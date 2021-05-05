@@ -8,6 +8,13 @@ services:
             - "27017:27017"
         volumes:
             - /var/lib/mongodb:/var/lib/mongodb
+              
+    postgres:
+        image: postgres
+        environment:
+            - POSTGRES_USER=postgres
+            - POSTGRES_PASSWORD=Password12!
+            - POSTGRES_DB=elsa-yessql
             
     azureblobstorage:
         image: mcr.microsoft.com/azure-blob-storage
