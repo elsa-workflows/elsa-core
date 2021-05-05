@@ -57,7 +57,8 @@ namespace Elsa.Expressions
                                                                                           [StubActivityExecutionContext] ActivityExecutionContext context)
         {
             var result = await sut.EvaluateAsync("2001-03-04T12:45:32Z", typeof(DateTime), context, default);
-            Assert.Equal(new DateTime(2001, 03, 04, 12, 45, 32, DateTimeKind.Utc), result);
+            var expected = new DateTime(2001, 03, 04, 12, 45, 32, DateTimeKind.Utc);
+            Assert.Equal(expected, result);
         }
     }
 }
