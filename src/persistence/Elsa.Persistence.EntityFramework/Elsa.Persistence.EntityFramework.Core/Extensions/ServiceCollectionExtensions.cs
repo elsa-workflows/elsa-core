@@ -93,20 +93,22 @@ namespace Elsa.Persistence.EntityFramework.Core.Extensions
         /// application, where re-use of DB Context objects is impractical.
         /// </para>
         /// <para>
-        /// Auto-running of migrations is not supported in this scenario.  When pooling is not in use and each instance of
+        /// Although auto-running of migrations is supported in this scenario, use this with caution. When pooling is not in use and each instance of
         /// the DB Context may differ, it is not feasible to try to automatically migrate them.
-        /// Your application is responsible for executing the contents of the <see cref="RunMigrations"/> class in a manner
+        /// Your application is ultimately responsible for executing the contents of the <see cref="RunMigrations"/> class in a manner
         /// which is suitable for your use-case.
         /// </para>
         /// </remarks>
         /// <param name="elsa">An Elsa options builder</param>
         /// <param name="configure">A configuration builder callback</param>
         /// <param name="serviceLifetime">The service lifetime which will be used for each DB Context instance</param>
+        /// <param name="autoRunMigrations">If <c>true</c> then database migrations will be auto-executed on startup</param>
         /// <returns>The Elsa options builder, so calls may be chained</returns>
         public static ElsaOptionsBuilder UseNonPooledEntityFrameworkPersistence(this ElsaOptionsBuilder elsa,
             Action<DbContextOptionsBuilder> configure,
-            ServiceLifetime serviceLifetime = ServiceLifetime.Singleton) =>
-            elsa.UseNonPooledEntityFrameworkPersistence<ElsaContext>(configure, serviceLifetime);
+            ServiceLifetime serviceLifetime = ServiceLifetime.Singleton,
+            bool autoRunMigrations = false) =>
+            elsa.UseNonPooledEntityFrameworkPersistence<ElsaContext>(configure, serviceLifetime, autoRunMigrations);
 
         /// <summary>
         /// Configures Elsa to use Entity Framework Core for persistence, without using pooled DB Context instances.
@@ -117,21 +119,23 @@ namespace Elsa.Persistence.EntityFramework.Core.Extensions
         /// application, where re-use of DB Context objects is impractical.
         /// </para>
         /// <para>
-        /// Auto-running of migrations is not supported in this scenario.  When pooling is not in use and each instance of
+        /// Although auto-running of migrations is supported in this scenario, use this with caution. When pooling is not in use and each instance of
         /// the DB Context may differ, it is not feasible to try to automatically migrate them.
-        /// Your application is responsible for executing the contents of the <see cref="RunMigrations"/> class in a manner
+        /// Your application is ultimately responsible for executing the contents of the <see cref="RunMigrations"/> class in a manner
         /// which is suitable for your use-case.
         /// </para>
         /// </remarks>
         /// <param name="elsa">An Elsa options builder</param>
         /// <param name="configure">A configuration builder callback</param>
         /// <param name="serviceLifetime">The service lifetime which will be used for each DB Context instance</param>
+        /// <param name="autoRunMigrations">If <c>true</c> then database migrations will be auto-executed on startup</param>
         /// <typeparam name="TElsaContext">The concrete type of <see cref="ElsaContext"/> to use.</typeparam>
         /// <returns>The Elsa options builder, so calls may be chained</returns>
         public static ElsaOptionsBuilder UseNonPooledEntityFrameworkPersistence<TElsaContext>(this ElsaOptionsBuilder elsa,
             Action<DbContextOptionsBuilder> configure,
-            ServiceLifetime serviceLifetime = ServiceLifetime.Singleton) where TElsaContext : ElsaContext =>
-            elsa.UseNonPooledEntityFrameworkPersistence<TElsaContext>((_, builder) => configure(builder), serviceLifetime);
+            ServiceLifetime serviceLifetime = ServiceLifetime.Singleton,
+            bool autoRunMigrations = false) where TElsaContext : ElsaContext =>
+            elsa.UseNonPooledEntityFrameworkPersistence<TElsaContext>((_, builder) => configure(builder), serviceLifetime, autoRunMigrations);
 
         /// <summary>
         /// Configures Elsa to use Entity Framework Core for persistence, without using pooled DB Context instances.
@@ -142,20 +146,22 @@ namespace Elsa.Persistence.EntityFramework.Core.Extensions
         /// application, where re-use of DB Context objects is impractical.
         /// </para>
         /// <para>
-        /// Auto-running of migrations is not supported in this scenario.  When pooling is not in use and each instance of
+        /// Although auto-running of migrations is supported in this scenario, use this with caution. When pooling is not in use and each instance of
         /// the DB Context may differ, it is not feasible to try to automatically migrate them.
-        /// Your application is responsible for executing the contents of the <see cref="RunMigrations"/> class in a manner
+        /// Your application is ultimately responsible for executing the contents of the <see cref="RunMigrations"/> class in a manner
         /// which is suitable for your use-case.
         /// </para>
         /// </remarks>
         /// <param name="elsa">An Elsa options builder</param>
         /// <param name="configure">A configuration builder callback, which also provides access to a service provider</param>
         /// <param name="serviceLifetime">The service lifetime which will be used for each DB Context instance</param>
+        /// <param name="autoRunMigrations">If <c>true</c> then database migrations will be auto-executed on startup</param>
         /// <returns>The Elsa options builder, so calls may be chained</returns>
         public static ElsaOptionsBuilder UseNonPooledEntityFrameworkPersistence(this ElsaOptionsBuilder elsa,
             Action<IServiceProvider, DbContextOptionsBuilder> configure,
-            ServiceLifetime serviceLifetime = ServiceLifetime.Singleton) =>
-            elsa.UseNonPooledEntityFrameworkPersistence<ElsaContext>(configure, serviceLifetime);
+            ServiceLifetime serviceLifetime = ServiceLifetime.Singleton,
+            bool autoRunMigrations = false) =>
+            elsa.UseNonPooledEntityFrameworkPersistence<ElsaContext>(configure, serviceLifetime, autoRunMigrations);
 
         /// <summary>
         /// Configures Elsa to use Entity Framework Core for persistence, without using pooled DB Context instances.
@@ -166,21 +172,23 @@ namespace Elsa.Persistence.EntityFramework.Core.Extensions
         /// application, where re-use of DB Context objects is impractical.
         /// </para>
         /// <para>
-        /// Auto-running of migrations is not supported in this scenario.  When pooling is not in use and each instance of
+        /// Although auto-running of migrations is supported in this scenario, use this with caution. When pooling is not in use and each instance of
         /// the DB Context may differ, it is not feasible to try to automatically migrate them.
-        /// Your application is responsible for executing the contents of the <see cref="RunMigrations"/> class in a manner
+        /// Your application is ultimately responsible for executing the contents of the <see cref="RunMigrations"/> class in a manner
         /// which is suitable for your use-case.
         /// </para>
         /// </remarks>
         /// <param name="elsa">An Elsa options builder</param>
         /// <param name="configure">A configuration builder callback, which also provides access to a service provider</param>
         /// <param name="serviceLifetime">The service lifetime which will be used for each DB Context instance</param>
+        /// <param name="autoRunMigrations">If <c>true</c> then database migrations will be auto-executed on startup</param>
         /// <typeparam name="TElsaContext">The concrete type of <see cref="ElsaContext"/> to use.</typeparam>
         /// <returns>The Elsa options builder, so calls may be chained</returns>
         public static ElsaOptionsBuilder UseNonPooledEntityFrameworkPersistence<TElsaContext>(this ElsaOptionsBuilder elsa,
             Action<IServiceProvider, DbContextOptionsBuilder> configure,
-            ServiceLifetime serviceLifetime = ServiceLifetime.Singleton) where TElsaContext : ElsaContext =>
-            UseEntityFrameworkPersistence<TElsaContext>(elsa, configure, false, false, serviceLifetime);
+            ServiceLifetime serviceLifetime = ServiceLifetime.Singleton,
+            bool autoRunMigrations = false) where TElsaContext : ElsaContext =>
+            UseEntityFrameworkPersistence<TElsaContext>(elsa, configure, autoRunMigrations, false, serviceLifetime);
 
         static ElsaOptionsBuilder UseEntityFrameworkPersistence<TElsaContext>(ElsaOptionsBuilder elsa,
             Action<IServiceProvider, DbContextOptionsBuilder> configure,
