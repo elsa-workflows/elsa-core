@@ -10,12 +10,8 @@ environment:
   sonarcloud_project_name: elsa-workflows_elsa-core
   sonarcloud_api_key:
     secure: qaE9kOVkGGFM7ZMf3YeliZxDU9udTCy6W5xXHJ9T+tXv5qXPMYlIdR7hyNgxW04A
-  
-version: 2.0.0-rc1.{build}
 
-services:
-  - mongodb
-  - postgresql101
+version: 2.0.0-rc1.{build}
 
 init:
   - cmd: git config --global core.autocrlf true
@@ -57,47 +53,48 @@ install:
 
 #      dotnet tool install --global dotnet-sonarscanner
 
-#before_build:
-#  - ps: >-
-#      if(-Not $env:APPVEYOR_PULL_REQUEST_NUMBER) {
-#      & dotnet-sonarscanner begin
-#      /k:$env:sonarcloud_project_name
-#      /v:AppVeyor_build_$env:APPVEYOR_BUILD_VERSION
-#      /o:$env:sonarcloud_org_name
-#      /s:$env:APPVEYOR_BUILD_FOLDER\.SonarQube.Analysis.xml
-#      /d:sonar.host.url="https://sonarcloud.io"
-#      /d:sonar.login=$env:sonarcloud_api_key
-#      /d:sonar.cs.xunit.reportsPaths=$env:APPVEYOR_BUILD_FOLDER\**\TestResults\TestResults.xml
-#      /d:sonar.cs.opencover.reportsPaths=$env:APPVEYOR_BUILD_FOLDER\**\TestResults\*\coverage.opencover.xml
-#      /d:sonar.branch.name=$env:APPVEYOR_REPO_BRANCH
-#      }
-      
+before_build:
+  - cmd: docker-compose -f docker-compose.yml up -d mongodb postgres
+      #  - ps: >-
+      #      if(-Not $env:APPVEYOR_PULL_REQUEST_NUMBER) {
+      #      & dotnet-sonarscanner begin
+      #      /k:$env:sonarcloud_project_name
+      #      /v:AppVeyor_build_$env:APPVEYOR_BUILD_VERSION
+      #      /o:$env:sonarcloud_org_name
+      #      /s:$env:APPVEYOR_BUILD_FOLDER\.SonarQube.Analysis.xml
+      #      /d:sonar.host.url="https://sonarcloud.io"
+      #      /d:sonar.login=$env:sonarcloud_api_key
+      #      /d:sonar.cs.xunit.reportsPaths=$env:APPVEYOR_BUILD_FOLDER\**\TestResults\TestResults.xml
+      #      /d:sonar.cs.opencover.reportsPaths=$env:APPVEYOR_BUILD_FOLDER\**\TestResults\*\coverage.opencover.xml
+      #      /d:sonar.branch.name=$env:APPVEYOR_REPO_BRANCH
+      #      }
+
 build_script:
   - ps: >-
       cd .\src\designer\elsa-workflows-studio
 
       npm run build
-      
+
       cd ..\bindings\aspnet\Elsa.Designer.Components.Web
-      
+
       npm run build
-        
+
       cd ..\..\..\..\dashboards\blazor\ElsaDashboard.Application
-      
+
       npm run build
-        
+
       cd ..\..\..\..\
-      
+
       dotnet build
 
 before_test:
   - cmd: >-
       SET PGUSER=postgres
-      
+
       SET PGPASSWORD=Password12!
 
       PATH=C:\Program Files\PostgreSQL\10\bin\;%PATH%
-      
+
       createdb "elsa-yessql"
 
 test_script:
@@ -121,7 +118,7 @@ deploy:
     skip_symbols: true
     on:
       branch: master
-  
+
   # Deploy to NuGet on builds from tags only
   - provider: NuGet
     api_key:
