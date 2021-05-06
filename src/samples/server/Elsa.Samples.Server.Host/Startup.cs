@@ -2,6 +2,7 @@ using Elsa.Activities.UserTask.Extensions;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
 using Elsa.Persistence.EntityFramework.SqlServer;
+using Elsa.Persistence.YesSql;
 using Elsa.Samples.Server.Host.Activities;
 using Elsa.Server.Hangfire.Extensions;
 using Hangfire;
@@ -12,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NodaTime;
 using NodaTime.Serialization.JsonNet;
+using Quartz;
 
 namespace Elsa.Samples.Server.Host
 {
@@ -52,8 +54,8 @@ namespace Elsa.Samples.Server.Host
                 .AddActivityPropertyOptionsProvider<VehicleActivity>()
                 .AddRuntimeSelectItemsProvider<VehicleActivity>()
                 .AddElsa(elsa => elsa
-                    //.UseNonPooledEntityFrameworkPersistence(ef => ef.UseSqlite())
-                    .UseEntityFrameworkPersistence(ef => ef.UseSqlServer("Server=LAPTOP-B76STK67;Database=Elsa;Integrated Security=true;MultipleActiveResultSets=True;"))
+                    .UseEntityFrameworkPersistence(ef => ef.UseSqlite())
+                    //.UseEntityFrameworkPersistence(ef => ef.UseSqlServer("Server=LAPTOP-B76STK67;Database=Elsa;Integrated Security=true;MultipleActiveResultSets=True;"))
                     //.UseYesSqlPersistence()
                     
                     // Using Hangfire as the dispatcher for workflow execution in the background.
@@ -63,10 +65,17 @@ namespace Elsa.Samples.Server.Host
                     .AddHttpActivities(elsaSection.GetSection("Http").Bind)
                     .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
                     .AddQuartzTemporalActivities()
+                    // .AddQuartzTemporalActivities(configureQuartz: quartz => quartz.UsePersistentStore(x =>
+                    // {
+                    //     x.UseJsonSerializer();
+                    //     x.UseGenericDatabase("SqlServer", ado =>
+                    //     {
+                    //         ado.ConnectionString = "Server=LAPTOP-B76STK67;Database=Elsa;Integrated Security=true;MultipleActiveResultSets=True;";
+                    //     });
+                    // }))
                     .AddJavaScriptActivities()
                     .AddUserTaskActivities()
                     .AddActivitiesFrom<VehicleActivity>()
-                    .AddWorkflowsFrom<Startup>()
                 );
 
             // Elsa API endpoints.

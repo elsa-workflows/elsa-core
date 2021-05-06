@@ -25,7 +25,23 @@ namespace Elsa.Activities.Temporal
                .Where(x => x.Value.Job.Type == workflowJobType && ((RunHangfireWorkflowJobModel)x.Value.Job.Args[0]).GetIdentity() == identity);
 
             foreach (var job in jobs) 
-                BackgroundJob.Delete(job.Key);
+                backgroundJobClient.Delete(job.Key);
+        }
+        
+        public static void UnscheduleJobWhenAlreadyExists(this IBackgroundJobClient backgroundJobClient, string workflowDefinitionId, string? tenantId)
+        {
+            var monitor = JobStorage.Current.GetMonitoringApi();
+            var workflowJobType = typeof(RunHangfireWorkflowJob);
+
+            var jobs = monitor.ScheduledJobs(0, int.MaxValue)
+                .Where(x =>
+                {
+                    var model = (RunHangfireWorkflowJobModel) x.Value.Job.Args[0];
+                    return x.Value.Job.Type == workflowJobType && model.WorkflowDefinitionId == workflowDefinitionId && model.TenantId == tenantId;
+                });
+
+            foreach (var job in jobs) 
+                backgroundJobClient.Delete(job.Key);
         }
     }
 }

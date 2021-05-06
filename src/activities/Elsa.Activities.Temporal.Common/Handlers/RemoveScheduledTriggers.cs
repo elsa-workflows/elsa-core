@@ -7,7 +7,7 @@ using MediatR;
 
 namespace Elsa.Activities.Temporal.Common.Handlers
 {
-    public class RemoveScheduledTriggers : INotificationHandler<BlockingActivityRemoved>
+    public class RemoveScheduledTriggers : INotificationHandler<BlockingActivityRemoved>, INotificationHandler<WorkflowDefinitionPublished>, INotificationHandler<WorkflowDefinitionRetracted>
     {
         private readonly string[] _supportedTypes = { nameof(Timer), nameof(StartAt), nameof(Cron) };
         private readonly IWorkflowScheduler _workflowScheduler;
@@ -25,5 +25,8 @@ namespace Elsa.Activities.Temporal.Common.Handlers
                 notification.WorkflowExecutionContext.WorkflowInstance.TenantId,
                 cancellationToken);
         }
+
+        public Task Handle(WorkflowDefinitionPublished notification, CancellationToken cancellationToken) => _workflowScheduler.UnscheduleWorkflowDefinitionAsync(notification.WorkflowDefinition.DefinitionId, notification.WorkflowDefinition.TenantId, cancellationToken);
+        public Task Handle(WorkflowDefinitionRetracted notification, CancellationToken cancellationToken) => _workflowScheduler.UnscheduleWorkflowDefinitionAsync(notification.WorkflowDefinition.DefinitionId, notification.WorkflowDefinition.TenantId, cancellationToken);
     }
 }

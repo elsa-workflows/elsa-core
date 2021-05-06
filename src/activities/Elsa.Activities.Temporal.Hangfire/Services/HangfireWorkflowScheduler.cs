@@ -43,6 +43,12 @@ namespace Elsa.Activities.Temporal.Hangfire.Services
             return Task.CompletedTask;
         }
 
+        public Task UnscheduleWorkflowDefinitionAsync(string workflowDefinitionId, string? tenantId, CancellationToken cancellationToken = default)
+        {
+            _backgroundJobClient.UnscheduleJobWhenAlreadyExists(workflowDefinitionId, tenantId);
+            return Task.CompletedTask;
+        }
+
         private RunHangfireWorkflowJobModel CreateData(string? workflowDefinitionId, string? workflowInstanceId, string activityId, string? tenantId, string? cronExpression = null)
         {
             return new(

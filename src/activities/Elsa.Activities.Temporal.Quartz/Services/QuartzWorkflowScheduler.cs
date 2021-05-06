@@ -5,6 +5,8 @@ using Elsa.Activities.Temporal.Quartz.Jobs;
 using Microsoft.Extensions.Logging;
 using NodaTime;
 using Quartz;
+using Quartz.Impl.Matchers;
+using Quartz.Util;
 
 namespace Elsa.Activities.Temporal.Quartz.Services
 {
@@ -47,6 +49,16 @@ namespace Elsa.Activities.Temporal.Quartz.Services
             if (existingTrigger != null)
                 await scheduler.UnscheduleJob(existingTrigger.Key, cancellationToken);
         }
+        
+        public async Task UnscheduleWorkflowDefinitionAsync(string workflowDefinitionId, string? tenantId, CancellationToken cancellationToken)
+        {
+            var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
+            var groupName = CreateTriggerGroupKey(tenantId, workflowDefinitionId);
+            var existingTriggers = await scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.GroupEquals(groupName), cancellationToken);
+
+            foreach (var existingTrigger in existingTriggers) 
+                await scheduler.UnscheduleJob(existingTrigger, cancellationToken);
+        }
 
         private async Task ScheduleJob(ITrigger trigger, CancellationToken cancellationToken)
         {
@@ -59,7 +71,7 @@ namespace Elsa.Activities.Temporal.Quartz.Services
 
                 if (existingTrigger != null)
                     await scheduler.UnscheduleJob(existingTrigger.Key, cancellationToken);
-
+                
                 await scheduler.ScheduleJob(trigger, cancellationToken);
             }
             catch (SchedulerException e)
@@ -83,8 +95,10 @@ namespace Elsa.Activities.Temporal.Quartz.Services
 
         private TriggerKey CreateTriggerKey(string? tenantId, string? workflowDefinitionId, string? workflowInstanceId, string activityId)
         {
-            var groupName = $"tenant:{tenantId ?? "default"}-workflow-instance:{workflowInstanceId ?? workflowDefinitionId}";
+            var groupName = CreateTriggerGroupKey(tenantId, workflowInstanceId ?? workflowDefinitionId);
             return new TriggerKey($"activity:{activityId}", groupName);
         }
+        
+        private string CreateTriggerGroupKey(string? tenantId, string? workflowId) => $"tenant:{tenantId ?? "default"}-workflow:{workflowId}";
     }
 }
