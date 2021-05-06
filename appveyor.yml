@@ -53,7 +53,10 @@ install:
 
 #      dotnet tool install --global dotnet-sonarscanner
 
-before_build:      
+before_build:
+  - cmd: >-
+      docker-compose -f docker-compose.yaml up -d mongodb postgres
+      
     #  - ps: >-
     #      if(-Not $env:APPVEYOR_PULL_REQUEST_NUMBER) {
     #      & dotnet-sonarscanner begin
@@ -86,9 +89,7 @@ build_script:
 
       dotnet build
 
-before_test:
-  - cmd: >-
-      docker-compose -f docker-compose.yaml up -d mongodb postgres
+# before_test:
 
 test_script:
   - ps: dotnet test --collect:"XPlat Code Coverage" --logger:xunit -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
