@@ -55,8 +55,6 @@ install:
 
 before_build:
   - cmd: >-
-      cd .\
-      
       docker-compose -f docker-compose.yaml up -d mongodb postgres
       
     #  - ps: >-
