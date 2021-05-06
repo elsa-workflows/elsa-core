@@ -53,10 +53,7 @@ install:
 
 #      dotnet tool install --global dotnet-sonarscanner
 
-before_build:
-  - cmd: >-
-      docker-compose -f docker-compose.yaml up -d mongodb postgres
-      
+before_build:      
     #  - ps: >-
     #      if(-Not $env:APPVEYOR_PULL_REQUEST_NUMBER) {
     #      & dotnet-sonarscanner begin
@@ -91,13 +88,7 @@ build_script:
 
 before_test:
   - cmd: >-
-      SET PGUSER=postgres
-
-      SET PGPASSWORD=Password12!
-
-      PATH=C:\Program Files\PostgreSQL\10\bin\;%PATH%
-
-      createdb "elsa-yessql"
+      docker-compose -f docker-compose.yaml up -d mongodb postgres
 
 test_script:
   - ps: dotnet test --collect:"XPlat Code Coverage" --logger:xunit -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
