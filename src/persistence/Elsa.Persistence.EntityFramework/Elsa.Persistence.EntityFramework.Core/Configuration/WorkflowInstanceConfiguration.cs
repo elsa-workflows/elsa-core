@@ -24,6 +24,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Configuration
             builder.Ignore(x => x.CurrentActivity);
             builder.Property<string>("Data");
             builder.HasIndex(x => new { x.WorkflowStatus, x.DefinitionId, x.Version }).HasDatabaseName($"IX_{nameof(WorkflowInstance)}_{nameof(WorkflowInstance.WorkflowStatus)}_{nameof(WorkflowInstance.DefinitionId)}_{nameof(WorkflowInstance.Version)}");
+            builder.HasIndex(x => new { x.WorkflowStatus, x.DefinitionId }).HasDatabaseName($"IX_{nameof(WorkflowInstance)}_{nameof(WorkflowInstance.WorkflowStatus)}_{nameof(WorkflowInstance.DefinitionId)}");
             builder.HasIndex(x => x.TenantId).HasDatabaseName($"IX_{nameof(WorkflowInstance)}_{nameof(WorkflowInstance.TenantId)}");
             builder.HasIndex(x => x.DefinitionId).HasDatabaseName($"IX_{nameof(WorkflowInstance)}_{nameof(WorkflowInstance.DefinitionId)}");
             builder.HasIndex(x => x.WorkflowStatus).HasDatabaseName($"IX_{nameof(WorkflowInstance)}_{nameof(WorkflowInstance.WorkflowStatus)}");

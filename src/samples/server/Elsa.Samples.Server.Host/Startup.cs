@@ -1,6 +1,7 @@
 using Elsa.Activities.UserTask.Extensions;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
+using Elsa.Persistence.EntityFramework.SqlServer;
 using Elsa.Samples.Server.Host.Activities;
 using Elsa.Server.Hangfire.Extensions;
 using Hangfire;
@@ -51,8 +52,8 @@ namespace Elsa.Samples.Server.Host
                 .AddActivityPropertyOptionsProvider<VehicleActivity>()
                 .AddRuntimeSelectItemsProvider<VehicleActivity>()
                 .AddElsa(elsa => elsa
-                    .UseNonPooledEntityFrameworkPersistence(ef => ef.UseSqlite())
-                    //.UseNonPooledEntityFrameworkPersistence(ef => ef.UseSqlServer("Server=LAPTOP-B76STK67;Database=Elsa;Integrated Security=true;MultipleActiveResultSets=True;"))
+                    //.UseNonPooledEntityFrameworkPersistence(ef => ef.UseSqlite())
+                    .UseEntityFrameworkPersistence(ef => ef.UseSqlServer("Server=LAPTOP-B76STK67;Database=Elsa;Integrated Security=true;MultipleActiveResultSets=True;"))
                     //.UseYesSqlPersistence()
                     
                     // Using Hangfire as the dispatcher for workflow execution in the background.

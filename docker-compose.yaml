@@ -10,11 +10,7 @@ services:
             - /var/lib/mongodb:/var/lib/mongodb
               
     postgres:
-        image: postgres
-        environment:
-            - POSTGRES_USER=postgres
-            - POSTGRES_PASSWORD=Password12!
-            - POSTGRES_DB=elsa-yessql
+        image: postgresql101
             
     azureblobstorage:
         image: mcr.microsoft.com/azure-blob-storage

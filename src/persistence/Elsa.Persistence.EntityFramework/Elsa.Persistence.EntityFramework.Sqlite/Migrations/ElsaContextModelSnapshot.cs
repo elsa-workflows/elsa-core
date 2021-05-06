@@ -281,6 +281,9 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
                     b.HasIndex("WorkflowStatus")
                         .HasDatabaseName("IX_WorkflowInstance_WorkflowStatus");
 
+                    b.HasIndex("WorkflowStatus", "DefinitionId")
+                        .HasDatabaseName("IX_WorkflowInstance_WorkflowStatus_DefinitionId");
+
                     b.HasIndex("WorkflowStatus", "DefinitionId", "Version")
                         .HasDatabaseName("IX_WorkflowInstance_WorkflowStatus_DefinitionId_Version");
 

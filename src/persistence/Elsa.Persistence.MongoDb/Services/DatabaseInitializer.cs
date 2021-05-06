@@ -32,8 +32,34 @@ namespace Elsa.Persistence.MongoDb.Services
             var versionKeysDefinition = Builders<WorkflowInstance>.IndexKeys.Ascending(x => x.Version);
             var workflowStatusKeysDefinition = Builders<WorkflowInstance>.IndexKeys.Ascending(x => x.WorkflowStatus);
             var workflowNameKeysDefinition = Builders<WorkflowInstance>.IndexKeys.Ascending(x => x.Name);
+            var contextIdKeysDefinition = Builders<WorkflowInstance>.IndexKeys.Ascending(x => x.ContextId);
+            var contextTypeKeysDefinition = Builders<WorkflowInstance>.IndexKeys.Ascending(x => x.ContextType);
+            var correlationIdKeysDefinition = Builders<WorkflowInstance>.IndexKeys.Ascending(x => x.CorrelationId);
+            var createdAtKeysDefinition = Builders<WorkflowInstance>.IndexKeys.Ascending(x => x.CreatedAt);
+            var definitionKeysDefinition = Builders<WorkflowInstance>.IndexKeys.Ascending(x => x.DefinitionId);
+            var faultedAtKeysDefinition = Builders<WorkflowInstance>.IndexKeys.Ascending(x => x.FaultedAt);
+            var finishedAtKeysDefinition = Builders<WorkflowInstance>.IndexKeys.Ascending(x => x.FinishedAt);
+            var lastExecutedAtKeysDefinition = Builders<WorkflowInstance>.IndexKeys.Ascending(x => x.LastExecutedAt);
+            var workflowStatusDefinitionVersionKeysDefinition = Builders<WorkflowInstance>.IndexKeys.Ascending(x => x.WorkflowStatus).Ascending(x => x.DefinitionId).Ascending(x => x.Version);
+            var workflowStatusDefinitionKeysDefinition = Builders<WorkflowInstance>.IndexKeys.Ascending(x => x.WorkflowStatus).Ascending(x => x.DefinitionId);
 
-            await CreateIndexesAsync(_mongoContext.WorkflowInstances, cancellationToken, tenantKeysDefinition, versionKeysDefinition, workflowStatusKeysDefinition, workflowNameKeysDefinition);
+            await CreateIndexesAsync(
+                _mongoContext.WorkflowInstances, 
+                cancellationToken, 
+                tenantKeysDefinition, 
+                versionKeysDefinition, 
+                workflowStatusKeysDefinition, 
+                workflowNameKeysDefinition,
+                contextIdKeysDefinition,
+                contextTypeKeysDefinition,
+                correlationIdKeysDefinition,
+                createdAtKeysDefinition,
+                definitionKeysDefinition,
+                faultedAtKeysDefinition,
+                finishedAtKeysDefinition,
+                lastExecutedAtKeysDefinition,
+                workflowStatusDefinitionVersionKeysDefinition,
+                workflowStatusDefinitionKeysDefinition);
         }
 
         private async Task CreateWorkflowDefinitionsIndexes(CancellationToken cancellationToken)

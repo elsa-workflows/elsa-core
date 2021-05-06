@@ -276,6 +276,12 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
                 column: "WorkflowStatus");
 
             migrationBuilder.CreateIndex(
+                name: "IX_WorkflowInstance_WorkflowStatus_DefinitionId",
+                schema: "Elsa",
+                table: "WorkflowInstances",
+                columns: new[] { "WorkflowStatus", "DefinitionId" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_WorkflowInstance_WorkflowStatus_DefinitionId_Version",
                 schema: "Elsa",
                 table: "WorkflowInstances",
