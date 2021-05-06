@@ -57,7 +57,7 @@ before_build:
   - cmd: >-
       cd .\
       
-      docker-compose -f docker-compose.yml up -d mongodb postgres
+      docker-compose -f docker-compose.yaml up -d mongodb postgres
       
     #  - ps: >-
     #      if(-Not $env:APPVEYOR_PULL_REQUEST_NUMBER) {
