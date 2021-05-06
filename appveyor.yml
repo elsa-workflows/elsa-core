@@ -54,7 +54,7 @@ install:
 #      dotnet tool install --global dotnet-sonarscanner
 
 before_build:
-  - cmd: docker-compose -f docker-compose.yml up -d mongodb postgres
+  - cmd: docker-compose -f .\docker-compose.yml up -d mongodb postgres
       #  - ps: >-
       #      if(-Not $env:APPVEYOR_PULL_REQUEST_NUMBER) {
       #      & dotnet-sonarscanner begin
