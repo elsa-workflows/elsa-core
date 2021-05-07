@@ -83,7 +83,7 @@ namespace Elsa.Builders
         {
             Version = value;
             IsLatest = isLatest;
-            isPublished = isPublished;
+            IsPublished = isPublished;
             return this;
         }
         
