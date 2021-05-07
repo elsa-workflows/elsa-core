@@ -50,7 +50,7 @@ export class ElsaStudioRoot {
           {/*<Tunnel.Provider state={tunnelState}>*/}
           <stencil-router>
             <stencil-route-switch scrollTopOffset={0}>
-              <stencil-route url="/" routeRender={props => <stencil-route-redirect url="/workflow-registry"/>} exact={true}/>
+              <stencil-route url="/" component="elsa-studio-home" exact={true}/>
               <stencil-route url="/workflow-registry" component="elsa-studio-workflow-registry" componentProps={{'serverUrl': serverUrl}} exact={true}/>
               <stencil-route url="/workflow-registry/:id" component="elsa-studio-workflow-blueprint-view" componentProps={{'serverUrl': serverUrl}} />
               <stencil-route url="/workflow-definitions" component="elsa-studio-workflow-definitions-list" componentProps={{'serverUrl': serverUrl}} exact={true}/>

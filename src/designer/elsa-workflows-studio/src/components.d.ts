@@ -141,6 +141,8 @@ export namespace Components {
         "propertyDescriptor": ActivityPropertyDescriptor;
         "propertyModel": ActivityDefinitionProperty;
     }
+    interface ElsaStudioHome {
+    }
     interface ElsaStudioRoot {
         "monacoLibPath": string;
         "serverUrl": string;
@@ -356,6 +358,12 @@ declare global {
         prototype: HTMLElsaSingleLinePropertyElement;
         new (): HTMLElsaSingleLinePropertyElement;
     };
+    interface HTMLElsaStudioHomeElement extends Components.ElsaStudioHome, HTMLStencilElement {
+    }
+    var HTMLElsaStudioHomeElement: {
+        prototype: HTMLElsaStudioHomeElement;
+        new (): HTMLElsaStudioHomeElement;
+    };
     interface HTMLElsaStudioRootElement extends Components.ElsaStudioRoot, HTMLStencilElement {
     }
     var HTMLElsaStudioRootElement: {
@@ -492,6 +500,7 @@ declare global {
         "elsa-property-editor": HTMLElsaPropertyEditorElement;
         "elsa-script-property": HTMLElsaScriptPropertyElement;
         "elsa-single-line-property": HTMLElsaSingleLinePropertyElement;
+        "elsa-studio-home": HTMLElsaStudioHomeElement;
         "elsa-studio-root": HTMLElsaStudioRootElement;
         "elsa-studio-workflow-blueprint-view": HTMLElsaStudioWorkflowBlueprintViewElement;
         "elsa-studio-workflow-definitions-edit": HTMLElsaStudioWorkflowDefinitionsEditElement;
@@ -644,6 +653,8 @@ declare namespace LocalJSX {
         "propertyDescriptor"?: ActivityPropertyDescriptor;
         "propertyModel"?: ActivityDefinitionProperty;
     }
+    interface ElsaStudioHome {
+    }
     interface ElsaStudioRoot {
         "monacoLibPath"?: string;
         "serverUrl"?: string;
@@ -748,6 +759,7 @@ declare namespace LocalJSX {
         "elsa-property-editor": ElsaPropertyEditor;
         "elsa-script-property": ElsaScriptProperty;
         "elsa-single-line-property": ElsaSingleLineProperty;
+        "elsa-studio-home": ElsaStudioHome;
         "elsa-studio-root": ElsaStudioRoot;
         "elsa-studio-workflow-blueprint-view": ElsaStudioWorkflowBlueprintView;
         "elsa-studio-workflow-definitions-edit": ElsaStudioWorkflowDefinitionsEdit;
@@ -794,6 +806,7 @@ declare module "@stencil/core" {
             "elsa-property-editor": LocalJSX.ElsaPropertyEditor & JSXBase.HTMLAttributes<HTMLElsaPropertyEditorElement>;
             "elsa-script-property": LocalJSX.ElsaScriptProperty & JSXBase.HTMLAttributes<HTMLElsaScriptPropertyElement>;
             "elsa-single-line-property": LocalJSX.ElsaSingleLineProperty & JSXBase.HTMLAttributes<HTMLElsaSingleLinePropertyElement>;
+            "elsa-studio-home": LocalJSX.ElsaStudioHome & JSXBase.HTMLAttributes<HTMLElsaStudioHomeElement>;
             "elsa-studio-root": LocalJSX.ElsaStudioRoot & JSXBase.HTMLAttributes<HTMLElsaStudioRootElement>;
             "elsa-studio-workflow-blueprint-view": LocalJSX.ElsaStudioWorkflowBlueprintView & JSXBase.HTMLAttributes<HTMLElsaStudioWorkflowBlueprintViewElement>;
             "elsa-studio-workflow-definitions-edit": LocalJSX.ElsaStudioWorkflowDefinitionsEdit & JSXBase.HTMLAttributes<HTMLElsaStudioWorkflowDefinitionsEditElement>;
