@@ -10,7 +10,7 @@ export async function getSelectListItems(serverUrl: string, propertyDescriptor: 
   const options = propertyDescriptor.options;
   let items = [];
 
-  if (!!options.runtimeSelectListItemsProviderType) {
+  if (!!options && options.runtimeSelectListItemsProviderType) {
     items = await fetchRuntimeItems(serverUrl, options);
   } else {
     items = options as Array<any> || [];

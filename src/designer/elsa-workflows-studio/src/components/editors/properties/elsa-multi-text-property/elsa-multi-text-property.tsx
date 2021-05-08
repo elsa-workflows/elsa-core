@@ -62,8 +62,8 @@ export class ElsaMultiTextProperty {
     const propertyOptions = this.createKeyValueOptions(items);
 
     const elsaInputTags = valueType === 'multi-text' ?
-      <elsa-input-tags values={values} fieldId={fieldId} fieldName={fieldName} onValueChanged={e => this.onValueChanged(e.detail)} /> :
-      <elsa-input-tags-dropdown dropdownValues={propertyOptions} values={values} fieldId={fieldId} fieldName={fieldName} onValueChanged={e => this.onValueChanged(e.detail)} />;
+      <elsa-input-tags-dropdown dropdownValues={propertyOptions} values={values} fieldId={fieldId} fieldName={fieldName} onValueChanged={e => this.onValueChanged(e.detail)} /> :
+      <elsa-input-tags values={values} fieldId={fieldId} fieldName={fieldName} onValueChanged={e => this.onValueChanged(e.detail)} />;
 
     return (
       <elsa-property-editor propertyDescriptor={propertyDescriptor}
