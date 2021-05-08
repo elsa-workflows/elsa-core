@@ -22,8 +22,6 @@ namespace Elsa.Dispatch.Handlers
         private readonly IBookmarkFinder _bookmarkFinder;
         private readonly ITriggerFinder _triggerFinder;
         private readonly IDistributedLockProvider _distributedLockProvider;
-        private readonly IWorkflowDefinitionDispatcher _workflowDefinitionDispatcher;
-        private readonly IWorkflowInstanceDispatcher _workflowInstanceDispatcher;
         private readonly IMediator _mediator;
         private readonly ElsaOptions _elsaOptions;
         private readonly ILogger<TriggerWorkflows> _logger;
@@ -33,8 +31,6 @@ namespace Elsa.Dispatch.Handlers
             IBookmarkFinder bookmarkFinder,
             ITriggerFinder triggerFinder,
             IDistributedLockProvider distributedLockProvider,
-            IWorkflowDefinitionDispatcher workflowDefinitionDispatcher,
-            IWorkflowInstanceDispatcher workflowInstanceDispatcher,
             IMediator mediator,
             ElsaOptions elsaOptions,
             ILogger<TriggerWorkflows> logger)
@@ -43,8 +39,6 @@ namespace Elsa.Dispatch.Handlers
             _bookmarkFinder = bookmarkFinder;
             _triggerFinder = triggerFinder;
             _distributedLockProvider = distributedLockProvider;
-            _workflowDefinitionDispatcher = workflowDefinitionDispatcher;
-            _workflowInstanceDispatcher = workflowInstanceDispatcher;
             _mediator = mediator;
             _elsaOptions = elsaOptions;
             _logger = logger;
@@ -55,31 +49,62 @@ namespace Elsa.Dispatch.Handlers
             var correlationId = request.CorrelationId;
 
             if (!string.IsNullOrWhiteSpace(correlationId))
+                return await ResumeCorrelatedWorkflowsAsync(request, cancellationToken);
+            
+            if (!string.IsNullOrWhiteSpace(request.WorkflowInstanceId))
+                return await ResumeSpecificWorkflowInstanceAsync(request, cancellationToken);
+
+            return await TriggerWorkflowsAsync(request, cancellationToken);
+        }
+
+        private async Task<int> TriggerWorkflowsAsync(TriggerWorkflowsRequest request, CancellationToken cancellationToken)
+        {
+            var bookmarkResultsQuery = await _bookmarkFinder.FindBookmarksAsync(request.ActivityType, request.Bookmark, request.TenantId, cancellationToken);
+            var bookmarkResults = bookmarkResultsQuery.ToList();
+            var triggeredCount = bookmarkResults.GroupBy(x => x.WorkflowInstanceId).Select(x => x.Key).Distinct().Count();
+
+            await ResumeWorkflowsAsync(bookmarkResults, request.Input, cancellationToken);
+            var startedCount = await StartWorkflowsAsync(request, cancellationToken);
+
+            return startedCount + triggeredCount;
+        }
+
+        private async Task<int> ResumeSpecificWorkflowInstanceAsync(TriggerWorkflowsRequest request, CancellationToken cancellationToken)
+        {
+            var bookmarkResultsQuery = await _bookmarkFinder.FindBookmarksAsync(request.ActivityType, request.Bookmark, request.TenantId, cancellationToken);
+            bookmarkResultsQuery = bookmarkResultsQuery.Where(x => x.WorkflowInstanceId == request.WorkflowInstanceId);
+            var bookmarkResults = bookmarkResultsQuery.ToList();
+            var triggeredCount = bookmarkResults.GroupBy(x => x.WorkflowInstanceId).Select(x => x.Key).Distinct().Count();
+
+            await ResumeWorkflowsAsync(bookmarkResults, request.Input, cancellationToken);
+            return triggeredCount;
+        }
+
+        private async Task<int> ResumeCorrelatedWorkflowsAsync(TriggerWorkflowsRequest request, CancellationToken cancellationToken)
+        {
+            var correlationId = request.CorrelationId!;
+            var lockKey = correlationId;
+
+            _logger.LogDebug("Acquiring lock on correlation ID {CorrelationId}", correlationId);
+            await using var handle = await _distributedLockProvider.AcquireLockAsync(lockKey, _elsaOptions.DistributedLockTimeout, cancellationToken);
+
+            if (handle == null)
+                throw new LockAcquisitionException($"Failed to acquire a lock on {lockKey}");
+
+            var correlatedWorkflowInstanceCount = !string.IsNullOrWhiteSpace(correlationId)
+                ? await _workflowInstanceStore.CountAsync(new CorrelationIdSpecification<WorkflowInstance>(correlationId).WithStatus(WorkflowStatus.Suspended), cancellationToken)
+                : 0;
+
+            _logger.LogDebug("Found {CorrelatedWorkflowCount} correlated workflows,", correlatedWorkflowInstanceCount);
+
+            if (correlatedWorkflowInstanceCount > 0)
             {
-                var lockKey = correlationId;
-
-                _logger.LogDebug("Acquiring lock on correlation ID {CorrelationId}", correlationId);
-                await using var handle = await _distributedLockProvider.AcquireLockAsync(lockKey, _elsaOptions.DistributedLockTimeout, cancellationToken);
-
-                if (handle == null)
-                    throw new LockAcquisitionException($"Failed to acquire a lock on {lockKey}");
-
-                var correlatedWorkflowInstanceCount = !string.IsNullOrWhiteSpace(correlationId)
-                    ? await _workflowInstanceStore.CountAsync(new CorrelationIdSpecification<WorkflowInstance>(correlationId).WithStatus(WorkflowStatus.Suspended), cancellationToken)
-                    : 0;
-                
-                _logger.LogDebug("Found {CorrelatedWorkflowCount} correlated workflows,", correlatedWorkflowInstanceCount);
-                
-                if (correlatedWorkflowInstanceCount > 0)
-                {
-                    _logger.LogDebug("{WorkflowInstanceCount} existing workflows found with correlation ID '{CorrelationId}' will be queued for execution", correlatedWorkflowInstanceCount, correlationId);
-                    var bookmarkResults = await _bookmarkFinder.FindBookmarksAsync(request.ActivityType, request.Bookmark, request.TenantId, cancellationToken).ToList();
-                    await ResumeWorkflowsAsync(bookmarkResults, request.Input, cancellationToken);
-                    return correlatedWorkflowInstanceCount;
-                }
+                _logger.LogDebug("{WorkflowInstanceCount} existing workflows found with correlation ID '{CorrelationId}' will be queued for execution", correlatedWorkflowInstanceCount, correlationId);
+                var bookmarkResults = await _bookmarkFinder.FindBookmarksAsync(request.ActivityType, request.Bookmark, request.TenantId, cancellationToken).ToList();
+                await ResumeWorkflowsAsync(bookmarkResults, request.Input, cancellationToken);
             }
 
-            return await StartWorkflowsAsync(request, cancellationToken);
+            return correlatedWorkflowInstanceCount;
         }
 
         private async Task<int> StartWorkflowsAsync(TriggerWorkflowsRequest request, CancellationToken cancellationToken)

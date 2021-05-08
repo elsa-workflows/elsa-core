@@ -24,7 +24,6 @@ namespace Elsa.Activities.Http.Results
             var httpContext = _httpContextAccessor.HttpContext;
             var response = httpContext.Response;
             
-            httpContext.Items[WorkflowHttpResult.Instance] = WorkflowHttpResult.Instance;
             response.Redirect(Location.ToString(), Permanent);
         }
     }

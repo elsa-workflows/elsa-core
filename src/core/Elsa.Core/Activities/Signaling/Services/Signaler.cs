@@ -20,17 +20,20 @@ namespace Elsa.Activities.Signaling.Services
             _workflowDispatcher = workflowDispatcher;
         }
 
-        public async Task TriggerSignalAsync(string signal, object? input = default, string? workflowInstanceId = default, CancellationToken cancellationToken = default) =>
+        public async Task TriggerSignalAsync(string signal, object? input = default, string? workflowInstanceId = default, CancellationToken cancellationToken = default)
+        {
             await _mediator.Send(new TriggerWorkflowsRequest(
                     nameof(SignalReceived),
-                    new SignalReceivedBookmark {Signal = signal, WorkflowInstanceId = workflowInstanceId},
-                    new SignalReceivedBookmark {Signal = signal},
+                    new SignalReceivedBookmark { Signal = signal, WorkflowInstanceId = workflowInstanceId },
+                    new SignalReceivedBookmark { Signal = signal },
                     new Signal(signal, input),
                     default,
+                    workflowInstanceId,
                     default,
                     TenantId),
                 cancellationToken
             );
+        }
 
         public async Task DispatchSignalAsync(string signal, object? input = default, string? workflowInstanceId = default, CancellationToken cancellationToken = default) =>
             await _workflowDispatcher.DispatchAsync(new TriggerWorkflowsRequest(

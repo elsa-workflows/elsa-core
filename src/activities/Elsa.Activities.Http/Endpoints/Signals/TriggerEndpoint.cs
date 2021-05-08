@@ -29,8 +29,8 @@ namespace Elsa.Activities.Http.Endpoints.Signals
 
             await _signaler.TriggerSignalAsync(signal.Name, null, signal.WorkflowInstanceId, cancellationToken);
             
-            return HttpContext.Items.ContainsKey(WorkflowHttpResult.Instance)
-                ? (IActionResult)new EmptyResult()
+            return HttpContext.Response.HasStarted
+                ? new EmptyResult()
                 : Accepted();
         }
     }
