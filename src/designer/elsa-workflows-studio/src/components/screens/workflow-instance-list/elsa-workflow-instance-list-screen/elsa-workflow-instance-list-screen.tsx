@@ -8,10 +8,10 @@ import {DropdownButtonItem, DropdownButtonOrigin} from "../../../controls/elsa-d
 import {Map, parseQuery} from '../../../../utils/utils';
 
 @Component({
-    tag: 'elsa-workflow-instances-list-screen',
+    tag: 'elsa-workflow-instance-list-screen',
     shadow: false,
 })
-export class ElsaWorkflowInstancesListScreen {
+export class ElsaWorkflowInstanceListScreen {
     @Prop() history?: RouterHistory;
     @Prop() serverUrl: string;
     @State() workflowBlueprints: Array<WorkflowBlueprintSummary> = [];

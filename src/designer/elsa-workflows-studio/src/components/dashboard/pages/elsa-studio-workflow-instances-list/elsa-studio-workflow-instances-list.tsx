@@ -20,7 +20,7 @@ export class ElsaStudioWorkflowInstancesList {
           </div>
         </div>
 
-        <elsa-workflow-instances-list-screen history={this.history} serverUrl={this.serverUrl} />
+        <elsa-workflow-instance-list-screen history={this.history} serverUrl={this.serverUrl} />
       </div>
     );
   }

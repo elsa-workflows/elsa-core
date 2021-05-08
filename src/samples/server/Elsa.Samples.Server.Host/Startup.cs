@@ -1,8 +1,6 @@
 using Elsa.Activities.UserTask.Extensions;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
-using Elsa.Persistence.EntityFramework.SqlServer;
-using Elsa.Persistence.YesSql;
 using Elsa.Samples.Server.Host.Activities;
 using Elsa.Server.Hangfire.Extensions;
 using Hangfire;
@@ -13,7 +11,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NodaTime;
 using NodaTime.Serialization.JsonNet;
-using Quartz;
 
 namespace Elsa.Samples.Server.Host
 {
@@ -100,7 +97,6 @@ namespace Elsa.Samples.Server.Host
             app
                 .UseCors()
                 .UseHttpActivities()
-                .UseCors()
                 .UseRouting()
                 .UseEndpoints(endpoints =>
                 {

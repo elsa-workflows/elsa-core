@@ -54,7 +54,6 @@ namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
         public int Version { get; set; }
         public string? TenantId { get; set; }
         public bool IsSingleton { get; set; }
-        public bool IsEnabled { get; set; }
         public bool IsPublished { get; set; }
         public bool IsLatest { get; set; }
     }
