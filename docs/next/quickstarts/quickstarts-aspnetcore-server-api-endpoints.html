@@ -79,7 +79,6 @@ It's of course also possible to combine the workflow host with a web app that ho
 </code></pre>
 <p>Add the following packages:</p>
 <pre><code class="hljs css language-bash">dotnet add package Elsa --prerelease
-dotnet add package Elsa.Activities.Email --prerelease
 dotnet add package Elsa.Activities.Http --prerelease
 dotnet add package Elsa.Activities.Temporal.Quartz --prerelease
 dotnet add package Elsa.Persistence.EntityFramework.Sqlite --prerelease
@@ -153,8 +152,7 @@ The second activity <code>WriteLine</code> writes the current time to standard o
                 .AddElsa(elsa =&gt; elsa
                     .UseEntityFrameworkPersistence(ef =&gt; ef.UseSqlite())
                     .AddConsoleActivities()
-                    .AddHttpActivities(elsaSection.GetSection(<span class="hljs-string">"Http"</span>).Bind)
-                    .AddEmailActivities(elsaSection.GetSection(<span class="hljs-string">"Smtp"</span>).Bind)
+                    .AddHttpActivities(elsaSection.GetSection(<span class="hljs-string">"Server"</span>).Bind)
                     .AddQuartzTemporalActivities()
                     .AddJavaScriptActivities()
                     .AddWorkflowsFrom&lt;Startup&gt;()
@@ -206,11 +204,6 @@ Let's update <code>appsettings.json</code> with these sections next:</p>
   <span class="hljs-attr">"Elsa"</span>: {
     <span class="hljs-attr">"Http"</span>: {
       <span class="hljs-attr">"BaseUrl"</span>: <span class="hljs-string">"https://localhost:5001"</span>
-    },
-    <span class="hljs-attr">"Smtp"</span>: {
-      <span class="hljs-attr">"Host"</span>: <span class="hljs-string">"localhost"</span>,
-      <span class="hljs-attr">"Port"</span>: <span class="hljs-string">"2525"</span>,
-      <span class="hljs-attr">"DefaultSender"</span>: <span class="hljs-string">"noreply@acme.com"</span>
     }
   }
 }

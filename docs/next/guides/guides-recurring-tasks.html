@@ -95,9 +95,7 @@ dotnet add package Microsoft.Extensions.Hosting
 }
 </code></pre>
 <h2><a class="anchor" aria-hidden="true" id="program"></a><a href="#program" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Program</h2>
-<p>Now that we have a workflow, we need to be able to execute it.
-Since the workflow starts with the <code>Timer</code> activity, Elsa can invoke it for us if we setup a .NET Host.
-Let's see how that works.</p>
+<p>Now that we have a workflow, we need to be able to execute it. Since the workflow starts with the <code>Timer</code> activity, Elsa can invoke it for us if we setup a .NET Host. Let's see how that works.</p>
 <p>Open <code>Program.cs</code> and replace its contents with the following:</p>
 <pre><code class="hljs css language-csharp"><span class="hljs-keyword">using</span> System.Threading.Tasks;
 <span class="hljs-keyword">using</span> Elsa;
@@ -136,8 +134,7 @@ Let's see how that works.</p>
 <p>Notice that we don't have to invoke the workflow ourselves manually. Instead, this is taken care of by a background task that is executed within the host built with <code>HostBuilder</code>.</p>
 </blockquote>
 <h2><a class="anchor" aria-hidden="true" id="first-run"></a><a href="#first-run" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>First Run</h2>
-<p>Run the program.
-After 5 seconds, you will start seeing the following output:</p>
+<p>Run the program. After 5 seconds, you will start seeing the following output:</p>
 <pre><code class="hljs css language-text">It's now 2021-05-08T11:24:06Z. Let's do this thing!
 It's now 2021-05-08T11:24:11Z. Let's do this thing!
 It's now 2021-05-08T11:24:16Z. Let's do this thing!
@@ -156,18 +153,19 @@ It's now 2021-05-08T11:24:16Z. Let's do this thing!
 <p>We'll use the dashboard to visually create the same workflow.</p>
 <h3><a class="anchor" aria-hidden="true" id="convert-project"></a><a href="#convert-project" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Convert Project</h3>
 <p>Open the <code>ElsaGuides.RecurringTasks.csproj</code> file and replace its contents with the following:</p>
-<pre><code class="hljs css language-xml"><span class="hljs-tag">&lt;<span class="hljs-name">Project</span> <span class="hljs-attr">Sdk</span>=<span class="hljs-string">"Microsoft.NET.Sdk.Web"</span>&gt;</span>
+<pre><code class="hljs css language-xml">
+<span class="hljs-tag">&lt;<span class="hljs-name">Project</span> <span class="hljs-attr">Sdk</span>=<span class="hljs-string">"Microsoft.NET.Sdk.Web"</span>&gt;</span>
 
     <span class="hljs-tag">&lt;<span class="hljs-name">PropertyGroup</span>&gt;</span>
         <span class="hljs-tag">&lt;<span class="hljs-name">TargetFramework</span>&gt;</span>net5.0<span class="hljs-tag">&lt;/<span class="hljs-name">TargetFramework</span>&gt;</span>
     <span class="hljs-tag">&lt;/<span class="hljs-name">PropertyGroup</span>&gt;</span>
 
     <span class="hljs-tag">&lt;<span class="hljs-name">ItemGroup</span>&gt;</span>
-        <span class="hljs-tag">&lt;<span class="hljs-name">PackageReference</span> <span class="hljs-attr">Include</span>=<span class="hljs-string">"Elsa"</span> <span class="hljs-attr">Version</span>=<span class="hljs-string">"2.0.0-rc1.27"</span> /&gt;</span>
-        <span class="hljs-tag">&lt;<span class="hljs-name">PackageReference</span> <span class="hljs-attr">Include</span>=<span class="hljs-string">"Elsa.Activities.Temporal.Quartz"</span> <span class="hljs-attr">Version</span>=<span class="hljs-string">"2.0.0-rc1.27"</span> /&gt;</span>
-        <span class="hljs-tag">&lt;<span class="hljs-name">PackageReference</span> <span class="hljs-attr">Include</span>=<span class="hljs-string">"Elsa.Designer.Components.Web"</span> <span class="hljs-attr">Version</span>=<span class="hljs-string">"2.0.0-rc1.27"</span> /&gt;</span>
-        <span class="hljs-tag">&lt;<span class="hljs-name">PackageReference</span> <span class="hljs-attr">Include</span>=<span class="hljs-string">"Elsa.Persistence.EntityFramework.Sqlite"</span> <span class="hljs-attr">Version</span>=<span class="hljs-string">"2.0.0-rc1.27"</span> /&gt;</span>
-        <span class="hljs-tag">&lt;<span class="hljs-name">PackageReference</span> <span class="hljs-attr">Include</span>=<span class="hljs-string">"Elsa.Server.Api"</span> <span class="hljs-attr">Version</span>=<span class="hljs-string">"2.0.0-rc1.27"</span> /&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">PackageReference</span> <span class="hljs-attr">Include</span>=<span class="hljs-string">"Elsa"</span> <span class="hljs-attr">Version</span>=<span class="hljs-string">"2.0.0-rc1.27"</span>/&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">PackageReference</span> <span class="hljs-attr">Include</span>=<span class="hljs-string">"Elsa.Activities.Temporal.Quartz"</span> <span class="hljs-attr">Version</span>=<span class="hljs-string">"2.0.0-rc1.27"</span>/&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">PackageReference</span> <span class="hljs-attr">Include</span>=<span class="hljs-string">"Elsa.Designer.Components.Web"</span> <span class="hljs-attr">Version</span>=<span class="hljs-string">"2.0.0-rc1.27"</span>/&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">PackageReference</span> <span class="hljs-attr">Include</span>=<span class="hljs-string">"Elsa.Persistence.EntityFramework.Sqlite"</span> <span class="hljs-attr">Version</span>=<span class="hljs-string">"2.0.0-rc1.27"</span>/&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">PackageReference</span> <span class="hljs-attr">Include</span>=<span class="hljs-string">"Elsa.Server.Api"</span> <span class="hljs-attr">Version</span>=<span class="hljs-string">"2.0.0-rc1.27"</span>/&gt;</span>
     <span class="hljs-tag">&lt;/<span class="hljs-name">ItemGroup</span>&gt;</span>
 
 <span class="hljs-tag">&lt;/<span class="hljs-name">Project</span>&gt;</span>
@@ -234,7 +232,7 @@ It's now 2021-05-08T11:24:16Z. Let's do this thing!
 <p>Finally, create a new folder called <code>Pages</code> and add a new file called <code>_Host.cshtml</code> with the following contents:</p>
 <pre><code class="hljs css language-html">@page "/"
 @{
-    var serverUrl = Request.Path.ToString();
+    var serverUrl = $"{Request.Scheme}://{Request.Host}";
 }
 <span class="hljs-meta">&lt;!DOCTYPE <span class="hljs-meta-keyword">html</span>&gt;</span>
 <span class="hljs-tag">&lt;<span class="hljs-name">html</span> <span class="hljs-attr">lang</span>=<span class="hljs-string">"en"</span>&gt;</span>
@@ -268,8 +266,8 @@ From the docs:</p>
 </blockquote>
 <h2><a class="anchor" aria-hidden="true" id="visual-workflow"></a><a href="#visual-workflow" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Visual Workflow</h2>
 <p>Let's go ahead and navigate to the <strong>Workflow Definitions</strong> page and click the <strong>Create Workflow</strong> button.</p>
-<p>Add a new <code>Timer</code> activity by clicking the <strong>Start</strong> button (reload the page <a href="https://github.com/elsa-workflows/elsa-core/issues/915">if you don't see any Start button</a>).
-Since the <code>Timer</code> activity uses NodaTime's <code>Duration</code> type to store the interval, we can provide the following text value to specify an interval of 5 seconds:</p>
+<p>Add a new <code>Timer</code> activity by clicking the <strong>Start</strong> button (reload the page <a href="https://github.com/elsa-workflows/elsa-core/issues/915">if you don't see any Start button</a>). Since the <code>Timer</code> activity uses NodaTime's <code>Duration</code> type to store
+the interval, we can provide the following text value to specify an interval of 5 seconds:</p>
 <pre><code class="hljs css language-text">00:00:00:05
 </code></pre>
 <p>Instead of using a plain text value, we might also take advantage of using a JavaScript expression and directly employ NodaTime's <code>Duration</code> type to construct an interval, like this:</p>
@@ -282,8 +280,7 @@ Since the <code>Timer</code> activity uses NodaTime's <code>Duration</code> type
 <li>Text (JavaScript): <code>`It's now ${new Date()}. Let's do this thing!`</code></li>
 </ul>
 <p>Click <strong>Save</strong> and then click <strong>Publish</strong> (at the bottom right of the screen).</p>
-<p>Elsa will now re-index the published workflows and see that there's a workflow with a <code>Timer</code> activity.
-Every 5 seconds, something like the following string will be written to standard out:</p>
+<p>Elsa will now re-index the published workflows and see that there's a workflow with a <code>Timer</code> activity. Every 5 seconds, something like the following string will be written to standard out:</p>
 <pre><code class="hljs css language-bash">It<span class="hljs-string">'s now Sat May 08 2021 12:50:34 GMTZ. Let'</span>s <span class="hljs-keyword">do</span> this thing!
 </code></pre>
 <p>And that's how easy it is to setup an Elsa Dashboard + Server and create some workflows!</p>
