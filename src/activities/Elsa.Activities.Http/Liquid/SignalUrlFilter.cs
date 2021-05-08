@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.Services;
 using Elsa.Scripting.Liquid.Services;
@@ -22,14 +21,10 @@ namespace Elsa.Activities.Http.Liquid
 
         public ValueTask<FluidValue> ProcessAsync(FluidValue input, FilterArguments arguments, TemplateContext context)
         {
-            var workflowContextValue = context.GetValue("WorkflowExecutionContext");
-
-            if (workflowContextValue.IsNil())
-                throw new ArgumentException("WorkflowExecutionContext missing while invoking 'signal_url'");
-
-            var workflowContext = (WorkflowExecutionContext)workflowContextValue.ToObjectValue();
+            var activityExecutionContext = (ActivityExecutionContext) context.Model;
+            var workflowExecutionContext = activityExecutionContext.WorkflowExecutionContext;
             var signalName = input.ToStringValue();
-            var url = GenerateUrl(signalName, workflowContext);
+            var url = GenerateUrl(signalName, workflowExecutionContext);
             return new ValueTask<FluidValue>(new StringValue(url));
         }
 

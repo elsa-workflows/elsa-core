@@ -3,9 +3,11 @@ using Elsa;
 using Elsa.Activities.Http;
 using Elsa.Activities.Http.Bookmarks;
 using Elsa.Activities.Http.JavaScript;
+using Elsa.Activities.Http.Liquid;
 using Elsa.Activities.Http.Options;
 using Elsa.Activities.Http.Parsers;
 using Elsa.Activities.Http.Services;
+using Elsa.Scripting.Liquid.Extensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -44,6 +46,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddBookmarkProvider<HttpEndpointBookmarkProvider>()
                 .AddHttpContextAccessor()
                 .AddNotificationHandlers(typeof(ConfigureJavaScriptEngine))
+                .AddLiquidFilter<SignalUrlFilter>("signal_url")
                 .AddDataProtection();
 
             return services;
