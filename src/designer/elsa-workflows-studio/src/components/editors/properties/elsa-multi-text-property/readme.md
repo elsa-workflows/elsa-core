@@ -7,24 +7,29 @@
 
 ## Properties
 
-| Property             | Attribute | Description | Type                         | Default     |
-| -------------------- | --------- | ----------- | ---------------------------- | ----------- |
-| `propertyDescriptor` | --        |             | `ActivityPropertyDescriptor` | `undefined` |
-| `propertyModel`      | --        |             | `ActivityDefinitionProperty` | `undefined` |
+| Property             | Attribute    | Description | Type                         | Default     |
+| -------------------- | ------------ | ----------- | ---------------------------- | ----------- |
+| `propertyDescriptor` | --           |             | `ActivityPropertyDescriptor` | `undefined` |
+| `propertyModel`      | --           |             | `ActivityDefinitionProperty` | `undefined` |
+| `serverUrl`          | `server-url` |             | `string`                     | `undefined` |
 
 
 ## Dependencies
 
 ### Depends on
 
-- [elsa-property-editor](../../elsa-property-editor)
+- [elsa-input-tags-dropdown](../../../controls/elsa-input-tags)
 - [elsa-input-tags](../../../controls/elsa-input-tags)
+- [elsa-property-editor](../../elsa-property-editor)
+- context-consumer
 
 ### Graph
 ```mermaid
 graph TD;
-  elsa-multi-text-property --> elsa-property-editor
+  elsa-multi-text-property --> elsa-input-tags-dropdown
   elsa-multi-text-property --> elsa-input-tags
+  elsa-multi-text-property --> elsa-property-editor
+  elsa-multi-text-property --> context-consumer
   elsa-property-editor --> elsa-multi-expression-editor
   elsa-multi-expression-editor --> elsa-expression-editor
   elsa-expression-editor --> elsa-monaco

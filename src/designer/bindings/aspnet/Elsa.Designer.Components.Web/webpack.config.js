@@ -4,7 +4,7 @@ const CopyPlugin = require("copy-webpack-plugin");
 module.exports = env => {
 
     return {
-        entry: ['./Interop/elsa-interop.ts'],
+        entry: ['./index.js'],
         devtool: env && env.production ? 'none' : 'source-map',
         module: {
             rules: [

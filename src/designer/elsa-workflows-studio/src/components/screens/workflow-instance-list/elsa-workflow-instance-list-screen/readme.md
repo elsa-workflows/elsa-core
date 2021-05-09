@@ -30,15 +30,15 @@
 ### Graph
 ```mermaid
 graph TD;
-  elsa-workflow-instances-list-screen --> stencil-route-link
-  elsa-workflow-instances-list-screen --> elsa-context-menu
-  elsa-workflow-instances-list-screen --> elsa-pager
-  elsa-workflow-instances-list-screen --> elsa-confirm-dialog
-  elsa-workflow-instances-list-screen --> elsa-dropdown-button
+  elsa-workflow-instance-list-screen --> stencil-route-link
+  elsa-workflow-instance-list-screen --> elsa-context-menu
+  elsa-workflow-instance-list-screen --> elsa-pager
+  elsa-workflow-instance-list-screen --> elsa-confirm-dialog
+  elsa-workflow-instance-list-screen --> elsa-dropdown-button
   elsa-confirm-dialog --> elsa-modal-dialog
   elsa-dropdown-button --> stencil-route-link
-  elsa-studio-workflow-instances-list --> elsa-workflow-instances-list-screen
-  style elsa-workflow-instances-list-screen fill:#f9f,stroke:#333,stroke-width:4px
+  elsa-studio-workflow-instances-list --> elsa-workflow-instance-list-screen
+  style elsa-workflow-instance-list-screen fill:#f9f,stroke:#333,stroke-width:4px
 ```
 
 ----------------------------------------------

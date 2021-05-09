@@ -33,7 +33,7 @@ Type: `Promise<boolean>`
 ### Used by
 
  - [elsa-workflow-definitions-list-screen](../../screens/workflow-definition-list/elsa-workflow-definitions-screen)
- - [elsa-workflow-instances-list-screen](../../screens/workflow-instances-list/elsa-workflow-instances-list-screen)
+ - [elsa-workflow-instance-list-screen](../../screens/workflow-instance-list/elsa-workflow-instance-list-screen)
 
 ### Depends on
 
@@ -44,7 +44,7 @@ Type: `Promise<boolean>`
 graph TD;
   elsa-confirm-dialog --> elsa-modal-dialog
   elsa-workflow-definitions-list-screen --> elsa-confirm-dialog
-  elsa-workflow-instances-list-screen --> elsa-confirm-dialog
+  elsa-workflow-instance-list-screen --> elsa-confirm-dialog
   style elsa-confirm-dialog fill:#f9f,stroke:#333,stroke-width:4px
 ```
 

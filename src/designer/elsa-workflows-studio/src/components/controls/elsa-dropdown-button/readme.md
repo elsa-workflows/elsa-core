@@ -26,7 +26,7 @@
 
 ### Used by
 
- - [elsa-workflow-instances-list-screen](../../screens/workflow-instances-list/elsa-workflow-instances-list-screen)
+ - [elsa-workflow-instance-list-screen](../../screens/workflow-instance-list/elsa-workflow-instance-list-screen)
 
 ### Depends on
 
@@ -36,7 +36,7 @@
 ```mermaid
 graph TD;
   elsa-dropdown-button --> stencil-route-link
-  elsa-workflow-instances-list-screen --> elsa-dropdown-button
+  elsa-workflow-instance-list-screen --> elsa-dropdown-button
   style elsa-dropdown-button fill:#f9f,stroke:#333,stroke-width:4px
 ```
 

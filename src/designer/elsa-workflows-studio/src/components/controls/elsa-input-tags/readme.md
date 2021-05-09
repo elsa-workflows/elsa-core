@@ -7,19 +7,20 @@
 
 ## Properties
 
-| Property      | Attribute      | Description | Type       | Default     |
-| ------------- | -------------- | ----------- | ---------- | ----------- |
-| `fieldId`     | `field-id`     |             | `string`   | `undefined` |
-| `fieldName`   | `field-name`   |             | `string`   | `undefined` |
-| `placeHolder` | `place-holder` |             | `string`   | `'Add tag'` |
-| `values`      | --             |             | `string[]` | `[]`        |
+| Property         | Attribute      | Description | Type                           | Default     |
+| ---------------- | -------------- | ----------- | ------------------------------ | ----------- |
+| `dropdownValues` | --             |             | `SelectListItem[]`             | `[]`        |
+| `fieldId`        | `field-id`     |             | `string`                       | `undefined` |
+| `fieldName`      | `field-name`   |             | `string`                       | `undefined` |
+| `placeHolder`    | `place-holder` |             | `string`                       | `'Add tag'` |
+| `values`         | --             |             | `(string \| SelectListItem)[]` | `[]`        |
 
 
 ## Events
 
-| Event          | Description | Type                    |
-| -------------- | ----------- | ----------------------- |
-| `valueChanged` |             | `CustomEvent<string[]>` |
+| Event          | Description | Type                                        |
+| -------------- | ----------- | ------------------------------------------- |
+| `valueChanged` |             | `CustomEvent<(string \| SelectListItem)[]>` |
 
 
 ## Dependencies
@@ -31,8 +32,8 @@
 ### Graph
 ```mermaid
 graph TD;
-  elsa-multi-text-property --> elsa-input-tags
-  style elsa-input-tags fill:#f9f,stroke:#333,stroke-width:4px
+  elsa-multi-text-property --> elsa-input-tags-dropdown
+  style elsa-input-tags-dropdown fill:#f9f,stroke:#333,stroke-width:4px
 ```
 
 ----------------------------------------------
