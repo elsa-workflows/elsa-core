@@ -1,6 +1,7 @@
 using Elsa;
 using Elsa.Activities.File;
 using Elsa.Activities.File.Options;
+using Elsa.Activities.File.Services;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -15,16 +16,12 @@ namespace Microsoft.Extensions.DependencyInjection
             return services;
         }
 
-        public static ElsaOptionsBuilder AddFileActivities(this ElsaOptionsBuilder builder, Action<FileWatcherOptions>? configureOptions = null)
-        {
-            builder.Services.AddFileServices(configureOptions);
-            builder.AddActivity<DeleteFile>();
-            builder.AddActivity<FileExists>();
-            builder.AddActivity<OutFile>();
-            builder.AddActivity<TempFile>();
-
-            return builder;
-        }
+        public static ElsaOptionsBuilder AddFileActivities(this ElsaOptionsBuilder builder, Action<FileWatcherOptions>? configureOptions = null) => builder
+            .AddActivity<DeleteFile>()
+            .AddActivity<FileExists>()
+            .AddActivity<OutFile>()
+            .AddActivity<ReadFile>()
+            .AddActivity<TempFile>();
 
         public static IServiceCollection AddFileServices(this IServiceCollection services, Action<FileWatcherOptions>? configureOptions = null)
         {
@@ -32,6 +29,7 @@ namespace Microsoft.Extensions.DependencyInjection
             {
                 services.Configure(configureOptions);
             }
+            services.AddHostedService<FileWatcherService>();
 
             return services;
         }
