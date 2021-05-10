@@ -35,7 +35,8 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
                         .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
                         .AddQuartzTemporalActivities()
                         .AddJavaScriptActivities()
-                        .AddWorkflow<HeartbeatWorkflow>()
+                        .AddActivitiesFrom<Startup>()
+                        .AddWorkflowsFrom<Startup>()
                 );
 
             services
