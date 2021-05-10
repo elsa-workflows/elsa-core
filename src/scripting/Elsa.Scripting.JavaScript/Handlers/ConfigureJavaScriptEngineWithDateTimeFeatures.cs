@@ -8,11 +8,11 @@ using NodaTime;
 
 namespace Elsa.Scripting.JavaScript.Handlers
 {
-    public class DateTimeScriptEngineConfigurator : INotificationHandler<EvaluatingJavaScriptExpression>
+    public class ConfigureJavaScriptEngineWithDateTimeFeatures : INotificationHandler<EvaluatingJavaScriptExpression>
     {
         private readonly IClock _clock;
 
-        public DateTimeScriptEngineConfigurator(IClock clock)
+        public ConfigureJavaScriptEngineWithDateTimeFeatures(IClock clock)
         {
             _clock = clock;
         }

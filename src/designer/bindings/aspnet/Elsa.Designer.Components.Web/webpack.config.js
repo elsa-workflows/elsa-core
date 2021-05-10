@@ -6,21 +6,8 @@ module.exports = env => {
     return {
         entry: ['./index.js'],
         devtool: env && env.production ? 'none' : 'source-map',
-        module: {
-            rules: [
-                {
-                    test: /\.(ts|tsx)$/,
-                    use: 'ts-loader',
-                    exclude: /node_modules/,
-                },
-                {
-                    test: /\.(js|jsx)$/,
-                    exclude: /node_modules/,
-                },
-            ],
-        },
         resolve: {
-            extensions: ['.tsx', '.ts', '.js', '.jsx'],
+            extensions: ['.js'],
         },
         experiments: {
             outputModule: true
