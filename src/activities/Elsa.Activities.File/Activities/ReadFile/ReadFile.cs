@@ -21,7 +21,7 @@ namespace Elsa.Activities.File
 
         public async override ValueTask<IActivityExecutionResult> ExecuteAsync(ActivityExecutionContext context)
         {
-            var content = System.IO.File.ReadAllTextAsync(Path);
+            var content = await System.IO.File.ReadAllTextAsync(Path);
             return Done(content);
         }
     }
