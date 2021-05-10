@@ -1,3 +1,3 @@
-Create migrations for all supported EF COre providers:
+Create migrations for all supported EF Core providers:
 
 `create-migrations-initial.cmd`

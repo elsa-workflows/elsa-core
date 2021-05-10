@@ -49,8 +49,8 @@ namespace Elsa.Dispatch.Handlers
             var correlationId = request.CorrelationId;
 
             if (!string.IsNullOrWhiteSpace(correlationId))
-                return await ResumeCorrelatedWorkflowsAsync(request, cancellationToken);
-            
+                return await ResumeOrStartCorrelatedWorkflowsAsync(request, cancellationToken);
+
             if (!string.IsNullOrWhiteSpace(request.WorkflowInstanceId))
                 return await ResumeSpecificWorkflowInstanceAsync(request, cancellationToken);
 
@@ -80,31 +80,33 @@ namespace Elsa.Dispatch.Handlers
             return triggeredCount;
         }
 
-        private async Task<int> ResumeCorrelatedWorkflowsAsync(TriggerWorkflowsRequest request, CancellationToken cancellationToken)
+        private async Task<int> ResumeOrStartCorrelatedWorkflowsAsync(TriggerWorkflowsRequest request, CancellationToken cancellationToken)
         {
             var correlationId = request.CorrelationId!;
             var lockKey = correlationId;
 
             _logger.LogDebug("Acquiring lock on correlation ID {CorrelationId}", correlationId);
-            await using var handle = await _distributedLockProvider.AcquireLockAsync(lockKey, _elsaOptions.DistributedLockTimeout, cancellationToken);
-
-            if (handle == null)
-                throw new LockAcquisitionException($"Failed to acquire a lock on {lockKey}");
-
-            var correlatedWorkflowInstanceCount = !string.IsNullOrWhiteSpace(correlationId)
-                ? await _workflowInstanceStore.CountAsync(new CorrelationIdSpecification<WorkflowInstance>(correlationId).WithStatus(WorkflowStatus.Suspended), cancellationToken)
-                : 0;
-
-            _logger.LogDebug("Found {CorrelatedWorkflowCount} correlated workflows,", correlatedWorkflowInstanceCount);
-
-            if (correlatedWorkflowInstanceCount > 0)
+            await using (var handle = await _distributedLockProvider.AcquireLockAsync(lockKey, _elsaOptions.DistributedLockTimeout, cancellationToken))
             {
-                _logger.LogDebug("{WorkflowInstanceCount} existing workflows found with correlation ID '{CorrelationId}' will be queued for execution", correlatedWorkflowInstanceCount, correlationId);
-                var bookmarkResults = await _bookmarkFinder.FindBookmarksAsync(request.ActivityType, request.Bookmark, request.TenantId, cancellationToken).ToList();
-                await ResumeWorkflowsAsync(bookmarkResults, request.Input, cancellationToken);
+                if (handle == null)
+                    throw new LockAcquisitionException($"Failed to acquire a lock on {lockKey}");
+
+                var correlatedWorkflowInstanceCount = !string.IsNullOrWhiteSpace(correlationId)
+                    ? await _workflowInstanceStore.CountAsync(new CorrelationIdSpecification<WorkflowInstance>(correlationId).WithStatus(WorkflowStatus.Suspended), cancellationToken)
+                    : 0;
+
+                _logger.LogDebug("Found {CorrelatedWorkflowCount} correlated workflows,", correlatedWorkflowInstanceCount);
+
+                if (correlatedWorkflowInstanceCount > 0)
+                {
+                    _logger.LogDebug("{WorkflowInstanceCount} existing workflows found with correlation ID '{CorrelationId}' will be queued for execution", correlatedWorkflowInstanceCount, correlationId);
+                    var bookmarkResults = await _bookmarkFinder.FindBookmarksAsync(request.ActivityType, request.Bookmark, request.TenantId, cancellationToken).ToList();
+                    await ResumeWorkflowsAsync(bookmarkResults, request.Input, cancellationToken);
+                    return correlatedWorkflowInstanceCount;
+                }
             }
 
-            return correlatedWorkflowInstanceCount;
+            return await StartWorkflowsAsync(request, cancellationToken);
         }
 
         private async Task<int> StartWorkflowsAsync(TriggerWorkflowsRequest request, CancellationToken cancellationToken)
