@@ -15,7 +15,7 @@
 
     <ItemGroup>
         <PackageReference Include="DistributedLock.Azure" Version="1.0.0" />
-        <PackageReference Include="Microsoft.Azure.Storage.Blob" Version="11.2.2" />
+        <PackageReference Include="Microsoft.Azure.Storage.Blob" Version="11.2.3" />
     </ItemGroup>
 
     <ItemGroup>

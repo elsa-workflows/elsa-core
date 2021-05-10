@@ -17,7 +17,7 @@ namespace Elsa.Persistence.EntityFramework.MySql
             
             builder.UseMySql(
                 connectionString,
-                serverVersion != null ? ServerVersion.FromString(serverVersion) : ServerVersion.AutoDetect(connectionString),
+                serverVersion != null ? ServerVersion.Parse(serverVersion) : ServerVersion.AutoDetect(connectionString),
                 db => db.MigrationsAssembly(typeof(MySqlElsaContextFactory).Assembly.GetName().Name));
             
             return new ElsaContext(builder.Options);
