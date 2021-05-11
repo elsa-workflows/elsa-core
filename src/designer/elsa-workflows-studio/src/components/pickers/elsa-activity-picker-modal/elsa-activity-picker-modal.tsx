@@ -34,14 +34,10 @@ export class ElsaActivityPickerModal {
   componentWillRender() {
     const activityDescriptors: Array<ActivityDescriptor> = state.activityDescriptors;
     this.categories = ['All', ...activityDescriptors.map(x => x.category).distinct().sort()];
-    const traits = [{text: 'All', value: 7}, {text: 'Actions', value: 1}, {text: 'Triggers', value: 2}, {text: 'Jobs', value: 4}];
     const searchText = this.searchText ? this.searchText.toLowerCase() : '';
     let filteredActivityDescriptors = activityDescriptors;
-
-    filteredActivityDescriptors = filteredActivityDescriptors.filter(x => (x.traits & this.selectedTrait) == x.traits)
-    filteredActivityDescriptors = !this.selectedCategory || this.selectedCategory == 'All' ? filteredActivityDescriptors : filteredActivityDescriptors.filter(x => x.category == this.selectedCategory);
-
-    if (searchText.length > 0)
+    
+    if (searchText.length > 0) {
       filteredActivityDescriptors = filteredActivityDescriptors.filter(x => {
         const category = x.category || '';
         const description = x.description || '';
@@ -53,6 +49,11 @@ export class ElsaActivityPickerModal {
           || displayName.toLowerCase().indexOf(searchText) >= 0
           || type.toLowerCase().indexOf(searchText) >= 0;
       });
+    }
+    else {
+      filteredActivityDescriptors = filteredActivityDescriptors.filter(x => (x.traits & this.selectedTrait) == x.traits)
+      filteredActivityDescriptors = !this.selectedCategory || this.selectedCategory == 'All' ? filteredActivityDescriptors : filteredActivityDescriptors.filter(x => x.category == this.selectedCategory);
+    }
 
     this.filteredActivityDescriptorDisplayContexts = filteredActivityDescriptors.map(x => {
       const color = (x.traits &= ActivityTraits.Trigger) == ActivityTraits.Trigger ? 'rose' : 'light-blue';
@@ -85,8 +86,6 @@ export class ElsaActivityPickerModal {
   }
 
   onSearchTextChange(e: TextEvent) {
-    this.selectedTrait = 7;
-    this.selectedCategory = 'All';
     this.searchText = (e.target as HTMLInputElement).value;
   }
 
