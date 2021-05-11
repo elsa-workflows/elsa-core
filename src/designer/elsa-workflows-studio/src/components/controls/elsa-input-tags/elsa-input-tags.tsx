@@ -23,6 +23,14 @@ export class ElsaInputTags {
         this.currentValues = this.values;
     }
 
+    async addItem(item: string)
+    {
+        const values = [...this.currentValues];
+        values.push(item);
+        this.currentValues = values.distinct();
+        await this.valueChanged.emit(values);
+    }
+
     async onInputKeyDown(e: KeyboardEvent) {
         if (e.key != "Enter")
             return;
@@ -35,11 +43,19 @@ export class ElsaInputTags {
         if (value.length == 0)
             return;
 
-        const values = [...this.currentValues];
-        values.push(value);
-        this.currentValues = values.distinct();
+        await this.addItem(value);
         input.value = '';
-        await this.valueChanged.emit(values);
+    }
+
+    async onInputBlur(e: Event) {
+        const input = e.target as HTMLInputElement;
+        const value = input.value.trim();
+
+        if (value.length == 0)
+            return;
+
+        await this.addItem(value);
+        input.value = '';
     }
 
     async onDeleteTagClick(e: Event, tag: string) {
@@ -65,7 +81,9 @@ export class ElsaInputTags {
                         <span class="text-white hover:text-white ml-1">&times;</span>
                     </a>
                 ))}
-                <input type="text" id={this.fieldId} onKeyDown={e => this.onInputKeyDown(e)}
+                <input type="text" id={this.fieldId} 
+                       onKeyDown={e => this.onInputKeyDown(e)}
+                       onBlur={e => this.onInputBlur(e)}
                        class="tag-input inline-block text-sm outline-none focus:outline-none border-none shadow:none focus:border-none focus:border-transparent focus:shadow-none"
                        placeholder={this.placeHolder}/>
                 <input type="hidden" name={this.fieldName} value={valuesJson}/>

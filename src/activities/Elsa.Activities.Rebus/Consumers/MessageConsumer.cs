@@ -12,10 +12,10 @@ namespace Elsa.Activities.Rebus.Consumers
     public class MessageConsumer<T> : IHandleMessages<T> where T : notnull
     {
         // TODO: Design multi-tenancy. 
-        private const string TenantId = default;
-        
+        private const string? TenantId = default;
+
         private readonly IMediator _mediator;
-        
+
         public MessageConsumer(IMediator mediator)
         {
             _mediator = mediator;
@@ -26,8 +26,8 @@ namespace Elsa.Activities.Rebus.Consumers
             var correlationId = MessageContext.Current.TransportMessage.Headers.GetValueOrNull(Headers.CorrelationId);
             await _mediator.Send(new TriggerWorkflowsRequest(
                 nameof(RebusMessageReceived),
-                new MessageReceivedBookmark {MessageType = message.GetType().Name, CorrelationId = correlationId},
-                new MessageReceivedBookmark {MessageType = message.GetType().Name},
+                new MessageReceivedBookmark { MessageType = message.GetType().Name, CorrelationId = correlationId },
+                new MessageReceivedBookmark { MessageType = message.GetType().Name },
                 message,
                 correlationId,
                 default,

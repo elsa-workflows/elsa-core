@@ -16,7 +16,7 @@ namespace Elsa.Samples.Server.Host.Activities
     [Action]
     public class VehicleActivity : Activity, IActivityPropertyOptionsProvider, IRuntimeSelectListItemsProvider
     {
-        private Random _random;
+        private readonly Random _random;
         
         public VehicleActivity()
         {
