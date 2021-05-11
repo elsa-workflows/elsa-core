@@ -94,7 +94,7 @@ export class ElsaWorkflowInstanceListScreen {
             case WorkflowStatus.Idle:
                 return "gray";
             case WorkflowStatus.Running:
-                return "pink";
+                return "rose";
             case WorkflowStatus.Suspended:
                 return "blue";
             case WorkflowStatus.Finished:
