@@ -24,6 +24,7 @@ namespace Elsa.Persistence.EntityFramework.Core.StartupTasks
         {
             await using var dbContext = _dbContextFactory.CreateDbContext();
             await dbContext.Database.MigrateAsync(cancellationToken);
+            await dbContext.DisposeAsync();
         }
     }
 }

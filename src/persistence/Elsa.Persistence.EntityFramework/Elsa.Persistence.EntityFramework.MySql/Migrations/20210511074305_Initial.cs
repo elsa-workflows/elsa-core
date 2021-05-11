@@ -18,91 +18,128 @@ namespace Elsa.Persistence.EntityFramework.MySql.Migrations
                 schema: "Elsa",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "varchar(255)", nullable: false),
-                    TenantId = table.Column<string>(type: "varchar(255)", nullable: true),
-                    Hash = table.Column<string>(type: "varchar(255)", nullable: false),
-                    Model = table.Column<string>(type: "longtext", nullable: false),
-                    ModelType = table.Column<string>(type: "longtext", nullable: false),
-                    ActivityType = table.Column<string>(type: "varchar(255)", nullable: false),
-                    ActivityId = table.Column<string>(type: "varchar(255)", nullable: false),
+                    Id = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    TenantId = table.Column<string>(type: "varchar(255)", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Hash = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Model = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ModelType = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ActivityType = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ActivityId = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     WorkflowInstanceId = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Bookmarks", x => x.Id);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "WorkflowDefinitions",
                 schema: "Elsa",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "varchar(255)", nullable: false),
-                    DefinitionId = table.Column<string>(type: "varchar(255)", nullable: false),
-                    TenantId = table.Column<string>(type: "varchar(255)", nullable: true),
-                    Name = table.Column<string>(type: "varchar(255)", nullable: true),
-                    DisplayName = table.Column<string>(type: "longtext", nullable: true),
-                    Description = table.Column<string>(type: "longtext", nullable: true),
+                    Id = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    DefinitionId = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    TenantId = table.Column<string>(type: "varchar(255)", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Name = table.Column<string>(type: "varchar(255)", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    DisplayName = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Description = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     Version = table.Column<int>(type: "int", nullable: false),
                     IsSingleton = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     PersistenceBehavior = table.Column<int>(type: "int", nullable: false),
                     DeleteCompletedInstances = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     IsPublished = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     IsLatest = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    Tag = table.Column<string>(type: "varchar(255)", nullable: true),
+                    Tag = table.Column<string>(type: "varchar(255)", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     Data = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_WorkflowDefinitions", x => x.Id);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "WorkflowExecutionLogRecords",
                 schema: "Elsa",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "varchar(255)", nullable: false),
-                    TenantId = table.Column<string>(type: "varchar(255)", nullable: true),
-                    WorkflowInstanceId = table.Column<string>(type: "varchar(255)", nullable: false),
-                    ActivityId = table.Column<string>(type: "varchar(255)", nullable: false),
-                    ActivityType = table.Column<string>(type: "varchar(255)", nullable: false),
+                    Id = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    TenantId = table.Column<string>(type: "varchar(255)", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    WorkflowInstanceId = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ActivityId = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ActivityType = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     Timestamp = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
-                    EventName = table.Column<string>(type: "longtext", nullable: true),
-                    Message = table.Column<string>(type: "longtext", nullable: true),
-                    Source = table.Column<string>(type: "longtext", nullable: true),
+                    EventName = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Message = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Source = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     Data = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_WorkflowExecutionLogRecords", x => x.Id);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "WorkflowInstances",
                 schema: "Elsa",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "varchar(255)", nullable: false),
-                    DefinitionId = table.Column<string>(type: "varchar(255)", nullable: false),
-                    TenantId = table.Column<string>(type: "varchar(255)", nullable: true),
+                    Id = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    DefinitionId = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    TenantId = table.Column<string>(type: "varchar(255)", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     Version = table.Column<int>(type: "int", nullable: false),
                     WorkflowStatus = table.Column<int>(type: "int", nullable: false),
-                    CorrelationId = table.Column<string>(type: "varchar(255)", nullable: true),
-                    ContextType = table.Column<string>(type: "varchar(255)", nullable: true),
-                    ContextId = table.Column<string>(type: "varchar(255)", nullable: true),
-                    Name = table.Column<string>(type: "varchar(255)", nullable: true),
+                    CorrelationId = table.Column<string>(type: "varchar(255)", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ContextType = table.Column<string>(type: "varchar(255)", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ContextId = table.Column<string>(type: "varchar(255)", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Name = table.Column<string>(type: "varchar(255)", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
                     LastExecutedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: true),
                     FinishedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: true),
                     CancelledAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: true),
                     FaultedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: true),
                     Data = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_WorkflowInstances", x => x.Id);
-                });
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Bookmark_ActivityId",
