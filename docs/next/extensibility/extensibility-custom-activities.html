@@ -84,14 +84,14 @@
 <li>Return an <code>IActivityExecutionResult</code> - an <code>OutcomeResult</code> in this example.</li>
 </ol>
 <h2><a class="anchor" aria-hidden="true" id="registering-activities"></a><a href="#registering-activities" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Registering Activities</h2>
-<p>To make your activity available for use, it needs to be registered with the DI service container:</p>
-<pre><code class="hljs css language-c#">services.AddActivity&lt;SayHelloWorld&gt;();
+<p>To make your activity available for use, it needs to be registered with the <code>ElsaOptions</code> as follows:</p>
+<pre><code class="hljs css language-c#">services.AddElsa(elsaOptions =&gt; elsaOptions.AddActivity&lt;SayHelloWorld&gt;());
 </code></pre>
 <p>Alternatively, you can register all activities from an assembly using the following extension method:</p>
-<pre><code class="hljs css language-c#">services.AddActivitiesFrom&lt;TMarkerType&gt;(); <span class="hljs-comment">// TMarkerType is any type in the assembly from which you want to find and register activities.</span>
+<pre><code class="hljs css language-c#">services.AddElsa(elsaOptions =&gt; elsaOptions.AddActivitiesFrom&lt;TMarkerType&gt;()); <span class="hljs-comment">// TMarkerType is any type in the assembly from which you want to find and register activities.</span>
 </code></pre>
 <h2><a class="anchor" aria-hidden="true" id="dependency-injection"></a><a href="#dependency-injection" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Dependency Injection</h2>
-<p>Since activities are registered with the service container, you can inject services into their constructor.
+<p>Activities are registered with the service container as well, which means that you can inject services into their constructor.
 For example, if you register the following service:</p>
 <pre><code class="hljs css language-c#">services.AddSingleton(Console.Out);
 </code></pre>
@@ -219,7 +219,7 @@ These outcomes are used by the workflow designer to render the possible outcomes
 [<span class="hljs-meta">ActivityDefinition(Outcomes = new[</span>] { <span class="hljs-string">"Success"</span>, <span class="hljs-string">"Failed"</span> })]
 <span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title">WriteLine</span> : <span class="hljs-title">Activity</span>
 { 
-    <span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">override</span> ActivityExecutionResult <span class="hljs-title">OnExecute</span>(<span class="hljs-params">WorkflowExecutionContext context</span>)</span>
+    <span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">override</span> IActivityExecutionResult <span class="hljs-title">OnExecute</span>(<span class="hljs-params">ActivityExecutionContext context</span>)</span>
     {
         <span class="hljs-keyword">var</span> success = DoSomething();
         <span class="hljs-keyword">var</span> outcomeName = success ? <span class="hljs-string">"Success"</span> : <span class="hljs-string">"Failed"</span>;
@@ -230,38 +230,31 @@ These outcomes are used by the workflow designer to render the possible outcomes
 </code></pre>
 <h2><a class="anchor" aria-hidden="true" id="suspend--resume"></a><a href="#suspend--resume" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Suspend &amp; Resume</h2>
 <p>Some activities represent workflow triggers, and require a certain event to be triggered before they return an outcome for the workflow runner to continue.
-The <code>TimerEvent</code> activity is one such example. When it executes, instead of returning an <code>OutcomeResult</code>, it will return a <code>HaltResult</code> which instructs the workflow runner to suspend &amp; persist the workflow.</p>
-<p>The workflow is now said to be <em>halted</em>. The <code>TimerEvent</code> activity is said to be <em>blocking</em>.</p>
-<p>When a timer event is eventually triggered, the workflow will be <em>resumed</em>. When a workflow resumes, it will invoke the blocking activity's <code>ResumeAsync</code> method.
+The <code>Timer</code> activity is one such example. When it executes, instead of returning an <code>OutcomeResult</code>, it will return a <code>SuspendResult</code> which instructs the workflow runner to suspend &amp; persist the workflow.</p>
+<p>The workflow is now said to be <em>suspended</em>. The <code>Timer</code> activity is said to be <em>blocking</em>.</p>
+<p>When a timer is eventually triggered, the workflow will be <em>resumed</em>. When a workflow resumes, it will invoke the blocking activity's <code>ResumeAsync</code> method.
 This method then performs any work that needs to be done, and depending on the activity's functionality, returns an appropriate activity execution result.</p>
 <p>For example, imagine we have a <code>ReadLine</code> activity that will block until a line is read from the console and fed into the halted workflow:</p>
 <pre><code class="hljs css language-c#"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title">ReadLine</span> : <span class="hljs-title">Activity</span>
 {
-    <span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">override</span> ActivityExecutionResult <span class="hljs-title">OnExecute</span>(<span class="hljs-params">WorkflowExecutionContext context</span>)</span>
+    <span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">override</span> IActivityExecutionResult <span class="hljs-title">OnExecute</span>(<span class="hljs-params">ActivityExecutionContext context</span>)</span>
     {
         <span class="hljs-comment">// Instruct the workflow runner to suspend the workflow.</span>
-        <span class="hljs-keyword">return</span> Halt();
+        <span class="hljs-keyword">return</span> Suspend();
     }
-    
-    <span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">override</span> ActivityExecutionResult <span class="hljs-title">OnResume</span>(<span class="hljs-params">WorkflowExecutionContext context</span>)</span>
+
+    <span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">override</span> IActivityExecutionResult <span class="hljs-title">OnResume</span>(<span class="hljs-params">ActivityExecutionContext context</span>)</span>
     {
         <span class="hljs-comment">// Read received input.</span>
-        <span class="hljs-keyword">var</span> receivedInput = (<span class="hljs-keyword">string</span>) context.Workflow.Input[<span class="hljs-string">"ReadLineInput"</span>];
-        
+        <span class="hljs-keyword">var</span> receivedInput = context.GetInput&lt;<span class="hljs-keyword">string</span>&gt;();
+    
         <span class="hljs-comment">// Store received input into activity output.</span>
-        Output.SetVariable(<span class="hljs-string">"Input"</span>, receivedInput);
+        context.Output = receivedInput;
 
         <span class="hljs-comment">// Instruct workflow runner that we're done.</span>
         <span class="hljs-keyword">return</span> Done();
     }
 }
 </code></pre>
-<p>A workflow containing this activity would halt when it is executed. It's then up to your application to provide input to the workflow, typically by triggering an event. For example:</p>
-<pre><code class="hljs css language-c#"><span class="hljs-keyword">var</span> line = Console.ReadLine();
-<span class="hljs-keyword">var</span> input = <span class="hljs-keyword">new</span> Variables { [<span class="hljs-string">"ReadLineInput"</span>] = line  };
-
-<span class="hljs-comment">// Trigger the ReadLine event activity.</span>
-_workflowInvoker.TriggerAsync(<span class="hljs-keyword">nameof</span>(ReadLine), input);
-</code></pre>
-<p>The <code>TriggerAsync</code> method will start any workflows that have <code>ReadLine</code> as a starting activity, an will resume any workflows that are blocked by <code>ReadLine</code>.</p>
+<p>A workflow containing this activity will become suspended when it is executed. It is then up to your application to provide input to the workflow.</p>
 </span></div></article></div><div class="docs-prevnext"><a class="docs-prev button" href="/elsa-core/docs/next/expressions/expressions-liquid"><span class="arrow-prev">← </span><span>Liquid</span></a><a class="docs-next button" href="/elsa-core/docs/next/extensibility/extensibility-persistence"><span>Persistence</span><span class="arrow-next"> →</span></a></div></div></div><nav class="onPageNav"><ul class="toc-headings"><li><a href="#hello-world-activity">Hello World Activity</a></li><li><a href="#registering-activities">Registering Activities</a></li><li><a href="#dependency-injection">Dependency Injection</a></li><li><a href="#async-execution">Async Execution</a></li><li><a href="#properties">Properties</a></li><li><a href="#activity-picker">Activity Picker</a></li><li><a href="#outcomes">Outcomes</a><ul class="toc-headings"><li><a href="#designer-support">Designer Support</a></li></ul></li><li><a href="#suspend--resume">Suspend &amp; Resume</a></li></ul></nav></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="/elsa-core/" class="nav-home"><img src="/elsa-core/img/android-icon-192x192.png" alt="ELSA" width="50" height="50"/></a><div><h5>Docs</h5><a href="/elsa-core/docs/en/installing-elsa-core">Getting Started</a><a href="/elsa-core/docs/en/concepts-workflows">Concepts</a><a href="/elsa-core/docs/en/guides-simple-workflow-csharp">Guides</a></div><div><h5>Community</h5><a href="https://stackoverflow.com/questions/tagged/elsa-workflows" target="_blank" rel="noreferrer noopener">Stack Overflow</a><a href="https://gitter.im/elsa-workflows/community" target="_blank" rel="noreferrer noopener">Gitter</a></div><div><h5>More</h5><a href="https://github.com/elsa-workflows/elsa-core">GitHub</a><a class="github-button" href="https://github.com/elsa-workflows/elsa-core" data-icon="octicon-star" data-count-href="/facebook/docusaurus/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star this project on GitHub">Star</a></div></section><a href="https://dotnetfoundation.org" target="_blank" rel="noreferrer noopener" class="dotnetfoundation" title="Supported by the .NET Foundation"><img src="/elsa-core/img/dotnetfoundation.png" alt="Supported by the .NET Foundation" width="100" height="100"/></a><section class="copyright">Copyright © 2021 .NET Foundation</section></footer></div></body></html>
