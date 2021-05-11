@@ -19,14 +19,14 @@ export class ElsaActivityPickerModal {
   categories: Array<string> = [];
   filteredActivityDescriptorDisplayContexts: Array<ActivityDescriptorDisplayContext> = [];
 
-  connectedCallback(){
+  connectedCallback() {
     eventBus.on(EventTypes.ShowActivityPicker, this.onShowActivityPicker);
   }
 
   disconnectedCallback() {
     eventBus.off(EventTypes.ShowActivityPicker, this.onShowActivityPicker);
   }
-  
+
   onShowActivityPicker = async () => {
     await this.dialog.show(true);
   };
@@ -85,6 +85,8 @@ export class ElsaActivityPickerModal {
   }
 
   onSearchTextChange(e: TextEvent) {
+    this.selectedTrait = 7;
+    this.selectedCategory = 'All';
     this.searchText = (e.target as HTMLInputElement).value;
   }
 
@@ -134,7 +136,9 @@ export class ElsaActivityPickerModal {
                         <line x1="21" y1="21" x2="15" y2="15"/>
                       </svg>
                     </div>
-                    <input type="text" value={this.searchText} onInput={e => this.onSearchTextChange(e as TextEvent)} class="form-input block w-full pl-10 sm:text-sm sm:leading-5" placeholder="Search activities"/>
+                    <input type="text" value={this.searchText} onInput={e => this.onSearchTextChange(e as TextEvent)}
+                           class="form-input block w-full pl-10 sm:text-sm sm:leading-5 focus:ring-blue-500 focus:border-blue-500 rounded-md border-gray-300" 
+                           placeholder="Search activities"/>
                   </div>
                 </div>
 
