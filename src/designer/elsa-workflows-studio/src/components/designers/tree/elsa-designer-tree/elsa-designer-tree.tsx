@@ -46,6 +46,7 @@ export class ElsaWorkflowDesigner {
   zoom: d3.ZoomBehavior<Element, unknown>;
   parentActivityId?: string;
   parentActivityOutcome?: string;
+  addingActivity: boolean = false;
   activityDisplayContexts: Map<ActivityDesignDisplayContext> = {};
   selectedActivities: Map<ActivityModel> = {};
 
@@ -134,26 +135,30 @@ export class ElsaWorkflowDesigner {
     eventBus.off(EventTypes.UpdateActivity, this.onUpdateActivity);
     d3.selectAll('.node').on('click', null);
     d3.selectAll('.edgePath').on('contextmenu', null);
-
   }
 
   onActivityPicked = async args => {
     const activityDescriptor = args as ActivityDescriptor;
-    const connectFromRoot = !this.parentActivityOutcome || this.parentActivityOutcome == '';
-    const sourceId = connectFromRoot ? null : this.parentActivityId;
-    const targetId = connectFromRoot ? this.parentActivityId : null;
-    const activityModel = this.addActivity(activityDescriptor, sourceId, targetId, this.parentActivityOutcome);
+    //const activityModel = this.addActivity(activityDescriptor, sourceId, targetId, this.parentActivityOutcome);
+    const activityModel = this.newActivity(activityDescriptor);
+    this.addingActivity = true;
     this.showActivityEditorInternal(activityModel, false);
   };
 
   onUpdateActivity = args => {
     const activityModel = args as ActivityModel;
-    this.updateActivity(activityModel);
+
+    if (this.addingActivity) {
+      const connectFromRoot = !this.parentActivityOutcome || this.parentActivityOutcome == '';
+      const sourceId = connectFromRoot ? null : this.parentActivityId;
+      const targetId = connectFromRoot ? this.parentActivityId : null;
+      this.addActivity(activityModel, sourceId, targetId, this.parentActivityOutcome);
+    } else {
+      this.updateActivity(activityModel);
+    }
   };
 
-  addActivity(activityDescriptor: ActivityDescriptor, sourceActivityId?: string, targetActivityId?: string, outcome?: string): ActivityModel {
-    outcome = outcome || 'Done';
-
+  newActivity(activityDescriptor: ActivityDescriptor): ActivityModel {
     const activity: ActivityModel = {
       activityId: uuid(),
       type: activityDescriptor.type,
@@ -168,6 +173,20 @@ export class ElsaWorkflowDesigner {
         expression: '',
       };
     }
+
+    return activity;
+  }
+
+  createAndAddActivity(activityDescriptor: ActivityDescriptor, sourceActivityId?: string, targetActivityId?: string, outcome?: string): ActivityModel {
+    outcome = outcome || 'Done';
+
+    const activity = this.newActivity(activityDescriptor);
+    this.addActivity(activity, sourceActivityId, targetActivityId, outcome);
+    return activity;
+  }
+
+  addActivity(activity: ActivityModel, sourceActivityId?: string, targetActivityId?: string, outcome?: string) {
+    outcome = outcome || 'Done';
 
     const workflowModel = {...this.workflowModel, activities: [...this.workflowModel.activities, activity]};
 
@@ -211,7 +230,6 @@ export class ElsaWorkflowDesigner {
     this.updateWorkflowModel(workflowModel);
     this.parentActivityId = null;
     this.parentActivityOutcome = null;
-    return activity;
   }
 
   getRootActivities(): Array<ActivityModel> {
