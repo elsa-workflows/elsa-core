@@ -79,7 +79,7 @@ namespace Elsa.Services
 
             await _mediator.Publish(new WorkflowDefinitionPublishing(workflowDefinition), cancellationToken);
             await _workflowDefinitionStore.SaveAsync(workflowDefinition, cancellationToken);
-            await _mediator.Publish(new WorkflowDefinitionPublishing(workflowDefinition), cancellationToken);
+            await _mediator.Publish(new WorkflowDefinitionPublished(workflowDefinition), cancellationToken);
             return workflowDefinition;
         }
         
