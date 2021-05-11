@@ -284,7 +284,7 @@ export class ElsaWorkflowInstanceViewerScreen {
               </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
-              {activityStats.eventCounts.map(eventCount => (
+              {activityStats.eventCounts.length > 0 ? activityStats.eventCounts.map(eventCount => (
                 <tr>
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {eventCount.eventName}
@@ -292,13 +292,16 @@ export class ElsaWorkflowInstanceViewerScreen {
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {eventCount.count}
                   </td>
-                </tr>))}
+                </tr>)) : <tr>
+                <td colSpan={2} class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  No events record for this activity.
+                </td>
+              </tr>}
               </tbody>
             </table>
           </div>
 
-          <div class="relative grid gap-6 bg-white px-5 py-6 sm:gap-8 sm:p-8">
-
+          {activityStats.eventCounts.length > 0 ? (<div class="relative grid gap-6 bg-white px-5 py-6 sm:gap-8 sm:p-8">
             {!!activityStats.fault ? (
               <a href="#" class="-m-3 p-3 flex items-start rounded-lg hover:bg-gray-50 transition ease-in-out duration-150">
                 <svg class="flex-shrink-0 h-6 w-6 text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -383,13 +386,14 @@ export class ElsaWorkflowInstanceViewerScreen {
                 </p>
               </div>
             </a>
-          </div>
+          </div>) : undefined
+          }
         </div>
       )
     };
 
     const renderLoader = function () {
-      return <div>Loading...</div>;
+      return <div class="p-6 bg-white">Loading...</div>;
     };
 
     return <div
