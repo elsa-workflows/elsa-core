@@ -97,10 +97,10 @@ export class ElsaWorkflowDesigner {
 
   updateWorkflowModel(model: WorkflowModel, emitEvent: boolean = true) {
     this.workflowModel = model;
-    
-    if(emitEvent)
+
+    if (emitEvent)
       this.workflowChanged.emit(model);
-    
+
     setTimeout(() => {
       this.rerenderTree();
     }, 50);

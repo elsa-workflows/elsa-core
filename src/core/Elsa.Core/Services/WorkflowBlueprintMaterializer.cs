@@ -154,11 +154,11 @@ namespace Elsa.Services
                     ActivityId = activityDefinition.ActivityId,
                     Name = activityDefinition.Name,
                     DisplayName = activityDefinition.DisplayName,
+                    Description = activityDefinition.Description,
                     PersistOutputEnabled = activityDefinition.PersistOutput,
                     PersistWorkflowEnabled = activityDefinition.PersistWorkflow,
                     LoadWorkflowContextEnabled = activityDefinition.LoadWorkflowContext,
                     SaveWorkflowContextEnabled = activityDefinition.SaveWorkflowContext,
-                    Description = activityDefinition.Description
                 };
                 
                 compositeActivity.Build(compositeActivityBuilder);

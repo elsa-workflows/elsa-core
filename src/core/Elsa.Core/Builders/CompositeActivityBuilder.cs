@@ -166,6 +166,8 @@ namespace Elsa.Builders
             {
                 Id = ActivityId,
                 Name = Name,
+                DisplayName = DisplayName,
+                Description = Description,
                 Type = ActivityTypeName,
                 PersistOutput = PersistOutputEnabled,
                 PersistWorkflow = PersistWorkflowEnabled,

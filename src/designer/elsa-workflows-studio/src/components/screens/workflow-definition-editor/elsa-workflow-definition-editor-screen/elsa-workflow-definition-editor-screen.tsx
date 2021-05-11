@@ -265,8 +265,8 @@ export class ElsaWorkflowDefinitionEditorScreen {
   }
 
   mapActivityModel(source: ActivityDefinition): ActivityModel {
-    const descriptors: Array<ActivityDescriptor> = state.activityDescriptors;
-    const descriptor = descriptors.find(x => x.type == source.type);
+    const activityDescriptors: Array<ActivityDescriptor> = state.activityDescriptors;
+    const activityDescriptor = activityDescriptors.find(x => x.type == source.type);
 
     return {
       activityId: source.activityId,
@@ -275,7 +275,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
       name: source.name,
       type: source.type,
       properties: source.properties,
-      outcomes: [...descriptor.outcomes],
+      outcomes: [...activityDescriptor.outcomes],
       persistOutput: source.persistOutput,
       persistWorkflow: source.persistWorkflow,
       saveWorkflowContext: source.saveWorkflowContext,
