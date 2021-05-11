@@ -14,14 +14,18 @@ namespace Elsa.Activities.Signaling
 
     public class SignalReceivedBookmarkProvider : BookmarkProvider<SignalReceivedBookmark, SignalReceived>
     {
-        public override async ValueTask<IEnumerable<IBookmark>> GetBookmarksAsync(BookmarkProviderContext<SignalReceived> context, CancellationToken cancellationToken) =>
-            new[]
+        public override async ValueTask<IEnumerable<IBookmark>> GetBookmarksAsync(BookmarkProviderContext<SignalReceived> context, CancellationToken cancellationToken)
+        {
+            var workflowInstanceId = context.Mode == BookmarkIndexingMode.WorkflowBlueprint ? default : context.ActivityExecutionContext.WorkflowInstance.Id;
+            
+            return new[]
             {
                 new SignalReceivedBookmark
                 {
                     Signal = (await context.Activity.GetPropertyValueAsync(x => x.Signal, cancellationToken))!,
-                    WorkflowInstanceId = context.ActivityExecutionContext.WorkflowInstance.Id
+                    WorkflowInstanceId = workflowInstanceId
                 }
             };
+        }
     }
 }
