@@ -246,6 +246,9 @@ export class ElsaWorkflowInstanceJournal {
         if (key.toLowerCase() == 'state')
           continue;
 
+        if (key.toLowerCase() == 'input')
+          continue;
+
         const value = recordData[key];
 
         if (!value)
@@ -308,7 +311,7 @@ export class ElsaWorkflowInstanceJournal {
                   {collection.map(filteredRecordData, (v, k) => (
                     <div class="sm:col-span-1">
                       <dt class="text-sm font-medium text-gray-500">{k}</dt>
-                      <dd class="mt-1 text-sm text-gray-900 mb-2">{v}</dd>
+                      <dd class="mt-1 text-sm text-gray-900 mb-2"><pre>{v}</pre></dd>
                     </div>
                   ))}
                   {record.message ? (
