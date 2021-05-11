@@ -207,7 +207,6 @@ export class ElsaWorkflowInstanceListScreen {
 
         return (
             <div>
-
                 <div class="relative z-10 flex-shrink-0 flex h-16 bg-white border-b border-gray-200">
                     <div class="flex-1 px-4 flex justify-between sm:px-6 lg:px-8">
                         <div class="flex-1 flex">
@@ -281,8 +280,8 @@ export class ElsaWorkflowInstanceListScreen {
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-100">
                             {workflowInstances.map(workflowInstance => {
-                                const workflowBlueprint = workflowBlueprints.find(x => x.id == workflowInstance.definitionId && x.version == workflowInstance.version) ?? {displayName: '(Workflow definition not found)'};
-                                const displayName = workflowBlueprint.displayName;
+                                const workflowBlueprint = workflowBlueprints.find(x => x.id == workflowInstance.definitionId && x.version == workflowInstance.version) ?? {name: 'Not Found', displayName: '(Workflow definition not found)'};
+                                const displayName = workflowBlueprint.displayName || workflowBlueprint.name;
                                 const statusColor = this.getStatusColor(workflowInstance.workflowStatus);
                                 const viewUrl = `/workflow-instances/${workflowInstance.id}`;
                                 const instanceName = !workflowInstance.name ? '' : workflowInstance.name;
