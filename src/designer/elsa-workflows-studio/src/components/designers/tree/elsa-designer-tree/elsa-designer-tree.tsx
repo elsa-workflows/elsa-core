@@ -5,7 +5,6 @@ import {ActivityDescriptor, ActivityDesignDisplayContext, ActivityModel, Activit
 import {eventBus} from '../../../../services/event-bus';
 import * as d3 from 'd3';
 import dagreD3 from 'dagre-d3';
-import {registerClickOutside} from 'stencil-click-outside';
 import state from '../../../../utils/store';
 import {ActivityIcon} from '../../../icons/activity-icon';
 import {ActivityContextMenuState, WorkflowDesignerMode} from "./models";
@@ -257,7 +256,7 @@ export class ElsaWorkflowDesigner {
       const descriptor = activityDescriptors.find(x => x.type == model.type);
       const description = model.description;
       const bodyText = description && description.length > 0 ? description : undefined;
-      const bodyDisplay = bodyText ? <p>{bodyText}</p> : undefined;
+      const bodyDisplay = bodyText ? `<p>${bodyText}</p>` : undefined;
       const color = (descriptor.traits &= ActivityTraits.Trigger) == ActivityTraits.Trigger ? 'rose' : 'light-blue';
 
       const displayContext: ActivityDesignDisplayContext = {
@@ -510,9 +509,18 @@ export class ElsaWorkflowDesigner {
 
   renderActivityBody(displayContext: ActivityDesignDisplayContext) {
     return (
-      `<div class="p-6 text-gray-400 text-sm border-t border-t-solid">
-        <div>${displayContext.activityModel.activityId}</div>
-        <div>${!!displayContext.bodyDisplay ? displayContext.bodyDisplay : ''}</div>
+      `<div class="border-t border-t-solid">
+          <div class="p-6 text-gray-400 text-sm">
+            <div class="mb-2">${!!displayContext.bodyDisplay ? displayContext.bodyDisplay : ''}</div>
+            <div>
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
+                <svg class="-ml-0.5 mr-1.5 h-2 w-2 text-gray-400" fill="currentColor" viewBox="0 0 8 8">
+                  <circle cx="4" cy="4" r="3" />
+                </svg>
+                ${displayContext.activityModel.activityId}
+              </span>
+            </div>
+          </div>
       </div>`
     );
   }
