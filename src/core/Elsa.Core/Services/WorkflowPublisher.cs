@@ -77,8 +77,9 @@ namespace Elsa.Services
             workflowDefinition.IsLatest = true;
             workflowDefinition = Initialize(workflowDefinition);
 
+            await _mediator.Publish(new WorkflowDefinitionPublishing(workflowDefinition), cancellationToken);
             await _workflowDefinitionStore.SaveAsync(workflowDefinition, cancellationToken);
-            await _mediator.Publish(new WorkflowDefinitionPublished(workflowDefinition), cancellationToken);
+            await _mediator.Publish(new WorkflowDefinitionPublishing(workflowDefinition), cancellationToken);
             return workflowDefinition;
         }
         
@@ -103,6 +104,7 @@ namespace Elsa.Services
             workflowDefinition.IsPublished = false;
             workflowDefinition = Initialize(workflowDefinition);
 
+            await _mediator.Publish(new WorkflowDefinitionRetracting(workflowDefinition), cancellationToken);
             await _workflowDefinitionStore.SaveAsync(workflowDefinition, cancellationToken);
             await _mediator.Publish(new WorkflowDefinitionRetracted(workflowDefinition), cancellationToken);
             return workflowDefinition;

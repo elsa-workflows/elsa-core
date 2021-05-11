@@ -6,11 +6,7 @@ namespace Elsa.Events
 {
     public class ManyWorkflowDefinitionsDeleted : INotification
     {
-        public ManyWorkflowDefinitionsDeleted(IEnumerable<WorkflowDefinition> workflowDefinitions)
-        {
-            WorkflowDefinitions = workflowDefinitions;
-        }
-
+        public ManyWorkflowDefinitionsDeleted(IEnumerable<WorkflowDefinition> workflowDefinitions) => WorkflowDefinitions = workflowDefinitions;
         public IEnumerable<WorkflowDefinition> WorkflowDefinitions { get; }
     }
 }
