@@ -105,7 +105,7 @@ For example, if you register the following service:</p>
         _writer = writer;
     }
 
-    <span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">override</span> ActivityExecutionResult <span class="hljs-title">OnExecute</span>(<span class="hljs-params">WorkflowExecutionContext context</span>)</span>
+    <span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">override</span> IActivityExecutionResult <span class="hljs-title">OnExecute</span>(<span class="hljs-params">ActivityExecutionContext context</span>)</span>
     {
         _writer.WriteLine(<span class="hljs-string">"Hello World!"</span>);
 
@@ -124,7 +124,7 @@ For example, if you register the following service:</p>
         _writer = writer;
     }
 
-    <span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">override</span> <span class="hljs-keyword">async</span> Task&lt;ActivityExecutionResult&gt; <span class="hljs-title">OnExecuteAsync</span>(<span class="hljs-params">WorkflowExecutionContext context, CancellationToken cancellationToken</span>)</span>
+    <span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">override</span> <span class="hljs-keyword">async</span> ValueTask&lt;IActivityExecutionResult&gt; <span class="hljs-title">OnExecuteAsync</span>(<span class="hljs-params">ActivityExecutionContext context</span>)</span>
     {
         <span class="hljs-keyword">await</span> _writer.WriteLineAsync(<span class="hljs-string">"Hello World!"</span>);
 
@@ -147,7 +147,7 @@ For example, if you register the following service:</p>
     [<span class="hljs-meta">ActivityProperty(Hint = <span class="hljs-meta-string">"The message to write."</span>)</span>]
     <span class="hljs-keyword">public</span> <span class="hljs-keyword">string</span> Message { <span class="hljs-keyword">get</span>; <span class="hljs-keyword">set</span>; }
 
-    <span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">override</span> <span class="hljs-keyword">async</span> Task&lt;ActivityExecutionResult&gt; <span class="hljs-title">OnExecuteAsync</span>(<span class="hljs-params">WorkflowExecutionContext context, CancellationToken cancellationToken</span>)</span>
+    <span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">override</span> <span class="hljs-keyword">async</span> ValueTask&lt;IActivityExecutionResult&gt; <span class="hljs-title">OnExecuteAsync</span>(<span class="hljs-params">ActivityExecutionContext context</span>)</span>
     {
         <span class="hljs-keyword">await</span> _writer.WriteLineAsync(Message);
 
@@ -186,7 +186,7 @@ In order to provide a custom display name and description, annotate your activit
 To return an <code>OutcomeResult</code>, use the <code>Outcome</code> method like so:</p>
 <pre><code class="hljs css language-c#"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title">WriteLine</span> : <span class="hljs-title">Activity</span>
 { 
-    <span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">override</span> <span class="hljs-keyword">async</span> Task&lt;ActivityExecutionResult&gt; <span class="hljs-title">OnExecuteAsync</span>(<span class="hljs-params">WorkflowExecutionContext context, CancellationToken cancellationToken</span>)</span>
+    <span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">override</span> IActivityExecutionResult <span class="hljs-title">OnExecute</span>(<span class="hljs-params">ActivityExecutionContext context</span>)</span>
     {
         <span class="hljs-comment">// Do something useful.</span>
         
@@ -201,7 +201,7 @@ To return an <code>OutcomeResult</code>, use the <code>Outcome</code> method lik
 <p>Since many activities only need to return a single outcome indicating that they're done, oftentimes a simple <code>&quot;Done&quot;</code> outcome is returned. For that reason, the <code>Activity</code> base class provides a <code>Done</code> method that can be used as follows:</p>
 <pre><code class="hljs css language-c#"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title">WriteLine</span> : <span class="hljs-title">Activity</span>
 { 
-    <span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">override</span> <span class="hljs-keyword">async</span> Task&lt;ActivityExecutionResult&gt; <span class="hljs-title">OnExecuteAsync</span>(<span class="hljs-params">WorkflowExecutionContext context, CancellationToken cancellationToken</span>)</span>
+    <span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">override</span> IActivityExecutionResult <span class="hljs-title">OnExecute</span>(<span class="hljs-params">ActivityExecutionContext context</span>)</span>
     {
         <span class="hljs-comment">// Do something useful.</span>
         
