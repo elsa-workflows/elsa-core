@@ -3,9 +3,12 @@ const require = win.require;
 
 let initialized = false;
 
-export function initializeMonacoWorker(libPath: string) {
+export function initializeMonacoWorker(libPath?: string) {
 
   if (initialized)
+    return;
+
+  if (!libPath)
     return;
 
   const origin = document.location.origin;
