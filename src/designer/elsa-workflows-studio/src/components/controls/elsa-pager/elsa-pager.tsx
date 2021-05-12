@@ -140,7 +140,7 @@ export class ElsaPager {
 
         return (
             <div class="elsa-bg-white elsa-px-4 elsa-py-3 elsa-flex elsa-items-center elsa-justify-between elsa-border-t elsa-border-gray-200 sm:elsa-px-6">
-                <div class="elsa-flex-1 elsa-flex elsa-justify-between sm:hidden">
+                <div class="elsa-flex-1 elsa-flex elsa-justify-between sm:elsa-hidden">
                     {renderPreviousButton()}
                     {renderNextButton()}
                 </div>
