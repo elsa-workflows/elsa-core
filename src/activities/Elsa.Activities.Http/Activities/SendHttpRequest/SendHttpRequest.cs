@@ -94,7 +94,7 @@ namespace Elsa.Activities.Http
             DefaultSyntax = SyntaxNames.Json,
             SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
-        public ICollection<int> SupportedStatusCodes { get; set; } = new HashSet<int>(new[] { 200 });
+        public ICollection<int>? SupportedStatusCodes { get; set; } = new HashSet<int>(new[] { 200 });
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
@@ -120,7 +120,7 @@ namespace Elsa.Activities.Http
 
             var statusCode = (int) response.StatusCode;
             var statusOutcome = statusCode.ToString();
-            var isSupportedStatusCode = SupportedStatusCodes.Contains(statusCode);
+            var isSupportedStatusCode = SupportedStatusCodes?.Contains(statusCode) == true;
             var outcomes = new List<string> { OutcomeNames.Done, statusOutcome };
 
             if (!isSupportedStatusCode)
