@@ -3,7 +3,6 @@ import {ActivityDefinitionProperty, ActivityPropertyDescriptor, SyntaxNames} fro
 
 @Component({
   tag: 'elsa-checkbox-property',
-  styleUrl: 'elsa-checkbox-property.css',
   shadow: false,
 })
 export class ElsaCheckBoxProperty {
@@ -43,13 +42,13 @@ export class ElsaCheckBoxProperty {
                             editor-height="2.75em"
                             single-line={true}
                             showLabel={false}>
-        <div class="max-w-lg">
-          <div class="relative flex items-start">
-            <div class="flex items-center h-5">
-              <input id={fieldId} name={fieldName} type="checkbox" checked={isChecked} value={'true'} onChange={e => this.onCheckChanged(e)} class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"/>
+        <div class="elsa-max-w-lg">
+          <div class="elsa-relative elsa-flex elsa-items-start">
+            <div class="elsa-flex elsa-items-center elsa-h-5">
+              <input id={fieldId} name={fieldName} type="checkbox" checked={isChecked} value={'true'} onChange={e => this.onCheckChanged(e)} class="focus:elsa-ring-blue-500 elsa-h-4 elsa-w-4 elsa-text-blue-600 elsa-border-gray-300 elsa-rounded"/>
             </div>
-            <div class="ml-3 text-sm">
-              <label htmlFor={fieldId} class="font-medium text-gray-700">{fieldLabel}</label>
+            <div class="elsa-ml-3 elsa-text-sm">
+              <label htmlFor={fieldId} class="elsa-font-medium elsa-text-gray-700">{fieldLabel}</label>
             </div>
           </div>
         </div>

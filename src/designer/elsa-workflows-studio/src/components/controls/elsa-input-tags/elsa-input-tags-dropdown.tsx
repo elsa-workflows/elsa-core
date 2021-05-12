@@ -3,7 +3,6 @@ import { SelectListItem } from '../../../models';
 
 @Component({
     tag: 'elsa-input-tags-dropdown',
-    styleUrl: 'elsa-input-tags-dropdown.css',
     shadow: false,
 })
 export class ElsaInputTagsDropdown {
@@ -85,17 +84,17 @@ export class ElsaInputTagsDropdown {
         const valuesJson = JSON.stringify(values.map(tag => tag.value));
 
         return (
-            <div class="py-2 px-3 bg-white shadow-sm border border-gray-300 rounded-md">
+            <div class="elsa-py-2 elsa-px-3 elsa-bg-white elsa-shadow-sm elsa-border elsa-border-gray-300 elsa-rounded-md">
                 {values.map(tag =>
                 (
-                    <a href="#" onClick={e => this.onDeleteTagClick(e, tag)} class="inline-block text-xs bg-blue-400 text-white py-2 px-3 mr-1 mb-1 rounded">
+                    <a href="#" onClick={e => this.onDeleteTagClick(e, tag)} class="elsa-inline-block elsa-text-xs elsa-bg-blue-400 elsa-text-white elsa-py-2 elsa-px-3 elsa-mr-1 elsa-mb-1 rounded">
                         <input type="hidden" value={tag.value} />
                         <span>{tag.text}</span>
-                        <span class="text-white hover:text-white ml-1">&times;</span>
+                        <span class="elsa-text-white hover:elsa-text-white elsa-ml-1">&times;</span>
                     </a>
                 ))}
 
-                <select id={this.fieldId} class="inline-block text-xs py-2 px-3 mr-1 mb-1 pr-8 border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded" onChange={(e) => this.onTagSelected(e)}>
+                <select id={this.fieldId} class="elsa-inline-block elsa-text-xs elsa-py-2 elsa-px-3 elsa-mr-1 elsa-mb-1 elsa-pr-8 elsa-border-gray-300 focus:elsa-outline-none focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-rounded" onChange={(e) => this.onTagSelected(e)}>
                     <option value="Add" disabled selected>{this.placeHolder}</option>
                     {dropdownItems.map(tag =>
                     (

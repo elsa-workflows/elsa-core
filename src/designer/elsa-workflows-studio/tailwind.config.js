@@ -11,6 +11,7 @@ module.exports = {
       safelist: ['jtk-connector', 'rose', 'light-blue', /gray$/, /pink$/, /blue$/, /green$/, /red$/, /yellow$/]
     },
   },
+  prefix: 'elsa-',
   theme: {
     extend: {
       colors: {

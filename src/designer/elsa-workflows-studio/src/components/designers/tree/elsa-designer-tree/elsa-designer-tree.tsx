@@ -326,8 +326,8 @@ export class ElsaWorkflowDesigner {
     this.graph.setNode('start', {
       shape: 'rect',
       label: this.mode == WorkflowDesignerMode.Edit
-        ? `<button class="px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white bg-green-600 hover:bg-green-500 focus:outline-none focus:border-green-700 focus:shadow-outline-green active:bg-green-700 transition ease-in-out duration-150">Start</button>`
-        : `<button class="px-6 py-3 border border-transparent text-base leading-6 font-medium rounded-md text-white bg-green-600 focus:outline-none cursor-default">Start</button>`,
+        ? `<button class="elsa-px-6 elsa-py-3 elsa-border elsa-border-transparent elsa-text-base elsa-leading-6 elsa-font-medium elsa-rounded-md elsa-text-white elsa-bg-green-600 hover:elsa-bg-green-500 focus:elsa-outline-none focus:elsa-border-green-700 focus:elsa-shadow-outline-green active:elsa-bg-green-700 elsa-transition elsa-ease-in-out elsa-duration-150">Start</button>`
+        : `<button class="elsa-px-6 elsa-py-3 elsa-border elsa-border-transparent elsa-text-base elsa-leading-6 elsa-font-medium elsa-rounded-md elsa-text-white elsa-bg-green-600 focus:elsa-outline-none elsa-cursor-default">Start</button>`,
       rx: 5,
       ry: 5,
       labelType: 'html',
@@ -352,7 +352,7 @@ export class ElsaWorkflowDesigner {
       outcomes.forEach(outcome => {
         this.graph.setNode(`${activity.activityId}/${outcome}`, {shape: 'rect', outcome, activity, label: this.renderOutcomeButton(), labelType: 'html', class: 'add'});
         this.graph.setEdge(activity.activityId, `${activity.activityId}/${outcome}`, {
-          label: `<p class="outcome mb-4 relative z-10 px-2.5 py-0.5 rounded-full text-xs font-medium leading-4 bg-cool-gray-100 text-cool-gray-800 capitalize cursor-default">${outcome}</p>`,
+          label: `<p class="elsa-outcome elsa-mb-4 elsa-relative elsa-z-10 elsa-px-2.5 elsa-py-0.5 elsa-rounded-full elsa-text-xs elsa-font-medium elsa-leading-4 elsa-bg-cool-gray-100 elsa-text-cool-gray-800 elsa-capitalize elsa-cursor-default">${outcome}</p>`,
           labelpos: 'c',
           labelType: 'html',
           arrowhead: 'undirected',
@@ -387,12 +387,12 @@ export class ElsaWorkflowDesigner {
         d3.select(node.elem)
         .on('click', e => {
           e.preventDefault();
-          d3.selectAll('.node.add svg').classed('text-green-400', false).classed('text-gray-400', true).classed('hover:text-blue-500', true);
+          d3.selectAll('.node.add svg').classed('elsa-text-green-400', false).classed('elsa-text-gray-400', true).classed('hover:elsa-text-blue-500', true);
           this.parentActivityId = node.activity.activityId;
           this.parentActivityOutcome = node.outcome;
 
           if (e.shiftKey) {
-            d3.select(node.elem).select('svg').classed('text-green-400', true).classed('text-gray-400', false).classed('hover:text-blue-500', false);
+            d3.select(node.elem).select('svg').classed('elsa-text-green-400', true).classed('elsa-text-gray-400', false).classed('hover:elsa-text-blue-500', false);
             return;
           }
 
@@ -400,10 +400,10 @@ export class ElsaWorkflowDesigner {
         })
         .on("mouseover", e => {
           if (e.shiftKey)
-            d3.select(node.elem).select('svg').classed('text-green-400', true).classed('hover:text-blue-500', false);
+            d3.select(node.elem).select('svg').classed('elsa-text-green-400', true).classed('hover:elsa-text-blue-500', false);
         })
         .on("mouseout", e => {
-          d3.select(node.elem).select('svg').classed('text-green-400', false).classed('hover:text-blue-500', true);
+          d3.select(node.elem).select('svg').classed('elsa-text-green-400', false).classed('hover:elsa-text-blue-500', true);
         });
       });
 
@@ -496,24 +496,24 @@ export class ElsaWorkflowDesigner {
   }
 
   renderOutcomeButton() {
-    const cssClass = this.mode == WorkflowDesignerMode.Edit ? 'hover:text-blue-500 cursor-pointer' : 'cursor-default';
-    return `<svg class="h-8 w-8 text-gray-400 ${cssClass}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    const cssClass = this.mode == WorkflowDesignerMode.Edit ? 'hover:elsa-text-blue-500 elsa-cursor-pointer' : 'elsa-cursor-default';
+    return `<svg class="elsa-h-8 elsa-w-8 elsa-text-gray-400 ${cssClass}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>`;
   }
 
   renderActivity(activity: ActivityModel) {
     const displayContext = this.activityDisplayContexts[activity.activityId] || undefined;
-    const cssClass = !!this.selectedActivities[activity.activityId] ? 'border-blue-600' : 'border-gray-200 hover:border-blue-600'
+    const cssClass = !!this.selectedActivities[activity.activityId] ? 'elsa-border-blue-600' : 'elsa-border-gray-200 hover:elsa-border-blue-600'
 
     return `<div id=${`activity-${activity.activityId}`} 
-    class="activity border-2 border-solid rounded bg-white text-left text-black text-lg select-none max-w-md shadow-sm relative ${cssClass}">
-      <div class="p-5">
-        <div class="flex justify-between space-x-8">
-          <div class="flex-shrink-0">
+    class="activity elsa-border-2 elsa-border-solid elsa-rounded elsa-bg-white elsa-text-left elsa-text-black elsa-text-lg elsa-select-none elsa-max-w-md elsa-shadow-sm elsa-relative ${cssClass}">
+      <div class="elsa-p-5">
+        <div class="elsa-flex elsa-justify-between elsa-space-x-8">
+          <div class="elsa-flex-shrink-0">
           ${displayContext?.activityIcon || ''}
           </div>
-          <div class="flex-1 font-medium leading-8">
+          <div class="elsa-flex-1 elsa-font-medium elsa-leading-8">
             <p>${activity.displayName}</p>
           </div>
           <div class="context-menu-button-container">
@@ -527,12 +527,12 @@ export class ElsaWorkflowDesigner {
 
   renderActivityBody(displayContext: ActivityDesignDisplayContext) {
     return (
-      `<div class="border-t border-t-solid">
-          <div class="p-6 text-gray-400 text-sm">
-            <div class="mb-2">${!!displayContext.bodyDisplay ? displayContext.bodyDisplay : ''}</div>
+      `<div class="elsa-border-t elsa-border-t-solid">
+          <div class="elsa-p-6 elsa-text-gray-400 elsa-text-sm">
+            <div class="elsa-mb-2">${!!displayContext.bodyDisplay ? displayContext.bodyDisplay : ''}</div>
             <div>
-              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
-                <svg class="-ml-0.5 mr-1.5 h-2 w-2 text-gray-400" fill="currentColor" viewBox="0 0 8 8">
+              <span class="elsa-inline-flex elsa-items-center elsa-px-2.5 elsa-py-0.5 elsa-rounded-full elsa-text-xs elsa-font-medium elsa-bg-gray-100 elsa-text-gray-500">
+                <svg class="-elsa-ml-0.5 elsa-mr-1.5 elsa-h-2 elsa-w-2 elsa-text-gray-400" fill="currentColor" viewBox="0 0 8 8">
                   <circle cx="4" cy="4" r="3" />
                 </svg>
                 ${displayContext.activityModel.activityId}
@@ -545,7 +545,7 @@ export class ElsaWorkflowDesigner {
 
   render() {
     return (
-      <Host class="workflow-canvas flex-1 flex" ref={el => (this.el = el)}>
+      <Host class="workflow-canvas elsa-flex-1 elsa-flex" ref={el => (this.el = el)}>
         <svg ref={el => (this.svg = el)} id="svg" style={{height: 'calc(100vh - 64px)', width: '100%', pointerEvents: this.activityContextMenuState.shown ? 'none' : ''}}>
           <g ref={el => (this.inner = el)}/>
         </svg>

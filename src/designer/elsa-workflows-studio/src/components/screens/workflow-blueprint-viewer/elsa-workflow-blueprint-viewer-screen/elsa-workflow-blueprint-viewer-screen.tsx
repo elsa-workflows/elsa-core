@@ -143,7 +143,7 @@ export class ElsaWorkflowBlueprintViewerScreen {
 
   render() {
     return (
-      <Host class="flex flex-col w-full relative" ref={el => this.el = el}>
+      <Host class="elsa-flex elsa-flex-col elsa-w-full elsa-relative" ref={el => this.el = el}>
         {this.renderCanvas()}
       </Host>
     );
@@ -151,8 +151,8 @@ export class ElsaWorkflowBlueprintViewerScreen {
 
   renderCanvas() {
     return (
-      <div class="flex-1 flex">
-        <elsa-designer-tree model={this.workflowModel} class="flex-1" ref={el => this.designer = el} mode={WorkflowDesignerMode.Blueprint}/>
+      <div class="elsa-flex-1 elsa-flex">
+        <elsa-designer-tree model={this.workflowModel} class="elsa-flex-1" ref={el => this.designer = el} mode={WorkflowDesignerMode.Blueprint}/>
       </div>
     );
   }

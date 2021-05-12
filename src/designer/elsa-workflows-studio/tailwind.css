@@ -3,34 +3,38 @@
 @tailwind utilities;
 
 svg.jtk-connector path {
-  @apply stroke-current;
-  @apply text-gray-400;
+    @apply elsa-stroke-current;
+    @apply elsa-text-gray-400;
 }
 
 svg.jtk-connector.jtk-hover path {
-  @apply stroke-current;
-  @apply stroke-2;
-  @apply text-blue-400;
+    @apply elsa-stroke-current;
+    @apply elsa-stroke-2;
+    @apply elsa-text-blue-400;
 }
 
-.w-2-5 {
-  width: 0.625rem;
+.elsa-w-2-5 {
+    width: 0.625rem;
 }
 
-.h-2-5 {
-  height: 0.625rem;
+.elsa-h-2-5 {
+    height: 0.625rem;
 }
 
-.space-x-0-5 > :not([hidden]) ~ :not([hidden]) {
-  --tw-space-x-reverse: 0;
-  margin-right: calc(0.125rem * var(--tw-space-x-reverse));
-  margin-left: calc(0.125rem * calc(1 - var(--tw-space-x-reverse)));
+.elsa-space-x-0-5 > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-x-reverse: 0;
+    margin-right: calc(0.125rem * var(--tw-space-x-reverse));
+    margin-left: calc(0.125rem * calc(1 - var(--tw-space-x-reverse)));
 }
 
 .node.activity, .node.start, .node.add .label-container {
-  fill: transparent;
+    fill: transparent;
 }
 
 .node.activity .label-container, .node.start .label-container {
-  stroke: none;
+    stroke: none;
+}
+
+.hidden {
+    display: none;
 }

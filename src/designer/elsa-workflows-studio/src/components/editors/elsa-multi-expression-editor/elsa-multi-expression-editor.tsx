@@ -77,9 +77,9 @@ export class ElsaMultiExpressionEditor {
 
   render() {
     return <div>
-      <div class="mb-1">
-        <div class="flex">
-          <div class="flex-1">
+      <div class="elsa-mb-1">
+        <div class="elsa-flex">
+          <div class="elsa-flex-1">
             {this.renderLabel()}
           </div>
           {this.renderContextMenuWidget()}
@@ -96,7 +96,7 @@ export class ElsaMultiExpressionEditor {
     const fieldId = this.fieldName;
     const fieldLabel = this.label || fieldId;
 
-    return <label htmlFor={fieldId} class="block text-sm font-medium text-gray-700">
+    return <label htmlFor={fieldId} class="elsa-block elsa-text-sm elsa-font-medium elsa-text-gray-700">
       {fieldLabel}
     </label>;
   }
@@ -106,30 +106,30 @@ export class ElsaMultiExpressionEditor {
       return undefined;
 
     const selectedSyntax = this.selectedSyntax;
-    const advancedButtonClass = selectedSyntax ? 'text-blue-500' : 'text-gray-300'
+    const advancedButtonClass = selectedSyntax ? 'elsa-text-blue-500' : 'elsa-text-gray-300'
 
-    return <div class="relative" ref={el => registerClickOutside(this, el, this.closeContextMenu)}>
-      <button type="button" class={`border-0 focus:outline-none text-sm ${advancedButtonClass}`} onClick={e => this.onSettingsClick(e)}>
+    return <div class="elsa-relative" ref={el => registerClickOutside(this, el, this.closeContextMenu)}>
+      <button type="button" class={`elsa-border-0 focus:elsa-outline-none elsa-text-sm ${advancedButtonClass}`} onClick={e => this.onSettingsClick(e)}>
         {this.renderContextMenuButton()}
       </button>
       <div>
         <div ref={el => this.contextMenu = el}
-             data-transition-enter="transition ease-out duration-100"
-             data-transition-enter-start="transform opacity-0 scale-95"
-             data-transition-enter-end="transform opacity-100 scale-100"
-             data-transition-leave="transition ease-in duration-75"
-             data-transition-leave-start="transform opacity-100 scale-100"
-             data-transition-leave-end="transform opacity-0 scale-95"
-             class="hidden origin-top-right absolute right-1 mt-1 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 focus:outline-none z-10" role="menu"
+             data-transition-enter="elsa-transition elsa-ease-out elsa-duration-100"
+             data-transition-enter-start="elsa-transform elsa-opacity-0 elsa-scale-95"
+             data-transition-enter-end="elsa-transform elsa-opacity-100 elsa-scale-100"
+             data-transition-leave="elsa-transition elsa-ease-in elsa-duration-75"
+             data-transition-leave-start="elsa-transform elsa-opacity-100 elsa-scale-100"
+             data-transition-leave-end="elsa-transform elsa-opacity-0 elsa-scale-95"
+             class="hidden elsa-origin-top-right elsa-absolute elsa-right-1 elsa-mt-1 elsa-w-56 elsa-rounded-md elsa-shadow-lg elsa-bg-white elsa-ring-1 elsa-ring-black elsa-ring-opacity-5 elsa-divide-y elsa-divide-gray-100 focus:elsa-outline-none elsa-z-10" role="menu"
              aria-orientation="vertical"
              aria-labelledby="options-menu">
-          <div class="py-1" role="none">
-            <a onClick={e => this.selectSyntax(e, null)} href="#" class={`block px-4 py-2 text-sm hover:bg-gray-100 hover:text-gray-900 ${!selectedSyntax ? 'text-blue-700' : 'text-gray-700'}`} role="menuitem">Default</a>
+          <div class="elsa-py-1" role="none">
+            <a onClick={e => this.selectSyntax(e, null)} href="#" class={`elsa-block elsa-px-4 elsa-py-2 elsa-text-sm hover:elsa-bg-gray-100 hover:elsa-text-gray-900 ${!selectedSyntax ? 'elsa-text-blue-700' : 'elsa-text-gray-700'}`} role="menuitem">Default</a>
           </div>
-          <div class="py-1" role="none">
+          <div class="elsa-py-1" role="none">
             {this.supportedSyntaxes.map(syntax => (
               <a onClick={e => this.selectSyntax(e, syntax)} href="#"
-                 class={`block px-4 py-2 text-sm hover:bg-gray-100 hover:text-gray-900 ${selectedSyntax == syntax ? 'text-blue-700' : 'text-gray-700'}`} role="menuitem">{syntax}</a>
+                 class={`elsa-block elsa-px-4 elsa-py-2 elsa-text-sm hover:elsa-bg-gray-100 hover:elsa-text-gray-900 ${selectedSyntax == syntax ? 'elsa-text-blue-700' : 'elsa-text-gray-700'}`} role="menuitem">{syntax}</a>
             ))}
           </div>
         </div>
@@ -139,7 +139,7 @@ export class ElsaMultiExpressionEditor {
 
   renderContextMenuButton() {
     if (!this.selectedSyntax)
-      return <svg class="h-5 w-5 text-gray-400" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      return <svg class="elsa-h-5 elsa-w-5 elsa-text-gray-400" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
         <path stroke="none" d="M0 0h24v24H0z"/>
         <circle cx="12" cy="12" r="9"/>
         <line x1="8" y1="12" x2="8" y2="12.01"/>

@@ -51,7 +51,7 @@ export class ElsaPropertyEditor {
                 editor-height={this.editorHeight}>
                 <slot/>
             </elsa-multi-expression-editor>
-            {fieldHint ? <p class="mt-2 text-sm text-gray-500">{fieldHint}</p> : undefined}
+            {fieldHint ? <p class="elsa-mt-2 elsa-text-sm elsa-text-gray-500">{fieldHint}</p> : undefined}
         </div>
     }
 }
