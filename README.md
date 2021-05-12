@@ -22,7 +22,69 @@ Workflows can be defined not only using code but also visually and of course JSO
 
 ## Getting Started
 
-Working on it.
+```bash
+dotnet new console -n "MyConsoleApp"
+
+cd MyConsoleApp
+
+dotnet add package Elsa --prerelease
+dotnet add package Elsa.Activities.Console --prerelease
+```
+
+Create a new file called `HelloWorldWorkflow.cs` and add the following:
+
+```csharp
+using Elsa.Activities.Console;
+using Elsa.Builders;
+
+namespace MyConsoleApp
+{
+    public class HelloWorld : IWorkflow
+    {
+        public void Build(IWorkflowBuilder builder) => builder.WriteLine("Hello World!");
+    }
+}
+```
+
+Modify `Program.cs` as follows:
+
+```csharp
+using System.Threading.Tasks;
+using Elsa.Services;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace MyConsoleApp
+{
+    class Program
+    {
+        private static async Task Main()
+        {
+            var services = new ServiceCollection()
+                .AddElsa(options => options
+                    .AddConsoleActivities()
+                    .AddWorkflow<HelloWorld>())
+                .BuildServiceProvider();
+            
+            var workflowRunner = services.GetRequiredService<IBuildsAndStartsWorkflow>();
+            await workflowRunner.BuildAndStartWorkflowAsync<HelloWorld>();
+        }
+    }
+}
+```
+
+Run the program:
+
+```bash
+dotnet run
+```
+
+Output:
+
+```bash
+Hello World!
+```
+
+Check out the [Quickstart guides](https://elsa-workflows.github.io/elsa-core/docs/next/quickstarts/quickstarts-console-hello-world) for more examples, including how to setup the Elsa Dashboard to create and manage visual workflows.
 
 ## Roadmap
 
