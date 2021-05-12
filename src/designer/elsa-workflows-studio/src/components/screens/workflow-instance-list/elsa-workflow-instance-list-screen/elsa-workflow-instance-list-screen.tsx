@@ -286,7 +286,6 @@ export class ElsaWorkflowInstanceListScreen {
                                 const viewUrl = `/workflow-instances/${workflowInstance.id}`;
                                 const instanceName = !workflowInstance.name ? '' : workflowInstance.name;
                                 const isSelected = this.selectedWorkflowInstanceIds.findIndex(x => x === workflowInstance.id) >= 0;
-                                //var displayContext = WorkflowInstanceDisplayContexts[workflowInstance];
 
                                 return <tr>
                                     <td class="px-6 py-3 whitespace-no-wrap text-sm leading-5 font-medium text-gray-900">
