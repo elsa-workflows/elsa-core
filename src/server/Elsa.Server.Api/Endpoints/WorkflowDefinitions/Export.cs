@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Serialization;
+using Humanizer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -44,7 +45,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             var json = _contentSerializer.Serialize(workflowDefinition);
             var bytes = Encoding.UTF8.GetBytes(json);
             var workflowName = workflowDefinition.Name is null or "" ? workflowDefinition.DefinitionId : workflowDefinition.Name.Trim();
-            var fileName = $"workflow-definition-{workflowName}.json";
+            var fileName = $"workflow-definition-{workflowName.Underscore().Dasherize().ToLowerInvariant()}.json";
             
             return File(bytes, "application/json", fileName);
         }
