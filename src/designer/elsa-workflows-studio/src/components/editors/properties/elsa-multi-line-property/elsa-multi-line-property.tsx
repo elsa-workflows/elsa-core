@@ -3,7 +3,6 @@ import {ActivityDefinitionProperty, ActivityPropertyDescriptor} from "../../../.
 
 @Component({
   tag: 'elsa-multi-line-property',
-  styleUrl: 'elsa-multi-line-property.css',
   shadow: false,
 })
 export class ElsaMultiLineProperty {
@@ -55,7 +54,7 @@ export class ElsaMultiLineProperty {
                             onDefaultSyntaxValueChanged={e => this.onDefaultSyntaxValueChanged(e)}
                             editor-height={editorHeight.propertyEditor}
                             context={context}>
-        <textarea id={fieldId} name={fieldName} value={value} onChange={e => this.onChange(e)} class="focus:ring-blue-500 focus:border-blue-500 block w-full min-w-0 rounded-md sm:text-sm border-gray-300" rows={editorHeight.textArea}/>
+        <textarea id={fieldId} name={fieldName} value={value} onChange={e => this.onChange(e)} class="focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300" rows={editorHeight.textArea}/>
       </elsa-property-editor>
     );
   }

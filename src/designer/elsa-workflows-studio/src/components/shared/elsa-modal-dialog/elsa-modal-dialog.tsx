@@ -3,7 +3,6 @@ import {enter, leave, toggle} from 'el-transition'
 
 @Component({
   tag: 'elsa-modal-dialog',
-  styleUrl: 'elsa-modal-dialog.css',
   shadow: false,
 })
 export class ElsaModalDialog {
@@ -49,36 +48,36 @@ export class ElsaModalDialog {
 
   renderModal() {
     return (
-      <Host class={{hidden: !this.isVisible}}>
-        <div class="fixed z-10 inset-0 overflow-y-auto">
-          <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+      <Host class={{'hidden': !this.isVisible, 'elsa-block': true}}>
+        <div class="elsa-fixed elsa-z-10 elsa-inset-0 elsa-overflow-y-auto">
+          <div class="elsa-flex elsa-items-end elsa-justify-center elsa-min-h-screen elsa-pt-4 elsa-px-4 elsa-pb-20 elsa-text-center sm:elsa-block sm:elsa-p-0">
             <div ref={el => this.overlay = el}
                  onClick={() => this.hide(true)}
-                 data-transition-enter="ease-out duration-300" data-transition-enter-start="opacity-0"
-                 data-transition-enter-end="opacity-100" data-transition-leave="ease-in duration-200"
-                 data-transition-leave-start="opacity-100" data-transition-leave-end="opacity-0"
-                 class="hidden fixed inset-0 transition-opacity" aria-hidden="true">
-              <div class="absolute inset-0 bg-gray-500 opacity-75"/>
+                 data-transition-enter="elsa-ease-out elsa-duration-300" data-transition-enter-start="elsa-opacity-0"
+                 data-transition-enter-end="elsa-opacity-0" data-transition-leave="elsa-ease-in elsa-duration-200"
+                 data-transition-leave-start="elsa-opacity-0" data-transition-leave-end="elsa-opacity-0"
+                 class="hidden elsa-fixed elsa-inset-0 elsa-transition-opacity" aria-hidden="true">
+              <div class="elsa-absolute elsa-inset-0 elsa-bg-gray-500 elsa-opacity-75"/>
             </div>
 
-            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true"/>
+            <span class="hidden sm:elsa-inline-block sm:elsa-align-middle sm:elsa-h-screen" aria-hidden="true"/>
             <div ref={el => this.modal = el}
-                 data-transition-enter="ease-out duration-300"
-                 data-transition-enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                 data-transition-enter-end="opacity-100 translate-y-0 sm:scale-100"
-                 data-transition-leave="ease-in duration-200"
-                 data-transition-leave-start="opacity-100 translate-y-0 sm:scale-100"
-                 data-transition-leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                 class="hidden inline-block sm:align-top bg-white rounded-lg text-left overflow-visible shadow-xl transform transition-all sm:my-8 sm:align-top sm:max-w-4xl sm:w-full"
+                 data-transition-enter="elsa-ease-out elsa-duration-300"
+                 data-transition-enter-start="elsa-opacity-0 elsa-translate-y-4 sm:elsa-translate-y-0 sm:elsa-scale-95"
+                 data-transition-enter-end="elsa-opacity-0 elsa-translate-y-0 sm:elsa-scale-100"
+                 data-transition-leave="elsa-ease-in elsa-duration-200"
+                 data-transition-leave-start="elsa-opacity-0 elsa-translate-y-0 sm:elsa-scale-100"
+                 data-transition-leave-end="elsa-opacity-0 elsa-translate-y-4 sm:elsa-translate-y-0 sm:elsa-scale-95"
+                 class="hidden elsa-inline-block sm:elsa-align-top elsa-bg-white elsa-rounded-lg elsa-text-left elsa-overflow-visible elsa-shadow-xl elsa-transform elsa-transition-all sm:elsa-my-8 sm:elsa-align-top sm:elsa-max-w-4xl sm:elsa-w-full"
                  role="dialog" aria-modal="true" aria-labelledby="modal-headline">
               <div class="modal-content">
                 <slot name="content"/>
               </div>
 
               <slot name="buttons">
-                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <div class="elsa-bg-gray-50 elsa-px-4 elsa-py-3 sm:elsa-px-6 sm:elsa-flex sm:elsa-flex-row-reverse">
                   <button type="button"
-                          class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                          class="elsa-mt-3 elsa-w-full elsa-inline-flex elsa-justify-center elsa-rounded-md elsa-border elsa-border-gray-300 elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-bg-white elsa-text-base elsa-font-medium elsa-text-gray-700 hover:elsa-bg-gray-50 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 sm:elsa-mt-0 sm:elsa-ml-3 sm:elsa-w-auto sm:elsa-text-sm">
                     Close
                   </button>
                 </div>

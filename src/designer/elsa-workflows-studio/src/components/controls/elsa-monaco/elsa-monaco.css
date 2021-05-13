@@ -1,10 +1,10 @@
-.monaco-editor-host {
+.elsa-monaco-editor-host {
   display: block;
   position: relative;
   min-height: 6em;
 }
 
-.monaco-editor-container {
+.elsa-monaco-editor-container {
   position: absolute;
   left: 0;
   top: 0;
@@ -15,15 +15,15 @@
   padding: 0;
 }
 
-.monaco-editor {
+.elsa-monaco-editor {
   border-radius: 0.25rem;
 }
 
-.monaco-editor .overflow-guard {
+.elsa-monaco-editor .overflow-guard {
   border-radius: 0.25rem;
 }
 
-.monaco-editor .suggest-widget div.tree {
+.elsa-monaco-editor .suggest-widget div.tree {
   white-space: unset;
   padding-bottom: 0;
 }

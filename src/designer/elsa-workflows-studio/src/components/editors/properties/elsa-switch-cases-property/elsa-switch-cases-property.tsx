@@ -2,8 +2,6 @@ import {Component, h, Prop, State} from '@stencil/core';
 import {ActivityDefinitionProperty, ActivityPropertyDescriptor, SyntaxNames} from "../../../../models";
 import {mapSyntaxToLanguage, parseJson} from "../../../../utils/utils";
 import {SwitchCase} from "./models";
-import {languages} from "monaco-editor";
-import json = languages.json;
 
 @Component({
     tag: 'elsa-switch-cases-property',
@@ -94,25 +92,25 @@ export class ElsaSwitchCasesProperty {
 
             return (
                 <tr key={`case-${index}`}>
-                    <td class="py-2 pr-5">
-                        <input type="text" value={switchCase.name} onChange={e => this.onCaseNameChanged(e, switchCase)} class="focus:ring-blue-500 focus:border-blue-500 block w-full min-w-0 rounded-md sm:text-sm border-gray-300"/>
+                    <td class="elsa-py-2 elsa-pr-5">
+                        <input type="text" value={switchCase.name} onChange={e => this.onCaseNameChanged(e, switchCase)} class="focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300"/>
                     </td>
-                    <td class="py-2 pl-5">
+                    <td class="elsa-py-2 pl-5">
 
-                        <div class="mt-1 relative rounded-md shadow-sm">
+                        <div class="elsa-mt-1 elsa-relative elsa-rounded-md elsa-shadow-sm">
                             <elsa-expression-editor
                                 key={`expression-editor-${index}-${this.syntaxSwitchCount}`}
                                 ref={el => expressionEditor = el}
                                 expression={expression}
                                 language={monacoLanguage}
                                 single-line={true}
-                                padding="pt-1.5 pl-1 pr-28"
+                                padding="elsa-pt-1.5 elsa-pl-1 elsa-pr-28"
                                 editor-height="2.75em"
                                 onExpressionChanged={e => this.onCaseExpressionChanged(e, switchCase)}
                             />
-                            <div class="absolute inset-y-0 right-0 flex items-center">
+                            <div class="elsa-absolute elsa-inset-y-0 elsa-right-0 elsa-flex elsa-items-center">
                                 <select onChange={e => this.onCaseSyntaxChanged(e, switchCase, expressionEditor)}
-                                        class="focus:ring-blue-500 focus:border-blue-500 h-full py-0 pl-2 pr-7 border-transparent bg-transparent text-gray-500 sm:text-sm rounded-md">
+                                        class="focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-h-full elsa-py-0 elsa-pl-2 elsa-pr-7 elsa-border-transparent elsa-bg-transparent elsa-text-gray-500 sm:elsa-text-sm elsa-rounded-md">
                                     {supportedSyntaxes.map(supportedSyntax => {
                                         const selected = supportedSyntax == syntax;
                                         return <option selected={selected}>{supportedSyntax}</option>;
@@ -121,9 +119,9 @@ export class ElsaSwitchCasesProperty {
                             </div>
                         </div>
                     </td>
-                    <td class="pt-1 pr-2 text-right">
-                        <button type="button" onClick={() => this.onDeleteCaseClick(switchCase)} class="h-5 w-5 mx-auto outline-none focus:outline-none">
-                            <svg class="h-5 w-5 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <td class="elsa-pt-1 elsa-pr-2 elsa-text-right">
+                        <button type="button" onClick={() => this.onDeleteCaseClick(switchCase)} class="elsa-h-5 elsa-w-5 elsa-mx-auto elsa-outline-none focus:elsa-outline-none">
+                            <svg class="elsa-h-5 elsa-w-5 elsa-text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="3 6 5 6 21 6"/>
                                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                                 <line x1="10" y1="11" x2="10" y2="17"/>
@@ -149,12 +147,12 @@ export class ElsaSwitchCasesProperty {
                     onSyntaxChanged={e => this.onMultiExpressionEditorSyntaxChanged(e)}
                 >
 
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="elsa-min-w-full elsa-divide-y elsa-divide-gray-200">
+                        <thead class="elsa-bg-gray-50">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-3/12">Name</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-8/12">Expression</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">&nbsp;</th>
+                            <th class="elsa-px-6 elsa-py-3 elsa-text-left elsa-text-xs elsa-font-medium elsa-text-gray-500 elsa-text-right elsa-tracking-wider elsa-w-3/12">Name</th>
+                            <th class="elsa-px-6 elsa-py-3 elsa-text-left elsa-text-xs elsa-font-medium elsa-text-gray-500 elsa-text-right elsa-tracking-wider elsa-w-8/12">Expression</th>
+                            <th class="elsa-px-6 elsa-py-3 elsa-text-left elsa-text-xs elsa-font-medium elsa-text-gray-500 elsa-text-right elsa-tracking-wider elsa-w-1/12">&nbsp;</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -162,8 +160,8 @@ export class ElsaSwitchCasesProperty {
                         </tbody>
                     </table>
                     <button type="button" onClick={() => this.onAddCaseClick()}
-                            class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 mt-2">
-                        <svg class="-ml-1 mr-2 h-5 w-5" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            class="elsa-inline-flex elsa-items-center elsa-px-4 elsa-py-2 elsa-border elsa-border-transparent elsa-shadow-sm elsa-text-sm elsa-font-medium elsa-rounded-md elsa-text-white elsa-bg-blue-600 hover:elsa-bg-blue-700 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 elsa-mt-2">
+                        <svg class="-elsa-ml-1 elsa-mr-2 elsa-h-5 elsa-w-5" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                             <path stroke="none" d="M0 0h24v24H0z"/>
                             <line x1="12" y1="5" x2="12" y2="19"/>
                             <line x1="5" y1="12" x2="19" y2="12"/>

@@ -6,7 +6,6 @@ import {MonacoValueChangedArgs} from "../../../controls/elsa-monaco/elsa-monaco"
 
 @Component({
   tag: 'elsa-script-property',
-  styleUrl: 'elsa-script-property.css',
   shadow: false,
 })
 export class ElsaScriptProperty {
@@ -51,7 +50,6 @@ export class ElsaScriptProperty {
 
   render() {
     const propertyDescriptor = this.propertyDescriptor;
-    const options = propertyDescriptor.options || {};
     const syntax = this.syntax;
     const monacoLanguage = this.mapSyntaxToLanguage(syntax);
     const propertyName = propertyDescriptor.name;
@@ -59,22 +57,21 @@ export class ElsaScriptProperty {
     const fieldName = propertyName;
     const fieldLabel = propertyDescriptor.label || propertyName;
     const fieldHint = propertyDescriptor.hint;
-    const property = this.propertyModel;
     const value = this.currentValue;
 
     return <div>
 
-      <div class="flex">
+      <div class="elsa-flex">
         <div class="">
-          <label htmlFor={fieldId} class="block text-sm font-medium text-gray-700">
+          <label htmlFor={fieldId} class="elsa-block elsa-text-sm elsa-font-medium elsa-text-gray-700">
             {fieldLabel}
           </label>
         </div>
-        <div class="flex-1">
+        <div class="elsa-flex-1">
           <div>
-            <div class="hidden sm:block">
-              <nav class="flex flex-row-reverse" aria-label="Tabs">
-                <span class="bg-blue-100 text-blue-700 px-3 py-2 font-medium text-sm rounded-md">
+            <div class="hidden sm:elsa-block">
+              <nav class="elsa-flex elsa-flex-row-reverse" aria-label="Tabs">
+                <span class="elsa-bg-blue-100 elsa-text-blue-700 elsa-px-3 elsa-py-2 elsa-font-medium elsa-text-sm elsa-rounded-md">
                   {syntax}
                 </span>
               </nav>
@@ -82,7 +79,7 @@ export class ElsaScriptProperty {
           </div>
         </div>
       </div>
-      <div class="mt-1">
+      <div class="elsa-mt-1">
         <elsa-monaco value={value}
                      language={monacoLanguage}
                      editor-height={this.editorHeight}
@@ -90,7 +87,7 @@ export class ElsaScriptProperty {
                      onValueChanged={e => this.onMonacoValueChanged(e.detail)}
                      ref={el => this.monacoEditor = el}/>
       </div>
-      {fieldHint ? <p class="mt-2 text-sm text-gray-500">{fieldHint}</p> : undefined}
+      {fieldHint ? <p class="elsa-mt-2 elsa-text-sm elsa-text-gray-500">{fieldHint}</p> : undefined}
       <input type="hidden" name={fieldName} value={value}/>
     </div>
   }

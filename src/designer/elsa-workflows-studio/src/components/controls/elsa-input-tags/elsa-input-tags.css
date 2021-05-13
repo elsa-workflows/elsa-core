@@ -2,7 +2,7 @@
   display: block;
 }
 
-.tag-input:focus {
+.elsa-tag-input:focus {
   outline: none !important;
   box-shadow: none !important;
 }

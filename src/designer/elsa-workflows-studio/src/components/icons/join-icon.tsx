@@ -2,8 +2,8 @@
 
 export const JoinIcon = props =>
   (
-    `<span class="rounded-lg inline-flex p-3 bg-green-50 text-green-700 ring-4 ring-white">
-      <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+    `<span class="elsa-rounded-lg elsa-inline-flex elsa-p-3 elsa-bg-green-50 elsa-text-green-700 elsa-ring-4 elsa-ring-white">
+      <svg class="elsa-h-6 elsa-w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
         <path stroke="none" d="M0 0h24v24H0z"/>
         <circle cx="12" cy="18" r="2"/>
         <circle cx="7" cy="6" r="2"/>

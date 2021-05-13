@@ -22,23 +22,23 @@ export class ElsaStudioRoot {
     // };
 
     return (
-      <div class="h-screen bg-gray-100">
-        <nav class="bg-gray-800">
-          <div class="px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-              <div class="flex items-center">
-                <div class="flex-shrink-0">
-                  <img class="h-8 w-8" src={logoPath} alt="Workflow"/>
+      <div class="elsa-h-screen elsa-bg-gray-100">
+        <nav class="elsa-bg-gray-800">
+          <div class="elsa-px-4 sm:elsa-px-6 lg:elsa-px-8">
+            <div class="elsa-flex elsa-items-center elsa-justify-between elsa-h-16">
+              <div class="elsa-flex elsa-items-center">
+                <div class="elsa-flex-shrink-0">
+                  <img class="elsa-h-8 elsa-w-8" src={logoPath} alt="Workflow"/>
                 </div>
-                <div class="hidden md:block">
-                  <div class="ml-10 flex items-baseline space-x-4">
-                    <stencil-route-link url="/workflow-definitions" anchorClass="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium" activeClass="text-white bg-gray-900">Workflow Definitions
+                <div class="hidden md:elsa-block">
+                  <div class="elsa-ml-10 elsa-flex elsa-items-baseline elsa-space-x-4">
+                    <stencil-route-link url="/workflow-definitions" anchorClass="elsa-text-gray-300 hover:elsa-bg-gray-700 hover:elsa-text-white elsa-px-3 elsa-py-2 elsa-rounded-md elsa-text-sm elsa-font-medium" activeClass="elsa-text-white elsa-bg-gray-900">Workflow Definitions
                     </stencil-route-link>
-                    <stencil-route-link url="/workflow-instances" anchorClass="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium" activeClass="text-white bg-gray-900">Workflow Instances
+                    <stencil-route-link url="/workflow-instances" anchorClass="elsa-text-gray-300 hover:elsa-bg-gray-700 hover:elsa-text-white elsa-px-3 elsa-py-2 elsa-rounded-md elsa-text-sm elsa-font-medium" activeClass="elsa-text-white elsa-bg-gray-900">Workflow Instances
                     </stencil-route-link>
-                    <stencil-route-link url="/workflow-registry" anchorClass="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium" activeClass="text-white bg-gray-900">Workflow Registry
+                    <stencil-route-link url="/workflow-registry" anchorClass="elsa-text-gray-300 hover:elsa-bg-gray-700 hover:elsa-text-white elsa-px-3 elsa-py-2 elsa-rounded-md elsa-text-sm elsa-font-medium" activeClass="elsa-text-white elsa-bg-gray-900">Workflow Registry
                     </stencil-route-link>
-                    {/*<stencil-route-link url="/custom-activities" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Custom Activities</stencil-route-link>*/}
+                    {/*<stencil-route-link url="/custom-activities" class="elsa-text-gray-300 hover:elsa-bg-gray-700 hover:elsa-text-white elsa-px-3 elsa-py-2 elsa-rounded-md elsa-text-sm elsa-font-medium">Custom Activities</stencil-route-link>*/}
                   </div>
                 </div>
               </div>

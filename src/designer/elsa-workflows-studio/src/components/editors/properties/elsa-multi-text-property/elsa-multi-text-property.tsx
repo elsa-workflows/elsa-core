@@ -6,7 +6,6 @@ import {getSelectListItems} from "../../../../utils/select-list-items";
 
 @Component({
   tag: 'elsa-multi-text-property',
-  styleUrl: 'elsa-multi-text-property.css',
   shadow: false,
 })
 export class ElsaMultiTextProperty {

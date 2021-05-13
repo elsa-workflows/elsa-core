@@ -142,8 +142,8 @@ export class ElsaWorkflowInstanceJournal {
   renderJournalButton() {
     return (
       <button onClick={() => this.onShowClick()} type="button"
-              class="workflow-settings-button fixed top-20 right-12 inline-flex items-center p-2 rounded-full border border-transparent bg-white shadow text-gray-400 hover:text-blue-500 focus:text-blue-500 hover:ring-2 hover:ring-offset-2 hover:ring-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" fill="none" class="h-8 w-8">
+              class="workflow-settings-button elsa-fixed elsa-top-20 elsa-right-12 elsa-inline-flex elsa-items-center elsa-p-2 elsa-rounded-full elsa-border elsa-border-transparent elsa-bg-white elsa-shadow elsa-text-gray-400 hover:elsa-text-blue-500 focus:elsa-text-blue-500 hover:elsa-ring-2 hover:elsa-ring-offset-2 hover:elsa-ring-blue-500 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" fill="none" class="elsa-h-8 elsa-w-8">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -160,26 +160,26 @@ export class ElsaWorkflowInstanceJournal {
     const selectedTab = tabs.find(x => x.id === selectedTabId);
 
     return (
-      <section class={`${panelHiddenClass} fixed top-0 right-0 bottom-0 overflow-hidden`} aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
-        <div class="absolute inset-0 overflow-hidden">
-          <div class="absolute inset-0" aria-hidden="true"/>
-          <div class="fixed inset-y-0 right-0 pl-10 max-w-full flex sm:pl-16">
+      <section class={`${panelHiddenClass} elsa-fixed elsa-top-0 elsa-right-0 elsa-bottom-0 elsa-overflow-hidden`} aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
+        <div class="elsa-absolute elsa-inset-0 elsa-overflow-hidden">
+          <div class="elsa-absolute elsa-inset-0" aria-hidden="true"/>
+          <div class="elsa-fixed elsa-inset-y-0 elsa-right-0 elsa-pl-10 max-elsa-w-full elsa-flex sm:elsa-pl-16">
 
             <div ref={el => this.el = el}
-                 data-transition-enter="transform transition ease-in-out duration-500 sm:duration-700"
-                 data-transition-enter-start="translate-x-full"
-                 data-transition-enter-end="translate-x-0"
-                 data-transition-leave="transform transition ease-in-out duration-500 sm:duration-700"
-                 data-transition-leave-start="translate-x-0"
-                 data-transition-leave-end="translate-x-full"
-                 class="w-screen max-w-2xl">
-              <div class="h-full flex flex-col py-6 bg-white shadow-xl overflow-y-scroll">
-                <div class="px-4 sm:px-6">
-                  <div class="flex flex-col items-end ">
-                    <div class="ml-3 h-7 flex items-center">
-                      <button type="button" onClick={e => this.onCloseClick()} class="bg-white rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                        <span class="sr-only">Close panel</span>
-                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                 data-transition-enter="elsa-transform elsa-transition elsa-ease-in-out elsa-duration-500 sm:elsa-duration-700"
+                 data-transition-enter-start="elsa-translate-x-full"
+                 data-transition-enter-end="elsa-translate-x-0"
+                 data-transition-leave="elsa-transform elsa-transition elsa-ease-in-out elsa-duration-500 sm:elsa-duration-700"
+                 data-transition-leave-start="elsa-translate-x-0"
+                 data-transition-leave-end="elsa-translate-x-full"
+                 class="elsa-w-screen elsa-max-w-2xl">
+              <div class="elsa-h-full elsa-flex elsa-flex-col elsa-py-6 elsa-bg-white elsa-shadow-xl elsa-overflow-y-scroll">
+                <div class="elsa-px-4 sm:elsa-px-6">
+                  <div class="elsa-flex elsa-flex-col elsa-items-end">
+                    <div class="elsa-ml-3 h-7 elsa-flex elsa-items-center">
+                      <button type="button" onClick={e => this.onCloseClick()} class="elsa-bg-white elsa-rounded-md elsa-text-gray-400 hover:elsa-text-gray-500 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500">
+                        <span class="elsa-sr-only">Close panel</span>
+                        <svg class="elsa-h-6 elsa-w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                         </svg>
                       </button>
@@ -188,11 +188,11 @@ export class ElsaWorkflowInstanceJournal {
 
                   <div>
                     <div>
-                      <div class="border-b border-gray-200">
-                        <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                      <div class="elsa-border-b elsa-border-gray-200">
+                        <nav class="-elsa-mb-px elsa-flex elsa-space-x-8" aria-label="Tabs">
                           {tabs.map(tab => {
-                            const className = tab.id == selectedTabId ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300';
-                            return <a href="#" onClick={e => this.onTabClick(e, tab)} class={`${className} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}>{tab.text}</a>;
+                            const className = tab.id == selectedTabId ? 'elsa-border-blue-500 elsa-text-blue-600' : 'elsa-border-transparent elsa-text-gray-500 hover:elsa-text-gray-700 hover:elsa-border-gray-300';
+                            return <a href="#" onClick={e => this.onTabClick(e, tab)} class={`${className} elsa-whitespace-nowrap elsa-py-4 elsa-px-1 elsa-border-b-2 elsa-font-medium elsa-text-sm`}>{tab.text}</a>;
                           })}
                         </nav>
                       </div>
@@ -200,8 +200,8 @@ export class ElsaWorkflowInstanceJournal {
                   </div>
 
                 </div>
-                <div class="mt-6 relative flex-1 px-4 sm:px-6">
-                  <div class="absolute inset-0 px-4 sm:px-6">
+                <div class="elsa-mt-6 elsa-relative elsa-flex-1 elsa-px-4 sm:elsa-px-6">
+                  <div class="elsa-absolute elsa-inset-0 elsa-px-4 sm:elsa-px-6">
                     {selectedTab.view()}
                   </div>
                 </div>
@@ -234,7 +234,7 @@ export class ElsaWorkflowInstanceJournal {
       const activityName = activityBlueprint.displayName || activityBlueprint.name || activityDescriptor.displayName || activityDescriptor.type;
       const eventName = record.eventName;
       const eventColor = this.getEventColor(eventName);
-      const recordClass = record.id === selectedRecordId ? 'border-blue-600' : 'hover:bg-gray-100 border-transparent';
+      const recordClass = record.id === selectedRecordId ? 'elsa-border-blue-600' : 'hover:elsa-bg-gray-100 elsa-border-transparent';
       const recordData = record.data || {};
       const filteredRecordData = {};
 
@@ -272,54 +272,54 @@ export class ElsaWorkflowInstanceJournal {
 
       return (
         <li>
-          <div onClick={() => this.onRecordClick(record)} class={`${recordClass} border-2 cursor-pointer p-4 rounded`}>
-            <div class="relative pb-10">
-              {isLastItem ? undefined : <div class="flex absolute top-8 left-4 -ml-px h-full w-0.5 bg-gray-200">
-                <div class="flex flex-1 items-center relative -left-5">
-                  <span class="flex-1 text-sm text-gray-500 w-max bg-white p-1 rounded">{deltaTimeText}</span>
+          <div onClick={() => this.onRecordClick(record)} class={`${recordClass} elsa-border-2 elsa-cursor-pointer elsa-p-4 elsa-rounded`}>
+            <div class="elsa-relative elsa-pb-10">
+              {isLastItem ? undefined : <div class="elsa-flex elsa-absolute top-8 left-4 -elsa-ml-px elsa-h-full elsa-w-0.5 elsa-bg-gray-200">
+                <div class="elsa-flex elsa-flex-1 elsa-items-center elsa-relative -elsa-left-5">
+                  <span class="elsa-flex-1 elsa-text-sm elsa-text-gray-500 elsa-w-max elsa-bg-white elsa-p-1 elsa-rounded">{deltaTimeText}</span>
                 </div>
               </div>}
-              <div class="relative flex space-x-3">
+              <div class="elsa-relative elsa-flex elsa-space-x-3">
                 <div>
-                  <span class="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center ring-8 ring-white" innerHTML={activityIcon}/>
+                  <span class="elsa-h-8 elsa-w-8 elsa-rounded-full elsa-bg-green-500 elsa-flex elsa-items-center elsa-justify-center elsa-ring-8 elsa-ring-white" innerHTML={activityIcon}/>
                 </div>
-                <div class="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
+                <div class="elsa-min-w-0 elsa-flex-1 elsa-pt-1.5 elsa-flex elsa-justify-between elsa-space-x-4">
                   <div>
-                    <h3 class="text-lg leading-6 font-medium text-gray-900">
+                    <h3 class="elsa-text-lg elsa-leading-6 elsa-font-medium elsa-text-gray-900">
                       {activityName}
                     </h3>
                   </div>
                   <div>
-                    <span class="relative inline-flex items-center rounded-full border border-gray-300 px-3 py-0.5 text-sm">
-                      <span class="absolute flex-shrink-0 flex items-center justify-center">
-                        <span class={`h-1.5 w-1.5 rounded-full bg-${eventColor}-500`} aria-hidden="true"/>
+                    <span class="elsa-relative elsa-inline-flex elsa-items-center elsa-rounded-full elsa-border elsa-border-gray-300 elsa-px-3 elsa-py-0.5 elsa-text-sm">
+                      <span class="elsa-absolute elsa-flex-shrink-0 elsa-flex elsa-items-center elsa-justify-center">
+                        <span class={`elsa-h-1.5 elsa-w-1.5 elsa-rounded-full elsa-bg-${eventColor}-500`} aria-hidden="true"/>
                       </span>
-                      <span class="ml-3.5 font-medium text-gray-900">{eventName}</span>
+                      <span class="elsa-ml-3.5 elsa-font-medium elsa-text-gray-900">{eventName}</span>
                     </span>
                   </div>
-                  <div class="text-right text-sm whitespace-nowrap text-gray-500">
+                  <div class="elsa-text-right elsa-text-sm elsa-whitespace-nowrap elsa-text-gray-500">
                     <span>{currentTimestamp.format('DD-MM-YYYY HH:mm:ss')}</span>
                   </div>
                 </div>
               </div>
-              <div class="ml-12 mt-2">
-                <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
-                  <div class="sm:col-span-1">
-                    <dt class="text-sm font-medium text-gray-500">Activity ID</dt>
-                    <dd class="mt-1 text-sm text-gray-900 mb-2">{record.activityId}</dd>
+              <div class="elsa-ml-12 elsa-mt-2">
+                <dl class="elsa-grid elsa-grid-cols-1 elsa-gap-x-4 elsa-gap-y-8 sm:elsa-grid-cols-2">
+                  <div class="sm:elsa-col-span-1">
+                    <dt class="elsa-text-sm elsa-font-medium elsa-text-gray-500">Activity ID</dt>
+                    <dd class="elsa-mt-1 elsa-text-sm elsa-text-gray-900 elsa-mb-2">{record.activityId}</dd>
                   </div>
                   {collection.map(filteredRecordData, (v, k) => (
-                    <div class="sm:col-span-1">
-                      <dt class="text-sm font-medium text-gray-500">{k}</dt>
-                      <dd class="mt-1 text-sm text-gray-900 mb-2"><pre>{v}</pre></dd>
+                    <div class="sm:elsa-col-span-1">
+                      <dt class="elsa-text-sm elsa-font-medium elsa-text-gray-500">{k}</dt>
+                      <dd class="elsa-mt-1 elsa-text-sm elsa-text-gray-900 elsa-mb-2"><pre>{v}</pre></dd>
                     </div>
                   ))}
                   {record.message ? (
-                    <div class="sm:col-span-1">
-                      <dt class="text-sm font-medium text-gray-500">
+                    <div class="sm:elsa-col-span-1">
+                      <dt class="elsa-text-sm elsa-font-medium elsa-text-gray-500">
                         Message
                       </dt>
-                      <dd class="mt-1 text-sm text-gray-900">
+                      <dd class="elsa-mt-1 elsa-text-sm elsa-text-gray-900">
                         {record.message}
                       </dd>
                     </div>
@@ -334,7 +334,7 @@ export class ElsaWorkflowInstanceJournal {
 
     return (
       <div class="flow-root">
-        <ul class="-mb-8">
+        <ul class="-elsa-mb-8">
           {items.map(renderRecord)}
         </ul>
       </div>

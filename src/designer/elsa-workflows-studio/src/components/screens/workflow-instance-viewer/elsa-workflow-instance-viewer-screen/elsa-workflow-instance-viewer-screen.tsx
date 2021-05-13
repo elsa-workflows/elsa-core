@@ -18,8 +18,6 @@ import {pluginManager} from '../../../../services/plugin-manager';
 import state from '../../../../utils/store';
 import {ActivityContextMenuState, WorkflowDesignerMode} from "../../../designers/tree/elsa-designer-tree/models";
 import {registerClickOutside} from "stencil-click-outside";
-import {editor} from "monaco-editor";
-import create = editor.create;
 import moment from "moment";
 import {durationToString} from "../../../../utils/utils";
 
@@ -222,7 +220,7 @@ export class ElsaWorkflowInstanceViewerScreen {
   render() {
     const descriptors: Array<ActivityDescriptor> = state.activityDescriptors;
     return (
-      <Host class="flex flex-col w-full relative" ref={el => this.el = el}>
+      <Host class="elsa-flex elsa-flex-col elsa-w-full elsa-relative" ref={el => this.el = el}>
         {this.renderCanvas()}
         <elsa-workflow-instance-journal ref={el => this.journal = el}
                                         workflowInstanceId={this.workflowInstanceId}
@@ -237,10 +235,10 @@ export class ElsaWorkflowInstanceViewerScreen {
 
   renderCanvas() {
     const activityStatsButton =
-      `<div class="context-menu-wrapper flex-shrink-0">
+      `<div class="context-menu-wrapper elsa-flex-shrink-0">
             <button aria-haspopup="true"
-                    class="w-8 h-8 inline-flex items-center justify-center text-gray-400 rounded-full bg-transparent hover:text-gray-500 focus:outline-none focus:text-gray-500 focus:bg-gray-100 transition ease-in-out duration-150">
-              <svg class="h-6 w-6 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    class="elsa-w-8 elsa-h-8 elsa-inline-flex elsa-items-center elsa-justify-center elsa-text-gray-400 elsa-rounded-full elsa-bg-transparent hover:elsa-text-gray-500 focus:elsa-outline-none focus:elsa-text-gray-500 focus:elsa-bg-gray-100 elsa-transition elsa-ease-in-out elsa-duration-150">
+              <svg class="elsa-h-6 elsa-w-6 elsa-text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10" /> 
                 <line x1="12" y1="16" x2="12" y2="12" />
                 <line x1="12" y1="8" x2="12.01" y2="8" />
@@ -249,9 +247,9 @@ export class ElsaWorkflowInstanceViewerScreen {
           </div>`;
 
     return (
-      <div class="flex-1 flex">
+      <div class="elsa-flex-1 elsa-flex">
         <elsa-designer-tree model={this.workflowModel}
-                            class="flex-1" ref={el => this.designer = el}
+                            class="elsa-flex-1" ref={el => this.designer = el}
                             mode={WorkflowDesignerMode.Instance}
                             activityContextMenuButton={activityStatsButton}
                             activityContextMenu={this.activityContextMenuState}
@@ -272,28 +270,28 @@ export class ElsaWorkflowInstanceViewerScreen {
       return (
         <div>
           <div>
-            <table class="min-w-full divide-y divide-gray-200 border-b border-gray-200">
-              <thead class="bg-gray-50">
+            <table class="elsa-min-w-full elsa-divide-y elsa-divide-gray-200 elsa-border-b elsa-border-gray-200">
+              <thead class="elsa-bg-gray-50">
               <tr>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" class="elsa-px-6 elsa-py-3 elsa-text-left elsa-text-xs elsa-font-medium elsa-text-gray-500 elsa-text-right elsa-tracking-wider">
                   Event
                 </th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" class="elsa-px-6 elsa-py-3 elsa-text-left elsa-text-xs elsa-font-medium elsa-text-gray-500 elsa-text-right elsa-tracking-wider">
                   Count
                 </th>
               </tr>
               </thead>
-              <tbody class="bg-white divide-y divide-gray-200">
+              <tbody class="elsa-bg-white elsa-divide-y elsa-divide-gray-200">
               {activityStats.eventCounts.length > 0 ? activityStats.eventCounts.map(eventCount => (
                 <tr>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <td class="elsa-px-6 elsa-py-4 elsa-whitespace-nowrap elsa-text-sm elsa-font-medium elsa-text-gray-900">
                     {eventCount.eventName}
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td class="elsa-px-6 elsa-py-4 elsa-whitespace-nowrap elsa-text-sm elsa-text-gray-500">
                     {eventCount.count}
                   </td>
                 </tr>)) : <tr>
-                <td colSpan={2} class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                <td colSpan={2} class="elsa-px-6 elsa-py-4 elsa-whitespace-nowrap elsa-text-sm elsa-font-medium elsa-text-gray-900">
                   No events record for this activity.
                 </td>
               </tr>}
@@ -301,74 +299,74 @@ export class ElsaWorkflowInstanceViewerScreen {
             </table>
           </div>
 
-          {activityStats.eventCounts.length > 0 ? (<div class="relative grid gap-6 bg-white px-5 py-6 sm:gap-8 sm:p-8">
+          {activityStats.eventCounts.length > 0 ? (<div class="elsa-relative elsa-grid elsa-gap-6 elsa-bg-white px-5 elsa-py-6 sm:elsa-gap-8 sm:elsa-p-8">
             {!!activityStats.fault ? (
-              <a href="#" class="-m-3 p-3 flex items-start rounded-lg hover:bg-gray-50 transition ease-in-out duration-150">
-                <svg class="flex-shrink-0 h-6 w-6 text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <a href="#" class="-elsa-m-3 elsa-p-3 elsa-flex elsa-items-start elsa-rounded-lg hover:elsa-bg-gray-50 elsa-transition elsa-ease-in-out elsa-duration-150">
+                <svg class="elsa-flex-shrink-0 elsa-h-6 elsa-w-6 elsa-text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <circle cx="12" cy="12" r="10"/>
                   <line x1="12" y1="8" x2="12" y2="12"/>
                   <line x1="12" y1="16" x2="12.01" y2="16"/>
                 </svg>
-                <div class="ml-4">
-                  <p class="text-base font-medium text-gray-900">
+                <div class="elsa-ml-4">
+                  <p class="elsa-text-base elsa-font-medium elsa-text-gray-900">
                     Fault
                   </p>
-                  <p class="mt-1 text-sm text-gray-500">
+                  <p class="elsa-mt-1 elsa-text-sm elsa-text-gray-500">
                     {activityStats.fault.message}
                   </p>
                 </div>
               </a>) : undefined}
 
-            <a href="#" class="-m-3 p-3 flex items-start rounded-lg hover:bg-gray-50 transition ease-in-out duration-150">
-              <svg class="flex-shrink-0 h-6 w-6 text-indigo-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <a href="#" class="-elsa-m-3 elsa-p-3 elsa-flex elsa-items-start elsa-rounded-lg hover:elsa-bg-gray-50 elsa-transition elsa-ease-in-out elsa-duration-150">
+              <svg class="elsa-flex-shrink-0 elsa-h-6 elsa-w-6 elsa-text-indigo-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                 <path stroke="none" d="M0 0h24v24H0z"/>
                 <circle cx="12" cy="12" r="9"/>
                 <polyline points="12 7 12 12 15 15"/>
               </svg>
-              <div class="ml-4">
-                <p class="text-base font-medium text-gray-900">
+              <div class="elsa-ml-4">
+                <p class="elsa-text-base elsa-font-medium elsa-text-gray-900">
                   Average Execution Time
                 </p>
-                <p class="mt-1 text-sm text-gray-500">
+                <p class="elsa-mt-1 elsa-text-sm elsa-text-gray-500">
                   {durationToString(moment.duration(activityStats.averageExecutionTime))}
                 </p>
               </div>
             </a>
 
-            <a href="#" class="-m-3 p-3 flex items-start rounded-lg hover:bg-gray-50 transition ease-in-out duration-150">
-              <svg class="flex-shrink-0 h-6 w-6 text-green-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <a href="#" class="-m-3 elsa-p-3 elsa-flex elsa-items-start elsa-rounded-lg hover:elsa-bg-gray-50 elsa-transition elsa-ease-in-out elsa-duration-150">
+              <svg class="elsa-flex-shrink-0 elsa-h-6 elsa-w-6 elsa-text-green-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                 <path stroke="none" d="M0 0h24v24H0z"/>
                 <circle cx="12" cy="12" r="9"/>
                 <polyline points="12 7 12 12 15 15"/>
               </svg>
-              <div class="ml-4">
-                <p class="text-base font-medium text-gray-900">
+              <div class="elsa-ml-4">
+                <p class="elsa-text-base elsa-font-medium elsa-text-gray-900">
                   Fastest Execution Time
                 </p>
-                <p class="mt-1 text-sm text-gray-500">
+                <p class="elsa-mt-1 elsa-text-sm elsa-text-gray-500">
                   {durationToString(moment.duration(activityStats.fastestExecutionTime))}
                 </p>
               </div>
             </a>
 
-            <a href="#" class="-m-3 p-3 flex items-start rounded-lg hover:bg-gray-50 transition ease-in-out duration-150">
-              <svg class="flex-shrink-0 h-6 w-6 text-yellow-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <a href="#" class="-elsa-m-3 elsa-p-3 elsa-flex elsa-items-start elsa-rounded-lg hover:elsa-bg-gray-50 elsa-transition elsa-ease-in-out elsa-duration-150">
+              <svg class="elsa-flex-shrink-0 elsa-h-6 elsa-w-6 elsa-text-yellow-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                 <path stroke="none" d="M0 0h24v24H0z"/>
                 <circle cx="12" cy="12" r="9"/>
                 <polyline points="12 7 12 12 15 15"/>
               </svg>
-              <div class="ml-4">
-                <p class="text-base font-medium text-gray-900">
+              <div class="elsa-ml-4">
+                <p class="elsa-text-base elsa-font-medium elsa-text-gray-900">
                   Slowest Execution Time
                 </p>
-                <p class="mt-1 text-sm text-gray-500">
+                <p class="elsa-mt-1 elsa-text-sm elsa-text-gray-500">
                   {durationToString(moment.duration(activityStats.slowestExecutionTime))}
                 </p>
               </div>
             </a>
 
-            <a href="#" class="-m-3 p-3 flex items-start rounded-lg hover:bg-gray-50 transition ease-in-out duration-150">
-              <svg class="flex-shrink-0 h-6 w-6 text-blue-600" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <a href="#" class="-elsa-m-3 elsa-p-3 elsa-flex elsa-items-start elsa-rounded-lg hover:elsa-bg-gray-50 elsa-transition elsa-ease-in-out elsa-duration-150">
+              <svg class="elsa-flex-shrink-0 elsa-h-6 elsa-w-6 elsa-text-blue-600" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                 <path stroke="none" d="M0 0h24v24H0z"/>
                 <rect x="4" y="5" width="16" height="16" rx="2"/>
                 <line x1="16" y1="3" x2="16" y2="7"/>
@@ -377,11 +375,11 @@ export class ElsaWorkflowInstanceViewerScreen {
                 <line x1="11" y1="15" x2="12" y2="15"/>
                 <line x1="12" y1="15" x2="12" y2="18"/>
               </svg>
-              <div class="ml-4">
-                <p class="text-base font-medium text-gray-900">
+              <div class="elsa-ml-4">
+                <p class="elsa-text-base elsa-font-medium elsa-text-gray-900">
                   Last Executed At
                 </p>
-                <p class="mt-1 text-sm text-gray-500">
+                <p class="elsa-mt-1 elsa-text-sm elsa-text-gray-500">
                   {moment(activityStats.lastExecutedAt).format('DD-MM-YYYY HH:mm:ss')}
                 </p>
               </div>
@@ -393,17 +391,17 @@ export class ElsaWorkflowInstanceViewerScreen {
     };
 
     const renderLoader = function () {
-      return <div class="p-6 bg-white">Loading...</div>;
+      return <div class="elsa-p-6 elsa-bg-white">Loading...</div>;
     };
 
     return <div
-      data-transition-enter="transition ease-out duration-100"
-      data-transition-enter-start="transform opacity-0 scale-95"
-      data-transition-enter-end="transform opacity-100 scale-100"
-      data-transition-leave="transition ease-in duration-75"
-      data-transition-leave-start="transform opacity-100 scale-100"
-      data-transition-leave-end="transform opacity-0 scale-95"
-      class={`${this.activityContextMenuState.shown ? '' : 'hidden'} absolute z-10 mt-3 px-2 w-screen max-w-xl sm:px-0`}
+      data-transition-enter="elsa-transition elsa-ease-out elsa-duration-100"
+      data-transition-enter-start="elsa-transform elsa-opacity-0 elsa-scale-95"
+      data-transition-enter-end="elsa-transform elsa-opacity-100 elsa-scale-100"
+      data-transition-leave="elsa-transition elsa-ease-in elsa-duration-75"
+      data-transition-leave-start="elsa-transform elsa-opacity-100 elsa-scale-100"
+      data-transition-leave-end="elsa-transform elsa-opacity-0 elsa-scale-95"
+      class={`${this.activityContextMenuState.shown ? '' : 'hidden'} elsa-absolute elsa-z-10 elsa-mt-3 elsa-px-2 elsa-w-screen elsa-max-w-xl sm:elsa-px-0`}
       style={{left: `${this.activityContextMenuState.x + 64}px`, top: `${this.activityContextMenuState.y - 256}px`}}
       ref={el =>
         registerClickOutside(this, el, () => {
@@ -411,9 +409,8 @@ export class ElsaWorkflowInstanceViewerScreen {
         })
       }
     >
-      <div class="rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 overflow-hidden">
+      <div class="elsa-rounded-lg elsa-shadow-lg elsa-ring-1 elsa-ring-black elsa-ring-opacity-5 elsa-overflow-hidden">
         {!!activityStats ? renderStats() : renderLoader()}
-
       </div>
     </div>
   }
