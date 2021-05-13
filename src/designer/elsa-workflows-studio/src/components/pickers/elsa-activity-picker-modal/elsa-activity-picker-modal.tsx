@@ -122,7 +122,6 @@ export class ElsaActivityPickerModal {
                 </nav>
               </div>
               <div class="elsa-flex-1 elsa-pr-8">
-
                 <div class="elsa-p-0 elsa-mb-6">
                   <div class="elsa-relative elsa-rounded-md elsa-shadow-sm">
                     <div class="elsa-absolute elsa-inset-y-0 elsa-left-0 elsa-pl-3 elsa-flex elsa-items-center elsa-pointer-events-none">
