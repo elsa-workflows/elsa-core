@@ -14,8 +14,8 @@ namespace ElsaDashboard.Application.Pages.WorkflowDefinitions
         [Parameter] public int PageSize { get; set; } = 10;
         [Inject] private IWorkflowDefinitionService WorkflowDefinitionService { get; set; } = default!;
         [Inject] private IConfirmDialogService ConfirmDialogService { get; set; } = default!;
-        private ICollection<WorkflowDefinition> Definitions { get; set; } = new List<WorkflowDefinition>();
-        private ICollection<IGrouping<string, WorkflowDefinition>> DefinitionGroupings { get; set; } = new List<IGrouping<string, WorkflowDefinition>>();
+        private ICollection<WorkflowDefinitionSummary> Definitions { get; set; } = new List<WorkflowDefinitionSummary>();
+        private ICollection<IGrouping<string, WorkflowDefinitionSummary>> DefinitionGroupings { get; set; } = new List<IGrouping<string, WorkflowDefinitionSummary>>();
 
         protected override async Task OnParametersSetAsync()
         {
@@ -28,7 +28,7 @@ namespace ElsaDashboard.Application.Pages.WorkflowDefinitions
             DefinitionGroupings = Definitions.GroupBy(x => x.DefinitionId).ToList();
         }
         
-        private async Task OnDeleteWorkflowDefinitionClick(WorkflowDefinition workflowDefinition)
+        private async Task OnDeleteWorkflowDefinitionClick(WorkflowDefinitionSummary workflowDefinition)
         {
             var result = await ConfirmDialogService.Show("Delete Workflow Definition", "Are you sure you want to delete this workflow definition? This will also delete any and all of its workflow instances.", "Delete");
 
