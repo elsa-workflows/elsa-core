@@ -139,7 +139,6 @@ export class ElsaWorkflowDesigner {
 
   onActivityPicked = async args => {
     const activityDescriptor = args as ActivityDescriptor;
-    //const activityModel = this.addActivity(activityDescriptor, sourceId, targetId, this.parentActivityOutcome);
     const activityModel = this.newActivity(activityDescriptor);
     this.addingActivity = true;
     this.showActivityEditorInternal(activityModel, false);
@@ -153,6 +152,7 @@ export class ElsaWorkflowDesigner {
       const sourceId = connectFromRoot ? null : this.parentActivityId;
       const targetId = connectFromRoot ? this.parentActivityId : null;
       this.addActivity(activityModel, sourceId, targetId, this.parentActivityOutcome);
+      this.addingActivity = false;
     } else {
       this.updateActivity(activityModel);
     }
