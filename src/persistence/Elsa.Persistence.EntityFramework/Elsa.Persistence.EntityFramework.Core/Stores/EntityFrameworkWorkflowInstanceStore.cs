@@ -9,7 +9,6 @@ using Elsa.Models;
 using Elsa.Persistence.EntityFramework.Core.Services;
 using Elsa.Persistence.Specifications;
 using Elsa.Serialization;
-using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 
 namespace Elsa.Persistence.EntityFramework.Core.Stores

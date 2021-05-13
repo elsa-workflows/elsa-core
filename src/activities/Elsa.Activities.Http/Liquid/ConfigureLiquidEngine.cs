@@ -7,7 +7,6 @@ using Fluid.Values;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Primitives;
 
 namespace Elsa.Activities.Http.Liquid
 {

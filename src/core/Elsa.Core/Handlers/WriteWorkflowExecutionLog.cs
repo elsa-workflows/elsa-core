@@ -4,7 +4,6 @@ using Elsa.Events;
 using Elsa.Services;
 using Elsa.Services.Models;
 using MediatR;
-using Newtonsoft.Json.Linq;
 
 namespace Elsa.Handlers
 {

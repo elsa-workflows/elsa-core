@@ -6,7 +6,6 @@ using Microsoft.Extensions.Logging;
 using NodaTime;
 using Quartz;
 using Quartz.Impl.Matchers;
-using Quartz.Util;
 
 namespace Elsa.Activities.Temporal.Quartz.Services
 {

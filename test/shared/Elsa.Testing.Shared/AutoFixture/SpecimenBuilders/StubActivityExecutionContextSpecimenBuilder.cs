@@ -3,7 +3,6 @@ using AutoFixture;
 using AutoFixture.Kernel;
 using Elsa.Models;
 using Elsa.Services.Models;
-using Microsoft.Extensions.DependencyInjection;
 using Moq;
 
 namespace Elsa.Testing.Shared.AutoFixture.SpecimenBuilders

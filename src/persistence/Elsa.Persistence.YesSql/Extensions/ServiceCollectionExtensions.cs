@@ -1,6 +1,5 @@
 using System;
 using System.Data;
-using System.Linq;
 using Elsa.Persistence.YesSql.Data;
 using Elsa.Persistence.YesSql.Indexes;
 using Elsa.Persistence.YesSql.Mapping;

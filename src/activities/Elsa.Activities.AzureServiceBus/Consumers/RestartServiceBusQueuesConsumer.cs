@@ -1,7 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Elsa.Activities.AzureServiceBus.Services;
 using Elsa.Events;
-using Elsa.Triggers;
 using Rebus.Handlers;
 
 namespace Elsa.Activities.AzureServiceBus.Consumers

@@ -2,7 +2,6 @@ using System;
 using Elsa.Persistence.YesSql;
 using Elsa.Testing.Shared.AutoFixture.Attributes;
 using Elsa.Testing.Shared.Helpers;
-using YesSql;
 using YesSql.Provider.PostgreSql;
 
 namespace Elsa.Core.IntegrationTests.Autofixture

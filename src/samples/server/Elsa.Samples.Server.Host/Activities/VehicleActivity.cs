@@ -17,12 +17,12 @@ namespace Elsa.Samples.Server.Host.Activities
     public class VehicleActivity : Activity, IActivityPropertyOptionsProvider, IRuntimeSelectListItemsProvider
     {
         private readonly Random _random;
-        
+
         public VehicleActivity()
         {
             _random = new Random();
         }
-        
+
         [ActivityProperty(
             UIHint = ActivityPropertyUIHints.Dropdown,
             OptionsProvider = typeof(VehicleActivity),

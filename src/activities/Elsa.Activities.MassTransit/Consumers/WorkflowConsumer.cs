@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Elsa.Activities.MassTransit.Bookmarks;
 using Elsa.Activities.MassTransit.Consumers.MessageCorrelation;
 using Elsa.Dispatch;
-using Elsa.Services;
 using MassTransit;
 using MediatR;
 
