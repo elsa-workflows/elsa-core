@@ -55,7 +55,7 @@
               }
             });
         </script></nav></div><div class="container mainContainer docsContainer"><div class="wrapper"><div class="post"><header class="postHeader"><h1 id="__docusaurus" class="postHeaderTitle">Elsa Dashboard + Docker</h1></header><article><div><span><p>If you have <a href="http://docker.com/">Docker</a> installed and an <a href="quickstarts/quickstarts-aspnetcore-server-api-endpoints">Elsa Server running</a> at e.g. <code>https://localhost:11000</code>, then running the Elsa Dashboard Docker image is the quickest way to run the dashboard:</p>
-<pre><code class="hljs css language-bash">docker run -t -i -e Elsa__Server__BaseAddress=<span class="hljs-string">'https://localhost:11000'</span> -e ASPNETCORE_ENVIRONMENT=<span class="hljs-string">'Development'</span> -p 13000:80 elsa-workflows/elsa-dashboard:latest
+<pre><code class="hljs css language-bash">docker run -t -i -e Elsa__Server__BaseAddress=<span class="hljs-string">'https://localhost:5001'</span> -e ASPNETCORE_ENVIRONMENT=<span class="hljs-string">'Development'</span> -p 13000:80 elsa-workflows/elsa-dashboard:latest
 </code></pre>
 <p>Notice that you can specify the Elsa Server URL by passing in an environment variable called <code>Elsa__Server__BaseAddress</code>.
 We also instructed Docker to map container port 80 to port 13000, which means that we can now launch a webbrowser and navigate to:</p>
