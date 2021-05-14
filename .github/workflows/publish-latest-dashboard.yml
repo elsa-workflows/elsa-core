@@ -1,9 +1,9 @@
-name: Build elsa-dashboard:latest
+name: Build elsa-dashboard-with-server:latest
 on:
   workflow_dispatch:
   push:
     branches: 
-    - feature/elsa-2.0
+    - master
   #release:
   #  types: [published]
 
