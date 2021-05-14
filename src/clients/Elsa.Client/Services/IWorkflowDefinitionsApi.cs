@@ -8,10 +8,10 @@ namespace Elsa.Client.Services
     public interface IWorkflowDefinitionsApi
     {
         [Get("/v1/workflow-definitions/{workflowDefinitionId}/{versionOptions}")]
-        Task<WorkflowDefinition?> GetByIdAsync(string workflowDefinitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default);
-
+        Task<WorkflowDefinition> GetByIdAsync(string workflowDefinitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default);
+        
         [Get("/v1/workflow-definitions/{workflowDefinitionVersionId}")]
-        Task<WorkflowDefinition?> GetByVersionIdAsync(string workflowDefinitionVersionId, CancellationToken cancellationToken = default);
+        Task<WorkflowDefinition> GetByVersionIdAsync(string workflowDefinitionVersionId, CancellationToken cancellationToken = default);
 
         [Get("/v1/workflow-definitions")]
         Task<PagedList<WorkflowDefinitionSummary>> ListAsync(int? page = default, int? pageSize = default, VersionOptions? version = default, CancellationToken cancellationToken = default);
