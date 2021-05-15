@@ -48,9 +48,7 @@ jobs:
           file: ./docker/Dockerfile-elsa-dashboard-and-server
           platforms: linux/amd64,linux/arm64,linux/arm/v7
           push: true
-          tags: |
-            elsa-dashboard-and-server:latest
-            elsaworkflows/elsa-dashboard-and-server:latest
+          tags: elsaworkflows/elsa-dashboard-and-server:latest
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
 
