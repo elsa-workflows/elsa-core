@@ -265,9 +265,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{D7F754
 ProjectSection(SolutionItems) = preProject
 	docker\docker-compose.yaml = docker\docker-compose.yaml
 	docker\Dockerfile = docker\Dockerfile
-	docker\Dockerfile-with-npm = docker\Dockerfile-with-npm
 	docker\README.md = docker\README.md
 	docker\Dockerfile-elsa-dashboard = docker\Dockerfile-elsa-dashboard
+	docker\Dockerfile-elsa-dashboard-and-server = docker\Dockerfile-elsa-dashboard-and-server
 EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.EntityFramework.MySql", "src\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.MySql\Elsa.Persistence.EntityFramework.MySql.csproj", "{D55BC08B-CA82-478A-99F7-EDE90AC33160}"
@@ -279,6 +279,13 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "aspnetcore", "aspnetcore", "{28C5C63F-2DCF-46BE-9576-1F50A7CFE8C4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElsaDashboard.Web", "src\dashboards\aspnetcore\ElsaDashboard\ElsaDashboard.Web.csproj", "{5F81C84A-4C04-48FF-981C-23E48A7ACA6C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "github", "github", "{3BF2C5A9-AC69-4587-833F-C16CFC97E100}"
+ProjectSection(SolutionItems) = preProject
+	.github\workflows\publish-latest-dashboard-docker.yml = .github\workflows\publish-latest-dashboard-docker.yml
+	.github\workflows\publish-latest-server-docker.yml = .github\workflows\publish-latest-server-docker.yml
+	.github\workflows\publish-latest-dashboard-and-server-docker.yml = .github\workflows\publish-latest-dashboard-and-server-docker.yml
+EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
