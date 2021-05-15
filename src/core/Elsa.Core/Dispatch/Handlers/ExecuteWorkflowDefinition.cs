@@ -14,7 +14,7 @@ using IDistributedLockProvider = Elsa.Services.IDistributedLockProvider;
 
 namespace Elsa.Dispatch.Handlers
 {
-    public class ExecuteWorkflowDefinition : IRequestHandler<ExecuteWorkflowDefinitionRequest>
+    public class ExecuteWorkflowDefinition : IRequestHandler<ExecuteWorkflowDefinitionRequest, ExecuteWorkflowDefinitionResponse>
     {
         private readonly IStartsWorkflow _startsWorkflow;
         private readonly IWorkflowRegistry _workflowRegistry;
@@ -39,19 +39,19 @@ namespace Elsa.Dispatch.Handlers
             _logger = logger;
         }
 
-        public async Task<Unit> Handle(ExecuteWorkflowDefinitionRequest request, CancellationToken cancellationToken)
+        public async Task<ExecuteWorkflowDefinitionResponse> Handle(ExecuteWorkflowDefinitionRequest request, CancellationToken cancellationToken)
         {
             var workflowDefinitionId = request.WorkflowDefinitionId;
             var tenantId = request.TenantId;
             var workflowBlueprint = await _workflowRegistry.GetAsync(workflowDefinitionId, tenantId, VersionOptions.Published, cancellationToken);
 
             if (!ValidatePreconditions(workflowDefinitionId, workflowBlueprint))
-                return Unit.Value;
+                return new ExecuteWorkflowDefinitionResponse();
 
-            var lockKey = $"execute-workflow-definition:tenant:{tenantId}:workflow-definition:{workflowDefinitionId}";
             var correlationId = request.CorrelationId;
             var correlationLockHandle = default(IDistributedSynchronizationHandle?);
 
+            // If we are creating a correlated workflow, make sure to acquire a lock on it to prevent duplicate workflow instances from being created.
             if (!string.IsNullOrWhiteSpace(correlationId))
             {
                 _logger.LogDebug("Acquiring lock on correlation ID {CorrelationId}", correlationId);
@@ -63,13 +63,18 @@ namespace Elsa.Dispatch.Handlers
 
             try
             {
+                // Acquire a lock on the workflow definition so that we can ensure singleton-workflows never execute more than one instance. 
+                var lockKey = $"execute-workflow-definition:tenant:{tenantId}:workflow-definition:{workflowDefinitionId}";
                 await using var handle = await _distributedLockProvider.AcquireLockAsync(lockKey, _elsaOptions.DistributedLockTimeout, cancellationToken);
 
                 if (handle == null)
                     throw new LockAcquisitionException($"Failed to acquire a lock on {lockKey}");
 
                 if (!workflowBlueprint!.IsSingleton || await GetWorkflowIsAlreadyExecutingAsync(tenantId, workflowDefinitionId) == false)
-                    await _startsWorkflow.StartWorkflowAsync(workflowBlueprint, request.ActivityId, request.Input, request.CorrelationId, request.ContextId, cancellationToken);
+                {
+                    var workflowInstance = await _startsWorkflow.StartWorkflowAsync(workflowBlueprint, request.ActivityId, request.Input, request.CorrelationId, request.ContextId, cancellationToken);
+                    return new ExecuteWorkflowDefinitionResponse(workflowInstance.Id);
+                }
             }
             finally
             {
@@ -77,7 +82,7 @@ namespace Elsa.Dispatch.Handlers
                     await correlationLockHandle.DisposeAsync();
             }
 
-            return Unit.Value;
+            return new ExecuteWorkflowDefinitionResponse();
         }
 
         private bool ValidatePreconditions(string? workflowDefinitionId, IWorkflowBlueprint? workflowBlueprint)
