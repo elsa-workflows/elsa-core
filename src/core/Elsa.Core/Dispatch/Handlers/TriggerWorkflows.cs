@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.Signaling;
 using Elsa.Bookmarks;
 using Elsa.Exceptions;
 using Elsa.Models;
@@ -17,7 +16,7 @@ using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Dispatch.Handlers
 {
-    public class TriggerWorkflows : IRequestHandler<TriggerWorkflowsRequest, int>
+    public class TriggerWorkflows : IRequestHandler<TriggerWorkflowsRequest, TriggerWorkflowsResponse>
     {
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
         private readonly IBookmarkFinder _bookmarkFinder;
@@ -45,7 +44,7 @@ namespace Elsa.Dispatch.Handlers
             _logger = logger;
         }
 
-        public async Task<int> Handle(TriggerWorkflowsRequest request, CancellationToken cancellationToken)
+        public async Task<TriggerWorkflowsResponse> Handle(TriggerWorkflowsRequest request, CancellationToken cancellationToken)
         {
             var correlationId = request.CorrelationId;
 
@@ -58,30 +57,30 @@ namespace Elsa.Dispatch.Handlers
             return await TriggerWorkflowsAsync(request, cancellationToken);
         }
 
-        private async Task<int> TriggerWorkflowsAsync(TriggerWorkflowsRequest request, CancellationToken cancellationToken)
+        private async Task<TriggerWorkflowsResponse> TriggerWorkflowsAsync(TriggerWorkflowsRequest request, CancellationToken cancellationToken)
         {
             var bookmarkResultsQuery = await _bookmarkFinder.FindBookmarksAsync(request.ActivityType, request.Bookmark, request.CorrelationId, request.TenantId, cancellationToken);
             var bookmarkResults = bookmarkResultsQuery.ToList();
-            var triggeredCount = bookmarkResults.GroupBy(x => x.WorkflowInstanceId).Select(x => x.Key).Distinct().Count();
+            var triggeredPendingWorkflows = bookmarkResults.Select(x => new PendingWorkflow(x.WorkflowInstanceId, x.ActivityId)).ToList();
+            await ResumeWorkflowsAsync(bookmarkResults, request.Input, request.Execute, cancellationToken);
+            var startWorkflowsResponse = await StartWorkflowsAsync(request, cancellationToken);
+            var pendingWorkflows = triggeredPendingWorkflows.Concat(startWorkflowsResponse.PendingWorkflows).Distinct().ToList();
 
-            await ResumeWorkflowsAsync(bookmarkResults, request.Input, cancellationToken);
-            var startedCount = await StartWorkflowsAsync(request, cancellationToken);
-
-            return startedCount + triggeredCount;
+            return new TriggerWorkflowsResponse(pendingWorkflows);
         }
 
-        private async Task<int> ResumeSpecificWorkflowInstanceAsync(TriggerWorkflowsRequest request, CancellationToken cancellationToken)
+        private async Task<TriggerWorkflowsResponse> ResumeSpecificWorkflowInstanceAsync(TriggerWorkflowsRequest request, CancellationToken cancellationToken)
         {
             var bookmarkResultsQuery = await _bookmarkFinder.FindBookmarksAsync(request.ActivityType, request.Bookmark, request.CorrelationId, request.TenantId, cancellationToken);
             bookmarkResultsQuery = bookmarkResultsQuery.Where(x => x.WorkflowInstanceId == request.WorkflowInstanceId);
             var bookmarkResults = bookmarkResultsQuery.ToList();
-            var triggeredCount = bookmarkResults.GroupBy(x => x.WorkflowInstanceId).Select(x => x.Key).Distinct().Count();
+            await ResumeWorkflowsAsync(bookmarkResults, request.Input, request.Execute, cancellationToken);
+            var pendingWorkflows = bookmarkResults.Select(x => new PendingWorkflow(x.WorkflowInstanceId, x.ActivityId)).ToList();
 
-            await ResumeWorkflowsAsync(bookmarkResults, request.Input, cancellationToken);
-            return triggeredCount;
+            return new TriggerWorkflowsResponse(pendingWorkflows);
         }
 
-        private async Task<int> ResumeOrStartCorrelatedWorkflowsAsync(TriggerWorkflowsRequest request, CancellationToken cancellationToken)
+        private async Task<TriggerWorkflowsResponse> ResumeOrStartCorrelatedWorkflowsAsync(TriggerWorkflowsRequest request, CancellationToken cancellationToken)
         {
             var correlationId = request.CorrelationId!;
             var lockKey = correlationId;
@@ -102,37 +101,38 @@ namespace Elsa.Dispatch.Handlers
                 {
                     _logger.LogDebug("{WorkflowInstanceCount} existing workflows found with correlation ID '{CorrelationId}' will be queued for execution", correlatedWorkflowInstanceCount, correlationId);
                     var bookmarkResults = await _bookmarkFinder.FindBookmarksAsync(request.ActivityType, request.Bookmark, correlationId, request.TenantId, cancellationToken).ToList();
-                    await ResumeWorkflowsAsync(bookmarkResults, request.Input, cancellationToken);
-                    return correlatedWorkflowInstanceCount;
+                    await ResumeWorkflowsAsync(bookmarkResults, request.Input, request.Execute, cancellationToken);
+                    return new TriggerWorkflowsResponse(bookmarkResults.Select(x => new PendingWorkflow(x.WorkflowInstanceId, x.ActivityId)).ToList());
                 }
             }
 
             return await StartWorkflowsAsync(request, cancellationToken);
         }
 
-        private async Task<int> StartWorkflowsAsync(TriggerWorkflowsRequest request, CancellationToken cancellationToken)
+        private async Task<TriggerWorkflowsResponse> StartWorkflowsAsync(TriggerWorkflowsRequest request, CancellationToken cancellationToken)
         {
             _logger.LogDebug("Triggering workflows using {ActivityType}", request.ActivityType);
 
             var filter = request.Trigger;
             var triggers = (await _triggerFinder.FindTriggersAsync(request.ActivityType, filter, request.TenantId, cancellationToken)).ToList();
+            var pendingWorkflows = new List<PendingWorkflow>();
 
             foreach (var trigger in triggers)
             {
                 var workflowBlueprint = trigger.WorkflowBlueprint;
+                var response = await _mediator.Send(new ExecuteWorkflowDefinitionRequest(workflowBlueprint.Id, trigger.ActivityId, request.Input, request.CorrelationId, request.ContextId, workflowBlueprint.TenantId, request.Execute), cancellationToken);
 
-                await _mediator.Send(
-                    new ExecuteWorkflowDefinitionRequest(workflowBlueprint.Id, trigger.ActivityId, request.Input, request.CorrelationId, request.ContextId, workflowBlueprint.TenantId),
-                    cancellationToken);
+                if (response.PendingWorkflow != null)
+                    pendingWorkflows.Add(response.PendingWorkflow);
             }
 
-            return triggers.Count;
+            return new TriggerWorkflowsResponse(pendingWorkflows);
         }
 
-        private async Task ResumeWorkflowsAsync(IEnumerable<BookmarkFinderResult> results, object? input, CancellationToken cancellationToken)
+        private async Task ResumeWorkflowsAsync(IEnumerable<BookmarkFinderResult> results, object? input, bool execute, CancellationToken cancellationToken)
         {
             foreach (var result in results)
-                await _mediator.Send(new ExecuteWorkflowInstanceRequest(result.WorkflowInstanceId, result.ActivityId, input), cancellationToken);
+                await _mediator.Send(new ExecuteWorkflowInstanceRequest(result.WorkflowInstanceId, result.ActivityId, input, execute), cancellationToken);
         }
     }
 }
