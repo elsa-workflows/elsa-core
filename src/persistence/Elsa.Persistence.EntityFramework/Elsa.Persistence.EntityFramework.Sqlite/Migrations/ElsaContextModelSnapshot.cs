@@ -30,6 +30,9 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("CorrelationId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Hash")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -57,6 +60,9 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
                     b.HasIndex("ActivityType")
                         .HasDatabaseName("IX_Bookmark_ActivityType");
 
+                    b.HasIndex("CorrelationId")
+                        .HasDatabaseName("IX_Bookmark_CorrelationId");
+
                     b.HasIndex("Hash")
                         .HasDatabaseName("IX_Bookmark_Hash");
 
@@ -68,6 +74,9 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
 
                     b.HasIndex("ActivityType", "TenantId", "Hash")
                         .HasDatabaseName("IX_Bookmark_ActivityType_TenantId_Hash");
+
+                    b.HasIndex("Hash", "CorrelationId", "TenantId")
+                        .HasDatabaseName("IX_Bookmark_Hash_CorrelationId_TenantId");
 
                     b.ToTable("Bookmarks");
                 });

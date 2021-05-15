@@ -1,12 +1,12 @@
-namespace Elsa.Activities.Http.Models
+namespace Elsa.Activities.Signaling.Models
 {
-    public class Signal
+    public class SignalModel
     {
-        public Signal()
+        public SignalModel()
         {
         }
 
-        public Signal(string name, string workflowInstanceId)
+        public SignalModel(string name, string workflowInstanceId)
         {
             Name = name;
             WorkflowInstanceId = workflowInstanceId;

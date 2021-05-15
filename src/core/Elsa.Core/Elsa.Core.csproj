@@ -22,6 +22,7 @@
         <PackageReference Include="Humanizer.Core" Version="2.10.1" />
         <PackageReference Include="MediatR" Version="9.0.0" />
         <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="9.0.0" />
+        <PackageReference Include="Microsoft.AspNetCore.DataProtection.Abstractions" Version="5.0.5" />
         <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
         <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="5.0.0" />
         <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />

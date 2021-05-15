@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.Signaling;
 using Elsa.Bookmarks;
 using Elsa.Exceptions;
 using Elsa.Models;
@@ -59,7 +60,7 @@ namespace Elsa.Dispatch.Handlers
 
         private async Task<int> TriggerWorkflowsAsync(TriggerWorkflowsRequest request, CancellationToken cancellationToken)
         {
-            var bookmarkResultsQuery = await _bookmarkFinder.FindBookmarksAsync(request.ActivityType, request.Bookmark, request.TenantId, cancellationToken);
+            var bookmarkResultsQuery = await _bookmarkFinder.FindBookmarksAsync(request.ActivityType, request.Bookmark, request.CorrelationId, request.TenantId, cancellationToken);
             var bookmarkResults = bookmarkResultsQuery.ToList();
             var triggeredCount = bookmarkResults.GroupBy(x => x.WorkflowInstanceId).Select(x => x.Key).Distinct().Count();
 
@@ -71,7 +72,7 @@ namespace Elsa.Dispatch.Handlers
 
         private async Task<int> ResumeSpecificWorkflowInstanceAsync(TriggerWorkflowsRequest request, CancellationToken cancellationToken)
         {
-            var bookmarkResultsQuery = await _bookmarkFinder.FindBookmarksAsync(request.ActivityType, request.Bookmark, request.TenantId, cancellationToken);
+            var bookmarkResultsQuery = await _bookmarkFinder.FindBookmarksAsync(request.ActivityType, request.Bookmark, request.CorrelationId, request.TenantId, cancellationToken);
             bookmarkResultsQuery = bookmarkResultsQuery.Where(x => x.WorkflowInstanceId == request.WorkflowInstanceId);
             var bookmarkResults = bookmarkResultsQuery.ToList();
             var triggeredCount = bookmarkResults.GroupBy(x => x.WorkflowInstanceId).Select(x => x.Key).Distinct().Count();
@@ -100,7 +101,7 @@ namespace Elsa.Dispatch.Handlers
                 if (correlatedWorkflowInstanceCount > 0)
                 {
                     _logger.LogDebug("{WorkflowInstanceCount} existing workflows found with correlation ID '{CorrelationId}' will be queued for execution", correlatedWorkflowInstanceCount, correlationId);
-                    var bookmarkResults = await _bookmarkFinder.FindBookmarksAsync(request.ActivityType, request.Bookmark, request.TenantId, cancellationToken).ToList();
+                    var bookmarkResults = await _bookmarkFinder.FindBookmarksAsync(request.ActivityType, request.Bookmark, correlationId, request.TenantId, cancellationToken).ToList();
                     await ResumeWorkflowsAsync(bookmarkResults, request.Input, cancellationToken);
                     return correlatedWorkflowInstanceCount;
                 }

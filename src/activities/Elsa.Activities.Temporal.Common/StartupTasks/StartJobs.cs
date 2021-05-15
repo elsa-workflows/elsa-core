@@ -36,7 +36,7 @@ namespace Elsa.Activities.Temporal.Common.StartupTasks
         private async Task ScheduleStartAtWorkflowsAsync(CancellationToken cancellationToken)
         {
             // Schedule workflow instances that are blocked on a start-at.
-            var bookmarkResults = await _bookmarkFinder.FindBookmarksAsync<StartAt>(TenantId, cancellationToken);
+            var bookmarkResults = await _bookmarkFinder.FindBookmarksAsync<StartAt>(tenantId: TenantId, cancellationToken: cancellationToken);
 
             foreach (var result in bookmarkResults)
             {
@@ -48,7 +48,7 @@ namespace Elsa.Activities.Temporal.Common.StartupTasks
         private async Task ScheduleTimerEventWorkflowsAsync(CancellationToken cancellationToken)
         {
             // Schedule workflow instances that are blocked on a timer.
-            var bookmarkResults = await _bookmarkFinder.FindBookmarksAsync<Timer>(TenantId, cancellationToken);
+            var bookmarkResults = await _bookmarkFinder.FindBookmarksAsync<Timer>(tenantId: TenantId, cancellationToken: cancellationToken);
 
             foreach (var result in bookmarkResults)
             {
@@ -60,7 +60,7 @@ namespace Elsa.Activities.Temporal.Common.StartupTasks
         private async Task ScheduleCronEventWorkflowsAsync(CancellationToken cancellationToken)
         {
             // Schedule workflow instances blocked on a cron event.
-            var cronEventTriggers = await _bookmarkFinder.FindBookmarksAsync<Cron>(TenantId, cancellationToken);
+            var cronEventTriggers = await _bookmarkFinder.FindBookmarksAsync<Cron>(tenantId: TenantId, cancellationToken: cancellationToken);
 
             foreach (var result in cronEventTriggers)
             {

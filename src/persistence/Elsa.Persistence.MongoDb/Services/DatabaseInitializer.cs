@@ -88,8 +88,9 @@ namespace Elsa.Persistence.MongoDb.Services
             var activityTypeKeysDefinition = Builders<Bookmark>.IndexKeys.Ascending(x => x.ActivityType);
             var hashKeysDefinition = Builders<Bookmark>.IndexKeys.Ascending(x => x.Hash);
             var workflowInstanceIdKeysDefinition = Builders<Bookmark>.IndexKeys.Ascending(x => x.WorkflowInstanceId);
+            var correlationIdKeysDefinition = Builders<Bookmark>.IndexKeys.Ascending(x => x.CorrelationId);
 
-            await CreateIndexesAsync(_mongoContext.Bookmarks, cancellationToken, tenantKeysDefinition, activityTypeKeysDefinition, hashKeysDefinition, workflowInstanceIdKeysDefinition);
+            await CreateIndexesAsync(_mongoContext.Bookmarks, cancellationToken, tenantKeysDefinition, activityTypeKeysDefinition, hashKeysDefinition, workflowInstanceIdKeysDefinition, correlationIdKeysDefinition);
         }
 
         private async Task CreateIndexesAsync<T>(IMongoCollection<T> collection, CancellationToken cancellationToken, params IndexKeysDefinition<T>[] definitions)

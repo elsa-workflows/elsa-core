@@ -11,6 +11,7 @@ namespace Elsa.Persistence.YesSql.Indexes
         public string Hash { get; set; } = default!;
         public string ActivityType { get; set; } = default!;
         public string WorkflowInstanceId { get; set; } = default!;
+        public string? CorrelationId { get; set; }
     }
     
     public class BookmarkIndexProvider : IndexProvider<BookmarkDocument>
@@ -28,6 +29,7 @@ namespace Elsa.Persistence.YesSql.Indexes
                         Hash = record.Hash,
                         ActivityType = record.ActivityType,
                         WorkflowInstanceId = record.WorkflowInstanceId,
+                        CorrelationId = record.CorrelationId
                     }
                 );
         }

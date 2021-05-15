@@ -12,29 +12,33 @@ namespace Elsa
         public static Task<IEnumerable<BookmarkFinderResult>> FindBookmarksAsync<T>(
             this IBookmarkFinder bookmarkFinder,
             IEnumerable<IBookmark> bookmarks,
-            string? tenantId,
+            string? correlationId = default,
+            string? tenantId = default,
             CancellationToken cancellationToken = default) where T : IActivity =>
-            bookmarkFinder.FindBookmarksAsync(typeof(T).Name, bookmarks, tenantId, cancellationToken);
+            bookmarkFinder.FindBookmarksAsync(typeof(T).Name, bookmarks, correlationId, tenantId, cancellationToken);
 
         public static Task<IEnumerable<BookmarkFinderResult>> FindBookmarksAsync<T>(
             this IBookmarkFinder bookmarkFinder,
             IBookmark bookmark,
-            string? tenantId,
+            string? correlationId = default,
+            string? tenantId = default,
             CancellationToken cancellationToken = default) where T : IActivity =>
-            bookmarkFinder.FindBookmarksAsync(typeof(T).Name, new[] { bookmark }, tenantId, cancellationToken);
-        
+            bookmarkFinder.FindBookmarksAsync(typeof(T).Name, new[] { bookmark }, correlationId, tenantId, cancellationToken);
+
         public static Task<IEnumerable<BookmarkFinderResult>> FindBookmarksAsync(
             this IBookmarkFinder bookmarkFinder,
             string activityType,
             IBookmark bookmark,
-            string? tenantId,
+            string? correlationId = default,
+            string? tenantId = default,
             CancellationToken cancellationToken = default) =>
-            bookmarkFinder.FindBookmarksAsync(activityType, new[] { bookmark }, tenantId, cancellationToken);
+            bookmarkFinder.FindBookmarksAsync(activityType, new[] { bookmark }, correlationId, tenantId, cancellationToken);
 
         public static Task<IEnumerable<BookmarkFinderResult>> FindBookmarksAsync<T>(
             this IBookmarkFinder bookmarkFinder,
-            string? tenantId,
+            string? correlationId = default,
+            string? tenantId = default,
             CancellationToken cancellationToken = default) where T : IActivity =>
-            bookmarkFinder.FindBookmarksAsync(typeof(T).Name, Enumerable.Empty<IBookmark>(), tenantId, cancellationToken);
+            bookmarkFinder.FindBookmarksAsync(typeof(T).Name, Enumerable.Empty<IBookmark>(), correlationId, tenantId, cancellationToken);
     }
 }

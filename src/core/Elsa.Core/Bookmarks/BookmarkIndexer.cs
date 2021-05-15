@@ -114,6 +114,7 @@ namespace Elsa.Bookmarks
                 ActivityType = triggerDescriptor.ActivityType,
                 ActivityId = triggerDescriptor.ActivityId,
                 WorkflowInstanceId = workflowInstance.Id,
+                CorrelationId = workflowInstance.CorrelationId,
                 Hash = _hasher.Hash(x),
                 Model = _contentSerializer.Serialize(x),
                 ModelType = x.GetType().GetSimpleAssemblyQualifiedName()

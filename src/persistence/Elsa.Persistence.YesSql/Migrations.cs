@@ -66,7 +66,8 @@ namespace Elsa.Persistence.YesSql
                     .Column<string?>(nameof(BookmarkIndex.TenantId))
                     .Column<string>(nameof(BookmarkIndex.Hash))
                     .Column<string>(nameof(BookmarkIndex.ActivityType))
-                    .Column<string>(nameof(BookmarkIndex.WorkflowInstanceId)),
+                    .Column<string>(nameof(BookmarkIndex.WorkflowInstanceId))
+                    .Column<string>(nameof(BookmarkIndex.CorrelationId)),
                 CollectionNames.Bookmarks);
 
             return 1;

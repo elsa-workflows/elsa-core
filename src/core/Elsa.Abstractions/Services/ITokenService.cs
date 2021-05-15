@@ -1,4 +1,4 @@
-namespace Elsa.Activities.Http.Services
+namespace Elsa.Services
 {
     public interface ITokenService
     {

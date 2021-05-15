@@ -26,26 +26,34 @@ namespace Elsa.Bookmarks
             _serializerSettings = new JsonSerializerSettings().ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
         }
 
-        public async Task<IEnumerable<BookmarkFinderResult>> FindBookmarksAsync(string activityType, IEnumerable<IBookmark> bookmarks, string? tenantId, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<BookmarkFinderResult>> FindBookmarksAsync(string activityType, IEnumerable<IBookmark> bookmarks, string? correlationId = default, string? tenantId = default, CancellationToken cancellationToken = default)
         {
             var triggerList = bookmarks as ICollection<IBookmark> ?? bookmarks.ToList();
+            
             var specification = !triggerList.Any()
                 ? new BookmarkSpecification(activityType, tenantId)
-                : BuildSpecification(activityType, triggerList, tenantId);
+                : BuildSpecification(activityType, triggerList, correlationId, tenantId);
 
             var records = await _bookmarkStore.FindManyAsync(specification, cancellationToken: cancellationToken);
             return SelectResults(records);
         }
 
-        private ISpecification<Bookmark> BuildSpecification(string activityType, IEnumerable<IBookmark> bookmarks, string? tenantId) => 
-            bookmarks
+        private ISpecification<Bookmark> BuildSpecification(string activityType, IEnumerable<IBookmark> bookmarks, string? correlationId, string? tenantId)
+        {
+            var specification = bookmarks
                 .Select(trigger => _hasher.Hash(trigger))
                 .Aggregate(Specification<Bookmark>.None, (current, hash) => current.Or(new BookmarkHashSpecification(hash, activityType, tenantId)));
+
+            if (correlationId != null)
+                specification = specification.And(new CorrelationIdSpecification(correlationId));
+
+            return specification;
+        }
 
         private IEnumerable<BookmarkFinderResult> SelectResults(IEnumerable<Bookmark> bookmarks) =>
             from bookmark in bookmarks
             let bookmarkType = Type.GetType(bookmark.ModelType)
             let model = (IBookmark) JsonConvert.DeserializeObject(bookmark.Model, bookmarkType, _serializerSettings)!
-            select new BookmarkFinderResult(bookmark.WorkflowInstanceId, bookmark.ActivityId, model);
+            select new BookmarkFinderResult(bookmark.WorkflowInstanceId, bookmark.ActivityId, model, bookmark.CorrelationId);
     }
 }

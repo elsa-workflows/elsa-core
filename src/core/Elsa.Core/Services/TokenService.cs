@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.DataProtection;
 using Newtonsoft.Json;
 
-namespace Elsa.Activities.Http.Services
+namespace Elsa.Services
 {
     public class TokenService : ITokenService
     {
@@ -9,7 +9,7 @@ namespace Elsa.Activities.Http.Services
 
         public TokenService(IDataProtectionProvider dataProtectionProvider)
         {
-            _dataProtector = dataProtectionProvider.CreateProtector("HTTP Workflow Tokens");
+            _dataProtector = dataProtectionProvider.CreateProtector("Elsa Tokens");
         }
 
         public string CreateToken<T>(T payload)
