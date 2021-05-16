@@ -65,7 +65,7 @@ namespace Elsa.Services
             var correlationId = context.CorrelationId;
 
             if (!string.IsNullOrWhiteSpace(correlationId))
-                return await CollectResumeableOrStartableCorrelatedWorkflowsAsync(context, cancellationToken);
+                return await CollectResumableOrStartableCorrelatedWorkflowsAsync(context, cancellationToken);
 
             if (!string.IsNullOrWhiteSpace(context.WorkflowInstanceId))
                 return await CollectSpecificWorkflowInstanceAsync(context, cancellationToken);
@@ -199,8 +199,11 @@ namespace Elsa.Services
         public async Task DispatchPendingWorkflowsAsync(IEnumerable<PendingWorkflow> pendingWorkflows, object? input, CancellationToken cancellationToken = default)
         {
             foreach (var pendingWorkflow in pendingWorkflows)
-                await _workflowInstanceDispatcher.DispatchAsync(new ExecuteWorkflowInstanceRequest(pendingWorkflow.WorkflowInstanceId, pendingWorkflow.ActivityId, input), cancellationToken);
+                await DispatchPendingWorkflowAsync(pendingWorkflow, input, cancellationToken);
         }
+        
+        public async Task DispatchPendingWorkflowAsync(PendingWorkflow pendingWorkflow, object? input, CancellationToken cancellationToken = default) => 
+            await _workflowInstanceDispatcher.DispatchAsync(new ExecuteWorkflowInstanceRequest(pendingWorkflow.WorkflowInstanceId, pendingWorkflow.ActivityId, input), cancellationToken);
 
         public async Task ExecuteStartableWorkflowAsync(StartableWorkflow startableWorkflow, object? input, CancellationToken cancellationToken = default)
         {
@@ -242,7 +245,7 @@ namespace Elsa.Services
             return pendingWorkflows;
         }
 
-        private async Task<IEnumerable<PendingWorkflow>> CollectResumeableOrStartableCorrelatedWorkflowsAsync(CollectWorkflowsContext context, CancellationToken cancellationToken)
+        private async Task<IEnumerable<PendingWorkflow>> CollectResumableOrStartableCorrelatedWorkflowsAsync(CollectWorkflowsContext context, CancellationToken cancellationToken)
         {
             var correlationId = context.CorrelationId!;
             var lockKey = correlationId;
