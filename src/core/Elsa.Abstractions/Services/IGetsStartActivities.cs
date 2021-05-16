@@ -6,7 +6,7 @@ namespace Elsa.Services
     /// <summary>
     /// An object which gets the starting activities for a specified <see cref="ICompositeActivityBlueprint"/>.
     /// </summary>
-    public interface IGetsStartActivitiesForCompositeActivityBlueprint
+    public interface IGetsStartActivities
     {
         /// <summary>
         /// Gets a collection of the starting activities for the specified composite activity blueprint.

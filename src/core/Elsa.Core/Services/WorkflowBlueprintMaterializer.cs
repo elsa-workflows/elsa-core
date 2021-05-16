@@ -16,13 +16,13 @@ namespace Elsa.Services
     public class WorkflowBlueprintMaterializer : IWorkflowBlueprintMaterializer
     {
         private readonly IActivityTypeService _activityTypeService;
-        private readonly IGetsStartActivitiesForCompositeActivityBlueprint _startingActivitiesProvider;
+        private readonly IGetsStartActivities _startingActivitiesProvider;
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger _logger;
 
         public WorkflowBlueprintMaterializer(
             IActivityTypeService activityTypeService,
-            IGetsStartActivitiesForCompositeActivityBlueprint startingActivitiesProvider,
+            IGetsStartActivities startingActivitiesProvider,
             IServiceProvider serviceProvider,
             ILogger<WorkflowBlueprintMaterializer> logger)
         {

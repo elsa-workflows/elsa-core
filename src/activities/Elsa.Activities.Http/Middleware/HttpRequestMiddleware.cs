@@ -1,9 +1,10 @@
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Bookmarks;
 using Elsa.Activities.Http.Extensions;
-using Elsa.Dispatch;
-using MediatR;
+using Elsa.Services;
 using Microsoft.AspNetCore.Http;
+using Newtonsoft.Json;
+using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Activities.Http.Middleware
 {
@@ -15,7 +16,7 @@ namespace Elsa.Activities.Http.Middleware
 
         public HttpEndpointMiddleware(RequestDelegate next) => _next = next;
 
-        public async Task InvokeAsync(HttpContext httpContext, IMediator mediator, IWorkflowInstanceDispatcher workflowInstanceDispatcher)
+        public async Task InvokeAsync(HttpContext httpContext, IWorkflowLaunchpad workflowLaunchpad)
         {
             var path = httpContext.Request.Path.Value.ToLowerInvariant();
             var method = httpContext.Request.Method!.ToLowerInvariant();
@@ -26,19 +27,29 @@ namespace Elsa.Activities.Http.Middleware
             const string activityType = nameof(HttpEndpoint);
             var trigger = new HttpEndpointBookmark(path, method, null);
             var bookmark = new HttpEndpointBookmark(path, method, correlationId?.ToLowerInvariant());
-            var triggerRequest = new TriggerWorkflowsRequest(activityType, bookmark, trigger, default, correlationId, default, TenantId, Execute: !useDispatch);
-            var response = await mediator.Send(triggerRequest, cancellationToken);
+            var collectWorkflowsContext = new CollectWorkflowsContext(activityType, bookmark, trigger, default, correlationId, default, TenantId);
+            var pendingWorkflows = await workflowLaunchpad.CollectWorkflowsAsync(collectWorkflowsContext, cancellationToken).ToList();
 
             if (useDispatch)
             {
-                // We created workflow instances but haven't scheduled them for execution yet. Use the dispatcher to schedule them for execution.
-                workflowInstanceDispatcher.DispatchAsync(new ExecuteWorkflowInstanceRequest())
+                await workflowLaunchpad.DispatchPendingWorkflowsAsync(pendingWorkflows, cancellationToken: cancellationToken);
+
+                if (pendingWorkflows.Count > 0)
+                {
+                    httpContext.Response.ContentType = "application/json";
+                    await httpContext.Response.WriteAsync(JsonConvert.SerializeObject(pendingWorkflows), cancellationToken);
+                    return;
+                }
+            }
+            else
+            {
+                await workflowLaunchpad.ExecutePendingWorkflowsAsync(pendingWorkflows, cancellationToken: cancellationToken);
+                
+                if (pendingWorkflows.Count > 0)
+                    return;
             }
             
-            if (response.WorkflowInstanceIds.Count == 0)
-            {
-                await _next(httpContext);
-            }
+            await _next(httpContext);
         }
     }
 }

@@ -13,11 +13,11 @@ namespace Elsa.Services
         [Theory(DisplayName = "The Build method should return a workflow blueprint with the WorkflowBurst persistence behaviour if no behaviour was specified"), AutoMoqData]
         public void BuildShouldReturnWorkflowBlueprintWithWorkflowBurstPersistenceBehaviourIfNoBehaviourSpecified([WithAutofixtureResolution, Frozen] IServiceProvider serviceProvider,
             IIdGenerator idGenerator,
-            IGetsStartActivitiesForCompositeActivityBlueprint getsStartActivitiesForCompositeActivityBlueprint,
+            IGetsStartActivities getsStartActivities,
             string idPrefix)
         {
             var workflow = new NoOpWorkflow();
-            var sut = new WorkflowBuilder(idGenerator, serviceProvider, getsStartActivitiesForCompositeActivityBlueprint);
+            var sut = new WorkflowBuilder(idGenerator, serviceProvider, getsStartActivities);
             var blueprint = sut.Build(workflow, idPrefix);
 
             Assert.Equal(WorkflowPersistenceBehavior.WorkflowBurst, blueprint.PersistenceBehavior);

@@ -14,11 +14,11 @@ namespace Elsa.Builders
     public class CompositeActivityBuilder : ActivityBuilder, ICompositeActivityBuilder
     {
         private readonly Func<ICompositeActivityBuilder> _compositeActivityBuilderFactory;
-        private readonly IGetsStartActivitiesForCompositeActivityBlueprint _startingActivitiesProvider;
+        private readonly IGetsStartActivities _startingActivitiesProvider;
 
         internal CompositeActivityBuilder(
             IServiceProvider serviceProvider,
-            IGetsStartActivitiesForCompositeActivityBlueprint startingActivitiesProvider,
+            IGetsStartActivities startingActivitiesProvider,
             Type activityType,
             string activityTypeName) : this(serviceProvider, startingActivitiesProvider)
         {
@@ -27,7 +27,7 @@ namespace Elsa.Builders
             WorkflowBuilder = this;
         }
 
-        public CompositeActivityBuilder(IServiceProvider serviceProvider, IGetsStartActivitiesForCompositeActivityBlueprint startingActivitiesProvider)
+        public CompositeActivityBuilder(IServiceProvider serviceProvider, IGetsStartActivities startingActivitiesProvider)
         {
             _startingActivitiesProvider = startingActivitiesProvider ?? throw new ArgumentNullException(nameof(startingActivitiesProvider));
             ServiceProvider = serviceProvider;

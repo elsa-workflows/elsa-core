@@ -6,6 +6,7 @@ using Elsa.Dispatch;
 using Elsa.Exceptions;
 using Elsa.Models;
 using Elsa.Persistence;
+using Elsa.Services.Models;
 
 namespace Elsa.Services
 {
@@ -15,14 +16,14 @@ namespace Elsa.Services
         private readonly IWorkflowInstanceDispatcher _workflowInstanceDispatcher;
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
-        private readonly IGetsStartActivitiesForCompositeActivityBlueprint _startingActivitiesProvider;
+        private readonly IGetsStartActivities _startingActivitiesProvider;
 
         public WorkflowReviver(
             IResumesWorkflow resumesWorkflow,
             IWorkflowInstanceDispatcher workflowInstanceDispatcher,
             IWorkflowRegistry workflowRegistry,
             IWorkflowInstanceStore workflowInstanceStore,
-            IGetsStartActivitiesForCompositeActivityBlueprint startingActivitiesProvider)
+            IGetsStartActivities startingActivitiesProvider)
         {
             _resumesWorkflow = resumesWorkflow;
             _workflowInstanceDispatcher = workflowInstanceDispatcher;
@@ -63,7 +64,7 @@ namespace Elsa.Services
             return workflowInstance;
         }
 
-        public async Task<WorkflowInstance> ReviveAndRunAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken)
+        public async Task<RunWorkflowResult> ReviveAndRunAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken)
         {
             workflowInstance = await ReviveAsync(workflowInstance, cancellationToken);
             return await _resumesWorkflow.ResumeWorkflowAsync(workflowInstance, null, null, cancellationToken);

@@ -7,7 +7,7 @@ namespace Elsa.Services
 {
     public interface IWorkflowRunner
     {
-        Task<WorkflowInstance> RunWorkflowAsync(
+        Task<RunWorkflowResult> RunWorkflowAsync(
             IWorkflowBlueprint workflowDefinition,
             WorkflowInstance workflowInstance,
             string? activityId = default,

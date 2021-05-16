@@ -17,13 +17,13 @@ namespace Elsa.Triggers
         readonly IActivityTypeService _activityTypeService;
         readonly ICreatesWorkflowExecutionContextForWorkflowBlueprint _workflowExecutionContextFactory;
         readonly IGetsTriggersForActivityBlueprintAndWorkflow _triggerProvider;
-        readonly IGetsStartActivitiesForCompositeActivityBlueprint _startingActivitiesProvider;
+        readonly IGetsStartActivities _startingActivitiesProvider;
 
         public TriggersForBlueprintsProvider(
             IActivityTypeService activityTypeService,
             ICreatesWorkflowExecutionContextForWorkflowBlueprint workflowExecutionContextFactory,
             IGetsTriggersForActivityBlueprintAndWorkflow triggerProvider,
-            IGetsStartActivitiesForCompositeActivityBlueprint startingActivitiesProvider)
+            IGetsStartActivities startingActivitiesProvider)
         {
             _activityTypeService = activityTypeService ?? throw new ArgumentNullException(nameof(activityTypeService));
             _workflowExecutionContextFactory = workflowExecutionContextFactory ?? throw new ArgumentNullException(nameof(workflowExecutionContextFactory));

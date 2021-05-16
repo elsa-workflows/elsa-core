@@ -1,12 +1,13 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
+using Elsa.Services.Models;
 
 namespace Elsa.Services
 {
     public interface IResumesWorkflow
     {
-        Task<WorkflowInstance> ResumeWorkflowAsync(
+        Task<RunWorkflowResult> ResumeWorkflowAsync(
             WorkflowInstance workflowInstance,
             string? activityId = default,
             object? input = default,
