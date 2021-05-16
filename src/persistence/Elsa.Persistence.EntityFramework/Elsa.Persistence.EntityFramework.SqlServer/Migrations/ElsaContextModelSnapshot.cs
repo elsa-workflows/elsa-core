@@ -150,6 +150,7 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
                         .HasDatabaseName("IX_WorkflowDefinition_Version");
 
                     b.HasIndex("DefinitionId", "Version")
+                        .IsUnique()
                         .HasDatabaseName("IX_WorkflowDefinition_DefinitionId_VersionId");
 
                     b.ToTable("WorkflowDefinitions");

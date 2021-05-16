@@ -10,7 +10,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Elsa.Persistence.EntityFramework.PostgreSql.Migrations
 {
     [DbContext(typeof(ElsaContext))]
-    [Migration("20210515172334_Initial")]
+    [Migration("20210516192655_Initial")]
     partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -152,6 +152,7 @@ namespace Elsa.Persistence.EntityFramework.PostgreSql.Migrations
                         .HasDatabaseName("IX_WorkflowDefinition_Version");
 
                     b.HasIndex("DefinitionId", "Version")
+                        .IsUnique()
                         .HasDatabaseName("IX_WorkflowDefinition_DefinitionId_VersionId");
 
                     b.ToTable("WorkflowDefinitions");

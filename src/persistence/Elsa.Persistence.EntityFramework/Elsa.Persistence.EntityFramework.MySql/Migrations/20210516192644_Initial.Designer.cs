@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.Persistence.EntityFramework.MySql.Migrations
 {
     [DbContext(typeof(ElsaContext))]
-    [Migration("20210515172325_Initial")]
+    [Migration("20210516192644_Initial")]
     partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -150,6 +150,7 @@ namespace Elsa.Persistence.EntityFramework.MySql.Migrations
                         .HasDatabaseName("IX_WorkflowDefinition_Version");
 
                     b.HasIndex("DefinitionId", "Version")
+                        .IsUnique()
                         .HasDatabaseName("IX_WorkflowDefinition_DefinitionId_VersionId");
 
                     b.ToTable("WorkflowDefinitions");

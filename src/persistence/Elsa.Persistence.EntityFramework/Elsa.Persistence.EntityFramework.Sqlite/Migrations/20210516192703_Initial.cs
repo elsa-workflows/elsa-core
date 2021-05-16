@@ -1,7 +1,7 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
-namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
+namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
 {
     public partial class Initial : Migration
     {
@@ -15,15 +15,15 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
                 schema: "Elsa",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    TenantId = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    Hash = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Model = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ModelType = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ActivityType = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    ActivityId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    WorkflowInstanceId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    CorrelationId = table.Column<string>(type: "nvarchar(450)", nullable: true)
+                    Id = table.Column<string>(type: "TEXT", nullable: false),
+                    TenantId = table.Column<string>(type: "TEXT", nullable: true),
+                    Hash = table.Column<string>(type: "TEXT", nullable: false),
+                    Model = table.Column<string>(type: "TEXT", nullable: false),
+                    ModelType = table.Column<string>(type: "TEXT", nullable: false),
+                    ActivityType = table.Column<string>(type: "TEXT", nullable: false),
+                    ActivityId = table.Column<string>(type: "TEXT", nullable: false),
+                    WorkflowInstanceId = table.Column<string>(type: "TEXT", nullable: false),
+                    CorrelationId = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -35,20 +35,20 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
                 schema: "Elsa",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    DefinitionId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    TenantId = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    Name = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    DisplayName = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Version = table.Column<int>(type: "int", nullable: false),
-                    IsSingleton = table.Column<bool>(type: "bit", nullable: false),
-                    PersistenceBehavior = table.Column<int>(type: "int", nullable: false),
-                    DeleteCompletedInstances = table.Column<bool>(type: "bit", nullable: false),
-                    IsPublished = table.Column<bool>(type: "bit", nullable: false),
-                    IsLatest = table.Column<bool>(type: "bit", nullable: false),
-                    Tag = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    Data = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Id = table.Column<string>(type: "TEXT", nullable: false),
+                    DefinitionId = table.Column<string>(type: "TEXT", nullable: false),
+                    TenantId = table.Column<string>(type: "TEXT", nullable: true),
+                    Name = table.Column<string>(type: "TEXT", nullable: true),
+                    DisplayName = table.Column<string>(type: "TEXT", nullable: true),
+                    Description = table.Column<string>(type: "TEXT", nullable: true),
+                    Version = table.Column<int>(type: "INTEGER", nullable: false),
+                    IsSingleton = table.Column<bool>(type: "INTEGER", nullable: false),
+                    PersistenceBehavior = table.Column<int>(type: "INTEGER", nullable: false),
+                    DeleteCompletedInstances = table.Column<bool>(type: "INTEGER", nullable: false),
+                    IsPublished = table.Column<bool>(type: "INTEGER", nullable: false),
+                    IsLatest = table.Column<bool>(type: "INTEGER", nullable: false),
+                    Tag = table.Column<string>(type: "TEXT", nullable: true),
+                    Data = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -60,16 +60,16 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
                 schema: "Elsa",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    TenantId = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    WorkflowInstanceId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    ActivityId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    ActivityType = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Timestamp = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    EventName = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Message = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Source = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Data = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Id = table.Column<string>(type: "TEXT", nullable: false),
+                    TenantId = table.Column<string>(type: "TEXT", nullable: true),
+                    WorkflowInstanceId = table.Column<string>(type: "TEXT", nullable: false),
+                    ActivityId = table.Column<string>(type: "TEXT", nullable: false),
+                    ActivityType = table.Column<string>(type: "TEXT", nullable: false),
+                    Timestamp = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    EventName = table.Column<string>(type: "TEXT", nullable: true),
+                    Message = table.Column<string>(type: "TEXT", nullable: true),
+                    Source = table.Column<string>(type: "TEXT", nullable: true),
+                    Data = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -81,21 +81,21 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
                 schema: "Elsa",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    DefinitionId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    TenantId = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    Version = table.Column<int>(type: "int", nullable: false),
-                    WorkflowStatus = table.Column<int>(type: "int", nullable: false),
-                    CorrelationId = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    ContextType = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    ContextId = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    Name = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    LastExecutedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    FinishedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    CancelledAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    FaultedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    Data = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Id = table.Column<string>(type: "TEXT", nullable: false),
+                    DefinitionId = table.Column<string>(type: "TEXT", nullable: false),
+                    TenantId = table.Column<string>(type: "TEXT", nullable: true),
+                    Version = table.Column<int>(type: "INTEGER", nullable: false),
+                    WorkflowStatus = table.Column<int>(type: "INTEGER", nullable: false),
+                    CorrelationId = table.Column<string>(type: "TEXT", nullable: true),
+                    ContextType = table.Column<string>(type: "TEXT", nullable: true),
+                    ContextId = table.Column<string>(type: "TEXT", nullable: true),
+                    Name = table.Column<string>(type: "TEXT", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    LastExecutedAt = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    FinishedAt = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    CancelledAt = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    FaultedAt = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    Data = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -154,7 +154,8 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
                 name: "IX_WorkflowDefinition_DefinitionId_VersionId",
                 schema: "Elsa",
                 table: "WorkflowDefinitions",
-                columns: new[] { "DefinitionId", "Version" });
+                columns: new[] { "DefinitionId", "Version" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowDefinition_IsLatest",
