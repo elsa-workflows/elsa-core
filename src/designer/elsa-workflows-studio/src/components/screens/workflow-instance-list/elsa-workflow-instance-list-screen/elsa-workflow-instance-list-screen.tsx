@@ -6,6 +6,7 @@ import {createElsaClient} from "../../../../services/elsa-client";
 import {OrderBy, PagedList, VersionOptions, WorkflowBlueprintSummary, WorkflowDefinitionSummary, WorkflowInstanceSummary, WorkflowStatus} from "../../../../models";
 import {DropdownButtonItem, DropdownButtonOrigin} from "../../../controls/elsa-dropdown-button/models";
 import {Map, parseQuery} from '../../../../utils/utils';
+import moment from "moment";
 
 @Component({
     tag: 'elsa-workflow-instance-list-screen',
@@ -249,12 +250,15 @@ export class ElsaWorkflowInstanceListScreen {
                                     <input type="checkbox" value="true" checked={this.selectAllChecked} onChange={e => this.onSelectAllCheckChange(e)} class="focus:elsa-ring-blue-500 elsa-h-4 elsa-w-4 elsa-text-blue-600 elsa-border-gray-300 elsa-rounded"/>
                                 </th>
                                 <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
-                                    <span class="lg:elsa-pl-2">ID</span>
+                                    ID
+                                </th>
+                                <th class="hidden md-elsa-table-cell elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
+                                    Correlation ID
                                 </th>
                                 <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
                                     Workflow
                                 </th>
-                                <th class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
+                                <th class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-right elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
                                     Version
                                 </th>
                                 <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
@@ -286,6 +290,10 @@ export class ElsaWorkflowInstanceListScreen {
                                 const viewUrl = `/workflow-instances/${workflowInstance.id}`;
                                 const instanceName = !workflowInstance.name ? '' : workflowInstance.name;
                                 const isSelected = this.selectedWorkflowInstanceIds.findIndex(x => x === workflowInstance.id) >= 0;
+                                const createdAt = moment(workflowInstance.createdAt);
+                                const finishedAt = !!workflowInstance.finishedAt ? moment(workflowInstance.finishedAt) : null;
+                                const lastExecutedAt = !!workflowInstance.lastExecutedAt ? moment(workflowInstance.lastExecutedAt) : null;
+                                const faultedAt = !!workflowInstance.faultedAt ? moment(workflowInstance.faultedAt) : null;
 
                                 return <tr>
                                     <td class="elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-font-medium elsa-text-gray-900">
@@ -295,12 +303,15 @@ export class ElsaWorkflowInstanceListScreen {
                                     <td class="elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-font-medium elsa-text-gray-900">
                                         <stencil-route-link url={viewUrl} anchorClass="elsa-truncate hover:elsa-text-gray-600">{workflowInstance.id}</stencil-route-link>
                                     </td>
+                                    <td class="elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-font-medium elsa-text-gray-900">
+                                        {!!workflowInstance.correlationId ? workflowInstance.correlationId : ''}
+                                    </td>
                                     <td class="elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-font-medium elsa-text-gray-900 elsa-text-left">
                                         <a href={`/workflow-registry/${workflowInstance.definitionId}/viewer`} class="elsa-truncate hover:elsa-text-gray-600">
                                             {displayName}
                                         </a>
                                     </td>
-                                    <td class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-uppercase">
+                                    <td class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-right elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-uppercase">
                                         {workflowInstance.version}
                                     </td>
                                     <td class="elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-font-medium elsa-text-gray-900 elsa-text-left">
@@ -313,16 +324,16 @@ export class ElsaWorkflowInstanceListScreen {
                                         </div>
                                     </td>
                                     <td class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-text-left">
-                                        {workflowInstance.createdAt}
+                                        {createdAt.format('DD-MM-YYYY HH:mm:ss')}
                                     </td>
                                     <td class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-text-left">
-                                        {!!workflowInstance.finishedAt ? workflowInstance.finishedAt.toString() : '-'}
+                                        {!!finishedAt ? finishedAt.format('DD-MM-YYYY HH:mm:ss') : '-'}
                                     </td>
                                     <td class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-text-left">
-                                        {!!workflowInstance.lastExecutedAt ? workflowInstance.lastExecutedAt.toString() : '-'}
+                                        {!!lastExecutedAt ? lastExecutedAt.format('DD-MM-YYYY HH:mm:ss') : '-'}
                                     </td>
                                     <td class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-text-left">
-                                        {!!workflowInstance.faultedAt ? workflowInstance.faultedAt.toString() : '-'}
+                                        {!!faultedAt ? faultedAt.format('DD-MM-YYYY HH:mm:ss') : '-'}
                                     </td>
                                     <td class="elsa-pr-6">
                                         <elsa-context-menu history={this.history} menuItems={[
