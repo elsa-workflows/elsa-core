@@ -46,7 +46,7 @@ namespace Elsa.Activities.Http.Middleware
             var pendingWorkflowInstanceIds = pendingWorkflows.Select(x => x.WorkflowInstanceId).Distinct();
             var pendingWorkflowInstances = (await workflowInstanceStore.FindManyAsync(new WorkflowInstanceIdsSpecification(pendingWorkflowInstanceIds), cancellationToken: cancellationToken)).ToDictionary(x => x.Id);
             var workflowDefinitionIds = pendingWorkflowInstances.Values.Select(x => x.DefinitionId).Distinct().ToHashSet();
-            var workflowBlueprints = (await workflowRegistry.FindManyAsync(x => workflowDefinitionIds.Contains(x.Id), cancellationToken)).ToDictionary(x => x.Id);
+            var workflowBlueprints = (await workflowRegistry.FindManyAsync(x => x.IsPublished && workflowDefinitionIds.Contains(x.Id), cancellationToken)).ToDictionary(x => x.Id);
             var serviceProvider = httpContext.RequestServices;
             var workflowBlueprintWrappers = (await Task.WhenAll(workflowBlueprints.Values.Select(async x => await workflowBlueprintReflector.ReflectAsync(serviceProvider, x, cancellationToken)))).ToDictionary(x => x.WorkflowBlueprint.Id);
 
