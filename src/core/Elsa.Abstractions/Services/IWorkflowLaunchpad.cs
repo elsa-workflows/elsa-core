@@ -60,6 +60,11 @@ namespace Elsa.Services
         Task DispatchPendingWorkflowsAsync(IEnumerable<PendingWorkflow> pendingWorkflows, object? input = default, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Dispatches a pending workflow for execution.
+        /// </summary>
+        Task DispatchPendingWorkflowAsync(PendingWorkflow pendingWorkflow, object? input, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Executes the specified startable workflow.
         /// </summary>
         Task ExecuteStartableWorkflowAsync(StartableWorkflow startableWorkflow, object? input, CancellationToken cancellationToken = default);

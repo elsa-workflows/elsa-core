@@ -27,10 +27,8 @@ namespace Microsoft.Extensions.DependencyInjection
 
         public static IServiceCollection AddHttpServices(this IServiceCollection services, Action<HttpActivityOptions>? configureOptions = null)
         {
-            if (configureOptions != null)
-            {
+            if (configureOptions != null) 
                 services.Configure(configureOptions);
-            }
 
             services.TryAddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddHttpClient(nameof(SendHttpRequest));

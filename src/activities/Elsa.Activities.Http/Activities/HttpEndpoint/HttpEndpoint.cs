@@ -24,17 +24,6 @@ namespace Elsa.Activities.Http
     )]
     public class HttpEndpoint : Activity
     {
-        private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly IEnumerable<IHttpRequestBodyParser> _parsers;
-
-        public HttpEndpoint(
-            IHttpContextAccessor httpContextAccessor,
-            IEnumerable<IHttpRequestBodyParser> parsers)
-        {
-            _httpContextAccessor = httpContextAccessor;
-            _parsers = parsers;
-        }
-
         /// <summary>
         /// The path that triggers this activity. 
         /// </summary>
@@ -69,36 +58,13 @@ namespace Elsa.Activities.Http
         [ActivityProperty(Category = PropertyCategories.Advanced)]
         public Type? TargetType { get; set; }
 
-        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context) => context.WorkflowExecutionContext.IsFirstPass ? await ExecuteInternalAsync(context.CancellationToken) : Suspend();
+        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => context.WorkflowExecutionContext.IsFirstPass ? ExecuteInternal(context) : Suspend();
+        protected override IActivityExecutionResult OnResume(ActivityExecutionContext context) => ExecuteInternal(context);
 
-        protected override ValueTask<IActivityExecutionResult> OnResumeAsync(ActivityExecutionContext context) => ExecuteInternalAsync(context.CancellationToken);
-
-        private async ValueTask<IActivityExecutionResult> ExecuteInternalAsync(CancellationToken cancellationToken)
+        private IActivityExecutionResult ExecuteInternal(ActivityExecutionContext context)
         {
-            var request = _httpContextAccessor.HttpContext.Request;
-
-            var model = new HttpRequestModel
-            {
-                Path = new Uri(request.Path.ToString(), UriKind.Relative),
-                QueryString = request.Query.ToDictionary(x => x.Key, x => x.Value.ToString()),
-                Headers = request.Headers.ToDictionary(x => x.Key, x => x.Value.ToString()),
-                Method = request.Method
-            };
-
-            if (ReadContent)
-            {
-                var parser = SelectContentParser(request.ContentType);
-                model.Body = await parser.ParseAsync(request, TargetType, cancellationToken);
-            }
-
+            var model = context.GetInput<HttpRequestModel>()!;
             return Done(model);
-        }
-
-        private IHttpRequestBodyParser SelectContentParser(string contentType)
-        {
-            var simpleContentType = contentType?.Split(';').First();
-            var formatters = _parsers.OrderByDescending(x => x.Priority).ToList();
-            return formatters.FirstOrDefault(x => x.SupportedContentTypes.Contains(simpleContentType, StringComparer.OrdinalIgnoreCase)) ?? formatters.Last();
         }
     }
 }
