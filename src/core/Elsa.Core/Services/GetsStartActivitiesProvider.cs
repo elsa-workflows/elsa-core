@@ -5,9 +5,9 @@ using Elsa.Services.Models;
 namespace Elsa.Services
 {
     /// <summary>
-    /// Default implementation of <see cref="IGetsStartActivitiesForCompositeActivityBlueprint"/>.
+    /// Default implementation of <see cref="IGetsStartActivities"/>.
     /// </summary>
-    public class StartActivitiesForCompositeActivityBlueprintProvider : IGetsStartActivitiesForCompositeActivityBlueprint
+    public class GetsStartActivitiesProvider : IGetsStartActivities
     {
         /// <summary>
         /// Gets a collection of the starting activities for the specified composite activity blueprint.

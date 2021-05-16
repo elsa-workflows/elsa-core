@@ -9,7 +9,7 @@ namespace Elsa.Activities.Entity.Extensions
     public static class WorkflowRunnerExtensions
     {
         // TODO: Design multi-tenancy 
-        private const string TenantId = default;
+        private const string? TenantId = default;
 
         public static async Task TriggerEntityChangedWorkflowsAsync(
             this IWorkflowDispatcher workflowDispatcher,
@@ -37,7 +37,7 @@ namespace Elsa.Activities.Entity.Extensions
                 correlationId
             );
 
-            await workflowDispatcher.DispatchAsync(new TriggerWorkflowsRequest(activityType, bookmark, trigger, input, correlationId, contextId, TenantId), cancellationToken);
+            await workflowDispatcher.DispatchAsync(new TriggerWorkflowsRequest(activityType, bookmark, trigger, input, correlationId, default, contextId, TenantId), cancellationToken);
         }
     }
 }

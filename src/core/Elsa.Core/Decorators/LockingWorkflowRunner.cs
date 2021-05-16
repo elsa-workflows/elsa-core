@@ -23,7 +23,7 @@ namespace Elsa.Decorators
             _elsaOptions = elsaOptions;
         }
 
-        public async Task<WorkflowInstance> RunWorkflowAsync(
+        public async Task<RunWorkflowResult> RunWorkflowAsync(
             IWorkflowBlueprint workflowBlueprint,
             WorkflowInstance workflowInstance,
             string? activityId = default,
@@ -37,9 +37,9 @@ namespace Elsa.Decorators
             if (handle == null)
                 throw new LockAcquisitionException("Could not acquire a lock within the configured amount of time");
 
-            workflowInstance =  await _workflowRunner.RunWorkflowAsync(workflowBlueprint, workflowInstance, activityId, input, cancellationToken);
+            var runWorkflowResult =  await _workflowRunner.RunWorkflowAsync(workflowBlueprint, workflowInstance, activityId, input, cancellationToken);
             await handle.DisposeAsync();
-            return workflowInstance;
+            return runWorkflowResult;
         }
     }
 }

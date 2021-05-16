@@ -10,7 +10,7 @@ namespace Elsa.Services
     public class StartActivitiesForCompositeActivityBlueprintProviderTests
     {
         [Theory(DisplayName = "The GetStartActivities returns only activities that have no inbound workflow connections"), AutoMoqData]
-        public void GetStartActivitiesReturnsAllActivitiesWhichHaveNoInboundConnections(StartActivitiesForCompositeActivityBlueprintProvider sut,
+        public void GetStartActivitiesReturnsAllActivitiesWhichHaveNoInboundConnections(GetsStartActivitiesProvider sut,
                                                                                         IWorkflowBlueprint workflowBlueprint,
                                                                                         IActivityBlueprint activityBlueprint1,
                                                                                         IActivityBlueprint activityBlueprint2,

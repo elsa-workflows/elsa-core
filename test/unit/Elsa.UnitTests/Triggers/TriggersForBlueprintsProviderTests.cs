@@ -19,7 +19,7 @@ namespace Elsa.Triggers
         public async Task GetTriggersAsyncGetsAllTriggersForAllBlueprintsStartActivitiesAndCompatibleBookmarks([Frozen] IActivityTypeService activityTypeService,
                                                                                                                [Frozen] ICreatesWorkflowExecutionContextForWorkflowBlueprint workflowExecutionContextFactory,
                                                                                                                [Frozen] IGetsTriggersForActivityBlueprintAndWorkflow triggerProvider,
-                                                                                                               [Frozen] IGetsStartActivitiesForCompositeActivityBlueprint startingActivitiesProvider,
+                                                                                                               [Frozen] IGetsStartActivities startingActivitiesProvider,
                                                                                                                TriggersForBlueprintsProvider sut,
                                                                                                                IWorkflowBlueprint workflowBlueprint1,
                                                                                                                IWorkflowBlueprint workflowBlueprint2,

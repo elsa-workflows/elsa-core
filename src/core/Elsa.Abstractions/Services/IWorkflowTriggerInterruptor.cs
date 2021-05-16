@@ -11,10 +11,10 @@ namespace Elsa.Services
     /// </summary>
     public interface IWorkflowTriggerInterruptor
     {
-        Task<WorkflowInstance> InterruptActivityAsync(WorkflowInstance workflowInstance, string activityId, object? input = default, CancellationToken cancellationToken = default);
-        Task<WorkflowInstance> InterruptActivityAsync(IWorkflowBlueprint workflowBlueprint, WorkflowInstance workflowInstance, string activityId, object? input = default, CancellationToken cancellationToken = default);
-        Task<WorkflowInstance> InterruptActivityTypeAsync(IWorkflowBlueprint workflowBlueprint, WorkflowInstance workflowInstance, string activityType, object? input = default, CancellationToken cancellationToken = default);
-        Task<WorkflowInstance> InterruptActivityTypeAsync(WorkflowInstance workflowInstance, string activityType, object? input = default, CancellationToken cancellationToken = default);
-        Task<IEnumerable<WorkflowInstance>> InterruptActivityTypeAsync(string activityType, object? input = default, CancellationToken cancellationToken = default);
+        Task<RunWorkflowResult> InterruptActivityAsync(WorkflowInstance workflowInstance, string activityId, object? input = default, CancellationToken cancellationToken = default);
+        Task<RunWorkflowResult> InterruptActivityAsync(IWorkflowBlueprint workflowBlueprint, WorkflowInstance workflowInstance, string activityId, object? input = default, CancellationToken cancellationToken = default);
+        Task<IEnumerable<RunWorkflowResult>> InterruptActivityTypeAsync(IWorkflowBlueprint workflowBlueprint, WorkflowInstance workflowInstance, string activityType, object? input = default, CancellationToken cancellationToken = default);
+        Task<IEnumerable<RunWorkflowResult>> InterruptActivityTypeAsync(WorkflowInstance workflowInstance, string activityType, object? input = default, CancellationToken cancellationToken = default);
+        Task<IEnumerable<RunWorkflowResult>> InterruptActivityTypeAsync(string activityType, object? input = default, CancellationToken cancellationToken = default);
     }
 }

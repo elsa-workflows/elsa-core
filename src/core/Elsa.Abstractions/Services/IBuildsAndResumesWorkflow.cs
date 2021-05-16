@@ -2,19 +2,20 @@
 using System.Threading.Tasks;
 using Elsa.Builders;
 using Elsa.Models;
+using Elsa.Services.Models;
 
 namespace Elsa.Services
 {
     public interface IBuildsAndResumesWorkflow
     {
-        Task<WorkflowInstance> BuildAndResumeWorkflowAsync<T>(
+        Task<RunWorkflowResult> BuildAndResumeWorkflowAsync<T>(
             WorkflowInstance workflowInstance,
             string? activityId = default,
             object? input = default,
             CancellationToken cancellationToken = default)
             where T : IWorkflow;
 
-        Task<WorkflowInstance> BuildAndResumeWorkflowAsync(
+        Task<RunWorkflowResult> BuildAndResumeWorkflowAsync(
             IWorkflow workflow,
             WorkflowInstance workflowInstance,
             string? activityId = default,

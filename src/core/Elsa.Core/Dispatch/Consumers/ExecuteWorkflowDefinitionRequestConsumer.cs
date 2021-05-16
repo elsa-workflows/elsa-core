@@ -1,13 +1,46 @@
 using System.Threading.Tasks;
+using Elsa.Models;
+using Elsa.Services;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using Rebus.Handlers;
 
 namespace Elsa.Dispatch.Consumers
 {
     public class ExecuteWorkflowDefinitionRequestConsumer : IHandleMessages<ExecuteWorkflowDefinitionRequest>
     {
-        private readonly IMediator _mediator;
-        public ExecuteWorkflowDefinitionRequestConsumer(IMediator mediator) => _mediator = mediator;
-        public async Task Handle(ExecuteWorkflowDefinitionRequest message) => await _mediator.Send(message);
+        private readonly IWorkflowLaunchpad _workflowLaunchpad;
+        private readonly IWorkflowRegistry _workflowRegistry;
+        private readonly ILogger _logger;
+
+        public ExecuteWorkflowDefinitionRequestConsumer(IWorkflowLaunchpad workflowLaunchpad, IWorkflowRegistry workflowRegistry, ILogger<ExecuteWorkflowDefinitionRequestConsumer> logger)
+        {
+            _workflowLaunchpad = workflowLaunchpad;
+            _workflowRegistry = workflowRegistry;
+            _logger = logger;
+        }
+
+        public async Task Handle(ExecuteWorkflowDefinitionRequest message)
+        {
+            var workflowDefinitionId = message.WorkflowDefinitionId;
+            var tenantId = message.TenantId;
+            var workflowBlueprint = await _workflowRegistry.GetAsync(workflowDefinitionId, tenantId, VersionOptions.Published);
+
+            if (workflowBlueprint == null)
+            {
+                _logger.LogWarning("Could not find workflow with ID {WorkflowDefinitionId}", workflowDefinitionId);
+                return;
+            }
+            
+            var startableWorkflow = await _workflowLaunchpad.CollectStartableWorkflowAsync(workflowBlueprint, message.ActivityId, message.CorrelationId, message.ContextId, tenantId);
+
+            if (startableWorkflow == null)
+            {
+                _logger.LogWarning("Could start workflow with ID {WorkflowDefinitionId}", workflowDefinitionId);
+                return;
+            }
+            
+            await _workflowLaunchpad.ExecuteStartableWorkflowAsync(startableWorkflow, message.Input);
+        }
     }
 }
