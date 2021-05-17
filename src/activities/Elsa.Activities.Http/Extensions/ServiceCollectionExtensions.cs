@@ -34,7 +34,6 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddHttpClient(nameof(SendHttpRequest));
 
             services
-                .AddSingleton<ITokenService, TokenService>()
                 .AddSingleton<IHttpRequestBodyParser, DefaultHttpRequestBodyParser>()
                 .AddSingleton<IHttpRequestBodyParser, JsonHttpRequestBodyParser>()
                 .AddSingleton<IHttpRequestBodyParser, FormHttpRequestBodyParser>()

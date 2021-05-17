@@ -119,6 +119,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IIdGenerator, IdGenerator>()
                 .AddScoped<IWorkflowRegistry, WorkflowRegistry>()
                 .AddSingleton<IActivityActivator, ActivityActivator>()
+                .AddSingleton<ITokenService, TokenService>()
                 .AddScoped<IWorkflowRunner, WorkflowRunner>()
                 .AddScoped<WorkflowStarter>()
                 .AddScoped<WorkflowResumer>()
