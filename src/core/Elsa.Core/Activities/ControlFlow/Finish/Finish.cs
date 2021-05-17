@@ -23,9 +23,9 @@ namespace Elsa.Activities.ControlFlow
         public object? OutputValue { get; set; }
 
         [ActivityProperty(
-            Hint = "The outcomes to set on the container activity", 
-            UIHint = ActivityPropertyUIHints.MultiText, 
-            DefaultValue = Elsa.OutcomeNames.Done, 
+            Hint = "The outcomes to set on the container activity",
+            UIHint = ActivityPropertyUIHints.MultiText,
+            DefaultValue = new[] { Elsa.OutcomeNames.Done },
             DefaultSyntax = SyntaxNames.Json,
             SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public IEnumerable<string> OutcomeNames { get; set; } = new[] { Elsa.OutcomeNames.Done };
