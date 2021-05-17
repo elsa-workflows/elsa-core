@@ -1,5 +1,5 @@
 import {Component, h, Prop, State} from '@stencil/core';
-import {ActivityDefinitionProperty, ActivityPropertyDescriptor} from "../../../../models";
+import {ActivityDefinitionProperty, ActivityPropertyDescriptor, SyntaxNames} from "../../../../models";
 
 @Component({
   tag: 'elsa-multi-line-property',
@@ -10,6 +10,11 @@ export class ElsaMultiLineProperty {
   @Prop() propertyDescriptor: ActivityPropertyDescriptor;
   @Prop() propertyModel: ActivityDefinitionProperty;
   @State() currentValue: string;
+
+  componentWillLoad() {
+    const defaultSyntax = this.propertyDescriptor.defaultSyntax || SyntaxNames.Literal;
+    this.currentValue = this.propertyModel.expressions[defaultSyntax] || '';
+  }
 
   getEditorHeight(options: any) {
     const editorHeightName = options.editorHeight || 'Default';
@@ -24,7 +29,7 @@ export class ElsaMultiLineProperty {
   }
 
   onChange(e: Event) {
-    const input = e.currentTarget as HTMLInputElement;
+    const input = e.currentTarget as HTMLTextAreaElement;
     this.propertyModel.expressions['Literal'] = this.currentValue = input.value;
   }
 
@@ -54,7 +59,8 @@ export class ElsaMultiLineProperty {
                             onDefaultSyntaxValueChanged={e => this.onDefaultSyntaxValueChanged(e)}
                             editor-height={editorHeight.propertyEditor}
                             context={context}>
-        <textarea id={fieldId} name={fieldName} value={value} onChange={e => this.onChange(e)} class="focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300" rows={editorHeight.textArea}/>
+        <textarea id={fieldId} name={fieldName} value={value} onChange={e => this.onChange(e)}
+                  class="focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300" rows={editorHeight.textArea}/>
       </elsa-property-editor>
     );
   }
