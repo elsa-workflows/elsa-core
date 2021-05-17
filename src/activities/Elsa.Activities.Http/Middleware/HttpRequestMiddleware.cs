@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Bookmarks;
 using Elsa.Activities.Http.Extensions;
@@ -31,9 +32,9 @@ namespace Elsa.Activities.Http.Middleware
             IWorkflowBlueprintReflector workflowBlueprintReflector,
             IEnumerable<IHttpRequestBodyParser> contentParsers)
         {
+            var cancellationToken = CancellationToken.None; // Prevent half-way request abortion (which also happens when WriteHttpResponse writes to the response).
             var path = httpContext.Request.Path.Value.ToLowerInvariant();
             var method = httpContext.Request.Method!.ToLowerInvariant();
-            var cancellationToken = httpContext.RequestAborted;
             var request = httpContext.Request;
             request.TryGetCorrelationId(out var correlationId);
             var useDispatch = httpContext.Request.GetUseDispatch();
