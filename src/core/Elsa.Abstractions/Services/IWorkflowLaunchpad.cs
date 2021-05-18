@@ -23,6 +23,11 @@ namespace Elsa.Services
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
         Task<IEnumerable<StartableWorkflow>> CollectStartableWorkflowsAsync(CollectWorkflowsContext context, CancellationToken cancellationToken = default);
+        
+        /// <summary>
+        /// Creates a new workflow instance with execution pending for the specified workflow blueprint using the specified starting activity ID.
+        /// </summary>
+        Task<StartableWorkflow?> CollectStartableWorkflowAsync(string workflowDefinitionId, string? activityId, string? correlationId = default, string? contextId = default, string? tenantId = default, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Creates a new workflow instance with execution pending for the specified workflow blueprint using the specified starting activity ID.
@@ -37,7 +42,7 @@ namespace Elsa.Services
         /// <summary>
         /// Collects and executes the specified startable workflow.
         /// </summary>
-        Task CollectAndExecuteStartableWorkflowAsync(IWorkflowBlueprint workflowBlueprint, string? activityId, string? correlationId = default, string? contextId = default, object? input = default, CancellationToken cancellationToken = default);
+        Task<RunWorkflowResult> CollectAndExecuteStartableWorkflowAsync(IWorkflowBlueprint workflowBlueprint, string? activityId, string? correlationId = default, string? contextId = default, object? input = default, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Executes a list of pending workflows.
@@ -67,7 +72,7 @@ namespace Elsa.Services
         /// <summary>
         /// Executes the specified startable workflow.
         /// </summary>
-        Task ExecuteStartableWorkflowAsync(StartableWorkflow startableWorkflow, object? input, CancellationToken cancellationToken = default);
+        Task<RunWorkflowResult> ExecuteStartableWorkflowAsync(StartableWorkflow startableWorkflow, object? input, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Collects and executes workflows that are ready for execution. This takes into account both resumable (suspended) workflows as well as startable workflows.

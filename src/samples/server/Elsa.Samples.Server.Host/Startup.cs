@@ -1,6 +1,8 @@
 using Elsa.Activities.UserTask.Extensions;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
+using Elsa.Persistence.EntityFramework.PostgreSql;
 using Elsa.Persistence.EntityFramework.Sqlite;
+using Elsa.Persistence.YesSql;
 using Elsa.Samples.Server.Host.Activities;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -32,6 +34,8 @@ namespace Elsa.Samples.Server.Host
                 .AddRuntimeSelectItemsProvider<VehicleActivity>()
                 .AddElsa(elsa => elsa
                     .UseEntityFrameworkPersistence(ef => ef.UseSqlite())
+                    //.UseEntityFrameworkPersistence(ef => ef.UsePostgreSql("Server=localhost;Port=5432;Database=yessql;User Id=root;Password=Password12!;"))
+                    //.UseYesSqlPersistence()
                     .AddConsoleActivities()
                     .AddHttpActivities(elsaSection.GetSection("Http").Bind)
                     .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
