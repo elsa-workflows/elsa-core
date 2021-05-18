@@ -13,4 +13,6 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
         WorkflowPersistenceBehavior PersistenceBehavior,
         bool IsPublished,
         bool IsLatest);
+    
+    public record ExecuteWorkflowDefinitionModel(string? ActivityId, string? CorrelationId, string? ContextId, object? Input);
 }

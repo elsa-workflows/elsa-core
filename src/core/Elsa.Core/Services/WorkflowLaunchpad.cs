@@ -93,6 +93,16 @@ namespace Elsa.Services
             return startableWorkflows;
         }
 
+        public async Task<StartableWorkflow?> CollectStartableWorkflowAsync(string workflowDefinitionId, string? activityId, string? correlationId = default, string? contextId = default, string? tenantId = default, CancellationToken cancellationToken = default)
+        {
+            var workflowBlueprint = await _workflowRegistry.GetAsync(workflowDefinitionId, tenantId, VersionOptions.Published, cancellationToken);
+
+            if (workflowBlueprint == null)
+                return null;
+
+            return await CollectStartableWorkflowAsync(workflowBlueprint, activityId, correlationId, contextId, tenantId, cancellationToken);
+        }
+
         public async Task<StartableWorkflow?> CollectStartableWorkflowAsync(IWorkflowBlueprint workflowBlueprint, string? activityId, string? correlationId = default, string? contextId = default, string? tenantId = default, CancellationToken cancellationToken = default)
         {
             var workflowDefinitionId = workflowBlueprint.Id;
@@ -137,7 +147,7 @@ namespace Elsa.Services
                         correlationId,
                         contextId,
                         cancellationToken);
-                    
+
                     await _workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
                     return new StartableWorkflow(workflowBlueprint, workflowInstance, startActivityId);
                 }
@@ -164,7 +174,7 @@ namespace Elsa.Services
             await CollectAndExecuteStartableWorkflowAsync(workflowBlueprint, activityId, correlationId, contextId, input, cancellationToken);
         }
 
-        public async Task CollectAndExecuteStartableWorkflowAsync(IWorkflowBlueprint workflowBlueprint, string? activityId, string? correlationId = default, string? contextId = default, object? input = default, CancellationToken cancellationToken = default)
+        public async Task<RunWorkflowResult> CollectAndExecuteStartableWorkflowAsync(IWorkflowBlueprint workflowBlueprint, string? activityId, string? correlationId = default, string? contextId = default, object? input = default, CancellationToken cancellationToken = default)
         {
             var workflowDefinitionId = workflowBlueprint.Id;
             var tenantId = workflowBlueprint.TenantId;
@@ -172,12 +182,9 @@ namespace Elsa.Services
             var startableWorkflow = await CollectStartableWorkflowAsync(workflowBlueprint, activityId, correlationId, contextId, tenantId, cancellationToken);
 
             if (startableWorkflow == null)
-            {
-                _logger.LogWarning("Could start workflow with ID {WorkflowDefinitionId}", workflowDefinitionId);
-                return;
-            }
+                throw new WorkflowException($"Could start workflow with ID {workflowDefinitionId}");
 
-            await ExecuteStartableWorkflowAsync(startableWorkflow, input, cancellationToken);
+            return await ExecuteStartableWorkflowAsync(startableWorkflow, input, cancellationToken);
         }
 
         public async Task ExecutePendingWorkflowsAsync(IEnumerable<PendingWorkflow> pendingWorkflows, object? input = default, CancellationToken cancellationToken = default)
@@ -201,13 +208,13 @@ namespace Elsa.Services
             foreach (var pendingWorkflow in pendingWorkflows)
                 await DispatchPendingWorkflowAsync(pendingWorkflow, input, cancellationToken);
         }
-        
-        public async Task DispatchPendingWorkflowAsync(PendingWorkflow pendingWorkflow, object? input, CancellationToken cancellationToken = default) => 
+
+        public async Task DispatchPendingWorkflowAsync(PendingWorkflow pendingWorkflow, object? input, CancellationToken cancellationToken = default) =>
             await _workflowInstanceDispatcher.DispatchAsync(new ExecuteWorkflowInstanceRequest(pendingWorkflow.WorkflowInstanceId, pendingWorkflow.ActivityId, input), cancellationToken);
 
-        public async Task ExecuteStartableWorkflowAsync(StartableWorkflow startableWorkflow, object? input, CancellationToken cancellationToken = default)
+        public async Task<RunWorkflowResult> ExecuteStartableWorkflowAsync(StartableWorkflow startableWorkflow, object? input, CancellationToken cancellationToken = default)
         {
-            await _workflowRunner.RunWorkflowAsync(startableWorkflow.WorkflowBlueprint, startableWorkflow.WorkflowInstance, startableWorkflow.ActivityId, input, cancellationToken);
+            return await _workflowRunner.RunWorkflowAsync(startableWorkflow.WorkflowBlueprint, startableWorkflow.WorkflowInstance, startableWorkflow.ActivityId, input, cancellationToken);
         }
 
         public async Task<IEnumerable<PendingWorkflow>> TriggerWorkflowsAsync(CollectWorkflowsContext context, object? input = default, CancellationToken cancellationToken = default)
