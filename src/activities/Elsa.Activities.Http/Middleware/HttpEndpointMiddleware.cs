@@ -42,7 +42,7 @@ namespace Elsa.Activities.Http.Middleware
             const string activityType = nameof(HttpEndpoint);
             var trigger = new HttpEndpointBookmark(path, method, null);
             var bookmark = new HttpEndpointBookmark(path, method, correlationId?.ToLowerInvariant());
-            var collectWorkflowsContext = new CollectWorkflowsContext(activityType, bookmark, trigger, default, correlationId, default, TenantId);
+            var collectWorkflowsContext = new CollectWorkflowsContext(activityType, bookmark, trigger, correlationId, default, default, TenantId);
             var pendingWorkflows = await workflowLaunchpad.CollectWorkflowsAsync(collectWorkflowsContext, cancellationToken).ToList();
             var pendingWorkflowInstanceIds = pendingWorkflows.Select(x => x.WorkflowInstanceId).Distinct();
             var pendingWorkflowInstances = (await workflowInstanceStore.FindManyAsync(new WorkflowInstanceIdsSpecification(pendingWorkflowInstanceIds), cancellationToken: cancellationToken)).ToDictionary(x => x.Id);
