@@ -26,7 +26,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
 
         [HttpPost]
         [ElsaJsonFormatter]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(WorkflowDefinitionExecuteResponse))]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ExecuteWorkflowDefinitionResponse))]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [SwaggerOperation(
             Summary = "Executes the specified workflow definition.",
@@ -46,7 +46,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             if (Response.HasStarted)
                 return new EmptyResult();
 
-            return Ok(new WorkflowDefinitionExecuteResponse(
+            return Ok(new ExecuteWorkflowDefinitionResponse(
                 result.Executed,
                 result.ActivityId,
                 result.WorkflowInstance
