@@ -177,7 +177,8 @@ export class ElsaWorkflowInstanceJournal {
                 <div class="elsa-px-4 sm:elsa-px-6">
                   <div class="elsa-flex elsa-flex-col elsa-items-end">
                     <div class="elsa-ml-3 h-7 elsa-flex elsa-items-center">
-                      <button type="button" onClick={e => this.onCloseClick()} class="elsa-bg-white elsa-rounded-md elsa-text-gray-400 hover:elsa-text-gray-500 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500">
+                      <button type="button" onClick={e => this.onCloseClick()}
+                              class="elsa-bg-white elsa-rounded-md elsa-text-gray-400 hover:elsa-text-gray-500 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500">
                         <span class="elsa-sr-only">Close panel</span>
                         <svg class="elsa-h-6 elsa-w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -259,7 +260,7 @@ export class ElsaWorkflowInstanceJournal {
         if (typeof value == 'string')
           valueText = value;
         else if (typeof value == 'object')
-          valueText = JSON.stringify(value);
+          valueText = JSON.stringify(value, null, 1);
         else if (typeof value == 'undefined')
           valueText = null;
         else
@@ -274,8 +275,8 @@ export class ElsaWorkflowInstanceJournal {
         <li>
           <div onClick={() => this.onRecordClick(record)} class={`${recordClass} elsa-border-2 elsa-cursor-pointer elsa-p-4 elsa-rounded`}>
             <div class="elsa-relative elsa-pb-10">
-              {isLastItem ? undefined : <div class="elsa-flex elsa-absolute top-8 left-4 -elsa-ml-px elsa-h-full elsa-w-0.5 elsa-bg-gray-200">
-                <div class="elsa-flex elsa-flex-1 elsa-items-center elsa-relative -elsa-left-5">
+              {isLastItem ? undefined : <div class="elsa-flex elsa-absolute top-8 elsa-left-4 -elsa-ml-px elsa-h-full elsa-w-0.5 elsa-bg-gray-200">
+                <div class="elsa-flex elsa-flex-1 elsa-items-center elsa-relative elsa-right-10">
                   <span class="elsa-flex-1 elsa-text-sm elsa-text-gray-500 elsa-w-max elsa-bg-white elsa-p-1 elsa-rounded">{deltaTimeText}</span>
                 </div>
               </div>}
@@ -303,27 +304,31 @@ export class ElsaWorkflowInstanceJournal {
                 </div>
               </div>
               <div class="elsa-ml-12 elsa-mt-2">
-                <dl class="elsa-grid elsa-grid-cols-1 elsa-gap-x-4 elsa-gap-y-8 sm:elsa-grid-cols-2">
-                  <div class="sm:elsa-col-span-1">
-                    <dt class="elsa-text-sm elsa-font-medium elsa-text-gray-500">Activity ID</dt>
-                    <dd class="elsa-mt-1 elsa-text-sm elsa-text-gray-900 elsa-mb-2">{record.activityId}</dd>
+                <dl class="sm:elsa-divide-y sm:elsa-divide-gray-200">
+                  <div class="elsa-grid elsa-grid-cols-2 elsa-gap-x-4 elsa-gap-y-8 sm:elsa-grid-cols-2">
+                    <div class="sm:elsa-col-span-2">
+                      <dt class="elsa-text-sm elsa-font-medium elsa-text-gray-500">Activity ID</dt>
+                      <dd class="elsa-mt-1 elsa-text-sm elsa-text-gray-900 elsa-mb-2">{record.activityId}</dd>
+                    </div>
+                    {collection.map(filteredRecordData, (v, k) => (
+                      <div class="sm:elsa-col-span-2">
+                        <dt class="elsa-text-sm elsa-font-medium elsa-text-gray-500">{k}</dt>
+                        <dd class="elsa-mt-1 elsa-text-sm elsa-text-gray-900 elsa-mb-2">
+                          <pre>{v}</pre>
+                        </dd>
+                      </div>
+                    ))}
+                    {record.message ? (
+                      <div class="sm:elsa-col-span-2">
+                        <dt class="elsa-text-sm elsa-font-medium elsa-text-gray-500">
+                          Message
+                        </dt>
+                        <dd class="elsa-mt-1 elsa-text-sm elsa-text-gray-900">
+                          {record.message}
+                        </dd>
+                      </div>
+                    ) : undefined}
                   </div>
-                  {collection.map(filteredRecordData, (v, k) => (
-                    <div class="sm:elsa-col-span-1">
-                      <dt class="elsa-text-sm elsa-font-medium elsa-text-gray-500">{k}</dt>
-                      <dd class="elsa-mt-1 elsa-text-sm elsa-text-gray-900 elsa-mb-2"><pre>{v}</pre></dd>
-                    </div>
-                  ))}
-                  {record.message ? (
-                    <div class="sm:elsa-col-span-1">
-                      <dt class="elsa-text-sm elsa-font-medium elsa-text-gray-500">
-                        Message
-                      </dt>
-                      <dd class="elsa-mt-1 elsa-text-sm elsa-text-gray-900">
-                        {record.message}
-                      </dd>
-                    </div>
-                  ) : undefined}
                 </dl>
               </div>
             </div>
