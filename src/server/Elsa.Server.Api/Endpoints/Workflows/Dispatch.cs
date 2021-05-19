@@ -41,7 +41,7 @@ namespace Elsa.Server.Api.Endpoints.Workflows
             if (Response.HasStarted)
                 return new EmptyResult();
 
-            return Ok(new ExecuteWorkflowsResponse(result));
+            return Ok(new DispatchWorkflowsResponse(result));
         }
     }
 }

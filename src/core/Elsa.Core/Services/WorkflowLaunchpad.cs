@@ -219,11 +219,11 @@ namespace Elsa.Services
             return pendingWorkflow;
         }
 
-        public async Task<IEnumerable<PendingWorkflow>> CollectAndExecuteWorkflowsAsync(CollectWorkflowsContext context, object? input = default, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<StartedWorkflow>> CollectAndExecuteWorkflowsAsync(CollectWorkflowsContext context, object? input = default, CancellationToken cancellationToken = default)
         {
             var pendingWorkflows = await CollectWorkflowsAsync(context, cancellationToken).ToList();
             await ExecutePendingWorkflowsAsync(pendingWorkflows, input, cancellationToken);
-            return pendingWorkflows;
+            return pendingWorkflows.Select(x => new StartedWorkflow(x.WorkflowInstanceId, x.ActivityId));
         }
 
         public async Task<IEnumerable<PendingWorkflow>> CollectAndDispatchWorkflowsAsync(CollectWorkflowsContext context, object? input = default, CancellationToken cancellationToken = default)

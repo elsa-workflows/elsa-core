@@ -1,5 +1,7 @@
-﻿using System.Threading;
+﻿using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Services.Models;
 
 namespace Elsa.Activities.Signaling.Services
 {
@@ -8,21 +10,21 @@ namespace Elsa.Activities.Signaling.Services
         /// <summary>
         /// Runs all workflows that start with or are blocked on the <see cref="SignalReceived"/> activity.
         /// </summary>
-        Task<bool> TriggerSignalTokenAsync(string signalToken, object? input = default, CancellationToken cancellationToken = default);
+        Task<IEnumerable<StartedWorkflow>> TriggerSignalTokenAsync(string signalToken, object? input = default, CancellationToken cancellationToken = default);
         
         /// <summary>
         /// Runs all workflows that start with or are blocked on the <see cref="SignalReceived"/> activity.
         /// </summary>
-        Task TriggerSignalAsync(string signal, object? input = default, string? workflowInstanceId = default, string? correlationId = default, CancellationToken cancellationToken = default);
+        Task<IEnumerable<StartedWorkflow>> TriggerSignalAsync(string signal, object? input = null, string? workflowInstanceId = null, string? correlationId = null, CancellationToken cancellationToken = default);
         
         /// <summary>
         /// Dispatches all workflows that start with or are blocked on the <see cref="SignalReceived"/> activity.
         /// </summary>
-        Task<bool> DispatchSignalTokenAsync(string token, object? input = default, CancellationToken cancellationToken = default);
+        Task<IEnumerable<PendingWorkflow>> DispatchSignalTokenAsync(string token, object? input = default, CancellationToken cancellationToken = default);
         
         /// <summary>
         /// Dispatches all workflows that start with or are blocked on the <see cref="SignalReceived"/> activity.
         /// </summary>
-        Task DispatchSignalAsync(string signal, object? input = default, string? workflowInstanceId = default, string? correlationId = default, CancellationToken cancellationToken = default);
+        Task<IEnumerable<PendingWorkflow>> DispatchSignalAsync(string signal, object? input = default, string? workflowInstanceId = default, string? correlationId = default, CancellationToken cancellationToken = default);
     }
 }

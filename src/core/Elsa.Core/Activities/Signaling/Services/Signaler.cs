@@ -1,9 +1,10 @@
-﻿using System.Threading;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Signaling.Models;
-using Elsa.Dispatch;
 using Elsa.Services;
-using MediatR;
+using Elsa.Services.Models;
 
 namespace Elsa.Activities.Signaling.Services
 {
@@ -21,18 +22,17 @@ namespace Elsa.Activities.Signaling.Services
             _tokenService = tokenService;
         }
 
-        public async Task<bool> TriggerSignalTokenAsync(string token, object? input = default, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<StartedWorkflow>> TriggerSignalTokenAsync(string token, object? input = default, CancellationToken cancellationToken = default)
         {
             if (!_tokenService.TryDecryptToken(token, out SignalModel signal))
-                return false;
+                return Enumerable.Empty<StartedWorkflow>();
 
-            await TriggerSignalAsync(signal.Name, input, signal.WorkflowInstanceId, cancellationToken: cancellationToken);
-            return true;
+            return await TriggerSignalAsync(signal.Name, input, signal.WorkflowInstanceId, cancellationToken: cancellationToken);
         }
 
-        public async Task TriggerSignalAsync(string signal, object? input = default, string? workflowInstanceId = default, string? correlationId = default, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<StartedWorkflow>> TriggerSignalAsync(string signal, object? input = default, string? workflowInstanceId = default, string? correlationId = default, CancellationToken cancellationToken = default)
         {
-            await _workflowLaunchpad.CollectAndExecuteWorkflowsAsync(new CollectWorkflowsContext(
+            return await _workflowLaunchpad.CollectAndExecuteWorkflowsAsync(new CollectWorkflowsContext(
                 nameof(SignalReceived),
                 new SignalReceivedBookmark { Signal = signal, WorkflowInstanceId = workflowInstanceId },
                 new SignalReceivedBookmark { Signal = signal },
@@ -43,16 +43,15 @@ namespace Elsa.Activities.Signaling.Services
             ), new Signal(signal, input), cancellationToken);
         }
 
-        public async Task<bool> DispatchSignalTokenAsync(string token, object? input = default, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<PendingWorkflow>> DispatchSignalTokenAsync(string token, object? input = default, CancellationToken cancellationToken = default)
         {
             if (!_tokenService.TryDecryptToken(token, out SignalModel signal))
-                return false;
+                return Enumerable.Empty<PendingWorkflow>();
 
-            await DispatchSignalAsync(signal.Name, input, signal.WorkflowInstanceId, cancellationToken: cancellationToken);
-            return true;
+            return await DispatchSignalAsync(signal.Name, input, signal.WorkflowInstanceId, cancellationToken: cancellationToken);
         }
 
-        public async Task DispatchSignalAsync(string signal, object? input = default, string? workflowInstanceId = default, string? correlationId = default, CancellationToken cancellationToken = default) =>
+        public async Task<IEnumerable<PendingWorkflow>> DispatchSignalAsync(string signal, object? input = default, string? workflowInstanceId = default, string? correlationId = default, CancellationToken cancellationToken = default) =>
             await _workflowLaunchpad.CollectAndDispatchWorkflowsAsync(new CollectWorkflowsContext(
                     nameof(SignalReceived),
                     new SignalReceivedBookmark { Signal = signal, WorkflowInstanceId = workflowInstanceId },
