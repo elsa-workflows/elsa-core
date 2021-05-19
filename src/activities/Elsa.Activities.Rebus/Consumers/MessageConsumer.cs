@@ -25,7 +25,7 @@ namespace Elsa.Activities.Rebus.Consumers
         public async Task Handle(T message)
         {
             var correlationId = MessageContext.Current.TransportMessage.Headers.GetValueOrNull(Headers.CorrelationId);
-            await _workflowLaunchpad.TriggerWorkflowsAsync(new CollectWorkflowsContext(
+            await _workflowLaunchpad.CollectAndExecuteWorkflowsAsync(new CollectWorkflowsContext(
                 nameof(RebusMessageReceived),
                 new MessageReceivedBookmark { MessageType = message.GetType().Name, CorrelationId = correlationId },
                 new MessageReceivedBookmark { MessageType = message.GetType().Name },

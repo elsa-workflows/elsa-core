@@ -1,4 +1,7 @@
-﻿using Elsa.Models;
+﻿using System.Collections.Generic;
+using Elsa.Bookmarks;
+using Elsa.Models;
+using Elsa.Services.Models;
 
 namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
 {
@@ -29,4 +32,12 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
     public record DispatchWorkflowInstanceRequest(string? ActivityId, object? Input);
 
     public record DispatchWorkflowInstanceResponse();
+
+    public record ExecuteWorkflowsRequest(string ActivityType, IBookmark? Bookmark, IBookmark? Trigger, string? CorrelationId, string? WorkflowInstanceId, string? ContextId, object? Input);
+
+    public record ExecuteWorkflowsResponse(ICollection<PendingWorkflow> PendingWorkflows);
+
+    public record DispatchWorkflowsRequest(string ActivityType, IBookmark? Bookmark, IBookmark? Trigger, string? CorrelationId, string? WorkflowInstanceId, string? ContextId, object? Input);
+
+    public record DispatchWorkflowsResponse(ICollection<PendingWorkflow> PendingWorkflows);
 }

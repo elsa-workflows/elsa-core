@@ -87,15 +87,15 @@ namespace Elsa.Services
         /// <summary>
         /// Collects and executes workflows that are ready for execution. This takes into account both resumable (suspended) workflows as well as startable workflows.
         /// </summary>
-        Task<IEnumerable<PendingWorkflow>> TriggerWorkflowsAsync(CollectWorkflowsContext context, object? input = default, CancellationToken cancellationToken = default);
+        Task<IEnumerable<PendingWorkflow>> CollectAndExecuteWorkflowsAsync(CollectWorkflowsContext context, object? input = default, CancellationToken cancellationToken = default);
         
         /// <summary>
         /// Collects and dispatches workflows that are ready for execution. This takes into account both resumable (suspended) workflows as well as startable workflows.
         /// </summary>
-        Task<IEnumerable<PendingWorkflow>> DispatchWorkflowsAsync(CollectWorkflowsContext context, object? input = default, CancellationToken cancellationToken = default);
+        Task<IEnumerable<PendingWorkflow>> CollectAndDispatchWorkflowsAsync(CollectWorkflowsContext context, object? input = default, CancellationToken cancellationToken = default);
     }
 
-    public record CollectWorkflowsContext(string ActivityType, IBookmark Bookmark, IBookmark Trigger, string? CorrelationId = default, string? WorkflowInstanceId = default, string? ContextId = default, string? TenantId = default);
+    public record CollectWorkflowsContext(string ActivityType, IBookmark? Bookmark, IBookmark? Trigger, string? CorrelationId = default, string? WorkflowInstanceId = default, string? ContextId = default, string? TenantId = default);
 
     public record CollectStartableWorkflowsContext(string WorkflowDefinitionId, string? ActivityId = default, string? CorrelationId = default, string? ContextId = default, string? TenantId = default);
 }
