@@ -11,7 +11,7 @@ namespace Elsa.Server.Hangfire.Jobs
         private readonly IWorkflowLaunchpad _workflowLaunchpad;
         public CorrelatedWorkflowDefinitionJob(IWorkflowLaunchpad workflowLaunchpad) => _workflowLaunchpad = workflowLaunchpad;
 
-        public async Task ExecuteAsync(TriggerWorkflowsRequest request, CancellationToken cancellationToken = default) => await _workflowLaunchpad.TriggerWorkflowsAsync(new CollectWorkflowsContext(
+        public async Task ExecuteAsync(TriggerWorkflowsRequest request, CancellationToken cancellationToken = default) => await _workflowLaunchpad.CollectAndExecuteWorkflowsAsync(new CollectWorkflowsContext(
                 request.ActivityType,
                 request.Bookmark,
                 request.Trigger,

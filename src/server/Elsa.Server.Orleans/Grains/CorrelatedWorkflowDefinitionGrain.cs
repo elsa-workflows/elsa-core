@@ -14,7 +14,7 @@ namespace Elsa.Server.Orleans.Grains
         private readonly IWorkflowLaunchpad _workflowLaunchpad;
         public CorrelatedWorkflowDefinitionGrain(IWorkflowLaunchpad workflowLaunchpad) => _workflowLaunchpad = workflowLaunchpad;
 
-        public async Task ExecutedCorrelatedWorkflowAsync(TriggerWorkflowsRequest request, CancellationToken cancellationToken = default) => await _workflowLaunchpad.TriggerWorkflowsAsync(new CollectWorkflowsContext(
+        public async Task ExecutedCorrelatedWorkflowAsync(TriggerWorkflowsRequest request, CancellationToken cancellationToken = default) => await _workflowLaunchpad.CollectAndExecuteWorkflowsAsync(new CollectWorkflowsContext(
                 request.ActivityType,
                 request.Bookmark,
                 request.Trigger,

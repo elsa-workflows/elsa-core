@@ -48,7 +48,7 @@ namespace Elsa.Activities.MassTransit.Consumers
                 MessageType = message.GetType().Name
             };
 
-            await _workflowLaunchpad.TriggerWorkflowsAsync(new CollectWorkflowsContext(
+            await _workflowLaunchpad.CollectAndExecuteWorkflowsAsync(new CollectWorkflowsContext(
                 nameof(ReceiveMassTransitMessage),
                 bookmark,
                 trigger,
