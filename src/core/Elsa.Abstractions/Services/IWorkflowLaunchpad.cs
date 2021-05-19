@@ -87,7 +87,7 @@ namespace Elsa.Services
         /// <summary>
         /// Collects and executes workflows that are ready for execution. This takes into account both resumable (suspended) workflows as well as startable workflows.
         /// </summary>
-        Task<IEnumerable<PendingWorkflow>> CollectAndExecuteWorkflowsAsync(CollectWorkflowsContext context, object? input = default, CancellationToken cancellationToken = default);
+        Task<IEnumerable<StartedWorkflow>> CollectAndExecuteWorkflowsAsync(CollectWorkflowsContext context, object? input = null, CancellationToken cancellationToken = default);
         
         /// <summary>
         /// Collects and dispatches workflows that are ready for execution. This takes into account both resumable (suspended) workflows as well as startable workflows.

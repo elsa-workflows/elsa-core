@@ -35,7 +35,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
 
     public record ExecuteWorkflowsRequest(string ActivityType, IBookmark? Bookmark, IBookmark? Trigger, string? CorrelationId, string? WorkflowInstanceId, string? ContextId, object? Input);
 
-    public record ExecuteWorkflowsResponse(ICollection<PendingWorkflow> PendingWorkflows);
+    public record ExecuteWorkflowsResponse(ICollection<StartedWorkflow> StartedWorkflows);
 
     public record DispatchWorkflowsRequest(string ActivityType, IBookmark? Bookmark, IBookmark? Trigger, string? CorrelationId, string? WorkflowInstanceId, string? ContextId, object? Input);
 
