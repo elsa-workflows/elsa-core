@@ -3,9 +3,9 @@ using Elsa;
 using Elsa.Models;
 using Elsa.Server.Api;
 using Elsa.Server.Api.Mapping;
-using Elsa.Server.Api.RouteConstraints;
 using Elsa.Server.Api.Services;
 using Elsa.Server.Api.Swagger.Examples;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.Filters;
@@ -19,8 +19,8 @@ namespace Microsoft.Extensions.DependencyInjection
         public static IServiceCollection AddElsaApiEndpoints(this IServiceCollection services, ElsaApiOptions apiOptions) =>
             services.AddElsaApiEndpoints(options =>
             {
-                options.SetupApiVersioning = apiOptions.SetupApiVersioning;
                 options.SetupNewtonsoftJson = apiOptions.SetupNewtonsoftJson;
+                options.ConfigureApiVersioningOptions = apiOptions.ConfigureApiVersioningOptions;
             });
 
         public static IServiceCollection AddElsaApiEndpoints(this IServiceCollection services, Action<ElsaApiOptions>? configureApiOptions = default)
@@ -33,9 +33,21 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddControllers().AddNewtonsoftJson(setupNewtonsoftJson);
             services.AddRouting(options => { options.LowercaseUrls = true; });
 
-            var addApiVersioning = apiOptions.SetupApiVersioning ?? (_ => { services.AddRouting(routeOptions => routeOptions.ConstraintMap["apiVersion"] = typeof(CompatibilityApiVersionConstraint)); });
+            services.AddVersionedApiExplorer(o =>
+            {
+                o.GroupNameFormat = "'v'VVV";
+                o.SubstituteApiVersionInUrl = true;
+            });
 
-            addApiVersioning(services);
+            services.AddApiVersioning(
+                options =>
+                {
+                    options.ReportApiVersions = true;
+                    options.DefaultApiVersion = ApiVersion.Default;
+                    options.AssumeDefaultVersionWhenUnspecified = true;
+                    apiOptions.ConfigureApiVersioningOptions?.Invoke(options);
+                });
+
             services.AddSingleton<ConnectionConverter>();
             services.AddSingleton<ActivityBlueprintConverter>();
             services.AddSingleton<IWorkflowBlueprintMapper, WorkflowBlueprintMapper>();
