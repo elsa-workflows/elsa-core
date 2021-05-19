@@ -73,6 +73,11 @@ namespace Elsa.Services
         /// Executes the specified startable workflow.
         /// </summary>
         Task<RunWorkflowResult> ExecuteStartableWorkflowAsync(StartableWorkflow startableWorkflow, object? input, CancellationToken cancellationToken = default);
+        
+        /// <summary>
+        /// Dispatches the specified startable workflow.
+        /// </summary>
+        Task<PendingWorkflow> DispatchStartableWorkflowAsync(StartableWorkflow startableWorkflow, object? input, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Collects and executes workflows that are ready for execution. This takes into account both resumable (suspended) workflows as well as startable workflows.

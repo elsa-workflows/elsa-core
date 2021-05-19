@@ -14,5 +14,8 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
         bool IsPublished,
         bool IsLatest);
     
-    public record ExecuteWorkflowDefinitionModel(string? ActivityId, string? CorrelationId, string? ContextId, object? Input);
+    public record ExecuteWorkflowDefinitionRequest(string? ActivityId, string? CorrelationId, string? ContextId, object? Input);
+    public record WorkflowDefinitionExecuteResponse(bool Executed, string? ActivityId, WorkflowInstance? WorkflowInstance);
+    public record DispatchWorkflowDefinitionRequest(string? ActivityId, string? CorrelationId, string? ContextId, object? Input);
+    public record DispatchWorkflowDefinitionResponse(string WorkflowInstanceId, string? ActivityId);
 }
