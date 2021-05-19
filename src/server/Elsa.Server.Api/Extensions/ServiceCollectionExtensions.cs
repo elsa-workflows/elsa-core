@@ -1,10 +1,11 @@
 ﻿using System;
 using Elsa;
 using Elsa.Models;
+using Elsa.Server.Api;
 using Elsa.Server.Api.Mapping;
+using Elsa.Server.Api.RouteConstraints;
 using Elsa.Server.Api.Services;
 using Elsa.Server.Api.Swagger.Examples;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.Filters;
@@ -15,26 +16,26 @@ namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddElsaApiEndpoints(this IServiceCollection services, Action<MvcNewtonsoftJsonOptions>? setupNewtonsoftJson = default)
-        {
-            setupNewtonsoftJson ??= _ => { }; 
-            services.AddControllers().AddNewtonsoftJson(setupNewtonsoftJson);
-            services.AddRouting(options => options.LowercaseUrls = true);
-
-            services.AddVersionedApiExplorer(o =>
+        public static IServiceCollection AddElsaApiEndpoints(this IServiceCollection services, ElsaApiOptions apiOptions) =>
+            services.AddElsaApiEndpoints(options =>
             {
-                o.GroupNameFormat = "'v'VVV";
-                o.SubstituteApiVersionInUrl = true;
+                options.SetupApiVersioning = apiOptions.SetupApiVersioning;
+                options.SetupNewtonsoftJson = apiOptions.SetupNewtonsoftJson;
             });
-            
-            services.AddApiVersioning(
-                options =>
-                {
-                    options.ReportApiVersions = true;
-                    options.DefaultApiVersion = ApiVersion.Default;
-                    options.AssumeDefaultVersionWhenUnspecified = true;
-                });
 
+        public static IServiceCollection AddElsaApiEndpoints(this IServiceCollection services, Action<ElsaApiOptions>? configureApiOptions = default)
+        {
+            var apiOptions = new ElsaApiOptions();
+            configureApiOptions?.Invoke(apiOptions);
+
+            var setupNewtonsoftJson = apiOptions.SetupNewtonsoftJson ?? (_ => { });
+
+            services.AddControllers().AddNewtonsoftJson(setupNewtonsoftJson);
+            services.AddRouting(options => { options.LowercaseUrls = true; });
+
+            var addApiVersioning = apiOptions.SetupApiVersioning ?? (_ => { services.AddRouting(routeOptions => routeOptions.ConstraintMap["apiVersion"] = typeof(CompatibilityApiVersionConstraint)); });
+
+            addApiVersioning(services);
             services.AddSingleton<ConnectionConverter>();
             services.AddSingleton<ActivityBlueprintConverter>();
             services.AddSingleton<IWorkflowBlueprintMapper, WorkflowBlueprintMapper>();
@@ -48,7 +49,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSwaggerExamplesFromAssemblyOf<WorkflowDefinitionExample>()
                 .AddSwaggerGen(c =>
                 {
-                    c.SwaggerDoc("v1", new OpenApiInfo {Title = "Elsa", Version = "v1"});
+                    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Elsa", Version = "v1" });
                     c.EnableAnnotations();
                     c.ExampleFilters();
                     c.MapType<VersionOptions?>(() => new OpenApiSchema
@@ -59,7 +60,7 @@ namespace Microsoft.Extensions.DependencyInjection
                         Nullable = true,
                         Default = new OpenApiString("Latest")
                     });
-                    
+
                     c.MapType<Type>(() => new OpenApiSchema
                     {
                         Type = PrimitiveType.String.ToString().ToLower(),
