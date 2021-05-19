@@ -212,6 +212,8 @@ namespace Microsoft.Extensions.DependencyInjection
             services
                 .AddAutoMapperProfile<NodaTimeProfile>()
                 .AddAutoMapperProfile<CloningProfile>()
+                .AddAutoMapperProfile<ExceptionProfile>()
+                .AddTransient<ExceptionConverter>()
                 .AddSingleton<ICloner, AutoMapperCloner>();
 
             // Caching.
