@@ -57,7 +57,7 @@ namespace Elsa.Services
         /// <summary>
         /// Executes a pending workflow.
         /// </summary>
-        Task ExecutePendingWorkflowAsync(string workflowInstanceId, string? activityId, object? input = default, CancellationToken cancellationToken = default);
+        Task<RunWorkflowResult> ExecutePendingWorkflowAsync(string workflowInstanceId, string? activityId, object? input = default, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Dispatches a list of pending workflows for execution.
@@ -68,6 +68,11 @@ namespace Elsa.Services
         /// Dispatches a pending workflow for execution.
         /// </summary>
         Task DispatchPendingWorkflowAsync(PendingWorkflow pendingWorkflow, object? input, CancellationToken cancellationToken = default);
+        
+        /// <summary>
+        /// Dispatches a pending workflow for execution.
+        /// </summary>
+        Task DispatchPendingWorkflowAsync(string workflowInstanceId, string? activityId, object? input, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Executes the specified startable workflow.

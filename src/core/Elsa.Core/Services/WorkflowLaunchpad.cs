@@ -193,15 +193,11 @@ namespace Elsa.Services
                 await _workflowInstanceExecutor.ExecuteAsync(pendingWorkflow.WorkflowInstanceId, pendingWorkflow.ActivityId, input, cancellationToken);
         }
 
-        public async Task ExecutePendingWorkflowAsync(PendingWorkflow pendingWorkflow, object? input = default, CancellationToken cancellationToken = default)
-        {
+        public async Task ExecutePendingWorkflowAsync(PendingWorkflow pendingWorkflow, object? input = default, CancellationToken cancellationToken = default) =>
             await _workflowInstanceExecutor.ExecuteAsync(pendingWorkflow.WorkflowInstanceId, pendingWorkflow.ActivityId, input, cancellationToken);
-        }
 
-        public async Task ExecutePendingWorkflowAsync(string workflowInstanceId, string? activityId, object? input = default, CancellationToken cancellationToken = default)
-        {
+        public async Task<RunWorkflowResult> ExecutePendingWorkflowAsync(string workflowInstanceId, string? activityId, object? input = default, CancellationToken cancellationToken = default) =>
             await _workflowInstanceExecutor.ExecuteAsync(workflowInstanceId, activityId, input, cancellationToken);
-        }
 
         public async Task DispatchPendingWorkflowsAsync(IEnumerable<PendingWorkflow> pendingWorkflows, object? input, CancellationToken cancellationToken = default)
         {
@@ -211,6 +207,8 @@ namespace Elsa.Services
 
         public async Task DispatchPendingWorkflowAsync(PendingWorkflow pendingWorkflow, object? input, CancellationToken cancellationToken = default) =>
             await _workflowInstanceDispatcher.DispatchAsync(new ExecuteWorkflowInstanceRequest(pendingWorkflow.WorkflowInstanceId, pendingWorkflow.ActivityId, input), cancellationToken);
+
+        public Task DispatchPendingWorkflowAsync(string workflowInstanceId, string? activityId, object? input, CancellationToken cancellationToken = default) => DispatchPendingWorkflowAsync(new PendingWorkflow(workflowInstanceId, activityId), input, cancellationToken);
 
         public async Task<RunWorkflowResult> ExecuteStartableWorkflowAsync(StartableWorkflow startableWorkflow, object? input, CancellationToken cancellationToken = default) => await _workflowRunner.RunWorkflowAsync(startableWorkflow.WorkflowBlueprint, startableWorkflow.WorkflowInstance, startableWorkflow.ActivityId, input, cancellationToken);
 
