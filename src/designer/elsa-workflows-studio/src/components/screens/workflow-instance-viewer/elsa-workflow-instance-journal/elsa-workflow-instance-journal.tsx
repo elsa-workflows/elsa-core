@@ -272,7 +272,6 @@ export class ElsaWorkflowInstanceJournal {
       const exception = !!recordData.Exception ? recordData.Exception : null;
 
       const renderExceptionMessage = (exception: any) => {
-        //const exceptionList = flattenExceptions(exception);
         return (
           <div>
             <div class="elsa-mb-4">

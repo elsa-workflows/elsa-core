@@ -8,7 +8,7 @@ import {
   ActivityModel,
   Connection,
   ConnectionModel,
-  EventTypes,
+  EventTypes, SimpleException,
   SyntaxNames,
   WorkflowBlueprint,
   WorkflowExecutionLogRecord, WorkflowFault,
@@ -295,6 +295,18 @@ export class ElsaWorkflowInstanceViewerScreen {
 
       const workflowFault: WorkflowFault = this.workflowInstance.fault;
 
+      const renderExceptionMessage = (exception: SimpleException) => {
+        return (
+          <div>
+            <div class="elsa-mb-4">
+              <strong class="elsa-block elsa-font-bold">{exception.type}</strong>
+              {exception.message}
+            </div>
+            {!!exception.innerException ? <div class="elsa-ml-4">{renderExceptionMessage(exception.innerException)}</div> : undefined}
+          </div>
+        );
+      }
+
       return [
         <div class="-elsa-m-3 elsa-p-3 elsa-flex elsa-items-start elsa-rounded-lg hover:elsa-bg-gray-50 elsa-transition elsa-ease-in-out elsa-duration-150">
           <svg class="elsa-flex-shrink-0 elsa-h-6 elsa-w-6 elsa-text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -307,6 +319,9 @@ export class ElsaWorkflowInstanceViewerScreen {
               Fault
             </p>
             <p class="elsa-mt-1 elsa-text-sm elsa-text-gray-500">
+              
+              {renderExceptionMessage(workflowFault.exception)}
+              
               <pre class="elsa-overflow-x-scroll elsa-max-w-md" onClick={e => clip(e.currentTarget)}>
                 {JSON.stringify(workflowFault, null, 1)}
               </pre>
