@@ -174,5 +174,7 @@ namespace Elsa.Services.Models
 
             return state;
         }
+
+        public void Fault(Exception exception) => WorkflowExecutionContext.Fault(exception, ActivityId, Input, Resuming);
     }
 }

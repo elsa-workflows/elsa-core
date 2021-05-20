@@ -8,7 +8,7 @@ import {
 } from "../../../../models";
 import {activityIconProvider} from "../../../../services/activity-icon-provider";
 import {createElsaClient} from "../../../../services/elsa-client";
-import {durationToString} from "../../../../utils/utils";
+import {clip, durationToString} from "../../../../utils/utils";
 
 interface Tab {
   id: string;
@@ -216,7 +216,7 @@ export class ElsaWorkflowInstanceJournal {
 
   renderJournalTab = () => {
     const records = this.records;
-    const items = records.items;
+    const items = records.items.filter(x => x.eventName != 'Executing');
     const activityDescriptors = this.activityDescriptors;
     const workflowBlueprint = this.workflowBlueprint;
     const activityBlueprints: Array<ActivityBlueprint> = workflowBlueprint.activities || [];
@@ -244,10 +244,15 @@ export class ElsaWorkflowInstanceJournal {
         if (!recordData.hasOwnProperty(key))
           continue;
 
-        if (key.toLowerCase() == 'state')
+        const lowerKey = key.toLowerCase();
+
+        if (lowerKey == 'state')
           continue;
 
-        if (key.toLowerCase() == 'input')
+        if (lowerKey == 'input')
+          continue;
+
+        if (lowerKey == 'outcomes')
           continue;
 
         const value = recordData[key];
@@ -270,6 +275,7 @@ export class ElsaWorkflowInstanceJournal {
       }
 
       const deltaTimeText = durationToString(deltaTime);
+      const outcomes = !!recordData.Outcomes ? recordData.Outcomes || [] : [];
 
       return (
         <li>
@@ -310,11 +316,22 @@ export class ElsaWorkflowInstanceJournal {
                       <dt class="elsa-text-sm elsa-font-medium elsa-text-gray-500">Activity ID</dt>
                       <dd class="elsa-mt-1 elsa-text-sm elsa-text-gray-900 elsa-mb-2">{record.activityId}</dd>
                     </div>
+                    {outcomes.length > 0 ? (
+                      <div class="sm:elsa-col-span-2">
+                        <dt class="elsa-text-sm elsa-font-medium elsa-text-gray-500">Outcomes</dt>
+                        <dd class="elsa-mt-1 elsa-text-sm elsa-text-gray-900 elsa-mb-2">
+                          <div class="elsa-flex elsa-flex-col elsa-space-y-4 sm:elsa-space-y-0 sm:elsa-flex-row sm:elsa-space-x-4">
+                            {outcomes.map(outcome => (
+                              <span class="elsa-inline-flex elsa-items-center elsa-px-3 elsa-py-0.5 elsa-rounded-full elsa-text-sm elsa-font-medium elsa-bg-blue-100 elsa-text-blue-800">{outcome}</span>))}
+                          </div>
+                        </dd>
+                      </div>
+                    ) : undefined}
                     {collection.map(filteredRecordData, (v, k) => (
                       <div class="sm:elsa-col-span-2">
                         <dt class="elsa-text-sm elsa-font-medium elsa-text-gray-500">{k}</dt>
-                        <dd class="elsa-mt-1 elsa-text-sm elsa-text-gray-900 elsa-mb-2">
-                          <pre>{v}</pre>
+                        <dd class="elsa-mt-1 elsa-text-sm elsa-text-gray-900 elsa-mb-2 elsa-overflow-x-scroll">
+                          <pre onClick={e => clip(e.currentTarget)}>{v}</pre>
                         </dd>
                       </div>
                     ))}
