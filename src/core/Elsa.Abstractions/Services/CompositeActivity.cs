@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Builders;
@@ -65,7 +66,12 @@ namespace Elsa.Services
 
             if (finishOutput != null)
             {
-                outcomes.AddRange(finishOutput.Outcomes);
+                // If any outcomes were specified explicitly, we use them instead of Done.
+                var finishOutcomes = finishOutput.Outcomes.ToList();
+
+                if (finishOutcomes.Any())
+                    outcomes = finishOutcomes;
+                
                 output = finishOutput.Output;
             }
             
