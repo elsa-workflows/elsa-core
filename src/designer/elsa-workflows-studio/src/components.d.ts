@@ -37,7 +37,7 @@ export namespace Components {
     }
     interface ElsaDesignerTree {
         "activityContextMenu"?: ActivityContextMenuState;
-        "activityContextMenuButton"?: string;
+        "activityContextMenuButton"?: (activity: ActivityModel) => string;
         "mode": WorkflowDesignerMode;
         "model": WorkflowModel;
         "removeActivity": (activity: ActivityModel) => Promise<void>;
@@ -544,7 +544,7 @@ declare namespace LocalJSX {
     }
     interface ElsaDesignerTree {
         "activityContextMenu"?: ActivityContextMenuState;
-        "activityContextMenuButton"?: string;
+        "activityContextMenuButton"?: (activity: ActivityModel) => string;
         "mode"?: WorkflowDesignerMode;
         "model"?: WorkflowModel;
         "onActivityContextMenuButtonClicked"?: (event: CustomEvent<ActivityContextMenuState>) => void;
