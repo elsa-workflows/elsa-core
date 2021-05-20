@@ -1,14 +1,12 @@
-// ReSharper disable once CheckNamespace
-namespace NodaTime
+using NodaTime;
+
+namespace Elsa.Activities.Temporal.Hangfire.Extensions
 {
     public static class DurationExtensions
     {
         public static string ToCronExpression(this Duration duration)
         {
-            static string CreateCronComponent(int number)
-            {
-                return (number > 0 ? $"*/{number}" : "* ");
-            }
+            static string CreateCronComponent(int number) => (number > 0 ? $"*/{number}" : "*");
 
             var cron = CreateCronComponent(duration.Seconds);
             cron += ' ' + CreateCronComponent(duration.Minutes);

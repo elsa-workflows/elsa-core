@@ -1,9 +1,11 @@
+using System;
 using Elsa.Activities.UserTask.Extensions;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.PostgreSql;
 using Elsa.Persistence.EntityFramework.Sqlite;
 using Elsa.Persistence.YesSql;
 using Elsa.Samples.Server.Host.Activities;
+using Hangfire;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Versioning;
@@ -38,7 +40,8 @@ namespace Elsa.Samples.Server.Host
                     .AddConsoleActivities()
                     .AddHttpActivities(elsaSection.GetSection("Http").Bind)
                     .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
-                    .AddQuartzTemporalActivities()
+                    //.AddQuartzTemporalActivities()
+                    .AddHangfireTemporalActivities(hangfire => hangfire.UseInMemoryStorage(), (_, hangfireServer) => hangfireServer.SchedulePollingInterval = TimeSpan.FromSeconds(5))
                     .AddJavaScriptActivities()
                     .AddUserTaskActivities()
                     .AddActivitiesFrom<Startup>()

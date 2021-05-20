@@ -10,6 +10,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.Email\Elsa.Activities.Email.csproj" />
+        <ProjectReference Include="..\..\..\activities\Elsa.Activities.Temporal.Hangfire\Elsa.Activities.Temporal.Hangfire.csproj" />
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.Temporal.Quartz\Elsa.Activities.Temporal.Quartz.csproj" />
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.UserTask\Elsa.Activities.UserTask.csproj" />
         <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.PostgreSql\Elsa.Persistence.EntityFramework.PostgreSql.csproj" />
