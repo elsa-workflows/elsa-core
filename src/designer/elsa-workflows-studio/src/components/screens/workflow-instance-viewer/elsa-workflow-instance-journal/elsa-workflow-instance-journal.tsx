@@ -1,11 +1,8 @@
-import {Component, EventEmitter, h, Host, Method, Prop, State, Watch, Event} from '@stencil/core';
+import {Component, Event, EventEmitter, h, Host, Method, Prop, State, Watch} from '@stencil/core';
 import * as collection from 'lodash/collection';
 import moment from 'moment';
-import {enter, leave, toggle} from 'el-transition'
-import {
-  ActivityBlueprint,
-  ActivityDescriptor, PagedList, SimpleException, WorkflowBlueprint, WorkflowExecutionLogRecord, WorkflowModel,
-} from "../../../../models";
+import {enter, leave} from 'el-transition'
+import {ActivityBlueprint, ActivityDescriptor, PagedList, WorkflowBlueprint, WorkflowExecutionLogRecord, WorkflowModel,} from "../../../../models";
 import {activityIconProvider} from "../../../../services/activity-icon-provider";
 import {createElsaClient} from "../../../../services/elsa-client";
 import {clip, durationToString} from "../../../../utils/utils";
@@ -42,6 +39,7 @@ export class ElsaWorkflowInstanceJournal {
   @Event() recordSelected: EventEmitter<WorkflowExecutionLogRecord>;
   @State() isVisible: boolean = true;
   @State() records: PagedList<WorkflowExecutionLogRecord> = {items: [], totalCount: 0};
+  @State() filteredRecords: Array<WorkflowExecutionLogRecord> = [];
   @State() selectedRecordId?: string;
   @State() selectedActivityId?: string;
   @State() selectedTabId: string = 'journal';
@@ -70,7 +68,7 @@ export class ElsaWorkflowInstanceJournal {
 
   @Method()
   async selectActivityRecord(activityId?: string) {
-    const record = !!activityId ? this.records.items.find(x => x.activityId == activityId) : null;
+    const record = !!activityId ? this.filteredRecords.find(x => x.activityId == activityId) : null;
     this.selectActivityRecordInternal(record);
     await this.show();
   }
@@ -83,6 +81,7 @@ export class ElsaWorkflowInstanceJournal {
     if (workflowInstanceId && workflowInstanceId.length > 0) {
       try {
         this.records = await client.workflowExecutionLogApi.get(workflowInstanceId);
+        this.filteredRecords = this.records.items.filter(x => x.eventName != 'Executing' && x.eventName != 'Resuming');
       } catch {
         console.warn('The specified workflow instance does not exist.');
       }
@@ -91,6 +90,10 @@ export class ElsaWorkflowInstanceJournal {
 
   async componentWillLoad() {
     await this.workflowInstanceIdChangedHandler(this.workflowInstanceId);
+  }
+  
+  filterRecords(){
+    return 
   }
 
   selectActivityRecordInternal(record?: WorkflowExecutionLogRecord) {
@@ -215,8 +218,7 @@ export class ElsaWorkflowInstanceJournal {
   }
 
   renderJournalTab = () => {
-    const records = this.records;
-    const items = records.items.filter(x => x.eventName != 'Executing');
+    const items = this.filteredRecords;
     const activityDescriptors = this.activityDescriptors;
     const workflowBlueprint = this.workflowBlueprint;
     const activityBlueprints: Array<ActivityBlueprint> = workflowBlueprint.activities || [];
