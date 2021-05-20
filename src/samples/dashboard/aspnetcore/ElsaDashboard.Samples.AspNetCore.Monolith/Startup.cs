@@ -30,7 +30,7 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
                 .AddElsa(options => options
                         .UseEntityFrameworkPersistence(ef => ef.UseSqlite())
                         .AddConsoleActivities()
-                        .AddHttpActivities(elsaSection.GetSection("Http").Bind)
+                        .AddHttpActivities(elsaSection.GetSection("Server").Bind)
                         .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
                         .AddQuartzTemporalActivities()
                         .AddJavaScriptActivities()
