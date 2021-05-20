@@ -307,7 +307,7 @@ export class ElsaWorkflowInstanceViewerScreen {
               Fault
             </p>
             <p class="elsa-mt-1 elsa-text-sm elsa-text-gray-500">
-              <pre class="elsa-overflow-x-scroll elsa-max-w-lg" onClick={e => clip(e.currentTarget)}>
+              <pre class="elsa-overflow-x-scroll elsa-max-w-md" onClick={e => clip(e.currentTarget)}>
                 {JSON.stringify(workflowFault, null, 1)}
               </pre>
             </p>

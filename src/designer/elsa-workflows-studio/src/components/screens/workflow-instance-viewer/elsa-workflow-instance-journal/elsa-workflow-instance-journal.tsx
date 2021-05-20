@@ -329,7 +329,7 @@ export class ElsaWorkflowInstanceJournal {
                     ) : undefined}
                     {collection.map(filteredRecordData, (v, k) => (
                       <div class="sm:elsa-col-span-2">
-                        <dt class="elsa-text-sm elsa-font-medium elsa-text-gray-500">{k}</dt>
+                        <dt class="elsa-text-sm elsa-font-medium elsa-text-gray-500 elsa-capitalize">{k}</dt>
                         <dd class="elsa-mt-1 elsa-text-sm elsa-text-gray-900 elsa-mb-2 elsa-overflow-x-scroll">
                           <pre onClick={e => clip(e.currentTarget)}>{v}</pre>
                         </dd>
