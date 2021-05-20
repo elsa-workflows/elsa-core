@@ -20,7 +20,6 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddElsaApiEndpoints(options =>
             {
                 options.SetupNewtonsoftJson = apiOptions.SetupNewtonsoftJson;
-                options.ConfigureApiVersioningOptions = apiOptions.ConfigureApiVersioningOptions;
             });
 
         public static IServiceCollection AddElsaApiEndpoints(this IServiceCollection services, Action<ElsaApiOptions>? configureApiOptions = default)
@@ -45,7 +44,6 @@ namespace Microsoft.Extensions.DependencyInjection
                     options.ReportApiVersions = true;
                     options.DefaultApiVersion = ApiVersion.Default;
                     options.AssumeDefaultVersionWhenUnspecified = true;
-                    apiOptions.ConfigureApiVersioningOptions?.Invoke(options);
                 });
 
             services.AddSingleton<ConnectionConverter>();
