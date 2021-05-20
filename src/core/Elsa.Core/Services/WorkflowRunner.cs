@@ -280,7 +280,7 @@ namespace Elsa.Services
             catch (Exception e)
             {
                 _logger.LogWarning(e, "Failed to run activity {ActivityId} of workflow {WorkflowInstanceId}", activity.Id, activityExecutionContext.WorkflowInstance.Id);
-                activityExecutionContext.WorkflowExecutionContext.Fault(e, activity.Id, activityExecutionContext.Input, activityExecutionContext.Resuming);
+                activityExecutionContext.Fault(e);
                 await _mediator.Publish(new ActivityFaulted(e, activityExecutionContext), cancellationToken);
             }
 

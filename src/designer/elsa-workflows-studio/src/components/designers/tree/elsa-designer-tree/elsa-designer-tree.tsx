@@ -18,7 +18,7 @@ import {ActivityContextMenuState, WorkflowDesignerMode} from "./models";
 export class ElsaWorkflowDesigner {
   @Prop() model: WorkflowModel = {activities: [], connections: [], persistenceBehavior: WorkflowPersistenceBehavior.WorkflowBurst};
   @Prop() selectedActivityIds: Array<string> = [];
-  @Prop() activityContextMenuButton?: string;
+  @Prop() activityContextMenuButton?: (activity: ActivityModel) => string;
   @Prop() activityContextMenu?: ActivityContextMenuState;
   @Prop() mode: WorkflowDesignerMode = WorkflowDesignerMode.Edit;
   @Event({eventName: 'workflow-changed', bubbles: true, composed: true, cancelable: true}) workflowChanged: EventEmitter<WorkflowModel>;
@@ -291,9 +291,6 @@ export class ElsaWorkflowDesigner {
     this.activityDisplayContexts = displayContexts;
   }
 
-  componentDidRender() {
-  }
-
   showActivityPicker() {
     eventBus.emit(EventTypes.ShowActivityPicker);
   }
@@ -505,6 +502,7 @@ export class ElsaWorkflowDesigner {
   renderActivity(activity: ActivityModel) {
     const displayContext = this.activityDisplayContexts[activity.activityId] || undefined;
     const cssClass = !!this.selectedActivities[activity.activityId] ? 'elsa-border-blue-600' : 'elsa-border-gray-200 hover:elsa-border-blue-600'
+    const activityContextMenuButton = !!this.activityContextMenuButton ? this.activityContextMenuButton(activity) : '';
 
     return `<div id=${`activity-${activity.activityId}`} 
     class="activity elsa-border-2 elsa-border-solid elsa-rounded elsa-bg-white elsa-text-left elsa-text-black elsa-text-lg elsa-select-none elsa-max-w-md elsa-shadow-sm elsa-relative ${cssClass}">
@@ -517,7 +515,7 @@ export class ElsaWorkflowDesigner {
             <p>${activity.displayName}</p>
           </div>
           <div class="context-menu-button-container">
-            ${!!this.activityContextMenuButton ? this.activityContextMenuButton : ''}
+            ${activityContextMenuButton}
           </div>
         </div>
       </div>

@@ -354,7 +354,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   renderCanvas() {
 
-    const activityContextMenuButton =
+    const activityContextMenuButton = (activity: ActivityModel) =>
       `<div class="context-menu-wrapper elsa-flex-shrink-0">
             <button aria-haspopup="true"
                     class="elsa-w-8 elsa-h-8 elsa-inline-flex elsa-items-center elsa-justify-center elsa-text-gray-400 elsa-rounded-full elsa-bg-transparent hover:elsa-text-gray-500 focus:elsa-outline-none focus:elsa-text-gray-500 focus:elsa-bg-gray-100 elsa-transition elsa-ease-in-out elsa-duration-150">
@@ -370,12 +370,12 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
     return (
       <div class="elsa-flex-1 elsa-flex elsa-relative">
-        <elsa-designer-tree model={this.workflowModel} 
-                            mode={WorkflowDesignerMode.Edit} 
+        <elsa-designer-tree model={this.workflowModel}
+                            mode={WorkflowDesignerMode.Edit}
                             activityContextMenuButton={activityContextMenuButton}
                             onActivityContextMenuButtonClicked={e => this.onActivityContextMenuButtonClicked(e)}
                             activityContextMenu={this.activityContextMenuState}
-                            class="elsa-flex-1" 
+                            class="elsa-flex-1"
                             ref={el => this.designer = el}/>
         {this.renderWorkflowSettingsButton()}
         {this.renderActivityContextMenu()}
