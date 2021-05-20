@@ -55,7 +55,7 @@ namespace Elsa.Handlers
 
             var data = new
             {
-                exception = exceptionModel
+                Exception = exceptionModel
             };
 
             await WriteEntryAsync("Faulted", exception.Message, notification.ActivityExecutionContext, data, cancellationToken);
