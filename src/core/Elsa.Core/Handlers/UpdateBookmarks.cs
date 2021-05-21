@@ -7,11 +7,11 @@ using MediatR;
 
 namespace Elsa.Handlers
 {
-    public class UpdateTriggers : INotificationHandler<WorkflowInstanceSaved>, INotificationHandler<ManyWorkflowInstancesDeleted>, INotificationHandler<ManyWorkflowInstancesAdded>
+    public class UpdateBookmarks : INotificationHandler<WorkflowInstanceSaved>, INotificationHandler<ManyWorkflowInstancesDeleted>, INotificationHandler<ManyWorkflowInstancesAdded>
     {
         private readonly IBookmarkIndexer _bookmarkIndexer;
 
-        public UpdateTriggers(IBookmarkIndexer bookmarkIndexer)
+        public UpdateBookmarks(IBookmarkIndexer bookmarkIndexer)
         {
             _bookmarkIndexer = bookmarkIndexer;
         }

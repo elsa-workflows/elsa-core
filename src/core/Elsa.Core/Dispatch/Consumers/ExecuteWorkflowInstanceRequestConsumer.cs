@@ -11,7 +11,6 @@ namespace Elsa.Dispatch.Consumers
     public class ExecuteWorkflowInstanceRequestConsumer : IHandleMessages<ExecuteWorkflowInstanceRequest>
     {
         private readonly IWorkflowInstanceExecutor _workflowInstanceExecutor;
-        private readonly IMediator _mediator;
         private readonly IDistributedLockProvider _distributedLockProvider;
         private readonly ICommandSender _commandSender;
         private readonly ILogger _logger;
@@ -19,13 +18,11 @@ namespace Elsa.Dispatch.Consumers
 
         public ExecuteWorkflowInstanceRequestConsumer(
             IWorkflowInstanceExecutor workflowInstanceExecutor,
-            IMediator mediator, 
             IDistributedLockProvider distributedLockProvider,
             ICommandSender commandSender,
             ILogger<ExecuteWorkflowInstanceRequestConsumer> logger)
         {
             _workflowInstanceExecutor = workflowInstanceExecutor;
-            _mediator = mediator;
             _distributedLockProvider = distributedLockProvider;
             _commandSender = commandSender;
             _logger = logger;
@@ -36,21 +33,22 @@ namespace Elsa.Dispatch.Consumers
             var workflowInstanceId = message.WorkflowInstanceId;
             var lockKey = $"execute-workflow-instance-consumer:{workflowInstanceId}";
             
-            _logger.LogDebug("Acquiring lock on workflow instance {WorkflowInstanceId}", workflowInstanceId);
+            _logger.LogDebug("Acquiring lock on {LockKey}", lockKey);
             _stopwatch.Restart();
 
             await using var handle = await _distributedLockProvider.AcquireLockAsync(lockKey, Duration.FromSeconds(10));
             
             if(handle == null)
             {
-                _logger.LogDebug("Failed to acquire lock on workflow instance {WorkflowInstanceId}. Re-queueing message", workflowInstanceId);
+                _logger.LogDebug("Failed to acquire lock on {LockKey}. Re-queueing message", lockKey);
                 await _commandSender.SendAsync(message);
                 return;
             }
             
+            _logger.LogDebug("Acquired lock on {LockKey}", lockKey);
             await _workflowInstanceExecutor.ExecuteAsync(message.WorkflowInstanceId, message.ActivityId, message.Input);
             _stopwatch.Stop();
-            _logger.LogDebug("Held lock on workflow instance {WorkflowInstanceId} for {ElapsedTime}", workflowInstanceId, _stopwatch.Elapsed);
+            _logger.LogDebug("Held lock on {LockKey} for {ElapsedTime}", lockKey, _stopwatch.Elapsed);
         }
     }
 }
