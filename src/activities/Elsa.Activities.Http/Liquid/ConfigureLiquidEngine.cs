@@ -1,5 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.Http.Models;
 using Elsa.Scripting.Liquid.Helpers;
 using Elsa.Scripting.Liquid.Messages;
 using Fluid;
@@ -28,6 +29,7 @@ namespace Elsa.Activities.Http.Liquid
 
             options.Scope.SetValue("Request", new ObjectValue(new LiquidRequestAccessor()));
 
+            options.MemberAccessStrategy.Register<HttpResponseModel>();
             options.MemberAccessStrategy.Register<LiquidRequestAccessor, FluidValue>((_, name, _) =>
             {
                 var request = _httpContextAccessor.HttpContext?.Request;
