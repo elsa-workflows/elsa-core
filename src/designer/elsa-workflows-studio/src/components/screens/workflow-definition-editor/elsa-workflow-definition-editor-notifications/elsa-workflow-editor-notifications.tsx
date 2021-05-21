@@ -39,7 +39,7 @@ export class ElsaWorkflowEditorNotifications {
   render() {
 
     return (
-      <Host class="block">
+      <Host class="elsa-block">
         <elsa-toast-notification ref={el => this.toastNotificationElement = el}/>
       </Host>
     );

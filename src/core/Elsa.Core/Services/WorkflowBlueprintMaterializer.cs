@@ -16,13 +16,13 @@ namespace Elsa.Services
     public class WorkflowBlueprintMaterializer : IWorkflowBlueprintMaterializer
     {
         private readonly IActivityTypeService _activityTypeService;
-        private readonly IGetsStartActivitiesForCompositeActivityBlueprint _startingActivitiesProvider;
+        private readonly IGetsStartActivities _startingActivitiesProvider;
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger _logger;
 
         public WorkflowBlueprintMaterializer(
             IActivityTypeService activityTypeService,
-            IGetsStartActivitiesForCompositeActivityBlueprint startingActivitiesProvider,
+            IGetsStartActivities startingActivitiesProvider,
             IServiceProvider serviceProvider,
             ILogger<WorkflowBlueprintMaterializer> logger)
         {
@@ -154,11 +154,11 @@ namespace Elsa.Services
                     ActivityId = activityDefinition.ActivityId,
                     Name = activityDefinition.Name,
                     DisplayName = activityDefinition.DisplayName,
+                    Description = activityDefinition.Description,
                     PersistOutputEnabled = activityDefinition.PersistOutput,
                     PersistWorkflowEnabled = activityDefinition.PersistWorkflow,
                     LoadWorkflowContextEnabled = activityDefinition.LoadWorkflowContext,
                     SaveWorkflowContextEnabled = activityDefinition.SaveWorkflowContext,
-                    Description = activityDefinition.Description
                 };
                 
                 compositeActivity.Build(compositeActivityBuilder);

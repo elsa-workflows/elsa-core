@@ -12,7 +12,7 @@ namespace Elsa.Activities.ControlFlow
     
     public static class ForActivityScopeExtensions
     {
-        public static ForScope ForScope(this ActivityExecutionContext context) => new(context.CurrentScope);
+        public static ForScope ForScope(this ActivityExecutionContext context) => new(context.CurrentScope!);
         public static ForScope ForScope(this ActivityExecutionContext context, string activityId) => new(context.GetScope(activityId));
         public static ForScope ForNamedScope(this ActivityExecutionContext context, string activityId) => new(context.GetNamedScope(activityId));
     }

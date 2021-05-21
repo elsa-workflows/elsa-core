@@ -7,10 +7,11 @@
 
 ## Properties
 
-| Property             | Attribute | Description | Type                         | Default     |
-| -------------------- | --------- | ----------- | ---------------------------- | ----------- |
-| `propertyDescriptor` | --        |             | `ActivityPropertyDescriptor` | `undefined` |
-| `propertyModel`      | --        |             | `ActivityDefinitionProperty` | `undefined` |
+| Property             | Attribute    | Description | Type                         | Default     |
+| -------------------- | ------------ | ----------- | ---------------------------- | ----------- |
+| `propertyDescriptor` | --           |             | `ActivityPropertyDescriptor` | `undefined` |
+| `propertyModel`      | --           |             | `ActivityDefinitionProperty` | `undefined` |
+| `serverUrl`          | `server-url` |             | `string`                     | `undefined` |
 
 
 ## Dependencies
@@ -18,11 +19,13 @@
 ### Depends on
 
 - [elsa-property-editor](../../elsa-property-editor)
+- context-consumer
 
 ### Graph
 ```mermaid
 graph TD;
   elsa-check-list-property --> elsa-property-editor
+  elsa-check-list-property --> context-consumer
   elsa-property-editor --> elsa-multi-expression-editor
   elsa-multi-expression-editor --> elsa-expression-editor
   elsa-expression-editor --> elsa-monaco

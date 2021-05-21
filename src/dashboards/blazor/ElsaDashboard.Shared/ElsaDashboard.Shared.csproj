@@ -13,9 +13,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Google.Api.CommonProtos" Version="2.2.0" />
-        <PackageReference Include="Grpc.Net.Client" Version="2.36.0" />
-        <PackageReference Include="Grpc.Net.ClientFactory" Version="2.36.0" />
+        <PackageReference Include="Google.Api.CommonProtos" Version="2.3.0" />
+        <PackageReference Include="Grpc.Net.Client" Version="2.37.0" />
+        <PackageReference Include="Grpc.Net.ClientFactory" Version="2.37.0" />
         <PackageReference Include="protobuf-net" Version="3.0.101" />
         <PackageReference Include="protobuf-net.Grpc" Version="1.0.152" />
     </ItemGroup>

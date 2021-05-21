@@ -47,20 +47,25 @@ namespace Elsa.Services
             await StartWorkflowsAsync(results, input, contextId, cancellationToken);
         }
 
-        public async Task StartWorkflowsAsync(
+        public async Task<IEnumerable<RunWorkflowResult>> StartWorkflowsAsync(
             IEnumerable<TriggerFinderResult> results,
             object? input = default,
             string? contextId = default,
             CancellationToken cancellationToken = default)
         {
+            var runWorkflowResults = new List<RunWorkflowResult>();
+            
             foreach (var result in results)
             {
                 var workflowBlueprint = result.WorkflowBlueprint;
-                await StartWorkflowAsync(workflowBlueprint, result.ActivityId, input, contextId: contextId, cancellationToken: cancellationToken);
+                var runWorkflowResult = await StartWorkflowAsync(workflowBlueprint, result.ActivityId, input, contextId: contextId, cancellationToken: cancellationToken);
+                runWorkflowResults.Add(runWorkflowResult);
             }
+
+            return runWorkflowResults;
         }
 
-        public async Task<WorkflowInstance> StartWorkflowAsync(
+        public async Task<RunWorkflowResult> StartWorkflowAsync(
             IWorkflowBlueprint workflowBlueprint,
             string? activityId = default,
             object? input = default,
@@ -78,7 +83,7 @@ namespace Elsa.Services
             return await _workflowRunner.RunWorkflowAsync(workflowBlueprint, workflowInstance, activityId, input, cancellationToken);
         }
 
-        public async Task<WorkflowInstance> BuildAndStartWorkflowAsync<T>(
+        public async Task<RunWorkflowResult> BuildAndStartWorkflowAsync<T>(
             string? activityId = default,
             object? input = default,
             string? correlationId = default,
@@ -89,7 +94,7 @@ namespace Elsa.Services
             return await StartWorkflowAsync(workflowBlueprint, activityId, input, correlationId, contextId, cancellationToken);
         }
 
-        public async Task<WorkflowInstance> BuildAndStartWorkflowAsync(
+        public async Task<RunWorkflowResult> BuildAndStartWorkflowAsync(
             IWorkflow workflow,
             string? activityId = default,
             object? input = default,

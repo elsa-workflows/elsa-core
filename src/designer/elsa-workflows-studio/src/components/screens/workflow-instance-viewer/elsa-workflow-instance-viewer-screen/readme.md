@@ -34,7 +34,7 @@ Type: `Promise<string>`
 
 ### Depends on
 
-- [elsa-workflow-instance-journal](.)
+- [elsa-workflow-instance-journal](../elsa-workflow-instance-journal)
 - [elsa-designer-tree](../../../designers/tree/elsa-designer-tree)
 
 ### Graph

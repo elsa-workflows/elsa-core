@@ -4,7 +4,6 @@ using AutoMapper;
 using Elsa.Models;
 using Elsa.Persistence.EntityFramework.Core.Services;
 using Elsa.Persistence.Specifications;
-using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EntityFramework.Core.Stores
 {

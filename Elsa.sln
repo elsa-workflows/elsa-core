@@ -274,10 +274,30 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.File", "src\activities\Elsa.Activities.File\Elsa.Activities.File.csproj", "{BE284508-9582-4FCB-B0DD-0761AB940AD7}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.ReadLineToFile", "src\samples\console\Elsa.Samples.ReadLineToFile\Elsa.Samples.ReadLineToFile.csproj", "{3EB488DF-3C28-4DAD-B43E-6062E39629AB}"
+ProjectSection(SolutionItems) = preProject
+	docker\docker-compose.yaml = docker\docker-compose.yaml
+	docker\Dockerfile = docker\Dockerfile
+	docker\README.md = docker\README.md
+	docker\Dockerfile-elsa-dashboard = docker\Dockerfile-elsa-dashboard
+	docker\Dockerfile-elsa-dashboard-and-server = docker\Dockerfile-elsa-dashboard-and-server
+EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.SendHttp", "src\samples\aspnet\Elsa.Samples.SendHttp\Elsa.Samples.SendHttp.csproj", "{775EFD59-F99C-4D38-B54E-9734C9D9649A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.FileWatcher", "src\samples\console\Elsa.Samples.FileWatcher\Elsa.Samples.FileWatcher.csproj", "{5FC56764-D70C-4CDE-8480-F67C2E846DC5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.CustomActivityOutcomes", "src\samples\console\Elsa.Samples.CustomActivityOutcomes\Elsa.Samples.CustomActivityOutcomes.csproj", "{30A9B140-14F5-4D00-84ED-1447F96D13C8}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "aspnetcore", "aspnetcore", "{28C5C63F-2DCF-46BE-9576-1F50A7CFE8C4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElsaDashboard.Web", "src\dashboards\aspnetcore\ElsaDashboard\ElsaDashboard.Web.csproj", "{5F81C84A-4C04-48FF-981C-23E48A7ACA6C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "github", "github", "{3BF2C5A9-AC69-4587-833F-C16CFC97E100}"
+ProjectSection(SolutionItems) = preProject
+	.github\workflows\publish-latest-dashboard-docker.yml = .github\workflows\publish-latest-dashboard-docker.yml
+	.github\workflows\publish-latest-server-docker.yml = .github\workflows\publish-latest-server-docker.yml
+	.github\workflows\publish-latest-dashboard-and-server-docker.yml = .github\workflows\publish-latest-dashboard-and-server-docker.yml
+EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -669,6 +689,14 @@ Global
 		{5FC56764-D70C-4CDE-8480-F67C2E846DC5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5FC56764-D70C-4CDE-8480-F67C2E846DC5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5FC56764-D70C-4CDE-8480-F67C2E846DC5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{30A9B140-14F5-4D00-84ED-1447F96D13C8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{30A9B140-14F5-4D00-84ED-1447F96D13C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{30A9B140-14F5-4D00-84ED-1447F96D13C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{30A9B140-14F5-4D00-84ED-1447F96D13C8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5F81C84A-4C04-48FF-981C-23E48A7ACA6C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5F81C84A-4C04-48FF-981C-23E48A7ACA6C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5F81C84A-4C04-48FF-981C-23E48A7ACA6C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5F81C84A-4C04-48FF-981C-23E48A7ACA6C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -799,6 +827,9 @@ Global
 		{3EB488DF-3C28-4DAD-B43E-6062E39629AB} = {FC9F520F-BA51-4AD2-BFEE-EF787798E734}
 		{775EFD59-F99C-4D38-B54E-9734C9D9649A} = {22E75696-6FE9-436A-9097-EE21C603F818}
 		{5FC56764-D70C-4CDE-8480-F67C2E846DC5} = {FC9F520F-BA51-4AD2-BFEE-EF787798E734}
+		{30A9B140-14F5-4D00-84ED-1447F96D13C8} = {FC9F520F-BA51-4AD2-BFEE-EF787798E734}
+		{28C5C63F-2DCF-46BE-9576-1F50A7CFE8C4} = {164EB38A-D6D2-4092-8835-C944ECEE357C}
+		{5F81C84A-4C04-48FF-981C-23E48A7ACA6C} = {28C5C63F-2DCF-46BE-9576-1F50A7CFE8C4}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}

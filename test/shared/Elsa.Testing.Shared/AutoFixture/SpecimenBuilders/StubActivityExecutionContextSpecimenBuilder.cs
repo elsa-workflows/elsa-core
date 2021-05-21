@@ -1,4 +1,5 @@
 using System;
+using AutoFixture;
 using AutoFixture.Kernel;
 using Elsa.Models;
 using Elsa.Services.Models;
@@ -15,10 +16,13 @@ namespace Elsa.Testing.Shared.AutoFixture.SpecimenBuilders
 
             var serviceProvider = GetServiceProvider(context);
             var workflowExecutionContext = GetWorkflowExecutionContext(context, serviceProvider);
+            var activityBlueprint = Mock.Of<IActivityBlueprint>();
 
+            Mock.Get(activityBlueprint).SetupGet(x => x.Id).Returns(context.Create<string>());
+            
             return new ActivityExecutionContext(serviceProvider,
                                                 workflowExecutionContext,
-                                                Mock.Of<IActivityBlueprint>(),
+                                                activityBlueprint,
                                                 default,
                                                 default,
                                                 default);

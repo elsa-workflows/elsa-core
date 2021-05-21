@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Events;
 using MediatR;
@@ -10,7 +9,6 @@ namespace Elsa.Handlers
     public class LogWorkflowExecution : INotificationHandler<ActivityExecuting>, INotificationHandler<ActivityExecuted>, INotificationHandler<WorkflowExecutionBurstCompleted>, INotificationHandler<ActivityFaulted>
     {
         private readonly ILogger _logger;
-        private readonly Stopwatch _stopwatch = new();
 
         public LogWorkflowExecution(ILogger<LogWorkflowExecution> logger)
         {
@@ -19,7 +17,6 @@ namespace Elsa.Handlers
 
         public Task Handle(ActivityExecuting notification, CancellationToken cancellationToken)
         {
-            _stopwatch.Start();
             var activityBlueprint = notification.Activity;
             var activityId = activityBlueprint.Id;
             var workflowInstanceId = notification.WorkflowExecutionContext.WorkflowInstance.Id;
@@ -29,11 +26,10 @@ namespace Elsa.Handlers
 
         public Task Handle(ActivityExecuted notification, CancellationToken cancellationToken)
         {
-            _stopwatch.Stop();
             var activityBlueprint = notification.Activity;
             var activityId = activityBlueprint.Id;
             var workflowInstanceId = notification.WorkflowExecutionContext.WorkflowInstance.Id;
-            _logger.LogDebug("Executed activity {ActivityType} {ActivityId} for workflow {WorkflowInstanceId} in {ElapsedTime}", activityBlueprint.Type, activityId, workflowInstanceId, _stopwatch.Elapsed);
+            _logger.LogDebug("Executed activity {ActivityType} {ActivityId} for workflow {WorkflowInstanceId}", activityBlueprint.Type, activityId, workflowInstanceId);
             return Task.CompletedTask;
         }
 

@@ -11,6 +11,7 @@ using Elsa.Persistence.YesSql.Services;
 using Microsoft.Extensions.Logging;
 using NodaTime;
 using YesSql;
+using YesSql.Services;
 using IIdGenerator = Elsa.Services.IIdGenerator;
 
 namespace Elsa.Persistence.YesSql.Stores
@@ -31,6 +32,7 @@ namespace Elsa.Persistence.YesSql.Stores
             {
                 EntityIdSpecification<WorkflowInstance> spec => Query<WorkflowInstanceIndex>(session, x => x.InstanceId == spec.Id),
                 WorkflowInstanceIdSpecification spec => Query<WorkflowInstanceIndex>(session, x => x.InstanceId == spec.Id),
+                WorkflowInstanceIdsSpecification spec => Query<WorkflowInstanceIndex>(session, x => x.InstanceId.IsIn(spec.WorkflowInstanceIds)),
                 BlockingActivityTypeSpecification spec => Query<WorkflowInstanceBlockingActivitiesIndex>(session, x => x.ActivityType == spec.ActivityType),
                 _ => AutoMapSpecification<WorkflowInstanceIndex>(session, specification)
             };

@@ -4,7 +4,6 @@ using Elsa.Persistence;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Services;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Elsa.Persistence.EntityFramework.SqlServer;
 
@@ -41,7 +40,8 @@ namespace Elsa.Samples.Persistence.EntityFramework
             var workflowRunner = services.GetRequiredService<IBuildsAndStartsWorkflow>();
 
             // Run the workflow.
-            var workflowInstance = await workflowRunner.BuildAndStartWorkflowAsync<HelloWorld>();
+            var runWorkflowResult = await workflowRunner.BuildAndStartWorkflowAsync<HelloWorld>();
+            var workflowInstance = runWorkflowResult.WorkflowInstance!;
 
             // Get a reference to the workflow instance store.
             var store = services.GetRequiredService<IWorkflowInstanceStore>();

@@ -12,6 +12,8 @@ import {SwitchPlugin} from "../plugins/switch-plugin";
 import {WhilePlugin} from "../plugins/while-plugin";
 import {StartAtPlugin} from "../plugins/start-at-plugin";
 import {CronPlugin} from "../plugins/cron-plugin";
+import {SignalReceivedPlugin} from "../plugins/signal-received-plugin";
+import {SendSignalPlugin} from "../plugins/send-signal-plugin";
 
 export class PluginManager {
 
@@ -29,6 +31,8 @@ export class PluginManager {
       new TimerPlugin(),
       new StartAtPlugin(),
       new CronPlugin(),
+      new SignalReceivedPlugin(),
+      new SendSignalPlugin(),
       new WriteLinePlugin(),
       new RunJavascriptPlugin(),
       new SendEmailPlugin()

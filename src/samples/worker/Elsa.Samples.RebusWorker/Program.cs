@@ -19,12 +19,12 @@ namespace Elsa.Samples.RebusWorker
                     services
                         .AddElsa(options => options
                             // Configure Elsa to use the Entity Framework Core persistence provider using Sqlite.
-                            .UseEntityFrameworkPersistence(ef =>
+                            .UseNonPooledEntityFrameworkPersistence(ef =>
                             {
                                 ef.UseSqlite(
                                     "Data Source=elsa.db;Cache=Shared",
                                     db => db.MigrationsAssembly(typeof(SqliteElsaContextFactory).Assembly.GetName().Name));
-                            }, true)
+                            })
                             .AddConsoleActivities()
                             .AddQuartzTemporalActivities()
                             .AddRebusActivities<Greeting>()

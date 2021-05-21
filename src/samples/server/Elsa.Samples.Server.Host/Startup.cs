@@ -1,18 +1,17 @@
-using Elsa.Activities.Telnyx.Extensions;
+using System;
 using Elsa.Activities.UserTask.Extensions;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
+using Elsa.Persistence.EntityFramework.PostgreSql;
 using Elsa.Persistence.EntityFramework.Sqlite;
-using Elsa.Persistence.EntityFramework.SqlServer;
+using Elsa.Persistence.YesSql;
 using Elsa.Samples.Server.Host.Activities;
-using Elsa.Server.Hangfire.Extensions;
 using Hangfire;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Versioning;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using NodaTime;
-using NodaTime.Serialization.JsonNet;
 
 namespace Elsa.Samples.Server.Host
 {
@@ -30,43 +29,22 @@ namespace Elsa.Samples.Server.Host
         public void ConfigureServices(IServiceCollection services)
         {
             var elsaSection = Configuration.GetSection("Elsa");
-            var hangfireSection = Configuration.GetSection("Hangfire");
 
             services.AddControllers();
-
-            // Hangfire is required when using Hangfire Dispatchers.
-            services
-                .AddHangfire(configuration => configuration
-                    .UseSimpleAssemblyNameTypeSerializer()
-                    .UseRecommendedSerializerSettings(settings => settings.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb))
-                    .UseInMemoryStorage())
-                .AddHangfireServer(options =>
-                {
-                    options.ConfigureForElsaDispatchers();
-                    hangfireSection
-                        .GetSection("Server")
-                        .Bind(options);
-                });
 
             services
                 .AddActivityPropertyOptionsProvider<VehicleActivity>()
                 .AddRuntimeSelectItemsProvider<VehicleActivity>()
                 .AddElsa(elsa => elsa
-                    .UseNonPooledEntityFrameworkPersistence(ef => ef.UseSqlite())
-                    //.UseNonPooledEntityFrameworkPersistence(ef => ef.UseSqlServer("Server=LAPTOP-B76STK67;Database=Elsa;Integrated Security=true;MultipleActiveResultSets=True;"))
-                    //.UseYesSqlPersistence()
-                    
-                    // Using Hangfire as the dispatcher for workflow execution in the background.
-                    .UseHangfireDispatchers()
-                    
+                    .UseEntityFrameworkPersistence(ef => ef.UseSqlite())
                     .AddConsoleActivities()
                     .AddHttpActivities(elsaSection.GetSection("Http").Bind)
                     .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
-                    .AddQuartzTemporalActivities()
+                    //.AddQuartzTemporalActivities()
+                    .AddHangfireTemporalActivities(hangfire => hangfire.UseInMemoryStorage(), (_, hangfireServer) => hangfireServer.SchedulePollingInterval = TimeSpan.FromSeconds(5))
                     .AddJavaScriptActivities()
                     .AddUserTaskActivities()
-                    .AddTelnyx()
-                    .AddActivitiesFrom<VehicleActivity>()
+                    .AddActivitiesFrom<Startup>()
                     .AddWorkflowsFrom<Startup>()
                 );
 
@@ -92,12 +70,10 @@ namespace Elsa.Samples.Server.Host
             app
                 .UseCors()
                 .UseHttpActivities()
-                .UseCors()
                 .UseRouting()
                 .UseEndpoints(endpoints =>
                 {
                     endpoints.MapControllers();
-                    endpoints.MapTelnyxWebhook();
                 });
         }
     }

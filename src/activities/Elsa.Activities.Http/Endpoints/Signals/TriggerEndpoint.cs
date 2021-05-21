@@ -1,9 +1,8 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.Http.Models;
-using Elsa.Activities.Http.Services;
 using Elsa.Activities.Signaling.Services;
 using Microsoft.AspNetCore.Mvc;
+using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Activities.Http.Endpoints.Signals
 {
@@ -12,26 +11,17 @@ namespace Elsa.Activities.Http.Endpoints.Signals
     [Produces("application/json")]
     public class TriggerEndpoint : ControllerBase
     {
-        private readonly ITokenService _tokenService;
         private readonly ISignaler _signaler;
+        public TriggerEndpoint(ISignaler signaler) => _signaler = signaler;
 
-        public TriggerEndpoint(ITokenService tokenService, ISignaler signaler)
-        {
-            _tokenService = tokenService;
-            _signaler = signaler;
-        }
-        
         [HttpGet, HttpPost]
         public async Task<IActionResult> Handle(string token, CancellationToken cancellationToken)
         {
-            if (!_tokenService.TryDecryptToken(token, out Signal signal))
-                return NotFound();
+            var result = await _signaler.TriggerSignalTokenAsync(token, cancellationToken: cancellationToken).ToList();
 
-            await _signaler.TriggerSignalAsync(signal.Name, null, signal.WorkflowInstanceId, cancellationToken);
-            
-            return HttpContext.Items.ContainsKey(WorkflowHttpResult.Instance)
-                ? (IActionResult)new EmptyResult()
-                : Accepted();
+            return HttpContext.Response.HasStarted
+                ? new EmptyResult()
+                : Ok(result);
         }
     }
 }

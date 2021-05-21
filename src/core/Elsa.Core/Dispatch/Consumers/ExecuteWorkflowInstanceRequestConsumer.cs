@@ -10,6 +10,7 @@ namespace Elsa.Dispatch.Consumers
 {
     public class ExecuteWorkflowInstanceRequestConsumer : IHandleMessages<ExecuteWorkflowInstanceRequest>
     {
+        private readonly IWorkflowInstanceExecutor _workflowInstanceExecutor;
         private readonly IMediator _mediator;
         private readonly IDistributedLockProvider _distributedLockProvider;
         private readonly ICommandSender _commandSender;
@@ -17,11 +18,13 @@ namespace Elsa.Dispatch.Consumers
         private readonly Stopwatch _stopwatch = new();
 
         public ExecuteWorkflowInstanceRequestConsumer(
+            IWorkflowInstanceExecutor workflowInstanceExecutor,
             IMediator mediator, 
             IDistributedLockProvider distributedLockProvider,
             ICommandSender commandSender,
             ILogger<ExecuteWorkflowInstanceRequestConsumer> logger)
         {
+            _workflowInstanceExecutor = workflowInstanceExecutor;
             _mediator = mediator;
             _distributedLockProvider = distributedLockProvider;
             _commandSender = commandSender;
@@ -45,7 +48,7 @@ namespace Elsa.Dispatch.Consumers
                 return;
             }
             
-            await _mediator.Send(message);
+            await _workflowInstanceExecutor.ExecuteAsync(message.WorkflowInstanceId, message.ActivityId, message.Input);
             _stopwatch.Stop();
             _logger.LogDebug("Held lock on workflow instance {WorkflowInstanceId} for {ElapsedTime}", workflowInstanceId, _stopwatch.Elapsed);
         }

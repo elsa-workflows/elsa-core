@@ -13,7 +13,6 @@ interface VariableDefinition {
 
 @Component({
   tag: 'elsa-workflow-settings-modal',
-  styleUrl: 'elsa-workflow-settings-modal.css',
   shadow: false,
 })
 export class ElsaWorkflowDefinitionSettingsModal {
@@ -77,22 +76,22 @@ export class ElsaWorkflowDefinitionSettingsModal {
 
     const tabs = ['Settings', 'Variables', 'Workflow Context'];
     const selectedTab = this.selectedTab;
-    const inactiveClass = 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300';
-    const selectedClass = 'border-blue-500 text-blue-600';
+    const inactiveClass = 'elsa-border-transparent elsa-text-gray-500 hover:elsa-text-gray-700 hover:elsa-border-gray-300';
+    const selectedClass = 'elsa-border-blue-500 elsa-text-blue-600';
 
     return (
       <Host>
         <elsa-modal-dialog ref={el => this.dialog = el}>
-          <div slot="content" class="py-8 pb-0">
+          <div slot="content" class="elsa-py-8 elsa-pb-0">
 
             <form onSubmit={e => this.onSubmit(e)}>
-              <div class="px-8 mb-8">
-                <div class="border-b border-gray-200">
-                  <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+              <div class="elsa-px-8 mb-8">
+                <div class="elsa-border-b elsa-border-gray-200">
+                  <nav class="-elsa-mb-px elsa-flex elsa-space-x-8" aria-label="Tabs">
                     {tabs.map(tab => {
                       const isSelected = tab === selectedTab;
                       const cssClass = isSelected ? selectedClass : inactiveClass;
-                      return <a href="#" onClick={e => this.onTabClick(e, tab)} class={`${cssClass} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}>{tab}</a>;
+                      return <a href="#" onClick={e => this.onTabClick(e, tab)} class={`${cssClass} elsa-whitespace-nowrap elsa-py-4 elsa-px-1 elsa-border-b-2 elsa-font-medium elsa-text-sm`}>{tab}</a>;
                     })}
                   </nav>
                 </div>
@@ -100,15 +99,15 @@ export class ElsaWorkflowDefinitionSettingsModal {
 
               {this.renderSelectedTab()}
 
-              <div class="pt-5">
-                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+              <div class="elsa-pt-5">
+                <div class="elsa-bg-gray-50 elsa-px-4 elsa-py-3 sm:elsa-px-6 sm:elsa-flex sm:elsa-flex-row-reverse">
                   <button type="submit"
-                          class="ml-0 w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
+                          class="elsa-ml-0 elsa-w-full elsa-inline-flex elsa-justify-center elsa-rounded-md elsa-border elsa-border-transparent elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-bg-blue-600 elsa-text-base elsa-font-medium elsa-text-white hover:elsa-bg-blue-700 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 sm:elsa-ml-3 sm:elsa-w-auto sm:elsa-text-sm">
                     Save
                   </button>
                   <button type="button"
                           onClick={() => this.onCancelClick()}
-                          class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                          class="elsa-mt-3 elsa-w-full elsa-inline-flex elsa-justify-center elsa-rounded-md elsa-border elsa-border-gray-300 elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-bg-white elsa-text-base elsa-font-medium elsa-text-gray-700 hover:elsa-bg-gray-50 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 sm:elsa-mt-0 sm:elsa-ml-3 sm:elsa-w-auto sm:elsa-text-sm">
                     Cancel
                   </button>
                 </div>
@@ -155,8 +154,8 @@ export class ElsaWorkflowDefinitionSettingsModal {
     }]
 
     return (
-      <div class="flex px-8">
-        <div class="space-y-8 w-full">
+      <div class="elsa-flex elsa-px-8">
+        <div class="elsa-space-y-8 elsa-w-full">
           {textInput(formContext, 'name', 'Name', workflowDefinition.name, 'The technical name of the workflow.', 'workflowName')}
           {textInput(formContext, 'displayName', 'Display Name', workflowDefinition.displayName, 'A user-friendly display name of the workflow.', 'workflowDisplayName')}
           {textArea(formContext, 'description', 'Description', workflowDefinition.description, null, 'workflowDescription')}
@@ -176,8 +175,8 @@ export class ElsaWorkflowDefinitionSettingsModal {
     const language = 'json';
 
     return (
-      <div class="flex px-8">
-        <div class="space-y-8 w-full h-30">
+      <div class="elsa-flex elsa-px-8">
+        <div class="elsa-space-y-8 elsa-w-full elsa-h-30">
           <elsa-monaco value={value} language={language} editor-height="30em" onValueChanged={e => this.onMonacoValueChanged(e.detail)} ref={el => this.monacoEditor = el}/>
         </div>
       </div>
@@ -202,8 +201,8 @@ export class ElsaWorkflowDefinitionSettingsModal {
     }]
 
     return (
-      <div class="flex px-8">
-        <div class="space-y-8 w-full">
+      <div class="elsa-flex elsa-px-8">
+        <div class="elsa-space-y-8 elsa-w-full">
           {textInput(formContext, 'contextOptions.contextType', 'Type', contextOptions.contextType, 'The fully qualified workflow context type name.', 'workflowContextType')}
           {selectField(formContext, 'contextOptions.contextFidelity', 'Fidelity', contextOptions.contextFidelity, fidelityOptions, 'The workflow context refresh fidelity controls the behavior of when to load and persist the workflow context.', 'workflowContextFidelity')}
         </div>

@@ -1,6 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Temporal.Common.Services;
+using Elsa.Activities.Temporal.Hangfire.Extensions;
 using Elsa.Activities.Temporal.Hangfire.Models;
 using Hangfire;
 using NodaTime;
@@ -9,37 +10,46 @@ namespace Elsa.Activities.Temporal.Hangfire.Services
 {
     public class HangfireWorkflowScheduler : IWorkflowScheduler
     {
-        private readonly IBackgroundJobClient _backgroundJobClient;
-        private readonly ICrontabParser _crontabParser;
+        private readonly JobManager _jobManager;
 
-        public HangfireWorkflowScheduler(IBackgroundJobClient backgroundJobClient, ICrontabParser crontabParser)
+        public HangfireWorkflowScheduler(JobManager jobManager)
         {
-            _backgroundJobClient = backgroundJobClient;
-            _crontabParser = crontabParser;
+            _jobManager = jobManager;
         }
 
         public Task ScheduleWorkflowAsync(string? workflowDefinitionId, string? workflowInstanceId, string activityId, string? tenantId, Instant startAt, Duration? interval, CancellationToken cancellationToken)
         {
-            var data = CreateData(workflowDefinitionId, workflowInstanceId, activityId, tenantId, interval?.ToCronExpression());
+            var cron = interval?.ToCronExpression();
+            var data = CreateData(workflowDefinitionId, workflowInstanceId, activityId, tenantId, cron);
 
-            _backgroundJobClient.ScheduleWorkflow(data, startAt.ToDateTimeOffset());
+            _jobManager.ScheduleJob(data, startAt);
+
+            if (cron != null)
+                _jobManager.ScheduleJob(data, cron);
 
             return Task.CompletedTask;
         }
-        
+
         public Task ScheduleWorkflowAsync(string? workflowDefinitionId, string? workflowInstanceId, string activityId, string? tenantId, string cronExpression, CancellationToken cancellationToken)
         {
             var data = CreateData(workflowDefinitionId, workflowInstanceId, activityId, tenantId, cronExpression);
-            var instant = _crontabParser.GetNextOccurrence(cronExpression);
 
-            _backgroundJobClient.ScheduleWorkflow(data, instant.ToDateTimeOffset());
+            _jobManager.ScheduleJob(data, cronExpression);
 
             return Task.CompletedTask;
         }
 
         public Task UnscheduleWorkflowAsync(string? workflowDefinitionId, string? workflowInstanceId, string activityId, string? tenantId, CancellationToken cancellationToken = default)
         {
-            _backgroundJobClient.UnscheduleJobWhenAlreadyExists(CreateData(workflowDefinitionId, workflowInstanceId, activityId, tenantId));
+            var data = CreateData(workflowDefinitionId, workflowInstanceId, activityId, tenantId);
+            var identity = data.GetIdentity();
+            _jobManager.UnscheduleJob(identity);
+            return Task.CompletedTask;
+        }
+
+        public Task UnscheduleWorkflowDefinitionAsync(string workflowDefinitionId, string? tenantId, CancellationToken cancellationToken = default)
+        {
+            _jobManager.UnscheduleJobs(workflowDefinitionId, tenantId);
             return Task.CompletedTask;
         }
 

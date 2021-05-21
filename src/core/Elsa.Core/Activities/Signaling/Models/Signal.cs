@@ -11,4 +11,6 @@ namespace Elsa.Activities.Signaling.Models
         public string SignalName { get; set; }
         public object? Input { get; set; }
     }
+    
+    
 }

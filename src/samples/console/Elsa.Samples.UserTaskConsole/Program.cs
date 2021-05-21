@@ -30,7 +30,8 @@ namespace Elsa.Samples.UserTaskConsole
             var workflowTriggerInterruptor = services.GetRequiredService<IWorkflowTriggerInterruptor>();
 
             // Execute the workflow.
-            var workflowInstance = await workflowRunner.BuildAndStartWorkflowAsync<UserTaskWorkflow>();
+            var runWorkflowResult = await workflowRunner.BuildAndStartWorkflowAsync<UserTaskWorkflow>();
+            var workflowInstance = runWorkflowResult.WorkflowInstance!;
 
             var availableActions = new[]
             {

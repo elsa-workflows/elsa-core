@@ -71,7 +71,8 @@ namespace Elsa.Core.IntegrationTests.Persistence.InMemory
 
             public async Task StartAsync(CancellationToken cancellationToken)
             {
-                var instance = await _workflowRunner.BuildAndStartWorkflowAsync<TWorkflow>(cancellationToken: cancellationToken);
+                var runWorkflowResult = await _workflowRunner.BuildAndStartWorkflowAsync<TWorkflow>(cancellationToken: cancellationToken);
+                var instance = runWorkflowResult.WorkflowInstance!;
                 var retrievedInstance = await _instanceStore.FindByIdAsync(instance.Id, cancellationToken);
 
                 // An instance should totally be retrieved from the store

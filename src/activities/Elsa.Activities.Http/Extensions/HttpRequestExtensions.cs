@@ -54,5 +54,16 @@ namespace Elsa.Activities.Http.Extensions
             correlationId = null;
             return false;
         }
+        
+        public static bool GetUseDispatch(this HttpRequest request)
+        {
+            if (request.Query.ContainsKey("x-dispatch"))
+                return true;
+
+            if (request.Headers.ContainsKey("X-Dispatch"))
+                return true;
+            
+            return false;
+        }
     }
 }

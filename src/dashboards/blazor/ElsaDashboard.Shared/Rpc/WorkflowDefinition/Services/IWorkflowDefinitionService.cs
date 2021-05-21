@@ -9,7 +9,7 @@ namespace ElsaDashboard.Shared.Rpc
     public interface IWorkflowDefinitionService
     {
         [Operation]
-        Task<PagedList<WorkflowDefinition>> ListAsync(ListWorkflowDefinitionsRequest request, CallContext context = default);
+        Task<PagedList<WorkflowDefinitionSummary>> ListAsync(ListWorkflowDefinitionsRequest request, CallContext context = default);
 
         [Operation]
         Task<WorkflowDefinition> GetByIdAsync(GetWorkflowDefinitionByIdRequest request, CallContext context = default);

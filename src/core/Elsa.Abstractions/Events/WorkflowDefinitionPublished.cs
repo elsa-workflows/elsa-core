@@ -1,15 +1,11 @@
 ﻿using Elsa.Models;
-using MediatR;
 
 namespace Elsa.Events
 {
-    public class WorkflowDefinitionPublished : INotification
+    public class WorkflowDefinitionPublished : WorkflowDefinitionNotification
     {
-        public WorkflowDefinitionPublished(WorkflowDefinition workflowDefinition)
+        public WorkflowDefinitionPublished(WorkflowDefinition workflowDefinition) : base(workflowDefinition)
         {
-            WorkflowDefinition = workflowDefinition;
         }
-
-        public WorkflowDefinition WorkflowDefinition { get; }
     }
 }

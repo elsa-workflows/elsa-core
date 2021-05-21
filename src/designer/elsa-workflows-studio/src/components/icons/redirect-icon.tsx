@@ -2,8 +2,8 @@
 
 export const RedirectIcon = props =>
   (
-    `<span class="${`rounded-lg inline-flex p-3 bg-light-blue-50 text-light-blue-700 ring-4 ring-white`}">
-      <svg class="h-6 w-6" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    `<span class="${`elsa-rounded-lg elsa-inline-flex elsa-p-3 elsa-bg-light-blue-50 elsa-text-light-blue-700 elsa-ring-4 elsa-ring-white`}">
+      <svg class="elsa-h-6 elsa-w-6" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
         <path stroke="none" d="M0 0h24v24H0z"/>
         <circle cx="6" cy="19" r="2"/>
         <circle cx="18" cy="5" r="2"/>

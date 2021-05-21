@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using Elsa.Events;
 using Elsa.Services;
-using Elsa.Triggers;
 using MediatR;
 
 namespace Elsa.Handlers

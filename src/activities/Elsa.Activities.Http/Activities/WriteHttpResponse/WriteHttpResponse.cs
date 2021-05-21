@@ -8,6 +8,7 @@ using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Localization;
 
 // ReSharper disable once CheckNamespace
@@ -38,9 +39,10 @@ namespace Elsa.Activities.Http
             UIHint = ActivityPropertyUIHints.Dropdown,
             Hint = "The HTTP status code to write.",
             Options = new[] { HttpStatusCode.OK, HttpStatusCode.Created, HttpStatusCode.Accepted, HttpStatusCode.NoContent, HttpStatusCode.Redirect, HttpStatusCode.BadRequest, HttpStatusCode.NotFound, HttpStatusCode.Conflict },
-            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid },
+            DefaultValue = HttpStatusCode.OK
         )]
-        public HttpStatusCode StatusCode { get; set; }
+        public HttpStatusCode StatusCode { get; set; } = HttpStatusCode.OK;
 
         /// <summary>
         /// The content to send along with the response
@@ -55,9 +57,10 @@ namespace Elsa.Activities.Http
             UIHint = ActivityPropertyUIHints.Dropdown,
             Hint = "The HTTP content type header to write.",
             Options = new[] { "text/plain", "text/html", "application/json", "application/xml" },
+            DefaultValue = "text/plain",
             SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
-        public string? ContentType { get; set; }
+        public string? ContentType { get; set; } = "text/plain";
 
         /// <summary>
         /// The headers to send along with the response.

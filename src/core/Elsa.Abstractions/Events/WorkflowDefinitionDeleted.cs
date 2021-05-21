@@ -1,15 +1,11 @@
 using Elsa.Models;
-using MediatR;
 
 namespace Elsa.Events
 {
-    public class WorkflowDefinitionDeleted : INotification
+    public class WorkflowDefinitionDeleted : WorkflowDefinitionNotification
     {
-        public WorkflowDefinitionDeleted(WorkflowDefinition workflowDefinition)
+        public WorkflowDefinitionDeleted(WorkflowDefinition workflowDefinition) : base(workflowDefinition)
         {
-            WorkflowDefinition = workflowDefinition;
         }
-
-        public WorkflowDefinition WorkflowDefinition { get; }
     }
 }

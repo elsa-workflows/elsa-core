@@ -1,4 +1,5 @@
 using System;
+using Elsa.Activities.Temporal;
 using Elsa.Activities.Temporal.Common.Options;
 using Elsa.Activities.Temporal.Common.Services;
 using Elsa.Activities.Temporal.Hangfire.Services;
@@ -19,7 +20,8 @@ namespace Elsa
         {
             timersOptions.Services
                 .AddSingleton<IWorkflowScheduler, HangfireWorkflowScheduler>()
-                .AddSingleton<ICrontabParser, HangfireCrontabParser>();
+                .AddSingleton<ICrontabParser, HangfireCrontabParser>()
+                .AddSingleton<JobManager>();
         }
 
         /// <summary>
@@ -30,15 +32,21 @@ namespace Elsa
         /// </remarks>
         /// <param name="timersOptions">The TimersOptions being configured</param>
         /// <param name="configure">Configure Hangfire settings</param>
-        public static void UseHangfire(this TimersOptions timersOptions, Action<IGlobalConfiguration> configure)
+        /// <param name="configureJobServer">Configure Hangfire job server settings</param>
+        public static void UseHangfire(this TimersOptions timersOptions, Action<IGlobalConfiguration> configure, Action<IServiceProvider, BackgroundJobServerOptions>? configureJobServer = default)
         {
             timersOptions.UseHangfire();
 
+            var services = timersOptions.Services;
+            
             // Add Hangfire services.
-            timersOptions.Services.AddHangfire(configure);
+            services.AddHangfire(configure);
 
             // Add the processing server as IHostedService
-            timersOptions.Services.AddHangfireServer();
+            if(configureJobServer != null)
+                services.AddHangfireServer(configureJobServer);
+            else
+                services.AddHangfireServer();
         }
     }
 }

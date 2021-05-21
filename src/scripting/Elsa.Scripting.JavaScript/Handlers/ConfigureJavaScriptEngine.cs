@@ -25,27 +25,33 @@ namespace Elsa.Scripting.JavaScript.Handlers
         
         public Task Handle(EvaluatingJavaScriptExpression notification, CancellationToken cancellationToken)
         {
-            var activityContext = notification.ActivityExecutionContext;
-            var workflowExecutionContext = activityContext.WorkflowExecutionContext;
+            var activityExecutionContext = notification.ActivityExecutionContext;
+            var workflowExecutionContext = activityExecutionContext.WorkflowExecutionContext;
             var workflowBlueprint = workflowExecutionContext.WorkflowBlueprint;
             var workflowInstance = workflowExecutionContext.WorkflowInstance;
             var engine = notification.Engine;
 
             // Global functions.
             engine.SetValue("guid", (Func<string>) (() => Guid.NewGuid().ToString()));
-            engine.SetValue("setVariable", (Action<string, object>) ((name, value) => activityContext.SetVariable(name, value)));
-            engine.SetValue("getVariable", (Func<string, object?>) (name => activityContext.GetVariable(name)));
+            engine.SetValue("setVariable", (Action<string, object>) ((name, value) => activityExecutionContext.SetVariable(name, value)));
+            engine.SetValue("getVariable", (Func<string, object?>) (name => activityExecutionContext.GetVariable(name)));
             engine.SetValue("getConfig", (Func<string, object?>) (name => _configuration.GetSection(name).Value));
             engine.SetValue("isNullOrWhiteSpace", (Func<string, bool>) (string.IsNullOrWhiteSpace));
             engine.SetValue("isNullOrEmpty", (Func<string, bool>) (string.IsNullOrEmpty));
-            engine.SetValue("getWorkflowDefinitionIdByName", (Func<string, string?>) (name => GetWorkflowDefinitionIdByName(activityContext, name)));
-            engine.SetValue("getWorkflowDefinitionIdByTag", (Func<string, string?>) (tag => GetWorkflowDefinitionIdByTag(activityContext, tag)));
+            engine.SetValue("getWorkflowDefinitionIdByName", (Func<string, string?>) (name => GetWorkflowDefinitionIdByName(activityExecutionContext, name)));
+            engine.SetValue("getWorkflowDefinitionIdByTag", (Func<string, string?>) (tag => GetWorkflowDefinitionIdByTag(activityExecutionContext, tag)));
 
             // Global variables.
-            engine.SetValue("input", activityContext.Input);
+            engine.SetValue("activityExecutionContext", activityExecutionContext);
+            engine.SetValue("workflowExecutionContext", workflowExecutionContext);
+            engine.SetValue("workflowInstance", workflowInstance);
+            engine.SetValue("input", activityExecutionContext.Input);
+            engine.SetValue("workflowInstanceId", workflowInstance.Id);
+            engine.SetValue("workflowDefinitionId", workflowInstance.DefinitionId);
+            engine.SetValue("workflowDefinitionVersion", workflowInstance.Version);
             engine.SetValue("correlationId", workflowInstance.CorrelationId);
             engine.SetValue("currentCulture", CultureInfo.InvariantCulture);
-            engine.SetValue("workflowContext", activityContext.GetWorkflowContext());
+            engine.SetValue("workflowContext", activityExecutionContext.GetWorkflowContext());
 
             // NodaTime types.
             RegisterType<Instant>(engine);

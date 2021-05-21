@@ -108,9 +108,15 @@ export class ElsaWorkflowBlueprintViewerScreen {
   }
 
   mapActivityModel(source: ActivityBlueprint): ActivityModel {
-    const descriptors: Array<ActivityDescriptor> = state.activityDescriptors;
-    const descriptor = descriptors.find(x => x.type == source.type);
-    const properties: Array<ActivityDefinitionProperty> = collection.map(source.properties.data, (v, k) => ({name: k, expressions: {'Literal': v}, syntax: SyntaxNames.Literal}));
+    const activityDescriptors: Array<ActivityDescriptor> = state.activityDescriptors;
+    const activityDescriptor = activityDescriptors.find(x => x.type == source.type);
+    const properties: Array<ActivityDefinitionProperty> = collection.map(source.properties.data, (value, key) => {
+      const propertyDescriptor = activityDescriptor.properties.find(x => x.name == key);
+      const defaultSyntax = propertyDescriptor.defaultSyntax || SyntaxNames.Literal;
+      const expressions = {};
+      expressions[defaultSyntax] = value;
+      return ({name: key, expressions: expressions, syntax: defaultSyntax});
+    });
 
     return {
       activityId: source.id,
@@ -119,7 +125,7 @@ export class ElsaWorkflowBlueprintViewerScreen {
       name: source.name,
       type: source.type,
       properties: properties,
-      outcomes: [...descriptor.outcomes],
+      outcomes: [...activityDescriptor.outcomes],
       persistOutput: source.persistOutput,
       persistWorkflow: source.persistWorkflow,
       saveWorkflowContext: source.saveWorkflowContext,
@@ -137,7 +143,7 @@ export class ElsaWorkflowBlueprintViewerScreen {
 
   render() {
     return (
-      <Host class="flex flex-col w-full relative" ref={el => this.el = el}>
+      <Host class="elsa-flex elsa-flex-col elsa-w-full elsa-relative" ref={el => this.el = el}>
         {this.renderCanvas()}
       </Host>
     );
@@ -145,8 +151,8 @@ export class ElsaWorkflowBlueprintViewerScreen {
 
   renderCanvas() {
     return (
-      <div class="flex-1 flex">
-        <elsa-designer-tree model={this.workflowModel} class="flex-1" ref={el => this.designer = el} mode={WorkflowDesignerMode.Blueprint}/>
+      <div class="elsa-flex-1 elsa-flex">
+        <elsa-designer-tree model={this.workflowModel} class="elsa-flex-1" ref={el => this.designer = el} mode={WorkflowDesignerMode.Blueprint}/>
       </div>
     );
   }

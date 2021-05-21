@@ -20,7 +20,7 @@ export class SwitchPlugin implements ElsaPlugin {
     const syntax = 'Switch';
     const casesProp = props.find(x => x.name == 'Cases') || { expressions: {'Switch': ''}, syntax: syntax };
     const expression = casesProp.expressions[syntax];
-    const cases: Array<SwitchCase> = parseJson(expression) || [];
+    const cases: Array<SwitchCase> = !!expression['$values'] ? expression['$values'] : parseJson(expression) || [];
     context.outcomes = [...cases.map(x => x.name), 'Default'];
   }
 }

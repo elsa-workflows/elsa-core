@@ -1,5 +1,4 @@
 using System;
-using System.Data;
 using Elsa.Persistence.YesSql.Data;
 using Elsa.Persistence.YesSql.Indexes;
 using YesSql.Sql;
@@ -67,7 +66,8 @@ namespace Elsa.Persistence.YesSql
                     .Column<string?>(nameof(BookmarkIndex.TenantId))
                     .Column<string>(nameof(BookmarkIndex.Hash))
                     .Column<string>(nameof(BookmarkIndex.ActivityType))
-                    .Column<string>(nameof(BookmarkIndex.WorkflowInstanceId)),
+                    .Column<string>(nameof(BookmarkIndex.WorkflowInstanceId))
+                    .Column<string>(nameof(BookmarkIndex.CorrelationId)),
                 CollectionNames.Bookmarks);
 
             return 1;

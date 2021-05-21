@@ -61,7 +61,15 @@ namespace Elsa.Services
                 try
                 {
                     var value = await provider.GetValueAsync(activityExecutionContext, cancellationToken);
-                    property.SetValue(activity, value);
+
+                    if (value == null)
+                    {
+                        var activityPropertyAttribute = property.GetCustomAttribute<ActivityPropertyAttribute>();
+                        value = activityPropertyAttribute?.DefaultValue;
+                    }
+                    
+                    if(value != null)
+                        property.SetValue(activity, value);
                 }
                 catch(Exception e)
                 {

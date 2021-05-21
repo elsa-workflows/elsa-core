@@ -17,9 +17,9 @@ namespace Elsa.Samples.ForkJoinTimerAndSignalHttp.Controllers
         }
         
         [HttpGet]
-        public async Task<IActionResult> Trigger(string signalName, string correlationId, CancellationToken cancellationToken)
+        public async Task<IActionResult> Trigger(string signalName, string workflowInstanceId, CancellationToken cancellationToken)
         {
-            await _signaler.TriggerSignalAsync(signalName, workflowInstanceId: correlationId, cancellationToken: cancellationToken);
+            await _signaler.TriggerSignalAsync(signalName, workflowInstanceId: workflowInstanceId, cancellationToken: cancellationToken);
             return Ok("Signal triggered :)");
         }
     }

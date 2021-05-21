@@ -2,7 +2,7 @@
 @inject IConfiguration Configuration;
 @{
     ViewData["Title"] = "Home page";
-    var serverUrl = Configuration["Elsa:Server:BaseAddress"];
+    var serverUrl = Configuration["Elsa:Server:BaseUrl"];
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -18,6 +18,6 @@
     <script type="module" src="/_content/Elsa.Designer.Components.Web/elsa-workflows-studio/elsa-workflows-studio.esm.js"></script>
 </head>
 <body class="h-screen" style="background-size: 30px 30px; background-image: url(/_content/Elsa.Designer.Components.Web/elsa-workflows-studio/assets/images/tile.png); background-color: #FBFBFB;">
-<elsa-studio-root server-url="@serverUrl" monaco-lib-path="_content/Elsa.Designer.Components.Web"></elsa-studio-root>
+<elsa-studio-root server-url="@serverUrl" monaco-lib-path="_content/Elsa.Designer.Components.Web/monaco-editor/min"></elsa-studio-root>
 </body>
 </html>

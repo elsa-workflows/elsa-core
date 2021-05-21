@@ -1,13 +1,12 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Models;
 using Elsa.Services.Models;
 
 namespace Elsa.Services
 {
     public interface IStartsWorkflow
     {
-        Task<WorkflowInstance> StartWorkflowAsync(
+        Task<RunWorkflowResult> StartWorkflowAsync(
             IWorkflowBlueprint workflowBlueprint,
             string? activityId = default,
             object? input = default,

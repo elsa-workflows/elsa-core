@@ -9,17 +9,17 @@ export function initializeMonacoWorker(libPath?: string) {
     return;
 
   if (!libPath)
-    libPath = 'assets/js';
+    return;
 
   const origin = document.location.origin;
-  const baseUrl = `${origin}/${libPath}/monaco-editor/min`;
+  const baseUrl = `${origin}/${libPath}`;
 
   require.config({paths: {'vs': `${baseUrl}/vs`}});
   win.MonacoEnvironment = {getWorkerUrl: () => proxy};
 
   let proxy = URL.createObjectURL(new Blob([`
 	self.MonacoEnvironment = {
-		baseUrl: '${baseUrl}/'
+		baseUrl: '${baseUrl}'
 	};
 	importScripts('${baseUrl}/vs/base/worker/workerMain.js');
 `], {type: 'text/javascript'}));

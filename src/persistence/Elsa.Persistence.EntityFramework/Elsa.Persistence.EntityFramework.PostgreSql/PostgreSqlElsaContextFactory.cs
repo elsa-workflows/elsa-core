@@ -11,9 +11,12 @@ namespace Elsa.Persistence.EntityFramework.PostgreSql
         {
             var builder = new DbContextOptionsBuilder<ElsaContext>();
             var connectionString = args.Any() ? args[0] : "Server=127.0.0.1;Port=5432;Database=elsa;User Id=postgres;Password=password;";
+            
             builder.UseNpgsql(
                 connectionString, 
-                db => db.MigrationsAssembly(typeof(PostgreSqlElsaContextFactory).Assembly.GetName().Name));
+                db => db.MigrationsAssembly(typeof(PostgreSqlElsaContextFactory).Assembly.GetName().Name)
+                    .MigrationsHistoryTable(ElsaContext.MigrationsHistoryTable, ElsaContext.ElsaSchema));
+            
             return new ElsaContext(builder.Options);
         }
     }

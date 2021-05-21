@@ -20,12 +20,12 @@
 
 ### Used by
 
- - [elsa-workflow-instances-list-screen](../../screens/workflow-instances-list/elsa-workflow-instances-list-screen)
+ - [elsa-workflow-instance-list-screen](../../screens/workflow-instance-list/elsa-workflow-instance-list-screen)
 
 ### Graph
 ```mermaid
 graph TD;
-  elsa-workflow-instances-list-screen --> elsa-pager
+  elsa-workflow-instance-list-screen --> elsa-pager
   style elsa-pager fill:#f9f,stroke:#333,stroke-width:4px
 ```
 

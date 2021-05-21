@@ -119,6 +119,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IIdGenerator, IdGenerator>()
                 .AddScoped<IWorkflowRegistry, WorkflowRegistry>()
                 .AddSingleton<IActivityActivator, ActivityActivator>()
+                .AddSingleton<ITokenService, TokenService>()
                 .AddScoped<IWorkflowRunner, WorkflowRunner>()
                 .AddScoped<WorkflowStarter>()
                 .AddScoped<WorkflowResumer>()
@@ -130,6 +131,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped<IResumesWorkflow>(sp => sp.GetRequiredService<WorkflowResumer>())
                 .AddScoped<IResumesWorkflows>(sp => sp.GetRequiredService<WorkflowResumer>())
                 .AddScoped<IBuildsAndResumesWorkflow>(sp => sp.GetRequiredService<WorkflowResumer>())
+                .AddScoped<IWorkflowLaunchpad, WorkflowLaunchpad>()
+                .AddScoped<IWorkflowInstanceExecutor, WorkflowInstanceExecutor>()
                 .AddScoped<IWorkflowTriggerInterruptor, WorkflowTriggerInterruptor>()
                 .AddScoped<IWorkflowReviver, WorkflowReviver>()
                 .AddSingleton<IWorkflowFactory, WorkflowFactory>()
@@ -143,7 +146,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped<IWorkflowExecutionLog, WorkflowExecutionLog>()
                 .AddTransient<ICreatesWorkflowExecutionContextForWorkflowBlueprint, WorkflowExecutionContextForWorkflowBlueprintFactory>()
                 .AddTransient<ICreatesActivityExecutionContextForActivityBlueprint, ActivityExecutionContextForActivityBlueprintFactory>()
-                .AddTransient<IGetsStartActivitiesForCompositeActivityBlueprint, StartActivitiesForCompositeActivityBlueprintProvider>()
+                .AddTransient<IGetsStartActivities, GetsStartActivitiesProvider>()
                 ;
 
             // Serialization.
@@ -209,6 +212,8 @@ namespace Microsoft.Extensions.DependencyInjection
             services
                 .AddAutoMapperProfile<NodaTimeProfile>()
                 .AddAutoMapperProfile<CloningProfile>()
+                .AddAutoMapperProfile<ExceptionProfile>()
+                .AddTransient<ExceptionConverter>()
                 .AddSingleton<ICloner, AutoMapperCloner>();
 
             // Caching.

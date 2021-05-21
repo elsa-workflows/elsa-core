@@ -3,9 +3,12 @@ using Elsa;
 using Elsa.Activities.Http;
 using Elsa.Activities.Http.Bookmarks;
 using Elsa.Activities.Http.JavaScript;
+using Elsa.Activities.Http.Liquid;
 using Elsa.Activities.Http.Options;
 using Elsa.Activities.Http.Parsers;
 using Elsa.Activities.Http.Services;
+using Elsa.Scripting.Liquid.Extensions;
+using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -24,16 +27,13 @@ namespace Microsoft.Extensions.DependencyInjection
 
         public static IServiceCollection AddHttpServices(this IServiceCollection services, Action<HttpActivityOptions>? configureOptions = null)
         {
-            if (configureOptions != null)
-            {
+            if (configureOptions != null) 
                 services.Configure(configureOptions);
-            }
 
             services.TryAddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddHttpClient(nameof(SendHttpRequest));
 
             services
-                .AddSingleton<ITokenService, TokenService>()
                 .AddSingleton<IHttpRequestBodyParser, DefaultHttpRequestBodyParser>()
                 .AddSingleton<IHttpRequestBodyParser, JsonHttpRequestBodyParser>()
                 .AddSingleton<IHttpRequestBodyParser, FormHttpRequestBodyParser>()
@@ -44,6 +44,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddBookmarkProvider<HttpEndpointBookmarkProvider>()
                 .AddHttpContextAccessor()
                 .AddNotificationHandlers(typeof(ConfigureJavaScriptEngine))
+                .AddLiquidFilter<SignalUrlFilter>("signal_url")
                 .AddDataProtection();
 
             return services;

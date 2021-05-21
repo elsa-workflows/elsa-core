@@ -1,5 +1,6 @@
+using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
@@ -7,6 +8,7 @@ using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
 using Elsa.Services;
 using Elsa.Services.Models;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.WorkflowProviders
 {
@@ -17,17 +19,40 @@ namespace Elsa.WorkflowProviders
     {
         private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
         private readonly IWorkflowBlueprintMaterializer _workflowBlueprintMaterializer;
+        private readonly ILogger _logger;
 
-        public DatabaseWorkflowProvider(IWorkflowDefinitionStore workflowDefinitionStore, IWorkflowBlueprintMaterializer workflowBlueprintMaterializer)
+        public DatabaseWorkflowProvider(IWorkflowDefinitionStore workflowDefinitionStore, IWorkflowBlueprintMaterializer workflowBlueprintMaterializer, ILogger<DatabaseWorkflowProvider> logger)
         {
             _workflowDefinitionStore = workflowDefinitionStore;
             _workflowBlueprintMaterializer = workflowBlueprintMaterializer;
+            _logger = logger;
         }
 
-        protected override async ValueTask<IEnumerable<IWorkflowBlueprint>> OnGetWorkflowsAsync(CancellationToken cancellationToken)
+        public override async IAsyncEnumerable<IWorkflowBlueprint> GetWorkflowsAsync([EnumeratorCancellation] CancellationToken cancellationToken)
         {
             var workflowDefinitions = await _workflowDefinitionStore.FindManyAsync(Specification<WorkflowDefinition>.Identity, cancellationToken: cancellationToken);
-            return await Task.WhenAll(workflowDefinitions.Select(async x => await _workflowBlueprintMaterializer.CreateWorkflowBlueprintAsync(x, cancellationToken)));
+
+            foreach (var workflowDefinition in workflowDefinitions)
+            {
+                var workflowBlueprint = await TryMaterializeBlueprintAsync(workflowDefinition, cancellationToken);
+
+                if (workflowBlueprint != null)
+                    yield return workflowBlueprint;
+            }
+        }
+
+        private async Task<IWorkflowBlueprint?> TryMaterializeBlueprintAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken)
+        {
+            try
+            {
+                return await _workflowBlueprintMaterializer.CreateWorkflowBlueprintAsync(workflowDefinition, cancellationToken);
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning(e, "Failed to materialize workflow definition {WorkflowDefinitionId} with version {WorkflowDefinitionVersion}", workflowDefinition.DefinitionId, workflowDefinition.Version);
+            }
+
+            return null;
         }
     }
 }

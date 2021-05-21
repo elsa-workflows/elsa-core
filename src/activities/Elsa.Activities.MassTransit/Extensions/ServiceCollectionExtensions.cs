@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Elsa.Activities.MassTransit.Bookmarks;
 using Elsa.Activities.MassTransit.Consumers;
 using Elsa.Activities.MassTransit.Options;
-using Elsa.Bookmarks;
 using MassTransit;
 using MassTransit.ConsumeConfigurators;
 using Microsoft.Extensions.DependencyInjection;

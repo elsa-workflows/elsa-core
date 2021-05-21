@@ -5,7 +5,6 @@ using Elsa.Activities.Webhooks.Models;
 using Elsa.Activities.Webhooks.Persistence;
 using Elsa.Models;
 using Elsa.Persistence.Specifications;
-using Elsa.Serialization;
 using Elsa.Server.Api.Services;
 using Elsa.Server.Api.Swagger.Examples;
 using Microsoft.AspNetCore.Http;

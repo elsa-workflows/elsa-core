@@ -17,11 +17,12 @@
     <ItemGroup>
         <PackageReference Include="AutoMapper" Version="10.1.1" />
         <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="8.1.1" />
-        <PackageReference Include="DistributedLock.Core" Version="1.0.0" />
+        <PackageReference Include="DistributedLock.Core" Version="1.0.1" />
         <PackageReference Include="DistributedLock.FileSystem" Version="1.0.0" />
-        <PackageReference Include="Humanizer.Core" Version="2.8.26" />
+        <PackageReference Include="Humanizer.Core" Version="2.10.1" />
         <PackageReference Include="MediatR" Version="9.0.0" />
         <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="9.0.0" />
+        <PackageReference Include="Microsoft.AspNetCore.DataProtection.Abstractions" Version="5.0.5" />
         <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
         <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="5.0.0" />
         <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
@@ -41,7 +42,7 @@
         <PackageReference Include="Storage.Net" Version="9.2.7" />
         <PackageReference Include="System.Linq.Async" Version="5.0.0" />
         <PackageReference Include="System.Threading.Channels" Version="5.0.0" />
-        <PackageReference Include="YamlDotNet" Version="11.0.1" />
+        <PackageReference Include="YamlDotNet" Version="11.1.1" />
         <PackageReference Include="Rebus.ServiceProvider" Version="6.4.1" />
     </ItemGroup>
 

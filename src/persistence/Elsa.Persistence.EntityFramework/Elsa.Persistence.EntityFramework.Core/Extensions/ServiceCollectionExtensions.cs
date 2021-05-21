@@ -4,9 +4,7 @@ using Elsa.Persistence.EntityFramework.Core.StartupTasks;
 using Elsa.Persistence.EntityFramework.Core.Stores;
 using Elsa.Runtime;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Elsa.Persistence.EntityFramework.Core.Extensions
 {
@@ -23,14 +21,31 @@ namespace Elsa.Persistence.EntityFramework.Core.Extensions
         /// </remarks>
         /// <param name="elsa">An Elsa options builder</param>
         /// <param name="configure">A configuration builder callback</param>
+        /// <param name="autoRunMigrations">If <c>true</c> then database migrations will be auto-executed on startup</param>
         /// <returns>The Elsa options builder, so calls may be chained</returns>
         public static ElsaOptionsBuilder UseEntityFrameworkPersistence(this ElsaOptionsBuilder elsa,
-            Action<DbContextOptionsBuilder> configure) =>
-            elsa.UseEntityFrameworkPersistence<ElsaContext>(configure);
+            Action<DbContextOptionsBuilder> configure,
+            bool autoRunMigrations = true) =>
+            elsa.UseEntityFrameworkPersistence<ElsaContext>(configure, autoRunMigrations);
 
+        /// <summary>
+        /// Configures Elsa to use Entity Framework Core for persistence, using pooled DB Context instances.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Pooled DB Context instances is a performance optimisation which is documented in more detail at
+        /// https://docs.microsoft.com/en-us/ef/core/performance/advanced-performance-topics?tabs=with-constant#dbcontext-pooling.
+        /// </para>
+        /// </remarks>
+        /// <param name="elsa">An Elsa options builder</param>
+        /// <param name="configure">A configuration builder callback</param>
+        /// <param name="autoRunMigrations">If <c>true</c> then database migrations will be auto-executed on startup</param>
+        /// <typeparam name="TElsaContext">The concrete type of <see cref="ElsaContext"/> to use.</typeparam>
+        /// <returns>The Elsa options builder, so calls may be chained</returns>
         public static ElsaOptionsBuilder UseEntityFrameworkPersistence<TElsaContext>(this ElsaOptionsBuilder elsa,
-            Action<DbContextOptionsBuilder> configure) where TElsaContext : ElsaContext =>
-            elsa.UseEntityFrameworkPersistence<TElsaContext>((_, builder) => configure(builder));
+            Action<DbContextOptionsBuilder> configure,
+            bool autoRunMigrations = true) where TElsaContext : ElsaContext =>
+            elsa.UseEntityFrameworkPersistence<TElsaContext>((_, builder) => configure(builder), autoRunMigrations);
 
         /// <summary>
         /// Configures Elsa to use Entity Framework Core for persistence, using pooled DB Context instances.
@@ -43,14 +58,31 @@ namespace Elsa.Persistence.EntityFramework.Core.Extensions
         /// </remarks>
         /// <param name="elsa">An Elsa options builder</param>
         /// <param name="configure">A configuration builder callback, which also provides access to a service provider</param>
+        /// <param name="autoRunMigrations">If <c>true</c> then database migrations will be auto-executed on startup</param>
         /// <returns>The Elsa options builder, so calls may be chained</returns>
         public static ElsaOptionsBuilder UseEntityFrameworkPersistence(this ElsaOptionsBuilder elsa,
-            Action<IServiceProvider, DbContextOptionsBuilder> configure) =>
-            elsa.UseEntityFrameworkPersistence<ElsaContext>(configure);
+            Action<IServiceProvider, DbContextOptionsBuilder> configure,
+            bool autoRunMigrations = true) =>
+            elsa.UseEntityFrameworkPersistence<ElsaContext>(configure, autoRunMigrations);
 
+        /// <summary>
+        /// Configures Elsa to use Entity Framework Core for persistence, using pooled DB Context instances.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Pooled DB Context instances is a performance optimisation which is documented in more detail at
+        /// https://docs.microsoft.com/en-us/ef/core/performance/advanced-performance-topics?tabs=with-constant#dbcontext-pooling.
+        /// </para>
+        /// </remarks>
+        /// <param name="elsa">An Elsa options builder</param>
+        /// <param name="configure">A configuration builder callback, which also provides access to a service provider</param>
+        /// <param name="autoRunMigrations">If <c>true</c> then database migrations will be auto-executed on startup</param>
+        /// <typeparam name="TElsaContext">The concrete type of <see cref="ElsaContext"/> to use.</typeparam>
+        /// <returns>The Elsa options builder, so calls may be chained</returns>
         public static ElsaOptionsBuilder UseEntityFrameworkPersistence<TElsaContext>(this ElsaOptionsBuilder elsa,
-            Action<IServiceProvider, DbContextOptionsBuilder> configure) where TElsaContext : ElsaContext =>
-            UseEntityFrameworkPersistence<TElsaContext>(elsa, configure, false, true, ServiceLifetime.Singleton);
+            Action<IServiceProvider, DbContextOptionsBuilder> configure,
+            bool autoRunMigrations = true) where TElsaContext : ElsaContext =>
+            UseEntityFrameworkPersistence<TElsaContext>(elsa, configure, autoRunMigrations, true, ServiceLifetime.Singleton);
 
         /// <summary>
         /// Configures Elsa to use Entity Framework Core for persistence, without using pooled DB Context instances.
@@ -61,27 +93,48 @@ namespace Elsa.Persistence.EntityFramework.Core.Extensions
         /// application, where re-use of DB Context objects is impractical.
         /// </para>
         /// <para>
-        /// Auto-running of migrations is not supported in this scenario.  When pooling is not in use and each instance of
+        /// Although auto-running of migrations is supported in this scenario, use this with caution. When pooling is not in use and each instance of
         /// the DB Context may differ, it is not feasible to try to automatically migrate them.
-        /// Your application is responsible for executing the contents of the <see cref="RunMigrations"/> class in a manner
+        /// Your application is ultimately responsible for executing the contents of the <see cref="RunMigrations"/> class in a manner
         /// which is suitable for your use-case.
         /// </para>
         /// </remarks>
         /// <param name="elsa">An Elsa options builder</param>
         /// <param name="configure">A configuration builder callback</param>
         /// <param name="serviceLifetime">The service lifetime which will be used for each DB Context instance</param>
-        /// <param name="autoRunMigrations">If <c>true</c> then migration scripts will auto-run on application startup; if <c>false</c> then they will not</param>
+        /// <param name="autoRunMigrations">If <c>true</c> then database migrations will be auto-executed on startup</param>
         /// <returns>The Elsa options builder, so calls may be chained</returns>
         public static ElsaOptionsBuilder UseNonPooledEntityFrameworkPersistence(this ElsaOptionsBuilder elsa,
             Action<DbContextOptionsBuilder> configure,
             ServiceLifetime serviceLifetime = ServiceLifetime.Singleton,
-            bool autoRunMigrations = true) =>
+            bool autoRunMigrations = false) =>
             elsa.UseNonPooledEntityFrameworkPersistence<ElsaContext>(configure, serviceLifetime, autoRunMigrations);
 
+        /// <summary>
+        /// Configures Elsa to use Entity Framework Core for persistence, without using pooled DB Context instances.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Use this method when you do not wish to use DB connection pooling, such as when integrating with a multi-tenant
+        /// application, where re-use of DB Context objects is impractical.
+        /// </para>
+        /// <para>
+        /// Although auto-running of migrations is supported in this scenario, use this with caution. When pooling is not in use and each instance of
+        /// the DB Context may differ, it is not feasible to try to automatically migrate them.
+        /// Your application is ultimately responsible for executing the contents of the <see cref="RunMigrations"/> class in a manner
+        /// which is suitable for your use-case.
+        /// </para>
+        /// </remarks>
+        /// <param name="elsa">An Elsa options builder</param>
+        /// <param name="configure">A configuration builder callback</param>
+        /// <param name="serviceLifetime">The service lifetime which will be used for each DB Context instance</param>
+        /// <param name="autoRunMigrations">If <c>true</c> then database migrations will be auto-executed on startup</param>
+        /// <typeparam name="TElsaContext">The concrete type of <see cref="ElsaContext"/> to use.</typeparam>
+        /// <returns>The Elsa options builder, so calls may be chained</returns>
         public static ElsaOptionsBuilder UseNonPooledEntityFrameworkPersistence<TElsaContext>(this ElsaOptionsBuilder elsa,
             Action<DbContextOptionsBuilder> configure,
             ServiceLifetime serviceLifetime = ServiceLifetime.Singleton,
-            bool autoRunMigrations = true) where TElsaContext : ElsaContext =>
+            bool autoRunMigrations = false) where TElsaContext : ElsaContext =>
             elsa.UseNonPooledEntityFrameworkPersistence<TElsaContext>((_, builder) => configure(builder), serviceLifetime, autoRunMigrations);
 
         /// <summary>
@@ -93,27 +146,48 @@ namespace Elsa.Persistence.EntityFramework.Core.Extensions
         /// application, where re-use of DB Context objects is impractical.
         /// </para>
         /// <para>
-        /// Auto-running of migrations is not supported in this scenario.  When pooling is not in use and each instance of
+        /// Although auto-running of migrations is supported in this scenario, use this with caution. When pooling is not in use and each instance of
         /// the DB Context may differ, it is not feasible to try to automatically migrate them.
-        /// Your application is responsible for executing the contents of the <see cref="RunMigrations"/> class in a manner
+        /// Your application is ultimately responsible for executing the contents of the <see cref="RunMigrations"/> class in a manner
         /// which is suitable for your use-case.
         /// </para>
         /// </remarks>
         /// <param name="elsa">An Elsa options builder</param>
         /// <param name="configure">A configuration builder callback, which also provides access to a service provider</param>
         /// <param name="serviceLifetime">The service lifetime which will be used for each DB Context instance</param>
-        /// /// <param name="autoRunMigrations">If <c>true</c> then migration scripts will auto-run on application startup; if <c>false</c> then they will not</param>
+        /// <param name="autoRunMigrations">If <c>true</c> then database migrations will be auto-executed on startup</param>
         /// <returns>The Elsa options builder, so calls may be chained</returns>
         public static ElsaOptionsBuilder UseNonPooledEntityFrameworkPersistence(this ElsaOptionsBuilder elsa,
             Action<IServiceProvider, DbContextOptionsBuilder> configure,
             ServiceLifetime serviceLifetime = ServiceLifetime.Singleton,
-            bool autoRunMigrations = true) =>
+            bool autoRunMigrations = false) =>
             elsa.UseNonPooledEntityFrameworkPersistence<ElsaContext>(configure, serviceLifetime, autoRunMigrations);
 
+        /// <summary>
+        /// Configures Elsa to use Entity Framework Core for persistence, without using pooled DB Context instances.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Use this method when you do not wish to use DB connection pooling, such as when integrating with a multi-tenant
+        /// application, where re-use of DB Context objects is impractical.
+        /// </para>
+        /// <para>
+        /// Although auto-running of migrations is supported in this scenario, use this with caution. When pooling is not in use and each instance of
+        /// the DB Context may differ, it is not feasible to try to automatically migrate them.
+        /// Your application is ultimately responsible for executing the contents of the <see cref="RunMigrations"/> class in a manner
+        /// which is suitable for your use-case.
+        /// </para>
+        /// </remarks>
+        /// <param name="elsa">An Elsa options builder</param>
+        /// <param name="configure">A configuration builder callback, which also provides access to a service provider</param>
+        /// <param name="serviceLifetime">The service lifetime which will be used for each DB Context instance</param>
+        /// <param name="autoRunMigrations">If <c>true</c> then database migrations will be auto-executed on startup</param>
+        /// <typeparam name="TElsaContext">The concrete type of <see cref="ElsaContext"/> to use.</typeparam>
+        /// <returns>The Elsa options builder, so calls may be chained</returns>
         public static ElsaOptionsBuilder UseNonPooledEntityFrameworkPersistence<TElsaContext>(this ElsaOptionsBuilder elsa,
             Action<IServiceProvider, DbContextOptionsBuilder> configure,
             ServiceLifetime serviceLifetime = ServiceLifetime.Singleton,
-            bool autoRunMigrations = true) where TElsaContext : ElsaContext =>
+            bool autoRunMigrations = false) where TElsaContext : ElsaContext =>
             UseEntityFrameworkPersistence<TElsaContext>(elsa, configure, autoRunMigrations, false, serviceLifetime);
 
         static ElsaOptionsBuilder UseEntityFrameworkPersistence<TElsaContext>(ElsaOptionsBuilder elsa,

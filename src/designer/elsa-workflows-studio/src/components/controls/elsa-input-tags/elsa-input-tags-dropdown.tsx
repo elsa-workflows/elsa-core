@@ -3,7 +3,6 @@ import { SelectListItem } from '../../../models';
 
 @Component({
     tag: 'elsa-input-tags-dropdown',
-    styleUrl: 'elsa-input-tags-dropdown.css',
     shadow: false,
 })
 export class ElsaInputTagsDropdown {
@@ -15,37 +14,38 @@ export class ElsaInputTagsDropdown {
     @Prop() dropdownValues?: Array<SelectListItem> = [];
     @Event({ bubbles: true }) valueChanged: EventEmitter<Array<string | SelectListItem>>;
     @State() currentValues?: Array<SelectListItem> = [];
-    @State() dropdownTags?: Array<SelectListItem> = [];
 
     @Watch('values')
     valuesChangedHandler(newValue: Array<string | SelectListItem>) {
         let values: Array<SelectListItem> = [];
-
-        newValue.forEach(value => {
-            this.dropdownValues.forEach(tag => {
-                if (value === tag.value) {
-                    values.push(tag);
-                }
+        const dropdownValues = this.dropdownValues || [];
+        
+        if(!!newValue) {
+            newValue.forEach(value => {
+                dropdownValues.forEach(tag => {
+                    if (value === tag.value) {
+                        values.push(tag);
+                    }
+                })
             })
-        })
+        }
+        
         this.currentValues = values || [];
     }
 
     componentWillLoad() {
-        this.dropdownTags = this.dropdownValues;
+        const dropdownValues = this.dropdownValues || [];
         let values: Array<SelectListItem> = [];
 
         this.values.forEach(value => {
-            this.dropdownValues.forEach(tag => {
+            dropdownValues.forEach(tag => {
                 if (value === tag.value) {
                     values.push(tag);
                 }
             })
         })
+        
         this.currentValues = values;
-
-        const tagsToRemove: Array<string> = this.currentValues.map(tag => tag.value);
-        this.dropdownTags = this.dropdownTags.filter(tag => !tagsToRemove.includes(tag.value));
     }
 
     async onTagSelected(e: any) {
@@ -64,7 +64,6 @@ export class ElsaInputTagsDropdown {
         values.push(currentTag);
         this.currentValues = values.distinct();
         input.value = "Add";
-        this.dropdownTags = this.dropdownTags.filter(tag => tag.value !== currentTag.value);
         await this.valueChanged.emit(values);
     }
 
@@ -72,12 +71,12 @@ export class ElsaInputTagsDropdown {
         e.preventDefault();
 
         this.currentValues = this.currentValues.filter(tag => tag.value !== currentTag.value);
-        this.dropdownTags = [...this.dropdownTags, currentTag].sort((tag1, tag2) => tag1.value.localeCompare(tag2.value));
         await this.valueChanged.emit(this.currentValues);
     }
 
     render() {
         let values: Array<SelectListItem> = this.currentValues || [];
+        let dropdownItems = this.dropdownValues.filter(x => values.findIndex(y => y.value === x.value) < 0);
 
         if (!Array.isArray(values))
             values = [];
@@ -85,23 +84,21 @@ export class ElsaInputTagsDropdown {
         const valuesJson = JSON.stringify(values.map(tag => tag.value));
 
         return (
-            <div class="py-2 px-3 bg-white shadow-sm border border-gray-300 rounded-md">
+            <div class="elsa-py-2 elsa-px-3 elsa-bg-white elsa-shadow-sm elsa-border elsa-border-gray-300 elsa-rounded-md">
                 {values.map(tag =>
                 (
-                    <a href="#" onClick={e => this.onDeleteTagClick(e, tag)} class="inline-block text-xs bg-blue-400 text-white py-2 px-3 mr-1 mb-1 rounded">
+                    <a href="#" onClick={e => this.onDeleteTagClick(e, tag)} class="elsa-inline-block elsa-text-xs elsa-bg-blue-400 elsa-text-white elsa-py-2 elsa-px-3 elsa-mr-1 elsa-mb-1 rounded">
                         <input type="hidden" value={tag.value} />
                         <span>{tag.text}</span>
-                        <span class="text-white hover:text-white ml-1">&times;</span>
+                        <span class="elsa-text-white hover:elsa-text-white elsa-ml-1">&times;</span>
                     </a>
                 ))}
 
-                <select id={this.fieldId} class="inline-block text-xs bg-green-400 text-white py-2 px-3 mr-1 mb-1 pr-8 rounded" onChange={(e) => this.onTagSelected(e)}>
+                <select id={this.fieldId} class="elsa-inline-block elsa-text-xs elsa-py-2 elsa-px-3 elsa-mr-1 elsa-mb-1 elsa-pr-8 elsa-border-gray-300 focus:elsa-outline-none focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-rounded" onChange={(e) => this.onTagSelected(e)}>
                     <option value="Add" disabled selected>{this.placeHolder}</option>
-                    {this.dropdownTags.map(tag =>
+                    {dropdownItems.map(tag =>
                     (
-                        <option value={tag.value}>
-                            <span>{tag.text}</span>
-                        </option>
+                        <option value={tag.value}>{tag.text}</option>
                     )
                     )}
                 </select>

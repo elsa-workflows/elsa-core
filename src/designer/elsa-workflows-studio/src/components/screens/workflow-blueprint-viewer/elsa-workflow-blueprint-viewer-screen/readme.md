@@ -7,10 +7,10 @@
 
 ## Properties
 
-| Property             | Attribute              | Description | Type     | Default     |
-| -------------------- | ---------------------- | ----------- | -------- | ----------- |
-| `serverUrl`          | `server-url`           |             | `string` | `undefined` |
-| `workflowInstanceId` | `workflow-instance-id` |             | `string` | `undefined` |
+| Property               | Attribute                | Description | Type     | Default     |
+| ---------------------- | ------------------------ | ----------- | -------- | ----------- |
+| `serverUrl`            | `server-url`             |             | `string` | `undefined` |
+| `workflowDefinitionId` | `workflow-definition-id` |             | `string` | `undefined` |
 
 
 ## Methods
@@ -30,20 +30,18 @@ Type: `Promise<string>`
 
 ### Used by
 
- - [elsa-studio-workflow-instances-view](../../../dashboard/pages/elsa-studio-workflow-instances-view)
+ - [elsa-studio-workflow-blueprint-view](../../../dashboard/pages/elsa-studio-workflow-blueprint-view)
 
 ### Depends on
 
-- [elsa-workflow-instance-journal](.)
 - [elsa-designer-tree](../../../designers/tree/elsa-designer-tree)
 
 ### Graph
 ```mermaid
 graph TD;
-  elsa-workflow-instance-viewer-screen --> elsa-workflow-instance-journal
-  elsa-workflow-instance-viewer-screen --> elsa-designer-tree
-  elsa-studio-workflow-instances-view --> elsa-workflow-instance-viewer-screen
-  style elsa-workflow-instance-viewer-screen fill:#f9f,stroke:#333,stroke-width:4px
+  elsa-workflow-blueprint-viewer-screen --> elsa-designer-tree
+  elsa-studio-workflow-blueprint-view --> elsa-workflow-blueprint-viewer-screen
+  style elsa-workflow-blueprint-viewer-screen fill:#f9f,stroke:#333,stroke-width:4px
 ```
 
 ----------------------------------------------

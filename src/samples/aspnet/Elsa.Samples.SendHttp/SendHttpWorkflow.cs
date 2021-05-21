@@ -2,10 +2,7 @@ using Elsa.Activities.Http;
 using Elsa.Activities.Http.Models;
 using Elsa.Builders;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace Elsa.Samples.SendHttp
 {
