@@ -48,11 +48,13 @@ namespace Elsa.Activities.File
                     throw new ApplicationException("Unsupported copy mode");
             }
 
-            using var fs = new FileStream(Path, fileMode, fileAccess);
-            using var sw = new StreamWriter(fs);
-            await sw.WriteLineAsync((string)Content);
-            await sw.FlushAsync();
-            await fs.FlushAsync();
+            using (var fs = new FileStream(Path, fileMode, fileAccess))
+            using (var sw = new StreamWriter(fs))
+            {
+                await sw.WriteLineAsync(Content);
+                await sw.FlushAsync();
+                await fs.FlushAsync();
+            }
 
             return Done();
         }
