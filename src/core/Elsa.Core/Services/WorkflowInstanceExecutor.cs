@@ -28,7 +28,10 @@ namespace Elsa.Services
             if (!ValidatePreconditions(workflowInstanceId, workflowInstance, activityId))
                 return new RunWorkflowResult(workflowInstance, activityId, false);
             
-            return await ExecuteAsync(workflowInstance!, activityId, input, cancellationToken);
+            return await _workflowRunner.ResumeWorkflowAsync(
+                workflowInstance!,
+                activityId,
+                input, cancellationToken);
         }
 
         public async Task<RunWorkflowResult> ExecuteAsync(WorkflowInstance workflowInstance, string? activityId, object? input = default, CancellationToken cancellationToken = default)

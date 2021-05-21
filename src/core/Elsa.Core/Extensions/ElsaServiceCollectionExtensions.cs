@@ -81,7 +81,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services.Decorate<IWorkflowDefinitionStore, InitializingWorkflowDefinitionStore>();
             services.Decorate<IWorkflowDefinitionStore, EventPublishingWorkflowDefinitionStore>();
             services.Decorate<IWorkflowInstanceStore, EventPublishingWorkflowInstanceStore>();
-            services.Decorate<IWorkflowRunner, LockingWorkflowRunner>();
+            services.Decorate<IWorkflowInstanceExecutor, LockingWorkflowInstanceExecutor>();
 
             return services;
         }
