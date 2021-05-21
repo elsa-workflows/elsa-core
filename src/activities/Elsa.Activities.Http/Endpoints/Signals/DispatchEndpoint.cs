@@ -1,4 +1,3 @@
-using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Signaling.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -19,9 +18,9 @@ namespace Elsa.Activities.Http.Endpoints.Signals
         }
 
         [HttpGet, HttpPost]
-        public async Task<IActionResult> Handle(string token, CancellationToken cancellationToken)
+        public async Task<IActionResult> Handle(string token)
         {
-            var pendingWorkflows = await _signaler.DispatchSignalTokenAsync(token, cancellationToken: cancellationToken).ToList();
+            var pendingWorkflows = await _signaler.DispatchSignalTokenAsync(token).ToList();
             return Accepted(pendingWorkflows);
         }
     }
