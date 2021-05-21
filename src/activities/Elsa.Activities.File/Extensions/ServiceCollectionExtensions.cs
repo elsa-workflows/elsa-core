@@ -16,14 +16,14 @@ namespace Microsoft.Extensions.DependencyInjection
             return services;
         }
 
-        public static ElsaOptionsBuilder AddFileActivities(this ElsaOptionsBuilder builder, Action<FileWatcherOptions>? configureOptions = null) => builder
+        public static ElsaOptionsBuilder AddFileActivities(this ElsaOptionsBuilder builder, Action<FileWatcherOptions> configureOptions = null) => builder
             .AddActivity<DeleteFile>()
             .AddActivity<FileExists>()
             .AddActivity<OutFile>()
             .AddActivity<ReadFile>()
             .AddActivity<TempFile>();
 
-        public static IServiceCollection AddFileServices(this IServiceCollection services, Action<FileWatcherOptions>? configureOptions = null)
+        public static IServiceCollection AddFileServices(this IServiceCollection services, Action<FileWatcherOptions> configureOptions = null)
         {
             if (configureOptions != null)
             {
