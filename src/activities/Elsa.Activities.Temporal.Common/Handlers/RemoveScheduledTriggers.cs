@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Temporal.Common.Services;
 using Elsa.Events;
@@ -9,15 +8,13 @@ namespace Elsa.Activities.Temporal.Common.Handlers
 {
     public class RemoveScheduledTriggers : INotificationHandler<BlockingActivityRemoved>, INotificationHandler<WorkflowDefinitionPublished>, INotificationHandler<WorkflowDefinitionRetracted>
     {
-        private readonly string[] _supportedTypes = { nameof(Timer), nameof(StartAt), nameof(Cron) };
         private readonly IWorkflowScheduler _workflowScheduler;
         public RemoveScheduledTriggers(IWorkflowScheduler workflowScheduler) => _workflowScheduler = workflowScheduler;
 
         public async Task Handle(BlockingActivityRemoved notification, CancellationToken cancellationToken)
         {
-            if (!_supportedTypes.Contains(notification.BlockingActivity.ActivityType))
-                return;
-
+            // TODO: Consider introducing a "stereotype" field for activities to exit early in case they are not stereotyped as "temporal".
+            
             await _workflowScheduler.UnscheduleWorkflowAsync(
                 null,
                 notification.WorkflowExecutionContext.WorkflowInstance.Id,
