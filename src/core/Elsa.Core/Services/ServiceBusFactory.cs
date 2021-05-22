@@ -30,19 +30,21 @@ namespace Elsa.Services
             _handlerActivator = new DependencyInjectionHandlerActivator(serviceProvider);
         }
 
-        public async Task<IBus> GetServiceBusAsync(Type messageType, CancellationToken cancellationToken)
+        public Task<IBus> GetServiceBusAsync(Type messageType, CancellationToken cancellationToken = default) => GetServiceBusAsync(messageType, messageType.Name, cancellationToken);
+
+        public async Task<IBus> GetServiceBusAsync(Type messageType, string queueName, CancellationToken cancellationToken = default)
         {
-            var queueName = FormatQueueName(messageType.Name);
+            var formattedQueueName = FormatQueueName(queueName);
             await _semaphore.WaitAsync(cancellationToken);
             
             try
             {
-                if (_serviceBuses.TryGetValue(queueName, out var bus))
+                if (_serviceBuses.TryGetValue(formattedQueueName, out var bus))
                     return bus;
 
                 var configurer = Configure.With(_handlerActivator);
-                var map = new Dictionary<Type, string> { [messageType] = queueName };
-                var configureContext = new ServiceBusEndpointConfigurationContext(configurer, queueName, map, _serviceProvider);
+                var map = new Dictionary<Type, string> { [messageType] = formattedQueueName };
+                var configureContext = new ServiceBusEndpointConfigurationContext(configurer, formattedQueueName, map, _serviceProvider);
 
                 // Default options.
                 configurer
@@ -55,7 +57,7 @@ namespace Elsa.Services
                 _elsaOptions.ConfigureServiceBusEndpoint(configureContext);
             
                 var newBus = configurer.Start();
-                _serviceBuses.TryAdd(queueName, newBus);
+                _serviceBuses.TryAdd(formattedQueueName, newBus);
 
                 return newBus;
             }

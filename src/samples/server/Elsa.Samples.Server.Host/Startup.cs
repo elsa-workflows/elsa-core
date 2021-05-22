@@ -1,9 +1,11 @@
 using System;
 using Elsa.Activities.UserTask.Extensions;
+using Elsa.Caching.Rebus.Extensions;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.PostgreSql;
 using Elsa.Persistence.EntityFramework.Sqlite;
 using Elsa.Persistence.YesSql;
+using Elsa.Rebus.RabbitMq.Extensions;
 using Elsa.Samples.Server.Host.Activities;
 using Hangfire;
 using Microsoft.AspNetCore.Builder;
@@ -36,7 +38,10 @@ namespace Elsa.Samples.Server.Host
                 .AddActivityPropertyOptionsProvider<VehicleActivity>()
                 .AddRuntimeSelectItemsProvider<VehicleActivity>()
                 .AddElsa(elsa => elsa
+                    .WithContainerName(Configuration["ContainerName"] ?? System.Environment.MachineName)
                     .UseEntityFrameworkPersistence(ef => ef.UseSqlite())
+                    .UseRabbitMq(Configuration.GetConnectionString("RabbitMq"))
+                    .AddRebusCacheSignal()
                     .AddConsoleActivities()
                     .AddHttpActivities(elsaSection.GetSection("Http").Bind)
                     .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)

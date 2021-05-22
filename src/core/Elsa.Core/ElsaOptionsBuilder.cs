@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Elsa.Activities.Signaling.Services;
 using Elsa.Builders;
 using Elsa.Caching;
 using Elsa.Persistence;
@@ -32,6 +33,7 @@ namespace Elsa
             services.AddSingleton<InMemorySubscriberStore>();
             services.AddSingleton<InMemDataStore>();
             services.AddMemoryCache();
+            services.AddSingleton<ICacheSignal, CacheSignal>();
             
             DistributedLockingOptionsBuilder = new DistributedLockingOptionsBuilder(this);
         }
@@ -45,6 +47,12 @@ namespace Elsa
         public ElsaOptionsBuilder NoCoreActivities()
         {
             WithCoreActivities = false;
+            return this;
+        }
+
+        public ElsaOptionsBuilder WithContainerName(string name)
+        {
+            ElsaOptions.ContainerName = name;
             return this;
         }
 
@@ -132,23 +140,25 @@ namespace Elsa
             return this;
         }
 
-        public ElsaOptionsBuilder AddMessageType(Type messageType)
+        public ElsaOptionsBuilder AddCompetingMessageType(Type messageType)
         {
-            ElsaOptions.MessageTypes.Add(messageType);
+            ElsaOptions.CompetingMessageTypes.Add(messageType);
             return this;
         }
 
-        public ElsaOptionsBuilder AddMessageType<T>() => AddMessageType(typeof(T));
+        public ElsaOptionsBuilder AddCompetingMessageType<T>() => AddCompetingMessageType(typeof(T));
+        
+        public ElsaOptionsBuilder AddPubSubMessageType(Type messageType)
+        {
+            ElsaOptions.PubSubMessageTypes.Add(messageType);
+            return this;
+        }
+
+        public ElsaOptionsBuilder AddPubSubMessageType<T>() => AddPubSubMessageType(typeof(T));
 
         public ElsaOptionsBuilder ConfigureDistributedLockProvider(Action<DistributedLockingOptionsBuilder> configureOptions)
         {
             configureOptions(DistributedLockingOptionsBuilder);
-            return this;
-        }
-
-        public ElsaOptionsBuilder UseSignal(Func<IServiceProvider, ISignal> factory)
-        {
-            ElsaOptions.SignalFactory = factory;
             return this;
         }
 

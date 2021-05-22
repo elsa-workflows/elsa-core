@@ -19,13 +19,13 @@ namespace Elsa.Decorators
         private const string CacheKey = "WorkflowRegistry";
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IMemoryCache _memoryCache;
-        private readonly ISignal _signal;
+        private readonly ICacheSignal _cacheSignal;
 
-        public CachingWorkflowRegistry(IWorkflowRegistry workflowRegistry, IMemoryCache memoryCache, ISignal signal)
+        public CachingWorkflowRegistry(IWorkflowRegistry workflowRegistry, IMemoryCache memoryCache, ICacheSignal cacheSignal)
         {
             _workflowRegistry = workflowRegistry;
             _memoryCache = memoryCache;
-            _signal = signal;
+            _cacheSignal = cacheSignal;
         }
 
         public async Task<IEnumerable<IWorkflowBlueprint>> ListAsync(CancellationToken cancellationToken) => await GetWorkflowBlueprints(cancellationToken);
@@ -50,14 +50,14 @@ namespace Elsa.Decorators
         {
             return await _memoryCache.GetOrCreateAsync(CacheKey, async entry =>
             {
-                entry.Monitor(_signal.GetToken(CacheKey));
+                entry.Monitor(_cacheSignal.GetToken(CacheKey));
                 return await _workflowRegistry.ListAsync(cancellationToken).ToList();
             });
         }
 
         Task INotificationHandler<WorkflowDefinitionSaved>.Handle(WorkflowDefinitionSaved notification, CancellationToken cancellationToken)
         {
-            _signal.Trigger(CacheKey);
+            _cacheSignal.TriggerTokenAsync(CacheKey);
             return Task.CompletedTask;
         }
     }
