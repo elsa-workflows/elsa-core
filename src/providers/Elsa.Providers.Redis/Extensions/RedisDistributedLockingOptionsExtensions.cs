@@ -7,17 +7,13 @@ using RedLockNet.SERedis;
 using RedLockNet.SERedis.Configuration;
 using StackExchange.Redis;
 
-namespace Elsa
+namespace Elsa.Extensions
 {
-    public static class DistributedLockingOptionsExtensions
+    public static class RedisDistributedLockingOptionsExtensions
     {
-        public static DistributedLockingOptionsBuilder UseRedisLockProvider(this DistributedLockingOptionsBuilder options, string connectionString)
+        public static DistributedLockingOptionsBuilder UseRedisLockProvider(this DistributedLockingOptionsBuilder options)
         {
-            options
-                .Services
-                .UseStackExchangeConnectionMultiplexer(connectionString)
-                .UseRedLockFactory();
-
+            options.Services.AddRedLockFactory();
             options.UseProviderFactory(CreateRedisDistributedLockFactory);
 
             return options;
@@ -29,9 +25,7 @@ namespace Elsa
             return name => new RedisDistributedLock(name, multiplexer.GetDatabase());
         }
 
-        private static IServiceCollection UseStackExchangeConnectionMultiplexer(this IServiceCollection services, string connectionString) => services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(connectionString));
-
-        private static IServiceCollection UseRedLockFactory(this IServiceCollection services) =>
+        private static IServiceCollection AddRedLockFactory(this IServiceCollection services) =>
             services.AddSingleton<IDistributedLockFactory, RedLockFactory>(sp => RedLockFactory.Create(
                 new[]
                 {

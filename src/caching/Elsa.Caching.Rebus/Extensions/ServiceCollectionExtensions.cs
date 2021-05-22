@@ -7,7 +7,7 @@ namespace Elsa.Caching.Rebus.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static ElsaOptionsBuilder AddRebusCacheSignal(this ElsaOptionsBuilder builder)
+        public static ElsaOptionsBuilder UseRebusCacheSignal(this ElsaOptionsBuilder builder)
         {
             var services = builder.Services;
             services.Decorate<ICacheSignal, RebusCacheSignal>();

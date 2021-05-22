@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Threading.Tasks;
+using Elsa.Extensions;
 
 namespace Elsa.Samples.DistributedLock
 {
@@ -18,7 +19,8 @@ namespace Elsa.Samples.DistributedLock
                     (_, services) =>
                     {
                         services
-                            .AddElsa(elsa => elsa.ConfigureDistributedLockProvider(options => options.UseRedisLockProvider("localhost:6379,abortConnect=false"))
+                            .AddRedis("localhost:6379,abortConnect=false")
+                            .AddElsa(elsa => elsa.ConfigureDistributedLockProvider(options => options.UseRedisLockProvider())
                                 .AddConsoleActivities()
                                 .AddQuartzTemporalActivities()
                                 .AddWorkflow<RecurringWorkflow>());

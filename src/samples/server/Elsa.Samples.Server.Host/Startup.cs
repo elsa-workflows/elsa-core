@@ -1,6 +1,7 @@
 using System;
 using Elsa.Activities.UserTask.Extensions;
 using Elsa.Caching.Rebus.Extensions;
+using Elsa.Extensions;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.PostgreSql;
 using Elsa.Persistence.EntityFramework.Sqlite;
@@ -37,11 +38,13 @@ namespace Elsa.Samples.Server.Host
             services
                 .AddActivityPropertyOptionsProvider<VehicleActivity>()
                 .AddRuntimeSelectItemsProvider<VehicleActivity>()
+                .AddRedis(Configuration.GetConnectionString("Redis"))
                 .AddElsa(elsa => elsa
-                    .WithContainerName(Configuration["ContainerName"] ?? System.Environment.MachineName)
+                    //.WithContainerName(Configuration["ContainerName"] ?? System.Environment.MachineName)
                     .UseEntityFrameworkPersistence(ef => ef.UseSqlite())
-                    .UseRabbitMq(Configuration.GetConnectionString("RabbitMq"))
-                    .AddRebusCacheSignal()
+                    //.UseRabbitMq(Configuration.GetConnectionString("RabbitMq"))
+                    //.UseRebusCacheSignal()
+                    //.UseRedisCacheSignal()
                     .AddConsoleActivities()
                     .AddHttpActivities(elsaSection.GetSection("Http").Bind)
                     .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
