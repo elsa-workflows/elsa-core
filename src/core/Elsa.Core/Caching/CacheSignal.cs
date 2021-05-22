@@ -1,14 +1,15 @@
 ﻿using System.Collections.Concurrent;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Primitives;
 
 namespace Elsa.Caching
 {
-    public class Signal : ISignal
+    public class CacheSignal : ICacheSignal
     {
         private readonly ConcurrentDictionary<string, ChangeTokenInfo> _changeTokens;
 
-        public Signal()
+        public CacheSignal()
         {
             _changeTokens = new ConcurrentDictionary<string, ChangeTokenInfo>();
         }
@@ -25,12 +26,19 @@ namespace Elsa.Caching
                 }).ChangeToken;
         }
 
-        public void Trigger(string key)
+        public void TriggerToken(string key)
         {
-            if (_changeTokens.TryRemove(key, out var changeTokenInfo)) changeTokenInfo.TokenSource.Cancel();
+            if (_changeTokens.TryRemove(key, out var changeTokenInfo))
+                changeTokenInfo.TokenSource.Cancel();
         }
 
-        private struct ChangeTokenInfo
+        public ValueTask TriggerTokenAsync(string key)
+        {
+            TriggerToken(key);
+            return new ValueTask();
+        }
+
+        private readonly struct ChangeTokenInfo
         {
             public ChangeTokenInfo(IChangeToken changeToken, CancellationTokenSource tokenSource)
             {

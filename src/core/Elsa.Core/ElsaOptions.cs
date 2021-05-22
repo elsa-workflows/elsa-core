@@ -30,7 +30,6 @@ namespace Elsa
             WorkflowInstanceDispatcherFactory = sp => ActivatorUtilities.CreateInstance<QueuingWorkflowDispatcher>(sp);
             CorrelatingWorkflowDispatcherFactory = sp => ActivatorUtilities.CreateInstance<QueuingWorkflowDispatcher>(sp);
             StorageFactory = sp => Storage.Net.StorageFactory.Blobs.InMemory();
-            SignalFactory = sp => new Signal();
             JsonSerializerConfigurer = (sp, serializer) => { };
             DistributedLockingOptions = new DistributedLockingOptions();
             ConfigureServiceBusEndpoint = ConfigureInMemoryServiceBusEndpoint;
@@ -42,13 +41,15 @@ namespace Elsa
                 return serializer;
             };
         }
-        
+
+        public string ContainerName { get; set; } = Environment.MachineName;
         public ServiceFactory<IActivity> ActivityFactory { get; } = new();
         public ServiceFactory<IWorkflow> WorkflowFactory { get; } = new();
         public IEnumerable<Type> ActivityTypes => ActivityFactory.Types;
 
         public IList<Type> WorkflowTypes { get; } = new List<Type>();
-        public IList<Type> MessageTypes { get; } = new List<Type>();
+        public IList<Type> CompetingMessageTypes { get; } = new List<Type>();
+        public IList<Type> PubSubMessageTypes { get; } = new List<Type>();
         public ServiceBusOptions ServiceBusOptions { get; } = new();
         public DistributedLockingOptions DistributedLockingOptions { get; set; }
 
@@ -62,7 +63,6 @@ namespace Elsa
         internal Func<IServiceProvider, IWorkflowInstanceStore> WorkflowInstanceStoreFactory { get; set; }
         internal Func<IServiceProvider, IWorkflowExecutionLogStore> WorkflowExecutionLogStoreFactory { get; set; }
         internal Func<IServiceProvider, IBookmarkStore> WorkflowTriggerStoreFactory { get; set; }
-        internal Func<IServiceProvider, ISignal> SignalFactory { get; set; }
         internal Func<IServiceProvider, JsonSerializer> CreateJsonSerializer { get; set; }
         internal Action<IServiceProvider, JsonSerializer> JsonSerializerConfigurer { get; set; }
         internal Func<IServiceProvider, IWorkflowDefinitionDispatcher> WorkflowDefinitionDispatcherFactory { get; set; }

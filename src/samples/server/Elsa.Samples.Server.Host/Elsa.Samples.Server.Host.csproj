@@ -13,6 +13,7 @@
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.Temporal.Hangfire\Elsa.Activities.Temporal.Hangfire.csproj" />
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.Temporal.Quartz\Elsa.Activities.Temporal.Quartz.csproj" />
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.UserTask\Elsa.Activities.UserTask.csproj" />
+        <ProjectReference Include="..\..\..\caching\Elsa.Caching.Rebus\Elsa.Caching.Rebus.csproj" />
         <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.PostgreSql\Elsa.Persistence.EntityFramework.PostgreSql.csproj" />
         <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.Sqlite\Elsa.Persistence.EntityFramework.Sqlite.csproj" />
         <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.SqlServer\Elsa.Persistence.EntityFramework.SqlServer.csproj" />
@@ -20,6 +21,7 @@
         <ProjectReference Include="..\..\..\server\Elsa.Server.Api\Elsa.Server.Api.csproj" />
         <ProjectReference Include="..\..\..\server\Elsa.Server.Hangfire\Elsa.Server.Hangfire.csproj" />
         <ProjectReference Include="..\..\..\server\Elsa.Server.Orleans\Elsa.Server.Orleans.csproj" />
+        <ProjectReference Include="..\..\..\servicebus\Elsa.Rebus.RabbitMq\Elsa.Rebus.RabbitMq.csproj" />
     </ItemGroup>
 
     <ItemGroup>

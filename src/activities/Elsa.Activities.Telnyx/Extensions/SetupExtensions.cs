@@ -39,7 +39,7 @@ namespace Elsa.Activities.Telnyx.Extensions
             // Activities.
             elsaOptions
                 .AddActivitiesFrom<AnswerCall>()
-                .AddConsumer<TriggerWorkflows, TelnyxWebhookReceived>();
+                .AddCompetingConsumer<TriggerWorkflows, TelnyxWebhookReceived>();
 
             // Services.
             services
