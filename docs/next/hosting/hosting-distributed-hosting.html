@@ -1,0 +1,166 @@
+<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>Hosting Elsa on Multiple Nodes · ELSA</title><meta name="viewport" content="width=device-width"/><meta name="generator" content="Docusaurus"/><meta name="description" content="Hosting Elsa in a multi-node environment is 100% supported and can significantly increase throughput and of course offers redundancy in case once node goes down. "/><meta name="docsearch:version" content="next"/><meta name="docsearch:language" content="en"/><meta property="og:title" content="Hosting Elsa on Multiple Nodes · ELSA"/><meta property="og:type" content="website"/><meta property="og:url" content="https://elsa-workflows.github.io//elsa-core/"/><meta property="og:description" content="Hosting Elsa in a multi-node environment is 100% supported and can significantly increase throughput and of course offers redundancy in case once node goes down. "/><meta property="og:image" content="https://elsa-workflows.github.io//elsa-core/img/undraw_online.svg"/><meta name="twitter:card" content="summary"/><meta name="twitter:image" content="https://elsa-workflows.github.io//elsa-core/img/undraw_tweetstorm.svg"/><link rel="shortcut icon" href="/elsa-core/img/favicon.ico"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script type="text/javascript" src="https://buttons.github.io/buttons.js"></script><script src="/elsa-core/js/scrollSpy.js"></script><link rel="stylesheet" href="/elsa-core/css/main.css"/><script src="/elsa-core/js/codetabs.js"></script></head><body class="sideNavVisible separateOnPageNav"><div class="fixedHeaderContainer"><div class="headerWrapper wrapper"><header><a href="/elsa-core/"><img class="logo" src="/elsa-core/img/android-icon-192x192.png" alt="ELSA"/><h2 class="headerTitleWithLogo">ELSA</h2></a><a href="/elsa-core/versions"><h3>next</h3></a><div class="navigationWrapper navigationSlider"><nav class="slidingNav"><ul class="nav-site nav-site-internal"><li class="siteNavGroupActive"><a href="/elsa-core/docs/next/installation/installing-elsa-core" target="_self">Documentation</a></li><li class=""><a href="/elsa-core/docs/next/features/features" target="_self">Features</a></li></ul></nav></div></header></div></div><div class="navPusher"><div class="docMainWrapper wrapper"><div class="docsNavContainer" id="docsNav"><nav class="toc"><div class="toggleNav"><section class="navWrapper wrapper"><div class="navBreadcrumb wrapper"><div class="navToggle" id="navToggler"><div class="hamburger-menu"><div class="line1"></div><div class="line2"></div><div class="line3"></div></div></div><h2><i>›</i><span>Hosting</span></h2><div class="tocToggler" id="tocToggler"><i class="icon-toc"></i></div></div><div class="navGroups"><div class="navGroup"><h3 class="navGroupCategoryTitle">Quickstart</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/quickstarts/quickstarts-console-hello-world">Hello World Console</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/quickstarts/quickstarts-aspnetcore-hello-world">Hello World HTTP</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/quickstarts/quickstarts-aspnetcore-server-api-endpoints">Elsa Server</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/quickstarts/quickstarts-aspnetcore-server-dashboard">Elsa Dashboard</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/quickstarts/quickstarts-aspnetcore-server-dashboard-and-api-endpoints">Elsa Dashboard + Server</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/quickstarts/quickstarts-elsa-and-docker">Elsa + Docker</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Installation</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/installation/installing-feeds">Package Feeds</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/installation/installing-elsa-core">Core</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/installation/installing-server">Server</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/installation/installing-persistence">Persistence</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/installation/installing-elsa-dashboard">Dashboard</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/installation/installing-elsa-designer">Designer</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Concepts</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/concepts/concepts-workflows">Workflows</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/concepts/concepts-workflow-variables">Workflow Variables</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/concepts/concepts-workflow-context">Workflow Context</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Guides</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/guides/guides-recurring-tasks">Recurring Tasks</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/guides/guides-document-approval">Document Approval</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/guides/guides-master-child-workflows">Master Child Workflows</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/guides/guides-signaling-workflows">Signaling Workflows</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/guides/guides-composite-activities">Composite Activities</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/guides/guides-runtime-list-values">Runtime List Values</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/guides/guides-json-workflows">JSON Workflows</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Expressions</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/expressions/expressions-javascript">JavaScript</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/expressions/expressions-liquid">Liquid</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Designer</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/designer/designer-using-the-designer">Using the Designer</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Extensibility</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/extensibility/extensibility-custom-activities">Custom Activities</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/extensibility/extensibility-custom-activity-providers">Custom Activity Providers</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/extensibility/extensibility-customize-existing-activities">Customize Activities</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/extensibility/extensibility-persistence">Persistence</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/extensibility/extensibility-javascript">JavaScript</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/extensibility/extensibility-liquid">Liquid</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/extensibility/extensibility-expression-handlers">Expression Handlers</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/extensibility/extensibility-property-editor-types">Property Editors</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Hosting</h3><ul class=""><li class="navListItem navListItemActive"><a class="navItem" href="/elsa-core/docs/next/hosting/hosting-distributed-hosting">Distributed Hosting</a></li></ul></div></div></section></div><script>
+            var coll = document.getElementsByClassName('collapsible');
+            var checkActiveCategory = true;
+            for (var i = 0; i < coll.length; i++) {
+              var links = coll[i].nextElementSibling.getElementsByTagName('*');
+              if (checkActiveCategory){
+                for (var j = 0; j < links.length; j++) {
+                  if (links[j].classList.contains('navListItemActive')){
+                    coll[i].nextElementSibling.classList.toggle('hide');
+                    coll[i].childNodes[1].classList.toggle('rotate');
+                    checkActiveCategory = false;
+                    break;
+                  }
+                }
+              }
+
+              coll[i].addEventListener('click', function() {
+                var arrow = this.childNodes[1];
+                arrow.classList.toggle('rotate');
+                var content = this.nextElementSibling;
+                content.classList.toggle('hide');
+              });
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+              createToggler('#navToggler', '#docsNav', 'docsSliderActive');
+              createToggler('#tocToggler', 'body', 'tocActive');
+
+              var headings = document.querySelector('.toc-headings');
+              headings && headings.addEventListener('click', function(event) {
+                var el = event.target;
+                while(el !== headings){
+                  if (el.tagName === 'A') {
+                    document.body.classList.remove('tocActive');
+                    break;
+                  } else{
+                    el = el.parentNode;
+                  }
+                }
+              }, false);
+
+              function createToggler(togglerSelector, targetSelector, className) {
+                var toggler = document.querySelector(togglerSelector);
+                var target = document.querySelector(targetSelector);
+
+                if (!toggler) {
+                  return;
+                }
+
+                toggler.onclick = function(event) {
+                  event.preventDefault();
+
+                  target.classList.toggle(className);
+                };
+              }
+            });
+        </script></nav></div><div class="container mainContainer docsContainer"><div class="wrapper"><div class="post"><header class="postHeader"><h1 id="__docusaurus" class="postHeaderTitle">Hosting Elsa on Multiple Nodes</h1></header><article><div><span><p>Hosting Elsa in a multi-node environment is 100% supported and can significantly increase throughput and of course offers redundancy in case once node goes down.</p>
+<h2><a class="anchor" aria-hidden="true" id="distributed-setup"></a><a href="#distributed-setup" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Distributed Setup</h2>
+<p>To make sure Elsa operates well in such an environment, there are three aspects to configure:</p>
+<ol>
+<li>Service Bus Broker</li>
+<li>Distributed Lock Provider</li>
+<li>Distributed Cache Signal Provider</li>
+</ol>
+<h3><a class="anchor" aria-hidden="true" id="service-bus-broker"></a><a href="#service-bus-broker" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Service Bus Broker</h3>
+<p>Elsa uses <a href="https://github.com/rebus-org/Rebus">Rebus</a> for sending messages via service bus brokers.
+Out of the box, it uses a memory provider.</p>
+<p>The memory provider is suitable for a single-node setup, but when hosting in a cluster we need to configure an actual message broker such as <a href="https://github.com/rebus-org/Rebus.RabbitMq">RabbitMQ</a> or <a href="https://github.com/rebus-org/Rebus.AzureServiceBus">Azure Service Bus</a>.</p>
+<p>One of the most important reasons of running multiple Elsa nodes besides redundancy is to increase throughput. The more nodes you have, the quicker workflow instruction messages (which are posted to a queue) are processed.</p>
+<p>The following code snippet demonstrates configuring Elsa to use RabbitMQ as the broker for Rebus:</p>
+<pre><code class="hljs css language-c#">services.AddElsa(elsa =&gt; elsa.UseRabbitMq(<span class="hljs-string">"amqp://localhost:5672"</span>);
+</code></pre>
+<blockquote>
+<p>Make sure to add the <code>Elsa.Rebus.RabbitMq</code> package and import the <code>Elsa.Rebus.RabbitMq</code> namespace.</p>
+</blockquote>
+<p>Elsa currently ships with support for RabbitMq and Azure Service Bus packages for Rebus, but any provider supported by Rebus is also supported by Elsa. The packages mentioned here are there for convenience, but if you wanted to use Rebus' <a href="https://github.com/rebus-org/Rebus.GoogleCloudPubSub">Rebus.GoogleCloudPubSub</a> for example, you can add that package directly and configure it as follows:</p>
+<pre><code class="hljs css language-c#">services.AddElsa(elsa =&gt; elsa.UseServiceBus(context =&gt; context.Configurer.Transport(t =&gt; t.UsePubSub(context.QueueName)));
+</code></pre>
+<h3><a class="anchor" aria-hidden="true" id="distributed-lock-provider"></a><a href="#distributed-lock-provider" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Distributed Lock Provider</h3>
+<p>Elsa uses <a href="https://github.com/madelson/DistributedLock">DistributedLock</a> to ensure thant only one thread can work on a workflow instance. By default, the <a href="https://github.com/madelson/DistributedLock/blob/master/docs/DistributedLock.FileSystem.md">FileSystem</a> lock is used, which ensures that no matter how many threads try to load a workflow instance from the store, only one of them will be able to do so at a time until the lock is released.
+When multiple threads try to acquire a lock on a given workflow instance, only the first one will succeed. Subsequent threads will simply wait until the lock is released.</p>
+<p>When you run multiple Elsa nodes, it is important to configure a distributed lock provider that can access a shared resource.</p>
+<p>If you are using SQL Server to store Elsa workflows, you might consider using the <a href="https://github.com/madelson/DistributedLock/blob/master/docs/DistributedLock.SqlServer.md">SqlServer</a> provider.
+And if you are already using <a href="https://github.com/madelson/DistributedLock/blob/master/docs/DistributedLock.Redis.md">Redis</a> or <a href="https://github.com/madelson/DistributedLock/blob/master/docs/DistributedLock.Azure.md">Azure</a>, you can use any of those providers as well.</p>
+<p>The following snippet shows how to configure Elsa with the SqlServer distributed lock provider:</p>
+<pre><code class="hljs css language-c#">services.AddElsa(elsa =&gt; elsa.ConfigureDistributedLockProvider(options =&gt; options.UseSqlServerLockProvider(<span class="hljs-string">"Server=localhost;Database=Elsa;Integrated Security=True;"</span>)));
+</code></pre>
+<blockquote>
+<p>Make sure to add the the <code>Elsa.DistributedLocking.SqlServer</code> package.</p>
+</blockquote>
+<p>Elsa currently ships with support for SqlServer and Azure Blob Storage, but any provider supported by DistributedLock can be used. To use the <a href="https://github.com/madelson/DistributedLock/blob/master/docs/DistributedLock.Redis.md">Redis</a> provider for example, you can configure Elsa to use it as follows:</p>
+<pre><code class="hljs css language-c#">services.AddRedis(<span class="hljs-string">"localhost:6379,abortConnect=false"</span>); <span class="hljs-comment">// Provided by the Elsa.Providers.Redis package. This is optional; you are free to construct your own connection multiplexer from the following factory code.</span>
+
+services.AddElsa(elsa =&gt; elsa.ConfigureDistributedLockProvider(options =&gt; options.UseProviderFactory(sp =&gt; name =&gt;
+{
+    <span class="hljs-keyword">var</span> connection = sp.GetRequiredService&lt;IConnectionMultiplexer&gt;(); <span class="hljs-comment">// `services.AddRedis` registers an `IConnectionMultiplexer` as a singleton. </span>
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> RedisDistributedLock(name, connection.GetDatabase());
+})));
+</code></pre>
+<h3><a class="anchor" aria-hidden="true" id="distributed-cache-signal-provider"></a><a href="#distributed-cache-signal-provider" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Distributed Cache Signal Provider</h3>
+<p>Elsa uses a local memory cache to store things like <a href="#">Workflow Blueprints</a>. However, when using a local memory cache in a multi-node environment, the caches need to be synchronized to avoid caches from becoming stale.</p>
+<p>When one is dealing with just one node, invalidating local cache entries is easy, because we can listen for domain events to know when it is time to evict a cache entry.</p>
+<p>For example, whenever you make changes to a workflow definition, Elsa publishes a domain event called <code>WorkflowDefinitionSaved</code>, which is handled by the <code>CachingWorkflowRegistry</code> decorator type and clears the cache using a service called <code>ICacheSignal</code>.</p>
+<h4><a class="anchor" aria-hidden="true" id="icachesignal"></a><a href="#icachesignal" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>ICacheSignal</h4>
+<p><code>ICacheSignal</code> is a relatively simple service that produces <a href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.primitives.ichangetoken">IChangeToken</a> objects that are used by <a href="https://docs.microsoft.com/en-us/aspnet/core/performance/caching/memory">IMemoryCache</a>.
+Other parts of Elsa can then <strong>trigger</strong> a signal that is being observed by the cache in order to invalidate that cache entry.</p>
+<p>The default implementation of <code>ICacheSignal</code> then triggers these tokens when you call <code>TriggerToken</code>.</p>
+<p>Elsa provides two additional implementations of <code>ICacheSignal</code>, which are:</p>
+<ul>
+<li>RebusCacheSignal</li>
+<li>RedisCacheSignal</li>
+</ul>
+<h4><a class="anchor" aria-hidden="true" id="rebuscachesignal"></a><a href="#rebuscachesignal" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>RebusCacheSignal</h4>
+<p>This implementation uses Elsa's Rebus configuration to <strong>publish a message to all nodes in the cluster</strong>.
+Each node receiving this message will then trigger the appropriate change token.</p>
+<p>For this to work, you need to configure Rebus with a message broker other than the default memory provider as described in the <a href="#service-bus-broker">Service Bus Broker</a> section.</p>
+<p>The following snippet demonstrates enabling the Rebus provider:</p>
+<pre><code class="hljs css language-c#">services.AddElsa(elsa =&gt; elsa.UseRebusCacheSignal());
+</code></pre>
+<p>No further configuration is necessary since you will already have configured Rebus itself.</p>
+<h4><a class="anchor" aria-hidden="true" id="rediscachesignal"></a><a href="#rediscachesignal" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>RedisCacheSignal</h4>
+<p>This implementation uses Redis' pub/sub mechanism to publish and subscribe to messages and can be enabled as follows:</p>
+<pre><code class="hljs css language-c#">services.AddElsa(elsa =&gt; elsa.UseRedisCacheSignal());
+</code></pre>
+<p>Similar to setting up Redis as the <a href="#distributed-lock-provider">Distributed Lock Provider</a>, you need to register a Redis Connection Multiplexer as a singleton, which can be done with this call:</p>
+<pre><code class="hljs css language-c#">services.AddRedis(<span class="hljs-string">"localhost:6379,abortConnect=false"</span>); <span class="hljs-comment">// Provided by the Elsa.Providers.Redis package.</span>
+</code></pre>
+<h2><a class="anchor" aria-hidden="true" id="background-information"></a><a href="#background-information" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Background Information</h2>
+<p>What follows is some more background information about why we need the additional configuration described previously.</p>
+<p>To support a multi-node setup, there are a few key aspects to accomodate for, which are:</p>
+<ul>
+<li>Background timer events (<code>Timer</code>, <code>Cron</code>, <code>StartAt</code>)</li>
+<li>Workflow concurrency</li>
+<li>Local memory cache (<code>WorkflowRegistry</code>)</li>
+</ul>
+<h3><a class="anchor" aria-hidden="true" id="background-timer-events"></a><a href="#background-timer-events" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Background Timer Events</h3>
+<p>Background timer events are basically background jobs executed by services such as Quartz.NET and Hangfire.
+These background jobs execute in the background whenever it is time to start or resume a workflow.</p>
+<p>The key thing to understand here is that these background jobs execute <strong>on each node in the cluster</strong>.
+By default (i.e. without configuring Elsa for a multi-node hosting environment), this will mean that if you for example have a workflow with a <strong>Timer</strong> activity, this workflow will execute on each node. Depending on your workflow specifics, this may or may not be problematic.</p>
+<h3><a class="anchor" aria-hidden="true" id="workflow-concurrency"></a><a href="#workflow-concurrency" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Workflow Concurrency</h3>
+<p>However, in order to avoid concurrency issues with workflow execution, it is crucial that only one node operates on a specific workflow instance at a time.</p>
+<blockquote>
+<p>To avoid any confusion, it is perfectly fine and even desirable that a given node operates on many workflow instances simultaneously.
+But the opposite is true for the other way around: it is bad for many nodes to operate on the same workflow at the same time.</p>
+</blockquote>
+<p>Elsa ensures the execution of only one workflow on one node at a given time by employing a technique called <a href="https://martin.kleppmann.com/2016/02/08/how-to-do-distributed-locking.html">Distributed Locking</a>.</p>
+<p>By default, Elsa uses a file-based primitive to acquire a distributed lock. Although this works fine when hosting multiple application instances on the same machine, it will not work when hosting Elsa in multiple Docker containers for instance.</p>
+<p>For that, we need access to a shared resource such as a database, Redis server or a blob in the cloud.</p>
+<h3><a class="anchor" aria-hidden="true" id="local-memory-cache"></a><a href="#local-memory-cache" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Local Memory Cache</h3>
+<p>To optimize performance, Elsa employs caching of certain objects such as <a href="">Workflow Blueprints</a>.
+However, imagine you have 3 instances of Elsa Server running behind some load balancer and a separate Elsa Dashboard application that communicates with the cluster through the load balancer.</p>
+<p>When you make a change to a workflow definition, this change will be posted to Elsa Server. This HTTP request may end up being handled by any of the 3 nodes in the cluster, and only that node will now have an updated cache.
+The two other nodes will now have an outdated cache.</p>
+<p>In order to mitigate this issue, we can do one of two things:</p>
+<ol>
+<li>Implement a distributed cache (using e.g. Redis), or:</li>
+<li>Implement distributed cache signaling.</li>
+</ol>
+<p>Elsa employs the second technique: distributed cache signaling. The advantage of that is performance. Updates made to workflow definitions occur far less often than reading workflow blueprints from the workflow registry, so it makes sense to optimize for that scenario.</p>
+<p>Local caches perform much better than distributed caches, because objects are stored in-memory, while distributed caches such as Redis are stored out of process, possibly on a different server which requires network roundtrips.</p>
+<blockquote>
+<p>An advantage of a distributed cache such as Redis however is that one might store much more information compared to a Docker container for example.
+Elsa does not support storing workflow blueprints in a distributed cache such as Redis because workflow blueprints aren't serializable.</p>
+</blockquote>
+</span></div></article></div><div class="docs-prevnext"><a class="docs-prev button" href="/elsa-core/docs/next/extensibility/extensibility-property-editor-types"><span class="arrow-prev">← </span><span>Property Editors</span></a></div></div></div><nav class="onPageNav"><ul class="toc-headings"><li><a href="#distributed-setup">Distributed Setup</a><ul class="toc-headings"><li><a href="#service-bus-broker">Service Bus Broker</a></li><li><a href="#distributed-lock-provider">Distributed Lock Provider</a></li><li><a href="#distributed-cache-signal-provider">Distributed Cache Signal Provider</a></li></ul></li><li><a href="#background-information">Background Information</a><ul class="toc-headings"><li><a href="#background-timer-events">Background Timer Events</a></li><li><a href="#workflow-concurrency">Workflow Concurrency</a></li><li><a href="#local-memory-cache">Local Memory Cache</a></li></ul></li></ul></nav></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="/elsa-core/" class="nav-home"><img src="/elsa-core/img/android-icon-192x192.png" alt="ELSA" width="50" height="50"/></a><div><h5>Docs</h5><a href="/elsa-core/docs/en/installing-elsa-core">Getting Started</a><a href="/elsa-core/docs/en/concepts-workflows">Concepts</a><a href="/elsa-core/docs/en/guides-simple-workflow-csharp">Guides</a></div><div><h5>Community</h5><a href="https://stackoverflow.com/questions/tagged/elsa-workflows" target="_blank" rel="noreferrer noopener">Stack Overflow</a><a href="https://gitter.im/elsa-workflows/community" target="_blank" rel="noreferrer noopener">Gitter</a></div><div><h5>More</h5><a href="https://github.com/elsa-workflows/elsa-core">GitHub</a><a class="github-button" href="https://github.com/elsa-workflows/elsa-core" data-icon="octicon-star" data-count-href="/facebook/docusaurus/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star this project on GitHub">Star</a></div></section><a href="https://dotnetfoundation.org" target="_blank" rel="noreferrer noopener" class="dotnetfoundation" title="Supported by the .NET Foundation"><img src="/elsa-core/img/dotnetfoundation.png" alt="Supported by the .NET Foundation" width="100" height="100"/></a><section class="copyright">Copyright © 2021 .NET Foundation</section></footer></div></body></html>
