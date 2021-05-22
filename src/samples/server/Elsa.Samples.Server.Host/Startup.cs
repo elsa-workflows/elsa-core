@@ -1,17 +1,9 @@
-using System;
 using Elsa.Activities.UserTask.Extensions;
-using Elsa.Caching.Rebus.Extensions;
-using Elsa.Extensions;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
-using Elsa.Persistence.EntityFramework.PostgreSql;
 using Elsa.Persistence.EntityFramework.Sqlite;
-using Elsa.Persistence.YesSql;
-using Elsa.Rebus.RabbitMq.Extensions;
 using Elsa.Samples.Server.Host.Activities;
-using Hangfire;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Versioning;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -38,13 +30,18 @@ namespace Elsa.Samples.Server.Host
             services
                 .AddActivityPropertyOptionsProvider<VehicleActivity>()
                 .AddRuntimeSelectItemsProvider<VehicleActivity>()
-                .AddRedis(Configuration.GetConnectionString("Redis"))
+                //.AddRedis(Configuration.GetConnectionString("Redis"))
                 .AddElsa(elsa => elsa
                     //.WithContainerName(Configuration["ContainerName"] ?? System.Environment.MachineName)
                     .UseEntityFrameworkPersistence(ef => ef.UseSqlite())
                     //.UseRabbitMq(Configuration.GetConnectionString("RabbitMq"))
                     //.UseRebusCacheSignal()
                     //.UseRedisCacheSignal()
+                    // .ConfigureDistributedLockProvider(options => options.UseProviderFactory(sp => name =>
+                    // {
+                    //     var connection = sp.GetRequiredService<IConnectionMultiplexer>();
+                    //     return new RedisDistributedLock(name, connection.GetDatabase());
+                    // }))
                     .AddConsoleActivities()
                     .AddHttpActivities(elsaSection.GetSection("Http").Bind)
                     .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)

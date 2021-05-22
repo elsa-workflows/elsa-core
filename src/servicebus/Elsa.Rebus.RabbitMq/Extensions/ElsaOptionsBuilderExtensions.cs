@@ -1,7 +1,8 @@
 ﻿using Elsa.Services;
 using Rebus.Config;
 
-namespace Elsa.Rebus.RabbitMq.Extensions
+// ReSharper disable once CheckNamespace
+namespace Elsa.Rebus.RabbitMq
 {
     public static class ElsaOptionsBuilderExtensions
     {

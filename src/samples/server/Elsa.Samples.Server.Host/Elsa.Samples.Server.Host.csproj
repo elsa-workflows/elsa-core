@@ -14,6 +14,7 @@
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.Temporal.Quartz\Elsa.Activities.Temporal.Quartz.csproj" />
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.UserTask\Elsa.Activities.UserTask.csproj" />
         <ProjectReference Include="..\..\..\caching\Elsa.Caching.Rebus\Elsa.Caching.Rebus.csproj" />
+        <ProjectReference Include="..\..\..\locking\Elsa.DistributedLocking.SqlServer\Elsa.DistributedLocking.SqlServer.csproj" />
         <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.PostgreSql\Elsa.Persistence.EntityFramework.PostgreSql.csproj" />
         <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.Sqlite\Elsa.Persistence.EntityFramework.Sqlite.csproj" />
         <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.SqlServer\Elsa.Persistence.EntityFramework.SqlServer.csproj" />
