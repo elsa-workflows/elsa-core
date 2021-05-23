@@ -25,7 +25,7 @@ namespace Elsa.Activities.Temporal.Hangfire.Services
             _jobManager.ScheduleJob(data, startAt);
 
             if (cron != null)
-                _jobManager.ScheduleJob(data, cron);
+                _jobManager.ScheduleRecurringJob(data, cron);
 
             return Task.CompletedTask;
         }
@@ -34,7 +34,7 @@ namespace Elsa.Activities.Temporal.Hangfire.Services
         {
             var data = CreateData(workflowDefinitionId, workflowInstanceId, activityId, tenantId, cronExpression);
 
-            _jobManager.ScheduleJob(data, cronExpression);
+            _jobManager.ScheduleRecurringJob(data, cronExpression);
 
             return Task.CompletedTask;
         }
@@ -42,14 +42,13 @@ namespace Elsa.Activities.Temporal.Hangfire.Services
         public Task UnscheduleWorkflowAsync(string? workflowDefinitionId, string? workflowInstanceId, string activityId, string? tenantId, CancellationToken cancellationToken = default)
         {
             var data = CreateData(workflowDefinitionId, workflowInstanceId, activityId, tenantId);
-            var identity = data.GetIdentity();
-            _jobManager.UnscheduleJob(identity);
+            _jobManager.DeleteJob(data);
             return Task.CompletedTask;
         }
 
         public Task UnscheduleWorkflowDefinitionAsync(string workflowDefinitionId, string? tenantId, CancellationToken cancellationToken = default)
         {
-            _jobManager.UnscheduleJobs(workflowDefinitionId, tenantId);
+            _jobManager.DeleteJobs(workflowDefinitionId, tenantId);
             return Task.CompletedTask;
         }
 

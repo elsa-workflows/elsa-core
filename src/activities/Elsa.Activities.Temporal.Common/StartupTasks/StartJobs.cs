@@ -13,7 +13,7 @@ namespace Elsa.Activities.Temporal.Common.StartupTasks
     public class StartJobs : IStartupTask
     {
         // TODO: Figure out how to start jobs across multiple tenants / how to get a list of all tenants. 
-        private const string TenantId = default;
+        private const string? TenantId = default;
 
         private readonly IBookmarkFinder _bookmarkFinder;
         private readonly IWorkflowScheduler _workflowScheduler;

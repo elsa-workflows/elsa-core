@@ -1,3 +1,7 @@
+using System;
+using System.Security.Cryptography;
+using System.Text;
+
 namespace Elsa.Activities.Temporal.Hangfire.Models
 {
     public class RunHangfireWorkflowJobModel
@@ -18,6 +22,14 @@ namespace Elsa.Activities.Temporal.Hangfire.Models
         public string? CronExpression { get; set; }
         public bool IsRecurringJob => string.IsNullOrEmpty(CronExpression) == false;
         
-        public string GetIdentity() => $"Elsa-tenant:{TenantId ?? "default"}-workflow-instance:{WorkflowInstanceId ?? WorkflowDefinitionId}-activity:{ActivityId}";
+        public string GetIdentity()
+        {
+            var text = $"{TenantId ?? "default"}:{WorkflowInstanceId ?? WorkflowDefinitionId}:{ActivityId}";
+            var bytes = Encoding.UTF8.GetBytes(text);
+
+            using var sha1 = new SHA1Managed();
+            var hash = sha1.ComputeHash(bytes);
+            return Convert.ToBase64String(hash);
+        }
     }
 }
