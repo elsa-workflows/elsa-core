@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Elsa.Activities.Signaling.Services;
 using Elsa.Builders;
 using Elsa.Caching;
 using Elsa.Persistence;

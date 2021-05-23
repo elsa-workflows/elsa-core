@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Elsa.Services;
-using MediatR;
 using Microsoft.Extensions.Logging;
 using NodaTime;
 using Rebus.Handlers;

@@ -1,7 +1,6 @@
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Services;
-using MediatR;
 using Microsoft.Extensions.Logging;
 using Rebus.Handlers;
 

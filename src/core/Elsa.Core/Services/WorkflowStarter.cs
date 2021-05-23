@@ -4,7 +4,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Bookmarks;
 using Elsa.Builders;
-using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services.Models;
 using Elsa.Triggers;

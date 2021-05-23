@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Elsa.Builders;
-using Elsa.Caching;
 using Elsa.Dispatch;
 using Elsa.Models;
 using Elsa.Persistence;
