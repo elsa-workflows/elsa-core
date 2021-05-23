@@ -220,8 +220,9 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddCompetingConsumer<TriggerWorkflowsRequestConsumer, TriggerWorkflowsRequest>()
                 .AddCompetingConsumer<ExecuteWorkflowDefinitionRequestConsumer, ExecuteWorkflowDefinitionRequest>()
                 .AddCompetingConsumer<ExecuteWorkflowInstanceRequestConsumer, ExecuteWorkflowInstanceRequest>()
-                .AddCompetingConsumer<UpdateWorkflowTriggersIndexConsumer, WorkflowDefinitionPublished>()
-                .AddCompetingConsumer<UpdateWorkflowTriggersIndexConsumer, WorkflowDefinitionRetracted>();
+                .AddPubSubConsumer<UpdateWorkflowTriggersIndexConsumer, WorkflowDefinitionPublished>()
+                .AddPubSubConsumer<UpdateWorkflowTriggersIndexConsumer, WorkflowDefinitionRetracted>()
+                .AddPubSubConsumer<UpdateWorkflowTriggersIndexConsumer, WorkflowDefinitionDeleted>();
 
             // AutoMapper.
             services

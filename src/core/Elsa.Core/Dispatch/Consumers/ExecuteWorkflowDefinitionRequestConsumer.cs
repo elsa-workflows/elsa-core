@@ -36,7 +36,7 @@ namespace Elsa.Dispatch.Consumers
 
             if (startableWorkflow == null)
             {
-                _logger.LogWarning("Could start workflow with ID {WorkflowDefinitionId}", workflowDefinitionId);
+                _logger.LogDebug("Could not start workflow with ID {WorkflowDefinitionId}", workflowDefinitionId);
                 return;
             }
             

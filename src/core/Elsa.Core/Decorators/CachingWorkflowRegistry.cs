@@ -14,7 +14,7 @@ using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Decorators
 {
-    public class CachingWorkflowRegistry : IWorkflowRegistry, INotificationHandler<WorkflowDefinitionSaved>
+    public class CachingWorkflowRegistry : IWorkflowRegistry, INotificationHandler<WorkflowDefinitionSaved>, INotificationHandler<WorkflowDefinitionDeleted>
     {
         private const string CacheKey = "WorkflowRegistry";
         private readonly IWorkflowRegistry _workflowRegistry;
@@ -56,6 +56,12 @@ namespace Elsa.Decorators
         }
 
         Task INotificationHandler<WorkflowDefinitionSaved>.Handle(WorkflowDefinitionSaved notification, CancellationToken cancellationToken)
+        {
+            _cacheSignal.TriggerTokenAsync(CacheKey);
+            return Task.CompletedTask;
+        }
+
+        Task INotificationHandler<WorkflowDefinitionDeleted>.Handle(WorkflowDefinitionDeleted notification, CancellationToken cancellationToken)
         {
             _cacheSignal.TriggerTokenAsync(CacheKey);
             return Task.CompletedTask;
