@@ -8,6 +8,9 @@ using System.Text;
 
 namespace Elsa.Activities.File
 {
+    [Action(Category = "File",
+        Description = "Checks if a file exists",
+        Outcomes = new[] { OutcomeNames.True, OutcomeNames.False })]
     public class FileExists : Activity
     {
         [ActivityProperty(Hint = "Path of the file to delete.")]
@@ -16,7 +19,10 @@ namespace Elsa.Activities.File
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
             var exists = System.IO.File.Exists(Path);
-            return Done(exists);
+            if (exists)
+                return Outcome(OutcomeNames.True);
+            else
+                return Outcome(OutcomeNames.False);
         }
     }
 }
