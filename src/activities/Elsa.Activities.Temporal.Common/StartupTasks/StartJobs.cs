@@ -16,9 +16,9 @@ namespace Elsa.Activities.Temporal.Common.StartupTasks
         private const string? TenantId = default;
 
         private readonly IBookmarkFinder _bookmarkFinder;
-        private readonly IWorkflowScheduler _workflowScheduler;
+        private readonly IWorkflowInstanceScheduler _workflowScheduler;
 
-        public StartJobs(IBookmarkFinder bookmarkFinder, IWorkflowScheduler workflowScheduler)
+        public StartJobs(IBookmarkFinder bookmarkFinder, IWorkflowInstanceScheduler workflowScheduler)
         {
             _bookmarkFinder = bookmarkFinder;
             _workflowScheduler = workflowScheduler;
@@ -41,7 +41,7 @@ namespace Elsa.Activities.Temporal.Common.StartupTasks
             foreach (var result in bookmarkResults)
             {
                 var bookmark = (StartAtBookmark) result.Bookmark;
-                await _workflowScheduler.ScheduleWorkflowAsync(null, result.WorkflowInstanceId!, result.ActivityId, TenantId, bookmark.ExecuteAt, null, cancellationToken);
+                await _workflowScheduler.ScheduleAsync(result.WorkflowInstanceId!, result.ActivityId, bookmark.ExecuteAt, null, cancellationToken);
             }
         }
 
@@ -53,7 +53,7 @@ namespace Elsa.Activities.Temporal.Common.StartupTasks
             foreach (var result in bookmarkResults)
             {
                 var bookmark = (TimerBookmark) result.Bookmark;
-                await _workflowScheduler.ScheduleWorkflowAsync(null, result.WorkflowInstanceId!, result.ActivityId, TenantId, bookmark.ExecuteAt, null, cancellationToken);
+                await _workflowScheduler.ScheduleAsync(result.WorkflowInstanceId!, result.ActivityId, bookmark.ExecuteAt, null, cancellationToken);
             }
         }
 
@@ -65,7 +65,7 @@ namespace Elsa.Activities.Temporal.Common.StartupTasks
             foreach (var result in cronEventTriggers)
             {
                 var trigger = (CronBookmark) result.Bookmark;
-                await _workflowScheduler.ScheduleWorkflowAsync(null, result.WorkflowInstanceId!, result.ActivityId, TenantId, trigger.ExecuteAt!.Value, null, cancellationToken);
+                await _workflowScheduler.ScheduleAsync(result.WorkflowInstanceId!, result.ActivityId, trigger.ExecuteAt!.Value, null, cancellationToken);
             }
         }
     }

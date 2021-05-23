@@ -1,9 +1,9 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.Temporal.Common.Options;
 using Elsa.Activities.Temporal.Common.Services;
 using Elsa.Activities.Temporal.Hangfire.Extensions;
 using Elsa.Activities.Temporal.Hangfire.Models;
-using Hangfire;
 using NodaTime;
 
 namespace Elsa.Activities.Temporal.Hangfire.Services
@@ -17,22 +17,22 @@ namespace Elsa.Activities.Temporal.Hangfire.Services
             _jobManager = jobManager;
         }
 
-        public Task ScheduleWorkflowAsync(string? workflowDefinitionId, string? workflowInstanceId, string activityId, string? tenantId, Instant startAt, Duration? interval, CancellationToken cancellationToken)
+        public Task ScheduleWorkflowAsync(string? workflowDefinitionId, string? workflowInstanceId, string activityId, string? tenantId, Instant startAt, Duration? interval, ClusterMode? clusterMode = default, CancellationToken cancellationToken = default)
         {
-            var cron = interval?.ToCronExpression();
-            var data = CreateData(workflowDefinitionId, workflowInstanceId, activityId, tenantId, cron);
+            var cronExpression = interval?.ToCronExpression();
+            var data = CreateData(workflowDefinitionId, workflowInstanceId, activityId, tenantId, cronExpression, clusterMode);
 
             _jobManager.ScheduleJob(data, startAt);
 
-            if (cron != null)
-                _jobManager.ScheduleRecurringJob(data, cron);
+            if (cronExpression != null)
+                _jobManager.ScheduleRecurringJob(data, cronExpression);
 
             return Task.CompletedTask;
         }
 
-        public Task ScheduleWorkflowAsync(string? workflowDefinitionId, string? workflowInstanceId, string activityId, string? tenantId, string cronExpression, CancellationToken cancellationToken)
+        public Task ScheduleWorkflowAsync(string? workflowDefinitionId, string? workflowInstanceId, string activityId, string? tenantId, string cronExpression, ClusterMode? clusterMode = default, CancellationToken cancellationToken = default)
         {
-            var data = CreateData(workflowDefinitionId, workflowInstanceId, activityId, tenantId, cronExpression);
+            var data = CreateData(workflowDefinitionId, workflowInstanceId, activityId, tenantId, cronExpression, clusterMode);
 
             _jobManager.ScheduleRecurringJob(data, cronExpression);
 
@@ -52,14 +52,15 @@ namespace Elsa.Activities.Temporal.Hangfire.Services
             return Task.CompletedTask;
         }
 
-        private RunHangfireWorkflowJobModel CreateData(string? workflowDefinitionId, string? workflowInstanceId, string activityId, string? tenantId, string? cronExpression = null)
+        private RunHangfireWorkflowJobModel CreateData(string? workflowDefinitionId, string? workflowInstanceId, string activityId, string? tenantId, string? cronExpression = default, ClusterMode? clusterMode = default)
         {
             return new(
                 workflowDefinitionId,
                 workflowInstanceId: workflowInstanceId,
                 activityId: activityId,
                 tenantId: tenantId,
-                cronExpression: cronExpression);
+                cronExpression: cronExpression,
+                clusterMode: clusterMode);
         }
     }
 }
