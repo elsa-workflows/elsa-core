@@ -10,7 +10,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Elsa.Persistence.EntityFramework.PostgreSql.Migrations
 {
     [DbContext(typeof(ElsaContext))]
-    [Migration("20210516192655_Initial")]
+    [Migration("20210523093439_Initial")]
     partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
