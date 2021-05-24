@@ -13,7 +13,7 @@ namespace Elsa.Core.IntegrationTests.Autofixture
             return builder => {
                 builder.ElsaCallbacks.Add(elsa => {
                     elsa.UseYesSqlPersistence((_, config) => {
-                        config.UsePostgreSql("Server=localhost;Port=5432;Database=yessql;User Id=root;Password=Password12!;");
+                        config.UsePostgreSql("Server=localhost;Port=5432;Database=elsa;User Id=root;Password=Password12!;");
                     });
                 });
             };
