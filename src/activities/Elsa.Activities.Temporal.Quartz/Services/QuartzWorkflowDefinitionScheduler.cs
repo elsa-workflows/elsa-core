@@ -23,9 +23,9 @@ namespace Elsa.Activities.Temporal.Quartz.Services
             _logger = logger;
         }
 
-        public async Task ScheduleAsync(string workflowDefinitionId, string activityId, Instant startAt, Duration? interval, ClusterMode clusterMode, CancellationToken cancellationToken = default)
+        public async Task ScheduleAsync(string workflowDefinitionId, string activityId, Instant startAt, Duration? interval, CancellationToken cancellationToken = default)
         {
-            var triggerBuilder = CreateTrigger(workflowDefinitionId, activityId, clusterMode).StartAt(startAt.ToDateTimeOffset());
+            var triggerBuilder = CreateTrigger(workflowDefinitionId, activityId).StartAt(startAt.ToDateTimeOffset());
             
             if (interval != null && interval != Duration.Zero)
                 triggerBuilder.WithSimpleSchedule(x => x.WithInterval(interval.Value.ToTimeSpan()).RepeatForever());
@@ -34,9 +34,9 @@ namespace Elsa.Activities.Temporal.Quartz.Services
             await ScheduleJob(trigger, cancellationToken);
         }
 
-        public async Task ScheduleAsync(string workflowDefinitionId, string activityId, string cronExpression, ClusterMode clusterMode, CancellationToken cancellationToken = default)
+        public async Task ScheduleAsync(string workflowDefinitionId, string activityId, string cronExpression, CancellationToken cancellationToken = default)
         {
-            var trigger = CreateTrigger(workflowDefinitionId, activityId, clusterMode).WithCronSchedule(cronExpression).Build();
+            var trigger = CreateTrigger(workflowDefinitionId, activityId).WithCronSchedule(cronExpression).Build();
             await ScheduleJob(trigger, cancellationToken);
         }
         
@@ -76,10 +76,9 @@ namespace Elsa.Activities.Temporal.Quartz.Services
                 var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
                 var existingTrigger = await scheduler.GetTrigger(trigger.Key, cancellationToken);
 
-                if (existingTrigger != null)
-                    await scheduler.UnscheduleJob(existingTrigger.Key, cancellationToken);
-                
-                await scheduler.ScheduleJob(trigger, cancellationToken);
+                // For workflow definitions we only schedule the job if one doesn't exist already because another node may have created it beforehand.
+                if (existingTrigger == null)
+                    await scheduler.ScheduleJob(trigger, cancellationToken);
             }
             catch (SchedulerException e)
             {
@@ -91,13 +90,12 @@ namespace Elsa.Activities.Temporal.Quartz.Services
             }
         }
 
-        private TriggerBuilder CreateTrigger(string workflowDefinitionId, string activityId, ClusterMode clusterMode) =>
+        private TriggerBuilder CreateTrigger(string workflowDefinitionId, string activityId) =>
             TriggerBuilder.Create()
                 .ForJob(RunWorkflowJobKey)
                 .WithIdentity(CreateTriggerKey(workflowDefinitionId, activityId))
                 .UsingJobData("WorkflowDefinitionId", workflowDefinitionId!)
-                .UsingJobData("ActivityId", activityId)
-                .UsingJobData("ClusterMode", clusterMode.ToString());
+                .UsingJobData("ActivityId", activityId);
         
         private TriggerKey CreateTriggerKey(string workflowDefinitionId, string activityId)
         {

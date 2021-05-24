@@ -1,10 +1,8 @@
 using System;
 using Elsa.Activities.Temporal.Common.Bookmarks;
-using Elsa.Activities.Temporal.Common.Consumers;
 using Elsa.Activities.Temporal.Common.Handlers;
 using Elsa.Activities.Temporal.Common.Options;
 using Elsa.Activities.Temporal.Common.StartupTasks;
-using Elsa.Events;
 using Elsa.Runtime;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -43,10 +41,6 @@ namespace Elsa.Activities.Temporal
                 .AddActivity<Timer>()
                 .AddActivity<StartAt>()
                 .AddActivity<ClearTimer>();
-
-            options.AddPubSubConsumer<RemoveScheduledTriggersConsumer, WorkflowDefinitionPublished>();
-            options.AddPubSubConsumer<RemoveScheduledTriggersConsumer, WorkflowDefinitionRetracted>();
-            options.AddPubSubConsumer<RemoveScheduledTriggersConsumer, WorkflowDefinitionDeleted>();
 
             return options;
         }

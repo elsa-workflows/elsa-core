@@ -1,8 +1,6 @@
 using Elsa.Activities.Temporal.Common.ActivityResults;
-using Elsa.Activities.Temporal.Common.Options;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
-using Elsa.Design;
 using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -26,14 +24,6 @@ namespace Elsa.Activities.Temporal
 
         [ActivityProperty(Hint = "The time interval at which this activity should tick.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public Duration Timeout { get; set; } = default!;
-        
-        [ActivityProperty(
-            Hint = "Whether workflows starting with this timer should execute on one node or on all nodes in a cluster.", 
-            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid },
-            Category = PropertyCategories.Hosting,
-            DefaultValue = Common.Options.ClusterMode.SingleNode
-        )]
-        public ClusterMode ClusterMode { get; set; } = ClusterMode.SingleNode;
 
         public Instant? ExecuteAt
         {

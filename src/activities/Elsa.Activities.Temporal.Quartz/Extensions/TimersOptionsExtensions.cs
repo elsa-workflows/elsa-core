@@ -30,6 +30,7 @@ namespace Elsa
             timersOptions.Services
                 .AddSingleton<IWorkflowDefinitionScheduler, QuartzWorkflowDefinitionScheduler>()
                 .AddSingleton<IWorkflowInstanceScheduler, QuartzWorkflowInstanceScheduler>()
+                .AddSingleton<ICrontabParser, QuartzCrontabParser>()
                 .AddTransient<RunQuartzWorkflowDefinitionJob>()
                 .AddTransient<RunQuartzWorkflowInstanceJob>()
                 .AddNotificationHandlers(typeof(ConfigureCronProperty));

@@ -46,7 +46,6 @@ namespace Elsa.Activities.Temporal
                 return Done();
 
             var cancellationToken = context.CancellationToken;
-            var tenantId = context.WorkflowExecutionContext.WorkflowBlueprint.TenantId;
             var workflowInstance = context.WorkflowExecutionContext.WorkflowInstance;
             var executeAt = _crontabParser.GetNextOccurrence(CronExpression);
 
