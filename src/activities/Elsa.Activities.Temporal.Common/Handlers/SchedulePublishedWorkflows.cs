@@ -15,11 +15,11 @@ namespace Elsa.Activities.Temporal.Common.Handlers
         // TODO: Design multi-tenancy. 
         private const string? TenantId = default;
 
-        private readonly IWorkflowScheduler _workflowScheduler;
+        private readonly IWorkflowDefinitionScheduler _workflowScheduler;
         private readonly ITriggerFinder _triggerFinder;
         private readonly ILogger<SchedulePublishedWorkflows> _logger;
 
-        public SchedulePublishedWorkflows(IWorkflowScheduler workflowScheduler, ITriggerFinder triggerFinder, ILogger<SchedulePublishedWorkflows> logger)
+        public SchedulePublishedWorkflows(IWorkflowDefinitionScheduler workflowScheduler, ITriggerFinder triggerFinder, ILogger<SchedulePublishedWorkflows> logger)
         {
             _workflowScheduler = workflowScheduler;
             _triggerFinder = triggerFinder;
@@ -32,22 +32,24 @@ namespace Elsa.Activities.Temporal.Common.Handlers
             var timerTriggers = await _triggerFinder.FindTriggersAsync<Timer>(TenantId, cancellationToken);
             var cronTriggers = await _triggerFinder.FindTriggersAsync<Cron>(TenantId, cancellationToken);
 
+            await _workflowScheduler.UnscheduleAllAsync(cancellationToken);
+
             foreach (var trigger in startAtTriggers)
             {
                 var bookmark = (StartAtBookmark) trigger.Bookmark;
-                await Try(() => _workflowScheduler.ScheduleWorkflowAsync(trigger.WorkflowBlueprint.Id, null, trigger.ActivityId, TenantId, bookmark.ExecuteAt, null, cancellationToken));
+                await Try(() => _workflowScheduler.ScheduleAsync(trigger.WorkflowBlueprint.Id, trigger.ActivityId, bookmark.ExecuteAt, null, cancellationToken));
             }
 
             foreach (var trigger in timerTriggers)
             {
                 var bookmark = (TimerBookmark) trigger.Bookmark;
-                await Try(() => _workflowScheduler.ScheduleWorkflowAsync(trigger.WorkflowBlueprint.Id, null, trigger.ActivityId, TenantId, bookmark.ExecuteAt, bookmark.Interval, cancellationToken));
+                await Try(() => _workflowScheduler.ScheduleAsync(trigger.WorkflowBlueprint.Id, trigger.ActivityId, bookmark.ExecuteAt, bookmark.Interval, cancellationToken));
             }
 
             foreach (var trigger in cronTriggers)
             {
                 var bookmark = (CronBookmark) trigger.Bookmark;
-                await Try(() => _workflowScheduler.ScheduleWorkflowAsync(trigger.WorkflowBlueprint.Id, null, trigger.ActivityId, TenantId, bookmark.CronExpression, cancellationToken));
+                await Try(() => _workflowScheduler.ScheduleAsync(trigger.WorkflowBlueprint.Id, trigger.ActivityId, bookmark.CronExpression, cancellationToken));
             }
         }
 

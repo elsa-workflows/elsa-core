@@ -131,26 +131,32 @@ namespace Elsa.Services
                 if (handle == null)
                     throw new LockAcquisitionException($"Failed to acquire a lock on {lockKey}");
 
-                if (!workflowBlueprint!.IsSingleton || await GetWorkflowIsAlreadyExecutingAsync(tenantId, workflowDefinitionId) == false)
+                if (workflowBlueprint.IsSingleton)
                 {
-                    var startActivities = _getsStartActivities.GetStartActivities(workflowBlueprint).Select(x => x.Id).ToHashSet();
-                    var startActivityId = activityId == null ? startActivities.FirstOrDefault() : startActivities.Contains(activityId) ? activityId : default;
-
-                    if (startActivityId == null)
+                    if (await GetWorkflowIsAlreadyExecutingAsync(tenantId, workflowDefinitionId))
                     {
-                        _logger.LogWarning("Cannot start workflow {WorkflowDefinitionId} with version {WorkflowDefinitionVersion} because it has no starting activities", workflowBlueprint.Id, workflowBlueprint.Version);
+                        _logger.LogDebug("Workflow {WorkflowDefinitionId} is a singleton workflow and is already running");
                         return null;
                     }
-
-                    var workflowInstance = await _workflowFactory.InstantiateAsync(
-                        workflowBlueprint,
-                        correlationId,
-                        contextId,
-                        cancellationToken);
-
-                    await _workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
-                    return new StartableWorkflow(workflowBlueprint, workflowInstance, startActivityId);
                 }
+
+                var startActivities = _getsStartActivities.GetStartActivities(workflowBlueprint).Select(x => x.Id).ToHashSet();
+                var startActivityId = activityId == null ? startActivities.FirstOrDefault() : startActivities.Contains(activityId) ? activityId : default;
+
+                if (startActivityId == null)
+                {
+                    _logger.LogWarning("Cannot start workflow {WorkflowDefinitionId} with version {WorkflowDefinitionVersion} because it has no starting activities", workflowBlueprint.Id, workflowBlueprint.Version);
+                    return null;
+                }
+
+                var workflowInstance = await _workflowFactory.InstantiateAsync(
+                    workflowBlueprint,
+                    correlationId,
+                    contextId,
+                    cancellationToken);
+
+                await _workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
+                return new StartableWorkflow(workflowBlueprint, workflowInstance, startActivityId);
             }
             finally
             {
@@ -182,7 +188,7 @@ namespace Elsa.Services
             var startableWorkflow = await CollectStartableWorkflowAsync(workflowBlueprint, activityId, correlationId, contextId, tenantId, cancellationToken);
 
             if (startableWorkflow == null)
-                throw new WorkflowException($"Could start workflow with ID {workflowDefinitionId}");
+                throw new WorkflowException($"Could not start workflow with ID {workflowDefinitionId}");
 
             return await ExecuteStartableWorkflowAsync(startableWorkflow, input, cancellationToken);
         }
@@ -210,7 +216,8 @@ namespace Elsa.Services
 
         public Task DispatchPendingWorkflowAsync(string workflowInstanceId, string? activityId, object? input, CancellationToken cancellationToken = default) => DispatchPendingWorkflowAsync(new PendingWorkflow(workflowInstanceId, activityId), input, cancellationToken);
 
-        public async Task<RunWorkflowResult> ExecuteStartableWorkflowAsync(StartableWorkflow startableWorkflow, object? input, CancellationToken cancellationToken = default) => await _workflowRunner.RunWorkflowAsync(startableWorkflow.WorkflowBlueprint, startableWorkflow.WorkflowInstance, startableWorkflow.ActivityId, input, cancellationToken);
+        public async Task<RunWorkflowResult> ExecuteStartableWorkflowAsync(StartableWorkflow startableWorkflow, object? input, CancellationToken cancellationToken = default) =>
+            await _workflowRunner.RunWorkflowAsync(startableWorkflow.WorkflowBlueprint, startableWorkflow.WorkflowInstance, startableWorkflow.ActivityId, input, cancellationToken);
 
         public async Task<PendingWorkflow> DispatchStartableWorkflowAsync(StartableWorkflow startableWorkflow, object? input, CancellationToken cancellationToken = default)
         {
@@ -235,7 +242,7 @@ namespace Elsa.Services
 
         public async Task<IEnumerable<PendingWorkflow>> CollectResumableAndStartableWorkflowsAsync(CollectWorkflowsContext context, CancellationToken cancellationToken)
         {
-            var bookmarkResultsQuery = context.Bookmark != null ?await _bookmarkFinder.FindBookmarksAsync(context.ActivityType, context.Bookmark, context.CorrelationId, context.TenantId, cancellationToken) : default;
+            var bookmarkResultsQuery = context.Bookmark != null ? await _bookmarkFinder.FindBookmarksAsync(context.ActivityType, context.Bookmark, context.CorrelationId, context.TenantId, cancellationToken) : default;
             var bookmarkResults = bookmarkResultsQuery?.ToList() ?? new List<BookmarkFinderResult>();
             var triggeredPendingWorkflows = bookmarkResults.Select(x => new PendingWorkflow(x.WorkflowInstanceId, x.ActivityId)).ToList();
             var startableWorkflows = await CollectStartableWorkflowsAsync(context, cancellationToken);

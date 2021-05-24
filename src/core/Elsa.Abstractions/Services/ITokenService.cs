@@ -10,6 +10,11 @@ namespace Elsa.Services
         /// <summary>
         /// Decrypts the specified SAS token.
         /// </summary>
+        T DecryptToken<T>(string token);
+
+        /// <summary>
+        /// Decrypts the specified SAS token.
+        /// </summary>
         bool TryDecryptToken<T>(string token, out T payload);
     }
 }

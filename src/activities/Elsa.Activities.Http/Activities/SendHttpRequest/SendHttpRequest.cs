@@ -126,7 +126,7 @@ namespace Elsa.Activities.Http
             if (!isSupportedStatusCode)
                 outcomes.Add("UnSupportedStatusCode");
 
-            return Combine(Outcomes(outcomes), Output(responseModel));
+            return Combine(Output(responseModel), Outcomes(outcomes));
         }
 
         private IHttpResponseBodyParser SelectContentParser(string contentType)

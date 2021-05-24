@@ -31,13 +31,6 @@ namespace Elsa.Activities.Temporal
             set => SetState(value);
         }
         
-        protected override bool OnCanExecute(ActivityExecutionContext context)
-        {
-            var now = _clock.GetCurrentInstant();
-            var executeAt = ExecuteAt;
-            return executeAt == null || executeAt <= now;
-        }
-
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
             if (context.WorkflowExecutionContext.IsFirstPass)

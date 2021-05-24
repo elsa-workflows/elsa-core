@@ -1,5 +1,4 @@
 using System;
-using Elsa.Activities.Temporal;
 using Elsa.Activities.Temporal.Common.Options;
 using Elsa.Activities.Temporal.Common.Services;
 using Elsa.Activities.Temporal.Hangfire.Services;
@@ -19,9 +18,9 @@ namespace Elsa
         public static void UseHangfire(this TimersOptions timersOptions)
         {
             timersOptions.Services
-                .AddSingleton<IWorkflowScheduler, HangfireWorkflowScheduler>()
-                .AddSingleton<ICrontabParser, HangfireCrontabParser>()
-                .AddSingleton<JobManager>();
+                .AddSingleton<IWorkflowDefinitionScheduler, HangfireWorkflowDefinitionScheduler>()
+                .AddSingleton<IWorkflowInstanceScheduler, HangfireWorkflowInstanceScheduler>()
+                .AddSingleton<ICrontabParser, HangfireCrontabParser>();
         }
 
         /// <summary>

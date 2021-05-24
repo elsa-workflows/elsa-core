@@ -8,11 +8,12 @@ services:
       - "27017:27017"
 
   postgres:
-    image: postgres:11
+    image: postgres:13.3-alpine
+    restart: always
     environment:
       - POSTGRES_USER=root
       - POSTGRES_PASSWORD=Password12!
-      - POSTGRES_DB=yessql
+      - POSTGRES_DB=elsa
     ports:
       - "5432:5432"
 

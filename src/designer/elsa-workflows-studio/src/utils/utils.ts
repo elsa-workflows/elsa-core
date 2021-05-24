@@ -190,11 +190,11 @@ export function mapSyntaxToLanguage(syntax: string): any {
 
 export function durationToString(duration: Duration) {
   return !!duration ? duration.asHours() > 1
-    ? `${duration.asHours()} h`
+    ? `${duration.asHours().toFixed(3)} h`
     : duration.asMinutes() > 1
-      ? `${duration.asMinutes()} m`
+      ? `${duration.asMinutes().toFixed(3)} m`
       : duration.asSeconds() > 1
-        ? `${duration.asSeconds()} s`
+        ? `${duration.asSeconds().toFixed(3)} s`
         : `${duration.asMilliseconds()} ms`
     : null;
 }

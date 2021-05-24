@@ -19,6 +19,7 @@ export class ElsaWorkflowDesigner {
   @Prop() model: WorkflowModel = {activities: [], connections: [], persistenceBehavior: WorkflowPersistenceBehavior.WorkflowBurst};
   @Prop() selectedActivityIds: Array<string> = [];
   @Prop() activityContextMenuButton?: (activity: ActivityModel) => string;
+  @Prop() activityBorderColor?: (activity: ActivityModel) => string;
   @Prop() activityContextMenu?: ActivityContextMenuState;
   @Prop() mode: WorkflowDesignerMode = WorkflowDesignerMode.Edit;
   @Event({eventName: 'workflow-changed', bubbles: true, composed: true, cancelable: true}) workflowChanged: EventEmitter<WorkflowModel>;
@@ -70,7 +71,7 @@ export class ElsaWorkflowDesigner {
       map[activity.activityId] = activity;
 
     this.selectedActivities = map;
-    this.rerenderTree();
+    this.tryRerenderTree();
   }
 
   @Watch('activityContextMenu')
@@ -102,9 +103,7 @@ export class ElsaWorkflowDesigner {
     if (emitEvent)
       this.workflowChanged.emit(model);
 
-    setTimeout(() => {
-      this.rerenderTree();
-    }, 50);
+    this.tryRerenderTree();
   }
 
   removeActivityInternal(activity: ActivityModel) {
@@ -260,9 +259,7 @@ export class ElsaWorkflowDesigner {
   componentDidLoad() {
     this.svgD3Selected = d3.select(this.svg);
     this.innerD3Selected = d3.select(this.inner);
-    setTimeout(() => {
-      this.rerenderTree();
-    }, 400);
+    this.tryRerenderTree(1200);
   }
 
   componentWillRender() {
@@ -367,6 +364,23 @@ export class ElsaWorkflowDesigner {
 
       this.graph.setEdge(sourceName, targetId, {arrowhead: 'undirected'});
     });
+  }
+
+  tryRerenderTree(waitTime?: number, attempt?: number) {
+    const maxTries = 3;
+
+    waitTime = waitTime || 50;
+    attempt = attempt || 0;
+    setTimeout(() => {
+      try {
+        this.rerenderTree()
+      } catch (e) {
+        console.warn(`Attempt ${attempt + 1} failed while trying to render tree. Retrying ${maxTries - attempt + 1} more times.`)
+
+        if (attempt < maxTries)
+          this.tryRerenderTree(100, attempt + 1);
+      }
+    }, waitTime);
   }
 
   renderNodes() {
@@ -501,8 +515,10 @@ export class ElsaWorkflowDesigner {
 
   renderActivity(activity: ActivityModel) {
     const displayContext = this.activityDisplayContexts[activity.activityId] || undefined;
-    const cssClass = !!this.selectedActivities[activity.activityId] ? 'elsa-border-blue-600' : 'elsa-border-gray-200 hover:elsa-border-blue-600'
     const activityContextMenuButton = !!this.activityContextMenuButton ? this.activityContextMenuButton(activity) : '';
+    const activityBorderColor = !!this.activityBorderColor ? this.activityBorderColor(activity) : 'gray';
+    const selectedColor = !!this.activityBorderColor ? activityBorderColor : 'blue';
+    const cssClass = !!this.selectedActivities[activity.activityId] ? `elsa-border-${selectedColor}-600` : `elsa-border-${activityBorderColor}-200 hover:elsa-border-${selectedColor}-600`;
 
     return `<div id=${`activity-${activity.activityId}`} 
     class="activity elsa-border-2 elsa-border-solid elsa-rounded elsa-bg-white elsa-text-left elsa-text-black elsa-text-lg elsa-select-none elsa-max-w-md elsa-shadow-sm elsa-relative ${cssClass}">

@@ -28,7 +28,10 @@ namespace Elsa.Services
             if (!ValidatePreconditions(workflowInstanceId, workflowInstance, activityId))
                 return new RunWorkflowResult(workflowInstance, activityId, false);
             
-            return await ExecuteAsync(workflowInstance!, activityId, input, cancellationToken);
+            return await _workflowRunner.ResumeWorkflowAsync(
+                workflowInstance!,
+                activityId,
+                input, cancellationToken);
         }
 
         public async Task<RunWorkflowResult> ExecuteAsync(WorkflowInstance workflowInstance, string? activityId, object? input = default, CancellationToken cancellationToken = default)
@@ -52,7 +55,7 @@ namespace Elsa.Services
 
             if (workflowInstance.WorkflowStatus != WorkflowStatus.Suspended && workflowInstance.WorkflowStatus != WorkflowStatus.Running && workflowInstance.WorkflowStatus != WorkflowStatus.Idle)
             {
-                _logger.LogWarning(
+                _logger.LogDebug(
                     "Could not run workflow instance with ID {WorkflowInstanceId} because it has a status other than Idle, Suspended or Running. Its actual status is {WorkflowStatus}",
                     workflowInstanceId, workflowInstance.WorkflowStatus);
                 return false;

@@ -1,11 +1,8 @@
-import {Component, EventEmitter, h, Host, Method, Prop, State, Watch, Event} from '@stencil/core';
+import {Component, Event, EventEmitter, h, Host, Method, Prop, State, Watch} from '@stencil/core';
 import * as collection from 'lodash/collection';
 import moment from 'moment';
-import {enter, leave, toggle} from 'el-transition'
-import {
-  ActivityBlueprint,
-  ActivityDescriptor, PagedList, WorkflowBlueprint, WorkflowExecutionLogRecord, WorkflowModel,
-} from "../../../../models";
+import {enter, leave} from 'el-transition'
+import {ActivityBlueprint, ActivityDescriptor, PagedList, WorkflowBlueprint, WorkflowExecutionLogRecord, WorkflowModel,} from "../../../../models";
 import {activityIconProvider} from "../../../../services/activity-icon-provider";
 import {createElsaClient} from "../../../../services/elsa-client";
 import {clip, durationToString} from "../../../../utils/utils";
@@ -42,6 +39,7 @@ export class ElsaWorkflowInstanceJournal {
   @Event() recordSelected: EventEmitter<WorkflowExecutionLogRecord>;
   @State() isVisible: boolean = true;
   @State() records: PagedList<WorkflowExecutionLogRecord> = {items: [], totalCount: 0};
+  @State() filteredRecords: Array<WorkflowExecutionLogRecord> = [];
   @State() selectedRecordId?: string;
   @State() selectedActivityId?: string;
   @State() selectedTabId: string = 'journal';
@@ -70,7 +68,7 @@ export class ElsaWorkflowInstanceJournal {
 
   @Method()
   async selectActivityRecord(activityId?: string) {
-    const record = !!activityId ? this.records.items.find(x => x.activityId == activityId) : null;
+    const record = !!activityId ? this.filteredRecords.find(x => x.activityId == activityId) : null;
     this.selectActivityRecordInternal(record);
     await this.show();
   }
@@ -83,6 +81,7 @@ export class ElsaWorkflowInstanceJournal {
     if (workflowInstanceId && workflowInstanceId.length > 0) {
       try {
         this.records = await client.workflowExecutionLogApi.get(workflowInstanceId);
+        this.filteredRecords = this.records.items.filter(x => x.eventName != 'Executing' && x.eventName != 'Resuming');
       } catch {
         console.warn('The specified workflow instance does not exist.');
       }
@@ -91,6 +90,10 @@ export class ElsaWorkflowInstanceJournal {
 
   async componentWillLoad() {
     await this.workflowInstanceIdChangedHandler(this.workflowInstanceId);
+  }
+  
+  filterRecords(){
+    return 
   }
 
   selectActivityRecordInternal(record?: WorkflowExecutionLogRecord) {
@@ -215,8 +218,7 @@ export class ElsaWorkflowInstanceJournal {
   }
 
   renderJournalTab = () => {
-    const records = this.records;
-    const items = records.items.filter(x => x.eventName != 'Executing');
+    const items = this.filteredRecords;
     const activityDescriptors = this.activityDescriptors;
     const workflowBlueprint = this.workflowBlueprint;
     const activityBlueprints: Array<ActivityBlueprint> = workflowBlueprint.activities || [];
@@ -238,21 +240,14 @@ export class ElsaWorkflowInstanceJournal {
       const recordClass = record.id === selectedRecordId ? 'elsa-border-blue-600' : 'hover:elsa-bg-gray-100 elsa-border-transparent';
       const recordData = record.data || {};
       const filteredRecordData = {};
+      const wellknownDataKeys = {State: true, Input: null, Outcomes: true, Exception: true};
 
       for (const key in recordData) {
 
         if (!recordData.hasOwnProperty(key))
           continue;
 
-        const lowerKey = key.toLowerCase();
-
-        if (lowerKey == 'state')
-          continue;
-
-        if (lowerKey == 'input')
-          continue;
-
-        if (lowerKey == 'outcomes')
+        if (!!wellknownDataKeys[key])
           continue;
 
         const value = recordData[key];
@@ -276,6 +271,19 @@ export class ElsaWorkflowInstanceJournal {
 
       const deltaTimeText = durationToString(deltaTime);
       const outcomes = !!recordData.Outcomes ? recordData.Outcomes || [] : [];
+      const exception = !!recordData.Exception ? recordData.Exception : null;
+
+      const renderExceptionMessage = (exception: any) => {
+        return (
+          <div>
+            <div class="elsa-mb-4">
+              <strong class="elsa-block elsa-font-bold">{exception.Type}</strong>
+              {exception.Message}
+            </div>
+            {!!exception.InnerException ? <div class="elsa-ml-4">{renderExceptionMessage(exception.InnerException)}</div> : undefined}
+          </div>
+        );
+      }
 
       return (
         <li>
@@ -327,15 +335,7 @@ export class ElsaWorkflowInstanceJournal {
                         </dd>
                       </div>
                     ) : undefined}
-                    {collection.map(filteredRecordData, (v, k) => (
-                      <div class="sm:elsa-col-span-2">
-                        <dt class="elsa-text-sm elsa-font-medium elsa-text-gray-500 elsa-capitalize">{k}</dt>
-                        <dd class="elsa-mt-1 elsa-text-sm elsa-text-gray-900 elsa-mb-2 elsa-overflow-x-scroll">
-                          <pre onClick={e => clip(e.currentTarget)}>{v}</pre>
-                        </dd>
-                      </div>
-                    ))}
-                    {record.message ? (
+                    {!!record.message && !exception ? (
                       <div class="sm:elsa-col-span-2">
                         <dt class="elsa-text-sm elsa-font-medium elsa-text-gray-500">
                           Message
@@ -345,6 +345,32 @@ export class ElsaWorkflowInstanceJournal {
                         </dd>
                       </div>
                     ) : undefined}
+                    {!!exception ? (
+                      [<div class="sm:elsa-col-span-2">
+                        <dt class="elsa-text-sm elsa-font-medium elsa-text-gray-500">
+                          Exception
+                        </dt>
+                        <dd class="elsa-mt-1 elsa-text-sm elsa-text-gray-900">
+                          {renderExceptionMessage(exception)}
+                        </dd>
+                      </div>,
+                        <div class="sm:elsa-col-span-2">
+                          <dt class="elsa-text-sm elsa-font-medium elsa-text-gray-500">
+                            Exception Details
+                          </dt>
+                          <dd class="elsa-mt-1 elsa-text-sm elsa-text-gray-900">
+                            <pre onClick={e => clip(e.currentTarget)}>{JSON.stringify(exception, null, 1)}</pre>
+                          </dd>
+                        </div>]
+                    ) : undefined}
+                    {collection.map(filteredRecordData, (v, k) => (
+                      <div class="sm:elsa-col-span-2">
+                        <dt class="elsa-text-sm elsa-font-medium elsa-text-gray-500 elsa-capitalize">{k}</dt>
+                        <dd class="elsa-mt-1 elsa-text-sm elsa-text-gray-900 elsa-mb-2 elsa-overflow-x-scroll">
+                          <pre onClick={e => clip(e.currentTarget)}>{v}</pre>
+                        </dd>
+                      </div>
+                    ))}
                   </div>
                 </dl>
               </div>

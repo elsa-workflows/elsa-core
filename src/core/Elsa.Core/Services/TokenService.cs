@@ -36,5 +36,11 @@ namespace Elsa.Services
 
             return false;
         }
+
+        public T DecryptToken<T>(string token)
+        {
+            var json = _dataProtector.Unprotect(token);
+            return JsonConvert.DeserializeObject<T>(json)!;
+        }
     }
 }

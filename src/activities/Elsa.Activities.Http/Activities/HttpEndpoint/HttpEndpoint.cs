@@ -1,10 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Elsa.Activities.Http.Models;
-using Elsa.Activities.Http.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;

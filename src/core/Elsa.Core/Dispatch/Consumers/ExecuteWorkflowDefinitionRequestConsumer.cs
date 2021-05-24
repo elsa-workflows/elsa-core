@@ -1,7 +1,6 @@
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Services;
-using MediatR;
 using Microsoft.Extensions.Logging;
 using Rebus.Handlers;
 
@@ -36,7 +35,7 @@ namespace Elsa.Dispatch.Consumers
 
             if (startableWorkflow == null)
             {
-                _logger.LogWarning("Could start workflow with ID {WorkflowDefinitionId}", workflowDefinitionId);
+                _logger.LogDebug("Could not start workflow with ID {WorkflowDefinitionId}", workflowDefinitionId);
                 return;
             }
             

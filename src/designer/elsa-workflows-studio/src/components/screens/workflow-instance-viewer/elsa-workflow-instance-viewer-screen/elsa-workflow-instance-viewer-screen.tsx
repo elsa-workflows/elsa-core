@@ -8,7 +8,7 @@ import {
   ActivityModel,
   Connection,
   ConnectionModel,
-  EventTypes,
+  EventTypes, SimpleException,
   SyntaxNames,
   WorkflowBlueprint,
   WorkflowExecutionLogRecord, WorkflowFault,
@@ -237,44 +237,78 @@ export class ElsaWorkflowInstanceViewerScreen {
     );
   }
 
+  getActivityBorderColor = (activity: ActivityModel): string => {
+    const workflowInstance = this.workflowInstance;
+    const workflowFault = !!workflowInstance ? workflowInstance.fault : null;
+    const activityData = workflowInstance.activityData[activity.activityId] || {};
+    const lifecycle = activityData['_Lifecycle'] || {};
+    const executing = !!lifecycle.Executing;
+    const executed = !!lifecycle.Executed;
+
+    if (!!workflowFault && workflowFault.faultedActivityId == activity.activityId)
+      return 'red';
+    
+    if(executed)
+      return 'green';
+    
+    if(executing)
+      return 'blue';
+    
+    return null;
+  }
+
   renderActivityStatsButton = (activity: ActivityModel): string => {
     const workflowInstance = this.workflowInstance;
     const workflowFault = !!workflowInstance ? workflowInstance.fault : null;
+    const activityData = workflowInstance.activityData[activity.activityId] || {};
+    const lifecycle = activityData['_Lifecycle'] || {};
+    const executing = !!lifecycle.Executing;
+    const executed = !!lifecycle.Executed;
+
+    let icon: string;
 
     if (!!workflowFault && workflowFault.faultedActivityId == activity.activityId) {
-      return `<div class="context-menu-wrapper elsa-flex-shrink-0">
-            <button aria-haspopup="true"
-                    class="elsa-w-8 elsa-h-8 elsa-inline-flex elsa-items-center elsa-justify-center elsa-text-gray-400 elsa-rounded-full elsa-bg-transparent hover:elsa-text-gray-500 focus:elsa-outline-none focus:elsa-text-gray-500 focus:elsa-bg-gray-100 elsa-transition elsa-ease-in-out elsa-duration-150">
-              <svg class="elsa-flex-shrink-0 elsa-h-6 elsa-w-6 elsa-text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="12" r="10"/>
-                  <line x1="12" y1="8" x2="12" y2="12"/>
-                  <line x1="12" y1="16" x2="12.01" y2="16"/>
-                </svg>
-            </button>
-          </div>`;
+      icon = `<svg class="elsa-flex-shrink-0 elsa-h-6 elsa-w-6 elsa-text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>`;
+    } else if (executed) {
+      icon = `<svg class="elsa-h-6 elsa-w-6 elsa-text-green-500"  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" /> 
+                <line x1="12" y1="16" x2="12" y2="12" /> 
+                <line x1="12" y1="8" x2="12.01" y2="8" />
+              </svg>`;
+    } else if (executing) {
+      icon = `<svg class="elsa-h-6 elsa-w-6 elsa-text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" /> 
+                <line x1="12" y1="16" x2="12" y2="12" /> 
+                <line x1="12" y1="8" x2="12.01" y2="8" />
+              </svg>`;
+    } else {
+      icon = `<svg class="h-6 w-6 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="16" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12.01" y2="8" />
+              </svg>`
     }
 
     return `<div class="context-menu-wrapper elsa-flex-shrink-0">
             <button aria-haspopup="true"
                     class="elsa-w-8 elsa-h-8 elsa-inline-flex elsa-items-center elsa-justify-center elsa-text-gray-400 elsa-rounded-full elsa-bg-transparent hover:elsa-text-gray-500 focus:elsa-outline-none focus:elsa-text-gray-500 focus:elsa-bg-gray-100 elsa-transition elsa-ease-in-out elsa-duration-150">
-              <svg class="elsa-h-6 elsa-w-6 elsa-text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10" /> 
-                <line x1="12" y1="16" x2="12" y2="12" />
-                <line x1="12" y1="8" x2="12.01" y2="8" />
-              </svg>
+              ${icon}
             </button>
           </div>`;
   }
 
   renderCanvas() {
-
-
     return (
       <div class="elsa-flex-1 elsa-flex">
         <elsa-designer-tree model={this.workflowModel}
                             class="elsa-flex-1" ref={el => this.designer = el}
                             mode={WorkflowDesignerMode.Instance}
                             activityContextMenuButton={this.renderActivityStatsButton}
+                            activityBorderColor={this.getActivityBorderColor}
                             activityContextMenu={this.activityContextMenuState}
                             selectedActivityIds={[this.selectedActivityId]}
                             onActivitySelected={e => this.onActivitySelected(e)}
@@ -295,6 +329,18 @@ export class ElsaWorkflowInstanceViewerScreen {
 
       const workflowFault: WorkflowFault = this.workflowInstance.fault;
 
+      const renderExceptionMessage = (exception: SimpleException) => {
+        return (
+          <div>
+            <div class="elsa-mb-4">
+              <strong class="elsa-block elsa-font-bold">{exception.type}</strong>
+              {exception.message}
+            </div>
+            {!!exception.innerException ? <div class="elsa-ml-4">{renderExceptionMessage(exception.innerException)}</div> : undefined}
+          </div>
+        );
+      }
+
       return [
         <div class="-elsa-m-3 elsa-p-3 elsa-flex elsa-items-start elsa-rounded-lg hover:elsa-bg-gray-50 elsa-transition elsa-ease-in-out elsa-duration-150">
           <svg class="elsa-flex-shrink-0 elsa-h-6 elsa-w-6 elsa-text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -307,6 +353,9 @@ export class ElsaWorkflowInstanceViewerScreen {
               Fault
             </p>
             <p class="elsa-mt-1 elsa-text-sm elsa-text-gray-500">
+
+              {renderExceptionMessage(workflowFault.exception)}
+
               <pre class="elsa-overflow-x-scroll elsa-max-w-md" onClick={e => clip(e.currentTarget)}>
                 {JSON.stringify(workflowFault, null, 1)}
               </pre>
