@@ -1,9 +1,11 @@
+using System;
 using Elsa.Activities.UserTask.Extensions;
 using Elsa.Caching.Rebus.Extensions;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.SqlServer;
 using Elsa.Rebus.RabbitMq;
 using Elsa.Samples.Server.Host.Activities;
+using Hangfire;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -52,7 +54,7 @@ namespace Elsa.Samples.Server.Host
                     //     store.UseClustering();
                     // }))
                     //.AddHangfireTemporalActivities(hangfire => hangfire.UseInMemoryStorage(), (_, hangfireServer) => hangfireServer.SchedulePollingInterval = TimeSpan.FromSeconds(5))
-                    //.AddHangfireTemporalActivities(hangfire => hangfire.UseSqlServerStorage(sqlServerConnectionString), (_, hangfireServer) => hangfireServer.SchedulePollingInterval = TimeSpan.FromSeconds(5))
+                    .AddHangfireTemporalActivities(hangfire => hangfire.UseSqlServerStorage(sqlServerConnectionString), (_, hangfireServer) => hangfireServer.SchedulePollingInterval = TimeSpan.FromSeconds(5))
                     .AddJavaScriptActivities()
                     .AddUserTaskActivities()
                     .AddActivitiesFrom<Startup>()
