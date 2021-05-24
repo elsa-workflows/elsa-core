@@ -46,13 +46,13 @@ namespace Elsa.Samples.Server.Host
                     .AddConsoleActivities()
                     .AddHttpActivities(elsaSection.GetSection("Http").Bind)
                     .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
-                    .AddQuartzTemporalActivities()
-                    // .AddQuartzTemporalActivities(configureQuartz: quartz => quartz.UsePersistentStore(store =>
-                    // {
-                    //     store.UseJsonSerializer();
-                    //     store.UseSqlServer(sqlServerConnectionString);
-                    //     store.UseClustering();
-                    // }))
+                    //.AddQuartzTemporalActivities()
+                    .AddQuartzTemporalActivities(configureQuartz: quartz => quartz.UsePersistentStore(store =>
+                    {
+                        store.UseJsonSerializer();
+                        store.UseSqlServer(sqlServerConnectionString);
+                        store.UseClustering();
+                    }))
                     //.AddHangfireTemporalActivities(hangfire => hangfire.UseInMemoryStorage(), (_, hangfireServer) => hangfireServer.SchedulePollingInterval = TimeSpan.FromSeconds(5))
                     //.AddHangfireTemporalActivities(hangfire => hangfire.UseSqlServerStorage(sqlServerConnectionString), (_, hangfireServer) => hangfireServer.SchedulePollingInterval = TimeSpan.FromSeconds(5))
                     .AddJavaScriptActivities()

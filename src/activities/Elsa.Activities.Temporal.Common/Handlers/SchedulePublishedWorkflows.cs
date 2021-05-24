@@ -33,22 +33,24 @@ namespace Elsa.Activities.Temporal.Common.Handlers
             var timerTriggers = await _triggerFinder.FindTriggersAsync<Timer>(TenantId, cancellationToken);
             var cronTriggers = await _triggerFinder.FindTriggersAsync<Cron>(TenantId, cancellationToken);
 
+            await _workflowScheduler.UnscheduleAllAsync(cancellationToken);
+
             foreach (var trigger in startAtTriggers)
             {
                 var bookmark = (StartAtBookmark) trigger.Bookmark;
-                await Try(() => _workflowScheduler.ScheduleAsync(trigger.WorkflowBlueprint.Id, trigger.ActivityId, bookmark.ExecuteAt, null, ClusterMode.SingleNode, cancellationToken));
+                await Try(() => _workflowScheduler.ScheduleAsync(trigger.WorkflowBlueprint.Id, trigger.ActivityId, bookmark.ExecuteAt, null, cancellationToken));
             }
 
             foreach (var trigger in timerTriggers)
             {
                 var bookmark = (TimerBookmark) trigger.Bookmark;
-                await Try(() => _workflowScheduler.ScheduleAsync(trigger.WorkflowBlueprint.Id, trigger.ActivityId, bookmark.ExecuteAt, bookmark.Interval, bookmark.ClusterMode ?? ClusterMode.SingleNode, cancellationToken));
+                await Try(() => _workflowScheduler.ScheduleAsync(trigger.WorkflowBlueprint.Id, trigger.ActivityId, bookmark.ExecuteAt, bookmark.Interval, cancellationToken));
             }
 
             foreach (var trigger in cronTriggers)
             {
                 var bookmark = (CronBookmark) trigger.Bookmark;
-                await Try(() => _workflowScheduler.ScheduleAsync(trigger.WorkflowBlueprint.Id, trigger.ActivityId, bookmark.CronExpression, ClusterMode.SingleNode, cancellationToken));
+                await Try(() => _workflowScheduler.ScheduleAsync(trigger.WorkflowBlueprint.Id, trigger.ActivityId, bookmark.CronExpression, cancellationToken));
             }
         }
 
