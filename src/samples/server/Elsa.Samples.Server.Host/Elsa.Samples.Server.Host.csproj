@@ -27,12 +27,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Update=".\Workflows\HelloWorld.*.cs">
-            <DependentUpon>.\Workflows\HelloWorld.cs</DependentUpon>
-        </Compile>
-    </ItemGroup>
-
-    <ItemGroup>
       <PackageReference Include="Hangfire.InMemory" Version="0.3.4" />
       <PackageReference Include="Hangfire.SqlServer" Version="1.7.22" />
       <PackageReference Include="Quartz.Serialization.Json" Version="3.3.2" />
