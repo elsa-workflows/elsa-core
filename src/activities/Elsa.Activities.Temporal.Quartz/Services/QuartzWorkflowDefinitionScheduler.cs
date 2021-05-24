@@ -1,6 +1,5 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.Temporal.Common.Options;
 using Elsa.Activities.Temporal.Common.Services;
 using Elsa.Activities.Temporal.Quartz.Jobs;
 using Microsoft.Extensions.Logging;

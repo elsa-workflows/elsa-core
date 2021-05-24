@@ -2,8 +2,6 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.Temporal.Common.Options;
-using Elsa.Attributes;
 using Elsa.Bookmarks;
 using NodaTime;
 

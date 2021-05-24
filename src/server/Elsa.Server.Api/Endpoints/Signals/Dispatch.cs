@@ -1,10 +1,7 @@
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Signaling.Services;
 using Elsa.Server.Api.ActionFilters;
-using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Open.Linq.AsyncExtensions;

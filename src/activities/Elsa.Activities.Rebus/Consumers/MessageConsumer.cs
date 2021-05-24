@@ -1,8 +1,6 @@
 using System.Threading.Tasks;
 using Elsa.Activities.Rebus.Bookmarks;
-using Elsa.Dispatch;
 using Elsa.Services;
-using MediatR;
 using Rebus.Extensions;
 using Rebus.Handlers;
 using Rebus.Messages;

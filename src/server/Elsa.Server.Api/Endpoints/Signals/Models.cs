@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using Elsa.Services.Models;
-using Microsoft.AspNetCore.Mvc;
 
 namespace Elsa.Server.Api.Endpoints.Signals
 {

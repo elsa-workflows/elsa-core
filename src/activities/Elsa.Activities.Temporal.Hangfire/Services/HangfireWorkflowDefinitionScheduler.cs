@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.Temporal.Common.Options;
 using Elsa.Activities.Temporal.Common.Services;
 using Elsa.Activities.Temporal.Hangfire.Extensions;
 using Elsa.Activities.Temporal.Hangfire.Jobs;
