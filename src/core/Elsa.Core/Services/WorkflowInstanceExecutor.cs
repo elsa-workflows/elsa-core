@@ -55,7 +55,7 @@ namespace Elsa.Services
 
             if (workflowInstance.WorkflowStatus != WorkflowStatus.Suspended && workflowInstance.WorkflowStatus != WorkflowStatus.Running && workflowInstance.WorkflowStatus != WorkflowStatus.Idle)
             {
-                _logger.LogWarning(
+                _logger.LogDebug(
                     "Could not run workflow instance with ID {WorkflowInstanceId} because it has a status other than Idle, Suspended or Running. Its actual status is {WorkflowStatus}",
                     workflowInstanceId, workflowInstance.WorkflowStatus);
                 return false;
