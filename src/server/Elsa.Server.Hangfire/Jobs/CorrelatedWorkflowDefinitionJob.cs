@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using Elsa.Dispatch;
 using Elsa.Services;
-using MediatR;
 
 namespace Elsa.Server.Hangfire.Jobs
 {

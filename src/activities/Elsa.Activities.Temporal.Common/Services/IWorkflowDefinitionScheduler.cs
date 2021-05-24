@@ -1,6 +1,5 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.Temporal.Common.Options;
 using NodaTime;
 
 namespace Elsa.Activities.Temporal.Common.Services

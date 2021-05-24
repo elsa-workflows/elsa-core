@@ -2,7 +2,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Temporal.Common.Bookmarks;
-using Elsa.Activities.Temporal.Common.Options;
 using Elsa.Activities.Temporal.Common.Services;
 using Elsa.Events;
 using Elsa.Triggers;

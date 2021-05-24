@@ -1,7 +1,5 @@
 using Elsa.Activities.Temporal;
-using Elsa.Activities.Temporal.Common.Services;
 using Elsa.Attributes;
-using Elsa.Persistence;
 using Microsoft.Extensions.Logging;
 using NodaTime;
 
