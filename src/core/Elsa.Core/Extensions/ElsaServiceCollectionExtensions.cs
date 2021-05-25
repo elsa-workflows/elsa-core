@@ -163,6 +163,9 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTransient<ICreatesActivityExecutionContextForActivityBlueprint, ActivityExecutionContextForActivityBlueprintFactory>()
                 .AddTransient<IGetsStartActivities, GetsStartActivitiesProvider>()
                 ;
+            
+            // Data Protection.
+            services.AddDataProtection();
 
             // Serialization.
             services

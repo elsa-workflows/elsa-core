@@ -10,7 +10,7 @@
             This package provides a MongoDb persistence provider.
         </Description>
         <Copyright>2020</Copyright>
-        <PackageTags>elsa, workflows, orchard</PackageTags>
+        <PackageTags>elsa, workflows, mongodb</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>
