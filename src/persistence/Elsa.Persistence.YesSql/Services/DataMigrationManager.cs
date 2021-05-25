@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Elsa.Persistence.YesSql.Data;
 using Elsa.Persistence.YesSql.Documents;
 using Microsoft.Extensions.Logging;
-
 using YesSql;
 using YesSql.Sql;
 
@@ -54,29 +53,12 @@ namespace Elsa.Persistence.YesSql.Services
                 }
             }
 
-            try
-            {
-                var commitTask = _session.CurrentTransaction?.CommitAsync() ?? Task.CompletedTask;
-                await commitTask;
-            }
-            catch(InvalidOperationException)
-            {
-                // TODO: Improve on this ugly hack/workaround!
-                // 
-                // The commit can throw this exception because it's already been committed.  But if
-                // we don't explicitly commit here then it never gets committed and it's as if the
-                // migrations never took place!
-                // 
-                // I suspect that either this method is being called more than once, or perhaps (IMO
-                // more likely) an async operation (somewhere) isn't being awaited.  That could mean
-                // that the connection is closed/killed-off before the commit actually completes,
-                // with the effect that it doesn't happen.
-            }
+            await _session.SaveChangesAsync();
         }
 
         public async Task<IEnumerable<IDataMigration>> GetMigrationsThatNeedUpdateAsync()
         {
-            var currentVersions = (await GetDataMigrationsDocumentAsync()).DataMigrations.ToDictionary(r => r.DataMigrationClass);
+            var currentVersions = (await GetOrCreateDataMigrationsDocumentAsync()).DataMigrations.ToDictionary(r => r.DataMigrationClass);
 
             var outOfDateMigrations = _dataMigrations.Where(
                 dataMigration =>
@@ -113,7 +95,7 @@ namespace Elsa.Persistence.YesSql.Services
             var dataMigrationRecord = await GetDataMigrationRecordAsync(tempMigration);
 
             var current = 0;
-            var dataMigrationsDocument = await GetDataMigrationsDocumentAsync();
+            var dataMigrationsDocument = await GetOrCreateDataMigrationsDocumentAsync();
 
             if (dataMigrationRecord != null)
             {
@@ -136,13 +118,13 @@ namespace Elsa.Persistence.YesSql.Services
                     var createMethod = GetCreateMethod(dataMigration);
 
                     if (createMethod != null)
-                        current = (int)createMethod.Invoke(dataMigration, new object[0])!;
+                        current = (int) createMethod.Invoke(dataMigration, new object[0])!;
 
                     // try to resolve a CreateAsync method.
                     var createAsyncMethod = GetCreateAsyncMethod(dataMigration);
 
                     if (createAsyncMethod != null)
-                        current = await (Task<int>)createAsyncMethod.Invoke(dataMigration, new object[0])!;
+                        current = await (Task<int>) createAsyncMethod.Invoke(dataMigration, new object[0])!;
                 }
 
                 var lookupTable = CreateUpgradeLookupTable(dataMigration);
@@ -157,8 +139,8 @@ namespace Elsa.Persistence.YesSql.Services
                     var isAwaitable = methodInfo.ReturnType.GetMethod(nameof(Task.GetAwaiter)) != null;
 
                     current = isAwaitable
-                        ? await (Task<int>)methodInfo.Invoke(dataMigration, new object[0])!
-                        : (int)methodInfo.Invoke(dataMigration, new object[0])!;
+                        ? await (Task<int>) methodInfo.Invoke(dataMigration, new object[0])!
+                        : (int) methodInfo.Invoke(dataMigration, new object[0])!;
                 }
 
                 // If current is 0, it means no upgrade/create method was found or succeeded.
@@ -174,8 +156,6 @@ namespace Elsa.Persistence.YesSql.Services
                     "Error while running migration version {Version} for '{MigrationName}'",
                     current,
                     migrationName);
-
-                await _session.CancelAsync();
             }
             finally
             {
@@ -184,7 +164,7 @@ namespace Elsa.Persistence.YesSql.Services
             }
         }
 
-        private async Task<DataMigrationsDocument> GetDataMigrationsDocumentAsync()
+        private async Task<DataMigrationsDocument> GetOrCreateDataMigrationsDocumentAsync()
         {
             if (_dataMigrationsDocument != null)
                 return _dataMigrationsDocument;
@@ -202,7 +182,7 @@ namespace Elsa.Persistence.YesSql.Services
 
         private async Task<DataMigrationRecord?> GetDataMigrationRecordAsync(IDataMigration migration)
         {
-            var dataMigrationsDocument = await GetDataMigrationsDocumentAsync();
+            var dataMigrationsDocument = await GetOrCreateDataMigrationsDocumentAsync();
             var records = dataMigrationsDocument.DataMigrations;
             return records.FirstOrDefault(x => x.DataMigrationClass == migration.GetType().FullName);
         }
