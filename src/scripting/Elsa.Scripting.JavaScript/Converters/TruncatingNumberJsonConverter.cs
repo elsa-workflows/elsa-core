@@ -26,6 +26,8 @@ namespace Elsa.Scripting.JavaScript.Converters
                 case double:
                 {
                     var doubleValue = Convert.ToDouble(value);
+                    
+                    // ReSharper disable once CompareOfFloatsByEqualityOperator
                     return doubleValue == Math.Truncate(doubleValue);
                 }
                 default:

@@ -33,6 +33,7 @@ namespace Elsa.Scripting.JavaScript.Handlers
 
             // Global functions.
             engine.SetValue("guid", (Func<string>) (() => Guid.NewGuid().ToString()));
+            engine.SetValue("parseGuid", (Func<string, Guid>) (Guid.Parse));
             engine.SetValue("setVariable", (Action<string, object>) ((name, value) => activityExecutionContext.SetVariable(name, value)));
             engine.SetValue("getVariable", (Func<string, object?>) (name => activityExecutionContext.GetVariable(name)));
             engine.SetValue("getConfig", (Func<string, object?>) (name => _configuration.GetSection(name).Value));
