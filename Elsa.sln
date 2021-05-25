@@ -241,10 +241,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "locking", "locking", "{DBBD
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.DistributedLocking.SqlServer", "src\locking\Elsa.DistributedLocking.SqlServer\Elsa.DistributedLocking.SqlServer.csproj", "{B09A6E42-EF42-4693-BA0E-5EE1D7F81FFD}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.DistributedLocking.Redis", "src\locking\Elsa.DistributedLocking.Redis\Elsa.DistributedLocking.Redis.csproj", "{7E5514AC-3633-4237-9490-0992417F2273}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.DistributedLocking.AzureBlob", "src\locking\Elsa.DistributedLocking.AzureBlob\Elsa.DistributedLocking.AzureBlob.csproj", "{495BE954-E6EA-41A9-8054-A5CA5DD0924E}"
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.DistributedLocking.AzureBlob", "src\locking\Elsa.DistributedLocking.AzureBlob\Elsa.DistributedLocking.AzureBlob.csproj", "{495BE954-E6EA-41A9-8054-A5CA5DD0924E}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "blazor", "blazor", "{D86B94DC-A53C-4A67-A820-828DD359C49B}"
 EndProject
@@ -275,40 +272,40 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.File", "src\activities\Elsa.Activities.File\Elsa.Activities.File.csproj", "{BE284508-9582-4FCB-B0DD-0761AB940AD7}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.ReadLineToFile", "src\samples\console\Elsa.Samples.ReadLineToFile\Elsa.Samples.ReadLineToFile.csproj", "{3EB488DF-3C28-4DAD-B43E-6062E39629AB}"
-ProjectSection(SolutionItems) = preProject
-	docker\docker-compose.yaml = docker\docker-compose.yaml
-	docker\Dockerfile = docker\Dockerfile
-	docker\README.md = docker\README.md
-	docker\Dockerfile-elsa-dashboard = docker\Dockerfile-elsa-dashboard
-	docker\Dockerfile-elsa-dashboard-and-server = docker\Dockerfile-elsa-dashboard-and-server
-EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.SendHttp", "src\samples\aspnet\Elsa.Samples.SendHttp\Elsa.Samples.SendHttp.csproj", "{775EFD59-F99C-4D38-B54E-9734C9D9649A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.FileWatcher", "src\samples\console\Elsa.Samples.FileWatcher\Elsa.Samples.FileWatcher.csproj", "{5FC56764-D70C-4CDE-8480-F67C2E846DC5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.FileWatcher", "src\samples\console\Elsa.Samples.FileWatcher\Elsa.Samples.FileWatcher.csproj", "{5FC56764-D70C-4CDE-8480-F67C2E846DC5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.CustomActivityOutcomes", "src\samples\console\Elsa.Samples.CustomActivityOutcomes\Elsa.Samples.CustomActivityOutcomes.csproj", "{30A9B140-14F5-4D00-84ED-1447F96D13C8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.CustomActivityOutcomes", "src\samples\console\Elsa.Samples.CustomActivityOutcomes\Elsa.Samples.CustomActivityOutcomes.csproj", "{30A9B140-14F5-4D00-84ED-1447F96D13C8}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "aspnetcore", "aspnetcore", "{28C5C63F-2DCF-46BE-9576-1F50A7CFE8C4}"
+	ProjectSection(SolutionItems) = preProject
+		docker\docker-compose.yaml = docker\docker-compose.yaml
+		docker\Dockerfile = docker\Dockerfile
+		docker\Dockerfile-elsa-dashboard = docker\Dockerfile-elsa-dashboard
+		docker\Dockerfile-elsa-dashboard-and-server = docker\Dockerfile-elsa-dashboard-and-server
+		docker\README.md = docker\README.md
+	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElsaDashboard.Web", "src\dashboards\aspnetcore\ElsaDashboard\ElsaDashboard.Web.csproj", "{5F81C84A-4C04-48FF-981C-23E48A7ACA6C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElsaDashboard.Web", "src\dashboards\aspnetcore\ElsaDashboard\ElsaDashboard.Web.csproj", "{5F81C84A-4C04-48FF-981C-23E48A7ACA6C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "github", "github", "{3BF2C5A9-AC69-4587-833F-C16CFC97E100}"
-ProjectSection(SolutionItems) = preProject
-	.github\workflows\publish-latest-dashboard-docker.yml = .github\workflows\publish-latest-dashboard-docker.yml
-	.github\workflows\publish-latest-server-docker.yml = .github\workflows\publish-latest-server-docker.yml
-	.github\workflows\publish-latest-dashboard-and-server-docker.yml = .github\workflows\publish-latest-dashboard-and-server-docker.yml
-EndProjectSection
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\publish-latest-dashboard-and-server-docker.yml = .github\workflows\publish-latest-dashboard-and-server-docker.yml
+		.github\workflows\publish-latest-dashboard-docker.yml = .github\workflows\publish-latest-dashboard-docker.yml
+		.github\workflows\publish-latest-server-docker.yml = .github\workflows\publish-latest-server-docker.yml
+	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.SignalApi", "src\samples\aspnet\Elsa.Samples.SignalApi\Elsa.Samples.SignalApi.csproj", "{3E2423CF-50E6-4D2B-8749-17B1EF540FE4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.SignalApi", "src\samples\aspnet\Elsa.Samples.SignalApi\Elsa.Samples.SignalApi.csproj", "{3E2423CF-50E6-4D2B-8749-17B1EF540FE4}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "caching", "caching", "{9937FB02-72D9-4FCD-B31E-8E60CFF1B37F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Caching.Rebus", "src\caching\Elsa.Caching.Rebus\Elsa.Caching.Rebus.csproj", "{61C16CA0-B190-4642-A81A-5C03705CA2C1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Caching.Rebus", "src\caching\Elsa.Caching.Rebus\Elsa.Caching.Rebus.csproj", "{61C16CA0-B190-4642-A81A-5C03705CA2C1}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "providers", "providers", "{EC5D4AFD-3F7F-4B51-9C38-F18C60618731}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Providers.Redis", "src\providers\Elsa.Providers.Redis\Elsa.Providers.Redis.csproj", "{9ACA06DA-9AFE-41A2-8109-EFED8B9B14A1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Providers.Redis", "src\providers\Elsa.Providers.Redis\Elsa.Providers.Redis.csproj", "{9ACA06DA-9AFE-41A2-8109-EFED8B9B14A1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
