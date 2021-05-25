@@ -13,7 +13,7 @@ namespace Elsa.Samples.ProgrammaticCompositeActivitiesConsole
         {
             // Create a service container with Elsa services.
             var services = new ServiceCollection()
-                .AddLogging(logging => logging.AddConsole())
+                .AddLogging(logging => logging.AddConsole().SetMinimumLevel(LogLevel.Warning))
                 .AddElsa(options => options
                     .AddConsoleActivities()
                     .AddActivity<NavigateActivity>()

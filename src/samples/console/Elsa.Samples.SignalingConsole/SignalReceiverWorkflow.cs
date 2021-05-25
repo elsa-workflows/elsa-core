@@ -10,7 +10,7 @@ namespace Elsa.Samples.SignalingConsole
         {
             builder
                 .SignalReceived("Demo Signal")
-                .WriteLine(context => $"Signal received!");
+                .WriteLine(() => $"Signal received!");
         }
     }
 }

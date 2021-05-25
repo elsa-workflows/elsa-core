@@ -16,10 +16,10 @@ namespace Elsa.Samples.ProgrammaticCompositeActivitiesConsole.Workflows
             .WriteLine("=Navigation demo=")
             .Then<NavigateActivity>(countDown =>
             {
-                countDown.When("Left").WriteLine("Where going left!");
-                countDown.When("Right").WriteLine("Where going right!");
+                countDown.When("Left").WriteLine("Where going left!").ThenNamed("CountdownDemo");
+                countDown.When("Right").WriteLine("Where going right!").ThenNamed("CountdownDemo");
             })
-            .WriteLine("=Countdown demo=")
+            .WriteLine("=Countdown demo=").WithName("CountdownDemo")
             .Then<CountdownActivity>(activity => activity.Set(x => x.Start, 10));
     }
 }
