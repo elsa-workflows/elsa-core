@@ -20,7 +20,7 @@ namespace Elsa.Models
         public static readonly VersionOptions Published = new VersionOptions { IsPublished = true };
         
         /// <summary>
-        /// Gets the latest or published version.
+        /// Gets the published version if available, and if not, the latest version.
         /// </summary>
         public static readonly VersionOptions LatestOrPublished = new VersionOptions { IsLatestOrPublished = true };
 
@@ -53,11 +53,34 @@ namespace Elsa.Models
                 _ => SpecificVersion(int.Parse(value))
             };
 
+        /// <summary>
+        /// Gets the latest version.
+        /// </summary>
         public bool IsLatest { get; private set; }
+        
+        /// <summary>
+        /// Gets the published version if available, and if not, the latest version.
+        /// </summary>
         public bool IsLatestOrPublished { get; private set; }
+        
+        /// <summary>
+        /// Gets the published version.
+        /// </summary>
         public bool IsPublished { get; private set; }
+        
+        /// <summary>
+        /// Gets the draft version.
+        /// </summary>
         public bool IsDraft { get; private set; }
+        
+        /// <summary>
+        /// Gets all versions.
+        /// </summary>
         public bool AllVersions { get; private set; }
+        
+        /// <summary>
+        /// Gets a specific version.
+        /// </summary>
         public int Version { get; private set; }
 
         /// <summary>
