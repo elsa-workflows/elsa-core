@@ -7,7 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="YesSql.Provider.Sqlite" Version="3.0.3" />
+      <PackageReference Include="YesSql.Provider.Sqlite" Version="3.0.6" />
     </ItemGroup>
 
     <ItemGroup>
