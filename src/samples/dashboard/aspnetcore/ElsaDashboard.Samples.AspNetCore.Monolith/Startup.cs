@@ -60,9 +60,9 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
                 app.UseHsts();
             }
 
+            app.UseCors();
             app.UseStaticFiles();
             app.UseHttpActivities();
-            app.UseCors();
             app.UseRouting();
             app.UseAuthorization();
             app.UseEndpoints(endpoints =>
