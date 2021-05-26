@@ -17,8 +17,13 @@ namespace Elsa.Samples.FileWatcher
                 .ConfigureServices((context, services) =>
                 {
                     var configuration = context.Configuration;
-                    services.Configure<FileWatcherOptions>(configuration.GetSection("Elsa").GetSection("FileWatcher"));
-                    services.AddHostedService<FileWatcherService>();
+                    services.AddElsa(configure => configure
+                        .AddConsoleActivities()
+                        .AddFileActivities(configuration.GetSection("Elsa")
+                            .GetSection("FileWatcher")
+                            .Bind)
+                        .AddWorkflow<FileWatcherWorkflow>()
+                    );
                 })
                 .RunConsoleAsync();
         }
