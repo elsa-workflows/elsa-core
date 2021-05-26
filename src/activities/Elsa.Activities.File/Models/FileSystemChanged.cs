@@ -9,11 +9,23 @@ namespace Elsa.Activities.File.Models
 {
     public class FileSystemChanged
     {
+        public FileSystemChanged()
+        { }
+
+        public FileSystemChanged(WatcherChangeTypes changeType, string directory, string fileName, string fullPath)
+        {
+            ChangeType = changeType;
+            Directory = directory;
+            FileName = fileName;
+            FullPath = fullPath;
+        }
 
         public WatcherChangeTypes ChangeType { get; set; }
 
         public string Directory { get; set; }
 
         public string FileName { get; set; }
+
+        public string FullPath { get; set; }
     }
 }
