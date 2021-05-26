@@ -97,7 +97,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
         private async Task OnMessageReceived(Message message, CancellationToken cancellationToken)
         {
             _logger.LogDebug("Message received with ID {MessageId}", message.MessageId);
-            await TriggerWorkflowsAsync(message, cancellationToken);
+            await TriggerWorkflowsAsync(message, CancellationToken.None);
             await ReceiverClient.CompleteAsync(message.SystemProperties.LockToken);
         }
     }
