@@ -1,5 +1,6 @@
 using Elsa;
 using Elsa.Activities.File;
+using Elsa.Activities.File.Bookmarks;
 using Elsa.Activities.File.Options;
 using Elsa.Activities.File.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,20 +17,30 @@ namespace Microsoft.Extensions.DependencyInjection
             return services;
         }
 
-        public static ElsaOptionsBuilder AddFileActivities(this ElsaOptionsBuilder builder, Action<FileWatcherOptions> configureOptions = null) => builder
-            .AddActivity<DeleteFile>()
-            .AddActivity<FileExists>()
-            .AddActivity<OutFile>()
-            .AddActivity<ReadFile>()
-            .AddActivity<TempFile>();
+        public static ElsaOptionsBuilder AddFileActivities(this ElsaOptionsBuilder builder, Action<FileWatcherOptions> configureOptions = null) 
+        {
+            if (builder == null)
+                throw new ArgumentNullException(nameof(builder));
+
+            builder.Services.AddFileServices(configureOptions);
+
+            builder.AddActivity<DeleteFile>()
+                .AddActivity<FileExists>()
+                .AddActivity<OutFile>()
+                .AddActivity<ReadFile>()
+                .AddActivity<TempFile>()
+                .AddActivity<WatchDirectory>();
+
+            return builder;
+        }
 
         public static IServiceCollection AddFileServices(this IServiceCollection services, Action<FileWatcherOptions> configureOptions = null)
         {
             if (configureOptions != null)
-            {
-                services.Configure(configureOptions);
-            }
+                services.Configure<FileWatcherOptions>(configureOptions);
+
             services.AddHostedService<FileWatcherService>();
+            services.AddBookmarkProvider<FileSystemChangedBookmarkProvider>();
 
             return services;
         }
