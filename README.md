@@ -11,7 +11,7 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/github/elsa-workflows/elsa-core?svg=true&branch=master)](https://ci.appveyor.com/project/sfmskywalker/elsa)
 [![Discord](https://img.shields.io/discord/814605913783795763?label=chat&logo=discord)](https://discord.gg/hhChk5H472)
 [![Stack Overflow questions](https://img.shields.io/badge/stackoverflow-elsa_workflows-orange.svg)]( http://stackoverflow.com/questions/tagged/elsa-workflows )
-[![Build elsa-dashboard:latest](https://github.com/elsa-workflows/elsa-core/actions/workflows/publish-latest-dashboard.yml/badge.svg)](https://github.com/elsa-workflows/elsa-core/actions/workflows/publish-latest-dashboard.yml)
+[![Build elsa-dashboard:latest](https://github.com/elsa-workflows/elsa-core/actions/workflows/publish-latest-dashboard-and-server-docker.yml/badge.svg)](https://github.com/elsa-workflows/elsa-core/actions/workflows/publish-latest-dashboard-and-server-docker.yml)
 
 Elsa Core is a workflows library that enables workflow execution in any .NET Core application.
 Workflows can be defined using code and using the visual workflow designer.
