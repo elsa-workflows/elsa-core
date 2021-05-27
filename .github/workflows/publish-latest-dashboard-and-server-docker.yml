@@ -67,7 +67,6 @@ jobs:
           file: ./docker/Dockerfile-elsa-dashboard-and-server
           platforms: linux/amd64,linux/arm64,linux/arm/v7
           push: true
-          images: |
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=local,src=/tmp/.buildx-cache
