@@ -49,8 +49,8 @@ jobs:
           platforms: linux/amd64,linux/arm64,linux/arm/v7
           push: true
           tags: |
-            - elsaworkflows/elsa-dashboard:latest
-            - elsaworkflows/elsa-dashboard:${{ github.run_number }}
+            elsaworkflows/elsa-dashboard:latest
+            elsaworkflows/elsa-dashboard:${{ github.run_number }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
 
