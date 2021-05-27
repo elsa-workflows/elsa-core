@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - master
+    tags:
+      - '*.*.*'
+  pull_request:
+    branches:
+      - master
   #release:
   #  types: [published]
 
@@ -32,6 +37,21 @@ jobs:
           key: ${{ runner.os }}-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-buildx-
+            
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v3
+        with:
+          # list of Docker images to use as base name for tags
+          images: |
+            elsaworkflows/elsa-dashboard-and-server
+          # generate Docker tags based on the following events/attributes
+          tags: |
+            type=ref
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha
 
       - name: Login to DockerHub
         uses: docker/login-action@v1
@@ -49,9 +69,8 @@ jobs:
           platforms: linux/amd64,linux/arm64,linux/arm/v7
           push: true
           images: |
-            elsaworkflows/elsa-dashboard-and-server
-          tags: |
-            type=sha
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
 
