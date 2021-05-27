@@ -47,7 +47,6 @@ jobs:
             elsaworkflows/elsa-dashboard-and-server
           # generate Docker tags based on the following events/attributes
           tags: |
-            type=ref
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
