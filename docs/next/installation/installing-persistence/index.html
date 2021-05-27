@@ -64,22 +64,21 @@ Out of the box, Elsa currently ships with the following providers:</p>
 <li><a href="https://www.mongodb.com/">MongoDB</a></li>
 <li><a href="https://github.com/sebastienros/yessql/blob/dev/README.md">YesSQL</a></li>
 </ul>
-<h2><a class="anchor" aria-hidden="true" id="example-using-entity-framework-core"></a><a href="#example-using-entity-framework-core" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Example using Entity Framework Core</h2>
+<h2><a class="anchor" aria-hidden="true" id="entity-framework-core"></a><a href="#entity-framework-core" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Entity Framework Core</h2>
 <p>For example, to use the <a href="https://docs.microsoft.com/en-us/ef/core/">Entity Framework Core</a> persistence provider and Sqlite as the database engine, add the following packages:</p>
 <pre><code class="hljs css language-bash">dotnet add package Elsa
 dotnet add package Elsa.Persistence.EntityFramework
 dotnet add package Elsa.Persistence.EntityFramework.Sqlite
 </code></pre>
 <p>When installed, update your <code>Startup</code> class as follows to configure Elsa to use the EF Core provider with SQLite:</p>
-<pre><code class="hljs css language-csharp"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">ConfigureServices</span>(<span class="hljs-params">IServiceCollection services</span>)</span>
+<pre><code class="hljs css language-c#"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">ConfigureServices</span>(<span class="hljs-params">IServiceCollection services</span>)</span>
 {
     services.AddElsa(options =&gt; options.UseEntityFrameworkPersistence(ef =&gt; ef.UseSqlite()));
 }
 </code></pre>
 <p>By default, Elsa will use the following connection string when using SQLite: <code>&quot;Data Source=elsa.sqlite.db;Cache=Shared;&quot;</code>.
 You can override this by importing the <code>Microsoft.EntityFrameworkCore</code> namespace to make available the default <code>UseSqlite()</code> extension method that accepts a connection string. Example:</p>
-<pre><code class="hljs css language-csharp">...
-<span class="hljs-keyword">using</span> Microsoft.EntityFrameworkCore;
+<pre><code class="hljs css language-c#"><span class="hljs-keyword">using</span> Microsoft.EntityFrameworkCore;
 
 <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">ConfigureServices</span>(<span class="hljs-params">IServiceCollection services</span>)</span>
 {
@@ -89,6 +88,42 @@ You can override this by importing the <code>Microsoft.EntityFrameworkCore</code
 <blockquote>
 <p>You can find an <a href="https://github.com/elsa-workflows/elsa-core/blob/master/src/samples/persistence/Elsa.Samples.Persistence.EntityFramework/Program.cs#L21">example using Entity Framework Core</a> and <a href="https://github.com/elsa-workflows/elsa-core/blob/master/src/samples/persistence/Elsa.Samples.Persistence.YesSql/Program.cs">YesSQL</a> in the samples folder on GitHub as well.</p>
 </blockquote>
+<h3><a class="anchor" aria-hidden="true" id="sql-server"></a><a href="#sql-server" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>SQL Server</h3>
+<p>To use SQL Server as the EF Core provider, add the <code>Elsa.Persistence.EntityFramework.SqlServer</code> package:</p>
+<pre><code class="hljs css language-bash">dotnet add package Elsa.Persistence.EntityFramework.SqlServer
+</code></pre>
+<p>Then update your Startup class as follows:</p>
+<pre><code class="hljs css language-c#"><span class="hljs-keyword">using</span> Elsa.Persistence.EntityFramework.<span class="hljs-function">SqlServer
+
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">ConfigureServices</span>(<span class="hljs-params">IServiceCollection services</span>)</span>
+{
+    services.AddElsa(options =&gt; options.UseEntityFrameworkPersistence(ef =&gt; ef.UseSqlServer(<span class="hljs-string">"Server=local;Database=Elsa"</span>)));
+}
+</code></pre>
+<h3><a class="anchor" aria-hidden="true" id="mysql"></a><a href="#mysql" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>MySQL</h3>
+<p>To use MySQL as the EF Core provider, add the <code>Elsa.Persistence.EntityFramework.MySql</code> package:</p>
+<pre><code class="hljs css language-bash">dotnet add package Elsa.Persistence.EntityFramework.MySql
+</code></pre>
+<p>Then update your Startup class as follows:</p>
+<pre><code class="hljs css language-c#"><span class="hljs-keyword">using</span> Elsa.Persistence.EntityFramework.<span class="hljs-function">MySql
+
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">ConfigureServices</span>(<span class="hljs-params">IServiceCollection services</span>)</span>
+{
+    services.AddElsa(options =&gt; options.UseEntityFrameworkPersistence(ef =&gt; ef.UseMySql(<span class="hljs-string">"Server=localhost;Port=3306;Database=elsa;User=myuser;Password=mypassword;"</span>)));
+}
+</code></pre>
+<h3><a class="anchor" aria-hidden="true" id="postgres"></a><a href="#postgres" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Postgres</h3>
+<p>To use PostgreSQL as the EF Core provider, add the <code>Elsa.Persistence.EntityFramework.PostgreSql</code> package:</p>
+<pre><code class="hljs css language-bash">dotnet add package Elsa.Persistence.EntityFramework.PostgreSql
+</code></pre>
+<p>Then update your Startup class as follows:</p>
+<pre><code class="hljs css language-c#"><span class="hljs-keyword">using</span> Elsa.Persistence.EntityFramework.<span class="hljs-function">PostgreSql
+
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">ConfigureServices</span>(<span class="hljs-params">IServiceCollection services</span>)</span>
+{
+    services.AddElsa(options =&gt; options.UseEntityFrameworkPersistence(ef =&gt; ef.UsePostgreSql(<span class="hljs-string">"Server=127.0.0.1;Port=5432;Database=elsa;User Id=postgres;Password=password;"</span>)));
+}
+</code></pre>
 <h3><a class="anchor" aria-hidden="true" id="ef-core-migrations"></a><a href="#ef-core-migrations" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>EF Core Migrations</h3>
 <p>The EF Core provider for Elsa ships with migrations that you can run either manually or automatically (the default for pooled db contexts).</p>
 <blockquote>
@@ -147,6 +182,69 @@ namespace WebApplication1.Data
 }
 </code></pre>
 <p>Notice that the factory accepts command-line arguments, which conveniently allows us to invoke the <code>dotnet ef database update</code> command by passing in arguments that get parsed into a <code>Configuration</code> object, making it convenient from the factory class to access the specified connection string.</p>
+<h2><a class="anchor" aria-hidden="true" id="mongodb"></a><a href="#mongodb" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>MongoDB</h2>
+<p>To configure Elsa with MongoDB, do the following:</p>
+<p>Add the <code>Elsa.Persistence.MongoDb</code> package:</p>
+<pre><code class="hljs css language-bash">dotnet add package Elsa.Persistence.MongoDb
+</code></pre>
+<p>And update your Startup class as follows:</p>
+<pre><code class="hljs css language-c#"><span class="hljs-keyword">using</span> Elsa.Persistence.<span class="hljs-function">MongoDb
+
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">ConfigureServices</span>(<span class="hljs-params">IServiceCollection services</span>)</span>
+{
+    services.AddElsa(options =&gt; options.UseMongoDbPersistence(options =&gt; options.ConnectionString = <span class="hljs-string">"mongodb://localhost:27017/Elsa"</span>));
+}
+</code></pre>
+<h2><a class="anchor" aria-hidden="true" id="yessql"></a><a href="#yessql" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>YesSQL</h2>
+<p>To configure Elsa with YesSQL, do the following:</p>
+<p>Add the <code>Elsa.Persistence.YesSql</code> package:</p>
+<pre><code class="hljs css language-bash">dotnet add package Elsa.Persistence.YesSql
+</code></pre>
+<p>And update your Startup class as follows:</p>
+<pre><code class="hljs css language-c#"><span class="hljs-keyword">using</span> Elsa.Persistence.<span class="hljs-function">YesSql
+
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">ConfigureServices</span>(<span class="hljs-params">IServiceCollection services</span>)</span>
+{
+    services.AddElsa(options =&gt; options.UseYesSqlPersistence());
+}
+</code></pre>
+<p>If you don't configure YesSql with a specific database provider, Elsa will us SQLite by default.</p>
+<h3><a class="anchor" aria-hidden="true" id="sql-server-1"></a><a href="#sql-server-1" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>SQL Server</h3>
+<p>To configure YesSQL with SQL Server, add the <code>YesSql.Provider.SqlServer</code> package:</p>
+<pre><code class="hljs css language-bash">dotnet add package YesSql.Provider.SqlServer
+</code></pre>
+<p>And update your Startup class as follows:</p>
+<pre><code class="hljs css language-c#"><span class="hljs-keyword">using</span> Elsa.Persistence.<span class="hljs-function">YesSql
+
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">ConfigureServices</span>(<span class="hljs-params">IServiceCollection services</span>)</span>
+{
+    services.AddElsa(options =&gt; options.UseYesSqlPersistence(config =&gt; config.UseSqlServer(<span class="hljs-string">"Server=local;Database=Elsa"</span>)));
+}
+</code></pre>
+<h3><a class="anchor" aria-hidden="true" id="postgres-1"></a><a href="#postgres-1" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Postgres</h3>
+<p>To configure YesSQL with PostgreSql, add the <code>YesSql.Provider.PostgreSql</code> package:</p>
+<pre><code class="hljs css language-bash">dotnet add package YesSql.Provider.PostgreSql
+</code></pre>
+<p>And update your Startup class as follows:</p>
+<pre><code class="hljs css language-c#"><span class="hljs-keyword">using</span> Elsa.Persistence.<span class="hljs-function">YesSql
+
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">ConfigureServices</span>(<span class="hljs-params">IServiceCollection services</span>)</span>
+{
+    services.AddElsa(options =&gt; options.UseYesSqlPersistence(config =&gt; config.UsePostgreSql(<span class="hljs-string">"Server=127.0.0.1;Port=5432;Database=elsa;User Id=postgres;Password=password;"</span>)));
+}
+</code></pre>
+<h3><a class="anchor" aria-hidden="true" id="mysql-1"></a><a href="#mysql-1" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>MySql</h3>
+<p>To configure YesSQL with PostgreSql, add the <code>YesSql.Provider.MySql</code> package:</p>
+<pre><code class="hljs css language-bash">dotnet add package YesSql.Provider.MySql
+</code></pre>
+<p>And update your Startup class as follows:</p>
+<pre><code class="hljs css language-c#"><span class="hljs-keyword">using</span> Elsa.Persistence.<span class="hljs-function">YesSql
+
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">ConfigureServices</span>(<span class="hljs-params">IServiceCollection services</span>)</span>
+{
+    services.AddElsa(options =&gt; options.UseYesSqlPersistence(config =&gt; config.UseMySql(<span class="hljs-string">"Server=localhost;Port=3306;Database=elsa;User=myuser;Password=mypassword;"</span>)));
+}
+</code></pre>
 <h2><a class="anchor" aria-hidden="true" id="custom-providers"></a><a href="#custom-providers" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Custom Providers</h2>
 <p>If none of the providers meet your need, you can always implement your own. Look at the source code of <a href="https://github.com/elsa-workflows/elsa-core/tree/master/src/persistence">one of the existing providers</a> for an existing example.</p>
-</span></div></article></div><div class="docs-prevnext"><a class="docs-prev button" href="/elsa-core/docs/next/installation/installing-server"><span class="arrow-prev">← </span><span>Server</span></a><a class="docs-next button" href="/elsa-core/docs/next/installation/installing-elsa-dashboard"><span>Dashboard</span><span class="arrow-next"> →</span></a></div></div></div><nav class="onPageNav"><ul class="toc-headings"><li><a href="#persistence-providers">Persistence Providers</a></li><li><a href="#example-using-entity-framework-core">Example using Entity Framework Core</a><ul class="toc-headings"><li><a href="#ef-core-migrations">EF Core Migrations</a></li><li><a href="#running-migrations-manually">Running Migrations Manually</a></li></ul></li><li><a href="#custom-providers">Custom Providers</a></li></ul></nav></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="/elsa-core/" class="nav-home"><img src="/elsa-core/img/android-icon-192x192.png" alt="ELSA" width="50" height="50"/></a><div><h5>Docs</h5><a href="/elsa-core/docs/en/installing-elsa-core">Getting Started</a><a href="/elsa-core/docs/en/concepts-workflows">Concepts</a><a href="/elsa-core/docs/en/guides-simple-workflow-csharp">Guides</a></div><div><h5>Community</h5><a href="https://stackoverflow.com/questions/tagged/elsa-workflows" target="_blank" rel="noreferrer noopener">Stack Overflow</a><a href="https://gitter.im/elsa-workflows/community" target="_blank" rel="noreferrer noopener">Gitter</a></div><div><h5>More</h5><a href="https://github.com/elsa-workflows/elsa-core">GitHub</a><a class="github-button" href="https://github.com/elsa-workflows/elsa-core" data-icon="octicon-star" data-count-href="/facebook/docusaurus/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star this project on GitHub">Star</a></div></section><a href="https://dotnetfoundation.org" target="_blank" rel="noreferrer noopener" class="dotnetfoundation" title="Supported by the .NET Foundation"><img src="/elsa-core/img/dotnetfoundation.png" alt="Supported by the .NET Foundation" width="100" height="100"/></a><section class="copyright">Copyright © 2021 .NET Foundation</section></footer></div></body></html>
+</span></div></article></div><div class="docs-prevnext"><a class="docs-prev button" href="/elsa-core/docs/next/installation/installing-server"><span class="arrow-prev">← </span><span>Server</span></a><a class="docs-next button" href="/elsa-core/docs/next/installation/installing-elsa-dashboard"><span>Dashboard</span><span class="arrow-next"> →</span></a></div></div></div><nav class="onPageNav"><ul class="toc-headings"><li><a href="#persistence-providers">Persistence Providers</a></li><li><a href="#entity-framework-core">Entity Framework Core</a><ul class="toc-headings"><li><a href="#sql-server">SQL Server</a></li><li><a href="#mysql">MySQL</a></li><li><a href="#postgres">Postgres</a></li><li><a href="#ef-core-migrations">EF Core Migrations</a></li><li><a href="#running-migrations-manually">Running Migrations Manually</a></li></ul></li><li><a href="#mongodb">MongoDB</a></li><li><a href="#yessql">YesSQL</a><ul class="toc-headings"><li><a href="#sql-server-1">SQL Server</a></li><li><a href="#postgres-1">Postgres</a></li><li><a href="#mysql-1">MySql</a></li></ul></li><li><a href="#custom-providers">Custom Providers</a></li></ul></nav></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="/elsa-core/" class="nav-home"><img src="/elsa-core/img/android-icon-192x192.png" alt="ELSA" width="50" height="50"/></a><div><h5>Docs</h5><a href="/elsa-core/docs/en/installing-elsa-core">Getting Started</a><a href="/elsa-core/docs/en/concepts-workflows">Concepts</a><a href="/elsa-core/docs/en/guides-simple-workflow-csharp">Guides</a></div><div><h5>Community</h5><a href="https://stackoverflow.com/questions/tagged/elsa-workflows" target="_blank" rel="noreferrer noopener">Stack Overflow</a><a href="https://gitter.im/elsa-workflows/community" target="_blank" rel="noreferrer noopener">Gitter</a></div><div><h5>More</h5><a href="https://github.com/elsa-workflows/elsa-core">GitHub</a><a class="github-button" href="https://github.com/elsa-workflows/elsa-core" data-icon="octicon-star" data-count-href="/facebook/docusaurus/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star this project on GitHub">Star</a></div></section><a href="https://dotnetfoundation.org" target="_blank" rel="noreferrer noopener" class="dotnetfoundation" title="Supported by the .NET Foundation"><img src="/elsa-core/img/dotnetfoundation.png" alt="Supported by the .NET Foundation" width="100" height="100"/></a><section class="copyright">Copyright © 2021 .NET Foundation</section></footer></div></body></html>
