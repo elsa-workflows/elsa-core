@@ -295,6 +295,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "providers", "providers", "{
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Providers.Redis", "src\providers\Elsa.Providers.Redis\Elsa.Providers.Redis.csproj", "{9ACA06DA-9AFE-41A2-8109-EFED8B9B14A1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.DistributedLocking.Redis", "src\locking\Elsa.DistributedLocking.Redis\Elsa.DistributedLocking.Redis.csproj", "{D1644D32-AA51-4D10-942E-F2722DB963B4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -689,6 +691,10 @@ Global
 		{9ACA06DA-9AFE-41A2-8109-EFED8B9B14A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9ACA06DA-9AFE-41A2-8109-EFED8B9B14A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9ACA06DA-9AFE-41A2-8109-EFED8B9B14A1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D1644D32-AA51-4D10-942E-F2722DB963B4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D1644D32-AA51-4D10-942E-F2722DB963B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D1644D32-AA51-4D10-942E-F2722DB963B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D1644D32-AA51-4D10-942E-F2722DB963B4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -823,6 +829,7 @@ Global
 		{61C16CA0-B190-4642-A81A-5C03705CA2C1} = {9937FB02-72D9-4FCD-B31E-8E60CFF1B37F}
 		{EC5D4AFD-3F7F-4B51-9C38-F18C60618731} = {DA71CDAA-8DD3-4D5F-9FBD-8E4B37A2D925}
 		{9ACA06DA-9AFE-41A2-8109-EFED8B9B14A1} = {EC5D4AFD-3F7F-4B51-9C38-F18C60618731}
+		{D1644D32-AA51-4D10-942E-F2722DB963B4} = {DBBD242E-4437-4BDB-919F-A70839BE75FA}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}

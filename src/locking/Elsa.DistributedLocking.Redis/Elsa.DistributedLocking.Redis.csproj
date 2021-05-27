@@ -8,9 +8,9 @@
         <RootNamespace>Elsa</RootNamespace>
         <Description>
             Elsa is a set of workflow libraries and tools that enable lean and mean workflowing capabilities in any .NET Core application.
-            This package provides a distributed locking provider using SQL Server.
+            This package provides a distributed locking provider using Redis.
         </Description>     
-        <PackageTags>elsa, workflows, distributed lock, sqlserver</PackageTags>
+        <PackageTags>elsa, workflows, distributed lock, redis</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>
@@ -18,8 +18,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="DistributedLock.SqlServer" Version="1.0.1" />
-      <PackageReference Include="System.Data.SqlClient" Version="4.8.2" />
+      <PackageReference Include="DistributedLock.Redis" Version="1.0.1" />
     </ItemGroup>
 
 </Project>
