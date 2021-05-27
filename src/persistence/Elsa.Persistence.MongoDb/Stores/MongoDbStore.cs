@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
-using Elsa.Persistence.MongoDb.Extensions;
 using Elsa.Persistence.Specifications;
 using Elsa.Services;
 using MongoDB.Driver;
