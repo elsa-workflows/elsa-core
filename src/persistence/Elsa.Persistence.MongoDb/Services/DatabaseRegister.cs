@@ -32,9 +32,19 @@ namespace Elsa.Persistence.MongoDb.Services
                     cm.SetIsRootClass(true);
                     cm.MapIdProperty(x => x.Id);
                 });
-
-                BsonClassMap.RegisterClassMap<WorkflowDefinition>(cm => cm.AutoMap());
-                BsonClassMap.RegisterClassMap<WorkflowInstance>(cm => cm.AutoMap());
+                
+                BsonClassMap.RegisterClassMap<WorkflowDefinition>(cm =>
+                {
+                    cm.MapProperty(p => p.Variables).SetSerializer(VariablesSerializer.Instance);
+                    cm.AutoMap();
+                });
+                
+                BsonClassMap.RegisterClassMap<WorkflowInstance>(cm =>
+                {
+                    cm.MapProperty(p => p.Variables).SetSerializer(VariablesSerializer.Instance);
+                    cm.AutoMap();
+                });
+                
                 BsonClassMap.RegisterClassMap<Bookmark>(cm => cm.AutoMap());
                 BsonClassMap.RegisterClassMap<WorkflowExecutionLogRecord>(cm => cm.AutoMap());
             }
@@ -48,6 +58,7 @@ namespace Elsa.Persistence.MongoDb.Services
 
         private static void RegisterSerializers()
         {
+            BsonSerializer.RegisterSerializer(VariablesSerializer.Instance);
             BsonSerializer.RegisterSerializer(JObjectSerializer.Instance);
             BsonSerializer.RegisterSerializer(ObjectSerializer.Instance);
             BsonSerializer.RegisterSerializer(new InstantSerializer());
