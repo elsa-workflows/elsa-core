@@ -43,9 +43,10 @@ jobs:
           # list of Docker images to use as base name for tags
           images: |
             elsaworkflows/elsa-dashboard-and-server
+          flavor: |
+            latest=true
           # generate Docker tags based on the following events/attributes
           tags: |
-            latest=true
             type=sha
 
       - name: Login to DockerHub
