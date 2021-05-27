@@ -1,3 +1,4 @@
+using Elsa.Activities.Console;
 using Elsa.Activities.File;
 using Elsa.Builders;
 using System;
@@ -17,7 +18,8 @@ namespace Elsa.Samples.FileWatcher
             {
                 setup.Set(x => x.Directory, "C:\\Temp\\FileWatcher");
                 setup.Set(x => x.ChangeType, WatcherChangeTypes.Created);
-            });
+            })
+            .WriteLine("Workflow received file");
         }
     }
 }
