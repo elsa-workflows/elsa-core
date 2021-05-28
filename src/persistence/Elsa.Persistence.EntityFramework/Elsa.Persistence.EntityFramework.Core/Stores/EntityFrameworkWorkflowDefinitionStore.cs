@@ -9,7 +9,7 @@ using Newtonsoft.Json;
 
 namespace Elsa.Persistence.EntityFramework.Core.Stores
 {
-    public class EntityFrameworkWorkflowDefinitionStore : EntityFrameworkStore<WorkflowDefinition>, IWorkflowDefinitionStore
+    public class EntityFrameworkWorkflowDefinitionStore : ElsaContextEntityFrameworkStore<WorkflowDefinition>, IWorkflowDefinitionStore
     {
         private readonly IContentSerializer _contentSerializer;
 
