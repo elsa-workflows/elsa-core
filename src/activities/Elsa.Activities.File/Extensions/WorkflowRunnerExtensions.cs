@@ -17,14 +17,24 @@ namespace Elsa.Activities.File.Extensions
 
         public static async Task TriggerFileSystemChangedWorkflowsAsync(this IWorkflowDispatcher workflowDispatcher,
             string directory,
+            string pattern,
             WatcherChangeTypes changeType,
             string fileName,
             string fullPath,
             CancellationToken cancellationToken = default)
         {
-            var input = new FileSystemChanged(changeType, directory, fileName, fullPath);
-            var bookmark = new FileSystemChangedBookmark(changeType, directory);
-            var trigger = new FileSystemChangedBookmark(changeType, directory);
+            var input = new FileSystemChanged(changeType, directory, fileName, fullPath)
+            {
+                ChangeType = changeType,
+                Directory = directory,
+                FileName = fileName,
+                FullPath = fullPath,
+                Pattern = pattern,
+                TimeStamp = DateTime.Now
+            };
+            var bookmark = new FileSystemChangedBookmark(changeType, directory, pattern);
+            var trigger = new FileSystemChangedBookmark(changeType, directory, pattern);
+            
             await workflowDispatcher.DispatchAsync(new TriggerWorkflowsRequest(_activityType, bookmark, trigger, input), cancellationToken);
         }
     }

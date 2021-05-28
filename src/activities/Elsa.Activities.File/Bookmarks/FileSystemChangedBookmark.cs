@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Elsa.Activities.File.Bookmarks
 {
-    public record FileSystemChangedBookmark(WatcherChangeTypes ChangeType, string Directory) : IBookmark
+    public record FileSystemChangedBookmark(WatcherChangeTypes ChangeType, string Directory, string Pattern) : IBookmark
     { }
 
     public class FileSystemChangedBookmarkProvider : BookmarkProvider<FileSystemChangedBookmark, WatchDirectory>
@@ -17,7 +17,8 @@ namespace Elsa.Activities.File.Bookmarks
         {
             new FileSystemChangedBookmark(
                 ChangeType: await context.Activity.GetPropertyValueAsync(x => x.ChangeType),
-                Directory: await context.Activity.GetPropertyValueAsync(x => x.Directory))
+                Directory: await context.Activity.GetPropertyValueAsync(x => x.Directory),
+                Pattern: await context.Activity.GetPropertyValueAsync(x => x.Pattern))
         };
     }
 }

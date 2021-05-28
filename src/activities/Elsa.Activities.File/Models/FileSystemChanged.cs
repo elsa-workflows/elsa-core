@@ -27,5 +27,9 @@ namespace Elsa.Activities.File.Models
         public string FileName { get; set; }
 
         public string FullPath { get; set; }
+
+        public string Pattern { get; set; }
+
+        public DateTime TimeStamp { get; set; }
     }
 }

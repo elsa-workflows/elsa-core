@@ -1,3 +1,4 @@
+using Elsa.Activities.File.Models;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Services;
@@ -29,11 +30,17 @@ namespace Elsa.Activities.File
 
         public string Directory { get; set; }
 
-        public string FileName { get; set; }
+        public string Pattern { get; set; }
+
+        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
+        {
+            return base.OnExecute(context);
+        }
 
         public async override ValueTask<IActivityExecutionResult> ExecuteAsync(ActivityExecutionContext context)
         {
-            _logger.LogInformation($"Directory={Directory}");
+            var input = context.GetInput<FileSystemChanged>();
+            _logger.LogInformation($"Directory={input.Directory}");
             return Done();
         }
     }
