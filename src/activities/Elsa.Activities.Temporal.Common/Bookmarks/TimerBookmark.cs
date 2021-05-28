@@ -24,7 +24,7 @@ namespace Elsa.Activities.Temporal.Common.Bookmarks
 
         public override async ValueTask<IEnumerable<IBookmark>> GetBookmarksAsync(BookmarkProviderContext<Timer> context, CancellationToken cancellationToken)
         {
-            var interval = await context.Activity.GetPropertyValueAsync(x => x.Timeout, cancellationToken);
+            var interval = await context.ReadActivityPropertyAsync(x => x.Timeout, cancellationToken);
             var executeAt = GetExecuteAt(context, interval);
 
             if (executeAt != null)
@@ -42,7 +42,7 @@ namespace Elsa.Activities.Temporal.Common.Bookmarks
 
         private Instant? GetExecuteAt(BookmarkProviderContext<Timer> context, Duration interval) =>
             context.Mode == BookmarkIndexingMode.WorkflowInstance 
-                ? context.Activity.GetState(x => x.ExecuteAt) 
+                ? context.Activity.GetPropertyValue(x => x.ExecuteAt) 
                 : _clock.GetCurrentInstant().Plus(interval);
     }
 }

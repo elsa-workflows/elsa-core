@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using MongoDB.Bson.Serialization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -7,20 +7,20 @@ using NodaTime.Serialization.JsonNet;
 
 namespace Elsa.Persistence.MongoDb.Serializers
 {
-    public class JsonSerializer : IBsonSerializer<JObject>
+    public class ObjectSerializer : IBsonSerializer<object>
     {
-        public static JsonSerializer Instance { get; } = new();
+        public static ObjectSerializer Instance { get; } = new();
 
         private readonly JsonSerializerSettings _serializerSettings = new JsonSerializerSettings
         {
-            NullValueHandling = NullValueHandling.Ignore
+            NullValueHandling = NullValueHandling.Ignore,
+            TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Simple,
+            TypeNameHandling = TypeNameHandling.Auto,
         }.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
 
-        public Type ValueType => typeof(JObject);
+        public Type ValueType => typeof(object);
 
-        public void Serialize(BsonSerializationContext context, BsonSerializationArgs args, object value) => Serialize(context, args, (JObject) value);
-
-        public void Serialize(BsonSerializationContext context, BsonSerializationArgs args, JObject value)
+        public void Serialize(BsonSerializationContext context, BsonSerializationArgs args, object value)
         {
             var json = JsonConvert.SerializeObject(value, _serializerSettings);
             context.Writer.WriteString(json);
@@ -28,10 +28,10 @@ namespace Elsa.Persistence.MongoDb.Serializers
 
         object IBsonSerializer.Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args) => Deserialize(context, args);
 
-        public JObject Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args)
+        public object Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args)
         {
             var text = context.Reader.ReadString();
-            return JsonConvert.DeserializeObject<JObject>(text, _serializerSettings)!;
+            return JsonConvert.DeserializeObject<object>(text, _serializerSettings)!;
         }
     }
 }

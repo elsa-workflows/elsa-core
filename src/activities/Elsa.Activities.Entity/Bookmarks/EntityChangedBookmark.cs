@@ -27,8 +27,8 @@ namespace Elsa.Activities.Entity.Bookmarks
             new[]
             {
                 new EntityChangedBookmark(
-                    entityName: await context.Activity.GetPropertyValueAsync(x => x.EntityName, cancellationToken),
-                    action: await context.Activity.GetPropertyValueAsync(x => x.Action, cancellationToken),
+                    entityName: await context.ReadActivityPropertyAsync(x => x.EntityName, cancellationToken),
+                    action: await context.ReadActivityPropertyAsync(x => x.Action, cancellationToken),
                     contextId: context.ActivityExecutionContext.WorkflowExecutionContext.WorkflowInstance.ContextId,
                     correlationId: context.ActivityExecutionContext.WorkflowExecutionContext.WorkflowInstance.CorrelationId
                 )

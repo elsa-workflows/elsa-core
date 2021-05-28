@@ -32,7 +32,7 @@ namespace Elsa.Activities.Temporal.Common.Bookmarks
 
         private static async Task<Instant?> GetExecuteAtAsync(BookmarkProviderContext<StartAt> context, CancellationToken cancellationToken) =>
             context.Mode == BookmarkIndexingMode.WorkflowInstance
-                ? context.Activity.GetState(x => x.ExecuteAt)
-                : await context.Activity.GetPropertyValueAsync(x => x.Instant, cancellationToken);
+                ? context.Activity.GetPropertyValue(x => x.ExecuteAt)
+                : await context.ReadActivityPropertyAsync(x => x.Instant, cancellationToken);
     }
 }

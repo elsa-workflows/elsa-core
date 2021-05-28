@@ -1,5 +1,5 @@
 using System;
-using Elsa.Persistence.MongoDb.Extensions;
+using Elsa.Persistence.MongoDb;
 using Elsa.Testing.Shared.AutoFixture.Attributes;
 using Elsa.Testing.Shared.Helpers;
 

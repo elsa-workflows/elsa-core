@@ -60,11 +60,22 @@ namespace Elsa.Activities.Http
             SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? ContentType { get; set; } = "text/plain";
+        
+        /// <summary>
+        /// The character set to use when writing the response.
+        /// </summary>
+        [ActivityProperty(
+            Hint = "The character set to use when writing the response.", 
+            UIHint = ActivityPropertyUIHints.Dropdown,
+            Options = new[] { "utf-8", "ASCII", "ANSI", "ISO-8859-1" },
+            DefaultValue = "utf-8",
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        public string CharSet { get; set; }
 
         /// <summary>
         /// The headers to send along with the response.
         /// </summary>
-        [ActivityProperty(Hint = "Additional headers to write.", UIHint = ActivityPropertyUIHints.Json)]
+        [ActivityProperty(Hint = "Additional headers to write.", UIHint = ActivityPropertyUIHints.Json, SupportedSyntaxes = new[]{ SyntaxNames.JavaScript, SyntaxNames.Liquid, SyntaxNames.Json })]
         public HttpResponseHeaders? ResponseHeaders { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
@@ -76,7 +87,7 @@ namespace Elsa.Activities.Http
                 return Fault(T["Response has already started"]!);
 
             response.StatusCode = (int) StatusCode;
-            response.ContentType = ContentType;
+            response.ContentType = $"{ContentType};charset={CharSet}";
 
             var headers = ResponseHeaders;
 

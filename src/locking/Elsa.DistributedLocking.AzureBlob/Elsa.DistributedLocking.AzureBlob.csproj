@@ -14,13 +14,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="DistributedLock.Azure" Version="1.0.0" />
-        <PackageReference Include="Microsoft.Azure.Storage.Blob" Version="11.2.3" />
+        <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\core\Elsa.Abstractions\Elsa.Abstractions.csproj" />
-        <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
+        <PackageReference Include="DistributedLock.Azure" Version="1.0.0" />
+        <PackageReference Include="Microsoft.Azure.Storage.Blob" Version="11.2.3" />
     </ItemGroup>
 
 </Project>

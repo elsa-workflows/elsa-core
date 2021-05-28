@@ -1,7 +1,7 @@
 ﻿using Elsa.Persistence.Specifications;
 using MongoDB.Driver.Linq;
 
-namespace Elsa.Persistence.MongoDb.Extensions
+namespace Elsa.Persistence.MongoDb
 {
     public static class MongoDbSpecificationExtensions
     {

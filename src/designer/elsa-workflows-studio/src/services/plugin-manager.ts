@@ -14,6 +14,7 @@ import {StartAtPlugin} from "../plugins/start-at-plugin";
 import {CronPlugin} from "../plugins/cron-plugin";
 import {SignalReceivedPlugin} from "../plugins/signal-received-plugin";
 import {SendSignalPlugin} from "../plugins/send-signal-plugin";
+import {UserTaskPlugin} from "../plugins/user-task-plugin";
 
 export class PluginManager {
 
@@ -35,6 +36,7 @@ export class PluginManager {
       new SendSignalPlugin(),
       new WriteLinePlugin(),
       new RunJavascriptPlugin(),
+      new UserTaskPlugin(),
       new SendEmailPlugin()
     ];
   }

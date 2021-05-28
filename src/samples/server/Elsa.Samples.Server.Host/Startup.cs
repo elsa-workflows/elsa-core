@@ -1,16 +1,12 @@
 using Elsa.Activities.UserTask.Extensions;
-using Elsa.Caching.Rebus.Extensions;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
-using Elsa.Persistence.YesSql;
-using Elsa.Rebus.RabbitMq;
 using Elsa.Samples.Server.Host.Activities;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using YesSql.Provider.PostgreSql;
 
 namespace Elsa.Samples.Server.Host
 {
@@ -20,6 +16,8 @@ namespace Elsa.Samples.Server.Host
         {
             Environment = environment;
             Configuration = configuration;
+
+            //BsonClassMap.RegisterClassMap<HttpRequestModel>(cm => { cm.AutoMap(); });
         }
 
         private IWebHostEnvironment Environment { get; }
@@ -30,6 +28,7 @@ namespace Elsa.Samples.Server.Host
             var elsaSection = Configuration.GetSection("Elsa");
             var sqlServerConnectionString = Configuration.GetConnectionString("SqlServer");
             var sqliteConnectionString = Configuration.GetConnectionString("Sqlite");
+            var mongoDbConnectionString = Configuration.GetConnectionString("MongoDb");
 
             services.AddControllers();
 
@@ -40,9 +39,10 @@ namespace Elsa.Samples.Server.Host
                 .AddElsa(elsa => elsa
                     .WithContainerName(Configuration["ContainerName"] ?? System.Environment.MachineName)
                     .UseEntityFrameworkPersistence(ef => ef.UseSqlite(sqliteConnectionString))
+                    //.UseMongoDbPersistence(options => options.ConnectionString = mongoDbConnectionString)
                     //.UseYesSqlPersistence(config => config.UsePostgreSql("Server=localhost;Port=5432;Database=yessql5;User Id=root;Password=Password12!;"))
                     //.UseRabbitMq(Configuration.GetConnectionString("RabbitMq"))
-                    .UseRebusCacheSignal()
+                    //.UseRebusCacheSignal()
                     //.UseRedisCacheSignal()
                     .AddConsoleActivities()
                     .AddHttpActivities(elsaSection.GetSection("Http").Bind)
@@ -85,10 +85,7 @@ namespace Elsa.Samples.Server.Host
                 .UseCors()
                 .UseHttpActivities()
                 .UseRouting()
-                .UseEndpoints(endpoints =>
-                {
-                    endpoints.MapControllers();
-                });
+                .UseEndpoints(endpoints => { endpoints.MapControllers(); });
         }
     }
 }

@@ -95,8 +95,8 @@ namespace Elsa.Activities.AzureServiceBus.Services
 
                 foreach (var activity in workflowBlueprintWrapper.Filter<AzureServiceBusTopicMessageReceived>())
                 {
-                    var topicName = await activity.GetPropertyValueAsync(x => x.TopicName, cancellationToken);
-                    var subscriptionName = await activity.GetPropertyValueAsync(x => x.SubscriptionName, cancellationToken);
+                    var topicName = await activity.EvaluatePropertyValueAsync(x => x.TopicName, cancellationToken);
+                    var subscriptionName = await activity.EvaluatePropertyValueAsync(x => x.SubscriptionName, cancellationToken);
                     yield return (topicName, subscriptionName)!;
                 }
             }
