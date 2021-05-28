@@ -30,8 +30,8 @@ namespace Elsa.Activities.AzureServiceBus.Bookmarks
             {
                 new TopicMessageReceivedBookmark
                 {
-                    TopicName = (await context.Activity.GetPropertyValueAsync(x => x.TopicName, cancellationToken))!,
-                    SubscriptionName = (await context.Activity.GetPropertyValueAsync(x => x.SubscriptionName, cancellationToken))!,
+                    TopicName = (await context.ReadActivityPropertyAsync(x => x.TopicName, cancellationToken))!,
+                    SubscriptionName = (await context.ReadActivityPropertyAsync(x => x.SubscriptionName, cancellationToken))!,
                     CorrelationId = context.ActivityExecutionContext.WorkflowExecutionContext.CorrelationId
                 }
             };

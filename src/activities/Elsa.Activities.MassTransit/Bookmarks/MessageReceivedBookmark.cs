@@ -18,7 +18,7 @@ namespace Elsa.Activities.MassTransit.Bookmarks
             {
                 new MessageReceivedBookmark
                 {
-                    MessageType = (await context.Activity.GetPropertyValueAsync(x => x.MessageType, cancellationToken))!.Name,
+                    MessageType = (await context.ReadActivityPropertyAsync(x => x.MessageType, cancellationToken))!.Name,
                     CorrelationId = context.ActivityExecutionContext.WorkflowExecutionContext.CorrelationId
                 }
             };

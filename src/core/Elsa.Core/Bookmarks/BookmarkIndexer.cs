@@ -78,7 +78,7 @@ namespace Elsa.Bookmarks
                 }
 
                 var blockingActivities = workflowBlueprint.GetBlockingActivities(workflowInstance!);
-                var bookmarkedWorkflows = await ExtractBookmarksAsync(workflowBlueprint, workflowInstance, blockingActivities, true, cancellationToken).ToList();
+                var bookmarkedWorkflows = await ExtractBookmarksAsync(workflowBlueprint, workflowInstance, blockingActivities, cancellationToken).ToList();
                 var bookmarks = MapBookmarks(bookmarkedWorkflows, workflowInstance);
                 entities.AddRange(bookmarks);
             }
@@ -131,19 +131,10 @@ namespace Elsa.Bookmarks
             IWorkflowBlueprint workflowBlueprint,
             WorkflowInstance workflowInstance,
             IEnumerable<IActivityBlueprint> blockingActivities,
-            bool loadContext,
             CancellationToken cancellationToken)
         {
             // Setup workflow execution context
             var workflowExecutionContext = new WorkflowExecutionContext(_serviceProvider, workflowBlueprint, workflowInstance);
-
-            // Load workflow context.
-            workflowExecutionContext.WorkflowContext =
-                loadContext &&
-                workflowBlueprint.ContextOptions != null &&
-                !string.IsNullOrWhiteSpace(workflowInstance.ContextId)
-                    ? await _workflowContextManager.LoadContext(new LoadWorkflowContext(workflowExecutionContext), cancellationToken)
-                    : default;
 
             // Extract bookmarks for each blocking activity.
             var bookmarkedWorkflows = new List<BookmarkedWorkflow>();

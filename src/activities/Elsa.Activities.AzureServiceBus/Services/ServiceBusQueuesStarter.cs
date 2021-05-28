@@ -86,7 +86,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
 
                 foreach (var activity in workflowBlueprintWrapper.Filter<AzureServiceBusQueueMessageReceived>())
                 {
-                    var queueName = await activity.GetPropertyValueAsync(x => x.QueueName, cancellationToken);
+                    var queueName = await activity.EvaluatePropertyValueAsync(x => x.QueueName, cancellationToken);
 
                     if (string.IsNullOrWhiteSpace(queueName))
                     {

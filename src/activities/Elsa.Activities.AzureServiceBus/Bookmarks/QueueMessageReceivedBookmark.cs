@@ -28,7 +28,7 @@ namespace Elsa.Activities.AzureServiceBus.Bookmarks
             {
                 new QueueMessageReceivedBookmark
                 {
-                    QueueName = (await context.Activity.GetPropertyValueAsync(x => x.QueueName, cancellationToken))!,
+                    QueueName = (await context.ReadActivityPropertyAsync(x => x.QueueName, cancellationToken))!,
                     CorrelationId = context.ActivityExecutionContext.WorkflowExecutionContext.CorrelationId
                 }
             };

@@ -20,8 +20,8 @@ namespace Elsa.Activities.Signaling
 
         private async IAsyncEnumerable<IBookmark> GetBookmarksInternalAsync(BookmarkProviderContext<SignalReceived> context, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            var signalName = (await context.Activity.GetPropertyValueAsync(x => x.Signal, cancellationToken))!;
-            var signalScope = (await context.Activity.GetPropertyValueAsync(x => x.Scope, cancellationToken))!;
+            var signalName = (await context.ReadActivityPropertyAsync(x => x.Signal, cancellationToken))!;
+            var signalScope = (await context.ReadActivityPropertyAsync(x => x.Scope, cancellationToken))!;
 
             if (context.Mode == BookmarkIndexingMode.WorkflowBlueprint || signalScope == SignalScope.Global)
             {
