@@ -34,11 +34,6 @@ namespace Elsa.Activities.File
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
-            return base.OnExecute(context);
-        }
-
-        public async override ValueTask<IActivityExecutionResult> ExecuteAsync(ActivityExecutionContext context)
-        {
             var input = context.GetInput<FileSystemChanged>();
             _logger.LogInformation($"Directory={input.Directory}");
             return Done();
