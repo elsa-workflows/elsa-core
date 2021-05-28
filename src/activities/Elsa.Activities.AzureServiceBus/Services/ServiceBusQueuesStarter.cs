@@ -19,6 +19,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger _logger;
         private readonly ICollection<QueueWorker> _workers;
+        private readonly SemaphoreSlim _semaphore = new(1);
 
         public ServiceBusQueuesStarter(
             IQueueMessageReceiverClientFactory messageReceiverClientFactory,
@@ -35,11 +36,20 @@ namespace Elsa.Activities.AzureServiceBus.Services
 
         public async Task CreateWorkersAsync(CancellationToken cancellationToken = default)
         {
-            await DisposeExistingWorkersAsync();
-            var queueNames = (await GetQueueNamesAsync(cancellationToken).ToListAsync(cancellationToken)).Distinct();
+            await _semaphore.WaitAsync(cancellationToken);
 
-            foreach (var queueName in queueNames) 
-                await CreateAndAddWorkerAsync(queueName, cancellationToken);
+            try
+            {
+                await DisposeExistingWorkersAsync();
+                var queueNames = (await GetQueueNamesAsync(cancellationToken).ToListAsync(cancellationToken)).Distinct();
+
+                foreach (var queueName in queueNames)
+                    await CreateAndAddWorkerAsync(queueName, cancellationToken);
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
         }
 
         private async Task CreateAndAddWorkerAsync(string queueName, CancellationToken cancellationToken)
