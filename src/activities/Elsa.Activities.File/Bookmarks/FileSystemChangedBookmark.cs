@@ -16,9 +16,9 @@ namespace Elsa.Activities.File.Bookmarks
         public override async ValueTask<IEnumerable<IBookmark>> GetBookmarksAsync(BookmarkProviderContext<WatchDirectory> context, CancellationToken cancellationToken) => new[]
         {
             new FileSystemChangedBookmark(
-                ChangeType: await context.Activity.GetPropertyValueAsync(x => x.ChangeType),
-                Directory: await context.Activity.GetPropertyValueAsync(x => x.Directory),
-                Pattern: await context.Activity.GetPropertyValueAsync(x => x.Pattern))
+                ChangeType: context.Activity.GetPropertyValue(x => x.ChangeType),
+                Directory: context.Activity.GetPropertyValue(x => x.Directory),
+                Pattern: context.Activity.GetPropertyValue(x => x.Pattern))
         };
     }
 }
