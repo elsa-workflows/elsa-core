@@ -36,13 +36,16 @@ namespace Elsa.Services
             properties[propertyName] = provider;
         }
 
-        public IDictionary<string, IActivityPropertyValueProvider> GetProviders(string activityId) => _providers.TryGetValue(activityId, out var properties) ? properties : new Dictionary<string, IActivityPropertyValueProvider>();
+        public IDictionary<string, IActivityPropertyValueProvider> GetProviders(string activityId) => 
+            _providers.TryGetValue(activityId, out var properties) 
+                ? properties ?? new Dictionary<string, IActivityPropertyValueProvider>() 
+                : new Dictionary<string, IActivityPropertyValueProvider>();
 
         public IActivityPropertyValueProvider? GetProvider(string activityId, string propertyName) =>
-            _providers.TryGetValue(activityId, out var properties) 
-            && properties != null 
-            && properties.TryGetValue(propertyName, out var provider) 
-                ? provider 
+            _providers.TryGetValue(activityId, out var properties)
+            && properties != null
+            && properties.TryGetValue(propertyName, out var provider)
+                ? provider
                 : null;
 
         public async ValueTask SetActivityPropertiesAsync(IActivity activity, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken = default)
@@ -64,14 +67,14 @@ namespace Elsa.Services
                         var activityPropertyAttribute = property.GetCustomAttribute<ActivityPropertyAttribute>();
                         value = activityPropertyAttribute?.DefaultValue;
                     }
-                    
-                    if(value != null)
+
+                    if (value != null)
                     {
                         property.SetValue(activity, value);
                         activityExecutionContext.SetState(property.Name, value);
                     }
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     throw new CannotSetActivityPropertyValueException($@"An exception was thrown whilst setting '{activity?.GetType().Name}.{property.Name}'. See the inner exception for further details.", e);
                 }
