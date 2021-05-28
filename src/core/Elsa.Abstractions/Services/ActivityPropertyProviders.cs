@@ -36,7 +36,7 @@ namespace Elsa.Services
             properties[propertyName] = provider;
         }
 
-        public IDictionary<string, IActivityPropertyValueProvider>? GetProviders(string activityId) => _providers.TryGetValue(activityId, out var properties) ? properties : null;
+        public IDictionary<string, IActivityPropertyValueProvider> GetProviders(string activityId) => _providers.TryGetValue(activityId, out var properties) ? properties : new Dictionary<string, IActivityPropertyValueProvider>();
 
         public IActivityPropertyValueProvider? GetProvider(string activityId, string propertyName) =>
             _providers.TryGetValue(activityId, out var properties) 
@@ -49,9 +49,6 @@ namespace Elsa.Services
         {
             var properties = activity.GetType().GetProperties().Where(IsActivityProperty).ToList();
             var providers = GetProviders(activity.Id);
-
-            if (providers == null)
-                return;
 
             foreach (var property in properties)
             {
@@ -69,7 +66,10 @@ namespace Elsa.Services
                     }
                     
                     if(value != null)
+                    {
                         property.SetValue(activity, value);
+                        activityExecutionContext.SetState(property.Name, value);
+                    }
                 }
                 catch(Exception e)
                 {
