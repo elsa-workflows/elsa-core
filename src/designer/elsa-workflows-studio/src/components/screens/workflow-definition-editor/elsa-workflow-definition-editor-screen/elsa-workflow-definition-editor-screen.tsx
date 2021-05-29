@@ -267,6 +267,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
     const activityDescriptors: Array<ActivityDescriptor> = state.activityDescriptors;
     const activityDescriptor = activityDescriptors.find(x => x.type == source.type);
 
+    debugger;
     return {
       activityId: source.activityId,
       description: source.description,

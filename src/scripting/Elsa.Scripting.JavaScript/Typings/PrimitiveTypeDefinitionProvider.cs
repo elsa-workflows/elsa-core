@@ -4,7 +4,7 @@ using Elsa.Scripting.JavaScript.Services;
 
 namespace Elsa.Scripting.JavaScript.Typings
 {
-    public class PrimitiveTypeDefinitionProvider : ITypeDefinitionProvider
+    public class PrimitiveTypeDefinitionProvider : TypeDefinitionProvider
     {
         private static readonly IDictionary<Type, string> TypeMap = new Dictionary<Type, string>
         {
@@ -25,7 +25,7 @@ namespace Elsa.Scripting.JavaScript.Typings
             [typeof(TimeSpan)] = "string",
         };
 
-        public bool SupportsType(Type type) => TypeMap.ContainsKey(type);
-        public string GetTypeDefinition(Type type) => TypeMap[type];
+        public override bool SupportsType(TypeDefinitionContext context, Type type) => TypeMap.ContainsKey(type);
+        public override string GetTypeDefinition(TypeDefinitionContext context, Type type) => TypeMap[type];
     }
 }

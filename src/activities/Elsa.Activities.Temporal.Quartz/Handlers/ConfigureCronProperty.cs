@@ -15,7 +15,7 @@ namespace Elsa.Activities.Temporal.Quartz.Handlers
             if (activityType.Type != typeof(Cron))
                 return Task.CompletedTask;
 
-            var cronExpressionProperty = notification.ActivityDescriptor.Properties.First(x => x.Name == nameof(Cron.CronExpression));
+            var cronExpressionProperty = notification.ActivityDescriptor.InputProperties.First(x => x.Name == nameof(Cron.CronExpression));
             cronExpressionProperty.DefaultValue = "0 * 0 ? * * *";
             cronExpressionProperty.Hint = "Specify a Quartz CRON expression. Go to https://www.freeformatter.com/cron-expression-generator-quartz.html to generate valid Quartz cron expressions.";
             

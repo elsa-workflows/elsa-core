@@ -44,6 +44,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddHttpContextAccessor()
                 .AddNotificationHandlers(typeof(ConfigureJavaScriptEngine))
                 .AddLiquidFilter<SignalUrlFilter>("signal_url")
+                .AddJavaScriptTypeDefinitionProvider<HttpTypeDefinitionProvider>()
                 .AddDataProtection();
 
             return services;
