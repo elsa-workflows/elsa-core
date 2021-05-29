@@ -21,7 +21,7 @@ namespace Elsa.Metadata
 
         public object? GetOptions(PropertyInfo activityPropertyInfo)
         {
-            var activityPropertyAttribute = activityPropertyInfo.GetCustomAttribute<ActivityPropertyAttribute>();
+            var activityPropertyAttribute = activityPropertyInfo.GetCustomAttribute<ActivityInputAttribute>();
 
             if (activityPropertyAttribute == null)
                 return null;

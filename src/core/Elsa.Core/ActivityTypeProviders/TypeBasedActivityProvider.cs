@@ -43,21 +43,9 @@ namespace Elsa.ActivityTypeProviders
                 DisplayName = info.DisplayName,
                 ActivateAsync = async context => await ActivateActivity(context, activityType),
                 Describe = () => info, 
-                CanExecuteAsync = async context =>
-                {
-                    var instance = await ActivateActivity(context, activityType);
-                    return await instance.CanExecuteAsync(context);
-                },
-                ExecuteAsync = async context =>
-                {
-                    var instance = await ActivateActivity(context, activityType);
-                    return await instance.ExecuteAsync(context);
-                },
-                ResumeAsync = async context =>
-                {
-                    var instance = await ActivateActivity(context, activityType);
-                    return await instance.ResumeAsync(context);
-                }
+                CanExecuteAsync = async (context, instance) => await instance.CanExecuteAsync(context),
+                ExecuteAsync = async (context, instance) => await instance.ExecuteAsync(context),
+                ResumeAsync = async (context, instance) => await instance.ResumeAsync(context)
             };
         }
 

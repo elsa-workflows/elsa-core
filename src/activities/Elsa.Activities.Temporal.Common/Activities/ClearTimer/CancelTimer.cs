@@ -19,7 +19,7 @@ namespace Elsa.Activities.Temporal
             _workflowScheduler = workflowScheduler;
         }
 
-        [ActivityProperty(Hint = "The ID of the timer (Cron, StartAt, Timer) activity, which is to be cleared.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "The ID of the timer (Cron, StartAt, Timer) activity, which is to be cleared.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string ActivityId { get; set; } = default!;
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)

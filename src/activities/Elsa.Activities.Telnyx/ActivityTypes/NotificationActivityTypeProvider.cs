@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.Telnyx.Activities;
 using Elsa.Activities.Telnyx.Extensions;
 using Elsa.Activities.Telnyx.Webhooks.Attributes;
 using Elsa.Activities.Telnyx.Webhooks.Models;
@@ -88,29 +89,11 @@ namespace Elsa.Activities.Telnyx.ActivityTypes
                     [NotificationAttribute] = true,
                     [EventTypeAttribute] = webhookAttribute.EventType
                 },
-                CanExecuteAsync = _ => new ValueTask<bool>(true),
-                ExecuteAsync = context => context.WorkflowExecutionContext.IsFirstPass ? ExecuteInternal(context) : new ValueTask<IActivityExecutionResult>(new SuspendResult()),
-                ResumeAsync = ExecuteInternal,
+                ActivateAsync = _ => new ValueTask<IActivity>(new Webhook()), 
+                CanExecuteAsync = (context, instance) => instance.CanExecuteAsync(context),
+                ExecuteAsync = (context, instance) => instance.ExecuteAsync(context),
+                ResumeAsync = (context, instance) => instance.ResumeAsync(context),
             };
-        }
-
-        private static ValueTask<IActivityExecutionResult> ExecuteInternal(ActivityExecutionContext context)
-        {
-            var webhook = (TelnyxWebhook) context.Input!;
-
-            if (webhook.Data.Payload is CallPayload callPayload)
-            {
-                context.WorkflowExecutionContext.CorrelationId ??= callPayload.CallSessionId;
-
-                if (!context.HasCallControlId())
-                    context.SetCallControlId(callPayload.CallControlId);
-
-                if (callPayload is CallInitiatedPayload callInitiatedPayload)
-                    if (!context.HasFromNumber())
-                        context.SetFromNumber(callInitiatedPayload.To);
-            }
-
-            return new(new CombinedResult(new OutputResult(context.Input), new DoneResult()));
         }
     }
 }

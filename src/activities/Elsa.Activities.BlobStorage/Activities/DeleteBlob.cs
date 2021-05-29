@@ -22,9 +22,9 @@ namespace Elsa.Activities.BlobStorage
         private readonly IBlobStorage _storage;
         public DeleteBlob(IBlobStorage storage) => _storage = storage;
 
-        [ActivityProperty(
+        [ActivityInput(
             Hint = "The IDs of the blobs.",
-            UIHint = ActivityPropertyUIHints.MultiText,
+            UIHint = ActivityInputUIHints.MultiText,
             DefaultSyntax = SyntaxNames.Json,
             SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]

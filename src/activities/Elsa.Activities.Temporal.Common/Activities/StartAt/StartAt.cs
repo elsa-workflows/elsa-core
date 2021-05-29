@@ -28,7 +28,7 @@ namespace Elsa.Activities.Temporal
             _logger = logger;
         }
 
-        [ActivityProperty(Hint = "An instant in the future at which this activity should execute.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "An instant in the future at which this activity should execute.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public Instant Instant { get; set; }
 
         public Instant? ExecuteAt

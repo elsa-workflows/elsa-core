@@ -19,7 +19,7 @@ namespace Elsa.Activities.MassTransit
         {
         }
 
-        [ActivityProperty(Hint = "An expression that evaluates to the event to publish.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "An expression that evaluates to the event to publish.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public object? Message { get; set; }
 
         protected override bool OnCanExecute(ActivityExecutionContext context) => Message != null;

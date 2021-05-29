@@ -64,7 +64,7 @@ namespace Elsa.Services
 
                     if (value == null)
                     {
-                        var activityPropertyAttribute = property.GetCustomAttribute<ActivityPropertyAttribute>();
+                        var activityPropertyAttribute = property.GetCustomAttribute<ActivityInputAttribute>();
                         value = activityPropertyAttribute?.DefaultValue;
                     }
 
@@ -81,7 +81,7 @@ namespace Elsa.Services
             }
         }
 
-        private bool IsActivityProperty(PropertyInfo property) => property.GetCustomAttribute<ActivityPropertyAttribute>() != null;
+        private bool IsActivityProperty(PropertyInfo property) => property.GetCustomAttribute<ActivityInputAttribute>() != null;
         public IEnumerator<KeyValuePair<string, IDictionary<string, IActivityPropertyValueProvider>>> GetEnumerator() => _providers.GetEnumerator();
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }

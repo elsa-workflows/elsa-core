@@ -34,12 +34,20 @@ namespace Elsa.Services
         protected virtual IActivityExecutionResult OnResume() => Done();
         protected virtual NoopResult Noop() => new();
         protected virtual OutcomeResult Done() => Outcome(OutcomeNames.Done);
+
+        [Obsolete("Do not use methods that accept an output. Use Done() instead and activity output properties to return output.")]
         protected virtual CombinedResult Done(object? output) => Combine(Output(output), Done());
+
         protected virtual OutcomeResult Outcomes(IEnumerable<string> outcomes) => new(outcomes);
-        protected virtual OutcomeResult Outcomes(params string[] outcomes) => Outcomes((IEnumerable<string>)outcomes);
+        protected virtual OutcomeResult Outcomes(params string[] outcomes) => Outcomes((IEnumerable<string>) outcomes);
         protected virtual OutcomeResult Outcome(string outcome) => Outcomes(outcome);
+        
+        [Obsolete("Do not use methods that accept an output. Use Outcome(string outcome) instead and activity output properties to return output.")]
         protected virtual CombinedResult Outcome(string outcome, object? output) => Combine(Output(output), Outcome(outcome));
+        
+        [Obsolete("Use activity output properties to return output.")]
         protected virtual OutputResult Output(object? output) => new(output);
+        
         protected virtual SuspendResult Suspend() => new();
         protected virtual ScheduleActivitiesResult Schedule(params string[] activityIds) => new(activityIds);
         protected virtual ScheduleActivitiesResult Schedule(IEnumerable<string> activityIds, object? input) => new(activityIds, input);
@@ -50,7 +58,7 @@ namespace Elsa.Services
         protected virtual FaultResult Fault(Exception exception) => new(exception);
         protected virtual FaultResult Fault(string message) => new(message);
         protected virtual RegisterTaskResult RegisterTask(Func<WorkflowExecutionContext, CancellationToken, ValueTask> task) => new(task);
-        
+
         protected virtual T? GetState<T>([CallerMemberName] string name = null!) => Data.GetState<T>(name);
         protected virtual T GetState<T>(Func<T> defaultValue, [CallerMemberName] string name = null!) => Data.GetState(name, defaultValue);
         protected virtual T GetState<T>(Type type, Func<T> defaultValue, [CallerMemberName] string name = null!) => Data.GetState(type, name, defaultValue);
