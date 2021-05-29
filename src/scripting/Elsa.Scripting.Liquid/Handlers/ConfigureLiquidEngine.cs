@@ -62,16 +62,6 @@ namespace Elsa.Scripting.Liquid.Handlers
         private Task<FluidValue> ToFluidValue(Variables dictionary, string key, TemplateOptions options) => Task.FromResult(!dictionary.Has(key) ? NilValue.Instance : FluidValue.Create(dictionary.Get(key), options));
         private LiquidActivityModel GetActivityModelAsync(ActivityExecutionContext context, string name) => new(context, name, null);
 
-        private object? GetInboundActivityModelPropertyAsync(ActivityExecutionContext context, string propertyName)
-        {
-            var activityModel = GetInboundActivityModelAsync(context);
-
-            if (activityModel == null)
-                return null;
-
-            return GetActivityProperty(activityModel, propertyName);
-        }
-        
         private LiquidActivityModel? GetInboundActivityModelAsync(ActivityExecutionContext context)
         {
             var inboundActivityId = context.WorkflowExecutionContext.GetInboundActivityPath(context.ActivityId).FirstOrDefault();

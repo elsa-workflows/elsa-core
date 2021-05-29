@@ -10,6 +10,7 @@ using Jint;
 using Jint.Runtime.Interop;
 using MediatR;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json.Linq;
 using NodaTime;
 
 namespace Elsa.Scripting.JavaScript.Handlers
@@ -41,6 +42,8 @@ namespace Elsa.Scripting.JavaScript.Handlers
             engine.SetValue("isNullOrEmpty", (Func<string, bool>) (string.IsNullOrEmpty));
             engine.SetValue("getWorkflowDefinitionIdByName", (Func<string, string?>) (name => GetWorkflowDefinitionIdByName(activityExecutionContext, name)));
             engine.SetValue("getWorkflowDefinitionIdByTag", (Func<string, string?>) (tag => GetWorkflowDefinitionIdByTag(activityExecutionContext, tag)));
+            engine.SetValue("getActivity", (Func<string, object?>) (idOrName => GetActivityModel(activityExecutionContext, idOrName)));
+            engine.SetValue("getInboundActivity", (Func<object?>) (() => GetInboundActivityModel(activityExecutionContext)));
 
             // Global variables.
             engine.SetValue("activityExecutionContext", activityExecutionContext);
@@ -68,6 +71,7 @@ namespace Elsa.Scripting.JavaScript.Handlers
             foreach (var variable in variables.Data)
                 engine.SetValue(variable.Key, variable.Value);
 
+            // TODO: Deprecated. Remove with next breaking version.
             // Add activity outputs.
             foreach (var activity in workflowBlueprint.Activities.Where(x => x.Name is not null and not "" && workflowInstance.ActivityOutput.ContainsKey(x.Id)))
             {
@@ -86,6 +90,19 @@ namespace Elsa.Scripting.JavaScript.Handlers
             var workflowRegistry = activityExecutionContext.GetService<IWorkflowRegistry>();
             var workflowBlueprint = workflowRegistry.FindAsync(filter).Result;
             return workflowBlueprint?.Id;
+        }
+        
+        private object? GetActivityModel(ActivityExecutionContext context, string idOrName)
+        {
+            var workflowExecutionContext = context.WorkflowExecutionContext;
+            var activity = workflowExecutionContext.GetActivityBlueprintByName(idOrName) ?? workflowExecutionContext.GetActivityBlueprintById(idOrName);
+            return activity == null ? null : workflowExecutionContext.WorkflowInstance.ActivityData[activity.Id];
+        }
+        
+        private object? GetInboundActivityModel(ActivityExecutionContext context)
+        {
+            var inboundActivityId = context.WorkflowExecutionContext.GetInboundActivityPath(context.ActivityId).FirstOrDefault();
+            return inboundActivityId == null ? null : GetActivityModel(context, inboundActivityId);
         }
 
         private void RegisterType<T>(Engine engine) => engine.SetValue(typeof(T).Name, TypeReference.CreateTypeReference(engine, typeof(T)));
