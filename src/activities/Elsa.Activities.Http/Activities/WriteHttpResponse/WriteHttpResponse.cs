@@ -75,7 +75,12 @@ namespace Elsa.Activities.Http
         /// <summary>
         /// The headers to send along with the response.
         /// </summary>
-        [ActivityProperty(Hint = "Additional headers to write.", UIHint = ActivityPropertyUIHints.Json, SupportedSyntaxes = new[]{ SyntaxNames.JavaScript, SyntaxNames.Liquid, SyntaxNames.Json })]
+        [ActivityProperty(
+            Hint = "Additional headers to write.", 
+            UIHint = ActivityPropertyUIHints.MultiLine,
+            DefaultSyntax = SyntaxNames.Json,
+            SupportedSyntaxes = new[]{ SyntaxNames.JavaScript, SyntaxNames.Liquid, SyntaxNames.Json }
+        )]
         public HttpResponseHeaders? ResponseHeaders { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
