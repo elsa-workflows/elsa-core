@@ -46,7 +46,7 @@ namespace Elsa.Scripting.Liquid.Handlers
             memberAccessStrategy.Register<ActivityExecutionContext, FluidValue>("WorkflowDefinitionVersion", x => ToFluidValue(x.WorkflowInstance.Version, options));
             memberAccessStrategy.Register<ActivityExecutionContext, LiquidPropertyAccessor>("Variables", x => new LiquidPropertyAccessor(name => ToFluidValue(x.WorkflowExecutionContext.GetMergedVariables(), name, options)));
             memberAccessStrategy.Register<ActivityExecutionContext, LiquidPropertyAccessor>("Activities", x => new LiquidPropertyAccessor(name => ToFluidValue(GetActivityModelAsync(x, name), options)!));
-            memberAccessStrategy.Register<ActivityExecutionContext, LiquidActivityModel?>("InboundActivity", GetInboundActivityModelAsync);
+            memberAccessStrategy.Register<ActivityExecutionContext, LiquidActivityModel>(GetActivityModelAsync);
             memberAccessStrategy.Register<LiquidActivityModel, object?>(GetActivityProperty);
             memberAccessStrategy.Register<LiquidObjectAccessor<JObject>, JObject>((x, name) => x.GetValueAsync(name));
             memberAccessStrategy.Register<ExpandoObject, object>((x, name) => ((IDictionary<string, object>) x)[name]);
