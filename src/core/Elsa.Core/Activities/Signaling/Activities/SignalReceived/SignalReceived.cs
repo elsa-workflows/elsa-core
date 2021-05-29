@@ -19,10 +19,10 @@ namespace Elsa.Activities.Signaling
     )]
     public class SignalReceived : Activity
     {
-        [ActivityProperty(Hint = "The name of the signal to wait for.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "The name of the signal to wait for.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string Signal { get; set; } = default!;
 
-        [ActivityProperty(Hint = "The scope of the signal to wait for.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }, DefaultValue = SignalScope.Instance)]
+        [ActivityInput(Hint = "The scope of the signal to wait for.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }, DefaultValue = SignalScope.Instance)]
         public SignalScope Scope { get; set; } = SignalScope.Instance;
 
         protected override bool OnCanExecute(ActivityExecutionContext context)

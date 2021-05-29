@@ -34,8 +34,8 @@ namespace Elsa.Activities.Http
         /// <summary>
         /// The HTTP status code to return.
         /// </summary>
-        [ActivityProperty(
-            UIHint = ActivityPropertyUIHints.Dropdown,
+        [ActivityInput(
+            UIHint = ActivityInputUIHints.Dropdown,
             Hint = "The HTTP status code to write.",
             Options = new[] { HttpStatusCode.OK, HttpStatusCode.Created, HttpStatusCode.Accepted, HttpStatusCode.NoContent, HttpStatusCode.Redirect, HttpStatusCode.BadRequest, HttpStatusCode.NotFound, HttpStatusCode.Conflict },
             SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid },
@@ -46,14 +46,14 @@ namespace Elsa.Activities.Http
         /// <summary>
         /// The content to send along with the response
         /// </summary>
-        [ActivityProperty(Hint = "The HTTP content to write.", UIHint = ActivityPropertyUIHints.MultiLine, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "The HTTP content to write.", UIHint = ActivityInputUIHints.MultiLine, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string? Content { get; set; }
 
         /// <summary>
         /// The Content-Type header to send along with the response.
         /// </summary>
-        [ActivityProperty(
-            UIHint = ActivityPropertyUIHints.Dropdown,
+        [ActivityInput(
+            UIHint = ActivityInputUIHints.Dropdown,
             Hint = "The HTTP content type header to write.",
             Options = new[] { "text/plain", "text/html", "application/json", "application/xml" },
             DefaultValue = "text/plain",
@@ -64,9 +64,9 @@ namespace Elsa.Activities.Http
         /// <summary>
         /// The character set to use when writing the response.
         /// </summary>
-        [ActivityProperty(
+        [ActivityInput(
             Hint = "The character set to use when writing the response.", 
-            UIHint = ActivityPropertyUIHints.Dropdown,
+            UIHint = ActivityInputUIHints.Dropdown,
             Options = new[] { "utf-8", "ASCII", "ANSI", "ISO-8859-1" },
             DefaultValue = "utf-8",
             SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
@@ -75,9 +75,9 @@ namespace Elsa.Activities.Http
         /// <summary>
         /// The headers to send along with the response.
         /// </summary>
-        [ActivityProperty(
+        [ActivityInput(
             Hint = "Additional headers to write.", 
-            UIHint = ActivityPropertyUIHints.MultiLine,
+            UIHint = ActivityInputUIHints.MultiLine,
             DefaultSyntax = SyntaxNames.Json,
             SupportedSyntaxes = new[]{ SyntaxNames.JavaScript, SyntaxNames.Liquid, SyntaxNames.Json }
         )]

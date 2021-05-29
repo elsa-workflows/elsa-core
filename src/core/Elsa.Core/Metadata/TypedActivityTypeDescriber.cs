@@ -49,7 +49,7 @@ namespace Elsa.Metadata
 
             foreach (var propertyInfo in properties)
             {
-                var activityPropertyAttribute = propertyInfo.GetCustomAttribute<ActivityPropertyAttribute>();
+                var activityPropertyAttribute = propertyInfo.GetCustomAttribute<ActivityInputAttribute>();
 
                 if (activityPropertyAttribute == null)
                     continue;

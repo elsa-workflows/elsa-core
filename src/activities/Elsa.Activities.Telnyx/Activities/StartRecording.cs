@@ -24,7 +24,7 @@ namespace Elsa.Activities.Telnyx.Activities
         private readonly ITelnyxClient _telnyxClient;
         public StartRecording(ITelnyxClient telnyxClient) => _telnyxClient = telnyxClient;
 
-        [ActivityProperty(
+        [ActivityInput(
             Label = "Call Control ID",
             Hint = "Unique identifier and token for controlling the call",
             Category = PropertyCategories.Advanced,
@@ -32,30 +32,30 @@ namespace Elsa.Activities.Telnyx.Activities
         )]
         public string? CallControlId { get; set; } = default!;
 
-        [ActivityProperty(
+        [ActivityInput(
             Hint = "When 'dual', final audio file will be stereo recorded with the first leg on channel A, and the rest on channel B.",
-            UIHint = ActivityPropertyUIHints.Dropdown,
+            UIHint = ActivityInputUIHints.Dropdown,
             Options = new[] { "single", "dual" },
             SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string Channels { get; set; } = default!;
 
-        [ActivityProperty(
+        [ActivityInput(
             Hint = "The audio file format used when storing the call recording. Can be either 'mp3' or 'wav'.",
-            UIHint = ActivityPropertyUIHints.Dropdown,
+            UIHint = ActivityInputUIHints.Dropdown,
             Options = new[] { "wav", "mp3" },
             SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string Format { get; set; } = default!;
 
-        [ActivityProperty(
+        [ActivityInput(
             Hint = "Use this field to add state to every subsequent webhook. It must be a valid Base-64 encoded string.",
             Category = PropertyCategories.Advanced,
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? ClientState { get; set; }
 
-        [ActivityProperty(
+        [ActivityInput(
             Label = "Command ID",
             Hint = "Use this field to avoid duplicate commands. Telnyx will ignore commands with the same Command ID.",
             Category = PropertyCategories.Advanced,
@@ -63,7 +63,7 @@ namespace Elsa.Activities.Telnyx.Activities
         )]
         public string? CommandId { get; set; }
 
-        [ActivityProperty(Hint = "If enabled, a beep sound will be played at the start of a recording.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "If enabled, a beep sound will be played at the start of a recording.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public bool? PlayBeep { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)

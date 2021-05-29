@@ -25,7 +25,7 @@ namespace Elsa.Activities.Telnyx.Activities
         private readonly ITelnyxClient _telnyxClient;
         public PlayAudio(ITelnyxClient telnyxClient) => _telnyxClient = telnyxClient;
 
-        [ActivityProperty(
+        [ActivityInput(
             Label = "Call Control ID",
             Hint = "Unique identifier and token for controlling the call",
             Category = PropertyCategories.Advanced,
@@ -33,21 +33,21 @@ namespace Elsa.Activities.Telnyx.Activities
         )]
         public string? CallControlId { get; set; } = default!;
 
-        [ActivityProperty(
+        [ActivityInput(
             Label = "Audio URL",
             Hint = "The URL of a file to be played back at the beginning of each prompt. The URL can point to either a WAV or MP3 file.",
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public Uri AudioUrl { get; set; } = default!;
 
-        [ActivityProperty(
+        [ActivityInput(
             Hint = "Use this field to add state to every subsequent webhook. It must be a valid Base-64 encoded string.",
             Category = PropertyCategories.Advanced,
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? ClientState { get; set; }
 
-        [ActivityProperty(
+        [ActivityInput(
             Label = "Command ID",
             Hint = "Use this field to avoid duplicate commands. Telnyx will ignore commands with the same Command ID.",
             Category = PropertyCategories.Advanced,
@@ -55,7 +55,7 @@ namespace Elsa.Activities.Telnyx.Activities
         )]
         public string? CommandId { get; set; }
 
-        [ActivityProperty(
+        [ActivityInput(
             Hint = "The number of times the audio file should be played. If supplied, the value must be an integer between 1 and 100, or the special string 'infinity' for an endless loop.",
             DefaultValue = "1",
             Category = PropertyCategories.Advanced,
@@ -63,7 +63,7 @@ namespace Elsa.Activities.Telnyx.Activities
         )]
         public string? Loop { get; set; } = "1";
 
-        [ActivityProperty(
+        [ActivityInput(
             Hint = "When enabled, audio will be mixed on top of any other audio that is actively being played back. Note that `overlay: true` will only work if there is another audio file already being played on the call.",
             DefaultValue = false,
             Category = PropertyCategories.Advanced,
@@ -71,9 +71,9 @@ namespace Elsa.Activities.Telnyx.Activities
         )]
         public bool Overlay { get; set; }
         
-        [ActivityProperty(
+        [ActivityInput(
             Hint = "Specifies the leg or legs on which audio will be played. If supplied, the value must be either 'self', 'opposite' or 'both'.",
-            UIHint = ActivityPropertyUIHints.Dropdown,
+            UIHint = ActivityInputUIHints.Dropdown,
             Options = new[]{ "", "self", "opposite", "both" },
             Category = PropertyCategories.Advanced,
             SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }

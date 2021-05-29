@@ -13,7 +13,7 @@ namespace Elsa.Samples.ProgrammaticCompositeActivitiesConsole.Activities
     {
         // Exposed properties on composite activities must store their values in the State property bag so that it gets persisted & available to child activities.
         // Think of composite activities as workflows and their properties as inputs into the workflow.
-        [ActivityProperty(Hint = "The start number.")]
+        [ActivityInput(Hint = "The start number.")]
         public int Start
         {
             get => GetState<int>();

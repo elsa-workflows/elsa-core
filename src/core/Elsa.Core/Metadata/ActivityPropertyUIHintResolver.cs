@@ -10,7 +10,7 @@ namespace Elsa.Metadata
     {
         public string GetUIHint(PropertyInfo activityPropertyInfo)
         {
-            var activityPropertyAttribute = activityPropertyInfo.GetCustomAttribute<ActivityPropertyAttribute>();
+            var activityPropertyAttribute = activityPropertyInfo.GetCustomAttribute<ActivityInputAttribute>();
 
             if (activityPropertyAttribute.UIHint != null)
                 return activityPropertyAttribute.UIHint;

@@ -28,13 +28,13 @@ namespace Elsa.Activities.Signaling
             _workflowInstanceManager = workflowInstanceStore;
         }
         
-        [ActivityProperty(Hint = "The ID of the workflow instance to resume.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "The ID of the workflow instance to resume.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string WorkflowInstanceId { get; set; } = default!;
         
-        [ActivityProperty(Hint = "The ID of the blocking activity to trigger.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "The ID of the blocking activity to trigger.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string BlockingActivityId { get; set; } = default!;
         
-        [ActivityProperty(Hint = "An optional input to pass to the blocking activity.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "An optional input to pass to the blocking activity.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public object? Input { get; set; } = default!;
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)

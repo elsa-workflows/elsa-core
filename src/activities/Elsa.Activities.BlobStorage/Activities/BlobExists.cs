@@ -20,7 +20,7 @@ namespace Elsa.Activities.BlobStorage
         private readonly IBlobStorage _storage;
         public BlobExists(IBlobStorage storage) => _storage = storage;
 
-        [ActivityProperty(Hint = "The ID of the blob.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "The ID of the blob.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string BlobId { get; set; } = default!;
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)

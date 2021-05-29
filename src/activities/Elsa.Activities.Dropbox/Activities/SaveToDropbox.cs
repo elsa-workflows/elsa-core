@@ -23,10 +23,10 @@ namespace Elsa.Activities.Dropbox.Activities
             _filesApi = filesApi;
         }
 
-        [ActivityProperty(Hint = "The file to store.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "The file to store.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public byte[] FileData { get; set; } = default!;
 
-        [ActivityProperty(Hint = "The path to which the file should be saved.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "The path to which the file should be saved.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string Path { get; set; } = default!;
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)

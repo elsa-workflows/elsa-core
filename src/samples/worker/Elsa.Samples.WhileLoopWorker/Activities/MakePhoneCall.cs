@@ -13,7 +13,7 @@ namespace Elsa.Samples.WhileLoopWorker.Activities
     {
         private readonly PhoneCallService _phoneCallService;
 
-        [ActivityProperty]
+        [ActivityInput]
         public string PhoneNumber
         {
             get => GetState<string>();

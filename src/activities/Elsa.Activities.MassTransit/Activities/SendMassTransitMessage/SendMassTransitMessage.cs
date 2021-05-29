@@ -20,10 +20,10 @@ namespace Elsa.Activities.MassTransit
         {
         }
 
-        [ActivityProperty(Hint = "An expression that evaluates to the message to send.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "An expression that evaluates to the message to send.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public object? Message { get; set; }
 
-        [ActivityProperty(Hint = "The address of a specific endpoint to send the message to.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "The address of a specific endpoint to send the message to.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public Uri EndpointAddress { get; set; } = default!;
 
         protected override bool OnCanExecute(ActivityExecutionContext context) => Message != null;
