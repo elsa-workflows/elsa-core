@@ -29,7 +29,9 @@ namespace Elsa.Metadata
             var category = activityAttribute?.Category ?? "Miscellaneous";
             var traits = activityAttribute?.Traits ?? ActivityTraits.Action;
             var outcomes = activityAttribute?.Outcomes ?? new[] { OutcomeNames.Done };
-            var properties = DescribeProperties(activityType);
+            var properties = activityType.GetProperties();
+            var inputProperties = DescribeInputProperties(properties);
+            var outputProperties = DescribeOutputProperties(properties);
 
             return new ActivityDescriptor
             {
@@ -38,15 +40,14 @@ namespace Elsa.Metadata
                 Description = description,
                 Category = category,
                 Traits = traits,
-                Properties = properties.ToArray(),
+                InputProperties = inputProperties.ToArray(),
+                OutputProperties = outputProperties.ToArray(),
                 Outcomes = outcomes,
             };
         }
 
-        private IEnumerable<ActivityPropertyDescriptor> DescribeProperties(Type activityType)
+        private IEnumerable<ActivityInputDescriptor> DescribeInputProperties(IEnumerable<PropertyInfo> properties)
         {
-            var properties = activityType.GetProperties();
-
             foreach (var propertyInfo in properties)
             {
                 var activityPropertyAttribute = propertyInfo.GetCustomAttribute<ActivityInputAttribute>();
@@ -54,7 +55,7 @@ namespace Elsa.Metadata
                 if (activityPropertyAttribute == null)
                     continue;
 
-                yield return new ActivityPropertyDescriptor
+                yield return new ActivityInputDescriptor
                 (
                     (activityPropertyAttribute.Name ?? propertyInfo.Name).Pascalize(),
                     propertyInfo.PropertyType,
@@ -66,6 +67,24 @@ namespace Elsa.Metadata
                     _defaultValueResolver.GetDefaultValue(propertyInfo),
                     activityPropertyAttribute.DefaultSyntax,
                     activityPropertyAttribute.SupportedSyntaxes
+                );
+            }
+        }
+
+        private IEnumerable<ActivityOutputDescriptor> DescribeOutputProperties(IEnumerable<PropertyInfo> properties)
+        {
+            foreach (var propertyInfo in properties)
+            {
+                var activityPropertyAttribute = propertyInfo.GetCustomAttribute<ActivityOutputAttribute>();
+
+                if (activityPropertyAttribute == null)
+                    continue;
+
+                yield return new ActivityOutputDescriptor
+                (
+                    (activityPropertyAttribute.Name ?? propertyInfo.Name).Pascalize(),
+                    propertyInfo.PropertyType,
+                    activityPropertyAttribute.Hint
                 );
             }
         }

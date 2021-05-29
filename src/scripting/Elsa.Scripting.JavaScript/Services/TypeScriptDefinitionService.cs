@@ -9,7 +9,6 @@ using AutoMapper.Internal;
 using Elsa.Models;
 using Elsa.Scripting.JavaScript.Events;
 using MediatR;
-using NodaTime;
 
 namespace Elsa.Scripting.JavaScript.Services
 {
@@ -27,78 +26,39 @@ namespace Elsa.Scripting.JavaScript.Services
         public async Task<string> GenerateTypeScriptDefinitionsAsync(WorkflowDefinition? workflowDefinition = default, string? context = default, CancellationToken cancellationToken = default)
         {
             var builder = new StringBuilder();
-            var types = await CollectTypesAsync(workflowDefinition, cancellationToken);
+            var providerContext = new TypeDefinitionContext(workflowDefinition, context);
+            var types = await CollectTypesAsync(providerContext, cancellationToken);
             
             // Render type declarations for anything except those listed in TypeConverters.
             foreach (var type in types)
             {
-                var shouldRenderDeclaration = ShouldRenderTypeDeclaration(type);
+                var shouldRenderDeclaration = ShouldRenderTypeDeclaration(providerContext, type);
 
                 if (shouldRenderDeclaration)
-                    RenderTypeDeclaration(type, types, builder);
+                    RenderTypeDeclaration(providerContext, type, types, builder);
             }
             
-            string GetTypeScriptTypeInternal(Type type) => GetTypeScriptType(type, types);
-
-            if (workflowDefinition != null)
-            {
-                var contextType = workflowDefinition.ContextOptions?.ContextType;
-
-                if (contextType != null)
-                {
-                    var typeScriptType = GetTypeScriptTypeInternal(contextType);
-                    builder.AppendLine($"declare const workflowContext: {typeScriptType}");
-                }
-
-                foreach (var variable in workflowDefinition.Variables!.Data)
-                {
-                    var variableType = variable.Value?.GetType() ?? typeof(object);
-                    var typeScriptType = GetTypeScriptTypeInternal(variableType);
-                    builder.AppendLine($"declare const {variable.Key}: {typeScriptType}");
-                }
-            }
-
+            string GetTypeScriptTypeInternal(Type type) => GetTypeScriptType(providerContext, type, types);
             var renderingTypeScriptDefinitions = new RenderingTypeScriptDefinitions(workflowDefinition, GetTypeScriptTypeInternal, context, builder);
             await _mediator.Publish(renderingTypeScriptDefinitions, cancellationToken);
 
             return builder.ToString();
         }
 
-        private async Task<ISet<Type>> CollectTypesAsync(WorkflowDefinition? workflowDefinition = default, CancellationToken cancellationToken = default)
+        private async Task<ISet<Type>> CollectTypesAsync(TypeDefinitionContext context, CancellationToken cancellationToken = default)
         {
             var collectedTypes = new HashSet<Type>();
 
-            if (workflowDefinition != null)
+            foreach (var provider in _providers)
             {
-                var contextType = workflowDefinition.ContextOptions?.ContextType;
+                var providedTypes = await provider.CollectTypesAsync(context, cancellationToken);
 
-                if (contextType != null)
-                    CollectType(contextType, collectedTypes);
-
-                foreach (var variable in workflowDefinition.Variables!.Data.Values)
-                    CollectType(variable!.GetType(), collectedTypes);
+                foreach (var providedType in providedTypes) 
+                    CollectType(providedType, collectedTypes);
             }
-
-            CollectType<Instant>(collectedTypes);
-            CollectType<Duration>(collectedTypes);
-            CollectType<Period>(collectedTypes);
-            CollectType<LocalDate>(collectedTypes);
-            CollectType<LocalTime>(collectedTypes);
-            CollectType<LocalDateTime>(collectedTypes);
-
-            void CollectTypesInternal(IEnumerable<Type> types)
-            {
-                foreach (var type in types) 
-                    CollectType(type, collectedTypes);
-            }
-
-            var collectTypesEvent = new CollectingTypeScriptDefinitionTypes(workflowDefinition, CollectTypesInternal);
-            await _mediator.Publish(collectTypesEvent, cancellationToken);
-
+            
             return collectedTypes;
         }
-
-        private static void CollectType<T>(ISet<Type> collectedTypes) => CollectType(typeof(T), collectedTypes);
 
         private static void CollectType(Type type, ISet<Type> collectedTypes)
         {
@@ -140,14 +100,11 @@ namespace Elsa.Scripting.JavaScript.Services
             }
         }
 
-        private void RenderTypeDeclaration(Type type, ISet<Type> collectedTypes, StringBuilder output)
-        {
-            RenderTypeDeclaration("class", type, collectedTypes, output);
-        }
+        private void RenderTypeDeclaration(TypeDefinitionContext context, Type type, ISet<Type> collectedTypes, StringBuilder output) => RenderTypeDeclaration(context, type.IsInterface ? "interface" : "class", type, collectedTypes, output);
 
-        private void RenderTypeDeclaration(string symbol, Type type, ISet<Type> collectedTypes, StringBuilder output)
+        private void RenderTypeDeclaration(TypeDefinitionContext context, string symbol, Type type, ISet<Type> collectedTypes, StringBuilder output)
         {
-            var typeName = type.Name;
+            var typeName = type.Name.Replace("`", "");
             var properties = type.GetProperties();
             var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static).Where(x => !x.IsSpecialName).ToList();
 
@@ -155,7 +112,7 @@ namespace Elsa.Scripting.JavaScript.Services
 
             foreach (var property in properties)
             {
-                var typeScriptType = GetTypeScriptType(property.PropertyType, collectedTypes);
+                var typeScriptType = GetTypeScriptType(context, property.PropertyType, collectedTypes);
                 var propertyName = property.PropertyType.IsNullableType() ? $"{property.Name}?" : property.Name;
                 output.AppendLine($"{propertyName}: {typeScriptType};");
             }
@@ -167,13 +124,13 @@ namespace Elsa.Scripting.JavaScript.Services
 
                 output.Append($"{method.Name}(");
 
-                var arguments = method.GetParameters().Select(x => $"{x.Name}:{GetTypeScriptType(x.ParameterType, collectedTypes)}");
+                var arguments = method.GetParameters().Select(x => $"{x.Name}:{GetTypeScriptType(context, x.ParameterType, collectedTypes)}");
                 output.Append(string.Join(", ", arguments));
                 output.Append(")");
 
                 var returnType = method.ReturnType;
                 if (returnType != typeof(void))
-                    output.AppendFormat(":{0}", GetTypeScriptType(returnType, collectedTypes));
+                    output.AppendFormat(":{0}", GetTypeScriptType(context, returnType, collectedTypes));
 
                 output.AppendLine(";");
             }
@@ -181,18 +138,18 @@ namespace Elsa.Scripting.JavaScript.Services
             output.AppendLine("}");
         }
 
-        private string GetTypeScriptType(Type type, ISet<Type> collectedTypes)
+        private string GetTypeScriptType(TypeDefinitionContext context, Type type, ISet<Type> collectedTypes)
         {
             if (type.IsNullableType())
                 type = type.GetTypeOfNullable();
 
-            var provider = _providers.FirstOrDefault(x => x.SupportsType(type));
-            return provider != null ? provider.GetTypeDefinition(type) : collectedTypes.Contains(type) ? type.Name : "any";
+            var provider = _providers.FirstOrDefault(x => x.SupportsType(context, type));
+            return provider != null ? provider.GetTypeDefinition(context, type) : collectedTypes.Contains(type) ? type.Name : "any";
         }
 
-        private bool ShouldRenderTypeDeclaration(Type type)
+        private bool ShouldRenderTypeDeclaration(TypeDefinitionContext context, Type type)
         {
-            var provider = _providers.FirstOrDefault(x => x.SupportsType(type));
+            var provider = _providers.FirstOrDefault(x => x.SupportsType(context, type));
             return provider == null;
         }
     }

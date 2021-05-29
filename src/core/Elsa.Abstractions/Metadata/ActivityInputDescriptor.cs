@@ -4,13 +4,13 @@ using System.Linq;
 
 namespace Elsa.Metadata
 {
-    public class ActivityPropertyDescriptor
+    public class ActivityInputDescriptor
     {
-        public ActivityPropertyDescriptor()
+        public ActivityInputDescriptor()
         {
         }
 
-        public ActivityPropertyDescriptor(
+        public ActivityInputDescriptor(
             string name,
             Type type,
             string uiHint,
