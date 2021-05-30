@@ -41,6 +41,11 @@ namespace Elsa.Attributes
         public string? Category { get; set; }
         
         /// <summary>
+        /// A value to order this property by. Properties are displayed in ascending order (lower appears before higher).
+        /// </summary>
+        public float Order { get; set; }
+        
+        /// <summary>
         /// The default value to set.
         /// </summary>
         public object? DefaultValue { get; set; }

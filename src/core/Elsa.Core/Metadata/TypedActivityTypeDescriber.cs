@@ -36,7 +36,7 @@ namespace Elsa.Metadata
             var traits = activityAttribute?.Traits ?? ActivityTraits.Action;
             var outcomes = await GetOutcomesAsync(activityAttribute, cancellationToken);
             var properties = activityType.GetProperties();
-            var inputProperties = DescribeInputProperties(properties);
+            var inputProperties = DescribeInputProperties(properties).OrderBy(x => x.Order);
             var outputProperties = DescribeOutputProperties(properties);
 
             return new ActivityDescriptor
@@ -93,6 +93,7 @@ namespace Elsa.Metadata
                     activityPropertyAttribute.Hint,
                     _optionsResolver.GetOptions(propertyInfo),
                     activityPropertyAttribute.Category,
+                    activityPropertyAttribute.Order,
                     _defaultValueResolver.GetDefaultValue(propertyInfo),
                     activityPropertyAttribute.DefaultSyntax,
                     activityPropertyAttribute.SupportedSyntaxes

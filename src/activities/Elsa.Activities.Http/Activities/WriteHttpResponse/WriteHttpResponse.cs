@@ -39,7 +39,8 @@ namespace Elsa.Activities.Http
             Hint = "The HTTP status code to write.",
             Options = new[] { HttpStatusCode.OK, HttpStatusCode.Created, HttpStatusCode.Accepted, HttpStatusCode.NoContent, HttpStatusCode.Redirect, HttpStatusCode.BadRequest, HttpStatusCode.NotFound, HttpStatusCode.Conflict },
             SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid },
-            DefaultValue = HttpStatusCode.OK
+            DefaultValue = HttpStatusCode.OK,
+            Category = PropertyCategories.Advanced
         )]
         public HttpStatusCode StatusCode { get; set; } = HttpStatusCode.OK;
 
@@ -60,17 +61,18 @@ namespace Elsa.Activities.Http
             SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? ContentType { get; set; } = "text/plain";
-        
+
         /// <summary>
         /// The character set to use when writing the response.
         /// </summary>
         [ActivityInput(
-            Hint = "The character set to use when writing the response.", 
+            Hint = "The character set to use when writing the response.",
             UIHint = ActivityInputUIHints.Dropdown,
             Options = new[] { "utf-8", "ASCII", "ANSI", "ISO-8859-1" },
             DefaultValue = "utf-8",
-            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
-        public string CharSet { get; set; }
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid },
+            Category = PropertyCategories.Advanced)]
+        public string CharSet { get; set; } = "utf-8";
 
         /// <summary>
         /// The headers to send along with the response.
@@ -79,7 +81,8 @@ namespace Elsa.Activities.Http
             Hint = "Additional headers to write.", 
             UIHint = ActivityInputUIHints.MultiLine,
             DefaultSyntax = SyntaxNames.Json,
-            SupportedSyntaxes = new[]{ SyntaxNames.JavaScript, SyntaxNames.Liquid, SyntaxNames.Json }
+            SupportedSyntaxes = new[]{ SyntaxNames.JavaScript, SyntaxNames.Liquid, SyntaxNames.Json },
+            Category = PropertyCategories.Advanced
         )]
         public HttpResponseHeaders? ResponseHeaders { get; set; }
 

@@ -66,6 +66,7 @@ namespace Elsa.Activities.Webhooks.ActivityTypes
                         "Specify what request method this webhook should handle. Leave empty to handle both GET and POST requests",
                         new[] { "", "GET", "POST" },
                         "Webhooks",
+                        0,
                         "POST",
                         SyntaxNames.Literal,
                         new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })

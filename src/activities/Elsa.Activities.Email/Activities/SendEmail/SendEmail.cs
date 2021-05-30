@@ -34,10 +34,20 @@ namespace Elsa.Activities.Email
         [ActivityInput(Hint = "The recipients email addresses.", UIHint = ActivityInputUIHints.MultiText, DefaultSyntax = SyntaxNames.Json, SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript })]
         public ICollection<string> To { get; set; } = new List<string>();
 
-        [ActivityInput(Hint = "The cc recipients email addresses. (Optional)", UIHint = ActivityInputUIHints.MultiText, DefaultSyntax = SyntaxNames.Json, SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript })]
+        [ActivityInput(
+            Hint = "The cc recipients email addresses.", 
+            UIHint = ActivityInputUIHints.MultiText, 
+            DefaultSyntax = SyntaxNames.Json, 
+            SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript },
+            Category = "More")]
         public ICollection<string> Cc { get; set; } = new List<string>();
 
-        [ActivityInput(Hint = "The Bcc recipients email addresses. (Optional)", UIHint = ActivityInputUIHints.MultiText, DefaultSyntax = SyntaxNames.Json, SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript })]
+        [ActivityInput(
+            Hint = "The Bcc recipients email addresses.", 
+            UIHint = ActivityInputUIHints.MultiText, 
+            DefaultSyntax = SyntaxNames.Json, 
+            SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript },
+            Category = "More")]
         public ICollection<string> Bcc { get; set; } = new List<string>();
 
         [ActivityInput(Hint = "The subject of the email message.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
