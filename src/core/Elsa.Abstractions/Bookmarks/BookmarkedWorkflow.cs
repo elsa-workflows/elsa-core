@@ -9,6 +9,6 @@ namespace Elsa.Bookmarks
         public string WorkflowInstanceId { get; set; } = default!;
         public string ActivityId { get; set; } = default!;
         public string ActivityType { get; set; } = default!;
-        public IEnumerable<IBookmark> Bookmarks { get; set; } = new List<IBookmark>();
+        public IBookmark Bookmark { get; set; } = default!;
     }
 }

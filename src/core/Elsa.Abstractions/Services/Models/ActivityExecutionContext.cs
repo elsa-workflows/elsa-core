@@ -43,6 +43,7 @@ namespace Elsa.Services.Models
         public IReadOnlyCollection<string> Outcomes { get; set; }
         public object? Input { get; }
         public bool Resuming { get; }
+        public bool IsFirstPass => WorkflowExecutionContext.IsFirstPass;
         
         public string? CorrelationId
         {

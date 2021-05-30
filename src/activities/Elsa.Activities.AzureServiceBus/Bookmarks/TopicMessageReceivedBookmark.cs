@@ -25,15 +25,15 @@ namespace Elsa.Activities.AzureServiceBus.Bookmarks
 
     public class TopicMessageReceivedBookmarkProvider : BookmarkProvider<TopicMessageReceivedBookmark, AzureServiceBusTopicMessageReceived>
     {
-        public override async ValueTask<IEnumerable<IBookmark>> GetBookmarksAsync(BookmarkProviderContext<AzureServiceBusTopicMessageReceived> context, CancellationToken cancellationToken) =>
+        public override async ValueTask<IEnumerable<BookmarkResult>> GetBookmarksAsync(BookmarkProviderContext<AzureServiceBusTopicMessageReceived> context, CancellationToken cancellationToken) =>
             new[]
             {
-                new TopicMessageReceivedBookmark
+                Result(new TopicMessageReceivedBookmark
                 {
                     TopicName = (await context.ReadActivityPropertyAsync(x => x.TopicName, cancellationToken))!,
                     SubscriptionName = (await context.ReadActivityPropertyAsync(x => x.SubscriptionName, cancellationToken))!,
                     CorrelationId = context.ActivityExecutionContext.WorkflowExecutionContext.CorrelationId
-                }
+                })
             };
     }
 }

@@ -12,10 +12,10 @@ namespace SampleClientApp.Web.Controllers
         [HttpPost]
         public IActionResult Post(ElsaCommand model)
         {
-            Console.WriteLine("Received command {0} with payload {1}", model.Command, model.Payload);
+            Console.WriteLine("Received command {0} with payload {1} for workflow {2}", model.Command, model.Payload, model.WorkflowInstanceId);
             return Ok();
         }
     }
 
-    public record ElsaCommand(string Command, JsonElement Payload);
+    public record ElsaCommand(string Command, JsonElement Payload, string WorkflowInstanceId);
 }

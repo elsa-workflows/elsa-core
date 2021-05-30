@@ -114,18 +114,18 @@ namespace Elsa.Bookmarks
         }
         
         private IEnumerable<Bookmark> MapBookmarks(IEnumerable<BookmarkedWorkflow> bookmarkedWorkflows, WorkflowInstance workflowInstance) =>
-            bookmarkedWorkflows.SelectMany(triggerDescriptor => triggerDescriptor.Bookmarks.Select(x => new Bookmark
+            bookmarkedWorkflows.Select(x => new Bookmark
             {
                 Id = _idGenerator.Generate(),
                 TenantId = workflowInstance.TenantId,
-                ActivityType = triggerDescriptor.ActivityType,
-                ActivityId = triggerDescriptor.ActivityId,
+                ActivityType = x.ActivityType,
+                ActivityId = x.ActivityId,
                 WorkflowInstanceId = workflowInstance.Id,
                 CorrelationId = workflowInstance.CorrelationId,
-                Hash = _hasher.Hash(x),
-                Model = _contentSerializer.Serialize(x),
-                ModelType = x.GetType().GetSimpleAssemblyQualifiedName()
-            }));
+                Hash = _hasher.Hash(x.Bookmark),
+                Model = _contentSerializer.Serialize(x.Bookmark),
+                ModelType = x.Bookmark.GetType().GetSimpleAssemblyQualifiedName()
+            });
 
         private async Task<IEnumerable<BookmarkedWorkflow>> ExtractBookmarksAsync(
             IWorkflowBlueprint workflowBlueprint,
@@ -150,18 +150,16 @@ namespace Elsa.Bookmarks
 
                 foreach (var provider in providers)
                 {
-                    var bookmarks = (await provider.GetBookmarksAsync(providerContext, cancellationToken)).ToList();
+                    var bookmarkResults = (await provider.GetBookmarksAsync(providerContext, cancellationToken)).ToList();
 
-                    var bookmarkedWorkflow = new BookmarkedWorkflow
+                    bookmarkedWorkflows.AddRange(bookmarkResults.Select(bookmarkResult => new BookmarkedWorkflow
                     {
                         WorkflowBlueprint = workflowBlueprint,
                         WorkflowInstanceId = workflowInstance.Id,
-                        ActivityType = blockingActivity.Type,
+                        ActivityType = bookmarkResult.ActivityTypeName ?? blockingActivity.Type,
                         ActivityId = blockingActivity.Id,
-                        Bookmarks = bookmarks
-                    };
-
-                    bookmarkedWorkflows.Add(bookmarkedWorkflow);
+                        Bookmark = bookmarkResult.Bookmark
+                    }));
                 }
             }
 

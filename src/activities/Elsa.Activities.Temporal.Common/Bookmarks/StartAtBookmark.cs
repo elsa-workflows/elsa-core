@@ -14,20 +14,20 @@ namespace Elsa.Activities.Temporal.Common.Bookmarks
 
     public class StartAtBookmarkProvider : BookmarkProvider<StartAtBookmark, StartAt>
     {
-        public override async ValueTask<IEnumerable<IBookmark>> GetBookmarksAsync(BookmarkProviderContext<StartAt> context, CancellationToken cancellationToken)
+        public override async ValueTask<IEnumerable<BookmarkResult>> GetBookmarksAsync(BookmarkProviderContext<StartAt> context, CancellationToken cancellationToken)
         {
             var executeAt = await GetExecuteAtAsync(context, cancellationToken);
 
             if (executeAt != null)
                 return new[]
                 {
-                    new StartAtBookmark
+                    Result(new StartAtBookmark
                     {
                         ExecuteAt = executeAt.Value,
-                    }
+                    })
                 };
             
-            return Enumerable.Empty<IBookmark>();
+            return Enumerable.Empty<BookmarkResult>();
         }
 
         private static async Task<Instant?> GetExecuteAtAsync(BookmarkProviderContext<StartAt> context, CancellationToken cancellationToken) =>
