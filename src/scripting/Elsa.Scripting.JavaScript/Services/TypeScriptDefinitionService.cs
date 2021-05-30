@@ -100,11 +100,11 @@ namespace Elsa.Scripting.JavaScript.Services
             }
         }
 
-        private void RenderTypeDeclaration(TypeDefinitionContext context, Type type, ISet<Type> collectedTypes, StringBuilder output) => RenderTypeDeclaration(context, type.IsInterface ? "interface" : "class", type, collectedTypes, output);
+        private void RenderTypeDeclaration(TypeDefinitionContext context, Type type, ISet<Type> collectedTypes, StringBuilder output) => RenderTypeDeclaration(context, "interface", type, collectedTypes, output);
 
         private void RenderTypeDeclaration(TypeDefinitionContext context, string symbol, Type type, ISet<Type> collectedTypes, StringBuilder output)
         {
-            var typeName = type.Name.Replace("`", "");
+            var typeName = GetSafeSymbol(type.Name);
             var properties = type.GetProperties();
             var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static).Where(x => !x.IsSpecialName).ToList();
 
@@ -119,6 +119,12 @@ namespace Elsa.Scripting.JavaScript.Services
 
             foreach (var method in methods)
             {
+                if(method.Name.StartsWith("<"))
+                    continue;
+
+                if(symbol == "interface" && method.IsStatic)
+                    continue;
+
                 if (method.IsStatic)
                     output.Append("static ");
 
@@ -144,7 +150,8 @@ namespace Elsa.Scripting.JavaScript.Services
                 type = type.GetTypeOfNullable();
 
             var provider = _providers.FirstOrDefault(x => x.SupportsType(context, type));
-            return provider != null ? provider.GetTypeDefinition(context, type) : collectedTypes.Contains(type) ? type.Name : "any";
+            var typeScriptType = provider != null ? provider.GetTypeDefinition(context, type) : collectedTypes.Contains(type) ? type.Name : "any";
+            return GetSafeSymbol(typeScriptType);
         }
 
         private bool ShouldRenderTypeDeclaration(TypeDefinitionContext context, Type type)
@@ -152,5 +159,7 @@ namespace Elsa.Scripting.JavaScript.Services
             var provider = _providers.FirstOrDefault(x => x.SupportsType(context, type));
             return provider == null;
         }
+
+        private string GetSafeSymbol(string symbol) => symbol.Replace("`", "");
     }
 }
