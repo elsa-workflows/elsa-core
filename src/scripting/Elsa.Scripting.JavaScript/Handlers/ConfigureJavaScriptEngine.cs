@@ -134,11 +134,12 @@ namespace Elsa.Scripting.JavaScript.Handlers
                 // Workflow Context
                 var contextType = workflowDefinition.ContextOptions?.ContextType;
 
-                if (contextType == null)
-                    return;
+                if (contextType != null)
+                {
 
-                var workflowContextTypeScriptType = notification.GetTypeScriptType(contextType);
-                output.AppendLine($"declare const workflowContext: {workflowContextTypeScriptType}");
+                    var workflowContextTypeScriptType = notification.GetTypeScriptType(contextType);
+                    output.AppendLine($"declare const workflowContext: {workflowContextTypeScriptType}");
+                }
 
                 // Workflow Variables.
                 foreach (var variable in workflowDefinition.Variables!.Data)

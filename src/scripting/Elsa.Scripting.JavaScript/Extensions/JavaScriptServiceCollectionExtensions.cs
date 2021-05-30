@@ -19,12 +19,12 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTransient(s => new JintEvaluationResultConverterFactory(s).GetConverter())
                 .AddTransient<IConvertsEnumerableToObject>(s => new EnumerableResultConverter(default))
                 .TryAddProvider<IExpressionHandler, JavaScriptExpressionHandler>(ServiceLifetime.Scoped)
-                .AddJavaScriptTypeDefinitionProvider<PrimitiveTypeDefinitionProvider>()
+                .AddJavaScriptTypeDefinitionProvider<CommonTypeDefinitionProvider>()
                 .AddJavaScriptTypeDefinitionProvider<EnumTypeDefinitionProvider>()
                 .AddJavaScriptTypeDefinitionProvider<EnumerableTypeDefinitionProvider>()
                 .AddJavaScriptTypeDefinitionProvider<WorkflowContextTypeDefinitionProvider>()
                 .AddJavaScriptTypeDefinitionProvider<WorkflowVariablesTypeDefinitionProvider>()
-                .AddJavaScriptTypeDefinitionProvider<CommonTypesTypeDefinitionProvider>()
+                .AddJavaScriptTypeDefinitionProvider<BlacklistedTypeDefinitionProvider>()
                 .AddNotificationHandlers(typeof(JavaScriptServiceCollectionExtensions));
         }
 
