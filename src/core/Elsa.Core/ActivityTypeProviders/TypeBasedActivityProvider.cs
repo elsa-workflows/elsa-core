@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Metadata;
@@ -24,13 +25,26 @@ namespace Elsa.ActivityTypeProviders
             _elsaOptions = options;
         }
         
-        public ValueTask<IEnumerable<ActivityType>> GetActivityTypesAsync(CancellationToken cancellationToken) => new(GetActivityTypesInternal());
+        public async ValueTask<IEnumerable<ActivityType>> GetActivityTypesAsync(CancellationToken cancellationToken) => await GetActivityTypesInternal(cancellationToken).ToListAsync(cancellationToken);
        
-        private IEnumerable<ActivityType> GetActivityTypesInternal() => GetActivityTypes().Select(CreateActivityType).Where(x => x != null).Select(x => x!);
-       
-        private ActivityType? CreateActivityType(Type activityType)
+        private async IAsyncEnumerable<ActivityType> GetActivityTypesInternal([EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            var info = _describesActivityType.Describe(activityType);
+            var types = GetActivityTypes();
+
+            foreach (var type in types)
+            {
+                var activityType = await CreateActivityTypeAsync(type, cancellationToken);
+                
+                if(activityType == null)
+                    continue;
+
+                yield return activityType;
+            }
+        }
+
+        private async Task<ActivityType?> CreateActivityTypeAsync(Type activityType, CancellationToken cancellationToken)
+        {
+            var info = await _describesActivityType.DescribeAsync(activityType, cancellationToken);
 
             if (info == null)
                 return default;
