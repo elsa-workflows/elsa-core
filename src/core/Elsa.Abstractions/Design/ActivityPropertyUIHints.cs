@@ -1,5 +1,8 @@
+using System;
+
 namespace Elsa.Design
 {
+    [Obsolete("Use ActivityInputUIHints instead.")]
     public static class ActivityPropertyUIHints
     {
         public const string SingleLine = "single-line";

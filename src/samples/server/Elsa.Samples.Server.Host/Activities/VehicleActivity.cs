@@ -23,8 +23,8 @@ namespace Elsa.Samples.Server.Host.Activities
             _random = new Random();
         }
 
-        [ActivityProperty(
-            UIHint = ActivityPropertyUIHints.Dropdown,
+        [ActivityInput(
+            UIHint = ActivityInputUIHints.Dropdown,
             OptionsProvider = typeof(VehicleActivity),
             DefaultSyntax = SyntaxNames.Literal,
             SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid }

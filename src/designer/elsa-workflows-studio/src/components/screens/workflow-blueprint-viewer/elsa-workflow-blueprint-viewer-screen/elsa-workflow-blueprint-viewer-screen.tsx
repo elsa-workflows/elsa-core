@@ -111,7 +111,7 @@ export class ElsaWorkflowBlueprintViewerScreen {
     const activityDescriptors: Array<ActivityDescriptor> = state.activityDescriptors;
     const activityDescriptor = activityDescriptors.find(x => x.type == source.type);
     const properties: Array<ActivityDefinitionProperty> = collection.map(source.properties.data, (value, key) => {
-      const propertyDescriptor = activityDescriptor.properties.find(x => x.name == key);
+      const propertyDescriptor = activityDescriptor.inputProperties.find(x => x.name == key);
       const defaultSyntax = propertyDescriptor.defaultSyntax || SyntaxNames.Literal;
       const expressions = {};
       expressions[defaultSyntax] = value;

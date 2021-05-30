@@ -23,8 +23,8 @@ namespace Elsa.Activities.UserTask.Activities
     {
         private readonly IContentSerializer _serializer;
 
-        [ActivityProperty(
-            UIHint = ActivityPropertyUIHints.MultiText,
+        [ActivityInput(
+            UIHint = ActivityInputUIHints.MultiText,
             Hint = "Provide a list of available actions",
             DefaultSyntax = SyntaxNames.Json,
             SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid }

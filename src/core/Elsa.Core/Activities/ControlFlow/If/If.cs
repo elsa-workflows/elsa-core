@@ -24,7 +24,7 @@ namespace Elsa.Activities.ControlFlow
         public const string True = "True";
         public const string False = "False";
 
-        [ActivityProperty(Hint = "The condition to evaluate.", UIHint = ActivityPropertyUIHints.SingleLine, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "The condition to evaluate.", UIHint = ActivityInputUIHints.SingleLine, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public bool Condition { get; set; }
 
         public bool EnteredScope

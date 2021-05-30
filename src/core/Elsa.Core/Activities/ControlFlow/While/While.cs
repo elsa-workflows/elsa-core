@@ -15,9 +15,9 @@ namespace Elsa.Activities.ControlFlow
     )]
     public class While : Activity
     {
-        [ActivityProperty(
+        [ActivityInput(
             Hint = "The condition to evaluate.",
-            UIHint = ActivityPropertyUIHints.SingleLine,
+            UIHint = ActivityInputUIHints.SingleLine,
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public bool Condition { get; set; }

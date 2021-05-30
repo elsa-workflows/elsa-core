@@ -30,29 +30,29 @@ namespace Elsa.Activities.Telnyx.Activities
             _telnyxClient = telnyxClient;
         }
 
-        [ActivityProperty(Label = "Call Control ID A", Hint = "Unique identifier and token for controlling the call.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Label = "Call Control ID A", Hint = "Unique identifier and token for controlling the call.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string? CallControlIdA { get; set; } = default!;
 
-        [ActivityProperty(Label = "Call Control ID B", Hint = "The Call Control ID of the call you want to bridge with.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Label = "Call Control ID B", Hint = "The Call Control ID of the call you want to bridge with.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string CallControlIdB { get; set; } = default!;
 
-        [ActivityProperty(
+        [ActivityInput(
             Label = "Command ID",
             Hint = "Use this field to avoid duplicate commands. Telnyx will ignore commands with the same Command ID.",
             Category = PropertyCategories.Advanced,
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string? CommandId { get; set; }
 
-        [ActivityProperty(
+        [ActivityInput(
             Hint = "Use this field to add state to every subsequent webhook. It must be a valid Base-64 encoded string.", 
             Category = PropertyCategories.Advanced,
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string? ClientState { get; set; }
 
-        [ActivityProperty(
+        [ActivityInput(
             Label = "Park After Unbridged", 
             Hint = "HTTP request type used for Webhook URL", 
-            UIHint = ActivityPropertyUIHints.Dropdown, 
+            UIHint = ActivityInputUIHints.Dropdown, 
             Options = new[] { "", "self" }, 
             Category = PropertyCategories.Advanced, 
             SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]

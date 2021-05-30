@@ -17,7 +17,7 @@ namespace Elsa.Handlers
 
         public Task Handle(ActivityExecuting notification, CancellationToken cancellationToken)
         {
-            var activityBlueprint = notification.Activity;
+            var activityBlueprint = notification.ActivityBlueprint;
             var activityId = activityBlueprint.Id;
             var workflowInstanceId = notification.WorkflowExecutionContext.WorkflowInstance.Id;
             _logger.LogDebug("Executing activity {ActivityType} {ActivityId} for workflow {WorkflowInstanceId}", activityBlueprint.Type, activityId, workflowInstanceId);
@@ -26,7 +26,7 @@ namespace Elsa.Handlers
 
         public Task Handle(ActivityExecuted notification, CancellationToken cancellationToken)
         {
-            var activityBlueprint = notification.Activity;
+            var activityBlueprint = notification.ActivityBlueprint;
             var activityId = activityBlueprint.Id;
             var workflowInstanceId = notification.WorkflowExecutionContext.WorkflowInstance.Id;
             _logger.LogDebug("Executed activity {ActivityType} {ActivityId} for workflow {WorkflowInstanceId}", activityBlueprint.Type, activityId, workflowInstanceId);
@@ -41,7 +41,7 @@ namespace Elsa.Handlers
 
         public Task Handle(ActivityFaulted notification, CancellationToken cancellationToken)
         {
-            _logger.LogWarning(notification.Exception, "An error occurred while executing activity {ActivityId}. Entering Faulted state", notification.Activity.Id);
+            _logger.LogWarning(notification.Exception, "An error occurred while executing activity {ActivityId}. Entering Faulted state", notification.ActivityBlueprint.Id);
             return Task.CompletedTask;
         }
     }

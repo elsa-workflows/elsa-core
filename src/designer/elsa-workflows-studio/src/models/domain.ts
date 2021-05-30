@@ -259,7 +259,7 @@ export interface ActivityDescriptor {
   traits: ActivityTraits;
   outcomes: Array<string>;
   browsable: boolean;
-  properties: Array<ActivityPropertyDescriptor>;
+  inputProperties: Array<ActivityPropertyDescriptor>;
 }
 
 export interface ActivityPropertyDescriptor {

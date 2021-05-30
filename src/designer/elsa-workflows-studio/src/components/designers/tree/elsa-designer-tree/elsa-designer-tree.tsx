@@ -166,7 +166,7 @@ export class ElsaWorkflowDesigner {
       properties: [],
     };
 
-    for (const property of activityDescriptor.properties) {
+    for (const property of activityDescriptor.inputProperties) {
       activity.properties[property.name] = {
         syntax: '',
         expression: '',

@@ -3,9 +3,9 @@ using Elsa.Scripting.JavaScript.Services;
 
 namespace Elsa.Scripting.JavaScript.Typings
 {
-    public class EnumTypeDefinitionProvider : ITypeDefinitionProvider
+    public class EnumTypeDefinitionProvider : TypeDefinitionProvider
     {
-        public bool SupportsType(Type type) => type.IsEnum;
-        public string GetTypeDefinition(Type type) => "number";
+        public override bool SupportsType(TypeDefinitionContext context, Type type) => type.IsEnum;
+        public override string GetTypeDefinition(TypeDefinitionContext context, Type type) => "number";
     }
 }

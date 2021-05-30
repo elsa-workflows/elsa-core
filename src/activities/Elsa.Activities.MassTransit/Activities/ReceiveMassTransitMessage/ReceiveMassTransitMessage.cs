@@ -14,7 +14,7 @@ namespace Elsa.Activities.MassTransit
     )]
     public class ReceiveMassTransitMessage : Activity
     {
-        [ActivityProperty(Hint = "The assembly-qualified type name of the message to receive.")]
+        [ActivityInput(Hint = "The assembly-qualified type name of the message to receive.")]
         public Type? MessageType { get; set; }
 
         protected override bool OnCanExecute(ActivityExecutionContext context) => MessageType?.IsAssignableFrom(context.Input?.GetType()) ?? false;

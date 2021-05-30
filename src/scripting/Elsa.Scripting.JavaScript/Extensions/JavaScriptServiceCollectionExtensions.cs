@@ -15,15 +15,20 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             return services
                 .AddScoped<ITypeScriptDefinitionService, TypeScriptDefinitionService>()
-                .AddScoped<ITypeDefinitionProvider, PrimitiveTypeDefinitionProvider>()
-                .AddScoped<ITypeDefinitionProvider, EnumTypeDefinitionProvider>()
-                .AddScoped<ITypeDefinitionProvider, EnumerableTypeDefinitionProvider>()
                 .AddScoped<IJavaScriptService, JintJavaScriptEvaluator>()
                 .AddTransient(s => new JintEvaluationResultConverterFactory(s).GetConverter())
                 .AddTransient<IConvertsEnumerableToObject>(s => new EnumerableResultConverter(default))
                 .TryAddProvider<IExpressionHandler, JavaScriptExpressionHandler>(ServiceLifetime.Scoped)
+                .AddJavaScriptTypeDefinitionProvider<CommonTypeDefinitionProvider>()
+                .AddJavaScriptTypeDefinitionProvider<EnumTypeDefinitionProvider>()
+                .AddJavaScriptTypeDefinitionProvider<EnumerableTypeDefinitionProvider>()
+                .AddJavaScriptTypeDefinitionProvider<WorkflowContextTypeDefinitionProvider>()
+                .AddJavaScriptTypeDefinitionProvider<WorkflowVariablesTypeDefinitionProvider>()
+                .AddJavaScriptTypeDefinitionProvider<BlacklistedTypeDefinitionProvider>()
                 .AddNotificationHandlers(typeof(JavaScriptServiceCollectionExtensions));
         }
+
+        public static IServiceCollection AddJavaScriptTypeDefinitionProvider<T>(this IServiceCollection services) where T: class, ITypeDefinitionProvider => services.AddScoped<ITypeDefinitionProvider, T>();
 
         public static IServiceCollection WithJavaScriptOptions(this IServiceCollection services, Action<ScriptOptions> configureOptions)
         {

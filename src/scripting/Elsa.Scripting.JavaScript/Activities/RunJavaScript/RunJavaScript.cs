@@ -30,12 +30,12 @@ namespace Elsa.Activities.JavaScript
             _javaScriptService = javaScriptService;
         }
 
-        [ActivityProperty(Hint = "The JavaScript to run.", UIHint = ActivityPropertyUIHints.CodeEditor, OptionsProvider = typeof(RunJavaScript))]
+        [ActivityInput(Hint = "The JavaScript to run.", UIHint = ActivityInputUIHints.CodeEditor, OptionsProvider = typeof(RunJavaScript))]
         public string? Script { get; set; }
 
-        [ActivityProperty(
+        [ActivityInput(
             Hint = "The possible outcomes that can be set by the script.",
-            UIHint = ActivityPropertyUIHints.MultiText,
+            UIHint = ActivityInputUIHints.MultiText,
             DefaultSyntax = SyntaxNames.Json,
             SupportedSyntaxes = new[] {SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid}
         )]

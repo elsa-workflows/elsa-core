@@ -56,16 +56,17 @@ namespace Elsa.Activities.Webhooks.ActivityTypes
                 Category = WebhookActivityCategory,
                 Outcomes = new[] { OutcomeNames.Done },
                 Traits = ActivityTraits.Trigger,
-                Properties = new[]
+                InputProperties = new[]
                 {
-                    new ActivityPropertyDescriptor(
+                    new ActivityInputDescriptor(
                         nameof(HttpEndpoint.Methods),
                         typeof(HashSet<string>),
-                        ActivityPropertyUIHints.Dropdown,
+                        ActivityInputUIHints.Dropdown,
                         "Request Method",
                         "Specify what request method this webhook should handle. Leave empty to handle both GET and POST requests",
                         new[] { "", "GET", "POST" },
                         "Webhooks",
+                        0,
                         "POST",
                         SyntaxNames.Literal,
                         new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })

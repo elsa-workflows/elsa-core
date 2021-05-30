@@ -4,13 +4,13 @@ using System.Linq;
 
 namespace Elsa.Metadata
 {
-    public class ActivityPropertyDescriptor
+    public class ActivityInputDescriptor
     {
-        public ActivityPropertyDescriptor()
+        public ActivityInputDescriptor()
         {
         }
 
-        public ActivityPropertyDescriptor(
+        public ActivityInputDescriptor(
             string name,
             Type type,
             string uiHint,
@@ -18,6 +18,7 @@ namespace Elsa.Metadata
             string? hint = default,
             object? options = default,
             string? category = default,
+            float order = 0,
             object? defaultValue = default,
             string? defaultSyntax = "Literal",
             IEnumerable<string>? supportedSyntaxes = default)
@@ -29,6 +30,7 @@ namespace Elsa.Metadata
             Hint = hint;
             Options = options;
             Category = category;
+            Order = order;
             DefaultValue = defaultValue;
             DefaultSyntax = defaultSyntax;
             SupportedSyntaxes = supportedSyntaxes?.ToList() ?? new List<string>();
@@ -41,6 +43,7 @@ namespace Elsa.Metadata
         public string? Hint { get; set; }
         public object? Options { get; set; }
         public string? Category { get; set; }
+        public float Order { get; set; }
         public object? DefaultValue { get; set; }
         public string? DefaultSyntax { get; set; }
         public IList<string> SupportedSyntaxes { get; set; } = new List<string>();

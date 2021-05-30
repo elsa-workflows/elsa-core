@@ -9,7 +9,7 @@ namespace Elsa.Activities.Rebus
     [Trigger(Category = "Rebus", Description = "Triggered when a message is received.", Outcomes = new[] { OutcomeNames.Done })]
     public class RebusMessageReceived : Activity
     {
-        [ActivityProperty(Hint = "The type of message to receive.")]
+        [ActivityInput(Hint = "The type of message to receive.")]
         public Type MessageType { get; set; } = default!;
         
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
