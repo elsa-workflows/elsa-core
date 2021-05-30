@@ -2,8 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
+using AutoMapper.Internal;
 using Elsa.Attributes;
 using Humanizer;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Metadata
 {
@@ -12,15 +16,17 @@ namespace Elsa.Metadata
         private readonly IActivityPropertyOptionsResolver _optionsResolver;
         private readonly IActivityPropertyUIHintResolver _uiHintResolver;
         private readonly IActivityPropertyDefaultValueResolver _defaultValueResolver;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
 
-        public TypedActivityTypeDescriber(IActivityPropertyOptionsResolver optionsResolver, IActivityPropertyUIHintResolver uiHintResolver, IActivityPropertyDefaultValueResolver defaultValueResolver)
+        public TypedActivityTypeDescriber(IActivityPropertyOptionsResolver optionsResolver, IActivityPropertyUIHintResolver uiHintResolver, IActivityPropertyDefaultValueResolver defaultValueResolver, IServiceScopeFactory serviceScopeFactory)
         {
             _optionsResolver = optionsResolver;
             _uiHintResolver = uiHintResolver;
             _defaultValueResolver = defaultValueResolver;
+            _serviceScopeFactory = serviceScopeFactory;
         }
 
-        public ActivityDescriptor? Describe(Type activityType)
+        public async Task<ActivityDescriptor?> DescribeAsync(Type activityType, CancellationToken cancellationToken = default)
         {
             var activityAttribute = activityType.GetCustomAttribute<ActivityAttribute>(false);
             var typeName = activityAttribute?.Type ?? activityType.Name;
@@ -28,7 +34,7 @@ namespace Elsa.Metadata
             var description = activityAttribute?.Description;
             var category = activityAttribute?.Category ?? "Miscellaneous";
             var traits = activityAttribute?.Traits ?? ActivityTraits.Action;
-            var outcomes = activityAttribute?.Outcomes ?? new[] { OutcomeNames.Done };
+            var outcomes = await GetOutcomesAsync(activityAttribute, cancellationToken);
             var properties = activityType.GetProperties();
             var inputProperties = DescribeInputProperties(properties);
             var outputProperties = DescribeOutputProperties(properties);
@@ -44,6 +50,29 @@ namespace Elsa.Metadata
                 OutputProperties = outputProperties.ToArray(),
                 Outcomes = outcomes,
             };
+        }
+
+        private async Task<string[]> GetOutcomesAsync(ActivityAttribute? activityAttribute, CancellationToken cancellationToken)
+        {
+            var outcomesObj = activityAttribute?.Outcomes;
+            
+            if (outcomesObj == null)
+                return new[] { OutcomeNames.Done };
+
+            var outcomesType = outcomesObj.GetType();
+
+            if (outcomesType.IsArray)
+                return (string[]) outcomesObj;
+
+            if (outcomesObj is Type providerType && typeof(IOutcomesProvider).IsAssignableFrom(providerType))
+            {
+                using var scope = _serviceScopeFactory.CreateScope();
+                var provider = (IOutcomesProvider) ActivatorUtilities.GetServiceOrCreateInstance(scope.ServiceProvider, providerType);
+                var providedOutcomes = await provider.GetOutcomesAsync(cancellationToken);
+                return providedOutcomes.ToArray();
+            }
+
+            throw new NotSupportedException("The specified outcomes type is not supported. Only string[] and typeof(IOutcomesProvider) are supported.");
         }
 
         private IEnumerable<ActivityInputDescriptor> DescribeInputProperties(IEnumerable<PropertyInfo> properties)
