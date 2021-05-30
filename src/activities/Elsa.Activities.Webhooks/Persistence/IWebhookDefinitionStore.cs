@@ -1,5 +1,5 @@
-using Elsa.Activities.Webhooks.Models;
 using Elsa.Persistence;
+using Elsa.Webhooks.Abstractions.Models;
 
 namespace Elsa.Activities.Webhooks.Persistence
 {

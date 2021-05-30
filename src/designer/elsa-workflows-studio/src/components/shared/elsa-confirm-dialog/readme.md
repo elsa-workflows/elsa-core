@@ -32,6 +32,7 @@ Type: `Promise<boolean>`
 
 ### Used by
 
+ - [elsa-webhook-definitions-list-screen](../../screens/webhook-definition-list/else-webhook-definitions-screen)
  - [elsa-workflow-definitions-list-screen](../../screens/workflow-definition-list/elsa-workflow-definitions-screen)
  - [elsa-workflow-instance-list-screen](../../screens/workflow-instance-list/elsa-workflow-instance-list-screen)
 
@@ -43,6 +44,7 @@ Type: `Promise<boolean>`
 ```mermaid
 graph TD;
   elsa-confirm-dialog --> elsa-modal-dialog
+  elsa-webhook-definitions-list-screen --> elsa-confirm-dialog
   elsa-workflow-definitions-list-screen --> elsa-confirm-dialog
   elsa-workflow-instance-list-screen --> elsa-confirm-dialog
   style elsa-confirm-dialog fill:#f9f,stroke:#333,stroke-width:4px

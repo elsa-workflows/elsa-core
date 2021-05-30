@@ -13,6 +13,7 @@ import {
   WorkflowDefinitionSummary, WorkflowExecutionLogRecord, WorkflowFault, WorkflowInstance, WorkflowInstanceSummary,
   WorkflowPersistenceBehavior, WorkflowStatus
 } from "../models";
+import { WebhookDefinition, WebhookDefinitionSummary } from "../models/webhook";
 
 export const createElsaClient = function (serverUrl: string): ElsaClient {
   const config: AxiosRequestConfig = {
@@ -76,6 +77,23 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
         return response.data;
       }
     },
+    webhookDefinitionsApi: {
+      list: async (page?: number, pageSize?: number) => {
+        const response = await httpClient.get<PagedList<WebhookDefinitionSummary>>(`v1/webhook-definitions`);
+        return response.data;
+      },
+      getByDefinition: async (definitionId: string) => {
+        const response = await httpClient.get<WebhookDefinition>(`v1/webhook-definitions/${definitionId}`);
+        return response.data;
+      },
+      save: async request => {
+        const response = await httpClient.post<WebhookDefinition>('v1/webhook-definitions', request);
+        return response.data;
+      },
+      delete: async definitionId => {
+        await httpClient.delete(`v1/webhook-definitions/${definitionId}`);
+      },
+    },    
     workflowRegistryApi: {
       list: async (page?: number, pageSize?: number, versionOptions?: VersionOptions): Promise<PagedList<WorkflowBlueprintSummary>> => {
         const versionOptionsString = getVersionOptionsString(versionOptions);
@@ -179,6 +197,7 @@ export interface ElsaClient {
   scriptingApi: ScriptingApi;
   designerApi: DesignerApi;
   activityStatsApi: ActivityStatsApi;
+  webhookDefinitionsApi: WebhookDefinitionsApi;
 }
 
 export interface ActivitiesApi {
@@ -200,6 +219,17 @@ export interface WorkflowDefinitionsApi {
   export(workflowDefinitionId: string, versionOptions: VersionOptions): Promise<ExportWorkflowResponse>;
 
   import(workflowDefinitionId: string, file: File): Promise<WorkflowDefinition>;
+}
+
+export interface WebhookDefinitionsApi {
+
+  list(page?: number, pageSize?: number): Promise<PagedList<WebhookDefinitionSummary>>;
+
+  getByDefinition(definitionId: string): Promise<WebhookDefinition>;
+
+  save(request: SaveWebhookDefinitionRequest): Promise<WebhookDefinition>;
+
+  delete(definitionId: string): Promise<void>;
 }
 
 export interface WorkflowRegistryApi {
@@ -262,6 +292,15 @@ export interface SaveWorkflowDefinitionRequest {
   publish?: boolean;
   activities: Array<ActivityDefinition>;
   connections: Array<ConnectionDefinition>;
+}
+
+export interface SaveWebhookDefinitionRequest {
+  webhookDefinitionId?: string;
+  name?: string;
+  path?: string;  
+  description?: string;
+  payloadTypeName?: string;
+  isEnabled?: boolean;  
 }
 
 export interface ExportWorkflowResponse {

@@ -7,13 +7,14 @@
 
 ## Properties
 
-| Property                    | Attribute                      | Description | Type                                                                                           | Default                                                                                             |
-| --------------------------- | ------------------------------ | ----------- | ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `activityContextMenu`       | --                             |             | `ActivityContextMenuState`                                                                     | `undefined`                                                                                         |
-| `activityContextMenuButton` | `activity-context-menu-button` |             | `string`                                                                                       | `undefined`                                                                                         |
-| `mode`                      | `mode`                         |             | `WorkflowDesignerMode.Blueprint \| WorkflowDesignerMode.Edit \| WorkflowDesignerMode.Instance` | `WorkflowDesignerMode.Edit`                                                                         |
-| `model`                     | --                             |             | `WorkflowModel`                                                                                | `{activities: [], connections: [], persistenceBehavior: WorkflowPersistenceBehavior.WorkflowBurst}` |
-| `selectedActivityIds`       | --                             |             | `string[]`                                                                                     | `[]`                                                                                                |
+| Property                    | Attribute | Description | Type                                                                                           | Default                                                                                             |
+| --------------------------- | --------- | ----------- | ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `activityBorderColor`       | --        |             | `(activity: ActivityModel) => string`                                                          | `undefined`                                                                                         |
+| `activityContextMenu`       | --        |             | `ActivityContextMenuState`                                                                     | `undefined`                                                                                         |
+| `activityContextMenuButton` | --        |             | `(activity: ActivityModel) => string`                                                          | `undefined`                                                                                         |
+| `mode`                      | `mode`    |             | `WorkflowDesignerMode.Blueprint \| WorkflowDesignerMode.Edit \| WorkflowDesignerMode.Instance` | `WorkflowDesignerMode.Edit`                                                                         |
+| `model`                     | --        |             | `WorkflowModel`                                                                                | `{activities: [], connections: [], persistenceBehavior: WorkflowPersistenceBehavior.WorkflowBurst}` |
+| `selectedActivityIds`       | --        |             | `string[]`                                                                                     | `[]`                                                                                                |
 
 
 ## Events

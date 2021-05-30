@@ -13,11 +13,16 @@
     </PropertyGroup>
     
     <ItemGroup>
+      <Compile Remove="Persistence\IWebhookDefinitionStore.cs" />
+    </ItemGroup>
+    
+    <ItemGroup>
       <PackageReference Include="Refit" Version="6.0.38" />
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
         <ProjectReference Include="..\Elsa.Activities.Http\Elsa.Activities.Http.csproj" />
+        <ProjectReference Include="..\Elsa.Webhooks.Abstractions\Elsa.Webhooks.Abstractions.csproj" />
     </ItemGroup>
 </Project>

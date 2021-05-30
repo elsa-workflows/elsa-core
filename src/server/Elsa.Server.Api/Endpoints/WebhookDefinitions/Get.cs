@@ -1,13 +1,13 @@
 using System.Net.Mime;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.Webhooks.Models;
-using Elsa.Activities.Webhooks.Persistence;
 using Elsa.Models;
 using Elsa.Persistence.Specifications;
 using Elsa.Serialization;
 using Elsa.Server.Api.Services;
 using Elsa.Server.Api.Swagger.Examples;
+using Elsa.Webhooks.Abstractions.Models;
+using Elsa.Webhooks.Abstractions.Persistence;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
