@@ -15,13 +15,13 @@ namespace Elsa.Activities.Conductor.Providers.ActivityTypes
     {
         private readonly IDescribesActivityType _describesActivityType;
         private readonly IActivityActivator _activityActivator;
-        private readonly Scoped<IEnumerable<ICommandProvider>> _scopedCommandProviders;
+        private readonly Scoped<IEnumerable<ICommandsProvider>> _scopedCommandsProviders;
 
-        public CommandActivityTypeProvider(IDescribesActivityType describesActivityType, IActivityActivator activityActivator, Scoped<IEnumerable<ICommandProvider>> scopedCommandProviders)
+        public CommandActivityTypeProvider(IDescribesActivityType describesActivityType, IActivityActivator activityActivator, Scoped<IEnumerable<ICommandsProvider>> scopedCommandsProviders)
         {
             _describesActivityType = describesActivityType;
             _activityActivator = activityActivator;
-            _scopedCommandProviders = scopedCommandProviders;
+            _scopedCommandsProviders = scopedCommandsProviders;
         }
 
         public async ValueTask<IEnumerable<ActivityType>> GetActivityTypesAsync(CancellationToken cancellationToken = default)
@@ -66,9 +66,9 @@ namespace Elsa.Activities.Conductor.Providers.ActivityTypes
         }
 
         private async Task<IEnumerable<CommandDefinition>> GetCommandsAsync(CancellationToken cancellationToken) => 
-            await _scopedCommandProviders.UseServiceAsync(async commandProviders => await GetCommandsAsync(commandProviders, cancellationToken).ToListAsync(cancellationToken));
+            await _scopedCommandsProviders.UseServiceAsync(async commandProviders => await GetCommandsAsync(commandProviders, cancellationToken).ToListAsync(cancellationToken));
 
-        private static async IAsyncEnumerable<CommandDefinition> GetCommandsAsync(IEnumerable<ICommandProvider> commandProviders, [EnumeratorCancellation] CancellationToken cancellationToken)
+        private static async IAsyncEnumerable<CommandDefinition> GetCommandsAsync(IEnumerable<ICommandsProvider> commandProviders, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             foreach (var commandProvider in commandProviders)
             {
