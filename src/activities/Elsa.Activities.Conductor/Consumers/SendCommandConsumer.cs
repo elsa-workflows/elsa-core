@@ -9,6 +9,6 @@ namespace Elsa.Activities.Conductor.Consumers
     {
         private readonly RemoteApplicationClient _remoteApplicationClient;
         public SendCommandConsumer(RemoteApplicationClient remoteApplicationClient) => _remoteApplicationClient = remoteApplicationClient;
-        public async Task Handle(SendCommandModel message) => await _remoteApplicationClient.SendCommandAsync(message.Command, message.Payload);
+        public async Task Handle(SendCommandModel message) => await _remoteApplicationClient.SendCommandAsync(message);
     }
 }

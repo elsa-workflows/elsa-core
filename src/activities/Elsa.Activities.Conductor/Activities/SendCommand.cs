@@ -10,7 +10,7 @@ using Elsa.Services.Models;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Conductor
 {
-    [Activity(
+    [Action(
         Category = "Conductor",
         Description = "Sends a command to your application.",
         Outcomes = new[] { OutcomeNames.Done }
@@ -39,7 +39,7 @@ namespace Elsa.Activities.Conductor
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            await _eventPublisher.PublishAsync(new SendCommandModel(CommandName, Payload));
+            await _eventPublisher.PublishAsync(new SendCommandModel(CommandName, Payload, context.WorkflowInstance.Id));
             return Done();
         }
     }

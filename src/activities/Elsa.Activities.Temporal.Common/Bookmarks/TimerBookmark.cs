@@ -22,7 +22,7 @@ namespace Elsa.Activities.Temporal.Common.Bookmarks
             _clock = clock;
         }
 
-        public override async ValueTask<IEnumerable<IBookmark>> GetBookmarksAsync(BookmarkProviderContext<Timer> context, CancellationToken cancellationToken)
+        public override async ValueTask<IEnumerable<BookmarkResult>> GetBookmarksAsync(BookmarkProviderContext<Timer> context, CancellationToken cancellationToken)
         {
             var interval = await context.ReadActivityPropertyAsync(x => x.Timeout, cancellationToken);
             var executeAt = GetExecuteAt(context, interval);
@@ -30,14 +30,14 @@ namespace Elsa.Activities.Temporal.Common.Bookmarks
             if (executeAt != null)
                 return new[]
                 {
-                    new TimerBookmark
+                    Result(new TimerBookmark
                     {
                         ExecuteAt = executeAt.Value,
                         Interval = interval
-                    }
+                    })
                 };
 
-            return Enumerable.Empty<IBookmark>();
+            return Enumerable.Empty<BookmarkResult>();
         }
 
         private Instant? GetExecuteAt(BookmarkProviderContext<Timer> context, Duration interval) =>
