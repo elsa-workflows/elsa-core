@@ -64,9 +64,10 @@ namespace Elsa.Activities.Workflows
         public string? ContextId { get; set; }
 
         [ActivityInput(
-            UIHint = ActivityInputUIHints.Json,
+            UIHint = ActivityInputUIHints.MultiLine,
             Hint = "Optional custom attributes to associate with the workflow to run.",
-            Category = PropertyCategories.Advanced)]
+            Category = PropertyCategories.Advanced,
+            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid, SyntaxNames.Json })]
         public Variables? CustomAttributes { get; set; } = default!;
 
         [ActivityInput(
