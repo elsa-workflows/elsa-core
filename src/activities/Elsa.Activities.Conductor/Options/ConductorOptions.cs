@@ -18,7 +18,12 @@ namespace Elsa.Activities.Conductor.Options
         /// <summary>
         /// The URL to post commands to.
         /// </summary>
-        public Uri ApplicationHookUrl { get; set; } = default!;
+        public Uri CommandsHookUrl { get; set; } = default!;
+        
+        /// <summary>
+        /// The URL to post tasks to.
+        /// </summary>
+        public Uri TasksHookUrl { get; set; } = default!;
 
         /// <summary>
         /// The serializer to use when serializing a command before sending to the application.
@@ -34,5 +39,10 @@ namespace Elsa.Activities.Conductor.Options
         /// A collection of events that can be received from the application.
         /// </summary>
         public ICollection<EventDefinition> Events { get; set; } = new List<EventDefinition>();
+        
+        /// <summary>
+        /// A collection of tasks that can be sent to the application.
+        /// </summary>
+        public ICollection<TaskDefinition> Tasks { get; set; } = new List<TaskDefinition>();
     }
 }

@@ -8,10 +8,10 @@ using Microsoft.Extensions.Options;
 
 namespace Elsa.Activities.Conductor.Providers.Commands
 {
-    public class OptionsCommandProvider : ICommandProvider
+    public class OptionsCommandsProvider : ICommandsProvider
     {
         private readonly ConductorOptions _options;
-        public OptionsCommandProvider(IOptions<ConductorOptions> options) => _options = options.Value;
+        public OptionsCommandsProvider(IOptions<ConductorOptions> options) => _options = options.Value;
         public ValueTask<IEnumerable<CommandDefinition>> GetCommandsAsync(CancellationToken cancellationToken) => new(_options.Commands);
     }
 }

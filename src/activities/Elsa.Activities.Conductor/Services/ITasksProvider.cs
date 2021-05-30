@@ -5,8 +5,8 @@ using Elsa.Activities.Conductor.Models;
 
 namespace Elsa.Activities.Conductor.Services
 {
-    public interface IEventProvider
+    public interface ITasksProvider
     {
-        ValueTask<IEnumerable<EventDefinition>> GetEventsAsync(CancellationToken cancellationToken);
+        ValueTask<IEnumerable<TaskDefinition>> GetTasksAsync(CancellationToken cancellationToken);
     }
 }

@@ -8,10 +8,10 @@ using Microsoft.Extensions.Options;
 
 namespace Elsa.Activities.Conductor.Providers.Events
 {
-    public class OptionsEventProvider : IEventProvider
+    public class OptionsEventsProvider : IEventsProvider
     {
         private readonly ConductorOptions _options;
-        public OptionsEventProvider(IOptions<ConductorOptions> options) => _options = options.Value;
+        public OptionsEventsProvider(IOptions<ConductorOptions> options) => _options = options.Value;
         public ValueTask<IEnumerable<EventDefinition>> GetEventsAsync(CancellationToken cancellationToken) => new(_options.Events);
     }
 }

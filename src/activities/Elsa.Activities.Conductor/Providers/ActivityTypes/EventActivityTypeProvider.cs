@@ -16,13 +16,13 @@ namespace Elsa.Activities.Conductor.Providers.ActivityTypes
     {
         private readonly IDescribesActivityType _describesActivityType;
         private readonly IActivityActivator _activityActivator;
-        private readonly Scoped<IEnumerable<IEventProvider>> _scopedEventProviders;
+        private readonly Scoped<IEnumerable<IEventsProvider>> _scopedEventsProviders;
 
-        public EventActivityTypeProvider(IDescribesActivityType describesActivityType, IActivityActivator activityActivator, Scoped<IEnumerable<IEventProvider>> scopedEventProviders)
+        public EventActivityTypeProvider(IDescribesActivityType describesActivityType, IActivityActivator activityActivator, Scoped<IEnumerable<IEventsProvider>> scopedEventsProviders)
         {
             _describesActivityType = describesActivityType;
             _activityActivator = activityActivator;
-            _scopedEventProviders = scopedEventProviders;
+            _scopedEventsProviders = scopedEventsProviders;
         }
 
         public async ValueTask<IEnumerable<ActivityType>> GetActivityTypesAsync(CancellationToken cancellationToken = default)
@@ -67,9 +67,9 @@ namespace Elsa.Activities.Conductor.Providers.ActivityTypes
         }
 
         private async Task<IEnumerable<EventDefinition>> GetEventsAsync(CancellationToken cancellationToken) => 
-            await _scopedEventProviders.UseServiceAsync(async eventProviders => await GetEventsAsync(eventProviders, cancellationToken).ToListAsync(cancellationToken));
+            await _scopedEventsProviders.UseServiceAsync(async eventProviders => await GetEventsAsync(eventProviders, cancellationToken).ToListAsync(cancellationToken));
 
-        private static async IAsyncEnumerable<EventDefinition> GetEventsAsync(IEnumerable<IEventProvider> eventProviders, [EnumeratorCancellation] CancellationToken cancellationToken)
+        private static async IAsyncEnumerable<EventDefinition> GetEventsAsync(IEnumerable<IEventsProvider> eventProviders, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             foreach (var commandProvider in eventProviders)
             {

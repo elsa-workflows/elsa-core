@@ -55,7 +55,7 @@ export class ElsaActivityPickerModal {
     }
 
     this.filteredActivityDescriptorDisplayContexts = filteredActivityDescriptors.map(x => {
-      const color = (x.traits &= ActivityTraits.Trigger) == ActivityTraits.Trigger ? 'rose' : 'light-blue';
+      const color = (x.traits &= ActivityTraits.Trigger) == ActivityTraits.Trigger ? 'rose' : (x.traits &= ActivityTraits.Job) == ActivityTraits.Job ? 'yellow' : 'light-blue';
       return {
         activityDescriptor: x,
         activityIcon: <ActivityIcon color={color}/>

@@ -13,11 +13,7 @@ namespace Elsa.Activities.Conductor.Providers.Bookmarks
 
     public class EventBookmarkProvider : BookmarkProvider<EventBookmark, EventReceived>
     {
-        public override bool SupportsActivity(BookmarkProviderContext<EventReceived> context)
-        {
-            return context.ActivityType.Type == typeof(EventReceived);
-        }
-
+        public override bool SupportsActivity(BookmarkProviderContext<EventReceived> context) => context.ActivityType.Type == typeof(EventReceived);
         public override async ValueTask<IEnumerable<BookmarkResult>> GetBookmarksAsync(BookmarkProviderContext<EventReceived> context, CancellationToken cancellationToken) => await GetBookmarksInternalAsync(context, cancellationToken).ToListAsync(cancellationToken);
 
         private async IAsyncEnumerable<BookmarkResult> GetBookmarksInternalAsync(BookmarkProviderContext<EventReceived> context, [EnumeratorCancellation] CancellationToken cancellationToken)
