@@ -5,12 +5,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Services\**" />
-    <EmbeddedResource Remove="Services\**" />
-    <None Remove="Services\**" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="ConfigureAwait.Fody" Version="3.3.1" />
     <PackageReference Include="EFCore.BulkExtensions" Version="5.2.2" />
     <PackageReference Include="Fody" Version="6.5.1">
