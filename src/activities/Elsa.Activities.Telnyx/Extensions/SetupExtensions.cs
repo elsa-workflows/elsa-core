@@ -9,6 +9,7 @@ using Elsa.Activities.Telnyx.Bookmarks;
 using Elsa.Activities.Telnyx.Client.Services;
 using Elsa.Activities.Telnyx.Liquid;
 using Elsa.Activities.Telnyx.Options;
+using Elsa.Activities.Telnyx.Scripting.JavaScript;
 using Elsa.Activities.Telnyx.Webhooks.Consumers;
 using Elsa.Activities.Telnyx.Webhooks.Events;
 using Elsa.Activities.Telnyx.Webhooks.Filters;
@@ -46,6 +47,7 @@ namespace Elsa.Activities.Telnyx.Extensions
                 .AddActivityTypeProvider<NotificationActivityTypeProvider>()
                 .AddBookmarkProvider<NotificationBookmarkProvider>()
                 .AddNotificationHandlers(typeof(TriggerWorkflows))
+                .AddJavaScriptTypeDefinitionProvider<TelnyxTypeDefinitionProvider>()
                 .AddScoped<IWebhookHandler, WebhookHandler>()
                 .AddSingleton<IWebhookFilterService, WebhookFilterService>()
                 .AddSingleton<IWebhookFilter, AttributeBasedWebhookFilter>()
