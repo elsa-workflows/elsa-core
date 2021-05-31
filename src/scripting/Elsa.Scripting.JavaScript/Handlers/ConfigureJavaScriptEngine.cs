@@ -91,7 +91,7 @@ namespace Elsa.Scripting.JavaScript.Handlers
             }
 
             // Named activities.
-            foreach (var activity in workflowBlueprint.Activities.Where(x => x.Name is not null))
+            foreach (var activity in workflowBlueprint.Activities.Where(x => !string.IsNullOrWhiteSpace(x.Name)))
             {
                 var state = activityExecutionContext.GetActivityData(activity.Id);
                 var dictionary = state.ToDictionary();
@@ -150,7 +150,7 @@ namespace Elsa.Scripting.JavaScript.Handlers
                 }
 
                 // Named Activities.
-                var namedActivities = workflowDefinition.Activities.Where(x => x.Name is not null).ToList();
+                var namedActivities = workflowDefinition.Activities.Where(x => !string.IsNullOrWhiteSpace(x.Name)).ToList();
                 var activityTypeNames = namedActivities.Select(x => x.Type).Distinct().ToList();
                 var activityTypes = await Task.WhenAll(activityTypeNames.Select(async activityTypeName => (activityTypeName, await _activityTypeService.GetActivityTypeAsync(activityTypeName, cancellationToken))));
                 var activityTypeDictionary = activityTypes.ToDictionary(x => x.activityTypeName, x => x.Item2);
