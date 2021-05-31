@@ -17,17 +17,18 @@ namespace Elsa.Handlers
         {
             var activity = notification.Activity;
             var activityType = activity.GetType();
-            var properties = activityType.GetProperties().Where(x => x.GetCustomAttribute<ActivityInputAttribute>() != null || x.GetCustomAttribute<ActivityOutputAttribute>() != null);
+            var properties = activityType.GetProperties()
+                .Where(x => (x.GetCustomAttribute<ActivityInputAttribute>() != null || x.GetCustomAttribute<ActivityOutputAttribute>() != null) && x.GetCustomAttribute<NonPersistableAttribute>() == null);
             var activityExecutionContext = notification.ActivityExecutionContext;
 
             foreach (var property in properties)
             {
                 var value = property.GetValue(activity);
-                
+
                 // TODO: Implement #898 (activity persistence providers).
                 activityExecutionContext.SetState(property.Name, value);
             }
-            
+
             return Task.CompletedTask;
         }
     }
