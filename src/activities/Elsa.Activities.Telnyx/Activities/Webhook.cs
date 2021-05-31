@@ -38,7 +38,7 @@ namespace Elsa.Activities.Telnyx.Activities
 
             Model = webhookModel;
             Payload = webhookModel.Data.Payload;
-            return Done();
+            return Done(webhookModel);
         }
     }
 }

@@ -1,9 +1,11 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Elsa.Activities.Telnyx.Client.Models;
 using Elsa.Activities.Telnyx.Client.Services;
 using Elsa.Activities.Telnyx.Extensions;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Builders;
 using Elsa.Design;
 using Elsa.Exceptions;
 using Elsa.Expressions;
@@ -36,17 +38,19 @@ namespace Elsa.Activities.Telnyx.Activities
             Hint = "The language you want spoken.",
             UIHint = ActivityInputUIHints.Dropdown,
             Options = new[] { "en-US", "en-AU", "nl-NL", "es-ES", "ru-RU" },
+            DefaultValue = "en-US",
             SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
-        public string Language { get; set; } = default!;
+        public string Language { get; set; } = "en-US";
 
         [ActivityInput(
             Hint = "The gender of the voice used to speak back the text.",
             UIHint = ActivityInputUIHints.Dropdown,
             Options = new[] { "female", "male" },
+            DefaultValue = "female",
             SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
-        public string Voice { get; set; } = default!;
+        public string Voice { get; set; } = "female";
 
         [ActivityInput(Hint = "The text or SSML to be converted into speech. There is a 5,000 character limit.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string Payload { get; set; } = default!;
@@ -113,5 +117,56 @@ namespace Elsa.Activities.Telnyx.Activities
         }
 
         private static string? EmptyToNull(string? value) => value is "" ? null : value;
+    }
+
+    public static class SpeakTextExtensions
+    {
+        public static ISetupActivity<SpeakText> WithCallControlId(this ISetupActivity<SpeakText> setup, Func<ActivityExecutionContext, ValueTask<string?>> value) => setup.Set(x => x.CallControlId, value);
+        public static ISetupActivity<SpeakText> WithCallControlId(this ISetupActivity<SpeakText> setup, Func<ActivityExecutionContext, string?> value) => setup.Set(x => x.CallControlId, value);
+        public static ISetupActivity<SpeakText> WithCallControlId(this ISetupActivity<SpeakText> setup, Func<ValueTask<string?>> value) => setup.Set(x => x.CallControlId, value);
+        public static ISetupActivity<SpeakText> WithCallControlId(this ISetupActivity<SpeakText> setup, Func<string?> value) => setup.Set(x => x.CallControlId, value);
+        public static ISetupActivity<SpeakText> WithCallControlId(this ISetupActivity<SpeakText> setup, string? value) => setup.Set(x => x.CallControlId, value);
+        
+        public static ISetupActivity<SpeakText> WithLanguage(this ISetupActivity<SpeakText> setup, Func<ActivityExecutionContext, ValueTask<string>> value) => setup.Set(x => x.Language, value!);
+        public static ISetupActivity<SpeakText> WithLanguage(this ISetupActivity<SpeakText> setup, Func<ActivityExecutionContext, string> value) => setup.Set(x => x.Language, value);
+        public static ISetupActivity<SpeakText> WithLanguage(this ISetupActivity<SpeakText> setup, Func<ValueTask<string>> value) => setup.Set(x => x.Language, value!);
+        public static ISetupActivity<SpeakText> WithLanguage(this ISetupActivity<SpeakText> setup, Func<string> value) => setup.Set(x => x.Language, value);
+        public static ISetupActivity<SpeakText> WithLanguage(this ISetupActivity<SpeakText> setup, string value) => setup.Set(x => x.Language, value);
+        
+        public static ISetupActivity<SpeakText> WithVoice(this ISetupActivity<SpeakText> setup, Func<ActivityExecutionContext, ValueTask<string>> value) => setup.Set(x => x.Voice, value!);
+        public static ISetupActivity<SpeakText> WithVoice(this ISetupActivity<SpeakText> setup, Func<ActivityExecutionContext, string> value) => setup.Set(x => x.Voice, value);
+        public static ISetupActivity<SpeakText> WithVoice(this ISetupActivity<SpeakText> setup, Func<ValueTask<string>> value) => setup.Set(x => x.Voice, value!);
+        public static ISetupActivity<SpeakText> WithVoice(this ISetupActivity<SpeakText> setup, Func<string> value) => setup.Set(x => x.Voice, value);
+        public static ISetupActivity<SpeakText> WithVoice(this ISetupActivity<SpeakText> setup, string value) => setup.Set(x => x.Voice, value);
+        
+        public static ISetupActivity<SpeakText> WithPayload(this ISetupActivity<SpeakText> setup, Func<ActivityExecutionContext, ValueTask<string>> value) => setup.Set(x => x.Payload, value!);
+        public static ISetupActivity<SpeakText> WithPayload(this ISetupActivity<SpeakText> setup, Func<ActivityExecutionContext, string> value) => setup.Set(x => x.Payload, value);
+        public static ISetupActivity<SpeakText> WithPayload(this ISetupActivity<SpeakText> setup, Func<ValueTask<string>> value) => setup.Set(x => x.Payload, value!);
+        public static ISetupActivity<SpeakText> WithPayload(this ISetupActivity<SpeakText> setup, Func<string> value) => setup.Set(x => x.Payload, value);
+        public static ISetupActivity<SpeakText> WithPayload(this ISetupActivity<SpeakText> setup, string value) => setup.Set(x => x.Payload, value);
+        
+        public static ISetupActivity<SpeakText> WithPayloadType(this ISetupActivity<SpeakText> setup, Func<ActivityExecutionContext, ValueTask<string?>> value) => setup.Set(x => x.PayloadType, value);
+        public static ISetupActivity<SpeakText> WithPayloadType(this ISetupActivity<SpeakText> setup, Func<ActivityExecutionContext, string?> value) => setup.Set(x => x.PayloadType, value);
+        public static ISetupActivity<SpeakText> WithPayloadType(this ISetupActivity<SpeakText> setup, Func<ValueTask<string?>> value) => setup.Set(x => x.PayloadType, value);
+        public static ISetupActivity<SpeakText> WithPayloadType(this ISetupActivity<SpeakText> setup, Func<string?> value) => setup.Set(x => x.PayloadType, value);
+        public static ISetupActivity<SpeakText> WithPayloadType(this ISetupActivity<SpeakText> setup, string? value) => setup.Set(x => x.PayloadType, value);
+        
+        public static ISetupActivity<SpeakText> WithServiceLevel(this ISetupActivity<SpeakText> setup, Func<ActivityExecutionContext, ValueTask<string?>> value) => setup.Set(x => x.ServiceLevel, value);
+        public static ISetupActivity<SpeakText> WithServiceLevel(this ISetupActivity<SpeakText> setup, Func<ActivityExecutionContext, string?> value) => setup.Set(x => x.ServiceLevel, value);
+        public static ISetupActivity<SpeakText> WithServiceLevel(this ISetupActivity<SpeakText> setup, Func<ValueTask<string?>> value) => setup.Set(x => x.ServiceLevel, value);
+        public static ISetupActivity<SpeakText> WithServiceLevel(this ISetupActivity<SpeakText> setup, Func<string?> value) => setup.Set(x => x.ServiceLevel, value);
+        public static ISetupActivity<SpeakText> WithServiceLevel(this ISetupActivity<SpeakText> setup, string? value) => setup.Set(x => x.ServiceLevel, value);
+        
+        public static ISetupActivity<SpeakText> WithClientState(this ISetupActivity<SpeakText> setup, Func<ActivityExecutionContext, ValueTask<string?>> value) => setup.Set(x => x.ClientState, value);
+        public static ISetupActivity<SpeakText> WithClientState(this ISetupActivity<SpeakText> setup, Func<ActivityExecutionContext, string?> value) => setup.Set(x => x.ClientState, value);
+        public static ISetupActivity<SpeakText> WithClientState(this ISetupActivity<SpeakText> setup, Func<ValueTask<string?>> value) => setup.Set(x => x.ClientState, value);
+        public static ISetupActivity<SpeakText> WithClientState(this ISetupActivity<SpeakText> setup, Func<string?> value) => setup.Set(x => x.ClientState, value);
+        public static ISetupActivity<SpeakText> WithClientState(this ISetupActivity<SpeakText> setup, string? value) => setup.Set(x => x.ClientState, value);
+        
+        public static ISetupActivity<SpeakText> WithCommandId(this ISetupActivity<SpeakText> setup, Func<ActivityExecutionContext, ValueTask<string?>> value) => setup.Set(x => x.CommandId, value);
+        public static ISetupActivity<SpeakText> WithCommandId(this ISetupActivity<SpeakText> setup, Func<ActivityExecutionContext, string?> value) => setup.Set(x => x.CommandId, value);
+        public static ISetupActivity<SpeakText> WithCommandId(this ISetupActivity<SpeakText> setup, Func<ValueTask<string?>> value) => setup.Set(x => x.CommandId, value);
+        public static ISetupActivity<SpeakText> WithCommandId(this ISetupActivity<SpeakText> setup, Func<string?> value) => setup.Set(x => x.CommandId, value);
+        public static ISetupActivity<SpeakText> WithCommandId(this ISetupActivity<SpeakText> setup, string? value) => setup.Set(x => x.CommandId, value);
     }
 }

@@ -81,7 +81,12 @@ namespace Elsa.Activities.Telnyx.Client.Models
         string? CommandId,
         bool? PlayBeep
     );
-    
+
+    public record StopRecordingRequest(
+        string? ClientState,
+        string? CommandId
+    );
+
     public record SpeakTextRequest(
         string Language,
         string Voice,
