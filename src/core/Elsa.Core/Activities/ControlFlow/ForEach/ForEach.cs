@@ -18,9 +18,9 @@ namespace Elsa.Activities.ControlFlow
     )]
     public class ForEach : Activity
     {
-        [ActivityProperty(
+        [ActivityInput(
             Hint = "A collection of items to iterate over.",
-            UIHint = ActivityPropertyUIHints.MultiLine,
+            UIHint = ActivityInputUIHints.MultiLine,
             DefaultSyntax = SyntaxNames.Json,
             SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]

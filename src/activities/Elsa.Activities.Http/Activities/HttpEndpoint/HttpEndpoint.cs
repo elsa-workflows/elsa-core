@@ -1,10 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Elsa.Activities.Http.Models;
-using Elsa.Activities.Http.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
@@ -24,28 +20,17 @@ namespace Elsa.Activities.Http
     )]
     public class HttpEndpoint : Activity
     {
-        private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly IEnumerable<IHttpRequestBodyParser> _parsers;
-
-        public HttpEndpoint(
-            IHttpContextAccessor httpContextAccessor,
-            IEnumerable<IHttpRequestBodyParser> parsers)
-        {
-            _httpContextAccessor = httpContextAccessor;
-            _parsers = parsers;
-        }
-
         /// <summary>
         /// The path that triggers this activity. 
         /// </summary>
-        [ActivityProperty(Hint = "The relative path that triggers this activity.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "The relative path that triggers this activity.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public PathString Path { get; set; }
 
         /// <summary>
         /// The HTTP methods that triggers this activity.
         /// </summary>
-        [ActivityProperty(
-            UIHint = ActivityPropertyUIHints.CheckList,
+        [ActivityInput(
+            UIHint = ActivityInputUIHints.CheckList,
             Hint = "The HTTP methods that trigger this activity.",
             Options = new[] { "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD" },
             DefaultValue = new[] { "GET" },
@@ -57,7 +42,7 @@ namespace Elsa.Activities.Http
         /// A value indicating whether the HTTP request content body should be read and stored as part of the HTTP request model.
         /// The stored format depends on the content-type header.
         /// </summary>
-        [ActivityProperty(
+        [ActivityInput(
             Hint = "A value indicating whether the HTTP request content body should be read and stored as part of the HTTP request model. The stored format depends on the content-type header.",
             SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public bool ReadContent { get; set; }
@@ -66,39 +51,20 @@ namespace Elsa.Activities.Http
         /// The <see cref="Type"/> to parse the received request content into if <seealso cref="ReadContent"/> is set to true.
         /// If not set, the content will be parse into a default type, depending on the parser associated with the received content-type header.
         /// </summary>
-        [ActivityProperty(Category = PropertyCategories.Advanced)]
+        [ActivityInput(Category = PropertyCategories.Advanced)]
         public Type? TargetType { get; set; }
 
-        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context) => context.WorkflowExecutionContext.IsFirstPass ? await ExecuteInternalAsync(context.CancellationToken) : Suspend();
+        [ActivityOutput(Hint = "The received HTTP request.")]
+        public HttpRequestModel? Request { get; set; }
 
-        protected override ValueTask<IActivityExecutionResult> OnResumeAsync(ActivityExecutionContext context) => ExecuteInternalAsync(context.CancellationToken);
+        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => context.WorkflowExecutionContext.IsFirstPass ? ExecuteInternal(context) : Suspend();
+        protected override IActivityExecutionResult OnResume(ActivityExecutionContext context) => ExecuteInternal(context);
 
-        private async ValueTask<IActivityExecutionResult> ExecuteInternalAsync(CancellationToken cancellationToken)
+        private IActivityExecutionResult ExecuteInternal(ActivityExecutionContext context)
         {
-            var request = _httpContextAccessor.HttpContext.Request;
-
-            var model = new HttpRequestModel
-            {
-                Path = new Uri(request.Path.ToString(), UriKind.Relative),
-                QueryString = request.Query.ToDictionary(x => x.Key, x => x.Value.ToString()),
-                Headers = request.Headers.ToDictionary(x => x.Key, x => x.Value.ToString()),
-                Method = request.Method
-            };
-
-            if (ReadContent)
-            {
-                var parser = SelectContentParser(request.ContentType);
-                model.Body = await parser.ParseAsync(request, TargetType, cancellationToken);
-            }
-
+            var model = context.GetInput<HttpRequestModel>()!;
+            Request = model;
             return Done(model);
-        }
-
-        private IHttpRequestBodyParser SelectContentParser(string contentType)
-        {
-            var simpleContentType = contentType?.Split(';').First();
-            var formatters = _parsers.OrderByDescending(x => x.Priority).ToList();
-            return formatters.FirstOrDefault(x => x.SupportedContentTypes.Contains(simpleContentType, StringComparer.OrdinalIgnoreCase)) ?? formatters.Last();
         }
     }
 }

@@ -28,9 +28,11 @@ namespace Elsa
             Action<QuartzHostedServiceOptions>? configureQuartzHostedService = default)
         {
             timersOptions.Services
-                .AddSingleton<IWorkflowScheduler, QuartzWorkflowScheduler>()
+                .AddSingleton<IWorkflowDefinitionScheduler, QuartzWorkflowDefinitionScheduler>()
+                .AddSingleton<IWorkflowInstanceScheduler, QuartzWorkflowInstanceScheduler>()
                 .AddSingleton<ICrontabParser, QuartzCrontabParser>()
-                .AddTransient<RunQuartzWorkflowJob>()
+                .AddTransient<RunQuartzWorkflowDefinitionJob>()
+                .AddTransient<RunQuartzWorkflowInstanceJob>()
                 .AddNotificationHandlers(typeof(ConfigureCronProperty));
 
             if (registerQuartz)
@@ -52,11 +54,11 @@ namespace Elsa
 
         private static void ConfigureQuartz(IServiceCollectionQuartzConfigurator quartz, Action<IServiceCollectionQuartzConfigurator>? configureQuartz)
         {
-            quartz.UseMicrosoftDependencyInjectionScopedJobFactory(options => options.AllowDefaultConstructor = true);
-            quartz.AddJob<RunQuartzWorkflowJob>(job => job.StoreDurably().WithIdentity(nameof(RunQuartzWorkflowJob)));
+            quartz.UseMicrosoftDependencyInjectionScopedJobFactory();
+            quartz.AddJob<RunQuartzWorkflowDefinitionJob>(job => job.StoreDurably().WithIdentity(nameof(RunQuartzWorkflowDefinitionJob)));
+            quartz.AddJob<RunQuartzWorkflowInstanceJob>(job => job.StoreDurably().WithIdentity(nameof(RunQuartzWorkflowInstanceJob)));
             quartz.UseSimpleTypeLoader();
             quartz.UseInMemoryStore();
-
             configureQuartz?.Invoke(quartz);
         }
     }

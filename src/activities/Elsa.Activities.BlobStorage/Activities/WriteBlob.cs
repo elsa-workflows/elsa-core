@@ -26,11 +26,11 @@ namespace Elsa.Activities.BlobStorage
 
         private readonly IBlobStorage _storage;
 
-        [ActivityProperty(Hint = "The ID to be assigned to the blob.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "The ID to be assigned to the blob.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         [Required]
         public string BlobId { get; set; } = default!;
 
-        [ActivityProperty(Hint = "The bytes to write.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript }, DefaultSyntax = SyntaxNames.JavaScript)]
+        [ActivityInput(Hint = "The bytes to write.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript }, DefaultSyntax = SyntaxNames.JavaScript)]
         public byte[]? Bytes { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)

@@ -241,8 +241,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "locking", "locking", "{DBBD
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.DistributedLocking.SqlServer", "src\locking\Elsa.DistributedLocking.SqlServer\Elsa.DistributedLocking.SqlServer.csproj", "{B09A6E42-EF42-4693-BA0E-5EE1D7F81FFD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.DistributedLocking.Redis", "src\locking\Elsa.DistributedLocking.Redis\Elsa.DistributedLocking.Redis.csproj", "{7E5514AC-3633-4237-9490-0992417F2273}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.DistributedLocking.AzureBlob", "src\locking\Elsa.DistributedLocking.AzureBlob\Elsa.DistributedLocking.AzureBlob.csproj", "{495BE954-E6EA-41A9-8054-A5CA5DD0924E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.DistributedLocking.AzureBlob", "src\locking\Elsa.DistributedLocking.AzureBlob\Elsa.DistributedLocking.AzureBlob.csproj", "{495BE954-E6EA-41A9-8054-A5CA5DD0924E}"
@@ -267,8 +265,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{D7F754
 ProjectSection(SolutionItems) = preProject
 	docker\docker-compose.yaml = docker\docker-compose.yaml
 	docker\Dockerfile = docker\Dockerfile
-	docker\Dockerfile-with-npm = docker\Dockerfile-with-npm
 	docker\README.md = docker\README.md
+	docker\Dockerfile-elsa-dashboard = docker\Dockerfile-elsa-dashboard
+	docker\Dockerfile-elsa-dashboard-and-server = docker\Dockerfile-elsa-dashboard-and-server
 EndProjectSection
 	ProjectSection(SolutionItems) = preProject
 		docker\docker-compose.yaml = docker\docker-compose.yaml
@@ -332,6 +331,33 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "clients", "clients", "{A998F0D4-08D7-4B2A-AC17-D20E45BB40B3}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Webhooks.Client", "src\activities\Elsa.Webhooks.Client\Elsa.Webhooks.Client.csproj", "{8DA03FFB-8AE7-440E-9CDB-1EA1E93A6B4C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "aspnetcore", "aspnetcore", "{28C5C63F-2DCF-46BE-9576-1F50A7CFE8C4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElsaDashboard.Web", "src\dashboards\aspnetcore\ElsaDashboard\ElsaDashboard.Web.csproj", "{5F81C84A-4C04-48FF-981C-23E48A7ACA6C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "github", "github", "{3BF2C5A9-AC69-4587-833F-C16CFC97E100}"
+ProjectSection(SolutionItems) = preProject
+	.github\workflows\publish-latest-dashboard-docker.yml = .github\workflows\publish-latest-dashboard-docker.yml
+	.github\workflows\publish-latest-server-docker.yml = .github\workflows\publish-latest-server-docker.yml
+	.github\workflows\publish-latest-dashboard-and-server-docker.yml = .github\workflows\publish-latest-dashboard-and-server-docker.yml
+EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.SignalApi", "src\samples\aspnet\Elsa.Samples.SignalApi\Elsa.Samples.SignalApi.csproj", "{3E2423CF-50E6-4D2B-8749-17B1EF540FE4}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "caching", "caching", "{9937FB02-72D9-4FCD-B31E-8E60CFF1B37F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Caching.Rebus", "src\caching\Elsa.Caching.Rebus\Elsa.Caching.Rebus.csproj", "{61C16CA0-B190-4642-A81A-5C03705CA2C1}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "providers", "providers", "{EC5D4AFD-3F7F-4B51-9C38-F18C60618731}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Providers.Redis", "src\providers\Elsa.Providers.Redis\Elsa.Providers.Redis.csproj", "{9ACA06DA-9AFE-41A2-8109-EFED8B9B14A1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.DistributedLocking.Redis", "src\locking\Elsa.DistributedLocking.Redis\Elsa.DistributedLocking.Redis.csproj", "{D1644D32-AA51-4D10-942E-F2722DB963B4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.Conductor", "src\activities\Elsa.Activities.Conductor\Elsa.Activities.Conductor.csproj", "{E62077E1-59F4-4937-B45B-59F86417BCF8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleClientApp.Web", "src\samples\server\SampleClientApp.Web\SampleClientApp.Web.csproj", "{7756E22A-AD59-46C1-A019-1D28D7217347}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -671,10 +697,6 @@ Global
 		{B09A6E42-EF42-4693-BA0E-5EE1D7F81FFD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B09A6E42-EF42-4693-BA0E-5EE1D7F81FFD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B09A6E42-EF42-4693-BA0E-5EE1D7F81FFD}.Release|Any CPU.Build.0 = Release|Any CPU
-		{7E5514AC-3633-4237-9490-0992417F2273}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{7E5514AC-3633-4237-9490-0992417F2273}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7E5514AC-3633-4237-9490-0992417F2273}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7E5514AC-3633-4237-9490-0992417F2273}.Release|Any CPU.Build.0 = Release|Any CPU
 		{495BE954-E6EA-41A9-8054-A5CA5DD0924E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{495BE954-E6EA-41A9-8054-A5CA5DD0924E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{495BE954-E6EA-41A9-8054-A5CA5DD0924E}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -771,6 +793,14 @@ Global
 		{8DA03FFB-8AE7-440E-9CDB-1EA1E93A6B4C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8DA03FFB-8AE7-440E-9CDB-1EA1E93A6B4C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8DA03FFB-8AE7-440E-9CDB-1EA1E93A6B4C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E62077E1-59F4-4937-B45B-59F86417BCF8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E62077E1-59F4-4937-B45B-59F86417BCF8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E62077E1-59F4-4937-B45B-59F86417BCF8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E62077E1-59F4-4937-B45B-59F86417BCF8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7756E22A-AD59-46C1-A019-1D28D7217347}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7756E22A-AD59-46C1-A019-1D28D7217347}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7756E22A-AD59-46C1-A019-1D28D7217347}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7756E22A-AD59-46C1-A019-1D28D7217347}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -885,7 +915,6 @@ Global
 		{A80FC28D-D865-428D-AF12-7A393D407803} = {B43B546E-23F3-46E8-ACB7-D04F05CDA180}
 		{DBBD242E-4437-4BDB-919F-A70839BE75FA} = {DA71CDAA-8DD3-4D5F-9FBD-8E4B37A2D925}
 		{B09A6E42-EF42-4693-BA0E-5EE1D7F81FFD} = {DBBD242E-4437-4BDB-919F-A70839BE75FA}
-		{7E5514AC-3633-4237-9490-0992417F2273} = {DBBD242E-4437-4BDB-919F-A70839BE75FA}
 		{495BE954-E6EA-41A9-8054-A5CA5DD0924E} = {DBBD242E-4437-4BDB-919F-A70839BE75FA}
 		{D86B94DC-A53C-4A67-A820-828DD359C49B} = {4673732F-2853-47BD-91B8-C95C229D2C89}
 		{C869CC72-9A98-4246-9A76-6A50F48AFD85} = {4673732F-2853-47BD-91B8-C95C229D2C89}
@@ -920,6 +949,8 @@ Global
 		{A998F0D4-08D7-4B2A-AC17-D20E45BB40B3} = {9DBE0062-22F7-4E96-B3B0-B39D274C4A8D}
 		{8DA03FFB-8AE7-440E-9CDB-1EA1E93A6B4C} = {A998F0D4-08D7-4B2A-AC17-D20E45BB40B3}
 		{2B67E954-3B04-402D-A9A7-AAAB1D6C3215} = {9DBE0062-22F7-4E96-B3B0-B39D274C4A8D}
+		{E62077E1-59F4-4937-B45B-59F86417BCF8} = {B43B546E-23F3-46E8-ACB7-D04F05CDA180}
+		{7756E22A-AD59-46C1-A019-1D28D7217347} = {BBCFC623-2113-464D-8A1F-3CCDABF1241C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}

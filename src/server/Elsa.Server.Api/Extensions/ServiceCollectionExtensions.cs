@@ -1,6 +1,7 @@
 ﻿using System;
 using Elsa;
 using Elsa.Models;
+using Elsa.Server.Api;
 using Elsa.Server.Api.Mapping;
 using Elsa.Server.Api.Services;
 using Elsa.Server.Api.Swagger.Examples;
@@ -15,18 +16,28 @@ namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddElsaApiEndpoints(this IServiceCollection services, Action<MvcNewtonsoftJsonOptions>? setupNewtonsoftJson = default)
+        public static IServiceCollection AddElsaApiEndpoints(this IServiceCollection services, ElsaApiOptions apiOptions) =>
+            services.AddElsaApiEndpoints(options =>
+            {
+                options.SetupNewtonsoftJson = apiOptions.SetupNewtonsoftJson;
+            });
+
+        public static IServiceCollection AddElsaApiEndpoints(this IServiceCollection services, Action<ElsaApiOptions>? configureApiOptions = default)
         {
-            setupNewtonsoftJson ??= _ => { }; 
+            var apiOptions = new ElsaApiOptions();
+            configureApiOptions?.Invoke(apiOptions);
+
+            var setupNewtonsoftJson = apiOptions.SetupNewtonsoftJson ?? (_ => { });
+
             services.AddControllers().AddNewtonsoftJson(setupNewtonsoftJson);
-            services.AddRouting(options => options.LowercaseUrls = true);
+            services.AddRouting(options => { options.LowercaseUrls = true; });
 
             services.AddVersionedApiExplorer(o =>
             {
                 o.GroupNameFormat = "'v'VVV";
                 o.SubstituteApiVersionInUrl = true;
             });
-            
+
             services.AddApiVersioning(
                 options =>
                 {
@@ -48,7 +59,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSwaggerExamplesFromAssemblyOf<WorkflowDefinitionExample>()
                 .AddSwaggerGen(c =>
                 {
-                    c.SwaggerDoc("v1", new OpenApiInfo {Title = "Elsa", Version = "v1"});
+                    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Elsa", Version = "v1" });
                     c.EnableAnnotations();
                     c.ExampleFilters();
                     c.MapType<VersionOptions?>(() => new OpenApiSchema
@@ -59,7 +70,7 @@ namespace Microsoft.Extensions.DependencyInjection
                         Nullable = true,
                         Default = new OpenApiString("Latest")
                     });
-                    
+
                     c.MapType<Type>(() => new OpenApiSchema
                     {
                         Type = PrimitiveType.String.ToString().ToLower(),

@@ -17,11 +17,13 @@
     <ItemGroup>
         <PackageReference Include="AutoMapper" Version="10.1.1" />
         <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="8.1.1" />
-        <PackageReference Include="DistributedLock.Core" Version="1.0.0" />
+        <PackageReference Include="DistributedLock.Core" Version="1.0.1" />
         <PackageReference Include="DistributedLock.FileSystem" Version="1.0.0" />
-        <PackageReference Include="Humanizer.Core" Version="2.8.26" />
+        <PackageReference Include="Humanizer.Core" Version="2.10.1" />
         <PackageReference Include="MediatR" Version="9.0.0" />
         <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="9.0.0" />
+        <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="5.0.6" />
+        <PackageReference Include="Microsoft.AspNetCore.DataProtection.Abstractions" Version="5.0.6" />
         <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
         <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="5.0.0" />
         <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
@@ -29,11 +31,9 @@
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="5.0.0" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.1" />
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="5.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Localization" Version="5.0.5" />
+        <PackageReference Include="Microsoft.Extensions.Localization" Version="5.0.6" />
         <PackageReference Include="Microsoft.Extensions.Logging" Version="5.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="5.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="5.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="5.0.0" />
         <PackageReference Include="NodaTime.Serialization.JsonNet" Version="3.0.0" />
         <PackageReference Include="Open.Linq.AsyncExtensions" Version="1.2.0" />
         <PackageReference Include="Rebus.Microsoft.Extensions.Logging" Version="2.0.0" />
@@ -41,7 +41,6 @@
         <PackageReference Include="Storage.Net" Version="9.2.7" />
         <PackageReference Include="System.Linq.Async" Version="5.0.0" />
         <PackageReference Include="System.Threading.Channels" Version="5.0.0" />
-        <PackageReference Include="YamlDotNet" Version="11.0.1" />
         <PackageReference Include="Rebus.ServiceProvider" Version="6.4.1" />
     </ItemGroup>
 

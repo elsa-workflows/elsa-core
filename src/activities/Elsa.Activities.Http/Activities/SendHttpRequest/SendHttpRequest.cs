@@ -42,14 +42,14 @@ namespace Elsa.Activities.Http
         /// <summary>
         /// The URL to invoke. 
         /// </summary>
-        [ActivityProperty(Hint = "The URL to send the HTTP request to.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "The URL to send the HTTP request to.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public Uri? Url { get; set; }
 
         /// <summary>
         /// The HTTP method to use.
         /// </summary>
-        [ActivityProperty(
-            UIHint = ActivityPropertyUIHints.Dropdown,
+        [ActivityInput(
+            UIHint = ActivityInputUIHints.Dropdown,
             Hint = "The HTTP method to use when making the request.",
             Options = new[] { "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD" },
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
@@ -59,42 +59,42 @@ namespace Elsa.Activities.Http
         /// <summary>
         /// The body to send along with the request.
         /// </summary>
-        [ActivityProperty(Hint = "The HTTP content to send along with the request.", UIHint = ActivityPropertyUIHints.MultiLine, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "The HTTP content to send along with the request.", UIHint = ActivityInputUIHints.MultiLine, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string? Content { get; set; }
 
         /// <summary>
         /// The Content Type header to send along with the request body.
         /// </summary>
-        [ActivityProperty(
-            UIHint = ActivityPropertyUIHints.Dropdown,
+        [ActivityInput(
+            UIHint = ActivityInputUIHints.Dropdown,
             Hint = "The content type to send with the request.",
             Options = new[] { "text/plain", "text/html", "application/json", "application/xml", "application/x-www-form-urlencoded" },
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? ContentType { get; set; }
 
-        [ActivityProperty(Hint = "The Authorization header value to send.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "The Authorization header value to send.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string? Authorization { get; set; }
 
         /// <summary>
         /// The headers to send along with the request.
         /// </summary>
-        [ActivityProperty(Hint = "Additional headers to send along with the request.", UIHint = ActivityPropertyUIHints.Json)]
+        [ActivityInput(Hint = "Additional headers to send along with the request.", UIHint = ActivityInputUIHints.Json)]
         public HttpRequestHeaders RequestHeaders { get; set; } = new();
 
-        [ActivityProperty(Hint = "Read the content of the response.", SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "Read the content of the response.", SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public bool ReadContent { get; set; }
 
         /// <summary>
         /// A list of HTTP status codes this activity can handle.
         /// </summary>
-        [ActivityProperty(
+        [ActivityInput(
             Hint = "A list of possible HTTP status codes to handle.",
-            UIHint = ActivityPropertyUIHints.MultiText,
+            UIHint = ActivityInputUIHints.MultiText,
             DefaultSyntax = SyntaxNames.Json,
             SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
-        public ICollection<int> SupportedStatusCodes { get; set; } = new HashSet<int>(new[] { 200 });
+        public ICollection<int>? SupportedStatusCodes { get; set; } = new HashSet<int>(new[] { 200 });
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
@@ -120,13 +120,13 @@ namespace Elsa.Activities.Http
 
             var statusCode = (int) response.StatusCode;
             var statusOutcome = statusCode.ToString();
-            var isSupportedStatusCode = SupportedStatusCodes.Contains(statusCode);
+            var isSupportedStatusCode = SupportedStatusCodes?.Contains(statusCode) == true;
             var outcomes = new List<string> { OutcomeNames.Done, statusOutcome };
 
             if (!isSupportedStatusCode)
                 outcomes.Add("UnSupportedStatusCode");
 
-            return Combine(Outcomes(outcomes), Output(responseModel));
+            return Combine(Output(responseModel), Outcomes(outcomes));
         }
 
         private IHttpResponseBodyParser SelectContentParser(string contentType)

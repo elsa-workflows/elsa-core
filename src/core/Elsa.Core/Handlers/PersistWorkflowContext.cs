@@ -28,7 +28,7 @@ namespace Elsa.Handlers
         public async Task Handle(ActivityExecuted notification, CancellationToken cancellationToken)
         {
             var workflowExecutionContext = notification.WorkflowExecutionContext;
-            var activityBlueprint = notification.Activity;
+            var activityBlueprint = notification.ActivityBlueprint;
             workflowExecutionContext.WorkflowInstance.ContextId = await SaveWorkflowContextAsync(workflowExecutionContext, WorkflowContextFidelity.Activity, activityBlueprint.SaveWorkflowContext, cancellationToken);
         }
         

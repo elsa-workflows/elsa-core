@@ -1,6 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using Elsa.Activities.Telnyx.ActivityTypes;
 using Elsa.Bookmarks;
 
@@ -18,13 +16,12 @@ namespace Elsa.Activities.Telnyx.Bookmarks
             return activityType.Attributes.ContainsKey(NotificationActivityTypeProvider.NotificationAttribute);
         }
 
-        public override ValueTask<IEnumerable<IBookmark>> GetBookmarksAsync(BookmarkProviderContext context, CancellationToken cancellationToken)
+        public override IEnumerable<BookmarkResult> GetBookmarks(BookmarkProviderContext context)
         {
             var activityType = context.ActivityType;
-            var eventType = (string)activityType.Attributes[NotificationActivityTypeProvider.EventTypeAttribute];
+            var eventType = (string) activityType.Attributes[NotificationActivityTypeProvider.EventTypeAttribute];
             var correlationId = context.ActivityExecutionContext.WorkflowExecutionContext.CorrelationId;
-            var bookmarks = new[] { new NotificationBookmark(eventType, correlationId) };
-            return new ValueTask<IEnumerable<IBookmark>>(bookmarks);
+            return new[] { Result(new NotificationBookmark(eventType, correlationId)) };
         }
     }
 }

@@ -7,7 +7,6 @@ import {ActivityIcon} from "../../icons/activity-icon";
 
 @Component({
   tag: 'elsa-activity-picker-modal',
-  styleUrl: 'elsa-activity-picker-modal.css',
   shadow: false,
 })
 export class ElsaActivityPickerModal {
@@ -19,14 +18,14 @@ export class ElsaActivityPickerModal {
   categories: Array<string> = [];
   filteredActivityDescriptorDisplayContexts: Array<ActivityDescriptorDisplayContext> = [];
 
-  connectedCallback(){
+  connectedCallback() {
     eventBus.on(EventTypes.ShowActivityPicker, this.onShowActivityPicker);
   }
 
   disconnectedCallback() {
     eventBus.off(EventTypes.ShowActivityPicker, this.onShowActivityPicker);
   }
-  
+
   onShowActivityPicker = async () => {
     await this.dialog.show(true);
   };
@@ -34,14 +33,10 @@ export class ElsaActivityPickerModal {
   componentWillRender() {
     const activityDescriptors: Array<ActivityDescriptor> = state.activityDescriptors;
     this.categories = ['All', ...activityDescriptors.map(x => x.category).distinct().sort()];
-    const traits = [{text: 'All', value: 7}, {text: 'Actions', value: 1}, {text: 'Triggers', value: 2}, {text: 'Jobs', value: 4}];
     const searchText = this.searchText ? this.searchText.toLowerCase() : '';
     let filteredActivityDescriptors = activityDescriptors;
-
-    filteredActivityDescriptors = filteredActivityDescriptors.filter(x => (x.traits & this.selectedTrait) == x.traits)
-    filteredActivityDescriptors = !this.selectedCategory || this.selectedCategory == 'All' ? filteredActivityDescriptors : filteredActivityDescriptors.filter(x => x.category == this.selectedCategory);
-
-    if (searchText.length > 0)
+    
+    if (searchText.length > 0) {
       filteredActivityDescriptors = filteredActivityDescriptors.filter(x => {
         const category = x.category || '';
         const description = x.description || '';
@@ -53,9 +48,14 @@ export class ElsaActivityPickerModal {
           || displayName.toLowerCase().indexOf(searchText) >= 0
           || type.toLowerCase().indexOf(searchText) >= 0;
       });
+    }
+    else {
+      filteredActivityDescriptors = filteredActivityDescriptors.filter(x => (x.traits & this.selectedTrait) == x.traits)
+      filteredActivityDescriptors = !this.selectedCategory || this.selectedCategory == 'All' ? filteredActivityDescriptors : filteredActivityDescriptors.filter(x => x.category == this.selectedCategory);
+    }
 
     this.filteredActivityDescriptorDisplayContexts = filteredActivityDescriptors.map(x => {
-      const color = (x.traits &= ActivityTraits.Trigger) == ActivityTraits.Trigger ? 'rose' : 'light-blue';
+      const color = (x.traits &= ActivityTraits.Trigger) == ActivityTraits.Trigger ? 'rose' : (x.traits &= ActivityTraits.Job) == ActivityTraits.Job ? 'yellow' : 'light-blue';
       return {
         activityDescriptor: x,
         activityIcon: <ActivityIcon color={color}/>
@@ -99,34 +99,33 @@ export class ElsaActivityPickerModal {
   }
 
   render() {
-    const selectedCategoryClass = 'bg-gray-100 text-gray-900 flex';
-    const defaultCategoryClass = 'text-gray-600 hover:bg-gray-50 hover:text-gray-900';
+    const selectedCategoryClass = 'elsa-bg-gray-100 elsa-text-gray-900 elsa-flex';
+    const defaultCategoryClass = 'elsa-text-gray-600 hover:elsa-bg-gray-50 hover:elsa-text-gray-900';
     const filteredDisplayContexts = this.filteredActivityDescriptorDisplayContexts;
     const categories = this.categories;
 
     return (
-      <Host>
+      <Host class="elsa-block">
         <elsa-modal-dialog ref={el => this.dialog = el}>
-          <div slot="content" class="py-8">
-            <div class="flex">
-              <div class="px-8">
-                <nav class="space-y-1" aria-label="Sidebar">
+          <div slot="content" class="elsa-py-8">
+            <div class="elsa-flex">
+              <div class="elsa-px-8">
+                <nav class="elsa-space-y-1" aria-label="Sidebar">
                   {categories.map(category => (
                     <a href="#" onClick={e => this.onCategoryClick(e, category)}
-                       class={`${category == this.selectedCategory ? selectedCategoryClass : defaultCategoryClass} text-gray-600 hover:bg-gray-50 hover:text-gray-900 flex items-center px-3 py-2 text-sm font-medium rounded-md`}>
-                    <span class="truncate">
+                       class={`${category == this.selectedCategory ? selectedCategoryClass : defaultCategoryClass} elsa-text-gray-600 hover:elsa-bg-gray-50 hover:elsa-text-gray-900 elsa-flex elsa-items-center elsa-px-3 elsa-py-2 elsa-text-sm elsa-font-medium elsa-rounded-md`}>
+                    <span class="elsa-truncate">
                       {category}
                     </span>
                     </a>
                   ))}
                 </nav>
               </div>
-              <div class="flex-1 pr-8">
-
-                <div class="p-0 mb-6">
-                  <div class="relative rounded-md shadow-sm">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <svg class="h-6 w-6 text-gray-400" width="24" height="24" viewBox="0 0 24 24"
+              <div class="elsa-flex-1 elsa-pr-8">
+                <div class="elsa-p-0 elsa-mb-6">
+                  <div class="elsa-relative elsa-rounded-md elsa-shadow-sm">
+                    <div class="elsa-absolute elsa-inset-y-0 elsa-left-0 elsa-pl-3 elsa-flex elsa-items-center elsa-pointer-events-none">
+                      <svg class="elsa-h-6 elsa-w-6 elsa-text-gray-400" width="24" height="24" viewBox="0 0 24 24"
                            stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
                            stroke-linejoin="round">
                         <path stroke="none" d="M0 0h24v24H0z"/>
@@ -134,11 +133,13 @@ export class ElsaActivityPickerModal {
                         <line x1="21" y1="21" x2="15" y2="15"/>
                       </svg>
                     </div>
-                    <input type="text" value={this.searchText} onInput={e => this.onSearchTextChange(e as TextEvent)} class="form-input block w-full pl-10 sm:text-sm sm:leading-5" placeholder="Search activities"/>
+                    <input type="text" value={this.searchText} onInput={e => this.onSearchTextChange(e as TextEvent)}
+                           class="form-input elsa-block elsa-w-full elsa-pl-10 sm:elsa-text-sm sm:elsa-leading-5 focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-rounded-md elsa-border-gray-300" 
+                           placeholder="Search activities"/>
                   </div>
                 </div>
 
-                <div class="max-w-4xl mx-auto p-0">
+                <div class="elsa-max-w-4xl elsa-mx-auto elsa-p-0">
 
                   {categories.map(category => {
                     const displayContexts = filteredDisplayContexts.filter(x => x.activityDescriptor.category == category);
@@ -148,23 +149,23 @@ export class ElsaActivityPickerModal {
 
                     return (
                       <div>
-                        <h2 class="my-4 text-lg leading-6 font-medium">{category}</h2>
-                        <div class="divide-y divide-gray-200 sm:divide-y-0 sm:grid sm:grid-cols-2 sm:gap-px">
+                        <h2 class="elsa-my-4 elsa-text-lg elsa-leading-6 elsa-font-medium">{category}</h2>
+                        <div class="elsa-divide-y elsa-divide-gray-200 sm:elsa-divide-y-0 sm:elsa-grid sm:elsa-grid-cols-2 sm:elsa-gap-px">
                           {displayContexts.map(displayContext => (
-                            <a href="#" onClick={e => this.onActivityClick(e, displayContext.activityDescriptor)} class="relative rounded group p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-blue-500">
-                              <div class="flex space-x-10">
-                                <div class="flex flex-0 items-center">
+                            <a href="#" onClick={e => this.onActivityClick(e, displayContext.activityDescriptor)} class="elsa-relative elsa-rounded elsa-group elsa-p-6 focus-within:elsa-ring-2 focus-within:elsa-ring-inset focus-within:elsa-ring-blue-500">
+                              <div class="elsa-flex elsa-space-x-10">
+                                <div class="elsa-flex elsa-flex-0 elsa-items-center">
                                   <div innerHTML={displayContext.activityIcon}>
                                   </div>
                                 </div>
-                                <div class="flex-1 mt-2">
-                                  <h3 class="text-lg font-medium">
-                                    <a href="#" class="focus:outline-none">
-                                      <span class="absolute inset-0" aria-hidden="true"/>
+                                <div class="elsa-flex-1 elsa-mt-2">
+                                  <h3 class="elsa-text-lg elsa-font-medium">
+                                    <a href="#" class="focus:elsa-outline-none">
+                                      <span class="elsa-absolute elsa-inset-0" aria-hidden="true"/>
                                       {displayContext.activityDescriptor.displayName}
                                     </a>
                                   </h3>
-                                  <p class="mt-2 text-sm text-gray-500">
+                                  <p class="elsa-mt-2 elsa-text-sm elsa-text-gray-500">
                                     {displayContext.activityDescriptor.description}
                                   </p>
                                 </div>
@@ -180,10 +181,10 @@ export class ElsaActivityPickerModal {
             </div>
           </div>
           <div slot="buttons">
-            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+            <div class="elsa-bg-gray-50 elsa-px-4 elsa-py-3 sm:elsa-px-6 sm:elsa-flex sm:elsa-flex-row-reverse">
               <button type="button"
                       onClick={() => this.onCancelClick()}
-                      class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                      class="elsa-mt-3 elsa-w-full elsa-inline-flex elsa-justify-center elsa-rounded-md elsa-border elsa-border-gray-300 elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-bg-white elsa-text-base elsa-font-medium elsa-text-gray-700 hover:elsa-bg-gray-50 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 sm:elsa-mt-0 sm:elsa-ml-3 sm:elsa-w-auto sm:elsa-text-sm">
                 Cancel
               </button>
             </div>

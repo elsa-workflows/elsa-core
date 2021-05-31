@@ -20,10 +20,10 @@ namespace Elsa.Activities.Temporal
     {
         private readonly IClock _clock;
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
-        private readonly IWorkflowScheduler _workflowScheduler;
+        private readonly IWorkflowInstanceScheduler _workflowScheduler;
         private readonly ICrontabParser _crontabParser;
 
-        public Cron(IWorkflowInstanceStore workflowInstanceStore, IWorkflowScheduler workflowScheduler, ICrontabParser crontabParser, IClock clock)
+        public Cron(IWorkflowInstanceStore workflowInstanceStore, IWorkflowInstanceScheduler workflowScheduler, ICrontabParser crontabParser, IClock clock)
         {
             _clock = clock;
             _workflowInstanceStore = workflowInstanceStore;
@@ -31,20 +31,13 @@ namespace Elsa.Activities.Temporal
             _crontabParser = crontabParser;
         }
 
-        [ActivityProperty(Hint = "Specify a CRON expression.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "Specify a CRON expression.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string CronExpression { get; set; } = "* * * * *";
 
         public Instant? ExecuteAt
         {
             get => GetState<Instant?>();
             set => SetState(value);
-        }
-        
-        protected override bool OnCanExecute(ActivityExecutionContext context)
-        {
-            var now = _clock.GetCurrentInstant();
-            var executeAt = ExecuteAt;
-            return executeAt == null || executeAt <= now;
         }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
@@ -53,7 +46,6 @@ namespace Elsa.Activities.Temporal
                 return Done();
 
             var cancellationToken = context.CancellationToken;
-            var tenantId = context.WorkflowExecutionContext.WorkflowBlueprint.TenantId;
             var workflowInstance = context.WorkflowExecutionContext.WorkflowInstance;
             var executeAt = _crontabParser.GetNextOccurrence(CronExpression);
 
@@ -63,7 +55,7 @@ namespace Elsa.Activities.Temporal
                 return Done();
 
             await _workflowInstanceStore.SaveAsync(context.WorkflowExecutionContext.WorkflowInstance, cancellationToken);
-            await _workflowScheduler.ScheduleWorkflowAsync(null, workflowInstance.Id, Id, tenantId, executeAt, null, cancellationToken);
+            await _workflowScheduler.ScheduleAsync(workflowInstance.Id, Id, executeAt, null, cancellationToken);
 
             return Suspend();
         }

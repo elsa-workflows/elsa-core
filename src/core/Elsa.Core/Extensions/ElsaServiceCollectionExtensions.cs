@@ -64,7 +64,6 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped(options.WorkflowExecutionLogStoreFactory)
                 .AddScoped(options.WorkflowTriggerStoreFactory)
                 .AddSingleton(options.DistributedLockingOptions.DistributedLockProviderFactory)
-                .AddSingleton(options.SignalFactory)
                 .AddSingleton(options.StorageFactory)
                 .AddSingleton(options.WorkflowDefinitionDispatcherFactory)
                 .AddSingleton(options.WorkflowInstanceDispatcherFactory)
@@ -81,7 +80,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services.Decorate<IWorkflowDefinitionStore, InitializingWorkflowDefinitionStore>();
             services.Decorate<IWorkflowDefinitionStore, EventPublishingWorkflowDefinitionStore>();
             services.Decorate<IWorkflowInstanceStore, EventPublishingWorkflowInstanceStore>();
-            services.Decorate<IWorkflowRunner, LockingWorkflowRunner>();
+            services.Decorate<IWorkflowInstanceExecutor, LockingWorkflowInstanceExecutor>();
 
             return services;
         }
@@ -95,10 +94,25 @@ namespace Microsoft.Extensions.DependencyInjection
             return elsaOptions.Services.AddHostedService<StartWorkflow<T>>();
         }
 
-        public static ElsaOptionsBuilder AddConsumer<TConsumer, TMessage>(this ElsaOptionsBuilder elsaOptions) where TConsumer : class, IHandleMessages<TMessage>
+        /// <summary>
+        /// Registers a consumer and associated message type using the competing consumer pattern. With the competing consumer pattern, only the first consumer on a given node to obtain a message will handle that message.
+        /// This is in contrast to the Publisher-Subscriber pattern, where a message will be delivered to the consumer on all nodes in a cluster. To register a Publisher-Subscriber consumer, use <seealso cref="AddPubSubConsumer{TConsumer,TMessage}"/>
+        /// </summary>
+        /// <param name="elsaOptions"></param>
+        /// <typeparam name="TConsumer"></typeparam>
+        /// <typeparam name="TMessage"></typeparam>
+        /// <returns></returns>
+        public static ElsaOptionsBuilder AddCompetingConsumer<TConsumer, TMessage>(this ElsaOptionsBuilder elsaOptions) where TConsumer : class, IHandleMessages<TMessage>
         {
             elsaOptions.Services.AddTransient<IHandleMessages<TMessage>, TConsumer>();
-            elsaOptions.AddMessageType<TMessage>();
+            elsaOptions.AddCompetingMessageType<TMessage>();
+            return elsaOptions;
+        }
+        
+        public static ElsaOptionsBuilder AddPubSubConsumer<TConsumer, TMessage>(this ElsaOptionsBuilder elsaOptions) where TConsumer : class, IHandleMessages<TMessage>
+        {
+            elsaOptions.Services.AddTransient<IHandleMessages<TMessage>, TConsumer>();
+            elsaOptions.AddPubSubMessageType<TMessage>();
             return elsaOptions;
         }
 
@@ -116,9 +130,11 @@ namespace Microsoft.Extensions.DependencyInjection
             services
                 .AddLogging()
                 .AddLocalization()
+                .AddSingleton<IContainerNameAccessor, OptionsContainerNameAccessor>()
                 .AddSingleton<IIdGenerator, IdGenerator>()
                 .AddScoped<IWorkflowRegistry, WorkflowRegistry>()
                 .AddSingleton<IActivityActivator, ActivityActivator>()
+                .AddSingleton<ITokenService, TokenService>()
                 .AddScoped<IWorkflowRunner, WorkflowRunner>()
                 .AddScoped<WorkflowStarter>()
                 .AddScoped<WorkflowResumer>()
@@ -130,6 +146,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped<IResumesWorkflow>(sp => sp.GetRequiredService<WorkflowResumer>())
                 .AddScoped<IResumesWorkflows>(sp => sp.GetRequiredService<WorkflowResumer>())
                 .AddScoped<IBuildsAndResumesWorkflow>(sp => sp.GetRequiredService<WorkflowResumer>())
+                .AddScoped<IWorkflowLaunchpad, WorkflowLaunchpad>()
+                .AddScoped<IWorkflowInstanceExecutor, WorkflowInstanceExecutor>()
                 .AddScoped<IWorkflowTriggerInterruptor, WorkflowTriggerInterruptor>()
                 .AddScoped<IWorkflowReviver, WorkflowReviver>()
                 .AddSingleton<IWorkflowFactory, WorkflowFactory>()
@@ -143,8 +161,11 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped<IWorkflowExecutionLog, WorkflowExecutionLog>()
                 .AddTransient<ICreatesWorkflowExecutionContextForWorkflowBlueprint, WorkflowExecutionContextForWorkflowBlueprintFactory>()
                 .AddTransient<ICreatesActivityExecutionContextForActivityBlueprint, ActivityExecutionContextForActivityBlueprintFactory>()
-                .AddTransient<IGetsStartActivitiesForCompositeActivityBlueprint, StartActivitiesForCompositeActivityBlueprintProvider>()
+                .AddTransient<IGetsStartActivities, GetsStartActivitiesProvider>()
                 ;
+            
+            // Data Protection.
+            services.AddDataProtection();
 
             // Serialization.
             services
@@ -199,16 +220,19 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IEventPublisher, EventPublisher>();
 
             options
-                .AddConsumer<TriggerWorkflowsRequestConsumer, TriggerWorkflowsRequest>()
-                .AddConsumer<ExecuteWorkflowDefinitionRequestConsumer, ExecuteWorkflowDefinitionRequest>()
-                .AddConsumer<ExecuteWorkflowInstanceRequestConsumer, ExecuteWorkflowInstanceRequest>()
-                .AddConsumer<UpdateWorkflowTriggersIndexConsumer, WorkflowDefinitionPublished>()
-                .AddConsumer<UpdateWorkflowTriggersIndexConsumer, WorkflowDefinitionRetracted>();
+                .AddCompetingConsumer<TriggerWorkflowsRequestConsumer, TriggerWorkflowsRequest>()
+                .AddCompetingConsumer<ExecuteWorkflowDefinitionRequestConsumer, ExecuteWorkflowDefinitionRequest>()
+                .AddCompetingConsumer<ExecuteWorkflowInstanceRequestConsumer, ExecuteWorkflowInstanceRequest>()
+                .AddPubSubConsumer<UpdateWorkflowTriggersIndexConsumer, WorkflowDefinitionPublished>()
+                .AddPubSubConsumer<UpdateWorkflowTriggersIndexConsumer, WorkflowDefinitionRetracted>()
+                .AddPubSubConsumer<UpdateWorkflowTriggersIndexConsumer, WorkflowDefinitionDeleted>();
 
             // AutoMapper.
             services
                 .AddAutoMapperProfile<NodaTimeProfile>()
                 .AddAutoMapperProfile<CloningProfile>()
+                .AddAutoMapperProfile<ExceptionProfile>()
+                .AddTransient<ExceptionConverter>()
                 .AddSingleton<ICloner, AutoMapperCloner>();
 
             // Caching.

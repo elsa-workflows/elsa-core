@@ -3,7 +3,6 @@ import {ActivityDefinitionProperty, ActivityPropertyDescriptor, SyntaxNames} fro
 
 @Component({
   tag: 'elsa-single-line-property',
-  styleUrl: 'elsa-single-line-property.css',
   shadow: false,
 })
 export class ElsaSingleLineProperty {
@@ -46,7 +45,7 @@ export class ElsaSingleLineProperty {
                             onDefaultSyntaxValueChanged={e => this.onDefaultSyntaxValueChanged(e)}
                             editor-height="2.75em"
                             single-line={true}>
-        <input type="text" id={fieldId} name={fieldName} value={value} onChange={e => this.onChange(e)} class="focus:ring-blue-500 focus:border-blue-500 block w-full min-w-0 rounded-md sm:text-sm border-gray-300"/>
+        <input type="text" id={fieldId} name={fieldName} value={value} onChange={e => this.onChange(e)} class="focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300"/>
       </elsa-property-editor>
     );
   }

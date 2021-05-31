@@ -26,18 +26,18 @@ namespace Elsa.Activities.Signaling
             _signaler = signaler;
         }
 
-        [ActivityProperty(Hint = "An expression that evaluates to the name of the signal to trigger.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "An expression that evaluates to the name of the signal to trigger.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string Signal { get; set; } = default!;
 
-        [ActivityProperty(Hint = "An expression that evaluates to the correlation ID to use when signaling.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "An expression that evaluates to the correlation ID to use when signaling.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string? CorrelationId { get; set; }
 
-        [ActivityProperty(Hint = "An expression that evaluates to an input value when triggering the signal.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "An expression that evaluates to an input value when triggering the signal.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public object? Input { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            await _signaler.TriggerSignalAsync(Signal, Input, CorrelationId, context.CancellationToken);
+            await _signaler.TriggerSignalAsync(Signal, Input,  correlationId: CorrelationId, cancellationToken: context.CancellationToken);
             return Done();
         }
     }

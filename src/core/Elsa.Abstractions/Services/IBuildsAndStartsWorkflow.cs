@@ -1,13 +1,13 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Builders;
-using Elsa.Models;
+using Elsa.Services.Models;
 
 namespace Elsa.Services
 {
     public interface IBuildsAndStartsWorkflow
     {
-        Task<WorkflowInstance> BuildAndStartWorkflowAsync<T>(
+        Task<RunWorkflowResult> BuildAndStartWorkflowAsync<T>(
             string? activityId = default,
             object? input = default,
             string? correlationId = default,
@@ -15,7 +15,7 @@ namespace Elsa.Services
             CancellationToken cancellationToken = default)
             where T : IWorkflow;
 
-        public Task<WorkflowInstance> BuildAndStartWorkflowAsync(
+        public Task<RunWorkflowResult> BuildAndStartWorkflowAsync(
             IWorkflow workflow,
             string? activityId = default,
             object? input = default,

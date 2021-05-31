@@ -6,7 +6,6 @@ import {getSelectListItems} from "../../../../utils/select-list-items";
 
 @Component({
   tag: 'elsa-multi-text-property',
-  styleUrl: 'elsa-multi-text-property.css',
   shadow: false,
 })
 export class ElsaMultiTextProperty {
@@ -23,12 +22,12 @@ export class ElsaMultiTextProperty {
   }
 
   onValueChanged(newValue: Array<string | number | boolean | SelectListItem>) {
-    const newValues = newValue.map(dropdown => {
-      if (typeof dropdown === 'string') return dropdown;
-      if (typeof dropdown === 'number') return dropdown.toString();
-      if (typeof dropdown === 'boolean') return dropdown.toString();
+    const newValues = newValue.map(item => {
+      if (typeof item === 'string') return item;
+      if (typeof item === 'number') return item.toString();
+      if (typeof item === 'boolean') return item.toString();
 
-      return dropdown.value;
+      return item.value;
     })
 
     this.currentValue = JSON.stringify(newValues);
@@ -58,10 +57,10 @@ export class ElsaMultiTextProperty {
     const fieldName = propertyName;
     const values = parseJson(this.currentValue);
     const items = this.items;
-    const valueType = propertyDescriptor.options !== null ? 'dropdown' : 'multi-text';
+    const useDropdown = !!propertyDescriptor.options && propertyDescriptor.options.length > 0;
     const propertyOptions = this.createKeyValueOptions(items);
 
-    const elsaInputTags = valueType === 'multi-text' ?
+    const elsaInputTags = useDropdown ?
       <elsa-input-tags-dropdown dropdownValues={propertyOptions} values={values} fieldId={fieldId} fieldName={fieldName} onValueChanged={e => this.onValueChanged(e.detail)} /> :
       <elsa-input-tags values={values} fieldId={fieldId} fieldName={fieldName} onValueChanged={e => this.onValueChanged(e.detail)} />;
 

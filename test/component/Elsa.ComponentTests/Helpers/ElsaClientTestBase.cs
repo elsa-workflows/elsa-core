@@ -6,7 +6,6 @@ namespace Elsa.ComponentTests.Helpers
 {
     public abstract class ElsaClientTestBase : TestBase
     {
-
         protected ElsaClientTestBase(ElsaHostApplicationFactory hostApplicationFactory) : base(hostApplicationFactory)
         {
             var services = new ServiceCollection().AddElsaClient(options => options.ServerUrl = HttpClient.BaseAddress!, () => HttpClient).BuildServiceProvider();

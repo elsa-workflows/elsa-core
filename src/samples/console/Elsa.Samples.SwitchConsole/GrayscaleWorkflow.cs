@@ -1,7 +1,9 @@
 ﻿using System;
 using Elsa.Activities.Console;
 using Elsa.Activities.ControlFlow;
+using Elsa.ActivityResults;
 using Elsa.Builders;
+using Elsa.Services;
 using Elsa.Services.Models;
 
 namespace Elsa.Samples.SwitchConsole
@@ -33,5 +35,46 @@ namespace Elsa.Samples.SwitchConsole
         }
 
         private static int GetNumber(ActivityExecutionContext context) => context.GetInput<int>();
+    }
+
+    public class ForkBranchDecisionActivity : Activity
+    {
+        protected override IActivityExecutionResult OnExecute()
+        {
+            Console.WriteLine("Choose a branch. A or B");
+            Console.WriteLine("Typing 'a' will result in going through branch A");
+            Console.WriteLine("Any other key will result in branch B");
+
+            var userChosenBranch = Console.ReadLine()!;
+
+            if (userChosenBranch.Equals("A", StringComparison.InvariantCultureIgnoreCase))
+                return Outcome("A");
+
+            return Outcome("B");
+        }
+    }
+
+    public class SimpleForkWorkflow : IWorkflow
+    {
+        public void Build(IWorkflowBuilder builder)
+        {
+            builder
+                .WriteLine("This demonstrates a simple workflow with switch.")
+                .WriteLine("Using switch we can branch a workflow.")
+                .Then<ForkBranchDecisionActivity>(fork =>
+                {
+                    fork.When("A")
+                        .WriteLine("You are in A branch. First line")
+                        .WriteLine("You are in A branch. Second line.")
+                        .ThenNamed("Finish");
+
+                    fork.When("B")
+                        .WriteLine("You are in B branch. First line")
+                        .WriteLine("You are in B branch. Second line.")
+                        .ThenNamed("Finish");
+                    
+                })
+                .WriteLine("Workflow finished.").WithName("Finish");
+        }
     }
 }

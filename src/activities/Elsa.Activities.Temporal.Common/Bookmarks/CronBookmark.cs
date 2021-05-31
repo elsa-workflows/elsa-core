@@ -15,39 +15,39 @@ namespace Elsa.Activities.Temporal.Common.Bookmarks
 
     public class CronBookmarkProvider : BookmarkProvider<CronBookmark, Cron>
     {
-        public override async ValueTask<IEnumerable<IBookmark>> GetBookmarksAsync(BookmarkProviderContext<Cron> context, CancellationToken cancellationToken)
+        public override async ValueTask<IEnumerable<BookmarkResult>> GetBookmarksAsync(BookmarkProviderContext<Cron> context, CancellationToken cancellationToken)
         {
-            var cronExpression = await context.Activity.GetPropertyValueAsync(x => x.CronExpression, cancellationToken);
+            var cronExpression = await context.ReadActivityPropertyAsync(x => x.CronExpression, cancellationToken);
 
             if (context.Mode == BookmarkIndexingMode.WorkflowInstance)
             {
-                var executeAt = context.Activity.GetState(x => x.ExecuteAt);
-                
-                if(executeAt == null)
-                    return Enumerable.Empty<IBookmark>();
-                
+                var executeAt = GetExecuteAt(context);
+
+                if (executeAt == null)
+                    return Enumerable.Empty<BookmarkResult>();
+
                 return new[]
                 {
-                    new CronBookmark
+                    Result(new CronBookmark
                     {
                         ExecuteAt = executeAt.Value,
                         CronExpression = cronExpression!
-                    }
+                    })
                 };
             }
 
             return new[]
             {
-                new CronBookmark
+                Result(new CronBookmark
                 {
                     CronExpression = cronExpression!
-                }
+                })
             };
         }
 
         private Instant? GetExecuteAt(BookmarkProviderContext<Cron> context) =>
             context.Mode == BookmarkIndexingMode.WorkflowInstance
-                ? context.Activity.GetState(x => x.ExecuteAt)
+                ? context.Activity.GetPropertyValue(x => x.ExecuteAt)
                 : default;
     }
 }

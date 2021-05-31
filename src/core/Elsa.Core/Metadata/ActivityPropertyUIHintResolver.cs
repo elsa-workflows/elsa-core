@@ -10,7 +10,7 @@ namespace Elsa.Metadata
     {
         public string GetUIHint(PropertyInfo activityPropertyInfo)
         {
-            var activityPropertyAttribute = activityPropertyInfo.GetCustomAttribute<ActivityPropertyAttribute>();
+            var activityPropertyAttribute = activityPropertyInfo.GetCustomAttribute<ActivityInputAttribute>();
 
             if (activityPropertyAttribute.UIHint != null)
                 return activityPropertyAttribute.UIHint;
@@ -18,18 +18,18 @@ namespace Elsa.Metadata
             var type = activityPropertyInfo.PropertyType;
 
             if (type == typeof(bool) || type == typeof(bool?))
-                return ActivityPropertyUIHints.Checkbox;
+                return ActivityInputUIHints.Checkbox;
 
             if (type == typeof(string))
-                return ActivityPropertyUIHints.SingleLine;
+                return ActivityInputUIHints.SingleLine;
 
             if (typeof(IEnumerable).IsAssignableFrom(type))
-                return ActivityPropertyUIHints.Dropdown;
+                return ActivityInputUIHints.Dropdown;
 
             if (type.IsEnum || type.IsNullableType() && type.GetTypeOfNullable().IsEnum)
-                return ActivityPropertyUIHints.Dropdown;
+                return ActivityInputUIHints.Dropdown;
 
-            return ActivityPropertyUIHints.SingleLine;
+            return ActivityInputUIHints.SingleLine;
         }
     }
 }

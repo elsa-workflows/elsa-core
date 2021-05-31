@@ -8,11 +8,14 @@ namespace Elsa.Persistence.EntityFramework.Core
 {
     public class ElsaContext : DbContext
     {
+        public const string ElsaSchema = "Elsa";
+        public const string MigrationsHistoryTable = "__EFMigrationsHistory";
+        
         public ElsaContext(DbContextOptions options) : base(options)
         {
         }
 
-        public virtual string Schema => "Elsa";
+        public virtual string Schema => ElsaSchema;
         public DbSet<WorkflowDefinition> WorkflowDefinitions { get; set; } = default!;
         public DbSet<WorkflowInstance> WorkflowInstances { get; set; } = default!;
         public DbSet<WorkflowExecutionLogRecord> WorkflowExecutionLogRecords { get; set; } = default!;
@@ -20,9 +23,9 @@ namespace Elsa.Persistence.EntityFramework.Core
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            if (!string.IsNullOrWhiteSpace(Schema))
+            if (!string.IsNullOrWhiteSpace(Schema)) 
                 modelBuilder.HasDefaultSchema(Schema);
-            
+
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(ElsaContext).Assembly);
 
             if (Database.IsSqlite())

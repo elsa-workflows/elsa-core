@@ -34,7 +34,8 @@ namespace Elsa.Core.IntegrationTests.Scripting.JavaScript
             public async Task StartAsync(CancellationToken cancellationToken)
             {
                 var workflow = await GetWorkflowBlueprintAsync(GetWorkflowDefinition());
-                var workflowInstance = await _workflowRunner.StartWorkflowAsync(workflow, cancellationToken: cancellationToken);
+                var runWorkflowResult = await _workflowRunner.StartWorkflowAsync(workflow, cancellationToken: cancellationToken);
+                var workflowInstance = runWorkflowResult.WorkflowInstance!;
 
                 Assert.NotNull(workflowInstance);
                 Assert.Null(workflowInstance.Fault);

@@ -12,12 +12,10 @@ COPY src/. ./src
 COPY *.props ./
 COPY ./Nuget.Config ./
 
-
 # build and publish (UseAppHost=false created platform independent binaries)
 WORKDIR /source/src/samples/dashboard/aspnetcore/ElsaDashboard.Samples.AspNetCore.Monolith
 RUN dotnet build "ElsaDashboard.Samples.AspNetCore.Monolith.csproj" -c Release -o /app/build
 RUN dotnet publish "ElsaDashboard.Samples.AspNetCore.Monolith.csproj" -c Release -o /app/publish /p:UseAppHost=false --no-restore
-
 
 # move binaries into smaller base image
 FROM mcr.microsoft.com/dotnet/aspnet:5.0-buster-slim AS base

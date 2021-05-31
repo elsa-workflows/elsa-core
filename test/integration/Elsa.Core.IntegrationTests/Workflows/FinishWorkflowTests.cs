@@ -17,7 +17,8 @@ namespace Elsa.Core.IntegrationTests.Workflows
         [Theory(DisplayName = "Sets the workflow status of the workflow instance to WorkflowStatus.Finished after RunWorkflowAsync is used"), AutoMoqData]
         public async Task RunWorkflowAsyncShouldSetWorkflowStatusToFinished(FinishWorkflow sut)
         {
-            var workflowInstance = await WorkflowRunner.BuildAndStartWorkflowAsync(sut);
+            var runWorkflowResult = await WorkflowRunner.BuildAndStartWorkflowAsync(sut);
+            var workflowInstance = runWorkflowResult.WorkflowInstance!;
 
             Assert.Equal(WorkflowStatus.Finished, workflowInstance.WorkflowStatus);
         }
@@ -25,7 +26,8 @@ namespace Elsa.Core.IntegrationTests.Workflows
         [Theory(DisplayName = "Sets the output of the workflow instance to a FinishOutput which contains the expected output after RunWorkflowAsync is used"), AutoMoqData]
         public async Task RunWorkflowAsyncShouldReturnExpectedOutput([Frozen] object expectedOutput, FinishWorkflow sut)
         {
-            var workflowInstance = await WorkflowRunner.BuildAndStartWorkflowAsync(sut);
+            var runWorkflowResult = await WorkflowRunner.BuildAndStartWorkflowAsync(sut);
+            var workflowInstance = runWorkflowResult.WorkflowInstance!;
             var actualOutput = (workflowInstance.Output as FinishOutput)?.Output;
 
             Assert.Same(expectedOutput, actualOutput);

@@ -15,6 +15,7 @@ namespace Elsa.Samples.SwitchConsole
             var services = new ServiceCollection()
                 .AddElsa(options => options
                     .AddConsoleActivities()
+                    .AddActivitiesFrom<SimpleForkWorkflow>()
                     .AddWorkflow<GrayscaleWorkflow>())
                 .BuildServiceProvider();
 
@@ -26,7 +27,7 @@ namespace Elsa.Samples.SwitchConsole
             var workflowRunner = services.GetRequiredService<IBuildsAndStartsWorkflow>();
 
             // Execute the workflow.
-            await workflowRunner.BuildAndStartWorkflowAsync<GrayscaleWorkflow>();
+            await workflowRunner.BuildAndStartWorkflowAsync<SimpleForkWorkflow>();
         }
     }
 }

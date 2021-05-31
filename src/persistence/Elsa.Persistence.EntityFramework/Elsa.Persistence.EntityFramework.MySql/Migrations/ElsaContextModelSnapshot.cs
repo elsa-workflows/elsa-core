@@ -31,6 +31,9 @@ namespace Elsa.Persistence.EntityFramework.MySql.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(255)");
 
+                    b.Property<string>("CorrelationId")
+                        .HasColumnType("varchar(255)");
+
                     b.Property<string>("Hash")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
@@ -58,6 +61,9 @@ namespace Elsa.Persistence.EntityFramework.MySql.Migrations
                     b.HasIndex("ActivityType")
                         .HasDatabaseName("IX_Bookmark_ActivityType");
 
+                    b.HasIndex("CorrelationId")
+                        .HasDatabaseName("IX_Bookmark_CorrelationId");
+
                     b.HasIndex("Hash")
                         .HasDatabaseName("IX_Bookmark_Hash");
 
@@ -69,6 +75,9 @@ namespace Elsa.Persistence.EntityFramework.MySql.Migrations
 
                     b.HasIndex("ActivityType", "TenantId", "Hash")
                         .HasDatabaseName("IX_Bookmark_ActivityType_TenantId_Hash");
+
+                    b.HasIndex("Hash", "CorrelationId", "TenantId")
+                        .HasDatabaseName("IX_Bookmark_Hash_CorrelationId_TenantId");
 
                     b.ToTable("Bookmarks");
                 });
@@ -139,6 +148,7 @@ namespace Elsa.Persistence.EntityFramework.MySql.Migrations
                         .HasDatabaseName("IX_WorkflowDefinition_Version");
 
                     b.HasIndex("DefinitionId", "Version")
+                        .IsUnique()
                         .HasDatabaseName("IX_WorkflowDefinition_DefinitionId_VersionId");
 
                     b.ToTable("WorkflowDefinitions");

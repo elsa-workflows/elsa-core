@@ -15,7 +15,7 @@ namespace Elsa.Activities.Primitives
     )]
     public class SetName : Activity
     {
-        [ActivityProperty(Hint = "The value to set as the workflow instance's name.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "The value to set as the workflow instance's name.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string? Value { get; set; }
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)

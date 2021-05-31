@@ -1,18 +1,25 @@
 using System.Threading;
 using System.Threading.Tasks;
+using AutoMapper;
 using Elsa.Events;
+using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
 using MediatR;
-using Newtonsoft.Json.Linq;
 
 namespace Elsa.Handlers
 {
     public class WriteWorkflowExecutionLog : INotificationHandler<ActivityExecuting>, INotificationHandler<ActivityExecutionResultExecuted>, INotificationHandler<ActivityFaulted>
     {
         private readonly IWorkflowExecutionLog _workflowExecutionLog;
-        public WriteWorkflowExecutionLog(IWorkflowExecutionLog workflowExecutionLog) => _workflowExecutionLog = workflowExecutionLog;
-        
+        private readonly IMapper _mapper;
+
+        public WriteWorkflowExecutionLog(IWorkflowExecutionLog workflowExecutionLog, IMapper mapper)
+        {
+            _workflowExecutionLog = workflowExecutionLog;
+            _mapper = mapper;
+        }
+
         public async Task Handle(ActivityExecuting notification, CancellationToken cancellationToken)
         {
             var activityExecutionContext = notification.ActivityExecutionContext;
@@ -44,11 +51,11 @@ namespace Elsa.Handlers
         public async Task Handle(ActivityFaulted notification, CancellationToken cancellationToken)
         {
             var exception = notification.Exception;
+            var exceptionModel = _mapper.Map<SimpleException>(exception);
 
             var data = new
             {
-                exception.Message,
-                exception.StackTrace
+                Exception = exceptionModel
             };
 
             await WriteEntryAsync("Faulted", exception.Message, notification.ActivityExecutionContext, data, cancellationToken);

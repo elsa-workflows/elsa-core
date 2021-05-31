@@ -6,6 +6,7 @@ import {createElsaClient} from "../../../../services/elsa-client";
 import {OrderBy, PagedList, VersionOptions, WorkflowBlueprintSummary, WorkflowDefinitionSummary, WorkflowInstanceSummary, WorkflowStatus} from "../../../../models";
 import {DropdownButtonItem, DropdownButtonOrigin} from "../../../controls/elsa-dropdown-button/models";
 import {Map, parseQuery} from '../../../../utils/utils';
+import moment from "moment";
 
 @Component({
     tag: 'elsa-workflow-instance-list-screen',
@@ -94,7 +95,7 @@ export class ElsaWorkflowInstanceListScreen {
             case WorkflowStatus.Idle:
                 return "gray";
             case WorkflowStatus.Running:
-                return "pink";
+                return "rose";
             case WorkflowStatus.Suspended:
                 return "blue";
             case WorkflowStatus.Finished:
@@ -104,6 +105,10 @@ export class ElsaWorkflowInstanceListScreen {
             case WorkflowStatus.Cancelled:
                 return "yellow";
         }
+    }
+
+    updateSelectAllChecked(){
+        this.selectAllChecked = this.workflowInstances.items.findIndex(x => this.selectedWorkflowInstanceIds.findIndex(id => id == x.id) < 0) < 0;
     }
 
     async routeChanged(e: LocationSegments) {
@@ -135,7 +140,7 @@ export class ElsaWorkflowInstanceListScreen {
         else
             this.selectedWorkflowInstanceIds = this.selectedWorkflowInstanceIds.filter(x => x != workflowInstance.id);
 
-        this.selectAllChecked = this.workflowInstances.items.findIndex(x => this.selectedWorkflowInstanceIds.findIndex(id => id == x.id) < 0) < 0;
+        this.updateSelectAllChecked();
     }
 
     async onDeleteClick(e: Event, workflowInstance: WorkflowInstanceSummary) {
@@ -157,7 +162,10 @@ export class ElsaWorkflowInstanceListScreen {
 
         const elsaClient = this.createClient();
         await elsaClient.workflowInstancesApi.bulkDelete({workflowInstanceIds: this.selectedWorkflowInstanceIds});
+        this.selectedWorkflowInstanceIds = [];
+        this.updateSelectAllChecked();
         await this.loadWorkflowInstances();
+        this.page = 0;
     }
 
     async onBulkActionSelected(e: CustomEvent<DropdownButtonItem>) {
@@ -185,7 +193,7 @@ export class ElsaWorkflowInstanceListScreen {
 
         const renderViewIcon = function () {
             return (
-                <svg class="h-5 w-5 text-gray-500" width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="elsa-h-5 elsa-w-5 elsa-text-gray-500" width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                 </svg>
@@ -194,7 +202,7 @@ export class ElsaWorkflowInstanceListScreen {
 
         const renderDeleteIcon = function () {
             return (
-                <svg class="h-5 w-5 text-gray-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="elsa-h-5 elsa-w-5 elsa-text-gray-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <path stroke="none" d="M0 0h24v24H0z"/>
                     <line x1="4" y1="7" x2="20" y2="7"/>
                     <line x1="10" y1="11" x2="10" y2="17"/>
@@ -207,20 +215,19 @@ export class ElsaWorkflowInstanceListScreen {
 
         return (
             <div>
-
-                <div class="relative z-10 flex-shrink-0 flex h-16 bg-white border-b border-gray-200">
-                    <div class="flex-1 px-4 flex justify-between sm:px-6 lg:px-8">
-                        <div class="flex-1 flex">
-                            <form class="w-full flex md:ml-0" onSubmit={e => this.onSearch(e)}>
-                                <label htmlFor="search_field" class="sr-only">Search</label>
-                                <div class="relative w-full text-cool-gray-400 focus-within:text-cool-gray-600">
-                                    <div class="absolute inset-y-0 left-0 flex items-center pointer-events-none">
-                                        <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                <div class="elsa-relative elsa-z-10 elsa-flex-shrink-0 elsa-flex elsa-h-16 elsa-bg-white elsa-border-b elsa-border-gray-200">
+                    <div class="elsa-flex-1 elsa-px-4 elsa-flex elsa-justify-between sm:elsa-px-6 lg:elsa-px-8">
+                        <div class="elsa-flex-1 elsa-flex">
+                            <form class="elsa-w-full elsa-flex md:ml-0" onSubmit={e => this.onSearch(e)}>
+                                <label htmlFor="search_field" class="elsa-sr-only">Search</label>
+                                <div class="elsa-relative elsa-w-full elsa-text-cool-gray-400 focus-within:elsa-text-cool-gray-600">
+                                    <div class="elsa-absolute elsa-inset-y-0 elsa-left-0 elsa-flex elsa-items-center elsa-pointer-events-none">
+                                        <svg class="elsa-h-5 elsa-w-5" fill="currentColor" viewBox="0 0 20 20">
                                             <path fill-rule="evenodd" clip-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"/>
                                         </svg>
                                     </div>
                                     <input name="searchTerm"
-                                           class="block w-full h-full pl-8 pr-3 py-2 rounded-md text-cool-gray-900 placeholder-cool-gray-500 focus:placeholder-cool-gray-400 sm:text-sm border-0 focus:outline-none focus:ring-0"
+                                           class="elsa-block elsa-w-full elsa-h-full elsa-pl-8 elsa-pr-3 elsa-py-2 elsa-rounded-md elsa-text-cool-gray-900 elsa-placeholder-cool-gray-500 focus:elsa-placeholder-cool-gray-400 sm:elsa-text-sm elsa-border-0 focus:elsa-outline-none focus:elsa-ring-0"
                                            placeholder="Search"
                                            type="search"/>
                                 </div>
@@ -229,11 +236,11 @@ export class ElsaWorkflowInstanceListScreen {
                     </div>
                 </div>
 
-                <div class="p-8 flex content-end justify-right bg-white space-x-4">
-                    <div class="flex-shrink-0">
+                <div class="elsa-p-8 elsa-flex elsa-content-end elsa-justify-right elsa-bg-white elsa-space-x-4">
+                    <div class="elsa-flex-shrink-0">
                         {this.renderBulkActions()}
                     </div>
-                    <div class="flex-1">
+                    <div class="elsa-flex-1">
                         &nbsp;
                     </div>
                     {this.renderWorkflowFilter()}
@@ -241,92 +248,101 @@ export class ElsaWorkflowInstanceListScreen {
                     {this.renderOrderByFilter()}
                 </div>
 
-                <div class="mt-8 sm:block">
-                    <div class="align-middle inline-block min-w-full border-b border-gray-200">
-                        <table class="min-w-full">
+                <div class="elsa-mt-8 sm:elsa-block">
+                    <div class="elsa-align-middle elsa-inline-block elsa-min-w-full elsa-border-b elsa-border-gray-200">
+                        <table class="elsa-min-w-full">
                             <thead>
-                            <tr class="border-t border-gray-200">
-                                <th class="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
-                                    <input type="checkbox" value="true" checked={this.selectAllChecked} onChange={e => this.onSelectAllCheckChange(e)} class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"/>
+                            <tr class="elsa-border-t elsa-border-gray-200">
+                                <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
+                                    <input type="checkbox" value="true" checked={this.selectAllChecked} onChange={e => this.onSelectAllCheckChange(e)} class="focus:elsa-ring-blue-500 elsa-h-4 elsa-w-4 elsa-text-blue-600 elsa-border-gray-300 elsa-rounded"/>
                                 </th>
-                                <th class="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
-                                    <span class="lg:pl-2">ID</span>
+                                <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
+                                    ID
                                 </th>
-                                <th class="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
+                                    Correlation ID
+                                </th>
+                                <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
                                     Workflow
                                 </th>
-                                <th class="hidden md:table-cell px-6 py-3 border-b border-gray-200 bg-gray-50 text-right text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-right elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
                                     Version
                                 </th>
-                                <th class="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
                                     Instance Name
                                 </th>
-                                <th class="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
                                     Status
                                 </th>
-                                <th class="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
                                     Created
                                 </th>
-                                <th class="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
                                     Finished
                                 </th>
-                                <th class="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
                                     Last Executed
                                 </th>
-                                <th class="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
                                     Faulted
                                 </th>
-                                <th class="pr-6 py-3 border-b border-gray-200 bg-gray-50 text-right text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider"/>
+                                <th class="elsa-pr-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider"/>
                             </tr>
                             </thead>
-                            <tbody class="bg-white divide-y divide-gray-100">
+                            <tbody class="elsa-bg-white elsa-divide-y elsa-divide-gray-100">
                             {workflowInstances.map(workflowInstance => {
-                                const workflowBlueprint = workflowBlueprints.find(x => x.id == workflowInstance.definitionId && x.version == workflowInstance.version) ?? {displayName: '(Workflow definition not found)'};
-                                const displayName = workflowBlueprint.displayName;
+                                const workflowBlueprint = workflowBlueprints.find(x => x.id == workflowInstance.definitionId && x.version == workflowInstance.version) ?? {name: 'Not Found', displayName: '(Workflow definition not found)'};
+                                const displayName = workflowBlueprint.displayName || workflowBlueprint.name || 'Untitled';
                                 const statusColor = this.getStatusColor(workflowInstance.workflowStatus);
                                 const viewUrl = `/workflow-instances/${workflowInstance.id}`;
                                 const instanceName = !workflowInstance.name ? '' : workflowInstance.name;
                                 const isSelected = this.selectedWorkflowInstanceIds.findIndex(x => x === workflowInstance.id) >= 0;
-                                //var displayContext = WorkflowInstanceDisplayContexts[workflowInstance];
+                                const createdAt = moment(workflowInstance.createdAt);
+                                const finishedAt = !!workflowInstance.finishedAt ? moment(workflowInstance.finishedAt) : null;
+                                const lastExecutedAt = !!workflowInstance.lastExecutedAt ? moment(workflowInstance.lastExecutedAt) : null;
+                                const faultedAt = !!workflowInstance.faultedAt ? moment(workflowInstance.faultedAt) : null;
 
                                 return <tr>
-                                    <td class="px-6 py-3 whitespace-no-wrap text-sm leading-5 font-medium text-gray-900">
+                                    <td class="elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-font-medium elsa-text-gray-900">
                                         <input type="checkbox" value={workflowInstance.id} checked={isSelected} onChange={e => this.onWorkflowInstanceCheckChange(e, workflowInstance)}
-                                               class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"/>
+                                               class="focus:elsa-ring-blue-500 elsa-h-4 elsa-w-4 elsa-text-blue-600 elsa-border-gray-300 elsa-rounded"/>
                                     </td>
-                                    <td class="px-6 py-3 whitespace-no-wrap text-sm leading-5 font-medium text-gray-900">
-                                        <stencil-route-link url={viewUrl} anchorClass="truncate hover:text-gray-600">{workflowInstance.id}</stencil-route-link>
+                                    <td class="elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-font-medium elsa-text-gray-900">
+                                        <stencil-route-link url={viewUrl} anchorClass="elsa-truncate hover:elsa-text-gray-600">{workflowInstance.id}</stencil-route-link>
                                     </td>
-                                    <td class="px-6 py-3 whitespace-no-wrap text-sm leading-5 font-medium text-gray-900 text-left">
-                                        <a href={`/workflow-registry/${workflowInstance.definitionId}/viewer`} class="truncate hover:text-gray-600">
+                                    <td class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-font-medium elsa-text-gray-900">
+                                        {!!workflowInstance.correlationId ? workflowInstance.correlationId : ''}
+                                    </td>
+                                    <td class="elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-font-medium elsa-text-gray-900 elsa-text-left">
+                                        <a href={`/workflow-registry/${workflowInstance.definitionId}/viewer`} class="elsa-truncate hover:elsa-text-gray-600">
                                             {displayName}
                                         </a>
                                     </td>
-                                    <td class="hidden md:table-cell px-6 py-3 whitespace-no-wrap text-sm leading-5 text-gray-500 text-right">
+                                    <td class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-right elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-uppercase">
                                         {workflowInstance.version}
                                     </td>
-                                    <td class="px-6 py-3 whitespace-no-wrap text-sm leading-5 font-medium text-gray-900 text-left">
-                                        <stencil-route-link url={`"@($" workflow-registry/{workflowInstance.definitionId}/viewer")"`} anchorClass="truncate hover:text-gray-600">{instanceName}</stencil-route-link>
+                                    <td class="elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-font-medium elsa-text-gray-900 elsa-text-left">
+                                        <stencil-route-link url={`"@($" workflow-registry/{workflowInstance.definitionId}/viewer")"`} anchorClass="elsa-truncate hover:elsa-text-gray-600">{instanceName}</stencil-route-link>
                                     </td>
-                                    <td class="hidden md:table-cell px-6 py-3 whitespace-no-wrap text-sm leading-5 text-gray-500 text-right">
-                                        <div class="flex items-center space-x-3 lg:pl-2">
-                                            <div class={`flex-shrink-0 w-2-5 h-2-5 rounded-full bg-${statusColor}-600`}/>
+                                    <td class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-text-right">
+                                        <div class="elsa-flex elsa-items-center elsa-space-x-3 lg:elsa-pl-2">
+                                            <div class={`flex-shrink-0 elsa-w-2-5 elsa-h-2-5 elsa-rounded-full elsa-bg-${statusColor}-600`}/>
                                             <span>{workflowInstance.workflowStatus}</span>
                                         </div>
                                     </td>
-                                    <td class="hidden md:table-cell px-6 py-3 whitespace-no-wrap text-sm leading-5 text-gray-500 text-left">
-                                        {workflowInstance.createdAt}
+                                    <td class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-text-left">
+                                        {createdAt.format('DD-MM-YYYY HH:mm:ss')}
                                     </td>
-                                    <td class="hidden md:table-cell px-6 py-3 whitespace-no-wrap text-sm leading-5 text-gray-500 text-left">
-                                        {!!workflowInstance.finishedAt ? workflowInstance.finishedAt.toString() : '-'}
+                                    <td class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-text-left">
+                                        {!!finishedAt ? finishedAt.format('DD-MM-YYYY HH:mm:ss') : '-'}
                                     </td>
-                                    <td class="hidden md:table-cell px-6 py-3 whitespace-no-wrap text-sm leading-5 text-gray-500 text-left">
-                                        {!!workflowInstance.lastExecutedAt ? workflowInstance.lastExecutedAt.toString() : '-'}
+                                    <td class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-text-left">
+                                        {!!lastExecutedAt ? lastExecutedAt.format('DD-MM-YYYY HH:mm:ss') : '-'}
                                     </td>
-                                    <td class="hidden md:table-cell px-6 py-3 whitespace-no-wrap text-sm leading-5 text-gray-500 text-left">
-                                        {!!workflowInstance.faultedAt ? workflowInstance.faultedAt.toString() : '-'}
+                                    <td class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-text-left">
+                                        {!!faultedAt ? faultedAt.format('DD-MM-YYYY HH:mm:ss') : '-'}
                                     </td>
-                                    <td class="pr-6">
+                                    <td class="elsa-pr-6">
                                         <elsa-context-menu history={this.history} menuItems={[
                                             {text: 'View', anchorUrl: viewUrl, icon: renderViewIcon()},
                                             {text: 'Delete', clickHandler: e => this.onDeleteClick(e, workflowInstance), icon: renderDeleteIcon()}
@@ -345,7 +361,7 @@ export class ElsaWorkflowInstanceListScreen {
     }
 
     renderBulkActions() {
-        const bulkActionIcon = <svg class="mr-3 h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        const bulkActionIcon = <svg class="elsa-mr-3 elsa-h-5 elsa-w-5 elsa-text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M13 10V3L4 14h7v7l9-11h-7z"/>
         </svg>;
 
@@ -378,7 +394,7 @@ export class ElsaWorkflowInstanceListScreen {
         items = [{text: 'All', value: null, url: this.buildFilterUrl(null, selectedWorkflowStatus, SelectedOrderBy), isSelected: !selectedWorkflowId}, ...items];
 
         const renderIcon = function () {
-            return <svg class="mr-3 h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            return <svg class="elsa-mr-3 elsa-h-5 elsa-w-5 elsa-text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke="none" d="M0 0h24v24H0z"/>
                 <rect x="4" y="4" width="6" height="6" rx="1"/>
                 <rect x="14" y="4" width="6" height="6" rx="1"/>
@@ -401,7 +417,7 @@ export class ElsaWorkflowInstanceListScreen {
         });
 
         const renderIcon = function () {
-            return <svg class="mr-3 h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            return <svg class="elsa-mr-3 elsa-h-5 elsa-w-5 elsa-text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <circle cx="12" cy="12" r="10"/>
                 <polygon points="10 8 16 12 10 16 10 8"/>
             </svg>
@@ -420,7 +436,7 @@ export class ElsaWorkflowInstanceListScreen {
         });
 
         const renderIcon = function () {
-            return <svg class="mr-3 h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            return <svg class="elsa-mr-3 elsa-h-5 elsa-w-5 elsa-text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"/>
             </svg>
         };

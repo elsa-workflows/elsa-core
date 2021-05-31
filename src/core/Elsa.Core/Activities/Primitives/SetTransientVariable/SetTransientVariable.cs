@@ -15,10 +15,10 @@ namespace Elsa.Activities.Primitives
     )]
     public class SetTransientVariable : Activity
     {
-        [ActivityProperty(Hint = "The name of the transient variable to store the value into.")]
+        [ActivityInput(Hint = "The name of the transient variable to store the value into.")]
         public string VariableName { get; set; } = default!;
 
-        [ActivityProperty(Hint = "The value to store in the transient variable.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "The value to store in the transient variable.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public object? Value { get; set; }
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)

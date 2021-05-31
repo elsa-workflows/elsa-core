@@ -48,7 +48,7 @@ namespace Elsa.Server.Api.Services
             
             foreach (var valueProvider in activityPropertyValueProviders)
             {
-                var value = await activityWrapper.GetPropertyValueAsync(valueProvider.Key, cancellationToken);
+                var value = await activityWrapper.EvaluatePropertyValueAsync(valueProvider.Key, cancellationToken);
                 properties.Set(valueProvider.Key, value);
             }
 

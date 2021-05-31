@@ -61,8 +61,7 @@ namespace Elsa.Bookmarks
 
             var workflowInstanceList = workflowInstances.ToList();
             var workflowInstanceIds = workflowInstanceList.Select(x => x.Id).ToList();
-            await DeleteBookmarksAsync(workflowInstanceIds, cancellationToken);
-
+            var oldBookmarks = await FindBookmarksAsync(workflowInstanceIds, cancellationToken).ToList();
             var workflowBlueprints = await _workflowRegistry.ListActiveAsync(cancellationToken);
             var workflowBlueprintsDictionary = workflowBlueprints.ToDictionary(x => (x.Id, x.Version));
             var entities = new List<Bookmark>();
@@ -79,12 +78,14 @@ namespace Elsa.Bookmarks
                 }
 
                 var blockingActivities = workflowBlueprint.GetBlockingActivities(workflowInstance!);
-                var bookmarkedWorkflows = await ExtractBookmarksAsync(workflowBlueprint, workflowInstance, blockingActivities, true, cancellationToken).ToList();
+                var bookmarkedWorkflows = await ExtractBookmarksAsync(workflowBlueprint, workflowInstance, blockingActivities, cancellationToken).ToList();
                 var bookmarks = MapBookmarks(bookmarkedWorkflows, workflowInstance);
                 entities.AddRange(bookmarks);
             }
             
             await _bookmarkStore.AddManyAsync(entities, cancellationToken);
+            var oldBookmarkIds = oldBookmarks.Select(x => x.Id).ToList();
+            await _bookmarkStore.DeleteManyAsync(new BookmarkIdsSpecification(oldBookmarkIds), cancellationToken);
 
             _stopwatch.Stop();
             _logger.LogInformation("Indexed {BookmarkCount} bookmarks in {ElapsedTime}", entities.Count, _stopwatch.Elapsed);
@@ -106,36 +107,34 @@ namespace Elsa.Bookmarks
             _logger.LogDebug("Deleted {DeletedBookmarkCount} bookmarks for workflow {WorkflowInstanceId}", count, workflowInstanceId);
         }
         
+        private async Task<IEnumerable<Bookmark>> FindBookmarksAsync(IEnumerable<string> workflowInstanceIds, CancellationToken cancellationToken = default)
+        {
+            var specification = new WorkflowInstanceIdsSpecification(workflowInstanceIds);
+            return await _bookmarkStore.FindManyAsync(specification, cancellationToken: cancellationToken);
+        }
+        
         private IEnumerable<Bookmark> MapBookmarks(IEnumerable<BookmarkedWorkflow> bookmarkedWorkflows, WorkflowInstance workflowInstance) =>
-            bookmarkedWorkflows.SelectMany(triggerDescriptor => triggerDescriptor.Bookmarks.Select(x => new Bookmark
+            bookmarkedWorkflows.Select(x => new Bookmark
             {
                 Id = _idGenerator.Generate(),
                 TenantId = workflowInstance.TenantId,
-                ActivityType = triggerDescriptor.ActivityType,
-                ActivityId = triggerDescriptor.ActivityId,
+                ActivityType = x.ActivityType,
+                ActivityId = x.ActivityId,
                 WorkflowInstanceId = workflowInstance.Id,
-                Hash = _hasher.Hash(x),
-                Model = _contentSerializer.Serialize(x),
-                ModelType = x.GetType().GetSimpleAssemblyQualifiedName()
-            }));
+                CorrelationId = workflowInstance.CorrelationId,
+                Hash = _hasher.Hash(x.Bookmark),
+                Model = _contentSerializer.Serialize(x.Bookmark),
+                ModelType = x.Bookmark.GetType().GetSimpleAssemblyQualifiedName()
+            });
 
         private async Task<IEnumerable<BookmarkedWorkflow>> ExtractBookmarksAsync(
             IWorkflowBlueprint workflowBlueprint,
             WorkflowInstance workflowInstance,
             IEnumerable<IActivityBlueprint> blockingActivities,
-            bool loadContext,
             CancellationToken cancellationToken)
         {
             // Setup workflow execution context
             var workflowExecutionContext = new WorkflowExecutionContext(_serviceProvider, workflowBlueprint, workflowInstance);
-
-            // Load workflow context.
-            workflowExecutionContext.WorkflowContext =
-                loadContext &&
-                workflowBlueprint.ContextOptions != null &&
-                !string.IsNullOrWhiteSpace(workflowInstance.ContextId)
-                    ? await _workflowContextManager.LoadContext(new LoadWorkflowContext(workflowExecutionContext), cancellationToken)
-                    : default;
 
             // Extract bookmarks for each blocking activity.
             var bookmarkedWorkflows = new List<BookmarkedWorkflow>();
@@ -151,18 +150,16 @@ namespace Elsa.Bookmarks
 
                 foreach (var provider in providers)
                 {
-                    var bookmarks = (await provider.GetBookmarksAsync(providerContext, cancellationToken)).ToList();
+                    var bookmarkResults = (await provider.GetBookmarksAsync(providerContext, cancellationToken)).ToList();
 
-                    var bookmarkedWorkflow = new BookmarkedWorkflow
+                    bookmarkedWorkflows.AddRange(bookmarkResults.Select(bookmarkResult => new BookmarkedWorkflow
                     {
                         WorkflowBlueprint = workflowBlueprint,
                         WorkflowInstanceId = workflowInstance.Id,
-                        ActivityType = blockingActivity.Type,
+                        ActivityType = bookmarkResult.ActivityTypeName ?? blockingActivity.Type,
                         ActivityId = blockingActivity.Id,
-                        Bookmarks = bookmarks
-                    };
-
-                    bookmarkedWorkflows.Add(bookmarkedWorkflow);
+                        Bookmark = bookmarkResult.Bookmark
+                    }));
                 }
             }
 

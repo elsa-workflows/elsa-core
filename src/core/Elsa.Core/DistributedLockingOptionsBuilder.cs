@@ -1,7 +1,5 @@
 ﻿using System;
-using System.IO;
 using Medallion.Threading;
-using Medallion.Threading.FileSystem;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa

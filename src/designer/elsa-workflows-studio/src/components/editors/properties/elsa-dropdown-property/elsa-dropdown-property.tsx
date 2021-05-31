@@ -1,12 +1,10 @@
 import {Component, h, Prop, State} from '@stencil/core';
 import {ActivityDefinitionProperty, ActivityPropertyDescriptor, RuntimeSelectListItemsProviderSettings, SelectListItem, SyntaxNames} from "../../../../models";
 import Tunnel from "../../../../data/workflow-editor";
-import {createElsaClient} from "../../../../services/elsa-client";
 import {getSelectListItems} from "../../../../utils/select-list-items";
 
 @Component({
   tag: 'elsa-dropdown-property',
-  styleUrl: 'elsa-dropdown-property.css',
   shadow: false,
 })
 export class ElsaDropdownProperty {
@@ -49,7 +47,7 @@ export class ElsaDropdownProperty {
                             onDefaultSyntaxValueChanged={e => this.onDefaultSyntaxValueChanged(e)}
                             editor-height="2.75em"
                             single-line={true}>
-        <select id={fieldId} name={fieldName} onChange={e => this.onChange(e)} class="mt-1 block focus:ring-blue-500 focus:border-blue-500 w-full shadow-sm sm:max-w-xs sm:text-sm border-gray-300 rounded-md">
+        <select id={fieldId} name={fieldName} onChange={e => this.onChange(e)} class="elsa-mt-1 elsa-block focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-w-full elsa-shadow-sm sm:elsa-max-w-xs sm:elsa-text-sm elsa-border-gray-300 elsa-rounded-md">
           {items.map(item => {
             const optionIsObject = typeof (item) == 'object';
             const value = optionIsObject ? item.value : item.toString();

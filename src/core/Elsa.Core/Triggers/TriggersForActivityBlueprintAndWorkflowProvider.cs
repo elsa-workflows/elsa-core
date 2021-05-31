@@ -13,18 +13,18 @@ namespace Elsa.Triggers
     /// </summary>
     public class TriggersForActivityBlueprintAndWorkflowProvider : IGetsTriggersForActivityBlueprintAndWorkflow
     {
-        readonly IBookmarkHasher bookmarkHasher;
-        readonly IEnumerable<IBookmarkProvider> bookmarkProviders;
-        readonly ICreatesActivityExecutionContextForActivityBlueprint activityExecutionContextFactory;
+        private readonly IBookmarkHasher _bookmarkHasher;
+        private readonly IEnumerable<IBookmarkProvider> _bookmarkProviders;
+        private readonly ICreatesActivityExecutionContextForActivityBlueprint _activityExecutionContextFactory;
 
         public TriggersForActivityBlueprintAndWorkflowProvider(
             IBookmarkHasher bookmarkHasher,
             IEnumerable<IBookmarkProvider> bookmarkProviders,
             ICreatesActivityExecutionContextForActivityBlueprint activityExecutionContextFactory)
         {
-            this.bookmarkHasher = bookmarkHasher ?? throw new System.ArgumentNullException(nameof(bookmarkHasher));
-            this.bookmarkProviders = bookmarkProviders ?? throw new System.ArgumentNullException(nameof(bookmarkProviders));
-            this.activityExecutionContextFactory = activityExecutionContextFactory ?? throw new System.ArgumentNullException(nameof(activityExecutionContextFactory));
+            _bookmarkHasher = bookmarkHasher;
+            _bookmarkProviders = bookmarkProviders;
+            _activityExecutionContextFactory = activityExecutionContextFactory;
         }
 
         /// <summary>
@@ -62,7 +62,7 @@ namespace Elsa.Triggers
             CancellationToken cancellationToken,
             IDictionary<string, ActivityType> activityTypes)
         {
-            var activityExecutionContext = activityExecutionContextFactory.CreateActivityExecutionContext(
+            var activityExecutionContext = _activityExecutionContextFactory.CreateActivityExecutionContext(
                 activity,
                 workflowExecutionContext,
                 cancellationToken);
@@ -71,23 +71,23 @@ namespace Elsa.Triggers
             return new BookmarkProviderContext(activityExecutionContext, activityType, BookmarkIndexingMode.WorkflowBlueprint);
         }
 
-        async IAsyncEnumerable<IBookmarkProvider> GetSupportedBookmarkProvidersForContextAsync(BookmarkProviderContext context)
+        private async IAsyncEnumerable<IBookmarkProvider> GetSupportedBookmarkProvidersForContextAsync(BookmarkProviderContext context)
         {
-            foreach (var provider in bookmarkProviders)
+            foreach (var provider in _bookmarkProviders)
                 if (await provider.SupportsActivityAsync(context))
                     yield return provider;
         }
 
-        async Task<IList<WorkflowTrigger>> GetTriggersForBookmarkProvider(
+        private async Task<IList<WorkflowTrigger>> GetTriggersForBookmarkProvider(
             IBookmarkProvider provider,
             BookmarkProviderContext context,
             IActivityBlueprint activityBlueprint,
             IWorkflowBlueprint workflowBlueprint,
             CancellationToken cancellationToken = default)
         {
-            var bookmarks = (await provider.GetBookmarksAsync(context, cancellationToken)).ToList();
-            return bookmarks
-                .Select(x => new WorkflowTrigger(workflowBlueprint, activityBlueprint.Id, activityBlueprint.Type, bookmarkHasher.Hash(x), x))
+            var bookmarkResults = (await provider.GetBookmarksAsync(context, cancellationToken)).ToList();
+            return bookmarkResults
+                .Select(x => new WorkflowTrigger(workflowBlueprint, activityBlueprint.Id, activityBlueprint.Type, _bookmarkHasher.Hash(x.Bookmark), x.Bookmark))
                 .ToList();
         }
     }

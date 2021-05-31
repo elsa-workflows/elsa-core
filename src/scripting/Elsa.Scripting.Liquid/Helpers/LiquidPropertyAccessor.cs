@@ -12,7 +12,7 @@ namespace Elsa.Scripting.Liquid.Helpers
     /// </summary>
     public class LiquidPropertyAccessor : LiquidObjectAccessor<FluidValue>
     {
-        public LiquidPropertyAccessor(Func<string, Task<FluidValue?>> getter) : base(getter!)
+        public LiquidPropertyAccessor(Func<string, Task<FluidValue>> getter) : base(getter!)
         {
         }
     }

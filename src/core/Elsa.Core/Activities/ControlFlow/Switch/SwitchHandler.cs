@@ -36,9 +36,9 @@ namespace Elsa.Activities.ControlFlow
             {
                 var syntax = caseModel.Syntax!;
                 var expression = caseModel.Expressions![syntax];
-                var result = await evaluator.EvaluateAsync<bool>(expression, syntax, context, cancellationToken);
-
-                yield return new SwitchCase(caseModel.Name, result);
+                var result = await evaluator.TryEvaluateAsync<bool>(expression, syntax, context, cancellationToken);
+                var caseResult = result.Success && result.Value;
+                yield return new SwitchCase(caseModel.Name, caseResult);
             }
         }
 

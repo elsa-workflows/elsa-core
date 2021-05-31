@@ -9,10 +9,15 @@ namespace Elsa.Scripting.JavaScript.Services
 
         public object? ConvertToDesiredType(object? evaluationResult, Type desiredType)
         {
-            var converter = TypeDescriptor.GetConverter(evaluationResult);
+            var converter = TypeDescriptor.GetConverter(evaluationResult!);
 
             if (converter.CanConvertTo(desiredType))
-                return converter.ConvertTo(evaluationResult, desiredType);
+                return converter.ConvertTo(evaluationResult!, desiredType);
+
+            var targetConverter = TypeDescriptor.GetConverter(desiredType);
+
+            if (targetConverter.CanConvertFrom(evaluationResult!.GetType()))
+                return targetConverter.ConvertFrom(evaluationResult!);
 
             return wrapped.ConvertToDesiredType(evaluationResult, desiredType);
         }

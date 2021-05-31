@@ -14,7 +14,7 @@ namespace Elsa.Client.Services
         Task<WorkflowDefinition> GetByVersionIdAsync(string workflowDefinitionVersionId, CancellationToken cancellationToken = default);
 
         [Get("/v1/workflow-definitions")]
-        Task<PagedList<WorkflowDefinition>> ListAsync(int? page = default, int? pageSize = default, VersionOptions? versionOptions = default, CancellationToken cancellationToken = default);
+        Task<PagedList<WorkflowDefinitionSummary>> ListAsync(int? page = default, int? pageSize = default, VersionOptions? version = default, CancellationToken cancellationToken = default);
 
         [Post("/v1/workflow-definitions")]
         Task<WorkflowDefinition> SaveAsync([Body] SaveWorkflowDefinitionRequest request, CancellationToken cancellationToken = default);

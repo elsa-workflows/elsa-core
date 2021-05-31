@@ -14,13 +14,13 @@
     </PropertyGroup>
 
     <ItemGroup>       
-        <PackageReference Include="DistributedLock.Core" Version="1.0.0" />       
+        <PackageReference Include="DistributedLock.Core" Version="1.0.1" />       
         <PackageReference Include="LinqKit.Core" Version="1.1.24" />
         <PackageReference Include="MediatR" Version="9.0.0" />
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="5.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Localization.Abstractions" Version="5.0.5" />
+        <PackageReference Include="Microsoft.Extensions.Localization.Abstractions" Version="5.0.6" />
         <PackageReference Include="Microsoft.Extensions.Primitives" Version="5.0.1" />
         <PackageReference Include="NodaTime" Version="3.0.5" />
         <PackageReference Include="NodaTime.Serialization.JsonNet" Version="3.0.0" />

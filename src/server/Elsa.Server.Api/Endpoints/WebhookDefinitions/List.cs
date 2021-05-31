@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 //using Elsa.Activities.Webhooks.Models;
 using Elsa.Models;
 using Elsa.Persistence.Specifications;
-using Elsa.Serialization;
 using Elsa.Server.Api.Models;
 using Elsa.Server.Api.Services;
 using Elsa.Server.Api.Swagger.Examples;

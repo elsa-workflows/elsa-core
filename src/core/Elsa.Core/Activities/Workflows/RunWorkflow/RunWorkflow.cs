@@ -29,14 +29,14 @@ namespace Elsa.Activities.Workflows
             _workflowRegistry = workflowRegistry;
         }
 
-        [ActivityProperty(
+        [ActivityInput(
             Label = "Workflow Definition",
             Hint = "The workflow definition ID to run.",
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? WorkflowDefinitionId { get; set; } = default!;
 
-        [ActivityProperty(
+        [ActivityInput(
             Label = "Tenant ID",
             Hint = "The tenant ID to which the workflow to run belongs.",
             Category = PropertyCategories.Advanced,
@@ -44,10 +44,10 @@ namespace Elsa.Activities.Workflows
         )]
         public string? TenantId { get; set; } = default!;
 
-        [ActivityProperty(Hint = "Optional input to send to the workflow to run.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "Optional input to send to the workflow to run.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public object? Input { get; set; }
 
-        [ActivityProperty(
+        [ActivityInput(
             Label = "Correlation ID",
             Hint = "The correlation ID to associate with the workflow to run.",
             Category = PropertyCategories.Advanced,
@@ -55,7 +55,7 @@ namespace Elsa.Activities.Workflows
         )]
         public string? CorrelationId { get; set; }
 
-        [ActivityProperty(
+        [ActivityInput(
             Label = "Context ID",
             Hint = "The context ID to associate with the workflow to run.",
             Category = PropertyCategories.Advanced,
@@ -63,13 +63,14 @@ namespace Elsa.Activities.Workflows
         )]
         public string? ContextId { get; set; }
 
-        [ActivityProperty(
-            UIHint = ActivityPropertyUIHints.Json,
+        [ActivityInput(
+            UIHint = ActivityInputUIHints.MultiLine,
             Hint = "Optional custom attributes to associate with the workflow to run.",
-            Category = PropertyCategories.Advanced)]
+            Category = PropertyCategories.Advanced,
+            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid, SyntaxNames.Json })]
         public Variables? CustomAttributes { get; set; } = default!;
 
-        [ActivityProperty(
+        [ActivityInput(
             Hint = "Fire And Forget: run the child workflow and continue the current one. Blocking: Run the child workflow and suspend the current one until the child workflow finishes.",
             SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public RunWorkflowMode Mode { get; set; }
@@ -88,8 +89,9 @@ namespace Elsa.Activities.Workflows
             if (workflowBlueprint == null || workflowBlueprint.Id == context.WorkflowInstance.DefinitionId)
                 return Outcome("Not Found");
 
-            var workflowInstance = await _startsWorkflow.StartWorkflowAsync(workflowBlueprint!, TenantId, Input, CorrelationId, ContextId, cancellationToken);
-            var workflowStatus = workflowInstance.WorkflowStatus;
+            var result = await _startsWorkflow.StartWorkflowAsync(workflowBlueprint!, TenantId, Input, CorrelationId, ContextId, cancellationToken);
+            var workflowInstance = result.WorkflowInstance;
+            var workflowStatus = result.WorkflowInstance.WorkflowStatus;
 
             ChildWorkflowInstanceId = workflowInstance.Id;
 

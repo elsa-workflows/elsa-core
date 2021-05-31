@@ -28,22 +28,32 @@ namespace Elsa.Activities.Email
             _options = options.Value;
         }
 
-        [ActivityProperty(Hint = "The sender's email address.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "The sender's email address.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string? From { get; set; }
 
-        [ActivityProperty(Hint = "The recipients email addresses.", UIHint = ActivityPropertyUIHints.MultiText, DefaultSyntax = SyntaxNames.Json, SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript })]
+        [ActivityInput(Hint = "The recipients email addresses.", UIHint = ActivityInputUIHints.MultiText, DefaultSyntax = SyntaxNames.Json, SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript })]
         public ICollection<string> To { get; set; } = new List<string>();
 
-        [ActivityProperty(Hint = "The cc recipients email addresses. (Optional)", UIHint = ActivityPropertyUIHints.MultiText, DefaultSyntax = SyntaxNames.Json, SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript })]
+        [ActivityInput(
+            Hint = "The cc recipients email addresses.", 
+            UIHint = ActivityInputUIHints.MultiText, 
+            DefaultSyntax = SyntaxNames.Json, 
+            SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript },
+            Category = "More")]
         public ICollection<string> Cc { get; set; } = new List<string>();
 
-        [ActivityProperty(Hint = "The Bcc recipients email addresses. (Optional)", UIHint = ActivityPropertyUIHints.MultiText, DefaultSyntax = SyntaxNames.Json, SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript })]
+        [ActivityInput(
+            Hint = "The Bcc recipients email addresses.", 
+            UIHint = ActivityInputUIHints.MultiText, 
+            DefaultSyntax = SyntaxNames.Json, 
+            SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript },
+            Category = "More")]
         public ICollection<string> Bcc { get; set; } = new List<string>();
 
-        [ActivityProperty(Hint = "The subject of the email message.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "The subject of the email message.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string? Subject { get; set; }
 
-        [ActivityProperty(Hint = "The body of the email message.", UIHint = ActivityPropertyUIHints.MultiLine, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "The body of the email message.", UIHint = ActivityInputUIHints.MultiLine, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string? Body { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)

@@ -43,6 +43,8 @@ namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
         public bool LoadWorkflowContext { get; set; }
         public bool SaveWorkflowContext { get; set; }
         public Variables Properties { get; set; } = new();
+
+        public override string ToString() => Type;
     }
 
     public class WorkflowBlueprintSummaryModel

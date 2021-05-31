@@ -4,13 +4,9 @@ using Elsa.Scripting.JavaScript.Services;
 
 namespace Elsa.Scripting.JavaScript.Typings
 {
-    public class EnumerableTypeDefinitionProvider : ITypeDefinitionProvider
+    public class EnumerableTypeDefinitionProvider : TypeDefinitionProvider
     {
-        public bool SupportsType(Type type) => typeof(IEnumerable).IsAssignableFrom(type);
-
-        public string GetTypeDefinition(Type type)
-        {
-            return "[]";
-        }
+        public override bool SupportsType(TypeDefinitionContext context, Type type) => typeof(IEnumerable).IsAssignableFrom(type);
+        public override string GetTypeDefinition(TypeDefinitionContext context, Type type) => "[]";
     }
 }

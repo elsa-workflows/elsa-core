@@ -10,12 +10,12 @@
             This package provides a MongoDb persistence provider.
         </Description>
         <Copyright>2020</Copyright>
-        <PackageTags>elsa, workflows, orchard</PackageTags>
+        <PackageTags>elsa, workflows, mongodb</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="MongoDb.Bson.NodaTime" Version="2.1.0" />
-        <PackageReference Include="MongoDB.Driver" Version="2.12.1" />
+        <PackageReference Include="MongoDB.Driver" Version="2.12.3" />
     </ItemGroup>
 
     <ItemGroup>

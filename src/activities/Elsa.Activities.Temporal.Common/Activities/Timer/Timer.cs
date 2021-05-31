@@ -22,7 +22,7 @@ namespace Elsa.Activities.Temporal
             _logger = logger;
         }
 
-        [ActivityProperty(Hint = "The time interval at which this activity should tick.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "The time interval at which this activity should tick.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public Duration Timeout { get; set; } = default!;
 
         public Instant? ExecuteAt
@@ -31,13 +31,6 @@ namespace Elsa.Activities.Temporal
             set => SetState(value);
         }
         
-        protected override bool OnCanExecute(ActivityExecutionContext context)
-        {
-            var now = _clock.GetCurrentInstant();
-            var executeAt = ExecuteAt;
-            return executeAt == null || executeAt <= now;
-        }
-
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
             if (context.WorkflowExecutionContext.IsFirstPass)

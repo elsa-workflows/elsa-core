@@ -13,9 +13,10 @@ namespace Elsa.Builders
         public static IActivityBuilder Then(
             this IBuilder builder,
             Func<ActivityExecutionContext, ValueTask<IActivityExecutionResult>> activity,
+            Action<IActivityBuilder>? branch = default,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default) =>
-            builder.Then<Inline>(inline => inline.Set(x => x.Function, RunInline(activity)), null, lineNumber, sourceFile);
+            builder.Then<Inline>(inline => inline.Set(x => x.Function, RunInline(activity)), branch, lineNumber, sourceFile);
 
         public static IActivityBuilder
             Then(this IBuilder builder, Func<ActivityExecutionContext, ValueTask> activity, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>

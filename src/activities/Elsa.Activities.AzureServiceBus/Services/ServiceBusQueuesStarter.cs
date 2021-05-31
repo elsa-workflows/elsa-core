@@ -4,10 +4,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Persistence;
-using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Services;
-using Elsa.Services.Models;
 using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -22,6 +19,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger _logger;
         private readonly ICollection<QueueWorker> _workers;
+        private readonly SemaphoreSlim _semaphore = new(1);
 
         public ServiceBusQueuesStarter(
             IQueueMessageReceiverClientFactory messageReceiverClientFactory,
@@ -38,11 +36,20 @@ namespace Elsa.Activities.AzureServiceBus.Services
 
         public async Task CreateWorkersAsync(CancellationToken cancellationToken = default)
         {
-            await DisposeExistingWorkersAsync();
-            var queueNames = (await GetQueueNamesAsync(cancellationToken).ToListAsync(cancellationToken)).Distinct();
+            await _semaphore.WaitAsync(cancellationToken);
 
-            foreach (var queueName in queueNames) 
-                await CreateAndAddWorkerAsync(queueName, cancellationToken);
+            try
+            {
+                await DisposeExistingWorkersAsync();
+                var queueNames = (await GetQueueNamesAsync(cancellationToken).ToListAsync(cancellationToken)).Distinct();
+
+                foreach (var queueName in queueNames)
+                    await CreateAndAddWorkerAsync(queueName, cancellationToken);
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
         }
 
         private async Task CreateAndAddWorkerAsync(string queueName, CancellationToken cancellationToken)
@@ -89,7 +96,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
 
                 foreach (var activity in workflowBlueprintWrapper.Filter<AzureServiceBusQueueMessageReceived>())
                 {
-                    var queueName = await activity.GetPropertyValueAsync(x => x.QueueName, cancellationToken);
+                    var queueName = await activity.EvaluatePropertyValueAsync(x => x.QueueName, cancellationToken);
 
                     if (string.IsNullOrWhiteSpace(queueName))
                     {

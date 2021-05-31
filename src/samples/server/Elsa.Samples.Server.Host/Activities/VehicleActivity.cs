@@ -16,15 +16,15 @@ namespace Elsa.Samples.Server.Host.Activities
     [Action]
     public class VehicleActivity : Activity, IActivityPropertyOptionsProvider, IRuntimeSelectListItemsProvider
     {
-        private Random _random;
-        
+        private readonly Random _random;
+
         public VehicleActivity()
         {
             _random = new Random();
         }
-        
-        [ActivityProperty(
-            UIHint = ActivityPropertyUIHints.Dropdown,
+
+        [ActivityInput(
+            UIHint = ActivityInputUIHints.Dropdown,
             OptionsProvider = typeof(VehicleActivity),
             DefaultSyntax = SyntaxNames.Literal,
             SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid }

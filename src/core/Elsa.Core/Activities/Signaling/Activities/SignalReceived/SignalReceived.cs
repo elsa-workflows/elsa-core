@@ -2,6 +2,7 @@ using System;
 using Elsa.Activities.Signaling.Models;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Design;
 using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -19,8 +20,14 @@ namespace Elsa.Activities.Signaling
     )]
     public class SignalReceived : Activity
     {
-        [ActivityProperty(Hint = "The name of the signal to wait for.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "The name of the signal to wait for.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string Signal { get; set; } = default!;
+
+        [ActivityInput(Hint = "The scope of the signal to wait for.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }, DefaultValue = SignalScope.Instance, Category = PropertyCategories.Advanced)]
+        public SignalScope Scope { get; set; } = SignalScope.Instance;
+
+        [ActivityOutput(Hint = "The input that was received with the signal.")]
+        public object? SignalInput { get; set; }
 
         protected override bool OnCanExecute(ActivityExecutionContext context)
         {
@@ -35,6 +42,7 @@ namespace Elsa.Activities.Signaling
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
         {
             var triggeredSignal = context.GetInput<Signal>()!;
+            SignalInput = triggeredSignal.Input;
             return Done(triggeredSignal.Input);
         }
     }

@@ -203,10 +203,10 @@ export class ElsaMonaco {
   }
 
   render() {
-    const padding = this.padding || 'pt-1.5 pl-1';
+    const padding = this.padding || 'elsa-pt-1.5 elsa-pl-1';
     return (
-      <Host class="monaco-editor-host border focus:ring-blue-500 focus:border-blue-500 block w-full min-w-0 rounded-md sm:text-sm border-gray-300 p-4" style={{'min-height': this.editorHeight}}>
-        <div ref={el => this.container = el} class={`monaco-editor-container ${padding}`}/>
+      <Host class="elsa-monaco-editor-host elsa-border focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300 elsa-p-4" style={{'min-height': this.editorHeight}}>
+        <div ref={el => this.container = el} class={`elsa-monaco-editor-container ${padding}`}/>
       </Host>
     )
   }

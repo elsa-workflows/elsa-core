@@ -1,3 +1,4 @@
+using Elsa.Activities.Conductor.Extensions;
 using Elsa.Activities.UserTask.Extensions;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
@@ -24,6 +25,9 @@ namespace Elsa.Samples.Server.Host
         public void ConfigureServices(IServiceCollection services)
         {
             var elsaSection = Configuration.GetSection("Elsa");
+            var sqlServerConnectionString = Configuration.GetConnectionString("SqlServer");
+            var sqliteConnectionString = Configuration.GetConnectionString("Sqlite");
+            var mongoDbConnectionString = Configuration.GetConnectionString("MongoDb");
 
             services.AddControllers();
 
@@ -43,8 +47,17 @@ namespace Elsa.Samples.Server.Host
                     .AddHttpActivities(elsaSection.GetSection("Http").Bind)
                     .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
                     .AddQuartzTemporalActivities()
+                    // .AddQuartzTemporalActivities(configureQuartz: quartz => quartz.UsePersistentStore(store =>
+                    // {
+                    //     store.UseJsonSerializer();
+                    //     store.UseSqlServer(sqlServerConnectionString);
+                    //     store.UseClustering();
+                    // }))
+                    //.AddHangfireTemporalActivities(hangfire => hangfire.UseInMemoryStorage(), (_, hangfireServer) => hangfireServer.SchedulePollingInterval = TimeSpan.FromSeconds(5))
+                    //.AddHangfireTemporalActivities(hangfire => hangfire.UseSqlServerStorage(sqlServerConnectionString), (_, hangfireServer) => hangfireServer.SchedulePollingInterval = TimeSpan.FromSeconds(5))
                     .AddJavaScriptActivities()
                     .AddUserTaskActivities()
+                    .AddConductorActivities(options => elsaSection.GetSection("Conductor").Bind(options))
                     .AddActivitiesFrom<Startup>()
                     .AddWorkflowsFrom<Startup>()
                 );
@@ -72,10 +85,7 @@ namespace Elsa.Samples.Server.Host
                 .UseCors()
                 .UseHttpActivities()
                 .UseRouting()
-                .UseEndpoints(endpoints =>
-                {
-                    endpoints.MapControllers();
-                });
+                .UseEndpoints(endpoints => { endpoints.MapControllers(); });
         }
     }
 }

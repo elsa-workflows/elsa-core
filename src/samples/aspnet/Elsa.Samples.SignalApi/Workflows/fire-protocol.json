@@ -1,0 +1,262 @@
+{
+  "$id": "1",
+  "definitionId": "cd6b168f415e4a85a3497d7b8ae377ed",
+  "versionId": "594123a8e04145b4a273d9338c2d7476",
+  "name": "Fire Protocol",
+  "version": 3,
+  "variables": {
+    "$id": "2",
+    "data": {}
+  },
+  "customAttributes": {
+    "$id": "3",
+    "data": {}
+  },
+  "isSingleton": false,
+  "persistenceBehavior": "WorkflowBurst",
+  "deleteCompletedInstances": false,
+  "isPublished": true,
+  "isLatest": true,
+  "activities": [
+    {
+      "$id": "4",
+      "activityId": "8611ce28-21ac-446a-a3eb-59f47a04fa8b",
+      "type": "SignalReceived",
+      "displayName": "Signal Received",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "persistOutput": false,
+      "properties": [
+        {
+          "$id": "5",
+          "name": "Signal",
+          "expressions": {
+            "$id": "6",
+            "Literal": "Fire"
+          }
+        },
+        {
+          "$id": "7",
+          "name": "Scope",
+          "expressions": {
+            "$id": "8"
+          }
+        }
+      ]
+    },
+    {
+      "$id": "9",
+      "activityId": "c242e5dc-a4c8-4085-82aa-69d5aafc2e80",
+      "type": "WriteLine",
+      "displayName": "Write Line",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "persistOutput": false,
+      "properties": [
+        {
+          "$id": "10",
+          "name": "Text",
+          "syntax": "Liquid",
+          "expressions": {
+            "$id": "11",
+            "Literal": "",
+            "Liquid": "There's a fire! Need water for workflow instance {{ WorkflowInstanceId }} fast!"
+          }
+        }
+      ]
+    },
+    {
+      "$id": "12",
+      "activityId": "8f27a5df-4c9f-49d2-a257-238213971530",
+      "type": "Fork",
+      "displayName": "Fork",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "persistOutput": false,
+      "properties": [
+        {
+          "$id": "13",
+          "name": "Branches",
+          "expressions": {
+            "$id": "14",
+            "Json": "[\"Timeout\",\"Extinguish\"]"
+          }
+        }
+      ]
+    },
+    {
+      "$id": "15",
+      "activityId": "3ef2c69e-3e86-443e-8aa9-570eb98969bb",
+      "type": "Timer",
+      "displayName": "Timer",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "persistOutput": false,
+      "properties": [
+        {
+          "$id": "16",
+          "name": "Timeout",
+          "syntax": "JavaScript",
+          "expressions": {
+            "$id": "17",
+            "JavaScript": "Duration.FromSeconds(10)"
+          }
+        }
+      ]
+    },
+    {
+      "$id": "18",
+      "activityId": "c13ef790-ad08-46a1-8744-7f13062e9824",
+      "type": "WriteLine",
+      "displayName": "Write Line",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "persistOutput": false,
+      "properties": [
+        {
+          "$id": "19",
+          "name": "Text",
+          "expressions": {
+            "$id": "20",
+            "Literal": "There goes the omelet :("
+          }
+        }
+      ]
+    },
+    {
+      "$id": "21",
+      "activityId": "fd27b8eb-3465-42d9-ba7e-f84e03b8a2e0",
+      "type": "Finish",
+      "displayName": "Finish",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "persistOutput": false,
+      "properties": [
+        {
+          "$id": "22",
+          "name": "OutputValue",
+          "expressions": {
+            "$id": "23"
+          }
+        },
+        {
+          "$id": "24",
+          "name": "OutcomeNames",
+          "expressions": {
+            "$id": "25"
+          }
+        }
+      ]
+    },
+    {
+      "$id": "26",
+      "activityId": "d79e1bbe-16db-46f3-aeb8-acbedf4b6e99",
+      "type": "WriteLine",
+      "displayName": "Write Line",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "persistOutput": false,
+      "properties": [
+        {
+          "$id": "27",
+          "name": "Text",
+          "expressions": {
+            "$id": "28",
+            "Literal": "Whew! Breakfast saved just in time :)"
+          }
+        }
+      ]
+    },
+    {
+      "$id": "29",
+      "activityId": "21e9a4d0-e49f-46b4-9d0b-d96cf3d4fea1",
+      "type": "SignalReceived",
+      "displayName": "Signal Received",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "persistOutput": false,
+      "properties": [
+        {
+          "$id": "30",
+          "name": "Signal",
+          "expressions": {
+            "$id": "31",
+            "Literal": "Water"
+          }
+        },
+        {
+          "$id": "32",
+          "name": "Scope",
+          "expressions": {
+            "$id": "33"
+          }
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "$id": "34",
+      "sourceActivityId": "8611ce28-21ac-446a-a3eb-59f47a04fa8b",
+      "targetActivityId": "c242e5dc-a4c8-4085-82aa-69d5aafc2e80",
+      "outcome": "Done"
+    },
+    {
+      "$id": "35",
+      "sourceActivityId": "c242e5dc-a4c8-4085-82aa-69d5aafc2e80",
+      "targetActivityId": "8f27a5df-4c9f-49d2-a257-238213971530",
+      "outcome": "Done"
+    },
+    {
+      "$id": "36",
+      "sourceActivityId": "8f27a5df-4c9f-49d2-a257-238213971530",
+      "targetActivityId": "3ef2c69e-3e86-443e-8aa9-570eb98969bb",
+      "outcome": "Timeout"
+    },
+    {
+      "$id": "37",
+      "sourceActivityId": "3ef2c69e-3e86-443e-8aa9-570eb98969bb",
+      "targetActivityId": "c13ef790-ad08-46a1-8744-7f13062e9824",
+      "outcome": "Done"
+    },
+    {
+      "$id": "38",
+      "sourceActivityId": "c13ef790-ad08-46a1-8744-7f13062e9824",
+      "targetActivityId": "fd27b8eb-3465-42d9-ba7e-f84e03b8a2e0",
+      "outcome": "Done"
+    },
+    {
+      "$id": "39",
+      "sourceActivityId": "d79e1bbe-16db-46f3-aeb8-acbedf4b6e99",
+      "targetActivityId": "fd27b8eb-3465-42d9-ba7e-f84e03b8a2e0",
+      "outcome": "Done"
+    },
+    {
+      "$id": "40",
+      "sourceActivityId": "8f27a5df-4c9f-49d2-a257-238213971530",
+      "targetActivityId": "21e9a4d0-e49f-46b4-9d0b-d96cf3d4fea1",
+      "outcome": "Extinguish"
+    },
+    {
+      "$id": "41",
+      "sourceActivityId": "21e9a4d0-e49f-46b4-9d0b-d96cf3d4fea1",
+      "targetActivityId": "d79e1bbe-16db-46f3-aeb8-acbedf4b6e99",
+      "outcome": "Extinguish"
+    },
+    {
+      "$id": "42",
+      "sourceActivityId": "21e9a4d0-e49f-46b4-9d0b-d96cf3d4fea1",
+      "targetActivityId": "d79e1bbe-16db-46f3-aeb8-acbedf4b6e99",
+      "outcome": "Done"
+    }
+  ],
+  "id": "594123a8e04145b4a273d9338c2d7476"
+}

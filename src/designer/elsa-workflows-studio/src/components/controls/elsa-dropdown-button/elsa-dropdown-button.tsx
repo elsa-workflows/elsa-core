@@ -31,10 +31,10 @@ export class ElsaContextMenu {
     getOriginClass(): string {
         switch (this.origin) {
             case DropdownButtonOrigin.TopLeft:
-                return `left-0 origin-top-left`;
+                return `elsa-left-0 elsa-origin-top-left`;
             case DropdownButtonOrigin.TopRight:
             default:
-                return 'right-0 origin-top-right';
+                return 'elsa-right-0 elsa-origin-top-right';
         }
     }
 
@@ -46,13 +46,13 @@ export class ElsaContextMenu {
 
     render() {
         return (
-            <div class="relative" ref={el => registerClickOutside(this, el, this.closeContextMenu)}>
+            <div class="elsa-relative" ref={el => registerClickOutside(this, el, this.closeContextMenu)}>
                 <button onClick={e => this.toggleMenu()} type="button"
-                        class="w-full bg-white border border-gray-300 rounded-md shadow-sm px-4 py-2 inline-flex justify-center text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        class="elsa-w-full elsa-bg-white elsa-border elsa-border-gray-300 elsa-rounded-md elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-inline-flex elsa-justify-center elsa-text-sm elsa-font-medium elsa-text-gray-700 hover:elsa-bg-gray-50 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500"
                         aria-haspopup="true" aria-expanded="false">
                     {this.renderIcon()}
                     {this.text}
-                    <svg class="ml-2.5 -mr-1.5 h-5 w-5 text-gray-400" x-description="Heroicon name: chevron-down" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <svg class="elsa-ml-2.5 -elsa-elsa-mr-1.5 elsa-h-5 elsa-w-5 elsa-text-gray-400" x-description="Heroicon name: chevron-down" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                         <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
                     </svg>
                 </button>
@@ -68,13 +68,13 @@ export class ElsaContextMenu {
         const originClass = this.getOriginClass();
 
         return <div ref={el => this.contextMenu = el}
-                    data-transition-enter="transition ease-out duration-100"
-                    data-transition-enter-start="transform opacity-0 scale-95"
-                    data-transition-leave="transition ease-in duration-75"
-                    data-transition-leave-start="transform opacity-100 scale-100"
-                    data-transition-leave-end="transform opacity-0 scale-95"            
-                    class={`hidden ${originClass} z-10 absolute mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5`}>
-            <div class="py-1" role="menu" aria-orientation="vertical">
+                    data-transition-enter="elsa-transition elsa-ease-out elsa-duration-100"
+                    data-transition-enter-start="elsa-transform elsa-opacity-0 elsa-scale-95"
+                    data-transition-leave="elsa-transition elsa-ease-in elsa-duration-75"
+                    data-transition-leave-start="elsa-transform elsa-opacity-100 elsa-scale-100"
+                    data-transition-leave-end="elsa-transform elsa-opacity-0 elsa-scale-95"            
+                    class={`hidden ${originClass} elsa-z-10 elsa-absolute elsa-mt-2 elsa-w-56 elsa-rounded-md elsa-shadow-lg elsa-bg-white elsa-ring-1 elsa-ring-black elsa-ring-opacity-5`}>
+            <div class="elsa-py-1" role="menu" aria-orientation="vertical">
                 {this.renderItems()}
             </div>
         </div>;
@@ -82,11 +82,11 @@ export class ElsaContextMenu {
 
     renderItems() {
         return this.items.map(item => {
-            const selectedCssClass = item.isSelected ? "bg-blue-600 hover:bg-blue-700 text-white" : "hover:bg-gray-100 text-gray-700 hover:text-gray-900";
+            const selectedCssClass = item.isSelected ? "elsa-bg-blue-600 hover:elsa-bg-blue-700 elsa-text-white" : "hover:elsa-bg-gray-100 elsa-text-gray-700 hover:elsa-text-gray-900";
 
             return !!item.url
-                ? <stencil-route-link onClick={e => this.closeContextMenu()} url={item.url} anchorClass={`block px-4 py-2 text-sm ${selectedCssClass} cursor-pointer`} role="menuitem">{item.text}</stencil-route-link>
-                : <a href="#" onClick={e => this.onItemClick(e, item)} class={`block px-4 py-2 text-sm ${selectedCssClass}`} role="menuitem">{item.text}</a>;
+                ? <stencil-route-link onClick={e => this.closeContextMenu()} url={item.url} anchorClass={`elsa-block elsa-px-4 elsa-py-2 elsa-text-sm ${selectedCssClass} elsa-cursor-pointer`} role="menuitem">{item.text}</stencil-route-link>
+                : <a href="#" onClick={e => this.onItemClick(e, item)} class={`elsa-block elsa-px-4 elsa-py-2 elsa-text-sm ${selectedCssClass}`} role="menuitem">{item.text}</a>;
         })
     }
 

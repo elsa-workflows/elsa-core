@@ -36,22 +36,22 @@ namespace Elsa.Services
             properties[propertyName] = provider;
         }
 
-        public IDictionary<string, IActivityPropertyValueProvider>? GetProviders(string activityId) => _providers.TryGetValue(activityId, out var properties) ? properties : null;
+        public IDictionary<string, IActivityPropertyValueProvider> GetProviders(string activityId) => 
+            _providers.TryGetValue(activityId, out var properties) 
+                ? properties ?? new Dictionary<string, IActivityPropertyValueProvider>() 
+                : new Dictionary<string, IActivityPropertyValueProvider>();
 
         public IActivityPropertyValueProvider? GetProvider(string activityId, string propertyName) =>
-            _providers.TryGetValue(activityId, out var properties) 
-            && properties != null 
-            && properties.TryGetValue(propertyName, out var provider) 
-                ? provider 
+            _providers.TryGetValue(activityId, out var properties)
+            && properties != null
+            && properties.TryGetValue(propertyName, out var provider)
+                ? provider
                 : null;
 
         public async ValueTask SetActivityPropertiesAsync(IActivity activity, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken = default)
         {
             var properties = activity.GetType().GetProperties().Where(IsActivityProperty).ToList();
             var providers = GetProviders(activity.Id);
-
-            if (providers == null)
-                return;
 
             foreach (var property in properties)
             {
@@ -61,16 +61,27 @@ namespace Elsa.Services
                 try
                 {
                     var value = await provider.GetValueAsync(activityExecutionContext, cancellationToken);
-                    property.SetValue(activity, value);
+
+                    if (value == null)
+                    {
+                        var activityPropertyAttribute = property.GetCustomAttribute<ActivityInputAttribute>();
+                        value = activityPropertyAttribute?.DefaultValue;
+                    }
+
+                    if (value != null)
+                    {
+                        property.SetValue(activity, value);
+                        activityExecutionContext.SetState(property.Name, value);
+                    }
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     throw new CannotSetActivityPropertyValueException($@"An exception was thrown whilst setting '{activity?.GetType().Name}.{property.Name}'. See the inner exception for further details.", e);
                 }
             }
         }
 
-        private bool IsActivityProperty(PropertyInfo property) => property.GetCustomAttribute<ActivityPropertyAttribute>() != null;
+        private bool IsActivityProperty(PropertyInfo property) => property.GetCustomAttribute<ActivityInputAttribute>() != null;
         public IEnumerator<KeyValuePair<string, IDictionary<string, IActivityPropertyValueProvider>>> GetEnumerator() => _providers.GetEnumerator();
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }

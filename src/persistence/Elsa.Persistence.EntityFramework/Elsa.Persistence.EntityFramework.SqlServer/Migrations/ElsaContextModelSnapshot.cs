@@ -33,6 +33,9 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<string>("CorrelationId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<string>("Hash")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
@@ -60,6 +63,9 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
                     b.HasIndex("ActivityType")
                         .HasDatabaseName("IX_Bookmark_ActivityType");
 
+                    b.HasIndex("CorrelationId")
+                        .HasDatabaseName("IX_Bookmark_CorrelationId");
+
                     b.HasIndex("Hash")
                         .HasDatabaseName("IX_Bookmark_Hash");
 
@@ -71,6 +77,9 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
 
                     b.HasIndex("ActivityType", "TenantId", "Hash")
                         .HasDatabaseName("IX_Bookmark_ActivityType_TenantId_Hash");
+
+                    b.HasIndex("Hash", "CorrelationId", "TenantId")
+                        .HasDatabaseName("IX_Bookmark_Hash_CorrelationId_TenantId");
 
                     b.ToTable("Bookmarks");
                 });
@@ -141,6 +150,7 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
                         .HasDatabaseName("IX_WorkflowDefinition_Version");
 
                     b.HasIndex("DefinitionId", "Version")
+                        .IsUnique()
                         .HasDatabaseName("IX_WorkflowDefinition_DefinitionId_VersionId");
 
                     b.ToTable("WorkflowDefinitions");

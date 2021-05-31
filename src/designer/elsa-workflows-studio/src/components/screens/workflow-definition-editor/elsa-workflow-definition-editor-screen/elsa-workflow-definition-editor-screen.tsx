@@ -11,7 +11,6 @@ import {registerClickOutside} from "stencil-click-outside";
 
 @Component({
   tag: 'elsa-workflow-definition-editor-screen',
-  styleUrl: 'elsa-workflow-definition-editor-screen.css',
   shadow: false,
 })
 export class ElsaWorkflowDefinitionEditorScreen {
@@ -265,9 +264,9 @@ export class ElsaWorkflowDefinitionEditorScreen {
   }
 
   mapActivityModel(source: ActivityDefinition): ActivityModel {
-    const descriptors: Array<ActivityDescriptor> = state.activityDescriptors;
-    const descriptor = descriptors.find(x => x.type == source.type);
-
+    const activityDescriptors: Array<ActivityDescriptor> = state.activityDescriptors;
+    const activityDescriptor = activityDescriptors.find(x => x.type == source.type);
+    
     return {
       activityId: source.activityId,
       description: source.description,
@@ -275,7 +274,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
       name: source.name,
       type: source.type,
       properties: source.properties,
-      outcomes: [...descriptor.outcomes],
+      outcomes: [...activityDescriptor.outcomes],
       persistOutput: source.persistOutput,
       persistWorkflow: source.persistWorkflow,
       saveWorkflowContext: source.saveWorkflowContext,
@@ -343,7 +342,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
     };
 
     return (
-      <Host class="flex flex-col w-full" ref={el => this.el = el}>
+      <Host class="elsa-flex elsa-flex-col elsa-w-full" ref={el => this.el = el}>
         <Tunnel.Provider state={tunnelState}>
           {this.renderCanvas()}
           {this.renderActivityPicker()}
@@ -355,11 +354,11 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   renderCanvas() {
 
-    const activityContextMenuButton =
-      `<div class="context-menu-wrapper flex-shrink-0">
+    const activityContextMenuButton = (activity: ActivityModel) =>
+      `<div class="context-menu-wrapper elsa-flex-shrink-0">
             <button aria-haspopup="true"
-                    class="w-8 h-8 inline-flex items-center justify-center text-gray-400 rounded-full bg-transparent hover:text-gray-500 focus:outline-none focus:text-gray-500 focus:bg-gray-100 transition ease-in-out duration-150">
-              <svg class="h-6 w-6 text-gray-400" width="24" height="24" viewBox="0 0 24 24" stroke-width="2"
+                    class="elsa-w-8 elsa-h-8 elsa-inline-flex elsa-items-center elsa-justify-center elsa-text-gray-400 elsa-rounded-full elsa-bg-transparent hover:elsa-text-gray-500 focus:elsa-outline-none focus:elsa-text-gray-500 focus:elsa-bg-gray-100 elsa-transition elsa-ease-in-out elsa-duration-150">
+              <svg class="elsa-h-6 elsa-w-6 elsa-text-gray-400" width="24" height="24" viewBox="0 0 24 24" stroke-width="2"
                    stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                 <path stroke="none" d="M0 0h24v24H0z"/>
                 <circle cx="5" cy="12" r="1"/>
@@ -370,20 +369,20 @@ export class ElsaWorkflowDefinitionEditorScreen {
           </div>`;
 
     return (
-      <div class="flex-1 flex relative">
-        <elsa-designer-tree model={this.workflowModel} 
-                            mode={WorkflowDesignerMode.Edit} 
+      <div class="elsa-flex-1 elsa-flex elsa-relative">
+        <elsa-designer-tree model={this.workflowModel}
+                            mode={WorkflowDesignerMode.Edit}
                             activityContextMenuButton={activityContextMenuButton}
                             onActivityContextMenuButtonClicked={e => this.onActivityContextMenuButtonClicked(e)}
                             activityContextMenu={this.activityContextMenuState}
-                            class="flex-1" 
+                            class="elsa-flex-1"
                             ref={el => this.designer = el}/>
         {this.renderWorkflowSettingsButton()}
         {this.renderActivityContextMenu()}
         <elsa-workflow-settings-modal workflowDefinition={this.workflowDefinition}/>
         <elsa-workflow-definition-editor-notifications/>
-        <div class="fixed bottom-10 right-12">
-          <div class="flex items-center space-x-4">
+        <div class="elsa-fixed elsa-bottom-10 elsa-right-12">
+          <div class="elsa-flex elsa-items-center elsa-space-x-4">
             {this.renderSavingIndicator()}
             {this.renderNetworkError()}
             {this.renderPublishButton()}
@@ -395,36 +394,36 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   renderActivityContextMenu() {
     return <div
-      data-transition-enter="transition ease-out duration-100"
-      data-transition-enter-start="transform opacity-0 scale-95"
-      data-transition-enter-end="transform opacity-100 scale-100"
-      data-transition-leave="transition ease-in duration-75"
-      data-transition-leave-start="transform opacity-100 scale-100"
-      data-transition-leave-end="transform opacity-0 scale-95"
-      class={`${this.activityContextMenuState.shown ? '' : 'hidden'} context-menu z-10 mx-3 w-48 mt-1 rounded-md shadow-lg`}
-      style={{position: 'absolute', left: `${this.activityContextMenuState.x}px`, top: `${this.activityContextMenuState.y - 64}px`}}
+      data-transition-enter="elsa-transition elsa-ease-out elsa-duration-100"
+      data-transition-enter-start="elsa-transform elsa-opacity-0 elsa-scale-95"
+      data-transition-enter-end="elsa-transform elsa-opacity-100 elsa-scale-100"
+      data-transition-leave="elsa-transition elsa-ease-in elsa-duration-75"
+      data-transition-leave-start="elsa-transform elsa-opacity-100 elsa-scale-100"
+      data-transition-leave-end="elsa-transform elsa-opacity-0 elsa-scale-95"
+      class={`${this.activityContextMenuState.shown ? '' : 'hidden'} context-menu elsa-z-10 elsa-mx-3 elsa-w-48 elsa-mt-1 elsa-rounded-md elsa-shadow-lg elsa-absolute`}
+      style={{left: `${this.activityContextMenuState.x}px`, top: `${this.activityContextMenuState.y - 64}px`}}
       ref={el =>
         registerClickOutside(this, el, () => {
           this.handleContextMenuChange({x: 0, y: 0, shown: false, activity: null});
         })
       }
     >
-      <div class="rounded-md bg-white shadow-xs" role="menu" aria-orientation="vertical" aria-labelledby="pinned-project-options-menu-0">
-        <div class="py-1">
+      <div class="elsa-rounded-md elsa-bg-white elsa-shadow-xs" role="menu" aria-orientation="vertical" aria-labelledby="pinned-project-options-menu-0">
+        <div class="elsa-py-1">
           <a
             onClick={e => this.onEditActivityClick(e)}
             href="#"
-            class="block px-4 py-2 text-sm leading-5 text-gray-700 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:bg-gray-100 focus:text-gray-900"
+            class="elsa-block elsa-px-4 elsa-py-2 elsa-text-sm elsa-leading-5 elsa-text-gray-700 hover:elsa-bg-gray-100 hover:elsa-text-gray-900 focus:elsa-outline-none focus:elsa-bg-gray-100 focus:elsa-text-gray-900"
             role="menuitem">
             Edit
           </a>
         </div>
-        <div class="border-t border-gray-100"/>
-        <div class="py-1">
+        <div class="elsa-border-t elsa-border-gray-100"/>
+        <div class="elsa-py-1">
           <a
             onClick={e => this.onDeleteActivityClick(e)}
             href="#"
-            class="block px-4 py-2 text-sm leading-5 text-gray-700 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:bg-gray-100 focus:text-gray-900"
+            class="elsa-block elsa-px-4 elsa-py-2 elsa-text-sm elsa-leading-5 elsa-text-gray-700 hover:elsa-bg-gray-100 hover:elsa-text-gray-900 focus:elsa-outline-none focus:elsa-bg-gray-100 focus:elsa-text-gray-900"
             role="menuitem">
             Delete
           </a>
@@ -444,8 +443,8 @@ export class ElsaWorkflowDefinitionEditorScreen {
   renderWorkflowSettingsButton() {
     return (
       <button onClick={() => this.onShowWorkflowSettingsClick()} type="button"
-              class="workflow-settings-button fixed top-20 right-12 inline-flex items-center p-2 rounded-full border border-transparent bg-white shadow text-gray-400 hover:text-blue-500 focus:text-blue-500 hover:ring-2 hover:ring-offset-2 hover:ring-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" fill="none" class="h-8 w-8">
+              class="workflow-settings-button elsa-fixed elsa-top-20 elsa-right-12 elsa-inline-flex elsa-items-center elsa-p-2 elsa-rounded-full elsa-border elsa-border-transparent elsa-bg-white shadow elsa-text-gray-400 hover:elsa-text-blue-500 focus:elsa-text-blue-500 hover:elsa-ring-2 hover:elsa-ring-offset-2 hover:elsa-ring-blue-500 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" fill="none" class="elsa-h-8 elsa-w-8">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -474,7 +473,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
     return (
       <div>
-        <span class="text-gray-400 text-sm">{message}</span>
+        <span class="elsa-text-gray-400 elsa-text-sm">{message}</span>
       </div>
     );
   }
@@ -485,7 +484,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
     return (
       <div>
-        <span class="text-rose-400 text-sm">An error occurred: {this.networkError}</span>
+        <span class="elsa-text-rose-400 elsa-text-sm">An error occurred: {this.networkError}</span>
       </div>);
   }
 

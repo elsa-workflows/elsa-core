@@ -43,7 +43,7 @@ namespace Elsa.Server.Api.Endpoints.ActivityStats
             var specification = new WorkflowInstanceIdSpecification(workflowInstanceId).And(new ActivityIdSpecification(activityId));
             var orderBy = OrderBySpecification.OrderBy<WorkflowExecutionLogRecord>(x => x.Timestamp);
             var records = await _workflowExecutionLogStore.FindManyAsync(specification, orderBy, null, cancellationToken).ToList();
-            var eventCounts = records.GroupBy(x => x.EventName);
+            var eventCounts = records.GroupBy(x => x.EventName).ToList();
             var executions = GetExecutions(records).ToList();
             var executionTimes = executions.Select(x => x.Duration).OrderBy(x => x).ToList();
             var faultRecord = records.FirstOrDefault(x => x.EventName == "Faulted");
@@ -55,7 +55,7 @@ namespace Elsa.Server.Api.Endpoints.ActivityStats
                 LastExecutedAt = executions.Select(x => x.Timestamp).OrderByDescending(x => x).FirstOrDefault(),
                 SlowestExecutionTime = executionTimes.LastOrDefault(),
                 FastestExecutionTime = executionTimes.FirstOrDefault(),
-                AverageExecutionTime = Duration.FromTicks(executionTimes.Average(x => x.TotalTicks)),
+                AverageExecutionTime = executionTimes.Any() ? Duration.FromTicks(executionTimes.Average(x => x.TotalTicks)) : default,
                 Fault = activityFault
             };
             

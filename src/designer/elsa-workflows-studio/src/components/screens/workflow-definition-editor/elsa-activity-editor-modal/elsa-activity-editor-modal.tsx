@@ -7,7 +7,6 @@ import {checkBox, FormContext, textArea, textInput} from "../../../../utils/form
 
 @Component({
   tag: 'elsa-activity-editor-modal',
-  styleUrl: 'elsa-activity-editor-modal.css',
   shadow: false,
 })
 export class ElsaActivityEditorModal {
@@ -38,7 +37,7 @@ export class ElsaActivityEditorModal {
   updateActivity(formData: FormData) {
     const activity = this.activityModel;
     const activityDescriptor = this.activityDescriptor;
-    const properties: Array<ActivityPropertyDescriptor> = activityDescriptor.properties;
+    const properties: Array<ActivityPropertyDescriptor> = activityDescriptor.inputProperties;
 
     for (const property of properties)
       propertyDisplayManager.update(activity, property, formData);
@@ -63,9 +62,9 @@ export class ElsaActivityEditorModal {
   }
 
   componentWillRender(){
-    const activityDescriptor = this.activityDescriptor || {displayName: '', type: '', outcomes: [], category: '', traits: 0, browsable: false, properties: [], description: ''};
-    const propertyCategories = activityDescriptor.properties.filter(x => x.category).map(x => x.category).distinct();
-    const defaultProperties = activityDescriptor.properties.filter(x => !x.category || x.category.length == 0);
+    const activityDescriptor: ActivityDescriptor = this.activityDescriptor || {displayName: '', type: '', outcomes: [], category: '', traits: 0, browsable: false, inputProperties: [], description: ''};
+    const propertyCategories = activityDescriptor.inputProperties.filter(x => x.category).map(x => x.category).distinct();
+    const defaultProperties = activityDescriptor.inputProperties.filter(x => !x.category || x.category.length == 0);
     let tabs: Array<string> = [];
 
     if(defaultProperties.length > 0) {
@@ -94,57 +93,57 @@ export class ElsaActivityEditorModal {
 
   render() {
     const renderProps = this.renderProps;
-    const activityDescriptor = renderProps.activityDescriptor;
+    const activityDescriptor: ActivityDescriptor = renderProps.activityDescriptor;
     const propertyCategories = renderProps.propertyCategories;
     const tabs = renderProps.tabs;
     const selectedTab = renderProps.selectedTab;
     const activityModel: ActivityModel = renderProps.activityModel;
-    const inactiveClass = 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300';
-    const selectedClass = 'border-blue-500 text-blue-600';
+    const inactiveClass = 'elsa-border-transparent elsa-text-gray-500 hover:elsa-text-gray-700 hover:elsa-border-gray-300';
+    const selectedClass = 'elsa-border-blue-500 elsa-text-blue-600';
 
     return (
-      <Host>
+      <Host class="elsa-block">
         <elsa-modal-dialog ref={el => this.dialog = el} >
-          <div slot="content" class="py-8 pb-0">
+          <div slot="content" class="elsa-py-8 elsa-pb-0">
             <form onSubmit={e => this.onSubmit(e)} ref={el => this.form = el} key={this.timestamp.getTime().toString()}>
-              <div class="flex px-8">
-                <div class="space-y-8 divide-y divide-gray-200 w-full">
+              <div class="elsa-flex elsa-px-8">
+                <div class="elsa-space-y-8 elsa-divide-y elsa-divide-gray-200 elsa-w-full">
                   <div>
                     <div>
-                      <h3 class="text-lg leading-6 font-medium text-gray-900">
+                      <h3 class="elsa-text-lg elsa-leading-6 elsa-font-medium elsa-text-gray-900">
                         {activityDescriptor.displayName}
                       </h3>
-                      <p class="mt-1 text-sm text-gray-500">
+                      <p class="elsa-mt-1 elsa-text-sm elsa-text-gray-500">
                         {activityDescriptor.description}
                       </p>
                     </div>
 
-                    <div class="border-b border-gray-200">
-                      <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                    <div class="elsa-border-b elsa-border-gray-200">
+                      <nav class="-elsa-mb-px elsa-flex elsa-space-x-8" aria-label="Tabs">
                         {tabs.map(tab => {
                           const isSelected = tab === selectedTab;
                           const cssClass = isSelected ? selectedClass : inactiveClass;
-                          return <a href="#" onClick={e => this.onTabClick(e, tab)} class={`${cssClass} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}>{tab}</a>;
+                          return <a href="#" onClick={e => this.onTabClick(e, tab)} class={`${cssClass} elsa-whitespace-nowrap elsa-py-4 elsa-px-1 elsa-border-b-2 elsa-font-medium elsa-text-sm`}>{tab}</a>;
                         })}
                       </nav>
                     </div>
 
-                    <div class="mt-8">
+                    <div class="elsa-mt-8">
                       {this.renderSelectedTab(activityModel, activityDescriptor, propertyCategories)}
                     </div>
                   </div>
 
                 </div>
               </div>
-              <div class="pt-5">
-                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+              <div class="elsa-pt-5">
+                <div class="elsa-bg-gray-50 elsa-px-4 elsa-py-3 sm:elsa-px-6 sm:elsa-flex sm:elsa-flex-row-reverse">
                   <button type="submit"
-                          class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                          class="elsa-ml-3 elsa-inline-flex elsa-justify-center elsa-py-2 elsa-px-4 elsa-border elsa-border-transparent elsa-shadow-sm elsa-text-sm elsa-font-medium elsa-rounded-md elsa-text-white elsa-bg-blue-600 hover:elsa-bg-blue-700 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500">
                     Save
                   </button>
                   <button type="button"
                           onClick={() => this.onCancelClick()}
-                          class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                          class="elsa-w-full elsa-inline-flex elsa-justify-center elsa-rounded-md elsa-border elsa-border-gray-300 elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-bg-white elsa-text-base elsa-font-medium elsa-text-gray-700 hover:elsa-bg-gray-50 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 sm:elsa-mt-0 sm:elsa-ml-3 sm:elsa-w-auto sm:elsa-text-sm">
                     Cancel
                   </button>
                 </div>
@@ -172,7 +171,7 @@ export class ElsaActivityEditorModal {
 
     return (
       <div class={`flex ${this.getHiddenClass('Behaviors')}`}>
-        <div class="space-y-8 w-full">
+        <div class="elsa-space-y-8 elsa-w-full">
           {checkBox(formContext, 'loadWorkflowContext', 'Load Workflow Context', activityModel.loadWorkflowContext, 'When enabled, this will load the workflow context into memory before executing this activity.', 'loadWorkflowContext')}
           {checkBox(formContext, 'saveWorkflowContext', 'Save Workflow Context', activityModel.saveWorkflowContext, 'When enabled, this will save the workflow context back into storage after executing this activity.', 'saveWorkflowContext')}
           {checkBox(formContext, 'persistWorkflow', 'Save Workflow Instance', activityModel.persistWorkflow, 'When enabled, this will save the workflow instance back into storage right after executing this activity.', 'persistWorkflow')}
@@ -187,7 +186,7 @@ export class ElsaActivityEditorModal {
 
     return (
       <div class={`flex ${this.getHiddenClass('Common')}`}>
-        <div class="space-y-8 w-full">
+        <div class="elsa-space-y-8 elsa-w-full">
           {textInput(formContext, 'name', 'Name', activityModel.name, 'The technical name of the activity.', 'activityName')}
           {textInput(formContext, 'displayName', 'Display Name', activityModel.displayName, 'A friendly name of the activity.', 'activityDisplayName')}
           {textArea(formContext, 'description', 'Description', activityModel.description, 'A custom description for this activity', 'activityDescription')}
@@ -205,20 +204,20 @@ export class ElsaActivityEditorModal {
     const key = `activity-settings:${activityModel.activityId}`;
 
     return (
-      <div key={key} class={`grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6 ${this.getHiddenClass('Properties')}`}>
+      <div key={key} class={`elsa-grid elsa-grid-cols-1 elsa-gap-y-6 elsa-gap-x-4 sm:elsa-grid-cols-6 ${this.getHiddenClass('Properties')}`}>
         {propertyDescriptors.map(property => this.renderPropertyEditor(activityModel, property))}
       </div>
     );
   }
 
   renderCategoryTabs(activityModel: ActivityModel, activityDescriptor: ActivityDescriptor, categories: Array<string>) {
-    const propertyDescriptors: Array<ActivityPropertyDescriptor> = activityDescriptor.properties;
+    const propertyDescriptors: Array<ActivityPropertyDescriptor> = activityDescriptor.inputProperties;
 
     return (
       categories.map(category => {
         const descriptors = propertyDescriptors.filter(x => x.category == category);
         const key = `activity-settings:${activityModel.activityId}:${category}`;
-        return <div key={key} class={`grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6 ${this.getHiddenClass(category)}`}>
+        return <div key={key} class={`elsa-grid elsa-grid-cols-1 elsa-gap-y-6 elsa-gap-x-4 sm:elsa-grid-cols-6 ${this.getHiddenClass(category)}`}>
           {descriptors.map(property => this.renderPropertyEditor(activityModel, property))}
         </div>
       })
@@ -227,7 +226,7 @@ export class ElsaActivityEditorModal {
 
   renderPropertyEditor(activity: ActivityModel, property: ActivityPropertyDescriptor) {
     const key = `activity-property-input:${activity.activityId}:${property.name}`;
-    return <div key={key} class="sm:col-span-6">{propertyDisplayManager.display(activity, property)}</div>;
+    return <div key={key} class="sm:elsa-col-span-6">{propertyDisplayManager.display(activity, property)}</div>;
   }
 
   getHiddenClass(tab: string) {

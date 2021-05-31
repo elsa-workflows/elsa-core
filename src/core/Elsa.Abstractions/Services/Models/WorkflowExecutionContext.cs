@@ -8,6 +8,7 @@ using Elsa.Models;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using NodaTime;
 using Rebus.Extensions;
 
@@ -205,6 +206,20 @@ namespace Elsa.Services.Models
         public void SetWorkflowContext(object? value) => WorkflowContext = value;
         public object? GetWorkflowContext() => WorkflowContext;
         public T GetWorkflowContext<T>() => (T) WorkflowContext!;
+        
+        public JObject GetActivityData(string activityId)
+        {
+            var activityData = WorkflowInstance.ActivityData;
+            var state = activityData.ContainsKey(activityId) ? activityData[activityId] : default;
+
+            if (state != null) 
+                return state;
+            
+            state = new JObject();
+            activityData[activityId] = state;
+
+            return state;
+        }
 
         /// <summary>
         /// Remove empty activity data to save on document size.

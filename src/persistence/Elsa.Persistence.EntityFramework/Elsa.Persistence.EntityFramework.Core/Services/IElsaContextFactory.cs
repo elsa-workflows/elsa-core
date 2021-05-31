@@ -1,7 +1,6 @@
 ﻿namespace Elsa.Persistence.EntityFramework.Core.Services
 {
-    public interface IElsaContextFactory
+    public interface IElsaContextFactory : IContextFactory<ElsaContext>
     {
-        ElsaContext CreateDbContext();
     }
 }

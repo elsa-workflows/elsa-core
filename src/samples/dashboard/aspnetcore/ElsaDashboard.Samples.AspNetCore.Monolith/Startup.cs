@@ -1,7 +1,6 @@
 using Elsa;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
-using ElsaDashboard.Samples.AspNetCore.Monolith.Workflows;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -31,11 +30,12 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
                 .AddElsa(options => options
                         .UseEntityFrameworkPersistence(ef => ef.UseSqlite())
                         .AddConsoleActivities()
-                        .AddHttpActivities(elsaSection.GetSection("Http").Bind)
+                        .AddHttpActivities(elsaSection.GetSection("Server").Bind)
                         .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
                         .AddQuartzTemporalActivities()
                         .AddJavaScriptActivities()
-                        .AddWorkflow<HeartbeatWorkflow>()
+                        .AddActivitiesFrom<Startup>()
+                        .AddWorkflowsFrom<Startup>()
                 );
 
             services
@@ -60,9 +60,9 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
                 app.UseHsts();
             }
 
+            app.UseCors();
             app.UseStaticFiles();
             app.UseHttpActivities();
-            app.UseCors();
             app.UseRouting();
             app.UseAuthorization();
             app.UseEndpoints(endpoints =>

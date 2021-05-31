@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Persistence.Specifications;
-using Elsa.Serialization;
 using Elsa.Server.Api.Services;
 using Elsa.Server.Api.Swagger.Examples;
 using Elsa.Webhooks.Abstractions.Models;

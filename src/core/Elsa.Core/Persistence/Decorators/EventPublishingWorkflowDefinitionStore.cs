@@ -2,13 +2,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-
 using Elsa.Events;
 using Elsa.Models;
 using Elsa.Persistence.Specifications;
-
 using MediatR;
-
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Persistence.Decorators
@@ -28,22 +25,29 @@ namespace Elsa.Persistence.Decorators
 
         public async Task DeleteAsync(WorkflowDefinition entity, CancellationToken cancellationToken = default)
         {
+            await _mediator.Publish(new WorkflowDefinitionDeleting(entity), cancellationToken);
             await _store.DeleteAsync(entity, cancellationToken);
             await _mediator.Publish(new WorkflowDefinitionDeleted(entity), cancellationToken);
         }
 
         public async Task<int> DeleteManyAsync(ISpecification<WorkflowDefinition> specification, CancellationToken cancellationToken = default)
         {
-            var instances = await FindManyAsync(specification, cancellationToken: cancellationToken).ToList();
+            var workflowDefinitions = await FindManyAsync(specification, cancellationToken: cancellationToken).ToList();
+
+            if (!workflowDefinitions.Any())
+                return 0;
+            
+            foreach (var workflowDefinition in workflowDefinitions)
+                await _mediator.Publish(new WorkflowDefinitionDeleting(workflowDefinition), cancellationToken);
+
+            await _mediator.Publish(new ManyWorkflowDefinitionsDeleting(workflowDefinitions), cancellationToken);
+
             var count = await _store.DeleteManyAsync(specification, cancellationToken);
 
-            if (instances.Any())
-            {
-                foreach (var instance in instances)
-                    await _mediator.Publish(new WorkflowDefinitionDeleted(instance), cancellationToken);
+            foreach (var instance in workflowDefinitions)
+                await _mediator.Publish(new WorkflowDefinitionDeleted(instance), cancellationToken);
 
-                await _mediator.Publish(new ManyWorkflowDefinitionsDeleted(instances), cancellationToken);
-            }
+            await _mediator.Publish(new ManyWorkflowDefinitionsDeleted(workflowDefinitions), cancellationToken);
 
             return count;
         }
@@ -55,27 +59,34 @@ namespace Elsa.Persistence.Decorators
 
         public async Task SaveAsync(WorkflowDefinition entity, CancellationToken cancellationToken = default)
         {
+            await _mediator.Publish(new WorkflowDefinitionSaving(entity), cancellationToken);
             await _store.SaveAsync(entity, cancellationToken);
             await _mediator.Publish(new WorkflowDefinitionSaved(entity), cancellationToken);
         }
 
         public async Task AddAsync(WorkflowDefinition entity, CancellationToken cancellationToken = default)
         {
+            await _mediator.Publish(new WorkflowDefinitionSaving(entity), cancellationToken);
             await _store.AddAsync(entity, cancellationToken);
             await _mediator.Publish(new WorkflowDefinitionSaved(entity), cancellationToken);
         }
-        
+
         public async Task AddManyAsync(IEnumerable<WorkflowDefinition> entities, CancellationToken cancellationToken = default)
         {
             var list = entities.ToList();
+            
+            foreach (var entity in list)
+                await _mediator.Publish(new WorkflowDefinitionSaving(entity), cancellationToken);
+            
             await _store.AddManyAsync(list, cancellationToken);
 
-            foreach (var entity in list) 
+            foreach (var entity in list)
                 await _mediator.Publish(new WorkflowDefinitionSaved(entity), cancellationToken);
         }
-		
-		public async Task UpdateAsync(WorkflowDefinition entity, CancellationToken cancellationToken = default)
+
+        public async Task UpdateAsync(WorkflowDefinition entity, CancellationToken cancellationToken = default)
         {
+            await _mediator.Publish(new WorkflowDefinitionSaving(entity), cancellationToken);
             await _store.UpdateAsync(entity, cancellationToken);
             await _mediator.Publish(new WorkflowDefinitionSaved(entity), cancellationToken);
         }

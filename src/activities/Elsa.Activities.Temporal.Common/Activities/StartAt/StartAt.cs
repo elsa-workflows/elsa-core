@@ -28,20 +28,13 @@ namespace Elsa.Activities.Temporal
             _logger = logger;
         }
 
-        [ActivityProperty(Hint = "An instant in the future at which this activity should execute.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "An instant in the future at which this activity should execute.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public Instant Instant { get; set; }
 
         public Instant? ExecuteAt
         {
             get => GetState<Instant?>();
             set => SetState(value);
-        }
-
-        protected override bool OnCanExecute(ActivityExecutionContext context)
-        {
-            var executeAt = ExecuteAt;
-            var now = _clock.GetCurrentInstant();
-            return executeAt == null || executeAt <= now;
         }
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)

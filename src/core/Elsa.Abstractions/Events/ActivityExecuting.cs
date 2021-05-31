@@ -1,15 +1,15 @@
-﻿using Elsa.Services.Models;
+﻿using Elsa.Services;
+using Elsa.Services.Models;
 
 namespace Elsa.Events
 {
     public class ActivityExecuting : ActivityNotification
     {
-        public ActivityExecuting(bool resuming, ActivityExecutionContext activityExecutionContext) : base(activityExecutionContext)
+        public ActivityExecuting(ActivityExecutionContext activityExecutionContext, IActivity activity) : base(activityExecutionContext, activity)
         {
-            Resuming = resuming;
         }
-        
-        public bool Resuming { get; }
+
+        public bool Resuming => ActivityExecutionContext.Resuming;
 
     }
 }

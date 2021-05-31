@@ -7,9 +7,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Autofixture" Version="4.16.0" />
-    <PackageReference Include="Autofixture.AutoMoq" Version="4.16.0" />
-    <PackageReference Include="autofixture.xunit2" Version="4.16.0" />
+    <PackageReference Include="Autofixture" Version="4.17.0" />
+    <PackageReference Include="Autofixture.AutoMoq" Version="4.17.0" />
+    <PackageReference Include="autofixture.xunit2" Version="4.17.0" />
     <PackageReference Include="Moq" Version="4.16.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.9.4" />
     <PackageReference Include="NodaTime.Testing" Version="3.0.5" />
@@ -23,13 +23,13 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="YesSql.Core" Version="3.0.2" />
-    <PackageReference Include="YesSql.Provider.Sqlite" Version="3.0.2" />
-    <PackageReference Include="YesSql.Provider.PostgreSql" Version="3.0.2" />
+    <PackageReference Include="YesSql.Core" Version="3.0.6" />
+    <PackageReference Include="YesSql.Provider.Sqlite" Version="3.0.6" />
+    <PackageReference Include="YesSql.Provider.PostgreSql" Version="3.0.6" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
-    <PackageReference Include="Hangfire.AspNetCore" Version="1.7.20" />
+    <PackageReference Include="Hangfire.AspNetCore" Version="1.7.22" />
     <PackageReference Include="Hangfire.InMemory" Version="0.3.4" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="5.0.5" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="5.0.6" />
   </ItemGroup>
 
   <ItemGroup>

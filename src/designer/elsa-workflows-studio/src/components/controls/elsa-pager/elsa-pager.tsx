@@ -65,7 +65,7 @@ export class ElsaPager {
             
             return <a href={`${getNavUrl(page - 1)}`}
                       onClick={e => self.onNavigateClick(e)}
-                      class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm leading-5 font-medium rounded-md text-gray-700 bg-white hover:text-gray-500 focus:outline-none focus:shadow-outline-blue focus:border-blue-300 active:bg-gray-100 active:text-gray-700 transition ease-in-out duration-150">
+                      class="elsa-relative elsa-inline-flex elsa-items-center elsa-px-4 elsa-py-2 elsa-border elsa-border-gray-300 elsa-text-sm elsa-leading-5 elsa-font-medium elsa-rounded-md elsa-text-gray-700 elsa-bg-white hover:elsa-text-gray-500 focus:elsa-outline-none focus:elsa-shadow-outline-blue focus:elsa-border-blue-300 active:elsa-bg-gray-100 active:elsa-text-gray-700 elsa-transition elsa-ease-in-out elsa-duration-150">
                 Previous
             </a>
         }
@@ -76,7 +76,7 @@ export class ElsaPager {
 
             return <a href={`/${getNavUrl(page + 1)}`}
                       onClick={e => self.onNavigateClick(e)}
-                      class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm leading-5 font-medium rounded-md text-gray-700 bg-white hover:text-gray-500 focus:outline-none focus:shadow-outline-blue focus:border-blue-300 active:bg-gray-100 active:text-gray-700 transition ease-in-out duration-150">
+                      class="elsa-ml-3 elsa-relative elsa-inline-flex elsa-items-center elsa-px-4 elsa-py-2 elsa-border elsa-border-gray-300 elsa-text-sm elsa-leading-5 elsa-font-medium elsa-rounded-md elsa-text-gray-700 elsa-bg-white hover:elsa-text-gray-500 focus:elsa-outline-none focus:elsa-shadow-outline-blue focus:elsa-border-blue-300 active:elsa-bg-gray-100 active:elsa-text-gray-700 elsa-transition elsa-ease-in-out elsa-duration-150">
                 Next
             </a>
         }
@@ -88,9 +88,9 @@ export class ElsaPager {
             return (
                 <a href={`${getNavUrl(page - 1)}`}
                    onClick={e => self.onNavigateClick(e)}
-                   class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm leading-5 font-medium text-gray-500 hover:text-gray-400 focus:z-10 focus:outline-none focus:border-blue-300 focus:shadow-outline-blue active:bg-gray-100 active:text-gray-500 transition ease-in-out duration-150"
+                   class="elsa-relative elsa-inline-flex elsa-items-center elsa-px-2 elsa-py-2 elsa-rounded-l-md elsa-border elsa-border-gray-300 elsa-bg-white elsa-text-sm elsa-leading-5 elsa-font-medium elsa-text-gray-500 hover:elsa-text-gray-400 focus:elsa-z-10 focus:elsa-outline-none focus:elsa-border-blue-300 focus:elsa-shadow-outline-blue active:elsa-bg-gray-100 active:elsa-text-gray-500 elsa-transition elsa-ease-in-out elsa-duration-150"
                    aria-label="Previous">
-                    <svg class="h-5 w-5" x-description="Heroicon name: chevron-left" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <svg class="elsa-h-5 elsa-w-5" x-description="Heroicon name: chevron-left" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/>
                     </svg>
                 </a>);
@@ -103,9 +103,9 @@ export class ElsaPager {
             return (
                 <a href={`${getNavUrl(page + 1)}`}
                    onClick={e => self.onNavigateClick(e)}
-                   class="-ml-px relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm leading-5 font-medium text-gray-500 hover:text-gray-400 focus:z-10 focus:outline-none focus:border-blue-300 focus:shadow-outline-blue active:bg-gray-100 active:text-gray-500 transition ease-in-out duration-150"
+                   class="-elsa-ml-px elsa-relative elsa-inline-flex elsa-items-center elsa-px-2 elsa-py-2 elsa-rounded-r-md elsa-border elsa-border-gray-300 elsa-bg-white elsa-text-sm elsa-leading-5 elsa-font-medium elsa-text-gray-500 hover:elsa-text-gray-400 focus:elsa-z-10 focus:elsa-outline-none focus:elsa-border-blue-300 focus:elsa-shadow-outline-blue active:elsa-bg-gray-100 active:elsa-text-gray-500 elsa-transition elsa-ease-in-out elsa-duration-150"
                    aria-label="Next">
-                    <svg class="h-5 w-5" x-description="Heroicon name: chevron-right" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <svg class="elsa-h-5 elsa-w-5" x-description="Heroicon name: chevron-right" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
                     </svg>
                 </a>
@@ -119,17 +119,17 @@ export class ElsaPager {
                 const isCurrent = page == i;
                 const isFirst = i == fromPage;
                 const isLast = i == toPage - 1;
-                const leftRoundedClass = isFirst && isCurrent ? 'rounded-l-md' : '';
-                const rightRoundedClass = isLast && isCurrent ? 'rounded-r-md' : '';
+                const leftRoundedClass = isFirst && isCurrent ? 'elsa-rounded-l-md' : '';
+                const rightRoundedClass = isLast && isCurrent ? 'elsa-rounded-r-md' : '';
 
                 if (isCurrent) {
-                    buttons.push(<span class={`-ml-px relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm leading-5 font-medium bg-blue-600 text-white ${leftRoundedClass} ${rightRoundedClass}`}>
+                    buttons.push(<span class={`-elsa-ml-px elsa-relative elsa-inline-flex elsa-items-center elsa-px-4 elsa-py-2 elsa-border elsa-border-gray-300 elsa-text-sm elsa-leading-5 elsa-font-medium elsa-bg-blue-600 elsa-text-white ${leftRoundedClass} ${rightRoundedClass}`}>
                         {i + 1}
                     </span>);
                 } else {
                     buttons.push(<a href={`${getNavUrl(i)}`}
                                     onClick={e => self.onNavigateClick(e)}
-                                    class={`-ml-px relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm leading-5 font-medium text-gray-700 hover:text-gray-500 focus:z-10 focus:outline-none active:bg-gray-100 active:text-gray-700 transition ease-in-out duration-150 ${leftRoundedClass}`}>
+                                    class={`-elsa-ml-px elsa-relative elsa-inline-flex elsa-items-center elsa-px-4 elsa-py-2 elsa-border elsa-border-gray-300 elsa-bg-white elsa-text-sm elsa-leading-5 elsa-font-medium elsa-text-gray-700 hover:elsa-text-gray-500 focus:elsa-z-10 focus:elsa-outline-none active:elsa-bg-gray-100 active:elsa-text-gray-700 elsa-transition elsa-ease-in-out elsa-duration-150 ${leftRoundedClass}`}>
                         {i + 1}
                     </a>)
                 }
@@ -139,25 +139,25 @@ export class ElsaPager {
         }
 
         return (
-            <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-                <div class="flex-1 flex justify-between sm:hidden">
+            <div class="elsa-bg-white elsa-px-4 elsa-py-3 elsa-flex elsa-items-center elsa-justify-between elsa-border-t elsa-border-gray-200 sm:elsa-px-6">
+                <div class="elsa-flex-1 elsa-flex elsa-justify-between sm:elsa-hidden">
                     {renderPreviousButton()}
                     {renderNextButton()}
                 </div>
-                <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div class="hidden sm:elsa-flex-1 sm:elsa-flex sm:elsa-items-center sm:elsa-justify-between">
                     <div>
-                        <p class="text-sm leading-5 text-gray-700 space-x-0-5">
+                        <p class="elsa-text-sm elsa-leading-5 elsa-text-gray-700 elsa-space-x-0-5">
                             <span>Showing</span>
-                            <span class="font-medium">{from}</span>
+                            <span class="elsa-font-medium">{from}</span>
                             <span>to</span>
-                            <span class="font-medium">{to}</span>
+                            <span class="elsa-font-medium">{to}</span>
                             <span>of</span>
-                            <span class="font-medium">{totalCount}</span>
+                            <span class="elsa-font-medium">{totalCount}</span>
                             <span>results</span>
                         </p>
                     </div>
                     <div>
-                        <nav class="relative z-0 inline-flex shadow-sm">
+                        <nav class="elsa-relative elsa-z-0 elsa-inline-flex elsa-shadow-sm">
                             {renderChevronLeft()}
                             {renderPagerButtons()}
                             {renderChevronRight()}
