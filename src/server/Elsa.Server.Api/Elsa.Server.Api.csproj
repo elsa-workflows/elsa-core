@@ -27,8 +27,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\activities\Elsa.Activities.Webhooks\Elsa.Activities.Webhooks.csproj" />
-        <ProjectReference Include="..\..\activities\Elsa.Webhooks.Abstractions\Elsa.Webhooks.Abstractions.csproj" />
         <ProjectReference Include="..\..\core\Elsa\Elsa.csproj" />
     </ItemGroup>
     

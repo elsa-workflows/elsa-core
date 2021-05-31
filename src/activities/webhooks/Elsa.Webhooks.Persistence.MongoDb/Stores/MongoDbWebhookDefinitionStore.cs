@@ -1,4 +1,3 @@
-using Elsa.Models;
 using Elsa.Services;
 using Elsa.Persistence.MongoDb.Stores;
 using Elsa.Webhooks.Abstractions.Models;

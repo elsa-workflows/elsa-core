@@ -79,7 +79,7 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
       }
     },
     webhookDefinitionsApi: {
-      list: async (page?: number, pageSize?: number) => {
+      list: async (page?: number, pageSize?: number) => {        
         const response = await httpClient.get<PagedList<WebhookDefinitionSummary>>(`v1/webhook-definitions`);
         return response.data;
       },
