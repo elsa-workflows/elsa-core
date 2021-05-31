@@ -15,16 +15,16 @@ namespace Elsa.Activities.ControlFlow
     )]
     public class For : Activity
     {
-        [ActivityProperty(Hint = "The starting number.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "The starting number.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public long Start { get; set; }
 
-        [ActivityProperty(Hint = "The ending number.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "The ending number.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public long End { get; set; }
 
-        [ActivityProperty(Hint = "An expression that evaluates to the incrementing number on each step.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "An expression that evaluates to the incrementing number on each step.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public long Step { get; set; } = 1;
 
-        [ActivityProperty(Hint = "The operator to use when comparing the current value against the end value.", SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "The operator to use when comparing the current value against the end value.", SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public Operator Operator { get; set; } = Operator.LessThan;
 
         internal long? CurrentValue

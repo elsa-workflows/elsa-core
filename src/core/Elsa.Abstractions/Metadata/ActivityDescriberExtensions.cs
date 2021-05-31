@@ -1,9 +1,11 @@
+using System.Threading;
+using System.Threading.Tasks;
 using Elsa.Services;
 
 namespace Elsa.Metadata
 {
     public static class ActivityDescriberExtensions
     {
-        public static ActivityDescriptor? Describe<T>(this IDescribesActivityType type) where T : IActivity => type.Describe(typeof(T));
+        public static async Task<ActivityDescriptor> DescribeAsync<T>(this IDescribesActivityType type, CancellationToken cancellationToken = default) where T : IActivity => (await type.DescribeAsync(typeof(T), cancellationToken))!;
     }
 }

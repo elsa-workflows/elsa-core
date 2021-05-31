@@ -11,6 +11,6 @@ namespace Elsa.Attributes
         public string? Description { get; set; }
         public string? Category { get; set; }
         public ActivityTraits Traits { get; set; } = ActivityTraits.Action;
-        public string[]? Outcomes { get; set; }
+        public object? Outcomes { get; set; }
     }
 }

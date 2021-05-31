@@ -16,29 +16,29 @@ namespace Elsa.Activities.Signaling
 
     public class SignalReceivedBookmarkProvider : BookmarkProvider<SignalReceivedBookmark, SignalReceived>
     {
-        public override async ValueTask<IEnumerable<IBookmark>> GetBookmarksAsync(BookmarkProviderContext<SignalReceived> context, CancellationToken cancellationToken) => await GetBookmarksInternalAsync(context, cancellationToken).ToListAsync(cancellationToken);
+        public override async ValueTask<IEnumerable<BookmarkResult>> GetBookmarksAsync(BookmarkProviderContext<SignalReceived> context, CancellationToken cancellationToken) => await GetBookmarksInternalAsync(context, cancellationToken).ToListAsync(cancellationToken);
 
-        private async IAsyncEnumerable<IBookmark> GetBookmarksInternalAsync(BookmarkProviderContext<SignalReceived> context, [EnumeratorCancellation] CancellationToken cancellationToken)
+        private async IAsyncEnumerable<BookmarkResult> GetBookmarksInternalAsync(BookmarkProviderContext<SignalReceived> context, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            var signalName = (await context.Activity.GetPropertyValueAsync(x => x.Signal, cancellationToken))!;
-            var signalScope = (await context.Activity.GetPropertyValueAsync(x => x.Scope, cancellationToken))!;
+            var signalName = (await context.ReadActivityPropertyAsync(x => x.Signal, cancellationToken))!;
+            var signalScope = (await context.ReadActivityPropertyAsync(x => x.Scope, cancellationToken))!;
 
             if (context.Mode == BookmarkIndexingMode.WorkflowBlueprint || signalScope == SignalScope.Global)
             {
-                yield return new SignalReceivedBookmark
+                yield return Result(new SignalReceivedBookmark
                 {
                     Signal = signalName
-                };
+                });
                 yield break;
             }
 
             if (signalScope == SignalScope.Instance)
             {
-                yield return new SignalReceivedBookmark
+                yield return Result(new SignalReceivedBookmark
                 {
                     Signal = signalName,
                     WorkflowInstanceId = context.ActivityExecutionContext.WorkflowInstance.Id
-                };
+                });
             }
         }
     }

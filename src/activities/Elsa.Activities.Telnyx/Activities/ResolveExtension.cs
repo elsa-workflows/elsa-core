@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Elsa.Activities.Telnyx.Models;
 using Elsa.Activities.Telnyx.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
@@ -22,13 +23,17 @@ namespace Elsa.Activities.Telnyx.Activities
 
         public ResolveExtension(IExtensionProvider extensionProvider) => _extensionProvider = extensionProvider;
 
-        [ActivityProperty(Hint = "The extension to resolve. If the extension could not be resolved, it is returned as-is.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "The extension to resolve. If the extension could not be resolved, it is returned as-is.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string Extension { get; set; } = default!;
+
+        [ActivityOutput(Hint = "The actual number the extension resolved to.")]
+        public Extension? ResolvedExtension { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            var resolvedNumber = await _extensionProvider.GetAsync(Extension, context.CancellationToken);
-            var result = resolvedNumber != null ? Outcome("Resolved", resolvedNumber) : Outcome("Unresolved", Extension);
+            var resolvedExtension = await _extensionProvider.GetAsync(Extension, context.CancellationToken);
+            ResolvedExtension = resolvedExtension;
+            var result = resolvedExtension != null ? Outcome("Resolved", resolvedExtension) : (IActivityExecutionResult)Outcome("Unresolved");
             return Combine(result);
         }
     }

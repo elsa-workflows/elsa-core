@@ -28,7 +28,7 @@ namespace Elsa.Activities.Console
             _output = output;
         }
 
-        [ActivityProperty(Hint = "The text to write.", SupportedSyntaxes = new[]{ SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "The text to write.", SupportedSyntaxes = new[]{ SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string? Text { get; set; }
 
         private readonly TextWriter _output;

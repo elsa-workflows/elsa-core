@@ -12,9 +12,9 @@ namespace Elsa.Activities.ControlFlow
     [Activity(Category = "Control Flow", Description = "Fork workflow execution into multiple branches.")]
     public class Fork : Activity
     {
-        [ActivityProperty(
+        [ActivityInput(
             Hint = "Enter one or more branch names.",
-            UIHint = ActivityPropertyUIHints.MultiText,
+            UIHint = ActivityInputUIHints.MultiText,
             DefaultSyntax = SyntaxNames.Json,
             SupportedSyntaxes = new[] { SyntaxNames.Json }
         )]

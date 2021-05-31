@@ -18,7 +18,7 @@ namespace Elsa.Services.Models
 
         public IActivityBlueprintWrapper<TActivity> As<TActivity>() where TActivity : IActivity => new ActivityBlueprintWrapper<TActivity>(ActivityExecutionContext);
         
-        public async ValueTask<object?> GetPropertyValueAsync(string propertyName, CancellationToken cancellationToken = default)
+        public async ValueTask<object?> EvaluatePropertyValueAsync(string propertyName, CancellationToken cancellationToken = default)
         {
             var workflowBlueprint = ActivityExecutionContext.WorkflowExecutionContext.WorkflowBlueprint;
             var activityId = ActivityExecutionContext.ActivityBlueprint.Id;
@@ -41,7 +41,10 @@ namespace Elsa.Services.Models
         {
         }
 
-        public async ValueTask<T?> GetPropertyValueAsync<T>(Expression<Func<TActivity, T>> propertyExpression, CancellationToken cancellationToken = default)
+        /// <summary>
+        /// Evaluates the property provider and returns the result.
+        /// </summary>
+        public async ValueTask<T?> EvaluatePropertyValueAsync<T>(Expression<Func<TActivity, T>> propertyExpression, CancellationToken cancellationToken = default)
         {
             var workflowBlueprint = ActivityExecutionContext.WorkflowExecutionContext.WorkflowBlueprint;
             var activityId = ActivityExecutionContext.ActivityBlueprint.Id;
@@ -57,6 +60,9 @@ namespace Elsa.Services.Models
             }
         }
 
-        public T? GetState<T>(Expression<Func<TActivity, T>> propertyExpression) => ActivityExecutionContext.GetState(propertyExpression);
+        /// <summary>
+        /// Retrieves the property value from the activity's State dictionary.
+        /// </summary>
+        public T? GetPropertyValue<T>(Expression<Func<TActivity, T>> propertyExpression) => ActivityExecutionContext.GetState(propertyExpression);
     }
 }

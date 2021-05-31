@@ -23,14 +23,14 @@ namespace Elsa.Activities.AzureServiceBus.Bookmarks
 
     public class QueueMessageReceivedBookmarkProvider : BookmarkProvider<QueueMessageReceivedBookmark, AzureServiceBusQueueMessageReceived>
     {
-        public override async ValueTask<IEnumerable<IBookmark>> GetBookmarksAsync(BookmarkProviderContext<AzureServiceBusQueueMessageReceived> context, CancellationToken cancellationToken) =>
+        public override async ValueTask<IEnumerable<BookmarkResult>> GetBookmarksAsync(BookmarkProviderContext<AzureServiceBusQueueMessageReceived> context, CancellationToken cancellationToken) =>
             new[]
             {
-                new QueueMessageReceivedBookmark
+                Result(new QueueMessageReceivedBookmark
                 {
-                    QueueName = (await context.Activity.GetPropertyValueAsync(x => x.QueueName, cancellationToken))!,
+                    QueueName = (await context.ReadActivityPropertyAsync(x => x.QueueName, cancellationToken))!,
                     CorrelationId = context.ActivityExecutionContext.WorkflowExecutionContext.CorrelationId
-                }
+                })
             };
     }
 }

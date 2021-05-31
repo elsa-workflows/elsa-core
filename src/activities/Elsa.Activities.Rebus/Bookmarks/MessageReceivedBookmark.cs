@@ -13,14 +13,14 @@ namespace Elsa.Activities.Rebus.Bookmarks
 
     public class MessageReceivedTriggerProvider : BookmarkProvider<MessageReceivedBookmark, RebusMessageReceived>
     {
-        public override async ValueTask<IEnumerable<IBookmark>> GetBookmarksAsync(BookmarkProviderContext<RebusMessageReceived> context, CancellationToken cancellationToken) =>
+        public override async ValueTask<IEnumerable<BookmarkResult>> GetBookmarksAsync(BookmarkProviderContext<RebusMessageReceived> context, CancellationToken cancellationToken) =>
             new[]
             {
-                new MessageReceivedBookmark
+                Result(new MessageReceivedBookmark
                 {
-                    MessageType = (await context.Activity.GetPropertyValueAsync(x => x.MessageType, cancellationToken))!.Name,
+                    MessageType = (await context.ReadActivityPropertyAsync(x => x.MessageType, cancellationToken))!.Name,
                     CorrelationId = context.ActivityExecutionContext.WorkflowExecutionContext.CorrelationId
-                }
+                })
             };
     }
 }

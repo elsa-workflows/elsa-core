@@ -10,8 +10,8 @@ namespace Elsa.Samples.Server.Host.Activities
 {
     public class ClosedMultiTextSampleActivity : Activity, IActivityPropertyOptionsProvider
     {
-        [ActivityProperty(
-            UIHint = ActivityPropertyUIHints.MultiText,
+        [ActivityInput(
+            UIHint = ActivityInputUIHints.MultiText,
             OptionsProvider = typeof(ClosedMultiTextSampleActivity),
             DefaultSyntax = SyntaxNames.Json,
             SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid }

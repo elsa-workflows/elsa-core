@@ -43,6 +43,7 @@ namespace Elsa.Services.Models
         public IReadOnlyCollection<string> Outcomes { get; set; }
         public object? Input { get; }
         public bool Resuming { get; }
+        public bool IsFirstPass => WorkflowExecutionContext.IsFirstPass;
         
         public string? CorrelationId
         {
@@ -164,23 +165,8 @@ namespace Elsa.Services.Models
         public void SetWorkflowContext(object? value) => WorkflowExecutionContext.SetWorkflowContext(value);
         public object? GetWorkflowContext() => WorkflowExecutionContext.GetWorkflowContext();
         public T GetWorkflowContext<T>() => WorkflowExecutionContext.GetWorkflowContext<T>();
-
         public JObject GetActivityData() => GetActivityData(ActivityId);
-        
-        public JObject GetActivityData(string activityId)
-        {
-            var activityData = WorkflowInstance.ActivityData;
-            var state = activityData.ContainsKey(activityId) ? activityData[activityId] : default;
-
-            if (state != null) 
-                return state;
-            
-            state = new JObject();
-            activityData[activityId] = state;
-
-            return state;
-        }
-
+        public JObject GetActivityData(string activityId) => WorkflowExecutionContext.GetActivityData(activityId);
         public void Fault(Exception exception) => WorkflowExecutionContext.Fault(exception, ActivityId, Input, Resuming);
     }
 }

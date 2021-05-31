@@ -20,10 +20,10 @@ namespace Elsa.Activities.AzureServiceBus
             _serializer = serializer;
         }
 
-        [ActivityProperty(SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string QueueName { get; set; } = default!;
 
-        [ActivityProperty]
+        [ActivityInput]
         public Type MessageType { get; set; } = default!;
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => context.WorkflowExecutionContext.IsFirstPass ? ExecuteInternal(context) : Suspend();

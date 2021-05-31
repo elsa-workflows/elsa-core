@@ -15,7 +15,7 @@ namespace Elsa.Activities.Primitives
     public class Inline : Activity
     {
         public Inline() => Function = context => new ValueTask<IActivityExecutionResult>(Done());
-        [ActivityProperty] public Func<ActivityExecutionContext, ValueTask<IActivityExecutionResult>> Function { get; set; }
+        [ActivityInput] public Func<ActivityExecutionContext, ValueTask<IActivityExecutionResult>> Function { get; set; }
         protected override ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context) => Function(context);
     }
 }

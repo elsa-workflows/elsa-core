@@ -8,7 +8,7 @@ using Elsa.Scripting.Liquid.Messages;
 using Fluid;
 using MediatR;
 
-namespace Elsa.Activities.Telnyx.Liquid
+namespace Elsa.Activities.Telnyx.Scripting.Liquid
 {
     public class ConfigureLiquidEngine : INotificationHandler<EvaluatingLiquidExpression>
     {

@@ -11,7 +11,7 @@ environment:
   sonarcloud_api_key:
     secure: qaE9kOVkGGFM7ZMf3YeliZxDU9udTCy6W5xXHJ9T+tXv5qXPMYlIdR7hyNgxW04A
 
-version: 2.0.0.{build}
+version: 2.1.0-preview.{build}
 
 init:
   - cmd: git config --global core.autocrlf true

@@ -19,10 +19,10 @@ namespace Elsa.Activities.Rebus
             _bus = bus;
         }
 
-        [ActivityProperty(Hint = "The message to send.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "The message to send.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public object Message { get; set; } = default!;
 
-        [ActivityProperty(Hint = "Optional headers to send along with the message.", UIHint = ActivityPropertyUIHints.Json)]
+        [ActivityInput(Hint = "Optional headers to send along with the message.", UIHint = ActivityInputUIHints.Json)]
         public IDictionary<string, string>? Headers { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)

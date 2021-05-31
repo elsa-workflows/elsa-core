@@ -37,7 +37,7 @@ export class ElsaActivityEditorModal {
   updateActivity(formData: FormData) {
     const activity = this.activityModel;
     const activityDescriptor = this.activityDescriptor;
-    const properties: Array<ActivityPropertyDescriptor> = activityDescriptor.properties;
+    const properties: Array<ActivityPropertyDescriptor> = activityDescriptor.inputProperties;
 
     for (const property of properties)
       propertyDisplayManager.update(activity, property, formData);
@@ -62,9 +62,9 @@ export class ElsaActivityEditorModal {
   }
 
   componentWillRender(){
-    const activityDescriptor = this.activityDescriptor || {displayName: '', type: '', outcomes: [], category: '', traits: 0, browsable: false, properties: [], description: ''};
-    const propertyCategories = activityDescriptor.properties.filter(x => x.category).map(x => x.category).distinct();
-    const defaultProperties = activityDescriptor.properties.filter(x => !x.category || x.category.length == 0);
+    const activityDescriptor: ActivityDescriptor = this.activityDescriptor || {displayName: '', type: '', outcomes: [], category: '', traits: 0, browsable: false, inputProperties: [], description: ''};
+    const propertyCategories = activityDescriptor.inputProperties.filter(x => x.category).map(x => x.category).distinct();
+    const defaultProperties = activityDescriptor.inputProperties.filter(x => !x.category || x.category.length == 0);
     let tabs: Array<string> = [];
 
     if(defaultProperties.length > 0) {
@@ -93,7 +93,7 @@ export class ElsaActivityEditorModal {
 
   render() {
     const renderProps = this.renderProps;
-    const activityDescriptor = renderProps.activityDescriptor;
+    const activityDescriptor: ActivityDescriptor = renderProps.activityDescriptor;
     const propertyCategories = renderProps.propertyCategories;
     const tabs = renderProps.tabs;
     const selectedTab = renderProps.selectedTab;
@@ -211,7 +211,7 @@ export class ElsaActivityEditorModal {
   }
 
   renderCategoryTabs(activityModel: ActivityModel, activityDescriptor: ActivityDescriptor, categories: Array<string>) {
-    const propertyDescriptors: Array<ActivityPropertyDescriptor> = activityDescriptor.properties;
+    const propertyDescriptors: Array<ActivityPropertyDescriptor> = activityDescriptor.inputProperties;
 
     return (
       categories.map(category => {

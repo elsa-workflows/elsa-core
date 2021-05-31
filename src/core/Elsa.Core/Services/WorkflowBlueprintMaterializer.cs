@@ -74,7 +74,7 @@ namespace Elsa.Services
             {
                 var activityType = await _activityTypeService.GetActivityTypeAsync(activityDefinition.Type, cancellationToken);
                 var activityDescriptor = activityType.Describe();
-                var propertyDescriptors = activityDescriptor.Properties;
+                var propertyDescriptors = activityDescriptor.InputProperties;
 
                 foreach (var property in activityDefinition.Properties)
                 {

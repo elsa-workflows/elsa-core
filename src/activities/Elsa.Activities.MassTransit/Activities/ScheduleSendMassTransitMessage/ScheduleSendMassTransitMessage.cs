@@ -31,13 +31,13 @@ namespace Elsa.Activities.MassTransit
             _options = options.Value;
         }
 
-        [ActivityProperty(Hint = "An expression that evaluates to the message to be delivered.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "An expression that evaluates to the message to be delivered.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public object? Message { get; set; }
 
-        [ActivityProperty(Hint = "The address of a specific endpoint to deliver the message to.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "The address of a specific endpoint to deliver the message to.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public Uri EndpointAddress { get; set; } = default!;
 
-        [ActivityProperty(Hint = "An expression that evaluates to the date and time to deliver the message.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "An expression that evaluates to the date and time to deliver the message.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public Instant ScheduledTime { get; set; }
 
         protected override bool OnCanExecute(ActivityExecutionContext context) => Message != null && _options.SchedulerAddress != null;

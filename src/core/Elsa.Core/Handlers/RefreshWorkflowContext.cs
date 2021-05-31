@@ -27,7 +27,7 @@ namespace Elsa.Handlers
         {
             var workflowExecutionContext = notification.WorkflowExecutionContext;
             var workflowBlueprint = workflowExecutionContext.WorkflowBlueprint;
-            var activityBlueprint = notification.Activity;
+            var activityBlueprint = notification.ActivityBlueprint;
             
             if (workflowBlueprint.ContextOptions?.ContextFidelity == WorkflowContextFidelity.Activity || activityBlueprint.LoadWorkflowContext || workflowExecutionContext.ContextHasChanged)
             {

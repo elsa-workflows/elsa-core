@@ -67,12 +67,12 @@ namespace Elsa.Activities.Http.Middleware
                 var pendingWorkflowInstance = pendingWorkflowInstances[pendingWorkflow.WorkflowInstanceId];
                 var workflowBlueprintWrapper = workflowBlueprintWrappers[pendingWorkflowInstance.DefinitionId];
                 var activityWrapper = workflowBlueprintWrapper.GetActivity<HttpEndpoint>(pendingWorkflow.ActivityId!);
-                var readContent = await activityWrapper!.GetPropertyValueAsync(x => x.ReadContent, cancellationToken);
+                var readContent = await activityWrapper!.EvaluatePropertyValueAsync(x => x.ReadContent, cancellationToken);
                 var inputModel = commonInputModel;
 
                 if (readContent)
                 {
-                    var targetType = await activityWrapper.GetPropertyValueAsync(x => x.TargetType, cancellationToken);
+                    var targetType = await activityWrapper.EvaluatePropertyValueAsync(x => x.TargetType, cancellationToken);
                     inputModel = inputModel with { Body = await contentParser.ParseAsync(request, targetType, cancellationToken) };
                 }
 

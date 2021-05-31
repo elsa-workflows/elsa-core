@@ -8,20 +8,20 @@ namespace Elsa.Activities.Workflows
     {
         public string ChildWorkflowInstanceId { get; set; } = default!;
     }
-    
+
     public class RunWorkflowBookmarkProvider : BookmarkProvider<RunWorkflowBookmark, RunWorkflow>
     {
-        public override IEnumerable<IBookmark> GetBookmarks(BookmarkProviderContext<RunWorkflow> context)
+        public override IEnumerable<BookmarkResult> GetBookmarks(BookmarkProviderContext<RunWorkflow> context)
         {
-            var childWorkflowInstanceId = context.GetActivity<RunWorkflow>().GetState(x => x.ChildWorkflowInstanceId);
+            var childWorkflowInstanceId = context.GetActivity<RunWorkflow>().GetPropertyValue(x => x.ChildWorkflowInstanceId);
 
             if (string.IsNullOrWhiteSpace(childWorkflowInstanceId))
                 yield break;
-            
-            yield return new RunWorkflowBookmark
+
+            yield return new BookmarkResult(new RunWorkflowBookmark
             {
                 ChildWorkflowInstanceId = childWorkflowInstanceId!
-            };
+            });
         }
     }
 }

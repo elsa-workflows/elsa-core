@@ -20,8 +20,8 @@ namespace Elsa.Activities.AzureServiceBus
             _serializer = serializer;
         }
 
-        [ActivityProperty] public string TopicName { get; set; } = default!;
-        [ActivityProperty] public object Message { get; set; } = default!;
+        [ActivityInput] public string TopicName { get; set; } = default!;
+        [ActivityInput] public object Message { get; set; } = default!;
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {

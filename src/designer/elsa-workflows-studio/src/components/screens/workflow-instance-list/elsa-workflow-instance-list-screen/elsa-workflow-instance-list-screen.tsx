@@ -107,6 +107,10 @@ export class ElsaWorkflowInstanceListScreen {
         }
     }
 
+    updateSelectAllChecked(){
+        this.selectAllChecked = this.workflowInstances.items.findIndex(x => this.selectedWorkflowInstanceIds.findIndex(id => id == x.id) < 0) < 0;
+    }
+
     async routeChanged(e: LocationSegments) {
 
         if (e.pathname.toLowerCase().indexOf('workflow-instances') < 0)
@@ -136,7 +140,7 @@ export class ElsaWorkflowInstanceListScreen {
         else
             this.selectedWorkflowInstanceIds = this.selectedWorkflowInstanceIds.filter(x => x != workflowInstance.id);
 
-        this.selectAllChecked = this.workflowInstances.items.findIndex(x => this.selectedWorkflowInstanceIds.findIndex(id => id == x.id) < 0) < 0;
+        this.updateSelectAllChecked();
     }
 
     async onDeleteClick(e: Event, workflowInstance: WorkflowInstanceSummary) {
@@ -158,7 +162,10 @@ export class ElsaWorkflowInstanceListScreen {
 
         const elsaClient = this.createClient();
         await elsaClient.workflowInstancesApi.bulkDelete({workflowInstanceIds: this.selectedWorkflowInstanceIds});
+        this.selectedWorkflowInstanceIds = [];
+        this.updateSelectAllChecked();
         await this.loadWorkflowInstances();
+        this.page = 0;
     }
 
     async onBulkActionSelected(e: CustomEvent<DropdownButtonItem>) {

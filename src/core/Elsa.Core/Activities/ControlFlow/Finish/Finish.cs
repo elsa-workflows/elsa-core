@@ -19,12 +19,12 @@ namespace Elsa.Activities.ControlFlow
     )]
     public class Finish : Activity
     {
-        [ActivityProperty(Hint = "The value to set as the workflow's output", SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "The value to set as the workflow's output", SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public object? OutputValue { get; set; }
 
-        [ActivityProperty(
+        [ActivityInput(
             Hint = "The outcomes to set on the container activity",
-            UIHint = ActivityPropertyUIHints.MultiText,
+            UIHint = ActivityInputUIHints.MultiText,
             DefaultValue = new[] { Elsa.OutcomeNames.Done },
             DefaultSyntax = SyntaxNames.Json,
             SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
