@@ -21,6 +21,23 @@ namespace Elsa.Activities.Telnyx.Client.Models
         string? ValidDigits
     );
 
+    public record GatherUsingSpeakRequest(
+        string? ClientState,
+        string? CommandId,
+        string Language,
+        string Voice,
+        string Payload,
+        string? PayloadType,
+        string? ServiceLevel,
+        int? InterDigitTimeoutMillis,
+        int? MaximumDigits,
+        int? MaximumTries,
+        int? MinimumDigits,
+        string? TerminatingDigit,
+        int? TimeoutMillis,
+        string? ValidDigits
+    );
+
     public record TransferCallRequest(
         string To,
         string? From,
@@ -92,9 +109,9 @@ namespace Elsa.Activities.Telnyx.Client.Models
         string Voice,
         string Payload,
         string? PayloadType,
+        string? ServiceLevel,
         string? ClientState,
         string? CommandId,
-        string? ServiceLevel,
         string? Stop
     );
 }

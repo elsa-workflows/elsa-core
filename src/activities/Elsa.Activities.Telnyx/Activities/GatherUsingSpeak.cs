@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Elsa.Activities.Telnyx.Client.Models;
 using Elsa.Activities.Telnyx.Client.Services;
 using Elsa.Activities.Telnyx.Extensions;
@@ -16,15 +15,15 @@ namespace Elsa.Activities.Telnyx.Activities
 {
     [Action(
         Category = Constants.Category,
-        Description = "Play an audio file on the call until the required DTMF signals are gathered to build interactive menus.",
+        Description = "Convert text to speech and play it on the call until the required DTMF signals are gathered to build interactive menus.",
         Outcomes = new[] { OutcomeNames.Done, TelnyxOutcomeNames.CallIsNoLongerActive },
-        DisplayName = "Gather Using Audio"
+        DisplayName = "Gather Using Speak"
     )]
-    public class GatherUsingAudio : Activity
+    public class GatherUsingSpeak : Activity
     {
         private readonly ITelnyxClient _telnyxClient;
 
-        public GatherUsingAudio(ITelnyxClient telnyxClient)
+        public GatherUsingSpeak(ITelnyxClient telnyxClient)
         {
             _telnyxClient = telnyxClient;
         }
@@ -35,13 +34,44 @@ namespace Elsa.Activities.Telnyx.Activities
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? CallControlId { get; set; } = default!;
+        
+        [ActivityInput(
+            Hint = "The language you want spoken.",
+            UIHint = ActivityInputUIHints.Dropdown,
+            Options = new[] { "en-US", "en-AU", "nl-NL", "es-ES", "ru-RU" },
+            DefaultValue = "en-US",
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
+        )]
+        public string Language { get; set; } = "en-US";
 
         [ActivityInput(
-            Label = "Audio URL",
-            Hint = "The URL of a file to be played back at the beginning of each prompt. The URL can point to either a WAV or MP3 file.",
-            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
+            Hint = "The gender of the voice used to speak back the text.",
+            UIHint = ActivityInputUIHints.Dropdown,
+            Options = new[] { "female", "male" },
+            DefaultValue = "female",
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
-        public Uri AudioUrl { get; set; } = default!;
+        public string Voice { get; set; } = "female";
+
+        [ActivityInput(Hint = "The text or SSML to be converted into speech. There is a 5,000 character limit.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        public string Payload { get; set; } = default!;
+
+        [ActivityInput(
+            Hint = "The type of the provided payload. The payload can either be plain text, or Speech Synthesis Markup Language (SSML).",
+            UIHint = ActivityInputUIHints.Dropdown,
+            Options = new[] { "", "text", "ssml" },
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
+        )]
+        public string? PayloadType { get; set; }
+
+        [ActivityInput(
+            Hint = "This parameter impacts speech quality, language options and payload types. When using `basic`, only the `en-US` language and payload type `text` are allowed.",
+            UIHint = ActivityInputUIHints.Dropdown,
+            Options = new[] { "", "basic", "premium" },
+            Category = PropertyCategories.Advanced,
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
+        )]
+        public string? ServiceLevel { get; set; }
 
         [ActivityInput(Hint = "Use this field to add state to every subsequent webhook. It must be a valid Base-64 encoded string.", Category = PropertyCategories.Advanced,
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
@@ -63,14 +93,7 @@ namespace Elsa.Activities.Telnyx.Activities
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public int? InterDigitTimeoutMillis { get; set; } = 5000;
-
-        [ActivityInput(
-            Label = "Invalid Audio Url",
-            Hint = "The URL of a file to play when digits don't match the Valid Digits setting or the number of digits is not between Min and Max. The URL can point to either a WAV or MP3 file.",
-            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
-        )]
-        public Uri? InvalidAudioUrl { get; set; }
-
+        
         [ActivityInput(
             Hint = "A list of all digits accepted as valid.",
             Category = PropertyCategories.Advanced,
@@ -101,12 +124,15 @@ namespace Elsa.Activities.Telnyx.Activities
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            var request = new GatherUsingAudioRequest(
-                AudioUrl,
+            var request = new GatherUsingSpeakRequest(
                 EmptyToNull(ClientState),
                 EmptyToNull(CommandId),
+                Language,
+                Voice,
+                Payload,
+                PayloadType,
+                ServiceLevel,
                 InterDigitTimeoutMillis,
-                InvalidAudioUrl,
                 MaximumDigits,
                 MaximumTries,
                 MinimumDigits,
@@ -119,7 +145,7 @@ namespace Elsa.Activities.Telnyx.Activities
 
             try
             {
-                await _telnyxClient.Calls.GatherUsingAudioAsync(callControlId, request, context.CancellationToken);
+                await _telnyxClient.Calls.GatherUsingSpeakAsync(callControlId, request, context.CancellationToken);
                 return Done();
             }
             catch (ApiException e)

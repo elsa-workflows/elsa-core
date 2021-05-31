@@ -106,12 +106,6 @@ namespace Elsa.Activities.Telnyx.Activities
             set => SetState(value);
         }
 
-        private IList<string> DialedControlIds
-        {
-            get => GetState(() => new List<string>());
-            set => SetState(value);
-        }
-
         private CallAnsweredPayload? CallAnsweredPayload
         {
             get => GetState<CallAnsweredPayload?>();
@@ -200,7 +194,7 @@ namespace Elsa.Activities.Telnyx.Activities
 
                     fork
                         .When("Timeout")
-                        .StartIn(RingTime)
+                        .StartIn(() => RingTime)
                         .Finish("No Response");
 
                     fork
