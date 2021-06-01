@@ -37,7 +37,7 @@ namespace Microsoft.Extensions.DependencyInjection
         public static IServiceCollection AddFileServices(this IServiceCollection services, Action<FileWatcherOptions> configureOptions = null)
         {
             if (configureOptions != null)
-                services.Configure<FileWatcherOptions>(configureOptions);
+                services.Configure(configureOptions);
 
             services.AddHostedService<FileWatcherService>();
             services.AddBookmarkProvider<FileSystemChangedBookmarkProvider>();
