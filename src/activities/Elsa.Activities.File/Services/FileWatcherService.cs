@@ -42,7 +42,7 @@ namespace Elsa.Activities.File.Services
                     | NotifyFilters.DirectoryName,
                 Filter = _options.Pattern,
                 Path = _options.Path,
-                IncludeSubdirectories = _options.SubDirectories
+                IncludeSubdirectories = false
             };
             _watcher.Created += Watcher_Created;
             _watcher.EnableRaisingEvents = true;

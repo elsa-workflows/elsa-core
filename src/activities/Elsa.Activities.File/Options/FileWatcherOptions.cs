@@ -8,6 +8,5 @@ namespace Elsa.Activities.File.Options
     {
         public string Path { get; set; }
         public string Pattern { get; set; }
-        public bool SubDirectories { get; set; } = false;
     }
 }
