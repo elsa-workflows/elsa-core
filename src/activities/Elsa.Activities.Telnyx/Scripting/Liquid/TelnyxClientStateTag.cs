@@ -6,7 +6,7 @@ using Elsa.Services.Models;
 using Fluid;
 using Fluid.Ast;
 
-namespace Elsa.Activities.Telnyx.Liquid
+namespace Elsa.Activities.Telnyx.Scripting.Liquid
 {
     public static class TelnyxClientStateTag
     {

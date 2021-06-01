@@ -10,7 +10,6 @@ using Elsa.Activities.Telnyx.Services;
 using Elsa.Activities.Telnyx.Webhooks.Models;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
 using Elsa.Activities.Temporal;
-using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Builders;
 using Elsa.Design;

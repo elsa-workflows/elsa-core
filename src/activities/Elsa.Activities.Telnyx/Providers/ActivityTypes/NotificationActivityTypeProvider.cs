@@ -5,18 +5,14 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Telnyx.Activities;
-using Elsa.Activities.Telnyx.Extensions;
 using Elsa.Activities.Telnyx.Webhooks.Attributes;
-using Elsa.Activities.Telnyx.Webhooks.Models;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Abstract;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
-using Elsa.Activities.Telnyx.Webhooks.Services;
-using Elsa.ActivityResults;
 using Elsa.Metadata;
 using Elsa.Services;
 using Elsa.Services.Models;
 
-namespace Elsa.Activities.Telnyx.ActivityTypes
+namespace Elsa.Activities.Telnyx.Providers.ActivityTypes
 {
     internal class NotificationActivityTypeProvider : IActivityTypeProvider
     {

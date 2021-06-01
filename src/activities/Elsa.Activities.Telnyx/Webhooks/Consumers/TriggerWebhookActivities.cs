@@ -1,32 +1,29 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Elsa.Activities.Telnyx.Bookmarks;
 using Elsa.Activities.Telnyx.Models;
+using Elsa.Activities.Telnyx.Providers.Bookmarks;
 using Elsa.Activities.Telnyx.Webhooks.Events;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Abstract;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
 using Elsa.Activities.Telnyx.Webhooks.Services;
-using Elsa.Dispatch;
+using Elsa.Services;
 using Microsoft.Extensions.Logging;
 using Rebus.Handlers;
 
 namespace Elsa.Activities.Telnyx.Webhooks.Consumers
 {
-    internal class TriggerWorkflows : IHandleMessages<TelnyxWebhookReceived>
+    internal class TriggerWebhookActivities : IHandleMessages<TelnyxWebhookReceived>
     {
-        // TODO: Design multi-tenancy. 
-        private const string TenantId = default;
-
-        private readonly IWorkflowDispatcher _workflowDispatcher;
+        private readonly IWorkflowLaunchpad _workflowLaunchpad;
         private readonly IWebhookFilterService _webhookFilterService;
-        private readonly ILogger<TriggerWorkflows> _logger;
+        private readonly ILogger _logger;
 
-        public TriggerWorkflows(
-            IWorkflowDispatcher workflowDispatcher,
+        public TriggerWebhookActivities(
+            IWorkflowLaunchpad workflowDispatcher,
             IWebhookFilterService webhookFilterService,
-            ILogger<TriggerWorkflows> logger)
+            ILogger<TriggerWebhookActivities> logger)
         {
-            _workflowDispatcher = workflowDispatcher;
+            _workflowLaunchpad = workflowDispatcher;
             _webhookFilterService = webhookFilterService;
             _logger = logger;
         }
@@ -45,11 +42,11 @@ namespace Elsa.Activities.Telnyx.Webhooks.Consumers
             }
 
             var correlationId = GetCorrelationId(payload);
-
             var bookmark = new NotificationBookmark(eventType, correlationId);
             var trigger = new NotificationBookmark(eventType);
+            var context = new CollectWorkflowsContext(activityType, bookmark, trigger, correlationId);
 
-            await _workflowDispatcher.DispatchAsync(new TriggerWorkflowsRequest(activityType, bookmark, trigger, webhook, correlationId, TenantId: TenantId));
+            await _workflowLaunchpad.CollectAndExecuteWorkflowsAsync(context, webhook);
         }
 
         private string GetCorrelationId(Payload payload)

@@ -3,8 +3,10 @@ using System.Threading.Tasks;
 using Elsa.Activities.Telnyx.Client.Models;
 using Elsa.Activities.Telnyx.Client.Services;
 using Elsa.Activities.Telnyx.Extensions;
+using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Bookmarks;
 using Elsa.Builders;
 using Elsa.Design;
 using Elsa.Exceptions;
@@ -15,16 +17,23 @@ using Refit;
 
 namespace Elsa.Activities.Telnyx.Activities
 {
+    public class SpeakTextBookmark : IBookmark
+    {
+    }
+    
     [Action(
         Category = Constants.Category,
         Description = "Convert text to speech and play it back on the call.",
-        Outcomes = new[] { OutcomeNames.Done, TelnyxOutcomeNames.CallIsNoLongerActive },
+        Outcomes = new[] { TelnyxOutcomeNames.Speaking, TelnyxOutcomeNames.CallIsNoLongerActive, TelnyxOutcomeNames.FinishedSpeaking },
         DisplayName = "Speak Text"
     )]
-    public class SpeakText : Activity
+    public class SpeakText : EventDrivenActivity<SpeakTextBookmark, CallSpeakEnded>
     {
         private readonly ITelnyxClient _telnyxClient;
-        public SpeakText(ITelnyxClient telnyxClient) => _telnyxClient = telnyxClient;
+        public SpeakText(ITelnyxClient telnyxClient, ICommandSender commandSender, IWorkflowLaunchpad workflowLaunchpad) : base(commandSender, workflowLaunchpad)
+        {
+            _telnyxClient = telnyxClient;
+        }
 
         [ActivityInput(
             Label = "Call Control ID",
@@ -86,6 +95,9 @@ namespace Elsa.Activities.Telnyx.Activities
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? CommandId { get; set; }
+        
+        [ActivityOutput(Hint = "The received payload when speaking ended.")]
+        public CallSpeakEnded? SpeakEndedPayload { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
@@ -105,7 +117,7 @@ namespace Elsa.Activities.Telnyx.Activities
             try
             {
                 await _telnyxClient.Calls.SpeakTextAsync(callControlId, request, context.CancellationToken);
-                return Done();
+                return Combine(Outcome(TelnyxOutcomeNames.Pending), Suspend());
             }
             catch (ApiException e)
             {
@@ -114,6 +126,12 @@ namespace Elsa.Activities.Telnyx.Activities
 
                 throw new WorkflowException(e.Content ?? e.Message, e);
             }
+        }
+
+        protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
+        {
+            SpeakEndedPayload = context.GetInput<CallSpeakEnded>();
+            return Outcome(TelnyxOutcomeNames.FinishedSpeaking);
         }
 
         private static string? EmptyToNull(string? value) => value is "" ? null : value;

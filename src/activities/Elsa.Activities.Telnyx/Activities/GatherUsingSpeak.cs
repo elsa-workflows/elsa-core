@@ -1,9 +1,13 @@
-﻿using System.Threading.Tasks;
+﻿using System.Threading;
+using System.Threading.Tasks;
 using Elsa.Activities.Telnyx.Client.Models;
 using Elsa.Activities.Telnyx.Client.Services;
 using Elsa.Activities.Telnyx.Extensions;
+using Elsa.Activities.Telnyx.Webhooks.Events;
+using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Bookmarks;
 using Elsa.Design;
 using Elsa.Exceptions;
 using Elsa.Expressions;
@@ -11,19 +15,24 @@ using Elsa.Services;
 using Elsa.Services.Models;
 using Refit;
 
+// ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Telnyx.Activities
 {
+    public class GatherUsingSpeakBookmark : IBookmark
+    {
+    }
+    
     [Action(
         Category = Constants.Category,
         Description = "Convert text to speech and play it on the call until the required DTMF signals are gathered to build interactive menus.",
-        Outcomes = new[] { OutcomeNames.Done, TelnyxOutcomeNames.CallIsNoLongerActive },
+        Outcomes = new[] { TelnyxOutcomeNames.Pending, TelnyxOutcomeNames.GatherCompleted, TelnyxOutcomeNames.CallIsNoLongerActive },
         DisplayName = "Gather Using Speak"
     )]
-    public class GatherUsingSpeak : Activity
+    public class GatherUsingSpeak : EventDrivenActivity<GatherUsingSpeakBookmark, CallGatherEndedPayload>
     {
         private readonly ITelnyxClient _telnyxClient;
 
-        public GatherUsingSpeak(ITelnyxClient telnyxClient)
+        public GatherUsingSpeak(ITelnyxClient telnyxClient, ICommandSender commandSender, IWorkflowLaunchpad workflowLaunchpad) : base(commandSender, workflowLaunchpad)
         {
             _telnyxClient = telnyxClient;
         }
@@ -121,6 +130,15 @@ namespace Elsa.Activities.Telnyx.Activities
             DefaultValue = 60000,
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public int? TimeoutMillis { get; set; } = 60000;
+        
+        [ActivityOutput(Hint = "The received payload when gathering completed.")]
+        public CallGatherEndedPayload? ReceivedPayload { get; set; }
+
+        public override Task Handle(TelnyxWebhookReceived notification, CancellationToken cancellationToken)
+        {
+            // Do nothing. Instead, let the shared CallGatherEndedHandler handle this to avoid sending the same command twice.
+            return Task.CompletedTask;
+        }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
@@ -146,7 +164,7 @@ namespace Elsa.Activities.Telnyx.Activities
             try
             {
                 await _telnyxClient.Calls.GatherUsingSpeakAsync(callControlId, request, context.CancellationToken);
-                return Done();
+                return Combine(Outcome(TelnyxOutcomeNames.Pending), Suspend());
             }
             catch (ApiException e)
             {
@@ -155,6 +173,12 @@ namespace Elsa.Activities.Telnyx.Activities
 
                 throw new WorkflowException(e.Content ?? e.Message, e);
             }
+        }
+
+        protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
+        {
+            ReceivedPayload = context.GetInput<CallGatherEndedPayload>();
+            return Outcome(TelnyxOutcomeNames.GatherCompleted);
         }
 
         private string? EmptyToNull(string? value) => value is "" ? null : value;

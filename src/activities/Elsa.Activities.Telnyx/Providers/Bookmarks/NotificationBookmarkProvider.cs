@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
-using Elsa.Activities.Telnyx.ActivityTypes;
+using Elsa.Activities.Telnyx.Providers.ActivityTypes;
 using Elsa.Bookmarks;
 
-namespace Elsa.Activities.Telnyx.Bookmarks
+namespace Elsa.Activities.Telnyx.Providers.Bookmarks
 {
     public record NotificationBookmark(string EventType, string? CorrelationId = default) : IBookmark
     {

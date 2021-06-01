@@ -2,8 +2,10 @@
 using Elsa.Activities.Telnyx.Client.Models;
 using Elsa.Activities.Telnyx.Client.Services;
 using Elsa.Activities.Telnyx.Extensions;
+using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Bookmarks;
 using Elsa.Design;
 using Elsa.Exceptions;
 using Elsa.Expressions;
@@ -11,19 +13,24 @@ using Elsa.Services;
 using Elsa.Services.Models;
 using Refit;
 
+// ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Telnyx.Activities
 {
-    [Action(
+    public class AnswerCallBookmark : IBookmark
+    {
+    }
+    
+    [Job(
         Category = Constants.Category,
         Description = "Answer an incoming call. You must issue this command before executing subsequent commands on an incoming call",
-        Outcomes = new[] { OutcomeNames.Done, TelnyxOutcomeNames.CallIsNoLongerActive },
+        Outcomes = new[] { TelnyxOutcomeNames.Pending, TelnyxOutcomeNames.Answered, TelnyxOutcomeNames.CallIsNoLongerActive },
         DisplayName = "Answer Call"
     )]
-    public class AnswerCall : Activity
+    public class AnswerCall : EventDrivenActivity<AnswerCallBookmark, CallAnsweredPayload>
     {
         private readonly ITelnyxClient _telnyxClient;
 
-        public AnswerCall(ITelnyxClient telnyxClient)
+        public AnswerCall(ITelnyxClient telnyxClient, ICommandSender commandSender, IWorkflowLaunchpad workflowLaunchpad) : base(commandSender, workflowLaunchpad)
         {
             _telnyxClient = telnyxClient;
         }
@@ -66,6 +73,9 @@ namespace Elsa.Activities.Telnyx.Activities
             Category = PropertyCategories.Advanced, 
             SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string? WebhookUrlMethod { get; set; }
+        
+        [ActivityOutput(Hint = "The received payload when the call got answered.")]
+        public CallAnsweredPayload? ReceivedPayload { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
@@ -74,7 +84,7 @@ namespace Elsa.Activities.Telnyx.Activities
                 var callControlId = context.GetCallControlId(CallControlId);
                 var request = new AnswerCallRequest(BillingGroupId, ClientState, CommandId, WebhookUrl, WebhookUrlMethod);
                 await _telnyxClient.Calls.AnswerCallAsync(callControlId, request, context.CancellationToken);
-                return Done();
+                return Combine(Outcome(TelnyxOutcomeNames.Pending), Suspend());
             }
             catch (ApiException e)
             {
@@ -83,6 +93,12 @@ namespace Elsa.Activities.Telnyx.Activities
 
                 throw new WorkflowException(e.Content ?? e.Message, e);
             }
+        }
+
+        protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
+        {
+            ReceivedPayload = context.GetInput<CallAnsweredPayload>();
+            return Outcome(TelnyxOutcomeNames.Answered);
         }
     }
 }
