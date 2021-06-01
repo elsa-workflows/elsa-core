@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Elsa.Samples.FileWatcher
 {
-    public class FileWatcherWorkflowSkip : IWorkflow
+    public class FileWatcherWorkflowIgnore : IWorkflow
     {
         public void Build(IWorkflowBuilder builder)
         {

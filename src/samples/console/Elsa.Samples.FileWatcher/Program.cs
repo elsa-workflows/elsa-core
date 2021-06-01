@@ -23,6 +23,7 @@ namespace Elsa.Samples.FileWatcher
                             .GetSection("FileWatcher")
                             .Bind)
                         .AddWorkflow<FileWatcherWorkflow>()
+                        .AddWorkflow<FileWatcherWorkflowIgnore>()
                     );
                 })
                 .RunConsoleAsync();
