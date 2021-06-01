@@ -1,5 +1,6 @@
 using Elsa.Activities.Conductor.Extensions;
 using Elsa.Activities.UserTask.Extensions;
+using Elsa.Activities.Webhooks.Extensions;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
 using Microsoft.Extensions.Hosting;
@@ -60,6 +61,7 @@ namespace Elsa.Samples.Server.Host
                     .AddConductorActivities(options => elsaSection.GetSection("Conductor").Bind(options))
                     .AddActivitiesFrom<Startup>()
                     .AddWorkflowsFrom<Startup>()
+                    .AddWebhooks()
                 );
 
             // Elsa API endpoints.
