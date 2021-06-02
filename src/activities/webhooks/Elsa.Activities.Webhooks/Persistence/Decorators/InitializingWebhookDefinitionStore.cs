@@ -66,9 +66,6 @@ namespace Elsa.Activities.Webhooks.Persistence.Decorators
         {
             if (string.IsNullOrWhiteSpace(webhookDefinition.Id))
                 webhookDefinition.Id = _idGenerator.Generate();
-            
-            if (string.IsNullOrWhiteSpace(webhookDefinition.DefinitionId))
-                webhookDefinition.DefinitionId = _idGenerator.Generate();
 
             return webhookDefinition;
         }

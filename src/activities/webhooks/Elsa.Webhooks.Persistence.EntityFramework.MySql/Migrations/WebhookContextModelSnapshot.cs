@@ -21,10 +21,6 @@ namespace Elsa.Webhooks.Persistence.EntityFramework.MySql.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("varchar(255)");
 
-                    b.Property<string>("DefinitionId")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
                     b.Property<string>("Description")
                         .HasColumnType("longtext");
 

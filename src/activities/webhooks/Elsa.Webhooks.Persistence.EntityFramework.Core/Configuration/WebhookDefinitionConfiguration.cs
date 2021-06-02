@@ -8,7 +8,6 @@ namespace Elsa.Webhooks.Persistence.EntityFramework.Core.Configuration
     {
         public void Configure(EntityTypeBuilder<WebhookDefinition> builder)
         {
-            builder.HasIndex(x => new { x.DefinitionId}).HasDatabaseName($"IX_{nameof(WebhookDefinition)}_{nameof(WebhookDefinition.DefinitionId)}").IsUnique();
             builder.HasIndex(x => x.TenantId).HasDatabaseName($"IX_{nameof(WebhookDefinition)}_{nameof(WebhookDefinition.TenantId)}");
             builder.HasIndex(x => x.Path).HasDatabaseName($"IX_{nameof(WebhookDefinition)}_{nameof(WebhookDefinition.Path)}");
             builder.HasIndex(x => x.Name).HasDatabaseName($"IX_{nameof(WebhookDefinition)}_{nameof(WebhookDefinition.Name)}");

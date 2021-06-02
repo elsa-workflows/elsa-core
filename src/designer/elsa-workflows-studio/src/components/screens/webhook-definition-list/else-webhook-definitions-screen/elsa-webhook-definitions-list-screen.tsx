@@ -27,7 +27,7 @@ export class ElsaWebhookDefinitionsListScreen {
       return;
 
     const elsaClient = this.createClient();
-    await elsaClient.webhookDefinitionsApi.delete(webhookDefinition.definitionId);
+    await elsaClient.webhookDefinitionsApi.delete(webhookDefinition.id);
     await this.loadWebhookDefinitions();
   }
 
@@ -43,12 +43,11 @@ export class ElsaWebhookDefinitionsListScreen {
   }
 
   render() {
-    const webhookDefinitions = this.webhookDefinitions.items;
-    const groupings = collection.groupBy(webhookDefinitions, 'definitionId');
+    const webhookDefinitions = this.webhookDefinitions;
+    const list = collection.orderBy(webhookDefinitions, 'name');
 
     return (
       <div>
-        {this.webhookDefinitions.items.length}
         <div class="elsa-align-middle elsa-inline-block elsa-min-w-full elsa-border-b elsa-border-gray-200">
           <table class="elsa-min-w-full">
             <thead>
@@ -64,9 +63,9 @@ export class ElsaWebhookDefinitionsListScreen {
             </tr>
             </thead>
             <tbody class="elsa-bg-white elsa-divide-y elsa-divide-gray-100">
-            {collection.map(groupings, group => {
-              const names = collection.orderBy(group, 'name', 'desc');
-              const webhookDefinition: WebhookDefinitionSummary = names[0];
+            {collection.map(list, item => {
+              
+              const webhookDefinition: WebhookDefinitionSummary = item;
               let webhookDisplayName = webhookDefinition.name;
 
               if (!webhookDisplayName || webhookDisplayName.trim().length == 0)
@@ -75,7 +74,8 @@ export class ElsaWebhookDefinitionsListScreen {
               if (!webhookDisplayName || webhookDisplayName.trim().length == 0)
               webhookDisplayName = 'Untitled';
 
-              const editUrl = `/webhook-definitions/${webhookDefinition.definitionId}`;
+              debugger
+              const editUrl = `/webhook-definitions/${webhookDefinition.id}`;
 
               const editIcon = (
                 <svg class="elsa-h-5 elsa-w-5 elsa-text-gray-500" width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

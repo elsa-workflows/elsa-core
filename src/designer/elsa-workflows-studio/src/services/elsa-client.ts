@@ -23,12 +23,11 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
   const httpClient = axios.create(config);
 
   return {
-    activitiesApi: {
+    activitiesApi: {      
       list: async () => {
         const response = await httpClient.get<Array<ActivityDescriptor>>('v1/activities');
-        debugger;
         return response.data;
-      }
+      }      
     },
     workflowDefinitionsApi: {
       list: async (page?: number, pageSize?: number, versionOptions?: VersionOptions) => {
@@ -83,16 +82,16 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
         const response = await httpClient.get<PagedList<WebhookDefinitionSummary>>(`v1/webhook-definitions`);
         return response.data;
       },
-      getByDefinition: async (definitionId: string) => {
-        const response = await httpClient.get<WebhookDefinition>(`v1/webhook-definitions/${definitionId}`);
+      getByWebhookId: async (webhookId: string) => {
+        const response = await httpClient.get<WebhookDefinition>(`v1/webhook-definitions/${webhookId}`);
         return response.data;
       },
       save: async request => {
         const response = await httpClient.post<WebhookDefinition>('v1/webhook-definitions', request);
         return response.data;
       },
-      delete: async definitionId => {
-        await httpClient.delete(`v1/webhook-definitions/${definitionId}`);
+      delete: async webhookId => {
+        await httpClient.delete(`v1/webhook-definitions/${webhookId}`);
       },
     },    
     workflowRegistryApi: {
@@ -226,11 +225,11 @@ export interface WebhookDefinitionsApi {
 
   list(page?: number, pageSize?: number): Promise<PagedList<WebhookDefinitionSummary>>;
 
-  getByDefinition(definitionId: string): Promise<WebhookDefinition>;
+  getByWebhookId(webhookId: string): Promise<WebhookDefinition>;
 
   save(request: SaveWebhookDefinitionRequest): Promise<WebhookDefinition>;
 
-  delete(definitionId: string): Promise<void>;
+  delete(webhookId: string): Promise<void>;
 }
 
 export interface WorkflowRegistryApi {
@@ -296,7 +295,7 @@ export interface SaveWorkflowDefinitionRequest {
 }
 
 export interface SaveWebhookDefinitionRequest {
-  webhookDefinitionId?: string;
+  webhookId?: string;
   name?: string;
   path?: string;  
   description?: string;

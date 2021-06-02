@@ -16,7 +16,7 @@ namespace Elsa.Activities.Webhooks.Endpoints.WebhookDefinitions
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{apiVersion:apiVersion}/webhook-definitions/{webhookDefinitionId}")]
+    [Route("v{apiVersion:apiVersion}/webhook-definitions/{webhookId}")]
     [Produces(MediaTypeNames.Application.Json)]
     public class Get : Controller
     {
@@ -30,8 +30,8 @@ namespace Elsa.Activities.Webhooks.Endpoints.WebhookDefinitions
         }
 
         [HttpGet]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(WorkflowDefinition))]
-        [SwaggerResponseExample(StatusCodes.Status200OK, typeof(WorkflowDefinitionExample))]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(WebhookDefinition))]
+        [SwaggerResponseExample(StatusCodes.Status200OK, typeof(WebhookDefinitionExample))]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [SwaggerOperation(
             Summary = "Returns a single webhook definition.",
@@ -39,9 +39,9 @@ namespace Elsa.Activities.Webhooks.Endpoints.WebhookDefinitions
             OperationId = "WebhookDefinitions.GetByDefinition",
             Tags = new[] { "WebhookDefinitions" })
         ]
-        public async Task<IActionResult> Handle(string webhookDefinitionId, CancellationToken cancellationToken = default)
+        public async Task<IActionResult> Handle(string webhookId, CancellationToken cancellationToken = default)
         {
-            var webhookDefinition = await _webhookDefinitionStore.FindAsync(new EntityIdSpecification<WebhookDefinition>(webhookDefinitionId), cancellationToken);
+            var webhookDefinition = await _webhookDefinitionStore.FindAsync(new EntityIdSpecification<WebhookDefinition>(webhookId), cancellationToken);
             return webhookDefinition == null ? (IActionResult) NotFound() : Json(webhookDefinition, _serializerSettingsProvider.GetSettings());
         }
     }

@@ -44,7 +44,7 @@ export class ElsaWorkflowDefinitionsListScreen {
 
   render() {
     const workflowDefinitions = this.workflowDefinitions.items;
-    const groupings = collection.groupBy(workflowDefinitions, 'definitionId');
+    const groupings = collection.groupBy(workflowDefinitions, 'id');
 
     return (
       <div>

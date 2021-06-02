@@ -36,15 +36,15 @@ namespace Elsa.Activities.Webhooks.Endpoints.WebhookDefinitions
         ]
         public async Task<ActionResult<WebhookDefinition>> Handle([FromBody] SaveRequest request, [FromRoute] ApiVersion apiVersion, CancellationToken cancellationToken)
         {
-            var webhookDefinitionId = request.WebhookDefinitionId;
-            var webhookDefinition = !string.IsNullOrWhiteSpace(webhookDefinitionId) ? await _webhookDefinitionStore.FindAsync(new EntityIdSpecification<WebhookDefinition>(webhookDefinitionId), cancellationToken) : default;
+            var webhookId = request.Id;
+            var webhookDefinition = !string.IsNullOrWhiteSpace(webhookId) ? await _webhookDefinitionStore.FindAsync(new EntityIdSpecification<WebhookDefinition>(webhookId), cancellationToken) : default;
 
             if (webhookDefinition == null)
             {
                 webhookDefinition = new WebhookDefinition();
 
-                if (!string.IsNullOrWhiteSpace(webhookDefinitionId))
-                    webhookDefinition.DefinitionId = webhookDefinitionId;
+                if (!string.IsNullOrWhiteSpace(webhookId))
+                    webhookDefinition.Id = webhookId;
             }
 
             webhookDefinition.Name = request.Name?.Trim();
@@ -55,7 +55,7 @@ namespace Elsa.Activities.Webhooks.Endpoints.WebhookDefinitions
 
             await _webhookDefinitionStore.SaveAsync(webhookDefinition, cancellationToken);
 
-            return CreatedAtAction("Handle", "Get", new { definitionId = webhookDefinition.DefinitionId, apiVersion = apiVersion.ToString() }, webhookDefinition);
+            return CreatedAtAction("Handle", "Get", new { id = webhookDefinition.Id, apiVersion = apiVersion.ToString() }, webhookDefinition);
         }
     }
 }

@@ -2,8 +2,7 @@ namespace Elsa.Activities.Webhooks.Endpoints.WebhookDefinitions
 {
     public sealed record SaveRequest
     {
-        //public string? Id { get; init; }
-        public string? WebhookDefinitionId { get; init; }
+        public string? Id { get; init; }
         public string? Path { get; init; }
         public string? Name { get; init; }
         public string? Description { get; init; }
