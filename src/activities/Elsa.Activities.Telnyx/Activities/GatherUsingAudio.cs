@@ -6,7 +6,6 @@ using Elsa.Activities.Telnyx.Extensions;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
-using Elsa.Bookmarks;
 using Elsa.Design;
 using Elsa.Exceptions;
 using Elsa.Expressions;
@@ -16,24 +15,17 @@ using Refit;
 
 namespace Elsa.Activities.Telnyx.Activities
 {
-    public class GatherUsingAudioBookmark : IBookmark
-    {
-    }
-    
-    [Action(
+    [Job(
         Category = Constants.Category,
         Description = "Play an audio file on the call until the required DTMF signals are gathered to build interactive menus.",
         Outcomes = new[] { TelnyxOutcomeNames.Pending, TelnyxOutcomeNames.GatherCompleted, TelnyxOutcomeNames.CallIsNoLongerActive },
         DisplayName = "Gather Using Audio"
     )]
-    public class GatherUsingAudio : EventDrivenActivity<GatherUsingAudioBookmark, CallGatherEndedPayload>
+    public class GatherUsingAudio : Activity
     {
         private readonly ITelnyxClient _telnyxClient;
 
-        public GatherUsingAudio(ITelnyxClient telnyxClient, ICommandSender commandSender, IWorkflowLaunchpad workflowLaunchpad) : base(commandSender, workflowLaunchpad)
-        {
-            _telnyxClient = telnyxClient;
-        }
+        public GatherUsingAudio(ITelnyxClient telnyxClient) => _telnyxClient = telnyxClient;
 
         [ActivityInput(
             Label = "Call Control ID", Hint = "Unique identifier and token for controlling the call",

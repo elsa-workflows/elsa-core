@@ -10,10 +10,8 @@ using Elsa.Activities.Telnyx.Providers.ActivityTypes;
 using Elsa.Activities.Telnyx.Providers.Bookmarks;
 using Elsa.Activities.Telnyx.Scripting.JavaScript;
 using Elsa.Activities.Telnyx.Scripting.Liquid;
-using Elsa.Activities.Telnyx.Webhooks.Consumers;
-using Elsa.Activities.Telnyx.Webhooks.Events;
 using Elsa.Activities.Telnyx.Webhooks.Filters;
-using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
+using Elsa.Activities.Telnyx.Webhooks.Handlers;
 using Elsa.Activities.Telnyx.Webhooks.Services;
 using Elsa.Bookmarks;
 using Elsa.Scripting.Liquid.Extensions;
@@ -25,7 +23,6 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using NodaTime;
 using NodaTime.Serialization.JsonNet;
-using Rebus.Handlers;
 using Refit;
 
 namespace Elsa.Activities.Telnyx.Extensions
@@ -42,22 +39,12 @@ namespace Elsa.Activities.Telnyx.Extensions
 
             // Activities.
             elsaOptions
-                .AddActivitiesFrom<AnswerCall>()
-                .AddEventDrivenActivity<AnswerCall, CallAnsweredPayload>()
-                .AddEventDrivenActivity<GatherUsingSpeak, CallGatherEndedPayload>()
-                .AddEventDrivenActivity<GatherUsingAudio, CallGatherEndedPayload>()
-                .AddEventDrivenActivity<SpeakText, CallSpeakEnded>()
-                .AddEventDrivenActivity<StartRecording, CallRecordingSaved>();
-
-            // Consumers.
-            elsaOptions.AddCompetingConsumer<TriggerWebhookActivities, TelnyxWebhookReceived>();
+                .AddActivitiesFrom<AnswerCall>();
 
             // Services.
             services
                 .AddActivityTypeProvider<NotificationActivityTypeProvider>()
-                .AddBookmarkProvider<NotificationBookmarkProvider>()
-                .AddBookmarkProvider<AnswerCall>()
-                .AddBookmarkProvider<GatherUsingSpeak>()
+                .AddBookmarkProvidersFrom<NotificationBookmarkProvider>()
                 .AddNotificationHandlers(typeof(TriggerWebhookActivities))
                 .AddJavaScriptTypeDefinitionProvider<TelnyxTypeDefinitionProvider>()
                 .AddScoped<IWebhookHandler, WebhookHandler>()
@@ -76,14 +63,6 @@ namespace Elsa.Activities.Telnyx.Extensions
             services
                 .AddApiClient<ICallsApi>(refitSettings, httpClientFactory)
                 .AddTransient<ITelnyxClient, TelnyxClient>();
-
-            return elsaOptions;
-        }
-
-        private static ElsaOptionsBuilder AddEventDrivenActivity<TActivity, TPayload>(this ElsaOptionsBuilder elsaOptions) where TActivity : class, IHandleMessages<TPayload>, IBookmarkProvider
-        {
-            elsaOptions.AddCompetingConsumer<TActivity, TPayload>();
-            elsaOptions.Services.AddBookmarkProvider<TActivity>();
 
             return elsaOptions;
         }

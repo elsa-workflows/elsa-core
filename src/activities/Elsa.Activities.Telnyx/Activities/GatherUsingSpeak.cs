@@ -3,11 +3,11 @@ using System.Threading.Tasks;
 using Elsa.Activities.Telnyx.Client.Models;
 using Elsa.Activities.Telnyx.Client.Services;
 using Elsa.Activities.Telnyx.Extensions;
+using Elsa.Activities.Telnyx.Providers.Bookmarks;
 using Elsa.Activities.Telnyx.Webhooks.Events;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
-using Elsa.Bookmarks;
 using Elsa.Design;
 using Elsa.Exceptions;
 using Elsa.Expressions;
@@ -18,24 +18,17 @@ using Refit;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Telnyx.Activities
 {
-    public class GatherUsingSpeakBookmark : IBookmark
-    {
-    }
-    
     [Action(
         Category = Constants.Category,
         Description = "Convert text to speech and play it on the call until the required DTMF signals are gathered to build interactive menus.",
         Outcomes = new[] { TelnyxOutcomeNames.Pending, TelnyxOutcomeNames.GatherCompleted, TelnyxOutcomeNames.CallIsNoLongerActive },
         DisplayName = "Gather Using Speak"
     )]
-    public class GatherUsingSpeak : EventDrivenActivity<GatherUsingSpeakBookmark, CallGatherEndedPayload>
+    public class GatherUsingSpeak : Activity
     {
         private readonly ITelnyxClient _telnyxClient;
 
-        public GatherUsingSpeak(ITelnyxClient telnyxClient, ICommandSender commandSender, IWorkflowLaunchpad workflowLaunchpad) : base(commandSender, workflowLaunchpad)
-        {
-            _telnyxClient = telnyxClient;
-        }
+        public GatherUsingSpeak(ITelnyxClient telnyxClient) => _telnyxClient = telnyxClient;
 
         [ActivityInput(
             Label = "Call Control ID", Hint = "Unique identifier and token for controlling the call",
@@ -133,12 +126,6 @@ namespace Elsa.Activities.Telnyx.Activities
         
         [ActivityOutput(Hint = "The received payload when gathering completed.")]
         public CallGatherEndedPayload? ReceivedPayload { get; set; }
-
-        public override Task Handle(TelnyxWebhookReceived notification, CancellationToken cancellationToken)
-        {
-            // Do nothing. Instead, let the shared CallGatherEndedHandler handle this to avoid sending the same command twice.
-            return Task.CompletedTask;
-        }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {

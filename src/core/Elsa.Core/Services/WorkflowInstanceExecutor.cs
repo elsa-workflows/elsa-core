@@ -11,19 +11,19 @@ namespace Elsa.Services
     public class WorkflowInstanceExecutor : IWorkflowInstanceExecutor
     {
         private readonly IResumesWorkflow _workflowRunner;
-        private readonly IWorkflowInstanceStore _workflowInstanceStore;
+        public IWorkflowInstanceStore WorkflowInstanceStore { get; }
         private readonly ILogger _logger;
 
         public WorkflowInstanceExecutor(IResumesWorkflow workflowRunner, IWorkflowInstanceStore workflowInstanceStore, ILogger<WorkflowInstanceExecutor> logger)
         {
             _workflowRunner = workflowRunner;
-            _workflowInstanceStore = workflowInstanceStore;
+            WorkflowInstanceStore = workflowInstanceStore;
             _logger = logger;
         }
 
         public async Task<RunWorkflowResult> ExecuteAsync(string workflowInstanceId, string? activityId, object? input = default, CancellationToken cancellationToken = default)
         {
-            var workflowInstance = await _workflowInstanceStore.FindByIdAsync(workflowInstanceId, cancellationToken);
+            var workflowInstance = await WorkflowInstanceStore.FindByIdAsync(workflowInstanceId, cancellationToken);
             
             if (!ValidatePreconditions(workflowInstanceId, workflowInstance, activityId))
                 return new RunWorkflowResult(workflowInstance, activityId, false);

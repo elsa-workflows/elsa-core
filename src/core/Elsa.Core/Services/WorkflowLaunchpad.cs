@@ -271,6 +271,8 @@ namespace Elsa.Services
             {
                 if (handle == null)
                     throw new LockAcquisitionException($"Failed to acquire a lock on {lockKey}");
+                
+                _logger.LogDebug("Acquired lock on correlation ID {CorrelationId}", correlationId);
 
                 var correlatedWorkflowInstanceCount = !string.IsNullOrWhiteSpace(correlationId)
                     ? await _workflowInstanceStore.CountAsync(new CorrelationIdSpecification<WorkflowInstance>(correlationId).WithStatus(WorkflowStatus.Suspended), cancellationToken)
@@ -282,9 +284,11 @@ namespace Elsa.Services
                 {
                     _logger.LogDebug("{WorkflowInstanceCount} existing workflows found with correlation ID '{CorrelationId}' will be queued for execution", correlatedWorkflowInstanceCount, correlationId);
                     var bookmarkResults = context.Bookmark != null ? await _bookmarkFinder.FindBookmarksAsync(context.ActivityType, context.Bookmark, correlationId, context.TenantId, cancellationToken).ToList() : new List<BookmarkFinderResult>();
+                    _logger.LogDebug("Found {BookmarkCount} bookmarks for activity type {ActivityType}", bookmarkResults.Count, context.ActivityType);
                     return bookmarkResults.Select(x => new PendingWorkflow(x.WorkflowInstanceId, x.ActivityId)).ToList();
                 }
             }
+            _logger.LogDebug("Released lock on correlation ID {CorrelationId}", correlationId);
 
             var startableWorkflows = await CollectStartableWorkflowsAsync(context, cancellationToken);
             return startableWorkflows.Select(x => new PendingWorkflow(x.WorkflowInstance.Id, x.ActivityId)).ToList();

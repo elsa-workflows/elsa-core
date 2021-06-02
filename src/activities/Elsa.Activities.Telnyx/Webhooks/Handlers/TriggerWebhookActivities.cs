@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Telnyx.Models;
 using Elsa.Activities.Telnyx.Providers.Bookmarks;
@@ -7,32 +8,29 @@ using Elsa.Activities.Telnyx.Webhooks.Payloads.Abstract;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
 using Elsa.Activities.Telnyx.Webhooks.Services;
 using Elsa.Services;
+using MediatR;
 using Microsoft.Extensions.Logging;
-using Rebus.Handlers;
 
-namespace Elsa.Activities.Telnyx.Webhooks.Consumers
+namespace Elsa.Activities.Telnyx.Webhooks.Handlers
 {
-    internal class TriggerWebhookActivities : IHandleMessages<TelnyxWebhookReceived>
+    internal class TriggerWebhookActivities : INotificationHandler<TelnyxWebhookReceived>
     {
         private readonly IWorkflowLaunchpad _workflowLaunchpad;
         private readonly IWebhookFilterService _webhookFilterService;
         private readonly ILogger _logger;
 
-        public TriggerWebhookActivities(
-            IWorkflowLaunchpad workflowDispatcher,
-            IWebhookFilterService webhookFilterService,
-            ILogger<TriggerWebhookActivities> logger)
+        public TriggerWebhookActivities(IWorkflowLaunchpad workflowLaunchpad, IWebhookFilterService webhookFilterService, ILogger<TriggerWebhookActivities> logger)
         {
-            _workflowLaunchpad = workflowDispatcher;
+            _workflowLaunchpad = workflowLaunchpad;
             _webhookFilterService = webhookFilterService;
             _logger = logger;
         }
 
-        public async Task Handle(TelnyxWebhookReceived message)
+        public async Task Handle(TelnyxWebhookReceived notification, CancellationToken cancellationToken)
         {
-            var webhook = message.Webhook;
+            var webhook = notification.Webhook;
             var eventType = webhook.Data.EventType;
-            var payload = message.Webhook.Data.Payload;
+            var payload = webhook.Data.Payload;
             var activityType = _webhookFilterService.GetActivityTypeName(payload);
 
             if (activityType == null)
@@ -46,9 +44,9 @@ namespace Elsa.Activities.Telnyx.Webhooks.Consumers
             var trigger = new NotificationBookmark(eventType);
             var context = new CollectWorkflowsContext(activityType, bookmark, trigger, correlationId);
 
-            await _workflowLaunchpad.CollectAndExecuteWorkflowsAsync(context, webhook);
+            await _workflowLaunchpad.CollectAndDispatchWorkflowsAsync(context, webhook, cancellationToken);
         }
-
+        
         private string GetCorrelationId(Payload payload)
         {
             if (!string.IsNullOrWhiteSpace(payload.ClientState))

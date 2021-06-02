@@ -6,7 +6,6 @@ using Elsa.Activities.Telnyx.Extensions;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
-using Elsa.Bookmarks;
 using Elsa.Builders;
 using Elsa.Design;
 using Elsa.Exceptions;
@@ -17,23 +16,16 @@ using Refit;
 
 namespace Elsa.Activities.Telnyx.Activities
 {
-    public class SpeakTextBookmark : IBookmark
-    {
-    }
-    
-    [Action(
+    [Job(
         Category = Constants.Category,
         Description = "Convert text to speech and play it back on the call.",
         Outcomes = new[] { TelnyxOutcomeNames.Speaking, TelnyxOutcomeNames.CallIsNoLongerActive, TelnyxOutcomeNames.FinishedSpeaking },
         DisplayName = "Speak Text"
     )]
-    public class SpeakText : EventDrivenActivity<SpeakTextBookmark, CallSpeakEnded>
+    public class SpeakText : Activity
     {
         private readonly ITelnyxClient _telnyxClient;
-        public SpeakText(ITelnyxClient telnyxClient, ICommandSender commandSender, IWorkflowLaunchpad workflowLaunchpad) : base(commandSender, workflowLaunchpad)
-        {
-            _telnyxClient = telnyxClient;
-        }
+        public SpeakText(ITelnyxClient telnyxClient) => _telnyxClient = telnyxClient;
 
         [ActivityInput(
             Label = "Call Control ID",

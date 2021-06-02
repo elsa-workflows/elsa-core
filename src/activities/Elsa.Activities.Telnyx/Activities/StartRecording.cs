@@ -5,7 +5,6 @@ using Elsa.Activities.Telnyx.Extensions;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
-using Elsa.Bookmarks;
 using Elsa.Design;
 using Elsa.Exceptions;
 using Elsa.Expressions;
@@ -15,20 +14,16 @@ using Refit;
 
 namespace Elsa.Activities.Telnyx.Activities
 {
-    public class StartRecordingBookmark : IBookmark
-    {
-    }
-
-    [Action(
+    [Job(
         Category = Constants.Category,
         Description = "Start recording the call.",
         Outcomes = new[] {TelnyxOutcomeNames.Recording, TelnyxOutcomeNames.FinishedRecording, TelnyxOutcomeNames.CallIsNoLongerActive, OutcomeNames.Done},
         DisplayName = "Start Recording"
     )]
-    public class StartRecording : EventDrivenActivity<StartRecordingBookmark, CallRecordingSaved>
+    public class StartRecording : Activity
     {
         private readonly ITelnyxClient _telnyxClient;
-        public StartRecording(ITelnyxClient telnyxClient, ICommandSender commandSender, IWorkflowLaunchpad workflowLaunchpad) : base(commandSender, workflowLaunchpad) => _telnyxClient = telnyxClient;
+        public StartRecording(ITelnyxClient telnyxClient) => _telnyxClient = telnyxClient;
 
         [ActivityInput(
             Label = "Call Control ID",

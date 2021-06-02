@@ -5,7 +5,6 @@ using Elsa.Activities.Telnyx.Extensions;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
-using Elsa.Bookmarks;
 using Elsa.Design;
 using Elsa.Exceptions;
 using Elsa.Expressions;
@@ -16,24 +15,17 @@ using Refit;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Telnyx.Activities
 {
-    public class AnswerCallBookmark : IBookmark
-    {
-    }
-    
     [Job(
         Category = Constants.Category,
         Description = "Answer an incoming call. You must issue this command before executing subsequent commands on an incoming call",
         Outcomes = new[] { TelnyxOutcomeNames.Pending, TelnyxOutcomeNames.Answered, TelnyxOutcomeNames.CallIsNoLongerActive },
         DisplayName = "Answer Call"
     )]
-    public class AnswerCall : EventDrivenActivity<AnswerCallBookmark, CallAnsweredPayload>
+    public class AnswerCall : Activity
     {
         private readonly ITelnyxClient _telnyxClient;
 
-        public AnswerCall(ITelnyxClient telnyxClient, ICommandSender commandSender, IWorkflowLaunchpad workflowLaunchpad) : base(commandSender, workflowLaunchpad)
-        {
-            _telnyxClient = telnyxClient;
-        }
+        public AnswerCall(ITelnyxClient telnyxClient) => _telnyxClient = telnyxClient;
 
         [ActivityInput(Label = "Call Control ID", Hint = "Unique identifier and token for controlling the call", Category = PropertyCategories.Advanced, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string CallControlId { get; set; } = default!;
