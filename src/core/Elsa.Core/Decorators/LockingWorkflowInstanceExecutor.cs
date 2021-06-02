@@ -34,13 +34,11 @@ namespace Elsa.Decorators
         public async Task<RunWorkflowResult> ExecuteAsync(string workflowInstanceId, string? activityId, object? input = default, CancellationToken cancellationToken = default)
         {
             var workflowInstanceLockKey = $"workflow-instance:{workflowInstanceId}";
-            _logger.LogDebug("Acquiring lock on {LockKey}", workflowInstanceLockKey);
             await using var workflowInstanceLockHandle = await _distributedLockProvider.AcquireLockAsync(workflowInstanceLockKey, _elsaOptions.DistributedLockTimeout, cancellationToken);
 
             if (workflowInstanceLockHandle == null)
                 throw new LockAcquisitionException("Could not acquire a lock within the configured amount of time");
-
-            _logger.LogDebug("Lock acquired on {LockKey}", workflowInstanceLockKey);
+            
             var workflowInstance = await _workflowInstanceStore.FindByIdAsync(workflowInstanceId, cancellationToken);
 
             if (workflowInstance == null)
@@ -53,22 +51,20 @@ namespace Elsa.Decorators
 
             if (!string.IsNullOrWhiteSpace(correlationId))
             {
-                _logger.LogDebug("Acquiring lock on correlation {CorrelationId}", correlationId);
+                // We need to lock on correlation ID to prevent a race condition with WorkflowLaunchpad that is used to find workflows by correlation ID to execute.
+                // The race condition is: when a workflow instance is done executing, the BookmarkIndexer will collect bookmarks.
+                // But if in the meantime an event comes in that triggers correlated workflows, the bookmarks may not have been created yet.
                 await using var correlationLockHandle = await _distributedLockProvider.AcquireLockAsync(correlationId, _elsaOptions.DistributedLockTimeout, cancellationToken);
                 
                 if(correlationLockHandle == null)
                     throw new LockAcquisitionException($"Could not acquire a lock on correlation {correlationId} within the configured amount of time");
                 
-                _logger.LogDebug("Lock acquired on correlation {CorrelationId}", correlationId);
                 var result = await _workflowInstanceExecutor.ExecuteAsync(workflowInstance, activityId, input, cancellationToken);
-                _logger.LogDebug("Released lock on correlation {CorrelationId}", correlationId);
-                _logger.LogDebug("Released lock on {LockKey}", workflowInstanceLockKey);
                 return result;
             }
             else
             {
                 var result = await _workflowInstanceExecutor.ExecuteAsync(workflowInstance, activityId, input, cancellationToken);
-                _logger.LogDebug("Released lock on {LockKey}", workflowInstanceLockKey);
                 return result;
             }
         }

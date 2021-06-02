@@ -163,8 +163,6 @@ namespace Elsa.Services
                 if (correlationLockHandle != null)
                     await correlationLockHandle.DisposeAsync();
             }
-
-            return null;
         }
 
         public async Task CollectAndExecuteStartableWorkflowAsync(string workflowDefinitionId, string? activityId, string? correlationId = default, string? contextId = default, object? input = default, string? tenantId = default, CancellationToken cancellationToken = default)
@@ -265,30 +263,25 @@ namespace Elsa.Services
         {
             var correlationId = context.CorrelationId!;
             var lockKey = correlationId;
-
-            _logger.LogDebug("Acquiring lock on correlation ID {CorrelationId}", correlationId);
+            
             await using (var handle = await _distributedLockProvider.AcquireLockAsync(lockKey, _elsaOptions.DistributedLockTimeout, cancellationToken))
             {
                 if (handle == null)
                     throw new LockAcquisitionException($"Failed to acquire a lock on {lockKey}");
-                
-                _logger.LogDebug("Acquired lock on correlation ID {CorrelationId}", correlationId);
-
+             
                 var correlatedWorkflowInstanceCount = !string.IsNullOrWhiteSpace(correlationId)
                     ? await _workflowInstanceStore.CountAsync(new CorrelationIdSpecification<WorkflowInstance>(correlationId).WithStatus(WorkflowStatus.Suspended), cancellationToken)
                     : 0;
 
-                _logger.LogDebug("Found {CorrelatedWorkflowCount} correlated workflows,", correlatedWorkflowInstanceCount);
+                _logger.LogDebug("Found {{CorrelatedWorkflowCount}} workflows with correlation ID {CorrelationId}", correlatedWorkflowInstanceCount, correlationId);
 
                 if (correlatedWorkflowInstanceCount > 0)
                 {
-                    _logger.LogDebug("{WorkflowInstanceCount} existing workflows found with correlation ID '{CorrelationId}' will be queued for execution", correlatedWorkflowInstanceCount, correlationId);
                     var bookmarkResults = context.Bookmark != null ? await _bookmarkFinder.FindBookmarksAsync(context.ActivityType, context.Bookmark, correlationId, context.TenantId, cancellationToken).ToList() : new List<BookmarkFinderResult>();
                     _logger.LogDebug("Found {BookmarkCount} bookmarks for activity type {ActivityType}", bookmarkResults.Count, context.ActivityType);
                     return bookmarkResults.Select(x => new PendingWorkflow(x.WorkflowInstanceId, x.ActivityId)).ToList();
                 }
             }
-            _logger.LogDebug("Released lock on correlation ID {CorrelationId}", correlationId);
 
             var startableWorkflows = await CollectStartableWorkflowsAsync(context, cancellationToken);
             return startableWorkflows.Select(x => new PendingWorkflow(x.WorkflowInstance.Id, x.ActivityId)).ToList();
