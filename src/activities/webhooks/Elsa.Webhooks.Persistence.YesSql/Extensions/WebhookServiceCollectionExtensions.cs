@@ -13,9 +13,9 @@ using Elsa.Webhooks.Persistence.YesSql.Indexes;
 
 namespace Elsa.Webhooks.Persistence.YesSql.Extensions
 {
-    public static class ServiceCollectionExtensions
+    public static class WebhookServiceCollectionExtensions
     {
-        public static WebhookOptionsBuilder UseYesSqlPersistence(this WebhookOptionsBuilder elsa, Action<IServiceProvider, IConfiguration> configure)
+        public static ElsaOptionsBuilder UseYesSqlPersistence(this ElsaOptionsBuilder elsa, Action<IServiceProvider, IConfiguration> configure)
         {
             elsa.Services
                 .AddScoped<YesSqlWebhookDefinitionStore>()
@@ -29,8 +29,11 @@ namespace Elsa.Webhooks.Persistence.YesSql.Extensions
                 .AddAutoMapperProfile<AutoMapperProfile>()
                 .AddIndexProvider<WebhookDefinitionIndexProvider>();
 
-            return elsa
-                .UseWebhookDefinitionStore(sp => sp.GetRequiredService<YesSqlWebhookDefinitionStore>());
+            var webhookOptionsBuilder = new WebhookOptionsBuilder(elsa.Services);
+
+            webhookOptionsBuilder.UseWebhookDefinitionStore(sp => sp.GetRequiredService<YesSqlWebhookDefinitionStore>());
+
+            return elsa;
         }
 
         private static IStore CreateStore(

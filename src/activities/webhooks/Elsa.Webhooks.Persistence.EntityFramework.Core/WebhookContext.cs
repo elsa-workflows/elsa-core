@@ -5,8 +5,8 @@ namespace Elsa.Webhooks.Persistence.EntityFramework.Core
 {
     public class WebhookContext : DbContext
     {
-        public const string ElsaSchema = "Elsa";
-        public const string MigrationsHistoryTable = "__EFMigrationsHistory";
+        public const string ElsaSchema = "Webhook";
+        public const string MigrationsHistoryTable = "__EFWebhookMigrationsHistory";
 
         public WebhookContext(DbContextOptions options) : base(options)
         {

@@ -1,7 +1,5 @@
 using System;
-using Elsa.Activities.Webhooks;
 using Elsa.Activities.Webhooks.ActivityTypes;
-using Elsa.Activities.Webhooks.Options;
 using Elsa.Activities.Webhooks.Persistence.Decorators;
 using Elsa.Services;
 using Elsa.Webhooks.Abstractions.Persistence;
@@ -18,7 +16,7 @@ namespace Elsa.Activities.Webhooks.Extensions
             var services = elsaOptions.Services;
 
             // Configure Webhooks.
-            var webhookOptionsBuilder = new WebhookOptionsBuilder(services);
+            var webhookOptionsBuilder = new WebhookOptionsBuilder(elsaOptions.Services);
             configure?.Invoke(webhookOptionsBuilder);
 
             // Services.

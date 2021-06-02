@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Design;
 
 namespace Elsa.Webhooks.Persistence.EntityFramework.MySql
 {
-    public class MySqlElsaContextFactory : IDesignTimeDbContextFactory<WebhookContext>
+    public class WebhookMySqlElsaContextFactory : IDesignTimeDbContextFactory<WebhookContext>
     {
         public WebhookContext CreateDbContext(string[] args)
         {
@@ -18,7 +18,7 @@ namespace Elsa.Webhooks.Persistence.EntityFramework.MySql
                 connectionString,
                 serverVersion != null ? ServerVersion.Parse(serverVersion) : ServerVersion.AutoDetect(connectionString),
                 db => db
-                    .MigrationsAssembly(typeof(MySqlElsaContextFactory).Assembly.GetName().Name)
+                    .MigrationsAssembly(typeof(WebhookMySqlElsaContextFactory).Assembly.GetName().Name)
                     .MigrationsHistoryTable(WebhookContext.MigrationsHistoryTable, WebhookContext.ElsaSchema));
 
             return new WebhookContext(builder.Options);

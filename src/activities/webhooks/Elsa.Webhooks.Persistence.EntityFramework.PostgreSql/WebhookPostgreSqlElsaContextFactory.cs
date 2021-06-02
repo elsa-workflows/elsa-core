@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Design;
 
 namespace Elsa.Webhooks.Persistence.EntityFramework.PostgreSql
 {
-    public class PostgreSqlElsaContextFactory : IDesignTimeDbContextFactory<WebhookContext>
+    public class WebhookPostgreSqlElsaContextFactory : IDesignTimeDbContextFactory<WebhookContext>
     {
         public WebhookContext CreateDbContext(string[] args)
         {
@@ -14,7 +14,7 @@ namespace Elsa.Webhooks.Persistence.EntityFramework.PostgreSql
 
             builder.UseNpgsql(
                 connectionString,
-                db => db.MigrationsAssembly(typeof(PostgreSqlElsaContextFactory).Assembly.GetName().Name)
+                db => db.MigrationsAssembly(typeof(WebhookPostgreSqlElsaContextFactory).Assembly.GetName().Name)
                     .MigrationsHistoryTable(WebhookContext.MigrationsHistoryTable, WebhookContext.ElsaSchema));
 
             return new WebhookContext(builder.Options);

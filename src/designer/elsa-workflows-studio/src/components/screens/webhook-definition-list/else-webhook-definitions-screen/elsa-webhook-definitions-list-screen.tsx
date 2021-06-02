@@ -97,6 +97,8 @@ export class ElsaWebhookDefinitionsListScreen {
                 </svg>
               );
 
+              debugger
+
               return (
                 <tr>
                   <td class="elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-font-medium elsa-text-gray-900">
@@ -119,7 +121,7 @@ export class ElsaWebhookDefinitionsListScreen {
 
                   <td class="elsa-px-6 elsa-py-3 elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-font-medium">
                     <div class="elsa-flex elsa-items-center elsa-space-x-3 lg:elsa-pl-2">
-                      {webhookDefinition.isEnabled}
+                      {true == webhookDefinition.isEnabled ? 'Yes' : 'No'}
                     </div>
                   </td>   
 
