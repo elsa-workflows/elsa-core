@@ -56,9 +56,12 @@ export class ElsaWebhookDefinitionsListScreen {
               <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
                 Path
               </th>
-              <th class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-right elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
+              <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
                 Payload Type Name
               </th>
+              <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
+                Enabled
+              </th>              
               <th class="elsa-pr-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-right elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider"/>
             </tr>
             </thead>
@@ -74,7 +77,6 @@ export class ElsaWebhookDefinitionsListScreen {
               if (!webhookDisplayName || webhookDisplayName.trim().length == 0)
               webhookDisplayName = 'Untitled';
 
-              debugger
               const editUrl = `/webhook-definitions/${webhookDefinition.id}`;
 
               const editIcon = (
@@ -113,8 +115,14 @@ export class ElsaWebhookDefinitionsListScreen {
                     <div class="elsa-flex elsa-items-center elsa-space-x-3 lg:elsa-pl-2">
                       {webhookDefinition.payloadTypeName}
                     </div>
-                  </td>                  
-                  
+                  </td>              
+
+                  <td class="elsa-px-6 elsa-py-3 elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-font-medium">
+                    <div class="elsa-flex elsa-items-center elsa-space-x-3 lg:elsa-pl-2">
+                      {webhookDefinition.isEnabled}
+                    </div>
+                  </td>   
+
                   <td class="elsa-pr-6">
                     <elsa-context-menu history={this.history} menuItems={[
                       {text: 'Edit', anchorUrl: editUrl, icon: editIcon},
