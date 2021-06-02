@@ -48,19 +48,17 @@ export class ElsaWebhookDefinitionsListScreen {
 
     return (
       <div>
+        {this.webhookDefinitions.items.length}
         <div class="elsa-align-middle elsa-inline-block elsa-min-w-full elsa-border-b elsa-border-gray-200">
           <table class="elsa-min-w-full">
             <thead>
             <tr class="elsa-border-t elsa-border-gray-200">
               <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider"><span class="lg:elsa-pl-2">Name</span></th>
               <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
-                Instances
+                Path
               </th>
               <th class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-right elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
-                Latest Version
-              </th>
-              <th class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-right elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
-                Published Version
+                Payload Type Name
               </th>
               <th class="elsa-pr-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-right elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider"/>
             </tr>
@@ -78,7 +76,6 @@ export class ElsaWebhookDefinitionsListScreen {
               webhookDisplayName = 'Untitled';
 
               const editUrl = `/webhook-definitions/${webhookDefinition.definitionId}`;
-              const instancesUrl = `/workflow-instances?workflow=${webhookDefinition.definitionId}`;
 
               const editIcon = (
                 <svg class="elsa-h-5 elsa-w-5 elsa-text-gray-500" width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -108,9 +105,15 @@ export class ElsaWebhookDefinitionsListScreen {
 
                   <td class="elsa-px-6 elsa-py-3 elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-font-medium">
                     <div class="elsa-flex elsa-items-center elsa-space-x-3 lg:elsa-pl-2">
-                      <stencil-route-link url={instancesUrl} anchorClass="elsa-truncate hover:elsa-text-gray-600">Instances</stencil-route-link>
+                      {webhookDefinition.path}
                     </div>
                   </td>
+
+                  <td class="elsa-px-6 elsa-py-3 elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-font-medium">
+                    <div class="elsa-flex elsa-items-center elsa-space-x-3 lg:elsa-pl-2">
+                      {webhookDefinition.payloadTypeName}
+                    </div>
+                  </td>                  
                   
                   <td class="elsa-pr-6">
                     <elsa-context-menu history={this.history} menuItems={[

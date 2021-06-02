@@ -1,8 +1,9 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Persistence.Specifications;
 using Elsa.Server.Api.Swagger.Examples;
 using Elsa.Webhooks.Abstractions.Models;
-using Elsa.Webhooks.Abstractions.Services;
+using Elsa.Webhooks.Abstractions.Persistence;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -16,11 +17,11 @@ namespace Elsa.Activities.Webhooks.Endpoints.WebhookDefinitions
     [Produces("application/json")]
     public partial class Save : ControllerBase
     {
-        private readonly IWebhookPublisher _webhookPublisher;
+        private readonly IWebhookDefinitionStore _webhookDefinitionStore;
 
-        public Save(IWebhookPublisher webhookPublisher)
+        public Save(IWebhookDefinitionStore webhookDefinitionStore)
         {
-            _webhookPublisher = webhookPublisher;
+            _webhookDefinitionStore = webhookDefinitionStore;
         }
 
         [HttpPost]
@@ -36,21 +37,23 @@ namespace Elsa.Activities.Webhooks.Endpoints.WebhookDefinitions
         public async Task<ActionResult<WebhookDefinition>> Handle([FromBody] SaveRequest request, [FromRoute] ApiVersion apiVersion, CancellationToken cancellationToken)
         {
             var webhookDefinitionId = request.WebhookDefinitionId;
-            var webhookDefinition = !string.IsNullOrWhiteSpace(webhookDefinitionId) ? await _webhookPublisher.GetAsync(webhookDefinitionId, cancellationToken) : default;
+            var webhookDefinition = !string.IsNullOrWhiteSpace(webhookDefinitionId) ? await _webhookDefinitionStore.FindAsync(new EntityIdSpecification<WebhookDefinition>(webhookDefinitionId), cancellationToken) : default;
 
             if (webhookDefinition == null)
             {
-                webhookDefinition = _webhookPublisher.New();
+                webhookDefinition = new WebhookDefinition();
 
                 if (!string.IsNullOrWhiteSpace(webhookDefinitionId))
                     webhookDefinition.DefinitionId = webhookDefinitionId;
             }
 
-            webhookDefinition.Description = request.Description?.Trim();
             webhookDefinition.Name = request.Name?.Trim();
+            webhookDefinition.Path = request.Path?.Trim();
+            webhookDefinition.Description = request.Description?.Trim();
+            webhookDefinition.PayloadTypeName = request.PayloadTypeName?.Trim();
             webhookDefinition.IsEnabled = request.IsEnabled;
 
-            webhookDefinition = await _webhookPublisher.SaveAsync(webhookDefinition, cancellationToken);
+            await _webhookDefinitionStore.SaveAsync(webhookDefinition, cancellationToken);
 
             return CreatedAtAction("Handle", "Get", new { definitionId = webhookDefinition.DefinitionId, apiVersion = apiVersion.ToString() }, webhookDefinition);
         }

@@ -193,15 +193,19 @@ export namespace Components {
     }
     interface ElsaWebhookDefinitionEditorNotifications {
     }
+    interface ElsaWebhookDefinitionEditorScreen {
+        "getServerUrl": () => Promise<string>;
+        "getWebhookDefinitionId": () => Promise<string>;
+        "monacoLibPath": string;
+        "serverUrl": string;
+        "webhookDefinitionId": string;
+    }
     interface ElsaWebhookDefinitionsListScreen {
         "history"?: RouterHistory;
         "serverUrl": string;
     }
     interface ElsaWebhookSaveButton {
         "saving": boolean;
-        "webhookDefinition": WebhookDefinition;
-    }
-    interface ElsaWebhookSettingsModal {
         "webhookDefinition": WebhookDefinition;
     }
     interface ElsaWorkflowBlueprintViewerScreen {
@@ -460,6 +464,12 @@ declare global {
         prototype: HTMLElsaWebhookDefinitionEditorNotificationsElement;
         new (): HTMLElsaWebhookDefinitionEditorNotificationsElement;
     };
+    interface HTMLElsaWebhookDefinitionEditorScreenElement extends Components.ElsaWebhookDefinitionEditorScreen, HTMLStencilElement {
+    }
+    var HTMLElsaWebhookDefinitionEditorScreenElement: {
+        prototype: HTMLElsaWebhookDefinitionEditorScreenElement;
+        new (): HTMLElsaWebhookDefinitionEditorScreenElement;
+    };
     interface HTMLElsaWebhookDefinitionsListScreenElement extends Components.ElsaWebhookDefinitionsListScreen, HTMLStencilElement {
     }
     var HTMLElsaWebhookDefinitionsListScreenElement: {
@@ -471,12 +481,6 @@ declare global {
     var HTMLElsaWebhookSaveButtonElement: {
         prototype: HTMLElsaWebhookSaveButtonElement;
         new (): HTMLElsaWebhookSaveButtonElement;
-    };
-    interface HTMLElsaWebhookSettingsModalElement extends Components.ElsaWebhookSettingsModal, HTMLStencilElement {
-    }
-    var HTMLElsaWebhookSettingsModalElement: {
-        prototype: HTMLElsaWebhookSettingsModalElement;
-        new (): HTMLElsaWebhookSettingsModalElement;
     };
     interface HTMLElsaWorkflowBlueprintViewerScreenElement extends Components.ElsaWorkflowBlueprintViewerScreen, HTMLStencilElement {
     }
@@ -573,9 +577,9 @@ declare global {
         "elsa-switch-cases-property": HTMLElsaSwitchCasesPropertyElement;
         "elsa-toast-notification": HTMLElsaToastNotificationElement;
         "elsa-webhook-definition-editor-notifications": HTMLElsaWebhookDefinitionEditorNotificationsElement;
+        "elsa-webhook-definition-editor-screen": HTMLElsaWebhookDefinitionEditorScreenElement;
         "elsa-webhook-definitions-list-screen": HTMLElsaWebhookDefinitionsListScreenElement;
         "elsa-webhook-save-button": HTMLElsaWebhookSaveButtonElement;
-        "elsa-webhook-settings-modal": HTMLElsaWebhookSettingsModalElement;
         "elsa-workflow-blueprint-viewer-screen": HTMLElsaWorkflowBlueprintViewerScreenElement;
         "elsa-workflow-definition-editor-notifications": HTMLElsaWorkflowDefinitionEditorNotificationsElement;
         "elsa-workflow-definition-editor-screen": HTMLElsaWorkflowDefinitionEditorScreenElement;
@@ -768,6 +772,12 @@ declare namespace LocalJSX {
     }
     interface ElsaWebhookDefinitionEditorNotifications {
     }
+    interface ElsaWebhookDefinitionEditorScreen {
+        "monacoLibPath"?: string;
+        "onWebhookSaved"?: (event: CustomEvent<WebhookDefinition>) => void;
+        "serverUrl"?: string;
+        "webhookDefinitionId"?: string;
+    }
     interface ElsaWebhookDefinitionsListScreen {
         "history"?: RouterHistory;
         "serverUrl"?: string;
@@ -775,9 +785,6 @@ declare namespace LocalJSX {
     interface ElsaWebhookSaveButton {
         "onSaveClicked"?: (event: CustomEvent<any>) => void;
         "saving"?: boolean;
-        "webhookDefinition"?: WebhookDefinition;
-    }
-    interface ElsaWebhookSettingsModal {
         "webhookDefinition"?: WebhookDefinition;
     }
     interface ElsaWorkflowBlueprintViewerScreen {
@@ -862,9 +869,9 @@ declare namespace LocalJSX {
         "elsa-switch-cases-property": ElsaSwitchCasesProperty;
         "elsa-toast-notification": ElsaToastNotification;
         "elsa-webhook-definition-editor-notifications": ElsaWebhookDefinitionEditorNotifications;
+        "elsa-webhook-definition-editor-screen": ElsaWebhookDefinitionEditorScreen;
         "elsa-webhook-definitions-list-screen": ElsaWebhookDefinitionsListScreen;
         "elsa-webhook-save-button": ElsaWebhookSaveButton;
-        "elsa-webhook-settings-modal": ElsaWebhookSettingsModal;
         "elsa-workflow-blueprint-viewer-screen": ElsaWorkflowBlueprintViewerScreen;
         "elsa-workflow-definition-editor-notifications": ElsaWorkflowDefinitionEditorNotifications;
         "elsa-workflow-definition-editor-screen": ElsaWorkflowDefinitionEditorScreen;
@@ -915,9 +922,9 @@ declare module "@stencil/core" {
             "elsa-switch-cases-property": LocalJSX.ElsaSwitchCasesProperty & JSXBase.HTMLAttributes<HTMLElsaSwitchCasesPropertyElement>;
             "elsa-toast-notification": LocalJSX.ElsaToastNotification & JSXBase.HTMLAttributes<HTMLElsaToastNotificationElement>;
             "elsa-webhook-definition-editor-notifications": LocalJSX.ElsaWebhookDefinitionEditorNotifications & JSXBase.HTMLAttributes<HTMLElsaWebhookDefinitionEditorNotificationsElement>;
+            "elsa-webhook-definition-editor-screen": LocalJSX.ElsaWebhookDefinitionEditorScreen & JSXBase.HTMLAttributes<HTMLElsaWebhookDefinitionEditorScreenElement>;
             "elsa-webhook-definitions-list-screen": LocalJSX.ElsaWebhookDefinitionsListScreen & JSXBase.HTMLAttributes<HTMLElsaWebhookDefinitionsListScreenElement>;
             "elsa-webhook-save-button": LocalJSX.ElsaWebhookSaveButton & JSXBase.HTMLAttributes<HTMLElsaWebhookSaveButtonElement>;
-            "elsa-webhook-settings-modal": LocalJSX.ElsaWebhookSettingsModal & JSXBase.HTMLAttributes<HTMLElsaWebhookSettingsModalElement>;
             "elsa-workflow-blueprint-viewer-screen": LocalJSX.ElsaWorkflowBlueprintViewerScreen & JSXBase.HTMLAttributes<HTMLElsaWorkflowBlueprintViewerScreenElement>;
             "elsa-workflow-definition-editor-notifications": LocalJSX.ElsaWorkflowDefinitionEditorNotifications & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionEditorNotificationsElement>;
             "elsa-workflow-definition-editor-screen": LocalJSX.ElsaWorkflowDefinitionEditorScreen & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionEditorScreenElement>;

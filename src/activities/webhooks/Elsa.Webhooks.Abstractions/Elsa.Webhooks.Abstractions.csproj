@@ -11,6 +11,12 @@
     </Description>
     <PackageTags>elsa, workflows, webhooks</PackageTags>
   </PropertyGroup>
+  
+  <ItemGroup>
+    <Compile Remove="Services\**" />
+    <EmbeddedResource Remove="Services\**" />
+    <None Remove="Services\**" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\core\Elsa.Abstractions\Elsa.Abstractions.csproj" />

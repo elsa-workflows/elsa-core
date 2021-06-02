@@ -62,7 +62,7 @@ export class ElsaStudioRoot {
               <stencil-route url="/workflow-instances" component="elsa-studio-workflow-instances-list" componentProps={{'serverUrl': serverUrl}} exact={true}/>
               <stencil-route url="/workflow-instances/:id" component="elsa-studio-workflow-instances-view" componentProps={{'serverUrl': serverUrl}}/>
               <stencil-route url="/webhook-definitions" component="elsa-studio-webhook-definitions-list" componentProps={{'serverUrl': serverUrl}} exact={true}/>
-              <stencil-route url="/webhook-definitions/:id" component="elsa-studio-webhook-definitions-edit" componentProps={{'serverUrl': serverUrl, 'monacoLibPath': monacoLibPath}}/>              
+              <stencil-route url="/webhook-definitions/:id" component="elsa-studio-webhook-definitions-edit" componentProps={{'serverUrl': serverUrl, 'monacoLibPath': monacoLibPath}}/>                            
             </stencil-route-switch>
           </stencil-router>
           {/*</Tunnel.Provider>*/}
