@@ -9,31 +9,23 @@ using Elsa.Services.Models;
 namespace Elsa.Activities.AzureServiceBus
 {
     [Action(Category = "Azure Service Bus", DisplayName = "Send Service Bus Topic Message", Description = "Sends a message to the specified topic", Outcomes = new[] { OutcomeNames.Done })]
-    public class SendAzureServiceBusTopicMessage : Activity
+    public class SendAzureServiceBusTopicMessage : AzureServiceBusSendActivity
     {
         private readonly ITopicMessageSenderFactory _messageSenderFactory;
-        private readonly IContentSerializer _serializer;
 
         public SendAzureServiceBusTopicMessage(ITopicMessageSenderFactory messageSenderFactory, IContentSerializer serializer)
+            :base(serializer)
         {
-            _messageSenderFactory = messageSenderFactory;
-            _serializer = serializer;
+            _messageSenderFactory = messageSenderFactory;            
         }
 
-        [ActivityInput] public string TopicName { get; set; } = default!;
-        [ActivityInput] public object Message { get; set; } = default!;
+        [ActivityInput] public string TopicName { get; set; } = default!;       
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            var sender = await _messageSenderFactory.GetTopicSenderAsync(TopicName, context.CancellationToken);
+            Sender = await _messageSenderFactory.GetTopicSenderAsync(TopicName, context.CancellationToken);
 
-            var message = Extensions.MessageBodyExtensions.CreateMessage(_serializer,Message);
-
-            if (!string.IsNullOrWhiteSpace(context.WorkflowExecutionContext.CorrelationId))
-                message.CorrelationId = context.WorkflowExecutionContext.CorrelationId;
-
-            await sender.SendAsync(message);
-            return Done();
+            return await base.OnExecuteAsync(context);
         }
     }
 }
