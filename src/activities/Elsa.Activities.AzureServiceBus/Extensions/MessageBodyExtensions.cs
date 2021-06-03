@@ -24,7 +24,12 @@ namespace Elsa.Activities.AzureServiceBus.Extensions
         {
             byte[] messageBytes;    
 
-            if (message is string s)
+            if(message is MessageModel)
+            {
+                var messageModel = (MessageModel)message;
+                return CreateMessageFromMessageModel(messageModel);
+            }
+            else if (message is string s)
                 messageBytes = Encoding.UTF8.GetBytes(s);
             else
             {
@@ -33,6 +38,35 @@ namespace Elsa.Activities.AzureServiceBus.Extensions
             }
 
             return new Message(messageBytes);
+        }
+
+        private static Message CreateMessageFromMessageModel(MessageModel message)
+        {
+            var returnMessage = new Message(message.Body)
+            {
+                CorrelationId = message.CorrelationId,
+                ContentType = message.ContentType,
+                Label = message.Label,
+                To = message.To,
+                PartitionKey = message.PartitionKey,
+                ViaPartitionKey = message.ViaPartitionKey,
+                ReplyTo = message.ReplyTo,
+                SessionId = message.SessionId,
+                ReplyToSessionId = message.ReplyToSessionId,
+            };
+
+            if(message.MessageId != null)
+                returnMessage.MessageId = message.MessageId;
+            if(message.TimeToLive != null && message.TimeToLive > TimeSpan.Zero )
+                returnMessage.TimeToLive = message.TimeToLive;
+            if(message.ScheduledEnqueueTimeUtc != null)
+                returnMessage.ScheduledEnqueueTimeUtc = message.ScheduledEnqueueTimeUtc;
+            
+            if (message.UserProperties != null)
+                foreach (var props in message.UserProperties)
+                    returnMessage.UserProperties.Add(props.Key, props.Value);
+
+            return returnMessage;
         }
 
     }
