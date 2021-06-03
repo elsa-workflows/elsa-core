@@ -1,0 +1,11 @@
+﻿<elsa-workflows-studio server-url="@ServerUrl" monaco-lib-path="@MonacoLibPath"></elsa-workflows-studio>
+
+@code{
+
+    [Parameter]
+    public string ServerUrl { get; set; } = default!;
+
+    [Parameter]
+    public string MonacoLibPath { get; set; } = "_content/Elsa.Designer.Components.Web/monaco-editor/min";
+
+}
