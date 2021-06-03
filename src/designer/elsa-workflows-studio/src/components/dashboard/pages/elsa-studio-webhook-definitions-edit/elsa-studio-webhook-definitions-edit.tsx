@@ -1,5 +1,5 @@
 import {Component, Prop, h} from '@stencil/core';
-import {MatchResults} from '@stencil/router';
+import {RouterHistory, MatchResults} from '@stencil/router';
 
 @Component({
   tag: 'elsa-studio-webhook-definitions-edit',
@@ -8,7 +8,7 @@ import {MatchResults} from '@stencil/router';
 export class ElsaStudioWebhookDefinitionsEdit {
   @Prop() match: MatchResults;
   @Prop() serverUrl: string;
-  @Prop() monacoLibPath: string;
+  @Prop() history: RouterHistory;
 
   id?: string;
 
@@ -25,7 +25,7 @@ export class ElsaStudioWebhookDefinitionsEdit {
     const id = this.id;
 
     return <div>
-      <elsa-webhook-definition-editor-screen server-url={this.serverUrl} webhook-definition-id={id} monaco-lib-path={this.monacoLibPath}/>
+      <elsa-webhook-definition-editor-screen history={this.history} server-url={this.serverUrl} webhook-definition-id={id}/>
     </div>;
   }
 }

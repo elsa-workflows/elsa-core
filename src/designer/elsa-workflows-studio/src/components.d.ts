@@ -150,8 +150,8 @@ export namespace Components {
         "serverUrl": string;
     }
     interface ElsaStudioWebhookDefinitionsEdit {
+        "history": RouterHistory;
         "match": MatchResults;
-        "monacoLibPath": string;
         "serverUrl": string;
     }
     interface ElsaStudioWebhookDefinitionsList {
@@ -196,6 +196,7 @@ export namespace Components {
     interface ElsaWebhookDefinitionEditorScreen {
         "getServerUrl": () => Promise<string>;
         "getWebhookId": () => Promise<string>;
+        "history"?: RouterHistory;
         "monacoLibPath": string;
         "serverUrl": string;
         "webhookId": string;
@@ -720,8 +721,8 @@ declare namespace LocalJSX {
         "serverUrl"?: string;
     }
     interface ElsaStudioWebhookDefinitionsEdit {
+        "history"?: RouterHistory;
         "match"?: MatchResults;
-        "monacoLibPath"?: string;
         "serverUrl"?: string;
     }
     interface ElsaStudioWebhookDefinitionsList {
@@ -762,6 +763,7 @@ declare namespace LocalJSX {
     interface ElsaWebhookDefinitionEditorNotifications {
     }
     interface ElsaWebhookDefinitionEditorScreen {
+        "history"?: RouterHistory;
         "monacoLibPath"?: string;
         "onWebhookSaved"?: (event: CustomEvent<WebhookDefinition>) => void;
         "serverUrl"?: string;

@@ -96,9 +96,7 @@ export class ElsaWebhookDefinitionsListScreen {
                   <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"/>
                 </svg>
               );
-
-              debugger
-
+              
               return (
                 <tr>
                   <td class="elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-font-medium elsa-text-gray-900">

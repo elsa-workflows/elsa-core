@@ -21,7 +21,7 @@ export class ElsaWebhookEditorNotifications {
   onWebhookSaved = async (webhookDefinition: WebhookDefinition) => await this.toastNotificationElement.show({
     autoCloseIn: 1500,
     title: 'Webhook Saved',
-    message: `Webhook successfully saved.`
+    message: `Webhook successfully saved with name ${webhookDefinition.name}.`
   });
 
   render() {
