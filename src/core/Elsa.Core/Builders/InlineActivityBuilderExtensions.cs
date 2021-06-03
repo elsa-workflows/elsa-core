@@ -27,6 +27,9 @@ namespace Elsa.Builders
 
         public static IActivityBuilder Then(this IBuilder builder, Action activity) =>
             builder.Then<Inline>(inline => inline.Set(x => x.Function, RunInline(activity)));
+        
+        public static IActivityBuilder Then(this IBuilder builder, Func<Task> activity) =>
+            builder.Then<Inline>(inline => inline.Set(x => x.Function, RunInline(activity)));
 
         private static Func<ActivityExecutionContext, ValueTask<IActivityExecutionResult>> RunInline(
             Func<ActivityExecutionContext, ValueTask<IActivityExecutionResult>> activity) =>
@@ -60,7 +63,14 @@ namespace Elsa.Builders
             context =>
             {
                 activity();
-                return new ValueTask<IActivityExecutionResult>(new OutcomeResult());
+                return new ValueTask<IActivityExecutionResult>(new DoneResult());
+            };
+        
+        private static Func<ActivityExecutionContext, ValueTask<IActivityExecutionResult>> RunInline(Func<Task> activity) =>
+            async context =>
+            {
+                await activity();
+                return new DoneResult();
             };
     }
 }

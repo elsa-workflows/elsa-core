@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -110,59 +111,41 @@ namespace Elsa.Services
             if (!ValidatePreconditions(workflowDefinitionId, workflowBlueprint))
                 return null;
 
-            var correlationLockHandle = default(IDistributedSynchronizationHandle?);
+            correlationId ??= Guid.NewGuid().ToString("N");
 
-            // If we are creating a correlated workflow, make sure to acquire a lock on it to prevent duplicate workflow instances from being created.
-            if (!string.IsNullOrWhiteSpace(correlationId))
+            // Acquire a lock on correlation ID to prevent duplicate workflow instances from being created.
+            await using var correlationLockHandle = await AcquireLockAsync(correlationId, cancellationToken);
+
+            // Acquire a lock on the workflow definition so that we can ensure singleton-workflows never execute more than one instance. 
+            var lockKey = $"execute-workflow-definition:tenant:{tenantId}:workflow-definition:{workflowDefinitionId}";
+            await using var workflowDefinitionHandle = await AcquireLockAsync(lockKey, cancellationToken);
+
+            if (workflowBlueprint.IsSingleton)
             {
-                _logger.LogDebug("Acquiring lock on correlation ID {CorrelationId}", correlationId);
-                correlationLockHandle = await _distributedLockProvider.AcquireLockAsync(correlationId, _elsaOptions.DistributedLockTimeout, cancellationToken);
-
-                if (correlationLockHandle == null)
-                    throw new LockAcquisitionException($"Failed to acquire a lock on correlation ID {correlationId}");
-            }
-
-            try
-            {
-                // Acquire a lock on the workflow definition so that we can ensure singleton-workflows never execute more than one instance. 
-                var lockKey = $"execute-workflow-definition:tenant:{tenantId}:workflow-definition:{workflowDefinitionId}";
-                await using var handle = await _distributedLockProvider.AcquireLockAsync(lockKey, _elsaOptions.DistributedLockTimeout, cancellationToken);
-
-                if (handle == null)
-                    throw new LockAcquisitionException($"Failed to acquire a lock on {lockKey}");
-
-                if (workflowBlueprint.IsSingleton)
+                if (await GetWorkflowIsAlreadyExecutingAsync(tenantId, workflowDefinitionId))
                 {
-                    if (await GetWorkflowIsAlreadyExecutingAsync(tenantId, workflowDefinitionId))
-                    {
-                        _logger.LogDebug("Workflow {WorkflowDefinitionId} is a singleton workflow and is already running");
-                        return null;
-                    }
-                }
-
-                var startActivities = _getsStartActivities.GetStartActivities(workflowBlueprint).Select(x => x.Id).ToHashSet();
-                var startActivityId = activityId == null ? startActivities.FirstOrDefault() : startActivities.Contains(activityId) ? activityId : default;
-
-                if (startActivityId == null)
-                {
-                    _logger.LogWarning("Cannot start workflow {WorkflowDefinitionId} with version {WorkflowDefinitionVersion} because it has no starting activities", workflowBlueprint.Id, workflowBlueprint.Version);
+                    _logger.LogDebug("Workflow {WorkflowDefinitionId} is a singleton workflow and is already running", workflowDefinitionId);
                     return null;
                 }
-
-                var workflowInstance = await _workflowFactory.InstantiateAsync(
-                    workflowBlueprint,
-                    correlationId,
-                    contextId,
-                    cancellationToken);
-
-                await _workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
-                return new StartableWorkflow(workflowBlueprint, workflowInstance, startActivityId);
             }
-            finally
+
+            var startActivities = _getsStartActivities.GetStartActivities(workflowBlueprint).Select(x => x.Id).ToHashSet();
+            var startActivityId = activityId == null ? startActivities.FirstOrDefault() : startActivities.Contains(activityId) ? activityId : default;
+
+            if (startActivityId == null)
             {
-                if (correlationLockHandle != null)
-                    await correlationLockHandle.DisposeAsync();
+                _logger.LogWarning("Cannot start workflow {WorkflowDefinitionId} with version {WorkflowDefinitionVersion} because it has no starting activities", workflowBlueprint.Id, workflowBlueprint.Version);
+                return null;
             }
+
+            var workflowInstance = await _workflowFactory.InstantiateAsync(
+                workflowBlueprint,
+                correlationId,
+                contextId,
+                cancellationToken);
+
+            await _workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
+            return new StartableWorkflow(workflowBlueprint, workflowInstance, startActivityId);
         }
 
         public async Task CollectAndExecuteStartableWorkflowAsync(string workflowDefinitionId, string? activityId, string? correlationId = default, string? contextId = default, object? input = default, string? tenantId = default, CancellationToken cancellationToken = default)
@@ -263,28 +246,34 @@ namespace Elsa.Services
         {
             var correlationId = context.CorrelationId!;
             var lockKey = correlationId;
+
+            await using var handle = await AcquireLockAsync(lockKey, cancellationToken);
             
-            await using (var handle = await _distributedLockProvider.AcquireLockAsync(lockKey, _elsaOptions.DistributedLockTimeout, cancellationToken))
+            var correlatedWorkflowInstanceCount = !string.IsNullOrWhiteSpace(correlationId)
+                ? await _workflowInstanceStore.CountAsync(new CorrelationIdSpecification<WorkflowInstance>(correlationId).WithStatus(WorkflowStatus.Suspended), cancellationToken)
+                : 0;
+
+            _logger.LogDebug("Found {CorrelatedWorkflowCount} workflows with correlation ID {CorrelationId}", correlatedWorkflowInstanceCount, correlationId);
+
+            if (correlatedWorkflowInstanceCount > 0)
             {
-                if (handle == null)
-                    throw new LockAcquisitionException($"Failed to acquire a lock on {lockKey}");
-             
-                var correlatedWorkflowInstanceCount = !string.IsNullOrWhiteSpace(correlationId)
-                    ? await _workflowInstanceStore.CountAsync(new CorrelationIdSpecification<WorkflowInstance>(correlationId).WithStatus(WorkflowStatus.Suspended), cancellationToken)
-                    : 0;
-
-                _logger.LogDebug("Found {{CorrelatedWorkflowCount}} workflows with correlation ID {CorrelationId}", correlatedWorkflowInstanceCount, correlationId);
-
-                if (correlatedWorkflowInstanceCount > 0)
-                {
-                    var bookmarkResults = context.Bookmark != null ? await _bookmarkFinder.FindBookmarksAsync(context.ActivityType, context.Bookmark, correlationId, context.TenantId, cancellationToken).ToList() : new List<BookmarkFinderResult>();
-                    _logger.LogDebug("Found {BookmarkCount} bookmarks for activity type {ActivityType}", bookmarkResults.Count, context.ActivityType);
-                    return bookmarkResults.Select(x => new PendingWorkflow(x.WorkflowInstanceId, x.ActivityId)).ToList();
-                }
+                var bookmarkResults = context.Bookmark != null ? await _bookmarkFinder.FindBookmarksAsync(context.ActivityType, context.Bookmark, correlationId, context.TenantId, cancellationToken).ToList() : new List<BookmarkFinderResult>();
+                _logger.LogDebug("Found {BookmarkCount} bookmarks for activity type {ActivityType}", bookmarkResults.Count, context.ActivityType);
+                return bookmarkResults.Select(x => new PendingWorkflow(x.WorkflowInstanceId, x.ActivityId)).ToList();
             }
 
             var startableWorkflows = await CollectStartableWorkflowsAsync(context, cancellationToken);
             return startableWorkflows.Select(x => new PendingWorkflow(x.WorkflowInstance.Id, x.ActivityId)).ToList();
+        }
+
+        private async Task<IDistributedSynchronizationHandle> AcquireLockAsync(string resource, CancellationToken cancellationToken)
+        {
+            var handle = await _distributedLockProvider.AcquireLockAsync(resource, _elsaOptions.DistributedLockTimeout, cancellationToken);
+            
+            if (handle == null)
+                throw new LockAcquisitionException($"Failed to acquire a lock on {resource}");
+
+            return handle;
         }
 
         private bool ValidatePreconditions(string? workflowDefinitionId, IWorkflowBlueprint? workflowBlueprint)

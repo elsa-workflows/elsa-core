@@ -4,6 +4,7 @@ using Elsa.Activities.AzureServiceBus.Bookmarks;
 using Elsa.Activities.AzureServiceBus.Options;
 using Elsa.Bookmarks;
 using Elsa.Dispatch;
+using Elsa.Services;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Extensions.Logging;
@@ -15,10 +16,10 @@ namespace Elsa.Activities.AzureServiceBus.Services
     {
         public TopicWorker(
             IReceiverClient receiverClient,
-            IWorkflowDispatcher workflowDispatcher,
+            Scoped<IWorkflowLaunchpad> workflowLaunchpad,
             IOptions<AzureServiceBusOptions> options,
             Func<IReceiverClient, Task> disposeReceiverAction,
-            ILogger<TopicWorker> logger) : base(receiverClient, workflowDispatcher, options, disposeReceiverAction, logger)
+            ILogger<TopicWorker> logger) : base(receiverClient, workflowLaunchpad, options, disposeReceiverAction, logger)
         {
         }
 
@@ -27,7 +28,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
         protected override IBookmark CreateBookmark(Message message)
         {
             GetTopicAndSubscription(out var topicName, out var subscriptionName);
-            return new TopicMessageReceivedBookmark(topicName, subscriptionName, message.CorrelationId);
+            return new TopicMessageReceivedBookmark(topicName, subscriptionName);
         }
 
         protected override IBookmark CreateTrigger(Message message)

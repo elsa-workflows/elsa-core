@@ -4,6 +4,7 @@ using Elsa.Activities.AzureServiceBus.Bookmarks;
 using Elsa.Activities.AzureServiceBus.Options;
 using Elsa.Bookmarks;
 using Elsa.Dispatch;
+using Elsa.Services;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Extensions.Logging;
@@ -15,10 +16,10 @@ namespace Elsa.Activities.AzureServiceBus.Services
     {
         public QueueWorker(
             IReceiverClient messageReceiver,
-            IWorkflowDispatcher workflowDispatcher,
+            Scoped<IWorkflowLaunchpad> workflowLaunchpad,
             IOptions<AzureServiceBusOptions> options,
             Func<IReceiverClient, Task> disposeReceiverAction,
-            ILogger<QueueWorker> logger) : base(messageReceiver, workflowDispatcher, options, disposeReceiverAction, logger)
+            ILogger<QueueWorker> logger) : base(messageReceiver, workflowLaunchpad, options, disposeReceiverAction, logger)
         {
         }
 
