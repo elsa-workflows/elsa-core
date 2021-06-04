@@ -55,7 +55,7 @@ namespace Elsa.Activities.Webhooks.Endpoints.WebhookDefinitions
 
             await _webhookDefinitionStore.SaveAsync(webhookDefinition, cancellationToken);
 
-            return CreatedAtAction("Handle", "Get", new { id = webhookDefinition.Id, apiVersion = apiVersion.ToString() }, webhookDefinition);
+            return CreatedAtAction("Handle", "Save", new { id = webhookDefinition.Id, apiVersion = apiVersion.ToString() }, webhookDefinition);
         }
     }
 }

@@ -59,12 +59,12 @@ namespace Elsa.Activities.Webhooks.ActivityTypes
                 InputProperties = new[]
                 {
                     new ActivityInputDescriptor(
-                        nameof(HttpEndpoint.Methods),
+                        nameof(HttpEndpoint.Methods),                       
                         typeof(HashSet<string>),
                         ActivityInputUIHints.Dropdown,
                         "Request Method",
                         "Specify what request method this webhook should handle. Leave empty to handle both GET and POST requests",
-                        new[] { "", "GET", "POST" },
+                        new HashSet<string> { "", "GET", "POST" },
                         "Webhooks",
                         0,
                         "POST",

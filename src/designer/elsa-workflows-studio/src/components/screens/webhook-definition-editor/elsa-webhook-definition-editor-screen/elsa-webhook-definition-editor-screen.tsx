@@ -110,11 +110,13 @@ export class ElsaWebhookDefinitionEditorScreen {
     this.saving = true;
 
     try {
+      debugger
       webhookDefinition = await client.webhookDefinitionsApi.save(request);
+
       this.saving = false;
       this.saved = true;
-      this.webhookDefinition = webhookDefinition;
-      setTimeout(() => this.saved = false, 2000);
+      //this.webhookDefinitionInternal = webhookDefinition;
+      setTimeout(() => this.saved = false, 500);
     } 
     catch (e) {
       console.error(e);    
@@ -133,8 +135,19 @@ export class ElsaWebhookDefinitionEditorScreen {
     e.preventDefault();
     
     await this.saveWebhook();
-    //eventBus.emit(EventTypes.WebhookSaved, this, this.webhookDefinitionInternal);
-    this.history.push(`/webhook-definitions`, {});
+    eventBus.emit(EventTypes.WebhookSaved, this, this.webhookDefinitionInternal);
+
+/*    setTimeout(function () {
+      // ...
+  }, 10000);
+
+// or
+
+.then(() => {
+// ...
+({ timeout: 10000 });
+    });*/
+    //this.history.push(`/webhook-definitions`, {});
   } 
 
   render() {

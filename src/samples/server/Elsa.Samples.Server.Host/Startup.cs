@@ -63,10 +63,7 @@ namespace Elsa.Samples.Server.Host
                     .AddConductorActivities(options => elsaSection.GetSection("Conductor").Bind(options))
                     .AddActivitiesFrom<Startup>()
                     .AddWorkflowsFrom<Startup>()
-                    .AddWebhooks(webhooks =>
-                    {
-                        webhooks.UseEntityFrameworkPersistence(ef => ef.UseWebhookSqlite());
-                    })
+                    .AddWebhooks(webhooks => webhooks.UseEntityFrameworkPersistence(ef => ef.UseWebhookSqlite()))
                 );
 
             // Elsa API endpoints.
