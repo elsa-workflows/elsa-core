@@ -13,17 +13,14 @@ import {checkBox, FormContext, selectField, SelectOption, textArea, textInput} f
 })
 export class ElsaWebhookDefinitionEditorScreen {
 
-  //@Event() webhookSaved: EventEmitter<WebhookDefinition>;
   @Prop() webhookDefinition: WebhookDefinition;
   @Prop({attribute: 'webhook-definition-id', reflect: true}) webhookId: string;
   @Prop({attribute: 'server-url', reflect: true}) serverUrl: string;
-  //@Prop({attribute: 'monaco-lib-path', reflect: true}) monacoLibPath: string;
   @Prop() history?: RouterHistory;
   @State() webhookDefinitionInternal: WebhookDefinition;
   @State() saving: boolean;
   @State() saved: boolean;
   @State() networkError: string;
-  //monacoEditor: HTMLElsaMonacoElement;
   formContext: FormContext;
   el: HTMLElement;
 
@@ -39,7 +36,8 @@ export class ElsaWebhookDefinitionEditorScreen {
 
   @Watch('webhookDefinition')
   async webhookDefinitionChangedHandler(newValue: WebhookDefinition) {
-    debugger
+
+
     this.webhookDefinitionInternal = {...newValue};
     this.formContext = new FormContext(this.webhookDefinitionInternal, newValue => this.webhookDefinitionInternal = newValue);
   }
@@ -49,8 +47,7 @@ export class ElsaWebhookDefinitionEditorScreen {
     
     const webhookId = newValue;
     let webhookDefinition: WebhookDefinition = ElsaWebhookDefinitionEditorScreen.createWebhookDefinition();
-    webhookDefinition.id = webhookId;
-    webhookDefinition.isEnabled = true;
+    webhookDefinition.id = webhookId;    
     const client = createElsaClient(this.serverUrl);
 
     if (webhookId && webhookId.length > 0) {
@@ -60,15 +57,19 @@ export class ElsaWebhookDefinitionEditorScreen {
         console.warn(`The specified webhook definition does not exist. Creating a new one.`)
       }
     }
+    else
+    {
+      webhookDefinition.isEnabled = true;
+    }
 
     this.updateWebhookDefinition(webhookDefinition);
   }
 
-  @Listen('webhook-changed')
+  /*@Listen('webhook-changed')
   async webhookChangedHandler(event: CustomEvent<WebhookModel>) {
     const webhookModel = event.detail;
     //await this.saveWebhookInternal(webhookModel);
-  }
+  }*/
 
   @Watch("serverUrl")
   async serverUrlChangedHandler(newValue: string) {
@@ -98,7 +99,7 @@ export class ElsaWebhookDefinitionEditorScreen {
     let webhookDefinition = this.webhookDefinitionInternal;
 
     const request: SaveWebhookDefinitionRequest = {
-      webhookId: webhookDefinition.id || this.webhookId,      
+      id: webhookDefinition.id || this.webhookId,      
       name: webhookDefinition.name,
       path: webhookDefinition.path,
       description: webhookDefinition.description,
@@ -114,7 +115,6 @@ export class ElsaWebhookDefinitionEditorScreen {
       this.saved = true;
       this.webhookDefinition = webhookDefinition;
       setTimeout(() => this.saved = false, 2000);
-      //this.webhookSaved.emit(webhookDefinition);
     } 
     catch (e) {
       console.error(e);    
@@ -138,11 +138,6 @@ export class ElsaWebhookDefinitionEditorScreen {
   } 
 
   render() {
-
-    /*const tunnelState: WebhookEditorState = {
-      serverUrl: this.serverUrl,
-      webhookId: this.webhookDefinitionInternal.id
-    };*/
 
     return (
       <Host class="elsa-flex elsa-flex-col elsa-w-full" ref={el => this.el = el}>

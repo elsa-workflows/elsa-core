@@ -295,7 +295,7 @@ export interface SaveWorkflowDefinitionRequest {
 }
 
 export interface SaveWebhookDefinitionRequest {
-  webhookId?: string;
+  id?: string;
   name?: string;
   path?: string;  
   description?: string;

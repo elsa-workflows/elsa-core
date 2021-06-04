@@ -1,5 +1,4 @@
 using Elsa.Webhooks.Persistence.EntityFramework.Core;
-using Elsa.Webhooks.Persistence.EntityFramework.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Webhooks.Persistence.EntityFramework.Sqlite
