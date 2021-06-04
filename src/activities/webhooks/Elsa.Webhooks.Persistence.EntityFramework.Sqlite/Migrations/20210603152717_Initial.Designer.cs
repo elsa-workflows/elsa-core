@@ -8,22 +8,19 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.Webhooks.Persistence.EntityFramework.Sqlite.Migrations
 {
     [DbContext(typeof(WebhookContext))]
-    [Migration("20210531210732_Initial")]
+    [Migration("20210603152717_Initial")]
     partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
+                .HasDefaultSchema("Elsa")
                 .HasAnnotation("ProductVersion", "5.0.6");
 
             modelBuilder.Entity("Elsa.Webhooks.Abstractions.Models.WebhookDefinition", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("DefinitionId")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Description")
@@ -47,6 +44,24 @@ namespace Elsa.Webhooks.Persistence.EntityFramework.Sqlite.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Description")
+                        .HasDatabaseName("IX_WebhookDefinition_Description");
+
+                    b.HasIndex("IsEnabled")
+                        .HasDatabaseName("IX_WebhookDefinition_IsEnabled");
+
+                    b.HasIndex("Name")
+                        .HasDatabaseName("IX_WebhookDefinition_Name");
+
+                    b.HasIndex("Path")
+                        .HasDatabaseName("IX_WebhookDefinition_Path");
+
+                    b.HasIndex("PayloadTypeName")
+                        .HasDatabaseName("IX_WebhookDefinition_PayloadTypeName");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_WebhookDefinition_TenantId");
 
                     b.ToTable("WebhookDefinitions");
                 });

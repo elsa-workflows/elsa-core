@@ -8,6 +8,7 @@ export interface WebhookDefinition {
   description?: string;
   payloadTypeName?: string;
   isEnabled?: boolean;
+  variables?: Variables;
 }
 
 export interface WebhookDefinitionSummary {
@@ -18,4 +19,8 @@ export interface WebhookDefinitionSummary {
     description?: string;
     payloadTypeName?: string;
     isEnabled?: boolean;
+}
+
+export interface Variables {
+  data: Map<any>;
 }

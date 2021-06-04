@@ -1,6 +1,6 @@
 using System;
-using Elsa.Persistence.EntityFramework.Core.StartupTasks;
 using Elsa.Webhooks.Persistence.EntityFramework.Core.Services;
+using Elsa.Webhooks.Persistence.EntityFramework.Core.StartupTasks;
 using Elsa.Webhooks.Persistence.EntityFramework.Core.Stores;
 using Elsa.Activities.Webhooks;
 using Elsa.Runtime;
@@ -20,14 +20,14 @@ namespace Elsa.Webhooks.Persistence.EntityFramework.Core.Extensions
         /// https://docs.microsoft.com/en-us/ef/core/performance/advanced-performance-topics?tabs=with-constant#dbcontext-pooling.
         /// </para>
         /// </remarks>
-        /// <param name="elsa">An Elsa options builder</param>
+        /// <param name="webhookOptions">An Elsa options builder</param>
         /// <param name="configure">A configuration builder callback</param>
         /// <param name="autoRunMigrations">If <c>true</c> then database migrations will be auto-executed on startup</param>
         /// <returns>The Elsa options builder, so calls may be chained</returns>
-        public static ElsaOptionsBuilder UseWebhookEntityFrameworkPersistence(this ElsaOptionsBuilder elsa,
+        public static WebhookOptionsBuilder UseEntityFrameworkPersistence(this WebhookOptionsBuilder webhookOptions,
             Action<DbContextOptionsBuilder> configure,
             bool autoRunMigrations = true) =>
-            elsa.UseWebhookEntityFrameworkPersistence<WebhookContext>(configure, autoRunMigrations);
+            webhookOptions.UseEntityFrameworkPersistence<WebhookContext>(configure, autoRunMigrations);
 
         /// <summary>
         /// Configures Elsa to use Entity Framework Core for persistence, using pooled DB Context instances.
@@ -38,15 +38,15 @@ namespace Elsa.Webhooks.Persistence.EntityFramework.Core.Extensions
         /// https://docs.microsoft.com/en-us/ef/core/performance/advanced-performance-topics?tabs=with-constant#dbcontext-pooling.
         /// </para>
         /// </remarks>
-        /// <param name="elsa">An Elsa options builder</param>
+        /// <param name="webhookOptions">An Elsa options builder</param>
         /// <param name="configure">A configuration builder callback</param>
         /// <param name="autoRunMigrations">If <c>true</c> then database migrations will be auto-executed on startup</param>
         /// <typeparam name="TElsaContext">The concrete type of <see cref="ElsaContext"/> to use.</typeparam>
         /// <returns>The Elsa options builder, so calls may be chained</returns>
-        public static ElsaOptionsBuilder UseWebhookEntityFrameworkPersistence<TElsaContext>(this ElsaOptionsBuilder elsa,
+        public static WebhookOptionsBuilder UseEntityFrameworkPersistence<TElsaContext>(this WebhookOptionsBuilder webhookOptions,
             Action<DbContextOptionsBuilder> configure,
             bool autoRunMigrations = true) where TElsaContext : WebhookContext =>
-            elsa.UseWebhookEntityFrameworkPersistence<TElsaContext>((_, builder) => configure(builder), autoRunMigrations);
+            webhookOptions.UseEntityFrameworkPersistence<TElsaContext>((_, builder) => configure(builder), autoRunMigrations);
 
         /// <summary>
         /// Configures Elsa to use Entity Framework Core for persistence, using pooled DB Context instances.
@@ -57,14 +57,14 @@ namespace Elsa.Webhooks.Persistence.EntityFramework.Core.Extensions
         /// https://docs.microsoft.com/en-us/ef/core/performance/advanced-performance-topics?tabs=with-constant#dbcontext-pooling.
         /// </para>
         /// </remarks>
-        /// <param name="elsa">An Elsa options builder</param>
+        /// <param name="webhookOptions">An Elsa options builder</param>
         /// <param name="configure">A configuration builder callback, which also provides access to a service provider</param>
         /// <param name="autoRunMigrations">If <c>true</c> then database migrations will be auto-executed on startup</param>
         /// <returns>The Elsa options builder, so calls may be chained</returns>
-        public static ElsaOptionsBuilder UseWebhookEntityFrameworkPersistence(this ElsaOptionsBuilder elsa,
+        public static WebhookOptionsBuilder UseEntityFrameworkPersistence(this WebhookOptionsBuilder webhookOptions,
             Action<IServiceProvider, DbContextOptionsBuilder> configure,
             bool autoRunMigrations = true) =>
-            elsa.UseWebhookEntityFrameworkPersistence<WebhookContext>(configure, autoRunMigrations);
+            webhookOptions.UseEntityFrameworkPersistence<WebhookContext>(configure, autoRunMigrations);
 
         /// <summary>
         /// Configures Elsa to use Entity Framework Core for persistence, using pooled DB Context instances.
@@ -75,15 +75,15 @@ namespace Elsa.Webhooks.Persistence.EntityFramework.Core.Extensions
         /// https://docs.microsoft.com/en-us/ef/core/performance/advanced-performance-topics?tabs=with-constant#dbcontext-pooling.
         /// </para>
         /// </remarks>
-        /// <param name="elsa">An Elsa options builder</param>
+        /// <param name="webhookOptions">An Elsa options builder</param>
         /// <param name="configure">A configuration builder callback, which also provides access to a service provider</param>
         /// <param name="autoRunMigrations">If <c>true</c> then database migrations will be auto-executed on startup</param>
         /// <typeparam name="TElsaContext">The concrete type of <see cref="ElsaContext"/> to use.</typeparam>
         /// <returns>The Elsa options builder, so calls may be chained</returns>
-        public static ElsaOptionsBuilder UseWebhookEntityFrameworkPersistence<TElsaContext>(this ElsaOptionsBuilder elsa,
+        public static WebhookOptionsBuilder UseEntityFrameworkPersistence<TElsaContext>(this WebhookOptionsBuilder webhookOptions,
             Action<IServiceProvider, DbContextOptionsBuilder> configure,
             bool autoRunMigrations = true) where TElsaContext : WebhookContext =>
-            UseWebhookEntityFrameworkPersistence<TElsaContext>(elsa, configure, autoRunMigrations, true, ServiceLifetime.Singleton);
+            UseEntityFrameworkPersistence<TElsaContext>(webhookOptions, configure, autoRunMigrations, true, ServiceLifetime.Singleton);
 
         /// <summary>
         /// Configures Elsa to use Entity Framework Core for persistence, without using pooled DB Context instances.
@@ -100,16 +100,16 @@ namespace Elsa.Webhooks.Persistence.EntityFramework.Core.Extensions
         /// which is suitable for your use-case.
         /// </para>
         /// </remarks>
-        /// <param name="elsa">An Elsa options builder</param>
+        /// <param name="webhookOptions">An Elsa options builder</param>
         /// <param name="configure">A configuration builder callback</param>
         /// <param name="serviceLifetime">The service lifetime which will be used for each DB Context instance</param>
         /// <param name="autoRunMigrations">If <c>true</c> then database migrations will be auto-executed on startup</param>
         /// <returns>The Elsa options builder, so calls may be chained</returns>
-        public static ElsaOptionsBuilder UseWebhookNonPooledEntityFrameworkPersistence(this ElsaOptionsBuilder elsa,
+        public static WebhookOptionsBuilder UseNonPooledEntityFrameworkPersistence(this WebhookOptionsBuilder webhookOptions,
             Action<DbContextOptionsBuilder> configure,
             ServiceLifetime serviceLifetime = ServiceLifetime.Singleton,
             bool autoRunMigrations = false) =>
-            elsa.UseWebhookNonPooledEntityFrameworkPersistence<WebhookContext>(configure, serviceLifetime, autoRunMigrations);
+            webhookOptions.UseNonPooledEntityFrameworkPersistence<WebhookContext>(configure, serviceLifetime, autoRunMigrations);
 
         /// <summary>
         /// Configures Elsa to use Entity Framework Core for persistence, without using pooled DB Context instances.
@@ -126,17 +126,17 @@ namespace Elsa.Webhooks.Persistence.EntityFramework.Core.Extensions
         /// which is suitable for your use-case.
         /// </para>
         /// </remarks>
-        /// <param name="elsa">An Elsa options builder</param>
+        /// <param name="webhookOptions">An Elsa options builder</param>
         /// <param name="configure">A configuration builder callback</param>
         /// <param name="serviceLifetime">The service lifetime which will be used for each DB Context instance</param>
         /// <param name="autoRunMigrations">If <c>true</c> then database migrations will be auto-executed on startup</param>
         /// <typeparam name="TElsaContext">The concrete type of <see cref="ElsaContext"/> to use.</typeparam>
         /// <returns>The Elsa options builder, so calls may be chained</returns>
-        public static ElsaOptionsBuilder UseWebhookNonPooledEntityFrameworkPersistence<TElsaContext>(this ElsaOptionsBuilder elsa,
+        public static WebhookOptionsBuilder UseNonPooledEntityFrameworkPersistence<TElsaContext>(this WebhookOptionsBuilder webhookOptions,
             Action<DbContextOptionsBuilder> configure,
             ServiceLifetime serviceLifetime = ServiceLifetime.Singleton,
             bool autoRunMigrations = false) where TElsaContext : WebhookContext =>
-            elsa.UseWebhookNonPooledEntityFrameworkPersistence<TElsaContext>((_, builder) => configure(builder), serviceLifetime, autoRunMigrations);
+            webhookOptions.UseNonPooledEntityFrameworkPersistence<TElsaContext>((_, builder) => configure(builder), serviceLifetime, autoRunMigrations);
 
         /// <summary>
         /// Configures Elsa to use Entity Framework Core for persistence, without using pooled DB Context instances.
@@ -153,16 +153,16 @@ namespace Elsa.Webhooks.Persistence.EntityFramework.Core.Extensions
         /// which is suitable for your use-case.
         /// </para>
         /// </remarks>
-        /// <param name="elsa">An Elsa options builder</param>
+        /// <param name="webhookOptions">An Elsa options builder</param>
         /// <param name="configure">A configuration builder callback, which also provides access to a service provider</param>
         /// <param name="serviceLifetime">The service lifetime which will be used for each DB Context instance</param>
         /// <param name="autoRunMigrations">If <c>true</c> then database migrations will be auto-executed on startup</param>
         /// <returns>The Elsa options builder, so calls may be chained</returns>
-        public static ElsaOptionsBuilder UseWebhookNonPooledEntityFrameworkPersistence(this ElsaOptionsBuilder elsa,
+        public static WebhookOptionsBuilder UseNonPooledEntityFrameworkPersistence(this WebhookOptionsBuilder webhookOptions,
             Action<IServiceProvider, DbContextOptionsBuilder> configure,
             ServiceLifetime serviceLifetime = ServiceLifetime.Singleton,
             bool autoRunMigrations = false) =>
-            elsa.UseWebhookNonPooledEntityFrameworkPersistence<WebhookContext>(configure, serviceLifetime, autoRunMigrations);
+            webhookOptions.UseNonPooledEntityFrameworkPersistence<WebhookContext>(configure, serviceLifetime, autoRunMigrations);
 
         /// <summary>
         /// Configures Elsa to use Entity Framework Core for persistence, without using pooled DB Context instances.
@@ -179,19 +179,19 @@ namespace Elsa.Webhooks.Persistence.EntityFramework.Core.Extensions
         /// which is suitable for your use-case.
         /// </para>
         /// </remarks>
-        /// <param name="elsa">An Elsa options builder</param>
+        /// <param name="webhookOptions">An Elsa options builder</param>
         /// <param name="configure">A configuration builder callback, which also provides access to a service provider</param>
         /// <param name="serviceLifetime">The service lifetime which will be used for each DB Context instance</param>
         /// <param name="autoRunMigrations">If <c>true</c> then database migrations will be auto-executed on startup</param>
         /// <typeparam name="TElsaContext">The concrete type of <see cref="ElsaContext"/> to use.</typeparam>
         /// <returns>The Elsa options builder, so calls may be chained</returns>
-        public static ElsaOptionsBuilder UseWebhookNonPooledEntityFrameworkPersistence<TElsaContext>(this ElsaOptionsBuilder elsa,
+        public static WebhookOptionsBuilder UseNonPooledEntityFrameworkPersistence<TElsaContext>(this WebhookOptionsBuilder webhookOptions,
             Action<IServiceProvider, DbContextOptionsBuilder> configure,
             ServiceLifetime serviceLifetime = ServiceLifetime.Singleton,
             bool autoRunMigrations = false) where TElsaContext : WebhookContext =>
-            UseWebhookEntityFrameworkPersistence<TElsaContext>(elsa, configure, autoRunMigrations, false, serviceLifetime);
+            UseEntityFrameworkPersistence<TElsaContext>(webhookOptions, configure, autoRunMigrations, false, serviceLifetime);
 
-        static ElsaOptionsBuilder UseWebhookEntityFrameworkPersistence<TElsaContext>(ElsaOptionsBuilder elsa,
+        static WebhookOptionsBuilder UseEntityFrameworkPersistence<TElsaContext>(WebhookOptionsBuilder webhookOptions,
             Action<IServiceProvider, DbContextOptionsBuilder> configure,
             bool autoRunMigrations,
             bool useContextPooling,
@@ -209,22 +209,23 @@ namespace Elsa.Webhooks.Persistence.EntityFramework.Core.Extensions
              */
 
             if (useContextPooling)
-                elsa.Services.AddPooledDbContextFactory<TElsaContext>(configure);
+                webhookOptions.Services.AddPooledDbContextFactory<TElsaContext>(configure);
             else
-                elsa.Services.AddDbContextFactory<TElsaContext>(configure, serviceLifetime);
+                webhookOptions.Services.AddDbContextFactory<TElsaContext>(configure, serviceLifetime);
 
-            elsa.Services
+            webhookOptions.Services
                 .AddSingleton<IWebhookContextFactory, WebhookContextFactory<TElsaContext>>()
-                .AddScoped<EntityFrameworkWebhookDefinitionStore>();
+                .AddScoped<EntityFrameworkWebhookDefinitionStore>()
+                .AddStartupTask<RunMigrations>();
 
             if (autoRunMigrations)
-                elsa.Services.AddStartupTask<RunMigrations>();
+                webhookOptions.Services.AddStartupTask<RunMigrations>();
 
-            var webhookOptionsBuilder = new WebhookOptionsBuilder(elsa.Services);
+            var webhookOptionsBuilder = new WebhookOptionsBuilder(webhookOptions.Services);
 
             webhookOptionsBuilder.UseWebhookDefinitionStore(sp => sp.GetRequiredService<EntityFrameworkWebhookDefinitionStore>());
 
-            return elsa;
+            return webhookOptions;
         }
     }
 }
