@@ -220,9 +220,11 @@ namespace Elsa.Webhooks.Persistence.EntityFramework.Core.Extensions
             if (autoRunMigrations)
                 webhookOptions.Services.AddStartupTask<RunMigrations>();
 
-            var webhookOptionsBuilder = new WebhookOptionsBuilder(webhookOptions.Services);
-
-            webhookOptionsBuilder.UseWebhookDefinitionStore(sp => sp.GetRequiredService<EntityFrameworkWebhookDefinitionStore>());
+            webhookOptions.UseWebhookDefinitionStore(sp =>
+            {
+                var x = sp.GetRequiredService<EntityFrameworkWebhookDefinitionStore>();
+                return x;
+            });
 
             return webhookOptions;
         }

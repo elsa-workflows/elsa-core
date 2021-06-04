@@ -21,11 +21,17 @@ namespace Elsa.Activities.Webhooks.Extensions
             configure?.Invoke(webhookOptionsBuilder);
 
             // Services.
+            
             services
                 .AddScoped<IActivityTypeProvider, WebhookActivityTypeProvider>()
-                .AddScoped(webhookOptionsBuilder.WebhookOptions.WebhookDefinitionStoreFactory);
+                .AddScoped(sp =>
+                {
+                    var x = webhookOptionsBuilder.WebhookOptions.WebhookDefinitionStoreFactory(sp);
+                    return x;
+                });
 
             services.Decorate<IWebhookDefinitionStore, InitializingWebhookDefinitionStore>();
+            services.Decorate<IWebhookDefinitionStore, EventPublishingWebhookDefinitionStore>();
 
             return elsaOptions;
         }

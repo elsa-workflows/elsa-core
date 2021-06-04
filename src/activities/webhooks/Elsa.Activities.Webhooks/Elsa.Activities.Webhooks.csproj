@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <Import Project="..\..\..\..\common.props" />
     <Import Project="..\..\..\..\configureawait.props" />
@@ -16,6 +16,10 @@
       <Compile Remove="Services\**" />
       <EmbeddedResource Remove="Services\**" />
       <None Remove="Services\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Remove="Persistence\Decorators\InitializingStoreBase.cs" />
     </ItemGroup>
 
     <ItemGroup>
