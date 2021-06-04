@@ -2,9 +2,8 @@ using Elsa.Models;
 
 namespace Elsa.Webhooks.Abstractions.Models
 {
-    public class WebhookDefinition : IEntity, ITenantScope
+    public class WebhookDefinition : Entity, ITenantScope
     {
-        public string Id { get; set; } = default!;
         public string? TenantId { get; set; }
         public string Name { get; set; } = default!;
         public string Path { get; set; } = default!;

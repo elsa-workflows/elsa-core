@@ -5,6 +5,7 @@ using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
 using Elsa.Samples.Server.Host.Activities;
 using Elsa.Webhooks.Persistence.EntityFramework.Core.Extensions;
+using Elsa.Webhooks.Persistence.EntityFramework.Sqlite;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -37,7 +38,7 @@ namespace Elsa.Samples.Server.Host
                 .AddActivityPropertyOptionsProvider<VehicleActivity>()
                 .AddRuntimeSelectItemsProvider<VehicleActivity>()
                 .AddElsa(elsa => elsa
-                    //.UseEntityFrameworkPersistence(ef => ef.UseSqlite())                    
+                    .UseEntityFrameworkPersistence(ef => ef.UseSqlite())                    
                     //.WithContainerName(Configuration["ContainerName"] ?? System.Environment.MachineName)
                     //.UseEntityFrameworkPersistence(ef => ef.UseSqlite(sqliteConnectionString))
                     //.UseMongoDbPersistence(options => options.ConnectionString = mongoDbConnectionString)
@@ -62,8 +63,8 @@ namespace Elsa.Samples.Server.Host
                     .AddConductorActivities(options => elsaSection.GetSection("Conductor").Bind(options))
                     .AddActivitiesFrom<Startup>()
                     .AddWorkflowsFrom<Startup>()
-                    .AddWebhooks(webhooks => webhooks.UseEntityFrameworkPersistence(ef => ef.UseSqlite()))
-                    //.UseWebhookEntityFrameworkPersistence(ef => ef.UseSqlite())
+                    //.AddWebhooks(webhooks => webhooks.UseEntityFrameworkPersistence(ef => ef.UseSqlite()))
+                    .AddWebhooks(webhooks => webhooks.UseEntityFrameworkPersistence(ef => ef.UseWebhookSqlite()))
                 );
 
             // Elsa API endpoints.

@@ -22,9 +22,7 @@ namespace Elsa.Webhooks.Persistence.EntityFramework.Core
         {
             if (!string.IsNullOrWhiteSpace(Schema))
                 modelBuilder.HasDefaultSchema(Schema);
-
-            base.OnModelCreating(modelBuilder);
-
+            
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(WebhookContext).Assembly);
 
             if (Database.IsSqlite())

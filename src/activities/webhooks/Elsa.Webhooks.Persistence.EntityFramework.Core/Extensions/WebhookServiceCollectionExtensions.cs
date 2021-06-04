@@ -215,8 +215,7 @@ namespace Elsa.Webhooks.Persistence.EntityFramework.Core.Extensions
 
             webhookOptions.Services
                 .AddSingleton<IWebhookContextFactory, WebhookContextFactory<TElsaContext>>()
-                .AddScoped<EntityFrameworkWebhookDefinitionStore>()
-                .AddStartupTask<RunMigrations>();
+                .AddScoped<EntityFrameworkWebhookDefinitionStore>();
 
             if (autoRunMigrations)
                 webhookOptions.Services.AddStartupTask<RunMigrations>();

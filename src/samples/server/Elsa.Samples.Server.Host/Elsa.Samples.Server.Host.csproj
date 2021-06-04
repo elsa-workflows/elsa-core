@@ -17,6 +17,9 @@
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.UserTask\Elsa.Activities.UserTask.csproj" />
         <ProjectReference Include="..\..\..\activities\webhooks\Elsa.Activities.Webhooks\Elsa.Activities.Webhooks.csproj" />
         <ProjectReference Include="..\..\..\activities\webhooks\Elsa.Webhooks.Persistence.EntityFramework.Core\Elsa.Webhooks.Persistence.EntityFramework.Core.csproj" />
+        <ProjectReference Include="..\..\..\activities\webhooks\Elsa.Webhooks.Persistence.EntityFramework.PostgreSql\Elsa.Webhooks.Persistence.EntityFramework.PostgreSql.csproj" />
+        <ProjectReference Include="..\..\..\activities\webhooks\Elsa.Webhooks.Persistence.EntityFramework.Sqlite\Elsa.Webhooks.Persistence.EntityFramework.Sqlite.csproj" />
+        <ProjectReference Include="..\..\..\activities\webhooks\Elsa.Webhooks.Persistence.EntityFramework.SqlServer\Elsa.Webhooks.Persistence.EntityFramework.SqlServer.csproj" />
         <ProjectReference Include="..\..\..\caching\Elsa.Caching.Rebus\Elsa.Caching.Rebus.csproj" />
         <ProjectReference Include="..\..\..\locking\Elsa.DistributedLocking.SqlServer\Elsa.DistributedLocking.SqlServer.csproj" />
         <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.PostgreSql\Elsa.Persistence.EntityFramework.PostgreSql.csproj" />
