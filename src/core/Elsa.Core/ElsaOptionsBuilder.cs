@@ -7,6 +7,7 @@ using Elsa.Caching;
 using Elsa.Persistence;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Newtonsoft.Json;
 using Rebus.DataBus.InMem;
 using Rebus.Persistence.InMem;

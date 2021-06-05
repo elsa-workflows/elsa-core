@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Elsa.Activities.Telnyx.Client.Models;
 using Elsa.Activities.Telnyx.Client.Services;
 using Elsa.Activities.Telnyx.Extensions;
+using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
@@ -14,20 +15,17 @@ using Refit;
 
 namespace Elsa.Activities.Telnyx.Activities
 {
-    [Action(
+    [Job(
         Category = Constants.Category,
-        Description = "Play an audio file on the call until the required DTMF signals are gathered to build interactive menus",
-        Outcomes = new[] { OutcomeNames.Done, TelnyxOutcomeNames.CallIsNoLongerActive },
+        Description = "Play an audio file on the call until the required DTMF signals are gathered to build interactive menus.",
+        Outcomes = new[] { TelnyxOutcomeNames.Pending, TelnyxOutcomeNames.GatherCompleted, TelnyxOutcomeNames.CallIsNoLongerActive },
         DisplayName = "Gather Using Audio"
     )]
     public class GatherUsingAudio : Activity
     {
         private readonly ITelnyxClient _telnyxClient;
 
-        public GatherUsingAudio(ITelnyxClient telnyxClient)
-        {
-            _telnyxClient = telnyxClient;
-        }
+        public GatherUsingAudio(ITelnyxClient telnyxClient) => _telnyxClient = telnyxClient;
 
         [ActivityInput(
             Label = "Call Control ID", Hint = "Unique identifier and token for controlling the call",
@@ -98,6 +96,9 @@ namespace Elsa.Activities.Telnyx.Activities
             DefaultValue = 60000,
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public int? TimeoutMillis { get; set; } = 60000;
+        
+        [ActivityOutput(Hint = "The received payload when gathering completed.")]
+        public CallGatherEndedPayload? ReceivedPayload { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
@@ -120,7 +121,7 @@ namespace Elsa.Activities.Telnyx.Activities
             try
             {
                 await _telnyxClient.Calls.GatherUsingAudioAsync(callControlId, request, context.CancellationToken);
-                return Done();
+                return Combine(Outcome(TelnyxOutcomeNames.Pending), Suspend());
             }
             catch (ApiException e)
             {
@@ -129,6 +130,12 @@ namespace Elsa.Activities.Telnyx.Activities
 
                 throw new WorkflowException(e.Content ?? e.Message, e);
             }
+        }
+        
+        protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
+        {
+            ReceivedPayload = context.GetInput<CallGatherEndedPayload>();
+            return Outcome(TelnyxOutcomeNames.GatherCompleted);
         }
 
         private string? EmptyToNull(string? value) => value is "" ? null : value;

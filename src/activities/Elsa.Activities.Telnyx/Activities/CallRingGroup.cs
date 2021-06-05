@@ -6,6 +6,7 @@ using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Telnyx.Client.Models;
 using Elsa.Activities.Telnyx.Client.Services;
 using Elsa.Activities.Telnyx.Models;
+using Elsa.Activities.Telnyx.Services;
 using Elsa.Activities.Telnyx.Webhooks.Models;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
 using Elsa.Activities.Temporal;
@@ -104,12 +105,6 @@ namespace Elsa.Activities.Telnyx.Activities
             set => SetState(value);
         }
 
-        private IList<string> DialedControlIds
-        {
-            get => GetState(() => new List<string>());
-            set => SetState(value);
-        }
-
         private CallAnsweredPayload? CallAnsweredPayload
         {
             get => GetState<CallAnsweredPayload?>();
@@ -153,10 +148,9 @@ namespace Elsa.Activities.Telnyx.Activities
         private void BuildPrioritizedHuntFlow(IOutcomeBuilder builder) =>
             builder
                 .ForEach(() => Extensions, iterate => iterate
-                    .Then<ResolveExtension>(a => a.WithExtension(context => context.GetInput<string>()))
                     .Then<Dial>(a => a
                         .WithConnectionId(() => CallControlAppId)
-                        .WithTo(context => context.GetInput<string>())
+                        .WithTo(async context => await ResolveExtensionAsync(context, context.GetInput<string>()!))
                         .WithTimeoutSecs(() => (int) RingTime.TotalSeconds)
                         .WithFrom(() => From)
                         .WithFromDisplayName(() => FromDisplayName)
@@ -195,21 +189,19 @@ namespace Elsa.Activities.Telnyx.Activities
                             .WithCallControlIdA(() => CallControlId)
                             .WithCallControlIdB(() => CallAnsweredPayload!.CallControlId))
                         .ThenTypeNamed(CallBridgedPayload.ActivityTypeName)
-                        .ThenTypeNamed(CallBridgedPayload.ActivityTypeName)
                         .Then<Finish>(finish => finish.WithOutcome("Connected").WithOutput(() => CallAnsweredPayload));
 
                     fork
                         .When("Timeout")
-                        .StartIn(RingTime)
+                        .StartIn(() => RingTime)
                         .Finish("No Response");
 
                     fork
                         .When("Dial Everyone")
                         .ParallelForEach(() => Extensions, iterate => iterate
-                            .Then<ResolveExtension>(a => a.WithExtension(context => context.GetInput<string>()))
                             .Then<Dial>(a => a
                                 .WithConnectionId(() => CallControlAppId)
-                                .WithTo(context => context.GetInput<string>())
+                                .WithTo(async context => await ResolveExtensionAsync(context, context.GetInput<string>()!))
                                 .WithTimeoutSecs(() => (int) RingTime.TotalSeconds)
                                 .WithFrom(() => From)
                                 .WithFromDisplayName(() => FromDisplayName)
@@ -224,6 +216,13 @@ namespace Elsa.Activities.Telnyx.Activities
             var dialResponse = context.GetInput<DialResponse>()!;
             collection.Add(dialResponse);
             CollectedDialResponses = collection;
+        }
+        
+        private static async Task<string> ResolveExtensionAsync(ActivityExecutionContext context, string extension)
+        {
+            var extensionProvider = context.GetService<IExtensionProvider>();
+            var resolvedExtension = await extensionProvider.GetAsync(extension, context.CancellationToken);
+            return resolvedExtension?.Number ?? extension;
         }
 
         object IActivityPropertyDefaultValueProvider.GetDefaultValue(PropertyInfo property) => Duration.FromSeconds(20);

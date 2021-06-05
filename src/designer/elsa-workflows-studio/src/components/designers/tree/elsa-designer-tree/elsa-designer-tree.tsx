@@ -528,7 +528,7 @@ export class ElsaWorkflowDesigner {
           ${displayContext?.activityIcon || ''}
           </div>
           <div class="elsa-flex-1 elsa-font-medium elsa-leading-8">
-            <p>${activity.displayName}</p>
+            <p class="elsa-overflow-ellipsis">${activity.displayName}</p>
           </div>
           <div class="context-menu-button-container">
             ${activityContextMenuButton}
@@ -541,7 +541,7 @@ export class ElsaWorkflowDesigner {
 
   renderActivityBody(displayContext: ActivityDesignDisplayContext) {
     return (
-      `<div class="elsa-border-t elsa-border-t-solid">
+      `<div class="elsa-border-t elsa-border-t-solid hidden">
           <div class="elsa-p-6 elsa-text-gray-400 elsa-text-sm">
             <div class="elsa-mb-2">${!!displayContext.bodyDisplay ? displayContext.bodyDisplay : ''}</div>
             <div>

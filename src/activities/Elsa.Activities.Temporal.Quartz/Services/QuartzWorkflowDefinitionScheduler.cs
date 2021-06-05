@@ -12,13 +12,13 @@ namespace Elsa.Activities.Temporal.Quartz.Services
     public class QuartzWorkflowDefinitionScheduler : IWorkflowDefinitionScheduler
     {
         private static readonly string RunWorkflowJobKey = nameof(RunQuartzWorkflowDefinitionJob);
-        private readonly ISchedulerFactory _schedulerFactory;
+        private readonly QuartzSchedulerProvider _schedulerProvider;
         private readonly ILogger _logger;
         private readonly SemaphoreSlim _semaphore = new(1);
 
-        public QuartzWorkflowDefinitionScheduler(ISchedulerFactory schedulerFactory, ILogger<QuartzWorkflowDefinitionScheduler> logger)
+        public QuartzWorkflowDefinitionScheduler(QuartzSchedulerProvider schedulerProvider, ILogger<QuartzWorkflowDefinitionScheduler> logger)
         {
-            _schedulerFactory = schedulerFactory;
+            _schedulerProvider = schedulerProvider;
             _logger = logger;
         }
 
@@ -41,7 +41,7 @@ namespace Elsa.Activities.Temporal.Quartz.Services
         
         public async Task UnscheduleAsync(string workflowDefinitionId, string activityId, CancellationToken cancellationToken)
         {
-            var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
+            var scheduler = await _schedulerProvider.GetSchedulerAsync(cancellationToken);
             var trigger = CreateTriggerKey(workflowDefinitionId, activityId);
             var existingTrigger = await scheduler.GetTrigger(trigger, cancellationToken);
 
@@ -51,7 +51,7 @@ namespace Elsa.Activities.Temporal.Quartz.Services
         
         public async Task UnscheduleAsync(string workflowDefinitionId, CancellationToken cancellationToken)
         {
-            var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
+            var scheduler = await _schedulerProvider.GetSchedulerAsync(cancellationToken);
             var groupName = CreateTriggerGroupKey(workflowDefinitionId);
             var existingTriggers = await scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.GroupEquals(groupName), cancellationToken);
 
@@ -61,18 +61,18 @@ namespace Elsa.Activities.Temporal.Quartz.Services
 
         public async Task UnscheduleAllAsync(CancellationToken cancellationToken)
         {
-            var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
+            var scheduler = await _schedulerProvider.GetSchedulerAsync(cancellationToken);
             var jobKeys = await scheduler.GetJobKeys(GroupMatcher<JobKey>.GroupStartsWith("workflow-definition"), cancellationToken);
             await scheduler.DeleteJobs(jobKeys, cancellationToken);
         }
 
         private async Task ScheduleJob(ITrigger trigger, CancellationToken cancellationToken)
         {
+            var scheduler = await _schedulerProvider.GetSchedulerAsync(cancellationToken);
             await _semaphore.WaitAsync(cancellationToken);
 
             try
             {
-                var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
                 var existingTrigger = await scheduler.GetTrigger(trigger.Key, cancellationToken);
 
                 // For workflow definitions we only schedule the job if one doesn't exist already because another node may have created it beforehand.

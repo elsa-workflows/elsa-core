@@ -1,3 +1,4 @@
+using Elsa.Activities.Conductor.Extensions;
 using Elsa.Activities.UserTask.Extensions;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
@@ -16,8 +17,6 @@ namespace Elsa.Samples.Server.Host
         {
             Environment = environment;
             Configuration = configuration;
-
-            //BsonClassMap.RegisterClassMap<HttpRequestModel>(cm => { cm.AutoMap(); });
         }
 
         private IWebHostEnvironment Environment { get; }
@@ -58,6 +57,7 @@ namespace Elsa.Samples.Server.Host
                     //.AddHangfireTemporalActivities(hangfire => hangfire.UseSqlServerStorage(sqlServerConnectionString), (_, hangfireServer) => hangfireServer.SchedulePollingInterval = TimeSpan.FromSeconds(5))
                     .AddJavaScriptActivities()
                     .AddUserTaskActivities()
+                    .AddConductorActivities(options => elsaSection.GetSection("Conductor").Bind(options))
                     .AddActivitiesFrom<Startup>()
                     .AddWorkflowsFrom<Startup>()
                 );

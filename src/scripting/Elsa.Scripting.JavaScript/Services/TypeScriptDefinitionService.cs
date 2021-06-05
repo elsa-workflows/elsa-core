@@ -28,7 +28,7 @@ namespace Elsa.Scripting.JavaScript.Services
             var builder = new StringBuilder();
             var providerContext = new TypeDefinitionContext(workflowDefinition, context);
             var types = await CollectTypesAsync(providerContext, cancellationToken);
-            
+
             // Render type declarations for anything except those listed in TypeConverters.
             foreach (var type in types)
             {
@@ -37,7 +37,7 @@ namespace Elsa.Scripting.JavaScript.Services
                 if (shouldRenderDeclaration)
                     RenderTypeDeclaration(providerContext, type, types, builder);
             }
-            
+
             string GetTypeScriptTypeInternal(Type type) => GetTypeScriptType(providerContext, type, types);
             var renderingTypeScriptDefinitions = new RenderingTypeScriptDefinitions(workflowDefinition, GetTypeScriptTypeInternal, context, builder);
             await _mediator.Publish(renderingTypeScriptDefinitions, cancellationToken);
@@ -53,10 +53,10 @@ namespace Elsa.Scripting.JavaScript.Services
             {
                 var providedTypes = await provider.CollectTypesAsync(context, cancellationToken);
 
-                foreach (var providedType in providedTypes) 
+                foreach (var providedType in providedTypes)
                     CollectType(providedType, collectedTypes);
             }
-            
+
             return collectedTypes;
         }
 
@@ -100,7 +100,19 @@ namespace Elsa.Scripting.JavaScript.Services
             }
         }
 
-        private void RenderTypeDeclaration(TypeDefinitionContext context, Type type, ISet<Type> collectedTypes, StringBuilder output) => RenderTypeDeclaration(context, "interface", type, collectedTypes, output);
+        private void RenderTypeDeclaration(TypeDefinitionContext context, Type type, ISet<Type> collectedTypes, StringBuilder output)
+        {
+            var symbol = type switch
+            {
+                {IsInterface: true} => "interface",
+                {IsClass: true} => "class",
+                {IsValueType: true} => "class",
+                {IsEnum: true} => "enum",
+                _ => "interface"
+            };
+            
+            RenderTypeDeclaration(context, symbol, type, collectedTypes, output);
+        }
 
         private void RenderTypeDeclaration(TypeDefinitionContext context, string symbol, Type type, ISet<Type> collectedTypes, StringBuilder output)
         {
@@ -119,10 +131,10 @@ namespace Elsa.Scripting.JavaScript.Services
 
             foreach (var method in methods)
             {
-                if(method.Name.StartsWith("<"))
+                if (method.Name.StartsWith("<"))
                     continue;
 
-                if(symbol == "interface" && method.IsStatic)
+                if (symbol == "interface" && method.IsStatic)
                     continue;
 
                 if (method.IsStatic)

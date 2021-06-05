@@ -6,9 +6,6 @@ namespace Elsa.Attributes
     [AttributeUsage(AttributeTargets.Class)]
     public sealed class ActionAttribute : ActivityAttribute
     {
-        public ActionAttribute()
-        {
-            Traits = ActivityTraits.Action;
-        }
+        public ActionAttribute() => Traits = ActivityTraits.Action;
     }
 }

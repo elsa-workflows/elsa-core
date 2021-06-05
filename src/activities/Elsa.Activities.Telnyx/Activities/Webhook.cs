@@ -1,5 +1,7 @@
-﻿using Elsa.Activities.Telnyx.Extensions;
+﻿using System.ComponentModel;
+using Elsa.Activities.Telnyx.Extensions;
 using Elsa.Activities.Telnyx.Webhooks.Models;
+using Elsa.Activities.Telnyx.Webhooks.Payloads.Abstract;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
@@ -8,9 +10,12 @@ using Elsa.Services.Models;
 
 namespace Elsa.Activities.Telnyx.Activities
 {
+    [Browsable(false)]
+    [Trigger(Category = "Telnyx", Outcomes = new[]{ OutcomeNames.Done })]
     public class Webhook : Activity
     {
         [ActivityOutput] public TelnyxWebhook? Model { get; set; }
+        [ActivityOutput] public Payload? Payload { get; set; }
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => context.WorkflowExecutionContext.IsFirstPass ? ExecuteInternal(context) : Suspend();
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context) => ExecuteInternal(context);
@@ -32,6 +37,7 @@ namespace Elsa.Activities.Telnyx.Activities
             }
 
             Model = webhookModel;
+            Payload = webhookModel.Data.Payload;
             return Done(webhookModel);
         }
     }

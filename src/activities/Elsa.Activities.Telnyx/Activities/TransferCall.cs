@@ -145,9 +145,11 @@ namespace Elsa.Activities.Telnyx.Activities
 
         private async ValueTask TransferCallAsync(ActivityExecutionContext context)
         {
+            var fromNumber = context.GetFromNumber(From);
+            
             var request = new TransferCallRequest(
                 To,
-                From,
+                fromNumber,
                 FromDisplayName,
                 AudioUrl,
                 AnsweringMachineDetection,

@@ -22,6 +22,9 @@ namespace Elsa.Activities.Telnyx.Client.Services
         [Post("/v2/calls/{callControlId}/actions/gather_using_audio")]
         Task GatherUsingAudioAsync(string callControlId, [Body]GatherUsingAudioRequest request, CancellationToken cancellationToken = default);
         
+        [Post("/v2/calls/{callControlId}/actions/gather_using_speak")]
+        Task GatherUsingSpeakAsync(string callControlId, [Body]GatherUsingSpeakRequest request, CancellationToken cancellationToken = default);
+        
         [Post("/v2/calls/{callControlId}/actions/bridge")]
         Task BridgeCallsAsync(string callControlId, [Body]BridgeCallsRequest request, CancellationToken cancellationToken = default);
         
@@ -30,6 +33,9 @@ namespace Elsa.Activities.Telnyx.Client.Services
         
         [Post("/v2/calls/{callControlId}/actions/record_start")]
         Task StartRecordingAsync(string callControlId, [Body]StartRecordingRequest request, CancellationToken cancellationToken = default);
+        
+        [Post("/v2/calls/{callControlId}/actions/record_stop")]
+        Task StopRecordingAsync(string callControlId, [Body]StopRecordingRequest request, CancellationToken cancellationToken = default);
         
         [Post("/v2/calls/{callControlId}/actions/speak")]
         Task SpeakTextAsync(string callControlId, [Body]SpeakTextRequest request, CancellationToken cancellationToken = default);

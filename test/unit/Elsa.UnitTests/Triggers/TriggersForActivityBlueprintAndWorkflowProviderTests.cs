@@ -18,25 +18,25 @@ namespace Elsa.Triggers
     {
         [Theory(DisplayName = "The GetTriggersForActivityBlueprintAsync returns a trigger for every bookmark in the bookmark providers that support the activity"), AutoMoqData]
         public async Task GetTriggersForActivityBlueprintAsyncReturnsTriggersForEachBookmarkInSupportedBookmarkProviders(IBookmarkHasher bookmarkHasher,
-                                                                                                                         IBookmarkProvider bookmarkProvider1,
-                                                                                                                         IBookmarkProvider unsupportedBookmarkProvider,
-                                                                                                                         IBookmarkProvider bookmarkProvider2,
-                                                                                                                         ICreatesActivityExecutionContextForActivityBlueprint activityExecutionContextFactory,
-                                                                                                                         [Frozen] IActivityBlueprint activityBlueprint,
-                                                                                                                         [WithAutofixtureResolution, Frozen] IServiceProvider serviceProvider,
-                                                                                                                         [Frozen] IWorkflowBlueprint workflowBlueprint,
-                                                                                                                         [OmitOnRecursion, Frozen] WorkflowInstance workflowInstance,
-                                                                                                                         [Frozen] WorkflowExecutionContext workflowExecutionContext,
-                                                                                                                         [NoAutoProperties] ActivityExecutionContext activityExecutionContext,
-                                                                                                                         ActivityType activityType,
-                                                                                                                         IBookmark bookmark1,
-                                                                                                                         IBookmark bookmark2,
-                                                                                                                         IBookmark bookmark3,
-                                                                                                                         IBookmark bookmark4)
+            IBookmarkProvider bookmarkProvider1,
+            IBookmarkProvider unsupportedBookmarkProvider,
+            IBookmarkProvider bookmarkProvider2,
+            ICreatesActivityExecutionContextForActivityBlueprint activityExecutionContextFactory,
+            [Frozen] IActivityBlueprint activityBlueprint,
+            [WithAutofixtureResolution, Frozen] IServiceProvider serviceProvider,
+            [Frozen] IWorkflowBlueprint workflowBlueprint,
+            [OmitOnRecursion, Frozen] WorkflowInstance workflowInstance,
+            [Frozen] WorkflowExecutionContext workflowExecutionContext,
+            [NoAutoProperties] ActivityExecutionContext activityExecutionContext,
+            ActivityType activityType,
+            IBookmark bookmark1,
+            IBookmark bookmark2,
+            IBookmark bookmark3,
+            IBookmark bookmark4)
         {
             var sut = new TriggersForActivityBlueprintAndWorkflowProvider(bookmarkHasher,
-                                                                          new[] { bookmarkProvider1, unsupportedBookmarkProvider, bookmarkProvider2 },
-                                                                          activityExecutionContextFactory);
+                new[] { bookmarkProvider1, unsupportedBookmarkProvider, bookmarkProvider2 },
+                activityExecutionContextFactory);
 
             Mock.Get(activityExecutionContextFactory)
                 .Setup(x => x.CreateActivityExecutionContext(activityBlueprint, workflowExecutionContext, default))
@@ -53,15 +53,15 @@ namespace Elsa.Triggers
                 .Returns(() => ValueTask.FromResult(true));
             Mock.Get(bookmarkProvider1)
                 .Setup(x => x.GetBookmarksAsync(It.IsAny<BookmarkProviderContext>(), default))
-                .Returns(() => ValueTask.FromResult<IEnumerable<IBookmark>>(new [] { bookmark1, bookmark2 }));
+                .Returns(() => ValueTask.FromResult<IEnumerable<BookmarkResult>>(new[] { new BookmarkResult(bookmark1), new BookmarkResult(bookmark2) }));
             Mock.Get(bookmarkProvider2)
                 .Setup(x => x.GetBookmarksAsync(It.IsAny<BookmarkProviderContext>(), default))
-                .Returns(() => ValueTask.FromResult<IEnumerable<IBookmark>>(new [] { bookmark3, bookmark4 }));
+                .Returns(() => ValueTask.FromResult<IEnumerable<BookmarkResult>>(new[] { new BookmarkResult(bookmark3), new BookmarkResult(bookmark4) }));
 
             var result = await sut.GetTriggersForActivityBlueprintAsync(activityBlueprint,
-                                                                        workflowExecutionContext,
-                                                                        new Dictionary<string, ActivityType> { { activityType.TypeName, activityType } });
-            
+                workflowExecutionContext,
+                new Dictionary<string, ActivityType> { { activityType.TypeName, activityType } });
+
             Assert.True(result.Any(x => x.Bookmark == bookmark1), "Result contains a trigger for bookmark 1");
             Assert.True(result.Any(x => x.Bookmark == bookmark2), "Result contains a trigger for bookmark 2");
             Assert.True(result.Any(x => x.Bookmark == bookmark3), "Result contains a trigger for bookmark 3");
