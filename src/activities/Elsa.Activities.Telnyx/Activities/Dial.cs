@@ -60,9 +60,10 @@ namespace Elsa.Activities.Telnyx.Activities
         [ActivityInput(
             Hint = "Enables Answering Machine Detection.",
             UIHint = ActivityInputUIHints.Dropdown,
-            Options = new[] { "disabled", "detect", "detect_beep", "detect_words", "greeting_end" },
-            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
-        public string? AnsweringMachineDetection { get; set; }
+            Options = new[] {"disabled", "detect", "detect_beep", "detect_words", "greeting_end"},
+            DefaultValue = "disabled",
+            SupportedSyntaxes = new[] {SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid})]
+        public string? AnsweringMachineDetection { get; set; } = "disabled";
 
         [ActivityInput(
             Label = "Answering Machine Detection Configuration",

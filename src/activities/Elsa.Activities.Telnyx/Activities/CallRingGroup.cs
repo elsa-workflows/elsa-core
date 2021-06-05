@@ -98,6 +98,15 @@ namespace Elsa.Activities.Telnyx.Activities
             get => GetState(() => Duration.FromSeconds(20));
             set => SetState(value);
         }
+        
+        [ActivityInput(
+            Hint = "Enables Answering Machine Detection.",
+            UIHint = ActivityInputUIHints.Dropdown,
+            Options = new[] {"disabled", "detect", "detect_beep", "detect_words", "greeting_end"},
+            DefaultValue = "disabled",
+            Category = PropertyCategories.Advanced,
+            SupportedSyntaxes = new[] {SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid})]
+        public string? AnsweringMachineDetection { get; set; } = "disabled";
 
         private CallAnsweredPayload? CallAnsweredPayload
         {
