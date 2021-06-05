@@ -82,19 +82,18 @@ namespace Elsa.Scripting.JavaScript.Handlers
             foreach (var variable in variables.Data)
                 engine.SetValue(variable.Key, variable.Value);
 
-            // TODO: Deprecated. Remove with next breaking version.
-            // Activity outputs.
-            foreach (var activity in workflowBlueprint.Activities.Where(x => x.Name is not null and not "" && workflowInstance.ActivityOutput.ContainsKey(x.Id)))
-            {
-                var output = new { Output = workflowInstance.ActivityOutput[activity.Id!] };
-                engine.SetValue(activity.Name, output);
-            }
-
             // Named activities.
             foreach (var activity in workflowBlueprint.Activities.Where(x => !string.IsNullOrWhiteSpace(x.Name)))
             {
                 var state = activityExecutionContext.GetActivityData(activity.Id);
                 var dictionary = state.ToDictionary();
+
+                // Output.
+                if (workflowInstance.ActivityOutput.ContainsKey(activity.Id))
+                {
+                    var output = workflowInstance.ActivityOutput[activity.Id];
+                    dictionary["Output"] = output;
+                }
                 
                 engine.SetValue(activity.Name, dictionary);
             }
