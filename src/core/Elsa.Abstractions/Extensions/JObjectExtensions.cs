@@ -1,4 +1,5 @@
 using System;
+using Elsa.Serialization.Converters;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NodaTime;
@@ -42,16 +43,19 @@ namespace Elsa
 
         public static bool HasKey(this JObject state, string key) => state.ContainsKey(key);
         
-        private static JsonSerializer CreateSerializer()
+        public static JObject CreateState(object value) => JObject.FromObject(value, CreateSerializer());
+
+        public static JsonSerializer CreateSerializer()
         {
             var serializer = new JsonSerializer();
-
+            
             serializer.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
             serializer.NullValueHandling = NullValueHandling.Ignore;
             serializer.ReferenceLoopHandling = ReferenceLoopHandling.Serialize;
             serializer.PreserveReferencesHandling = PreserveReferencesHandling.Objects;
             serializer.TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Simple;
             serializer.TypeNameHandling = TypeNameHandling.Auto;
+            serializer.Converters.Add(new TypeJsonConverter());
             
             return serializer;
         }
