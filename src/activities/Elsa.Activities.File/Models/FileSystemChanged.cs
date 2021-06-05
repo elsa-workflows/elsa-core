@@ -18,6 +18,7 @@ namespace Elsa.Activities.File.Models
             Directory = directory;
             FileName = fileName;
             FullPath = fullPath;
+            TimeStamp = DateTime.Now;
         }
 
         public WatcherChangeTypes ChangeType { get; set; }
