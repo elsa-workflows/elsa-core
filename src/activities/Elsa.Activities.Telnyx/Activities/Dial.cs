@@ -5,7 +5,9 @@ using Elsa.Activities.Telnyx.Client.Models;
 using Elsa.Activities.Telnyx.Client.Services;
 using Elsa.Activities.Telnyx.Exceptions;
 using Elsa.Activities.Telnyx.Extensions;
+using Elsa.Activities.Telnyx.Models;
 using Elsa.Activities.Telnyx.Options;
+using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Builders;
@@ -21,7 +23,7 @@ namespace Elsa.Activities.Telnyx.Activities
     [Action(
         Category = Constants.Category,
         Description = "Dial a number or SIP URI from a given connection.",
-        Outcomes = new[] { OutcomeNames.Done },
+        Outcomes = new[] { TelnyxOutcomeNames.Dialing, TelnyxOutcomeNames.CallInitiated, TelnyxOutcomeNames.Answered, TelnyxOutcomeNames.Hangup, OutcomeNames.Done },
         DisplayName = "Dial"
     )]
     public class Dial : Activity
@@ -76,12 +78,6 @@ namespace Elsa.Activities.Telnyx.Activities
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string? CommandId { get; set; }
 
-        [ActivityInput(
-            Hint = "Use this field to add state to every subsequent webhook. It must be a valid Base-64 encoded string.",
-            Category = PropertyCategories.Advanced,
-            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
-        public string? ClientState { get; set; }
-
         [ActivityInput(Label = "Custom Headers", Hint = "Custom headers to be added to the SIP INVITE.", Category = PropertyCategories.Advanced, UIHint = ActivityInputUIHints.Json)]
         public IList<Header>? CustomHeaders { get; set; }
 
@@ -116,10 +112,36 @@ namespace Elsa.Activities.Telnyx.Activities
             SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string? WebhookUrlMethod { get; set; }
 
+        [ActivityInput(
+            Hint = "A flag indicating whether this activity should complete immediately or suspend the workflow.",
+            Category = PropertyCategories.Advanced,
+            DefaultValue = true,
+            SupportedSyntaxes = new[] {SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid})]
+        public bool SuspendWorkflow { get; set; } = true;
+
+        [ActivityOutput] public DialResponse DialResponse { get; set; }
+
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
             var response = await DialAsync(context);
-            return Done(response);
+            DialResponse = response;
+
+            return !SuspendWorkflow 
+                ? Done(response) 
+                : Combine(Outcome(TelnyxOutcomeNames.Dialing, response), Suspend());
+        }
+
+        protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
+        {
+            var payload = context.GetInput<CallPayload>();
+
+            return payload switch
+            {
+                CallAnsweredPayload callAnsweredPayload => Outcome(TelnyxOutcomeNames.Answered, callAnsweredPayload),
+                CallHangupPayload callHangupPayload => Outcome(TelnyxOutcomeNames.Hangup, callHangupPayload),
+                CallInitiatedPayload callInitiatedPayload => Combine(Outcome(TelnyxOutcomeNames.CallInitiated, callInitiatedPayload), Suspend()),
+                _ => throw new ArgumentOutOfRangeException(nameof(payload))
+            };
         }
 
         private async Task<DialResponse> DialAsync(ActivityExecutionContext context)
@@ -131,6 +153,8 @@ namespace Elsa.Activities.Telnyx.Activities
 
             var fromNumber = context.GetFromNumber(From);
 
+            var clientState = new ClientStatePayload(context.CorrelationId!).ToBase64();
+
             var request = new DialRequest(
                 connectionId,
                 To,
@@ -138,7 +162,7 @@ namespace Elsa.Activities.Telnyx.Activities
                 FromDisplayName,
                 AnsweringMachineDetection,
                 AnsweringMachineDetectionConfig,
-                ClientState,
+                clientState,
                 CommandId,
                 CustomHeaders,
                 SipAuthUsername,
@@ -207,12 +231,6 @@ namespace Elsa.Activities.Telnyx.Activities
         public static ISetupActivity<Dial> WithCommandId(this ISetupActivity<Dial> setup, Func<string?> value) => setup.Set(x => x.CommandId, value);
         public static ISetupActivity<Dial> WithCommandId(this ISetupActivity<Dial> setup, string? value) => setup.Set(x => x.CommandId, value);
 
-        public static ISetupActivity<Dial> WithClientState(this ISetupActivity<Dial> setup, Func<ActivityExecutionContext, ValueTask<string?>> value) => setup.Set(x => x.ClientState, value);
-        public static ISetupActivity<Dial> WithClientState(this ISetupActivity<Dial> setup, Func<ActivityExecutionContext, string?> value) => setup.Set(x => x.ClientState, value);
-        public static ISetupActivity<Dial> WithClientState(this ISetupActivity<Dial> setup, Func<ValueTask<string?>> value) => setup.Set(x => x.ClientState, value);
-        public static ISetupActivity<Dial> WithClientState(this ISetupActivity<Dial> setup, Func<string?> value) => setup.Set(x => x.ClientState, value);
-        public static ISetupActivity<Dial> WithClientState(this ISetupActivity<Dial> setup, string? value) => setup.Set(x => x.ClientState, value);
-
         public static ISetupActivity<Dial> WithCustomHeaders(this ISetupActivity<Dial> setup, Func<ActivityExecutionContext, ValueTask<IList<Header>?>> value) => setup.Set(x => x.CustomHeaders, value);
         public static ISetupActivity<Dial> WithCustomHeaders(this ISetupActivity<Dial> setup, Func<ActivityExecutionContext, IList<Header>?> value) => setup.Set(x => x.CustomHeaders, value);
         public static ISetupActivity<Dial> WithCustomHeaders(this ISetupActivity<Dial> setup, Func<ValueTask<IList<Header>?>> value) => setup.Set(x => x.CustomHeaders, value);
@@ -254,5 +272,11 @@ namespace Elsa.Activities.Telnyx.Activities
         public static ISetupActivity<Dial> WithWebhookUrlMethod(this ISetupActivity<Dial> setup, Func<ValueTask<string?>> value) => setup.Set(x => x.WebhookUrlMethod, value);
         public static ISetupActivity<Dial> WithWebhookUrlMethod(this ISetupActivity<Dial> setup, Func<string?> value) => setup.Set(x => x.WebhookUrlMethod, value);
         public static ISetupActivity<Dial> WithWebhookUrlMethod(this ISetupActivity<Dial> setup, string? value) => setup.Set(x => x.WebhookUrlMethod, value);
+        
+        public static ISetupActivity<Dial> WithSuspendWorkflow(this ISetupActivity<Dial> setup, Func<ActivityExecutionContext, ValueTask<bool>> value) => setup.Set(x => x.SuspendWorkflow, value);
+        public static ISetupActivity<Dial> WithSuspendWorkflow(this ISetupActivity<Dial> setup, Func<ActivityExecutionContext, bool> value) => setup.Set(x => x.SuspendWorkflow, value);
+        public static ISetupActivity<Dial> WithSuspendWorkflow(this ISetupActivity<Dial> setup, Func<ValueTask<bool>> value) => setup.Set(x => x.SuspendWorkflow, value);
+        public static ISetupActivity<Dial> WithSuspendWorkflow(this ISetupActivity<Dial> setup, Func<bool> value) => setup.Set(x => x.SuspendWorkflow, value);
+        public static ISetupActivity<Dial> WithSuspendWorkflow(this ISetupActivity<Dial> setup, bool value) => setup.Set(x => x.SuspendWorkflow, value);
     }
 }
