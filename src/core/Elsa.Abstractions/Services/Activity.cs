@@ -34,18 +34,12 @@ namespace Elsa.Services
         protected virtual IActivityExecutionResult OnResume() => Done();
         protected virtual NoopResult Noop() => new();
         protected virtual OutcomeResult Done() => Outcome(OutcomeNames.Done);
-
-        [Obsolete("Do not use methods that accept an output. Use Done() instead and activity output properties to return output.")]
         protected virtual CombinedResult Done(object? output) => Combine(Output(output), Done());
 
         protected virtual OutcomeResult Outcomes(IEnumerable<string> outcomes) => new(outcomes);
         protected virtual OutcomeResult Outcomes(params string[] outcomes) => Outcomes((IEnumerable<string>) outcomes);
         protected virtual OutcomeResult Outcome(string outcome) => Outcomes(outcome);
-        
-        [Obsolete("Do not use methods that accept an output. Use Outcome(string outcome) instead and activity output properties to return output.")]
         protected virtual CombinedResult Outcome(string outcome, object? output) => Combine(Output(output), Outcome(outcome));
-        
-        [Obsolete("Use activity output properties to return output.")]
         protected virtual OutputResult Output(object? output) => new(output);
         
         protected virtual SuspendResult Suspend() => new();
