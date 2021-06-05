@@ -1,7 +1,10 @@
 using System;
+using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.ControlFlow;
+using Elsa.Attributes;
 using Elsa.Services.Models;
 
 namespace Elsa.Services
@@ -14,15 +17,17 @@ namespace Elsa.Services
         {
             _elsaOptions = options;
         }
-        
+
         public async Task<IActivity> ActivateActivityAsync(ActivityExecutionContext context, Type type, CancellationToken cancellationToken = default)
         {
             var activity = _elsaOptions.ActivityFactory.CreateService(type, context.ServiceProvider);
             activity.Data = context.GetData();
             activity.Id = context.ActivityId;
 
+            ApplyStoredValues(context, activity);
+
             // TODO: Make extensible / apply open/closed.
-            if(ShouldSetProperties(activity))
+            if (ShouldSetProperties(context, activity))
             {
                 // TODO: Figure out how to deal with dynamically defined properties and what it means to set values to these.
                 // ActivityTypes can have dynamic properties, so they need to be able to "intercept" when values are being applied.
@@ -30,11 +35,24 @@ namespace Elsa.Services
                 //var activityType = await _activityTypeService.GetActivityTypeAsync(activity.Type, cancellationToken);
                 await context.WorkflowExecutionContext.WorkflowBlueprint.ActivityPropertyProviders.SetActivityPropertiesAsync(activity, context, context.CancellationToken);
             }
-            
+
             return activity;
         }
 
-        private bool ShouldSetProperties(IActivity activity)
+        private void ApplyStoredValues(ActivityExecutionContext context, IActivity activity)
+        {
+            var properties = activity.GetType().GetProperties().Where(IsActivityProperty).ToList();
+
+            foreach (var property in properties)
+            {
+                var value = context.GetState(property.Name, property.PropertyType);
+
+                if (value != null)
+                    property.SetValue(activity, value);
+            }
+        }
+
+        private bool ShouldSetProperties(ActivityExecutionContext context, IActivity activity)
         {
             if (IsReturningComposite(activity))
                 return false;
@@ -44,7 +62,7 @@ namespace Elsa.Services
                 activity.Data.SetState("Unwinding", false);
                 return false;
             }
-            
+
             if (IsReturningSwitch(activity))
             {
                 activity.Data.SetState("Unwinding", false);
@@ -53,9 +71,10 @@ namespace Elsa.Services
 
             return true;
         }
-        
+
         private bool IsReturningComposite(IActivity activity) => activity is CompositeActivity && activity.Data.GetState<bool>(nameof(CompositeActivity.IsScheduled));
         private bool IsReturningIf(IActivity activity) => activity is If && activity.Data.GetState<bool>("Unwinding");
         private bool IsReturningSwitch(IActivity activity) => activity is Switch && activity.Data.GetState<bool>("Unwinding");
+        private bool IsActivityProperty(PropertyInfo property) => property.GetCustomAttribute<ActivityInputAttribute>() != null || property.GetCustomAttribute<ActivityOutputAttribute>() != null;
     }
 }
