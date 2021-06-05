@@ -247,20 +247,23 @@ namespace Elsa.Services
             var correlationId = context.CorrelationId!;
             var lockKey = correlationId;
 
-            await using var handle = await AcquireLockAsync(lockKey, cancellationToken);
-            
-            var correlatedWorkflowInstanceCount = !string.IsNullOrWhiteSpace(correlationId)
-                ? await _workflowInstanceStore.CountAsync(new CorrelationIdSpecification<WorkflowInstance>(correlationId).WithStatus(WorkflowStatus.Suspended), cancellationToken)
-                : 0;
-
-            _logger.LogDebug("Found {CorrelatedWorkflowCount} workflows with correlation ID {CorrelationId}", correlatedWorkflowInstanceCount, correlationId);
-
-            if (correlatedWorkflowInstanceCount > 0)
+            await using (var handle = await AcquireLockAsync(lockKey, cancellationToken))
             {
-                var bookmarkResults = context.Bookmark != null ? await _bookmarkFinder.FindBookmarksAsync(context.ActivityType, context.Bookmark, correlationId, context.TenantId, cancellationToken).ToList() : new List<BookmarkFinderResult>();
-                _logger.LogDebug("Found {BookmarkCount} bookmarks for activity type {ActivityType}", bookmarkResults.Count, context.ActivityType);
-                return bookmarkResults.Select(x => new PendingWorkflow(x.WorkflowInstanceId, x.ActivityId)).ToList();
-            }
+                var correlatedWorkflowInstanceCount = !string.IsNullOrWhiteSpace(correlationId)
+                    ? await _workflowInstanceStore.CountAsync(new CorrelationIdSpecification<WorkflowInstance>(correlationId).WithStatus(WorkflowStatus.Suspended), cancellationToken)
+                    : 0;
+
+                _logger.LogDebug("Found {CorrelatedWorkflowCount} workflows with correlation ID {CorrelationId}", correlatedWorkflowInstanceCount, correlationId);
+
+                if (correlatedWorkflowInstanceCount > 0)
+                {
+                    var bookmarkResults = context.Bookmark != null
+                        ? await _bookmarkFinder.FindBookmarksAsync(context.ActivityType, context.Bookmark, correlationId, context.TenantId, cancellationToken).ToList()
+                        : new List<BookmarkFinderResult>();
+                    _logger.LogDebug("Found {BookmarkCount} bookmarks for activity type {ActivityType}", bookmarkResults.Count, context.ActivityType);
+                    return bookmarkResults.Select(x => new PendingWorkflow(x.WorkflowInstanceId, x.ActivityId)).ToList();
+                }
+            } // This ensures the lock handle is released before calling the next line (CollectStartableWorkflowsAsync), which also acquires a lock on the correlation ID.
 
             var startableWorkflows = await CollectStartableWorkflowsAsync(context, cancellationToken);
             return startableWorkflows.Select(x => new PendingWorkflow(x.WorkflowInstance.Id, x.ActivityId)).ToList();
