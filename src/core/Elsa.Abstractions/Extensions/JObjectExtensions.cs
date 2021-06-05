@@ -19,6 +19,16 @@ namespace Elsa
 
             return item.ToObject<T>(CreateSerializer())!;
         }
+        
+        public static object? GetState(this JObject? state, string key, Type targetType)
+        {
+            var item = state?.GetValue(key, StringComparison.OrdinalIgnoreCase);
+
+            if (item == null || item.Type == JTokenType.Null)
+                return null;
+
+            return item.ToObject(targetType, CreateSerializer())!;
+        }
 
         public static T? GetState<T>(this JObject? state, Type type, string key) => state.GetState<T>(type, key, () => default!);
 

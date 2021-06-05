@@ -40,17 +40,18 @@ namespace Elsa.Services.Models
             get => WorkflowExecutionContext.ContextId;
             set => WorkflowExecutionContext.ContextId = value;
         }
+
         public IReadOnlyCollection<string> Outcomes { get; set; }
         public object? Input { get; }
         public bool Resuming { get; }
         public bool IsFirstPass => WorkflowExecutionContext.IsFirstPass;
-        
+
         public string? CorrelationId
         {
             get => WorkflowExecutionContext.CorrelationId;
             set => WorkflowExecutionContext.CorrelationId = value;
         }
-        
+
         public CancellationToken CancellationToken { get; }
 
         public JObject GetData() => WorkflowInstance.ActivityData.GetItem(ActivityBlueprint.Id, () => new JObject());
@@ -60,19 +61,25 @@ namespace Elsa.Services.Models
             var data = GetData();
             data.SetState(propertyName, value);
         }
-        
+
         public T? GetState<T>(string propertyName)
         {
             var data = GetData();
             return data.GetState<T>(propertyName);
         }
-        
+
         public T GetState<T>(string propertyName, Func<T> defaultValue)
         {
             var data = GetData();
             return data.GetState<T>(propertyName, defaultValue);
         }
-        
+
+        public object? GetState(string propertyName, Type targetType)
+        {
+            var data = GetData();
+            return data.GetState(propertyName, targetType);
+        }
+
         public T? GetState<TActivity, T>(Expression<Func<TActivity, T>> propertyExpression) where TActivity : IActivity
         {
             var expression = (MemberExpression) propertyExpression.Body;
@@ -81,27 +88,27 @@ namespace Elsa.Services.Models
         }
 
         public T? GetContainerState<T>() => GetContainerState<T>(typeof(T).Name);
-        
+
         public T? GetContainerState<T>(string key)
         {
             var parentActivityId = ActivityBlueprint.Parent?.Id;
 
             if (parentActivityId == null)
                 return default;
-            
+
             var parentData = WorkflowExecutionContext.WorkflowInstance.ActivityData.GetItem(parentActivityId);
             return parentData.GetState<T>(key);
         }
 
-        public void SetContainerState<T>(object? value) => SetContainerState(typeof(T).Name, value); 
-        
+        public void SetContainerState<T>(object? value) => SetContainerState(typeof(T).Name, value);
+
         public void SetContainerState(string key, object? value)
         {
             var parentActivityId = ActivityBlueprint.Parent?.Id;
 
             if (parentActivityId == null)
                 return;
-            
+
             var parentData = WorkflowExecutionContext.WorkflowInstance.ActivityData.GetItem(parentActivityId);
             parentData?.SetState(key, value);
         }
@@ -119,7 +126,7 @@ namespace Elsa.Services.Models
         public ActivityScope GetNamedScope(string activityName) => WorkflowExecutionContext.GetNamedScope(activityName);
 
         public void SetVariable(string name, object? value) => WorkflowExecutionContext.SetVariable(name, value);
-        
+
         public T? SetVariable<T>(string name, Func<T?, T?> updater)
         {
             var value = GetVariable<T>(name);
@@ -151,7 +158,7 @@ namespace Elsa.Services.Models
             var activityTypeService = ServiceProvider.GetRequiredService<IActivityTypeService>();
             return await activityTypeService.ActivateActivityAsync(ActivityBlueprint, cancellationToken);
         }
-        
+
         public T? GetInput<T>() => Input.ConvertTo<T>();
         public T? GetInput<T>(Func<T?> defaultValue) => Input != null ? Input.ConvertTo<T>() : defaultValue();
         public T? GetInput<T>(T? defaultValue) => Input != null ? Input.ConvertTo<T>() : defaultValue;
@@ -167,6 +174,7 @@ namespace Elsa.Services.Models
         public T GetWorkflowContext<T>() => WorkflowExecutionContext.GetWorkflowContext<T>();
         public JObject GetActivityData() => GetActivityData(ActivityId);
         public JObject GetActivityData(string activityId) => WorkflowExecutionContext.GetActivityData(activityId);
+        public T? GetActivityProperty<TActivity, T>(Expression<Func<TActivity, T>> propertyExpression) where TActivity : IActivity => WorkflowExecutionContext.GetActivityProperty<TActivity, T>(ActivityId, propertyExpression);
         public void Fault(Exception exception) => WorkflowExecutionContext.Fault(exception, ActivityId, Input, Resuming);
     }
 }
