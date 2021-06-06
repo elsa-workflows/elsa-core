@@ -16,7 +16,7 @@ namespace Elsa.Activities.File
         Outcomes = new[] { OutcomeNames.Done })]
     public class ReadFile : Activity
     {
-        [ActivityProperty(Hint = "Path to read content from.", UIHint = ActivityPropertyUIHints.SingleLine, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "Path to read content from.", UIHint = ActivityInputUIHints.SingleLine, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string Path { get; set; }
 
         public async override ValueTask<IActivityExecutionResult> ExecuteAsync(ActivityExecutionContext context)

@@ -17,13 +17,13 @@ namespace Elsa.Activities.File
         Outcomes = new[] { OutcomeNames.Done })]
     public class OutFile : Activity
     {
-        [ActivityProperty(Hint = "Content of the file.", UIHint = ActivityPropertyUIHints.MultiLine, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "Content of the file.", UIHint = ActivityInputUIHints.MultiLine, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string Content { get; set; }
 
-        [ActivityProperty(Hint = "Path to create file at.", UIHint = ActivityPropertyUIHints.SingleLine, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "Path to create file at.", UIHint = ActivityInputUIHints.SingleLine, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string Path { get; set; }
 
-        [ActivityProperty(Hint = "How the output file should be written to.", UIHint = ActivityPropertyUIHints.Dropdown)]
+        [ActivityInput(Hint = "How the output file should be written to.", UIHint = ActivityInputUIHints.Dropdown)]
         public CopyMode Mode { get; set; } = CopyMode.CreateNew;
 
         protected async override ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)

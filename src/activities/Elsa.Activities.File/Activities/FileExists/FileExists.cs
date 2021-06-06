@@ -13,7 +13,7 @@ namespace Elsa.Activities.File
         Outcomes = new[] { OutcomeNames.True, OutcomeNames.False })]
     public class FileExists : Activity
     {
-        [ActivityProperty(Hint = "Path of the file to delete.")]
+        [ActivityInput(Hint = "Path of the file to delete.")]
         public string Path { get; set; }
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
