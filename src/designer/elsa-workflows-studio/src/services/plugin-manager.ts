@@ -16,6 +16,7 @@ import {SignalReceivedPlugin} from "../plugins/signal-received-plugin";
 import {SendSignalPlugin} from "../plugins/send-signal-plugin";
 import {UserTaskPlugin} from "../plugins/user-task-plugin";
 import {StatePlugin} from "../plugins/state-plugin";
+import {SendHttpRequestPlugin} from "../plugins/send-http-request-plugin";
 
 export class PluginManager {
 
@@ -30,6 +31,7 @@ export class PluginManager {
       new ForkPlugin(),
       new SwitchPlugin(),
       new HttpEndpointPlugin(),
+      new SendHttpRequestPlugin(),
       new TimerPlugin(),
       new StartAtPlugin(),
       new CronPlugin(),
