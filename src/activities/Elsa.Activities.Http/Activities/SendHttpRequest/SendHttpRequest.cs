@@ -92,6 +92,7 @@ namespace Elsa.Activities.Http
             Hint = "A list of possible HTTP status codes to handle.",
             UIHint = ActivityInputUIHints.MultiText,
             DefaultSyntax = SyntaxNames.Json,
+            DefaultValue = new[] { 200 },
             SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public ICollection<int>? SupportedStatusCodes { get; set; } = new HashSet<int>(new[] { 200 });

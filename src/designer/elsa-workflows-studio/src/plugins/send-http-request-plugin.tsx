@@ -18,7 +18,7 @@ export class SendHttpRequestPlugin implements ElsaPlugin {
     const props = activityModel.properties || [];
     const syntax = SyntaxNames.Json;
     const supportedStatusCodes = props.find(x => x.name == 'SupportedStatusCodes') || {expressions: {'Json': '[]'}, syntax: syntax};
-    const expression = supportedStatusCodes.expressions[syntax];
+    const expression = supportedStatusCodes.expressions[syntax] || '[]';
     context.outcomes = !!expression['$values'] ? expression['$values'] : parseJson(expression) || [];
   }
 }

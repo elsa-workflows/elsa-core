@@ -25,7 +25,6 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
     activitiesApi: {
       list: async () => {
         const response = await httpClient.get<Array<ActivityDescriptor>>('v1/activities');
-        debugger;
         return response.data;
       }
     },
