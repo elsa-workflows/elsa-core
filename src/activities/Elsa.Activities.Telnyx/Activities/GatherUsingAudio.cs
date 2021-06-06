@@ -18,7 +18,7 @@ namespace Elsa.Activities.Telnyx.Activities
     [Job(
         Category = Constants.Category,
         Description = "Play an audio file on the call until the required DTMF signals are gathered to build interactive menus.",
-        Outcomes = new[] { TelnyxOutcomeNames.Pending, TelnyxOutcomeNames.GatherCompleted, TelnyxOutcomeNames.CallIsNoLongerActive },
+        Outcomes = new[] { TelnyxOutcomeNames.GatheringInput, TelnyxOutcomeNames.GatherCompleted, TelnyxOutcomeNames.CallIsNoLongerActive },
         DisplayName = "Gather Using Audio"
     )]
     public class GatherUsingAudio : Activity
@@ -121,7 +121,7 @@ namespace Elsa.Activities.Telnyx.Activities
             try
             {
                 await _telnyxClient.Calls.GatherUsingAudioAsync(callControlId, request, context.CancellationToken);
-                return Combine(Outcome(TelnyxOutcomeNames.Pending), Suspend());
+                return Combine(Outcome(TelnyxOutcomeNames.GatheringInput), Suspend());
             }
             catch (ApiException e)
             {

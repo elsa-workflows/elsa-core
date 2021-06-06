@@ -109,7 +109,7 @@ namespace Elsa.Activities.Telnyx.Activities
             try
             {
                 await _telnyxClient.Calls.SpeakTextAsync(callControlId, request, context.CancellationToken);
-                return Combine(Outcome(TelnyxOutcomeNames.Pending), Suspend());
+                return Combine(Outcome(TelnyxOutcomeNames.Speaking), Suspend());
             }
             catch (ApiException e)
             {

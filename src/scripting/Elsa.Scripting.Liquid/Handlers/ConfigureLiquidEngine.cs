@@ -76,11 +76,10 @@ namespace Elsa.Scripting.Liquid.Handlers
         {
             var activityExecutionContext = activityModel.ActivityExecutionContext;
             
-            // Deprecated.
             if (name == "Output")
             {
                 var output = activityExecutionContext.GetOutputFrom(activityModel.ActivityName!);
-                return output != null ? new JObject(output) : default;
+                return output != null ? JObjectExtensions.CreateState(output) : default;
             }
 
             var workflowExecutionContext = activityExecutionContext.WorkflowExecutionContext;

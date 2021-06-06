@@ -21,7 +21,7 @@ namespace Elsa.Activities.Telnyx.Activities
     [Action(
         Category = Constants.Category,
         Description = "Convert text to speech and play it on the call until the required DTMF signals are gathered to build interactive menus.",
-        Outcomes = new[] { TelnyxOutcomeNames.Pending, TelnyxOutcomeNames.GatherCompleted, TelnyxOutcomeNames.CallIsNoLongerActive },
+        Outcomes = new[] { TelnyxOutcomeNames.GatheringInput, TelnyxOutcomeNames.GatherCompleted, TelnyxOutcomeNames.CallIsNoLongerActive },
         DisplayName = "Gather Using Speak"
     )]
     public class GatherUsingSpeak : Activity
@@ -151,7 +151,7 @@ namespace Elsa.Activities.Telnyx.Activities
             try
             {
                 await _telnyxClient.Calls.GatherUsingSpeakAsync(callControlId, request, context.CancellationToken);
-                return Combine(Outcome(TelnyxOutcomeNames.Pending), Suspend());
+                return Combine(Outcome(TelnyxOutcomeNames.GatheringInput), Suspend());
             }
             catch (ApiException e)
             {

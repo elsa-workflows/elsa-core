@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Elsa.Activities.Telnyx.Client.Models;
 using Elsa.Activities.Telnyx.Client.Services;
 using Elsa.Activities.Telnyx.Extensions;
+using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Builders;
@@ -19,7 +20,14 @@ namespace Elsa.Activities.Telnyx.Activities
     [Action(
         Category = Constants.Category,
         Description = "Transfer a call to a new destination",
-        Outcomes = new[] { OutcomeNames.Done },
+        Outcomes = new[]
+        {
+            TelnyxOutcomeNames.Transferring, 
+            TelnyxOutcomeNames.CallInitiated, 
+            TelnyxOutcomeNames.Bridged, 
+            TelnyxOutcomeNames.Answered, 
+            TelnyxOutcomeNames.Hangup
+        },
         DisplayName = "Transfer Call"
     )]
     public class TransferCall : Activity
@@ -35,23 +43,23 @@ namespace Elsa.Activities.Telnyx.Activities
             Label = "Call Control ID",
             Hint = "Unique identifier and token for controlling the call.",
             Category = PropertyCategories.Advanced,
-            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
+            SupportedSyntaxes = new[] {SyntaxNames.JavaScript, SyntaxNames.Liquid}
         )]
         public string? CallControlId { get; set; } = default!;
 
-        [ActivityInput(Label = "To", Hint = "The DID or SIP URI to dial out and bridge to the given call.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Label = "To", Hint = "The DID or SIP URI to dial out and bridge to the given call.", SupportedSyntaxes = new[] {SyntaxNames.JavaScript, SyntaxNames.Liquid})]
         public string To { get; set; } = default!;
 
         [ActivityInput(
             Hint = "The 'from' number to be used as the caller id presented to the destination ('To' number). The number should be in +E164 format. This attribute will default to the 'From' number of the original call if omitted.",
-            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
+            SupportedSyntaxes = new[] {SyntaxNames.JavaScript, SyntaxNames.Liquid}
         )]
         public string? From { get; set; }
 
         [ActivityInput(
             Hint =
                 "The string to be used as the caller id name (SIP From Display Name) presented to the destination ('To' number). The string should have a maximum of 128 characters, containing only letters, numbers, spaces, and -_~!.+ special characters. If omitted, the display name will be the same as the number in the 'From' field.",
-            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
+            SupportedSyntaxes = new[] {SyntaxNames.JavaScript, SyntaxNames.Liquid}
         )]
         public string? FromDisplayName { get; set; }
 
@@ -59,8 +67,8 @@ namespace Elsa.Activities.Telnyx.Activities
             Label = "Answering Machine Detection",
             Hint = "Enables Answering Machine Detection.",
             UIHint = ActivityInputUIHints.Dropdown,
-            Options = new[] { "disabled", "detect", "detect_beep", "detect_words", "greeting_end" },
-            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
+            Options = new[] {"disabled", "detect", "detect_beep", "detect_words", "greeting_end"},
+            SupportedSyntaxes = new[] {SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid}
         )]
         public string? AnsweringMachineDetection { get; set; }
 
@@ -76,46 +84,46 @@ namespace Elsa.Activities.Telnyx.Activities
             Label = "Command ID",
             Hint = "Use this field to avoid duplicate commands. Telnyx will ignore commands with the same Command ID.",
             Category = PropertyCategories.Advanced,
-            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
+            SupportedSyntaxes = new[] {SyntaxNames.JavaScript, SyntaxNames.Liquid}
         )]
         public string? CommandId { get; set; }
 
         [ActivityInput(
             Label = "Audio URL",
             Hint = "Audio URL to be played back when the transfer destination answers before bridging the call. The URL can point to either a WAV or MP3 file.",
-            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+            SupportedSyntaxes = new[] {SyntaxNames.JavaScript, SyntaxNames.Liquid})]
         public Uri? AudioUrl { get; set; }
 
         [ActivityInput(
             Hint = "Use this field to add state to every subsequent webhook. It must be a valid Base-64 encoded string.",
             Category = PropertyCategories.Advanced,
-            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+            SupportedSyntaxes = new[] {SyntaxNames.JavaScript, SyntaxNames.Liquid})]
         public string? ClientState { get; set; }
 
         [ActivityInput(
             Hint = "Use this field to add state to every subsequent webhook for the new leg. It must be a valid Base-64 encoded string.",
             Category = PropertyCategories.Advanced,
-            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
+            SupportedSyntaxes = new[] {SyntaxNames.JavaScript, SyntaxNames.Liquid}
         )]
         public string? TargetLegClientState { get; set; }
 
         [ActivityInput(Hint = "Custom headers to be added to the SIP INVITE.", Category = PropertyCategories.Advanced, UIHint = ActivityInputUIHints.Json)]
         public IList<Header>? CustomHeaders { get; set; }
 
-        [ActivityInput(Label = "SIP Authentication Username", Hint = "SIP Authentication username used for SIP challenges.", Category = "SIP Authentication", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Label = "SIP Authentication Username", Hint = "SIP Authentication username used for SIP challenges.", Category = "SIP Authentication", SupportedSyntaxes = new[] {SyntaxNames.JavaScript, SyntaxNames.Liquid})]
         public string? SipAuthUsername { get; set; }
 
-        [ActivityInput(Label = "SIP Authentication Password", Hint = "SIP Authentication password used for SIP challenges.", Category = "SIP Authentication", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Label = "SIP Authentication Password", Hint = "SIP Authentication password used for SIP challenges.", Category = "SIP Authentication", SupportedSyntaxes = new[] {SyntaxNames.JavaScript, SyntaxNames.Liquid})]
         public string? SipAuthPassword { get; set; }
 
-        [ActivityInput(Label = "Time Limit", Hint = "Sets the maximum duration of a Call Control Leg in seconds.", Category = PropertyCategories.Advanced, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Label = "Time Limit", Hint = "Sets the maximum duration of a Call Control Leg in seconds.", Category = PropertyCategories.Advanced, SupportedSyntaxes = new[] {SyntaxNames.JavaScript, SyntaxNames.Liquid})]
         public int? TimeLimitSecs { get; set; }
 
         [ActivityInput(
             Label = "Timeout",
             Hint = "The number of seconds that Telnyx will wait for the call to be answered by the destination to which it is being transferred.",
             Category = PropertyCategories.Advanced,
-            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
+            SupportedSyntaxes = new[] {SyntaxNames.JavaScript, SyntaxNames.Liquid}
         )]
         public int? TimeoutSecs { get; set; }
 
@@ -123,7 +131,7 @@ namespace Elsa.Activities.Telnyx.Activities
             Label = "Webhook URL",
             Hint = "Use this field to override the URL for which Telnyx will send subsequent webhooks to for this call.",
             Category = PropertyCategories.Advanced,
-            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
+            SupportedSyntaxes = new[] {SyntaxNames.JavaScript, SyntaxNames.Liquid}
         )]
         public string? WebhookUrl { get; set; }
 
@@ -131,22 +139,36 @@ namespace Elsa.Activities.Telnyx.Activities
             Label = "Webhook URL Method",
             Hint = "HTTP request type used for Webhook URL",
             UIHint = ActivityInputUIHints.Dropdown,
-            Options = new[] { "GET", "POST" },
+            Options = new[] {"GET", "POST"},
             Category = PropertyCategories.Advanced,
-            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
+            SupportedSyntaxes = new[] {SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid}
         )]
         public string? WebhookUrlMethod { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
             await TransferCallAsync(context);
-            return Done();
+            return Combine(Outcome(TelnyxOutcomeNames.Transferring), Suspend());
+        }
+
+        protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
+        {
+            var payload = context.GetInput<CallPayload>();
+
+            return payload switch
+            {
+                CallAnsweredPayload callAnsweredPayload => Outcome(TelnyxOutcomeNames.Answered, callAnsweredPayload),
+                CallBridgedPayload callBridgedPayload => Outcome(TelnyxOutcomeNames.Bridged, callBridgedPayload),
+                CallHangupPayload callHangupPayload => Outcome(TelnyxOutcomeNames.Hangup, callHangupPayload),
+                CallInitiatedPayload callInitiatedPayload => Outcome(TelnyxOutcomeNames.CallInitiated, callInitiatedPayload),
+                _ => throw new ArgumentOutOfRangeException(nameof(payload))
+            };
         }
 
         private async ValueTask TransferCallAsync(ActivityExecutionContext context)
         {
             var fromNumber = context.GetFromNumber(From);
-            
+
             var request = new TransferCallRequest(
                 To,
                 fromNumber,

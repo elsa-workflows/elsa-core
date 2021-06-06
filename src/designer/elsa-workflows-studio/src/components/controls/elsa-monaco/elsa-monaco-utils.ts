@@ -12,7 +12,7 @@ export function initializeMonacoWorker(libPath?: string) {
     return;
 
   const origin = document.location.origin;
-  const baseUrl = `${origin}/${libPath}`;
+  const baseUrl = libPath.startsWith('http') ? libPath : `${origin}/${libPath}`;
 
   require.config({paths: {'vs': `${baseUrl}/vs`}});
   win.MonacoEnvironment = {getWorkerUrl: () => proxy};

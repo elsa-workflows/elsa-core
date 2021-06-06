@@ -22,7 +22,10 @@ namespace Elsa.Scripting.JavaScript.Extensions
                 where value != null && value.GetType() == typeof(JArray)
                 select key).ToList();
 
-            jArrayKeys.ForEach(key => result[key] = ((JArray) result[key]).Values().Select(x => ((JValue) x).Value).ToArray());
+            jArrayKeys.ForEach(key => result[key] = ((JArray) result[key]).Values().Select(x =>
+            {
+                return x is JValue jValue ? jValue.Value : x is JProperty jProperty ? ((JValue) jProperty.Value).Value : x;
+            }).ToArray());
             jObjectKeys.ForEach(key => result[key] = ToDictionary((JObject) result[key]));
 
             return result;
