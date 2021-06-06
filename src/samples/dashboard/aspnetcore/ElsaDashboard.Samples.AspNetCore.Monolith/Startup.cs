@@ -39,6 +39,7 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
                 );
 
             services
+                .AddElsaSwagger()
                 .AddElsaApiEndpoints();
             
             // Allow arbitrary client browser apps to access the API.
@@ -52,6 +53,8 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
+                app.UseSwagger();
+                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Elsa"));
             }
             else
             {
