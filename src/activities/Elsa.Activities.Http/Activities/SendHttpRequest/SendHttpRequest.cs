@@ -79,7 +79,7 @@ namespace Elsa.Activities.Http
         /// <summary>
         /// The headers to send along with the request.
         /// </summary>
-        [ActivityInput(Hint = "Additional headers to send along with the request.", UIHint = ActivityInputUIHints.Json)]
+        [ActivityInput(Hint = "Additional headers to send along with the request.", UIHint = ActivityInputUIHints.MultiLine, DefaultSyntax = SyntaxNames.Json, SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public HttpRequestHeaders RequestHeaders { get; set; } = new();
 
         [ActivityInput(Hint = "Read the content of the response.", SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
