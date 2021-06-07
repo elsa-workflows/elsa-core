@@ -39,10 +39,10 @@ namespace Elsa.Services
             CancellationToken cancellationToken = default)
         {
             var results = await _bookmarkFinder.FindBookmarksAsync(activityType, bookmark, correlationId, tenantId, cancellationToken).ToList();
-            await ResumeWorkflowsAsync(results, input, correlationId, contextId, cancellationToken);
+            await ResumeWorkflowsAsync(results, input, cancellationToken);
         }
 
-        public async Task ResumeWorkflowsAsync(IEnumerable<BookmarkFinderResult> results, object? input = default, string? correlationId = default, string? contextId = default, CancellationToken cancellationToken = default)
+        public async Task ResumeWorkflowsAsync(IEnumerable<BookmarkFinderResult> results, object? input = default, CancellationToken cancellationToken = default)
         {
             foreach (var result in results)
             {

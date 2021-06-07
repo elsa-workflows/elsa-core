@@ -274,9 +274,8 @@ namespace Elsa.Services
         private async Task<IEnumerable<PendingWorkflow>> CollectResumableOrStartableCorrelatedWorkflowsAsync(CollectWorkflowsContext context, CancellationToken cancellationToken)
         {
             var correlationId = context.CorrelationId!;
-            var lockKey = correlationId;
 
-            await using var handle = await AcquireLockAsync(lockKey, cancellationToken);
+            await using var handle = await AcquireLockAsync(correlationId, cancellationToken);
             var correlatedWorkflowInstanceCount = !string.IsNullOrWhiteSpace(correlationId)
                 ? await _workflowInstanceStore.CountAsync(new CorrelationIdSpecification<WorkflowInstance>(correlationId).And(new WorkflowUnfinishedStatusSpecification()), cancellationToken)
                 : 0;

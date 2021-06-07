@@ -90,8 +90,8 @@ namespace Elsa.Activities.Workflows
                 return Outcome("Not Found");
 
             var result = await _startsWorkflow.StartWorkflowAsync(workflowBlueprint!, TenantId, Input, CorrelationId, ContextId, cancellationToken);
-            var workflowInstance = result.WorkflowInstance;
-            var workflowStatus = result.WorkflowInstance.WorkflowStatus;
+            var workflowInstance = result.WorkflowInstance!;
+            var workflowStatus = result.WorkflowInstance!.WorkflowStatus;
 
             ChildWorkflowInstanceId = workflowInstance.Id;
 

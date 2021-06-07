@@ -10,8 +10,6 @@ namespace Elsa.Services
         Task ResumeWorkflowsAsync(
             IEnumerable<BookmarkFinderResult> results,
             object? input = default,
-            string? correlationId = default,
-            string? contextId = default,
             CancellationToken cancellationToken = default);
     }
 }

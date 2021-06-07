@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using Elsa.Comparers;
 using Newtonsoft.Json.Linq;
@@ -21,7 +20,7 @@ namespace Elsa.Models
         public string? TenantId { get; set; }
         public int Version { get; set; }
         public WorkflowStatus WorkflowStatus { get; set; }
-        public string? CorrelationId { get; set; }
+        public string CorrelationId { get; set; } = default!;
         public string? ContextType { get; set; }
         public string? ContextId { get; set; }
         public string? Name { get; set; }
