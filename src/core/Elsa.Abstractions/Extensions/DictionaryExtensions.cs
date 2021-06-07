@@ -14,6 +14,11 @@ namespace Elsa
         /// <summary>
         /// Safely gets a value by key from the dictionary without throwing if the key does not exist.
         /// </summary>
+        public static object GetItem(this IDictionary<string, object> dictionary, string key, Func<object> defaultValue) => dictionary.ContainsKey(key) ? dictionary[key] : dictionary[key] = defaultValue();
+        
+        /// <summary>
+        /// Safely gets a value by key from the dictionary without throwing if the key does not exist.
+        /// </summary>
         public static T? GetItem<T>(this IDictionary<string, T> dictionary, string key) => dictionary.ContainsKey(key) ? dictionary[key] : default;
 
         /// <summary>

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Elsa.Serialization.Converters;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -9,46 +10,35 @@ namespace Elsa
 {
     public static class JObjectExtensions
     {
-        public static T? GetState<T>(this JObject? state, string key) => state.GetState<T>(key, () => default!);
+        public static T? GetState<T>(this IDictionary<string, object?>? state, string key) => state.GetState<T>(key, () => default!);
 
-        public static T GetState<T>(this JObject? state, string key, Func<T> defaultValue)
+        public static T? GetState<T>(this IDictionary<string, object?>? state, string key, Func<T> defaultValue)
         {
-            var item = state?.GetValue(key, StringComparison.OrdinalIgnoreCase);
+            var item = state?.ContainsKey(key) == true ? state![key] : default;
 
-            if (item == null || item.Type == JTokenType.Null)
+            if (item == null)
                 return defaultValue();
 
-            return item.ToObject<T>(CreateSerializer())!;
+            return item.ConvertTo<T>();
         }
-        
-        public static object? GetState(this JObject? state, string key, Type targetType)
+
+        public static object? GetState(this IDictionary<string, object?>? state, string key, Type targetType)
         {
-            var item = state?.GetValue(key, StringComparison.OrdinalIgnoreCase);
-
-            if (item == null || item.Type == JTokenType.Null)
-                return null;
-
-            return item.ToObject(targetType, CreateSerializer())!;
+            var item = state?.ContainsKey(key) == true ? state![key] : default;
+            return item?.ConvertTo(targetType);
         }
 
-        public static T? GetState<T>(this JObject? state, Type type, string key) => state.GetState<T>(type, key, () => default!);
+        public static void SetState(this IDictionary<string, object?> state, string key, object? value) => state[key] = value;
 
-        public static T GetState<T>(this JObject? state, Type type, string key, Func<T> defaultValue)
-        {
-            var item = state?.GetValue(key, StringComparison.OrdinalIgnoreCase);
-            return item != null ? (T) item.ToObject(type, CreateSerializer())! : defaultValue();
-        }
+        public static bool HasKey(this IDictionary<string, object?> state, string key) => state.ContainsKey(key);
 
-        public static void SetState(this JObject state, string key, object? value) => state[key] = value != null ? JToken.FromObject(value, CreateSerializer()) : null;
-
-        public static bool HasKey(this JObject state, string key) => state.ContainsKey(key);
-        
-        public static JObject CreateState(object value) => JObject.FromObject(value, CreateSerializer());
+        public static JObject SerializeState(object value) => JObject.FromObject(value, CreateSerializer());
+        public static object DeserializeState(JToken value, Type targetType) => value.ToObject(targetType, CreateSerializer())!;
 
         public static JsonSerializer CreateSerializer()
         {
             var serializer = new JsonSerializer();
-            
+
             serializer.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
             serializer.NullValueHandling = NullValueHandling.Ignore;
             serializer.ReferenceLoopHandling = ReferenceLoopHandling.Serialize;
@@ -56,7 +46,7 @@ namespace Elsa
             serializer.TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Simple;
             serializer.TypeNameHandling = TypeNameHandling.Auto;
             serializer.Converters.Add(new TypeJsonConverter());
-            
+
             return serializer;
         }
     }

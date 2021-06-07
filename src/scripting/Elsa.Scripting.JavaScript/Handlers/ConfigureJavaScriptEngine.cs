@@ -17,6 +17,7 @@ using Jint;
 using Jint.Runtime.Interop;
 using MediatR;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json.Linq;
 using NodaTime;
 
 namespace Elsa.Scripting.JavaScript.Handlers
@@ -85,17 +86,17 @@ namespace Elsa.Scripting.JavaScript.Handlers
             // Named activities.
             foreach (var activity in workflowBlueprint.Activities.Where(x => !string.IsNullOrWhiteSpace(x.Name)))
             {
-                var state = activityExecutionContext.GetActivityData(activity.Id);
-                var dictionary = state.ToDictionary();
+                var state = new Dictionary<string, object>(activityExecutionContext.GetActivityData(activity.Id));
 
                 // Output.
                 if (workflowInstance.ActivityOutput.ContainsKey(activity.Id))
                 {
                     var output = workflowInstance.ActivityOutput[activity.Id];
-                    dictionary["Output"] = output;
+                    //state["Output"] = output != null ? JObjectExtensions.SerializeState(output) : null;
+                    state["Output"] = output;
                 }
                 
-                engine.SetValue(activity.Name, dictionary);
+                engine.SetValue(activity.Name, state);
             }
 
             return Task.CompletedTask;
