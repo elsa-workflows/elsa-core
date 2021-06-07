@@ -1,6 +1,7 @@
 using Elsa.Activities.File.Models;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Design;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Logging;
@@ -26,10 +27,13 @@ namespace Elsa.Activities.File
             _logger = logger;
         }
 
+        [ActivityInput(Hint = "The type of change to listen for", UIHint = ActivityInputUIHints.CheckList)]
         public WatcherChangeTypes ChangeType { get; set; }
 
+        [ActivityInput(Hint = "The path to monitor")]
         public string Directory { get; set; }
 
+        [ActivityInput(Hint = "The pattern of files to listen to changes for")]
         public string Pattern { get; set; }
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
