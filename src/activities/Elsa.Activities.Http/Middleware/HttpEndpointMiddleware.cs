@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Elsa.Activities.Http.Bookmarks;
 using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.Http.Models;
+using Elsa.Activities.Http.Parsers;
 using Elsa.Activities.Http.Services;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications.WorkflowInstances;
@@ -60,7 +61,7 @@ namespace Elsa.Activities.Http.Middleware
 
             var orderedContentParsers = contentParsers.OrderByDescending(x => x.Priority).ToList();
             var simpleContentType = request.ContentType?.Split(';').First();
-            var contentParser = orderedContentParsers.FirstOrDefault(x => x.SupportedContentTypes.Contains(simpleContentType, StringComparer.OrdinalIgnoreCase)) ?? orderedContentParsers.Last();
+            var contentParser = orderedContentParsers.FirstOrDefault(x => x.SupportedContentTypes.Contains(simpleContentType, StringComparer.OrdinalIgnoreCase)) ?? orderedContentParsers.LastOrDefault() ?? new DefaultHttpRequestBodyParser();
 
             foreach (var pendingWorkflow in pendingWorkflows)
             {
