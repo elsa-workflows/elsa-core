@@ -6,6 +6,7 @@ using Elsa.Activities.AzureServiceBus.Models;
 using Elsa.Activities.AzureServiceBus.Options;
 using Elsa.Bookmarks;
 using Elsa.Dispatch;
+using Elsa.Exceptions;
 using Elsa.Services;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
@@ -101,6 +102,10 @@ namespace Elsa.Activities.AzureServiceBus.Services
         {
             _logger.LogDebug("Message received with ID {MessageId}", message.MessageId);
             await TriggerWorkflowsAsync(message, CancellationToken.None);
+
+            if (ReceiverClient.IsClosedOrClosing)
+                throw new WorkflowException("Can't handle message with closed receiver");
+            
             await ReceiverClient.CompleteAsync(message.SystemProperties.LockToken);
         }
     }
