@@ -40,7 +40,7 @@ namespace Elsa.Activities.Telnyx.Webhooks.Handlers
             }
 
             var correlationId = GetCorrelationId(payload);
-            var bookmark = new NotificationBookmark(eventType, correlationId);
+            var bookmark = new NotificationBookmark(eventType);
             var trigger = new NotificationBookmark(eventType);
             var context = new CollectWorkflowsContext(activityType, bookmark, trigger, correlationId);
 
