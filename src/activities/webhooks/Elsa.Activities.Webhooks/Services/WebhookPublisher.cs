@@ -1,30 +1,24 @@
-using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Events;
-using Elsa.Models;
-using Elsa.Persistence;
+using Elsa.Persistence.Specifications;
 using Elsa.Services;
 using Elsa.Webhooks.Abstractions.Models;
 using Elsa.Webhooks.Abstractions.Persistence;
 using Elsa.Webhooks.Abstractions.Services;
 using MediatR;
-using WorkflowDefinitionIdSpecification = Elsa.Persistence.Specifications.WorkflowInstances.WorkflowDefinitionIdSpecification;
 
 namespace Elsa.Activities.Webhooks.Services
 {
     public class WebhookPublisher : IWebhookPublisher
     {
         private readonly IWebhookDefinitionStore _webhookDefinitionStore;
-        //private readonly IWorkflowInstanceStore _workflowInstanceStore;
         private readonly IIdGenerator _idGenerator;
         private readonly ICloner _cloner;
         private readonly IMediator _mediator;
 
-        public WebhookPublisher(IWebhookDefinitionStore workflowDefinitionStore, IWorkflowInstanceStore workflowInstanceStore, IIdGenerator idGenerator, ICloner cloner, IMediator mediator)
+        public WebhookPublisher(IWebhookDefinitionStore webhookDefinitionStore, IIdGenerator idGenerator, ICloner cloner, IMediator mediator)
         {
-            _webhookDefinitionStore = workflowDefinitionStore;
-            //_workflowInstanceStore = workflowInstanceStore;
+            _webhookDefinitionStore = webhookDefinitionStore;
             _idGenerator = idGenerator;
             _cloner = cloner;
             _mediator = mediator;
@@ -35,44 +29,37 @@ namespace Elsa.Activities.Webhooks.Services
             var definition = new WebhookDefinition
             {
                 Id = _idGenerator.Generate(),
-                DefinitionId = _idGenerator.Generate(),
-                Name = "New Webhook",
-                IsEnabled = true
+                Name = "New Webhook"
             };
 
             return definition;
         }
 
-        public async Task<WebhookDefinition?> GetAsync(string webhookDefinitionId, CancellationToken cancellationToken = default)
-        {
-            var definition = await _webhookDefinitionStore.FindByDefinitionIdAsync(
-                webhookDefinitionId,
-                cancellationToken);
-
-            return definition;
-        }
-
         public async Task<WebhookDefinition> SaveAsync(WebhookDefinition webhookDefinition, CancellationToken cancellationToken = default)
-        {
-            await _webhookDefinitionStore.SaveAsync(webhookDefinition, cancellationToken);
-            return webhookDefinition;
+        {            
+            var webhook = webhookDefinition;
+            webhook = Initialize(webhook);
+
+            await _webhookDefinitionStore.SaveAsync(webhook, cancellationToken);
+            return webhook;
         }
 
-        public async Task DeleteAsync(string webhookDefinitionId, CancellationToken cancellationToken = default)
+        public async Task DeleteAsync(string webhookId, CancellationToken cancellationToken = default)
         {
-            //await _workflowInstanceStore.DeleteManyAsync(new WorkflowDefinitionIdSpecification(webhookDefinitionId), cancellationToken);
-            await _workflowDefinitionStore.DeleteManyAsync(new Persistence.Specifications.WorkflowDefinitions.WorkflowDefinitionIdSpecification(webhookDefinitionId), cancellationToken);
+            var webhookDefinition = New();
+            if (!string.IsNullOrWhiteSpace(webhookId))
+            {
+                webhookDefinition = await _webhookDefinitionStore.FindAsync(new EntityIdSpecification<WebhookDefinition>(webhookId), cancellationToken);
+            }
+            await _webhookDefinitionStore.DeleteAsync(webhookDefinition, cancellationToken);
         }
 
-        public Task DeleteAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken = default) => DeleteAsync(workflowDefinition.Id, cancellationToken);
+        public Task DeleteAsync(WebhookDefinition webhookDefinition, CancellationToken cancellationToken = default) => DeleteAsync(webhookDefinition, cancellationToken);
 
         private WebhookDefinition Initialize(WebhookDefinition webhookDefinition)
         {
             if (webhookDefinition.Id == null!)
                 webhookDefinition.Id = _idGenerator.Generate();
-
-            if (webhookDefinition.DefinitionId == null!)
-                webhookDefinition.DefinitionId = _idGenerator.Generate();
 
             return webhookDefinition;
         }

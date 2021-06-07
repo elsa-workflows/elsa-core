@@ -4,6 +4,7 @@ using Elsa.Persistence.Specifications;
 using Elsa.Server.Api.Swagger.Examples;
 using Elsa.Webhooks.Abstractions.Models;
 using Elsa.Webhooks.Abstractions.Persistence;
+using Elsa.Webhooks.Abstractions.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -18,10 +19,12 @@ namespace Elsa.Activities.Webhooks.Endpoints.WebhookDefinitions
     public partial class Save : ControllerBase
     {
         private readonly IWebhookDefinitionStore _webhookDefinitionStore;
+        private readonly IWebhookPublisher _webhookPublisher;
 
-        public Save(IWebhookDefinitionStore webhookDefinitionStore)
+        public Save(IWebhookDefinitionStore webhookDefinitionStore, IWebhookPublisher webhookPublisher)
         {
             _webhookDefinitionStore = webhookDefinitionStore;
+            _webhookPublisher = webhookPublisher;
         }
 
         [HttpPost]
@@ -31,7 +34,7 @@ namespace Elsa.Activities.Webhooks.Endpoints.WebhookDefinitions
             Summary = "Creates a new webhook definition or updates an existing one.",
             Description =
                 "Creates a new webhook definition or updates an existing one.",
-            OperationId = "WebhookDefinitions.Save",
+            OperationId = "WebhookDefinitions.Post",
             Tags = new[] { "WebhookDefinitions" })
         ]
         public async Task<ActionResult<WebhookDefinition>> Handle([FromBody] SaveRequest request, [FromRoute] ApiVersion apiVersion, CancellationToken cancellationToken)
@@ -41,7 +44,7 @@ namespace Elsa.Activities.Webhooks.Endpoints.WebhookDefinitions
 
             if (webhookDefinition == null)
             {
-                webhookDefinition = new WebhookDefinition();
+                webhookDefinition = _webhookPublisher.New();
 
                 if (!string.IsNullOrWhiteSpace(webhookId))
                     webhookDefinition.Id = webhookId;
@@ -53,9 +56,9 @@ namespace Elsa.Activities.Webhooks.Endpoints.WebhookDefinitions
             webhookDefinition.PayloadTypeName = request.PayloadTypeName?.Trim();
             webhookDefinition.IsEnabled = request.IsEnabled;
 
-            await _webhookDefinitionStore.SaveAsync(webhookDefinition, cancellationToken);
+            webhookDefinition = await _webhookPublisher.SaveAsync(webhookDefinition, cancellationToken);
 
-            return CreatedAtAction("Handle", "Save", new { id = webhookDefinition.Id, apiVersion = apiVersion.ToString() }, webhookDefinition);
+            return CreatedAtAction("Handle", "Get", new { id = webhookDefinition.Id, apiVersion = apiVersion.ToString() }, webhookDefinition);
         }
     }
 }

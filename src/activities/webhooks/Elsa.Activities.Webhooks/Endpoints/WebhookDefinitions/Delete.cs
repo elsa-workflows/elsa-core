@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Elsa.Persistence.Specifications;
 using Elsa.Webhooks.Abstractions.Models;
 using Elsa.Webhooks.Abstractions.Persistence;
+using Elsa.Webhooks.Abstractions.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -16,10 +17,12 @@ namespace Elsa.Activities.Webhooks.Endpoints.WebhookDefinitions
     public class Delete : ControllerBase
     {
         private readonly IWebhookDefinitionStore _webhookDefinitionStore;
+        private readonly IWebhookPublisher _webhookPublisher;
 
-        public Delete(IWebhookDefinitionStore webhookDefinitionStore)
+        public Delete(IWebhookDefinitionStore webhookDefinitionStore, IWebhookPublisher webhookPublisher)
         {
             _webhookDefinitionStore = webhookDefinitionStore;
+            _webhookPublisher = webhookPublisher;
         }
 
         [HttpDelete]
@@ -32,12 +35,13 @@ namespace Elsa.Activities.Webhooks.Endpoints.WebhookDefinitions
         ]
         public async Task<IActionResult> Handle(string id, CancellationToken cancellationToken)
         {
-            var webhookDefinition = !string.IsNullOrWhiteSpace(id) ? await _webhookDefinitionStore.FindAsync(new EntityIdSpecification<WebhookDefinition>(id), cancellationToken) : default;
+            await _webhookPublisher.DeleteAsync(id, cancellationToken);
+            //var webhookDefinition = !string.IsNullOrWhiteSpace(id) ? await _webhookDefinitionStore.FindAsync(new EntityIdSpecification<WebhookDefinition>(id), cancellationToken) : default;
 
-            if (webhookDefinition != null)
-            {
-                await _webhookDefinitionStore.DeleteAsync(webhookDefinition, cancellationToken);
-            }
+            //if (webhookDefinition != null)
+            //{
+            //    await _webhookPublisher.DeleteAsync(webhookDefinition, cancellationToken);
+            //}
 
             return Accepted();
         }

@@ -17,6 +17,10 @@
     <EmbeddedResource Remove="Services\**" />
     <None Remove="Services\**" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <Compile Include="Services\IWebhookPublisher.cs" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\core\Elsa.Abstractions\Elsa.Abstractions.csproj" />

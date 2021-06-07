@@ -65,12 +65,6 @@ export class ElsaWebhookDefinitionEditorScreen {
     this.updateWebhookDefinition(webhookDefinition);
   }
 
-  /*@Listen('webhook-changed')
-  async webhookChangedHandler(event: CustomEvent<WebhookModel>) {
-    const webhookModel = event.detail;
-    //await this.saveWebhookInternal(webhookModel);
-  }*/
-
   @Watch("serverUrl")
   async serverUrlChangedHandler(newValue: string) {
   }
@@ -80,14 +74,6 @@ export class ElsaWebhookDefinitionEditorScreen {
     await this.webhookDefinitionChangedHandler(this.webhookDefinition);
     await this.webhookIdChangedHandler(this.webhookId);
   }
-
-  /*connectedCallback() {
-    eventBus.on(EventTypes.WebhookModelChanged, this.onUpdateWorkflowSettings);
-  }
-
-  disconnectedCallback() {
-    eventBus.detach(EventTypes.UpdateWorkflowSettings, this.onUpdateWorkflowSettings);
-  }*/
 
   async saveWebhook() {
     
@@ -131,23 +117,16 @@ export class ElsaWebhookDefinitionEditorScreen {
     this.webhookDefinition = value;
   }
 
+  sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
   async onSaveClicked(e: Event) {    
     e.preventDefault();
     
     await this.saveWebhook();
-    eventBus.emit(EventTypes.WebhookSaved, this, this.webhookDefinitionInternal);
-
-/*    setTimeout(function () {
-      // ...
-  }, 10000);
-
-// or
-
-.then(() => {
-// ...
-({ timeout: 10000 });
-    });*/
-    //this.history.push(`/webhook-definitions`, {});
+    eventBus.emit(EventTypes.WebhookSaved, this, this.webhookDefinitionInternal);    
+    this.sleep(1000).then(() => { this.history.push(`/webhook-definitions`, {}); });
   } 
 
   render() {

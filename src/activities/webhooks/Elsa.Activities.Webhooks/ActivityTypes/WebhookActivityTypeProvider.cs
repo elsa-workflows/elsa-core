@@ -80,7 +80,7 @@ namespace Elsa.Activities.Webhooks.ActivityTypes
                 activity.Path = webhook.Path;
                 activity.ReadContent = true;
                 activity.TargetType = webhook.PayloadTypeName is not null and not "" ? Type.GetType(webhook.PayloadTypeName) : throw new Exception($"Type {webhook.PayloadTypeName} not found");
-                return activity;
+                return activity;  
             }
 
             return new ActivityType
