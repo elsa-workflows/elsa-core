@@ -36,13 +36,6 @@ namespace Elsa.Activities.Webhooks.Endpoints.WebhookDefinitions
         public async Task<IActionResult> Handle(string id, CancellationToken cancellationToken)
         {
             await _webhookPublisher.DeleteAsync(id, cancellationToken);
-            //var webhookDefinition = !string.IsNullOrWhiteSpace(id) ? await _webhookDefinitionStore.FindAsync(new EntityIdSpecification<WebhookDefinition>(id), cancellationToken) : default;
-
-            //if (webhookDefinition != null)
-            //{
-            //    await _webhookPublisher.DeleteAsync(webhookDefinition, cancellationToken);
-            //}
-
             return Accepted();
         }
     }

@@ -2,9 +2,7 @@ import {Component, Event, EventEmitter, h, Host, Listen, Method, Prop, State, Wa
 import {eventBus} from '../../../../services/event-bus';
 import {EventTypes, WebhookDefinition, WebhookModel} from "../../../../models/webhook";
 import {createElsaClient, SaveWebhookDefinitionRequest} from "../../../../services/elsa-client";
-import state from '../../../../utils/store';
 import {RouterHistory} from '@stencil/router';
-import Tunnel, {WebhookEditorState} from '../../../../data/webhook-editor';
 import {checkBox, FormContext, selectField, SelectOption, textArea, textInput} from "../../../../utils/forms";
 
 @Component({
@@ -143,14 +141,6 @@ export class ElsaWebhookDefinitionEditorScreen {
             {this.renderWebhookFields()}
             {this.renderCanvas()}
 
-            <div class="elsa-pt-5">
-              <div class="elsa-px-4 elsa-py-3 sm:elsa-px-6 sm:elsa-flex sm:elsa-flex-row-reverse">
-                <button type="submit"
-                        class="elsa-ml-0 elsa-w-full elsa-inline-flex elsa-justify-center elsa-rounded-md elsa-border elsa-border-transparent elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-bg-blue-600 elsa-text-base elsa-font-medium elsa-text-white hover:elsa-bg-blue-700 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 sm:elsa-ml-3 sm:elsa-w-auto sm:elsa-text-sm">
-                  Save
-                </button>
-              </div>
-            </div>
           </form>
         
       </Host>
@@ -163,15 +153,59 @@ export class ElsaWebhookDefinitionEditorScreen {
     const formContext = this.formContext;
 
     return (
-      <div class="elsa-flex elsa-px-8">
-        <div class="elsa-space-y-8 elsa-w-full">
-          {textInput(formContext, 'name', 'Name', webhookDefinition.name, 'The name of the webhook.', 'webhookName')}
-          {textInput(formContext, 'path', 'Path', webhookDefinition.path, 'The path of the webhook.', 'webhookPath')}
-          {textArea(formContext, 'description', 'Description', webhookDefinition.description, null, 'webhookDescription')}
-          {textInput(formContext, 'payloadTypeName', 'Payload Type Name', webhookDefinition.payloadTypeName, 'The payload type name of the webhook.', 'webhookPayloadTypeName')}
-          {checkBox(formContext, 'isEnabled', 'Enabled', webhookDefinition.isEnabled, null)}
+
+      <main class="elsa-max-w-7xl elsa-mx-auto elsa-pb-10 lg:elsa-py-12 lg:elsa-px-8">
+        <div class="lg:elsa-grid lg:elsa-grid-cols-12 lg:elsa-gap-x-5">
+
+          <aside class="elsa-py-6 elsa-px-2 sm:elsa-px-6 lg:elsa-py-0 lg:elsa-px-0 lg:elsa-col-span-2">
+          </aside>
+
+            <div class="elsa-space-y-6 sm:elsa-px-6 lg:elsa-px-0 lg:elsa-col-span-9">
+            <section aria-labelledby="payment_details_heading">
+              <div class="elsa-shadow sm:elsa-rounded-md sm:elsa-overflow-hidden">
+                <div class="elsa-bg-white elsa-py-6 elsa-px-4 sm:elsa-p-6">
+                  <div>
+                    <h1 class="elsa-text-lg elsa-leading-6 elsa-font-medium elsa-text-gray-900">
+                      { null == webhookDefinition.id ? "Create Webhook Definition" : "Edit Webhook Definition" }
+                    </h1>
+                  </div>
+
+                  <div class="elsa-mt-6 elsa-grid elsa-grid-cols-4 elsa-gap-6">
+                    <div class="elsa-col-span-4">
+                      {textInput(formContext, 'name', 'Name', webhookDefinition.name, 'The name of the webhook.', 'webhookName')}
+                    </div>
+
+                    <div class="elsa-col-span-4">
+                      {textInput(formContext, 'path', 'Path', webhookDefinition.path, 'The path of the webhook.', 'webhookPath')}                  
+                    </div>
+
+                    <div class="elsa-col-span-4">
+                      {textArea(formContext, 'description', 'Description', webhookDefinition.description, null, 'webhookDescription')}
+                    </div>
+
+                    <div class="elsa-col-span-4">
+                      {textInput(formContext, 'payloadTypeName', 'Payload Type Name', webhookDefinition.payloadTypeName, 'The payload type name of the webhook.', 'webhookPayloadTypeName')}
+                    </div>
+
+                    <div class="elsa-col-span-4">
+                      {checkBox(formContext, 'isEnabled', 'Enabled', webhookDefinition.isEnabled, null)}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="elsa-px-4 elsa-py-3 elsa-bg-gray-50 elsa-text-right sm:px-6">
+                    <button type="submit"
+                            class="elsa-ml-0 elsa-w-full elsa-inline-flex elsa-justify-center elsa-rounded-md elsa-border elsa-border-transparent elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-bg-blue-600 elsa-text-base elsa-font-medium elsa-text-white hover:elsa-bg-blue-700 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 sm:elsa-ml-3 sm:elsa-w-auto sm:elsa-text-sm">
+                      Save
+                    </button>
+                </div>
+                
+              </div>
+            </section>
+          </div>
         </div>
-      </div>
+      </main>
+
     );
   }
 
