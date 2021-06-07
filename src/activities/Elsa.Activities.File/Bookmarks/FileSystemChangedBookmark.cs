@@ -13,12 +13,12 @@ namespace Elsa.Activities.File.Bookmarks
 
     public class FileSystemChangedBookmarkProvider : BookmarkProvider<FileSystemChangedBookmark, WatchDirectory>
     {
-        public override async ValueTask<IEnumerable<IBookmark>> GetBookmarksAsync(BookmarkProviderContext<WatchDirectory> context, CancellationToken cancellationToken) => new[]
+        public override async ValueTask<IEnumerable<BookmarkResult>> GetBookmarksAsync(BookmarkProviderContext<WatchDirectory> context, CancellationToken cancellationToken) => new[]
         {
-            new FileSystemChangedBookmark(
+            Result(new FileSystemChangedBookmark(
                 ChangeType: context.Activity.GetPropertyValue(x => x.ChangeType),
                 Directory: context.Activity.GetPropertyValue(x => x.Directory),
-                Pattern: context.Activity.GetPropertyValue(x => x.Pattern))
+                Pattern: context.Activity.GetPropertyValue(x => x.Pattern)))
         };
     }
 }
