@@ -19,6 +19,10 @@ export class SendHttpRequestPlugin implements ElsaPlugin {
     const syntax = SyntaxNames.Json;
     const supportedStatusCodes = props.find(x => x.name == 'SupportedStatusCodes') || {expressions: {'Json': '[]'}, syntax: syntax};
     const expression = supportedStatusCodes.expressions[syntax] || '[]';
-    context.outcomes = !!expression['$values'] ? expression['$values'] : parseJson(expression) || [];
+    let outcomes = !!expression['$values'] ? expression['$values'] : parseJson(expression) || [];
+    
+    outcomes = [...outcomes, 'Done', 'Unsupported Status Code']
+    
+    context.outcomes = outcomes;
   }
 }

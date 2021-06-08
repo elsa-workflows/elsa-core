@@ -73,13 +73,18 @@ namespace Elsa.Activities.Http
         )]
         public string? ContentType { get; set; }
 
-        [ActivityInput(Hint = "The Authorization header value to send.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Hint = "The Authorization header value to send.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }, Category = PropertyCategories.Advanced)]
         public string? Authorization { get; set; }
 
         /// <summary>
         /// The headers to send along with the request.
         /// </summary>
-        [ActivityInput(Hint = "Additional headers to send along with the request.", UIHint = ActivityInputUIHints.MultiLine, DefaultSyntax = SyntaxNames.Json, SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(
+            Hint = "Additional headers to send along with the request.",
+            UIHint = ActivityInputUIHints.MultiLine, DefaultSyntax = SyntaxNames.Json,
+            SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid },
+            Category = PropertyCategories.Advanced
+        )]
         public HttpRequestHeaders RequestHeaders { get; set; } = new();
 
         [ActivityInput(Hint = "Read the content of the response.", SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
@@ -125,7 +130,7 @@ namespace Elsa.Activities.Http
             var outcomes = new List<string> { OutcomeNames.Done, statusOutcome };
 
             if (!isSupportedStatusCode)
-                outcomes.Add("UnSupportedStatusCode");
+                outcomes.Add("Unsupported Status Code");
 
             return Combine(Output(responseModel), Outcomes(outcomes));
         }
