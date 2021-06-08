@@ -1,10 +1,9 @@
 using System.Threading.Tasks;
 using Elsa.Activities.AzureServiceBus.Services;
-using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Expressions;
 using Elsa.Serialization;
-using Elsa.Services;
-using Elsa.Services.Models;
+using Microsoft.Azure.ServiceBus.Core;
 
 namespace Elsa.Activities.AzureServiceBus
 {
@@ -14,18 +13,12 @@ namespace Elsa.Activities.AzureServiceBus
         private readonly ITopicMessageSenderFactory _messageSenderFactory;
 
         public SendAzureServiceBusTopicMessage(ITopicMessageSenderFactory messageSenderFactory, IContentSerializer serializer)
-            :base(serializer)
-        {
-            _messageSenderFactory = messageSenderFactory;            
-        }
+            : base(serializer) =>
+            _messageSenderFactory = messageSenderFactory;
 
-        [ActivityInput] public string TopicName { get; set; } = default!;       
+        [ActivityInput(SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        public string TopicName { get; set; } = default!;
 
-        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
-        {
-            Sender = await _messageSenderFactory.GetTopicSenderAsync(TopicName, context.CancellationToken);
-
-            return await base.OnExecuteAsync(context);
-        }
+        protected override Task<ISenderClient> GetSenderAsync() => _messageSenderFactory.GetTopicSenderAsync(TopicName);
     }
 }

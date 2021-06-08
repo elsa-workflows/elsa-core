@@ -1,11 +1,9 @@
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Elsa.Activities.AzureServiceBus.Services;
-using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Expressions;
 using Elsa.Serialization;
-using Elsa.Services;
-using Elsa.Services.Models;
+using Microsoft.Azure.ServiceBus.Core;
 
 namespace Elsa.Activities.AzureServiceBus
 {
@@ -15,18 +13,12 @@ namespace Elsa.Activities.AzureServiceBus
         private readonly IQueueMessageSenderFactory _queueMessageSenderFactory;
 
         public SendAzureServiceBusQueueMessage(IQueueMessageSenderFactory queueMessageSenderFactory, IContentSerializer serializer)
-            :base(serializer)
-        {
+            : base(serializer) =>
             _queueMessageSenderFactory = queueMessageSenderFactory;
-        }
 
         [ActivityInput(SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string QueueName { get; set; } = default!;
 
-        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
-        {
-            Sender = await _queueMessageSenderFactory.GetSenderAsync(QueueName, context.CancellationToken);
-            return await base.OnExecuteAsync(context);
-        }
+        protected override Task<ISenderClient> GetSenderAsync() => _queueMessageSenderFactory.GetSenderAsync(QueueName);
     }
 }
