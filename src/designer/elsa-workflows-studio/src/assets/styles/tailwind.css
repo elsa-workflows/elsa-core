@@ -1118,6 +1118,12 @@ select {
   margin-left: calc(1rem * calc(1 - var(--tw-space-x-reverse)));
 }
 
+.elsa-space-y-6 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(1.5rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(1.5rem * var(--tw-space-y-reverse));
+}
+
 .elsa-space-y-8 > :not([hidden]) ~ :not([hidden]) {
   --tw-space-y-reverse: 0;
   margin-top: calc(2rem * calc(1 - var(--tw-space-y-reverse)));
@@ -2544,6 +2550,14 @@ select {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.elsa-grid-cols-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.elsa-col-span-4 {
+  grid-column: span 4 / span 4;
+}
+
 .elsa-transform {
   --tw-translate-x: 0;
   --tw-translate-y: 0;
@@ -3210,6 +3224,10 @@ svg.jtk-connector.jtk-hover path {
   .sm\:elsa-divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
     --tw-divide-opacity: 1;
     border-color: rgba(229, 231, 235, var(--tw-divide-opacity));
+  }
+
+  .sm\:elsa-rounded-md {
+    border-radius: 0.375rem;
   }
 
   .sm\:elsa-rounded-lg {
@@ -4357,9 +4375,24 @@ svg.jtk-connector.jtk-hover path {
     max-width: 65ch;
   }
 
+  .lg\:elsa-py-0 {
+    padding-top: 0px;
+    padding-bottom: 0px;
+  }
+
+  .lg\:elsa-px-0 {
+    padding-left: 0px;
+    padding-right: 0px;
+  }
+
   .lg\:elsa-px-8 {
     padding-left: 2rem;
     padding-right: 2rem;
+  }
+
+  .lg\:elsa-py-12 {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
   }
 
   .lg\:elsa-pl-2 {
@@ -4374,12 +4407,25 @@ svg.jtk-connector.jtk-hover path {
     gap: 2rem;
   }
 
+  .lg\:elsa-gap-x-5 {
+    -moz-column-gap: 1.25rem;
+         column-gap: 1.25rem;
+  }
+
   .lg\:elsa-grid-cols-12 {
     grid-template-columns: repeat(12, minmax(0, 1fr));
   }
 
+  .lg\:elsa-col-span-2 {
+    grid-column: span 2 / span 2;
+  }
+
   .lg\:elsa-col-span-6 {
     grid-column: span 6 / span 6;
+  }
+
+  .lg\:elsa-col-span-9 {
+    grid-column: span 9 / span 9;
   }
 }
 

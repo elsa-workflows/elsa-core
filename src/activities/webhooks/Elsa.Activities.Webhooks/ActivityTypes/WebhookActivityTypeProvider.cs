@@ -16,6 +16,7 @@ namespace Elsa.Activities.Webhooks.ActivityTypes
 {
     public class WebhookActivityTypeProvider : IActivityTypeProvider
     {
+        public const string WebhookMarkerAttribute = "WebhookMarker";
         private const string WebhookActivityCategory = "Webhooks";
 
         private readonly IWebhookDefinitionStore _webhookDefinitionStore;
@@ -59,17 +60,17 @@ namespace Elsa.Activities.Webhooks.ActivityTypes
                 InputProperties = new[]
                 {
                     new ActivityInputDescriptor(
-                        nameof(HttpEndpoint.Methods),                       
+                        nameof(HttpEndpoint.Methods),
                         typeof(HashSet<string>),
-                        ActivityInputUIHints.Dropdown,
+                        ActivityInputUIHints.CheckList,
                         "Request Method",
                         "Specify what request method this webhook should handle. Leave empty to handle both GET and POST requests",
-                        new HashSet<string> { "", "GET", "POST" },
-                        "Webhooks",
+                        new[] { "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD" },
+                        default,
                         0,
                         "POST",
-                        SyntaxNames.Literal,
-                        new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })
+                        SyntaxNames.Json,
+                        new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid })
                 }
             };
 
@@ -78,18 +79,22 @@ namespace Elsa.Activities.Webhooks.ActivityTypes
                 var activity = await _activityActivator.ActivateActivityAsync<HttpEndpoint>(context);
 
                 activity.Path = webhook.Path;
-                activity.ReadContent = true;
-                activity.TargetType = webhook.PayloadTypeName is not null and not "" ? Type.GetType(webhook.PayloadTypeName) : throw new Exception($"Type {webhook.PayloadTypeName} not found");
-                return activity;  
+                activity.TargetType = !string.IsNullOrWhiteSpace(webhook.PayloadTypeName) ? Type.GetType(webhook.PayloadTypeName) ?? throw new Exception($"Type {webhook.PayloadTypeName} not found") : null;
+                return activity;
             }
 
             return new ActivityType
             {
                 TypeName = webhook.Name,
                 Type = typeof(HttpEndpoint),
-                Description = webhook.Description is not null and not "" ? webhook.Description : $"A webhook at {webhook.Path}",
+                Description = !string.IsNullOrWhiteSpace(webhook.Description) ? webhook.Description : $"A webhook at {webhook.Path}",
                 DisplayName = webhook.Name,
                 ActivateAsync = ActivateActivityAsync,
+                Attributes = new Dictionary<string, object>
+                {
+                    [WebhookMarkerAttribute] = true,
+                    ["Path"] = webhook.Path,
+                },
                 Describe = () => descriptor
             };
         }

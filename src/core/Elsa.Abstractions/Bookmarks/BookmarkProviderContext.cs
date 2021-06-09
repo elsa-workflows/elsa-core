@@ -20,6 +20,16 @@ namespace Elsa.Bookmarks
         public ActivityType ActivityType { get; }
         public BookmarkIndexingMode Mode { get; }
         public IActivityBlueprintWrapper<TActivity> GetActivity<TActivity>() where TActivity : IActivity => new ActivityBlueprintWrapper<TActivity>(ActivityExecutionContext);
+        
+        public async ValueTask<T?> ReadActivityPropertyAsync<TActivity, T>(Expression<Func<TActivity, T>> propertyExpression, CancellationToken cancellationToken = default) where TActivity : IActivity
+        {
+            var activityBlueprint = GetActivity<TActivity>();
+
+            if (Mode == BookmarkIndexingMode.WorkflowBlueprint)
+                return await activityBlueprint.EvaluatePropertyValueAsync(propertyExpression, cancellationToken);
+            
+            return activityBlueprint.GetPropertyValue(propertyExpression);
+        }
     }
 
     public class BookmarkProviderContext<TActivity> : BookmarkProviderContext where TActivity: IActivity
@@ -29,15 +39,7 @@ namespace Elsa.Bookmarks
         }
 
         public IActivityBlueprintWrapper<TActivity> Activity => GetActivity<TActivity>();
-        
-        public async ValueTask<T?> ReadActivityPropertyAsync<T>(Expression<Func<TActivity, T>> propertyExpression, CancellationToken cancellationToken = default)
-        {
-            var activityBlueprint = GetActivity<TActivity>();
 
-            if (Mode == BookmarkIndexingMode.WorkflowBlueprint)
-                return await activityBlueprint.EvaluatePropertyValueAsync(propertyExpression, cancellationToken);
-            
-            return activityBlueprint.GetPropertyValue(propertyExpression);
-        }
+        public ValueTask<T?> ReadActivityPropertyAsync<T>(Expression<Func<TActivity, T>> propertyExpression, CancellationToken cancellationToken = default) => base.ReadActivityPropertyAsync(propertyExpression, cancellationToken);
     }
 }

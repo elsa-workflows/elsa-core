@@ -1,5 +1,6 @@
 using System;
 using Elsa.Activities.Webhooks.ActivityTypes;
+using Elsa.Activities.Webhooks.Bookmarks;
 using Elsa.Activities.Webhooks.Persistence.Decorators;
 using Elsa.Activities.Webhooks.Services;
 using Elsa.Services;
@@ -22,11 +23,11 @@ namespace Elsa.Activities.Webhooks.Extensions
             configure?.Invoke(webhookOptionsBuilder);
 
             // Services.
-            
             services
                 .AddScoped<IActivityTypeProvider, WebhookActivityTypeProvider>()
                 .AddScoped(sp => webhookOptionsBuilder.WebhookOptions.WebhookDefinitionStoreFactory(sp))
-                .AddScoped<IWebhookPublisher, WebhookPublisher>();
+                .AddScoped<IWebhookPublisher, WebhookPublisher>()
+                .AddBookmarkProvider<WebhookBookmarkProvider>();
 
             services.Decorate<IWebhookDefinitionStore, InitializingWebhookDefinitionStore>();
             services.Decorate<IWebhookDefinitionStore, EventPublishingWebhookDefinitionStore>();

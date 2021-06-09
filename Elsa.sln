@@ -233,13 +233,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "blazor", "blazor", "{D86B94
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "aspnetcore", "aspnetcore", "{C869CC72-9A98-4246-9A76-6A50F48AFD85}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElsaDashboard.Samples.Monolith", "src\samples\dashboard\blazor\ElsaDashboard.Samples.Monolith\ElsaDashboard.Samples.Monolith.csproj", "{C0ECCB6E-B6FA-413E-B717-648E9CB71A97}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElsaDashboard.Samples.Server", "src\samples\dashboard\blazor\ElsaDashboard.Samples.Server\ElsaDashboard.Samples.Server.csproj", "{9B56C09A-E4D5-4FDD-AD41-EDD1F52B7B9B}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElsaDashboard.Samples.WebAssembly", "src\samples\dashboard\blazor\ElsaDashboard.Samples.WebAssembly\ElsaDashboard.Samples.WebAssembly.csproj", "{84876EBC-8109-475E-8C4E-A5CB714DB429}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElsaDashboard.Samples.AspNetCore.Monolith", "src\samples\dashboard\aspnetcore\ElsaDashboard.Samples.AspNetCore.Monolith\ElsaDashboard.Samples.AspNetCore.Monolith.csproj", "{F1EF5639-021A-4D22-9D4A-73D57C88EBFA}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElsaDashboard.Samples.AspNetCore.Monolith", "src\samples\dashboard\aspnetcore\ElsaDashboard.Samples.AspNetCore.Monolith\ElsaDashboard.Samples.AspNetCore.Monolith.csproj", "{F1EF5639-021A-4D22-9D4A-73D57C88EBFA}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.Persistence.YesSql", "src\samples\persistence\Elsa.Samples.Persistence.YesSql\Elsa.Samples.Persistence.YesSql.csproj", "{3A30EFFE-32D8-40B8-9C62-427037BB5424}"
@@ -262,8 +257,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.CustomActivityOutcomes", "src\samples\console\Elsa.Samples.CustomActivityOutcomes\Elsa.Samples.CustomActivityOutcomes.csproj", "{30A9B140-14F5-4D00-84ED-1447F96D13C8}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "aspnetcore", "aspnetcore", "{28C5C63F-2DCF-46BE-9576-1F50A7CFE8C4}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElsaDashboard.Web", "src\dashboards\aspnetcore\ElsaDashboard\ElsaDashboard.Web.csproj", "{5F81C84A-4C04-48FF-981C-23E48A7ACA6C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "github", "github", "{3BF2C5A9-AC69-4587-833F-C16CFC97E100}"
 	ProjectSection(SolutionItems) = preProject

@@ -67,7 +67,7 @@ namespace Elsa.Activities.Http.Middleware
             {
                 var pendingWorkflowInstance = pendingWorkflowInstances[pendingWorkflow.WorkflowInstanceId];
                 var workflowBlueprintWrapper = workflowBlueprintWrappers[pendingWorkflowInstance.DefinitionId];
-                var activityWrapper = workflowBlueprintWrapper.GetActivity<HttpEndpoint>(pendingWorkflow.ActivityId!);
+                var activityWrapper = workflowBlueprintWrapper.GetUnfilteredActivity<HttpEndpoint>(pendingWorkflow.ActivityId!);
                 var readContent = await activityWrapper!.EvaluatePropertyValueAsync(x => x.ReadContent, cancellationToken);
                 var inputModel = commonInputModel;
 
