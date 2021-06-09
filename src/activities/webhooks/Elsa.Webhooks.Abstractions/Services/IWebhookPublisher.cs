@@ -8,6 +8,7 @@ namespace Elsa.Webhooks.Abstractions.Services
     {
         WebhookDefinition New();
         Task<WebhookDefinition> SaveAsync(WebhookDefinition webhookDefinition, CancellationToken cancellationToken = default);
+        Task<WebhookDefinition> UpdateAsync(WebhookDefinition webhookDefinition, CancellationToken cancellationToken = default);
         Task DeleteAsync(string webhookId, CancellationToken cancellationToken = default);
         Task DeleteAsync(WebhookDefinition webhookDefinition, CancellationToken cancellationToken = default);
     }

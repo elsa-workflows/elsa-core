@@ -94,12 +94,14 @@ export class ElsaWebhookDefinitionEditorScreen {
     this.saving = true;
 
     try {
-      debugger
-      webhookDefinition = await client.webhookDefinitionsApi.save(request);
+      
+      if (request.id == null)
+        webhookDefinition = await client.webhookDefinitionsApi.save(request);
+      else
+        webhookDefinition = await client.webhookDefinitionsApi.update(request);
 
       this.saving = false;
       this.saved = true;
-      //this.webhookDefinitionInternal = webhookDefinition;
       setTimeout(() => this.saved = false, 500);
     } 
     catch (e) {

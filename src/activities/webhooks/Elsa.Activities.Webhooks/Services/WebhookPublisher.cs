@@ -44,6 +44,15 @@ namespace Elsa.Activities.Webhooks.Services
             return webhook;
         }
 
+        public async Task<WebhookDefinition> UpdateAsync(WebhookDefinition webhookDefinition, CancellationToken cancellationToken = default)
+        {
+            var webhook = webhookDefinition;
+            webhook = Initialize(webhook);
+
+            await _webhookDefinitionStore.UpdateAsync(webhook, cancellationToken);
+            return webhook;
+        }
+
         public async Task DeleteAsync(string webhookId, CancellationToken cancellationToken = default)
         {
             var webhookDefinition = New();

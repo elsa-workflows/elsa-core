@@ -235,8 +235,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "aspnetcore", "aspnetcore", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElsaDashboard.Samples.AspNetCore.Monolith", "src\samples\dashboard\aspnetcore\ElsaDashboard.Samples.AspNetCore.Monolith\ElsaDashboard.Samples.AspNetCore.Monolith.csproj", "{F1EF5639-021A-4D22-9D4A-73D57C88EBFA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElsaDashboard.Samples.AspNetCore.Monolith", "src\samples\dashboard\aspnetcore\ElsaDashboard.Samples.AspNetCore.Monolith\ElsaDashboard.Samples.AspNetCore.Monolith.csproj", "{F1EF5639-021A-4D22-9D4A-73D57C88EBFA}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.Persistence.YesSql", "src\samples\persistence\Elsa.Samples.Persistence.YesSql\Elsa.Samples.Persistence.YesSql.csproj", "{3A30EFFE-32D8-40B8-9C62-427037BB5424}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Designer.Components.Web", "src\designer\bindings\aspnet\Elsa.Designer.Components.Web\Elsa.Designer.Components.Web.csproj", "{3DF05CFC-AC77-489F-9A42-C4FDB599AA69}"
@@ -303,19 +301,19 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Webhooks.Persistence.M
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Webhooks.Persistence.YesSql", "src\activities\webhooks\Elsa.Webhooks.Persistence.YesSql\Elsa.Webhooks.Persistence.YesSql.csproj", "{EE147504-555D-4EFC-A79A-34748666AA6C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElsaDashboard.Web", "src\dashboards\ElsaDashboard\ElsaDashboard.Web.csproj", "{1129868E-BA72-44C4-941C-A28D9001504B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElsaDashboard.Web", "src\dashboards\ElsaDashboard\ElsaDashboard.Web.csproj", "{1129868E-BA72-44C4-941C-A28D9001504B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElsaDashboard.Samples.BlazorWasm", "src\samples\dashboard\blazor\ElsaDashboard.Samples.BlazorWasm\ElsaDashboard.Samples.BlazorWasm.csproj", "{24A99602-F743-4B1A-AC96-599F34AE916C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElsaDashboard.Samples.BlazorWasm", "src\samples\dashboard\blazor\ElsaDashboard.Samples.BlazorWasm\ElsaDashboard.Samples.BlazorWasm.csproj", "{24A99602-F743-4B1A-AC96-599F34AE916C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "html", "html", "{8E6215AB-FDD3-4011-B598-B6BB63F294BB}"
-ProjectSection(SolutionItems) = preProject
-	src\samples\dashboard\html\index.html = src\samples\dashboard\html\index.html
-	src\samples\dashboard\html\package.json = src\samples\dashboard\html\package.json
-EndProjectSection
+	ProjectSection(SolutionItems) = preProject
+		src\samples\dashboard\html\index.html = src\samples\dashboard\html\index.html
+		src\samples\dashboard\html\package.json = src\samples\dashboard\html\package.json
+	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElsaDashboard.Samples.BlazorServer", "src\samples\dashboard\blazor\ElsaDashboard.Samples.BlazorServer\ElsaDashboard.Samples.BlazorServer.csproj", "{6A03B177-09E0-4421-9704-945E6248AB69}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElsaDashboard.Samples.BlazorServer", "src\samples\dashboard\blazor\ElsaDashboard.Samples.BlazorServer\ElsaDashboard.Samples.BlazorServer.csproj", "{6A03B177-09E0-4421-9704-945E6248AB69}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.FaultyWorkflows", "src\samples\aspnet\Elsa.Samples.FaultyWorkflows\Elsa.Samples.FaultyWorkflows.csproj", "{84751112-C2B7-41D4-98F5-D87D7C2E1DAE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.FaultyWorkflows", "src\samples\aspnet\Elsa.Samples.FaultyWorkflows\Elsa.Samples.FaultyWorkflows.csproj", "{84751112-C2B7-41D4-98F5-D87D7C2E1DAE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

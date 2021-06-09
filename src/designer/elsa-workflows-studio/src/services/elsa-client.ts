@@ -90,6 +90,10 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
         const response = await httpClient.post<WebhookDefinition>('v1/webhook-definitions', request);
         return response.data;
       },
+      update: async request => {
+        const response = await httpClient.put<WebhookDefinition>('v1/webhook-definitions', request);
+        return response.data;
+      },      
       delete: async webhookId => {
         await httpClient.delete(`v1/webhook-definitions/${webhookId}`);
       },
@@ -228,6 +232,8 @@ export interface WebhookDefinitionsApi {
   getByWebhookId(webhookId: string): Promise<WebhookDefinition>;
 
   save(request: SaveWebhookDefinitionRequest): Promise<WebhookDefinition>;
+  
+  update(request: SaveWebhookDefinitionRequest): Promise<WebhookDefinition>;  
 
   delete(webhookId: string): Promise<void>;
 }
