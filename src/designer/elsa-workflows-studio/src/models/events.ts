@@ -27,6 +27,7 @@ export interface ActivityPickedEventArgs {
 export interface ActivityDesignDisplayContext {
   activityModel: ActivityModel;
   activityIcon: any;
+  displayName?: string;
   bodyDisplay: string;
   outcomes: Array<string>;
 }

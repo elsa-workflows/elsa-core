@@ -33,6 +33,7 @@
  - [elsa-dropdown-property](../properties/elsa-dropdown-property)
  - [elsa-multi-line-property](../properties/elsa-multi-line-property)
  - [elsa-multi-text-property](../properties/elsa-multi-text-property)
+ - [elsa-radio-list-property](../properties/elsa-radio-list-property)
  - [elsa-single-line-property](../properties/elsa-single-line-property)
 
 ### Depends on
@@ -51,6 +52,7 @@ graph TD;
   elsa-dropdown-property --> elsa-property-editor
   elsa-multi-line-property --> elsa-property-editor
   elsa-multi-text-property --> elsa-property-editor
+  elsa-radio-list-property --> elsa-property-editor
   elsa-single-line-property --> elsa-property-editor
   style elsa-property-editor fill:#f9f,stroke:#333,stroke-width:4px
 ```

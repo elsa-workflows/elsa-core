@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Events;
@@ -203,11 +204,25 @@ namespace Elsa.Services.Models
         }
 
         public T GetOutputFrom<T>(string activityName) => (T) GetOutputFrom(activityName)!;
+        
+        public T? GetActivityProperty<TActivity, T>(string activityId, Expression<Func<TActivity, T>> propertyExpression) where TActivity : IActivity
+        {
+            var expression = (MemberExpression) propertyExpression.Body;
+            string propertyName = expression.Member.Name;
+            return GetActivityProperty<T>(activityId, propertyName);
+        }
+        
+        public T? GetActivityProperty<T>(string activityId, string propertyName)
+        {
+            var data = GetActivityData(activityId);
+            return data.GetState<T>(propertyName);
+        }
+        
         public void SetWorkflowContext(object? value) => WorkflowContext = value;
         public object? GetWorkflowContext() => WorkflowContext;
         public T GetWorkflowContext<T>() => (T) WorkflowContext!;
         
-        public JObject GetActivityData(string activityId)
+        public IDictionary<string, object> GetActivityData(string activityId)
         {
             var activityData = WorkflowInstance.ActivityData;
             var state = activityData.ContainsKey(activityId) ? activityData[activityId] : default;
@@ -215,7 +230,7 @@ namespace Elsa.Services.Models
             if (state != null) 
                 return state;
             
-            state = new JObject();
+            state = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
             activityData[activityId] = state;
 
             return state;

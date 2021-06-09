@@ -229,9 +229,8 @@ namespace Elsa.Services
                 var activityExecutionContext = new ActivityExecutionContext(scope, workflowExecutionContext, activityBlueprint, scheduledActivity.Input, resuming, cancellationToken);
                 var runtimeActivityInstance = await activityExecutionContext.ActivateActivityAsync(cancellationToken);
                 var activityType = runtimeActivityInstance.ActivityType;
-                var activity = await activityType.ActivateAsync(activityExecutionContext);
-
                 using var executionScope = AmbientActivityExecutionContext.EnterScope(activityExecutionContext);
+                var activity = await activityType.ActivateAsync(activityExecutionContext);
 
                 if (!burstStarted)
                 {

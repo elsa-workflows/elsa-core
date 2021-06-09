@@ -51,7 +51,7 @@ namespace Elsa.Services
 
         public async ValueTask SetActivityPropertiesAsync(IActivity activity, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken = default)
         {
-            var properties = activity.GetType().GetProperties().Where(IsActivityProperty).ToList();
+            var properties = activity.GetType().GetProperties().Where(IsActivityInputProperty).ToList();
             var providers = GetProviders(activity.Id);
             var defaultValueResolver = activityExecutionContext.GetService<IActivityPropertyDefaultValueResolver>();
 
@@ -72,6 +72,10 @@ namespace Elsa.Services
                     if (value != null)
                     {
                         property.SetValue(activity, value);
+
+                        if (property.GetCustomAttribute<NonPersistableAttribute>() is not null)
+                            return;
+                        
                         activityExecutionContext.SetState(property.Name, value);
                     }
                 }
@@ -82,7 +86,7 @@ namespace Elsa.Services
             }
         }
 
-        private bool IsActivityProperty(PropertyInfo property) => property.GetCustomAttribute<ActivityInputAttribute>() != null;
+        private bool IsActivityInputProperty(PropertyInfo property) => property.GetCustomAttribute<ActivityInputAttribute>() != null;
         public IEnumerator<KeyValuePair<string, IDictionary<string, IActivityPropertyValueProvider>>> GetEnumerator() => _providers.GetEnumerator();
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }

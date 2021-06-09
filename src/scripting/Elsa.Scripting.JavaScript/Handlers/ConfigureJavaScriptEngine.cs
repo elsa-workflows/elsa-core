@@ -17,6 +17,7 @@ using Jint;
 using Jint.Runtime.Interop;
 using MediatR;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json.Linq;
 using NodaTime;
 
 namespace Elsa.Scripting.JavaScript.Handlers
@@ -82,21 +83,20 @@ namespace Elsa.Scripting.JavaScript.Handlers
             foreach (var variable in variables.Data)
                 engine.SetValue(variable.Key, variable.Value);
 
-            // TODO: Deprecated. Remove with next breaking version.
-            // Activity outputs.
-            foreach (var activity in workflowBlueprint.Activities.Where(x => x.Name is not null and not "" && workflowInstance.ActivityOutput.ContainsKey(x.Id)))
-            {
-                var output = new { Output = workflowInstance.ActivityOutput[activity.Id!] };
-                engine.SetValue(activity.Name, output);
-            }
-
             // Named activities.
-            foreach (var activity in workflowBlueprint.Activities.Where(x => x.Name is not null))
+            foreach (var activity in workflowBlueprint.Activities.Where(x => !string.IsNullOrWhiteSpace(x.Name)))
             {
-                var state = activityExecutionContext.GetActivityData(activity.Id);
-                var dictionary = state.ToDictionary();
+                var state = new Dictionary<string, object>(activityExecutionContext.GetActivityData(activity.Id));
+
+                // Output.
+                if (workflowInstance.ActivityOutput.ContainsKey(activity.Id))
+                {
+                    var output = workflowInstance.ActivityOutput[activity.Id];
+                    //state["Output"] = output != null ? JObjectExtensions.SerializeState(output) : null;
+                    state["Output"] = output;
+                }
                 
-                engine.SetValue(activity.Name, dictionary);
+                engine.SetValue(activity.Name, state);
             }
 
             return Task.CompletedTask;
@@ -150,7 +150,7 @@ namespace Elsa.Scripting.JavaScript.Handlers
                 }
 
                 // Named Activities.
-                var namedActivities = workflowDefinition.Activities.Where(x => x.Name is not null).ToList();
+                var namedActivities = workflowDefinition.Activities.Where(x => !string.IsNullOrWhiteSpace(x.Name)).ToList();
                 var activityTypeNames = namedActivities.Select(x => x.Type).Distinct().ToList();
                 var activityTypes = await Task.WhenAll(activityTypeNames.Select(async activityTypeName => (activityTypeName, await _activityTypeService.GetActivityTypeAsync(activityTypeName, cancellationToken))));
                 var activityTypeDictionary = activityTypes.ToDictionary(x => x.activityTypeName, x => x.Item2);

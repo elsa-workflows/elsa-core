@@ -67,7 +67,7 @@ namespace Elsa.Activities.ControlFlow
             if (notification.EvictedScope.Type != nameof(Switch))
                 return Task.CompletedTask;
 
-            var data = notification.WorkflowExecutionContext.WorkflowInstance.ActivityData.GetItem(notification.EvictedScope.Id, () => new JObject());
+            var data = notification.WorkflowExecutionContext.WorkflowInstance.ActivityData.GetItem(notification.EvictedScope.Id, () => new Dictionary<string, object>());
             data.SetState(nameof(EnteredScope), false);
             data.SetState("Unwinding", false);
 

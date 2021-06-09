@@ -34,6 +34,5 @@ namespace Elsa.Activities.AzureServiceBus.Extensions
 
             return new Message(messageBytes);
         }
-
     }
 }

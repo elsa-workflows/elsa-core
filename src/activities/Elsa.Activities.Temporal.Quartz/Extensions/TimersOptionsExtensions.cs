@@ -28,6 +28,7 @@ namespace Elsa
             Action<QuartzHostedServiceOptions>? configureQuartzHostedService = default)
         {
             timersOptions.Services
+                .AddSingleton<QuartzSchedulerProvider>()
                 .AddSingleton<IWorkflowDefinitionScheduler, QuartzWorkflowDefinitionScheduler>()
                 .AddSingleton<IWorkflowInstanceScheduler, QuartzWorkflowInstanceScheduler>()
                 .AddSingleton<ICrontabParser, QuartzCrontabParser>()

@@ -15,8 +15,8 @@ FROM mcr.microsoft.com/dotnet/sdk:5.0-buster-slim-amd64 AS build
 WORKDIR /source
 
 # restore packages
-COPY ./src/dashboards/aspnetcore/ElsaDashboard/ElsaDashboard.Web.csproj ./src/dashboards/aspnetcore/ElsaDashboard/ElsaDashboard.Web.csproj
-RUN dotnet restore "./src/dashboards/aspnetcore/ElsaDashboard/ElsaDashboard.Web.csproj"
+COPY ./src/dashboards/ElsaDashboard/ElsaDashboard.Web.csproj ./src/dashboards/ElsaDashboard/ElsaDashboard.Web.csproj
+RUN dotnet restore "./src/dashboards/ElsaDashboard/ElsaDashboard.Web.csproj"
 
 # copy required source code
 COPY src/. ./src
@@ -26,7 +26,7 @@ COPY --from=client-build /app/designer/elsa-workflows-studio ./src/designer/elsa
 COPY --from=client-build /app/designer/bindings/aspnet/Elsa.Designer.Components.Web ./src/designer/bindings/aspnet/Elsa.Designer.Components.Web
 
 # build and publish (UseAppHost=false created platform independent binaries)
-WORKDIR /source/src/dashboards/aspnetcore/ElsaDashboard
+WORKDIR /source/src/dashboards/ElsaDashboard
 RUN dotnet build "ElsaDashboard.Web.csproj" -c Release -o /app/build
 RUN dotnet publish "ElsaDashboard.Web.csproj" -c Release -o /app/publish /p:UseAppHost=false --no-restore
 

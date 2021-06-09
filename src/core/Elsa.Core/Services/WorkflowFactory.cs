@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
@@ -30,7 +31,7 @@ namespace Elsa.Services
                 TenantId = workflowBlueprint.TenantId,
                 Version = workflowBlueprint.Version,
                 WorkflowStatus = WorkflowStatus.Idle,
-                CorrelationId = correlationId,
+                CorrelationId = correlationId ?? Guid.NewGuid().ToString("N"),
                 ContextId = contextId,
                 CreatedAt = _clock.GetCurrentInstant(),
                 Variables = new Variables(workflowBlueprint.Variables),

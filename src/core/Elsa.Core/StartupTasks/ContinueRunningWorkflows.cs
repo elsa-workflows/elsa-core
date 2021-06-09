@@ -6,9 +6,11 @@ using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Services;
+using Medallion.Threading;
 using Microsoft.Extensions.Logging;
 using NodaTime;
 using Open.Linq.AsyncExtensions;
+using IDistributedLockProvider = Elsa.Services.IDistributedLockProvider;
 
 namespace Elsa.StartupTasks
 {
@@ -21,17 +23,20 @@ namespace Elsa.StartupTasks
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
         private readonly IWorkflowInstanceDispatcher _workflowInstanceDispatcher;
         private readonly IDistributedLockProvider _distributedLockProvider;
+        private readonly ElsaOptions _elsaOptions;
         private readonly ILogger _logger;
 
         public ContinueRunningWorkflows(
             IWorkflowInstanceStore workflowInstanceStore,
             IWorkflowInstanceDispatcher workflowInstanceDispatcher,
             IDistributedLockProvider distributedLockProvider,
+            ElsaOptions elsaOptions,
             ILogger<ContinueRunningWorkflows> logger)
         {
             _workflowInstanceStore = workflowInstanceStore;
             _workflowInstanceDispatcher = workflowInstanceDispatcher;
             _distributedLockProvider = distributedLockProvider;
+            _elsaOptions = elsaOptions;
             _logger = logger;
         }
 
@@ -39,9 +44,7 @@ namespace Elsa.StartupTasks
 
         public async Task ExecuteAsync(CancellationToken cancellationToken = default)
         {
-            var lockKey = GetType().Name;
-
-            await using var handle = await _distributedLockProvider.AcquireLockAsync(lockKey, Duration.FromSeconds(10), cancellationToken);
+            await using var handle = await _distributedLockProvider.AcquireLockAsync(GetType().Name, _elsaOptions.DistributedLockTimeout, cancellationToken);
 
             if (handle == null)
                 return;
@@ -55,6 +58,14 @@ namespace Elsa.StartupTasks
 
             foreach (var instance in instances)
             {
+                await using var correlationLockHandle = await _distributedLockProvider.AcquireLockAsync(instance.CorrelationId, _elsaOptions.DistributedLockTimeout, cancellationToken);
+                
+                if(handle == null)
+                {
+                    _logger.LogWarning("Failed to acquire lock on correlation {CorrelationId} for workflow instance {WorkflowInstanceId}", instance.CorrelationId, instance.Id);
+                    continue;
+                }
+
                 _logger.LogInformation("Resuming {WorkflowInstanceId}", instance.Id);
                 var scheduledActivities = instance.ScheduledActivities;
 
@@ -65,6 +76,7 @@ namespace Elsa.StartupTasks
                         _logger.LogWarning(
                             "Workflow '{WorkflowInstanceId}' was in the Running state, but has no scheduled activities not has a currently executing one. However, it does have blocking activities, so switching to Suspended status",
                             instance.Id);
+                        
                         instance.WorkflowStatus = WorkflowStatus.Suspended;
                         await _workflowInstanceStore.SaveAsync(instance, cancellationToken);
                         continue;

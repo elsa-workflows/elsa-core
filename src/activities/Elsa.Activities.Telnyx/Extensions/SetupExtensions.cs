@@ -4,16 +4,16 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Elsa.Activities.Telnyx.Activities;
-using Elsa.Activities.Telnyx.ActivityTypes;
-using Elsa.Activities.Telnyx.Bookmarks;
 using Elsa.Activities.Telnyx.Client.Services;
-using Elsa.Activities.Telnyx.Liquid;
 using Elsa.Activities.Telnyx.Options;
+using Elsa.Activities.Telnyx.Providers.ActivityTypes;
+using Elsa.Activities.Telnyx.Providers.Bookmarks;
 using Elsa.Activities.Telnyx.Scripting.JavaScript;
-using Elsa.Activities.Telnyx.Webhooks.Consumers;
-using Elsa.Activities.Telnyx.Webhooks.Events;
+using Elsa.Activities.Telnyx.Scripting.Liquid;
 using Elsa.Activities.Telnyx.Webhooks.Filters;
+using Elsa.Activities.Telnyx.Webhooks.Handlers;
 using Elsa.Activities.Telnyx.Webhooks.Services;
+using Elsa.Bookmarks;
 using Elsa.Scripting.Liquid.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -39,14 +39,13 @@ namespace Elsa.Activities.Telnyx.Extensions
 
             // Activities.
             elsaOptions
-                .AddActivitiesFrom<AnswerCall>()
-                .AddCompetingConsumer<TriggerWorkflows, TelnyxWebhookReceived>();
+                .AddActivitiesFrom<AnswerCall>();
 
             // Services.
             services
                 .AddActivityTypeProvider<NotificationActivityTypeProvider>()
-                .AddBookmarkProvider<NotificationBookmarkProvider>()
-                .AddNotificationHandlers(typeof(TriggerWorkflows))
+                .AddBookmarkProvidersFrom<NotificationBookmarkProvider>()
+                .AddNotificationHandlers(typeof(TriggerWebhookActivities))
                 .AddJavaScriptTypeDefinitionProvider<TelnyxTypeDefinitionProvider>()
                 .AddScoped<IWebhookHandler, WebhookHandler>()
                 .AddSingleton<IWebhookFilterService, WebhookFilterService>()

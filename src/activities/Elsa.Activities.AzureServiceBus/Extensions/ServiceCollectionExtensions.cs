@@ -6,6 +6,7 @@ using Elsa.Activities.AzureServiceBus.Services;
 using Elsa.Activities.AzureServiceBus.StartupTasks;
 using Elsa.Events;
 using Elsa.Runtime;
+using Elsa.Services;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Management;
 using Microsoft.Extensions.DependencyInjection;
@@ -32,6 +33,7 @@ namespace Elsa.Activities.AzureServiceBus.Extensions
                 .AddSingleton<ITopicMessageReceiverFactory>(sp => sp.GetRequiredService<BusClientFactory>())
                 .AddSingleton<IServiceBusQueuesStarter, ServiceBusQueuesStarter>()
                 .AddSingleton<IServiceBusTopicsStarter, ServiceBusTopicsStarter>()
+                .AddSingleton<Scoped<IWorkflowLaunchpad>>()
                 .AddStartupTask<StartServiceBusQueues>()
                 .AddStartupTask<StartServiceBusTopics>()
                 .AddBookmarkProvider<QueueMessageReceivedBookmarkProvider>()

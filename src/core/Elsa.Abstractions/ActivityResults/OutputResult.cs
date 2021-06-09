@@ -3,7 +3,6 @@ using Elsa.Services.Models;
 
 namespace Elsa.ActivityResults
 {
-    [Obsolete("Use activity output properties to return output.")]
     public class OutputResult : ActivityExecutionResult
     {
         public OutputResult(object? output) => Output = output;

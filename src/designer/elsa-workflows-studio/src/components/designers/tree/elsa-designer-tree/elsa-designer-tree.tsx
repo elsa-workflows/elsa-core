@@ -273,11 +273,13 @@ export class ElsaWorkflowDesigner {
       const bodyText = description && description.length > 0 ? description : undefined;
       const bodyDisplay = bodyText ? `<p>${bodyText}</p>` : undefined;
       const color = (descriptor.traits &= ActivityTraits.Trigger) == ActivityTraits.Trigger ? 'rose' : 'light-blue';
+      const displayName = model.displayName;
 
       const displayContext: ActivityDesignDisplayContext = {
         activityModel: model,
         activityIcon: <ActivityIcon color={color}/>,
         bodyDisplay: bodyDisplay,
+        displayName: displayName,
         outcomes: [...model.outcomes],
       };
 
@@ -519,6 +521,7 @@ export class ElsaWorkflowDesigner {
     const activityBorderColor = !!this.activityBorderColor ? this.activityBorderColor(activity) : 'gray';
     const selectedColor = !!this.activityBorderColor ? activityBorderColor : 'blue';
     const cssClass = !!this.selectedActivities[activity.activityId] ? `elsa-border-${selectedColor}-600` : `elsa-border-${activityBorderColor}-200 hover:elsa-border-${selectedColor}-600`;
+    const displayName = displayContext.displayName || activity.displayName;
 
     return `<div id=${`activity-${activity.activityId}`} 
     class="activity elsa-border-2 elsa-border-solid elsa-rounded elsa-bg-white elsa-text-left elsa-text-black elsa-text-lg elsa-select-none elsa-max-w-md elsa-shadow-sm elsa-relative ${cssClass}">
@@ -528,7 +531,7 @@ export class ElsaWorkflowDesigner {
           ${displayContext?.activityIcon || ''}
           </div>
           <div class="elsa-flex-1 elsa-font-medium elsa-leading-8">
-            <p>${activity.displayName}</p>
+            <p class="elsa-overflow-ellipsis">${displayName}</p>
           </div>
           <div class="context-menu-button-container">
             ${activityContextMenuButton}
@@ -541,7 +544,7 @@ export class ElsaWorkflowDesigner {
 
   renderActivityBody(displayContext: ActivityDesignDisplayContext) {
     return (
-      `<div class="elsa-border-t elsa-border-t-solid">
+      `<div class="elsa-border-t elsa-border-t-solid hidden">
           <div class="elsa-p-6 elsa-text-gray-400 elsa-text-sm">
             <div class="elsa-mb-2">${!!displayContext.bodyDisplay ? displayContext.bodyDisplay : ''}</div>
             <div>

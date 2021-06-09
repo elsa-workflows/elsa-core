@@ -1,7 +1,7 @@
 {
-  "name": "@elsa-workflows/elsa-workflow-designer",
-  "version": "2.0.0-rc1.1",
-  "description": "Elsa Workflow Designer is a collection of web components to manage Elsa workflows stored on an Elsa Workflows server.",
+  "name": "@elsa-workflows/elsa-workflows-studio",
+  "version": "2.0.1",
+  "description": "Elsa Workflow Studio is a collection of web components to manage Elsa workflows stored on an Elsa Workflows server.",
   "main": "dist/index.cjs.js",
   "module": "dist/custom-elements/index.js",
   "es2015": "dist/esm/index.mjs",
@@ -15,8 +15,8 @@
     "loader/"
   ],
   "scripts": {
-    "push": "npm publish --access-public",
-    "push:preview": "npm publish --access-public --tag preview",
+    "push": "npm publish --access public",
+    "push:preview": "npm publish --access public --tag preview",
     "build": "npm run build:tailwind:prod & stencil build",
     "build:dev": "stencil build --dev --tailwind:dev",
     "start:dev": "stencil build --dev --tailwind:dev --watch --serve",

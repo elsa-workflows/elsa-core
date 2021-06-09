@@ -30,7 +30,7 @@ namespace Elsa.Activities.Conductor
             DefaultSyntax = SyntaxNames.Json,
             SupportedSyntaxes = new[] { SyntaxNames.Json }
         )]
-        public ISet<string> Outcomes { get; set; } = new HashSet<string>();
+        public ISet<string> OutcomeNames { get; set; } = new HashSet<string>();
 
         [ActivityOutput(Hint = "Any input that was sent along with the event from your application.")]
         public object? Payload { get; set; }
@@ -44,7 +44,7 @@ namespace Elsa.Activities.Conductor
             var outcomes = eventModel.Outcomes;
 
             if (outcomes?.Any() == false)
-                outcomes = new[] { OutcomeNames.Done };
+                outcomes = new[] { Elsa.OutcomeNames.Done };
 
             Payload = eventModel.Payload;
             return base.Outcomes(outcomes!);

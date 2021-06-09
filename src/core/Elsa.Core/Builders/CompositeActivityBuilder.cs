@@ -160,6 +160,12 @@ namespace Elsa.Builders
             return connectionBuilder;
         }
 
+        public override IActivityBuilder ThenNamed(string activityName)
+        {
+            var compositeName = GetCompositeName(activityName)!;
+            return base.ThenNamed(compositeName);
+        }
+
         public ICompositeActivityBlueprint Build(string activityIdPrefix = "activity")
         {
             var compositeActivityBlueprint = new CompositeActivityBlueprint
@@ -240,14 +246,16 @@ namespace Elsa.Builders
             }
         }
 
-        private static IActivityBlueprint BuildActivityBlueprint(IActivityBuilder builder, ICompositeActivityBlueprint parent)
+        private IActivityBlueprint BuildActivityBlueprint(IActivityBuilder builder, ICompositeActivityBlueprint parent)
         {
             var isComposite = typeof(CompositeActivity).IsAssignableFrom(builder.ActivityType);
             return isComposite
-                ? new CompositeActivityBlueprint(builder.ActivityId, parent, builder.Name, builder.DisplayName, builder.Description, builder.ActivityTypeName, builder.PersistWorkflowEnabled, builder.LoadWorkflowContextEnabled,
+                ? new CompositeActivityBlueprint(builder.ActivityId, parent, GetCompositeName(builder.Name), builder.DisplayName, builder.Description, builder.ActivityTypeName, builder.PersistWorkflowEnabled, builder.LoadWorkflowContextEnabled,
                     builder.SaveWorkflowContextEnabled, builder.PersistOutputEnabled, builder.Source)
-                : new ActivityBlueprint(builder.ActivityId, parent, builder.Name, builder.DisplayName, builder.Description, builder.ActivityTypeName, builder.PersistWorkflowEnabled, builder.LoadWorkflowContextEnabled,
+                : new ActivityBlueprint(builder.ActivityId, parent, GetCompositeName(builder.Name), builder.DisplayName, builder.Description, builder.ActivityTypeName, builder.PersistWorkflowEnabled, builder.LoadWorkflowContextEnabled,
                     builder.SaveWorkflowContextEnabled, builder.PersistOutputEnabled, builder.Source);
         }
+
+        private string? GetCompositeName(string? activityName) => activityName == null ? null : $"{ActivityId}:{activityName}";
     }
 }

@@ -160,7 +160,7 @@ namespace Elsa.Activities.ControlFlow
 
             var inboundConnections = inboundTransitionsQuery.ToList();
             var joinBlueprint = inboundConnections.FirstOrDefault()?.Target.Activity;
-            var joinActivityData = joinBlueprint != null ? workflowExecutionContext.WorkflowInstance.ActivityData.GetItem(joinBlueprint.Id, () => new JObject()) : default;
+            var joinActivityData = joinBlueprint != null ? workflowExecutionContext.WorkflowInstance.ActivityData.GetItem(joinBlueprint.Id, () => new Dictionary<string, object>()) : default;
 
             if (joinActivityData == null)
                 return;

@@ -1,7 +1,7 @@
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
+using Elsa.Samples.FaultyWorkflows.Workflows;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Samples.FaultyWorkflows
@@ -12,7 +12,8 @@ namespace Elsa.Samples.FaultyWorkflows
         {
             services
                 .AddElsa(elsa => elsa
-                    .UseEntityFrameworkPersistence(options => options.UseSqlite("Data Source=elsa.db;Cache=Shared;", db => db.MigrationsAssembly(typeof(SqliteElsaContextFactory).Assembly.GetName().Name)))
+                    .UseEntityFrameworkPersistence(options => options.UseSqlite())
+                    .AddConsoleActivities()
                     .AddHttpActivities()
                     .AddWorkflow<FaultyWorkflow>());
         }
