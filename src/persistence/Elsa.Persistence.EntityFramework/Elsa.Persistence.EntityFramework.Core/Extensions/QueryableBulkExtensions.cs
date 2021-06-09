@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using EFCore.BulkExtensions;
@@ -10,9 +10,10 @@ namespace Elsa.Persistence.EntityFramework.Core.Extensions
     {
         public static async Task<int> BatchDeleteWithWorkAroundAsync<T>(this IQueryable<T> queryable, ElsaContext elsaContext, CancellationToken cancellationToken = default) where T : class
         {
-            if (elsaContext.Database.IsPostgres())
+            if (elsaContext.Database.IsPostgres() || elsaContext.Database.IsMySql())
             {
-                // Need this workaround until https://github.com/borisdj/EFCore.BulkExtensions/issues/67 is solved.    
+                // Need this workaround until https://github.com/borisdj/EFCore.BulkExtensions/issues/67
+                // and https://github.com/borisdj/EFCore.BulkExtensions/issues/553 is solved.
                 var records = await queryable.ToListAsync(cancellationToken);
 
                 foreach (var @record in records) 
@@ -20,7 +21,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Extensions
 
                 return records.Count;
             }
-            
+
             return await queryable.BatchDeleteAsync(cancellationToken);
         }
     }
