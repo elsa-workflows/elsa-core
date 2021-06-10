@@ -7,7 +7,7 @@ using Elsa.Builders;
 using Elsa.Services;
 using Elsa.Services.Models;
 
-namespace Elsa.WorkflowProviders
+namespace Elsa.Providers.Workflows
 {
     /// <summary>
     /// Provides programmatic workflows (.NET types).

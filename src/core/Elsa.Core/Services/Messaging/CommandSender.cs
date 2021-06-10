@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using NodaTime;
 
-namespace Elsa.Services
+namespace Elsa.Services.Messaging
 {
     public class CommandSender : ICommandSender
     {

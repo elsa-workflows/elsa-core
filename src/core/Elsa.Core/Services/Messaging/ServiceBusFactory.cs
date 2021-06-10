@@ -11,7 +11,7 @@ using Rebus.Routing.TypeBased;
 using Rebus.Serialization.Json;
 using Rebus.ServiceProvider;
 
-namespace Elsa.Services
+namespace Elsa.Services.Messaging
 {
     public class ServiceBusFactory : IServiceBusFactory
     {

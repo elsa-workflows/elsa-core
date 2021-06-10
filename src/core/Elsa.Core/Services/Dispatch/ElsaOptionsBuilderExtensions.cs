@@ -1,8 +1,8 @@
 ﻿using System;
-using Elsa.Services;
+using Elsa.Dispatch;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Dispatch
+namespace Elsa.Services.Dispatch
 {
     public static class ElsaOptionsBuilderExtensions
     {

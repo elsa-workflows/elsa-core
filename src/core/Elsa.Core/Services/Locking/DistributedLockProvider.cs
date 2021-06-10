@@ -5,7 +5,7 @@ using Medallion.Threading;
 using Microsoft.Extensions.Logging;
 using NodaTime;
 
-namespace Elsa.Services
+namespace Elsa.Services.Locking
 {
     public class DistributedLockProvider : IDistributedLockProvider
     {

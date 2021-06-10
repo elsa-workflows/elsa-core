@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Elsa.Providers.WorkflowContext;
 using Elsa.Services.Models;
 
-namespace Elsa.Services
+namespace Elsa.Services.WorkflowContexts
 {
     public class WorkflowContextManager : IWorkflowContextManager
     {

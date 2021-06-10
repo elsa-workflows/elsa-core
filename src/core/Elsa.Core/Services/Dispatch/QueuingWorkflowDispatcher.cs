@@ -1,8 +1,8 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Services;
+using Elsa.Dispatch;
 
-namespace Elsa.Dispatch
+namespace Elsa.Services.Dispatch
 {
     /// <summary>
     /// The default strategy that process workflow execution requests by sending them to a queue.

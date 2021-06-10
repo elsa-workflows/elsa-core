@@ -4,12 +4,12 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Events;
-using Elsa.Services;
 using Elsa.Services.Models;
+using Elsa.Triggers;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace Elsa.Triggers
+namespace Elsa.Services.Triggers
 {
     public class TriggerIndexer : ITriggerIndexer
     {

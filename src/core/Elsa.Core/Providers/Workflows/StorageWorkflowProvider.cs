@@ -11,7 +11,7 @@ using Elsa.Services.Models;
 using Microsoft.Extensions.Logging;
 using Storage.Net.Blobs;
 
-namespace Elsa.WorkflowProviders
+namespace Elsa.Providers.Workflows
 {
     public class StorageWorkflowProvider : WorkflowProvider
     {
