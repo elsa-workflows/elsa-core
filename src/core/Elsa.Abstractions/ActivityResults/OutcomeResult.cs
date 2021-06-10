@@ -43,7 +43,7 @@ namespace Elsa.ActivityResults
             foreach (var nextConnection in nextConnections)
                 workflowExecutionContext.ExecutionLog.Add(nextConnection);
 
-            workflowExecutionContext.ScheduleActivities(nextActivities, activityExecutionContext.Output);
+            workflowExecutionContext.ScheduleActivities(nextActivities);
         }
 
         public static IEnumerable<string> GetNextActivities(

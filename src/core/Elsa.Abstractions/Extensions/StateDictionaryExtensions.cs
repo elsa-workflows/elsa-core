@@ -8,7 +8,7 @@ using NodaTime.Serialization.JsonNet;
 
 namespace Elsa
 {
-    public static class JObjectExtensions
+    public static class StateDictionaryExtensions
     {
         public static T? GetState<T>(this IDictionary<string, object?>? state, string key) => state.GetState<T>(key, () => default!);
 
@@ -24,9 +24,11 @@ namespace Elsa
 
         public static object? GetState(this IDictionary<string, object?>? state, string key, Type targetType)
         {
-            var item = state?.ContainsKey(key) == true ? state![key] : default;
+            var item = state.GetState(key);
             return item?.ConvertTo(targetType);
         }
+        
+        public static object? GetState(this IDictionary<string, object?>? state, string key) => state?.ContainsKey(key) == true ? state![key] : default;
 
         public static void SetState(this IDictionary<string, object?> state, string key, object? value) => state[key] = value;
 

@@ -63,7 +63,6 @@ namespace Elsa.Services.Workflows
             if (currentActivity != null)
             {
                 activityId = currentActivity.ActivityId;
-                input ??= currentActivity.Input;
             }
 
             var activity = activityId != null ? workflowBlueprint.GetActivity(activityId) : default;
@@ -143,7 +142,7 @@ namespace Elsa.Services.Workflows
                 return new RunWorkflowResult(workflowExecutionContext.WorkflowInstance, activity.Id, false);
 
             workflowExecutionContext.Begin();
-            workflowExecutionContext.ScheduleActivity(activity.Id, input);
+            workflowExecutionContext.ScheduleActivity(activity.Id);
             await RunAsync(workflowExecutionContext, Execute, cancellationToken);
             return new RunWorkflowResult(workflowExecutionContext.WorkflowInstance, activity.Id, true);
         }
@@ -226,6 +225,7 @@ namespace Elsa.Services.Workflows
                 var currentActivityId = scheduledActivity.ActivityId;
                 var activityBlueprint = workflowBlueprint.GetActivity(currentActivityId)!;
                 var resuming = activityOperation == Resume;
+                var input = 
                 var activityExecutionContext = new ActivityExecutionContext(scope, workflowExecutionContext, activityBlueprint, scheduledActivity.Input, resuming, cancellationToken);
                 var runtimeActivityInstance = await activityExecutionContext.ActivateActivityAsync(cancellationToken);
                 var activityType = runtimeActivityInstance.ActivityType;

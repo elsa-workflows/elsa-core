@@ -48,10 +48,10 @@ namespace Elsa.Services.Models
         /// </summary>
         public Variables TransientState { get; set; } = new();
 
-        public void ScheduleActivities(IEnumerable<string> activityIds, object? input = default)
+        public void ScheduleActivities(IEnumerable<string> activityIds)
         {
             foreach (var activityId in activityIds)
-                ScheduleActivity(activityId, input);
+                ScheduleActivity(activityId);
         }
 
         public void ScheduleActivities(IEnumerable<ScheduledActivity> activities)
@@ -60,7 +60,7 @@ namespace Elsa.Services.Models
                 ScheduleActivity(activity);
         }
 
-        public void ScheduleActivity(string activityId, object? input = default) => ScheduleActivity(new ScheduledActivity(activityId, input));
+        public void ScheduleActivity(string activityId) => ScheduleActivity(new ScheduledActivity(activityId));
         public void ScheduleActivity(ScheduledActivity activity) => WorkflowInstance.ScheduledActivities.Push(activity);
         public ScheduledActivity PopScheduledActivity() => WorkflowInstance.ScheduledActivities.Pop();
         public ScheduledActivity PeekScheduledActivity() => WorkflowInstance.ScheduledActivities.Peek();
@@ -234,21 +234,6 @@ namespace Elsa.Services.Models
             activityData[activityId] = state;
 
             return state;
-        }
-
-        /// <summary>
-        /// Remove empty activity data to save on document size.
-        /// </summary>
-        internal void PruneActivityData()
-        {
-            WorkflowInstance.ActivityData.Prune(x => x.Value.Count == 0);
-            WorkflowInstance.ActivityOutput.Prune(x => x.Value == null || !ShouldPersistActivityOutput(x.Key));
-        }
-
-        private bool ShouldPersistActivityOutput(string activityId)
-        {
-            var activityBlueprint = WorkflowBlueprint.GetActivity(activityId);
-            return activityBlueprint != null && activityBlueprint.PersistOutput;
         }
 
         private async Task<IActivityBlueprint> EvictScopeAsync(ActivityScope scope)

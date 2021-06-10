@@ -55,7 +55,7 @@ namespace Elsa.Services.Workflows
             {
                 // An activity caused the fault.
                 workflowInstance.WorkflowStatus = fault.Resuming ? WorkflowStatus.Suspended : WorkflowStatus.Running;
-                workflowInstance.ScheduledActivities.Push(new ScheduledActivity(faultedActivityId, fault.ActivityInput));
+                workflowInstance.ScheduledActivities.Push(new ScheduledActivity(faultedActivityId));
             }
 
             workflowInstance.Fault = null;
@@ -74,7 +74,7 @@ namespace Elsa.Services.Workflows
         {
             workflowInstance = await ReviveAsync(workflowInstance, cancellationToken);
             var currentActivity = await GetActivityToScheduleAsync(workflowInstance, cancellationToken);
-            await _workflowInstanceDispatcher.DispatchAsync(new ExecuteWorkflowInstanceRequest(workflowInstance.Id, currentActivity.ActivityId, currentActivity.Input), cancellationToken);
+            await _workflowInstanceDispatcher.DispatchAsync(new ExecuteWorkflowInstanceRequest(workflowInstance.Id, currentActivity.ActivityId), cancellationToken);
             return workflowInstance;
         }
 

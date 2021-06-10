@@ -41,7 +41,6 @@ namespace Elsa.Builders
         public bool PersistWorkflowEnabled { get; set; }
         public bool LoadWorkflowContextEnabled { get; set; }
         public bool SaveWorkflowContextEnabled { get; set; }
-        public bool PersistOutputEnabled { get; set; }
         public IDictionary<string, IActivityPropertyValueProvider>? PropertyValueProviders { get; protected set; }
         public int LineNumber { get; }
         public string? SourceFile { get; }
@@ -118,12 +117,6 @@ namespace Elsa.Builders
         public IActivityBuilder SaveWorkflowContext(bool value)
         {
             SaveWorkflowContextEnabled = value;
-            return this;
-        }
-
-        public IActivityBuilder PersistOutput(bool value)
-        {
-            PersistOutputEnabled = value;
             return this;
         }
 
