@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Services.Models;
-using Elsa.Triggers;
+using Elsa.Services.Triggers;
 
 namespace Elsa.Services
 {

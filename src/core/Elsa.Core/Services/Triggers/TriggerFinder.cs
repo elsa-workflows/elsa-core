@@ -2,8 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Bookmarks;
-using Elsa.Triggers;
+using Elsa.Services.Bookmarks;
 
 namespace Elsa.Services.Triggers
 {

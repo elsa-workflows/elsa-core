@@ -2,9 +2,8 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Services;
 
-namespace Elsa.Bookmarks
+namespace Elsa.Services.Bookmarks
 {
     public abstract class BookmarkProvider<T> : IBookmarkProvider where T : IBookmark
     {

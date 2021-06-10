@@ -2,10 +2,10 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Dispatch;
 using Elsa.Exceptions;
 using Elsa.Models;
 using Elsa.Persistence;
+using Elsa.Services.Dispatch;
 using Elsa.Services.Models;
 
 namespace Elsa.Services.Workflows

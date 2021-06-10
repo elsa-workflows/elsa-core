@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Triggers;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace Elsa.Services.Triggers

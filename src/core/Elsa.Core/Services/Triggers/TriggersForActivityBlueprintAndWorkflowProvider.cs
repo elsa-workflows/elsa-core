@@ -2,9 +2,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Bookmarks;
+using Elsa.Services.Bookmarks;
 using Elsa.Services.Models;
-using Elsa.Triggers;
 
 namespace Elsa.Services.Triggers
 {

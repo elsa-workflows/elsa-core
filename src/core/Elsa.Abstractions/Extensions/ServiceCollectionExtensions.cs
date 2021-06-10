@@ -1,9 +1,9 @@
 using Elsa.Services;
 using System.Reflection;
 using Elsa;
-using Elsa.Bookmarks;
 using Elsa.Providers.Workflow;
 using Elsa.Providers.WorkflowContext;
+using Elsa.Services.Bookmarks;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection

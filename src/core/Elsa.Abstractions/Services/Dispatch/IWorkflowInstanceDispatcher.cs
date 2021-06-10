@@ -1,7 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 
-namespace Elsa.Dispatch
+namespace Elsa.Services.Dispatch
 {
     /// <summary>
     /// Dispatches requests for executing workflow instances.

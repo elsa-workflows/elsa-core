@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Elsa.Bookmarks
+namespace Elsa.Services.Bookmarks
 {
     public interface IBookmarkFinder
     {

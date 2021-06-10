@@ -2,8 +2,8 @@
 using System.Threading.Tasks;
 using Elsa.Activities.Temporal.Common.Bookmarks;
 using Elsa.Activities.Temporal.Common.Services;
-using Elsa.Bookmarks;
 using Elsa.Services;
+using Elsa.Services.Bookmarks;
 
 namespace Elsa.Activities.Temporal.Common.StartupTasks
 {

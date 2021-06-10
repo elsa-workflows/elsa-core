@@ -1,7 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 
-namespace Elsa.Triggers
+namespace Elsa.Services.Triggers
 {
     public interface ITriggerIndexer
     {

@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Bookmarks;
 using Elsa.Builders;
 using Elsa.Persistence;
+using Elsa.Services.Bookmarks;
 using Elsa.Services.Models;
-using Elsa.Triggers;
+using Elsa.Services.Triggers;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Services.Workflows

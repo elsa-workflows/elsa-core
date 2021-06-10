@@ -1,7 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 
-namespace Elsa.Dispatch
+namespace Elsa.Services.Dispatch
 {
     /// <summary>
     /// The correlating dispatcher is responsible for finding workflows correlated by the specified correlation ID.

@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Services.Models;
-using Elsa.Triggers;
 
 namespace Elsa.Services.Triggers
 {

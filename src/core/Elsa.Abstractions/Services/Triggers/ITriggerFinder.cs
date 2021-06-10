@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Bookmarks;
+using Elsa.Services.Bookmarks;
 
-namespace Elsa.Triggers
+namespace Elsa.Services.Triggers
 {
     public interface ITriggerFinder
     {

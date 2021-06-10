@@ -1,7 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Services;
-using Elsa.Triggers;
+using Elsa.Services.Triggers;
 
 namespace Elsa.StartupTasks
 {
