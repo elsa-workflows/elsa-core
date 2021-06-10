@@ -18,7 +18,6 @@ export class ElsaSwitchCasesProperty {
     syntaxSwitchCount: number = 0;
 
     async componentWillLoad() {
-        debugger
         const propertyModel = this.propertyModel;
         const casesJson = propertyModel.expressions['Switch']
         this.cases = parseJson(casesJson) || [];

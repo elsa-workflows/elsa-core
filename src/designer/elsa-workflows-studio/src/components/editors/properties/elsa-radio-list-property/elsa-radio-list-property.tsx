@@ -19,7 +19,6 @@ export class ElsaRadioListProperty {
   items: any[];
 
   async componentWillLoad() {
-    debugger
     const defaultSyntax = this.propertyDescriptor.defaultSyntax || SyntaxNames.Literal;
     this.currentValue = this.propertyModel.expressions[defaultSyntax] || null;
   }

@@ -33,7 +33,7 @@ export class ElsaDropdownProperty {
   }
   
   render() {
-    debugger
+
     const propertyDescriptor = this.propertyDescriptor;
     const propertyModel = this.propertyModel;
     const propertyName = propertyDescriptor.name;

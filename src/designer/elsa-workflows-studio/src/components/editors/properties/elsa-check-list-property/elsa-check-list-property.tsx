@@ -46,7 +46,7 @@ export class ElsaCheckListProperty {
   }
 
   render() {
-debugger
+
     const propertyDescriptor = this.propertyDescriptor;
     const propertyModel = this.propertyModel;
     const fieldId = propertyDescriptor.name;
