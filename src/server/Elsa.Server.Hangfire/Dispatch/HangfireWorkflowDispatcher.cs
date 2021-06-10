@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Dispatch;
 using Elsa.Server.Hangfire.Jobs;
+using Elsa.Services;
 using Hangfire;
 using Hangfire.States;
 
