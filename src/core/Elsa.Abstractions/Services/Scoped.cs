@@ -4,6 +4,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Services
 {
+    /// <summary>
+    /// Inject scoped services into singletons.
+    /// </summary>
     public class Scoped<T> where T : notnull
     {
         private readonly IServiceScopeFactory _scopeFactory;
