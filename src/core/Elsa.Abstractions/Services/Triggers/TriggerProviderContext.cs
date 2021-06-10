@@ -1,6 +1,6 @@
 ﻿using Elsa.Services.Models;
 
-namespace Elsa.Triggers
+namespace Elsa.Services.Triggers
 {
     public class TriggerProviderContext
     {

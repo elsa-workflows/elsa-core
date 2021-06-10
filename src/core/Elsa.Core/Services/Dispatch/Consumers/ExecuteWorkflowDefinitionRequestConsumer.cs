@@ -1,5 +1,4 @@
 using System.Threading.Tasks;
-using Elsa.Dispatch;
 using Elsa.Models;
 using Microsoft.Extensions.Logging;
 using Rebus.Handlers;

@@ -1,11 +1,11 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Dispatch;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Services;
+using Elsa.Services.Dispatch;
 using Medallion.Threading;
 using Microsoft.Extensions.Logging;
 using NodaTime;

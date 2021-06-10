@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Events;
 using Elsa.Services.Models;
-using Elsa.Triggers;
 using MediatR;
 using Microsoft.Extensions.Logging;
 

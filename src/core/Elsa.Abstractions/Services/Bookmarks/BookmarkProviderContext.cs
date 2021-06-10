@@ -2,10 +2,9 @@
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Services;
 using Elsa.Services.Models;
 
-namespace Elsa.Bookmarks
+namespace Elsa.Services.Bookmarks
 {
     public class BookmarkProviderContext
     {

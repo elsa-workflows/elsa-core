@@ -1,4 +1,4 @@
-﻿namespace Elsa.Bookmarks
+﻿namespace Elsa.Services.Bookmarks
 {
     public interface IBookmark
     {

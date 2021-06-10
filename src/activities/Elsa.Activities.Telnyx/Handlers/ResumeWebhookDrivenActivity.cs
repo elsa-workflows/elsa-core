@@ -7,8 +7,8 @@ using Elsa.Activities.Telnyx.Models;
 using Elsa.Activities.Telnyx.Providers.Bookmarks;
 using Elsa.Activities.Telnyx.Webhooks.Events;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
-using Elsa.Bookmarks;
 using Elsa.Services;
+using Elsa.Services.Bookmarks;
 using MediatR;
 
 namespace Elsa.Activities.Telnyx.Handlers

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using Elsa.Services.Models;
 
-namespace Elsa.Bookmarks
+namespace Elsa.Services.Bookmarks
 {
     public class BookmarkedWorkflow
     {

@@ -4,7 +4,6 @@ using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using Elsa.Attributes;
-using Elsa.Bookmarks;
 using Elsa.Serialization.ContractResolvers;
 using Newtonsoft.Json;
 using NodaTime;

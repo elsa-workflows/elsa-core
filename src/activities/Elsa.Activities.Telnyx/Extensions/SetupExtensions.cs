@@ -13,7 +13,6 @@ using Elsa.Activities.Telnyx.Scripting.Liquid;
 using Elsa.Activities.Telnyx.Webhooks.Filters;
 using Elsa.Activities.Telnyx.Webhooks.Handlers;
 using Elsa.Activities.Telnyx.Webhooks.Services;
-using Elsa.Bookmarks;
 using Elsa.Scripting.Liquid.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;

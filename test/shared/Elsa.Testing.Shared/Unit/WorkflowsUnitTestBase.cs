@@ -1,8 +1,8 @@
 using System;
 using System.Threading.Tasks;
-using Elsa.Bookmarks;
 using Elsa.Builders;
 using Elsa.Services;
+using Elsa.Services.Bookmarks;
 using Elsa.Testing.Shared.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;

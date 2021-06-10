@@ -1,5 +1,4 @@
 using System.Threading.Tasks;
-using Elsa.Dispatch;
 using Rebus.Handlers;
 
 namespace Elsa.Services.Dispatch.Consumers
