@@ -1,8 +1,8 @@
 using System.Threading.Tasks;
-using Elsa.Services;
+using Elsa.Dispatch;
 using Rebus.Handlers;
 
-namespace Elsa.Dispatch.Consumers
+namespace Elsa.Services.Dispatch.Consumers
 {
     public class ExecuteWorkflowInstanceRequestConsumer : IHandleMessages<ExecuteWorkflowInstanceRequest>
     {

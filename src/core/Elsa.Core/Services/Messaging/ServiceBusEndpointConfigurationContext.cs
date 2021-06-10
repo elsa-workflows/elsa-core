@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Rebus.Config;
 
-namespace Elsa.Services
+namespace Elsa.Services.Messaging
 {
     public class ServiceBusEndpointConfigurationContext
     {

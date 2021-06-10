@@ -3,10 +3,10 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Bookmarks;
-using Elsa.Services;
 using Elsa.Services.Models;
+using Elsa.Triggers;
 
-namespace Elsa.Triggers
+namespace Elsa.Services.Triggers
 {
     /// <summary>
     /// Default implementation of <see cref="IGetsTriggersForActivityBlueprintAndWorkflow"/>.

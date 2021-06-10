@@ -8,7 +8,7 @@ using Elsa.Metadata;
 using Elsa.Services;
 using Elsa.Services.Models;
 
-namespace Elsa.ActivityTypeProviders
+namespace Elsa.Providers.ActivityTypes
 {
     public class TypeBasedActivityProvider : IActivityTypeProvider
     {

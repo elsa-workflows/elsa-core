@@ -6,6 +6,7 @@ using Elsa.Builders;
 using Elsa.Caching;
 using Elsa.Persistence;
 using Elsa.Services;
+using Elsa.Services.Messaging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Newtonsoft.Json;

@@ -1,10 +1,10 @@
 using System.Threading.Tasks;
+using Elsa.Dispatch;
 using Elsa.Models;
-using Elsa.Services;
 using Microsoft.Extensions.Logging;
 using Rebus.Handlers;
 
-namespace Elsa.Dispatch.Consumers
+namespace Elsa.Services.Dispatch.Consumers
 {
     public class ExecuteWorkflowDefinitionRequestConsumer : IHandleMessages<ExecuteWorkflowDefinitionRequest>
     {

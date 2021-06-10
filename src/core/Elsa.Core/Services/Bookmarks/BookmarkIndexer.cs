@@ -4,17 +4,17 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Bookmarks;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications.Bookmarks;
 using Elsa.Serialization;
-using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Logging;
 using Open.Linq.AsyncExtensions;
 using Rebus.Extensions;
 
-namespace Elsa.Bookmarks
+namespace Elsa.Services.Bookmarks
 {
     public class BookmarkIndexer : IBookmarkIndexer
     {

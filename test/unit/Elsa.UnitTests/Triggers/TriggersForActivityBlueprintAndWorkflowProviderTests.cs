@@ -7,6 +7,7 @@ using Elsa.Bookmarks;
 using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
+using Elsa.Services.Triggers;
 using Elsa.Testing.Shared;
 using Elsa.Testing.Shared.AutoFixture.Attributes;
 using Moq;

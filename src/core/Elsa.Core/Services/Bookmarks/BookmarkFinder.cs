@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Bookmarks;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
@@ -11,7 +12,7 @@ using Newtonsoft.Json;
 using NodaTime;
 using NodaTime.Serialization.JsonNet;
 
-namespace Elsa.Bookmarks
+namespace Elsa.Services.Bookmarks
 {
     public class BookmarkFinder : IBookmarkFinder
     {

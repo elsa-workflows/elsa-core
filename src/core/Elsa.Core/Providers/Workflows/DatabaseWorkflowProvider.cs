@@ -10,7 +10,7 @@ using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Logging;
 
-namespace Elsa.WorkflowProviders
+namespace Elsa.Providers.Workflows
 {
     /// <summary>
     /// Provides workflows from the workflow definition store.

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Elsa.Services
+namespace Elsa.Services.Messaging
 {
     public class EventPublisher : IEventPublisher
     {

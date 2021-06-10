@@ -4,12 +4,13 @@ using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using Elsa.Attributes;
+using Elsa.Bookmarks;
 using Elsa.Serialization.ContractResolvers;
 using Newtonsoft.Json;
 using NodaTime;
 using NodaTime.Serialization.JsonNet;
 
-namespace Elsa.Bookmarks
+namespace Elsa.Services.Bookmarks
 {
     public class BookmarkHasher : IBookmarkHasher
     {

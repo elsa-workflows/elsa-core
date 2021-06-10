@@ -1,7 +1,7 @@
 ﻿using System;
 using Rebus.Config;
 
-namespace Elsa.Services
+namespace Elsa.Services.Messaging
 {
     public class ServiceBusPublishEndpointConfigurationContext
     {
