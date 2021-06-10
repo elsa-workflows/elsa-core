@@ -27,8 +27,8 @@ namespace Elsa.Handlers
 
             // Re-schedule the current scope activity.
             var scope = workflowExecutionContext.WorkflowInstance.Scopes.Pop();
-            workflowExecutionContext.WorkflowInstance.ActivityData.GetItem(scope.ActivityId)?.SetState("Unwinding", true);
-            workflowExecutionContext.ScheduleActivity(scope.ActivityId, activityExecutionContext.Output);
+            workflowExecutionContext.WorkflowInstance.ActivityData.GetItem(scope.ActivityId)!.SetState("Unwinding", true);
+            workflowExecutionContext.ScheduleActivity(scope.ActivityId);
             
             return Task.CompletedTask;
         }

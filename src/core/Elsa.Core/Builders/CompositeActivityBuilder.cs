@@ -176,7 +176,6 @@ namespace Elsa.Builders
                 DisplayName = DisplayName,
                 Description = Description,
                 Type = ActivityTypeName,
-                PersistOutput = PersistOutputEnabled,
                 PersistWorkflow = PersistWorkflowEnabled,
                 LoadWorkflowContext = LoadWorkflowContextEnabled,
                 SaveWorkflowContext = SaveWorkflowContextEnabled
@@ -252,9 +251,9 @@ namespace Elsa.Builders
             var isComposite = typeof(CompositeActivity).IsAssignableFrom(builder.ActivityType);
             return isComposite
                 ? new CompositeActivityBlueprint(builder.ActivityId, parent, GetCompositeName(builder.Name), builder.DisplayName, builder.Description, builder.ActivityTypeName, builder.PersistWorkflowEnabled, builder.LoadWorkflowContextEnabled,
-                    builder.SaveWorkflowContextEnabled, builder.PersistOutputEnabled, builder.Source)
+                    builder.SaveWorkflowContextEnabled, new Dictionary<string, string>(), builder.Source)
                 : new ActivityBlueprint(builder.ActivityId, parent, GetCompositeName(builder.Name), builder.DisplayName, builder.Description, builder.ActivityTypeName, builder.PersistWorkflowEnabled, builder.LoadWorkflowContextEnabled,
-                    builder.SaveWorkflowContextEnabled, builder.PersistOutputEnabled, builder.Source);
+                    builder.SaveWorkflowContextEnabled, new Dictionary<string, string>(), builder.Source);
         }
 
         private string? GetCompositeName(string? activityName) => activityName == null ? null : $"{ActivityId}:{activityName}";

@@ -6,16 +6,19 @@ using System.Threading.Tasks;
 using Elsa.Activities.ControlFlow;
 using Elsa.Attributes;
 using Elsa.Services.Models;
+using Elsa.Services.WorkflowStorage;
 
 namespace Elsa.Services.Workflows
 {
     public class ActivityActivator : IActivityActivator
     {
         private readonly ElsaOptions _elsaOptions;
+        private readonly IWorkflowStorageService _workflowStorageService;
 
-        public ActivityActivator(ElsaOptions options)
+        public ActivityActivator(ElsaOptions options, IWorkflowStorageService workflowStorageService)
         {
             _elsaOptions = options;
+            _workflowStorageService = workflowStorageService;
         }
 
         public async Task<IActivity> ActivateActivityAsync(ActivityExecutionContext context, Type type, CancellationToken cancellationToken = default)
@@ -24,7 +27,7 @@ namespace Elsa.Services.Workflows
             activity.Data = context.GetData();
             activity.Id = context.ActivityId;
 
-            ApplyStoredValues(context, activity);
+            await ApplyStoredValuesAsync(context, activity, cancellationToken);
 
             // TODO: Make extensible / apply open/closed.
             if (ShouldSetProperties(context, activity))
@@ -39,16 +42,22 @@ namespace Elsa.Services.Workflows
             return activity;
         }
 
-        private void ApplyStoredValues(ActivityExecutionContext context, IActivity activity)
+        private async ValueTask ApplyStoredValuesAsync(ActivityExecutionContext context, IActivity activity, CancellationToken cancellationToken)
         {
             var properties = activity.GetType().GetProperties().Where(IsActivityProperty).ToList();
+            var propertyStorageProviderDictionary = context.ActivityBlueprint.PropertyStorageProviders;
 
             foreach (var property in properties)
             {
-                var value = context.GetState(property.Name, property.PropertyType);
+                var providerName = propertyStorageProviderDictionary.GetItem(property.Name);
+                var provider = _workflowStorageService.GetProviderByNameOrDefault(providerName);
+                var value = await provider.LoadAsync(context, property.Name, cancellationToken);
 
                 if (value != null)
-                    property.SetValue(activity, value);
+                {
+                    var typedValue = value.ConvertTo(property.PropertyType);
+                    property.SetValue(activity, typedValue);
+                }
             }
         }
 
@@ -59,22 +68,22 @@ namespace Elsa.Services.Workflows
 
             if (IsReturningIf(activity))
             {
-                activity.Data.SetState("Unwinding", false);
+                activity.Data!.SetState("Unwinding", false);
                 return false;
             }
 
             if (IsReturningSwitch(activity))
             {
-                activity.Data.SetState("Unwinding", false);
+                activity.Data!.SetState("Unwinding", false);
                 return false;
             }
 
             return true;
         }
 
-        private bool IsReturningComposite(IActivity activity) => activity is CompositeActivity && activity.Data.GetState<bool>(nameof(CompositeActivity.IsScheduled));
-        private bool IsReturningIf(IActivity activity) => activity is If && activity.Data.GetState<bool>("Unwinding");
-        private bool IsReturningSwitch(IActivity activity) => activity is Switch && activity.Data.GetState<bool>("Unwinding");
-        private bool IsActivityProperty(PropertyInfo property) => property.GetCustomAttribute<ActivityInputAttribute>() != null || property.GetCustomAttribute<ActivityOutputAttribute>() != null;
+        private bool IsReturningComposite(IActivity activity) => activity is CompositeActivity && activity.Data!.GetState<bool>(nameof(CompositeActivity.IsScheduled));
+        private bool IsReturningIf(IActivity activity) => activity is If && activity.Data!.GetState<bool>("Unwinding");
+        private bool IsReturningSwitch(IActivity activity) => activity is Switch && activity.Data!.GetState<bool>("Unwinding");
+        private bool IsActivityProperty(PropertyInfo property) => (property.GetCustomAttribute<ActivityInputAttribute>() != null || property.GetCustomAttribute<ActivityOutputAttribute>() != null) && property.GetCustomAttribute<NonPersistableAttribute>() == null;
     }
 }

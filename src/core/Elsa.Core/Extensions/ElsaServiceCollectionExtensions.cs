@@ -20,6 +20,7 @@ using Elsa.Persistence;
 using Elsa.Persistence.Decorators;
 using Elsa.Providers.ActivityTypes;
 using Elsa.Providers.Workflows;
+using Elsa.Providers.WorkflowStorage;
 using Elsa.Runtime;
 using Elsa.Serialization;
 using Elsa.Serialization.Converters;
@@ -32,6 +33,7 @@ using Elsa.Services.Messaging;
 using Elsa.Services.Triggers;
 using Elsa.Services.WorkflowContexts;
 using Elsa.Services.Workflows;
+using Elsa.Services.WorkflowStorage;
 using Elsa.StartupTasks;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -123,6 +125,11 @@ namespace Microsoft.Extensions.DependencyInjection
         public static IServiceCollection AddActivityPropertyOptionsProvider<T>(this IServiceCollection services) where T : class, IActivityPropertyOptionsProvider => services.AddSingleton<IActivityPropertyOptionsProvider, T>();
         public static IServiceCollection AddRuntimeSelectItemsProvider<T>(this IServiceCollection services) where T : class, IRuntimeSelectListItemsProvider => services.AddScoped<IRuntimeSelectListItemsProvider, T>();
         public static IServiceCollection AddActivityTypeProvider<T>(this IServiceCollection services) where T : class, IActivityTypeProvider => services.AddSingleton<IActivityTypeProvider, T>();
+        
+        public static IServiceCollection AddWorkflowStorageProvider<T>(this IServiceCollection services) where T : class, IWorkflowStorageProvider =>
+            services
+                .AddSingleton<T>()
+                .AddSingleton<IWorkflowStorageProvider>(sp => sp.GetRequiredService<T>());
 
         private static ElsaOptionsBuilder AddWorkflowsCore(this ElsaOptionsBuilder options)
         {
@@ -191,6 +198,12 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddWorkflowProvider<ProgrammaticWorkflowProvider>()
                 .AddWorkflowProvider<StorageWorkflowProvider>()
                 .AddWorkflowProvider<DatabaseWorkflowProvider>();
+            
+            // Workflow Storage Providers.
+            services
+                .AddSingleton<IWorkflowStorageService, WorkflowStorageService>()
+                .AddWorkflowStorageProvider<TransientWorkflowStorageProvider>()
+                .AddWorkflowStorageProvider<WorkflowInstanceWorkflowStorageProvider>();
 
             // Metadata.
             services

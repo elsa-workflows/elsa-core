@@ -79,12 +79,19 @@ namespace Elsa.Services.Models
             var data = GetData();
             return data.GetState(propertyName, targetType);
         }
+        
 
         public T? GetState<TActivity, T>(Expression<Func<TActivity, T>> propertyExpression) where TActivity : IActivity
         {
             var expression = (MemberExpression) propertyExpression.Body;
             string propertyName = expression.Member.Name;
             return GetState<T>(propertyName);
+        }
+        
+        public object? GetState(string propertyName)
+        {
+            var data = GetData();
+            return data.GetState(propertyName);
         }
 
         public T? GetContainerState<T>() => GetContainerState<T>(typeof(T).Name);
@@ -115,11 +122,7 @@ namespace Elsa.Services.Models
 
         public ActivityScope CreateScope() => WorkflowExecutionContext.CreateScope(ActivityId);
 
-        public object? Output
-        {
-            get => WorkflowExecutionContext.WorkflowInstance.ActivityOutput.GetItem(ActivityBlueprint.Id, () => null!);
-            set => WorkflowExecutionContext.WorkflowInstance.ActivityOutput.SetItem(ActivityBlueprint.Id, value);
-        }
+        public ActivityOutput? Output { get; set; }
 
         public ActivityScope? CurrentScope => WorkflowExecutionContext.CurrentScope;
         public ActivityScope GetScope(string activityId) => WorkflowExecutionContext.GetScope(activityId);

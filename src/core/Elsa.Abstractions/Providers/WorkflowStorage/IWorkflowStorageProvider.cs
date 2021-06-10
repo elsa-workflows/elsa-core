@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Services.Models;
 
 namespace Elsa.Providers.WorkflowStorage
 {
@@ -10,7 +11,9 @@ namespace Elsa.Providers.WorkflowStorage
     {
         string Name { get; }
         string DisplayName { get; }
-        ValueTask SaveAsync(CancellationToken cancellationToken = default);
-        ValueTask<object?> LoadAsync(CancellationToken cancellationToken = default);
+        ValueTask SaveAsync(ActivityExecutionContext context, string propertyName, object? value, CancellationToken cancellationToken = default);
+        ValueTask<object?> LoadAsync(ActivityExecutionContext context, string propertyName, CancellationToken cancellationToken = default);
+        ValueTask DeleteAsync(ActivityExecutionContext context, string propertyName, CancellationToken cancellationToken = default);
+        ValueTask DeleteAsync(ActivityExecutionContext context, CancellationToken cancellationToken = default);
     }
 }

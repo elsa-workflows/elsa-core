@@ -79,7 +79,7 @@ namespace Elsa.Scripting.Liquid.Handlers
             if (name == "Output")
             {
                 var output = activityExecutionContext.GetOutputFrom(activityModel.ActivityName!);
-                return output != null ? JObjectExtensions.SerializeState(output) : default;
+                return output != null ? StateDictionaryExtensions.SerializeState(output) : default;
             }
 
             var workflowExecutionContext = activityExecutionContext.WorkflowExecutionContext;

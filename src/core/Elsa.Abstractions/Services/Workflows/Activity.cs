@@ -44,8 +44,8 @@ namespace Elsa.Services
         
         protected virtual SuspendResult Suspend() => new();
         protected virtual ScheduleActivitiesResult Schedule(params string[] activityIds) => new(activityIds);
-        protected virtual ScheduleActivitiesResult Schedule(IEnumerable<string> activityIds, object? input) => new(activityIds, input);
-        protected virtual ScheduleActivitiesResult Schedule(string activityId, object? input) => Schedule(new[] { activityId }, input);
+        protected virtual ScheduleActivitiesResult Schedule(IEnumerable<string> activityIds) => new(activityIds);
+        protected virtual ScheduleActivitiesResult Schedule(string activityId) => Schedule(new[] { activityId });
         protected virtual ScheduleActivitiesResult Schedule(IEnumerable<ScheduledActivity> activities) => new(activities);
         protected virtual CombinedResult Combine(IEnumerable<IActivityExecutionResult> results) => new(results);
         protected virtual CombinedResult Combine(params IActivityExecutionResult[] results) => new(results);
