@@ -60,6 +60,19 @@ namespace Elsa.Activities.Webhooks.ActivityTypes
                 InputProperties = new[]
                 {
                     new ActivityInputDescriptor(
+                        nameof(HttpEndpoint.Path),
+                        typeof(Microsoft.AspNetCore.Http.PathString),
+                        ActivityInputUIHints.SingleLine,
+                        "Path",
+                        "The relative path that triggers this activity.",
+                        null,
+                        default,
+                        0,
+                        webhook.Path,
+                        SyntaxNames.Literal,
+                        new[] { SyntaxNames.Literal }
+                        ),
+                    new ActivityInputDescriptor(
                         nameof(HttpEndpoint.Methods),
                         typeof(HashSet<string>),
                         ActivityInputUIHints.CheckList,
@@ -67,10 +80,20 @@ namespace Elsa.Activities.Webhooks.ActivityTypes
                         "Specify what request method this webhook should handle. Leave empty to handle both GET and POST requests",
                         new[] { "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD" },
                         default,
-                        0,
-                        "POST",
+                        1,
+                        new[] { "GET", "POST" },
                         SyntaxNames.Json,
-                        new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid })
+                        new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid }
+                        )
+                },
+                OutputProperties = new[]
+                {
+                    new ActivityOutputDescriptor
+                    (
+                       "Request",
+                       typeof(Models.WebhookRequestModel),
+                       "The received HTTP request."
+                    )
                 }
             };
 

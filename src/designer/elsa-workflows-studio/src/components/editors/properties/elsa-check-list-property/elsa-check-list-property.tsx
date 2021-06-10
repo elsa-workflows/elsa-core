@@ -46,11 +46,17 @@ export class ElsaCheckListProperty {
   }
 
   render() {
+debugger
     const propertyDescriptor = this.propertyDescriptor;
     const propertyModel = this.propertyModel;
     const fieldId = propertyDescriptor.name;
     const items = this.items;
-    const values = parseJson(this.currentValue) || [];
+    let values = parseJson(this.currentValue) || [];
+
+    if (values.length == 0) {
+      const defaultValue = this.propertyDescriptor.defaultValue;
+      values = defaultValue ? defaultValue : [];
+    }
 
     return (
       <elsa-property-editor propertyDescriptor={propertyDescriptor}

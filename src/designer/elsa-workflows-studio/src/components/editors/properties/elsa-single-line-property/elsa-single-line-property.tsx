@@ -17,9 +17,9 @@ export class ElsaSingleLineProperty {
     this.propertyModel.expressions[defaultSyntax] = this.currentValue = input.value;
   }
 
-  componentWillLoad() {
+  componentWillLoad() {    
     const defaultSyntax = this.propertyDescriptor.defaultSyntax || SyntaxNames.Literal;
-    this.currentValue = this.propertyModel.expressions[defaultSyntax] || '';
+    this.currentValue = this.propertyModel.expressions[defaultSyntax] || undefined;
   }
 
   onDefaultSyntaxValueChanged(e: CustomEvent) {
@@ -27,6 +27,7 @@ export class ElsaSingleLineProperty {
   }
 
   render() {
+    
     const propertyDescriptor = this.propertyDescriptor;
     const propertyModel = this.propertyModel;
     const propertyName = propertyDescriptor.name;
