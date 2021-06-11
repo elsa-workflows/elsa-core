@@ -88,7 +88,7 @@ namespace Elsa.StartupTasks
 
                 var scheduledActivity = instance.CurrentActivity ?? instance.ScheduledActivities.Peek();
 
-                await _workflowInstanceDispatcher.DispatchAsync(new ExecuteWorkflowInstanceRequest(instance.Id, scheduledActivity.ActivityId, scheduledActivity.Input), cancellationToken);
+                await _workflowInstanceDispatcher.DispatchAsync(new ExecuteWorkflowInstanceRequest(instance.Id, scheduledActivity.ActivityId), cancellationToken);
             }
         }
     }

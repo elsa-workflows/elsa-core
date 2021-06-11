@@ -18,7 +18,7 @@ namespace Elsa.Core.IntegrationTests.Workflows
         {
             var items = Enumerable.Range(1, 10).Select(x => $"Item {x}").ToList();
             var workflow = new ForEachWorkflow(items);
-            var runWorkflowResult = await WorkflowRunner.BuildAndStartWorkflowAsync(workflow);
+            var runWorkflowResult = await WorkflowBuilderAndStarter.BuildAndStartWorkflowAsync(workflow);
             var workflowInstance = runWorkflowResult.WorkflowInstance!;
 
             Assert.Equal(WorkflowStatus.Suspended, workflowInstance.WorkflowStatus);

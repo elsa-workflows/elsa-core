@@ -38,10 +38,12 @@ namespace Elsa.Builders
         public string? Name { get; set; }
         public string? DisplayName { get; set; }
         public string? Description { get; set; }
+        public string? OutputStorageProviderName { get; set; }
         public bool PersistWorkflowEnabled { get; set; }
         public bool LoadWorkflowContextEnabled { get; set; }
         public bool SaveWorkflowContextEnabled { get; set; }
         public IDictionary<string, IActivityPropertyValueProvider>? PropertyValueProviders { get; protected set; }
+        public IDictionary<string, string> PropertyStorageProviders { get; set; } = new Dictionary<string, string>();
         public int LineNumber { get; }
         public string? SourceFile { get; }
         public string? Source => SourceFile != null && LineNumber != default ? $"{Path.GetFileName(SourceFile)}:{LineNumber}" : default;

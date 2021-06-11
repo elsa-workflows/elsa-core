@@ -5,6 +5,7 @@ using System.Reflection;
 using Elsa.Builders;
 using Elsa.Caching;
 using Elsa.Persistence;
+using Elsa.Providers.WorkflowStorage;
 using Elsa.Services;
 using Elsa.Services.Messaging;
 using Microsoft.Extensions.DependencyInjection;
@@ -35,7 +36,7 @@ namespace Elsa
             services.AddSingleton<InMemDataStore>();
             services.AddMemoryCache();
             services.AddSingleton<ICacheSignal, CacheSignal>();
-            
+
             DistributedLockingOptionsBuilder = new DistributedLockingOptionsBuilder(this);
         }
 
@@ -148,7 +149,7 @@ namespace Elsa
         }
 
         public ElsaOptionsBuilder AddCompetingMessageType<T>() => AddCompetingMessageType(typeof(T));
-        
+
         public ElsaOptionsBuilder AddPubSubMessageType(Type messageType)
         {
             ElsaOptions.PubSubMessageTypes.Add(messageType);
@@ -210,6 +211,14 @@ namespace Elsa
         public ElsaOptionsBuilder ConfigureJsonSerializer(Action<IServiceProvider, JsonSerializer> configure)
         {
             ElsaOptions.JsonSerializerConfigurer = configure;
+            return this;
+        }
+
+        public ElsaOptionsBuilder UseDefaultWorkflowStorageProvider<T>() where T : IWorkflowStorageProvider => UseDefaultWorkflowStorageProvider(typeof(T));
+
+        public ElsaOptionsBuilder UseDefaultWorkflowStorageProvider(Type type)
+        {
+            ElsaOptions.DefaultWorkflowStorageProviderType = type;
             return this;
         }
 

@@ -16,7 +16,7 @@ namespace Elsa.Persistence.EntityFramework.MySql.Migrations
             modelBuilder
                 .HasDefaultSchema("Elsa")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64)
-                .HasAnnotation("ProductVersion", "5.0.5");
+                .HasAnnotation("ProductVersion", "5.0.6");
 
             modelBuilder.Entity("Elsa.Models.Bookmark", b =>
                 {
@@ -114,6 +114,9 @@ namespace Elsa.Persistence.EntityFramework.MySql.Migrations
 
                     b.Property<string>("Name")
                         .HasColumnType("varchar(255)");
+
+                    b.Property<string>("OutputStorageProviderName")
+                        .HasColumnType("longtext");
 
                     b.Property<int>("PersistenceBehavior")
                         .HasColumnType("int");
@@ -224,6 +227,7 @@ namespace Elsa.Persistence.EntityFramework.MySql.Migrations
                         .HasColumnType("varchar(255)");
 
                     b.Property<string>("CorrelationId")
+                        .IsRequired()
                         .HasColumnType("varchar(255)");
 
                     b.Property<DateTimeOffset>("CreatedAt")
@@ -241,6 +245,9 @@ namespace Elsa.Persistence.EntityFramework.MySql.Migrations
 
                     b.Property<DateTimeOffset?>("FinishedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<string>("LastExecutedActivityId")
+                        .HasColumnType("longtext");
 
                     b.Property<DateTimeOffset?>("LastExecutedAt")
                         .HasColumnType("datetime(6)");

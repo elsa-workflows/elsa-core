@@ -1,6 +1,6 @@
-﻿using System.Threading;
+﻿using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Services.Models;
 
 namespace Elsa.Providers.WorkflowStorage
 {
@@ -9,29 +9,37 @@ namespace Elsa.Providers.WorkflowStorage
     /// </summary>
     public class WorkflowInstanceWorkflowStorageProvider : WorkflowStorageProvider
     {
-        public override ValueTask SaveAsync(ActivityExecutionContext context, string propertyName, object? value, CancellationToken cancellationToken = default)
+        public override ValueTask SaveAsync(WorkflowStorageContext context, string key, object? value, CancellationToken cancellationToken = default)
         {
-            context.SetState(propertyName, value);
+            SetState(context, key, value);
             return new ValueTask();
         }
         
-        public override ValueTask<object?> LoadAsync(ActivityExecutionContext context, string propertyName, CancellationToken cancellationToken = default)
+        public override ValueTask<object?> LoadAsync(WorkflowStorageContext context, string key, CancellationToken cancellationToken = default)
         {
-            var value = context.GetState(propertyName);
+            var value = GetState(context, key);
             return new ValueTask<object?>(value);
         }
 
-        public override ValueTask DeleteAsync(ActivityExecutionContext context, string propertyName, CancellationToken cancellationToken = default)
+        public override ValueTask DeleteAsync(WorkflowStorageContext context, string key, CancellationToken cancellationToken = default)
         {
-            var state = context.GetData();
-            state.Remove(propertyName);
+            var state = GetData(context);
+            state.Remove(key);
             return new ValueTask();
         }
 
-        public override ValueTask DeleteAsync(ActivityExecutionContext context, CancellationToken cancellationToken = default)
+        public override ValueTask DeleteAsync(WorkflowStorageContext context, CancellationToken cancellationToken = default)
         {
             context.WorkflowInstance.ActivityData.Remove(context.ActivityId);
             return new ValueTask();
         }
+
+        private IDictionary<string, object> GetData(WorkflowStorageContext context)
+        {
+            return context.WorkflowInstance.ActivityData.GetItem(context.ActivityId, () => new Dictionary<string, object>());
+        }
+
+        private void SetState(WorkflowStorageContext context, string propertyName, object? value) => GetData(context)!.SetState(propertyName, value);
+        public object? GetState(WorkflowStorageContext context, string propertyName) => GetData(context)!.GetState(propertyName);
     }
 }

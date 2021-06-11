@@ -1,7 +1,10 @@
-﻿using System.Threading;
+﻿using System;
+using System.Linq.Expressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Persistence;
+using Elsa.Persistence.Specifications;
 using Newtonsoft.Json.Linq;
 using NodaTime;
 
@@ -27,5 +30,7 @@ namespace Elsa.Services.Workflows
             var record = new WorkflowExecutionLogRecord(id, tenantId, workflowInstanceId, activityId, activityType, timeStamp, eventName, message, source, data);
             await _store.SaveAsync(record, cancellationToken);
         }
+
+        public Task<WorkflowExecutionLogRecord?> FindEntryAsync(ISpecification<WorkflowExecutionLogRecord> specification, CancellationToken cancellationToken = default) => _store.FindAsync(specification, cancellationToken);
     }
 }

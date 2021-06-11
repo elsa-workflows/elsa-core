@@ -1,9 +1,15 @@
-﻿using Elsa.Providers.WorkflowStorage;
+﻿using System.Threading;
+using System.Threading.Tasks;
+using Elsa.Providers.WorkflowStorage;
 
 namespace Elsa.Services.WorkflowStorage
 {
     public interface IWorkflowStorageService
     {
-        IWorkflowStorageProvider GetProviderByNameOrDefault(string? name = null);
+        IWorkflowStorageProvider GetProviderByNameOrDefault(string? providerName = null);
+        ValueTask SaveAsync(string? providerName, WorkflowStorageContext context, string key, object? value, CancellationToken cancellationToken = default);
+        ValueTask<object?> LoadAsync(string? providerName, WorkflowStorageContext context, string key, CancellationToken cancellationToken = default);
+        ValueTask DeleteAsync(string? providerName, WorkflowStorageContext context, string key, CancellationToken cancellationToken = default);
+        ValueTask DeleteAsync(string? providerName, WorkflowStorageContext context, CancellationToken cancellationToken = default);
     }
 }

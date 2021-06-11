@@ -6,10 +6,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Events;
 using Elsa.Models;
+using Elsa.Providers.WorkflowStorage;
+using Elsa.Services.WorkflowStorage;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using NodaTime;
 using Rebus.Extensions;
 
@@ -197,13 +198,15 @@ namespace Elsa.Services.Models
         public IActivityBlueprint? GetActivityBlueprintById(string id) => WorkflowBlueprint.Activities.FirstOrDefault(x => x.Id == id);
         public IActivityBlueprint? GetActivityBlueprintByName(string name) => WorkflowBlueprint.Activities.FirstOrDefault(x => x.Name == name);
 
-        public object? GetOutputFrom(string activityName)
+        public ValueTask<object?> GetOutputFromAsync(string activityName, CancellationToken cancellationToken = default)
         {
+            var workflowStorageService = ServiceProvider.GetRequiredService<IWorkflowStorageService>();
             var activityBlueprint = GetActivityBlueprintByName(activityName)!;
-            return WorkflowInstance.ActivityOutput.GetItem(activityBlueprint.Id);
+            var context = new WorkflowStorageContext(WorkflowInstance, activityBlueprint.Id);
+            return workflowStorageService.LoadAsync(activityBlueprint.OutputStorageProviderName, context, ActivityOutput.PropertyName, cancellationToken);
         }
 
-        public T GetOutputFrom<T>(string activityName) => (T) GetOutputFrom(activityName)!;
+        public async ValueTask<T?> GetOutputFromAsync<T>(string activityName, CancellationToken cancellationToken = default) => (T?) await GetOutputFromAsync(activityName, cancellationToken);
         
         public T? GetActivityProperty<TActivity, T>(string activityId, Expression<Func<TActivity, T>> propertyExpression) where TActivity : IActivity
         {
@@ -236,11 +239,10 @@ namespace Elsa.Services.Models
             return state;
         }
 
-        private async Task<IActivityBlueprint> EvictScopeAsync(ActivityScope scope)
+        private async Task EvictScopeAsync(ActivityScope scope)
         {
             var scopeActivity = WorkflowBlueprint.GetActivity(scope.ActivityId)!;
             await EvictScopeAsync(scopeActivity);
-            return scopeActivity;
         }
 
         public ActivityScope CreateScope(string activityId)

@@ -21,45 +21,45 @@ namespace Elsa.Providers.WorkflowStorage
             _cacheSignal = cacheSignal;
         }
 
-        public override ValueTask SaveAsync(ActivityExecutionContext context, string propertyName, object? value, CancellationToken cancellationToken = default)
+        public override ValueTask SaveAsync(WorkflowStorageContext context, string key, object? value, CancellationToken cancellationToken = default)
         {
             var workflowInstanceId = context.WorkflowInstance.Id;
             var activityId = context.ActivityId;
-            var key = GetKey(workflowInstanceId, activityId, propertyName);
+            var cacheKey = GetKey(workflowInstanceId, activityId, key);
             var options = new MemoryCacheEntryOptions();
 
             options.ExpirationTokens.Add(_cacheSignal.GetToken(GetSignalKey(workflowInstanceId)));
-            _cache.Set(key, value, options);
+            _cache.Set(cacheKey, value, options);
 
             return new ValueTask();
         }
 
-        public override ValueTask<object?> LoadAsync(ActivityExecutionContext context, string propertyName, CancellationToken cancellationToken = default)
+        public override ValueTask<object?> LoadAsync(WorkflowStorageContext context, string key, CancellationToken cancellationToken = default)
         {
             var workflowInstanceId = context.WorkflowInstance.Id;
             var activityId = context.ActivityId;
-            var key = GetKey(workflowInstanceId, activityId, propertyName);
-            var value = _cache.TryGetValue(key, out var v) ? v : default;
+            var cacheKey = GetKey(workflowInstanceId, activityId, key);
+            var value = _cache.TryGetValue(cacheKey, out var v) ? v : default;
             return new ValueTask<object?>(value);
         }
 
-        public override ValueTask DeleteAsync(ActivityExecutionContext context, string propertyName, CancellationToken cancellationToken = default)
+        public override ValueTask DeleteAsync(WorkflowStorageContext context, string key, CancellationToken cancellationToken = default)
         {
             var workflowInstanceId = context.WorkflowInstance.Id;
             var activityId = context.ActivityId;
-            var key = GetKey(workflowInstanceId, activityId, propertyName);
-            _cache.Remove(key);
+            var cacheKey = GetKey(workflowInstanceId, activityId, key);
+            _cache.Remove(cacheKey);
             return new ValueTask();
         }
 
-        public override ValueTask DeleteAsync(ActivityExecutionContext context, CancellationToken cancellationToken = default)
+        public override ValueTask DeleteAsync(WorkflowStorageContext context, CancellationToken cancellationToken = default)
         {
             var workflowInstanceId = context.WorkflowInstance.Id;
             _cacheSignal.TriggerToken(GetSignalKey(workflowInstanceId));
             return new ValueTask();
         }
 
-        private static (string workflowInstanceId, string activityId, string propertyName) GetKey(string workflowInstanceId, string activityId, string propertyName) => (workflowInstanceId, activityId, propertyName);
+        private static (string workflowInstanceId, string? activityId, string propertyName) GetKey(string workflowInstanceId, string? activityId, string propertyName) => (workflowInstanceId, activityId, propertyName);
         private static string GetSignalKey(string workflowInstanceId) => $"{nameof(TransientWorkflowStorageProvider)}:{workflowInstanceId}";
     }
 }

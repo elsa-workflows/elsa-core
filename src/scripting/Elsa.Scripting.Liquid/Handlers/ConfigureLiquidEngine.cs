@@ -72,13 +72,13 @@ namespace Elsa.Scripting.Liquid.Handlers
             return new LiquidActivityModel(context, null, inboundActivityId);
         }
 
-        private object? GetActivityProperty(LiquidActivityModel activityModel, string name)
+        private async Task<object?> GetActivityProperty(LiquidActivityModel activityModel, string name)
         {
             var activityExecutionContext = activityModel.ActivityExecutionContext;
             
             if (name == "Output")
             {
-                var output = activityExecutionContext.GetOutputFrom(activityModel.ActivityName!);
+                var output = await activityExecutionContext.GetOutputFromAsync(activityModel.ActivityName!);
                 return output != null ? StateDictionaryExtensions.SerializeState(output) : default;
             }
 
