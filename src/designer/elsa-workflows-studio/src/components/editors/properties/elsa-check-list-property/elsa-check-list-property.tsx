@@ -19,11 +19,12 @@ export class ElsaCheckListProperty {
   items: any[];
 
   async componentWillLoad() {
+    if (this.propertyModel.expressions[SyntaxNames.Json] == undefined)
+      this.propertyModel.expressions[SyntaxNames.Json] = JSON.stringify(this.propertyDescriptor.defaultValue);
     this.currentValue = this.propertyModel.expressions[SyntaxNames.Json] || '[]';
   }
 
   onCheckChanged(e: Event) {
-    debugger
     const checkbox = (e.target as HTMLInputElement);
     const checked = checkbox.checked;
     const value = checkbox.value;
@@ -51,12 +52,7 @@ export class ElsaCheckListProperty {
     const propertyModel = this.propertyModel;
     const fieldId = propertyDescriptor.name;
     const items = this.items;
-    let values = parseJson(this.currentValue) || [];
-
-    if (values.length == 0) {
-      const defaultValue = this.propertyDescriptor.defaultValue;
-      values = defaultValue ? defaultValue : [];
-    }
+    const values = parseJson(this.currentValue) || [];
 
     return (
       <elsa-property-editor propertyDescriptor={propertyDescriptor}
