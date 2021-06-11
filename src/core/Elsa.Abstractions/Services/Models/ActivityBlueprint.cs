@@ -19,6 +19,7 @@ namespace Elsa.Services.Models
             bool loadWorkflowContext,
             bool saveWorkflowContext,
             IDictionary<string, string> propertyStorageProviders,
+            string? outputStorageProviderName,
             string? source)
         {
             Id = id;
@@ -31,6 +32,7 @@ namespace Elsa.Services.Models
             LoadWorkflowContext = loadWorkflowContext;
             SaveWorkflowContext = saveWorkflowContext;
             PropertyStorageProviders = propertyStorageProviders;
+            OutputStorageProviderName = outputStorageProviderName;
             Source = source;
         }
 
@@ -44,6 +46,7 @@ namespace Elsa.Services.Models
         public bool LoadWorkflowContext { get; set; }
         public bool SaveWorkflowContext { get; set; }
         public IDictionary<string, string> PropertyStorageProviders { get; } = new Dictionary<string, string>();
+        public string? OutputStorageProviderName { get; }
         public string? Source { get; set; }
        
 

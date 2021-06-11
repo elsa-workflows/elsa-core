@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Elsa.Services.Models;
 
 namespace Elsa
@@ -14,7 +16,7 @@ namespace Elsa
 
         public static IEnumerable<string> GetInboundActivityPath(this WorkflowExecutionContext workflowExecutionContext, string activityId) => workflowExecutionContext.GetInboundActivityPathInternal(activityId, activityId).Distinct();
         public static IEnumerable<string> GetOutboundActivityPath(this WorkflowExecutionContext workflowExecutionContext, string activityId) => workflowExecutionContext.GetOutboundActivityPathInternal(activityId, activityId).Distinct();
-        public static T GetOutputFrom<T>(this WorkflowExecutionContext workflowExecutionContext, string activityName) => (T)workflowExecutionContext.GetOutputFrom(activityName)!;
+        public static async ValueTask<T?> GetOutputFromAsync<T>(this WorkflowExecutionContext workflowExecutionContext, string activityName, CancellationToken cancellationToken = default) => await workflowExecutionContext.GetOutputFromAsync<T>(activityName, cancellationToken);
 
         private static IEnumerable<string> GetInboundActivityPathInternal(this WorkflowExecutionContext workflowExecutionContext, string activityId, string startingPointActivityId)
         {

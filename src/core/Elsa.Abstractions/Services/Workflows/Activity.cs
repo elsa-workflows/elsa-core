@@ -20,7 +20,7 @@ namespace Elsa.Services
         public virtual bool PersistWorkflow { get; set; }
         public virtual bool LoadWorkflowContext { get; set; }
         public virtual bool SaveWorkflowContext { get; set; }
-        public virtual IDictionary<string, object> Data { get; set; } = new Dictionary<string, object>();
+        public virtual IDictionary<string, object?> Data { get; set; } = new Dictionary<string, object?>();
         public virtual ValueTask<bool> CanExecuteAsync(ActivityExecutionContext context) => OnCanExecuteAsync(context);
         public virtual ValueTask<IActivityExecutionResult> ExecuteAsync(ActivityExecutionContext context) => OnExecuteAsync(context);
         public virtual ValueTask<IActivityExecutionResult> ResumeAsync(ActivityExecutionContext context) => OnResumeAsync(context);

@@ -61,6 +61,7 @@ namespace Elsa.Services.Workflows
                 workflowDefinition.DeleteCompletedInstances,
                 activityBlueprints.Values,
                 connections,
+                workflowDefinition.OutputStorageProviderName,
                 new ActivityPropertyProviders(propertyProviders.ToDictionary(x => x.Key, x => x.Value))
             );
         }

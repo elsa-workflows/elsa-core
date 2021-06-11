@@ -34,6 +34,7 @@ namespace Elsa.Builders
             ServiceProvider = serviceProvider;
             ActivityBuilders = new List<IActivityBuilder>();
             ConnectionBuilders = new List<IConnectionBuilder>();
+            PropertyStorageProviders = new Dictionary<string, string>();
 
             _compositeActivityBuilderFactory = () =>
             {
@@ -251,9 +252,9 @@ namespace Elsa.Builders
             var isComposite = typeof(CompositeActivity).IsAssignableFrom(builder.ActivityType);
             return isComposite
                 ? new CompositeActivityBlueprint(builder.ActivityId, parent, GetCompositeName(builder.Name), builder.DisplayName, builder.Description, builder.ActivityTypeName, builder.PersistWorkflowEnabled, builder.LoadWorkflowContextEnabled,
-                    builder.SaveWorkflowContextEnabled, new Dictionary<string, string>(), builder.Source)
+                    builder.SaveWorkflowContextEnabled, builder.PropertyStorageProviders, builder.OutputStorageProviderName, builder.Source)
                 : new ActivityBlueprint(builder.ActivityId, parent, GetCompositeName(builder.Name), builder.DisplayName, builder.Description, builder.ActivityTypeName, builder.PersistWorkflowEnabled, builder.LoadWorkflowContextEnabled,
-                    builder.SaveWorkflowContextEnabled, new Dictionary<string, string>(), builder.Source);
+                    builder.SaveWorkflowContextEnabled, builder.PropertyStorageProviders, builder.OutputStorageProviderName, builder.Source);
         }
 
         private string? GetCompositeName(string? activityName) => activityName == null ? null : $"{ActivityId}:{activityName}";

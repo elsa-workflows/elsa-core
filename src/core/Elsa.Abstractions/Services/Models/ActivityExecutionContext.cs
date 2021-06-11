@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json.Linq;
 
 namespace Elsa.Services.Models
 {
@@ -54,7 +53,7 @@ namespace Elsa.Services.Models
 
         public CancellationToken CancellationToken { get; }
 
-        public IDictionary<string, object> GetData() => WorkflowInstance.ActivityData.GetItem(ActivityBlueprint.Id, () => new Dictionary<string, object>());
+        public IDictionary<string, object?> GetData() => WorkflowInstance.ActivityData.GetItem(ActivityBlueprint.Id, () => new Dictionary<string, object?>());
 
         public void SetState(string propertyName, object? value)
         {
@@ -68,10 +67,10 @@ namespace Elsa.Services.Models
             return data.GetState<T>(propertyName);
         }
 
-        public T GetState<T>(string propertyName, Func<T> defaultValue)
+        public T? GetState<T>(string propertyName, Func<T> defaultValue)
         {
             var data = GetData();
-            return data.GetState<T>(propertyName, defaultValue);
+            return data.GetState(propertyName, defaultValue);
         }
 
         public object? GetState(string propertyName, Type targetType)
@@ -166,12 +165,12 @@ namespace Elsa.Services.Models
         public T? GetInput<T>(Func<T?> defaultValue) => Input != null ? Input.ConvertTo<T>() : defaultValue();
         public T? GetInput<T>(T? defaultValue) => Input != null ? Input.ConvertTo<T>() : defaultValue;
 
-        public object? GetOutputFrom(string activityName) => WorkflowExecutionContext.GetOutputFrom(activityName);
-        public object? GetOutputFrom(string activityName, object? defaultValue) => WorkflowExecutionContext.GetOutputFrom(activityName) ?? defaultValue;
-        public object? GetOutputFrom(string activityName, Func<object?> defaultValue) => WorkflowExecutionContext.GetOutputFrom(activityName) ?? defaultValue();
-        public T? GetOutputFrom<T>(string activityName) => (T?) GetOutputFrom(activityName)!;
-        public T? GetOutputFrom<T>(string activityName, Func<T?> defaultValue) => (T?) GetOutputFrom(activityName, defaultValue())!;
-        public T? GetOutputFrom<T>(string activityName, T? defaultValue) => (T?) GetOutputFrom(activityName, () => defaultValue)!;
+        public ValueTask<object?> GetOutputFromAsync(string activityName, CancellationToken cancellationToken = default) => WorkflowExecutionContext.GetOutputFromAsync(activityName, cancellationToken);
+        public async ValueTask<object?> GetOutputFromAsync(string activityName, object? defaultValue, CancellationToken cancellationToken = default) => await WorkflowExecutionContext.GetOutputFromAsync(activityName, cancellationToken) ?? defaultValue;
+        public async ValueTask<object?> GetOutputFromAsync(string activityName, Func<object?> defaultValue, CancellationToken cancellationToken = default) => await WorkflowExecutionContext.GetOutputFromAsync(activityName, cancellationToken) ?? defaultValue();
+        public async ValueTask<T?> GetOutputFromAsync<T>(string activityName, CancellationToken cancellationToken = default) => await WorkflowExecutionContext.GetOutputFromAsync<T>(activityName, cancellationToken);
+        public async ValueTask<T?> GetOutputFromAsync<T>(string activityName, Func<T?> defaultValue, CancellationToken cancellationToken = default) => await GetOutputFromAsync<T>(activityName, cancellationToken) ?? defaultValue();
+        public async ValueTask<T?> GetOutputFromAsync<T>(string activityName, T? defaultValue) => await GetOutputFromAsync(activityName, () => defaultValue, CancellationToken);
         public void SetWorkflowContext(object? value) => WorkflowExecutionContext.SetWorkflowContext(value);
         public object? GetWorkflowContext() => WorkflowExecutionContext.GetWorkflowContext();
         public T GetWorkflowContext<T>() => WorkflowExecutionContext.GetWorkflowContext<T>();

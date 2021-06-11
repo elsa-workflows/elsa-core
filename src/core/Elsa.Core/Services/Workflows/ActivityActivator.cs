@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.ControlFlow;
 using Elsa.Attributes;
+using Elsa.Providers.WorkflowStorage;
 using Elsa.Services.Models;
 using Elsa.Services.WorkflowStorage;
 
@@ -37,6 +38,7 @@ namespace Elsa.Services.Workflows
                 // Right now, we can only set these values on properties of the IActivity implementation.
                 //var activityType = await _activityTypeService.GetActivityTypeAsync(activity.Type, cancellationToken);
                 await context.WorkflowExecutionContext.WorkflowBlueprint.ActivityPropertyProviders.SetActivityPropertiesAsync(activity, context, context.CancellationToken);
+                await StoreAppliedValuesAsync(context, activity, cancellationToken);
             }
 
             return activity;
@@ -46,18 +48,32 @@ namespace Elsa.Services.Workflows
         {
             var properties = activity.GetType().GetProperties().Where(IsActivityProperty).ToList();
             var propertyStorageProviderDictionary = context.ActivityBlueprint.PropertyStorageProviders;
+            var workflowStorageContext = new WorkflowStorageContext(context.WorkflowInstance, context.ActivityId);
 
             foreach (var property in properties)
             {
                 var providerName = propertyStorageProviderDictionary.GetItem(property.Name);
-                var provider = _workflowStorageService.GetProviderByNameOrDefault(providerName);
-                var value = await provider.LoadAsync(context, property.Name, cancellationToken);
+                var value = await _workflowStorageService.LoadAsync( providerName, workflowStorageContext, property.Name, cancellationToken);
 
                 if (value != null)
                 {
                     var typedValue = value.ConvertTo(property.PropertyType);
                     property.SetValue(activity, typedValue);
                 }
+            }
+        }
+        
+        private async ValueTask StoreAppliedValuesAsync(ActivityExecutionContext context, IActivity activity, CancellationToken cancellationToken)
+        {
+            var properties = activity.GetType().GetProperties().Where(IsActivityProperty).ToList();
+            var propertyStorageProviderDictionary = context.ActivityBlueprint.PropertyStorageProviders;
+            var workflowStorageContext = new WorkflowStorageContext(context.WorkflowInstance, context.ActivityId);
+
+            foreach (var property in properties)
+            {
+                var value = property.GetValue(activity);
+                var providerName = propertyStorageProviderDictionary.GetItem(property.Name);
+                await _workflowStorageService.SaveAsync(providerName, workflowStorageContext, property.Name, value, cancellationToken);
             }
         }
 

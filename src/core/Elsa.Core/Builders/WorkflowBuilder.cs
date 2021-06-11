@@ -176,6 +176,7 @@ namespace Elsa.Builders
                 DeleteCompletedInstances,
                 compositeRoot.Activities,
                 compositeRoot.Connections,
+                compositeRoot.OutputStorageProviderName,
                 compositeRoot.ActivityPropertyProviders);
         }
     }

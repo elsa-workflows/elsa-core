@@ -68,15 +68,7 @@ namespace Elsa.Services
                         value = activityPropertyAttribute?.DefaultValue;
                     }
 
-                    if (value != null)
-                    {
-                        property.SetValue(activity, value);
-
-                        if (property.GetCustomAttribute<NonPersistableAttribute>() is not null)
-                            return;
-                        
-                        activityExecutionContext.SetState(property.Name, value);
-                    }
+                    if (value != null) property.SetValue(activity, value);
                 }
                 catch (Exception e)
                 {
