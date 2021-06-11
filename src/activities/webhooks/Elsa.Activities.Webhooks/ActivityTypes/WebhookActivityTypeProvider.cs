@@ -70,7 +70,8 @@ namespace Elsa.Activities.Webhooks.ActivityTypes
                         0,
                         webhook.Path,
                         SyntaxNames.Literal,
-                        new[] { SyntaxNames.Literal }
+                        new[] { SyntaxNames.Literal },
+                        true
                         ),
                     new ActivityInputDescriptor(
                         nameof(HttpEndpoint.Methods),

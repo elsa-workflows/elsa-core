@@ -23,6 +23,7 @@ export class ElsaCheckListProperty {
   }
 
   onCheckChanged(e: Event) {
+    debugger
     const checkbox = (e.target as HTMLInputElement);
     const checked = checkbox.checked;
     const value = checkbox.value;
@@ -46,7 +47,6 @@ export class ElsaCheckListProperty {
   }
 
   render() {
-
     const propertyDescriptor = this.propertyDescriptor;
     const propertyModel = this.propertyModel;
     const fieldId = propertyDescriptor.name;
