@@ -1,5 +1,7 @@
+using Elsa.Activities.Primitives;
 using Elsa.Activities.Rpa.Web;
 using Elsa.Builders;
+using System.Dynamic;
 
 namespace Elsa.Samples.HelloWorldConsole
 {
@@ -10,7 +12,16 @@ namespace Elsa.Samples.HelloWorldConsole
     {
         public void Build(IWorkflowBuilder builder)
         {
-            //builder.WriteLine("Hello World!");
+            builder.StartWith<OpenBrowser>()
+                .SetVariable("DriverId",x=>x.Input)
+                .Then<NavigateToUrl>(a=>
+                    a.Set(x=> x.Url,"https://google.com")
+                    .Set(x=> x.DriverId, context => context.GetVariable<string>("DriverId"))
+                    )
+                .Then<CloseBrowser>(
+                    a=>a.Set(x=>x.DriverId,context=>context.GetVariable<string>("DriverId"))
+                    )
+                ;
         }
     }
 }

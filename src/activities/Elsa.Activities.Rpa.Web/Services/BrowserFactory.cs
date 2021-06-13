@@ -36,7 +36,7 @@ namespace Elsa.Activities.Rpa.Web.Services
             var chromeVersion = await chromeDriverInstaller.GetChromeVersion();
             await chromeDriverInstaller.Install(chromeVersion);
             var chromeOptions = new ChromeOptions();
-            chromeOptions.AddArguments("headless");
+            //chromeOptions.AddArguments("headless");
             var driver = new ChromeDriver(chromeOptions);            
             _drivers[id]=driver;
             return id;

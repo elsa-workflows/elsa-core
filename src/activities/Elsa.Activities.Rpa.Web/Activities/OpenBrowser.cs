@@ -30,8 +30,7 @@ namespace Elsa.Activities.Rpa.Web
         public bool UseHeadless { get; set; }
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            await _factory.OpenAsync(context.CancellationToken);
-            return Done();
+            return Done(await _factory.OpenAsync(context.CancellationToken));
         }
     }
 }
