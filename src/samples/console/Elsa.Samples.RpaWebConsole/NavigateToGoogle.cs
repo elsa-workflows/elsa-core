@@ -13,14 +13,13 @@ namespace Elsa.Samples.HelloWorldConsole
         public void Build(IWorkflowBuilder builder)
         {
             builder.StartWith<OpenBrowser>()
-                .SetVariable("DriverId",x=>x.Input)
+                //.SetVariable("MyDriverId",x=>x.Input)//this is optional, to handle multiple driver instances
                 .Then<NavigateToUrl>(a=>
-                    a.Set(x=> x.Url,"https://google.com")
-                    .Set(x=> x.DriverId, context => context.GetVariable<string>("DriverId"))
+                    a
+                    .Set(x=> x.Url,"https://google.com")
+                    //.Set(x=> x.DriverId, context => context.GetVariable<string>("MyDriverId"))//this is optional, to handle multiple driver instances
                     )
-                .Then<CloseBrowser>(
-                    a=>a.Set(x=>x.DriverId,context=>context.GetVariable<string>("DriverId"))
-                    )
+                .Then<CloseBrowser>()
                 ;
         }
     }

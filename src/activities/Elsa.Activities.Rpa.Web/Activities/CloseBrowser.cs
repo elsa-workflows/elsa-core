@@ -24,7 +24,7 @@ namespace Elsa.Activities.Rpa.Web
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            _factory.CloseBrowserAsync(DriverId);
+            await _factory.CloseBrowserAsync(GetDriverId(context));
             return Done();
         }
     }

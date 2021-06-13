@@ -30,7 +30,10 @@ namespace Elsa.Activities.Rpa.Web
         public bool UseHeadless { get; set; }
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            return Done(await _factory.OpenAsync(context.CancellationToken));
+            var driverId = await _factory.OpenAsync(context.CancellationToken);
+            Data[RpaWebConventions.DriverIdKey] = driverId;
+            //this.SaveWorkflowContext = true;
+            return Done(driverId);
         }
     }
 }
