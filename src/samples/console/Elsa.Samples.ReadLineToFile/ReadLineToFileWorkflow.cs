@@ -21,7 +21,7 @@ namespace Elsa.Samples.ReadLineToFile
                 .WithName("TempFile")
                 .OutFile(setup =>
                 {
-                    setup.WithContent(context => context.GetOutputFrom<string>("ReadLine"));
+                    setup.WithContent(context => System.Text.Encoding.UTF8.GetBytes(context.GetOutputFrom<string>("ReadLine")));
                     setup.WithPath(context => context.GetOutputFrom<string>("TempFile"));
                     setup.WithMode(CopyMode.Overwrite);
                 })

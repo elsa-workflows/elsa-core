@@ -17,8 +17,8 @@ namespace Elsa.Activities.File
         Outcomes = new[] { OutcomeNames.Done })]
     public class OutFile : Activity
     {
-        [ActivityInput(Hint = "Content of the file.", UIHint = ActivityInputUIHints.MultiLine, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
-        public string Content { get; set; }
+        [ActivityInput(Hint = "Data to write to file.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        public byte[] Data { get; set; }
 
         [ActivityInput(Hint = "Path to create file at.", UIHint = ActivityInputUIHints.SingleLine, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string Path { get; set; }
@@ -49,10 +49,8 @@ namespace Elsa.Activities.File
             }
 
             using (var fs = new FileStream(Path, fileMode, fileAccess))
-            using (var sw = new StreamWriter(fs))
             {
-                await sw.WriteLineAsync(Content);
-                await sw.FlushAsync();
+                await fs.WriteAsync(Data);
                 await fs.FlushAsync();
             }
 
