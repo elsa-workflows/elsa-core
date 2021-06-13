@@ -102,6 +102,8 @@ namespace Elsa.Activities.Http
         )]
         public ICollection<int>? SupportedStatusCodes { get; set; } = new HashSet<int>(new[] { 200 });
 
+        [ActivityOutput] public HttpResponseModel Response { get; set; }
+
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
             var request = CreateRequest();
@@ -126,12 +128,14 @@ namespace Elsa.Activities.Http
 
             var statusCode = (int) response.StatusCode;
             var statusOutcome = statusCode.ToString();
-            var isSupportedStatusCode = SupportedStatusCodes?.Contains(statusCode) == true;
+            var supportedStatusCodes = SupportedStatusCodes;
+            var isSupportedStatusCode = supportedStatusCodes == null || !supportedStatusCodes.Any() || SupportedStatusCodes?.Contains(statusCode) == true;
             var outcomes = new List<string> { OutcomeNames.Done, statusOutcome };
 
             if (!isSupportedStatusCode)
                 outcomes.Add("Unsupported Status Code");
 
+            Response = responseModel;
             return Combine(Output(responseModel), Outcomes(outcomes));
         }
 

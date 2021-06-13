@@ -1,4 +1,5 @@
 ﻿import {ActivityDefinitionProperty, WorkflowPersistenceBehavior} from "./domain";
+import {Map} from '../utils/utils';
 
 export interface WorkflowModel {
   activities: Array<ActivityModel>;
@@ -15,9 +16,10 @@ export interface ActivityModel {
   outcomes: Array<string>;
   properties: Array<ActivityDefinitionProperty>;
   persistWorkflow?: boolean;
-  persistOutput?: boolean;
+  outputStorageProviderName?: string;
   loadWorkflowContext?: boolean;
   saveWorkflowContext?: boolean;
+  propertyStorageProviders: Map<string>;
 }
 
 export interface ConnectionModel {

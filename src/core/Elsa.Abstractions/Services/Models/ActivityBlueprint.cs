@@ -45,8 +45,8 @@ namespace Elsa.Services.Models
         public bool PersistWorkflow { get; set; }
         public bool LoadWorkflowContext { get; set; }
         public bool SaveWorkflowContext { get; set; }
-        public IDictionary<string, string> PropertyStorageProviders { get; } = new Dictionary<string, string>();
-        public string? OutputStorageProviderName { get; }
+        public IDictionary<string, string> PropertyStorageProviders { get; set; } = new Dictionary<string, string>();
+        public string? OutputStorageProviderName { get; set; }
         public string? Source { get; set; }
        
 

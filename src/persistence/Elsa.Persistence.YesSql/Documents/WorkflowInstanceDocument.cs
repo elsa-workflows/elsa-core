@@ -27,7 +27,6 @@ namespace Elsa.Persistence.YesSql.Documents
         public Variables Variables { get; set; } = new();
         public object? Output { get; set; }
         public IDictionary<string, object> ActivityData { get; set; } = new Dictionary<string, object>();
-        public IDictionary<string, object> ActivityOutput { get; set; } = new Dictionary<string, object>();
 
         public HashSet<BlockingActivity> BlockingActivities
         {

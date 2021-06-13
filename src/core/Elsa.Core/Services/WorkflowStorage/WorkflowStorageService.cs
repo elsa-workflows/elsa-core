@@ -20,6 +20,7 @@ namespace Elsa.Services.WorkflowStorage
         }
 
         public IWorkflowStorageProvider GetProviderByNameOrDefault(string? providerName = default) => providerName != null ? _providersLookup.GetItem(providerName) ?? _defaultStorageProvider : _defaultStorageProvider;
+        public IEnumerable<IWorkflowStorageProvider> ListProviders() => _providersLookup.Values;
 
         public async ValueTask SaveAsync(string? providerName, WorkflowStorageContext context, string key, object? value, CancellationToken cancellationToken = default)
         {
