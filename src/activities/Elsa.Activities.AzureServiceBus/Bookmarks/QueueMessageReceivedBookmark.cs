@@ -11,14 +11,12 @@ namespace Elsa.Activities.AzureServiceBus.Bookmarks
         {
         }
 
-        public QueueMessageReceivedBookmark(string queueName, string? correlationId = default)
+        public QueueMessageReceivedBookmark(string queueName)
         {
             QueueName = queueName;
-            CorrelationId = correlationId;
         }
         
         public string QueueName { get; set; } = default!;
-        public string? CorrelationId { get; set; }
     }
 
     public class QueueMessageReceivedBookmarkProvider : BookmarkProvider<QueueMessageReceivedBookmark, AzureServiceBusQueueMessageReceived>
@@ -28,8 +26,7 @@ namespace Elsa.Activities.AzureServiceBus.Bookmarks
             {
                 Result(new QueueMessageReceivedBookmark
                 {
-                    QueueName = (await context.ReadActivityPropertyAsync(x => x.QueueName, cancellationToken))!,
-                    CorrelationId = context.ActivityExecutionContext.WorkflowExecutionContext.CorrelationId
+                    QueueName = (await context.ReadActivityPropertyAsync(x => x.QueueName, cancellationToken))!
                 })
             };
     }

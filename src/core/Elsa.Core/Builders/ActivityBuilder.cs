@@ -76,10 +76,14 @@ namespace Elsa.Builders
             return this;
         }
 
-        public virtual IConnectionBuilder ThenNamed(string activityName) =>
+        public virtual IActivityBuilder ThenNamed(string activityName)
+        {
             WorkflowBuilder.Connect(
                 () => this,
                 () => WorkflowBuilder.Activities.First(x => x.Name == activityName));
+
+            return this;
+        }
 
         public IActivityBuilder WithId(string? value)
         {

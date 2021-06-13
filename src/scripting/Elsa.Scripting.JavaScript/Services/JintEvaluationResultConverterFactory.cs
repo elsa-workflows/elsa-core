@@ -20,6 +20,7 @@ namespace Elsa.Scripting.JavaScript.Services
             service = GetPlainObjectService(service);
             service = GetEnumerableConvertingService(service);
             service = GetExpandoConvertingService(service);
+            //service = GetJObjectService(service);
             service = GetTypeConverterConvertingService(service);
             service = GetNullConvertingService(service);
 
@@ -29,6 +30,7 @@ namespace Elsa.Scripting.JavaScript.Services
         static IConvertsJintEvaluationResult GetConvertChangeTypeService() => new ConvertChangeTypeResultConverter();
 
         static IConvertsJintEvaluationResult GetPlainObjectService(IConvertsJintEvaluationResult wrapped) => new PlainObjectResultConverter(wrapped);
+        //static IConvertsJintEvaluationResult GetJObjectService(IConvertsJintEvaluationResult wrapped) => new JObjectResultConverter(wrapped);
 
         IConvertsJintEvaluationResult GetEnumerableConvertingService(IConvertsJintEvaluationResult wrapped) => new EnumerableResultConverter(wrapped);
 

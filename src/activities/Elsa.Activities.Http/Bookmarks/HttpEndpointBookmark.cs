@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Activities.Http.Bookmarks
 {
-    public record HttpEndpointBookmark(PathString Path, string? Method, string? CorrelationId) : IBookmark
+    public record HttpEndpointBookmark(PathString Path, string? Method) : IBookmark
     {
     }
 
@@ -19,7 +19,7 @@ namespace Elsa.Activities.Http.Bookmarks
             var correlationId = ToLower(context.ActivityExecutionContext.WorkflowExecutionContext.CorrelationId);
             var methods = (await context.ReadActivityPropertyAsync(x => x.Methods, cancellationToken))?.Select(x => x.ToLowerInvariant()) ?? Enumerable.Empty<string>();
 
-            BookmarkResult CreateBookmark(string method) => Result(new(path, method, correlationId));
+            BookmarkResult CreateBookmark(string method) => Result(new(path, method));
             return methods.Select(CreateBookmark);
         }
 

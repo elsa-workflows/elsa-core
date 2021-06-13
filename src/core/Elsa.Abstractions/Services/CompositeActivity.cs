@@ -25,7 +25,7 @@ namespace Elsa.Services
             set => SetState(value);
         }
 
-        public override JObject Data
+        public override IDictionary<string, object> Data
         {
             get
             {

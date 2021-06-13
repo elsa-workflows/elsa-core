@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Elsa.Activities.Http.Bookmarks;
 using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.Http.Models;
+using Elsa.Activities.Http.Parsers;
 using Elsa.Activities.Http.Services;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications.WorkflowInstances;
@@ -40,8 +41,8 @@ namespace Elsa.Activities.Http.Middleware
             var useDispatch = httpContext.Request.GetUseDispatch();
 
             const string activityType = nameof(HttpEndpoint);
-            var trigger = new HttpEndpointBookmark(path, method, null);
-            var bookmark = new HttpEndpointBookmark(path, method, correlationId?.ToLowerInvariant());
+            var trigger = new HttpEndpointBookmark(path, method);
+            var bookmark = new HttpEndpointBookmark(path, method);
             var collectWorkflowsContext = new CollectWorkflowsContext(activityType, bookmark, trigger, correlationId, default, default, TenantId);
             var pendingWorkflows = await workflowLaunchpad.CollectWorkflowsAsync(collectWorkflowsContext, cancellationToken).ToList();
             var pendingWorkflowInstanceIds = pendingWorkflows.Select(x => x.WorkflowInstanceId).Distinct();
@@ -60,7 +61,7 @@ namespace Elsa.Activities.Http.Middleware
 
             var orderedContentParsers = contentParsers.OrderByDescending(x => x.Priority).ToList();
             var simpleContentType = request.ContentType?.Split(';').First();
-            var contentParser = orderedContentParsers.FirstOrDefault(x => x.SupportedContentTypes.Contains(simpleContentType, StringComparer.OrdinalIgnoreCase)) ?? orderedContentParsers.Last();
+            var contentParser = orderedContentParsers.FirstOrDefault(x => x.SupportedContentTypes.Contains(simpleContentType, StringComparer.OrdinalIgnoreCase)) ?? orderedContentParsers.LastOrDefault() ?? new DefaultHttpRequestBodyParser();
 
             foreach (var pendingWorkflow in pendingWorkflows)
             {

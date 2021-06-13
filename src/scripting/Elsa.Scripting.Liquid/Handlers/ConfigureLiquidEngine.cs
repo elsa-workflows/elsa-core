@@ -79,12 +79,12 @@ namespace Elsa.Scripting.Liquid.Handlers
             if (name == "Output")
             {
                 var output = activityExecutionContext.GetOutputFrom(activityModel.ActivityName!);
-                return output != null ? JObjectExtensions.CreateState(output) : default;
+                return output != null ? JObjectExtensions.SerializeState(output) : default;
             }
 
             var workflowExecutionContext = activityExecutionContext.WorkflowExecutionContext;
             var activityId = activityModel.ActivityId ?? workflowExecutionContext.GetActivityBlueprintByName(activityModel.ActivityName!)!.Id;
-            var activityState = workflowExecutionContext.WorkflowInstance.ActivityData.GetItem(activityId, () => new JObject());
+            var activityState = workflowExecutionContext.WorkflowInstance.ActivityData.GetItem(activityId, () => new Dictionary<string, object>());
             var value = activityState.GetState<object>(name);
             return value;
         }

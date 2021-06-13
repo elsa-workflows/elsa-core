@@ -222,7 +222,7 @@ namespace Elsa.Services.Models
         public object? GetWorkflowContext() => WorkflowContext;
         public T GetWorkflowContext<T>() => (T) WorkflowContext!;
         
-        public JObject GetActivityData(string activityId)
+        public IDictionary<string, object> GetActivityData(string activityId)
         {
             var activityData = WorkflowInstance.ActivityData;
             var state = activityData.ContainsKey(activityId) ? activityData[activityId] : default;
@@ -230,7 +230,7 @@ namespace Elsa.Services.Models
             if (state != null) 
                 return state;
             
-            state = new JObject();
+            state = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
             activityData[activityId] = state;
 
             return state;

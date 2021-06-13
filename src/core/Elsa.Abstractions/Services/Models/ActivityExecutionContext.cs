@@ -54,7 +54,7 @@ namespace Elsa.Services.Models
 
         public CancellationToken CancellationToken { get; }
 
-        public JObject GetData() => WorkflowInstance.ActivityData.GetItem(ActivityBlueprint.Id, () => new JObject());
+        public IDictionary<string, object> GetData() => WorkflowInstance.ActivityData.GetItem(ActivityBlueprint.Id, () => new Dictionary<string, object>());
 
         public void SetState(string propertyName, object? value)
         {
@@ -172,8 +172,8 @@ namespace Elsa.Services.Models
         public void SetWorkflowContext(object? value) => WorkflowExecutionContext.SetWorkflowContext(value);
         public object? GetWorkflowContext() => WorkflowExecutionContext.GetWorkflowContext();
         public T GetWorkflowContext<T>() => WorkflowExecutionContext.GetWorkflowContext<T>();
-        public JObject GetActivityData() => GetActivityData(ActivityId);
-        public JObject GetActivityData(string activityId) => WorkflowExecutionContext.GetActivityData(activityId);
+        public IDictionary<string, object> GetActivityData() => GetActivityData(ActivityId);
+        public IDictionary<string, object> GetActivityData(string activityId) => WorkflowExecutionContext.GetActivityData(activityId);
         public T? GetActivityProperty<TActivity, T>(Expression<Func<TActivity, T>> propertyExpression) where TActivity : IActivity => WorkflowExecutionContext.GetActivityProperty<TActivity, T>(ActivityId, propertyExpression);
         public void Fault(Exception exception) => WorkflowExecutionContext.Fault(exception, ActivityId, Input, Resuming);
     }

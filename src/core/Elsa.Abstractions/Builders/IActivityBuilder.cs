@@ -24,7 +24,7 @@ namespace Elsa.Builders
         IActivityBuilder Add<T>(string activityTypeName, Action<ISetupActivity<T>>? setup = default, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) where T : class, IActivity;
         IOutcomeBuilder When(string outcome);
         IActivityBuilder Then(IActivityBuilder targetActivity);
-        IConnectionBuilder ThenNamed(string activityName);
+        IActivityBuilder ThenNamed(string activityName);
         IActivityBuilder WithId(string? value);
         IActivityBuilder WithName(string? value);
         IActivityBuilder WithDisplayName(string? value);

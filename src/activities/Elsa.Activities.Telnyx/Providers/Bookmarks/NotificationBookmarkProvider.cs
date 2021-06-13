@@ -4,7 +4,7 @@ using Elsa.Bookmarks;
 
 namespace Elsa.Activities.Telnyx.Providers.Bookmarks
 {
-    public record NotificationBookmark(string EventType, string? CorrelationId = default) : IBookmark
+    public record NotificationBookmark(string EventType) : IBookmark
     {
     }
 
@@ -20,8 +20,7 @@ namespace Elsa.Activities.Telnyx.Providers.Bookmarks
         {
             var activityType = context.ActivityType;
             var eventType = (string) activityType.Attributes[NotificationActivityTypeProvider.EventTypeAttribute];
-            var correlationId = context.ActivityExecutionContext.WorkflowExecutionContext.CorrelationId;
-            return new[] { Result(new NotificationBookmark(eventType, correlationId)) };
+            return new[] {Result(new NotificationBookmark(eventType))};
         }
     }
 }

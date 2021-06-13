@@ -1,39 +1,24 @@
 using System.Threading.Tasks;
 using Elsa.Activities.AzureServiceBus.Services;
-using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Expressions;
 using Elsa.Serialization;
-using Elsa.Services;
-using Elsa.Services.Models;
+using Microsoft.Azure.ServiceBus.Core;
 
 namespace Elsa.Activities.AzureServiceBus
 {
     [Action(Category = "Azure Service Bus", DisplayName = "Send Service Bus Topic Message", Description = "Sends a message to the specified topic", Outcomes = new[] { OutcomeNames.Done })]
-    public class SendAzureServiceBusTopicMessage : Activity
+    public class SendAzureServiceBusTopicMessage : AzureServiceBusSendActivity
     {
         private readonly ITopicMessageSenderFactory _messageSenderFactory;
-        private readonly IContentSerializer _serializer;
 
         public SendAzureServiceBusTopicMessage(ITopicMessageSenderFactory messageSenderFactory, IContentSerializer serializer)
-        {
+            : base(serializer) =>
             _messageSenderFactory = messageSenderFactory;
-            _serializer = serializer;
-        }
 
-        [ActivityInput] public string TopicName { get; set; } = default!;
-        [ActivityInput] public object Message { get; set; } = default!;
+        [ActivityInput(SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        public string TopicName { get; set; } = default!;
 
-        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
-        {
-            var sender = await _messageSenderFactory.GetTopicSenderAsync(TopicName, context.CancellationToken);
-
-            var message = Extensions.MessageBodyExtensions.CreateMessage(_serializer,Message);
-
-            if (!string.IsNullOrWhiteSpace(context.WorkflowExecutionContext.CorrelationId))
-                message.CorrelationId = context.WorkflowExecutionContext.CorrelationId;
-
-            await sender.SendAsync(message);
-            return Done();
-        }
+        protected override Task<ISenderClient> GetSenderAsync() => _messageSenderFactory.GetTopicSenderAsync(TopicName);
     }
 }
