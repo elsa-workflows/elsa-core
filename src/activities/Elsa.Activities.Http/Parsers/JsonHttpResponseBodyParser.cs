@@ -15,8 +15,11 @@ namespace Elsa.Activities.Http.Parsers
 
         public async Task<object> ParseAsync(HttpResponseMessage response, CancellationToken cancellationToken)
         {
+#if NET
             var json = (await response.Content.ReadAsStringAsync(cancellationToken)).Trim();
-            
+#else
+            var json = (await response.Content.ReadAsStringAsync()).Trim();
+#endif
             if(json.StartsWith('['))
                 return JsonConvert.DeserializeObject<ExpandoObject[]>(json)!;
             
