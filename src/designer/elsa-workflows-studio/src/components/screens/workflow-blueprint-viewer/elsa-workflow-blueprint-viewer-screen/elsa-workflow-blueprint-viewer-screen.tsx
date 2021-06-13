@@ -51,11 +51,11 @@ export class ElsaWorkflowBlueprintViewerScreen {
       isPublished: false,
       loadWorkflowContext: false,
       isSingleton: false,
-      persistOutput: false,
       saveWorkflowContext: false,
       variables: {data: {}},
       type: null,
-      properties: {data: {}}
+      properties: {data: {}},
+      propertyStorageProviders: {}
     };
 
     const client = createElsaClient(this.serverUrl);
@@ -126,10 +126,11 @@ export class ElsaWorkflowBlueprintViewerScreen {
       type: source.type,
       properties: properties,
       outcomes: [...activityDescriptor.outcomes],
-      persistOutput: source.persistOutput,
+      outputStorageProviderName: source.outputStorageProviderName,
       persistWorkflow: source.persistWorkflow,
       saveWorkflowContext: source.saveWorkflowContext,
-      loadWorkflowContext: source.loadWorkflowContext
+      loadWorkflowContext: source.loadWorkflowContext,
+      propertyStorageProviders: source.propertyStorageProviders
     }
   }
 

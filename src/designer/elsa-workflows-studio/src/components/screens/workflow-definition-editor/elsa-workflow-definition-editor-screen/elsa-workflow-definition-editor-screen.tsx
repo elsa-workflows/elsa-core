@@ -109,8 +109,10 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   @Watch("serverUrl")
   async serverUrlChangedHandler(newValue: string) {
-    if (newValue && newValue.length > 0)
+    if (newValue && newValue.length > 0) {
       await this.loadActivityDescriptors();
+      await this.loadWorkflowStorageDescriptors();
+    }
   }
 
   @Watch("monacoLibPath")
@@ -148,6 +150,11 @@ export class ElsaWorkflowDefinitionEditorScreen {
   async loadActivityDescriptors() {
     const client = createElsaClient(this.serverUrl);
     state.activityDescriptors = await client.activitiesApi.list();
+  }
+
+  async loadWorkflowStorageDescriptors() {
+    const client = createElsaClient(this.serverUrl);
+    state.workflowStorageDescriptors = await client.workflowStorageProvidersApi.list();
   }
 
   updateWorkflowDefinition(value: WorkflowDefinition) {
@@ -203,8 +210,9 @@ export class ElsaWorkflowDefinitionEditorScreen {
         persistWorkflow: x.persistWorkflow,
         loadWorkflowContext: x.loadWorkflowContext,
         saveWorkflowContext: x.saveWorkflowContext,
-        persistOutput: x.persistOutput,
-        properties: x.properties
+        outputStorageProviderName: x.outputStorageProviderName,
+        properties: x.properties,
+        propertyStorageProviders: x.propertyStorageProviders
       })),
       connections: workflowModel.connections.map<ConnectionDefinition>(x => ({
         sourceActivityId: x.sourceId,
@@ -275,10 +283,11 @@ export class ElsaWorkflowDefinitionEditorScreen {
       type: source.type,
       properties: source.properties,
       outcomes: [...activityDescriptor.outcomes],
-      persistOutput: source.persistOutput,
+      outputStorageProviderName: source.outputStorageProviderName,
       persistWorkflow: source.persistWorkflow,
       saveWorkflowContext: source.saveWorkflowContext,
-      loadWorkflowContext: source.loadWorkflowContext
+      loadWorkflowContext: source.loadWorkflowContext,
+      propertyStorageProviders: source.propertyStorageProviders
     }
   }
 

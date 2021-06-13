@@ -1,9 +1,9 @@
-import {Component, Host, h, State, Event} from '@stencil/core';
+import {Component, Event, h, Host, State} from '@stencil/core';
 import {eventBus} from '../../../../services/event-bus';
 import state from '../../../../utils/store';
-import {ActivityDescriptor, ActivityModel, ActivityPropertyDescriptor, EventTypes} from "../../../../models";
+import {ActivityDescriptor, ActivityModel, ActivityPropertyDescriptor, EventTypes, WorkflowStorageDescriptor} from "../../../../models";
 import {propertyDisplayManager} from '../../../../services/property-display-manager';
-import {checkBox, FormContext, textArea, textInput} from "../../../../utils/forms";
+import {checkBox, FormContext, section, selectField, SelectOption, textArea, textInput} from "../../../../utils/forms";
 
 @Component({
   tag: 'elsa-activity-editor-modal',
@@ -11,6 +11,7 @@ import {checkBox, FormContext, textArea, textInput} from "../../../../utils/form
 })
 export class ElsaActivityEditorModal {
 
+  @State() workflowStorageDescriptors: Array<WorkflowStorageDescriptor> = [];
   @State() activityModel: ActivityModel;
   @State() activityDescriptor: ActivityDescriptor;
   @State() selectedTab: string = 'Properties';
@@ -18,7 +19,7 @@ export class ElsaActivityEditorModal {
   form: HTMLFormElement;
   formContext: FormContext;
   renderProps: any;
-  
+
   // Force a new key every time we show the editor to make sure Stencil creates new components.
   // This prevents the issue where the designer has e.g. one activity where the user edits the properties, cancels out, then opens the editor again, seeing the entered value still there.
   timestamp: Date = new Date();
@@ -27,8 +28,9 @@ export class ElsaActivityEditorModal {
     eventBus.on(EventTypes.ShowActivityEditor, async (activity: ActivityModel, animate: boolean) => {
       this.activityModel = JSON.parse(JSON.stringify(activity));
       this.activityDescriptor = state.activityDescriptors.find(x => x.type == activity.type);
+      this.workflowStorageDescriptors = state.workflowStorageDescriptors;
       this.formContext = new FormContext(this.activityModel, newValue => this.activityModel = newValue);
-      this.selectedTab = 'Properties'; 
+      this.selectedTab = 'Properties';
       this.timestamp = new Date();
       await this.dialog.show(animate);
     });
@@ -37,9 +39,9 @@ export class ElsaActivityEditorModal {
   updateActivity(formData: FormData) {
     const activity = this.activityModel;
     const activityDescriptor = this.activityDescriptor;
-    const properties: Array<ActivityPropertyDescriptor> = activityDescriptor.inputProperties;
+    const inputProperties: Array<ActivityPropertyDescriptor> = activityDescriptor.inputProperties;
 
-    for (const property of properties)
+    for (const property of inputProperties)
       propertyDisplayManager.update(activity, property, formData);
   }
 
@@ -61,25 +63,26 @@ export class ElsaActivityEditorModal {
     this.selectedTab = tab;
   }
 
-  componentWillRender(){
-    const activityDescriptor: ActivityDescriptor = this.activityDescriptor || {displayName: '', type: '', outcomes: [], category: '', traits: 0, browsable: false, inputProperties: [], description: ''};
+  componentWillRender() {
+    const activityDescriptor: ActivityDescriptor = this.activityDescriptor || {displayName: '', type: '', outcomes: [], category: '', traits: 0, browsable: false, inputProperties: [], outputProperties: [], description: ''};
     const propertyCategories = activityDescriptor.inputProperties.filter(x => x.category).map(x => x.category).distinct();
     const defaultProperties = activityDescriptor.inputProperties.filter(x => !x.category || x.category.length == 0);
     let tabs: Array<string> = [];
 
-    if(defaultProperties.length > 0) {
+    if (defaultProperties.length > 0) {
       tabs.push('Properties');
     }
 
-    tabs.push('Common');
-    tabs.push('Behaviors');
     tabs = [...tabs, ...propertyCategories];
+    tabs.push('Common');
+    tabs.push('Storage');
+
     let selectedTab = this.selectedTab;
 
-    if(tabs.findIndex(x => x === selectedTab) < 0)
+    if (tabs.findIndex(x => x === selectedTab) < 0)
       selectedTab = tabs[0];
 
-    const activityModel: ActivityModel = this.activityModel || {type: '', activityId: '', outcomes: [], properties: []};
+    const activityModel: ActivityModel = this.activityModel || {type: '', activityId: '', outcomes: [], properties: [], propertyStorageProviders: {}};
 
     this.renderProps = {
       activityDescriptor,
@@ -103,7 +106,7 @@ export class ElsaActivityEditorModal {
 
     return (
       <Host class="elsa-block">
-        <elsa-modal-dialog ref={el => this.dialog = el} >
+        <elsa-modal-dialog ref={el => this.dialog = el}>
           <div slot="content" class="elsa-py-8 elsa-pb-0">
             <form onSubmit={e => this.onSubmit(e)} ref={el => this.form = el} key={this.timestamp.getTime().toString()}>
               <div class="elsa-flex elsa-px-8">
@@ -159,23 +162,43 @@ export class ElsaActivityEditorModal {
 
   renderSelectedTab(activityModel: ActivityModel, activityDescriptor: ActivityDescriptor, categories: Array<string>) {
     return [
-      this.renderWorkflowContextTab(activityModel),
+      this.renderStorageTab(activityModel, activityDescriptor),
       this.renderCommonTab(activityModel),
       this.renderPropertiesTab(activityModel, activityDescriptor),
-      this.renderCategoryTabs(activityModel, activityDescriptor, categories)
+      this.renderCategoryTabs(activityModel, activityDescriptor, categories),
     ];
   }
 
-  renderWorkflowContextTab(activityModel: ActivityModel) {
+  renderStorageTab(activityModel: ActivityModel, activityDescriptor: ActivityDescriptor) {
     const formContext = this.formContext;
+    let storageDescriptorOptions: Array<SelectOption> = this.workflowStorageDescriptors.map(x => ({value: x.name, text: x.displayName}));
+    let outputProperties = activityDescriptor.outputProperties;
+
+    storageDescriptorOptions = [{value: null, text: 'Default'}, ...storageDescriptorOptions];
+
+    const renderOutputProperty = function (propertyDescriptor: ActivityPropertyDescriptor) {
+      const propertyName = propertyDescriptor.name;
+      const fieldName = `propertyStorageProviders.${propertyName}`;
+      return selectField(formContext, fieldName, propertyName, activityModel.propertyStorageProviders[propertyName], storageDescriptorOptions, 'Select a storage provider.', fieldName);
+    }
 
     return (
-      <div class={`flex ${this.getHiddenClass('Behaviors')}`}>
+      <div class={`flex ${this.getHiddenClass('Storage')}`}>
         <div class="elsa-space-y-8 elsa-w-full">
+
+          {section('Workflow Context')}
           {checkBox(formContext, 'loadWorkflowContext', 'Load Workflow Context', activityModel.loadWorkflowContext, 'When enabled, this will load the workflow context into memory before executing this activity.', 'loadWorkflowContext')}
           {checkBox(formContext, 'saveWorkflowContext', 'Save Workflow Context', activityModel.saveWorkflowContext, 'When enabled, this will save the workflow context back into storage after executing this activity.', 'saveWorkflowContext')}
+
+          {section('Workflow Instance')}
           {checkBox(formContext, 'persistWorkflow', 'Save Workflow Instance', activityModel.persistWorkflow, 'When enabled, this will save the workflow instance back into storage right after executing this activity.', 'persistWorkflow')}
-          {checkBox(formContext, 'persistOutput', 'Save Activity Output', activityModel.persistOutput, 'When enabled, this will store this activity\'s output as part of the workflow instance. Enable this when you plan to reference this output from other activities', 'persistOutput')}
+
+          {section('Activity Output', 'Configure what storage to use when persisting activity output.')}
+          {selectField(formContext, 'outputStorageProviderName', 'Output Storage', activityModel.outputStorageProviderName, storageDescriptorOptions, 'Select a storage provider for this activity\'s output.', 'outputStorageProviderName')}
+
+          {Object.keys(outputProperties).length > 0 ? (
+            [section('Activity Output Properties', 'Configure the desired storage for each output property of this activity.'), outputProperties.map(renderOutputProperty)]
+          ) : undefined}
         </div>
       </div>
     );
@@ -198,7 +221,7 @@ export class ElsaActivityEditorModal {
   renderPropertiesTab(activityModel: ActivityModel, activityDescriptor: ActivityDescriptor) {
     const propertyDescriptors: Array<ActivityPropertyDescriptor> = this.renderProps.defaultProperties;
 
-    if(propertyDescriptors.length == 0)
+    if (propertyDescriptors.length == 0)
       return undefined;
 
     const key = `activity-settings:${activityModel.activityId}`;

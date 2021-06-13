@@ -7,7 +7,7 @@ import * as d3 from 'd3';
 import dagreD3 from 'dagre-d3';
 import state from '../../../../utils/store';
 import {ActivityIcon} from '../../../icons/activity-icon';
-import {ActivityContextMenuState, WorkflowDesignerMode} from "./models";
+import {ActivityContextMenuState, LayoutDirection, WorkflowDesignerMode} from "./models";
 
 @Component({
   tag: 'elsa-designer-tree',
@@ -22,6 +22,7 @@ export class ElsaWorkflowDesigner {
   @Prop() activityBorderColor?: (activity: ActivityModel) => string;
   @Prop() activityContextMenu?: ActivityContextMenuState;
   @Prop() mode: WorkflowDesignerMode = WorkflowDesignerMode.Edit;
+  @Prop() layoutDirection: LayoutDirection = LayoutDirection.Vertical;
   @Event({eventName: 'workflow-changed', bubbles: true, composed: true, cancelable: true}) workflowChanged: EventEmitter<WorkflowModel>;
   @Event() activitySelected: EventEmitter<ActivityModel>;
   @Event() activityDeselected: EventEmitter<ActivityModel>;
@@ -164,6 +165,7 @@ export class ElsaWorkflowDesigner {
       outcomes: activityDescriptor.outcomes,
       displayName: activityDescriptor.displayName,
       properties: [],
+      propertyStorageProviders: {}
     };
 
     for (const property of activityDescriptor.inputProperties) {
@@ -315,6 +317,9 @@ export class ElsaWorkflowDesigner {
 
   setEntities() {
     this.graph = new dagreD3.graphlib.Graph().setGraph({});
+
+    const layoutDirection = this.layoutDirection;
+    this.graph.graph().rankdir = layoutDirection == LayoutDirection.Vertical ? 'TB' : 'LR';
 
     const rootActivities = this.getRootActivities();
 

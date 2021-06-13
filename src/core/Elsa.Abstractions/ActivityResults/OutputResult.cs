@@ -21,8 +21,9 @@ namespace Elsa.ActivityResults
         {
             var workflowStorageService = activityExecutionContext.GetService<IWorkflowStorageService>();
             var workflowStorageContext = new WorkflowStorageContext(activityExecutionContext.WorkflowInstance, activityExecutionContext.ActivityId);
-            await workflowStorageService.SaveAsync(StorageProviderName, workflowStorageContext, ActivityOutput.PropertyName, Output, cancellationToken);
-            activityExecutionContext.WorkflowInstance.Output = new WorkflowOutputReference(StorageProviderName, workflowStorageContext.ActivityId);
+            var storageProviderName = StorageProviderName ?? activityExecutionContext.ActivityBlueprint.OutputStorageProviderName;
+            await workflowStorageService.SaveAsync(storageProviderName, workflowStorageContext, ActivityOutput.PropertyName, Output, cancellationToken);
+            activityExecutionContext.WorkflowInstance.Output = new WorkflowOutputReference(storageProviderName, workflowStorageContext.ActivityId);
         }
     }
 }
