@@ -54,20 +54,22 @@ namespace Elsa.Builders
             Type activityType,
             string activityTypeName,
             IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default,
+            IDictionary<string, string>? storageProviders = default,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default)
         {
-            var activityBuilder = new ActivityBuilder(activityType, activityTypeName, this, propertyValueProviders, lineNumber, sourceFile);
+            var activityBuilder = new ActivityBuilder(activityType, activityTypeName, this, propertyValueProviders, storageProviders, lineNumber, sourceFile);
             return activityBuilder;
         }
 
         public IActivityBuilder New<T>(
             string activityTypeName,
             IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default,
+            IDictionary<string, string>? storageProviders = default,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default)
             where T : class, IActivity =>
-            New(typeof(T), activityTypeName, propertyValueProviders, lineNumber, sourceFile);
+            New(typeof(T), activityTypeName, propertyValueProviders, storageProviders, lineNumber, sourceFile);
 
         public IActivityBuilder New<T>(
             string activityTypeName,
@@ -82,7 +84,9 @@ namespace Elsa.Builders
                 x => x.Key,
                 x => (IActivityPropertyValueProvider) new DelegateActivityPropertyValueProvider(x.Value));
 
-            return New<T>(activityTypeName, valueProviders, lineNumber, sourceFile);
+            var storageProviders = propertyValuesBuilder.StorageProviders;
+
+            return New<T>(activityTypeName, valueProviders, storageProviders, lineNumber, sourceFile);
         }
 
         public IActivityBuilder StartWith<T>(
@@ -98,7 +102,7 @@ namespace Elsa.Builders
 
         public IActivityBuilder StartWith<T>(string activityTypeName, Action<IActivityBuilder>? branch = default, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default)
             where T : class, IActivity =>
-            Add<T>(activityTypeName, branch, null, lineNumber, sourceFile);
+            Add<T>(activityTypeName, branch, null, null, lineNumber, sourceFile);
 
         public IActivityBuilder Add<T>(
             string activityTypeName,
@@ -115,11 +119,12 @@ namespace Elsa.Builders
             string activityTypeName,
             Action<IActivityBuilder>? branch = default,
             IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default,
+            IDictionary<string, string>? storageProviders = default,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default)
             where T : class, IActivity
         {
-            var activityBuilder = new ActivityBuilder(typeof(T), activityTypeName, this, propertyValueProviders, lineNumber, sourceFile);
+            var activityBuilder = new ActivityBuilder(typeof(T), activityTypeName, this, propertyValueProviders, storageProviders, lineNumber, sourceFile);
             return Add(activityBuilder, branch);
         }
 
@@ -215,6 +220,8 @@ namespace Elsa.Builders
 
             return compositeActivityBlueprint;
         }
+        
+        protected virtual string? GetCompositeName(string? activityName) => activityName == null ? null : $"{ActivityId}:{activityName}";
 
         private void BuildCompositeActivities(
             IEnumerable<IActivityBuilder> compositeActivityBuilders,
@@ -237,9 +244,9 @@ namespace Elsa.Builders
                 connections.AddRange(compositeActivityBlueprint.Connections.Select(x => new Connection(activityDictionary[x.Source.Activity.Id], activityDictionary[x.Target.Activity.Id], x.Source.Outcome)));
                 activityPropertyProviders.AddRange(compositeActivityBlueprint.ActivityPropertyProviders);
 
-                compositeActivityBlueprint.Activities = compositeActivityBlueprint.Activities;
-                compositeActivityBlueprint.Connections = compositeActivityBlueprint.Connections;
-                compositeActivityBlueprint.ActivityPropertyProviders = compositeActivityBlueprint.ActivityPropertyProviders;
+                // compositeActivityBlueprint.Activities = compositeActivityBlueprint.Activities;
+                // compositeActivityBlueprint.Connections = compositeActivityBlueprint.Connections;
+                // compositeActivityBlueprint.ActivityPropertyProviders = compositeActivityBlueprint.ActivityPropertyProviders;
 
                 // Connect the composite activity to its starting activities.
                 var startActivities = _startingActivitiesProvider.GetStartActivities(compositeActivityBlueprint).ToList();
@@ -257,6 +264,5 @@ namespace Elsa.Builders
                     builder.SaveWorkflowContextEnabled, builder.PropertyStorageProviders, builder.Source);
         }
 
-        private string? GetCompositeName(string? activityName) => activityName == null ? null : $"{ActivityId}:{activityName}";
     }
 }

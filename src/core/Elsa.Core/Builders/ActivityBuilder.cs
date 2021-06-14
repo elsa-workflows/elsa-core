@@ -16,6 +16,7 @@ namespace Elsa.Builders
             string activityTypeName,
             ICompositeActivityBuilder workflowBuilder,
             IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders,
+            IDictionary<string, string>? storageProviders,
             int lineNumber,
             string? sourceFile)
         {
@@ -23,6 +24,7 @@ namespace Elsa.Builders
             ActivityTypeName = activityTypeName;
             WorkflowBuilder = workflowBuilder;
             PropertyValueProviders = propertyValueProviders;
+            StorageProviders = storageProviders;
             LineNumber = lineNumber;
             SourceFile = sourceFile;
         }
@@ -42,6 +44,7 @@ namespace Elsa.Builders
         public bool LoadWorkflowContextEnabled { get; set; }
         public bool SaveWorkflowContextEnabled { get; set; }
         public IDictionary<string, IActivityPropertyValueProvider>? PropertyValueProviders { get; protected set; }
+        public IDictionary<string, string>? StorageProviders { get; }
         public IDictionary<string, string> PropertyStorageProviders { get; set; } = new Dictionary<string, string>();
         public int LineNumber { get; }
         public string? SourceFile { get; }
