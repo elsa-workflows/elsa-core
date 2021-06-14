@@ -4,7 +4,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Scripting.JavaScript.Events;
-using Elsa.Scripting.JavaScript.Typings;
 using Elsa.Services;
 using Elsa.Services.Models;
 using MediatR;

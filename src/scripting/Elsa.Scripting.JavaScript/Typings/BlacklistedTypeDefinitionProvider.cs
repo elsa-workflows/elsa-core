@@ -1,22 +1,7 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Runtime.Serialization;
-using System.Threading;
-using System.Threading.Tasks;
-using Elsa.Models;
 using Elsa.Scripting.JavaScript.Services;
-using Elsa.Services.Models;
-using MediatR;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Win32.SafeHandles;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json.Serialization;
-using NodaTime;
 
 namespace Elsa.Scripting.JavaScript.Typings
 {

@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Models;
 using Elsa.Services.Models;
-using Newtonsoft.Json.Linq;
 
 namespace Elsa.Services
 {
