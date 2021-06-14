@@ -2,7 +2,6 @@ using System.Threading.Tasks;
 using AutoFixture.Xunit2;
 using Elsa.Models;
 using Elsa.Providers.WorkflowStorage;
-using Elsa.Services.Models;
 using Elsa.Testing.Shared;
 using Elsa.Testing.Shared.Unit;
 using Xunit;
@@ -31,9 +30,9 @@ namespace Elsa.Core.IntegrationTests.Workflows
             var runWorkflowResult = await WorkflowBuilderAndStarter.BuildAndStartWorkflowAsync(sut);
             var workflowInstance = runWorkflowResult.WorkflowInstance!;
             var actualOutputReference = workflowInstance.Output!;
-            var actualOutput = await WorkflowStorageService.LoadAsync(actualOutputReference.Value.ProviderName, new WorkflowStorageContext(workflowInstance, workflowInstance.LastExecutedActivityId!), "Output");
+            var actualOutput = (FinishOutput)(await WorkflowStorageService.LoadAsync(actualOutputReference.ProviderName, new WorkflowStorageContext(workflowInstance, workflowInstance.LastExecutedActivityId!), "Output"))!;
 
-            Assert.Same(expectedOutput, actualOutput);
+            Assert.Same(expectedOutput, actualOutput.Output);
         }
     }
 }

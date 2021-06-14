@@ -6,9 +6,7 @@ using Elsa.Persistence;
 using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Services;
 using Elsa.Services.Dispatch;
-using Medallion.Threading;
 using Microsoft.Extensions.Logging;
-using NodaTime;
 using Open.Linq.AsyncExtensions;
 using IDistributedLockProvider = Elsa.Services.IDistributedLockProvider;
 

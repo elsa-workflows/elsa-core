@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using Elsa.Comparers;
 using Elsa.Models;
-using Newtonsoft.Json.Linq;
 using NodaTime;
 
 namespace Elsa.Persistence.YesSql.Documents

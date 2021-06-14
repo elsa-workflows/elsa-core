@@ -7,7 +7,6 @@ using Elsa.Models;
 using Elsa.Persistence.Specifications.WorkflowExecutionLogRecords;
 using Elsa.Services.Models;
 using Elsa.Testing.Shared.Unit;
-using Open.Linq.AsyncExtensions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -34,7 +33,7 @@ namespace Elsa.Core.IntegrationTests.Workflows
                 return entry != null;
             }
             
-            Task<bool> GetIsFinishedAsync() => GetActivityHasExecutedAsync("Finished");
+            Task<bool> GetIsFinishedAsync() => GetActivityHasExecutedAsync("ForkJoinWorkflow:Finished");
 
             Assert.Equal(WorkflowStatus.Suspended, workflowInstance.WorkflowStatus);
             Assert.False(await GetIsFinishedAsync());
@@ -76,7 +75,7 @@ namespace Elsa.Core.IntegrationTests.Workflows
                 return entry != null;
             }
             
-            Task<bool> GetIsFinishedAsync() => GetActivityHasExecutedAsync("Finished");
+            Task<bool> GetIsFinishedAsync() => GetActivityHasExecutedAsync("ForkJoinWorkflow:Finished");
 
             Assert.Equal(WorkflowStatus.Suspended, workflowInstance.WorkflowStatus);
             Assert.False(await GetIsFinishedAsync());

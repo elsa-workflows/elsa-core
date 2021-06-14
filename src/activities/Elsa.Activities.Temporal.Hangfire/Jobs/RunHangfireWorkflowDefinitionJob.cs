@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using Elsa.Activities.Temporal.Hangfire.Models;
-using Elsa.Services;
 using Elsa.Services.Dispatch;
 
 namespace Elsa.Activities.Temporal.Hangfire.Jobs
