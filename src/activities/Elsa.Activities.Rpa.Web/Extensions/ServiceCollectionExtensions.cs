@@ -28,6 +28,7 @@ namespace Microsoft.Extensions.DependencyInjection
             .AddActivity<OpenBrowser>()
             .AddActivity<CloseBrowser>()
             .AddActivity<NavigateToUrl>()
+            .AddActivity<ClickElement>()
             ;
     }
 }
