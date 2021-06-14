@@ -9,6 +9,10 @@ namespace Elsa.Providers.WorkflowStorage
     /// </summary>
     public class WorkflowInstanceWorkflowStorageProvider : WorkflowStorageProvider
     {
+        public const string ProviderName = "WorkflowInstance";
+        
+        public override string Name => ProviderName;
+        
         public override ValueTask SaveAsync(WorkflowStorageContext context, string key, object? value, CancellationToken cancellationToken = default)
         {
             SetState(context, key, value);
