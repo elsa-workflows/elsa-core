@@ -16,8 +16,6 @@ import { ToastNotificationOptions } from "./components/shared/elsa-toast-notific
 export namespace Components {
     interface ElsaActivityEditorModal {
     }
-    interface ElsaActivityPickerModal {
-    }
     interface ElsaCheckListProperty {
         "propertyDescriptor": ActivityPropertyDescriptor;
         "propertyModel": ActivityDefinitionProperty;
@@ -244,12 +242,6 @@ declare global {
     var HTMLElsaActivityEditorModalElement: {
         prototype: HTMLElsaActivityEditorModalElement;
         new (): HTMLElsaActivityEditorModalElement;
-    };
-    interface HTMLElsaActivityPickerModalElement extends Components.ElsaActivityPickerModal, HTMLStencilElement {
-    }
-    var HTMLElsaActivityPickerModalElement: {
-        prototype: HTMLElsaActivityPickerModalElement;
-        new (): HTMLElsaActivityPickerModalElement;
     };
     interface HTMLElsaCheckListPropertyElement extends Components.ElsaCheckListProperty, HTMLStencilElement {
     }
@@ -493,7 +485,6 @@ declare global {
     };
     interface HTMLElementTagNameMap {
         "elsa-activity-editor-modal": HTMLElsaActivityEditorModalElement;
-        "elsa-activity-picker-modal": HTMLElsaActivityPickerModalElement;
         "elsa-check-list-property": HTMLElsaCheckListPropertyElement;
         "elsa-checkbox-property": HTMLElsaCheckboxPropertyElement;
         "elsa-confirm-dialog": HTMLElsaConfirmDialogElement;
@@ -538,8 +529,6 @@ declare global {
 }
 declare namespace LocalJSX {
     interface ElsaActivityEditorModal {
-    }
-    interface ElsaActivityPickerModal {
     }
     interface ElsaCheckListProperty {
         "propertyDescriptor"?: ActivityPropertyDescriptor;
@@ -760,7 +749,6 @@ declare namespace LocalJSX {
     }
     interface IntrinsicElements {
         "elsa-activity-editor-modal": ElsaActivityEditorModal;
-        "elsa-activity-picker-modal": ElsaActivityPickerModal;
         "elsa-check-list-property": ElsaCheckListProperty;
         "elsa-checkbox-property": ElsaCheckboxProperty;
         "elsa-confirm-dialog": ElsaConfirmDialog;
@@ -808,7 +796,6 @@ declare module "@stencil/core" {
     export namespace JSX {
         interface IntrinsicElements {
             "elsa-activity-editor-modal": LocalJSX.ElsaActivityEditorModal & JSXBase.HTMLAttributes<HTMLElsaActivityEditorModalElement>;
-            "elsa-activity-picker-modal": LocalJSX.ElsaActivityPickerModal & JSXBase.HTMLAttributes<HTMLElsaActivityPickerModalElement>;
             "elsa-check-list-property": LocalJSX.ElsaCheckListProperty & JSXBase.HTMLAttributes<HTMLElsaCheckListPropertyElement>;
             "elsa-checkbox-property": LocalJSX.ElsaCheckboxProperty & JSXBase.HTMLAttributes<HTMLElsaCheckboxPropertyElement>;
             "elsa-confirm-dialog": LocalJSX.ElsaConfirmDialog & JSXBase.HTMLAttributes<HTMLElsaConfirmDialogElement>;
