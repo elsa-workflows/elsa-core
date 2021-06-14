@@ -7,9 +7,9 @@ using HtmlAgilityPack;
 namespace Elsa.Samples.HelloWorldConsole
 {
     /// <summary>
-    /// A basic workflow demostrating google navigation
+    /// A basic workflow demostrating a website navigation
     /// </summary>
-    public class NavigateToGoogle : IWorkflow
+    public class NavigateToWebsite : IWorkflow
     {
         public void Build(IWorkflowBuilder builder)
         {

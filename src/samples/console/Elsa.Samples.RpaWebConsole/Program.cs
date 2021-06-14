@@ -12,14 +12,15 @@ namespace Elsa.Samples.HelloWorldConsole
             var services = new ServiceCollection()
                 .AddElsa(options => options
                     .AddRpaWebActivities()
-                    .AddWorkflow<NavigateToGoogle>())
+                    .AddWorkflow<NavigateToWebsite>())
                 .BuildServiceProvider();
             
             // Get a workflow runner.
             var workflowRunner = services.GetRequiredService<IBuildsAndStartsWorkflow>();
 
             // Run the workflow.
-            await workflowRunner.BuildAndStartWorkflowAsync<NavigateToGoogle>();
+            //await workflowRunner.BuildAndStartWorkflowAsync<NavigateToWebsite>();
+            await workflowRunner.BuildAndStartWorkflowAsync<NavigateToW3School>();
         }
     }
 }
