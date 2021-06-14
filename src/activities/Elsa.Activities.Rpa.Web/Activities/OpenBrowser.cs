@@ -26,11 +26,21 @@ namespace Elsa.Activities.Rpa.Web
             _options = options.Value;
         }
 
-        [ActivityInput(Hint = "Open browser in headless mode")]
-        public bool UseHeadless { get; set; }
+        [ActivityInput(Hint = "Open browser in headless mode. Headless means no GUI will be displayed. Often times headless mode is required due to lack of an interactive automation session such as when using Docker or Linux. When running Elsa in an interactive session (e.g. from desktop) you can set this parameter to false and browser GUI will show up")]
+        public bool UseHeadless { get; set; } = true;
+        [ActivityInput(
+            UIHint = ActivityInputUIHints.Dropdown,
+            Hint = "The browser to use",
+            Options = new[] { DriverType.Chrome, DriverType.Firefox, DriverType.InternetExplorer, DriverType.Opera },
+            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
+        )]
+        public string BrowserType { get; set; } = DriverType.Chrome;
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            var driverId = await _factory.OpenAsync(context.CancellationToken);
+            var options = new OpenQA.Selenium.Chrome.ChromeOptions();
+            if (UseHeadless)
+                options.AddArguments("headless");
+            var driverId = await _factory.OpenAsync(BrowserType, options, context.CancellationToken);
             Data[RpaWebConventions.DriverIdKey] = driverId;
             //this.SaveWorkflowContext = true;
             return Done(driverId);

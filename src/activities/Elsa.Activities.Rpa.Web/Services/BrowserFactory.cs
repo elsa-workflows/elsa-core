@@ -27,17 +27,40 @@ namespace Elsa.Activities.Rpa.Web.Services
         /// <summary>
         /// 
         /// </summary>
+        /// <param name="driverType"><see cref="DriverType"/></param>
+        /// <param name="options"></param>
         /// <param name="cancellationToken"></param>
-        /// <returns>the DriverId</returns>
-        public async Task<string> OpenAsync(CancellationToken cancellationToken)
+        /// <returns>the driverId</returns>
+        public async Task<string> OpenAsync(string driverType, object? options = default, CancellationToken cancellationToken=default)
         {
             var id = Guid.NewGuid().ToString();
-            var chromeDriverInstaller = new ChromeDriverInstaller();
-            var chromeVersion = await chromeDriverInstaller.GetChromeVersion();
-            await chromeDriverInstaller.Install(chromeVersion);
-            var chromeOptions = new ChromeOptions();
-            //chromeOptions.AddArguments("headless");
-            var driver = new ChromeDriver(chromeOptions);            
+            IWebDriver driver = default;
+            switch(driverType)
+            {
+                case DriverType.Chrome:
+                    {
+                        var chromeDriverInstaller = new ChromeDriverInstaller();
+                        var chromeVersion = await chromeDriverInstaller.GetChromeVersion();
+                        await chromeDriverInstaller.Install(chromeVersion);
+                        //chromeOptions.AddArguments("headless");
+                        driver = new ChromeDriver(options as ChromeOptions);
+                        break;
+                    }
+                case DriverType.Firefox:
+                    {
+                        throw new NotImplementedException();
+                    }
+                case DriverType.InternetExplorer:
+                    {
+                        throw new NotImplementedException();
+                    }
+                case DriverType.Opera:
+                    {
+                        throw new NotImplementedException();
+                    }
+                default: { throw new Exception($"invalid driver type {driverType}"); }
+            }
+                      
             _drivers[id]=driver;
             return id;
         }

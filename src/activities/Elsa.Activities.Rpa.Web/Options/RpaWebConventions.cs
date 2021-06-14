@@ -1,4 +1,4 @@
-﻿namespace Elsa.Activities.Rpa.Web.Options
+namespace Elsa.Activities.Rpa.Web.Options
 {
     public class RpaWebConventions
     {
