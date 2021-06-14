@@ -55,16 +55,15 @@ namespace Elsa.Activities.Http
         public Type? TargetType { get; set; }
 
         [ActivityOutput(Hint = "The received HTTP request.")]
-        public HttpRequestModel? Request { get; set; }
+        public HttpRequestModel? Output { get; set; }
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => context.WorkflowExecutionContext.IsFirstPass ? ExecuteInternal(context) : Suspend();
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context) => ExecuteInternal(context);
 
         private IActivityExecutionResult ExecuteInternal(ActivityExecutionContext context)
         {
-            var model = context.GetInput<HttpRequestModel>()!;
-            Request = model;
-            return Done(model);
+            Output = context.GetInput<HttpRequestModel>();
+            return Done();
         }
     }
 }

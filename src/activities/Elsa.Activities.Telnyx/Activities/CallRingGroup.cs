@@ -210,10 +210,10 @@ namespace Elsa.Activities.Telnyx.Activities
             CollectedDialResponses = collection;
         }
 
-        private static async ValueTask<string> ResolveExtensionAsync(ActivityExecutionContext context)
+        private static async ValueTask<string?> ResolveExtensionAsync(ActivityExecutionContext context)
         {
             if (context.Resuming)
-                return context.GetActivityProperty<Dial, string>(x => x.To)!;
+                return await context.GetActivityPropertyAsync<Dial, string>(x => x.To)!;
 
             var extension = context.GetInput<string>()!;
             var extensionProvider = context.GetService<IExtensionProvider>();

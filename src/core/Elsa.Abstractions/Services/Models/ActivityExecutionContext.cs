@@ -78,7 +78,7 @@ namespace Elsa.Services.Models
             var data = GetData();
             return data.GetState(propertyName, targetType);
         }
-        
+
 
         public T? GetState<TActivity, T>(Expression<Func<TActivity, T>> propertyExpression) where TActivity : IActivity
         {
@@ -86,7 +86,7 @@ namespace Elsa.Services.Models
             string propertyName = expression.Member.Name;
             return GetState<T>(propertyName);
         }
-        
+
         public object? GetState(string propertyName)
         {
             var data = GetData();
@@ -165,18 +165,23 @@ namespace Elsa.Services.Models
         public T? GetInput<T>(Func<T?> defaultValue) => Input != null ? Input.ConvertTo<T>() : defaultValue();
         public T? GetInput<T>(T? defaultValue) => Input != null ? Input.ConvertTo<T>() : defaultValue;
 
-        public ValueTask<object?> GetOutputFromAsync(string activityName, CancellationToken cancellationToken = default) => WorkflowExecutionContext.GetOutputFromAsync(activityName, cancellationToken);
-        public async ValueTask<object?> GetOutputFromAsync(string activityName, object? defaultValue, CancellationToken cancellationToken = default) => await WorkflowExecutionContext.GetOutputFromAsync(activityName, cancellationToken) ?? defaultValue;
-        public async ValueTask<object?> GetOutputFromAsync(string activityName, Func<object?> defaultValue, CancellationToken cancellationToken = default) => await WorkflowExecutionContext.GetOutputFromAsync(activityName, cancellationToken) ?? defaultValue();
-        public async ValueTask<T?> GetOutputFromAsync<T>(string activityName, CancellationToken cancellationToken = default) => await WorkflowExecutionContext.GetOutputFromAsync<T>(activityName, cancellationToken);
-        public async ValueTask<T?> GetOutputFromAsync<T>(string activityName, Func<T?> defaultValue, CancellationToken cancellationToken = default) => await GetOutputFromAsync<T>(activityName, cancellationToken) ?? defaultValue();
-        public async ValueTask<T?> GetOutputFromAsync<T>(string activityName, T? defaultValue) => await GetOutputFromAsync(activityName, () => defaultValue, CancellationToken);
+        public Task<object?> GetNamedActivityPropertyAsync(string activityName, string propertyName, CancellationToken cancellationToken = default) => WorkflowExecutionContext.GetNamedActivityPropertyAsync(activityName, propertyName, cancellationToken);
+        public async Task<object?> GetNamedActivityPropertyAsync(string activityName, string propertyName, object? defaultValue, CancellationToken cancellationToken = default) => await WorkflowExecutionContext.GetNamedActivityPropertyAsync(activityName, propertyName, cancellationToken) ?? defaultValue;
+        public async Task<object?> GetNamedActivityPropertyAsync(string activityName, string propertyName, Func<object?> defaultValue, CancellationToken cancellationToken = default) => await WorkflowExecutionContext.GetNamedActivityPropertyAsync(activityName, propertyName, cancellationToken) ?? defaultValue();
+        public async Task<T?> GetNamedActivityPropertyAsync<T>(string activityName, string propertyName, CancellationToken cancellationToken = default) => await WorkflowExecutionContext.GetNamedActivityPropertyAsync<T>(activityName, propertyName, cancellationToken);
+        public async Task<T?> GetNamedActivityPropertyAsync<T>(string activityName, string propertyName, Func<T?> defaultValue, CancellationToken cancellationToken = default) => await GetNamedActivityPropertyAsync<T>(activityName, propertyName, cancellationToken) ?? defaultValue();
+        public async Task<T?> GetNamedActivityPropertyAsync<T>(string activityName, string propertyName, T? defaultValue) => await GetNamedActivityPropertyAsync(activityName, propertyName, () => defaultValue, CancellationToken);
+
+        public async Task<T?> GetNamedActivityPropertyAsync<TActivity, T>(string activityName, Expression<Func<TActivity, T>> propertyExpression, CancellationToken cancellationToken = default) where TActivity : IActivity => await WorkflowExecutionContext.GetNamedActivityPropertyAsync(activityName, propertyExpression, cancellationToken);
+        public async Task<T?> GetNamedActivityPropertyAsync<TActivity, T>(string activityName, Expression<Func<TActivity, T>> propertyExpression, Func<T?> defaultValue, CancellationToken cancellationToken = default) where TActivity : IActivity => await GetNamedActivityPropertyAsync(activityName, propertyExpression, cancellationToken) ?? defaultValue();
+        public async Task<T?> GetNamedActivityPropertyAsync<TActivity, T>(string activityName, Expression<Func<TActivity, T>> propertyExpression, T? defaultValue) where TActivity : IActivity => await GetNamedActivityPropertyAsync(activityName, propertyExpression, () => defaultValue, CancellationToken);
+
         public void SetWorkflowContext(object? value) => WorkflowExecutionContext.SetWorkflowContext(value);
         public object? GetWorkflowContext() => WorkflowExecutionContext.GetWorkflowContext();
         public T GetWorkflowContext<T>() => WorkflowExecutionContext.GetWorkflowContext<T>();
         public IDictionary<string, object> GetActivityData() => GetActivityData(ActivityId);
         public IDictionary<string, object> GetActivityData(string activityId) => WorkflowExecutionContext.GetActivityData(activityId);
-        public T? GetActivityProperty<TActivity, T>(Expression<Func<TActivity, T>> propertyExpression) where TActivity : IActivity => WorkflowExecutionContext.GetActivityProperty<TActivity, T>(ActivityId, propertyExpression);
+        public Task<T?> GetActivityPropertyAsync<TActivity, T>(Expression<Func<TActivity, T>> propertyExpression, CancellationToken cancellationToken = default) where TActivity : IActivity => WorkflowExecutionContext.GetActivityPropertyAsync<TActivity, T>(ActivityId, propertyExpression, cancellationToken);
         public void Fault(Exception exception) => WorkflowExecutionContext.Fault(exception, ActivityId, Input, Resuming);
     }
 }

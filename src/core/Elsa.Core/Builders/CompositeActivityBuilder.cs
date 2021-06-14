@@ -252,9 +252,9 @@ namespace Elsa.Builders
             var isComposite = typeof(CompositeActivity).IsAssignableFrom(builder.ActivityType);
             return isComposite
                 ? new CompositeActivityBlueprint(builder.ActivityId, parent, GetCompositeName(builder.Name), builder.DisplayName, builder.Description, builder.ActivityTypeName, builder.PersistWorkflowEnabled, builder.LoadWorkflowContextEnabled,
-                    builder.SaveWorkflowContextEnabled, builder.PropertyStorageProviders, builder.OutputStorageProviderName, builder.Source)
+                    builder.SaveWorkflowContextEnabled, builder.PropertyStorageProviders, builder.Source)
                 : new ActivityBlueprint(builder.ActivityId, parent, GetCompositeName(builder.Name), builder.DisplayName, builder.Description, builder.ActivityTypeName, builder.PersistWorkflowEnabled, builder.LoadWorkflowContextEnabled,
-                    builder.SaveWorkflowContextEnabled, builder.PropertyStorageProviders, builder.OutputStorageProviderName, builder.Source);
+                    builder.SaveWorkflowContextEnabled, builder.PropertyStorageProviders, builder.Source);
         }
 
         private string? GetCompositeName(string? activityName) => activityName == null ? null : $"{ActivityId}:{activityName}";

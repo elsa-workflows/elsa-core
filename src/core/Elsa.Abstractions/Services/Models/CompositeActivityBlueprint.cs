@@ -22,8 +22,7 @@ namespace Elsa.Services.Models
             bool loadWorkflowContext,
             bool saveWorkflowContext,
             IDictionary<string, string> propertyStorageProviders,
-            string? outputStorageProviderName,
-            string? source) : base(id, parent, name, displayName, description, type, persistWorkflow, loadWorkflowContext, saveWorkflowContext, propertyStorageProviders, outputStorageProviderName, source)
+            string? source) : base(id, parent, name, displayName, description, type, persistWorkflow, loadWorkflowContext, saveWorkflowContext, propertyStorageProviders, source)
         {
         }
 

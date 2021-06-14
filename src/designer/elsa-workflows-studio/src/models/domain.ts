@@ -46,7 +46,6 @@ export interface ActivityBlueprint {
   persistWorkflow: boolean;
   loadWorkflowContext: boolean;
   saveWorkflowContext: boolean;
-  outputStorageProviderName?: string;
   source?: string;
   properties: Variables;
   propertyStorageProviders: Map<string>;
@@ -140,7 +139,6 @@ export interface ActivityDefinition {
   persistWorkflow: boolean;
   loadWorkflowContext: boolean;
   saveWorkflowContext: boolean;
-  outputStorageProviderName: string;
   properties: Array<ActivityDefinitionProperty>;
   propertyStorageProviders: Map<string>;
 }

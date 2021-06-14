@@ -210,7 +210,6 @@ export class ElsaWorkflowDefinitionEditorScreen {
         persistWorkflow: x.persistWorkflow,
         loadWorkflowContext: x.loadWorkflowContext,
         saveWorkflowContext: x.saveWorkflowContext,
-        outputStorageProviderName: x.outputStorageProviderName,
         properties: x.properties,
         propertyStorageProviders: x.propertyStorageProviders
       })),
@@ -225,6 +224,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
     this.publishing = publish;
 
     try {
+      console.debug("Saving workflow...");
       workflowDefinition = await client.workflowDefinitionsApi.save(request);
       this.workflowDefinition = workflowDefinition;
       this.workflowModel = this.mapWorkflowModel(workflowDefinition);
@@ -283,7 +283,6 @@ export class ElsaWorkflowDefinitionEditorScreen {
       type: source.type,
       properties: source.properties,
       outcomes: [...activityDescriptor.outcomes],
-      outputStorageProviderName: source.outputStorageProviderName,
       persistWorkflow: source.persistWorkflow,
       saveWorkflowContext: source.saveWorkflowContext,
       loadWorkflowContext: source.loadWorkflowContext,

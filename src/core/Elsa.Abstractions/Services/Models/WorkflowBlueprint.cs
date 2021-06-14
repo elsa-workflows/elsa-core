@@ -31,7 +31,6 @@ namespace Elsa.Services.Models
             bool deleteCompletedInstances,
             IEnumerable<IActivityBlueprint> activities,
             IEnumerable<IConnection> connections,
-            string? outputStorageProviderName,
             IActivityPropertyProviders activityPropertyValueProviders) : base(
             id, 
             default, 
@@ -42,8 +41,7 @@ namespace Elsa.Services.Models
             true, 
             false, 
             false, 
-            new Dictionary<string, string>(), 
-            outputStorageProviderName, 
+            new Dictionary<string, string>(),
             default)
         {
             Id = id;

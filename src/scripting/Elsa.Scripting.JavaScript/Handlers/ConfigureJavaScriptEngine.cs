@@ -19,22 +19,23 @@ using NodaTime;
 
 namespace Elsa.Scripting.JavaScript.Handlers
 {
-    public class ConfigureJavaScriptEngine : INotificationHandler<EvaluatingJavaScriptExpression>, INotificationHandler<RenderingTypeScriptDefinitions>
+    public class ConfigureJavaScriptEngine : INotificationHandler<EvaluatingJavaScriptExpression>
     {
         private readonly IConfiguration _configuration;
         private readonly IActivityTypeService _activityTypeService;
+        private readonly IWorkflowStorageService _workflowStorageService;
 
-        public ConfigureJavaScriptEngine(IConfiguration configuration, IActivityTypeService activityTypeService)
+        public ConfigureJavaScriptEngine(IConfiguration configuration, IActivityTypeService activityTypeService, IWorkflowStorageService workflowStorageService)
         {
             _configuration = configuration;
             _activityTypeService = activityTypeService;
+            _workflowStorageService = workflowStorageService;
         }
 
-        public Task Handle(EvaluatingJavaScriptExpression notification, CancellationToken cancellationToken)
+        public async Task Handle(EvaluatingJavaScriptExpression notification, CancellationToken cancellationToken)
         {
             var activityExecutionContext = notification.ActivityExecutionContext;
             var workflowExecutionContext = activityExecutionContext.WorkflowExecutionContext;
-            var workflowBlueprint = workflowExecutionContext.WorkflowBlueprint;
             var workflowInstance = workflowExecutionContext.WorkflowInstance;
             var engine = notification.Engine;
 
@@ -51,7 +52,7 @@ namespace Elsa.Scripting.JavaScript.Handlers
             engine.SetValue("getActivity", (Func<string, object?>) (idOrName => GetActivityModel(activityExecutionContext, idOrName)));
             
             // Using .Result because Jint doesn't support Task-based functions yet.  
-            engine.SetValue("getActivityOutput", (Func<string, string?, object?>) ((activityId, propertyName) => GetActivityOutputAsync(activityId, propertyName, activityExecutionContext).Result));
+            engine.SetValue("getActivityProperty", (Func<string, string?, object?>) ((activityId, propertyName) => GetActivityPropertyAsync(activityId, propertyName, activityExecutionContext).Result));
 
             // Global variables.
             engine.SetValue("activityExecutionContext", activityExecutionContext);
@@ -82,113 +83,53 @@ namespace Elsa.Scripting.JavaScript.Handlers
             foreach (var variable in variables.Data)
                 engine.SetValue(variable.Key, variable.Value);
 
+
             // DEPRECATED: The following only works when activity state is stored as part of the workflow instance itself.
             // With the introduction of pluggable workflow state storage providers, which are asynchronous, we don't want to load all states of all activities upfront (e.g. we don't want to download files from blob storage).
-            // Named activities.
+            AddActivityOutputOld(engine, activityExecutionContext);
+
+            await AddActivityOutputAsync(engine, activityExecutionContext, cancellationToken);
+        }
+        
+        private async Task AddActivityOutputAsync(Engine engine, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
+        {
+            var workflowExecutionContext = activityExecutionContext.WorkflowExecutionContext;
+            var workflowInstance = activityExecutionContext.WorkflowInstance;
+            var workflowBlueprint = workflowExecutionContext.WorkflowBlueprint;
+            var activities = new Dictionary<string, object>();
+
             foreach (var activity in workflowBlueprint.Activities.Where(x => !string.IsNullOrWhiteSpace(x.Name)))
             {
-                var state = new Dictionary<string, object>(activityExecutionContext.GetActivityData(activity.Id));
-
-                // Output.
-                if (state.ContainsKey(ActivityOutput.PropertyName))
-                {
-                    var output = state.GetItem(ActivityOutput.PropertyName);
-                    state["Output"] = output ?? new { };
-                }
-
-                engine.SetValue(activity.Name, state);
-            }
-
-            return Task.CompletedTask;
-        }
-
-        public async Task Handle(RenderingTypeScriptDefinitions notification, CancellationToken cancellationToken)
-        {
-            var output = notification.Output;
-
-            output.AppendLine("declare function guid(): string");
-            output.AppendLine("declare function parseGuid(text: string): Guid");
-            output.AppendLine("declare function setVariable(name: string, value?: any): void;");
-            output.AppendLine("declare function getVariable(name: string): any;");
-            output.AppendLine("declare function getConfig(section: string): any;");
-            output.AppendLine("declare function isNullOrWhiteSpace(text: string): boolean;");
-            output.AppendLine("declare function isNullOrEmpty(text: string): boolean;");
-            output.AppendLine("declare function getWorkflowDefinitionIdByName(name: string): string;");
-            output.AppendLine("declare function getWorkflowDefinitionIdByTag(tag: string): string;");
-            output.AppendLine("declare function getActivity(idOrName: string): any;");
-            output.AppendLine("declare function getActivityOutput(activityIdOrName: string, propertyName?: string): any;");
-
-            output.AppendLine("declare const activityExecutionContext: ActivityExecutionContext;");
-            output.AppendLine("declare const workflowExecutionContext: WorkflowExecutionContext;");
-            output.AppendLine("declare const workflowInstance: WorkflowInstance;");
-            output.AppendLine("declare const workflowInstanceId: string;");
-            output.AppendLine("declare const workflowDefinitionId: string;");
-            output.AppendLine("declare const workflowDefinitionVersion: number;");
-            output.AppendLine("declare const correlationId: string;");
-            output.AppendLine("declare const currentCulture: CultureInfo;");
-
-            var workflowDefinition = notification.WorkflowDefinition;
-
-            if (workflowDefinition != null)
-            {
-                // Workflow Context
-                var contextType = workflowDefinition.ContextOptions?.ContextType;
-
-                if (contextType != null)
-                {
-                    var workflowContextTypeScriptType = notification.GetTypeScriptType(contextType);
-                    output.AppendLine($"declare const workflowContext: {workflowContextTypeScriptType}");
-                }
-
-                // Workflow Variables.
-                foreach (var variable in workflowDefinition.Variables!.Data)
-                {
-                    var variableType = variable.Value?.GetType() ?? typeof(object);
-                    var typeScriptType = notification.GetTypeScriptType(variableType);
-                    output.AppendLine($"declare const {variable.Key}: {typeScriptType}");
-                }
-
-                // Named Activities.
-                var namedActivities = workflowDefinition.Activities.Where(x => !string.IsNullOrWhiteSpace(x.Name)).ToList();
-                var activityTypeNames = namedActivities.Select(x => x.Type).Distinct().ToList();
-                var activityTypes = await Task.WhenAll(activityTypeNames.Select(async activityTypeName => (activityTypeName, await _activityTypeService.GetActivityTypeAsync(activityTypeName, cancellationToken))));
-                var activityTypeDictionary = activityTypes.ToDictionary(x => x.activityTypeName, x => x.Item2);
-
-                foreach (var activityType in activityTypeDictionary.Values)
-                    RenderActivityTypeDeclaration(activityType, output);
-
-                foreach (var activity in namedActivities)
-                {
-                    var activityType = activityTypeDictionary[activity.Type];
-                    var typeScriptType = activityType.TypeName;
-                    output.AppendLine($"declare const {activity.Name}: {typeScriptType}");
-                }
-            }
-
-            void RenderActivityTypeDeclaration(ActivityType type, StringBuilder writer)
-            {
-                var typeName = type.TypeName;
-                var descriptor = type.Describe();
-                var inputProperties = descriptor.InputProperties;
-                var outputProperties = descriptor.OutputProperties;
-
-                writer.AppendLine($"declare interface {typeName} {{");
-
-                foreach (var property in inputProperties)
-                {
-                    var typeScriptType = notification.GetTypeScriptType(property.Type);
-                    var propertyName = property.Name;
-                    writer.AppendLine($"{propertyName}: {typeScriptType};");
-                }
+                var activityType = await _activityTypeService.GetActivityTypeAsync(activity.Type, cancellationToken);
+                var activityDescriptor = await _activityTypeService.DescribeActivityType(activityType, cancellationToken);
+                var outputProperties = activityDescriptor.OutputProperties;
+                var storageProviderLookup = activity.PropertyStorageProviders;
+                var activityModel = new Dictionary<string, object?>();
+                var storageContext = new WorkflowStorageContext(workflowInstance, activity.Id);
 
                 foreach (var property in outputProperties)
                 {
-                    var typeScriptType = notification.GetTypeScriptType(property.Type);
                     var propertyName = property.Name;
-                    writer.AppendLine($"{propertyName}: {typeScriptType};");
+                    var storageProviderName = storageProviderLookup.GetItem(propertyName);
+
+                    activityModel[propertyName] = (Func<object?>) (() => _workflowStorageService.LoadAsync(storageProviderName, storageContext, propertyName, cancellationToken).Result);
                 }
 
-                writer.AppendLine("}");
+                activities[activity.Name!] = activityModel;
+            }
+            
+            engine.SetValue("activities", activities);
+        }
+
+        private void AddActivityOutputOld(Engine engine, ActivityExecutionContext activityExecutionContext)
+        {
+            var workflowExecutionContext = activityExecutionContext.WorkflowExecutionContext;
+            var workflowBlueprint = workflowExecutionContext.WorkflowBlueprint;
+            
+            foreach (var activity in workflowBlueprint.Activities.Where(x => !string.IsNullOrWhiteSpace(x.Name)))
+            {
+                var state = new Dictionary<string, object>(activityExecutionContext.GetActivityData(activity.Id));
+                engine.SetValue(activity.Name, state);
             }
         }
 
@@ -208,25 +149,17 @@ namespace Elsa.Scripting.JavaScript.Handlers
             var activity = workflowExecutionContext.GetActivityBlueprintByName(idOrName) ?? workflowExecutionContext.GetActivityBlueprintById(idOrName);
             return activity == null ? null : workflowExecutionContext.WorkflowInstance.ActivityData[activity.Id];
         }
-
-        private object? GetInboundActivityModel(ActivityExecutionContext context)
-        {
-            var inboundActivityId = context.WorkflowExecutionContext.GetInboundActivityPath(context.ActivityId).FirstOrDefault();
-            return inboundActivityId == null ? null : GetActivityModel(context, inboundActivityId);
-        }
         
-        private async Task<object?> GetActivityOutputAsync(string activityIdOrName, string? propertyName, ActivityExecutionContext context)
+        private async Task<object?> GetActivityPropertyAsync(string activityIdOrName, string propertyName, ActivityExecutionContext context)
         {
             var workflowExecutionContext = context.WorkflowExecutionContext;
             var activityBlueprint = workflowExecutionContext.GetActivityBlueprintByName(activityIdOrName) ?? workflowExecutionContext.GetActivityBlueprintById(activityIdOrName)!;
             var storageService = context.GetService<IWorkflowStorageService>();
-            var propName = propertyName ?? ActivityOutput.PropertyName;
-            var providerName = propertyName == null ? activityBlueprint.OutputStorageProviderName : activityBlueprint.PropertyStorageProviders.GetItem(propertyName);
+            var providerName = activityBlueprint.PropertyStorageProviders.GetItem(propertyName);
             var storageContext = new WorkflowStorageContext(context.WorkflowInstance, activityBlueprint.Id);
-            return await storageService.LoadAsync(providerName, storageContext, propName, context.CancellationToken);
+            return await storageService.LoadAsync(providerName, storageContext, propertyName, context.CancellationToken);
         }
 
         private void RegisterType<T>(Engine engine) => engine.SetValue(typeof(T).Name, TypeReference.CreateTypeReference(engine, typeof(T)));
-        private void RegisterType(Type type, Engine engine) => engine.SetValue(type.Name, TypeReference.CreateTypeReference(engine, type));
     }
 }

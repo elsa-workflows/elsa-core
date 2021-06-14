@@ -126,7 +126,6 @@ export class ElsaWorkflowBlueprintViewerScreen {
       type: source.type,
       properties: properties,
       outcomes: [...activityDescriptor.outcomes],
-      outputStorageProviderName: source.outputStorageProviderName,
       persistWorkflow: source.persistWorkflow,
       saveWorkflowContext: source.saveWorkflowContext,
       loadWorkflowContext: source.loadWorkflowContext,

@@ -31,7 +31,7 @@ namespace Elsa.Core.IntegrationTests.Workflows
             var runWorkflowResult = await WorkflowBuilderAndStarter.BuildAndStartWorkflowAsync(sut);
             var workflowInstance = runWorkflowResult.WorkflowInstance!;
             var actualOutputReference = workflowInstance.Output!;
-            var actualOutput = await WorkflowStorageService.LoadAsync(actualOutputReference.Value.ProviderName, new WorkflowStorageContext(workflowInstance, workflowInstance.LastExecutedActivityId!), ActivityOutput.PropertyName);
+            var actualOutput = await WorkflowStorageService.LoadAsync(actualOutputReference.Value.ProviderName, new WorkflowStorageContext(workflowInstance, workflowInstance.LastExecutedActivityId!), "Output");
 
             Assert.Same(expectedOutput, actualOutput);
         }
