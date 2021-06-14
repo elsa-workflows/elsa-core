@@ -33,7 +33,7 @@ namespace Elsa.Core.IntegrationTests.Workflows
                 return entry != null;
             }
             
-            Task<bool> GetIsFinishedAsync() => GetActivityHasExecutedAsync("ForkJoinWorkflow:Finished");
+            Task<bool> GetIsFinishedAsync() => GetActivityHasExecutedAsync("Finished");
 
             Assert.Equal(WorkflowStatus.Suspended, workflowInstance.WorkflowStatus);
             Assert.False(await GetIsFinishedAsync());
@@ -75,7 +75,7 @@ namespace Elsa.Core.IntegrationTests.Workflows
                 return entry != null;
             }
             
-            Task<bool> GetIsFinishedAsync() => GetActivityHasExecutedAsync("ForkJoinWorkflow:Finished");
+            Task<bool> GetIsFinishedAsync() => GetActivityHasExecutedAsync("Finished");
 
             Assert.Equal(WorkflowStatus.Suspended, workflowInstance.WorkflowStatus);
             Assert.False(await GetIsFinishedAsync());
