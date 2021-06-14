@@ -10,6 +10,8 @@ namespace Elsa.Providers.WorkflowStorage
     /// </summary>
     public class TransientWorkflowStorageProvider : WorkflowStorageProvider
     {
+        public const string ProviderName = "Transient";
+        
         private readonly IMemoryCache _cache;
         private readonly ICacheSignal _cacheSignal;
 
@@ -18,6 +20,8 @@ namespace Elsa.Providers.WorkflowStorage
             _cache = cache;
             _cacheSignal = cacheSignal;
         }
+
+        public override string Name => ProviderName;
 
         public override ValueTask SaveAsync(WorkflowStorageContext context, string key, object? value, CancellationToken cancellationToken = default)
         {
