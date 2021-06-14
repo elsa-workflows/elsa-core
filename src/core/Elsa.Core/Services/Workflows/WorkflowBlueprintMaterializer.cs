@@ -61,7 +61,6 @@ namespace Elsa.Services.Workflows
                 workflowDefinition.DeleteCompletedInstances,
                 activityBlueprints.Values,
                 connections,
-                workflowDefinition.OutputStorageProviderName,
                 new ActivityPropertyProviders(propertyProviders.ToDictionary(x => x.Key, x => x.Value))
             );
         }
@@ -138,7 +137,6 @@ namespace Elsa.Services.Workflows
                     LoadWorkflowContext = activityDefinition.LoadWorkflowContext,
                     SaveWorkflowContext = activityDefinition.SaveWorkflowContext,
                     ActivityPropertyProviders = await CreatePropertyProviders(compositeActivityDefinition, cancellationToken),
-                    OutputStorageProviderName = activityDefinition.OutputStorageProviderName,
                     PropertyStorageProviders = activityDefinition.PropertyStorageProviders
                 };
 
@@ -160,7 +158,6 @@ namespace Elsa.Services.Workflows
                     PersistWorkflowEnabled = activityDefinition.PersistWorkflow,
                     LoadWorkflowContextEnabled = activityDefinition.LoadWorkflowContext,
                     SaveWorkflowContextEnabled = activityDefinition.SaveWorkflowContext,
-                    OutputStorageProviderName = activityDefinition.OutputStorageProviderName,
                     PropertyStorageProviders = activityDefinition.PropertyStorageProviders
                 };
                 
@@ -187,7 +184,6 @@ namespace Elsa.Services.Workflows
                     PersistWorkflow = activityDefinition.PersistWorkflow,
                     LoadWorkflowContext = activityDefinition.LoadWorkflowContext,
                     SaveWorkflowContext = activityDefinition.SaveWorkflowContext,
-                    OutputStorageProviderName = activityDefinition.OutputStorageProviderName,
                     PropertyStorageProviders = activityDefinition.PropertyStorageProviders
                 });
             }

@@ -3,10 +3,10 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using Elsa.ActivityResults;
+using Elsa.Attributes;
 using Elsa.Builders;
 using Elsa.Models;
 using Elsa.Services.Models;
-using Newtonsoft.Json.Linq;
 
 namespace Elsa.Services
 {
@@ -18,6 +18,8 @@ namespace Elsa.Services
         public virtual void Build(ICompositeActivityBuilder builder)
         {
         }
+        
+        [ActivityOutput] public object? Output { get; set; }
 
         public bool IsScheduled
         {
@@ -25,7 +27,7 @@ namespace Elsa.Services
             set => SetState(value);
         }
 
-        public override IDictionary<string, object> Data
+        public override IDictionary<string, object?> Data
         {
             get
             {
@@ -76,8 +78,9 @@ namespace Elsa.Services
             }
             
             await OnExitAsync(context, output);
-            
-            return Combine(Output(output), Outcomes(outcomes));
+
+            Output = output;
+            return Outcomes(outcomes);
         }
 
         protected virtual ValueTask OnEnterAsync(ActivityExecutionContext context)

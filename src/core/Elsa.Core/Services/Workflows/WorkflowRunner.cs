@@ -231,8 +231,8 @@ namespace Elsa.Services.Workflows
                 var activityBlueprint = workflowBlueprint.GetActivity(currentActivityId)!;
                 var resuming = activityOperation == Resume;
                 var outputReference = workflowInstance.Output;
-                var output = outputReference != null ? await _workflowStorageService.LoadAsync(outputReference.Value.ProviderName, new WorkflowStorageContext(workflowInstance, outputReference.Value.ActivityId), ActivityOutput.PropertyName, cancellationToken) : null;
-                var input = !burstStarted ? workflowExecutionContext.Input : output;
+                var output = outputReference != null ? await _workflowStorageService.LoadAsync(outputReference.Value.ProviderName, new WorkflowStorageContext(workflowInstance, outputReference.Value.ActivityId), "Output", cancellationToken) : null;
+                var input = !burstStarted ? workflowExecutionContext.Input : scheduledActivity.Input ?? output;
                 var activityExecutionContext = new ActivityExecutionContext(scope, workflowExecutionContext, activityBlueprint, input, resuming, cancellationToken);
                 var runtimeActivityInstance = await activityExecutionContext.ActivateActivityAsync(cancellationToken);
                 var activityType = runtimeActivityInstance.ActivityType;

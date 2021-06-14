@@ -49,19 +49,19 @@ namespace Elsa.Services.Models
         /// </summary>
         public Variables TransientState { get; set; } = new();
 
-        public void ScheduleActivities(IEnumerable<string> activityIds)
+        public void ScheduleActivities(IEnumerable<string> activityIds, object? input = null)
         {
             foreach (var activityId in activityIds)
-                ScheduleActivity(activityId);
+                ScheduleActivity(activityId, input);
         }
 
-        public void ScheduleActivities(IEnumerable<ScheduledActivity> activities)
+        public void ScheduleActivities(IEnumerable<ScheduledActivity> activities, object? input = null)
         {
             foreach (var activity in activities)
                 ScheduleActivity(activity);
         }
 
-        public void ScheduleActivity(string activityId) => ScheduleActivity(new ScheduledActivity(activityId));
+        public void ScheduleActivity(string activityId, object? input = null) => ScheduleActivity(new ScheduledActivity(activityId, input));
         public void ScheduleActivity(ScheduledActivity activity) => WorkflowInstance.ScheduledActivities.Push(activity);
         public ScheduledActivity PopScheduledActivity() => WorkflowInstance.ScheduledActivities.Pop();
         public ScheduledActivity PeekScheduledActivity() => WorkflowInstance.ScheduledActivities.Peek();
@@ -198,27 +198,42 @@ namespace Elsa.Services.Models
         public IActivityBlueprint? GetActivityBlueprintById(string id) => WorkflowBlueprint.Activities.FirstOrDefault(x => x.Id == id);
         public IActivityBlueprint? GetActivityBlueprintByName(string name) => WorkflowBlueprint.Activities.FirstOrDefault(x => x.Name == name);
 
-        public ValueTask<object?> GetOutputFromAsync(string activityName, CancellationToken cancellationToken = default)
+        public async Task<object?> GetNamedActivityPropertyAsync(string activityName, string propertyName, CancellationToken cancellationToken = default)
         {
-            var workflowStorageService = ServiceProvider.GetRequiredService<IWorkflowStorageService>();
             var activityBlueprint = GetActivityBlueprintByName(activityName)!;
-            var context = new WorkflowStorageContext(WorkflowInstance, activityBlueprint.Id);
-            return workflowStorageService.LoadAsync(activityBlueprint.OutputStorageProviderName, context, ActivityOutput.PropertyName, cancellationToken);
+            return await GetActivityPropertyAsync(activityBlueprint, propertyName, cancellationToken);
         }
 
-        public async ValueTask<T?> GetOutputFromAsync<T>(string activityName, CancellationToken cancellationToken = default) => (T?) await GetOutputFromAsync(activityName, cancellationToken);
+        public async ValueTask<T?> GetNamedActivityPropertyAsync<T>(string activityName, string propertyName, CancellationToken cancellationToken = default) => (T?) await GetNamedActivityPropertyAsync(activityName, propertyName, cancellationToken);
         
-        public T? GetActivityProperty<TActivity, T>(string activityId, Expression<Func<TActivity, T>> propertyExpression) where TActivity : IActivity
+        public async Task<T?> GetNamedActivityPropertyAsync<TActivity, T>(string activityName, Expression<Func<TActivity, T>> propertyExpression, CancellationToken cancellationToken = default) where TActivity : IActivity
         {
             var expression = (MemberExpression) propertyExpression.Body;
             string propertyName = expression.Member.Name;
-            return GetActivityProperty<T>(activityId, propertyName);
+            return await GetNamedActivityPropertyAsync<T>(activityName, propertyName, cancellationToken);
         }
         
-        public T? GetActivityProperty<T>(string activityId, string propertyName)
+        public async Task<T?> GetActivityPropertyAsync<TActivity, T>(string activityId, Expression<Func<TActivity, T>> propertyExpression, CancellationToken cancellationToken = default) where TActivity : IActivity
         {
-            var data = GetActivityData(activityId);
-            return data.GetState<T>(propertyName);
+            var expression = (MemberExpression) propertyExpression.Body;
+            string propertyName = expression.Member.Name;
+            return await GetActivityPropertyAsync<T>(activityId, propertyName, cancellationToken);
+        }
+        
+        public async Task<T?> GetActivityPropertyAsync<T>(string activityId, string propertyName, CancellationToken cancellationToken = default)
+        {
+            var activityBlueprint = GetActivityBlueprintById(activityId)!;
+            return await GetActivityPropertyAsync<T>(activityBlueprint, propertyName, cancellationToken);
+        }
+        
+        public async Task<T?> GetActivityPropertyAsync<T>(IActivityBlueprint activityBlueprint, string propertyName, CancellationToken cancellationToken = default) => (T?)await GetActivityPropertyAsync(activityBlueprint, propertyName, cancellationToken);
+
+        public async Task<object?> GetActivityPropertyAsync(IActivityBlueprint activityBlueprint, string propertyName, CancellationToken cancellationToken = default)
+        {
+            var workflowStorageService = ServiceProvider.GetRequiredService<IWorkflowStorageService>();
+            var storageProviderName = activityBlueprint.PropertyStorageProviders.GetItem(propertyName);
+            var context = new WorkflowStorageContext(WorkflowInstance, activityBlueprint.Id);
+            return await workflowStorageService.LoadAsync(storageProviderName, context, propertyName, cancellationToken);
         }
         
         public void SetWorkflowContext(object? value) => WorkflowContext = value;

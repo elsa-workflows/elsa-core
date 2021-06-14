@@ -14,6 +14,13 @@ namespace Elsa.Samples.Server.Host.Activities
             SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? FavoriteLanguage { get; set; }
-        protected override IActivityExecutionResult OnExecute() => Done(FavoriteLanguage);
+        
+        [ActivityOutput] public string? Output { get; set; }
+        
+        protected override IActivityExecutionResult OnExecute()
+        {
+            Output = FavoriteLanguage;
+            return Done();
+        }
     }
 }

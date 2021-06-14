@@ -17,7 +17,6 @@ namespace Elsa.Builders
         public string? Description { get; set; }
         IDictionary<string, IActivityPropertyValueProvider>? PropertyValueProviders { get; }
         IDictionary<string,string> PropertyStorageProviders { get; set; }
-        string? OutputStorageProviderName { get; set; }
         bool PersistWorkflowEnabled { get; set; }
         bool LoadWorkflowContextEnabled { get; set; }
         bool SaveWorkflowContextEnabled { get; set; }

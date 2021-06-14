@@ -40,6 +40,8 @@ namespace Elsa.Activities.JavaScript
             SupportedSyntaxes = new[] {SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid}
         )]
         public ICollection<string> PossibleOutcomes { get; set; } = new List<string> {OutcomeNames.Done};
+        
+        [ActivityOutput] public object? Output { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
@@ -64,7 +66,8 @@ namespace Elsa.Activities.JavaScript
             if (!outcomes.Any())
                 outcomes.Add(OutcomeNames.Done);
 
-            return new CombinedResult(Output(output), new OutcomeResult(outcomes));
+            Output = output;
+            return Outcomes(outcomes);
         }
 
         public Task Handle(RenderingTypeScriptDefinitions notification, CancellationToken cancellationToken)

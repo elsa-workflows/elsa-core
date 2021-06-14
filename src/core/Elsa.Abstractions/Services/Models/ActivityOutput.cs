@@ -2,6 +2,6 @@
 {
     public record ActivityOutput(object? Value, string? StorageName = default)
     {
-        public const string PropertyName = "_ActivityOutput";
+        //public const string PropertyName = "_ActivityOutput";
     }
 }

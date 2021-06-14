@@ -20,7 +20,7 @@ namespace Elsa.Samples.SendHttp
                     .WithReadContent(true))
                 .WithName("TestHttpRequest")
                 .WriteHttpResponse(setup => setup.WithStatusCode(System.Net.HttpStatusCode.OK)
-                    .WithContent(async x => JsonSerializer.Serialize((await x.GetOutputFromAsync<HttpResponseModel>("TestHttpRequest"))!.Content)));
+                    .WithContent(async context => JsonSerializer.Serialize((await context.GetNamedActivityPropertyAsync<SendHttpRequest, HttpResponseModel>("TestHttpRequest", x => x.Output))!.Content)));
         }
     }
 }

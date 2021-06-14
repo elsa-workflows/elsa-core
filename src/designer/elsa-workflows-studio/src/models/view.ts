@@ -16,7 +16,6 @@ export interface ActivityModel {
   outcomes: Array<string>;
   properties: Array<ActivityDefinitionProperty>;
   persistWorkflow?: boolean;
-  outputStorageProviderName?: string;
   loadWorkflowContext?: boolean;
   saveWorkflowContext?: boolean;
   propertyStorageProviders: Map<string>;

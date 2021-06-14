@@ -46,6 +46,10 @@ namespace Elsa.Handlers
             var workflowStorageContext = new WorkflowStorageContext(context.WorkflowInstance, context.ActivityId);
 
             await _workflowStorageService.SaveAsync(providerName, workflowStorageContext, propertyName, value, cancellationToken);
+            
+            // By convention, properties named "Output" will be stored as the workflow output.
+            if (propertyName == "Output")
+                context.WorkflowInstance.Output = new WorkflowOutputReference(providerName, context.ActivityId);
         }
     }
 }

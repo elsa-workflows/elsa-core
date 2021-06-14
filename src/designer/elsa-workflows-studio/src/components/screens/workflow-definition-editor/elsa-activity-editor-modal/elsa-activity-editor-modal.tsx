@@ -179,7 +179,7 @@ export class ElsaActivityEditorModal {
     const renderOutputProperty = function (propertyDescriptor: ActivityPropertyDescriptor) {
       const propertyName = propertyDescriptor.name;
       const fieldName = `propertyStorageProviders.${propertyName}`;
-      return selectField(formContext, fieldName, propertyName, activityModel.propertyStorageProviders[propertyName], storageDescriptorOptions, 'Select a storage provider.', fieldName);
+      return selectField(formContext, fieldName, propertyName, activityModel.propertyStorageProviders[propertyName], storageDescriptorOptions, null, fieldName);
     }
 
     return (
@@ -193,11 +193,8 @@ export class ElsaActivityEditorModal {
           {section('Workflow Instance')}
           {checkBox(formContext, 'persistWorkflow', 'Save Workflow Instance', activityModel.persistWorkflow, 'When enabled, this will save the workflow instance back into storage right after executing this activity.', 'persistWorkflow')}
 
-          {section('Activity Output', 'Configure what storage to use when persisting activity output.')}
-          {selectField(formContext, 'outputStorageProviderName', 'Output Storage', activityModel.outputStorageProviderName, storageDescriptorOptions, 'Select a storage provider for this activity\'s output.', 'outputStorageProviderName')}
-
           {Object.keys(outputProperties).length > 0 ? (
-            [section('Activity Output Properties', 'Configure the desired storage for each output property of this activity.'), outputProperties.map(renderOutputProperty)]
+            [section('Activity Output', 'Configure the desired storage for each output property of this activity.'), outputProperties.map(renderOutputProperty)]
           ) : undefined}
         </div>
       </div>

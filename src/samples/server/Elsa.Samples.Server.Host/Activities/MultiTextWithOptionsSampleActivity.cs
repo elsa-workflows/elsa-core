@@ -17,6 +17,8 @@ namespace Elsa.Samples.Server.Host.Activities
             SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? FavoriteLanguage { get; set; }
+        
+        [ActivityOutput] public string? Output { get; set; }
 
         public object GetOptions(PropertyInfo property) => new[]
         {
@@ -26,6 +28,10 @@ namespace Elsa.Samples.Server.Host.Activities
             new SelectListItem("PHP", "php"),
         };
         
-        protected override IActivityExecutionResult OnExecute() => Done(FavoriteLanguage);
+        protected override IActivityExecutionResult OnExecute()
+        {
+            Output = FavoriteLanguage;
+            return Done();
+        }
     }
 }

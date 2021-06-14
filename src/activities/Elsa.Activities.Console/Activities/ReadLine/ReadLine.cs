@@ -20,6 +20,8 @@ namespace Elsa.Activities.Console
     {
         private readonly TextReader? _input;
 
+        [ActivityOutput] public string? Output { get; set; }
+
         public ReadLine() : this(System.Console.In)
         {
         }
@@ -44,6 +46,10 @@ namespace Elsa.Activities.Console
             return Execute(receivedInput);
         }
 
-        private IActivityExecutionResult Execute(string receivedInput) => Done(receivedInput);
+        private IActivityExecutionResult Execute(string receivedInput)
+        {
+            Output = receivedInput;
+            return Done();
+        }
     }
 }

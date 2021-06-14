@@ -64,8 +64,8 @@ namespace Elsa.Activities.Telnyx.Providers.ActivityTypes
             descriptor.DisplayName = webhookAttribute.DisplayName;
             descriptor.Type = webhookAttribute.ActivityType;
 
-            var outputProperties = descriptor.OutputProperties.Where(x => x.Name != nameof(Webhook.Payload)).ToList();
-            outputProperties.Add(new ActivityOutputDescriptor(nameof(Webhook.Payload), payloadType));
+            var outputProperties = descriptor.OutputProperties.Where(x => x.Name != nameof(Webhook.Output)).ToList();
+            outputProperties.Add(new ActivityOutputDescriptor(nameof(Webhook.Output), payloadType));
             descriptor.OutputProperties = outputProperties.ToArray();
 
             return new ActivityType

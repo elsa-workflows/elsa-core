@@ -35,8 +35,6 @@ namespace Elsa.Models
         /// </summary>
         public string? Tag { get; set; }
 
-        public string? OutputStorageProviderName { get; set; }
-        
         public ICollection<ActivityDefinition> Activities { get; set; }
         public ICollection<ConnectionDefinition> Connections { get; set; }
     }
