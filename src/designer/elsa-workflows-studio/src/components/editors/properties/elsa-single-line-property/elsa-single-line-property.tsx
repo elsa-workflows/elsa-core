@@ -46,7 +46,11 @@ export class ElsaSingleLineProperty {
                             onDefaultSyntaxValueChanged={e => this.onDefaultSyntaxValueChanged(e)}
                             editor-height="2.75em"
                             single-line={true}>
-        <input type="text" id={fieldId} name={fieldName} value={value} readonly={readonly} onChange={e => this.onChange(e)} class="focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300"/>
+        {readonly ? 
+          <input type="text" id={fieldId} name={fieldName} value={value} disabled class="elsa-block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300"/>
+          :
+          <input type="text" id={fieldId} name={fieldName} value={value} onChange={e => this.onChange(e)} class="focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300"/>
+        }
       </elsa-property-editor>
     );
   }
