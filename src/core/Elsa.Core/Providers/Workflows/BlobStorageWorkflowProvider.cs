@@ -13,14 +13,14 @@ using Storage.Net.Blobs;
 
 namespace Elsa.Providers.Workflows
 {
-    public class StorageWorkflowProvider : WorkflowProvider
+    public class BlobStorageWorkflowProvider : WorkflowProvider
     {
         private readonly IBlobStorage _storage;
         private readonly IWorkflowBlueprintMaterializer _workflowBlueprintMaterializer;
         private readonly IContentSerializer _contentSerializer;
         private readonly ILogger _logger;
 
-        public StorageWorkflowProvider(IBlobStorage storage, IWorkflowBlueprintMaterializer workflowBlueprintMaterializer, IContentSerializer contentSerializer, ILogger<StorageWorkflowProvider> logger)
+        public BlobStorageWorkflowProvider(IBlobStorage storage, IWorkflowBlueprintMaterializer workflowBlueprintMaterializer, IContentSerializer contentSerializer, ILogger<BlobStorageWorkflowProvider> logger)
         {
             _storage = storage;
             _workflowBlueprintMaterializer = workflowBlueprintMaterializer;

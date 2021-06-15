@@ -7,6 +7,5 @@ namespace Elsa.Activities.Http.Models
     {
         public HttpStatusCode StatusCode { get; set; }
         public Dictionary<string, string[]> Headers { get; set; } = new();
-        public object? Content { get; set; }
     }
 }
