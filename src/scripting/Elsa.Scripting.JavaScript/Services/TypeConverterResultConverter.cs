@@ -5,7 +5,7 @@ namespace Elsa.Scripting.JavaScript.Services
 {
     public class TypeConverterResultConverter : IConvertsJintEvaluationResult
     {
-        readonly IConvertsJintEvaluationResult wrapped;
+        private readonly IConvertsJintEvaluationResult wrapped;
 
         public object? ConvertToDesiredType(object? evaluationResult, Type desiredType)
         {

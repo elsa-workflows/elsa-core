@@ -1,7 +1,7 @@
 using System;
 using Newtonsoft.Json;
 
-namespace Elsa.Scripting.JavaScript.Converters
+namespace Elsa.Scripting.JavaScript.Converters.Json
 {
     /// <summary>
     /// Ensures that whole numeric values are serialized without any decimal (e.g. 2 instead of 2.0) to ensure deserialization to models having int properties works. 

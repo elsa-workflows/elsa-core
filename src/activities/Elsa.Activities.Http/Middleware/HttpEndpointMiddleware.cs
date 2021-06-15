@@ -7,6 +7,7 @@ using Elsa.Activities.Http.Bookmarks;
 using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.Parsers;
+using Elsa.Activities.Http.Parsers.Request;
 using Elsa.Activities.Http.Services;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications.WorkflowInstances;
