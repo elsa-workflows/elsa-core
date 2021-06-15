@@ -10,12 +10,12 @@ namespace Elsa.Activities.File
 {
     public static class OutFileExtensions
     {
-        #region Data
-        public static ISetupActivity<OutFile> WithContent(this ISetupActivity<OutFile> setup, Func<ActivityExecutionContext, ValueTask<byte[]>> data) => setup.Set(x => x.Data, data);
-        public static ISetupActivity<OutFile> WithContent(this ISetupActivity<OutFile> setup, Func<ActivityExecutionContext, byte[]> data) => setup.Set(x => x.Data, data);
-        public static ISetupActivity<OutFile> WithContent(this ISetupActivity<OutFile> setup, Func<ValueTask<byte[]>> data) => setup.Set(x => x.Data, data);
-        public static ISetupActivity<OutFile> WithContent(this ISetupActivity<OutFile> setup, Func<byte[]> data) => setup.Set(x => x.Data, data);
-        public static ISetupActivity<OutFile> WithContent(this ISetupActivity<OutFile> setup, byte[] data) => setup.Set(x => x.Data, data);
+        #region Bytes
+        public static ISetupActivity<OutFile> WithBytes(this ISetupActivity<OutFile> setup, Func<ActivityExecutionContext, ValueTask<byte[]>> bytes) => setup.Set(x => x.Bytes, bytes);
+        public static ISetupActivity<OutFile> WithBytes(this ISetupActivity<OutFile> setup, Func<ActivityExecutionContext, byte[]> bytes) => setup.Set(x => x.Bytes, bytes);
+        public static ISetupActivity<OutFile> WithBytes(this ISetupActivity<OutFile> setup, Func<ValueTask<byte[]>> bytes) => setup.Set(x => x.Bytes, bytes);
+        public static ISetupActivity<OutFile> WithBytes(this ISetupActivity<OutFile> setup, Func<byte[]> bytes) => setup.Set(x => x.Bytes, bytes);
+        public static ISetupActivity<OutFile> WithBytes(this ISetupActivity<OutFile> setup, byte[] bytes) => setup.Set(x => x.Bytes, bytes);
         #endregion
 
         #region Path
