@@ -257,8 +257,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.ReadLineToFile
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.SendHttp", "src\samples\aspnet\Elsa.Samples.SendHttp\Elsa.Samples.SendHttp.csproj", "{775EFD59-F99C-4D38-B54E-9734C9D9649A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.FileWatcher", "src\samples\console\Elsa.Samples.FileWatcher\Elsa.Samples.FileWatcher.csproj", "{5FC56764-D70C-4CDE-8480-F67C2E846DC5}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.CustomActivityOutcomes", "src\samples\console\Elsa.Samples.CustomActivityOutcomes\Elsa.Samples.CustomActivityOutcomes.csproj", "{30A9B140-14F5-4D00-84ED-1447F96D13C8}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "aspnetcore", "aspnetcore", "{28C5C63F-2DCF-46BE-9576-1F50A7CFE8C4}"
@@ -305,7 +303,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "html", "html", "{8E6215AB-F
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElsaDashboard.Samples.BlazorServer", "src\samples\dashboard\blazor\ElsaDashboard.Samples.BlazorServer\ElsaDashboard.Samples.BlazorServer.csproj", "{6A03B177-09E0-4421-9704-945E6248AB69}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.FaultyWorkflows", "src\samples\aspnet\Elsa.Samples.FaultyWorkflows\Elsa.Samples.FaultyWorkflows.csproj", "{84751112-C2B7-41D4-98F5-D87D7C2E1DAE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.FaultyWorkflows", "src\samples\aspnet\Elsa.Samples.FaultyWorkflows\Elsa.Samples.FaultyWorkflows.csproj", "{84751112-C2B7-41D4-98F5-D87D7C2E1DAE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -657,10 +655,6 @@ Global
 		{775EFD59-F99C-4D38-B54E-9734C9D9649A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{775EFD59-F99C-4D38-B54E-9734C9D9649A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{775EFD59-F99C-4D38-B54E-9734C9D9649A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5FC56764-D70C-4CDE-8480-F67C2E846DC5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5FC56764-D70C-4CDE-8480-F67C2E846DC5}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5FC56764-D70C-4CDE-8480-F67C2E846DC5}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5FC56764-D70C-4CDE-8480-F67C2E846DC5}.Release|Any CPU.Build.0 = Release|Any CPU
 		{30A9B140-14F5-4D00-84ED-1447F96D13C8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{30A9B140-14F5-4D00-84ED-1447F96D13C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{30A9B140-14F5-4D00-84ED-1447F96D13C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -824,7 +818,6 @@ Global
 		{BE284508-9582-4FCB-B0DD-0761AB940AD7} = {B43B546E-23F3-46E8-ACB7-D04F05CDA180}
 		{3EB488DF-3C28-4DAD-B43E-6062E39629AB} = {FC9F520F-BA51-4AD2-BFEE-EF787798E734}
 		{775EFD59-F99C-4D38-B54E-9734C9D9649A} = {22E75696-6FE9-436A-9097-EE21C603F818}
-		{5FC56764-D70C-4CDE-8480-F67C2E846DC5} = {FC9F520F-BA51-4AD2-BFEE-EF787798E734}
 		{30A9B140-14F5-4D00-84ED-1447F96D13C8} = {FC9F520F-BA51-4AD2-BFEE-EF787798E734}
 		{3E2423CF-50E6-4D2B-8749-17B1EF540FE4} = {22E75696-6FE9-436A-9097-EE21C603F818}
 		{9937FB02-72D9-4FCD-B31E-8E60CFF1B37F} = {DA71CDAA-8DD3-4D5F-9FBD-8E4B37A2D925}
