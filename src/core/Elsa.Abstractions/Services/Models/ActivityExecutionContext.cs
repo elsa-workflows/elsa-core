@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 using Microsoft.Extensions.DependencyInjection;
+using NodaTime;
 
 namespace Elsa.Services.Models
 {
@@ -120,10 +121,9 @@ namespace Elsa.Services.Models
         }
 
         public ActivityScope CreateScope() => WorkflowExecutionContext.CreateScope(ActivityId);
-
-        public ActivityOutput? Output { get; set; }
-
         public ActivityScope? CurrentScope => WorkflowExecutionContext.CurrentScope;
+        public object? Output { get; set; }
+
         public ActivityScope GetScope(string activityId) => WorkflowExecutionContext.GetScope(activityId);
         public ActivityScope GetNamedScope(string activityName) => WorkflowExecutionContext.GetNamedScope(activityName);
 

@@ -37,6 +37,10 @@ namespace Elsa.Handlers
                 var value = property.GetValue(activity);
                 await SavePropertyAsync(activityExecutionContext, property.Name, value, cancellationToken);
             }
+            
+            // Handle "inline" activities with output.
+            if (activityExecutionContext.Output != null) 
+                await SavePropertyAsync(activityExecutionContext, "Output", activityExecutionContext.Output, cancellationToken);
         }
 
         private async Task SavePropertyAsync(ActivityExecutionContext context, string propertyName, object? value, CancellationToken cancellationToken)

@@ -33,9 +33,11 @@ namespace Elsa.Services
         protected virtual IActivityExecutionResult OnResume() => Done();
         protected virtual NoopResult Noop() => new();
         protected virtual OutcomeResult Done() => Outcome(OutcomeNames.Done);
+        protected virtual OutcomeResult Done(object? input) => Outcome(OutcomeNames.Done, input);
         protected virtual OutcomeResult Outcomes(IEnumerable<string> outcomes, object? input = null) => new(outcomes, input);
         protected virtual OutcomeResult Outcomes(params string[] outcomes) => Outcomes((IEnumerable<string>) outcomes);
-        protected virtual OutcomeResult Outcome(string outcome, object? input = null) => Outcomes(outcome);
+        protected virtual OutcomeResult Outcomes(object? input, params string[] outcomes) => Outcomes((IEnumerable<string>) outcomes, input);
+        protected virtual OutcomeResult Outcome(string outcome, object? input = null) => Outcomes(input, outcome);
 
         protected virtual SuspendResult Suspend() => new();
         protected virtual ScheduleActivitiesResult Schedule(params string[] activityIds) => new(activityIds);

@@ -39,7 +39,6 @@ namespace Elsa.Handlers
             
             var data = new
             {
-                Output = activityExecutionContext.Output,
                 Outcomes = activityExecutionContext.Outcomes,
             };
 

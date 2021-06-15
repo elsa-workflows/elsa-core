@@ -62,7 +62,7 @@ namespace Elsa.Activities.ControlFlow
 
                 CurrentIndex = currentIndex + 1;
                 Output = currentValue;
-                return Combine(Outcome(OutcomeNames.Iterate));
+                return Outcome(OutcomeNames.Iterate, currentValue);
             }
 
             CurrentIndex = null;

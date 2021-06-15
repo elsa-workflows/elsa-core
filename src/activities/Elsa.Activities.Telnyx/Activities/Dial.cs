@@ -129,8 +129,8 @@ namespace Elsa.Activities.Telnyx.Activities
             DialResponse = response;
 
             return !SuspendWorkflow 
-                ? Done() 
-                : Combine(Outcome(TelnyxOutcomeNames.Dialing), Suspend());
+                ? Done(response) 
+                : Combine(Outcome(TelnyxOutcomeNames.Dialing, response), Suspend());
         }
 
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
