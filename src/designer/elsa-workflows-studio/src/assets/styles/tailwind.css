@@ -1177,7 +1177,7 @@ select {
 .elsa-bg-white {
   --tw-bg-opacity: 1;
   background-color: rgba(255, 255, 255, var(--tw-bg-opacity));
-}
+}amp
 
 .elsa-bg-gray-50 {
   --tw-bg-opacity: 1;
@@ -1412,6 +1412,10 @@ select {
 
 .elsa-cursor-default {
   cursor: default;
+}
+
+.elsa-cursor-not-allowed { 
+  cursor: not-allowed; 
 }
 
 .elsa-cursor-pointer {
@@ -1744,6 +1748,10 @@ select {
 
 .elsa-opacity-25 {
   opacity: 0.25;
+}
+
+.elsa-opacity-50 {
+  opacity: 0.50;
 }
 
 .elsa-opacity-75 {

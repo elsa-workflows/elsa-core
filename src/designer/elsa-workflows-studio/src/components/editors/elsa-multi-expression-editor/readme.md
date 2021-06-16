@@ -14,6 +14,7 @@
 | `editorHeight`      | `editor-height`  |             | `string`                     | `'6em'`               |
 | `expressions`       | --               |             | `{ [key: string]: string; }` | `{}`                  |
 | `fieldName`         | `field-name`     |             | `string`                     | `undefined`           |
+| `isDisabled`        | `is-disabled`    |             | `boolean`                    | `undefined`           |
 | `label`             | `label`          |             | `string`                     | `undefined`           |
 | `singleLineMode`    | `single-line`    |             | `boolean`                    | `false`               |
 | `supportedSyntaxes` | --               |             | `string[]`                   | `[]`                  |

@@ -30,7 +30,7 @@ export class ElsaSingleLineProperty {
     const propertyDescriptor = this.propertyDescriptor;
     const propertyModel = this.propertyModel;
     const propertyName = propertyDescriptor.name;
-    const readonly = propertyDescriptor.isReadonly;
+    const isDisabled = propertyDescriptor.isDisabled;
     const fieldId = propertyName;
     const fieldName = propertyName;
     let value = this.currentValue;
@@ -40,7 +40,7 @@ export class ElsaSingleLineProperty {
       value = defaultValue ? defaultValue.toString() : undefined;
     }
 
-    if (readonly)
+    if (isDisabled)
     {      
       const defaultSyntax = this.propertyDescriptor.defaultSyntax || SyntaxNames.Literal;
       this.propertyModel.expressions[defaultSyntax] = value;
@@ -52,10 +52,10 @@ export class ElsaSingleLineProperty {
                             onDefaultSyntaxValueChanged={e => this.onDefaultSyntaxValueChanged(e)}
                             editor-height="2.75em"
                             single-line={true}>
-        {!readonly ?
+        {!isDisabled ?
           <input type="text" id={fieldId} name={fieldName} value={value} onChange={e => this.onChange(e)} class="focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300"/>
           :
-          <input type="text" id={fieldId} name={fieldName} value={value} disabled class="elsa-block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300"/>
+          <input type="text" id={fieldId} name={fieldName} value={value} disabled class="elsa-opacity-50 elsa-cursor-not-allowed elsa-block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300"/>
         }
       </elsa-property-editor>
     );

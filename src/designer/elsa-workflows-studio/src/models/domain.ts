@@ -272,7 +272,7 @@ export interface ActivityPropertyDescriptor {
   defaultValue?: any;
   defaultSyntax?: string;
   supportedSyntaxes: Array<string>;
-  isReadonly: boolean;
+  isDisabled?: boolean;
 }
 
 export interface PagedList<T> {
