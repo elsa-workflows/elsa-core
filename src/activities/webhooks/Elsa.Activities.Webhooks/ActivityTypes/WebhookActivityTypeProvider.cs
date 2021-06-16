@@ -17,7 +17,8 @@ namespace Elsa.Activities.Webhooks.ActivityTypes
     public class WebhookActivityTypeProvider : IActivityTypeProvider
     {
         public const string WebhookMarkerAttribute = "WebhookMarker";
-        private const string WebhookActivityCategory = "Webhooks";
+        private const string WebhooksActivityType = "Webhook";
+        private const string WebhooksActivityCategory = "Webhooks";
 
         private readonly IWebhookDefinitionStore _webhookDefinitionStore;
         private readonly IActivityActivator _activityActivator;
@@ -47,14 +48,11 @@ namespace Elsa.Activities.Webhooks.ActivityTypes
 
         private ActivityType CreateWebhookActivityType(WebhookDefinition webhook)
         {
-            var typeName = webhook.Name;
-            var displayName = webhook.Name;
-
             var descriptor = new ActivityDescriptor
             {
-                Type = typeName,
-                DisplayName = displayName,
-                Category = WebhookActivityCategory,
+                Type = WebhooksActivityType, //$"{webhook.Name} {WebhooksActivityType}",
+                DisplayName = $"{WebhooksActivityType}: {webhook.Name}",
+                Category = WebhooksActivityCategory,
                 Outcomes = new[] { OutcomeNames.Done },
                 Traits = ActivityTraits.Trigger,
                 InputProperties = new[]

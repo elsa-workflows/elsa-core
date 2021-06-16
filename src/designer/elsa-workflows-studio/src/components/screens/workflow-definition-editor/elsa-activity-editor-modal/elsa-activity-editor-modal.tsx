@@ -100,8 +100,9 @@ export class ElsaActivityEditorModal {
     const activityModel: ActivityModel = renderProps.activityModel;
     const inactiveClass = 'elsa-border-transparent elsa-text-gray-500 hover:elsa-text-gray-700 hover:elsa-border-gray-300';
     const selectedClass = 'elsa-border-blue-500 elsa-text-blue-600';
-
+debugger    
     return (
+
       <Host class="elsa-block">
         <elsa-modal-dialog ref={el => this.dialog = el} >
           <div slot="content" class="elsa-py-8 elsa-pb-0">

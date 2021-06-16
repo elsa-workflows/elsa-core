@@ -26,7 +26,7 @@ export class ElsaSingleLineProperty {
     this.currentValue = e.detail;
   }
 
-  render() {    
+  render() {        
     const propertyDescriptor = this.propertyDescriptor;
     const propertyModel = this.propertyModel;
     const propertyName = propertyDescriptor.name;
@@ -40,16 +40,22 @@ export class ElsaSingleLineProperty {
       value = defaultValue ? defaultValue.toString() : undefined;
     }
 
+    if (readonly)
+    {      
+      const defaultSyntax = this.propertyDescriptor.defaultSyntax || SyntaxNames.Literal;
+      this.propertyModel.expressions[defaultSyntax] = value;
+    }
+
     return (
       <elsa-property-editor propertyDescriptor={propertyDescriptor}
                             propertyModel={propertyModel}
                             onDefaultSyntaxValueChanged={e => this.onDefaultSyntaxValueChanged(e)}
                             editor-height="2.75em"
                             single-line={true}>
-        {readonly ? 
-          <input type="text" id={fieldId} name={fieldName} value={value} disabled class="elsa-block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300"/>
-          :
+        {!readonly ?
           <input type="text" id={fieldId} name={fieldName} value={value} onChange={e => this.onChange(e)} class="focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300"/>
+          :
+          <input type="text" id={fieldId} name={fieldName} value={value} disabled class="elsa-block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300"/>
         }
       </elsa-property-editor>
     );

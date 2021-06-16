@@ -7,6 +7,10 @@
 
 ## Dependencies
 
+### Used by
+
+ - [elsa-webhook-definition-editor-screen](../elsa-webhook-definition-editor-screen)
+
 ### Depends on
 
 - [elsa-toast-notification](../../../shared/elsa-toast-notification)
@@ -15,6 +19,7 @@
 ```mermaid
 graph TD;
   elsa-webhook-definition-editor-notifications --> elsa-toast-notification
+  elsa-webhook-definition-editor-screen --> elsa-webhook-definition-editor-notifications
   style elsa-webhook-definition-editor-notifications fill:#f9f,stroke:#333,stroke-width:4px
 ```
 

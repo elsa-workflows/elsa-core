@@ -544,7 +544,7 @@ export class ElsaWorkflowDesigner {
 
   renderActivityBody(displayContext: ActivityDesignDisplayContext) {
     return (
-      `<div class="elsa-border-t elsa-border-t-solid hidden">
+      `<div class="elsa-border-t elsa-border-t-solid">
           <div class="elsa-p-6 elsa-text-gray-400 elsa-text-sm">
             <div class="elsa-mb-2">${!!displayContext.bodyDisplay ? displayContext.bodyDisplay : ''}</div>
             <div>
