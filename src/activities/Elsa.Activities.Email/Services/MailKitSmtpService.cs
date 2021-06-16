@@ -12,15 +12,15 @@ using MimeKit;
 
 namespace Elsa.Activities.Email.Services
 {
-    public class SmtpService : ISmtpService
+    public class MailKitSmtpService : ISmtpService
     {
         private readonly SmtpOptions _options;
-        private readonly ILogger<SmtpService> _logger;
+        private readonly ILogger<MailKitSmtpService> _logger;
         private const string EmailExtension = ".eml";
 
-        public SmtpService(
+        public MailKitSmtpService(
             IOptions<SmtpOptions> options,
-            ILogger<SmtpService> logger
+            ILogger<MailKitSmtpService> logger
         )
         {
             _options = options.Value;

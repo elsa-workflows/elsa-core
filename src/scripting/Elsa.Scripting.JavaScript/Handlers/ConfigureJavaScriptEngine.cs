@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Providers.WorkflowStorage;
+using Elsa.Scripting.JavaScript.Extensions;
 using Elsa.Scripting.JavaScript.Messages;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -65,15 +66,15 @@ namespace Elsa.Scripting.JavaScript.Handlers
             engine.SetValue("workflowContext", activityExecutionContext.GetWorkflowContext());
 
             // Types.
-            RegisterType<Instant>(engine);
-            RegisterType<Duration>(engine);
-            RegisterType<Period>(engine);
-            RegisterType<LocalDate>(engine);
-            RegisterType<LocalTime>(engine);
-            RegisterType<LocalDateTime>(engine);
-            RegisterType<Guid>(engine);
-            RegisterType<WorkflowExecutionContext>(engine);
-            RegisterType<ActivityExecutionContext>(engine);
+            engine.RegisterType<Instant>();
+            engine.RegisterType<Duration>();
+            engine.RegisterType<Period>();
+            engine.RegisterType<LocalDate>();
+            engine.RegisterType<LocalTime>();
+            engine.RegisterType<LocalDateTime>();
+            engine.RegisterType<Guid>();
+            engine.RegisterType<WorkflowExecutionContext>();
+            engine.RegisterType<ActivityExecutionContext>();
 
             // Workflow variables.
             var variables = workflowExecutionContext.GetMergedVariables();
@@ -157,7 +158,5 @@ namespace Elsa.Scripting.JavaScript.Handlers
             var storageContext = new WorkflowStorageContext(context.WorkflowInstance, activityBlueprint.Id);
             return await storageService.LoadAsync(providerName, storageContext, propertyName, context.CancellationToken);
         }
-
-        private void RegisterType<T>(Engine engine) => engine.SetValue(typeof(T).Name, TypeReference.CreateTypeReference(engine, typeof(T)));
     }
 }
