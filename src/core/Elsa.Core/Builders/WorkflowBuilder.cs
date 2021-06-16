@@ -178,5 +178,8 @@ namespace Elsa.Builders
                 compositeRoot.Connections,
                 compositeRoot.ActivityPropertyProviders);
         }
+
+        // Do not qualify root activities.
+        protected override string? GetCompositeName(string? activityName) => activityName;
     }
 }

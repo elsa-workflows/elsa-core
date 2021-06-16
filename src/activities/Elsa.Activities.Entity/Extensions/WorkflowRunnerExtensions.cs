@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Elsa.Activities.Entity.Bookmarks;
 using Elsa.Activities.Entity.Models;
-using Elsa.Dispatch;
+using Elsa.Services.Dispatch;
 
 namespace Elsa.Activities.Entity.Extensions
 {

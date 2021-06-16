@@ -102,13 +102,15 @@ namespace Elsa.Activities.Http
         )]
         public ICollection<int>? SupportedStatusCodes { get; set; } = new HashSet<int>(new[] { 200 });
 
+        [ActivityOutput] public HttpResponseModel Output { get; set; }
+
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
             var request = CreateRequest();
             var cancellationToken = context.CancellationToken;
             var response = (await _httpClient.SendAsync(request, cancellationToken))!;
             var hasContent = response.Content != null!;
-            var contentType = response?.Content?.Headers?.ContentType?.MediaType;
+            var contentType = response.Content?.Headers.ContentType?.MediaType;
 
             var responseModel = new HttpResponseModel
             {
@@ -126,18 +128,20 @@ namespace Elsa.Activities.Http
 
             var statusCode = (int) response.StatusCode;
             var statusOutcome = statusCode.ToString();
-            var isSupportedStatusCode = SupportedStatusCodes?.Contains(statusCode) == true;
+            var supportedStatusCodes = SupportedStatusCodes;
+            var isSupportedStatusCode = supportedStatusCodes == null || !supportedStatusCodes.Any() || SupportedStatusCodes?.Contains(statusCode) == true;
             var outcomes = new List<string> { OutcomeNames.Done, statusOutcome };
 
             if (!isSupportedStatusCode)
                 outcomes.Add("Unsupported Status Code");
 
-            return Combine(Output(responseModel), Outcomes(outcomes));
+            Output = responseModel;
+            return Outcomes(outcomes);
         }
 
         private IHttpResponseBodyParser SelectContentParser(string contentType)
         {
-            string? simpleContentType = contentType?.Split(';').First();
+            var simpleContentType = contentType?.Split(';').First();
             var formatters = _parsers.OrderByDescending(x => x.Priority).ToList();
             return formatters.FirstOrDefault(
                 x => x.SupportedContentTypes.Contains(simpleContentType, StringComparer.OrdinalIgnoreCase)

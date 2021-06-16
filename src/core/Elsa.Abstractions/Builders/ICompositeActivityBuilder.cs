@@ -14,6 +14,7 @@ namespace Elsa.Builders
         IActivityBuilder New<T>(
             string activityTypeName, 
             IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default,
+            IDictionary<string, string>? storageProviders = default,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default)
             where T : class, IActivity;
@@ -44,6 +45,7 @@ namespace Elsa.Builders
             string activityTypeName, 
             Action<IActivityBuilder>? branch = default,
             IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default,
+            IDictionary<string, string>? storageProviders = default,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default)
             where T : class, IActivity;

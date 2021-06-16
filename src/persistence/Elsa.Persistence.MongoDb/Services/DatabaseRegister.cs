@@ -1,6 +1,7 @@
 using System;
 using Elsa.Models;
 using Elsa.Persistence.MongoDb.Serializers;
+using Elsa.Services.Models;
 using MongoDb.Bson.NodaTime;
 using MongoDB.Bson.Serialization;
 
@@ -47,6 +48,7 @@ namespace Elsa.Persistence.MongoDb.Services
                 
                 BsonClassMap.RegisterClassMap<Bookmark>(cm => cm.AutoMap());
                 BsonClassMap.RegisterClassMap<WorkflowExecutionLogRecord>(cm => cm.AutoMap());
+                BsonClassMap.RegisterClassMap<WorkflowOutputReference>(cm => cm.AutoMap());
             }
             catch (Exception)
             {

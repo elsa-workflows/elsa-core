@@ -9,7 +9,6 @@ using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
 using MediatR;
-using Newtonsoft.Json.Linq;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.ControlFlow

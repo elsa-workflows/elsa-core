@@ -12,3 +12,8 @@ export interface ActivityContextMenuState {
   y: number;
   activity?: ActivityModel | null;
 }
+
+export enum LayoutDirection {
+  Horizontal,
+  Vertical
+}

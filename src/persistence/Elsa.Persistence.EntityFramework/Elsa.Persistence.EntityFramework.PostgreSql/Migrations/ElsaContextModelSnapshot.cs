@@ -17,7 +17,7 @@ namespace Elsa.Persistence.EntityFramework.PostgreSql.Migrations
             modelBuilder
                 .HasDefaultSchema("Elsa")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63)
-                .HasAnnotation("ProductVersion", "5.0.5")
+                .HasAnnotation("ProductVersion", "5.0.6")
                 .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
             modelBuilder.Entity("Elsa.Models.Bookmark", b =>
@@ -115,6 +115,9 @@ namespace Elsa.Persistence.EntityFramework.PostgreSql.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("Name")
+                        .HasColumnType("text");
+
+                    b.Property<string>("OutputStorageProviderName")
                         .HasColumnType("text");
 
                     b.Property<int>("PersistenceBehavior")
@@ -226,6 +229,7 @@ namespace Elsa.Persistence.EntityFramework.PostgreSql.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("CorrelationId")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<DateTimeOffset>("CreatedAt")
@@ -243,6 +247,9 @@ namespace Elsa.Persistence.EntityFramework.PostgreSql.Migrations
 
                     b.Property<DateTimeOffset?>("FinishedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastExecutedActivityId")
+                        .HasColumnType("text");
 
                     b.Property<DateTimeOffset?>("LastExecutedAt")
                         .HasColumnType("timestamp with time zone");

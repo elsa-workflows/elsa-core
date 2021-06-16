@@ -11,7 +11,7 @@ import {
   WorkflowContextOptions,
   WorkflowDefinition,
   WorkflowDefinitionSummary, WorkflowExecutionLogRecord, WorkflowFault, WorkflowInstance, WorkflowInstanceSummary,
-  WorkflowPersistenceBehavior, WorkflowStatus
+  WorkflowPersistenceBehavior, WorkflowStatus, WorkflowStorageDescriptor
 } from "../models";
 
 export const createElsaClient = function (serverUrl: string): ElsaClient {
@@ -166,123 +166,134 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
         const response = await httpClient.get(`v1/workflow-instances/${workflowInstanceId}/activity-stats/${activityId}`);
         return response.data;
       }
+    },
+    workflowStorageProvidersApi: {
+      list: async () => {
+        const response = await httpClient.get<Array<WorkflowStorageDescriptor>>('v1/workflow-storage-providers');
+        return response.data;
+      }
     }
   }
 }
 
-export interface ElsaClient {
-  activitiesApi: ActivitiesApi;
-  workflowDefinitionsApi: WorkflowDefinitionsApi;
-  workflowRegistryApi: WorkflowRegistryApi;
-  workflowInstancesApi: WorkflowInstancesApi;
-  workflowExecutionLogApi: WorkflowExecutionLogApi;
-  scriptingApi: ScriptingApi;
-  designerApi: DesignerApi;
-  activityStatsApi: ActivityStatsApi;
-}
+  export interface ElsaClient {
+    activitiesApi: ActivitiesApi;
+    workflowDefinitionsApi: WorkflowDefinitionsApi;
+    workflowRegistryApi: WorkflowRegistryApi;
+    workflowInstancesApi: WorkflowInstancesApi;
+    workflowExecutionLogApi: WorkflowExecutionLogApi;
+    scriptingApi: ScriptingApi;
+    designerApi: DesignerApi;
+    activityStatsApi: ActivityStatsApi;
+    workflowStorageProvidersApi: WorkflowStorageProvidersApi;
+  }
 
-export interface ActivitiesApi {
-  list(): Promise<Array<ActivityDescriptor>>;
-}
+  export interface ActivitiesApi {
+    list(): Promise<Array<ActivityDescriptor>>;
+  }
 
-export interface WorkflowDefinitionsApi {
+  export interface WorkflowDefinitionsApi {
 
-  list(page?: number, pageSize?: number, versionOptions?: VersionOptions): Promise<PagedList<WorkflowDefinitionSummary>>;
+    list(page?: number, pageSize?: number, versionOptions?: VersionOptions): Promise<PagedList<WorkflowDefinitionSummary>>;
 
-  getByDefinitionAndVersion(definitionId: string, versionOptions: VersionOptions): Promise<WorkflowDefinition>;
+    getByDefinitionAndVersion(definitionId: string, versionOptions: VersionOptions): Promise<WorkflowDefinition>;
 
-  save(request: SaveWorkflowDefinitionRequest): Promise<WorkflowDefinition>;
+    save(request: SaveWorkflowDefinitionRequest): Promise<WorkflowDefinition>;
 
-  delete(definitionId: string): Promise<void>;
+    delete(definitionId: string): Promise<void>;
 
-  retract(workflowDefinitionId: string): Promise<WorkflowDefinition>;
+    retract(workflowDefinitionId: string): Promise<WorkflowDefinition>;
 
-  export(workflowDefinitionId: string, versionOptions: VersionOptions): Promise<ExportWorkflowResponse>;
+    export(workflowDefinitionId: string, versionOptions: VersionOptions): Promise<ExportWorkflowResponse>;
 
-  import(workflowDefinitionId: string, file: File): Promise<WorkflowDefinition>;
-}
+    import(workflowDefinitionId: string, file: File): Promise<WorkflowDefinition>;
+  }
 
-export interface WorkflowRegistryApi {
-  list(page?: number, pageSize?: number, versionOptions?: VersionOptions): Promise<PagedList<WorkflowBlueprintSummary>>;
+  export interface WorkflowRegistryApi {
+    list(page?: number, pageSize?: number, versionOptions?: VersionOptions): Promise<PagedList<WorkflowBlueprintSummary>>;
 
-  get(id: string, versionOptions: VersionOptions): Promise<WorkflowBlueprint>;
-}
+    get(id: string, versionOptions: VersionOptions): Promise<WorkflowBlueprint>;
+  }
 
-export interface WorkflowInstancesApi {
-  list(page?: number, pageSize?: number, workflowDefinitionId?: string, workflowStatus?: WorkflowStatus, orderBy?: OrderBy, searchTerm?: string): Promise<PagedList<WorkflowInstanceSummary>>;
+  export interface WorkflowInstancesApi {
+    list(page?: number, pageSize?: number, workflowDefinitionId?: string, workflowStatus?: WorkflowStatus, orderBy?: OrderBy, searchTerm?: string): Promise<PagedList<WorkflowInstanceSummary>>;
 
-  get(id: string): Promise<WorkflowInstance>;
+    get(id: string): Promise<WorkflowInstance>;
 
-  delete(id: string): Promise<void>;
+    delete(id: string): Promise<void>;
 
-  bulkDelete(request: BulkDeleteWorkflowsRequest): Promise<BulkDeleteWorkflowsResponse>;
-}
+    bulkDelete(request: BulkDeleteWorkflowsRequest): Promise<BulkDeleteWorkflowsResponse>;
+  }
 
-export interface WorkflowExecutionLogApi {
+  export interface WorkflowExecutionLogApi {
 
-  get(workflowInstanceId: string, page?: number, pageSize?: number): Promise<PagedList<WorkflowExecutionLogRecord>>;
+    get(workflowInstanceId: string, page?: number, pageSize?: number): Promise<PagedList<WorkflowExecutionLogRecord>>;
 
-}
+  }
 
-export interface BulkDeleteWorkflowsRequest {
-  workflowInstanceIds: Array<string>;
-}
+  export interface BulkDeleteWorkflowsRequest {
+    workflowInstanceIds: Array<string>;
+  }
 
-export interface BulkDeleteWorkflowsResponse {
-  deletedWorkflowCount: number;
-}
+  export interface BulkDeleteWorkflowsResponse {
+    deletedWorkflowCount: number;
+  }
 
-export interface ScriptingApi {
-  getJavaScriptTypeDefinitions(workflowDefinitionId: string, context?: string): Promise<string>
-}
+  export interface ScriptingApi {
+    getJavaScriptTypeDefinitions(workflowDefinitionId: string, context?: string): Promise<string>
+  }
 
-export interface DesignerApi {
-  runtimeSelectItemsApi: RuntimeSelectItemsApi;
-}
+  export interface DesignerApi {
+    runtimeSelectItemsApi: RuntimeSelectItemsApi;
+  }
 
-export interface RuntimeSelectItemsApi {
-  get(providerTypeName: string, context?: any): Promise<Array<SelectListItem>>
-}
+  export interface RuntimeSelectItemsApi {
+    get(providerTypeName: string, context?: any): Promise<Array<SelectListItem>>
+  }
 
-export interface ActivityStatsApi {
-  get(workflowInstanceId: string, activityId: string): Promise<ActivityStats>;
-}
+  export interface ActivityStatsApi {
+    get(workflowInstanceId: string, activityId: string): Promise<ActivityStats>;
+  }
 
-export interface SaveWorkflowDefinitionRequest {
-  workflowDefinitionId?: string;
-  name?: string;
-  displayName?: string;
-  description?: string;
-  tag?: string;
-  variables?: Variables;
-  contextOptions?: WorkflowContextOptions;
-  isSingleton?: boolean;
-  persistenceBehavior?: WorkflowPersistenceBehavior;
-  deleteCompletedInstances?: boolean;
-  publish?: boolean;
-  activities: Array<ActivityDefinition>;
-  connections: Array<ConnectionDefinition>;
-}
+  export interface WorkflowStorageProvidersApi {
+    list(): Promise<Array<WorkflowStorageDescriptor>>;
+  }
 
-export interface ExportWorkflowResponse {
-  fileName: string;
-  data: Blob;
-}
+  export interface SaveWorkflowDefinitionRequest {
+    workflowDefinitionId?: string;
+    name?: string;
+    displayName?: string;
+    description?: string;
+    tag?: string;
+    variables?: Variables;
+    contextOptions?: WorkflowContextOptions;
+    isSingleton?: boolean;
+    persistenceBehavior?: WorkflowPersistenceBehavior;
+    deleteCompletedInstances?: boolean;
+    publish?: boolean;
+    activities: Array<ActivityDefinition>;
+    connections: Array<ConnectionDefinition>;
+  }
 
-export interface ActivityStats {
-  fault?: ActivityFault;
-  averageExecutionTime: string;
-  fastestExecutionTime: string;
-  slowestExecutionTime: string;
-  lastExecutedAt: Date;
-  eventCounts: Array<ActivityEventCount>;
-}
+  export interface ExportWorkflowResponse {
+    fileName: string;
+    data: Blob;
+  }
 
-interface ActivityEventCount {
-  eventName: string;
-  count: number;
-}
+  export interface ActivityStats {
+    fault?: ActivityFault;
+    averageExecutionTime: string;
+    fastestExecutionTime: string;
+    slowestExecutionTime: string;
+    lastExecutedAt: Date;
+    eventCounts: Array<ActivityEventCount>;
+  }
 
-interface ActivityFault{
-  message: string;
-}
+  interface ActivityEventCount {
+    eventName: string;
+    count: number;
+  }
+
+  interface ActivityFault {
+    message: string;
+  }

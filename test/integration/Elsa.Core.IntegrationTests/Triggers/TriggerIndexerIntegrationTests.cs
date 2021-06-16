@@ -8,7 +8,7 @@ using Elsa.Activities.Signaling;
 using Elsa.Builders;
 using Elsa.Models;
 using Elsa.Persistence;
-using Elsa.Triggers;
+using Elsa.Services.Triggers;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 

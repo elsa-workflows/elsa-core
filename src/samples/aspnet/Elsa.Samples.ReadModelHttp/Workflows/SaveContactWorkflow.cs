@@ -31,9 +31,9 @@ namespace Elsa.Samples.ReadModelHttp.Workflows
                 .WriteHttpResponse(activity => activity
                     .WithStatusCode(HttpStatusCode.OK)
                     .WithContentType("application/json")
-                    .WithContent(context =>
+                    .WithContent(async context =>
                     {
-                        var request = context.GetOutputFrom<HttpRequestModel>("HttpRequest");
+                        var request = await context.GetNamedActivityPropertyAsync<HttpEndpoint, HttpRequestModel>("HttpRequest", x => x.Output);
                         var contact = request!.GetBody<Contact>();
                         return serializer.Serialize(contact);
                     }));

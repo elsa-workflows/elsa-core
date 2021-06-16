@@ -1,8 +1,8 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Dispatch;
 using Elsa.Server.Orleans.Grains.Contracts;
 using Elsa.Services;
+using Elsa.Services.Dispatch;
 using Orleans;
 using Orleans.Concurrency;
 

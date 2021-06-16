@@ -74,6 +74,8 @@ namespace Elsa.Activities.Workflows
             Hint = "Fire And Forget: run the child workflow and continue the current one. Blocking: Run the child workflow and suspend the current one until the child workflow finishes.",
             SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public RunWorkflowMode Mode { get; set; }
+        
+        [ActivityOutput] public object? Output { get; set; }
 
         public string ChildWorkflowInstanceId
         {
@@ -107,8 +109,8 @@ namespace Elsa.Activities.Workflows
 
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
         {
-            var input = (FinishedWorkflowModel) context.WorkflowExecutionContext.Input!;
-            return Done(input);
+            Output = (FinishedWorkflowModel) context.WorkflowExecutionContext.Input!;
+            return Done();
         }
 
         private async Task<IWorkflowBlueprint?> FindWorkflowBlueprintAsync(CancellationToken cancellationToken)

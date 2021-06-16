@@ -8,7 +8,7 @@ import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
 import { ActivityDefinitionProperty, ActivityDescriptor, ActivityModel, ActivityPropertyDescriptor, SelectListItem, VersionOptions, WorkflowBlueprint, WorkflowDefinition, WorkflowExecutionLogRecord, WorkflowModel } from "./models";
 import { LocationSegments, MatchResults, RouterHistory } from "@stencil/router";
 import { MenuItem } from "./components/controls/elsa-context-menu/models";
-import { ActivityContextMenuState, WorkflowDesignerMode } from "./components/designers/tree/elsa-designer-tree/models";
+import { ActivityContextMenuState, LayoutDirection, WorkflowDesignerMode } from "./components/designers/tree/elsa-designer-tree/models";
 import { DropdownButtonItem, DropdownButtonOrigin } from "./components/controls/elsa-dropdown-button/models";
 import { MonacoValueChangedArgs } from "./components/controls/elsa-monaco/elsa-monaco";
 import { Map } from "./utils/utils";
@@ -39,6 +39,7 @@ export namespace Components {
         "activityBorderColor"?: (activity: ActivityModel) => string;
         "activityContextMenu"?: ActivityContextMenuState;
         "activityContextMenuButton"?: (activity: ActivityModel) => string;
+        "layoutDirection": LayoutDirection;
         "mode": WorkflowDesignerMode;
         "model": WorkflowModel;
         "removeActivity": (activity: ActivityModel) => Promise<void>;
@@ -559,6 +560,7 @@ declare namespace LocalJSX {
         "activityBorderColor"?: (activity: ActivityModel) => string;
         "activityContextMenu"?: ActivityContextMenuState;
         "activityContextMenuButton"?: (activity: ActivityModel) => string;
+        "layoutDirection"?: LayoutDirection;
         "mode"?: WorkflowDesignerMode;
         "model"?: WorkflowModel;
         "onActivityContextMenuButtonClicked"?: (event: CustomEvent<ActivityContextMenuState>) => void;

@@ -25,7 +25,8 @@ export function textInput(context: FormContext, fieldName: string, label: string
         {label}
       </label>
       <div class="elsa-mt-1">
-        <input type="text" id={fieldId} name={fieldName} value={value} onChange={e => onTextInputChange(e, context)} class="focus:elsa-ring-blue-500 focus:elsa-border-blue-500 block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300"/>
+        <input type="text" id={fieldId} name={fieldName} value={value} onChange={e => onTextInputChange(e, context)}
+               class="focus:elsa-ring-blue-500 focus:elsa-border-blue-500 block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300"/>
       </div>
       {hint && hint.length > 0 ? <p class="elsa-mt-2 elsa-text-sm elsa-text-gray-500">{hint}</p> : undefined}
     </div>);
@@ -53,7 +54,8 @@ export function textArea(context: FormContext, fieldName: string, label: string,
         {label}
       </label>
       <div class="elsa-mt-1">
-        <textarea id={fieldId} name={fieldName} value={value} onChange={e => onTextAreaChange(e, context)} rows={3} class="focus:elsa-ring-blue-500 focus:elsa-border-blue-500 block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300"/>
+        <textarea id={fieldId} name={fieldName} value={value} onChange={e => onTextAreaChange(e, context)} rows={3}
+                  class="focus:elsa-ring-blue-500 focus:elsa-border-blue-500 block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300"/>
       </div>
       {hint && hint.length > 0 ? <p class="elsa-mt-2 elsa-text-sm elsa-text-gray-500">{hint}</p> : undefined}
     </div>);
@@ -76,6 +78,19 @@ export function selectField(context: FormContext, fieldName: string, label: stri
       </div>
       {hint && hint.length > 0 ? <p class="elsa-mt-2 elsa-text-sm elsa-text-gray-500">{hint}</p> : undefined}
     </div>);
+}
+
+export function section(title: string, subTitle?: string) {
+  return <div>
+    <h3 class="elsa-text-lg elsa-leading-6 elsa-font-medium elsa-text-gray-900">
+      {title}
+    </h3>
+    {!!subTitle ? (
+        <p class="elsa-mt-1 elsa-max-w-2xl elsa-text-sm elsa-text-gray-500">
+          {subTitle}
+        </p>)
+      : undefined}
+  </div>
 }
 
 export function updateField<T>(context: FormContext, fieldName: string, value: T) {

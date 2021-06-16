@@ -25,6 +25,8 @@ namespace Elsa.Activities.ControlFlow
             SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public ICollection<object> Items { get; set; } = new Collection<object>();
+        
+        
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {

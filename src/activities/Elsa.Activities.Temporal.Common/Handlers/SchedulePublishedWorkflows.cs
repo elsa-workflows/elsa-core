@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Elsa.Activities.Temporal.Common.Bookmarks;
 using Elsa.Activities.Temporal.Common.Services;
 using Elsa.Events;
-using Elsa.Triggers;
+using Elsa.Services.Triggers;
 using MediatR;
 using Microsoft.Extensions.Logging;
 

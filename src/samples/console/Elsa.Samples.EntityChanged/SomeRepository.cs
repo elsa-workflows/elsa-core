@@ -3,7 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Activities.Entity;
 using Elsa.Activities.Entity.Extensions;
-using Elsa.Dispatch;
+using Elsa.Services.Dispatch;
 
 namespace Elsa.Samples.EntityChanged
 {

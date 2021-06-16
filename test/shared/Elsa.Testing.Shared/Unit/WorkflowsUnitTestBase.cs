@@ -1,8 +1,9 @@
 using System;
 using System.Threading.Tasks;
-using Elsa.Bookmarks;
 using Elsa.Builders;
 using Elsa.Services;
+using Elsa.Services.Bookmarks;
+using Elsa.Services.WorkflowStorage;
 using Elsa.Testing.Shared.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -26,21 +27,31 @@ namespace Elsa.Testing.Shared.Unit
             configureServices?.Invoke(services);
             ServiceProvider = services.BuildServiceProvider();
             ServiceScope = ServiceProvider.CreateScope();
-            WorkflowRunner = ServiceScope.ServiceProvider.GetRequiredService<IBuildsAndStartsWorkflow>();
+            WorkflowRunner = ServiceScope.ServiceProvider.GetRequiredService<IWorkflowRunner>();
+            WorkflowBuilderAndStarter = ServiceScope.ServiceProvider.GetRequiredService<IBuildsAndStartsWorkflow>();
+            WorkflowStarter = ServiceScope.ServiceProvider.GetRequiredService<IStartsWorkflow>();
+            WorkflowResumer = ServiceScope.ServiceProvider.GetRequiredService<IResumesWorkflow>();
             WorkflowBlueprintMaterializer = ServiceScope.ServiceProvider.GetRequiredService<IWorkflowBlueprintMaterializer>();
             WorkflowBuilder = ServiceScope.ServiceProvider.GetRequiredService<IWorkflowBuilder>();
             WorkflowRegistry = ServiceScope.ServiceProvider.GetRequiredService<IWorkflowRegistry>();
             BookmarkFinder = ServiceScope.ServiceProvider.GetRequiredService<IBookmarkFinder>();
+            WorkflowExecutionLog = ServiceScope.ServiceProvider.GetRequiredService<IWorkflowExecutionLog>();
+            WorkflowStorageService = ServiceScope.ServiceProvider.GetRequiredService<IWorkflowStorageService>();
         }
 
         protected ITestOutputHelper TestOutputHelper { get; }
         protected ServiceProvider ServiceProvider { get; }
         protected IServiceScope ServiceScope { get; }
-        protected IBuildsAndStartsWorkflow WorkflowRunner { get; }
+        protected IWorkflowRunner WorkflowRunner { get; }
+        protected IBuildsAndStartsWorkflow WorkflowBuilderAndStarter { get; }
+        protected IStartsWorkflow WorkflowStarter { get; }
+        protected IResumesWorkflow WorkflowResumer { get; }
+        protected IWorkflowExecutionLog WorkflowExecutionLog { get; }
         protected IWorkflowBlueprintMaterializer WorkflowBlueprintMaterializer { get; }
         protected IWorkflowBuilder WorkflowBuilder { get; }
         protected IWorkflowRegistry WorkflowRegistry { get; }
         protected IBookmarkFinder BookmarkFinder { get; }
+        protected IWorkflowStorageService WorkflowStorageService { get; }
         public virtual void Dispose() => _tempFolder.Dispose();
 
         public virtual async Task InitializeAsync()

@@ -120,7 +120,8 @@ namespace Elsa.Activities.Telnyx.Activities
             SupportedSyntaxes = new[] {SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid})]
         public bool SuspendWorkflow { get; set; } = true;
 
-        [ActivityOutput] public DialResponse DialResponse { get; set; }
+        [ActivityOutput] public DialResponse? DialResponse { get; set; }
+        [ActivityOutput] public CallPayload? Output { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
@@ -135,12 +136,13 @@ namespace Elsa.Activities.Telnyx.Activities
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
         {
             var payload = context.GetInput<CallPayload>();
+            Output = payload;
 
             return payload switch
             {
-                CallAnsweredPayload callAnsweredPayload => Outcome(TelnyxOutcomeNames.Answered, callAnsweredPayload),
-                CallHangupPayload callHangupPayload => Outcome(TelnyxOutcomeNames.Hangup, callHangupPayload),
-                CallInitiatedPayload callInitiatedPayload => Combine(Outcome(TelnyxOutcomeNames.CallInitiated, callInitiatedPayload), Suspend()),
+                CallAnsweredPayload => Outcome(TelnyxOutcomeNames.Answered),
+                CallHangupPayload => Outcome(TelnyxOutcomeNames.Hangup),
+                CallInitiatedPayload => Combine(Outcome(TelnyxOutcomeNames.CallInitiated), Suspend()),
                 _ => throw new ArgumentOutOfRangeException(nameof(payload))
             };
         }

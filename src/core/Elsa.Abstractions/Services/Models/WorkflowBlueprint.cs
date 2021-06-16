@@ -12,7 +12,7 @@ namespace Elsa.Services.Models
             Variables = new Variables();
             CustomAttributes = new Variables();
         }
-    
+
         public WorkflowBlueprint(
             string id,
             int version,
@@ -31,7 +31,18 @@ namespace Elsa.Services.Models
             bool deleteCompletedInstances,
             IEnumerable<IActivityBlueprint> activities,
             IEnumerable<IConnection> connections,
-            IActivityPropertyProviders activityPropertyValueProviders) : base(id, default, name, displayName, description, id, true, false, false, false, default)
+            IActivityPropertyProviders activityPropertyValueProviders) : base(
+            id, 
+            default, 
+            name, 
+            displayName, 
+            description, 
+            id, 
+            true, 
+            false, 
+            false, 
+            new Dictionary<string, string>(),
+            default)
         {
             Id = id;
             Parent = this;
@@ -51,7 +62,7 @@ namespace Elsa.Services.Models
             Connections = connections.ToList();
             ActivityPropertyProviders = activityPropertyValueProviders;
         }
-        
+
         public int Version { get; set; }
         public string? TenantId { get; set; }
         public bool IsSingleton { get; set; }

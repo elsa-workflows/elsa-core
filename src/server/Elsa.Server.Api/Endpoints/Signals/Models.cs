@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Elsa.Services.Models;
 
 namespace Elsa.Server.Api.Endpoints.Signals

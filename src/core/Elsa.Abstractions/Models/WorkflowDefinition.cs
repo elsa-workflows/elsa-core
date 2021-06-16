@@ -34,7 +34,7 @@ namespace Elsa.Models
         /// Allows for applications to store an application-specific, queryable value to associate with the workflow.
         /// </summary>
         public string? Tag { get; set; }
-        
+
         public ICollection<ActivityDefinition> Activities { get; set; }
         public ICollection<ConnectionDefinition> Connections { get; set; }
     }

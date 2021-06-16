@@ -15,7 +15,6 @@ namespace Elsa.Persistence.EntityFramework.Core.Configuration
             builder.Property(x => x.FaultedAt).HasConversion(ValueConverters.InstantConverter);
             builder.Ignore(x => x.Output);
             builder.Ignore(x => x.ActivityData);
-            builder.Ignore(x => x.ActivityOutput);
             builder.Ignore(x => x.BlockingActivities);
             builder.Ignore(x => x.Fault);
             builder.Ignore(x => x.ScheduledActivities);

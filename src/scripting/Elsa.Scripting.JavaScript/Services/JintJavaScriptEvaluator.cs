@@ -59,8 +59,7 @@ namespace Elsa.Scripting.JavaScript.Services
 
         private static object? ExecuteExpressionAndGetResult(Engine engine, string expression)
         {
-            engine.Execute(expression);
-            return engine.GetCompletionValue().ToObject();
+            return engine.Evaluate(expression).ToObject();
         }
     }
 }

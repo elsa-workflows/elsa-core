@@ -32,7 +32,7 @@ namespace Elsa.Activities.AzureServiceBus
         public Type MessageType { get; set; } = default!;
         
         [ActivityOutput]
-        public object? ReceivedMessage { get; set; }
+        public object? Output { get; set; }
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => context.WorkflowExecutionContext.IsFirstPass ? ExecuteInternal(context) : Suspend();
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context) => ExecuteInternal(context);
@@ -40,10 +40,9 @@ namespace Elsa.Activities.AzureServiceBus
         private IActivityExecutionResult ExecuteInternal(ActivityExecutionContext context)
         {
             var message = (MessageModel) context.Input!;
-            var model = message.ReadBody(MessageType, _serializer);
-
-            ReceivedMessage = model;
-            return Done(model);
+            Output = message.ReadBody(MessageType, _serializer);
+            
+            return Done();
         }
     }
 }

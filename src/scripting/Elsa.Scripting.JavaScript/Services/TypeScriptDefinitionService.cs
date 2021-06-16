@@ -28,6 +28,8 @@ namespace Elsa.Scripting.JavaScript.Services
             var builder = new StringBuilder();
             var providerContext = new TypeDefinitionContext(workflowDefinition, context);
             var types = await CollectTypesAsync(providerContext, cancellationToken);
+            
+            providerContext.GetTypeScriptType = ((provider, type) => GetTypeScriptType(providerContext, type, types, provider));
 
             // Render type declarations for anything except those listed in TypeConverters.
             foreach (var type in types)
@@ -116,7 +118,7 @@ namespace Elsa.Scripting.JavaScript.Services
 
         private void RenderTypeDeclaration(TypeDefinitionContext context, string symbol, Type type, ISet<Type> collectedTypes, StringBuilder output)
         {
-            var typeName = GetSafeSymbol(type.Name);
+            var typeName = GetTypeScriptType(context, type, collectedTypes);
             var properties = type.GetProperties();
             var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static).Where(x => !x.IsSpecialName).ToList();
 
@@ -156,12 +158,17 @@ namespace Elsa.Scripting.JavaScript.Services
             output.AppendLine("}");
         }
 
-        private string GetTypeScriptType(TypeDefinitionContext context, Type type, ISet<Type> collectedTypes)
+        private string GetTypeScriptType(TypeDefinitionContext context, Type type, ISet<Type> collectedTypes, ITypeDefinitionProvider? excludeProvider = default)
         {
             if (type.IsNullableType())
                 type = type.GetTypeOfNullable();
 
-            var provider = _providers.FirstOrDefault(x => x.SupportsType(context, type));
+            var providers = _providers;
+
+            if (excludeProvider != null)
+                providers = providers.Where(x => x != excludeProvider);
+            
+            var provider = providers.FirstOrDefault(x => x.SupportsType(context, type));
             var typeScriptType = provider != null ? provider.GetTypeDefinition(context, type) : collectedTypes.Contains(type) ? type.Name : "any";
             return GetSafeSymbol(typeScriptType);
         }
@@ -169,7 +176,7 @@ namespace Elsa.Scripting.JavaScript.Services
         private bool ShouldRenderTypeDeclaration(TypeDefinitionContext context, Type type)
         {
             var provider = _providers.FirstOrDefault(x => x.SupportsType(context, type));
-            return provider == null;
+            return provider == null || provider.ShouldRenderType(context, type);
         }
 
         private string GetSafeSymbol(string symbol) => symbol.Replace("`", "");

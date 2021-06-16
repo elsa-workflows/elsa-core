@@ -1,4 +1,6 @@
-﻿namespace Elsa.Services.Models
+﻿using System.Collections.Generic;
+
+namespace Elsa.Services.Models
 {
     public class ActivityBlueprint : IActivityBlueprint
     {
@@ -16,7 +18,7 @@
             bool persistWorkflow,
             bool loadWorkflowContext,
             bool saveWorkflowContext,
-            bool persistOutput,
+            IDictionary<string, string> propertyStorageProviders,
             string? source)
         {
             Id = id;
@@ -28,6 +30,7 @@
             PersistWorkflow = persistWorkflow;
             LoadWorkflowContext = loadWorkflowContext;
             SaveWorkflowContext = saveWorkflowContext;
+            PropertyStorageProviders = propertyStorageProviders;
             Source = source;
         }
 
@@ -40,8 +43,9 @@
         public bool PersistWorkflow { get; set; }
         public bool LoadWorkflowContext { get; set; }
         public bool SaveWorkflowContext { get; set; }
+        public IDictionary<string, string> PropertyStorageProviders { get; set; } = new Dictionary<string, string>();
         public string? Source { get; set; }
-        public bool PersistOutput { get; set; }
+       
 
         public override string ToString() => Type;
     }

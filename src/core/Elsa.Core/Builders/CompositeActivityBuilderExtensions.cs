@@ -11,9 +11,10 @@ namespace Elsa.Builders
         public static IActivityBuilder New<T>(
             this ICompositeActivityBuilder compositeActivityBuilder,
             IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default,
+            IDictionary<string, string>? storageProviders = default,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default)
-            where T : class, IActivity => compositeActivityBuilder.New<T>(typeof(T).Name, propertyValueProviders, lineNumber, sourceFile);
+            where T : class, IActivity => compositeActivityBuilder.New<T>(typeof(T).Name, propertyValueProviders, storageProviders, lineNumber, sourceFile);
 
         public static IActivityBuilder New<T>(
             this ICompositeActivityBuilder compositeActivityBuilder,
@@ -45,8 +46,9 @@ namespace Elsa.Builders
             this ICompositeActivityBuilder compositeActivityBuilder,
             Action<IActivityBuilder>? branch = default,
             IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default,
+            IDictionary<string, string>? storageProviders = default,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default)
-            where T : class, IActivity => compositeActivityBuilder.Add<T>(typeof(T).Name, branch, propertyValueProviders, lineNumber, sourceFile);
+            where T : class, IActivity => compositeActivityBuilder.Add<T>(typeof(T).Name, branch, propertyValueProviders, storageProviders, lineNumber, sourceFile);
     }
 }

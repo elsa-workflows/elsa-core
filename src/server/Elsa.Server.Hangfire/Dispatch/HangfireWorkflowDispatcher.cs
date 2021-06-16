@@ -2,8 +2,8 @@
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Dispatch;
 using Elsa.Server.Hangfire.Jobs;
+using Elsa.Services.Dispatch;
 using Hangfire;
 using Hangfire.States;
 

@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Generic;
 using Elsa.Builders;
-using Elsa.Dispatch;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.InMemory;
+using Elsa.Providers.WorkflowStorage;
 using Elsa.Serialization;
 using Elsa.Services;
+using Elsa.Services.Dispatch;
+using Elsa.Services.Messaging;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using NodaTime;
@@ -30,6 +32,7 @@ namespace Elsa
             CorrelatingWorkflowDispatcherFactory = sp => ActivatorUtilities.CreateInstance<QueuingWorkflowDispatcher>(sp);
             StorageFactory = sp => Storage.Net.StorageFactory.Blobs.InMemory();
             JsonSerializerConfigurer = (sp, serializer) => { };
+            DefaultWorkflowStorageProviderType = typeof(WorkflowInstanceWorkflowStorageProvider);
             DistributedLockingOptions = new DistributedLockingOptions();
             ConfigureServiceBusEndpoint = ConfigureInMemoryServiceBusEndpoint;
 
@@ -57,6 +60,8 @@ namespace Elsa
         /// </summary>
         public Duration DistributedLockTimeout { get; set; } = Duration.FromHours(1);
 
+        public Type DefaultWorkflowStorageProviderType { get; set; }
+
         internal Func<IServiceProvider, IBlobStorage> StorageFactory { get; set; }
         internal Func<IServiceProvider, IWorkflowDefinitionStore> WorkflowDefinitionStoreFactory { get; set; }
         internal Func<IServiceProvider, IWorkflowInstanceStore> WorkflowInstanceStoreFactory { get; set; }
@@ -68,7 +73,7 @@ namespace Elsa
         internal Func<IServiceProvider, IWorkflowInstanceDispatcher> WorkflowInstanceDispatcherFactory { get; set; }
         internal Func<IServiceProvider, IWorkflowDispatcher> CorrelatingWorkflowDispatcherFactory { get; set; }
         internal Action<ServiceBusEndpointConfigurationContext> ConfigureServiceBusEndpoint { get; set; }
-        
+
         private static void ConfigureInMemoryServiceBusEndpoint(ServiceBusEndpointConfigurationContext context)
         {
             var serviceProvider = context.ServiceProvider;
