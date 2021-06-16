@@ -5,14 +5,13 @@ using Elsa.Server.Api.Endpoints.WorkflowDefinitions;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Open.Linq.AsyncExtensions;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace Elsa.Server.Api.Endpoints.Workflows
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{apiVersion:apiVersion}/workflows/execute")]
+    [Route("v{apiVersion:apiVersion}/workflows/{workflowDefinitionId}/execute")]
     [Produces("application/json")]
     public class Execute : Controller
     {
@@ -25,23 +24,31 @@ namespace Elsa.Server.Api.Endpoints.Workflows
 
         [HttpPost]
         [ElsaJsonFormatter]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ExecuteWorkflowsResponse))]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ExecuteWorkflowDefinitionResponse))]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [SwaggerOperation(
-            Summary = "Triggers all workflows matching the specified criteria synchronously.",
-            Description = "Triggers all workflows matching the specified criteria synchronously.",
-            OperationId = "Workflows.Execute",
-            Tags = new[] { "Workflows" })
+            Summary = "Executes the specified workflow definition.",
+            Description = "Executes the specified workflow definition.",
+            OperationId = "WorkflowDefinitions.Execute",
+            Tags = new[] { "WorkflowDefinitions" })
         ]
-        public async Task<IActionResult> Handle(ExecuteWorkflowsRequest request, CancellationToken cancellationToken = default)
+        public async Task<IActionResult> Handle(string workflowDefinitionId, ExecuteWorkflowDefinitionRequest request, CancellationToken cancellationToken = default)
         {
-            var context = new CollectWorkflowsContext(request.ActivityType, request.Bookmark, request.Trigger, request.CorrelationId, request.WorkflowInstanceId, request.ContextId);
-            var result = await _workflowLaunchpad.CollectAndExecuteWorkflowsAsync(context, request.Input, cancellationToken).ToList();
+            var startableWorkflow = await _workflowLaunchpad.CollectStartableWorkflowAsync(workflowDefinitionId, request.ActivityId, request.CorrelationId, request.ContextId, default, cancellationToken);
+
+            if (startableWorkflow == null)
+                return NotFound();
+
+            var result = await _workflowLaunchpad.ExecuteStartableWorkflowAsync(startableWorkflow, request.Input, cancellationToken);
 
             if (Response.HasStarted)
                 return new EmptyResult();
 
-            return Ok(new ExecuteWorkflowsResponse(result));
+            return Ok(new ExecuteWorkflowDefinitionResponse(
+                result.Executed,
+                result.ActivityId,
+                result.WorkflowInstance
+            ));
         }
     }
 }
