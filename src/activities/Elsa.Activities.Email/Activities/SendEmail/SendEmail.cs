@@ -118,6 +118,20 @@ namespace Elsa.Activities.Email
                         case string path:
                             await AttachLocalFileAsync(bodyBuilder, path, cancellationToken);
                             break;
+                        case byte[] bytes:
+                        {
+                            var fileName = $"Attachment-{++index}";
+                            var contentType = "application/binary";
+                            bodyBuilder.Attachments.Add(fileName, bytes, ContentType.Parse(contentType));
+                            break;
+                        } 
+                        case Stream stream:
+                        {
+                            var fileName = $"Attachment-{++index}";
+                            var contentType = "application/binary";
+                            await bodyBuilder.Attachments.AddAsync(fileName, stream, ContentType.Parse(contentType), cancellationToken);
+                            break;
+                        } 
                         case EmailAttachment emailAttachment:
                         {
                             var fileName = emailAttachment.FileName ?? $"Attachment-{++index}";
