@@ -20,6 +20,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 throw new ArgumentNullException(nameof(builder));
 
             builder.AddActivity<DeleteFile>()
+                .AddActivity<EnumerateFiles>()
                 .AddActivity<FileExists>()
                 .AddActivity<OutFile>()
                 .AddActivity<ReadFile>()
