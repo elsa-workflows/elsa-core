@@ -65,9 +65,9 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
 
             app.UseCors();
             app.UseStaticFiles();
-            app.UseHttpActivities();
             app.UseRouting();
             app.UseAuthorization();
+            app.UseHttpActivities();
             app.UseEndpoints(endpoints =>
             {
                 // Elsa Server uses ASP.NET Core Controllers.

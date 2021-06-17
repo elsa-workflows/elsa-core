@@ -56,7 +56,6 @@ export class ElsaCheckListProperty {
       <elsa-property-editor propertyDescriptor={propertyDescriptor}
                             propertyModel={propertyModel}
                             onDefaultSyntaxValueChanged={e => this.onDefaultSyntaxValueChanged(e)}
-                            editor-height="2.75em"
                             single-line={true}>
         <div class="elsa-max-w-lg elsa-space-y-3 elsa-my-4">
           {items.map((item, index) => {
