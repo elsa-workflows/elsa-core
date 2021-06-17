@@ -5,7 +5,7 @@ using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.Http.Services;
 using Microsoft.AspNetCore.Http;
 
-namespace Elsa.Activities.Http.Parsers
+namespace Elsa.Activities.Http.Parsers.Request
 {
     public class DefaultHttpRequestBodyParser : IHttpRequestBodyParser
     {

@@ -6,6 +6,8 @@ using Elsa.Activities.Http.JavaScript;
 using Elsa.Activities.Http.Liquid;
 using Elsa.Activities.Http.Options;
 using Elsa.Activities.Http.Parsers;
+using Elsa.Activities.Http.Parsers.Request;
+using Elsa.Activities.Http.Parsers.Response;
 using Elsa.Activities.Http.Services;
 using Elsa.Scripting.Liquid.Extensions;
 using Microsoft.AspNetCore.Http;
@@ -36,8 +38,9 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IHttpRequestBodyParser, DefaultHttpRequestBodyParser>()
                 .AddSingleton<IHttpRequestBodyParser, JsonHttpRequestBodyParser>()
                 .AddSingleton<IHttpRequestBodyParser, FormHttpRequestBodyParser>()
-                .AddSingleton<IHttpResponseBodyParser, DefaultHttpResponseBodyParser>()
-                .AddSingleton<IHttpResponseBodyParser, JsonHttpResponseBodyParser>()
+                .AddSingleton<IHttpResponseContentReader, DefaultHttpResponseContentReader>()
+                .AddSingleton<IHttpResponseContentReader, JsonHttpResponseContentReader>()
+                .AddSingleton<IHttpResponseContentReader, FileResponseContentReader>()
                 .AddSingleton<IActionContextAccessor, ActionContextAccessor>()
                 .AddSingleton<IAbsoluteUrlProvider, DefaultAbsoluteUrlProvider>()
                 .AddBookmarkProvider<HttpEndpointBookmarkProvider>()

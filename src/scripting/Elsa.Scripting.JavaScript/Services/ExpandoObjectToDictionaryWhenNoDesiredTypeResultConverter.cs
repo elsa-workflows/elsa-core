@@ -9,8 +9,8 @@ namespace Elsa.Scripting.JavaScript.Services
 {
     public class ExpandoObjectToDictionaryWhenNoDesiredTypeResultConverter : IConvertsJintEvaluationResult
     {
-        readonly IConvertsJintEvaluationResult wrapped;
-        readonly IConvertsEnumerableToObject enumerableConverter;
+        private readonly IConvertsJintEvaluationResult wrapped;
+        private readonly IConvertsEnumerableToObject enumerableConverter;
 
         public object? ConvertToDesiredType(object? evaluationResult, Type desiredType)
         {
@@ -20,7 +20,7 @@ namespace Elsa.Scripting.JavaScript.Services
             return wrapped.ConvertToDesiredType(evaluationResult, desiredType);
         }
 
-        object? RecursivelyPrepareExpandoObjectForReturn(ExpandoObject obj)
+        private object? RecursivelyPrepareExpandoObjectForReturn(ExpandoObject obj)
         {
             IDictionary<string,object?> ExpandoToDictionary(ExpandoObject expando)
             {

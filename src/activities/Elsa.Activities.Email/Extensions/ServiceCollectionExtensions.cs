@@ -1,6 +1,7 @@
 using System;
 using Elsa;
 using Elsa.Activities.Email;
+using Elsa.Activities.Email.Handlers;
 using Elsa.Activities.Email.Options;
 using Elsa.Activities.Email.Services;
 
@@ -12,6 +13,9 @@ namespace Microsoft.Extensions.DependencyInjection
         public static ElsaOptionsBuilder AddEmailActivities(this ElsaOptionsBuilder options, Action<SmtpOptions>? configureOptions = null)
         {
             options.Services.AddEmailServices(configureOptions);
+            options.Services.AddNotificationHandlersFrom<ConfigureJavaScriptEngine>();
+            options.Services.AddJavaScriptTypeDefinitionProvider<EmailTypeDefinitionProvider>();
+            options.Services.AddHttpClient();
             options.AddEmailActivitiesInternal();
             return options;
         }
@@ -21,7 +25,7 @@ namespace Microsoft.Extensions.DependencyInjection
             if (configureOptions != null) 
                 services.Configure(configureOptions);
 
-            return services.AddSingleton<ISmtpService, SmtpService>();
+            return services.AddSingleton<ISmtpService, MailKitSmtpService>();
         }
 
         private static ElsaOptionsBuilder AddEmailActivitiesInternal(this ElsaOptionsBuilder services) => services.AddActivity<SendEmail>();

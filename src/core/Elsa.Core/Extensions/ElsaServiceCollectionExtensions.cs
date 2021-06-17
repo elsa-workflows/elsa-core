@@ -196,14 +196,15 @@ namespace Microsoft.Extensions.DependencyInjection
             // Workflow providers.
             services
                 .AddWorkflowProvider<ProgrammaticWorkflowProvider>()
-                .AddWorkflowProvider<StorageWorkflowProvider>()
+                .AddWorkflowProvider<BlobStorageWorkflowProvider>()
                 .AddWorkflowProvider<DatabaseWorkflowProvider>();
             
             // Workflow Storage Providers.
             services
                 .AddSingleton<IWorkflowStorageService, WorkflowStorageService>()
                 .AddWorkflowStorageProvider<TransientWorkflowStorageProvider>()
-                .AddWorkflowStorageProvider<WorkflowInstanceWorkflowStorageProvider>();
+                .AddWorkflowStorageProvider<WorkflowInstanceWorkflowStorageProvider>()
+                .AddWorkflowStorageProvider<BlobStorageWorkflowStorageProvider>();
 
             // Metadata.
             services
