@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Elsa.Activities.File.Activities.EnumeratreFiles
+namespace Elsa.Activities.File
 {
     public static class EnumerateFilesExtensions
     {
