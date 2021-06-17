@@ -19,10 +19,13 @@ namespace Elsa.Activities.File
         [ActivityInput(Hint = "Path to read content from.", UIHint = ActivityInputUIHints.SingleLine, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string Path { get; set; }
 
+        [ActivityOutput(Hint = "Bytes of the file read.")]
+        public byte[] Bytes { get; set; }
+
         public async override ValueTask<IActivityExecutionResult> ExecuteAsync(ActivityExecutionContext context)
         {
-            var data = await System.IO.File.ReadAllBytesAsync(Path);
-            return Done(data);
+            var Bytes = await System.IO.File.ReadAllBytesAsync(Path);
+            return Done();
         }
     }
 }

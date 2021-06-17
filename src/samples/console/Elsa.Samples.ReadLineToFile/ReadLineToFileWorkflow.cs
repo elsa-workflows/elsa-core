@@ -21,11 +21,14 @@ namespace Elsa.Samples.ReadLineToFile
                 .WithName("TempFile")
                 .OutFile(setup =>
                 {
-                    setup.WithBytes(context => System.Text.Encoding.UTF8.GetBytes(context.GetOutputFrom<string>("ReadLine")));
-                    setup.WithPath(context => context.GetOutputFrom<string>("TempFile"));
+                    setup.WithBytes(async context => Encoding.UTF8.GetBytes(await context.GetNamedActivityPropertyAsync<ReadLine, string>("ReadLine", x => x.Output)));
+                    setup.WithPath(async context => await context.GetNamedActivityPropertyAsync<TempFile, string>("TempFile", x => x.Path));
                     setup.WithMode(CopyMode.Overwrite);
                 })
-                .DeleteFile(setup => setup.WithPath(context => context.GetOutputFrom<string>("TempFile")));
+                .WriteLine(setup => setup.WithText(async context => await context.GetNamedActivityPropertyAsync<TempFile, string>("TempFile", x => x.Path)))
+                .WriteLine("Press any key to continue")
+                .ReadLine()
+                .DeleteFile(setup => setup.WithPath(async context => await context.GetNamedActivityPropertyAsync<TempFile, string>("TempFile", x => x.Path)));
         }
     }
 }

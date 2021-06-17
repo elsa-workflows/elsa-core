@@ -31,6 +31,9 @@ namespace Elsa.Activities.File
         [ActivityInput(Hint = "Return files from sub directories", Label = "Sub Directories")]
         public bool SubDirectories { get; set; } = false;
 
+        [ActivityOutput(Hint = "List of files.")]
+        public IEnumerable<string> Files { get; set; }
+
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
             if (string.IsNullOrWhiteSpace(Pattern))
@@ -42,7 +45,8 @@ namespace Elsa.Activities.File
                 MatchCasing = MatchCasing,
                 RecurseSubdirectories = SubDirectories
             };
-            return Done(Directory.EnumerateFiles(Path, Pattern, options));
+            Files = Directory.EnumerateFiles(Path, Pattern, options);
+            return Done();
         }
     }
 }
