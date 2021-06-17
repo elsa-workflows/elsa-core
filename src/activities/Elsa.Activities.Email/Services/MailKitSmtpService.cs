@@ -5,6 +5,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Email.Options;
+using Elsa.Services.Models;
 using MailKit.Net.Smtp;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -27,7 +28,7 @@ namespace Elsa.Activities.Email.Services
             _logger = logger;
         }
 
-        public async Task SendAsync(MimeMessage message, CancellationToken cancellationToken)
+        public async Task SendAsync(ActivityExecutionContext context, MimeMessage message, CancellationToken cancellationToken)
         {
             switch (_options.DeliveryMethod)
             {
