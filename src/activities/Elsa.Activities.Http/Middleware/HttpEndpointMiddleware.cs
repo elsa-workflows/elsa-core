@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Bookmarks;
@@ -72,6 +73,7 @@ namespace Elsa.Activities.Http.Middleware
                 var readContent = await activityWrapper!.EvaluatePropertyValueAsync(x => x.ReadContent, cancellationToken);
                 var inputModel = commonInputModel;
 
+                // TODO: Explain this + sequence.
                 if (readContent)
                 {
                     var targetType = await activityWrapper.EvaluatePropertyValueAsync(x => x.TargetType, cancellationToken);
@@ -89,6 +91,7 @@ namespace Elsa.Activities.Http.Middleware
                 if (useDispatch)
                 {
                     httpContext.Response.ContentType = "application/json";
+                    httpContext.Response.StatusCode = (int)HttpStatusCode.Accepted;
                     await httpContext.Response.WriteAsync(JsonConvert.SerializeObject(pendingWorkflows), cancellationToken);
                 }
 
