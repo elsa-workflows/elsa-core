@@ -50,7 +50,7 @@ namespace Elsa.Activities.Webhooks.ActivityTypes
         {
             var descriptor = new ActivityDescriptor
             {
-                Type = WebhooksActivityType, //$"{webhook.Name} {WebhooksActivityType}",
+                Type = $"{webhook.Name} {WebhooksActivityType}",
                 DisplayName = $"{WebhooksActivityType}: {webhook.Name}",
                 Category = WebhooksActivityCategory,
                 Outcomes = new[] { OutcomeNames.Done },

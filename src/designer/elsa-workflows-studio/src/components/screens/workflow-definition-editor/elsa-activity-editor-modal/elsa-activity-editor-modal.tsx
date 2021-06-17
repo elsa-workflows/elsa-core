@@ -92,6 +92,7 @@ export class ElsaActivityEditorModal {
   }
 
   render() {
+    debugger
     const renderProps = this.renderProps;
     const activityDescriptor: ActivityDescriptor = renderProps.activityDescriptor;
     const propertyCategories = renderProps.propertyCategories;
@@ -112,7 +113,7 @@ export class ElsaActivityEditorModal {
                   <div>
                     <div>
                       <h3 class="elsa-text-lg elsa-leading-6 elsa-font-medium elsa-text-gray-900">
-                        {activityDescriptor.displayName}
+                        {activityDescriptor.type}
                       </h3>
                       <p class="elsa-mt-1 elsa-text-sm elsa-text-gray-500">
                         {activityDescriptor.description}

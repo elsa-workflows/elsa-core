@@ -77,7 +77,6 @@ export class ElsaMultiExpressionEditor {
   }
 
   render() {
-    debugger
     return <div>
       <div class="elsa-mb-1">
         <div class="elsa-flex">
