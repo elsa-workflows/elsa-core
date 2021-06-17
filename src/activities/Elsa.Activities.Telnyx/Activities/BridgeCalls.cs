@@ -120,7 +120,7 @@ namespace Elsa.Activities.Telnyx.Activities
 
             if (CallBridgedPayloadA != null && CallBridgedPayloadB != null)
             {
-                results.Add(Outcome(TelnyxOutcomeNames.Bridged));
+                results.Add(Outcome(TelnyxOutcomeNames.Bridged, new BridgedCallsOutput(CallBridgedPayloadA, CallBridgedPayloadB)));
             }
             else
             {
@@ -145,6 +145,8 @@ namespace Elsa.Activities.Telnyx.Activities
             return inboundCallActivityResponse != null ? inboundCallActivityResponse.CallControlId : null;
         }
     }
+
+    public record BridgedCallsOutput(CallBridgedPayload PayloadA, CallBridgedPayload PayloadB);
 
     public static class BridgeCallsExtensions
     {

@@ -32,8 +32,12 @@ namespace Elsa.Activities.Telnyx.Activities
                     context.SetCallControlId(callPayload.CallControlId);
 
                 if (callPayload is CallInitiatedPayload callInitiatedPayload)
+                {
                     if (!context.HasFromNumber())
                         context.SetFromNumber(callInitiatedPayload.To);
+
+                    context.SetCallerNumber(callInitiatedPayload.From);
+                }
             }
 
             Model = webhookModel;

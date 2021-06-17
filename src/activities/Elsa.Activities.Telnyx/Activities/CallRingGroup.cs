@@ -98,7 +98,17 @@ namespace Elsa.Activities.Telnyx.Activities
             get => GetState(() => Duration.FromSeconds(20));
             set => SetState(value);
         }
-        
+
+        [ActivityInput(
+            Hint = "The maximum time to wait for anyone to pickup before giving up.",
+            SupportedSyntaxes = new[] {SyntaxNames.JavaScript, SyntaxNames.Liquid}
+        )]
+        public Duration? MaxQueueWaitTime
+        {
+            get => GetState<Duration>();
+            set => SetState(value);
+        }
+
         [ActivityInput(
             Hint = "Enables Answering Machine Detection.",
             UIHint = ActivityInputUIHints.Dropdown,
@@ -121,11 +131,25 @@ namespace Elsa.Activities.Telnyx.Activities
         }
 
         public override void Build(ICompositeActivityBuilder builder) =>
-            builder.Switch(cases =>
-            {
-                cases.Add(RingGroupStrategy.PrioritizedHunt.ToString(), () => Strategy == RingGroupStrategy.PrioritizedHunt, BuildPrioritizedHuntFlow);
-                cases.Add(RingGroupStrategy.RingAll.ToString(), () => Strategy == RingGroupStrategy.RingAll, BuildRingAllFlow);
-            });
+            builder
+                .StartWith<Fork>(fork => fork.WithBranches("Ring", "Queue Timeout"), fork =>
+                {
+                    fork.When("Ring")
+                        .While(true, iterate => iterate
+                            .Switch(cases =>
+                            {
+                                cases.Add(RingGroupStrategy.PrioritizedHunt.ToString(), () => Strategy == RingGroupStrategy.PrioritizedHunt, BuildPrioritizedHuntFlow);
+                                cases.Add(RingGroupStrategy.RingAll.ToString(), () => Strategy == RingGroupStrategy.RingAll, BuildRingAllFlow);
+                            }));
+
+                    fork.When("Queue Timeout")
+                        .IfFalse(() => IsNullOrZero(MaxQueueWaitTime), whenTrue =>
+                        {
+                            whenTrue
+                                .Timer(() => MaxQueueWaitTime!.Value)
+                                .Finish(TelnyxOutcomeNames.NoResponse);
+                        });
+                });
 
         protected override async ValueTask OnExitAsync(ActivityExecutionContext context, object? output)
         {
@@ -163,11 +187,11 @@ namespace Elsa.Activities.Telnyx.Activities
                                 .When(TelnyxOutcomeNames.Answered)
                                 .Then<BridgeCalls>(bridgeCalls =>
                                     bridgeCalls.When(TelnyxOutcomeNames.Bridged)
-                                        .Finish(TelnyxOutcomeNames.Connected));
+                                        .Finish(activity => activity.WithOutcome(TelnyxOutcomeNames.Connected).WithOutput(context => context.GetInput<BridgedCallsOutput>())));
                         }
                     )
                 )
-                .Finish(TelnyxOutcomeNames.NoResponse);
+                .IfTrue(() => IsNullOrZero(MaxQueueWaitTime), whenTrue => whenTrue.Finish(TelnyxOutcomeNames.NoResponse));
 
         private void BuildRingAllFlow(IOutcomeBuilder builder) =>
             builder
@@ -181,12 +205,12 @@ namespace Elsa.Activities.Telnyx.Activities
                             .WithCallControlIdA(() => CallControlId)
                             .WithCallControlIdB(() => CallAnsweredPayload!.CallControlId), bridge => bridge
                             .When(TelnyxOutcomeNames.Bridged)
-                            .Finish(TelnyxOutcomeNames.Connected));
+                            .Finish(activity => activity.WithOutcome(TelnyxOutcomeNames.Connected).WithOutput(context => context.GetInput<BridgedCallsOutput>())));
 
                     fork
                         .When("Timeout")
                         .StartIn(() => RingTime)
-                        .Finish(TelnyxOutcomeNames.NoResponse);
+                        .IfTrue(() => IsNullOrZero(MaxQueueWaitTime), whenTrue => whenTrue.Finish(TelnyxOutcomeNames.NoResponse));
 
                     fork
                         .When("Dial Everyone")
@@ -220,6 +244,8 @@ namespace Elsa.Activities.Telnyx.Activities
             var resolvedExtension = await extensionProvider.GetAsync(extension, context.CancellationToken);
             return resolvedExtension?.Number ?? extension;
         }
+
+        private static bool IsNullOrZero(Duration? duration) => duration == null || duration.Value == Duration.Zero;
 
         object IActivityPropertyDefaultValueProvider.GetDefaultValue(PropertyInfo property) => Duration.FromSeconds(20);
     }

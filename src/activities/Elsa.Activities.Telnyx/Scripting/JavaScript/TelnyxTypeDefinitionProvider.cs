@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Elsa.Activities.Telnyx.Models;
 using Elsa.Activities.Telnyx.Webhooks.Models;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
 using Elsa.Scripting.JavaScript.Services;
@@ -13,6 +14,7 @@ namespace Elsa.Activities.Telnyx.Scripting.JavaScript
             return new[]
             {
                 typeof(TelnyxWebhook),
+                typeof(Extension),
                 
                 typeof(CallAnsweredPayload),
                 typeof(CallBridgedPayload),
