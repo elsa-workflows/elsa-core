@@ -1,21 +1,17 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using Elsa.Activities.Conductor.Extensions;
 using Elsa.Activities.UserTask.Extensions;
-using Elsa.Activities.Webhooks.Extensions;
-using Elsa.Attributes;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
 using Elsa.Samples.Server.Host.Activities;
-//using Elsa.Webhooks.Persistence.EntityFramework.Core.Extensions;
-using Elsa.Webhooks.Persistence.EntityFramework.Sqlite;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 
 namespace Elsa.Samples.Server.Host
 {
@@ -74,8 +70,6 @@ namespace Elsa.Samples.Server.Host
                     .AddActivitiesFrom<Startup>()
                     .AddWorkflowsFrom<Startup>()
                     .AddFeatures(assemblies, elsaSection.GetSection("Features").Get<List<string>>())
-
-                    //.AddWebhooks(webhooks => webhooks.UseEntityFrameworkPersistence(ef => ef.UseWebhookSqlite()))
                 );
 
             // Elsa API endpoints.

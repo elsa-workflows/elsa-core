@@ -8,7 +8,6 @@ using Elsa.Caching;
 using Elsa.Persistence;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Newtonsoft.Json;
 using Rebus.DataBus.InMem;
 using Rebus.Persistence.InMem;
@@ -19,6 +18,8 @@ namespace Elsa
 {
     public class ElsaOptionsBuilder
     {
+        private const string configureFetureMethod = "ConfigureElsa";
+
         public ElsaOptionsBuilder(IServiceCollection services)
         {
             ElsaOptions = new ElsaOptions();
@@ -69,7 +70,7 @@ namespace Elsa
                     {
                         if (!features.Contains(((FeatureAttribute)attribute).FeatureName)) continue;
 
-                        MethodInfo methodInfo = type.GetMethod("ConfigureElsa");
+                        MethodInfo methodInfo = type.GetMethod(configureFetureMethod);
 
                         if (methodInfo != null)
                         {
@@ -77,7 +78,6 @@ namespace Elsa
                             object classInstance = Activator.CreateInstance(type, null);
                             methodInfo.Invoke(classInstance, parametersArray);
                         }
-
                     }
                 }
             }
