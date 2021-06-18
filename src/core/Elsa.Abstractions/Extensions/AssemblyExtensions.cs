@@ -10,7 +10,9 @@ namespace Elsa
     {
         public static IEnumerable<Type> GetAllWithInterface(this Assembly assembly, Type @interface) => assembly.GetTypes().Where(t => t.IsClass && t.IsAbstract == false && t.GetInterfaces().Contains(@interface));
         public static IEnumerable<Type> GetAllWithBaseClass(this Assembly assembly, Type baseClass) => assembly.GetTypes().Where(baseClass.IsAssignableFrom);
+        //public static IEnumerable<Type> GetAllWithAttribute(this Assembly assembly, Type attribute) => assembly.GetTypes().Where(t => t.GetCustomAttributes(typeof(attribute), true).Length > 0);
         public static IEnumerable<Type> GetAllWithInterface<TType>(this Assembly assembly) => assembly.GetAllWithInterface(typeof(TType));
         public static IEnumerable<Type> GetAllWithBaseClass<TType>(this Assembly assembly) => assembly.GetAllWithBaseClass(typeof(TType));
+        //public static IEnumerable<Type> GetAllWithAttribute<TType>(this Assembly assembly) => assembly.GetAllWithAttribute(typeof(TType));
     }
 }

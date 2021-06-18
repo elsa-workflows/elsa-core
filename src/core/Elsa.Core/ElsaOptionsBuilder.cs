@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Elsa.Attributes;
 using Elsa.Builders;
 using Elsa.Caching;
 using Elsa.Persistence;
@@ -53,6 +54,34 @@ namespace Elsa
         public ElsaOptionsBuilder WithContainerName(string name)
         {
             ElsaOptions.ContainerName = name;
+            return this;
+        }
+
+        public ElsaOptionsBuilder AddFeatures(IEnumerable<Assembly> assemblies, IEnumerable<string> features)
+        {            
+            foreach (Assembly assembly in assemblies)
+            {
+                foreach (Type type in assembly.GetTypes())
+                {
+                    var attributes = type.GetCustomAttributes(typeof(FeatureAttribute), true);
+                    
+                    foreach (Attribute attribute in attributes)
+                    {
+                        if (!features.Contains(((FeatureAttribute)attribute).FeatureName)) continue;
+
+                        MethodInfo methodInfo = type.GetMethod("ConfigureElsa");
+
+                        if (methodInfo != null)
+                        {
+                            object[] parametersArray = new object[] { this };
+                            object classInstance = Activator.CreateInstance(type, null);
+                            methodInfo.Invoke(classInstance, parametersArray);
+                        }
+
+                    }
+                }
+            }
+
             return this;
         }
 

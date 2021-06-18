@@ -1,16 +1,21 @@
 using Elsa.Activities.Conductor.Extensions;
 using Elsa.Activities.UserTask.Extensions;
 using Elsa.Activities.Webhooks.Extensions;
+using Elsa.Attributes;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
 using Elsa.Samples.Server.Host.Activities;
-using Elsa.Webhooks.Persistence.EntityFramework.Core.Extensions;
+//using Elsa.Webhooks.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Webhooks.Persistence.EntityFramework.Sqlite;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 
 namespace Elsa.Samples.Server.Host
 {
@@ -34,6 +39,9 @@ namespace Elsa.Samples.Server.Host
 
             services.AddControllers();
 
+            //List<Assembly> assemblies = Assembly.GetExecutingAssembly().GetReferencedAssemblies().Select((item) => Assembly.Load(item)).ToList();
+            List<Assembly> assemblies = AppDomain.CurrentDomain.GetAssemblies().ToList<Assembly>();
+
             services
                 .AddActivityPropertyOptionsProvider<VehicleActivity>()
                 .AddRuntimeSelectItemsProvider<VehicleActivity>()
@@ -46,7 +54,9 @@ namespace Elsa.Samples.Server.Host
                     //.UseRabbitMq(Configuration.GetConnectionString("RabbitMq"))
                     //.UseRebusCacheSignal()
                     //.UseRedisCacheSignal()
+
                     .AddConsoleActivities()
+
                     .AddHttpActivities(elsaSection.GetSection("Http").Bind)
                     .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
                     .AddQuartzTemporalActivities()
@@ -63,13 +73,17 @@ namespace Elsa.Samples.Server.Host
                     .AddConductorActivities(options => elsaSection.GetSection("Conductor").Bind(options))
                     .AddActivitiesFrom<Startup>()
                     .AddWorkflowsFrom<Startup>()
-                    .AddWebhooks(webhooks => webhooks.UseEntityFrameworkPersistence(ef => ef.UseWebhookSqlite()))
+                    .AddFeatures(assemblies, elsaSection.GetSection("Features").Get<List<string>>())
+
+                    //.AddWebhooks(webhooks => webhooks.UseEntityFrameworkPersistence(ef => ef.UseWebhookSqlite()))
                 );
 
             // Elsa API endpoints.
             services
                 .AddElsaApiEndpoints()
                 .AddElsaSwagger();
+
+            //AddFeatures();
 
             // Allow arbitrary client browser apps to access the API for demo purposes only.
             // In a production environment, make sure to allow only origins you trust.
@@ -91,5 +105,6 @@ namespace Elsa.Samples.Server.Host
                 .UseRouting()
                 .UseEndpoints(endpoints => { endpoints.MapControllers(); });
         }
+
     }
 }
