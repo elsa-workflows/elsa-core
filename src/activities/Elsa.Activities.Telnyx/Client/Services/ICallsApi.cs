@@ -31,6 +31,9 @@ namespace Elsa.Activities.Telnyx.Client.Services
         [Post("/v2/calls/{callControlId}/actions/playback_start")]
         Task PlayAudioAsync(string callControlId, [Body]PlayAudioRequest request, CancellationToken cancellationToken = default);
         
+        [Post("/v2/calls/{callControlId}/actions/playback_stop")]
+        Task StopAudioPlaybackAsync(string callControlId, [Body]StopAudioPlaybackRequest request, CancellationToken cancellationToken = default);
+        
         [Post("/v2/calls/{callControlId}/actions/record_start")]
         Task StartRecordingAsync(string callControlId, [Body]StartRecordingRequest request, CancellationToken cancellationToken = default);
         

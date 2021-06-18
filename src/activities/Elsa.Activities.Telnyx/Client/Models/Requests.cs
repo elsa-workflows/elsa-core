@@ -90,6 +90,12 @@ namespace Elsa.Activities.Telnyx.Client.Models
         bool Overlay,
         string? TargetLegs
     );
+    
+    public record StopAudioPlaybackRequest(
+        string? ClientState,
+        string? CommandId,
+        string? Stop
+    );
 
     public record StartRecordingRequest(
         string Channels,
