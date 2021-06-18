@@ -13,7 +13,7 @@ namespace Elsa.Builders
             Action<IActivityBuilder>? branch = default,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default)
-            where T : class, IActivity => builder.Then<T>(typeof(T).Name, setup, branch, lineNumber, sourceFile);
+            where T : class, IActivity => builder.Then(typeof(T).Name, setup, branch, lineNumber, sourceFile);
 
         public static IActivityBuilder ThenTypeNamed(
             this IBuilder builder,

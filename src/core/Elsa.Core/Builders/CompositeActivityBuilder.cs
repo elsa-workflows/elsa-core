@@ -104,12 +104,12 @@ namespace Elsa.Builders
             where T : class, IActivity =>
             Add<T>(activityTypeName, branch, null, null, lineNumber, sourceFile);
 
-        public IActivityBuilder Add<T>(
+        public override IActivityBuilder Add<T>(
             string activityTypeName,
             Action<ISetupActivity<T>>? setup = default,
             Action<IActivityBuilder>? branch = default,
             [CallerLineNumber] int lineNumber = default,
-            [CallerFilePath] string? sourceFile = default) where T : class, IActivity
+            [CallerFilePath] string? sourceFile = default)
         {
             var activityBuilder = New(activityTypeName, setup, lineNumber, sourceFile);
             return Add(activityBuilder, branch);
