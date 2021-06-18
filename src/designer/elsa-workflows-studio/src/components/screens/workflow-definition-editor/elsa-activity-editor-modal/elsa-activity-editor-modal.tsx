@@ -92,7 +92,6 @@ export class ElsaActivityEditorModal {
   }
 
   render() {
-    debugger
     const renderProps = this.renderProps;
     const activityDescriptor: ActivityDescriptor = renderProps.activityDescriptor;
     const propertyCategories = renderProps.propertyCategories;

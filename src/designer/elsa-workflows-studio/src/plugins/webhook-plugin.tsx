@@ -11,7 +11,7 @@ export class WebhookPlugin implements ElsaPlugin {
   onActivityDisplaying(context: ActivityDesignDisplayContext) {
     const activityModel = context.activityModel;
     
-    if (activityModel.type !== 'Webhook')
+    if (!activityModel.type.endsWith('Webhook'))
       return;
 
     const props = activityModel.properties || [];
