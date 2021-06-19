@@ -8,7 +8,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Extensions
 {
     public static class QueryableBulkExtensions
     {
-        public static async Task<int> BatchDeleteWithWorkAroundAsync<T>(this IQueryable<T> queryable, ElsaContext elsaContext, CancellationToken cancellationToken = default) where T : class
+        public static async Task<int> BatchDeleteWithWorkAroundAsync<T>(this IQueryable<T> queryable, DbContext elsaContext, CancellationToken cancellationToken = default) where T : class
         {
             if (elsaContext.Database.IsPostgres() || elsaContext.Database.IsMySql())
             {

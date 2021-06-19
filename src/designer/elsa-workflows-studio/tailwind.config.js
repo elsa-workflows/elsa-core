@@ -27,7 +27,11 @@ module.exports = {
     }
   },
   variants: {
-    borderColor: ['responsive', 'hover', 'focus']
+    extend: {
+      opacity: ['disabled'],
+      cursor: ['disabled'],
+    },
+    borderColor: ['responsive', 'hover', 'focus'],    
   },
   plugins: [
     require('@tailwindcss/forms'),

@@ -18,7 +18,7 @@ export class ElsaDropdownProperty {
 
   async componentWillLoad() {
     const defaultSyntax = this.propertyDescriptor.defaultSyntax || SyntaxNames.Literal;
-    this.currentValue = this.propertyModel.expressions[defaultSyntax] || '';
+    this.currentValue = this.propertyModel.expressions[defaultSyntax] || undefined;
     this.items = await getSelectListItems(this.serverUrl, this.propertyDescriptor);
   }
 
@@ -33,13 +33,19 @@ export class ElsaDropdownProperty {
   }
   
   render() {
+
     const propertyDescriptor = this.propertyDescriptor;
     const propertyModel = this.propertyModel;
     const propertyName = propertyDescriptor.name;
     const fieldId = propertyName;
     const fieldName = propertyName;
-    const currentValue = this.currentValue;
+    let currentValue = this.currentValue;
     const items = this.items;
+
+    if (currentValue == undefined) {
+      const defaultValue = this.propertyDescriptor.defaultValue;
+      currentValue = defaultValue ? defaultValue.toString() : undefined;
+    }
 
     return (
       <elsa-property-editor propertyDescriptor={propertyDescriptor}

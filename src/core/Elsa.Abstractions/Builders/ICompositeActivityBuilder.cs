@@ -36,13 +36,6 @@ namespace Elsa.Builders
 
         IActivityBuilder Add<T>(
             string activityTypeName, 
-            Action<ISetupActivity<T>>? setup,
-            Action<IActivityBuilder>? branch = default,
-            [CallerLineNumber] int lineNumber = default,
-            [CallerFilePath] string? sourceFile = default) where T : class, IActivity;
-
-        IActivityBuilder Add<T>(
-            string activityTypeName, 
             Action<IActivityBuilder>? branch = default,
             IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders = default,
             IDictionary<string, string>? storageProviders = default,

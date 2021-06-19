@@ -24,6 +24,7 @@ import {FinishIcon} from "../components/icons/finish-icon";
 import {InterruptTriggerIcon} from "../components/icons/interrupt-trigger-icon";
 import {CorrelateIcon} from "../components/icons/correlate-icon";
 import {StateIcon} from "../components/icons/state-icon";
+import {WebhookIcon} from "../components/icons/webhook-icon";
 
 export class ActivityIconProvider {
   map: Map<() => any> = {
@@ -58,7 +59,8 @@ export class ActivityIconProvider {
     'SendHttpRequest': () => <SendHttpRequestIcon/>,
     'WriteHttpResponse': () => <WriteHttpResponseIcon/>,
     'Redirect': () => <RedirectIcon/>,
-    'SendEmail': () => <SendEmailIcon/>
+    'SendEmail': () => <SendEmailIcon/>,
+    'Webhook': () => <WebhookIcon/>
   };
 
   register(activityType: string, icon: () => any) {

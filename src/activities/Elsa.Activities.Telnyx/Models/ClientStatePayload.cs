@@ -10,7 +10,7 @@ namespace Elsa.Activities.Telnyx.Models
         {
             var bytes = Convert.FromBase64String(base64);
             var json = Encoding.UTF8.GetString(bytes);
-            return JsonConvert.DeserializeObject<ClientStatePayload>(json);
+            return JsonConvert.DeserializeObject<ClientStatePayload>(json)!;
         }
         
         public string ToBase64()

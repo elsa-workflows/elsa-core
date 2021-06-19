@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -13,18 +13,18 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EntityFramework.Core.Stores
 {
-    public abstract class EntityFrameworkStore<T> : IStore<T> where T : class, IEntity
+    public abstract class EntityFrameworkStore<T, TContext> : IStore<T> where T : class, IEntity where TContext:DbContext
     {
         private readonly IMapper _mapper;
         private readonly SemaphoreSlim _semaphore = new(1);
 
-        protected EntityFrameworkStore(IElsaContextFactory dbContextFactory, IMapper mapper)
+        protected EntityFrameworkStore(IContextFactory<TContext> dbContextFactory, IMapper mapper)
         {
             _mapper = mapper;
             DbContextFactory = dbContextFactory;
         }
 
-        protected IElsaContextFactory DbContextFactory { get; }
+        protected IContextFactory<TContext> DbContextFactory { get; }
 
         public async Task SaveAsync(T entity, CancellationToken cancellationToken)
         {
@@ -53,6 +53,11 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
 
                     OnSaving(dbContext, existingEntity);
                 }, cancellationToken);
+            }
+            catch(Exception ex)
+            {
+                var a = ex.Message;
+                throw;
             }
             finally
             {
@@ -126,7 +131,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
             }, cancellationToken);
         }
 
-        private T ReadShadowProperties(ElsaContext dbContext, T entity)
+        private T ReadShadowProperties(TContext dbContext, T entity)
         {
             OnLoading(dbContext, entity);
             return entity;
@@ -150,14 +155,14 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
         protected ValueTask<TResult> DoWorkOnSet<TResult>(Func<DbSet<T>, ValueTask<TResult>> work, CancellationToken cancellationToken) => DoWork(dbContext => work(dbContext.Set<T>()), cancellationToken);
         protected ValueTask DoWorkOnSet(Action<DbSet<T>> work, CancellationToken cancellationToken) => DoWork(dbContext => work(dbContext.Set<T>()), cancellationToken);
 
-        protected async ValueTask DoWork(Func<ElsaContext, ValueTask> work, CancellationToken cancellationToken)
+        protected async ValueTask DoWork(Func<TContext, ValueTask> work, CancellationToken cancellationToken)
         {
             await using var dbContext = DbContextFactory.CreateDbContext();
             await work(dbContext);
             await dbContext.SaveChangesAsync(cancellationToken);
         }
 
-        protected async ValueTask<TResult> DoWork<TResult>(Func<ElsaContext, ValueTask<TResult>> work, CancellationToken cancellationToken)
+        protected async ValueTask<TResult> DoWork<TResult>(Func<TContext, ValueTask<TResult>> work, CancellationToken cancellationToken)
         {
             await using var dbContext = DbContextFactory.CreateDbContext();
             var result = await work(dbContext);
@@ -165,20 +170,20 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
             return result;
         }
 
-        protected async ValueTask DoWork(Action<ElsaContext> work, CancellationToken cancellationToken)
+        protected async ValueTask DoWork(Action<TContext> work, CancellationToken cancellationToken)
         {
             await using var dbContext = DbContextFactory.CreateDbContext();
             work(dbContext);
             await dbContext.SaveChangesAsync(cancellationToken);
         }
 
-        protected virtual void OnSaving(ElsaContext dbContext, T entity) => OnSaving(entity);
+        protected virtual void OnSaving(TContext dbContext, T entity) => OnSaving(entity);
 
         protected virtual void OnSaving(T entity)
         {
         }
 
-        protected virtual void OnLoading(ElsaContext dbContext, T entity) => OnLoading(entity);
+        protected virtual void OnLoading(TContext dbContext, T entity) => OnLoading(entity);
 
         protected virtual void OnLoading(T entity)
         {

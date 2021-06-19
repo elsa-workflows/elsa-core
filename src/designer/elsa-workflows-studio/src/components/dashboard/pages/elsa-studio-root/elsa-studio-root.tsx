@@ -38,6 +38,10 @@ export class ElsaStudioRoot {
                     </stencil-route-link>
                     <stencil-route-link url="/workflow-registry" anchorClass="elsa-text-gray-300 hover:elsa-bg-gray-700 hover:elsa-text-white elsa-px-3 elsa-py-2 elsa-rounded-md elsa-text-sm elsa-font-medium" activeClass="elsa-text-white elsa-bg-gray-900">Workflow Registry
                     </stencil-route-link>
+
+                    {/*<stencil-route-link url="/custom-activities" class="elsa-text-gray-300 hover:elsa-bg-gray-700 hover:elsa-text-white elsa-px-3 elsa-py-2 elsa-rounded-md elsa-text-sm elsa-font-medium">Custom Activities</stencil-route-link>*/}
+                    <stencil-route-link url="/webhook-definitions" anchorClass="elsa-text-gray-300 hover:elsa-bg-gray-700 hover:elsa-text-white elsa-px-3 elsa-py-2 elsa-rounded-md elsa-text-sm elsa-font-medium" activeClass="elsa-text-white elsa-bg-gray-900">Webhook Definitions
+                    </stencil-route-link>                    
                     {/*<stencil-route-link url="/custom-activities" class="elsa-text-gray-300 hover:elsa-bg-gray-700 hover:elsa-text-white elsa-px-3 elsa-py-2 elsa-rounded-md elsa-text-sm elsa-font-medium">Custom Activities</stencil-route-link>*/}
                   </div>
                 </div>
@@ -57,6 +61,8 @@ export class ElsaStudioRoot {
               <stencil-route url="/workflow-definitions/:id" component="elsa-studio-workflow-definitions-edit" componentProps={{'serverUrl': serverUrl, 'monacoLibPath': monacoLibPath}}/>
               <stencil-route url="/workflow-instances" component="elsa-studio-workflow-instances-list" componentProps={{'serverUrl': serverUrl}} exact={true}/>
               <stencil-route url="/workflow-instances/:id" component="elsa-studio-workflow-instances-view" componentProps={{'serverUrl': serverUrl}}/>
+              <stencil-route url="/webhook-definitions" component="elsa-studio-webhook-definitions-list" componentProps={{'serverUrl': serverUrl}} exact={true}/>
+              <stencil-route url="/webhook-definitions/:id" component="elsa-studio-webhook-definitions-edit" componentProps={{'serverUrl': serverUrl}}/>                            
             </stencil-route-switch>
           </stencil-router>
           {/*</Tunnel.Provider>*/}

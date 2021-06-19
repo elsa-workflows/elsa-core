@@ -31,7 +31,7 @@ export class ElsaWorkflowDefinitionSettingsModal {
     this.formContext = new FormContext(this.workflowDefinitionInternal, newValue => this.workflowDefinitionInternal = newValue);
   }
 
-  componentWillLoad() {
+  componentWillLoad() {    
     this.handleWorkflowDefinitionChanged(this.workflowDefinition);
   }
 

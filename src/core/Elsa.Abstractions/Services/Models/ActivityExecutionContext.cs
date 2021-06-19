@@ -46,7 +46,7 @@ namespace Elsa.Services.Models
         public bool Resuming { get; }
         public bool IsFirstPass => WorkflowExecutionContext.IsFirstPass;
 
-        public string? CorrelationId
+        public string CorrelationId
         {
             get => WorkflowExecutionContext.CorrelationId;
             set => WorkflowExecutionContext.CorrelationId = value;
@@ -68,7 +68,7 @@ namespace Elsa.Services.Models
             return data.GetState<T>(propertyName);
         }
 
-        public T? GetState<T>(string propertyName, Func<T> defaultValue)
+        public T GetState<T>(string propertyName, Func<T> defaultValue)
         {
             var data = GetData();
             return data.GetState(propertyName, defaultValue);
@@ -179,8 +179,8 @@ namespace Elsa.Services.Models
         public void SetWorkflowContext(object? value) => WorkflowExecutionContext.SetWorkflowContext(value);
         public object? GetWorkflowContext() => WorkflowExecutionContext.GetWorkflowContext();
         public T GetWorkflowContext<T>() => WorkflowExecutionContext.GetWorkflowContext<T>();
-        public IDictionary<string, object> GetActivityData() => GetActivityData(ActivityId);
-        public IDictionary<string, object> GetActivityData(string activityId) => WorkflowExecutionContext.GetActivityData(activityId);
+        public IDictionary<string, object?> GetActivityData() => GetActivityData(ActivityId);
+        public IDictionary<string, object?> GetActivityData(string activityId) => WorkflowExecutionContext.GetActivityData(activityId);
         public Task<T?> GetActivityPropertyAsync<TActivity, T>(Expression<Func<TActivity, T>> propertyExpression, CancellationToken cancellationToken = default) where TActivity : IActivity => WorkflowExecutionContext.GetActivityPropertyAsync<TActivity, T>(ActivityId, propertyExpression, cancellationToken);
         public void Fault(Exception exception) => WorkflowExecutionContext.Fault(exception, ActivityId, Input, Resuming);
     }

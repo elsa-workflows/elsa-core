@@ -7,13 +7,14 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="YesSql.Provider.Sqlite" Version="3.0.6" />
+        <PackageReference Include="System.Text.Encodings.Web" Version="5.0.1"/>
+        <PackageReference Include="YesSql.Provider.Sqlite" Version="3.0.6"/>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\..\activities\Elsa.Activities.Http\Elsa.Activities.Http.csproj" />
-      <ProjectReference Include="..\..\..\core\Elsa\Elsa.csproj" />
-      <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.YesSql\Elsa.Persistence.YesSql.csproj" />
+        <ProjectReference Include="..\..\..\activities\Elsa.Activities.Http\Elsa.Activities.Http.csproj"/>
+        <ProjectReference Include="..\..\..\core\Elsa\Elsa.csproj"/>
+        <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.YesSql\Elsa.Persistence.YesSql.csproj"/>
     </ItemGroup>
 
 </Project>

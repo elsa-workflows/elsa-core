@@ -50,8 +50,8 @@ namespace Elsa.Scripting.JavaScript.Handlers
             engine.SetValue("getWorkflowDefinitionIdByTag", (Func<string, string?>) (tag => GetWorkflowDefinitionIdByTag(activityExecutionContext, tag)));
             engine.SetValue("getActivity", (Func<string, object?>) (idOrName => GetActivityModel(activityExecutionContext, idOrName)));
             
-            // Using .Result because Jint doesn't support Task-based functions yet.  
-            engine.SetValue("getActivityProperty", (Func<string, string?, object?>) ((activityId, propertyName) => GetActivityPropertyAsync(activityId, propertyName, activityExecutionContext).Result));
+            // Using .Result because Jint doesn't support Task-based functions.  
+            engine.SetValue("getActivityProperty", (Func<string, string, object?>) ((activityId, propertyName) => GetActivityPropertyAsync(activityId, propertyName, activityExecutionContext).Result));
 
             // Global variables.
             engine.SetValue("activityExecutionContext", activityExecutionContext);
@@ -127,7 +127,7 @@ namespace Elsa.Scripting.JavaScript.Handlers
             
             foreach (var activity in workflowBlueprint.Activities.Where(x => !string.IsNullOrWhiteSpace(x.Name)))
             {
-                var state = new Dictionary<string, object>(activityExecutionContext.GetActivityData(activity.Id));
+                var state = new Dictionary<string, object?>(activityExecutionContext.GetActivityData(activity.Id));
                 engine.SetValue(activity.Name, state);
             }
         }
