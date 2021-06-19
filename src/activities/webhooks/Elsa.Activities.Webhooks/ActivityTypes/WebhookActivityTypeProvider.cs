@@ -11,13 +11,15 @@ using Elsa.Metadata;
 using Elsa.Persistence.Specifications;
 using Elsa.Services;
 using Elsa.Services.Models;
+using Humanizer;
+using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Activities.Webhooks.ActivityTypes
 {
     public class WebhookActivityTypeProvider : IActivityTypeProvider
     {
         public const string WebhookMarkerAttribute = "WebhookMarker";
-        private const string WebhooksActivityType = "Webhook";
+        private const string WebhooksActivityTypeSuffix = "Webhook";
         private const string WebhooksActivityCategory = "Webhooks";
 
         private readonly IWebhookDefinitionStore _webhookDefinitionStore;
@@ -48,10 +50,13 @@ namespace Elsa.Activities.Webhooks.ActivityTypes
 
         private ActivityType CreateWebhookActivityType(WebhookDefinition webhook)
         {
+            var activityTypeName = webhook.Name.EndsWith(WebhooksActivityTypeSuffix) ? webhook.Name : $"{webhook.Name}{WebhooksActivityTypeSuffix}";
+            var activityDisplayName = activityTypeName.Humanize();
+            
             var descriptor = new ActivityDescriptor
             {
-                Type = $"{webhook.Name} {WebhooksActivityType}",
-                DisplayName = $"{WebhooksActivityType}: {webhook.Name}",
+                Type = activityTypeName,
+                DisplayName = activityDisplayName,
                 Category = WebhooksActivityCategory,
                 Outcomes = new[] { OutcomeNames.Done },
                 Traits = ActivityTraits.Trigger,
@@ -59,7 +64,7 @@ namespace Elsa.Activities.Webhooks.ActivityTypes
                 {
                     new ActivityInputDescriptor(
                         nameof(HttpEndpoint.Path),
-                        typeof(Microsoft.AspNetCore.Http.PathString),
+                        typeof(PathString),
                         ActivityInputUIHints.SingleLine,
                         "Path",
                         "The relative path that triggers this activity.",
@@ -107,10 +112,10 @@ namespace Elsa.Activities.Webhooks.ActivityTypes
 
             return new ActivityType
             {
-                TypeName = webhook.Name,
+                TypeName = activityTypeName,
                 Type = typeof(HttpEndpoint),
                 Description = !string.IsNullOrWhiteSpace(webhook.Description) ? webhook.Description : $"A webhook at {webhook.Path}",
-                DisplayName = webhook.Name,
+                DisplayName = activityDisplayName,
                 ActivateAsync = ActivateActivityAsync,
                 Attributes = new Dictionary<string, object>
                 {

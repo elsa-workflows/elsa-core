@@ -5,8 +5,7 @@ using System.Threading.Tasks;
 using Elsa.Activities.Http;
 using Elsa.Activities.Http.Bookmarks;
 using Elsa.Activities.Webhooks.ActivityTypes;
-using Elsa.Bookmarks;
-using Microsoft.AspNetCore.Http;
+using Elsa.Services.Bookmarks;
 
 namespace Elsa.Activities.Webhooks.Bookmarks
 {
@@ -29,7 +28,7 @@ namespace Elsa.Activities.Webhooks.Bookmarks
             return methods.Select(CreateBookmark);
         }
         
-        private static string? ToLower(string? s) => s?.ToLowerInvariant();
+        private static string ToLower(string s) => s.ToLowerInvariant();
 
     }
 }
