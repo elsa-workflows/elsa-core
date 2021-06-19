@@ -17,10 +17,10 @@ namespace Elsa.Activities.File
     public class OutFile : Activity
     {
         [ActivityInput(Hint = "Bytes to write to file.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript }, DefaultSyntax = SyntaxNames.JavaScript)]
-        public byte[] Bytes { get; set; }
+        public byte[] Bytes { get; set; } = default!;
 
         [ActivityInput(Hint = "Path to create file at.", UIHint = ActivityInputUIHints.SingleLine, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
-        public string Path { get; set; }
+        public string Path { get; set; } = default!;
 
         [ActivityInput(Hint = "How the output file should be written to.", UIHint = ActivityInputUIHints.Dropdown)]
         public CopyMode Mode { get; set; } = CopyMode.CreateNew;

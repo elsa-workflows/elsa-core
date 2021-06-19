@@ -12,25 +12,25 @@ namespace Elsa.Activities.File
     {
         public static IActivityBuilder FileExists(this IActivityBuilder builder, Action<ISetupActivity<FileExists>> setup, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) => builder.Then(setup, null, lineNumber, sourceFile);
 
-        public static IActivityBuilder FileExists(this IActivityBuilder builder, Func<ActivityExecutionContext, string> path, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
+        public static IActivityBuilder FileExists(this IActivityBuilder builder, Func<ActivityExecutionContext, string?> path, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
             builder.FileExists(activity => activity
                     .Set(x => x.Path, path),
                 lineNumber,
                 sourceFile);
 
-        public static IActivityBuilder FileExists(this IActivityBuilder builder, Func<ActivityExecutionContext, ValueTask<string>> path, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
+        public static IActivityBuilder FileExists(this IActivityBuilder builder, Func<ActivityExecutionContext, ValueTask<string?>> path, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
             builder.FileExists(activity => activity
                     .Set(x => x.Path, path),
                 lineNumber,
                 sourceFile);
 
-        public static IActivityBuilder FileExists(this IActivityBuilder builder, Func<string> path, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
+        public static IActivityBuilder FileExists(this IActivityBuilder builder, Func<string?> path, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
             builder.FileExists(activity => activity
                     .Set(x => x.Path, path),
                 lineNumber,
                 sourceFile);
 
-        public static IActivityBuilder FileExists(this IActivityBuilder builder, Func<ValueTask<string>> path, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
+        public static IActivityBuilder FileExists(this IActivityBuilder builder, Func<ValueTask<string?>> path, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
             builder.FileExists(activity => activity
                     .Set(x => x.Path, path),
                 lineNumber,

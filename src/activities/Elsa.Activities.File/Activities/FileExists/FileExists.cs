@@ -12,7 +12,7 @@ namespace Elsa.Activities.File
     public class FileExists : Activity
     {
         [ActivityInput(Hint = "Path of the file to delete.")]
-        public string Path { get; set; }
+        public string Path { get; set; } = default!;
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {

@@ -6,7 +6,8 @@ namespace Elsa.Activities.File.Models
     public class FileSystemChanged
     {
         public FileSystemChanged()
-        { }
+        {
+        }
 
         public FileSystemChanged(WatcherChangeTypes changeType, string directory, string fileName, string fullPath)
         {
@@ -19,14 +20,12 @@ namespace Elsa.Activities.File.Models
 
         public WatcherChangeTypes ChangeType { get; set; }
 
-        public string Directory { get; set; }
+        public string Directory { get; set; } = default!;
 
-        public string FileName { get; set; }
+        public string FileName { get; set; } = default!;
 
-        public string FullPath { get; set; }
+        public string FullPath { get; set; } = default!;
 
-        public string Pattern { get; set; }
-
-        public DateTime TimeStamp { get; set; }
+        public DateTime TimeStamp { get; set; } = default!;
     }
 }
