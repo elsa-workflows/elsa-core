@@ -50,31 +50,25 @@ namespace Elsa.Activities.Signaling
             Assert.False(result);
         }
 
-        [Theory(DisplayName = "The ResumeAsync method should return a combined 'Done' Outcome & Output result"), AutoMoqData]
-        public async Task ResumeAsyncShouldReturnCombinedDoneAndOutputResult(SignalReceived sut, Signal triggeredSignal, object signalInput)
+        [Theory(DisplayName = "The ResumeAsync method should return a 'Done' Outcome result"), AutoMoqData]
+        public async Task ResumeAsyncShouldReturnDoneResult(SignalReceived sut, Signal triggeredSignal, object signalInput)
         {
-            var context = new ActivityExecutionContext(default, default, default, triggeredSignal, default, default);
+            var context = new ActivityExecutionContext(default!, default!, default!, triggeredSignal, default, default);
             triggeredSignal.Input = signalInput;
             
             var result = await sut.ResumeAsync(context);
 
-            Assert.True((result is CombinedResult combinedResult)
-                        && combinedResult.Results.Any(res => res is OutcomeResult outcome && outcome.Outcomes.Any(o => o == OutcomeNames.Done))
-                        && combinedResult.Results.Any(res => res is OutputResult),
-                        $"The result is {nameof(CombinedResult)} which contains both a {nameof(OutcomeResult)} (of \"Done\") and a {nameof(OutputResult)}.");
+            Assert.True((result is OutcomeResult outcome && outcome.Outcomes.Any(o => o == OutcomeNames.Done)),
+                        $"The result is {nameof(OutcomeResult)} which contains a {nameof(OutcomeResult)} (of \"Done\").");
         }
 
         [Theory(DisplayName = "The ResumeAsync method should include the original signal input within the Output result"), AutoMoqData]
         public async Task ResumeAsyncShouldReturnOriginalSignalInputWithinDoneResult(SignalReceived sut, Signal triggeredSignal, object signalInput)
         {
-            var context = new ActivityExecutionContext(default, default, default, triggeredSignal, default, default);
+            var context = new ActivityExecutionContext(default!, default!, default!, triggeredSignal, default, default);
             triggeredSignal.Input = signalInput;
-            
-            var result = await sut.ResumeAsync(context);
-            var resultOutput = ((CombinedResult) result).Results
-                .OfType<OutputResult>()
-                ?.FirstOrDefault()
-                ?.Output;
+            await sut.ResumeAsync(context);
+            var resultOutput = sut.Output;
 
             Assert.Same(signalInput, resultOutput);
         }

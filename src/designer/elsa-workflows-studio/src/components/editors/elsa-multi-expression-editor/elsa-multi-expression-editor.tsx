@@ -17,7 +17,7 @@ export class ElsaMultiExpressionEditor {
   @Prop() expressions: Map<string> = {};
   @Prop() supportedSyntaxes: Array<string> = [];
   @Prop() isDisabled?: boolean;
-  @Prop({attribute: 'editor-height', reflect: true}) editorHeight: string = '6em';
+  @Prop({attribute: 'editor-height', reflect: true}) editorHeight: string = '10em';
   @Prop({attribute: 'single-line', reflect: true}) singleLineMode: boolean = false;
   @Prop({attribute: 'context', reflect: true}) context?: string;
 

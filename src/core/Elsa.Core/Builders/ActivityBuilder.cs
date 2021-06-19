@@ -16,6 +16,7 @@ namespace Elsa.Builders
             string activityTypeName,
             ICompositeActivityBuilder workflowBuilder,
             IDictionary<string, IActivityPropertyValueProvider>? propertyValueProviders,
+            IDictionary<string, string>? storageProviders,
             int lineNumber,
             string? sourceFile)
         {
@@ -23,6 +24,7 @@ namespace Elsa.Builders
             ActivityTypeName = activityTypeName;
             WorkflowBuilder = workflowBuilder;
             PropertyValueProviders = propertyValueProviders;
+            StorageProviders = storageProviders;
             LineNumber = lineNumber;
             SourceFile = sourceFile;
         }
@@ -41,19 +43,21 @@ namespace Elsa.Builders
         public bool PersistWorkflowEnabled { get; set; }
         public bool LoadWorkflowContextEnabled { get; set; }
         public bool SaveWorkflowContextEnabled { get; set; }
-        public bool PersistOutputEnabled { get; set; }
         public IDictionary<string, IActivityPropertyValueProvider>? PropertyValueProviders { get; protected set; }
+        public IDictionary<string, string>? StorageProviders { get; }
+        public IDictionary<string, string> PropertyStorageProviders { get; set; } = new Dictionary<string, string>();
         public int LineNumber { get; }
         public string? SourceFile { get; }
         public string? Source => SourceFile != null && LineNumber != default ? $"{Path.GetFileName(SourceFile)}:{LineNumber}" : default;
 
-        public IActivityBuilder Add<T>(
+        public virtual IActivityBuilder Add<T>(
             string activityTypeName, 
             Action<ISetupActivity<T>>? setup = default,
+            Action<IActivityBuilder>? branch = default,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default)
             where T : class, IActivity =>
-            WorkflowBuilder.Add(activityTypeName, setup, null, lineNumber, sourceFile);
+            WorkflowBuilder.Add(activityTypeName, setup, branch, lineNumber, sourceFile);
 
         public IOutcomeBuilder When(string outcome) => new OutcomeBuilder(WorkflowBuilder, this, outcome);
 
@@ -118,12 +122,6 @@ namespace Elsa.Builders
         public IActivityBuilder SaveWorkflowContext(bool value)
         {
             SaveWorkflowContextEnabled = value;
-            return this;
-        }
-
-        public IActivityBuilder PersistOutput(bool value)
-        {
-            PersistOutputEnabled = value;
             return this;
         }
 

@@ -26,15 +26,18 @@ namespace Elsa.Activities.BlobStorage
         [ActivityInput(Hint = "If set, the output of this activity is written to the specified file. Otherwise, the bytes of the blob will be set as the activity output.")]
         public string? DestinationFilePath { get; set; }
 
+        [ActivityOutput] public byte[]? Output { get; set; }
+
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
             if (string.IsNullOrWhiteSpace(BlobId))
                 throw new System.Exception($"{nameof(BlobId)} must have a value");
 
             if (string.IsNullOrWhiteSpace(DestinationFilePath))
-                return Done(await _storage.ReadBytesAsync(BlobId, context.CancellationToken));
+                Output = await _storage.ReadBytesAsync(BlobId, context.CancellationToken);
+            else
+                await _storage.ReadToFileAsync(BlobId, DestinationFilePath, context.CancellationToken);
 
-            await _storage.ReadToFileAsync(BlobId, DestinationFilePath, context.CancellationToken);
             return Done();
         }
     }

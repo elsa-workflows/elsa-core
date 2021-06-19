@@ -1,5 +1,5 @@
-﻿using Elsa.Dispatch;
-using Elsa.Server.Orleans.Dispatch;
+﻿using Elsa.Server.Orleans.Dispatch;
+using Elsa.Services.Dispatch;
 
 namespace Elsa.Server.Orleans.Extensions
 {

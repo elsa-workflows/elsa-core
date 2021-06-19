@@ -7,8 +7,9 @@ namespace Elsa.ActivityResults
 {
     public class OutcomeResult : ActivityExecutionResult
     {
-        public OutcomeResult(IEnumerable<string>? outcomes = default, string? parentId = default)
+        public OutcomeResult(IEnumerable<string>? outcomes = default, object? input = null, string? parentId = default)
         {
+            Input = input;
             ParentId = parentId;
             var outcomeList = outcomes?.ToList() ?? new List<string>(1);
 
@@ -19,6 +20,7 @@ namespace Elsa.ActivityResults
         }
 
         public IEnumerable<string> Outcomes { get; }
+        public object? Input { get; }
         public string? ParentId { get; }
 
         protected override void Execute(ActivityExecutionContext activityExecutionContext)
@@ -43,7 +45,7 @@ namespace Elsa.ActivityResults
             foreach (var nextConnection in nextConnections)
                 workflowExecutionContext.ExecutionLog.Add(nextConnection);
 
-            workflowExecutionContext.ScheduleActivities(nextActivities, activityExecutionContext.Output);
+            workflowExecutionContext.ScheduleActivities(nextActivities, Input);
         }
 
         public static IEnumerable<string> GetNextActivities(

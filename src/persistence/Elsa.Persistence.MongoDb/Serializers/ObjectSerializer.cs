@@ -1,7 +1,6 @@
 ﻿using System;
 using MongoDB.Bson.Serialization;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using NodaTime;
 using NodaTime.Serialization.JsonNet;
 

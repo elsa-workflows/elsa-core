@@ -13,6 +13,7 @@ namespace Elsa.Builders
     public interface ISetupActivity<T> : ISetupActivity where T : IActivity
     {
         ISetupActivity<T> Set<TProperty>(Expression<Func<T, TProperty?>> propertyAccessor, Func<ActivityExecutionContext, ValueTask<TProperty?>> valueFactory);
+        ISetupActivity<T> WithStorageFor<TProperty>(Expression<Func<T, TProperty?>> propertyAccessor, string? storageProviderName);
     }
 
     public static class SetupActivityExtensions

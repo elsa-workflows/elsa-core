@@ -1,5 +1,5 @@
 ﻿using System;
-using Elsa.Services;
+using Elsa.Services.Messaging;
 using Microsoft.Azure.ServiceBus.Primitives;
 using Rebus.Config;
 

@@ -11,7 +11,9 @@ import {
   WorkflowContextOptions,
   WorkflowDefinition,
   WorkflowDefinitionSummary, WorkflowExecutionLogRecord, WorkflowFault, WorkflowInstance, WorkflowInstanceSummary,
-  WorkflowPersistenceBehavior, WorkflowStatus
+  WorkflowPersistenceBehavior,
+  WorkflowStatus,
+  WorkflowStorageDescriptor
 } from "../models";
 import { WebhookDefinition, WebhookDefinitionSummary } from "../models/webhook";
 
@@ -188,6 +190,12 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
         const response = await httpClient.get(`v1/workflow-instances/${workflowInstanceId}/activity-stats/${activityId}`);
         return response.data;
       }
+    },
+    workflowStorageProvidersApi: {
+      list: async () => {
+        const response = await httpClient.get<Array<WorkflowStorageDescriptor>>('v1/workflow-storage-providers');
+        return response.data;
+      }
     }
   }
 }
@@ -201,6 +209,7 @@ export interface ElsaClient {
   scriptingApi: ScriptingApi;
   designerApi: DesignerApi;
   activityStatsApi: ActivityStatsApi;
+  workflowStorageProvidersApi: WorkflowStorageProvidersApi;
   webhookDefinitionsApi: WebhookDefinitionsApi;
 }
 
@@ -282,6 +291,10 @@ export interface RuntimeSelectItemsApi {
 
 export interface ActivityStatsApi {
   get(workflowInstanceId: string, activityId: string): Promise<ActivityStats>;
+}
+
+export interface WorkflowStorageProvidersApi {
+  list(): Promise<Array<WorkflowStorageDescriptor>>;
 }
 
 export interface SaveWorkflowDefinitionRequest {

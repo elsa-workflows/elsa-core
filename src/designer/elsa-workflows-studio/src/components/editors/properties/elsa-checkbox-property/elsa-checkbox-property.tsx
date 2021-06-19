@@ -39,7 +39,6 @@ export class ElsaCheckBoxProperty {
       <elsa-property-editor propertyDescriptor={propertyDescriptor}
                             propertyModel={propertyModel}
                             onDefaultSyntaxValueChanged={e => this.onDefaultSyntaxValueChanged(e)}
-                            editor-height="2.75em"
                             single-line={true}
                             showLabel={false}>
         <div class="elsa-max-w-lg">

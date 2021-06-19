@@ -15,7 +15,7 @@ namespace Elsa.Core.IntegrationTests.Persistence.MongoDb
     public class MongoDbIntegrationTests
     {
         [Theory(DisplayName = "A persistable workflow instance with default persistence behaviour should be persisted-to and readable-from a MongoDb store after being run"), AutoMoqData]
-        public async Task APersistableWorkflowInstanceWithDefaultPersistanceBehaviourShouldBeRoundTrippable([WithPersistableWorkflow,WithMongoDb] ElsaHostBuilderBuilder hostBuilderBuilder)
+        public async Task APersistableWorkflowInstanceWithDefaultPersistenceBehaviourShouldBeRoundTrippable([WithPersistableWorkflow,WithMongoDb] ElsaHostBuilderBuilder hostBuilderBuilder)
         {
             var hostBuilder = hostBuilderBuilder.GetHostBuilder();
             hostBuilder.ConfigureServices((ctx, services) => services.AddHostedService<HostedWorkflowRunner>());
@@ -29,9 +29,9 @@ namespace Elsa.Core.IntegrationTests.Persistence.MongoDb
 
             public async Task StartAsync(CancellationToken cancellationToken)
             {
-                var runWorkflowResult = await _workflowRunner.BuildAndStartWorkflowAsync<PersistableWorkflow>(cancellationToken: cancellationToken);
+                var runWorkflowResult = await _workflowRunner.BuildAndStartWorkflowAsync<PersistableWorkflow>();
                 var instance = runWorkflowResult.WorkflowInstance!;
-                var retrievedInstance = await _instanceStore.FindByIdAsync(instance.Id, cancellationToken);
+                var retrievedInstance = await _instanceStore.FindByIdAsync(instance.Id);
 
                 Assert.NotNull(retrievedInstance);
             }

@@ -1,4 +1,4 @@
-﻿using Elsa.Services;
+﻿using Elsa.Services.Messaging;
 using Rebus.Config;
 
 // ReSharper disable once CheckNamespace

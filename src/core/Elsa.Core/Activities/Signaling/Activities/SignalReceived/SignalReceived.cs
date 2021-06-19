@@ -28,6 +28,8 @@ namespace Elsa.Activities.Signaling
 
         [ActivityOutput(Hint = "The input that was received with the signal.")]
         public object? SignalInput { get; set; }
+        
+        [ActivityOutput] public object? Output { get; set; }
 
         protected override bool OnCanExecute(ActivityExecutionContext context)
         {
@@ -43,7 +45,8 @@ namespace Elsa.Activities.Signaling
         {
             var triggeredSignal = context.GetInput<Signal>()!;
             SignalInput = triggeredSignal.Input;
-            return Done(triggeredSignal.Input);
+            Output = triggeredSignal.Input;
+            return Done();
         }
     }
 }

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Bookmarks;
+using Elsa.Services.Bookmarks;
 
 namespace Elsa.Activities.Entity.Bookmarks
 {

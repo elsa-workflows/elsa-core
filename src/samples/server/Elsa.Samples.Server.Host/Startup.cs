@@ -6,6 +6,7 @@ using Elsa.Activities.Conductor.Extensions;
 using Elsa.Activities.UserTask.Extensions;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
+using Elsa.Providers.WorkflowStorage;
 using Elsa.Samples.Server.Host.Activities;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -50,7 +51,7 @@ namespace Elsa.Samples.Server.Host
                     //.UseRabbitMq(Configuration.GetConnectionString("RabbitMq"))
                     //.UseRebusCacheSignal()
                     //.UseRedisCacheSignal()
-
+                    .UseDefaultWorkflowStorageProvider<TransientWorkflowStorageProvider>()
                     .AddConsoleActivities()
 
                     .AddHttpActivities(elsaSection.GetSection("Http").Bind)

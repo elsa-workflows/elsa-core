@@ -1,7 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Dispatch;
 using Elsa.Server.Orleans.Grains.Contracts;
+using Elsa.Services.Dispatch;
 using MediatR;
 using Orleans;
 using Orleans.Concurrency;

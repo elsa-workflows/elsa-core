@@ -50,7 +50,7 @@ export class ElsaSingleLineProperty {
       <elsa-property-editor propertyDescriptor={propertyDescriptor}
                             propertyModel={propertyModel}
                             onDefaultSyntaxValueChanged={e => this.onDefaultSyntaxValueChanged(e)}
-                            editor-height="2.75em"
+                            editor-height="5em"
                             single-line={true}>
         <input type="text" id={fieldId} name={fieldName} value={value} onChange={e => this.onChange(e)} class="disabled:elsa-opacity-50 disabled:elsa-cursor-not-allowed focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300" disabled={isDisabled} />
       </elsa-property-editor>

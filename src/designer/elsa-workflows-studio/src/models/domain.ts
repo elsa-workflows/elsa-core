@@ -46,9 +46,9 @@ export interface ActivityBlueprint {
   persistWorkflow: boolean;
   loadWorkflowContext: boolean;
   saveWorkflowContext: boolean;
-  persistOutput: boolean;
   source?: string;
   properties: Variables;
+  propertyStorageProviders: Map<string>;
 }
 
 export interface Connection {
@@ -139,8 +139,8 @@ export interface ActivityDefinition {
   persistWorkflow: boolean;
   loadWorkflowContext: boolean;
   saveWorkflowContext: boolean;
-  persistOutput: boolean;
   properties: Array<ActivityDefinitionProperty>;
+  propertyStorageProviders: Map<string>;
 }
 
 export interface WorkflowExecutionLogRecord {
@@ -260,6 +260,7 @@ export interface ActivityDescriptor {
   outcomes: Array<string>;
   browsable: boolean;
   inputProperties: Array<ActivityPropertyDescriptor>;
+  outputProperties: Array<ActivityPropertyDescriptor>;
 }
 
 export interface ActivityPropertyDescriptor {
@@ -273,6 +274,11 @@ export interface ActivityPropertyDescriptor {
   defaultSyntax?: string;
   supportedSyntaxes: Array<string>;
   isDisabled?: boolean;
+}
+
+export interface WorkflowStorageDescriptor {
+  name: string;
+  displayName?: string;
 }
 
 export interface PagedList<T> {

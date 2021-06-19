@@ -5,10 +5,13 @@ namespace Elsa.Scripting.JavaScript.Services
 {
     public class TypeConverterResultConverter : IConvertsJintEvaluationResult
     {
-        readonly IConvertsJintEvaluationResult wrapped;
+        private readonly IConvertsJintEvaluationResult wrapped;
 
         public object? ConvertToDesiredType(object? evaluationResult, Type desiredType)
         {
+            if (desiredType == typeof(object))
+                return evaluationResult;
+            
             var converter = TypeDescriptor.GetConverter(evaluationResult!);
 
             if (converter.CanConvertTo(desiredType))

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Scripting.JavaScript.Converters.Jint;
 using Elsa.Scripting.JavaScript.Messages;
 using Elsa.Scripting.JavaScript.Options;
 using Elsa.Services.Models;
@@ -41,10 +42,11 @@ namespace Elsa.Scripting.JavaScript.Services
             return _resultConverter.ConvertToDesiredType(result, returnType);
         }
 
-        async Task<Engine> GetConfiguredEngine(Action<Engine>? configureEngine, ActivityExecutionContext context, CancellationToken cancellationToken)
+        private async Task<Engine> GetConfiguredEngine(Action<Engine>? configureEngine, ActivityExecutionContext context, CancellationToken cancellationToken)
         {
             var engine = new Engine(opts =>
             {
+                opts.AddObjectConverter<ByteArrayConverter>();
                 if (_scriptOptions.AllowClr)
                     opts.AllowClr();
             });
@@ -59,8 +61,7 @@ namespace Elsa.Scripting.JavaScript.Services
 
         private static object? ExecuteExpressionAndGetResult(Engine engine, string expression)
         {
-            engine.Execute(expression);
-            return engine.GetCompletionValue().ToObject();
+            return engine.Evaluate(expression).ToObject();
         }
     }
 }

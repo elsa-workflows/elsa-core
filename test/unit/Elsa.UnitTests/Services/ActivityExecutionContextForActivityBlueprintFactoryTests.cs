@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using Elsa.Services.Models;
+using Elsa.Services.Workflows;
 using Elsa.Testing.Shared;
 using Elsa.Testing.Shared.AutoFixture.Attributes;
 using Xunit;

@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using Elsa.Bookmarks;
+using Elsa.Services.Bookmarks;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Workflows

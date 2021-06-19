@@ -7,6 +7,7 @@ namespace Elsa.Activities.Telnyx.Extensions
     {
         private const string CallControlIdVariableName = "TelnyxCallControlId";
         private const string FromNumberVariableName = "TelnyxFromNumber";
+        private const string CallerNumberVariableName = "TelnyxCallerNumber";
         
         /// <summary>
         /// Returns the control ID of the active call session in the workflow if the specified call control ID is null or empty.
@@ -50,7 +51,10 @@ namespace Elsa.Activities.Telnyx.Extensions
         /// <summary>
         /// Sets a workflow variable with the specified call control ID value.
         /// </summary>
-        public static void SetFromNumber(this ActivityExecutionContext context, string fromNumber) => context.SetVariable(FromNumberVariableName, fromNumber);
+        public static void SetFromNumber(this ActivityExecutionContext context, string number) => context.SetVariable(FromNumberVariableName, number);
+        
+        public static void SetCallerNumber(this ActivityExecutionContext context, string number) => context.SetVariable(CallerNumberVariableName, number);
+        public static string? GetCallerNumber(this ActivityExecutionContext context) => context.GetVariable<string>(CallerNumberVariableName);
 
         public static bool HasFromNumber(this ActivityExecutionContext context) => context.HasVariable(FromNumberVariableName);
     }

@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Bookmarks;
 using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.Parsers;
+using Elsa.Activities.Http.Parsers.Request;
 using Elsa.Activities.Http.Services;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications.WorkflowInstances;
@@ -71,6 +73,7 @@ namespace Elsa.Activities.Http.Middleware
                 var readContent = await activityWrapper!.EvaluatePropertyValueAsync(x => x.ReadContent, cancellationToken);
                 var inputModel = commonInputModel;
 
+                // TODO: Explain this + sequence.
                 if (readContent)
                 {
                     var targetType = await activityWrapper.EvaluatePropertyValueAsync(x => x.TargetType, cancellationToken);
@@ -88,6 +91,7 @@ namespace Elsa.Activities.Http.Middleware
                 if (useDispatch)
                 {
                     httpContext.Response.ContentType = "application/json";
+                    httpContext.Response.StatusCode = (int)HttpStatusCode.Accepted;
                     await httpContext.Response.WriteAsync(JsonConvert.SerializeObject(pendingWorkflows), cancellationToken);
                 }
 

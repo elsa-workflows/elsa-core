@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
-using Elsa.Bookmarks;
 using Elsa.Models;
+using Elsa.Services.Bookmarks;
 using Elsa.Services.Models;
 
 namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
@@ -33,11 +33,12 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
 
     public record DispatchWorkflowInstanceResponse();
 
-    public record ExecuteWorkflowsRequest(string ActivityType, IBookmark? Bookmark, IBookmark? Trigger, string? CorrelationId, string? WorkflowInstanceId, string? ContextId, object? Input);
+    public record TriggerWorkflowsRequest(string ActivityType, IBookmark? Bookmark, IBookmark? Trigger, string? CorrelationId, string? WorkflowInstanceId, string? ContextId, object? Input, bool Dispatch);
 
-    public record ExecuteWorkflowsResponse(ICollection<StartedWorkflow> StartedWorkflows);
+    public record TriggerWorkflowsResponse(ICollection<TriggeredWorkflow> TriggeredWorkflows);
+    public record TriggeredWorkflow(string WorkflowInstanceId, string? ActivityId);
 
-    public record DispatchWorkflowsRequest(string ActivityType, IBookmark? Bookmark, IBookmark? Trigger, string? CorrelationId, string? WorkflowInstanceId, string? ContextId, object? Input);
+    public record DispatchTriggerWorkflowsRequest(string ActivityType, IBookmark? Bookmark, IBookmark? Trigger, string? CorrelationId, string? WorkflowInstanceId, string? ContextId, object? Input);
 
-    public record DispatchWorkflowsResponse(ICollection<PendingWorkflow> PendingWorkflows);
+    public record DispatchTriggerWorkflowsResponse(ICollection<PendingWorkflow> PendingWorkflows);
 }

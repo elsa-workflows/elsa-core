@@ -107,8 +107,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.FileBasedWorkf
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.ForLoopConsole", "src\samples\console\Elsa.Samples.ForLoopConsole\Elsa.Samples.ForLoopConsole.csproj", "{F5124847-D046-4458-A89D-CD796FEDEE1A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.GoBackConsole", "src\samples\console\Elsa.Samples.GoBackConsole\Elsa.Samples.GoBackConsole.csproj", "{0B147307-64FF-4496-9DC9-8F83013AC045}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.HelloWorldConsole", "src\samples\console\Elsa.Samples.HelloWorldConsole\Elsa.Samples.HelloWorldConsole.csproj", "{935888CF-E871-42BB-A47D-5E1168269A03}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.HappinessConsole", "src\samples\console\Elsa.Samples.HappinessConsole\Elsa.Samples.HappinessConsole.csproj", "{EA1D7E39-D77D-4B13-BAD0-76BA30547019}"
@@ -255,6 +253,28 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.CustomActivityOutcomes", "src\samples\console\Elsa.Samples.CustomActivityOutcomes\Elsa.Samples.CustomActivityOutcomes.csproj", "{30A9B140-14F5-4D00-84ED-1447F96D13C8}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "aspnetcore", "aspnetcore", "{28C5C63F-2DCF-46BE-9576-1F50A7CFE8C4}"
+		docker\Dockerfile-with-npm = docker\Dockerfile-with-npm
+		docker\README.md = docker\README.md
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Persistence.EntityFramework.MySql", "src\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.MySql\Elsa.Persistence.EntityFramework.MySql.csproj", "{D55BC08B-CA82-478A-99F7-EDE90AC33160}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.File", "src\activities\Elsa.Activities.File\Elsa.Activities.File.csproj", "{BE284508-9582-4FCB-B0DD-0761AB940AD7}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.ReadLineToFile", "src\samples\console\Elsa.Samples.ReadLineToFile\Elsa.Samples.ReadLineToFile.csproj", "{3EB488DF-3C28-4DAD-B43E-6062E39629AB}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.SendHttp", "src\samples\aspnet\Elsa.Samples.SendHttp\Elsa.Samples.SendHttp.csproj", "{775EFD59-F99C-4D38-B54E-9734C9D9649A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.CustomActivityOutcomes", "src\samples\console\Elsa.Samples.CustomActivityOutcomes\Elsa.Samples.CustomActivityOutcomes.csproj", "{30A9B140-14F5-4D00-84ED-1447F96D13C8}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "aspnetcore", "aspnetcore", "{28C5C63F-2DCF-46BE-9576-1F50A7CFE8C4}"
+	ProjectSection(SolutionItems) = preProject
+		docker\docker-compose.yaml = docker\docker-compose.yaml
+		docker\Dockerfile = docker\Dockerfile
+		docker\Dockerfile-elsa-dashboard = docker\Dockerfile-elsa-dashboard
+		docker\Dockerfile-elsa-dashboard-and-server = docker\Dockerfile-elsa-dashboard-and-server
+		docker\README.md = docker\README.md
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "github", "github", "{3BF2C5A9-AC69-4587-833F-C16CFC97E100}"
 	ProjectSection(SolutionItems) = preProject
@@ -300,6 +320,15 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Webhooks.Persistence.MongoDb", "src\activities\webhooks\Elsa.Webhooks.Persistence.MongoDb\Elsa.Webhooks.Persistence.MongoDb.csproj", "{08D8228B-F989-434E-AC73-C08086745BCC}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Webhooks.Persistence.YesSql", "src\activities\webhooks\Elsa.Webhooks.Persistence.YesSql\Elsa.Webhooks.Persistence.YesSql.csproj", "{EE147504-555D-4EFC-A79A-34748666AA6C}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElsaDashboard.Web", "src\dashboards\ElsaDashboard\ElsaDashboard.Web.csproj", "{1129868E-BA72-44C4-941C-A28D9001504B}"
+EndProject
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.DistributedLocking.Redis", "src\locking\Elsa.DistributedLocking.Redis\Elsa.DistributedLocking.Redis.csproj", "{D1644D32-AA51-4D10-942E-F2722DB963B4}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.Conductor", "src\activities\Elsa.Activities.Conductor\Elsa.Activities.Conductor.csproj", "{E62077E1-59F4-4937-B45B-59F86417BCF8}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SampleClientApp.Web", "src\samples\server\SampleClientApp.Web\SampleClientApp.Web.csproj", "{7756E22A-AD59-46C1-A019-1D28D7217347}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElsaDashboard.Web", "src\dashboards\ElsaDashboard\ElsaDashboard.Web.csproj", "{1129868E-BA72-44C4-941C-A28D9001504B}"
 EndProject
@@ -441,10 +470,6 @@ Global
 		{F5124847-D046-4458-A89D-CD796FEDEE1A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F5124847-D046-4458-A89D-CD796FEDEE1A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F5124847-D046-4458-A89D-CD796FEDEE1A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0B147307-64FF-4496-9DC9-8F83013AC045}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0B147307-64FF-4496-9DC9-8F83013AC045}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0B147307-64FF-4496-9DC9-8F83013AC045}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0B147307-64FF-4496-9DC9-8F83013AC045}.Release|Any CPU.Build.0 = Release|Any CPU
 		{935888CF-E871-42BB-A47D-5E1168269A03}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{935888CF-E871-42BB-A47D-5E1168269A03}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{935888CF-E871-42BB-A47D-5E1168269A03}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -649,6 +674,14 @@ Global
 		{D55BC08B-CA82-478A-99F7-EDE90AC33160}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D55BC08B-CA82-478A-99F7-EDE90AC33160}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D55BC08B-CA82-478A-99F7-EDE90AC33160}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BE284508-9582-4FCB-B0DD-0761AB940AD7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BE284508-9582-4FCB-B0DD-0761AB940AD7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BE284508-9582-4FCB-B0DD-0761AB940AD7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BE284508-9582-4FCB-B0DD-0761AB940AD7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3EB488DF-3C28-4DAD-B43E-6062E39629AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3EB488DF-3C28-4DAD-B43E-6062E39629AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3EB488DF-3C28-4DAD-B43E-6062E39629AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3EB488DF-3C28-4DAD-B43E-6062E39629AB}.Release|Any CPU.Build.0 = Release|Any CPU
 		{775EFD59-F99C-4D38-B54E-9734C9D9649A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{775EFD59-F99C-4D38-B54E-9734C9D9649A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{775EFD59-F99C-4D38-B54E-9734C9D9649A}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -785,7 +818,6 @@ Global
 		{7EC9B4E1-820E-4D53-B4E2-9815E31C7AE8} = {FC9F520F-BA51-4AD2-BFEE-EF787798E734}
 		{C6A54F89-271D-402E-A38D-6C3A9DB7DF9C} = {FC9F520F-BA51-4AD2-BFEE-EF787798E734}
 		{F5124847-D046-4458-A89D-CD796FEDEE1A} = {FC9F520F-BA51-4AD2-BFEE-EF787798E734}
-		{0B147307-64FF-4496-9DC9-8F83013AC045} = {FC9F520F-BA51-4AD2-BFEE-EF787798E734}
 		{935888CF-E871-42BB-A47D-5E1168269A03} = {FC9F520F-BA51-4AD2-BFEE-EF787798E734}
 		{EA1D7E39-D77D-4B13-BAD0-76BA30547019} = {FC9F520F-BA51-4AD2-BFEE-EF787798E734}
 		{0FC36CEC-35B3-4EB7-9DD7-0F2A1C4E9313} = {FC9F520F-BA51-4AD2-BFEE-EF787798E734}
@@ -852,6 +884,8 @@ Global
 		{3A30EFFE-32D8-40B8-9C62-427037BB5424} = {EEBEA8AF-C8A8-4C71-A96C-D5836DE24359}
 		{3DF05CFC-AC77-489F-9A42-C4FDB599AA69} = {8B6B40A8-DF21-4CD2-BABD-474B79D0C3AF}
 		{D55BC08B-CA82-478A-99F7-EDE90AC33160} = {C865B0FD-E505-48F0-BFAF-0D4D7C1B5CA1}
+		{BE284508-9582-4FCB-B0DD-0761AB940AD7} = {B43B546E-23F3-46E8-ACB7-D04F05CDA180}
+		{3EB488DF-3C28-4DAD-B43E-6062E39629AB} = {FC9F520F-BA51-4AD2-BFEE-EF787798E734}
 		{775EFD59-F99C-4D38-B54E-9734C9D9649A} = {22E75696-6FE9-436A-9097-EE21C603F818}
 		{30A9B140-14F5-4D00-84ED-1447F96D13C8} = {FC9F520F-BA51-4AD2-BFEE-EF787798E734}
 		{3E2423CF-50E6-4D2B-8749-17B1EF540FE4} = {22E75696-6FE9-436A-9097-EE21C603F818}
