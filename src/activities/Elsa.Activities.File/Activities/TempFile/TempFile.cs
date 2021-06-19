@@ -1,10 +1,6 @@
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Services;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
 
 namespace Elsa.Activities.File
 {

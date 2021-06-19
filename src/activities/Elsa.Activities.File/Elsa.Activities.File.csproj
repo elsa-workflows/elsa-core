@@ -12,6 +12,7 @@
             * ReadFile
             * TempFile</Description>
     <PackageTags>elsa, workflows</PackageTags>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>

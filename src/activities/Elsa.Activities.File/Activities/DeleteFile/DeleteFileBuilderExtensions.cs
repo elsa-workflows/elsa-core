@@ -1,11 +1,11 @@
 using Elsa.Builders;
 using Elsa.Services.Models;
 using System;
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading.Tasks;
 
+// ReSharper disable ExplicitCallerInfoArgument
+// ReSharper disable once CheckNamespace
 namespace Elsa.Activities.File
 {
     public static class DeleteFileBuilderExtensions

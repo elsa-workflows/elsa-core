@@ -2,10 +2,8 @@ using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Services;
 using Elsa.Services.Models;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
+// ReSharper disable once CheckNamespace
 namespace Elsa.Activities.File
 {
     [Action(Category = "File",
@@ -19,10 +17,7 @@ namespace Elsa.Activities.File
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
             var exists = System.IO.File.Exists(Path);
-            if (exists)
-                return Outcome(OutcomeNames.True);
-            else
-                return Outcome(OutcomeNames.False);
+            return Outcome(exists ? OutcomeNames.True : OutcomeNames.False);
         }
     }
 }
