@@ -68,7 +68,7 @@ namespace Elsa.Services.Models
             return data.GetState<T>(propertyName);
         }
 
-        public T? GetState<T>(string propertyName, Func<T> defaultValue)
+        public T GetState<T>(string propertyName, Func<T> defaultValue)
         {
             var data = GetData();
             return data.GetState(propertyName, defaultValue);

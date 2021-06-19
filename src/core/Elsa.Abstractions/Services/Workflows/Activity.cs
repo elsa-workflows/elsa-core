@@ -51,7 +51,7 @@ namespace Elsa.Services
         protected virtual RegisterTaskResult RegisterTask(Func<WorkflowExecutionContext, CancellationToken, ValueTask> task) => new(task);
 
         protected virtual T? GetState<T>([CallerMemberName] string name = null!) => Data.GetState<T>(name);
-        protected virtual T? GetState<T>(Func<T> defaultValue, [CallerMemberName] string name = null!) => Data.GetState(name, defaultValue);
+        protected virtual T GetState<T>(Func<T> defaultValue, [CallerMemberName] string name = null!) => Data.GetState(name, defaultValue);
         protected virtual void SetState(object? value, [CallerMemberName] string name = null!) => Data.SetState(name, value);
     }
 }
