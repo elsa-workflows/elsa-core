@@ -2,8 +2,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Webhooks.Swagger.Examples;
 using Elsa.Persistence.Specifications;
-using Elsa.Server.Api.Swagger.Examples;
-using Elsa.Services;
 using Elsa.Webhooks.Models;
 using Elsa.Webhooks.Persistence;
 using Microsoft.AspNetCore.Http;
@@ -15,39 +13,30 @@ namespace Elsa.Activities.Webhooks.Endpoints.WebhookDefinitions
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{apiVersion:apiVersion}/webhook-definitions")]
+    [Route("v{apiVersion:apiVersion}/webhook-definitions/{id}")]
     [Produces("application/json")]
-    public class Save : ControllerBase
+    public class Put : ControllerBase
     {
         private readonly IWebhookDefinitionStore _store;
-        private readonly IIdGenerator _idGenerator;
+        public Put(IWebhookDefinitionStore store) => _store = store;
 
-        public Save(IWebhookDefinitionStore store, IIdGenerator idGenerator)
-        {
-            _store = store;
-            _idGenerator = idGenerator;
-        }
-
-        [HttpPost]
-        [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(WebhookDefinition))]
+        [HttpPut]
+        [ProducesResponseType(typeof(WebhookDefinition), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         [SwaggerResponseExample(StatusCodes.Status200OK, typeof(WebhookDefinitionExample))]
         [SwaggerOperation(
-            Summary = "Creates a new webhook definition or updates an existing one.",
-            Description =
-                "Creates a new webhook definition or updates an existing one.",
-            OperationId = "WebhookDefinitions.Post",
+            Summary = "Updates an existing webhook.",
+            Description = "Updates an existing webhook definition.",
+            OperationId = "WebhookDefinitions.Put",
             Tags = new[] { "WebhookDefinitions" })
         ]
         public async Task<ActionResult<WebhookDefinition>> Handle([FromBody] SaveRequest request, [FromRoute] ApiVersion apiVersion, CancellationToken cancellationToken)
         {
             var webhookId = request.Id;
-            var webhookDefinition = !string.IsNullOrWhiteSpace(webhookId) ? await _store.FindAsync(new EntityIdSpecification<WebhookDefinition>(webhookId), cancellationToken) : default;
+            var webhookDefinition = await _store.FindAsync(new EntityIdSpecification<WebhookDefinition>(webhookId), cancellationToken);
 
             if (webhookDefinition == null)
-                webhookDefinition = new WebhookDefinition
-                {
-                    Id = !string.IsNullOrWhiteSpace(webhookId) ? webhookId : _idGenerator.Generate(),
-                };
+                return NotFound();
 
             webhookDefinition.Name = request.Name.Trim();
             webhookDefinition.Path = request.Path.Trim();
@@ -56,8 +45,8 @@ namespace Elsa.Activities.Webhooks.Endpoints.WebhookDefinitions
             webhookDefinition.IsEnabled = request.IsEnabled;
 
             await _store.SaveAsync(webhookDefinition, cancellationToken);
-
-            return CreatedAtAction("Handle", "Get", new { id = webhookDefinition.Id, apiVersion = apiVersion.ToString() }, webhookDefinition);
+            
+            return Ok(webhookDefinition);
         }
     }
 }

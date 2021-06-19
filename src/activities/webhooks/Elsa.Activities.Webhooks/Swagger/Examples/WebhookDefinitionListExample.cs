@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
-using Elsa.Activities.Webhooks.Models;
+using Elsa.Webhooks.Models;
 using Swashbuckle.AspNetCore.Filters;
 
-namespace Elsa.Server.Api.Swagger.Examples
+namespace Elsa.Activities.Webhooks.Swagger.Examples
 {
     public class WebhookDefinitionListExample : IExamplesProvider<IEnumerable<WebhookDefinition>>
     {

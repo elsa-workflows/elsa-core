@@ -1,8 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
-using Elsa.Webhooks.Abstractions.Models;
-using Elsa.Webhooks.Abstractions.Persistence;
 using Elsa.Webhooks.Persistence.YesSql.Data;
 using Elsa.Webhooks.Persistence.YesSql.Documents;
 using Elsa.Webhooks.Persistence.YesSql.Indexes;
@@ -11,6 +9,7 @@ using Elsa.Persistence.YesSql;
 using Elsa.Persistence.YesSql.Services;
 using Elsa.Persistence.YesSql.Stores;
 using AutoMapper;
+using Elsa.Webhooks.Models;
 using Microsoft.Extensions.Logging;
 using YesSql;
 using IIdGenerator = Elsa.Services.IIdGenerator;  

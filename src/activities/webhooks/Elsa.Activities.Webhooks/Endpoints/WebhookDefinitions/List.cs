@@ -2,13 +2,14 @@ using System.Collections.Generic;
 using System.Net.Mime;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.Webhooks.Swagger.Examples;
 using Elsa.Models;
 using Elsa.Persistence.Specifications;
 using Elsa.Server.Api.Models;
 using Elsa.Server.Api.Services;
 using Elsa.Server.Api.Swagger.Examples;
-using Elsa.Webhooks.Abstractions.Models;
-using Elsa.Webhooks.Abstractions.Persistence;
+using Elsa.Webhooks.Models;
+using Elsa.Webhooks.Persistence;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -22,12 +23,12 @@ namespace Elsa.Activities.Webhooks.Endpoints.WebhookDefinitions
     [Produces(MediaTypeNames.Application.Json)]
     public class List : Controller
     {
-        private readonly IWebhookDefinitionStore _webhookDefinitionStore;
+        private readonly IWebhookDefinitionStore _store;
         private readonly IEndpointContentSerializerSettingsProvider _serializerSettingsProvider;
 
-        public List(IWebhookDefinitionStore webhookDefinitionStore, IEndpointContentSerializerSettingsProvider serializerSettingsProvider)
+        public List(IWebhookDefinitionStore store, IEndpointContentSerializerSettingsProvider serializerSettingsProvider)
         {
-            _webhookDefinitionStore = webhookDefinitionStore;
+            _store = store;
             _serializerSettingsProvider = serializerSettingsProvider;
         }
 
@@ -43,7 +44,7 @@ namespace Elsa.Activities.Webhooks.Endpoints.WebhookDefinitions
         public async Task<ActionResult<PagedList<WorkflowDefinition>>> Handle(CancellationToken cancellationToken = default)
         {
             var specification = Specification<WebhookDefinition>.Identity;
-            var items = await _webhookDefinitionStore.FindManyAsync(specification, cancellationToken: cancellationToken);
+            var items = await _store.FindManyAsync(specification, cancellationToken: cancellationToken);
 
             return Json(items, _serializerSettingsProvider.GetSettings());
         }

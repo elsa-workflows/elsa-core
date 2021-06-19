@@ -1,7 +1,7 @@
 using System;
 using Elsa.Activities.Webhooks.Options;
 using Elsa.Caching;
-using Elsa.Webhooks.Abstractions.Persistence;
+using Elsa.Webhooks.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Activities.Webhooks

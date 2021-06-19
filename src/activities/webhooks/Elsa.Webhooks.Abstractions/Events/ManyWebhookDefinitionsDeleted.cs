@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using Elsa.Webhooks.Abstractions.Models;
+using Elsa.Webhooks.Models;
 using MediatR;
 
-namespace Elsa.Webhooks.Abstractions.Events
+namespace Elsa.Webhooks.Events
 {
     public class ManyWebhookDefinitionsDeleted : INotification
     {

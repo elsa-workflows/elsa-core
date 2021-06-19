@@ -1,10 +1,12 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Elsa.Activities.Webhooks.Endpoints.WebhookDefinitions
 {
     public sealed record SaveRequest
     {
         public string? Id { get; init; }
-        public string? Path { get; init; }
-        public string? Name { get; init; }
+        [Required] public string Path { get; init; } = default!;
+        [Required] public string Name { get; init; }= default!;
         public string? Description { get; init; }
         public string? PayloadTypeName { get; init; }
         public bool IsEnabled { get; init; }
@@ -16,5 +18,5 @@ namespace Elsa.Activities.Webhooks.Endpoints.WebhookDefinitions
         string? Name,
         string? Description,
         string? PayloadTypeName,
-        bool IsEnabled); 
+        bool IsEnabled);
 }

@@ -1,7 +1,7 @@
 using Elsa.Persistence.InMemory;
 using Elsa.Services;
-using Elsa.Webhooks.Abstractions.Models;
-using Elsa.Webhooks.Abstractions.Persistence;
+using Elsa.Webhooks.Models;
+using Elsa.Webhooks.Persistence;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace Elsa.Activities.Webhooks.Persistence.InMemory

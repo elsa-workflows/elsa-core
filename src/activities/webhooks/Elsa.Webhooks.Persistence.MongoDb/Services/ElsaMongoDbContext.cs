@@ -1,6 +1,6 @@
 using System;
 using Elsa.Persistence.MongoDb.Options;
-using Elsa.Webhooks.Abstractions.Models;
+using Elsa.Webhooks.Models;
 using Elsa.Webhooks.Persistence.MongoDb.Data;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;

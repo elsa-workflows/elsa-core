@@ -1,7 +1,7 @@
 using Elsa.Persistence.Specifications;
-using Elsa.Webhooks.Abstractions.Models;
 using System;
 using System.Linq.Expressions;
+using Elsa.Webhooks.Models;
 
 namespace Elsa.Activities.Webhooks.Persistence.Specifications.WebhookDefinitions
 {

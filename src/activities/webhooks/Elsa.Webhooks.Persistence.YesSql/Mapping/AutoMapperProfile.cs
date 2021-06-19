@@ -1,6 +1,6 @@
-using Elsa.Webhooks.Abstractions.Models;
 using Elsa.Webhooks.Persistence.YesSql.Documents;
 using AutoMapper;
+using Elsa.Webhooks.Models;
 
 namespace Elsa.Webhooks.Persistence.YesSql.Mapping
 {

@@ -1,7 +1,6 @@
 using Elsa.Services;
 using Elsa.Persistence.MongoDb.Stores;
-using Elsa.Webhooks.Abstractions.Models;
-using Elsa.Webhooks.Abstractions.Persistence;
+using Elsa.Webhooks.Models;
 using MongoDB.Driver;
 
 namespace Elsa.Webhooks.Persistence.MongoDb.Stores

@@ -3,10 +3,9 @@ using System.Linq.Expressions;
 using Elsa.Persistence.EntityFramework.Core.Stores;
 using Elsa.Persistence.Specifications;
 using Elsa.Serialization;
-using Elsa.Webhooks.Abstractions.Models;
-using Elsa.Webhooks.Abstractions.Persistence;
 using Elsa.Webhooks.Persistence.EntityFramework.Core.Services;
 using AutoMapper;
+using Elsa.Webhooks.Models;
 
 namespace Elsa.Webhooks.Persistence.EntityFramework.Core.Stores
 {

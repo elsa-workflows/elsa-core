@@ -2,7 +2,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Services;
-using Elsa.Webhooks.Abstractions.Models;
+using Elsa.Webhooks.Models;
 using MongoDB.Driver;
 
 namespace Elsa.Webhooks.Persistence.MongoDb.Services

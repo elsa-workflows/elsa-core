@@ -1,6 +1,6 @@
 using System.Linq;
 using Elsa.Persistence.EntityFramework.Core.Configuration;
-using Elsa.Webhooks.Abstractions.Models;
+using Elsa.Webhooks.Models;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
 

@@ -1,7 +1,7 @@
 using System;
 using Elsa.Models;
-using Elsa.Webhooks.Abstractions.Models;
 using Elsa.Persistence.MongoDb.Serializers;
+using Elsa.Webhooks.Models;
 using MongoDb.Bson.NodaTime;
 using MongoDB.Bson.Serialization;
 

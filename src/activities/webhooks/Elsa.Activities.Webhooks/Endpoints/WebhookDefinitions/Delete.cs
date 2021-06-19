@@ -1,9 +1,8 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Persistence.Specifications;
-using Elsa.Webhooks.Abstractions.Models;
-using Elsa.Webhooks.Abstractions.Persistence;
-using Elsa.Webhooks.Abstractions.Services;
+using Elsa.Webhooks.Models;
+using Elsa.Webhooks.Persistence;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -16,17 +15,12 @@ namespace Elsa.Activities.Webhooks.Endpoints.WebhookDefinitions
     [Produces("application/json")]
     public class Delete : ControllerBase
     {
-        private readonly IWebhookDefinitionStore _webhookDefinitionStore;
-        private readonly IWebhookPublisher _webhookPublisher;
-
-        public Delete(IWebhookDefinitionStore webhookDefinitionStore, IWebhookPublisher webhookPublisher)
-        {
-            _webhookDefinitionStore = webhookDefinitionStore;
-            _webhookPublisher = webhookPublisher;
-        }
+        private readonly IWebhookDefinitionStore _store;
+        public Delete(IWebhookDefinitionStore store) => _store = store;
 
         [HttpDelete]
-        [ProducesResponseType(StatusCodes.Status202Accepted)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         [SwaggerOperation(
             Summary = "Deletes a webhook definition.",
             Description = "Deletes a webhook definition.",
@@ -35,8 +29,13 @@ namespace Elsa.Activities.Webhooks.Endpoints.WebhookDefinitions
         ]
         public async Task<IActionResult> Handle(string id, CancellationToken cancellationToken)
         {
-            await _webhookPublisher.DeleteAsync(id, cancellationToken);
-            return Accepted();
+            var webhookDefinition = await _store.FindAsync(new EntityIdSpecification<WebhookDefinition>(id), cancellationToken);
+
+            if (webhookDefinition == null)
+                return NotFound();
+            
+            await _store.DeleteAsync(webhookDefinition, cancellationToken);
+            return Ok();
         }
     }
 }

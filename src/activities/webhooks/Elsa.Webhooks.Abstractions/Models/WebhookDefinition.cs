@@ -1,6 +1,6 @@
 using Elsa.Models;
 
-namespace Elsa.Webhooks.Abstractions.Models
+namespace Elsa.Webhooks.Models
 {
     public class WebhookDefinition : Entity, ITenantScope
     {

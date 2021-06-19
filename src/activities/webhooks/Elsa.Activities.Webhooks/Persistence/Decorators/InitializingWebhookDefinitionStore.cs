@@ -4,8 +4,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Persistence.Specifications;
 using Elsa.Services;
-using Elsa.Webhooks.Abstractions.Models;
-using Elsa.Webhooks.Abstractions.Persistence;
+using Elsa.Webhooks.Models;
+using Elsa.Webhooks.Persistence;
 
 namespace Elsa.Activities.Webhooks.Persistence.Decorators
 {

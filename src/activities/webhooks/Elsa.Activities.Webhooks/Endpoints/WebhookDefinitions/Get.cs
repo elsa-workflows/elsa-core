@@ -1,12 +1,12 @@
 using System.Net.Mime;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Models;
+using Elsa.Activities.Webhooks.Swagger.Examples;
 using Elsa.Persistence.Specifications;
 using Elsa.Server.Api.Services;
 using Elsa.Server.Api.Swagger.Examples;
-using Elsa.Webhooks.Abstractions.Models;
-using Elsa.Webhooks.Abstractions.Persistence;
+using Elsa.Webhooks.Models;
+using Elsa.Webhooks.Persistence;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -20,12 +20,12 @@ namespace Elsa.Activities.Webhooks.Endpoints.WebhookDefinitions
     [Produces(MediaTypeNames.Application.Json)]
     public class Get : Controller
     {
-        private readonly IWebhookDefinitionStore _webhookDefinitionStore;
+        private readonly IWebhookDefinitionStore _store;
         private readonly IEndpointContentSerializerSettingsProvider _serializerSettingsProvider;
 
-        public Get(IWebhookDefinitionStore webhookDefinitionStore, IEndpointContentSerializerSettingsProvider serializerSettingsProvider)
+        public Get(IWebhookDefinitionStore store, IEndpointContentSerializerSettingsProvider serializerSettingsProvider)
         {
-            _webhookDefinitionStore = webhookDefinitionStore;
+            _store = store;
             _serializerSettingsProvider = serializerSettingsProvider;
         }
 
@@ -41,8 +41,8 @@ namespace Elsa.Activities.Webhooks.Endpoints.WebhookDefinitions
         ]
         public async Task<IActionResult> Handle(string id, CancellationToken cancellationToken = default)
         {
-            var webhookDefinition = await _webhookDefinitionStore.FindAsync(new EntityIdSpecification<WebhookDefinition>(id), cancellationToken);
-            return webhookDefinition == null ? (IActionResult) NotFound() : Json(webhookDefinition, _serializerSettingsProvider.GetSettings());
+            var webhookDefinition = await _store.FindAsync(new EntityIdSpecification<WebhookDefinition>(id), cancellationToken);
+            return webhookDefinition == null ? NotFound() : Json(webhookDefinition, _serializerSettingsProvider.GetSettings());
         }
     }
 }

@@ -3,9 +3,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Persistence.Specifications;
-using Elsa.Webhooks.Abstractions.Events;
-using Elsa.Webhooks.Abstractions.Models;
-using Elsa.Webhooks.Abstractions.Persistence;
+using Elsa.Webhooks.Events;
+using Elsa.Webhooks.Models;
+using Elsa.Webhooks.Persistence;
 using MediatR;
 using Open.Linq.AsyncExtensions;
 

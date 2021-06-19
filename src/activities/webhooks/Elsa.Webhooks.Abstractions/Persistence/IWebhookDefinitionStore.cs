@@ -1,7 +1,7 @@
 using Elsa.Persistence;
-using Elsa.Webhooks.Abstractions.Models;
+using Elsa.Webhooks.Models;
 
-namespace Elsa.Webhooks.Abstractions.Persistence
+namespace Elsa.Webhooks.Persistence
 {
     public interface IWebhookDefinitionStore : IStore<WebhookDefinition>
     {

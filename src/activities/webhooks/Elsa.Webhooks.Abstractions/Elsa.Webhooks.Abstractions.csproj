@@ -10,18 +10,9 @@
       This package provides Webhook abstractions.
     </Description>
     <PackageTags>elsa, workflows, webhooks</PackageTags>
+    <RootNamespace>Elsa.Webhooks</RootNamespace>
   </PropertyGroup>
   
-  <ItemGroup>
-    <Compile Remove="Services\**" />
-    <EmbeddedResource Remove="Services\**" />
-    <None Remove="Services\**" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <Compile Include="Services\IWebhookPublisher.cs" />
-  </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\..\..\core\Elsa.Abstractions\Elsa.Abstractions.csproj" />
   </ItemGroup>

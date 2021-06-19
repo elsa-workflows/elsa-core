@@ -1,6 +1,6 @@
-using Elsa.Webhooks.Abstractions.Models;
+using Elsa.Webhooks.Models;
 
-namespace Elsa.Webhooks.Abstractions.Events
+namespace Elsa.Webhooks.Events
 {
     public class WebhookDefinitionDeleted : WebhookDefinitionNotification
     {

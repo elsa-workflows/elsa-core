@@ -1,7 +1,7 @@
-using Elsa.Webhooks.Abstractions.Models;
+using Elsa.Webhooks.Models;
 using MediatR;
 
-namespace Elsa.Webhooks.Abstractions.Events
+namespace Elsa.Webhooks.Events
 {
     public abstract class WebhookDefinitionNotification : INotification
     {

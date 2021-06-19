@@ -1,8 +1,8 @@
 using System;
-using Elsa.Activities.Webhooks.Models;
+using Elsa.Webhooks.Models;
 using Swashbuckle.AspNetCore.Filters;
 
-namespace Elsa.Server.Api.Swagger.Examples
+namespace Elsa.Activities.Webhooks.Swagger.Examples
 {
     public class WebhookDefinitionExample : IExamplesProvider<WebhookDefinition>
     {

@@ -1,4 +1,4 @@
-using Elsa.Webhooks.Abstractions.Models;
+using Elsa.Webhooks.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
