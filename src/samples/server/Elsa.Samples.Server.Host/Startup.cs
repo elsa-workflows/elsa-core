@@ -35,10 +35,7 @@ namespace Elsa.Samples.Server.Host
             var mongoDbConnectionString = Configuration.GetConnectionString("MongoDb");
 
             services.AddControllers();
-
-            //List<Assembly> assemblies = Assembly.GetExecutingAssembly().GetReferencedAssemblies().Select((item) => Assembly.Load(item)).ToList();
-            List<Assembly> assemblies = AppDomain.CurrentDomain.GetAssemblies().ToList<Assembly>();
-
+            
             services
                 .AddActivityPropertyOptionsProvider<VehicleActivity>()
                 .AddRuntimeSelectItemsProvider<VehicleActivity>()
@@ -51,10 +48,7 @@ namespace Elsa.Samples.Server.Host
                     //.UseRabbitMq(Configuration.GetConnectionString("RabbitMq"))
                     //.UseRebusCacheSignal()
                     //.UseRedisCacheSignal()
-                    .UseDefaultWorkflowStorageProvider<TransientWorkflowStorageProvider>()
-                    .AddConsoleActivities()
-
-                    .AddHttpActivities(elsaSection.GetSection("Http").Bind)
+                    
                     .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
                     .AddQuartzTemporalActivities()
                     // .AddQuartzTemporalActivities(configureQuartz: quartz => quartz.UsePersistentStore(store =>
@@ -70,15 +64,13 @@ namespace Elsa.Samples.Server.Host
                     .AddConductorActivities(options => elsaSection.GetSection("Conductor").Bind(options))
                     .AddActivitiesFrom<Startup>()
                     .AddWorkflowsFrom<Startup>()
-                    .AddFeatures(assemblies, elsaSection.GetSection("Features").Get<List<string>>())
+                    .AddFeatures(Configuration, elsaSection.GetSection("Features").Get<List<string>>())
                 );
 
             // Elsa API endpoints.
             services
                 .AddElsaApiEndpoints()
                 .AddElsaSwagger();
-
-            //AddFeatures();
 
             // Allow arbitrary client browser apps to access the API for demo purposes only.
             // In a production environment, make sure to allow only origins you trust.
@@ -96,7 +88,7 @@ namespace Elsa.Samples.Server.Host
 
             app
                 .UseCors()
-                .UseHttpActivities()
+                .UseElsaFeatures()
                 .UseRouting()
                 .UseEndpoints(endpoints => { endpoints.MapControllers(); });
         }

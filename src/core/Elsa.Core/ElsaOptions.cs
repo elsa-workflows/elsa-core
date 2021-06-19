@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using Elsa.Builders;
 using Elsa.Models;
 using Elsa.Persistence;
@@ -73,6 +74,7 @@ namespace Elsa
         internal Func<IServiceProvider, IWorkflowInstanceDispatcher> WorkflowInstanceDispatcherFactory { get; set; }
         internal Func<IServiceProvider, IWorkflowDispatcher> CorrelatingWorkflowDispatcherFactory { get; set; }
         internal Action<ServiceBusEndpointConfigurationContext> ConfigureServiceBusEndpoint { get; set; }
+        internal ICollection<(Type type, MethodInfo methodInfo)> ConfigureAppMethods { get; set; }
 
         private static void ConfigureInMemoryServiceBusEndpoint(ServiceBusEndpointConfigurationContext context)
         {

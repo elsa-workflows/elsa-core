@@ -9,6 +9,7 @@ using Elsa.Persistence;
 using Elsa.Providers.WorkflowStorage;
 using Elsa.Services;
 using Elsa.Services.Messaging;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Rebus.DataBus.InMem;
@@ -20,7 +21,8 @@ namespace Elsa
 {
     public class ElsaOptionsBuilder
     {
-        private const string configureFetureMethod = "ConfigureElsa";
+        private const string ConfigureElsaMethod = "ConfigureElsa";
+        private const string ConfigureAppMethod = "ConfigureApp";
 
         public ElsaOptionsBuilder(IServiceCollection services)
         {
@@ -60,29 +62,44 @@ namespace Elsa
             return this;
         }
 
-        public ElsaOptionsBuilder AddFeatures(IEnumerable<Assembly> assemblies, IEnumerable<string> features)
-        {            
-            foreach (Assembly assembly in assemblies)
+        public ElsaOptionsBuilder AddFeatures(IConfiguration configuration, IEnumerable<string> features) => AddFeatures(AppDomain.CurrentDomain.GetAssemblies(), configuration, features);
+
+        public ElsaOptionsBuilder AddFeatures(IEnumerable<Assembly> assemblies, IConfiguration configuration, IEnumerable<string> features)
+        {
+            var enabledFeatures = features.ToHashSet();
+
+            var startupTypesQuery = from assembly in assemblies
+                from type in assembly.GetTypes()
+                where type.IsClass
+                let featureAttribute = type.GetCustomAttribute<FeatureAttribute>()
+                where featureAttribute != null && enabledFeatures.Contains(featureAttribute.FeatureName)
+                select type;
+
+            var startupTypes = startupTypesQuery.ToList();
+
+            var configureElsaMethodsQuery =
+                from type in startupTypes
+                let methodInfo = type.GetMethod(ConfigureElsaMethod)
+                where methodInfo != null
+                select (type, methodInfo);
+
+            var configureElsaMethodsResults = configureElsaMethodsQuery.ToList();
+
+            foreach (var (type, method) in configureElsaMethodsResults)
             {
-                foreach (Type type in assembly.GetTypes())
-                {
-                    var attributes = type.GetCustomAttributes(typeof(FeatureAttribute), true);
-                    
-                    foreach (Attribute attribute in attributes)
-                    {
-                        if (!features.Contains(((FeatureAttribute)attribute).FeatureName)) continue;
-
-                        MethodInfo methodInfo = type.GetMethod(configureFetureMethod);
-
-                        if (methodInfo != null)
-                        {
-                            object[] parametersArray = new object[] { this };
-                            object classInstance = Activator.CreateInstance(type, null);
-                            methodInfo.Invoke(classInstance, parametersArray);
-                        }
-                    }
-                }
+                var methodParams = method.GetParameters();
+                var parametersArray = methodParams.Select(x => x.ParameterType == typeof(ElsaOptionsBuilder) ? (object) this : x.ParameterType == typeof(IConfiguration) ? configuration : throw new ArgumentException()).ToArray();
+                var classInstance = Activator.CreateInstance(type, null);
+                method.Invoke(classInstance, parametersArray);
             }
+
+            var configureAppMethodsQuery =
+                from type in startupTypes
+                let methodInfo = type.GetMethod(ConfigureAppMethod)
+                where methodInfo != null
+                select (type, methodInfo);
+            
+            ElsaOptions.ConfigureAppMethods = configureAppMethodsQuery.ToList();
 
             return this;
         }
