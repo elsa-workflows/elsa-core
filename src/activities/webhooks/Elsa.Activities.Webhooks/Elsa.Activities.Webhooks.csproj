@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\..\..\..\common.props" />
-    <Import Project="..\..\..\..\configureawait.props" />
+    <Import Project="..\..\..\..\common.props"/>
+    <Import Project="..\..\..\..\configureawait.props"/>
 
     <PropertyGroup>
         <TargetFramework>net5.0</TargetFramework>
@@ -13,33 +13,20 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Compile Remove="Services\**" />
-      <EmbeddedResource Remove="Services\**" />
-      <None Remove="Services\**" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.1"/>
+        <PackageReference Include="System.Text.Encodings.Web" Version="5.0.1"/>
     </ItemGroup>
 
     <ItemGroup>
-      <Compile Remove="Persistence\Decorators\InitializingStoreBase.cs" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Compile Include="Services\WebhookPublisher.cs" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\..\..\core\Elsa.Core\Elsa.Core.csproj" />
-        <ProjectReference Include="..\..\..\server\Elsa.Server.Api\Elsa.Server.Api.csproj" />
-        <ProjectReference Include="..\..\Elsa.Activities.Http\Elsa.Activities.Http.csproj" />
-        <ProjectReference Include="..\Elsa.Webhooks.Abstractions\Elsa.Webhooks.Abstractions.csproj" />
-        <ProjectReference Include="..\Elsa.Webhooks.Persistence.EntityFramework.Core\Elsa.Webhooks.Persistence.EntityFramework.Core.csproj" />
-        <ProjectReference Include="..\Elsa.Webhooks.Persistence.EntityFramework.MySql\Elsa.Webhooks.Persistence.EntityFramework.MySql.csproj" />
-        <ProjectReference Include="..\Elsa.Webhooks.Persistence.EntityFramework.PostgreSql\Elsa.Webhooks.Persistence.EntityFramework.PostgreSql.csproj" />
-        <ProjectReference Include="..\Elsa.Webhooks.Persistence.EntityFramework.Sqlite\Elsa.Webhooks.Persistence.EntityFramework.Sqlite.csproj" />
-        <ProjectReference Include="..\Elsa.Webhooks.Persistence.EntityFramework.SqlServer\Elsa.Webhooks.Persistence.EntityFramework.SqlServer.csproj" />
+        <ProjectReference Include="..\..\..\core\Elsa.Core\Elsa.Core.csproj"/>
+        <ProjectReference Include="..\..\..\server\Elsa.Server.Api\Elsa.Server.Api.csproj"/>
+        <ProjectReference Include="..\..\Elsa.Activities.Http\Elsa.Activities.Http.csproj"/>
+        <ProjectReference Include="..\Elsa.Webhooks.Abstractions\Elsa.Webhooks.Abstractions.csproj"/>
+        <ProjectReference Include="..\Elsa.Webhooks.Persistence.EntityFramework.Core\Elsa.Webhooks.Persistence.EntityFramework.Core.csproj"/>
+        <ProjectReference Include="..\Elsa.Webhooks.Persistence.EntityFramework.MySql\Elsa.Webhooks.Persistence.EntityFramework.MySql.csproj"/>
+        <ProjectReference Include="..\Elsa.Webhooks.Persistence.EntityFramework.PostgreSql\Elsa.Webhooks.Persistence.EntityFramework.PostgreSql.csproj"/>
+        <ProjectReference Include="..\Elsa.Webhooks.Persistence.EntityFramework.Sqlite\Elsa.Webhooks.Persistence.EntityFramework.Sqlite.csproj"/>
+        <ProjectReference Include="..\Elsa.Webhooks.Persistence.EntityFramework.SqlServer\Elsa.Webhooks.Persistence.EntityFramework.SqlServer.csproj"/>
     </ItemGroup>
 
 </Project>

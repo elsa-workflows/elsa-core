@@ -4,10 +4,10 @@ namespace Elsa.Webhooks.Persistence.YesSql.Documents
 {
     public class WebhookDefinitionDocument : YesSqlDocument
     {
-        public string Id { get; set; } = default!;
+        public string WebhookDefinitionId { get; set; } = default!;
         public string? TenantId { get; set; }
-        public string? Name { get; set; }
-        public string? Path { get; set; }
+        public string Name { get; set; } = default!;
+        public string Path { get; set; } = default!;
         public string? Description { get; set; }
         public string? PayloadTypeName { get; set; }
         public bool IsEnabled { get; set; }

@@ -6,7 +6,7 @@ namespace Elsa.Webhooks.Persistence.YesSql.Indexes
 {
     public class WebhookDefinitionIndex : MapIndex
     {
-        public string Id { get; set; } = default!;
+        public string WebhookDefinitionId { get; set; } = default!;
         public string? TenantId { get; set; }
         public bool IsEnabled { get; set; }
     }
@@ -21,7 +21,7 @@ namespace Elsa.Webhooks.Persistence.YesSql.Indexes
                 .Map(
                     webhookDefinition => new WebhookDefinitionIndex
                     {
-                        Id = webhookDefinition.Id,
+                        WebhookDefinitionId = webhookDefinition.WebhookDefinitionId,
                         TenantId = webhookDefinition.TenantId,
                         IsEnabled = webhookDefinition.IsEnabled
                     }

@@ -12,7 +12,7 @@ using AutoMapper;
 using Elsa.Webhooks.Models;
 using Microsoft.Extensions.Logging;
 using YesSql;
-using IIdGenerator = Elsa.Services.IIdGenerator;  
+using IIdGenerator = Elsa.Services.IIdGenerator;
 
 namespace Elsa.Webhooks.Persistence.YesSql.Stores
 {
@@ -22,13 +22,13 @@ namespace Elsa.Webhooks.Persistence.YesSql.Stores
         {
         }
 
-        protected override async Task<WebhookDefinitionDocument?> FindDocumentAsync(ISession session, WebhookDefinition entity, CancellationToken cancellationToken) => await Query<WebhookDefinitionIndex>(session, x => x.Id == entity.Id).FirstOrDefaultAsync();
+        protected override async Task<WebhookDefinitionDocument?> FindDocumentAsync(ISession session, WebhookDefinition entity, CancellationToken cancellationToken) => await Query<WebhookDefinitionIndex>(session, x => x.WebhookDefinitionId == entity.Id).FirstOrDefaultAsync();
 
         protected override IQuery<WebhookDefinitionDocument> MapSpecification(ISession session, ISpecification<WebhookDefinition> specification)
         {
             return specification switch
             {
-                EntityIdSpecification<WebhookDefinition> s => Query<WebhookDefinitionIndex>(session, x => x.Id == s.Id),
+                EntityIdSpecification<WebhookDefinition> s => Query<WebhookDefinitionIndex>(session, x => x.WebhookDefinitionId == s.Id),
                 _ => AutoMapSpecification<WebhookDefinitionIndex>(session, specification)
             };
         }
