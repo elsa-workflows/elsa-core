@@ -1,4 +1,5 @@
 using Elsa.Attributes;
+using Elsa.Services.Startup;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -6,13 +7,13 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.Activities.Http
 {
     [Feature("Http")]
-    public class HttpStartup
+    public class Startup : StartupBase
     {
-        public void ConfigureElsa(ElsaOptionsBuilder elsa, IConfiguration configuration)
+        public override void ConfigureElsa(ElsaOptionsBuilder elsa, IConfiguration configuration)
         {
             elsa.AddHttpActivities(configuration.GetSection("Elsa:Http").Bind);
         }
         
-        public void ConfigureApp(IApplicationBuilder app) => app.UseHttpActivities();
+        public override void ConfigureApp(IApplicationBuilder app) => app.UseHttpActivities();
     }
 }

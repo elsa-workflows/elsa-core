@@ -2,6 +2,7 @@ using Elsa;
 using Elsa.Activities.File;
 using System;
 
+// ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions

@@ -62,48 +62,6 @@ namespace Elsa
             return this;
         }
 
-        public ElsaOptionsBuilder AddFeatures(IConfiguration configuration, IEnumerable<string> features) => AddFeatures(AppDomain.CurrentDomain.GetAssemblies(), configuration, features);
-
-        public ElsaOptionsBuilder AddFeatures(IEnumerable<Assembly> assemblies, IConfiguration configuration, IEnumerable<string> features)
-        {
-            var enabledFeatures = features.ToHashSet();
-
-            var startupTypesQuery = from assembly in assemblies
-                from type in assembly.GetTypes()
-                where type.IsClass
-                let featureAttribute = type.GetCustomAttribute<FeatureAttribute>()
-                where featureAttribute != null && enabledFeatures.Contains(featureAttribute.FeatureName)
-                select type;
-
-            var startupTypes = startupTypesQuery.ToList();
-
-            var configureElsaMethodsQuery =
-                from type in startupTypes
-                let methodInfo = type.GetMethod(ConfigureElsaMethod)
-                where methodInfo != null
-                select (type, methodInfo);
-
-            var configureElsaMethodsResults = configureElsaMethodsQuery.ToList();
-
-            foreach (var (type, method) in configureElsaMethodsResults)
-            {
-                var methodParams = method.GetParameters();
-                var parametersArray = methodParams.Select(x => x.ParameterType == typeof(ElsaOptionsBuilder) ? (object) this : x.ParameterType == typeof(IConfiguration) ? configuration : throw new ArgumentException()).ToArray();
-                var classInstance = Activator.CreateInstance(type, null);
-                method.Invoke(classInstance, parametersArray);
-            }
-
-            var configureAppMethodsQuery =
-                from type in startupTypes
-                let methodInfo = type.GetMethod(ConfigureAppMethod)
-                where methodInfo != null
-                select (type, methodInfo);
-            
-            ElsaOptions.ConfigureAppMethods = configureAppMethodsQuery.ToList();
-
-            return this;
-        }
-
         public ElsaOptionsBuilder AddActivity<T>() where T : IActivity => AddActivity(typeof(T));
 
         public ElsaOptionsBuilder AddActivity(Type activityType)

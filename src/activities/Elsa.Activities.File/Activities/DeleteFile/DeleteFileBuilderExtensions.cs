@@ -18,7 +18,7 @@ namespace Elsa.Activities.File
                 lineNumber,
                 sourceFile);
 
-        public static IActivityBuilder DeleteFile(this IActivityBuilder builder, Func<ActivityExecutionContext, ValueTask<string>> path, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
+        public static IActivityBuilder DeleteFile(this IActivityBuilder builder, Func<ActivityExecutionContext, ValueTask<string?>> path, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
             builder.DeleteFile(activity => activity
                     .Set(x => x.Path, path),
                 lineNumber,
@@ -32,7 +32,7 @@ namespace Elsa.Activities.File
 
         public static IActivityBuilder DeleteFile(this IActivityBuilder builder, Func<ValueTask<string>> path, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
             builder.DeleteFile(activity => activity
-                    .Set(x => x.Path, path),
+                    .Set(x => x.Path, path!),
                 lineNumber,
                 sourceFile);
 

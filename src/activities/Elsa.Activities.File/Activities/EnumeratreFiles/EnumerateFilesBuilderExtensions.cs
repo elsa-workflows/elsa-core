@@ -12,7 +12,7 @@ namespace Elsa.Activities.File
     {
         public static IActivityBuilder EnumerateFiles(this IBuilder builder, Action<ISetupActivity<EnumerateFiles>> setup, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) => builder.Then(setup, null, lineNumber, sourceFile);
 
-        public static IActivityBuilder EnumerateFiles(this IBuilder builder, Func<ActivityExecutionContext, ValueTask<string>> path, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
+        public static IActivityBuilder EnumerateFiles(this IBuilder builder, Func<ActivityExecutionContext, ValueTask<string?>> path, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
             builder.EnumerateFiles(activity => activity
                     .Set(x => x.Path, path),
                 lineNumber,
@@ -24,7 +24,7 @@ namespace Elsa.Activities.File
                 lineNumber,
                 sourceFile);
 
-        public static IActivityBuilder EnumerateFiles(this IBuilder builder, Func<ValueTask<string>> path, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
+        public static IActivityBuilder EnumerateFiles(this IBuilder builder, Func<ValueTask<string?>> path, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
             builder.EnumerateFiles(activity => activity
                     .Set(x => x.Path, path),
                 lineNumber,

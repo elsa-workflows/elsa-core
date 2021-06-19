@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Elsa.Activities.Conductor.Extensions;
+using Elsa.Activities.Console;
+using Elsa.Activities.Http;
 using Elsa.Activities.UserTask.Extensions;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
@@ -30,41 +32,38 @@ namespace Elsa.Samples.Server.Host
         public void ConfigureServices(IServiceCollection services)
         {
             var elsaSection = Configuration.GetSection("Elsa");
-            var sqlServerConnectionString = Configuration.GetConnectionString("SqlServer");
-            var sqliteConnectionString = Configuration.GetConnectionString("Sqlite");
-            var mongoDbConnectionString = Configuration.GetConnectionString("MongoDb");
 
             services.AddControllers();
-            
+
+            // TODO: Determine startup types based on project references, similar to Orchard Core's Targets.props for Applications and Modules.
+            // Note that simply loading all referenced assemblies will not include assemblies where no types have been referenced in this project (due to assembly trimming?).
+            var startups = new[]
+            {
+                typeof(Elsa.Activities.Console.Startup), 
+                typeof(Elsa.Activities.Http.Startup),
+                typeof(Elsa.Activities.Webhooks.Startup),
+                typeof(Elsa.Activities.AzureServiceBus.Startup),
+                typeof(Elsa.Activities.Conductor.Startup),
+                typeof(Elsa.Activities.UserTask.Startup),
+                typeof(Persistence.EntityFramework.Sqlite.Startup),
+                typeof(Persistence.EntityFramework.SqlServer.Startup),
+                typeof(Persistence.EntityFramework.MySql.Startup),
+                typeof(Persistence.EntityFramework.PostgreSql.Startup),
+                typeof(Persistence.MongoDb.Startup),
+                typeof(Persistence.YesSql.SqliteStartup),
+                typeof(Persistence.YesSql.SqlServerStartup),
+                typeof(Persistence.YesSql.MySqlStartup),
+                typeof(Persistence.YesSql.PostgreSqlStartup),
+                typeof(Elsa.Scripting.JavaScript.Startup),
+            };
+
             services
                 .AddActivityPropertyOptionsProvider<VehicleActivity>()
                 .AddRuntimeSelectItemsProvider<VehicleActivity>()
                 .AddElsa(elsa => elsa
-                    .UseEntityFrameworkPersistence(ef => ef.UseSqlite())                    
-                    //.WithContainerName(Configuration["ContainerName"] ?? System.Environment.MachineName)
-                    //.UseEntityFrameworkPersistence(ef => ef.UseSqlite(sqliteConnectionString))
-                    //.UseMongoDbPersistence(options => options.ConnectionString = mongoDbConnectionString)
-                    //.UseYesSqlPersistence(config => config.UsePostgreSql("Server=localhost;Port=5432;Database=yessql5;User Id=root;Password=Password12!;"))
-                    //.UseRabbitMq(Configuration.GetConnectionString("RabbitMq"))
-                    //.UseRebusCacheSignal()
-                    //.UseRedisCacheSignal()
-                    
-                    .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
-                    .AddQuartzTemporalActivities()
-                    // .AddQuartzTemporalActivities(configureQuartz: quartz => quartz.UsePersistentStore(store =>
-                    // {
-                    //     store.UseJsonSerializer();
-                    //     store.UseSqlServer(sqlServerConnectionString);
-                    //     store.UseClustering();
-                    // }))
-                    //.AddHangfireTemporalActivities(hangfire => hangfire.UseInMemoryStorage(), (_, hangfireServer) => hangfireServer.SchedulePollingInterval = TimeSpan.FromSeconds(5))
-                    //.AddHangfireTemporalActivities(hangfire => hangfire.UseSqlServerStorage(sqlServerConnectionString), (_, hangfireServer) => hangfireServer.SchedulePollingInterval = TimeSpan.FromSeconds(5))
-                    .AddJavaScriptActivities()
-                    .AddUserTaskActivities()
-                    .AddConductorActivities(options => elsaSection.GetSection("Conductor").Bind(options))
                     .AddActivitiesFrom<Startup>()
                     .AddWorkflowsFrom<Startup>()
-                    .AddFeatures(Configuration, elsaSection.GetSection("Features").Get<List<string>>())
+                    .AddFeatures(startups, Configuration, elsaSection.GetSection("Features").Get<List<string>>())
                 );
 
             // Elsa API endpoints.
@@ -92,6 +91,5 @@ namespace Elsa.Samples.Server.Host
                 .UseRouting()
                 .UseEndpoints(endpoints => { endpoints.MapControllers(); });
         }
-
     }
 }

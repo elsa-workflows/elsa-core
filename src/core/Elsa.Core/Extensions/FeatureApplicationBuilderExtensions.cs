@@ -1,5 +1,3 @@
-using System;
-using System.Linq;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -11,13 +9,8 @@ namespace Elsa
         {
             var elsaOptions = applicationBuilder.ApplicationServices.GetRequiredService<ElsaOptions>();
 
-            foreach (var (type, method) in elsaOptions.ConfigureAppMethods)
-            {
-                var methodParams = method.GetParameters();
-                var parametersArray = methodParams.Select(x => x.ParameterType == typeof(IApplicationBuilder) ? (object) applicationBuilder : throw new ArgumentException()).ToArray();
-                var classInstance = Activator.CreateInstance(type, null);
-                method.Invoke(classInstance, parametersArray);
-            }
+            foreach (var startup in elsaOptions.Startups) 
+                startup.ConfigureApp(applicationBuilder);
 
             return applicationBuilder;
         }
