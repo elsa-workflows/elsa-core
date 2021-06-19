@@ -46,7 +46,7 @@ namespace Elsa.Services.Models
         public bool Resuming { get; }
         public bool IsFirstPass => WorkflowExecutionContext.IsFirstPass;
 
-        public string? CorrelationId
+        public string CorrelationId
         {
             get => WorkflowExecutionContext.CorrelationId;
             set => WorkflowExecutionContext.CorrelationId = value;

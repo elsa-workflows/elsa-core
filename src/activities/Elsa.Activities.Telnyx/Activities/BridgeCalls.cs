@@ -141,7 +141,7 @@ namespace Elsa.Activities.Telnyx.Activities
                 return input.CallControlId;
 
             var inboundCallActivityId = context.WorkflowExecutionContext.GetInboundConnections(Id).Where(x => x.Source.Activity.Type == nameof(Dial)).Select(x => x.Source.Activity.Id).FirstOrDefault();
-            var inboundCallActivityResponse = inboundCallActivityId != null ? await context.WorkflowExecutionContext.GetActivityPropertyAsync<Dial, DialResponse>(inboundCallActivityId, x => x.DialResponse) : default;
+            var inboundCallActivityResponse = inboundCallActivityId != null ? await context.WorkflowExecutionContext.GetActivityPropertyAsync<Dial, DialResponse>(inboundCallActivityId, x => x.DialResponse!) : default;
             return inboundCallActivityResponse != null ? inboundCallActivityResponse.CallControlId : null;
         }
     }
