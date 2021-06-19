@@ -50,7 +50,7 @@ namespace Elsa.Services
         /// <summary>
         /// A data store for the activity to store information that needs to be persisted as part of the workflow instance.
         /// </summary>
-        IDictionary<string, object> Data { get; set; }
+        IDictionary<string, object?> Data { get; set; }
 
         /// <summary>
         /// Returns a value of whether the specified activity can execute.

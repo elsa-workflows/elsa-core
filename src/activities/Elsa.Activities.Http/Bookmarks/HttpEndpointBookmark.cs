@@ -22,6 +22,6 @@ namespace Elsa.Activities.Http.Bookmarks
             return methods.Select(CreateBookmark);
         }
 
-        private static string? ToLower(string? s) => s?.ToLowerInvariant();
+        private static string ToLower(string s) => s.ToLowerInvariant();
     }
 }
