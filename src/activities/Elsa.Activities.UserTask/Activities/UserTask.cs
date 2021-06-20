@@ -54,6 +54,6 @@ namespace Elsa.Activities.UserTask.Activities
             return Outcome(userAction);
         }
 
-        private string GetUserAction(ActivityExecutionContext context) => (string) context.Input!;
+        private static string GetUserAction(ActivityExecutionContext context) => (string) context.Input!;
     }
 }
