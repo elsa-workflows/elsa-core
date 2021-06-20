@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using Newtonsoft.Json.Linq;
 using NodaTime;
 using NodaTime.Text;
 
@@ -15,6 +16,10 @@ namespace Elsa
                 return default!;
 
             var underlyingTargetType = Nullable.GetUnderlyingType(targetType) ?? targetType;
+            
+            if (targetType == typeof(object))
+                return value;
+            
             var sourceType = value.GetType();
             var underlyingSourceType = Nullable.GetUnderlyingType(sourceType) ?? sourceType;
 
@@ -23,6 +28,9 @@ namespace Elsa
 
             if (value == default!)
                 return default!;
+            
+            if(typeof(JToken).IsAssignableFrom(underlyingSourceType))
+                return StateDictionaryExtensions.DeserializeState((JToken) value, underlyingTargetType);
 
             if (underlyingTargetType == typeof(Duration))
                 return DurationPattern.JsonRoundtrip.Parse(value!.ToString()).Value!;
@@ -39,6 +47,12 @@ namespace Elsa
 
             if (underlyingTargetType.IsInstanceOfType(value))
                 return value;
+
+            if (underlyingTargetType.IsEnum)
+            {
+                if (underlyingSourceType != typeof(string))
+                    return Enum.ToObject(underlyingTargetType, value);
+            }
             
             return Convert.ChangeType(value, underlyingTargetType);
         }
