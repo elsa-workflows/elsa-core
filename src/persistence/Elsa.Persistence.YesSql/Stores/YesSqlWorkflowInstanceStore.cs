@@ -33,7 +33,6 @@ namespace Elsa.Persistence.YesSql.Stores
                 EntityIdSpecification<WorkflowInstance> spec => Query<WorkflowInstanceIndex>(session, x => x.InstanceId == spec.Id),
                 WorkflowInstanceIdSpecification spec => Query<WorkflowInstanceIndex>(session, x => x.InstanceId == spec.Id),
                 WorkflowInstanceIdsSpecification spec => Query<WorkflowInstanceIndex>(session, x => x.InstanceId.IsIn(spec.WorkflowInstanceIds)),
-                BlockingActivityTypeSpecification spec => Query<WorkflowInstanceBlockingActivitiesIndex>(session, x => x.ActivityType == spec.ActivityType),
                 _ => AutoMapSpecification<WorkflowInstanceIndex>(session, specification)
             };
 
@@ -41,12 +40,6 @@ namespace Elsa.Persistence.YesSql.Stores
         {
             switch (specification)
             {
-                case BlockingActivityTypeSpecification:
-                {
-                    var indexedQuery = query.With<WorkflowInstanceBlockingActivitiesIndex>();
-                    var expression = orderBy.OrderByExpression.ConvertType<WorkflowInstance, WorkflowInstanceDocument>().ConvertType<WorkflowInstanceDocument, WorkflowInstanceBlockingActivitiesIndex>();
-                    return orderBy.SortDirection == SortDirection.Ascending ? indexedQuery.OrderBy(expression) : indexedQuery.OrderByDescending(expression);
-                }
                 default:
                 {
                     var indexedQuery = query.With<WorkflowInstanceIndex>();
