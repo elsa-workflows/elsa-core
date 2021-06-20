@@ -7,6 +7,7 @@ using Elsa.Exceptions;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications.WorkflowInstances;
+using Elsa.Services.Bookmarks;
 using Elsa.Services.Models;
 using Open.Linq.AsyncExtensions;
 
@@ -17,12 +18,14 @@ namespace Elsa.Services.Workflows
         private readonly IWorkflowRunner _workflowRunner;
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
+        private readonly IBookmarkFinder _bookmarkFinder;
 
-        public WorkflowTriggerInterruptor(IWorkflowRunner workflowRunner, IWorkflowRegistry workflowRegistry, IWorkflowInstanceStore workflowInstanceStore)
+        public WorkflowTriggerInterruptor(IWorkflowRunner workflowRunner, IWorkflowRegistry workflowRegistry, IWorkflowInstanceStore workflowInstanceStore, IBookmarkFinder bookmarkFinder)
         {
             _workflowRunner = workflowRunner;
             _workflowRegistry = workflowRegistry;
             _workflowInstanceStore = workflowInstanceStore;
+            _bookmarkFinder = bookmarkFinder;
         }
 
         public async Task<RunWorkflowResult> InterruptActivityAsync(WorkflowInstance workflowInstance, string activityId, object? input, CancellationToken cancellationToken)
@@ -72,13 +75,12 @@ namespace Elsa.Services.Workflows
 
         private async IAsyncEnumerable<RunWorkflowResult> InterruptActivityTypeInternalAsync(string activityType, object? input, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            var suspendedWorkflows = await _workflowInstanceStore.FindManyAsync(new BlockingActivityTypeSpecification(activityType), cancellationToken: cancellationToken).ToList();
-            var workflowInstanceIds = suspendedWorkflows.Select(x => x.Id).Distinct().ToList();
-            var workflowInstances = await _workflowInstanceStore.FindManyAsync(new ManyWorkflowInstanceIdsSpecification(workflowInstanceIds), cancellationToken: cancellationToken).ToDictionary(x => x.Id);
+            var bookmarks = await _bookmarkFinder.FindBookmarksAsync(activityType, Enumerable.Empty<IBookmark>(), null, null, cancellationToken);
+            var workflowInstanceIds = bookmarks.Select(x => x.WorkflowInstanceId).Distinct().ToList();
+            var workflowInstances = await _workflowInstanceStore.FindManyAsync(new ManyWorkflowInstanceIdsSpecification(workflowInstanceIds), cancellationToken: cancellationToken);
 
-            foreach (var suspendedWorkflow in suspendedWorkflows)
+            foreach (var workflowInstance in workflowInstances)
             {
-                var workflowInstance = workflowInstances[suspendedWorkflow.Id];
                 var results = await InterruptActivityTypeAsync(workflowInstance, activityType, input, cancellationToken);
 
                 foreach (var result in results)
