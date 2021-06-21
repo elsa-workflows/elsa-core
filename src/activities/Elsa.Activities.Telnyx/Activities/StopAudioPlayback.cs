@@ -58,7 +58,7 @@ namespace Elsa.Activities.Telnyx.Activities
         )]
         public string? Stop { get; set; } = "all";
         
-        [ActivityOutput(Hint = "The received payload when speaking ended.")]
+        [ActivityOutput(Hint = "The received payload when audio ended.")]
         public CallPlaybackEndedPayload? PlaybackEndedPayload { get; set; }
         
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)

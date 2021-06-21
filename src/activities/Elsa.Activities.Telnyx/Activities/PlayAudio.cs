@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Elsa.Activities.Telnyx.Client.Models;
 using Elsa.Activities.Telnyx.Client.Services;
 using Elsa.Activities.Telnyx.Extensions;
+using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Builders;
@@ -18,7 +19,7 @@ namespace Elsa.Activities.Telnyx.Activities
     [Action(
         Category = Constants.Category,
         Description = "Play an audio file on the call.",
-        Outcomes = new[] { OutcomeNames.Done, TelnyxOutcomeNames.CallIsNoLongerActive },
+        Outcomes = new[] { TelnyxOutcomeNames.PlaybackRequested, TelnyxOutcomeNames.CallIsNoLongerActive, TelnyxOutcomeNames.CallPlaybackEnded },
         DisplayName = "Play Audio"
     )]
     public class PlayAudio : Activity
@@ -80,6 +81,9 @@ namespace Elsa.Activities.Telnyx.Activities
             SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? TargetLegs { get; set; }
+        
+        [ActivityOutput(Hint = "The received payload when audio ended.")]
+        public CallPlaybackEndedPayload? PlaybackEndedPayload { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
@@ -97,7 +101,7 @@ namespace Elsa.Activities.Telnyx.Activities
             try
             {
                 await _telnyxClient.Calls.PlayAudioAsync(callControlId, request, context.CancellationToken);
-                return Done();
+                return Combine(Outcome(TelnyxOutcomeNames.PlaybackRequested), Suspend());
             }
             catch (ApiException e)
             {
@@ -106,6 +110,12 @@ namespace Elsa.Activities.Telnyx.Activities
 
                 throw new WorkflowException(e.Content ?? e.Message, e);
             }
+        }
+
+        protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
+        {
+            PlaybackEndedPayload = context.GetInput<CallPlaybackEndedPayload>();
+            return Outcome(TelnyxOutcomeNames.CallPlaybackEnded);
         }
 
         private static string? EmptyToNull(string? value) => value is "" ? null : value;

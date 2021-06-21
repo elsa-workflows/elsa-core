@@ -121,6 +121,16 @@ namespace Elsa.Activities.Telnyx.Activities
         }
 
         [ActivityInput(
+            Hint = "The audio file to play as intro.",
+            SupportedSyntaxes = new[] {SyntaxNames.JavaScript, SyntaxNames.Liquid}
+        )]
+        public Uri? IntroMusic
+        {
+            get => GetState<Uri>();
+            set => SetState(value);
+        }
+
+        [ActivityInput(
             Hint = "Enables Answering Machine Detection.",
             UIHint = ActivityInputUIHints.Dropdown,
             Options = new[] {"disabled", "detect", "detect_beep", "detect_words", "greeting_end"},
@@ -145,7 +155,17 @@ namespace Elsa.Activities.Telnyx.Activities
         {
             // Root.
             builder
-                .If(() => MusicOnHold != null, @if =>
+                .If(() => IntroMusic != null, @if =>
+                {
+                    @if.When(OutcomeNames.True)
+                        .Then<PlayAudio>(playAudio => playAudio.WithAudioUrl(() => IntroMusic), playAudio =>
+                        {
+                            playAudio.When(TelnyxOutcomeNames.CallPlaybackEnded).ThenNamed("If1");
+                        });
+
+                    @if.When(OutcomeNames.False).ThenNamed("If1");
+                })
+                .Add<If>(@if => @if.WithCondition(() => MusicOnHold != null), @if =>
                 {
                     @if
                         .When(OutcomeNames.True)
@@ -155,7 +175,7 @@ namespace Elsa.Activities.Telnyx.Activities
                     @if
                         .When(OutcomeNames.False)
                         .ThenNamed("MainFork");
-                })
+                }).WithName("If1")
                 .Add<Fork>(fork => fork.WithBranches("Ring", "Queue Timeout"), fork =>
                 {
                     fork.When("Ring")
@@ -240,7 +260,7 @@ namespace Elsa.Activities.Telnyx.Activities
                     fork
                         .When(TelnyxOutcomeNames.Connected)
                         .ThenTypeNamed(CallAnsweredPayload.ActivityTypeName)
-                        .Then(context => CallAnsweredPayload = (CallAnsweredPayload) context.GetInput<TelnyxWebhook>()!.Data.Payload)
+                        .Then(context => CallAnsweredPayload = context.GetInput<CallAnsweredPayload>()!)
                         .Then<BridgeCalls>(bridge => bridge
                             .WithCallControlIdA(() => CallControlId)
                             .WithCallControlIdB(() => CallAnsweredPayload!.CallControlId), bridge => bridge
@@ -252,10 +272,7 @@ namespace Elsa.Activities.Telnyx.Activities
                         .StartIn(() => RingTime)
 
                         // If we don't have a queue wait time, then break out of outer loop.
-                        .If(@if => @if.WithCondition( () => IsNullOrZero(MaxQueueWaitTime)), @if =>
-                        {
-                            @if.When(OutcomeNames.True).Break();
-                        });
+                        .If(@if => @if.WithCondition(() => IsNullOrZero(MaxQueueWaitTime)), @if => { @if.When(OutcomeNames.True).Break(); });
 
                     fork
                         .When("Dial Everyone")
