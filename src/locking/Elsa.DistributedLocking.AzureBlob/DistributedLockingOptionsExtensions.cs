@@ -7,7 +7,7 @@ namespace Elsa
 {
     public static class DistributedLockingOptionsExtensions
     {
-        public static DistributedLockingOptionsBuilder UseSqlServerLockProvider(this DistributedLockingOptionsBuilder options, Uri blobContainerUrl)
+        public static DistributedLockingOptionsBuilder UseAzureBlobLockProvider(this DistributedLockingOptionsBuilder options, Uri blobContainerUrl)
         {
             options.UseProviderFactory(sp => CreateAzureDistributedLockFactory(sp, blobContainerUrl));
             return options;
