@@ -7,7 +7,7 @@ namespace Elsa.Persistence.Specifications.WorkflowInstances
     /// <summary>
     /// Matches all workflow instances that are idle, running or suspended.
     /// </summary>
-    public class NonFinalizedWorkflowSpecification : Specification<WorkflowInstance>
+    public class UnfinishedWorkflowSpecification : Specification<WorkflowInstance>
     {
         public override Expression<Func<WorkflowInstance, bool>> ToExpression() => x => x.WorkflowStatus == WorkflowStatus.Idle || x.WorkflowStatus == WorkflowStatus.Running || x.WorkflowStatus == WorkflowStatus.Suspended;
     }
