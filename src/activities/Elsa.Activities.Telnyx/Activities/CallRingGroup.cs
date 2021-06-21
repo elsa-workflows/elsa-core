@@ -261,11 +261,21 @@ namespace Elsa.Activities.Telnyx.Activities
                         .When(TelnyxOutcomeNames.Connected)
                         .ThenTypeNamed(CallAnsweredPayload.ActivityTypeName)
                         .Then(context => CallAnsweredPayload = context.GetInput<CallAnsweredPayload>()!)
-                        .Then<BridgeCalls>(bridge => bridge
+                        .If(() => MusicOnHold != null, @if =>
+                        {
+                            @if.When(OutcomeNames.True)
+                                .Then<StopAudioPlayback>(stopAudioPlayback => stopAudioPlayback
+                                    .When(TelnyxOutcomeNames.CallPlaybackEnded)
+                                    .ThenNamed("BridgeCalls2"));
+
+                            @if.When(OutcomeNames.False)
+                                .ThenNamed("BridgeCalls2");
+                        })
+                        .Add<BridgeCalls>(bridge => bridge
                             .WithCallControlIdA(() => CallControlId)
                             .WithCallControlIdB(() => CallAnsweredPayload!.CallControlId), bridge => bridge
                             .When(TelnyxOutcomeNames.Bridged)
-                            .Finish(activity => activity.WithOutcome(TelnyxOutcomeNames.Connected).WithOutput(context => context.GetInput<BridgedCallsOutput>())));
+                            .Finish(activity => activity.WithOutcome(TelnyxOutcomeNames.Connected).WithOutput(context => context.GetInput<BridgedCallsOutput>()))).WithName("BridgeCalls2");
 
                     fork
                         .When("Timeout")
