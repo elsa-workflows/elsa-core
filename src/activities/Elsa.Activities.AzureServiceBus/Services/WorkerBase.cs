@@ -102,10 +102,8 @@ namespace Elsa.Activities.AzureServiceBus.Services
             _logger.LogDebug("Message received with ID {MessageId}", message.MessageId);
             await TriggerWorkflowsAsync(message, CancellationToken.None);
 
-            if (ReceiverClient.IsClosedOrClosing)
-                throw new WorkflowException("Can't handle message with closed receiver");
-            
-            await ReceiverClient.CompleteAsync(message.SystemProperties.LockToken);
+            if (!ReceiverClient.IsClosedOrClosing)
+                await ReceiverClient.CompleteAsync(message.SystemProperties.LockToken);
         }
     }
 }
