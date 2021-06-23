@@ -24,7 +24,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddActivity<FileExists>()
                 .AddActivity<OutFile>()
                 .AddActivity<ReadFile>()
-                .AddActivity<TempFile>();
+                .AddActivity<TempFile>()
+                .AddActivity<WatchDirectory>();
 
             return builder;
         }
