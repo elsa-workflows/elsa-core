@@ -13,7 +13,7 @@ using MediatR;
 
 namespace Elsa.Activities.Telnyx.Handlers
 {
-    public abstract class ResumeWebhookDrivenActivity<TActivity, TPayload> : ResumeWebhookDrivenActivity<TActivity> where TPayload : CallPayload
+    public abstract class ResumeWebhookDrivenActivity<TActivity, TPayload> : ResumeWebhookDrivenActivity<TActivity> where TPayload : CallPayload where TActivity : IActivity
     {
         protected ResumeWebhookDrivenActivity(IWorkflowLaunchpad workflowLaunchpad) : base(workflowLaunchpad)
         {
@@ -22,7 +22,7 @@ namespace Elsa.Activities.Telnyx.Handlers
         protected override IEnumerable<Type> GetSupportedPayloadTypes() => new[] {typeof(TPayload)};
     }
 
-    public abstract class ResumeWebhookDrivenActivity<TActivity> : INotificationHandler<TelnyxWebhookReceived>
+    public abstract class ResumeWebhookDrivenActivity<TActivity> : INotificationHandler<TelnyxWebhookReceived> where TActivity : IActivity
     {
         private readonly IWorkflowLaunchpad _workflowLaunchpad;
         protected ResumeWebhookDrivenActivity(IWorkflowLaunchpad workflowLaunchpad) => _workflowLaunchpad = workflowLaunchpad;

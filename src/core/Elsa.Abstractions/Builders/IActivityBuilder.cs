@@ -21,7 +21,7 @@ namespace Elsa.Builders
         bool LoadWorkflowContextEnabled { get; set; }
         bool SaveWorkflowContextEnabled { get; set; }
         string? Source { get; }
-        IActivityBuilder Add<T>(string activityTypeName, Action<ISetupActivity<T>>? setup = default, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) where T : class, IActivity;
+        IActivityBuilder Add<T>(string activityTypeName, Action<ISetupActivity<T>>? setup = default, Action<IActivityBuilder>? branch = default, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) where T : class, IActivity;
         IOutcomeBuilder When(string outcome);
         IActivityBuilder Then(IActivityBuilder targetActivity);
         IActivityBuilder ThenNamed(string activityName);

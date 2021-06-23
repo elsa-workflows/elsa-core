@@ -11,7 +11,7 @@ export class ElsaPropertyEditor {
     @Event() defaultSyntaxValueChanged: EventEmitter<string>;
     @Prop() propertyDescriptor: ActivityPropertyDescriptor;
     @Prop() propertyModel: ActivityDefinitionProperty;
-    @Prop({attribute: 'editor-height', reflect: true}) editorHeight: string = '6em';
+    @Prop({attribute: 'editor-height', reflect: true}) editorHeight: string = '10em';
     @Prop({attribute: 'single-line', reflect: true}) singleLineMode: boolean = false;
     @Prop({attribute: 'context', reflect: true}) context?: string;
     @Prop() showLabel: boolean = true;
@@ -46,6 +46,7 @@ export class ElsaPropertyEditor {
                 label={label}
                 syntax={propertyModel.syntax}
                 defaultSyntax={propertyDescriptor.defaultSyntax}
+                isDisabled={propertyDescriptor.isDisabled}
                 expressions={propertyModel.expressions}
                 supportedSyntaxes={propertyDescriptor.supportedSyntaxes}
                 editor-height={this.editorHeight}>

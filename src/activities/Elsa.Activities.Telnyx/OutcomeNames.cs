@@ -23,5 +23,8 @@
         public const string Speaking = "Speaking";
         public const string Recording = "Recording";
         public const string FinishedRecording = "Finished Recording";
+        public const string CallPlaybackEnding = "Playback Ending";
+        public const string CallPlaybackEnded = "Playback Ended";
+        public const string PlaybackRequested = "Playback Requested";
     }
 }

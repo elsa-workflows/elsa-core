@@ -1,30 +1,28 @@
 using Elsa.Builders;
 using Elsa.Services.Models;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
+// ReSharper disable once CheckNamespace
 namespace Elsa.Activities.File
 {
     public static class EnumerateFilesExtensions
     {
         #region Path
-        public static ISetupActivity<EnumerateFiles> WithPath(this ISetupActivity<EnumerateFiles> setup, Func<ActivityExecutionContext, ValueTask<string>> path) => setup.Set(x => x.Path, path);
-        public static ISetupActivity<EnumerateFiles> WithPath(this ISetupActivity<EnumerateFiles> setup, Func<ActivityExecutionContext, string> path) => setup.Set(x => x.Path, path);
-        public static ISetupActivity<EnumerateFiles> WithPath(this ISetupActivity<EnumerateFiles> setup, Func<ValueTask<string>> path) => setup.Set(x => x.Path, path);
-        public static ISetupActivity<EnumerateFiles> WithPath(this ISetupActivity<EnumerateFiles> setup, Func<string> path) => setup.Set(x => x.Path, path);
-        public static ISetupActivity<EnumerateFiles> WithPath(this ISetupActivity<EnumerateFiles> setup, string path) => setup.Set(x => x.Path, path);
+        public static ISetupActivity<EnumerateFiles> WithPath(this ISetupActivity<EnumerateFiles> setup, Func<ActivityExecutionContext, ValueTask<string?>> path) => setup.Set(x => x.Path, path);
+        public static ISetupActivity<EnumerateFiles> WithPath(this ISetupActivity<EnumerateFiles> setup, Func<ActivityExecutionContext, string?> path) => setup.Set(x => x.Path, path);
+        public static ISetupActivity<EnumerateFiles> WithPath(this ISetupActivity<EnumerateFiles> setup, Func<ValueTask<string?>> path) => setup.Set(x => x.Path, path);
+        public static ISetupActivity<EnumerateFiles> WithPath(this ISetupActivity<EnumerateFiles> setup, Func<string?> path) => setup.Set(x => x.Path, path);
+        public static ISetupActivity<EnumerateFiles> WithPath(this ISetupActivity<EnumerateFiles> setup, string? path) => setup.Set(x => x.Path, path);
         #endregion
 
         #region Pattern
-        public static ISetupActivity<EnumerateFiles> WithPattern(this ISetupActivity<EnumerateFiles> setup, Func<ActivityExecutionContext, ValueTask<string>> pattern) => setup.Set(x => x.Pattern, pattern);
-        public static ISetupActivity<EnumerateFiles> WithPattern(this ISetupActivity<EnumerateFiles> setup, Func<ActivityExecutionContext, string> pattern) => setup.Set(x => x.Pattern, pattern);
-        public static ISetupActivity<EnumerateFiles> WithPattern(this ISetupActivity<EnumerateFiles> setup, Func<ValueTask<string>> pattern) => setup.Set(x => x.Pattern, pattern);
-        public static ISetupActivity<EnumerateFiles> WithPattern(this ISetupActivity<EnumerateFiles> setup, Func<string> pattern) => setup.Set(x => x.Pattern, pattern);
-        public static ISetupActivity<EnumerateFiles> WithPattern(this ISetupActivity<EnumerateFiles> setup, string pattern) => setup.Set(x => x.Pattern, pattern);
+        public static ISetupActivity<EnumerateFiles> WithPattern(this ISetupActivity<EnumerateFiles> setup, Func<ActivityExecutionContext, ValueTask<string?>> pattern) => setup.Set(x => x.Pattern, pattern);
+        public static ISetupActivity<EnumerateFiles> WithPattern(this ISetupActivity<EnumerateFiles> setup, Func<ActivityExecutionContext, string?> pattern) => setup.Set(x => x.Pattern, pattern);
+        public static ISetupActivity<EnumerateFiles> WithPattern(this ISetupActivity<EnumerateFiles> setup, Func<ValueTask<string?>> pattern) => setup.Set(x => x.Pattern, pattern);
+        public static ISetupActivity<EnumerateFiles> WithPattern(this ISetupActivity<EnumerateFiles> setup, Func<string?> pattern) => setup.Set(x => x.Pattern, pattern);
+        public static ISetupActivity<EnumerateFiles> WithPattern(this ISetupActivity<EnumerateFiles> setup, string? pattern) => setup.Set(x => x.Pattern, pattern);
         #endregion
 
         #region IgnoreInaccessible

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using Elsa.Builders;
 using Elsa.Models;
 using Elsa.Persistence;
@@ -9,6 +10,7 @@ using Elsa.Serialization;
 using Elsa.Services;
 using Elsa.Services.Dispatch;
 using Elsa.Services.Messaging;
+using Elsa.Services.Startup;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using NodaTime;
@@ -73,6 +75,7 @@ namespace Elsa
         internal Func<IServiceProvider, IWorkflowInstanceDispatcher> WorkflowInstanceDispatcherFactory { get; set; }
         internal Func<IServiceProvider, IWorkflowDispatcher> CorrelatingWorkflowDispatcherFactory { get; set; }
         internal Action<ServiceBusEndpointConfigurationContext> ConfigureServiceBusEndpoint { get; set; }
+        internal ICollection<IStartup> Startups { get; } = new List<IStartup>();
 
         private static void ConfigureInMemoryServiceBusEndpoint(ServiceBusEndpointConfigurationContext context)
         {

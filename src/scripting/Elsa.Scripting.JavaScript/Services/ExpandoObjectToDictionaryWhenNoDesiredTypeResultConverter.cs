@@ -9,15 +9,15 @@ namespace Elsa.Scripting.JavaScript.Services
 {
     public class ExpandoObjectToDictionaryWhenNoDesiredTypeResultConverter : IConvertsJintEvaluationResult
     {
-        private readonly IConvertsJintEvaluationResult wrapped;
-        private readonly IConvertsEnumerableToObject enumerableConverter;
+        private readonly IConvertsJintEvaluationResult _wrapped;
+        private readonly IConvertsEnumerableToObject _enumerableConverter;
 
         public object? ConvertToDesiredType(object? evaluationResult, Type desiredType)
         {
             if(evaluationResult is ExpandoObject expando && desiredType == typeof(object))
                 return RecursivelyPrepareExpandoObjectForReturn(expando);
 
-            return wrapped.ConvertToDesiredType(evaluationResult, desiredType);
+            return _wrapped.ConvertToDesiredType(evaluationResult, desiredType);
         }
 
         private object? RecursivelyPrepareExpandoObjectForReturn(ExpandoObject obj)
@@ -35,7 +35,7 @@ namespace Elsa.Scripting.JavaScript.Services
                                       let val = (IEnumerable) kvp.Value
                                       let replacementValue = (val is ExpandoObject expando)
                                             ? RecursivelyPrepareExpandoObjectForReturn(expando)
-                                            : enumerableConverter.ConvertEnumerable(val)
+                                            : _enumerableConverter.ConvertEnumerable(val)
                                       select new { Key = kvp.Key, Value = replacementValue })
                 .ToDictionary(k => k.Key, v => v.Value);
 
@@ -48,8 +48,8 @@ namespace Elsa.Scripting.JavaScript.Services
 
         public ExpandoObjectToDictionaryWhenNoDesiredTypeResultConverter(IConvertsEnumerableToObject enumerableConverter, IConvertsJintEvaluationResult wrapped)
         {
-            this.wrapped = wrapped ?? throw new ArgumentNullException(nameof(wrapped));
-            this.enumerableConverter = enumerableConverter ?? throw new ArgumentNullException(nameof(enumerableConverter));
+            this._wrapped = wrapped ?? throw new ArgumentNullException(nameof(wrapped));
+            this._enumerableConverter = enumerableConverter ?? throw new ArgumentNullException(nameof(enumerableConverter));
         }
     }
 }

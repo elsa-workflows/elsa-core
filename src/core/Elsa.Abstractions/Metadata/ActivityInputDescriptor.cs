@@ -21,7 +21,8 @@ namespace Elsa.Metadata
             float order = 0,
             object? defaultValue = default,
             string? defaultSyntax = "Literal",
-            IEnumerable<string>? supportedSyntaxes = default)
+            IEnumerable<string>? supportedSyntaxes = default,
+            bool? isDisabled = default)
         {
             Name = name;
             Type = type;
@@ -34,6 +35,7 @@ namespace Elsa.Metadata
             DefaultValue = defaultValue;
             DefaultSyntax = defaultSyntax;
             SupportedSyntaxes = supportedSyntaxes?.ToList() ?? new List<string>();
+            IsDisabled = isDisabled;
         }
 
         public string Name { get; set; } = default!;
@@ -47,5 +49,6 @@ namespace Elsa.Metadata
         public object? DefaultValue { get; set; }
         public string? DefaultSyntax { get; set; }
         public IList<string> SupportedSyntaxes { get; set; } = new List<string>();
+        public bool? IsDisabled { get; set; }
     }
 }

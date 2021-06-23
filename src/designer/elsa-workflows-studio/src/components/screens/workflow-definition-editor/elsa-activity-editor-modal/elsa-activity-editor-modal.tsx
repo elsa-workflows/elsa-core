@@ -105,6 +105,7 @@ export class ElsaActivityEditorModal {
     const selectedClass = 'elsa-border-blue-500 elsa-text-blue-600';
 
     return (
+
       <Host class="elsa-block">
         <elsa-modal-dialog ref={el => this.dialog = el}>
           <div slot="content" class="elsa-py-8 elsa-pb-0">
@@ -114,7 +115,7 @@ export class ElsaActivityEditorModal {
                   <div>
                     <div>
                       <h3 class="elsa-text-lg elsa-leading-6 elsa-font-medium elsa-text-gray-900">
-                        {activityDescriptor.displayName}
+                        {activityDescriptor.type}
                       </h3>
                       <p class="elsa-mt-1 elsa-text-sm elsa-text-gray-500">
                         {activityDescriptor.description}

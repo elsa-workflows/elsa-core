@@ -1,11 +1,8 @@
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Services;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
 
+// ReSharper disable once CheckNamespace
 namespace Elsa.Activities.File
 {
     [Action(Category = "File",
@@ -14,7 +11,7 @@ namespace Elsa.Activities.File
     public class TempFile : Activity
     {
         [ActivityOutput(Hint = "Path of the created temporary file.")]
-        public string Path { get; set; }
+        public string Path { get; set; } = default!;
 
         protected override IActivityExecutionResult OnExecute()
         {

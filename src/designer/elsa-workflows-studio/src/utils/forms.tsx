@@ -105,7 +105,7 @@ export function updateField<T>(context: FormContext, fieldName: string, value: T
     current = current[name];
   }
 
-  const leafFieldName = fieldNameHierarchy.last();
+  const leafFieldName = fieldNameHierarchy[fieldNameHierarchy.length-1];
   current[leafFieldName] = value;
 
   context.model = clone;

@@ -10,5 +10,6 @@ namespace Elsa.Activities.Telnyx.Webhooks.Payloads.Call
         public string Direction { get; init; } = default!;
         public string State { get; init; } = default!;
         public string To { get; init; } = default!;
+        public string From { get; init; } = default!;
     }
 }

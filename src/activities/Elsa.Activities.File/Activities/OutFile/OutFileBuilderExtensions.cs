@@ -1,19 +1,18 @@
 using Elsa.Builders;
 using Elsa.Services.Models;
 using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading.Tasks;
 
+// ReSharper disable ExplicitCallerInfoArgument
+// ReSharper disable once CheckNamespace
 namespace Elsa.Activities.File
 {
     public static class OutFileBuilderExtensions
     {
         public static IActivityBuilder OutFile(this IBuilder builder, Action<ISetupActivity<OutFile>> setup, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) => builder.Then(setup, null, lineNumber, sourceFile);
 
-        public static IActivityBuilder OutFile(this IBuilder builder, Func<ActivityExecutionContext, byte[]> bytes, Func<ActivityExecutionContext, string> path, Func<ActivityExecutionContext, CopyMode> mode, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
+        public static IActivityBuilder OutFile(this IBuilder builder, Func<ActivityExecutionContext, byte[]?> bytes, Func<ActivityExecutionContext, string?> path, Func<ActivityExecutionContext, CopyMode> mode, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
             builder.OutFile(activity => activity
                     .Set(x => x.Bytes, bytes)
                     .Set(x => x.Path, path)
@@ -21,7 +20,7 @@ namespace Elsa.Activities.File
                 lineNumber, 
                 sourceFile);
 
-        public static IActivityBuilder OutFile(this IBuilder builder, Func<ActivityExecutionContext, ValueTask<byte[]>> bytes, Func<ActivityExecutionContext, ValueTask<string>> path, Func<ActivityExecutionContext, ValueTask<CopyMode>> mode, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
+        public static IActivityBuilder OutFile(this IBuilder builder, Func<ActivityExecutionContext, ValueTask<byte[]?>> bytes, Func<ActivityExecutionContext, ValueTask<string?>> path, Func<ActivityExecutionContext, ValueTask<CopyMode>> mode, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
             builder.OutFile(activity => activity
                     .Set(x => x.Bytes, bytes)
                     .Set(x => x.Path, path)
@@ -29,7 +28,7 @@ namespace Elsa.Activities.File
                 lineNumber,
                 sourceFile);
 
-        public static IActivityBuilder OutFile(this IBuilder builder, Func<byte[]> bytes, Func<string> path, Func<CopyMode> mode, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
+        public static IActivityBuilder OutFile(this IBuilder builder, Func<byte[]?> bytes, Func<string?> path, Func<CopyMode> mode, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
             builder.OutFile(activity => activity
                     .Set(x => x.Bytes, bytes)
                     .Set(x => x.Path, path)
@@ -37,7 +36,7 @@ namespace Elsa.Activities.File
                 lineNumber,
                 sourceFile);
 
-        public static IActivityBuilder OutFile(this IBuilder builder, Func<ValueTask<byte[]>> bytes, Func<ValueTask<string>> path, Func<ValueTask<CopyMode>> mode, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
+        public static IActivityBuilder OutFile(this IBuilder builder, Func<ValueTask<byte[]?>> bytes, Func<ValueTask<string?>> path, Func<ValueTask<CopyMode>> mode, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
             builder.OutFile(activity => activity
                     .Set(x => x.Bytes, bytes)
                     .Set(x => x.Path, path)

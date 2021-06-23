@@ -19,7 +19,7 @@ export class ElsaMonaco {
 
   monaco = (window as any).monaco;
 
-  @Prop({attribute: 'editor-height', reflect: true}) editorHeight: string = '6em';
+  @Prop({attribute: 'editor-height', reflect: true}) editorHeight: string = '5em';
   @Prop() value: string;
   @Prop() language: string;
   @Prop({attribute: 'single-line', reflect: true}) singleLineMode: boolean = false;

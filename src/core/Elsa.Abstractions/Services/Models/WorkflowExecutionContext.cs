@@ -66,7 +66,7 @@ namespace Elsa.Services.Models
         public ScheduledActivity PopScheduledActivity() => WorkflowInstance.ScheduledActivities.Pop();
         public ScheduledActivity PeekScheduledActivity() => WorkflowInstance.ScheduledActivities.Peek();
 
-        public string? CorrelationId
+        public string CorrelationId
         {
             get => WorkflowInstance.CorrelationId;
             set => WorkflowInstance.CorrelationId = value;
@@ -240,7 +240,7 @@ namespace Elsa.Services.Models
         public object? GetWorkflowContext() => WorkflowContext;
         public T GetWorkflowContext<T>() => (T) WorkflowContext!;
         
-        public IDictionary<string, object> GetActivityData(string activityId)
+        public IDictionary<string, object?> GetActivityData(string activityId)
         {
             var activityData = WorkflowInstance.ActivityData;
             var state = activityData.ContainsKey(activityId) ? activityData[activityId] : default;
@@ -248,7 +248,7 @@ namespace Elsa.Services.Models
             if (state != null) 
                 return state;
             
-            state = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+            state = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
             activityData[activityId] = state;
 
             return state;

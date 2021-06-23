@@ -13,7 +13,7 @@ export class ElsaMultiLineProperty {
 
   componentWillLoad() {
     const defaultSyntax = this.propertyDescriptor.defaultSyntax || SyntaxNames.Literal;
-    this.currentValue = this.propertyModel.expressions[defaultSyntax] || '';
+    this.currentValue = this.propertyModel.expressions[defaultSyntax] || undefined;
   }
 
   getEditorHeight(options: any) {
@@ -24,7 +24,7 @@ export class ElsaMultiLineProperty {
         return {propertyEditor: '20em', textArea: 6}
       case 'Default':
       default:
-        return {propertyEditor: '8em', textArea: 3}
+        return {propertyEditor: '15em', textArea: 3}
     }
   }
 

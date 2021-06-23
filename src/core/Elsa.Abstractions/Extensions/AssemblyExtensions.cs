@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
-// The System.Reflection namespace is not used here because of the likelihood that another library will use identical functions. This can cause conflicts.
 namespace Elsa
 {
     public static class AssemblyExtensions

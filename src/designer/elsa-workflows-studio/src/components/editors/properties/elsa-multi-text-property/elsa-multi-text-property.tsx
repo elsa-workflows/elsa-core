@@ -68,7 +68,6 @@ export class ElsaMultiTextProperty {
       <elsa-property-editor propertyDescriptor={propertyDescriptor}
                             propertyModel={propertyModel}
                             onDefaultSyntaxValueChanged={e => this.onDefaultSyntaxValueChanged(e)}
-                            editor-height="2em"
                             single-line={true}>
         {elsaInputTags}
       </elsa-property-editor>

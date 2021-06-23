@@ -78,8 +78,8 @@ namespace Elsa.Activities.Email
             var cancellationToken = context.CancellationToken;
             var message = new MimeMessage();
             var from = string.IsNullOrWhiteSpace(From) ? _options.DefaultSender : From;
-
-            message.From.Add(MailboxAddress.Parse(from));
+            
+            message.Sender = MailboxAddress.Parse(from);
             message.Subject = Subject;
 
             var bodyBuilder = new BodyBuilder { HtmlBody = Body };
@@ -91,7 +91,7 @@ namespace Elsa.Activities.Email
             SetRecipientsEmailAddresses(message.Cc, Cc);
             SetRecipientsEmailAddresses(message.Bcc, Bcc);
 
-            await _smtpService.SendAsync(message, context.CancellationToken);
+            await _smtpService.SendAsync(context, message, context.CancellationToken);
 
             return Done();
         }

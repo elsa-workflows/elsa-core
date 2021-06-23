@@ -1,11 +1,11 @@
 using Elsa.Builders;
 using Elsa.Services.Models;
 using System;
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading.Tasks;
 
+// ReSharper disable ExplicitCallerInfoArgument
+// ReSharper disable once CheckNamespace
 namespace Elsa.Activities.File
 {
     public static class DeleteFileBuilderExtensions
@@ -18,7 +18,7 @@ namespace Elsa.Activities.File
                 lineNumber,
                 sourceFile);
 
-        public static IActivityBuilder DeleteFile(this IActivityBuilder builder, Func<ActivityExecutionContext, ValueTask<string>> path, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
+        public static IActivityBuilder DeleteFile(this IActivityBuilder builder, Func<ActivityExecutionContext, ValueTask<string?>> path, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
             builder.DeleteFile(activity => activity
                     .Set(x => x.Path, path),
                 lineNumber,
@@ -32,7 +32,7 @@ namespace Elsa.Activities.File
 
         public static IActivityBuilder DeleteFile(this IActivityBuilder builder, Func<ValueTask<string>> path, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
             builder.DeleteFile(activity => activity
-                    .Set(x => x.Path, path),
+                    .Set(x => x.Path, path!),
                 lineNumber,
                 sourceFile);
 
