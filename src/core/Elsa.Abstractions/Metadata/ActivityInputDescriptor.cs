@@ -4,6 +4,43 @@ using System.Linq;
 
 namespace Elsa.Metadata
 {
+    [Obsolete("Use ActivityInputDescriptor instead.")]
+    public class ActivityPropertyDescriptor : ActivityInputDescriptor
+    {
+        public ActivityPropertyDescriptor() : base()
+        {
+        }
+
+        public ActivityPropertyDescriptor(
+            string name,
+            Type type,
+            string uiHint,
+            string label,
+            string? hint = default,
+            object? options = default,
+            string? category = default,
+            object? defaultValue = default,
+            string? defaultSyntax = "Literal",
+            IEnumerable<string>? supportedSyntaxes = default,
+            bool? isDisabled = default)
+            : base (
+                name,
+                type,
+                uiHint,
+                label,
+                hint,
+                options,
+                category,
+                0,
+                defaultValue,
+                defaultSyntax,
+                supportedSyntaxes,
+                isDisabled
+            )
+        {
+        }
+    }
+
     public class ActivityInputDescriptor
     {
         public ActivityInputDescriptor()
