@@ -31,7 +31,7 @@ namespace Elsa.Activities.Telnyx.Activities
     )]
     public class CallRingGroup : CompositeActivity, IActivityPropertyDefaultValueProvider
     {
-        private readonly ILogger<CallRingGroup> _logger;
+        private readonly ILogger _logger;
 
         public CallRingGroup(ILogger<CallRingGroup> logger)
         {
