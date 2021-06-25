@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Infrastructure;
+using Oracle.EntityFrameworkCore.Infrastructure;
 
 namespace Elsa.Persistence.EntityFrameworkCore.CustomSchema
 {
@@ -50,6 +51,15 @@ namespace Elsa.Persistence.EntityFrameworkCore.CustomSchema
             return npgsqlDbContextOptionsBuilder;
         }
 
+        public static OracleDbContextOptionsBuilder AddCustomSchemaModelSupport(this OracleDbContextOptionsBuilder oracleDbContextOptionsBuilder, DbContextOptionsBuilder dbContextOptionsBuilder, IServiceCollection services)
+        {
+            services.AddTransient<CustomSchemaOptionsExtension>();
+            dbContextOptionsBuilder.ReplaceService<IModelCacheKeyFactory, CustomSchemaModelCacheKeyFactory>();
+            oracleDbContextOptionsBuilder.AddCustomSchemaExtension(services);
+
+            return oracleDbContextOptionsBuilder;
+        }
+
         public static SqliteDbContextOptionsBuilder AddCustomSchemaExtension(this SqliteDbContextOptionsBuilder sqliteDbContextOptionsBuilder, IServiceCollection services)
         {
             var infrastructure = sqliteDbContextOptionsBuilder as IRelationalDbContextOptionsBuilderInfrastructure;
@@ -69,6 +79,13 @@ namespace Elsa.Persistence.EntityFrameworkCore.CustomSchema
             var infrastructure = npgsqlDbContextOptionsBuilder as IRelationalDbContextOptionsBuilderInfrastructure;
             infrastructure.AddCustomSchemaExtension(services);
             return npgsqlDbContextOptionsBuilder;            
+        }
+
+        public static OracleDbContextOptionsBuilder AddCustomSchemaExtension(this OracleDbContextOptionsBuilder oracleDbContextOptionsBuilder, IServiceCollection services)
+        {
+            var infrastructure = oracleDbContextOptionsBuilder as IRelationalDbContextOptionsBuilderInfrastructure;
+            infrastructure.AddCustomSchemaExtension(services);
+            return oracleDbContextOptionsBuilder;
         }
 
         static void AddCustomSchemaExtension(this IRelationalDbContextOptionsBuilderInfrastructure relationalDbContextOptionsBuilderInfrastructure, IServiceCollection services)

@@ -9,6 +9,7 @@ dotnet ef migrations add Update01 --context SqliteContext --output-dir Migration
 dotnet ef migrations add Update01 --context SqlServerContext --output-dir Migrations/SqlServer
 dotnet ef migrations add Update01 --context PostgreSqlContext --output-dir Migrations/PostgreSql
 dotnet ef migrations add Update01 --context MySqlContext --output-dir Migrations/MySql
+dotnet ef migrations add Update01 --context OracleContext --output-dir Migrations/Oracle
 ```
  
 
@@ -31,4 +32,8 @@ dotnet ef database update --context PostgreSqlContext
 
 SET EF_CONNECTIONSTRING=Server=localhost;Database=Elsa;uid=developer;pwd=Secret_password123!
 dotnet ef database update --context MySqlContext
+
+SET EF_CONNECTIONSTRING=Data Source=localhost/XEPDB1;user id=developer;password=Secret_password123!;
+dotnet ef database update --context OracleContext
+
 ``` 
