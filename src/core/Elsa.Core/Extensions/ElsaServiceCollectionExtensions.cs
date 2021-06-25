@@ -167,7 +167,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IBackgroundWorker, BackgroundWorker>()
                 .AddScoped<IWorkflowPublisher, WorkflowPublisher>()
                 .AddScoped<IWorkflowContextManager, WorkflowContextManager>()
-                .AddTransient<IActivityTypeService, ActivityTypeService>()
+                .AddScoped<IActivityTypeService, ActivityTypeService>()
                 .AddActivityTypeProvider<TypeBasedActivityProvider>()
                 .AddScoped<IWorkflowExecutionLog, WorkflowExecutionLog>()
                 .AddTransient<ICreatesWorkflowExecutionContextForWorkflowBlueprint, WorkflowExecutionContextForWorkflowBlueprintFactory>()
