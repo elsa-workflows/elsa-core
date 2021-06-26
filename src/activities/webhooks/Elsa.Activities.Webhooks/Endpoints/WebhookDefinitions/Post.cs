@@ -33,12 +33,11 @@ namespace Elsa.Activities.Webhooks.Endpoints.WebhookDefinitions
         [SwaggerResponseExample(StatusCodes.Status200OK, typeof(WebhookDefinitionExample))]
         [SwaggerOperation(
             Summary = "Creates a new webhook definition or updates an existing one.",
-            Description =
-                "Creates a new webhook definition or updates an existing one.",
+            Description = "Creates a new webhook definition or updates an existing one.",
             OperationId = "WebhookDefinitions.Post",
             Tags = new[] { "WebhookDefinitions" })
         ]
-        public async Task<ActionResult<WebhookDefinition>> Handle([FromBody] SaveRequest request, [FromRoute] ApiVersion apiVersion, CancellationToken cancellationToken)
+        public async Task<ActionResult<WebhookDefinition>> Handle([FromBody] SaveWebhookDefinitionRequest request, [FromRoute] ApiVersion apiVersion, CancellationToken cancellationToken)
         {
             var webhookId = request.Id;
             var webhookDefinition = !string.IsNullOrWhiteSpace(webhookId) ? await _store.FindAsync(new EntityIdSpecification<WebhookDefinition>(webhookId), cancellationToken) : default;
