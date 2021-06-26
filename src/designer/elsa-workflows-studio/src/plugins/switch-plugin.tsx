@@ -15,12 +15,12 @@ export class SwitchPlugin implements ElsaPlugin {
     
     if (activityModel.type !== 'Switch')
       return;
-
+    
     const props = activityModel.properties || [];
     const syntax = 'Switch';
     const casesProp = props.find(x => x.name == 'Cases') || { expressions: {'Switch': ''}, syntax: syntax };
-    const expression = casesProp.expressions[syntax] || '[]';
-    const cases: Array<SwitchCase> = !!expression['$values'] ? expression['$values'] : parseJson(expression) || [];
+    const expression: any = casesProp.expressions[syntax] || [];
+    const cases: Array<SwitchCase> = !!expression['$values'] ? expression['$values'] : Array.isArray(expression) ? expression : parseJson(expression) || [];
     context.outcomes = [...cases.map(x => x.name), 'Default'];
   }
 }

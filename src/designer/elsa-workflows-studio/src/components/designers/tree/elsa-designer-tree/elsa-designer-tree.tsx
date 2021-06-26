@@ -49,7 +49,7 @@ export class ElsaWorkflowDesigner {
   parentActivityId?: string;
   parentActivityOutcome?: string;
   addingActivity: boolean = false;
-  activityDisplayContexts: Map<ActivityDesignDisplayContext> = {};
+  activityDisplayContexts: Map<ActivityDesignDisplayContext> = null;
   selectedActivities: Map<ActivityModel> = {};
 
   handleContextMenuChange(state: ActivityContextMenuState) {
@@ -113,6 +113,9 @@ export class ElsaWorkflowDesigner {
   }
 
   componentWillRender() {
+    if(!!this.activityDisplayContexts)
+      return;
+    
     const activityModels = this.workflowModel.activities;
     const displayContexts: Map<ActivityDesignDisplayContext> = {};
     const activityDescriptors: Array<ActivityDescriptor> = state.activityDescriptors;
@@ -150,6 +153,7 @@ export class ElsaWorkflowDesigner {
 
   updateWorkflowModel(model: WorkflowModel, emitEvent: boolean = true) {
     this.workflowModel = this.cleanWorkflowModel(model);
+    this.activityDisplayContexts = null;
 
     if (emitEvent)
       this.workflowChanged.emit(model);
@@ -378,9 +382,11 @@ export class ElsaWorkflowDesigner {
     });
 
     // Connections between activities and their outcomes.
+    const activityDisplayContexts = this.activityDisplayContexts || {};
+    
     this.workflowModel.activities.forEach(activity => {
       this.graph.setNode(activity.activityId, this.createActivityOptions(activity));
-      const displayContext = this.activityDisplayContexts[activity.activityId] || undefined;
+      const displayContext = activityDisplayContexts[activity.activityId] || undefined;
       const outcomes = !!displayContext ? displayContext.outcomes : activity.outcomes || [];
 
       outcomes.forEach(outcome => {
@@ -554,7 +560,8 @@ export class ElsaWorkflowDesigner {
   }
 
   renderActivity(activity: ActivityModel) {
-    const displayContext = this.activityDisplayContexts[activity.activityId] || undefined;
+    const activityDisplayContexts = this.activityDisplayContexts || {};
+    const displayContext = activityDisplayContexts[activity.activityId] || undefined;
     const activityContextMenuButton = !!this.activityContextMenuButton ? this.activityContextMenuButton(activity) : '';
     const activityBorderColor = !!this.activityBorderColor ? this.activityBorderColor(activity) : 'gray';
     const selectedColor = !!this.activityBorderColor ? activityBorderColor : 'blue';

@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Elsa.Activities.Webhooks.Endpoints.WebhookDefinitions
 {
-    public sealed record SaveRequest
+    public sealed record SaveWebhookDefinitionRequest
     {
         public string? Id { get; init; }
         [Required] public string Path { get; init; } = default!;

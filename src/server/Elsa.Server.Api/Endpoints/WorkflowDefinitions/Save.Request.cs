@@ -5,7 +5,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
 {
     public partial class Save
     {
-        public sealed record SaveRequest
+        public sealed record SaveWorkflowDefinitionRequest
         {
             public string? WorkflowDefinitionId { get; init; }
             public string? Name { get; init; }

@@ -35,7 +35,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             OperationId = "WorkflowDefinitions.Post",
             Tags = new[] { "WorkflowDefinitions" })
         ]
-        public async Task<ActionResult<WorkflowDefinition>> Handle([FromBody]SaveRequest request, [FromRoute]ApiVersion apiVersion, CancellationToken cancellationToken)
+        public async Task<ActionResult<WorkflowDefinition>> Handle([FromBody]SaveWorkflowDefinitionRequest request, [FromRoute]ApiVersion apiVersion, CancellationToken cancellationToken)
         {
             var workflowDefinitionId = request.WorkflowDefinitionId;
             var workflowDefinition = !string.IsNullOrWhiteSpace(workflowDefinitionId) ? await _workflowPublisher.GetDraftAsync(workflowDefinitionId, cancellationToken) : default;
@@ -68,7 +68,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             return CreatedAtAction("Handle", "GetByVersionId", new { versionId = workflowDefinition.Id, apiVersion = apiVersion.ToString() }, workflowDefinition);
         }
 
-        private IEnumerable<ConnectionDefinition> FilterInvalidConnections(SaveRequest request)
+        private IEnumerable<ConnectionDefinition> FilterInvalidConnections(SaveWorkflowDefinitionRequest request)
         {
             var validConnections =
                 from connection in request.Connections

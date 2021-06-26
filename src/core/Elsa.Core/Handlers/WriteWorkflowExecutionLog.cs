@@ -24,13 +24,7 @@ namespace Elsa.Handlers
         {
             var activityExecutionContext = notification.ActivityExecutionContext;
             
-            var data = new
-            {
-                Input = notification.ActivityExecutionContext.Input,
-                State = activityExecutionContext.GetActivityData()
-            };
-            
-            await WriteEntryAsync(notification.Resuming ? "Resuming" : "Executing", default, activityExecutionContext, data, cancellationToken);
+            await WriteEntryAsync(notification.Resuming ? "Resuming" : "Executing", default, activityExecutionContext, null, cancellationToken);
         }
 
         public async Task Handle(ActivityExecutionResultExecuted notification, CancellationToken cancellationToken)

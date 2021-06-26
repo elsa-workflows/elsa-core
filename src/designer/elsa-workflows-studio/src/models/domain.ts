@@ -173,6 +173,7 @@ export interface ActivityDefinitionProperty {
   name: string;
   syntax?: string;
   expressions: Map<string>;
+  value?: any;
 }
 
 interface BlockingActivity {
