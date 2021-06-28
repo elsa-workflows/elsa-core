@@ -9,7 +9,6 @@ using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
 using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Services.Bookmarks;
-using Elsa.Services.Dispatch;
 using Elsa.Services.Models;
 using Elsa.Services.Triggers;
 using Medallion.Threading;
@@ -167,7 +166,7 @@ namespace Elsa.Services.Workflows
         public async Task<PendingWorkflow> DispatchStartableWorkflowAsync(StartableWorkflow startableWorkflow, object? input, CancellationToken cancellationToken = default)
         {
             var pendingWorkflow = new PendingWorkflow(startableWorkflow.WorkflowInstance.Id, startableWorkflow.ActivityId);
-            await ExecutePendingWorkflowAsync(pendingWorkflow, input, cancellationToken);
+            await DispatchPendingWorkflowAsync(pendingWorkflow, input, cancellationToken);
             return pendingWorkflow;
         }
 

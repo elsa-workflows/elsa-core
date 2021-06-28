@@ -268,6 +268,7 @@ export namespace Components {
         "serverUrl": string;
     }
     interface ElsaWorkflowSettingsModal {
+        "serverUrl": string;
         "workflowDefinition": WorkflowDefinition;
     }
 }
@@ -868,6 +869,7 @@ declare namespace LocalJSX {
         "serverUrl"?: string;
     }
     interface ElsaWorkflowSettingsModal {
+        "serverUrl"?: string;
         "workflowDefinition"?: WorkflowDefinition;
     }
     interface IntrinsicElements {

@@ -1,7 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Services;
-using Elsa.Services.Dispatch;
 
 namespace Elsa.Server.Hangfire.Jobs
 {

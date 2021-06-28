@@ -1,6 +1,5 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Models;
 using Elsa.Webhooks.Persistence.YesSql.Data;
 using Elsa.Webhooks.Persistence.YesSql.Documents;
 using Elsa.Webhooks.Persistence.YesSql.Indexes;

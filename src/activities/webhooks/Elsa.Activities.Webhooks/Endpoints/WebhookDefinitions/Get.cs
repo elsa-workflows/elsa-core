@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Elsa.Activities.Webhooks.Swagger.Examples;
 using Elsa.Persistence.Specifications;
 using Elsa.Server.Api.Services;
-using Elsa.Server.Api.Swagger.Examples;
 using Elsa.Webhooks.Models;
 using Elsa.Webhooks.Persistence;
 using Microsoft.AspNetCore.Http;

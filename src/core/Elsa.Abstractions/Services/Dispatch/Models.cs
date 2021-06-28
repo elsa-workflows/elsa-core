@@ -1,6 +1,6 @@
 ﻿using Elsa.Services.Bookmarks;
 
-namespace Elsa.Services.Dispatch
+namespace Elsa.Services
 {
     public record TriggerWorkflowsRequest(string ActivityType, IBookmark Bookmark, IBookmark Trigger, object? Input = default, string? CorrelationId = default, string? WorkflowInstanceId = default, string? ContextId = default, string? TenantId = default);
 

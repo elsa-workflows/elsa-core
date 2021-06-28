@@ -13,7 +13,6 @@ using Elsa.Services;
 using Elsa.Services.Models;
 using Elsa.Services.WorkflowStorage;
 using Jint;
-using Jint.Runtime.Interop;
 using MediatR;
 using Microsoft.Extensions.Configuration;
 using NodaTime;
