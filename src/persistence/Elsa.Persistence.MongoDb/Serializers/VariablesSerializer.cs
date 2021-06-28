@@ -1,5 +1,6 @@
 ﻿using System;
 using Elsa.Models;
+using Elsa.Serialization.Converters;
 using MongoDB.Bson.Serialization;
 using Newtonsoft.Json;
 using NodaTime;
@@ -10,14 +11,20 @@ namespace Elsa.Persistence.MongoDb.Serializers
     public class VariablesSerializer : IBsonSerializer<Variables>
     {
         public static VariablesSerializer Instance { get; } = new();
+        private readonly JsonSerializerSettings _serializerSettings;
 
-        private readonly JsonSerializerSettings _serializerSettings = new JsonSerializerSettings
+        public VariablesSerializer()
         {
-            NullValueHandling = NullValueHandling.Ignore,
-            TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Simple,
-            TypeNameHandling = TypeNameHandling.Auto,
-        }.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
-
+            _serializerSettings = new JsonSerializerSettings
+            {
+                NullValueHandling = NullValueHandling.Ignore,
+                TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Simple,
+                TypeNameHandling = TypeNameHandling.Auto,
+            }.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
+            
+            _serializerSettings.Converters.Add(new TypeJsonConverter());
+        }
+        
         public Type ValueType => typeof(Variables);
 
         public void Serialize(BsonSerializationContext context, BsonSerializationArgs args, object value) => Serialize(context, args, (Variables) value);
