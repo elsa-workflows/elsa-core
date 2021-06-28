@@ -2,6 +2,11 @@
   "name": "@elsa-workflows/elsa-workflows-studio",
   "version": "2.0.1",
   "description": "Elsa Workflow Studio is a collection of web components to manage Elsa workflows stored on an Elsa Workflows server.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elsa-workflows/elsa-core.git",
+    "directory": "src/designer/elsa-workflows-studio"
+  },
   "main": "dist/index.cjs.js",
   "module": "dist/custom-elements/index.js",
   "es2015": "dist/esm/index.mjs",
@@ -40,6 +45,7 @@
     "@tailwindcss/typography": "^0.4.0",
     "autoprefixer": "10.2.5",
     "axios": "^0.21.1",
+    "axios-middleware": "^0.3.1",
     "cssnano": "^4.1.10",
     "d3": "^6.6.2",
     "dagre-d3": "^0.6.4",
@@ -53,7 +59,7 @@
     "postcss-import": "^14.0.0",
     "postcss-preset-env": "^6.7.0",
     "stencil-click-outside": "^1.7.1",
-    "tailwindcss": "2.1.1",
+    "tailwindcss": "^2.2.4",
     "tslint": "6.1.3",
     "tslint-stencil": "1.0.1",
     "typescript": "4.2.3",

@@ -274,7 +274,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
   mapActivityModel(source: ActivityDefinition): ActivityModel {
     const activityDescriptors: Array<ActivityDescriptor> = state.activityDescriptors;
     const activityDescriptor = activityDescriptors.find(x => x.type == source.type);
-    
+
     return {
       activityId: source.activityId,
       description: source.description,
@@ -304,11 +304,6 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   onShowWorkflowSettingsClick() {
     eventBus.emit(EventTypes.ShowWorkflowSettings);
-  }
-
-  private onUpdateWorkflowSettings = async (workflowDefinition: WorkflowDefinition) => {
-    this.updateWorkflowDefinition(workflowDefinition);
-    await this.saveWorkflowInternal(this.workflowModel);
   }
 
   async onPublishClicked() {
@@ -341,6 +336,11 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   onActivityContextMenuButtonClicked(e: CustomEvent<ActivityContextMenuState>) {
     this.activityContextMenuState = e.detail;
+  }
+
+  private onUpdateWorkflowSettings = async (workflowDefinition: WorkflowDefinition) => {
+    this.updateWorkflowDefinition(workflowDefinition);
+    await this.saveWorkflowInternal(this.workflowModel);
   }
 
   render() {

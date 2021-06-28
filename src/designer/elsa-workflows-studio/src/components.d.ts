@@ -10,6 +10,8 @@ import { LocationSegments, MatchResults, RouterHistory } from "@stencil/router";
 import { MenuItem } from "./components/controls/elsa-context-menu/models";
 import { ActivityContextMenuState, LayoutDirection, WorkflowDesignerMode } from "./components/designers/tree/elsa-designer-tree/models";
 import { DropdownButtonItem, DropdownButtonOrigin } from "./components/controls/elsa-dropdown-button/models";
+import { AxiosInstance, AxiosRequestConfig } from "axios";
+import { Service } from "axios-middleware";
 import { MonacoValueChangedArgs } from "./components/controls/elsa-monaco/elsa-monaco";
 import { Map } from "./utils/utils";
 import { ToastNotificationOptions } from "./components/shared/elsa-toast-notification/elsa-toast-notification";
@@ -68,6 +70,8 @@ export namespace Components {
         "setExpression": (value: string) => Promise<void>;
         "singleLineMode": boolean;
         "workflowDefinitionId": string;
+    }
+    interface ElsaExternalEvents {
     }
     interface ElsaInputTags {
         "fieldId"?: string;
@@ -324,6 +328,12 @@ declare global {
         prototype: HTMLElsaExpressionEditorElement;
         new (): HTMLElsaExpressionEditorElement;
     };
+    interface HTMLElsaExternalEventsElement extends Components.ElsaExternalEvents, HTMLStencilElement {
+    }
+    var HTMLElsaExternalEventsElement: {
+        prototype: HTMLElsaExternalEventsElement;
+        new (): HTMLElsaExternalEventsElement;
+    };
     interface HTMLElsaInputTagsElement extends Components.ElsaInputTags, HTMLStencilElement {
     }
     var HTMLElsaInputTagsElement: {
@@ -557,6 +567,7 @@ declare global {
         "elsa-dropdown-button": HTMLElsaDropdownButtonElement;
         "elsa-dropdown-property": HTMLElsaDropdownPropertyElement;
         "elsa-expression-editor": HTMLElsaExpressionEditorElement;
+        "elsa-external-events": HTMLElsaExternalEventsElement;
         "elsa-input-tags": HTMLElsaInputTagsElement;
         "elsa-input-tags-dropdown": HTMLElsaInputTagsDropdownElement;
         "elsa-modal-dialog": HTMLElsaModalDialogElement;
@@ -651,6 +662,10 @@ declare namespace LocalJSX {
         "serverUrl"?: string;
         "singleLineMode"?: boolean;
         "workflowDefinitionId"?: string;
+    }
+    interface ElsaExternalEvents {
+        "onHttpClientConfigCreated"?: (event: CustomEvent<AxiosRequestConfig>) => void;
+        "onHttpClientCreated"?: (event: CustomEvent<{ service: Service, axiosInstance: AxiosInstance }>) => void;
     }
     interface ElsaInputTags {
         "fieldId"?: string;
@@ -851,6 +866,7 @@ declare namespace LocalJSX {
         "elsa-dropdown-button": ElsaDropdownButton;
         "elsa-dropdown-property": ElsaDropdownProperty;
         "elsa-expression-editor": ElsaExpressionEditor;
+        "elsa-external-events": ElsaExternalEvents;
         "elsa-input-tags": ElsaInputTags;
         "elsa-input-tags-dropdown": ElsaInputTagsDropdown;
         "elsa-modal-dialog": ElsaModalDialog;
@@ -904,6 +920,7 @@ declare module "@stencil/core" {
             "elsa-dropdown-button": LocalJSX.ElsaDropdownButton & JSXBase.HTMLAttributes<HTMLElsaDropdownButtonElement>;
             "elsa-dropdown-property": LocalJSX.ElsaDropdownProperty & JSXBase.HTMLAttributes<HTMLElsaDropdownPropertyElement>;
             "elsa-expression-editor": LocalJSX.ElsaExpressionEditor & JSXBase.HTMLAttributes<HTMLElsaExpressionEditorElement>;
+            "elsa-external-events": LocalJSX.ElsaExternalEvents & JSXBase.HTMLAttributes<HTMLElsaExternalEventsElement>;
             "elsa-input-tags": LocalJSX.ElsaInputTags & JSXBase.HTMLAttributes<HTMLElsaInputTagsElement>;
             "elsa-input-tags-dropdown": LocalJSX.ElsaInputTagsDropdown & JSXBase.HTMLAttributes<HTMLElsaInputTagsDropdownElement>;
             "elsa-modal-dialog": LocalJSX.ElsaModalDialog & JSXBase.HTMLAttributes<HTMLElsaModalDialogElement>;

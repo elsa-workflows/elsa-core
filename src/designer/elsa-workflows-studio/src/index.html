@@ -18,5 +18,32 @@
 <!--<elsa-studio-root server-url="https://localhost:6080" monaco-lib-path="build/assets/js/monaco-editor/min"></elsa-studio-root>-->
 <!--<elsa-studio-root server-url="https://skynet-workflow.azurewebsites.net" monaco-lib-path="build/assets/js/monaco-editor/min"></elsa-studio-root>-->
 
+<script>
+  const elsaStudioRoot = document.querySelector('elsa-studio-root');
+  elsaStudioRoot.addEventListener('httpClientCreated', event => {
+    
+    // Get access to the axios middleware service and register a sample middleware:
+    const { service } = event.detail;
+
+    // Register a sample middleware.
+    service.register({
+      onRequest(config) {
+        console.log('onRequest');
+        config.headers = { 
+          'X-Client': 'Elsa Dashboard',
+          Authorization: 'Bearer 123'
+        };
+        return config;
+      },
+      
+      onResponse(response) {
+        console.log('onResponse');
+        return response;
+      }
+    });
+    
+  })
+</script>
+
 </body>
 </html>
