@@ -37,4 +37,12 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
     public record BulkDeleteWorkflowsRequest(ICollection<string> WorkflowInstanceIds)
     {
     }
+    
+    public record ExecuteWorkflowInstanceRequestModel(string? ActivityId, object? Input);
+
+    public record ExecuteWorkflowInstanceResponseModel(bool Executed, string? ActivityId, WorkflowInstance? WorkflowInstance);
+
+    public record DispatchWorkflowInstanceRequestModel(string? ActivityId, object? Input);
+
+    public record DispatchWorkflowInstanceResponseModel();
 }

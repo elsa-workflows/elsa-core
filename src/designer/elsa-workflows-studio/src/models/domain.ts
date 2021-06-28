@@ -19,6 +19,7 @@ export interface WorkflowDefinition {
   activities: Array<ActivityDefinition>;
   connections: Array<ConnectionDefinition>;
   tag?: string;
+  channel?: string;
 }
 
 export interface WorkflowDefinitionSummary {

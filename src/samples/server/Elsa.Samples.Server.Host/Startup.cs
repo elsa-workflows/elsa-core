@@ -1,15 +1,7 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using Elsa.Activities.Conductor.Extensions;
-using Elsa.Activities.Console;
-using Elsa.Activities.Http;
-using Elsa.Activities.UserTask.Extensions;
-using Elsa.Persistence.EntityFramework.Core.Extensions;
-using Elsa.Persistence.EntityFramework.Sqlite;
-using Elsa.Providers.WorkflowStorage;
 using Elsa.Samples.Server.Host.Activities;
+using Elsa.Server.Hangfire.Extensions;
+using Hangfire;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -58,6 +50,7 @@ namespace Elsa.Samples.Server.Host
                 typeof(Persistence.YesSql.SqlServerStartup),
                 typeof(Persistence.YesSql.MySqlStartup),
                 typeof(Persistence.YesSql.PostgreSqlStartup),
+                typeof(Elsa.Server.Hangfire.Startup),
                 typeof(Elsa.Scripting.JavaScript.Startup),
             };
 
@@ -68,7 +61,12 @@ namespace Elsa.Samples.Server.Host
                     .AddActivitiesFrom<Startup>()
                     .AddWorkflowsFrom<Startup>()
                     .AddFeatures(startups, Configuration, elsaSection.GetSection("Features").Get<List<string>>())
+                    .ConfigureWorkflowChannels(options => elsaSection.GetSection("WorkflowChannels").Bind(options))
                 );
+            
+            // Hangfire.
+            services.AddHangfire(configuration => configuration.UseSqlServerStorage(Configuration.GetConnectionString("SqlServer")));
+            services.AddHangfireServer((sp, options)=> options.ConfigureForElsaDispatchers(sp));
 
             // Elsa API endpoints.
             services

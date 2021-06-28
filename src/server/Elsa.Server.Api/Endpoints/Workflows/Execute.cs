@@ -24,7 +24,7 @@ namespace Elsa.Server.Api.Endpoints.Workflows
 
         [HttpPost]
         [ElsaJsonFormatter]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ExecuteWorkflowDefinitionResponse))]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ExecuteWorkflowDefinitionResponseModel))]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [SwaggerOperation(
             Summary = "Executes the specified workflow definition.",
@@ -32,7 +32,7 @@ namespace Elsa.Server.Api.Endpoints.Workflows
             OperationId = "WorkflowDefinitions.Execute",
             Tags = new[] { "WorkflowDefinitions" })
         ]
-        public async Task<IActionResult> Handle(string workflowDefinitionId, ExecuteWorkflowDefinitionRequest request, CancellationToken cancellationToken = default)
+        public async Task<IActionResult> Handle(string workflowDefinitionId, ExecuteWorkflowDefinitionRequestModel request, CancellationToken cancellationToken = default)
         {
             var startableWorkflow = await _workflowLaunchpad.CollectStartableWorkflowAsync(workflowDefinitionId, request.ActivityId, request.CorrelationId, request.ContextId, default, cancellationToken);
 
@@ -44,7 +44,7 @@ namespace Elsa.Server.Api.Endpoints.Workflows
             if (Response.HasStarted)
                 return new EmptyResult();
 
-            return Ok(new ExecuteWorkflowDefinitionResponse(
+            return Ok(new ExecuteWorkflowDefinitionResponseModel(
                 result.Executed,
                 result.ActivityId,
                 result.WorkflowInstance

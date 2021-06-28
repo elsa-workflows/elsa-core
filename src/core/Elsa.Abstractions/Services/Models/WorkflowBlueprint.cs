@@ -24,6 +24,7 @@ namespace Elsa.Services.Models
             bool isLatest,
             bool isPublished,
             string? tag,
+            string? channel,
             Variables? variables,
             Variables? customAttributes,
             WorkflowContextOptions? contextOptions,
@@ -52,6 +53,7 @@ namespace Elsa.Services.Models
             IsLatest = isLatest;
             IsPublished = isPublished;
             Tag = tag;
+            Channel = channel;
             ContextOptions = contextOptions;
             Variables = variables ?? new Variables();
             CustomAttributes = customAttributes ?? new Variables();
@@ -69,6 +71,12 @@ namespace Elsa.Services.Models
         public bool IsPublished { get; set; }
         public bool IsLatest { get; set; }
         public string? Tag { get; set; }
+        
+        /// <summary>
+        /// The channel, or queue, to place workflow instances of this workflow blueprint in. Channels can be used by the workflow dispatcher to prioritize workflows. 
+        /// </summary>
+        public string? Channel { get; }
+        
         public Variables Variables { get; set; }
         public WorkflowContextOptions? ContextOptions { get; set; }
         public WorkflowPersistenceBehavior PersistenceBehavior { get; set; }

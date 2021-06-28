@@ -217,6 +217,12 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
         const response = await httpClient.get<Array<WorkflowStorageDescriptor>>('v1/workflow-storage-providers');
         return response.data;
       }
+    },
+    workflowChannelsApi: {
+      list: async () => {
+        const response = await httpClient.get<Array<string>>('v1/workflow-channels');
+        return response.data;
+      }
     }
   }
 
@@ -234,6 +240,7 @@ export interface ElsaClient {
   activityStatsApi: ActivityStatsApi;
   workflowStorageProvidersApi: WorkflowStorageProvidersApi;
   webhookDefinitionsApi: WebhookDefinitionsApi;
+  workflowChannelsApi: WorkflowChannelsApi;
 }
 
 export interface ActivitiesApi {
@@ -320,12 +327,17 @@ export interface WorkflowStorageProvidersApi {
   list(): Promise<Array<WorkflowStorageDescriptor>>;
 }
 
+export interface WorkflowChannelsApi {
+  list(): Promise<Array<string>>;
+}
+
 export interface SaveWorkflowDefinitionRequest {
   workflowDefinitionId?: string;
   name?: string;
   displayName?: string;
   description?: string;
   tag?: string;
+  channel?: string;
   variables?: Variables;
   contextOptions?: WorkflowContextOptions;
   isSingleton?: boolean;

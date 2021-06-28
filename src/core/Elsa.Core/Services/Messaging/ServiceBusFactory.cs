@@ -30,10 +30,11 @@ namespace Elsa.Services.Messaging
             _handlerActivator = new DependencyInjectionHandlerActivator(serviceProvider);
         }
 
-        public Task<IBus> GetServiceBusAsync(Type messageType, CancellationToken cancellationToken = default) => GetServiceBusAsync(messageType, messageType.Name, cancellationToken);
-
-        public async Task<IBus> GetServiceBusAsync(Type messageType, string queueName, CancellationToken cancellationToken = default)
+        public async Task<IBus> GetServiceBusAsync(Type messageType, string? queueName = default, CancellationToken cancellationToken = default)
         {
+            if (string.IsNullOrWhiteSpace(queueName))
+                queueName = messageType.Name;
+            
             var formattedQueueName = FormatQueueName(queueName);
             await _semaphore.WaitAsync(cancellationToken);
             

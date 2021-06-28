@@ -21,9 +21,6 @@ namespace Elsa
 {
     public class ElsaOptionsBuilder
     {
-        private const string ConfigureElsaMethod = "ConfigureElsa";
-        private const string ConfigureAppMethod = "ConfigureApp";
-
         public ElsaOptionsBuilder(IServiceCollection services)
         {
             ElsaOptions = new ElsaOptions();
@@ -59,6 +56,13 @@ namespace Elsa
         public ElsaOptionsBuilder WithContainerName(string name)
         {
             ElsaOptions.ContainerName = name;
+            return this;
+        }
+
+        public ElsaOptionsBuilder ConfigureWorkflowChannels(Action<WorkflowChannelOptions> configure)
+        {
+            ElsaOptions.WorkflowChannelOptions.Channels = new List<string>();
+            configure(ElsaOptions.WorkflowChannelOptions);
             return this;
         }
 
@@ -146,13 +150,13 @@ namespace Elsa
             return this;
         }
 
-        public ElsaOptionsBuilder AddCompetingMessageType(Type messageType)
+        public ElsaOptionsBuilder AddCompetingMessageType(Type messageType, string? queue = default)
         {
-            ElsaOptions.CompetingMessageTypes.Add(messageType);
+            ElsaOptions.CompetingMessageTypes.Add(new CompetingMessageType(messageType, queue));
             return this;
         }
 
-        public ElsaOptionsBuilder AddCompetingMessageType<T>() => AddCompetingMessageType(typeof(T));
+        public ElsaOptionsBuilder AddCompetingMessageType<T>(string? queue = default) => AddCompetingMessageType(typeof(T), queue);
 
         public ElsaOptionsBuilder AddPubSubMessageType(Type messageType)
         {

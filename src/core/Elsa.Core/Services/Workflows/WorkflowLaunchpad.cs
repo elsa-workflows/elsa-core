@@ -167,7 +167,7 @@ namespace Elsa.Services.Workflows
         public async Task<PendingWorkflow> DispatchStartableWorkflowAsync(StartableWorkflow startableWorkflow, object? input, CancellationToken cancellationToken = default)
         {
             var pendingWorkflow = new PendingWorkflow(startableWorkflow.WorkflowInstance.Id, startableWorkflow.ActivityId);
-            await ExecutePendingWorkflowAsync(pendingWorkflow, input, cancellationToken);
+            await DispatchPendingWorkflowAsync(pendingWorkflow, input, cancellationToken);
             return pendingWorkflow;
         }
 

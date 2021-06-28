@@ -71,9 +71,9 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped(options.WorkflowTriggerStoreFactory)
                 .AddSingleton(options.DistributedLockingOptions.DistributedLockProviderFactory)
                 .AddSingleton(options.StorageFactory)
-                .AddSingleton(options.WorkflowDefinitionDispatcherFactory)
-                .AddSingleton(options.WorkflowInstanceDispatcherFactory)
-                .AddSingleton(options.CorrelatingWorkflowDispatcherFactory)
+                .AddScoped(options.WorkflowDefinitionDispatcherFactory)
+                .AddScoped(options.WorkflowInstanceDispatcherFactory)
+                .AddScoped(options.CorrelatingWorkflowDispatcherFactory)
                 .AddSingleton<IDistributedLockProvider, DistributedLockProvider>()
                 .AddStartupTask<ContinueRunningWorkflows>()
                 .AddStartupTask<CreateSubscriptions>()
@@ -110,8 +110,14 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <returns></returns>
         public static ElsaOptionsBuilder AddCompetingConsumer<TConsumer, TMessage>(this ElsaOptionsBuilder elsaOptions) where TConsumer : class, IHandleMessages<TMessage>
         {
-            elsaOptions.Services.AddTransient<IHandleMessages<TMessage>, TConsumer>();
+            elsaOptions.AddCompetingConsumerService<TConsumer, TMessage>();
             elsaOptions.AddCompetingMessageType<TMessage>();
+            return elsaOptions;
+        }
+
+        private static ElsaOptionsBuilder AddCompetingConsumerService<TConsumer, TMessage>(this ElsaOptionsBuilder elsaOptions) where TConsumer : class, IHandleMessages<TMessage>
+        {
+            elsaOptions.Services.AddTransient<IHandleMessages<TMessage>, TConsumer>();
             return elsaOptions;
         }
         
@@ -239,8 +245,8 @@ namespace Microsoft.Extensions.DependencyInjection
 
             options
                 .AddCompetingConsumer<TriggerWorkflowsRequestConsumer, TriggerWorkflowsRequest>()
-                .AddCompetingConsumer<ExecuteWorkflowDefinitionRequestConsumer, ExecuteWorkflowDefinitionRequest>()
-                .AddCompetingConsumer<ExecuteWorkflowInstanceRequestConsumer, ExecuteWorkflowInstanceRequest>()
+                .AddCompetingConsumerService<ExecuteWorkflowDefinitionRequestConsumer, ExecuteWorkflowDefinitionRequest>()
+                .AddCompetingConsumerService<ExecuteWorkflowInstanceRequestConsumer, ExecuteWorkflowInstanceRequest>()
                 .AddPubSubConsumer<UpdateWorkflowTriggersIndexConsumer, WorkflowDefinitionPublished>()
                 .AddPubSubConsumer<UpdateWorkflowTriggersIndexConsumer, WorkflowDefinitionRetracted>()
                 .AddPubSubConsumer<UpdateWorkflowTriggersIndexConsumer, WorkflowDefinitionDeleted>();

@@ -1,4 +1,4 @@
-import {Component, h, Prop, Event, EventEmitter, State, Watch} from '@stencil/core';
+import {Component, Host, h, Prop, Event, EventEmitter, State, Watch} from '@stencil/core';
 import {AxiosInstance, AxiosRequestConfig} from "axios";
 import {Service} from 'axios-middleware';
 import {eventBus} from "../../../services/event-bus";
@@ -32,6 +32,6 @@ export class ElsaExternalEvents {
   };
 
   render() {
-    return <slot/>
+    return <Host/>;
   }
 }
