@@ -47,7 +47,8 @@ export interface ActivityBlueprint {
   loadWorkflowContext: boolean;
   saveWorkflowContext: boolean;
   source?: string;
-  properties: Variables;
+  inputProperties: Variables;
+  outputProperties: Variables;
   propertyStorageProviders: Map<string>;
 }
 

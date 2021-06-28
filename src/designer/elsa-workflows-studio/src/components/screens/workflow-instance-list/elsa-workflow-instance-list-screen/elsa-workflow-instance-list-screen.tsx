@@ -314,15 +314,15 @@ export class ElsaWorkflowInstanceListScreen {
                                         {!!workflowInstance.correlationId ? workflowInstance.correlationId : ''}
                                     </td>
                                     <td class="elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-font-medium elsa-text-gray-900 elsa-text-left">
-                                        <a href={`/workflow-registry/${workflowInstance.definitionId}/viewer`} class="elsa-truncate hover:elsa-text-gray-600">
+                                        <stencil-route-link url={`/workflow-registry/${workflowInstance.definitionId}`} anchorClass="elsa-truncate hover:elsa-text-gray-600">
                                             {displayName}
-                                        </a>
+                                        </stencil-route-link>
                                     </td>
                                     <td class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-right elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-uppercase">
                                         {workflowInstance.version}
                                     </td>
                                     <td class="elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-font-medium elsa-text-gray-900 elsa-text-left">
-                                        <stencil-route-link url={`"@($" workflow-registry/{workflowInstance.definitionId}/viewer")"`} anchorClass="elsa-truncate hover:elsa-text-gray-600">{instanceName}</stencil-route-link>
+                                        <stencil-route-link url={viewUrl} anchorClass="elsa-truncate hover:elsa-text-gray-600">{instanceName}</stencil-route-link>
                                     </td>
                                     <td class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-text-right">
                                         <div class="elsa-flex elsa-items-center elsa-space-x-3 lg:elsa-pl-2">
