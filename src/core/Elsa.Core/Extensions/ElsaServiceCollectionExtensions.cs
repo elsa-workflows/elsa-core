@@ -26,7 +26,6 @@ using Elsa.Serialization;
 using Elsa.Serialization.Converters;
 using Elsa.Services;
 using Elsa.Services.Bookmarks;
-using Elsa.Services.Dispatch;
 using Elsa.Services.Dispatch.Consumers;
 using Elsa.Services.Locking;
 using Elsa.Services.Messaging;

@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Elsa.Models;
-using Elsa.Server.Api.Endpoints.WorkflowDefinitions;
 using Elsa.Services.Bookmarks;
 using Elsa.Services.Models;
 

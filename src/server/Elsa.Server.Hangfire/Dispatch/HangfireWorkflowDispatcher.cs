@@ -6,7 +6,6 @@ using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Server.Hangfire.Jobs;
 using Elsa.Services;
-using Elsa.Services.Dispatch;
 using Hangfire;
 using Hangfire.States;
 using Microsoft.Extensions.Logging;

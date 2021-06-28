@@ -1,5 +1,4 @@
 using Elsa.Activities.Http;
-using Elsa.Activities.Http.Models;
 using Elsa.Builders;
 using System;
 using System.Text.Json;

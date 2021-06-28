@@ -1,10 +1,6 @@
 using Elsa.Activities.Console;
 using Elsa.Activities.File;
-using Elsa.Activities.Primitives;
 using Elsa.Builders;
-using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Text;
 
 namespace Elsa.Samples.ReadLineToFile

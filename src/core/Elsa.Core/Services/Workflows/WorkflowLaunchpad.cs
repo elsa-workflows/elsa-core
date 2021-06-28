@@ -9,7 +9,6 @@ using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
 using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Services.Bookmarks;
-using Elsa.Services.Dispatch;
 using Elsa.Services.Models;
 using Elsa.Services.Triggers;
 using Medallion.Threading;

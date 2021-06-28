@@ -5,7 +5,6 @@ using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Services;
-using Elsa.Services.Dispatch;
 using Microsoft.Extensions.Logging;
 using Open.Linq.AsyncExtensions;
 using IDistributedLockProvider = Elsa.Services.IDistributedLockProvider;

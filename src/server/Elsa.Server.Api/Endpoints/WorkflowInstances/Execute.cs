@@ -1,7 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Server.Api.ActionFilters;
-using Elsa.Server.Api.Endpoints.WorkflowDefinitions;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
