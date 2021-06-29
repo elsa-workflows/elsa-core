@@ -1,5 +1,4 @@
 import {Component, h, Prop, State} from '@stencil/core';
-import * as collection from 'lodash/collection';
 import {createElsaClient} from "../../../../services/elsa-client";
 import {PagedList, VersionOptions, WorkflowDefinitionSummary} from "../../../../models";
 import {RouterHistory} from "@stencil/router";
@@ -12,6 +11,7 @@ export class ElsaWorkflowDefinitionsListScreen {
   @Prop() history?: RouterHistory;
   @Prop() serverUrl: string;
   @State() workflowDefinitions: PagedList<WorkflowDefinitionSummary> = {items: [], page: 1, pageSize: 50, totalCount: 0};
+  @State() publishedWorkflowDefinitions: WorkflowDefinitionSummary[] = [];
 
   confirmDialog: HTMLElsaConfirmDialogElement;
 
@@ -34,8 +34,12 @@ export class ElsaWorkflowDefinitionsListScreen {
     const elsaClient = this.createClient();
     const page = 0;
     const pageSize = 50;
-    const versionOptions: VersionOptions = {allVersions: true};
-    this.workflowDefinitions = await elsaClient.workflowDefinitionsApi.list(page, pageSize, versionOptions);
+    const latestVersionOptions: VersionOptions = {isLatest: true};
+    const publishedVersionOptions: VersionOptions = {isPublished: true};
+    const latestWorkflowDefinitions = await elsaClient.workflowDefinitionsApi.list(page, pageSize, latestVersionOptions);
+    const unpublishedWorkflowDefinitionIds = latestWorkflowDefinitions.items.filter(x => !x.isPublished).map(x => x.definitionId);
+    this.publishedWorkflowDefinitions = await elsaClient.workflowDefinitionsApi.getMany(unpublishedWorkflowDefinitionIds, publishedVersionOptions);
+    this.workflowDefinitions = latestWorkflowDefinitions;
   }
 
   createClient() {
@@ -44,7 +48,6 @@ export class ElsaWorkflowDefinitionsListScreen {
 
   render() {
     const workflowDefinitions = this.workflowDefinitions.items;
-    const groupings = collection.groupBy(workflowDefinitions, 'definitionId');
 
     return (
       <div>
@@ -66,11 +69,9 @@ export class ElsaWorkflowDefinitionsListScreen {
             </tr>
             </thead>
             <tbody class="elsa-bg-white elsa-divide-y elsa-divide-gray-100">
-            {collection.map(groupings, group => {
-              const versions = collection.orderBy(group, 'version', 'desc');
-              const workflowDefinition: WorkflowDefinitionSummary = versions[0];
+            {workflowDefinitions.map(workflowDefinition => {
               const latestVersionNumber = workflowDefinition.version;
-              const publishedVersion: WorkflowDefinitionSummary = versions.find(x => x.isPublished);
+              const publishedVersion: WorkflowDefinitionSummary = workflowDefinition.isPublished ? workflowDefinition : this.publishedWorkflowDefinitions.find(x => x.definitionId == workflowDefinition.definitionId);
               const publishedVersionNumber = !!publishedVersion ? publishedVersion.version : '-';
               let workflowDisplayName = workflowDefinition.displayName;
 

@@ -291,6 +291,10 @@ export interface PagedList<T> {
   totalCount: number;
 }
 
+export interface ListModel<T> {
+  items: Array<T>;
+}
+
 export enum ActivityTraits {
   Action = 1,
   Trigger = 2,

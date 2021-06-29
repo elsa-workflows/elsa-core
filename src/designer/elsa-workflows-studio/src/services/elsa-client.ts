@@ -7,7 +7,7 @@ import {
   ActivityDescriptor,
   ConnectionDefinition,
   EventTypes,
-  getVersionOptionsString,
+  getVersionOptionsString, ListModel,
   OrderBy,
   PagedList,
   SelectListItem,
@@ -57,6 +57,11 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
         const versionOptionsString = getVersionOptionsString(versionOptions);
         const response = await httpClient.get<PagedList<WorkflowDefinitionSummary>>(`v1/workflow-definitions?version=${versionOptionsString}`);
         return response.data;
+      },
+      getMany: async (ids: Array<string>, versionOptions?: VersionOptions) => {
+        const versionOptionsString = getVersionOptionsString(versionOptions);
+        const response = await httpClient.get<ListModel<WorkflowDefinitionSummary>>(`v1/workflow-definitions?ids=${ids.join(',')}&version=${versionOptionsString}`);
+        return response.data.items;
       },
       getByDefinitionAndVersion: async (definitionId: string, versionOptions: VersionOptions) => {
         const versionOptionsString = getVersionOptionsString(versionOptions);
@@ -250,6 +255,8 @@ export interface ActivitiesApi {
 export interface WorkflowDefinitionsApi {
 
   list(page?: number, pageSize?: number, versionOptions?: VersionOptions): Promise<PagedList<WorkflowDefinitionSummary>>;
+
+  getMany(ids: Array<string>, versionOptions?: VersionOptions): Promise<Array<WorkflowDefinitionSummary>>;
 
   getByDefinitionAndVersion(definitionId: string, versionOptions: VersionOptions): Promise<WorkflowDefinition>;
 
