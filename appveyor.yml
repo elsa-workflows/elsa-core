@@ -44,7 +44,7 @@ install:
 
       npm install --force
 
-      cd ..\..\..
+      cd ..\..\..\..\..
 
       dotnet tool install --global dotnet-sonarscanner
 
@@ -76,7 +76,7 @@ build_script:
 
       npm run build
 
-      cd ..\..\..
+      cd ..\..\..\..\..
 
       dotnet build
 
