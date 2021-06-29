@@ -82,7 +82,7 @@ namespace Elsa.Activities.Http.Middleware
                 if (useDispatch)
                     await workflowLaunchpad.DispatchPendingWorkflowAsync(pendingWorkflow, inputModel, cancellationToken);
                 else
-                    await workflowLaunchpad.ExecutePendingWorkflowsAsync(pendingWorkflows, inputModel, cancellationToken);
+                    await workflowLaunchpad.ExecutePendingWorkflowAsync(pendingWorkflow, inputModel, cancellationToken);
             }
 
             if (pendingWorkflows.Count > 0)
