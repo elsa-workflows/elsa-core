@@ -174,10 +174,11 @@ export class ElsaActivityEditorModal {
     const formContext = this.formContext;
     let storageDescriptorOptions: Array<SelectOption> = this.workflowStorageDescriptors.map(x => ({value: x.name, text: x.displayName}));
     let outputProperties = activityDescriptor.outputProperties;
+    let inputProperties = activityDescriptor.inputProperties;
 
     storageDescriptorOptions = [{value: null, text: 'Default'}, ...storageDescriptorOptions];
 
-    const renderOutputProperty = function (propertyDescriptor: ActivityPropertyDescriptor) {
+    const renderPropertyStorageSelectField = function (propertyDescriptor: ActivityPropertyDescriptor) {
       const propertyName = propertyDescriptor.name;
       const fieldName = `propertyStorageProviders.${propertyName}`;
       return selectField(formContext, fieldName, propertyName, activityModel.propertyStorageProviders[propertyName], storageDescriptorOptions, null, fieldName);
@@ -195,7 +196,11 @@ export class ElsaActivityEditorModal {
           {checkBox(formContext, 'persistWorkflow', 'Save Workflow Instance', activityModel.persistWorkflow, 'When enabled, this will save the workflow instance back into storage right after executing this activity.', 'persistWorkflow')}
 
           {Object.keys(outputProperties).length > 0 ? (
-            [section('Activity Output', 'Configure the desired storage for each output property of this activity.'), outputProperties.map(renderOutputProperty)]
+            [section('Activity Output', 'Configure the desired storage for each output property of this activity.'), outputProperties.map(renderPropertyStorageSelectField)]
+          ) : undefined}
+
+          {Object.keys(inputProperties).length > 0 ? (
+            [section('Activity Input', 'Configure the desired storage for each input property of this activity.'), inputProperties.map(renderPropertyStorageSelectField)]
           ) : undefined}
         </div>
       </div>
