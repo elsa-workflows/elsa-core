@@ -199,7 +199,7 @@ namespace Elsa.Services.Workflows
         {
             _logger.LogDebug("Triggering workflows using {ActivityType}", context.ActivityType);
 
-            var filter = context.Trigger;
+            var filter = context.Trigger ?? context.Bookmark;
             var triggers = filter != null ? (await _triggerFinder.FindTriggersAsync(context.ActivityType, filter, context.TenantId, cancellationToken)).ToList() : new List<TriggerFinderResult>();
             var startableWorkflows = new List<StartableWorkflow>();
 
