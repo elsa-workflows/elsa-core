@@ -64,6 +64,7 @@ namespace Elsa.Activities.Http.Middleware
             var simpleContentType = request.ContentType?.Split(';').First();
             var contentParser = orderedContentParsers.FirstOrDefault(x => x.SupportedContentTypes.Contains(simpleContentType, StringComparer.OrdinalIgnoreCase)) ?? orderedContentParsers.LastOrDefault() ?? new DefaultHttpRequestBodyParser();
 
+            // Handle each pending workflow individually. We need to check their readContent setting to see if we need to parse the incoming HTTP request body or not.
             foreach (var pendingWorkflow in pendingWorkflows)
             {
                 var pendingWorkflowInstance = pendingWorkflowInstances[pendingWorkflow.WorkflowInstanceId];
@@ -71,8 +72,7 @@ namespace Elsa.Activities.Http.Middleware
                 var activityWrapper = workflowBlueprintWrapper.GetUnfilteredActivity<HttpEndpoint>(pendingWorkflow.ActivityId!);
                 var readContent = await activityWrapper!.EvaluatePropertyValueAsync(x => x.ReadContent, cancellationToken);
                 var inputModel = commonInputModel;
-
-                // TODO: Explain this + sequence.
+                
                 if (readContent)
                 {
                     var targetType = await activityWrapper.EvaluatePropertyValueAsync(x => x.TargetType, cancellationToken);

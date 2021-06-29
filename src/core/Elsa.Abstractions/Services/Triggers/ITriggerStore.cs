@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Elsa.Services.Triggers
+namespace Elsa.Services
 {
     public interface ITriggerStore
     {
