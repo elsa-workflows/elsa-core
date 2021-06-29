@@ -29,7 +29,6 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
                 entity.Variables,
                 entity.ContextOptions,
                 entity.CustomAttributes,
-                entity.Tag,
                 entity.Channel
             };
             
@@ -46,7 +45,6 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
                 entity.Variables,
                 entity.ContextOptions,
                 entity.CustomAttributes,
-                entity.Tag,
                 entity.Channel
             };
             
@@ -58,7 +56,6 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
             entity.Variables = data.Variables;
             entity.ContextOptions = data.ContextOptions;
             entity.CustomAttributes = data.CustomAttributes;
-            entity.Tag = data.Tag;
             entity.Channel = data.Channel;
         }
     }
