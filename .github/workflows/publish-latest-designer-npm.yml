@@ -11,15 +11,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v1
-      - uses: actions/setup-node@v1
-      with:
-        node-version: 10
-        - run: |
-            cd ./src/designer/elsa-workflows-studio/
-            npm install
-            npm run build
-        - uses: JS-DevTools/npm-publish@v1
+      - name: Checkout
+        uses: actions/checkout@v1
+      
+      - name: Setup Node
+        uses: actions/setup-node@v1
+        with:
+          node-version: 10
+            - run: |
+                cd ./src/designer/elsa-workflows-studio/
+                npm install
+                npm run build
+        
+        - name: NPM Publish
+          uses: JS-DevTools/npm-publish@v1
           with:
             package: ./src/designer/elsa-workflows-studio/package.json
             token: ${{ secrets.NPM_TOKEN }}
