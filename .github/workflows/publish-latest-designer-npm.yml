@@ -9,6 +9,9 @@ jobs:
   push_to_npm:
     name: Push NPM package to NPM
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./src/designer/elsa-workflows-studio
 
     steps:
       - name: Checkout
@@ -18,8 +21,7 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: 10
-          
-      - run: cd ./src/designer/elsa-workflows-studio/
+      
       - run: npm install
       - run: npm run build
         
