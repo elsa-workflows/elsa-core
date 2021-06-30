@@ -20,7 +20,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v1
         with:
-          node-version: 10
+          node-version: 14.17.1
       
       - run: npm install
       - run: npm run build
