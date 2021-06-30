@@ -18,10 +18,12 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: 10
-            - run: |
-                cd ./src/designer/elsa-workflows-studio/
-                npm install
-                npm run build
+          
+      - name: Build
+        run: |
+          cd ./src/designer/elsa-workflows-studio/
+          npm install
+          npm run build
         
         - name: NPM Publish
           uses: JS-DevTools/npm-publish@v1
