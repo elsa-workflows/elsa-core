@@ -1,21 +1,26 @@
 using System;
+using System.Data;
 using Elsa.Activities.Webhooks;
 using Elsa.Persistence.YesSql;
+using Elsa.Persistence.YesSql.Data;
+using Elsa.Persistence.YesSql.Mapping;
+using Elsa.Persistence.YesSql.Services;
+using Elsa.Runtime;
+using Elsa.Webhooks.Persistence.YesSql.Indexes;
 using Elsa.Webhooks.Persistence.YesSql.Stores;
 using Microsoft.Extensions.DependencyInjection;
 using YesSql;
 using YesSql.Indexes;
-using Elsa.Runtime;
-using Elsa.Webhooks.Persistence.YesSql.Mapping;
-using Elsa.Persistence.YesSql.Services;
-using Elsa.Persistence.YesSql.Data;
-using Elsa.Webhooks.Persistence.YesSql.Indexes;
+using YesSql.Provider.Sqlite;
 
 namespace Elsa.Webhooks.Persistence.YesSql.Extensions
 {
     public static class WebhookServiceCollectionExtensions
     {
-        public static ElsaOptionsBuilder UseYesSqlPersistence(this ElsaOptionsBuilder elsa, Action<IServiceProvider, IConfiguration> configure)
+        public static ElsaOptionsBuilder UseWebhookYesSqlPersistence(this ElsaOptionsBuilder elsa) => elsa.UseWebhookYesSqlPersistence(config => config.UseSqLite("Data Source=elsa.yessql.db;Cache=Shared", IsolationLevel.ReadUncommitted));
+        public static ElsaOptionsBuilder UseWebhookYesSqlPersistence(this ElsaOptionsBuilder elsa, Action<IConfiguration> configure) => elsa.UseWebhookYesSqlPersistence((_, config) => configure(config));
+
+        public static ElsaOptionsBuilder UseWebhookYesSqlPersistence(this ElsaOptionsBuilder elsa, Action<IServiceProvider, IConfiguration> configure)
         {
             elsa.Services
                 .AddScoped<YesSqlWebhookDefinitionStore>()

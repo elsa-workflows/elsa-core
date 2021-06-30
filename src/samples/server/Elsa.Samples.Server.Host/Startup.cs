@@ -1,14 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using Elsa.Activities.Conductor.Extensions;
-using Elsa.Activities.Console;
-using Elsa.Activities.Http;
-using Elsa.Activities.UserTask.Extensions;
-using Elsa.Persistence.EntityFramework.Core.Extensions;
-using Elsa.Persistence.EntityFramework.Sqlite;
-using Elsa.Providers.WorkflowStorage;
 using Elsa.Samples.Server.Host.Activities;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -41,7 +31,6 @@ namespace Elsa.Samples.Server.Host
             {
                 typeof(Elsa.Activities.Console.Startup), 
                 typeof(Elsa.Activities.Http.Startup),
-                typeof(Elsa.Activities.Webhooks.Startup),
                 typeof(Elsa.Activities.AzureServiceBus.Startup),
                 typeof(Elsa.Activities.Conductor.Startup),
                 typeof(Elsa.Activities.UserTask.Startup),
@@ -58,6 +47,17 @@ namespace Elsa.Samples.Server.Host
                 typeof(Persistence.YesSql.MySqlStartup),
                 typeof(Persistence.YesSql.PostgreSqlStartup),
                 typeof(Elsa.Scripting.JavaScript.Startup),
+                typeof(Elsa.Activities.Webhooks.Startup),
+                // Webhooks
+                typeof(Webhooks.Persistence.EntityFramework.Sqlite.Startup),
+                typeof(Webhooks.Persistence.EntityFramework.SqlServer.Startup),
+                typeof(Webhooks.Persistence.EntityFramework.MySql.Startup),
+                typeof(Webhooks.Persistence.EntityFramework.PostgreSql.Startup),
+                typeof(Webhooks.Persistence.MongoDb.Startup),
+                typeof(Webhooks.Persistence.YesSql.SqliteStartup),
+                typeof(Webhooks.Persistence.YesSql.SqlServerStartup),
+                typeof(Webhooks.Persistence.YesSql.MySqlStartup),
+                typeof(Webhooks.Persistence.YesSql.PostgreSqlStartup),
             };
 
             services

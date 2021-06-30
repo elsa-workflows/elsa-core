@@ -11,9 +11,9 @@ namespace Elsa.Webhooks.Persistence.MongoDb.Extensions
 {
     public static class WebhookServiceCollectionExtensions
     {
-        public static ElsaOptionsBuilder UseMongoDbPersistence(this ElsaOptionsBuilder elsa, Action<ElsaMongoDbOptions> configureOptions) => UseMongoDbPersistence<ElsaMongoDbContext>(elsa, configureOptions);
+        public static ElsaOptionsBuilder UseWebhookMongoDbPersistence(this ElsaOptionsBuilder elsa, Action<ElsaMongoDbOptions> configureOptions) => UseWebhookMongoDbPersistence<ElsaMongoDbContext>(elsa, configureOptions);
 
-        public static ElsaOptionsBuilder UseMongoDbPersistence<TDbContext>(this ElsaOptionsBuilder elsa, Action<ElsaMongoDbOptions> configureOptions) where TDbContext : ElsaMongoDbContext
+        public static ElsaOptionsBuilder UseWebhookMongoDbPersistence<TDbContext>(this ElsaOptionsBuilder elsa, Action<ElsaMongoDbOptions> configureOptions) where TDbContext : ElsaMongoDbContext
         {
             AddCore<TDbContext>(elsa);
             elsa.Services.Configure(configureOptions);
@@ -21,9 +21,9 @@ namespace Elsa.Webhooks.Persistence.MongoDb.Extensions
             return elsa;
         }
 
-        public static ElsaOptionsBuilder UseMongoDbPersistence(this ElsaOptionsBuilder elsa, IConfiguration configuration) => UseMongoDbPersistence<ElsaMongoDbContext>(elsa, configuration);
+        public static ElsaOptionsBuilder UseWebhookMongoDbPersistence(this ElsaOptionsBuilder elsa, IConfiguration configuration) => UseWebhookMongoDbPersistence<ElsaMongoDbContext>(elsa, configuration);
 
-        public static ElsaOptionsBuilder UseMongoDbPersistence<TDbContext>(this ElsaOptionsBuilder elsa, IConfiguration configuration) where TDbContext : ElsaMongoDbContext
+        public static ElsaOptionsBuilder UseWebhookMongoDbPersistence<TDbContext>(this ElsaOptionsBuilder elsa, IConfiguration configuration) where TDbContext : ElsaMongoDbContext
         {
             AddCore<TDbContext>(elsa);
             elsa.Services.Configure<ElsaMongoDbOptions>(configuration);

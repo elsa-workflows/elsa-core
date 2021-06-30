@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <Import Project="..\..\..\..\common.props" />
     <Import Project="..\..\..\..\configureawait.props" />
@@ -13,6 +13,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <Compile Remove="Extensions\WebhookServiceCollectionExtensions.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
         <PackageReference Include="System.Text.Encodings.Web" Version="5.0.1" />
     </ItemGroup>
@@ -22,11 +26,6 @@
         <ProjectReference Include="..\..\..\server\Elsa.Server.Api\Elsa.Server.Api.csproj" />
         <ProjectReference Include="..\..\Elsa.Activities.Http\Elsa.Activities.Http.csproj" />
         <ProjectReference Include="..\Elsa.Webhooks.Abstractions\Elsa.Webhooks.Abstractions.csproj" />
-        <ProjectReference Include="..\Elsa.Webhooks.Persistence.EntityFramework.Core\Elsa.Webhooks.Persistence.EntityFramework.Core.csproj" />
-        <ProjectReference Include="..\Elsa.Webhooks.Persistence.EntityFramework.MySql\Elsa.Webhooks.Persistence.EntityFramework.MySql.csproj" />
-        <ProjectReference Include="..\Elsa.Webhooks.Persistence.EntityFramework.PostgreSql\Elsa.Webhooks.Persistence.EntityFramework.PostgreSql.csproj" />
-        <ProjectReference Include="..\Elsa.Webhooks.Persistence.EntityFramework.Sqlite\Elsa.Webhooks.Persistence.EntityFramework.Sqlite.csproj" />
-        <ProjectReference Include="..\Elsa.Webhooks.Persistence.EntityFramework.SqlServer\Elsa.Webhooks.Persistence.EntityFramework.SqlServer.csproj" />
     </ItemGroup>
 
 </Project>
