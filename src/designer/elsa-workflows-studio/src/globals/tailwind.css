@@ -728,11 +728,27 @@ select {
   --list-counter-style: lower-alpha;
 }
 
+.elsa-prose ol[type="A" s] {
+  --list-counter-style: upper-alpha;
+}
+
+.elsa-prose ol[type="a" s] {
+  --list-counter-style: lower-alpha;
+}
+
 .elsa-prose ol[type="I"] {
   --list-counter-style: upper-roman;
 }
 
 .elsa-prose ol[type="i"] {
+  --list-counter-style: lower-roman;
+}
+
+.elsa-prose ol[type="I" s] {
+  --list-counter-style: upper-roman;
+}
+
+.elsa-prose ol[type="i" s] {
   --list-counter-style: lower-roman;
 }
 
@@ -2765,6 +2781,45 @@ select {
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+svg.jtk-connector path {
+  stroke: currentColor;
+  --tw-text-opacity: 1;
+  color: rgba(156, 163, 175, var(--tw-text-opacity));
+}
+
+svg.jtk-connector.jtk-hover path {
+  stroke: currentColor;
+  stroke-width: 2;
+  --tw-text-opacity: 1;
+  color: rgba(96, 165, 250, var(--tw-text-opacity));
+}
+
+.elsa-w-2-5 {
+  width: 0.625rem;
+}
+
+.elsa-h-2-5 {
+  height: 0.625rem;
+}
+
+.elsa-space-x-0-5 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-x-reverse: 0;
+  margin-right: calc(0.125rem * var(--tw-space-x-reverse));
+  margin-left: calc(0.125rem * calc(1 - var(--tw-space-x-reverse)));
+}
+
+.node.activity, .node.start, .node.add .label-container {
+  fill: transparent;
+}
+
+.node.activity .label-container, .node.start .label-container {
+  stroke: none;
+}
+
+.hidden {
+  display: none;
+}
+
 @media (min-width: 640px) {
   .sm\:elsa-prose {
     color: #374151;
@@ -2798,11 +2853,27 @@ select {
     --list-counter-style: lower-alpha;
   }
 
+  .sm\:elsa-prose ol[type="A" s] {
+    --list-counter-style: upper-alpha;
+  }
+
+  .sm\:elsa-prose ol[type="a" s] {
+    --list-counter-style: lower-alpha;
+  }
+
   .sm\:elsa-prose ol[type="I"] {
     --list-counter-style: upper-roman;
   }
 
   .sm\:elsa-prose ol[type="i"] {
+    --list-counter-style: lower-roman;
+  }
+
+  .sm\:elsa-prose ol[type="I" s] {
+    --list-counter-style: upper-roman;
+  }
+
+  .sm\:elsa-prose ol[type="i" s] {
     --list-counter-style: lower-roman;
   }
 
@@ -3496,11 +3567,27 @@ select {
     --list-counter-style: lower-alpha;
   }
 
+  .md\:elsa-prose ol[type="A" s] {
+    --list-counter-style: upper-alpha;
+  }
+
+  .md\:elsa-prose ol[type="a" s] {
+    --list-counter-style: lower-alpha;
+  }
+
   .md\:elsa-prose ol[type="I"] {
     --list-counter-style: upper-roman;
   }
 
   .md\:elsa-prose ol[type="i"] {
+    --list-counter-style: lower-roman;
+  }
+
+  .md\:elsa-prose ol[type="I" s] {
+    --list-counter-style: upper-roman;
+  }
+
+  .md\:elsa-prose ol[type="i" s] {
     --list-counter-style: lower-roman;
   }
 
@@ -3930,11 +4017,27 @@ select {
     --list-counter-style: lower-alpha;
   }
 
+  .lg\:elsa-prose ol[type="A" s] {
+    --list-counter-style: upper-alpha;
+  }
+
+  .lg\:elsa-prose ol[type="a" s] {
+    --list-counter-style: lower-alpha;
+  }
+
   .lg\:elsa-prose ol[type="I"] {
     --list-counter-style: upper-roman;
   }
 
   .lg\:elsa-prose ol[type="i"] {
+    --list-counter-style: lower-roman;
+  }
+
+  .lg\:elsa-prose ol[type="I" s] {
+    --list-counter-style: upper-roman;
+  }
+
+  .lg\:elsa-prose ol[type="i" s] {
     --list-counter-style: lower-roman;
   }
 
@@ -4426,11 +4529,27 @@ select {
     --list-counter-style: lower-alpha;
   }
 
+  .xl\:elsa-prose ol[type="A" s] {
+    --list-counter-style: upper-alpha;
+  }
+
+  .xl\:elsa-prose ol[type="a" s] {
+    --list-counter-style: lower-alpha;
+  }
+
   .xl\:elsa-prose ol[type="I"] {
     --list-counter-style: upper-roman;
   }
 
   .xl\:elsa-prose ol[type="i"] {
+    --list-counter-style: lower-roman;
+  }
+
+  .xl\:elsa-prose ol[type="I" s] {
+    --list-counter-style: upper-roman;
+  }
+
+  .xl\:elsa-prose ol[type="i" s] {
     --list-counter-style: lower-roman;
   }
 
@@ -4853,11 +4972,27 @@ select {
     --list-counter-style: lower-alpha;
   }
 
+  .\32xl\:elsa-prose ol[type="A" s] {
+    --list-counter-style: upper-alpha;
+  }
+
+  .\32xl\:elsa-prose ol[type="a" s] {
+    --list-counter-style: lower-alpha;
+  }
+
   .\32xl\:elsa-prose ol[type="I"] {
     --list-counter-style: upper-roman;
   }
 
   .\32xl\:elsa-prose ol[type="i"] {
+    --list-counter-style: lower-roman;
+  }
+
+  .\32xl\:elsa-prose ol[type="I" s] {
+    --list-counter-style: upper-roman;
+  }
+
+  .\32xl\:elsa-prose ol[type="i" s] {
     --list-counter-style: lower-roman;
   }
 

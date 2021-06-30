@@ -22,7 +22,7 @@ export class ElsaActivityPickerModal {
   }
 
   disconnectedCallback() {
-    eventBus.off(EventTypes.ShowActivityPicker, this.onShowActivityPicker);
+    eventBus.off(EventTypes.ShowActivityPicker);
   }
 
   onShowActivityPicker = async () => {
