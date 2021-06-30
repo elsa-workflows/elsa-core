@@ -19,14 +19,12 @@ jobs:
         with:
           node-version: 10
           
-      - name: Build
-        run: |
-          cd ./src/designer/elsa-workflows-studio/
-          npm install
-          npm run build
+      - run: cd ./src/designer/elsa-workflows-studio/
+      - run: npm install
+      - run: npm run build
         
-        - name: NPM Publish
-          uses: JS-DevTools/npm-publish@v1
-          with:
-            package: ./src/designer/elsa-workflows-studio/package.json
-            token: ${{ secrets.NPM_TOKEN }}
+      - name: NPM Publish
+        uses: JS-DevTools/npm-publish@v1
+        with:
+          package: ./src/designer/elsa-workflows-studio/package.json
+          token: ${{ secrets.NPM_TOKEN }}
