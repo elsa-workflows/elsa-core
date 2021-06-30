@@ -27,7 +27,7 @@ jobs:
       - run: npm install
       - run: npm run build
 
-      - name: NPM Publish PReview
+      - name: NPM Publish Preview
         if: github.event_name == 'push'
         uses: JS-DevTools/npm-publish@v1
         with:
