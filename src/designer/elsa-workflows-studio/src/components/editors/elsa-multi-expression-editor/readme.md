@@ -11,7 +11,7 @@
 | ------------------- | ---------------- | ----------- | ---------------------------- | --------------------- |
 | `context`           | `context`        |             | `string`                     | `undefined`           |
 | `defaultSyntax`     | `default-syntax` |             | `string`                     | `SyntaxNames.Literal` |
-| `editorHeight`      | `editor-height`  |             | `string`                     | `'6em'`               |
+| `editorHeight`      | `editor-height`  |             | `string`                     | `'10em'`              |
 | `expressions`       | --               |             | `{ [key: string]: string; }` | `{}`                  |
 | `fieldName`         | `field-name`     |             | `string`                     | `undefined`           |
 | `isDisabled`        | `is-disabled`    |             | `boolean`                    | `undefined`           |

@@ -75,7 +75,7 @@ Type: `Promise<void>`
 - [elsa-designer-tree](../../../designers/tree/elsa-designer-tree)
 - [elsa-workflow-settings-modal](../elsa-workflow-settings-modal)
 - [elsa-workflow-definition-editor-notifications](../elsa-workflow-definition-editor-notifications)
-- [elsa-activity-picker-modal](../../../pickers/elsa-activity-picker-modal)
+- [elsa-activity-picker-modal](../elsa-activity-picker-modal)
 - [elsa-activity-editor-modal](../elsa-activity-editor-modal)
 - [elsa-workflow-publish-button](../elsa-workflow-publish-button)
 - context-consumer

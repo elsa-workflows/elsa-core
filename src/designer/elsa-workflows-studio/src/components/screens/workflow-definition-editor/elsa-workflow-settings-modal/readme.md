@@ -7,9 +7,10 @@
 
 ## Properties
 
-| Property             | Attribute | Description | Type                 | Default     |
-| -------------------- | --------- | ----------- | -------------------- | ----------- |
-| `workflowDefinition` | --        |             | `WorkflowDefinition` | `undefined` |
+| Property             | Attribute    | Description | Type                 | Default     |
+| -------------------- | ------------ | ----------- | -------------------- | ----------- |
+| `serverUrl`          | `server-url` |             | `string`             | `undefined` |
+| `workflowDefinition` | --           |             | `WorkflowDefinition` | `undefined` |
 
 
 ## Dependencies
