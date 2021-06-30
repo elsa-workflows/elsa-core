@@ -125,7 +125,7 @@ export class ElsaWorkflowDesigner {
       const description = model.description;
       const bodyText = description && description.length > 0 ? description : undefined;
       const bodyDisplay = bodyText ? `<p>${bodyText}</p>` : undefined;
-      const color = (descriptor.traits &= ActivityTraits.Trigger) == ActivityTraits.Trigger ? 'rose' : 'light-blue';
+      const color = (descriptor.traits &= ActivityTraits.Trigger) == ActivityTraits.Trigger ? 'rose' : 'sky';
       const displayName = model.displayName;
 
       const displayContext: ActivityDesignDisplayContext = {
