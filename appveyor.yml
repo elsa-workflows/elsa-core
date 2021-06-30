@@ -46,7 +46,7 @@ install:
 
       cd ..\..\..\..\..
 
-      dotnet tool install --global dotnet-sonarscanner
+#      dotnet tool install --global dotnet-sonarscanner
 
 before_build:
   - cmd: >-
@@ -83,7 +83,8 @@ build_script:
 # before_test:
 
 test_script:
-  - ps: dotnet test --collect:"XPlat Code Coverage" --logger:xunit -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+#  - ps: dotnet test --collect:"XPlat Code Coverage" --logger:xunit -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+  - ps: dotnet test
 
 after_test:
   - ps: >-
