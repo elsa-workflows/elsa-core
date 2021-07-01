@@ -15,6 +15,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using NodaTime;
 using Rebus.Persistence.InMem;
+using Rebus.Routing.TypeBased;
 using Rebus.Transport.InMem;
 using Storage.Net;
 using Storage.Net.Blobs;
@@ -25,12 +26,15 @@ namespace Elsa
     
     public class ElsaOptions
     {
-        public static string FormatChannelQueueName<TMessage>(string? channel = default)
+        public static string FormatChannelQueueName<TMessage>(string channel) => FormatChannelQueueName(typeof(TMessage), channel);
+        
+        public static string FormatChannelQueueName(Type messageType, string channel)
         {
-            var queue = !string.IsNullOrWhiteSpace(channel) ? $"{typeof(TMessage).Name}{channel}" : typeof(TMessage).Name;
-
-            return queue.Dehumanize().Underscore().Dasherize();
+            var queue = !string.IsNullOrWhiteSpace(channel) ? $"{messageType.Name}{channel}" : messageType.Name;
+            return FormatQueueName(queue);
         }
+        
+        public static string FormatQueueName(string queue) => queue.Dehumanize().Underscore().Dasherize();
 
         internal ElsaOptions()
         {

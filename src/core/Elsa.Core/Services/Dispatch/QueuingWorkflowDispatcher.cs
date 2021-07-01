@@ -66,7 +66,7 @@ namespace Elsa.Services.Dispatch
             }
 
             var channel = _workflowChannelOptions.GetChannelOrDefault(workflowBlueprint.Channel);
-            var queue = ElsaOptions.FormatChannelQueueName<ExecuteWorkflowInstanceRequest>(channel);
+            var queue = ElsaOptions.FormatChannelQueueName<ExecuteWorkflowDefinitionRequest>(channel);
             await _commandSender.SendAsync(request, queue, default, cancellationToken);
         }
     }

@@ -6,18 +6,18 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="System.Text.Encodings.Web" Version="5.0.1"/>
+        <PackageReference Include="System.Text.Encodings.Web" Version="5.0.1" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\..\..\activities\Elsa.Activities.Email\Elsa.Activities.Email.csproj"/>
-        <ProjectReference Include="..\..\..\..\activities\Elsa.Activities.Http\Elsa.Activities.Http.csproj"/>
-        <ProjectReference Include="..\..\..\..\activities\Elsa.Activities.Temporal.Quartz\Elsa.Activities.Temporal.Quartz.csproj"/>
-        <ProjectReference Include="..\..\..\..\core\Elsa\Elsa.csproj"/>
-        <ProjectReference Include="..\..\..\..\designer\bindings\aspnet\Elsa.Designer.Components.Web\Elsa.Designer.Components.Web.csproj"/>
-        <ProjectReference Include="..\..\..\..\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.Sqlite\Elsa.Persistence.EntityFramework.Sqlite.csproj"/>
-        <ProjectReference Include="..\..\..\..\server\Elsa.Server.Api\Elsa.Server.Api.csproj"/>
-        <ProjectReference Include="..\..\..\persistence\Elsa.Samples.Persistence.EntityFramework\Elsa.Samples.Persistence.EntityFramework.csproj"/>
+        <ProjectReference Include="..\..\..\..\activities\Elsa.Activities.Email\Elsa.Activities.Email.csproj" />
+        <ProjectReference Include="..\..\..\..\activities\Elsa.Activities.Http\Elsa.Activities.Http.csproj" />
+        <ProjectReference Include="..\..\..\..\activities\Elsa.Activities.Temporal.Quartz\Elsa.Activities.Temporal.Quartz.csproj" />
+        <ProjectReference Include="..\..\..\..\core\Elsa\Elsa.csproj" />
+        <ProjectReference Include="..\..\..\..\designer\bindings\aspnet\Elsa.Designer.Components.Web\Elsa.Designer.Components.Web.csproj" />
+        <ProjectReference Include="..\..\..\..\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.Sqlite\Elsa.Persistence.EntityFramework.Sqlite.csproj" />
+        <ProjectReference Include="..\..\..\..\server\Elsa.Server.Api\Elsa.Server.Api.csproj" />
+        <ProjectReference Include="..\..\..\persistence\Elsa.Samples.Persistence.EntityFramework\Elsa.Samples.Persistence.EntityFramework.csproj" />
     </ItemGroup>
 
 </Project>
