@@ -94,7 +94,7 @@ export class ElsaWebhookDefinitionEditorScreen {
     this.saving = true;
 
     try {
-      
+      debugger
       if (request.id == null)
         webhookDefinition = await client.webhookDefinitionsApi.save(request);
       else
