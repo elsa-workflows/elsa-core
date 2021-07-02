@@ -128,7 +128,7 @@ EF MongoDB
     "SqlServer": "Server=LAPTOP-B76STK67;Database=Elsa;Integrated Security=true;MultipleActiveResultSets=True;Max Pool Size=500;Connection Timeout=3600",
     "Sqlite": "Data Source=elsa.sqlite.db;Cache=Shared;",
     "MongoDb": "mongodb://localhost:27017/Elsa",
-    "PostgreSql": "Server=127.0.0.1;Port=5432;Database=elsa;User Id=postgres;Password=password;"
+    "PostgreSql": "Server=127.0.0.1;Port=5433;Database=elsa;User Id=postgres;Password=Password12!;"
   },
 ```
 
