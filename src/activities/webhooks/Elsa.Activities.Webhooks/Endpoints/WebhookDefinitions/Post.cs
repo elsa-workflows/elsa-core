@@ -46,7 +46,7 @@ namespace Elsa.Activities.Webhooks.Endpoints.WebhookDefinitions
                 webhookDefinition = new WebhookDefinition
                 {
                     Id = !string.IsNullOrWhiteSpace(webhookId) ? webhookId : _idGenerator.Generate(),
-                };
+                };  
 
             webhookDefinition.Name = request.Name.Trim();
             webhookDefinition.Path = request.Path.Trim();

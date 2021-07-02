@@ -3,8 +3,6 @@ using Elsa.Activities.Webhooks;
 using Elsa.Activities.Webhooks.Persistence.Decorators;
 using Elsa.Attributes;
 using Elsa.Services.Startup;
-//using Elsa.Webhooks.Persistence.EntityFramework.Core.Extensions;
-//using Elsa.Webhooks.Persistence.YesSql.Extensions;
 using Elsa.Webhooks.Persistence.YesSql.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -65,14 +63,11 @@ namespace Elsa.Webhooks.Persistence.YesSql
 
             if (string.IsNullOrWhiteSpace(connectionString))
                 connectionString = GetDefaultConnectionString();
-
-            //elsa.UseWebhookYesSqlPersistence(options => Configure(options, connectionString));
-
+            
             var webhookOptionsBuilder = new WebhookOptionsBuilder(services);
             webhookOptionsBuilder.UseWebhookYesSqlPersistence(options => Configure(options, connectionString));
 
             services.AddScoped(sp => webhookOptionsBuilder.WebhookOptions.WebhookDefinitionStoreFactory(sp));
-
             services.Decorate<IWebhookDefinitionStore, InitializingWebhookDefinitionStore>();
             services.Decorate<IWebhookDefinitionStore, EventPublishingWebhookDefinitionStore>();
         }

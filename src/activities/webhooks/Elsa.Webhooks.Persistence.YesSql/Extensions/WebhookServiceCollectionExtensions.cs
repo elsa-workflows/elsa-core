@@ -3,9 +3,6 @@ using System.Data;
 using Elsa.Activities.Webhooks;
 using Elsa.Webhooks.Persistence.YesSql.Services;
 using Elsa.Persistence.YesSql;
-//using Elsa.Persistence.YesSql.Data;
-//using Elsa.Persistence.YesSql.Mapping;
-//using Elsa.Persistence.YesSql.Services;
 using Elsa.Runtime;
 using Elsa.Webhooks.Persistence.YesSql.Indexes;
 using Elsa.Webhooks.Persistence.YesSql.Stores;
@@ -28,17 +25,10 @@ namespace Elsa.Webhooks.Persistence.YesSql.Extensions
             webhookOptions.Services
                 .AddScoped<YesSqlWebhookDefinitionStore>()
                 .AddSingleton(sp => CreateStore(sp, configure))
-                //.AddSingleton<ISessionProvider, SessionProvider>()
-                //.AddScoped(CreateSession)
-                //.AddScoped<IDataMigrationManager, Elsa.Persistence.YesSql.Services.DataMigrationManager>()
                 .AddStartupTask<DatabaseInitializer>()
-                //.AddStartupTask<Elsa.Persistence.YesSql.Services.RunMigrations>()
                 .AddDataMigration<Migrations>()
                 .AddAutoMapperProfile<AutoMapperProfile>()
                 .AddIndexProvider<WebhookDefinitionIndexProvider>();
-
-            //var webhookOptionsBuilder = new WebhookOptionsBuilder(webhookOptions.Services);
-
 
             webhookOptions.UseWebhookDefinitionStore(sp => sp.GetRequiredService<YesSqlWebhookDefinitionStore>());
 
