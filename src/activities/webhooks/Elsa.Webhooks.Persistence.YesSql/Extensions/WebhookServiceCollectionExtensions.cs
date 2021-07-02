@@ -1,10 +1,11 @@
 using System;
 using System.Data;
 using Elsa.Activities.Webhooks;
+using Elsa.Webhooks.Persistence.YesSql.Services;
 using Elsa.Persistence.YesSql;
-using Elsa.Persistence.YesSql.Data;
-using Elsa.Persistence.YesSql.Mapping;
-using Elsa.Persistence.YesSql.Services;
+//using Elsa.Persistence.YesSql.Data;
+//using Elsa.Persistence.YesSql.Mapping;
+//using Elsa.Persistence.YesSql.Services;
 using Elsa.Runtime;
 using Elsa.Webhooks.Persistence.YesSql.Indexes;
 using Elsa.Webhooks.Persistence.YesSql.Stores;
@@ -12,6 +13,8 @@ using Microsoft.Extensions.DependencyInjection;
 using YesSql;
 using YesSql.Indexes;
 using YesSql.Provider.Sqlite;
+using Elsa.Persistence.YesSql.Data;
+using Elsa.Webhooks.Persistence.YesSql.Mapping;
 
 namespace Elsa.Webhooks.Persistence.YesSql.Extensions
 {
@@ -25,21 +28,27 @@ namespace Elsa.Webhooks.Persistence.YesSql.Extensions
             webhookOptions.Services
                 .AddScoped<YesSqlWebhookDefinitionStore>()
                 .AddSingleton(sp => CreateStore(sp, configure))
-                .AddSingleton<ISessionProvider, SessionProvider>()
-                .AddScoped(CreateSession)
-                .AddScoped<IDataMigrationManager, DataMigrationManager>()
+                //.AddSingleton<ISessionProvider, SessionProvider>()
+                //.AddScoped(CreateSession)
+                //.AddScoped<IDataMigrationManager, Elsa.Persistence.YesSql.Services.DataMigrationManager>()
                 .AddStartupTask<DatabaseInitializer>()
-                .AddStartupTask<RunMigrations>()
+                //.AddStartupTask<Elsa.Persistence.YesSql.Services.RunMigrations>()
                 .AddDataMigration<Migrations>()
                 .AddAutoMapperProfile<AutoMapperProfile>()
                 .AddIndexProvider<WebhookDefinitionIndexProvider>();
 
-            var webhookOptionsBuilder = new WebhookOptionsBuilder(webhookOptions.Services);
+            //var webhookOptionsBuilder = new WebhookOptionsBuilder(webhookOptions.Services);
 
-            webhookOptionsBuilder.UseWebhookDefinitionStore(sp => sp.GetRequiredService<YesSqlWebhookDefinitionStore>());
+
+            webhookOptions.UseWebhookDefinitionStore(sp => sp.GetRequiredService<YesSqlWebhookDefinitionStore>());
 
             return webhookOptions;
         }
+
+        public static IServiceCollection AddIndexProvider<T>(this IServiceCollection services) where T : class, IIndexProvider => services.AddSingleton<IIndexProvider, T>();
+        public static IServiceCollection AddScopedIndexProvider<T>(this IServiceCollection services) where T : class, IIndexProvider => services.AddScoped<IScopedIndexProvider>();
+
+        public static IServiceCollection AddDataMigration<T>(this IServiceCollection services) where T : class, IDataMigration => services.AddScoped<IDataMigration, T>();
 
         private static IStore CreateStore(
             IServiceProvider serviceProvider,
@@ -64,7 +73,7 @@ namespace Elsa.Webhooks.Persistence.YesSql.Extensions
 
         private static ISession CreateSession(IServiceProvider serviceProvider)
         {
-            var provider = serviceProvider.GetRequiredService<ISessionProvider>();
+            var provider = serviceProvider.GetRequiredService<Elsa.Persistence.YesSql.Services.ISessionProvider>();
             return provider.CreateSession();
         }
     }

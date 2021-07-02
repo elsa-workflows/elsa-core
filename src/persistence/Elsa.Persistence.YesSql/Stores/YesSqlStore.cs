@@ -41,14 +41,14 @@ namespace Elsa.Persistence.YesSql.Stores
         {
             await _semaphore.WaitAsync(cancellationToken);
 
-            try
+            try  
             {
                 await using var session = SessionProvider.CreateSession();
                 var existingDocument = await FindDocumentAsync(session, entity, cancellationToken);
                 var document = Mapper.Map(entity, existingDocument);
                 session.Save(document, CollectionName);
                 await session.SaveChangesAsync();
-            }
+            }            
             finally
             {
                 _semaphore.Release();
