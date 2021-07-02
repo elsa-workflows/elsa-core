@@ -31,7 +31,7 @@ namespace Elsa.Webhooks.Persistence.EntityFramework.Core
             if (string.IsNullOrWhiteSpace(connectionString))
                 connectionString = GetDefaultConnectionString();
 
-            var webhookOptionsBuilder = new WebhookOptionsBuilder(elsa.Services);
+            var webhookOptionsBuilder = new WebhookOptionsBuilder(services);
             webhookOptionsBuilder.UseEntityFrameworkPersistence(options => Configure(options, connectionString));
 
             services.AddScoped(sp => webhookOptionsBuilder.WebhookOptions.WebhookDefinitionStoreFactory(sp));

@@ -1,8 +1,13 @@
 using System;
+using Elsa.Activities.Webhooks;
+using Elsa.Activities.Webhooks.Persistence.Decorators;
 using Elsa.Attributes;
 using Elsa.Services.Startup;
+//using Elsa.Webhooks.Persistence.EntityFramework.Core.Extensions;
+//using Elsa.Webhooks.Persistence.YesSql.Extensions;
 using Elsa.Webhooks.Persistence.YesSql.Extensions;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using YesSql.Provider.MySql;
 using YesSql.Provider.PostgreSql;
 using YesSql.Provider.Sqlite;
@@ -45,6 +50,7 @@ namespace Elsa.Webhooks.Persistence.YesSql
 
         public override void ConfigureElsa(ElsaOptionsBuilder elsa, IConfiguration configuration)
         {
+            var services = elsa.Services;
             var section = configuration.GetSection($"Elsa:Persistence:{ProviderName}");
             var connectionStringName = section.GetValue<string>("ConnectionStringName");
             var connectionString = section.GetValue<string>("ConnectionString");
@@ -60,7 +66,15 @@ namespace Elsa.Webhooks.Persistence.YesSql
             if (string.IsNullOrWhiteSpace(connectionString))
                 connectionString = GetDefaultConnectionString();
 
-            elsa.UseWebhookYesSqlPersistence(options => Configure(options, connectionString));
+            //elsa.UseWebhookYesSqlPersistence(options => Configure(options, connectionString));
+
+            var webhookOptionsBuilder = new WebhookOptionsBuilder(services);
+            webhookOptionsBuilder.UseWebhookYesSqlPersistence(options => Configure(options, connectionString));
+
+            services.AddScoped(sp => webhookOptionsBuilder.WebhookOptions.WebhookDefinitionStoreFactory(sp));
+
+            services.Decorate<IWebhookDefinitionStore, InitializingWebhookDefinitionStore>();
+            services.Decorate<IWebhookDefinitionStore, EventPublishingWebhookDefinitionStore>();
         }
 
         protected virtual string GetDefaultConnectionString() => throw new Exception($"No connection string specified for the {ProviderName} provider");

@@ -17,12 +17,12 @@ namespace Elsa.Webhooks.Persistence.YesSql.Extensions
 {
     public static class WebhookServiceCollectionExtensions
     {
-        public static ElsaOptionsBuilder UseWebhookYesSqlPersistence(this ElsaOptionsBuilder elsa) => elsa.UseWebhookYesSqlPersistence(config => config.UseSqLite("Data Source=elsa.yessql.db;Cache=Shared", IsolationLevel.ReadUncommitted));
-        public static ElsaOptionsBuilder UseWebhookYesSqlPersistence(this ElsaOptionsBuilder elsa, Action<IConfiguration> configure) => elsa.UseWebhookYesSqlPersistence((_, config) => configure(config));
+        public static WebhookOptionsBuilder UseWebhookYesSqlPersistence(this WebhookOptionsBuilder webhookOptions) => webhookOptions.UseWebhookYesSqlPersistence(config => config.UseSqLite("Data Source=elsa.yessql.db;Cache=Shared", IsolationLevel.ReadUncommitted));
+        public static WebhookOptionsBuilder UseWebhookYesSqlPersistence(this WebhookOptionsBuilder webhookOptions, Action<IConfiguration> configure) => webhookOptions.UseWebhookYesSqlPersistence((_, config) => configure(config));
 
-        public static ElsaOptionsBuilder UseWebhookYesSqlPersistence(this ElsaOptionsBuilder elsa, Action<IServiceProvider, IConfiguration> configure)
+        public static WebhookOptionsBuilder UseWebhookYesSqlPersistence(this WebhookOptionsBuilder webhookOptions, Action<IServiceProvider, IConfiguration> configure)
         {
-            elsa.Services
+            webhookOptions.Services
                 .AddScoped<YesSqlWebhookDefinitionStore>()
                 .AddSingleton(sp => CreateStore(sp, configure))
                 .AddSingleton<ISessionProvider, SessionProvider>()
@@ -34,11 +34,11 @@ namespace Elsa.Webhooks.Persistence.YesSql.Extensions
                 .AddAutoMapperProfile<AutoMapperProfile>()
                 .AddIndexProvider<WebhookDefinitionIndexProvider>();
 
-            var webhookOptionsBuilder = new WebhookOptionsBuilder(elsa.Services);
+            var webhookOptionsBuilder = new WebhookOptionsBuilder(webhookOptions.Services);
 
             webhookOptionsBuilder.UseWebhookDefinitionStore(sp => sp.GetRequiredService<YesSqlWebhookDefinitionStore>());
 
-            return elsa;
+            return webhookOptions;
         }
 
         private static IStore CreateStore(

@@ -90,6 +90,35 @@ YesSql Postgre
 }
 ```
 
+### Configure modular activity providers such as Webhooks
+It is required to add modular activity provider and additional persistence feature for your modular activity provider.
+The persistence providers should match for Elsa Core and modular activity providers.
+Two examples below are given to set up Elsa Core and Webhooks persistence as follow.
+
+EF Sqlite
+```
+"Elsa": {
+"Features": [
+    "Persistence:EntityFrameworkCore:Sqlite",
+    "Webhooks"
+    "Webhooks:Persistence:EntityFrameworkCore:Sqlite",
+    ...
+    ],
+}
+```
+
+EF MongoDB
+```
+"Elsa": {
+"Features": [
+    "Persistence:MongoDb",
+    "Webhooks"
+    "Webhooks:Persistence:MongoDb",
+    ...
+    ],
+}
+```
+
 ### Configure connection strings for each persistence
 
 ```
@@ -102,7 +131,7 @@ YesSql Postgre
   },
 ```
 
-### Connection string examples
+### Connection strings
 MySql
 https://www.connectionstrings.com/mysql/
 SQL Server
