@@ -54,7 +54,7 @@ namespace Elsa.Activities.Http.Middleware
             var workflowBlueprintWrappers = (await Task.WhenAll(workflowBlueprints.Values.Select(async x => await workflowBlueprintReflector.ReflectAsync(serviceProvider, x, cancellationToken)))).ToDictionary(x => x.WorkflowBlueprint.Id);
 
             var commonInputModel = new HttpRequestModel(
-                new Uri(request.Path.ToString(), UriKind.Relative),
+                request.Path.ToString(),
                 request.Method,
                 request.Query.ToDictionary(x => x.Key, x => x.Value.ToString()),
                 request.Headers.ToDictionary(x => x.Key, x => x.Value.ToString())
