@@ -11,37 +11,35 @@ namespace Elsa.Webhooks.Persistence.MongoDb.Extensions
 {
     public static class WebhookServiceCollectionExtensions
     {
-        public static ElsaOptionsBuilder UseMongoDbPersistence(this ElsaOptionsBuilder elsa, Action<ElsaMongoDbOptions> configureOptions) => UseMongoDbPersistence<ElsaMongoDbContext>(elsa, configureOptions);
+        public static WebhookOptionsBuilder UseWebhookMongoDbPersistence(this WebhookOptionsBuilder webhookOptions, Action<ElsaMongoDbOptions> configureOptions) => UseWebhookMongoDbPersistence<ElsaMongoDbContext>(webhookOptions, configureOptions);
 
-        public static ElsaOptionsBuilder UseMongoDbPersistence<TDbContext>(this ElsaOptionsBuilder elsa, Action<ElsaMongoDbOptions> configureOptions) where TDbContext : ElsaMongoDbContext
+        public static WebhookOptionsBuilder UseWebhookMongoDbPersistence<TDbContext>(this WebhookOptionsBuilder webhookOptions, Action<ElsaMongoDbOptions> configureOptions) where TDbContext : ElsaMongoDbContext
         {
-            AddCore<TDbContext>(elsa);
-            elsa.Services.Configure(configureOptions);
+            AddCore<TDbContext>(webhookOptions);
+            webhookOptions.Services.Configure(configureOptions);
 
-            return elsa;
+            return webhookOptions;
         }
 
-        public static ElsaOptionsBuilder UseMongoDbPersistence(this ElsaOptionsBuilder elsa, IConfiguration configuration) => UseMongoDbPersistence<ElsaMongoDbContext>(elsa, configuration);
+        public static WebhookOptionsBuilder UseWebhookMongoDbPersistence(this WebhookOptionsBuilder webhookOptions, IConfiguration configuration) => UseWebhookMongoDbPersistence<ElsaMongoDbContext>(webhookOptions, configuration);
 
-        public static ElsaOptionsBuilder UseMongoDbPersistence<TDbContext>(this ElsaOptionsBuilder elsa, IConfiguration configuration) where TDbContext : ElsaMongoDbContext
+        public static WebhookOptionsBuilder UseWebhookMongoDbPersistence<TDbContext>(this WebhookOptionsBuilder webhookOptions, IConfiguration configuration) where TDbContext : ElsaMongoDbContext
         {
-            AddCore<TDbContext>(elsa);
-            elsa.Services.Configure<ElsaMongoDbOptions>(configuration);
-            return elsa;
+            AddCore<TDbContext>(webhookOptions);
+            webhookOptions.Services.Configure<ElsaMongoDbOptions>(configuration);
+            return webhookOptions;
         }
 
-        private static void AddCore<TDbContext>(ElsaOptionsBuilder elsa) where TDbContext : ElsaMongoDbContext
+        private static void AddCore<TDbContext>(WebhookOptionsBuilder webhookOptions) where TDbContext : ElsaMongoDbContext
         {
-            elsa.Services
+            webhookOptions.Services
                 .AddSingleton<MongoDbWebhookDefinitionStore>()
                 .AddSingleton<TDbContext>()
                 .AddSingleton<ElsaMongoDbContext, TDbContext>()
                 .AddSingleton(sp => sp.GetRequiredService<TDbContext>().WebhookDefinitions)
                 .AddStartupTask<DatabaseInitializer>();
 
-            var webhookOptionsBuilder = new WebhookOptionsBuilder(elsa.Services);
-
-            webhookOptionsBuilder.UseWebhookDefinitionStore(sp => sp.GetRequiredService<MongoDbWebhookDefinitionStore>());
+            webhookOptions.UseWebhookDefinitionStore(sp => sp.GetRequiredService<MongoDbWebhookDefinitionStore>());
 
             DatabaseRegister.RegisterMapsAndSerializers();
         }

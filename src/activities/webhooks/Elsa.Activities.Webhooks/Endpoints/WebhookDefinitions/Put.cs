@@ -13,12 +13,12 @@ namespace Elsa.Activities.Webhooks.Endpoints.WebhookDefinitions
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{apiVersion:apiVersion}/webhook-definitions/{id}")]
+    [Route("v{apiVersion:apiVersion}/webhook-definitions")]
     [Produces("application/json")]
-    public class Put : ControllerBase
+    public class Update : ControllerBase
     {
         private readonly IWebhookDefinitionStore _store;
-        public Put(IWebhookDefinitionStore store) => _store = store;
+        public Update(IWebhookDefinitionStore store) => _store = store;
 
         [HttpPut]
         [ProducesResponseType(typeof(WebhookDefinition), StatusCodes.Status200OK)]
@@ -44,7 +44,7 @@ namespace Elsa.Activities.Webhooks.Endpoints.WebhookDefinitions
             webhookDefinition.PayloadTypeName = request.PayloadTypeName?.Trim();
             webhookDefinition.IsEnabled = request.IsEnabled;
 
-            await _store.SaveAsync(webhookDefinition, cancellationToken);
+            await _store.UpdateAsync(webhookDefinition, cancellationToken);
             
             return Ok(webhookDefinition);
         }

@@ -1,14 +1,14 @@
 using System;
+using Elsa.Activities.Webhooks;
 using Elsa.Persistence.EntityFramework.Core;
 using Elsa.Runtime;
-using Elsa.Webhooks.Persistence.EntityFramework.Core;
 using Elsa.Webhooks.Persistence.EntityFramework.Core.Services;
 using Elsa.Webhooks.Persistence.EntityFramework.Core.StartupTasks;
 using Elsa.Webhooks.Persistence.EntityFramework.Core.Stores;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Activities.Webhooks.Extensions
+namespace Elsa.Webhooks.Persistence.EntityFramework.Core.Extensions
 {
     public static class WebhookServiceCollectionExtensions
     {
