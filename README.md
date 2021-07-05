@@ -96,7 +96,7 @@ Check out the [Quickstart guides](https://elsa-workflows.github.io/elsa-core/doc
 A quick and easy way to give Elsa a spin is to run the following Docker command:
 
 ```bash
-docker run -t -i -e ELSA__SERVER__BASEURL='http://localhost:13000' -p 13000:80 elsaworkflows/elsa-dashboard-and-server:latest
+docker run -t -i -e ELSA__HTTP__BASEURL='http://localhost:13000' -p 13000:80 elsaworkflows/elsa-dashboard-and-server:latest
 ```
 
 Then navigate to http://localhost:13000.
