@@ -112,9 +112,9 @@ namespace Elsa.Services.Models
 
         public void SetVariable(string name, object? value) => WorkflowInstance.Variables.Set(name, value);
         public T? GetVariable<T>() => GetVariable<T>(typeof(T).Name);
-        public T? GetVariable<T>(string name) => WorkflowInstance.Variables.Get<T>(name);
-        public bool HasVariable(string name) => WorkflowInstance.Variables.Has(name);
-
+        public T? GetVariable<T>(string name) => GetMergedVariables().Get<T>(name);
+        public bool HasVariable(string name) => GetMergedVariables().Has(name);
+        
         /// <summary>
         /// Gets a variable from across all scopes, starting with the current scope, going up each scope until the requested variable is found.
         /// </summary>
@@ -144,14 +144,13 @@ namespace Elsa.Services.Models
         /// <summary>
         /// Gets a workflow variable.
         /// </summary>
-        public object? GetWorkflowVariable(string name) => WorkflowInstance.Variables.Get(name);
+        public object? GetWorkflowVariable(string name) => GetMergedVariables().Get(name);
 
         /// <summary>
         /// Clears all of the variables associated with the current <see cref="WorkflowInstance"/>.
         /// </summary>
         /// <seealso cref="Variables.RemoveAll"/>
         public void PurgeVariables() => WorkflowInstance.Variables.RemoveAll();
-
 
         public ActivityScope? CurrentScope => WorkflowInstance.Scopes.Any() ? WorkflowInstance.Scopes.Peek() : default;
         public ActivityScope GetScope(string activityId) => WorkflowInstance.Scopes.First(x => x.ActivityId == activityId);
