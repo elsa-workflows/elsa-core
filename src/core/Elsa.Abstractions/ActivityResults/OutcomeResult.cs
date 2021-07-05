@@ -30,8 +30,10 @@ namespace Elsa.ActivityResults
             var nextConnections = GetNextConnections(workflowExecutionContext, activityExecutionContext.ActivityBlueprint.Id, outcomes).ToList();
 
             // See if we got a "default" connection (from the current activity to the next activity via the default "Done" outcome).
-            if (!outcomes.Contains(OutcomeNames.Done) && !nextConnections.Any())
-                nextConnections = GetNextConnections(workflowExecutionContext, activityExecutionContext.ActivityBlueprint.Id, new[] { OutcomeNames.Done }).ToList();
+            // Unless the current activity is a "scope" activity, in which case it will schedule a Done outcome itself.
+            // TODO: This is another sign that we need to refactor activity scopes into a natural contained activity structure.
+            if (!outcomes.Contains(OutcomeNames.Done) && !nextConnections.Any() && activityExecutionContext.ActivityId != activityExecutionContext.CurrentScope?.ActivityId)
+                nextConnections = GetNextConnections(workflowExecutionContext, activityExecutionContext.ActivityId, new[] { OutcomeNames.Done }).ToList();
             
             var nextActivities =
                 (

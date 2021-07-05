@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Services.Bookmarks;
 
-namespace Elsa.Services.Triggers
+namespace Elsa.Services
 {
     public interface ITriggerFinder
     {

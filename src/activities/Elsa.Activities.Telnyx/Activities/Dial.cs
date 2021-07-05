@@ -60,15 +60,16 @@ namespace Elsa.Activities.Telnyx.Activities
         [ActivityInput(
             Hint = "Enables Answering Machine Detection.",
             UIHint = ActivityInputUIHints.Dropdown,
-            Options = new[] {"disabled", "detect", "detect_beep", "detect_words", "greeting_end"},
+            Options = new[] { "disabled", "detect", "detect_beep", "detect_words", "greeting_end" },
             DefaultValue = "disabled",
-            SupportedSyntaxes = new[] {SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid})]
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string? AnsweringMachineDetection { get; set; } = "disabled";
 
         [ActivityInput(
             Label = "Answering Machine Detection Configuration",
             Hint = "Optional configuration parameters to modify answering machine detection performance.",
             UIHint = ActivityInputUIHints.Json,
+            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid },
             Category = PropertyCategories.Advanced)]
         public AnsweringMachineConfig? AnsweringMachineDetectionConfig { get; set; }
 
@@ -117,7 +118,7 @@ namespace Elsa.Activities.Telnyx.Activities
             Hint = "A flag indicating whether this activity should complete immediately or suspend the workflow.",
             Category = PropertyCategories.Advanced,
             DefaultValue = true,
-            SupportedSyntaxes = new[] {SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid})]
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public bool SuspendWorkflow { get; set; } = true;
 
         [ActivityOutput] public DialResponse? DialResponse { get; set; }
@@ -131,8 +132,8 @@ namespace Elsa.Activities.Telnyx.Activities
             var response = await DialAsync(context);
             DialResponse = response;
 
-            return !SuspendWorkflow 
-                ? Done(response) 
+            return !SuspendWorkflow
+                ? Done(response)
                 : Combine(Outcome(TelnyxOutcomeNames.Dialing, response), Suspend());
         }
 
@@ -155,13 +156,13 @@ namespace Elsa.Activities.Telnyx.Activities
             AnsweredOutput = payload;
             return Outcome(TelnyxOutcomeNames.Answered, payload);
         }
-        
+
         private IActivityExecutionResult HangupOutcome(CallHangupPayload payload)
         {
             HangupOutput = payload;
             return Outcome(TelnyxOutcomeNames.Hangup, payload);
         }
-        
+
         private IActivityExecutionResult InitiatedOutcome(CallInitiatedPayload payload)
         {
             InitiatedOutput = payload;
@@ -296,7 +297,7 @@ namespace Elsa.Activities.Telnyx.Activities
         public static ISetupActivity<Dial> WithWebhookUrlMethod(this ISetupActivity<Dial> setup, Func<ValueTask<string?>> value) => setup.Set(x => x.WebhookUrlMethod, value);
         public static ISetupActivity<Dial> WithWebhookUrlMethod(this ISetupActivity<Dial> setup, Func<string?> value) => setup.Set(x => x.WebhookUrlMethod, value);
         public static ISetupActivity<Dial> WithWebhookUrlMethod(this ISetupActivity<Dial> setup, string? value) => setup.Set(x => x.WebhookUrlMethod, value);
-        
+
         public static ISetupActivity<Dial> WithSuspendWorkflow(this ISetupActivity<Dial> setup, Func<ActivityExecutionContext, ValueTask<bool>> value) => setup.Set(x => x.SuspendWorkflow, value);
         public static ISetupActivity<Dial> WithSuspendWorkflow(this ISetupActivity<Dial> setup, Func<ActivityExecutionContext, bool> value) => setup.Set(x => x.SuspendWorkflow, value);
         public static ISetupActivity<Dial> WithSuspendWorkflow(this ISetupActivity<Dial> setup, Func<ValueTask<bool>> value) => setup.Set(x => x.SuspendWorkflow, value);

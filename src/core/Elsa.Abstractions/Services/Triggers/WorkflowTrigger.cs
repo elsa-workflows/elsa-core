@@ -1,7 +1,7 @@
 ﻿using Elsa.Services.Bookmarks;
 using Elsa.Services.Models;
 
-namespace Elsa.Services.Triggers
+namespace Elsa.Services
 {
     public class WorkflowTrigger
     {

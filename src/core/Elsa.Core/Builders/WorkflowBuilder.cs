@@ -31,6 +31,7 @@ namespace Elsa.Builders
         public string? TenantId { get; private set; }
         public bool IsSingleton { get; private set; }
         public string? Tag { get; private set; }
+        public string? Channel { get; private set; }
 
         public Variables Variables { get; }
         public Variables CustomAttributes { get; }
@@ -59,6 +60,12 @@ namespace Elsa.Builders
         public new IWorkflowBuilder WithDescription(string? value)
         {
             Description = value;
+            return this;
+        }
+        
+        public new IWorkflowBuilder WithChannel(string? value)
+        {
+            Channel = value;
             return this;
         }
 
@@ -169,6 +176,7 @@ namespace Elsa.Builders
                 IsLatest,
                 IsPublished,
                 Tag,
+                Channel,
                 Variables,
                 CustomAttributes,
                 ContextOptions,

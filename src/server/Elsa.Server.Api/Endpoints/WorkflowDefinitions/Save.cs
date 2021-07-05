@@ -59,6 +59,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             workflowDefinition.ContextOptions = request.ContextOptions;
             workflowDefinition.DisplayName = request.DisplayName?.Trim();
             workflowDefinition.Tag = request.Tag?.Trim();
+            workflowDefinition.Channel = request.Channel?.Trim();
 
             if (request.Publish)
                 workflowDefinition = await _workflowPublisher.PublishAsync(workflowDefinition, cancellationToken);

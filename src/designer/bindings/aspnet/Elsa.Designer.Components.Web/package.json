@@ -7,10 +7,10 @@
         "watch": "cross-env webpack --watch --mode=development --env configuration=Debug"
     },
     "devDependencies": {
-        "copy-webpack-plugin": "^8.1.1",
+        "copy-webpack-plugin": "^9.0.1",
         "cross-env": "^7.0.3",
-        "monaco-editor": "^0.23.0",
-        "webpack": "^5.36.2",
-        "webpack-cli": "^4.7.0"
+        "monaco-editor": "^0.25.2",
+        "webpack": "^5.41.1",
+        "webpack-cli": "^4.7.2"
     }
 }

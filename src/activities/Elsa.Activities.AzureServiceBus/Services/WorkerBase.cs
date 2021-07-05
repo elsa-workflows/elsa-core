@@ -4,7 +4,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.AzureServiceBus.Models;
 using Elsa.Activities.AzureServiceBus.Options;
-using Elsa.Exceptions;
 using Elsa.Services;
 using Elsa.Services.Bookmarks;
 using Microsoft.Azure.ServiceBus;

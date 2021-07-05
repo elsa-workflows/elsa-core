@@ -29,12 +29,12 @@ namespace Elsa.Server.Api.Endpoints.Signals
         {
         }
         
-        public DispatchSignalResponse(ICollection<PendingWorkflow> startedWorkflows)
+        public DispatchSignalResponse(ICollection<CollectedWorkflow> startedWorkflows)
         {
             StartedWorkflows = startedWorkflows;
         }
 
-        public ICollection<PendingWorkflow> StartedWorkflows { get; init; } = default!;
+        public ICollection<CollectedWorkflow> StartedWorkflows { get; init; } = default!;
     }
 
     public record ExecuteSignalRequest
@@ -63,11 +63,11 @@ namespace Elsa.Server.Api.Endpoints.Signals
         {
         }
 
-        public ExecuteSignalResponse(ICollection<StartedWorkflow> startedWorkflows)
+        public ExecuteSignalResponse(ICollection<CollectedWorkflow> startedWorkflows)
         {
             StartedWorkflows = startedWorkflows;
         }
         
-        public ICollection<StartedWorkflow> StartedWorkflows { get; init; } = new List<StartedWorkflow>();
+        public ICollection<CollectedWorkflow> StartedWorkflows { get; init; } = new List<CollectedWorkflow>();
     }
 }

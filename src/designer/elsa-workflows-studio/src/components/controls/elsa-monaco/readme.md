@@ -9,7 +9,7 @@
 
 | Property         | Attribute       | Description | Type      | Default     |
 | ---------------- | --------------- | ----------- | --------- | ----------- |
-| `editorHeight`   | `editor-height` |             | `string`  | `'6em'`     |
+| `editorHeight`   | `editor-height` |             | `string`  | `'5em'`     |
 | `language`       | `language`      |             | `string`  | `undefined` |
 | `padding`        | `padding`       |             | `string`  | `undefined` |
 | `singleLineMode` | `single-line`   |             | `boolean` | `false`     |
@@ -51,6 +51,7 @@ Type: `Promise<void>`
 ### Used by
 
  - [elsa-expression-editor](../../editors/elsa-expression-editor)
+ - [elsa-json-property](../../editors/properties/elsa-json-property)
  - [elsa-script-property](../../editors/properties/elsa-script-property)
  - [elsa-workflow-settings-modal](../../screens/workflow-definition-editor/elsa-workflow-settings-modal)
 
@@ -58,6 +59,7 @@ Type: `Promise<void>`
 ```mermaid
 graph TD;
   elsa-expression-editor --> elsa-monaco
+  elsa-json-property --> elsa-monaco
   elsa-script-property --> elsa-monaco
   elsa-workflow-settings-modal --> elsa-monaco
   style elsa-monaco fill:#f9f,stroke:#333,stroke-width:4px

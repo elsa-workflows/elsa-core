@@ -8,14 +8,14 @@ module.exports = {
     enabled: !dev,
     content: ['./src/**/*.tsx', './src/**/*.html'],
     options: {
-      safelist: ['jtk-connector', 'rose', 'light-blue', /gray$/, /pink$/, /blue$/, /green$/, /red$/, /yellow$/, /rose$/]
+      safelist: ['hidden', 'jtk-connector', 'rose', 'sky', /gray/, /pink/, /blue/, /green/, /red/, /yellow/, /rose/]
     },
   },
   prefix: 'elsa-',
   theme: {
     extend: {
       colors: {
-        'light-blue': colors.lightBlue,
+        'sky': colors.sky,
         'cool-gray': colors.coolGray,
         teal: colors.teal,
         cyan: colors.cyan,

@@ -6,7 +6,6 @@ using Elsa.Services;
 using Elsa.Services.WorkflowStorage;
 using MediatR;
 using Microsoft.Extensions.Configuration;
-using NodaTime;
 
 namespace Elsa.Activities.Email.Handlers
 {

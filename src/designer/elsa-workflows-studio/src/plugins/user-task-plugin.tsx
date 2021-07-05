@@ -19,6 +19,6 @@ export class UserTaskPlugin implements ElsaPlugin {
     const syntax = SyntaxNames.Json;
     const branches = props.find(x => x.name == 'Actions') || {expressions: {'Json': '[]'}, syntax: syntax};
     const expression = branches.expressions[syntax] || '[]';
-    context.outcomes = !!expression['$values'] ? expression['$values'] : parseJson(expression) || [];
+    context.outcomes = !!expression['$values'] ? expression['$values'] : Array.isArray(expression) ? expression : parseJson(expression) || [];
   }
 }

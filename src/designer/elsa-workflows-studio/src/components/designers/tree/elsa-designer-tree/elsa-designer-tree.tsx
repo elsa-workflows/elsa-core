@@ -96,8 +96,8 @@ export class ElsaWorkflowDesigner {
   }
 
   disconnectedCallback() {
-    eventBus.off(EventTypes.ActivityPicked, this.onActivityPicked);
-    eventBus.off(EventTypes.UpdateActivity, this.onUpdateActivity);
+    eventBus.off(EventTypes.ActivityPicked);
+    eventBus.off(EventTypes.UpdateActivity);
     d3.selectAll('.node').on('click', null);
     d3.selectAll('.edgePath').on('contextmenu', null);
   }
@@ -125,7 +125,7 @@ export class ElsaWorkflowDesigner {
       const description = model.description;
       const bodyText = description && description.length > 0 ? description : undefined;
       const bodyDisplay = bodyText ? `<p>${bodyText}</p>` : undefined;
-      const color = (descriptor.traits &= ActivityTraits.Trigger) == ActivityTraits.Trigger ? 'rose' : 'light-blue';
+      const color = (descriptor.traits &= ActivityTraits.Trigger) == ActivityTraits.Trigger ? 'rose' : 'sky';
       const displayName = model.displayName;
 
       const displayContext: ActivityDesignDisplayContext = {

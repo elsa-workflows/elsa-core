@@ -33,7 +33,7 @@ Type: `Promise<void>`
 ### Used by
 
  - [elsa-activity-editor-modal](../../screens/workflow-definition-editor/elsa-activity-editor-modal)
- - [elsa-activity-picker-modal](../../pickers/elsa-activity-picker-modal)
+ - [elsa-activity-picker-modal](../../screens/workflow-definition-editor/elsa-activity-picker-modal)
  - [elsa-confirm-dialog](../elsa-confirm-dialog)
  - [elsa-workflow-settings-modal](../../screens/workflow-definition-editor/elsa-workflow-settings-modal)
 

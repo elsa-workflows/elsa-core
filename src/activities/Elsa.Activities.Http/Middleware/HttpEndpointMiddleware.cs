@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Elsa.Activities.Http.Bookmarks;
 using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.Http.Models;
-using Elsa.Activities.Http.Parsers;
 using Elsa.Activities.Http.Parsers.Request;
 using Elsa.Activities.Http.Services;
 using Elsa.Persistence;
@@ -55,7 +54,7 @@ namespace Elsa.Activities.Http.Middleware
             var workflowBlueprintWrappers = (await Task.WhenAll(workflowBlueprints.Values.Select(async x => await workflowBlueprintReflector.ReflectAsync(serviceProvider, x, cancellationToken)))).ToDictionary(x => x.WorkflowBlueprint.Id);
 
             var commonInputModel = new HttpRequestModel(
-                new Uri(request.Path.ToString(), UriKind.Relative),
+                request.Path.ToString(),
                 request.Method,
                 request.Query.ToDictionary(x => x.Key, x => x.Value.ToString()),
                 request.Headers.ToDictionary(x => x.Key, x => x.Value.ToString())
@@ -65,6 +64,7 @@ namespace Elsa.Activities.Http.Middleware
             var simpleContentType = request.ContentType?.Split(';').First();
             var contentParser = orderedContentParsers.FirstOrDefault(x => x.SupportedContentTypes.Contains(simpleContentType, StringComparer.OrdinalIgnoreCase)) ?? orderedContentParsers.LastOrDefault() ?? new DefaultHttpRequestBodyParser();
 
+            // Handle each pending workflow individually. We need to check their readContent setting to see if we need to parse the incoming HTTP request body or not.
             foreach (var pendingWorkflow in pendingWorkflows)
             {
                 var pendingWorkflowInstance = pendingWorkflowInstances[pendingWorkflow.WorkflowInstanceId];
@@ -72,8 +72,7 @@ namespace Elsa.Activities.Http.Middleware
                 var activityWrapper = workflowBlueprintWrapper.GetUnfilteredActivity<HttpEndpoint>(pendingWorkflow.ActivityId!);
                 var readContent = await activityWrapper!.EvaluatePropertyValueAsync(x => x.ReadContent, cancellationToken);
                 var inputModel = commonInputModel;
-
-                // TODO: Explain this + sequence.
+                
                 if (readContent)
                 {
                     var targetType = await activityWrapper.EvaluatePropertyValueAsync(x => x.TargetType, cancellationToken);
@@ -83,7 +82,7 @@ namespace Elsa.Activities.Http.Middleware
                 if (useDispatch)
                     await workflowLaunchpad.DispatchPendingWorkflowAsync(pendingWorkflow, inputModel, cancellationToken);
                 else
-                    await workflowLaunchpad.ExecutePendingWorkflowsAsync(pendingWorkflows, inputModel, cancellationToken);
+                    await workflowLaunchpad.ExecutePendingWorkflowAsync(pendingWorkflow, inputModel, cancellationToken);
             }
 
             if (pendingWorkflows.Count > 0)

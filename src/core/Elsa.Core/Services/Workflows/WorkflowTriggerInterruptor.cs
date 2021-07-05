@@ -9,7 +9,6 @@ using Elsa.Persistence;
 using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Services.Bookmarks;
 using Elsa.Services.Models;
-using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Services.Workflows
 {

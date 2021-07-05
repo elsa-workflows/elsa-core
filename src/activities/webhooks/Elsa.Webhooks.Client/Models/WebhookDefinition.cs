@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Runtime.Serialization;
 
 namespace Elsa.Webhooks.Client.Models

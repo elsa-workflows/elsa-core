@@ -1,7 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Server.Api.ActionFilters;
-using Elsa.Server.Api.Endpoints.WorkflowDefinitions;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -24,7 +23,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
 
         [HttpPost]
         [ElsaJsonFormatter]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ExecuteWorkflowInstanceResponse))]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ExecuteWorkflowInstanceResponseModel))]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [SwaggerOperation(
             Summary = "Executes the specified workflow instance.",
@@ -39,7 +38,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
             if (Response.HasStarted)
                 return new EmptyResult();
 
-            return Ok(new ExecuteWorkflowInstanceResponse(result.Executed, result.ActivityId, result.WorkflowInstance));
+            return Ok(new ExecuteWorkflowInstanceResponseModel(result.Executed, result.ActivityId, result.WorkflowInstance));
         }
     }
 }

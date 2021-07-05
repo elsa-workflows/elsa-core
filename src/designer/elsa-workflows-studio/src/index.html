@@ -1,22 +1,51 @@
 <!DOCTYPE html>
 <html dir="ltr" lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0"/>
-  <title>Elsa Dashboard</title>
-  <link rel="icon" type="image/png" sizes="32x32" href="/build/assets/images/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/build/assets/images/favicon-16x16.png">
-  <link rel="stylesheet" href="/build/assets/fonts/inter/inter.css">
-  <link href="/build/assets/styles/tailwind.css" rel="stylesheet">
-  <script src="/build/assets/js/monaco-editor/min/vs/loader.js"></script>
-  <script type="module" src="/build/elsa-workflows-studio.esm.js"></script>
-  <script nomodule src="/build/elsa-workflows-studio.js"></script>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0"/>
+    <title>Elsa Dashboard</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/build/assets/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/build/assets/images/favicon-16x16.png">
+    <link rel="stylesheet" href="/build/assets/fonts/inter/inter.css">
+    <link href="/build/assets/styles/tailwind.css" rel="stylesheet">
+    <script src="/build/assets/js/monaco-editor/min/vs/loader.js"></script>
+    <script type="module" src="/build/elsa-workflows-studio.esm.js"></script>
+    <script nomodule src="/build/elsa-workflows-studio.js"></script>
 </head>
 <body>
 
 <elsa-studio-root server-url="https://localhost:11000" monaco-lib-path="build/assets/js/monaco-editor/min"></elsa-studio-root>
+<!--<elsa-studio-root server-url="https://localhost:5001" monaco-lib-path="build/assets/js/monaco-editor/min"></elsa-studio-root>-->
 <!--<elsa-studio-root server-url="https://localhost:6080" monaco-lib-path="build/assets/js/monaco-editor/min"></elsa-studio-root>-->
 <!--<elsa-studio-root server-url="https://skynet-workflow.azurewebsites.net" monaco-lib-path="build/assets/js/monaco-editor/min"></elsa-studio-root>-->
+
+<script>
+    const elsaStudioRoot = document.querySelector('elsa-studio-root');
+    elsaStudioRoot.addEventListener('httpClientCreated', event => {
+
+        // Get access to the axios middleware service and register a sample middleware:
+        const {service} = event.detail;
+
+        // Register a sample middleware.
+        service.register({
+            onRequest(request) {
+                console.log('onRequest');
+                request.headers = {
+                    ...request.headers,
+                    'X-Client': 'Elsa Dashboard',
+                    Authorization: 'Bearer secret-token' // For example, set a JWT value here.
+                };
+                return request;
+            },
+
+            onResponse(response) {
+                console.log('onResponse');
+                return response;
+            }
+        });
+
+    })
+</script>
 
 </body>
 </html>
