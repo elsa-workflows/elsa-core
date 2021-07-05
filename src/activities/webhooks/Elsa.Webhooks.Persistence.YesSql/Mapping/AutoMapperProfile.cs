@@ -9,10 +9,10 @@ namespace Elsa.Webhooks.Persistence.YesSql.Mapping
         public AutoMapperProfile()
         {
             CreateMap<WebhookDefinition, WebhookDefinitionDocument>()
-                .ForMember(d => d.WebhookId, d => d.MapFrom(s => s.Id))
+                .ForMember(d => d.DefinitionId, d => d.MapFrom(s => s.Id))
                 .ForMember(d => d.Id, d => d.Ignore())
                 .ReverseMap()
-                .ForMember(d => d.Id, d => d.MapFrom(s => s.WebhookId));
+                .ForMember(d => d.Id, d => d.MapFrom(s => s.DefinitionId));
         }
     }
 }

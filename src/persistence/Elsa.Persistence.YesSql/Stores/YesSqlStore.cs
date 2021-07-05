@@ -41,7 +41,7 @@ namespace Elsa.Persistence.YesSql.Stores
         {
             await _semaphore.WaitAsync(cancellationToken);
 
-            try  
+            try
             {
                 await using var session = SessionProvider.CreateSession();
                 var existingDocument = await FindDocumentAsync(session, entity, cancellationToken);

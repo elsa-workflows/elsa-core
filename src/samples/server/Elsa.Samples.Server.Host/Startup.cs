@@ -48,7 +48,6 @@ namespace Elsa.Samples.Server.Host
                 typeof(Persistence.YesSql.PostgreSqlStartup),
                 typeof(Elsa.Scripting.JavaScript.Startup),
                 typeof(Elsa.Activities.Webhooks.Startup),
-                // Webhooks
                 typeof(Webhooks.Persistence.EntityFramework.Sqlite.Startup),
                 typeof(Webhooks.Persistence.EntityFramework.SqlServer.Startup),
                 typeof(Webhooks.Persistence.EntityFramework.MySql.Startup),
