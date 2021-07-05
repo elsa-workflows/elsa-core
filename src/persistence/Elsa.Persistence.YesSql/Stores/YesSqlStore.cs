@@ -48,7 +48,7 @@ namespace Elsa.Persistence.YesSql.Stores
                 var document = Mapper.Map(entity, existingDocument);
                 session.Save(document, CollectionName);
                 await session.SaveChangesAsync();
-            }            
+            }
             finally
             {
                 _semaphore.Release();
