@@ -15,12 +15,12 @@ namespace Elsa
 
         public static ElsaOptionsBuilder AddFeatures(this ElsaOptionsBuilder builder, IEnumerable<Assembly> assemblies, IConfiguration configuration)
         {
-            ParseFeatures(configuration);
+            ICollection<string> enabledFeatures = ParseFeatures(configuration);
 
-            if (EnabledFeatures == null!) // Null when configuration binding finds an empty array.
+            if (enabledFeatures == null!) // Null when configuration binding finds an empty array.
                 return builder;
             
-            var enabledFeatures = EnabledFeatures.ToHashSet();
+            enabledFeatures = enabledFeatures.ToHashSet();
 
             var startupTypesQuery = from assembly in assemblies
                 from type in assembly.GetExportedTypes()
@@ -41,11 +41,10 @@ namespace Elsa
             return builder;
         }
 
-        private static void ParseFeatures(IConfiguration configuration)
+        private static ICollection<string> ParseFeatures(IConfiguration configuration)
         {
             var elsaFeaturesSection = "Elsa:Features";
-
-            EnabledFeatures = new List<string>();
+            var enabledFeatures = new List<string>();
             var features = configuration.GetSection(elsaFeaturesSection).AsEnumerable();
 
             foreach (var feature in features)
@@ -66,12 +65,12 @@ namespace Elsa
 
                 var featureName = feature.Key.Replace($"{elsaFeaturesSection}:", string.Empty);
 
-                EnabledFeatures.Add(featureName);
+                enabledFeatures.Add(featureName);
             }
+
+            return enabledFeatures;
         }
 
         private static IEnumerable<Assembly> GetAssemblies(IEnumerable<Type> assemblyMarkerTypes) => assemblyMarkerTypes.Select(x => x.Assembly).Distinct();
-
-        private static ICollection<string>? EnabledFeatures { get; set; }
     }
 }
