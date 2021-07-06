@@ -15,8 +15,8 @@ namespace Elsa.Webhooks.Persistence.MongoDb
         {
             var services = elsa.Services;
             var section = configuration.GetSection($"Elsa:Features:Webhooks:Persistence:MongoDb");
-            var connectionStringName = section.GetValue<string>("Options:ConnectionStringName");
-            var connectionString = section.GetValue<string>("Options:ConnectionString");
+            var connectionStringName = section.GetValue<string>("ConnectionStringName");
+            var connectionString = section.GetValue<string>("ConnectionString");
 
             if (string.IsNullOrWhiteSpace(connectionString))
             {

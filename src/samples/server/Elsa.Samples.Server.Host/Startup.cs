@@ -66,7 +66,6 @@ namespace Elsa.Samples.Server.Host
                 .AddElsa(elsa => elsa
                     .AddActivitiesFrom<Startup>()
                     .AddWorkflowsFrom<Startup>()
-                    .ConfigureFeatures(Configuration)
                     .AddFeatures(startups, Configuration)
                     .ConfigureWorkflowChannels(options => elsaSection.GetSection("WorkflowChannels").Bind(options))
                 );

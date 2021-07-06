@@ -77,7 +77,6 @@ namespace Elsa
 
         public Type DefaultWorkflowStorageProviderType { get; set; }
         public WorkflowChannelOptions WorkflowChannelOptions { get; set; } = new();
-        public FeatureOptions FeatureOptions { get; set; } = new();
 
         internal Func<IServiceProvider, IBlobStorage> StorageFactory { get; set; }
         internal Func<IServiceProvider, IWorkflowDefinitionStore> WorkflowDefinitionStoreFactory { get; set; }

@@ -10,8 +10,8 @@ namespace Elsa.Persistence.MongoDb
         public override void ConfigureElsa(ElsaOptionsBuilder elsa, IConfiguration configuration)
         {
             var section = configuration.GetSection($"Elsa:Features:Persistence:MongoDb");
-            var connectionStringName = section.GetValue<string>("Options:ConnectionStringName");
-            var connectionString = section.GetValue<string>("Options:ConnectionString");
+            var connectionStringName = section.GetValue<string>("ConnectionStringName");
+            var connectionString = section.GetValue<string>("ConnectionString");
 
             if (string.IsNullOrWhiteSpace(connectionString))
             {

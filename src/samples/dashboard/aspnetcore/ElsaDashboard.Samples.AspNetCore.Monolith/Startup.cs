@@ -36,7 +36,6 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
                     .AddQuartzTemporalActivities()
                     .AddJavaScriptActivities()
                     .AddActivitiesFrom<Startup>()
-                    .ConfigureFeatures(Configuration)
                     .AddFeatures(new[] { typeof(Startup) }, Configuration)
                 );
 

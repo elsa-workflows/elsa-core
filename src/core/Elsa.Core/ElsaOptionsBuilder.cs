@@ -66,38 +66,6 @@ namespace Elsa
             return this;
         }
 
-        public ElsaOptionsBuilder ConfigureFeatures(IConfiguration configuration)
-        {
-            var elsaFeaturesSection = "Elsa:Features";
-
-            ElsaOptions.FeatureOptions.Features = new List<FeatureOption>();
-            var features = configuration.GetSection(elsaFeaturesSection).AsEnumerable();
-
-            foreach (var feature in features)
-            {
-                if (!configuration.GetSection($"{feature.Key}:Enabled").Exists()) continue;
-
-                var enabled = configuration.GetValue<bool>($"{feature.Key}:Enabled");
-                if (!enabled) continue;
-
-                var opts = new Dictionary<string, string>();
-                var config = configuration.GetSection($"{feature.Key}:Options");
-                config.Bind(opts);
-
-                var name = feature.Key.Replace($"{elsaFeaturesSection}:", string.Empty);
-
-                ElsaOptions.FeatureOptions.Features.Add(
-                    new FeatureOption 
-                    { 
-                        Name = name,
-                        Enabled = enabled,
-                        Options = opts
-                    });
-            }
-
-            return this;
-        }
-
         public ElsaOptionsBuilder AddActivity<T>() where T : IActivity => AddActivity(typeof(T));
 
         public ElsaOptionsBuilder AddActivity(Type activityType)
