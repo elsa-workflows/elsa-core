@@ -15,6 +15,8 @@
 <body>
 
 <elsa-studio-root server-url="https://localhost:11000" monaco-lib-path="build/assets/js/monaco-editor/min"></elsa-studio-root>
+<!--<elsa-workflow-definition-editor-screen server-url="https://localhost:11000" monaco-lib-path="build/assets/js/monaco-editor/min"></elsa-workflow-definition-editor-screen>-->
+<!--<elsa-external-events></elsa-external-events>-->
 <!--<elsa-studio-root server-url="https://localhost:5001" monaco-lib-path="build/assets/js/monaco-editor/min"></elsa-studio-root>-->
 <!--<elsa-studio-root server-url="https://localhost:6080" monaco-lib-path="build/assets/js/monaco-editor/min"></elsa-studio-root>-->
 <!--<elsa-studio-root server-url="https://skynet-workflow.azurewebsites.net" monaco-lib-path="build/assets/js/monaco-editor/min"></elsa-studio-root>-->
@@ -30,11 +32,6 @@
         service.register({
             onRequest(request) {
                 console.log('onRequest');
-                request.headers = {
-                    ...request.headers,
-                    'X-Client': 'Elsa Dashboard',
-                    Authorization: 'Bearer secret-token' // For example, set a JWT value here.
-                };
                 return request;
             },
 

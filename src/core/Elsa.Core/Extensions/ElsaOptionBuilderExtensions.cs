@@ -15,6 +15,9 @@ namespace Elsa
 
         public static ElsaOptionsBuilder AddFeatures(this ElsaOptionsBuilder builder, IEnumerable<Assembly> assemblies, IConfiguration configuration)
         {
+            if (builder.ElsaOptions.FeatureOptions.Features == null!) // Null when configuration binding finds an empty array.
+                return builder;
+            
             var enabledFeatures = builder.ElsaOptions.FeatureOptions.Features.ToHashSet();
 
             var startupTypesQuery = from assembly in assemblies
