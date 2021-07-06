@@ -7,7 +7,7 @@ EF Sqlite
 "Elsa": {
   "Features": {
     "Persistence:EntityFrameworkCore:Sqlite": {
-    "Enabled": "true",
+    "Enabled": true,
     "ConnectionStringName": "Sqlite"
     },
     ...
@@ -18,7 +18,7 @@ EF MySQL
 "Elsa": {
   "Features": {
     "Persistence:EntityFrameworkCore:MySql": {
-    "Enabled": "true",
+    "Enabled": true,
     "ConnectionStringName": "MySql"
     },
     ...
@@ -29,7 +29,7 @@ EF SQL Server
 "Elsa": {
   "Features": {
     "Persistence:EntityFrameworkCore:SqlServer": {
-    "Enabled": "true",
+    "Enabled": true,
     "ConnectionStringName": "SqlServer"
     },
     ...  
@@ -51,7 +51,7 @@ EF MongoDB
 "Elsa": {
   "Features": {
     "Persistence:MongoDb": {
-    "Enabled": "true",
+    "Enabled": true,
     "ConnectionStringName": "MongoDb"
     },
     ...
@@ -62,7 +62,7 @@ YesSql Sqlite
 "Elsa": {
   "Features": {
     "Persistence:YesSql:Sqlite": {
-    "Enabled": "true",
+    "Enabled": true,
     "ConnectionStringName": "Sqlite"
     },
     ...
@@ -73,7 +73,7 @@ YesSql MySQL
 "Elsa": {
   "Features": {
     "Persistence:YesSql:MySql": {
-    "Enabled": "true",
+    "Enabled": true,
     "ConnectionStringName": "MySql"
     },
     ...
@@ -84,7 +84,7 @@ YesSql SQL Server
 "Elsa": {
   "Features": {
     "Persistence:YesSql:SqlServer": {
-    "Enabled": "true",
+    "Enabled": true,
     "ConnectionStringName": "SqlServer"
     },
     ...
@@ -95,7 +95,7 @@ YesSql Postgre
 "Elsa": {
   "Features": {
     "Persistence:YesSql:PostgreSql": {
-    "Enabled": "true",
+    "Enabled": true,
     "ConnectionStringName": "PostgreSql"
     },
     ...
@@ -111,19 +111,14 @@ EF Sqlite
 "Elsa": {
   "Features": {
     "Persistence:EntityFrameworkCore:Sqlite": {
-    "Enabled": "true",
-        "Options": {
-          "ConnectionStringName": "Sqlite"
-        }
+      "Enabled": true,
+      "ConnectionStringName": "Sqlite"
     },
-    "Webhooks": {
-      "Enabled": "true"
+    "Webhooks": true
     },
     "Webhooks:Persistence:EntityFrameworkCore:Sqlite": {
-      "Enabled": "true",
-        "Options": {
-          "ConnectionStringName": "Sqlite"
-        }
+      "Enabled": true,
+      "ConnectionStringName": "Sqlite"
     }
     ...
 ```
@@ -133,19 +128,14 @@ EF MongoDB
 "Elsa": {
   "Features": {
     "Persistence:MongoDb": {
-    "Enabled": "true",
-        "Options": {
-          "ConnectionStringName": "MongoDb"
-        }
+      "Enabled": true,
+      "ConnectionStringName": "MongoDb"
     },
-    "Webhooks": {
-      "Enabled": "true"
+    "Webhooks": true
     },
     "Webhooks:Persistence:MongoDb": {
-      "Enabled": "true",
-        "Options": {
-          "ConnectionStringName": "MongoDb"
-        }
+      "Enabled": true,
+      "ConnectionStringName": "MongoDb"
     }
     ...
 ```
