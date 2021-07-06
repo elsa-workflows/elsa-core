@@ -1,93 +1,104 @@
-### Configure persistence in appsettings.json
+### Configure persistence for Elsa Core in the appsettings.json
+
+It is required to specify the persistence, it's enabled status and connection string name in Features
 
 EF Sqlite
 ```
 "Elsa": {
-"Features": [
-    "Persistence:EntityFrameworkCore:Sqlite",
+  "Features": {
+    "Persistence:EntityFrameworkCore:Sqlite": {
+    "Enabled": "true",
+    "ConnectionStringName": "Sqlite"
+    },
     ...
-    ],
-}
 ```
 
 EF MySQL
 ```
 "Elsa": {
-"Features": [
-    "Persistence:EntityFrameworkCore:MySql",
+  "Features": {
+    "Persistence:EntityFrameworkCore:MySql": {
+    "Enabled": "true",
+    "ConnectionStringName": "MySql"
+    },
     ...
-    ],
-}
 ```
 
 EF SQL Server
 ```
 "Elsa": {
-"Features": [
-    "Persistence:EntityFrameworkCore:SqlServer",
-    ...
-    ],
-}
+  "Features": {
+    "Persistence:EntityFrameworkCore:SqlServer": {
+    "Enabled": "true",
+    "ConnectionStringName": "SqlServer"
+    },
+    ...  
 ```
 
 EF Postgre
 ```
 "Elsa": {
-"Features": [
-    "Persistence:EntityFrameworkCore:PostgreSql",
+  "Features": {
+    "Persistence:EntityFrameworkCore:PostgreSql": {
+    "Enabled": "true",
+    "ConnectionStringName": "PostgreSql"
+    },
     ...
-    ],
-}
 ```
 
 EF MongoDB
 ```
 "Elsa": {
-"Features": [
-    "Persistence:MongoDb",
+  "Features": {
+    "Persistence:MongoDb": {
+    "Enabled": "true",
+    "ConnectionStringName": "MongoDb"
+    },
     ...
-    ],
-}
 ```
 
 YesSql Sqlite
 ```
 "Elsa": {
-"Features": [
-    "Persistence:YesSql:Sqlite",
+  "Features": {
+    "Persistence:YesSql:Sqlite": {
+    "Enabled": "true",
+    "ConnectionStringName": "Sqlite"
+    },
     ...
-    ],
-}
 ```
 
 YesSql MySQL
 ```
 "Elsa": {
-"Features": [
-    "Persistence:YesSql:MySql",
+  "Features": {
+    "Persistence:YesSql:MySql": {
+    "Enabled": "true",
+    "ConnectionStringName": "MySql"
+    },
     ...
-    ],
-}
 ```
 
 YesSql SQL Server
 ```
 "Elsa": {
-"Features": [
-    "Persistence:YesSql:SqlServer",
+  "Features": {
+    "Persistence:YesSql:SqlServer": {
+    "Enabled": "true",
+    "ConnectionStringName": "SqlServer"
+    },
     ...
-    ],
-}
 ```
 
 YesSql Postgre
 ```
 "Elsa": {
-"Features": [
-    "Persistence:YesSql:PostgreSql",
+  "Features": {
+    "Persistence:YesSql:PostgreSql": {
+    "Enabled": "true",
+    "ConnectionStringName": "PostgreSql"
+    },
     ...
-    ],
-}
 ```
 
 ### Configure modular activity providers such as Webhooks
@@ -98,25 +109,37 @@ Two examples below are given to set up Elsa Core and Webhooks persistence as fol
 EF Sqlite
 ```
 "Elsa": {
-"Features": [
-    "Persistence:EntityFrameworkCore:Sqlite",
-    "Webhooks"
-    "Webhooks:Persistence:EntityFrameworkCore:Sqlite",
+  "Features": {
+    "Persistence:EntityFrameworkCore:Sqlite": {
+    "Enabled": "true",
+    "ConnectionStringName": "Sqlite"
+    },
+    "Webhooks": {
+      "Enabled": "true"
+    },
+    "Webhooks:Persistence:EntityFrameworkCore:Sqlite": {
+      "Enabled": "true",
+      "ConnectionStringName": "Sqlite"
+    }
     ...
-    ],
-}
 ```
 
 EF MongoDB
 ```
 "Elsa": {
-"Features": [
-    "Persistence:MongoDb",
-    "Webhooks"
-    "Webhooks:Persistence:MongoDb",
+  "Features": {
+    "Persistence:MongoDb": {
+    "Enabled": "true",
+    "ConnectionStringName": "Sqlite"
+    },
+    "Webhooks": {
+      "Enabled": "true"
+    },
+    "Webhooks:Persistence:MongoDb": {
+      "Enabled": "true",
+      "ConnectionStringName": "Sqlite"
+    }
     ...
-    ],
-}
 ```
 
 ### Configure connection strings for each persistence
