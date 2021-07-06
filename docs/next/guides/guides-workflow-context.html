@@ -1,11 +1,383 @@
 <!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>Working with Workflow Context · ELSA</title><meta name="viewport" content="width=device-width"/><meta name="generator" content="Docusaurus"/><meta name="description" content="In this guide, we will learn how to work with **Workflow Contexts**."/><meta name="docsearch:version" content="next"/><meta name="docsearch:language" content="en"/><meta property="og:title" content="Working with Workflow Context · ELSA"/><meta property="og:type" content="website"/><meta property="og:url" content="https://elsa-workflows.github.io//elsa-core/"/><meta property="og:description" content="In this guide, we will learn how to work with **Workflow Contexts**."/><meta property="og:image" content="https://elsa-workflows.github.io//elsa-core/img/undraw_online.svg"/><meta name="twitter:card" content="summary"/><meta name="twitter:image" content="https://elsa-workflows.github.io//elsa-core/img/undraw_tweetstorm.svg"/><link rel="shortcut icon" href="/elsa-core/img/favicon.ico"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script type="text/javascript" src="https://buttons.github.io/buttons.js"></script><script src="/elsa-core/js/scrollSpy.js"></script><link rel="stylesheet" href="/elsa-core/css/main.css"/><script src="/elsa-core/js/codetabs.js"></script></head><body class="sideNavVisible separateOnPageNav"><div class="fixedHeaderContainer"><div class="headerWrapper wrapper"><header><a href="/elsa-core/"><img class="logo" src="/elsa-core/img/android-icon-192x192.png" alt="ELSA"/><h2 class="headerTitleWithLogo">ELSA</h2></a><a href="/elsa-core/versions"><h3>next</h3></a><div class="navigationWrapper navigationSlider"><nav class="slidingNav"><ul class="nav-site nav-site-internal"><li class=""><a href="/elsa-core/docs/next/installation/installing-elsa-core" target="_self">Documentation</a></li><li class=""><a href="/elsa-core/docs/next/features/features" target="_self">Features</a></li></ul></nav></div></header></div></div><div class="navPusher"><div class="docMainWrapper wrapper"><div class="container mainContainer docsContainer"><div class="wrapper"><div class="post"><header class="postHeader"><h1 id="__docusaurus" class="postHeaderTitle">Working with Workflow Context</h1></header><article><div><span><p>In this guide, we will learn how to work with <strong>Workflow Contexts</strong>.</p>
-<p>A workflow context is nothing more than an object instance that represents some business domain model of your choosing.
-Examples of workflow contexts are documents, time sheets, users, employees, products, shopping carts, leave requests, change requests, and so forth.</p>
+<p>A workflow context represents a model that is specific to your own domain, which means it can be any object that you like.
+Examples are documents, time sheets, users, employees, products, shopping carts, leave requests, change requests, blog posts and so forth.</p>
 <blockquote>
-<p>See also the <a href="/elsa-core/docs/next/concepts/concepts-workflow-context">conceptual definition of Workflow Context</a>.</p>
+<p>See also the <a href="../concepts/concepts-workflow-context">conceptual definition of Workflow Context</a>.</p>
 </blockquote>
+<h2><a class="anchor" aria-hidden="true" id="why-use-workflow-context"></a><a href="#why-use-workflow-context" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Why Use Workflow Context?</h2>
+<p>Oftentimes when you work with long-running workflows that deal with domain entities, you need to load the entity into memory before you can start reading information from it or perform update operations.</p>
+<p>For <a href="(../concepts/concepts-workflows#short-running-workflows)">short-running</a> workflows, it is enough to load the entity just once, which will be in memory for the duration of the workflow's lifetime.</p>
+<p>For <a href="(../concepts/concepts-workflows#long-running-workflows)">long-running</a> workflows on the other hand, you will need to load the entity each time the workflow gets resumed and if you need access to this entity.</p>
+<p>This is usually solved by writing custom activities that take care of loading (and perhaps persisting) these domain entities. Although that works fine, one disadvantage of this approach is that it tends to clutters the workflow.</p>
+<p>Elsa's Workflow Context helps alleviate this by providing an API to the developer that allows them to implement a workflow context provider that can load and/or save domain entities from their own data source.</p>
+<h2><a class="anchor" aria-hidden="true" id="how-use-workflow-context"></a><a href="#how-use-workflow-context" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>How Use Workflow Context?</h2>
+<p>To demonstrate how to work with workflow contexts, we will setup a simple web application that handles incoming blog posts that can be submitted to a workflow.
+This workflow will do the following things:</p>
+<ol>
+<li>Handle POST requests at <code>/workflows/blog-posts</code>.</li>
+<li>Respond with the generated workflow instance ID as well as the received blog post (in JSON format).</li>
+<li>Wait for a signal called <code>&quot;Publish&quot;</code>. This will cause the workflow to be suspended.</li>
+<li>Set the blog post's <code>IsPublished</code> field to <code>true</code>.</li>
+<li>Respond with a JSON representation of the updated blog post model.</li>
+</ol>
+<p>The key thing to notice here is that even though step 3 causes the workflow to be suspended, the blog post will still be available in step 4 and 5 as if the blog post never went out of scope.</p>
+<p>That's because we will implement a workflow context provider that will automatically create, save and load the blog post whenever the workflow engine executes the workflow.</p>
+<h3><a class="anchor" aria-hidden="true" id="the-project"></a><a href="#the-project" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>The Project</h3>
+<p>The demo project will have the following key elements:</p>
+<ul>
+<li>A <code>BlogPost</code> domain model.</li>
+<li>An Entity Framework Core <code>BlogContext</code> to read and write <code>BlogPost</code> models from and to.</li>
+<li>A <code>StartupTask</code> to automatically run EF Core migrations for <code>BlogContext</code>.</li>
+<li>A <strong>workflow context provider</strong> that will be invoked by the workflow engine to load and save blog posts.</li>
+</ul>
+<p>To scaffold the demo project, perform the following steps:</p>
+<pre><code class="hljs css language-bash">dotnet new web -n ElsaGuides.WorkflowContexts.Web
+<span class="hljs-built_in">cd</span> ElsaGuides.WorkflowContexts.Web
+dotnet add package Elsa
+dotnet add package Elsa.Activities.Http
+dotnet add package Elsa.Persistence.EntityFramework.Sqlite
+dotnet add package Elsa.Server.Api
+dotnet add package Microsoft.EntityFrameworkCore.Design
+dotnet add package Microsoft.EntityFrameworkCore.Sqlite
+</code></pre>
+<p>Create a new folder called <code>Models</code> and add the following class:</p>
+<pre><code class="hljs css language-csharp"><span class="hljs-keyword">namespace</span> <span class="hljs-title">ElsaGuides.WorkflowContexts.Web.Models</span>
+{
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title">BlogPost</span>
+    {
+        <span class="hljs-keyword">public</span> <span class="hljs-keyword">string</span> Id { <span class="hljs-keyword">get</span>; <span class="hljs-keyword">set</span>; } = <span class="hljs-keyword">default</span>!;
+        <span class="hljs-keyword">public</span> <span class="hljs-keyword">string</span> Title { <span class="hljs-keyword">get</span>; <span class="hljs-keyword">set</span>; } = <span class="hljs-keyword">default</span>!;
+        <span class="hljs-keyword">public</span> <span class="hljs-keyword">string</span> Body { <span class="hljs-keyword">get</span>; <span class="hljs-keyword">set</span>; } = <span class="hljs-keyword">default</span>!;
+        <span class="hljs-keyword">public</span> <span class="hljs-keyword">bool</span> IsPublished { <span class="hljs-keyword">get</span>; <span class="hljs-keyword">set</span>; }
+    }
+}
+</code></pre>
+<p>Create a new folder called <code>Data</code> and add the following class:</p>
+<pre><code class="hljs css language-csharp"><span class="hljs-keyword">using</span> ElsaGuides.WorkflowContexts.Web.Models;
+<span class="hljs-keyword">using</span> Microsoft.EntityFrameworkCore;
+
+<span class="hljs-keyword">namespace</span> <span class="hljs-title">ElsaGuides.WorkflowContexts.Web.Data</span>
+{
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title">BlogContext</span> : <span class="hljs-title">DbContext</span>
+    {
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">BlogContext</span>(<span class="hljs-params">DbContextOptions options</span>) : <span class="hljs-title">base</span>(<span class="hljs-params">options</span>)</span>
+        {
+        }
+
+        <span class="hljs-keyword">public</span> DbSet&lt;BlogPost&gt; BlogPosts { <span class="hljs-keyword">get</span>; <span class="hljs-keyword">set</span>; } = <span class="hljs-keyword">default</span>!;
+    }
+}
+</code></pre>
+<p>Create the following class in the same folder:</p>
+<pre><code class="hljs css language-csharp">using System.Linq;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Design;
+
+namespace ElsaGuides.WorkflowContexts.Web.Data
+{
+    public class SqliteBlogContextFactory : IDesignTimeDbContextFactory&lt;BlogContext&gt;
+    {
+        public BlogContext CreateDbContext(string[] args)
+        {
+            var builder = new DbContextOptionsBuilder&lt;BlogContext&gt;();
+            var connectionString = args.Any() ? args[0] : "Data Source=blog.db;Cache=Shared";
+            
+            builder.UseSqlite(connectionString, db =&gt; db
+                .MigrationsAssembly(typeof(SqliteBlogContextFactory).Assembly.GetName().Name));
+            
+            return new BlogContext(builder.Options);
+        }
+    }
+}
+</code></pre>
+<p>The design time DB context factory will be used by the dotnet EF Core tool to generate migrations.</p>
+<p>To generate the migrations, execute the following command:</p>
+<pre><code class="hljs css language-bash"><span class="hljs-built_in">cd</span> 
+dotnet ef migrations add Initial -c BlogContext -o Data/Migrations
+</code></pre>
+<p>At this point, we could go ahead and create the SQLite database by running the following command:</p>
+<p><code>dotnet ef database update -- &quot;Data Source=blog.db;Cache=Shared&quot;</code></p>
+<p>That would be fine, and is usually the right thing to do. But if you for whatever reason prefer to automatically run migrations during application startup, you can create a new class that implements <code>IStartupTask</code>, which is a feature provided by Elsa and will be executed during application startup.</p>
+<p>To see how that works, create a new folder called <code>Data/StartupTasks</code> and add the following class:</p>
+<pre><code class="hljs css language-csharp"><span class="hljs-keyword">using</span> System.Threading;
+<span class="hljs-keyword">using</span> System.Threading.Tasks;
+<span class="hljs-keyword">using</span> Elsa.Services;
+<span class="hljs-keyword">using</span> Microsoft.EntityFrameworkCore;
+
+<span class="hljs-keyword">namespace</span> <span class="hljs-title">ElsaGuides.WorkflowContexts.Web.Data.StartupTasks</span>
+{
+    <span class="hljs-comment"><span class="hljs-doctag">///</span> <span class="hljs-doctag">&lt;summary&gt;</span></span>
+    <span class="hljs-comment"><span class="hljs-doctag">///</span> Executes EF Core migrations for <span class="hljs-doctag">&lt;see cref="BlogContext"/&gt;</span>.</span>
+    <span class="hljs-comment"><span class="hljs-doctag">///</span> <span class="hljs-doctag">&lt;/summary&gt;</span></span>
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title">RunBlogMigrations</span> : <span class="hljs-title">IStartupTask</span>
+    {
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">readonly</span> IDbContextFactory&lt;BlogContext&gt; _dbContextFactory;
+
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">RunBlogMigrations</span>(<span class="hljs-params">IDbContextFactory&lt;BlogContext&gt; dbContextFactoryFactory</span>)</span>
+        {
+            _dbContextFactory = dbContextFactoryFactory;
+        }
+
+        <span class="hljs-keyword">public</span> <span class="hljs-keyword">int</span> Order =&gt; <span class="hljs-number">0</span>;
+        
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">async</span> Task <span class="hljs-title">ExecuteAsync</span>(<span class="hljs-params">CancellationToken cancellationToken = <span class="hljs-keyword">default</span></span>)</span>
+        {
+            <span class="hljs-keyword">await</span> <span class="hljs-keyword">using</span> <span class="hljs-keyword">var</span> dbContext = _dbContextFactory.CreateDbContext();
+            <span class="hljs-keyword">await</span> dbContext.Database.MigrateAsync(cancellationToken);
+            <span class="hljs-keyword">await</span> dbContext.DisposeAsync();
+        }
+    }
+}
+</code></pre>
+<p>When we register this class with the service container (which we will get to shortly when updating <code>Startup</code>, the migrations will be applied automatically.</p>
+<p>Before we go over the <code>Startup</code> class, we will first create a new folder called <code>Providers/WorkfowContexts</code> and add the following class:</p>
+<pre><code class="hljs css language-csharp">using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Elsa.Activities.Http.Models;
+using Elsa.Services;
+using Elsa.Services.Models;
+using ElsaGuides.WorkflowContexts.Web.Data;
+using ElsaGuides.WorkflowContexts.Web.Models;
+using Microsoft.EntityFrameworkCore;
+
+namespace ElsaGuides.WorkflowContexts.Web.Providers.WorkflowContexts
+{
+    public class BlogPostWorkflowContextProvider : WorkflowContextRefresher&lt;BlogPost&gt;
+    {
+        private readonly IDbContextFactory&lt;BlogContext&gt; _blogContextFactory;
+
+        public BlogPostWorkflowContextProvider(IDbContextFactory&lt;BlogContext&gt; blogContextFactoryFactory)
+        {
+            _blogContextFactory = blogContextFactoryFactory;
+        }
+
+        /// &lt;summary&gt;
+        /// Loads a BlogPost entity from the database.
+        /// &lt;/summary&gt;
+        public override async ValueTask&lt;BlogPost?&gt; LoadAsync(LoadWorkflowContext context, CancellationToken cancellationToken = default)
+        {
+            var blogPostId = context.ContextId;
+            await using var dbContext = _blogContextFactory.CreateDbContext();
+            return await dbContext.BlogPosts.AsQueryable().FirstOrDefaultAsync(x =&gt; x.Id == blogPostId, cancellationToken);
+        }
+
+        /// &lt;summary&gt;
+        /// Updates a BlogPost entity in the database.
+        /// If there's no actual workflow context, we will get it from the input. This works because we know we have a workflow that starts with an HTTP Endpoint activity that receives BlogPost models.
+        /// This is a design choice for this particular demo. In real world scenarios, you might not even need this since your workflows may be dealing with existing entities, or have (other) workflows that handle initial entity creation.
+        /// The key take away is: you can do whatever you want with these workflow context providers :) 
+        /// &lt;/summary&gt;
+        public override async ValueTask&lt;string?&gt; SaveAsync(SaveWorkflowContext&lt;BlogPost&gt; context, CancellationToken cancellationToken = default)
+        {
+            var blogPost = context.Context;
+            await using var dbContext = _blogContextFactory.CreateDbContext();
+            var dbSet = dbContext.BlogPosts;
+            
+            if (blogPost == null)
+            {
+                // We are handling a newly posted blog post.
+                blogPost = ((HttpRequestModel) context.WorkflowExecutionContext.Input!).GetBody&lt;BlogPost&gt;();
+                
+                // Generate a new ID.
+                blogPost.Id = Guid.NewGuid().ToString("N");
+                
+                // Set IsPublished to false to prevent caller from cheating ;)
+                blogPost.IsPublished = false;
+                
+                // Set context.
+                context.WorkflowExecutionContext.WorkflowContext = blogPost;
+                context.WorkflowExecutionContext.ContextId = blogPost.Id;
+                
+                // Add blog post to DB.
+                await dbSet.AddAsync(blogPost, cancellationToken);
+            }
+            else
+            {
+                var blogPostId = blogPost.Id;
+                var existingBlogPost = await dbSet.AsQueryable().Where(x =&gt; x.Id == blogPostId).FirstAsync(cancellationToken);
+                
+                dbContext.Entry(existingBlogPost).CurrentValues.SetValues(blogPost);
+            }
+            
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return blogPost.Id;
+        }
+    }
+}
+</code></pre>
+<p>This workflow context provider supports both loading blog posts from and updating blog posts in the database.</p>
+<blockquote>
+<p>I don't recommend that your workflow provider has knowledge about any of your workflow structures like I did here where I &quot;know&quot; about the workflow that we will be building receives a BlogPost model as input.
+In the real world, you typically either already have an existing entity in your database, or you have a separate means of handling new entities (which could even be in the form of another or the same workflow).
+I'm doing it here nonetheless because it keeps my demo workflow small. You get the point :)</p>
+</blockquote>
+<p>Although it's a bit of code to read and write, you only have to do it once and the workflow doesn't have to do so explicitly using custom activities. Which is a big win for long-running workflows!</p>
+<p>Now that we got the important pieces of the puzzle in place, it's time to update the <code>Startup</code> as follows:</p>
+<pre><code class="hljs css language-csharp"><span class="hljs-keyword">using</span> Elsa.Persistence.EntityFramework.Core.Extensions;
+<span class="hljs-keyword">using</span> Elsa.Persistence.EntityFramework.Sqlite;
+<span class="hljs-keyword">using</span> Elsa.Runtime;
+<span class="hljs-keyword">using</span> ElsaGuides.WorkflowContexts.Web.Data;
+<span class="hljs-keyword">using</span> ElsaGuides.WorkflowContexts.Web.Data.StartupTasks;
+<span class="hljs-keyword">using</span> ElsaGuides.WorkflowContexts.Web.Providers.WorkflowContexts;
+<span class="hljs-keyword">using</span> Microsoft.AspNetCore.Builder;
+<span class="hljs-keyword">using</span> Microsoft.AspNetCore.Hosting;
+<span class="hljs-keyword">using</span> Microsoft.EntityFrameworkCore;
+<span class="hljs-keyword">using</span> Microsoft.Extensions.Configuration;
+<span class="hljs-keyword">using</span> Microsoft.Extensions.DependencyInjection;
+<span class="hljs-keyword">using</span> Microsoft.Extensions.Hosting;
+
+<span class="hljs-keyword">namespace</span> <span class="hljs-title">ElsaGuides.WorkflowContexts.Web</span>
+{
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title">Startup</span>
+    {
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">Startup</span>(<span class="hljs-params">IConfiguration configuration</span>)</span>
+        {
+            Configuration = configuration;
+        }
+
+        <span class="hljs-keyword">private</span> IConfiguration Configuration { <span class="hljs-keyword">get</span>; }
+
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">ConfigureServices</span>(<span class="hljs-params">IServiceCollection services</span>)</span>
+        {
+            <span class="hljs-keyword">var</span> connectionString = Configuration.GetConnectionString(<span class="hljs-string">"Sqlite"</span>);
+
+            services
+                .AddDbContextFactory&lt;BlogContext&gt;(options =&gt; options.UseSqlite(connectionString, sql =&gt; sql.MigrationsAssembly(<span class="hljs-keyword">typeof</span>(Startup).Assembly.FullName)))
+                .AddCors(cors =&gt; cors.AddDefaultPolicy(policy =&gt; policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()))
+                .AddElsa(elsa =&gt; elsa
+                    .UseEntityFrameworkPersistence(ef =&gt; ef.UseSqlite(connectionString))
+                    .AddConsoleActivities()
+                    .AddJavaScriptActivities()
+                    .AddHttpActivities(options =&gt; options.BasePath = <span class="hljs-string">"/workflows"</span>))
+                .AddWorkflowContextProvider&lt;BlogPostWorkflowContextProvider&gt;()
+                .AddStartupTask&lt;RunBlogMigrations&gt;()
+                .AddElsaApiEndpoints();
+        }
+
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">Configure</span>(<span class="hljs-params">IApplicationBuilder app, IWebHostEnvironment env</span>)</span>
+        {
+            <span class="hljs-keyword">if</span> (env.IsDevelopment())
+                app.UseDeveloperExceptionPage();
+
+            app.UseRouting();
+            app.UseCors();
+            app.UseHttpActivities();
+            app.UseEndpoints(endpoints =&gt; endpoints.MapControllers());
+            app.UseWelcomePage();
+        }
+    }
+}
+</code></pre>
+<p>Nothing too special going on here. We're configuring:</p>
+<ul>
+<li>EF Core with our <code>BlogContext</code></li>
+<li>CORS</li>
+<li>Elsa</li>
+<li>Our workflow context provider</li>
+<li>Our migrations startup task</li>
+<li>Elsa API endpoints (just ASP.NET Core with controllers)</li>
+</ul>
+<p>Before we can run the application, update <code>appsettings.json</code> with the following:</p>
+<pre><code class="hljs css language-json">{
+  <span class="hljs-attr">"ConnectionStrings"</span>: {
+    <span class="hljs-attr">"Sqlite"</span>: <span class="hljs-string">"Data Source=blog.db;Cache=Shared"</span>
+  }
+}
+</code></pre>
+<p>With that in place, run the following command to start the application:</p>
+<pre><code class="hljs css language-bash">dotnet run
+</code></pre>
+<p>With the application running, you can navigate to <code>http://localhost:5000/</code> which will display a standard welcome page.
+Since we didn't setup Elsa Dashboard, we will need to run that separately in order to design our workflow.</p>
+<p>Run the following Docker command to do exactly that:</p>
+<pre><code class="hljs css language-bash">docker run -t -i -e ELSA__SERVER__BASEADDRESS=<span class="hljs-string">'http://localhost:5000'</span> -p 14000:80 elsaworkflows/elsa-dashboard:latest
+</code></pre>
+<p>Navigate to the dashboard at <code>http://localhost:14000/</code></p>
+<h2><a class="anchor" aria-hidden="true" id="the-workflow"></a><a href="#the-workflow" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>The Workflow</h2>
+<p>From the dashboard, go to Workflow Definitions and create a new workflow.</p>
+<p>The first thing to configure are the workflow settings itself.
+Click on the cog icon to the far top and right of the design surface and select the <strong>Workflow Context</strong> tab.</p>
+<p>Enter the following values:</p>
+<ul>
+<li><strong>Type</strong>: <code>ElsaGuides.WorkflowContexts.Web.Models.BlogPost, ElsaGuides.WorkflowContexts.Web</code></li>
+<li><strong>Fidelity</strong>: <code>Burst</code> (the default)</li>
+</ul>
+<p>The Type field tells Elsa what context provider to use when running this workflow. The Fidelity field controls how often the workflow context is loaded or saved.
+A value of <code>Burst</code> means that the workflow context is only loaded once per burst of execution, while the <code>Activity</code> setting will cause the workflow engine to load the context <strong>after every activity execution</strong>.</p>
+<p>For most typical use cases, you should stick with <code>Burst</code>.</p>
+<p>Click <strong>Save</strong> to apply the changes.</p>
+<h3><a class="anchor" aria-hidden="true" id="http-endpoint"></a><a href="#http-endpoint" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>HTTP Endpoint</h3>
+<p>Next, click the <strong>Start</strong> button to add the <strong>HTTP Endpoint</strong> activity with the following settings:</p>
+<ul>
+<li>Properties
+<ul>
+<li>Path: <code>/blog-posts</code></li>
+<li>Methods: <code>GET</code></li>
+<li>Read Content: <code>on</code></li>
+</ul></li>
+<li>Advanced
+<ul>
+<li>Target Type: <code>ElsaGuides.WorkflowContexts.Web.Models.BlogPost, ElsaGuides.WorkflowContexts.Web</code></li>
+</ul></li>
+<li>Common
+<ul>
+<li>Name: <code>HttpEndpoint1</code></li>
+</ul></li>
+<li>Storage
+<ul>
+<li>Save Workflow Context: <code>on</code></li>
+</ul></li>
+</ul>
+<p>The Target Type setting together with Read Content tell the activity to parse the received JSON into an actual <code>BlogPost</code> instance.
+Notice also that we <strong>named</strong> the activity <code>HttpEndpoint1</code>, which allows us to access this activity's output from JavaScript by name.</p>
+<h3><a class="anchor" aria-hidden="true" id="http-response-1"></a><a href="#http-response-1" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>HTTP Response 1</h3>
+<p>Connect a new <strong>HTTP Response</strong> activity to the <strong>Done</strong> outcome and configure it as follows:</p>
+<ul>
+<li>Content (use JS syntax):</li>
+</ul>
+<pre><code class="hljs css language-javascript"><span class="hljs-keyword">const</span> model = {
+    <span class="hljs-attr">blogPost</span>: workflowContext,
+    <span class="hljs-attr">workflowInstanceId</span>: workflowInstanceId
+}
+
+<span class="hljs-keyword">return</span> <span class="hljs-built_in">JSON</span>.stringify(model, <span class="hljs-literal">null</span>, <span class="hljs-number">2</span>);
+</code></pre>
+<ul>
+<li>Content Type: <code>application/json</code></li>
+</ul>
+<p>Notice that we are simply writing back a JSON object that contains the received blog post available from the <code>workflowContext</code> variable.
+This variable is set because our workflow context provider's <code>SaveAsync</code> method will be invoked when this workflow is triggered, which happens because we set <strong>Save Workflow Context</strong>: <code>on</code> of the HTTP Endpoint activity.</p>
+<p>And when we look back at that method again (BlogPostWorkflowContextProvider.cs:57-58), we see that we are setting the <code>WorkflowContext</code> for newly received blog posts:</p>
+<pre><code class="hljs css language-csharp"><span class="hljs-comment">// Set context.</span>
+context.WorkflowExecutionContext.WorkflowContext = blogPost;
+context.WorkflowExecutionContext.ContextId = blogPost.Id;
+</code></pre>
+<p>The reason we're also writing back the <strong>workflow instance ID</strong> will become apparent after the next step where we will add a new <strong>Signal Received</strong> activity.</p>
+<h3><a class="anchor" aria-hidden="true" id="signal-received"></a><a href="#signal-received" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Signal Received</h3>
+<p>Connect a new <strong>Signal Received</strong> activity with the following settings:</p>
+<ul>
+<li>Signal: <code>Publish</code></li>
+</ul>
+<p>When we try out our workflow shortly, we will see that it becomes suspended at this point. To resume the workflow, we will send a signal called <code>&quot;Publish&quot;</code>. When doing so, we will also provide the workflow instance ID.</p>
+<h3><a class="anchor" aria-hidden="true" id="run-javascript"></a><a href="#run-javascript" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Run JavaScript</h3>
+<p>Connect a new <strong>Run JavaScript</strong> activity and configure it with the following script:</p>
+<pre><code class="hljs css language-javascript">workflowContext.IsPublished = <span class="hljs-literal">true</span>;
+</code></pre>
+<p>All we are doing here is updating the <code>IsPublished</code> property of the blog post in context to <code>true</code>.</p>
+<p>The key thing to realize here is that at this point, the workflow got resumed and the blog post was loaded automatically into memory thanks to our workflow context provider.
+The workflow context provider will also take care of persisting any changes made to the blog post back to storage.</p>
+<p>All we had to do is set a simple property that we wanted to change (<code>IsPublished</code>) and that's that.</p>
+<h3><a class="anchor" aria-hidden="true" id="http-response-2"></a><a href="#http-response-2" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>HTTP Response 2</h3>
+<p>As a final touch, let's add another <strong>HTTP Response</strong> after the previous activity with the following content:</p>
+<pre><code class="hljs css language-javascript"><span class="hljs-built_in">JSON</span>.stringify(workflowContext)
+</code></pre>
+<p>Make sure to select the JavaScript syntax and set the <strong>Content Type</strong> field to <code>application/json</code>.</p>
+<p>Finally, publish the workflow. Now it's time to try it out!</p>
+<h2><a class="anchor" aria-hidden="true" id="running-the-workflow"></a><a href="#running-the-workflow" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Running the Workflow</h2>
 <blockquote>
 <p><strong>UNDER CONSTRUCTION</strong></p>
 <p>We're working on it. Check back soon!</p>
 </blockquote>
-</span></div></article></div><div class="docs-prevnext"></div></div></div><nav class="onPageNav"></nav></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="/elsa-core/" class="nav-home"><img src="/elsa-core/img/android-icon-192x192.png" alt="ELSA" width="50" height="50"/></a><div><h5>Docs</h5><a href="/elsa-core/docs/next/installation/installing-elsa-core">Getting Started</a><a href="/elsa-core/docs/next/concepts/concepts-workflows">Concepts</a><a href="/elsa-core/docs/next/quickstarts/quickstarts-console-hello-world">Quickstarts</a><a href="/elsa-core/docs/next/guides/guides-recurring-tasks">Guides</a></div><div><h5>Community</h5><a href="https://stackoverflow.com/questions/tagged/elsa-workflows" target="_blank" rel="noreferrer noopener">Stack Overflow</a><a href="https://discord.gg/hhChk5H472" target="_blank" rel="noreferrer noopener">Discord</a></div><div><h5>More</h5><a href="https://github.com/elsa-workflows/elsa-core">GitHub</a><a class="github-button" href="https://github.com/elsa-workflows/elsa-core" data-icon="octicon-star" data-count-href="/facebook/docusaurus/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star this project on GitHub">Star</a></div></section><a href="https://dotnetfoundation.org" target="_blank" rel="noreferrer noopener" class="dotnetfoundation" title="Supported by the .NET Foundation"><img src="/elsa-core/img/dotnetfoundation.png" alt="Supported by the .NET Foundation" width="100" height="100"/></a><section class="copyright">Copyright © 2021 .NET Foundation</section></footer></div></body></html>
+</span></div></article></div><div class="docs-prevnext"></div></div></div><nav class="onPageNav"><ul class="toc-headings"><li><a href="#why-use-workflow-context">Why Use Workflow Context?</a></li><li><a href="#how-use-workflow-context">How Use Workflow Context?</a><ul class="toc-headings"><li><a href="#the-project">The Project</a></li></ul></li><li><a href="#the-workflow">The Workflow</a><ul class="toc-headings"><li><a href="#http-endpoint">HTTP Endpoint</a></li><li><a href="#http-response-1">HTTP Response 1</a></li><li><a href="#signal-received">Signal Received</a></li><li><a href="#run-javascript">Run JavaScript</a></li><li><a href="#http-response-2">HTTP Response 2</a></li></ul></li><li><a href="#running-the-workflow">Running the Workflow</a></li></ul></nav></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="/elsa-core/" class="nav-home"><img src="/elsa-core/img/android-icon-192x192.png" alt="ELSA" width="50" height="50"/></a><div><h5>Docs</h5><a href="/elsa-core/docs/next/installation/installing-elsa-core">Getting Started</a><a href="/elsa-core/docs/next/concepts/concepts-workflows">Concepts</a><a href="/elsa-core/docs/next/quickstarts/quickstarts-console-hello-world">Quickstarts</a><a href="/elsa-core/docs/next/guides/guides-recurring-tasks">Guides</a></div><div><h5>Community</h5><a href="https://stackoverflow.com/questions/tagged/elsa-workflows" target="_blank" rel="noreferrer noopener">Stack Overflow</a><a href="https://discord.gg/hhChk5H472" target="_blank" rel="noreferrer noopener">Discord</a></div><div><h5>More</h5><a href="https://github.com/elsa-workflows/elsa-core">GitHub</a><a class="github-button" href="https://github.com/elsa-workflows/elsa-core" data-icon="octicon-star" data-count-href="/facebook/docusaurus/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star this project on GitHub">Star</a></div></section><a href="https://dotnetfoundation.org" target="_blank" rel="noreferrer noopener" class="dotnetfoundation" title="Supported by the .NET Foundation"><img src="/elsa-core/img/dotnetfoundation.png" alt="Supported by the .NET Foundation" width="100" height="100"/></a><section class="copyright">Copyright © 2021 .NET Foundation</section></footer></div></body></html>
