@@ -112,14 +112,18 @@ EF Sqlite
   "Features": {
     "Persistence:EntityFrameworkCore:Sqlite": {
     "Enabled": "true",
-    "ConnectionStringName": "Sqlite"
+        "Options": {
+          "ConnectionStringName": "Sqlite"
+        }
     },
     "Webhooks": {
       "Enabled": "true"
     },
     "Webhooks:Persistence:EntityFrameworkCore:Sqlite": {
       "Enabled": "true",
-      "ConnectionStringName": "Sqlite"
+        "Options": {
+          "ConnectionStringName": "Sqlite"
+        }
     }
     ...
 ```
@@ -130,14 +134,18 @@ EF MongoDB
   "Features": {
     "Persistence:MongoDb": {
     "Enabled": "true",
-    "ConnectionStringName": "Sqlite"
+        "Options": {
+          "ConnectionStringName": "MongoDb"
+        }
     },
     "Webhooks": {
       "Enabled": "true"
     },
     "Webhooks:Persistence:MongoDb": {
       "Enabled": "true",
-      "ConnectionStringName": "Sqlite"
+        "Options": {
+          "ConnectionStringName": "MongoDb"
+        }
     }
     ...
 ```
