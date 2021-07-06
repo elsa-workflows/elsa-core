@@ -115,6 +115,28 @@ namespace Elsa.Activities.Http.Middleware
             else
             {
                 await workflowLaunchpad.ExecutePendingWorkflowAsync(pendingWorkflow, inputModel, cancellationToken);
+                pendingWorkflowInstance = await workflowInstanceStore.FindByIdAsync(pendingWorkflow.WorkflowInstanceId);
+
+                if (pendingWorkflowInstance is not null
+                    && pendingWorkflowInstance.WorkflowStatus == Elsa.Models.WorkflowStatus.Faulted
+                    && !httpContext.Response.HasStarted)
+                {
+                    httpContext.Response.ContentType = "application/json";
+                    httpContext.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+
+                    var faultedResponse = JsonConvert.SerializeObject(new
+                    {
+                        errorMessage = $"Workflow faulted at {pendingWorkflowInstance.FaultedAt!} with error: {pendingWorkflowInstance.Fault!.Message}",
+                        workflow = new
+                        {
+                            name = pendingWorkflowInstance.Name,
+                            version = pendingWorkflowInstance.Version,
+                            instanceId = pendingWorkflowInstance.Id
+                        }
+                    });
+
+                    await httpContext.Response.WriteAsync(faultedResponse, cancellationToken);
+                }
             }
         }
     }
