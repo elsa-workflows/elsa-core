@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Elsa.Attributes;
+using Elsa.Models;
 using Elsa.Services.Startup;
 using Microsoft.Extensions.Configuration;
 
@@ -20,8 +21,8 @@ namespace Elsa
                 from type in assembly.GetExportedTypes()
                 where type.IsClass && !type.IsAbstract && typeof(IStartup).IsAssignableFrom(type)
                 let featureAttribute = type.GetCustomAttribute<FeatureAttribute>()
-                let enabledFeature = enabledFeatures.FirstOrDefault(x => x.Key == featureAttribute.FeatureName && x.Value)
-                where featureAttribute != null && !enabledFeature.Equals(default(KeyValuePair<string, bool>))
+                let enabledFeature = enabledFeatures.FirstOrDefault(x => x.Name == featureAttribute.FeatureName)
+                where featureAttribute != null && enabledFeature != null
                 select type;
 
             var startupTypes = startupTypesQuery.ToList();

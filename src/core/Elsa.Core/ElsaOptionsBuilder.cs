@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using Elsa.Builders;
 using Elsa.Caching;
+using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Providers.WorkflowStorage;
 using Elsa.Services;
@@ -65,21 +66,33 @@ namespace Elsa
             return this;
         }
 
-        public ElsaOptionsBuilder ConfigureFeatures(IConfigurationSection configuration)
+        public ElsaOptionsBuilder ConfigureFeatures(IConfiguration configuration)
         {
-            ElsaOptions.FeatureOptions.Features = new Dictionary<string, bool>();
-            var features = configuration.AsEnumerable();
+            var elsaFeaturesSection = "Elsa:Features";
+
+            ElsaOptions.FeatureOptions.Features = new List<FeatureOption>();
+            var features = configuration.GetSection(elsaFeaturesSection).AsEnumerable();
 
             foreach (var feature in features)
             {
-                if (feature.Key.EndsWith(":ConnectionStringName")) continue;
+                if (!configuration.GetSection($"{feature.Key}:Enabled").Exists()) continue;
 
-                if (feature.Value != null && bool.Parse(feature.Value))
-                {
-                    ElsaOptions.FeatureOptions.Features.Add(feature.Key
-                        .Replace("Elsa:Features:", string.Empty)
-                        .Replace(":Enabled", string.Empty), true);
-                }
+                var enabled = configuration.GetValue<bool>($"{feature.Key}:Enabled");
+                if (!enabled) continue;
+
+                var opts = new Dictionary<string, string>();
+                var config = configuration.GetSection($"{feature.Key}:Options");
+                config.Bind(opts);
+
+                var name = feature.Key.Replace($"{elsaFeaturesSection}:", string.Empty);
+
+                ElsaOptions.FeatureOptions.Features.Add(
+                    new FeatureOption 
+                    { 
+                        Name = name,
+                        Enabled = enabled,
+                        Options = opts
+                    });
             }
 
             return this;

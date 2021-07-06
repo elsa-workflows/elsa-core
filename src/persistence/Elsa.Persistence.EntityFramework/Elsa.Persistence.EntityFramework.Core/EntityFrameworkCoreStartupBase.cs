@@ -13,8 +13,8 @@ namespace Elsa.Persistence.EntityFramework.Core
         public override void ConfigureElsa(ElsaOptionsBuilder elsa, IConfiguration configuration)
         {
             var section = configuration.GetSection($"Elsa:Features:Persistence:EntityFrameworkCore:{ProviderName}");
-            var connectionStringName = section.GetValue<string>("ConnectionStringName");
-            var connectionString = section.GetValue<string>("ConnectionString");
+            var connectionStringName = section.GetValue<string>("Options:ConnectionStringName");
+            var connectionString = section.GetValue<string>("Options:ConnectionString");
 
             if (string.IsNullOrWhiteSpace(connectionString))
             {

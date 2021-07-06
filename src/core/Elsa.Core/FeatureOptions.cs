@@ -1,9 +1,10 @@
 using System.Collections.Generic;
+using Elsa.Models;
 
 namespace Elsa
 {
     public class FeatureOptions
     {
-        public Dictionary<string, bool>? Features { get; set; }
+        public ICollection<FeatureOption>? Features { get; set; }
     }
 }
