@@ -18,7 +18,7 @@ namespace Elsa
 
             if (enabledFeatures == null!) // Null when configuration binding finds an empty array.
                 return builder;
-            
+
             enabledFeatures = enabledFeatures.ToHashSet();
 
             var startupTypesQuery = from assembly in assemblies
@@ -43,31 +43,30 @@ namespace Elsa
         private static IEnumerable<string> ParseFeatures(IConfiguration configuration)
         {
             var elsaFeaturesSection = "Elsa:Features";
-            var enabledFeatures = new List<string>();
             var features = configuration.GetSection(elsaFeaturesSection).AsEnumerable();
 
-            foreach (var feature in features)
+            return
+                from feature in features
+                let isEnabled = ParseFeatureFlag(configuration, feature.Key)
+                where isEnabled
+                select feature.Key.Replace($"{elsaFeaturesSection}:", string.Empty);
+        }
+
+        private static bool ParseFeatureFlag(IConfiguration configuration, string feature)
+        {
+            if (configuration.GetSection($"{feature}:Enabled").Exists())
             {
-                var explEnabled = false;
-                var implEnabled = false;
-
-                if (configuration.GetSection($"{feature.Key}:Enabled").Exists())
-                {
-                    bool.TryParse(configuration.GetValue<string>($"{feature.Key}:Enabled"), out explEnabled);
-                }
-                else if (!feature.Key.EndsWith(":Enabled"))
-                {
-                    bool.TryParse(configuration.GetValue<string>($"{feature.Key}"), out implEnabled);
-                }
-
-                if (!explEnabled && !implEnabled) continue;
-
-                var featureName = feature.Key.Replace($"{elsaFeaturesSection}:", string.Empty);
-
-                enabledFeatures.Add(featureName);
+                bool.TryParse(configuration.GetValue<string>($"{feature}:Enabled"), out var enabled);
+                return enabled;
             }
 
-            return enabledFeatures;
+            if (!feature.EndsWith(":Enabled"))
+            {
+                bool.TryParse(configuration.GetValue<string>($"{feature}"), out var enabled);
+                return enabled;
+            }
+
+            return false;
         }
 
         private static IEnumerable<Assembly> GetAssemblies(IEnumerable<Type> assemblyMarkerTypes) => assemblyMarkerTypes.Select(x => x.Assembly).Distinct();
