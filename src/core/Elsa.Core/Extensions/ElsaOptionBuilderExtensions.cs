@@ -10,14 +10,16 @@ namespace Elsa
 {
     public static class ElsaOptionBuilderExtensions
     {
-        public static ElsaOptionsBuilder AddFeatures(this ElsaOptionsBuilder builder, IEnumerable<Type> assemblyMarkerTypes, IConfiguration configuration, IEnumerable<string> features) => AddFeatures(builder, GetAssemblies(assemblyMarkerTypes), configuration, features);
+        public static ElsaOptionsBuilder AddFeatures(this ElsaOptionsBuilder builder, IEnumerable<Type> assemblyMarkerTypes, IConfiguration configuration) => AddFeatures(builder, GetAssemblies(assemblyMarkerTypes), configuration);
 
-        public static ElsaOptionsBuilder AddFeatures(this ElsaOptionsBuilder builder, IEnumerable<Assembly> assemblies, IConfiguration configuration, IEnumerable<string> features)
+        public static ElsaOptionsBuilder AddFeatures(this ElsaOptionsBuilder builder, IEnumerable<Assembly> assemblies, IConfiguration configuration)
         {
-            if (features == null!) // Null when configuration binding finds an empty array.
+            var enabledFeatures = ParseFeatures(configuration);
+
+            if (enabledFeatures == null!) // Null when configuration binding finds an empty array.
                 return builder;
-            
-            var enabledFeatures = features.ToHashSet();
+
+            enabledFeatures = enabledFeatures.ToHashSet();
 
             var startupTypesQuery = from assembly in assemblies
                 from type in assembly.GetExportedTypes()
@@ -37,7 +39,36 @@ namespace Elsa
 
             return builder;
         }
-        
+
+        private static IEnumerable<string> ParseFeatures(IConfiguration configuration)
+        {
+            var elsaFeaturesSection = "Elsa:Features";
+            var features = configuration.GetSection(elsaFeaturesSection).AsEnumerable();
+
+            return
+                from feature in features
+                let isEnabled = ParseFeatureFlag(configuration, feature.Key)
+                where isEnabled
+                select feature.Key.Replace($"{elsaFeaturesSection}:", string.Empty);
+        }
+
+        private static bool ParseFeatureFlag(IConfiguration configuration, string feature)
+        {
+            if (configuration.GetSection($"{feature}:Enabled").Exists())
+            {
+                bool.TryParse(configuration.GetValue<string>($"{feature}:Enabled"), out var enabled);
+                return enabled;
+            }
+
+            if (!feature.EndsWith(":Enabled"))
+            {
+                bool.TryParse(configuration.GetValue<string>($"{feature}"), out var enabled);
+                return enabled;
+            }
+
+            return false;
+        }
+
         private static IEnumerable<Assembly> GetAssemblies(IEnumerable<Type> assemblyMarkerTypes) => assemblyMarkerTypes.Select(x => x.Assembly).Distinct();
     }
 }

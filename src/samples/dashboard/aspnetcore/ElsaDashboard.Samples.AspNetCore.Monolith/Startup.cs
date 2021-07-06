@@ -36,7 +36,7 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
                     .AddQuartzTemporalActivities()
                     .AddJavaScriptActivities()
                     .AddActivitiesFrom<Startup>()
-                    .AddFeatures(new[] { typeof(Startup) }, Configuration, elsaSection.GetSection("Features").Get<List<string>>())
+                    .AddFeatures(new[] { typeof(Startup) }, Configuration)
                 );
 
             services

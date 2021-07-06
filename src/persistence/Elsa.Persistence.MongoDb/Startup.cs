@@ -9,7 +9,7 @@ namespace Elsa.Persistence.MongoDb
     {
         public override void ConfigureElsa(ElsaOptionsBuilder elsa, IConfiguration configuration)
         {
-            var section = configuration.GetSection($"Elsa:Persistence:MongoDb");
+            var section = configuration.GetSection($"Elsa:Features:Persistence:MongoDb");
             var connectionStringName = section.GetValue<string>("ConnectionStringName");
             var connectionString = section.GetValue<string>("ConnectionString");
 
