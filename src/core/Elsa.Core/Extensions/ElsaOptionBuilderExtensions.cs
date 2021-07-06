@@ -14,7 +14,7 @@ namespace Elsa
 
         public static ElsaOptionsBuilder AddFeatures(this ElsaOptionsBuilder builder, IEnumerable<Assembly> assemblies, IConfiguration configuration)
         {
-            ICollection<string> enabledFeatures = ParseFeatures(configuration);
+            var enabledFeatures = ParseFeatures(configuration);
 
             if (enabledFeatures == null!) // Null when configuration binding finds an empty array.
                 return builder;
@@ -40,7 +40,7 @@ namespace Elsa
             return builder;
         }
 
-        private static ICollection<string> ParseFeatures(IConfiguration configuration)
+        private static IEnumerable<string> ParseFeatures(IConfiguration configuration)
         {
             var elsaFeaturesSection = "Elsa:Features";
             var enabledFeatures = new List<string>();
