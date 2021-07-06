@@ -44,6 +44,7 @@ namespace Elsa.Scripting.Liquid.Handlers
             memberAccessStrategy.Register<LiquidActivityModel>();
             memberAccessStrategy.Register<LiquidPropertyAccessor, FluidValue>((x, name) => x.GetValueAsync(name));
             memberAccessStrategy.Register<ActivityExecutionContext, FluidValue>("Input", x => ToFluidValue(x.Input, options));
+            memberAccessStrategy.Register<ActivityExecutionContext, FluidValue>("WorkflowContextId", x => ToFluidValue(x.ContextId, options));
             memberAccessStrategy.Register<ActivityExecutionContext, FluidValue>("WorkflowInstanceId", x => ToFluidValue(x.WorkflowInstance.Id, options));
             memberAccessStrategy.Register<ActivityExecutionContext, FluidValue>("CorrelationId", x => ToFluidValue(x.CorrelationId, options));
             memberAccessStrategy.Register<ActivityExecutionContext, FluidValue>("WorkflowDefinitionId", x => ToFluidValue(x.WorkflowInstance.DefinitionId, options));

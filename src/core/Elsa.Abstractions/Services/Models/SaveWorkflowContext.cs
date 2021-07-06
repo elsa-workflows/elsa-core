@@ -12,7 +12,7 @@ namespace Elsa.Services.Models
         public WorkflowExecutionContext WorkflowExecutionContext { get; }
         public Type ContextType => WorkflowExecutionContext.WorkflowBlueprint.ContextOptions!.ContextType!;
         public string ContextId => WorkflowExecutionContext.WorkflowInstance.ContextId!;
-        public object Context => WorkflowExecutionContext.WorkflowContext!; 
+        public object? Context => WorkflowExecutionContext.WorkflowContext; 
     }
     
     public class SaveWorkflowContext<T> : SaveWorkflowContext
@@ -25,7 +25,7 @@ namespace Elsa.Services.Models
         {
         }
         
-        public new T Context => (T)base.Context;
+        public new T? Context => (T?)base.Context;
 
     }
 }

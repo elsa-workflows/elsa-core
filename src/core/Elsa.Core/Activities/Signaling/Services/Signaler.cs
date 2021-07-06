@@ -32,15 +32,17 @@ namespace Elsa.Activities.Signaling.Services
 
         public async Task<IEnumerable<CollectedWorkflow>> TriggerSignalAsync(string signal, object? input = default, string? workflowInstanceId = default, string? correlationId = default, CancellationToken cancellationToken = default)
         {
+            var normalizedSignal = signal.ToLowerInvariant();
+            
             return await _workflowLaunchpad.CollectAndExecuteWorkflowsAsync(new CollectWorkflowsContext(
                 nameof(SignalReceived),
-                new SignalReceivedBookmark { Signal = signal, WorkflowInstanceId = workflowInstanceId },
-                new SignalReceivedBookmark { Signal = signal },
+                new SignalReceivedBookmark { Signal = normalizedSignal, WorkflowInstanceId = workflowInstanceId },
+                new SignalReceivedBookmark { Signal = normalizedSignal },
                 correlationId,
                 workflowInstanceId,
                 default,
                 TenantId
-            ), new Signal(signal, input), cancellationToken);
+            ), new Signal(normalizedSignal, input), cancellationToken);
         }
 
         public async Task<IEnumerable<CollectedWorkflow>> DispatchSignalTokenAsync(string token, object? input = default, CancellationToken cancellationToken = default)

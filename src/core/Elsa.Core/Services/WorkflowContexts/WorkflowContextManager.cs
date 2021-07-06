@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Providers.WorkflowContext;
+using Elsa.Providers.WorkflowContexts;
 using Elsa.Services.Models;
 
 namespace Elsa.Services.WorkflowContexts

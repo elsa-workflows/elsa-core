@@ -19,6 +19,6 @@ namespace Elsa.Services
         ValueTask<string?> ISaveWorkflowContext.SaveAsync(SaveWorkflowContext context, CancellationToken cancellationToken) => SaveAsync(new SaveWorkflowContext<T>(context), cancellationToken);
         async ValueTask<object?> ILoadWorkflowContext.LoadAsync(LoadWorkflowContext context, CancellationToken cancellationToken) => await LoadAsync(context, cancellationToken);
         public virtual ValueTask<string?> SaveAsync(SaveWorkflowContext<T> context, CancellationToken cancellationToken = default) => new();
-        public virtual ValueTask<T?> LoadAsync(LoadWorkflowContext context, CancellationToken cancellationToken) => new();
+        public virtual ValueTask<T?> LoadAsync(LoadWorkflowContext context, CancellationToken cancellationToken = default) => new();
     }
 }
