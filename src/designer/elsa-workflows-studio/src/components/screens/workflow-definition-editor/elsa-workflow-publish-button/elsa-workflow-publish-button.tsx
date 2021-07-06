@@ -47,6 +47,7 @@ export class ElsaWorkflowPublishButton {
   }
 
   async onImportClick(e: Event) {
+    e.preventDefault();
     this.fileInput.value = null;
     this.fileInput.click();
 
