@@ -8,6 +8,7 @@ using Elsa.Persistence;
 using Elsa.Providers.WorkflowStorage;
 using Elsa.Services;
 using Elsa.Services.Messaging;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Rebus.DataBus.InMem;
@@ -61,6 +62,26 @@ namespace Elsa
         {
             ElsaOptions.WorkflowChannelOptions.Channels = new List<string>();
             configure(ElsaOptions.WorkflowChannelOptions);
+            return this;
+        }
+
+        public ElsaOptionsBuilder ConfigureFeatures(IConfigurationSection configuration)
+        {
+            ElsaOptions.FeatureOptions.Features = new Dictionary<string, bool>();
+            var features = configuration.AsEnumerable();
+
+            foreach (var feature in features)
+            {
+                if (feature.Key.EndsWith(":ConnectionStringName")) continue;
+
+                if (feature.Value != null && bool.Parse(feature.Value))
+                {
+                    ElsaOptions.FeatureOptions.Features.Add(feature.Key
+                        .Replace("Elsa:Features:", string.Empty)
+                        .Replace(":Enabled", string.Empty), true);
+                }
+            }
+
             return this;
         }
 

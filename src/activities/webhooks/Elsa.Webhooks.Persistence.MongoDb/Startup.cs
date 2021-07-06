@@ -1,7 +1,6 @@
 using Elsa.Activities.Webhooks;
 using Elsa.Activities.Webhooks.Persistence.Decorators;
 using Elsa.Attributes;
-using Elsa.Persistence.MongoDb.Options;
 using Elsa.Services.Startup;
 using Elsa.Webhooks.Persistence.MongoDb.Extensions;
 using Microsoft.Extensions.Configuration;
@@ -15,7 +14,7 @@ namespace Elsa.Webhooks.Persistence.MongoDb
         public override void ConfigureElsa(ElsaOptionsBuilder elsa, IConfiguration configuration)
         {
             var services = elsa.Services;
-            var section = configuration.GetSection($"Elsa:Persistence:MongoDb");
+            var section = configuration.GetSection($"Elsa:Features:Webhooks:Persistence:MongoDb");
             var connectionStringName = section.GetValue<string>("ConnectionStringName");
             var connectionString = section.GetValue<string>("ConnectionString");
 

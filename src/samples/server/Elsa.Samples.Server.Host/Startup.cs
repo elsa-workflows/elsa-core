@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using Elsa.Samples.Server.Host.Activities;
 using Elsa.Server.Hangfire.Extensions;
 using Hangfire;
 using Microsoft.AspNetCore.Builder;
@@ -7,6 +5,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Elsa.Samples.Server.Host
 {
@@ -67,7 +67,8 @@ namespace Elsa.Samples.Server.Host
                 .AddElsa(elsa => elsa
                     .AddActivitiesFrom<Startup>()
                     .AddWorkflowsFrom<Startup>()
-                    .AddFeatures(startups, Configuration, elsaSection.GetSection("Features").Get<List<string>>())
+                    .ConfigureFeatures(elsaSection.GetSection("Features"))
+                    .AddFeatures(startups, Configuration)
                     .ConfigureWorkflowChannels(options => elsaSection.GetSection("WorkflowChannels").Bind(options))
                 );
             
