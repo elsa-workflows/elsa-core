@@ -13,7 +13,7 @@ using YesSql.Provider.SqlServer;
 
 namespace Elsa.Webhooks.Persistence.YesSql
 {
-    [Feature("WebhooksPersistenceYesSqlSqlite")]
+    [Feature("Webhooks:YesSql:Sqlite")]
     public class SqliteStartup : YesSqlStartupBase
     {
         protected override string ProviderName => "Sqlite";
@@ -21,21 +21,21 @@ namespace Elsa.Webhooks.Persistence.YesSql
         protected override void Configure(global::YesSql.IConfiguration options, string connectionString) => options.UseSqLite(connectionString);
     }
 
-    [Feature("WebhooksPersistenceYesSqlSqlServer")]
+    [Feature("Webhooks:YesSql:SqlServer")]
     public class SqlServerStartup : YesSqlStartupBase
     {
         protected override string ProviderName => "SqlServer";
         protected override void Configure(global::YesSql.IConfiguration options, string connectionString) => options.UseSqlServer(connectionString);
     }
 
-    [Feature("WebhooksPersistenceYesSqlMySql")]
+    [Feature("Webhooks:YesSql:MySql")]
     public class MySqlStartup : YesSqlStartupBase
     {
         protected override string ProviderName => "MySql";
         protected override void Configure(global::YesSql.IConfiguration options, string connectionString) => options.UseMySql(connectionString);
     }
 
-    [Feature("WebhooksPersistenceYesSqlPostgreSql")]
+    [Feature("Webhooks:YesSql:PostgreSql")]
     public class PostgreSqlStartup : YesSqlStartupBase
     {
         protected override string ProviderName => "PostgreSql";
@@ -49,8 +49,8 @@ namespace Elsa.Webhooks.Persistence.YesSql
         public override void ConfigureElsa(ElsaOptionsBuilder elsa, IConfiguration configuration)
         {
             var services = elsa.Services;
-            var section = configuration.GetSection($"Elsa:Features:WebhooksPersistenceYesSql{ProviderName}");
-            var connectionStringName = section.GetValue<string>("ConnectionStringName");
+            var section = configuration.GetSection($"Elsa:Features:Webhooks");
+            var connectionStringName = section.GetValue<string>("ConnectionStringIdentifier");
             var connectionString = section.GetValue<string>("ConnectionString");
 
             if (string.IsNullOrWhiteSpace(connectionString))

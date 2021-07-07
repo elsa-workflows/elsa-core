@@ -1,14 +1,24 @@
 ### Configure persistence for Elsa Core in the appsettings.json
 
-In order to specify the persistence it's required to set enabled status and connection string name in Features node
+A simple way to enable a feature without persitence:
+
+```
+"Elsa": {
+  "Features": {
+    "Console": true
+    ...
+```
+
+In order to specify persistence for a feature it's required to set enabled status, framework (has to be an empty space for MongoDb) and connection string identifier:
 
 EF Sqlite
 ```
 "Elsa": {
   "Features": {
-    "PersistenceEntityFrameworkCoreSqlite": {
-    "Enabled": true,
-    "ConnectionStringName": "Sqlite"
+    "DefaultPersistence": {
+      "Enabled": true,
+      "Framework": "EntityFrameworkCore",
+      "ConnectionStringIdentifier": "Sqlite"
     },
     ...
 ```
@@ -17,9 +27,10 @@ EF MySQL
 ```
 "Elsa": {
   "Features": {
-    "PersistenceEntityFrameworkCoreMySql": {
-    "Enabled": true,
-    "ConnectionStringName": "MySql"
+    "DefaultPersistence": {
+      "Enabled": true,
+      "Framework": "EntityFrameworkCore",
+      "ConnectionStringIdentifier": "MySql"
     },
     ...
 ```
@@ -28,9 +39,10 @@ EF SQL Server
 ```
 "Elsa": {
   "Features": {
-    "PersistenceEntityFrameworkCoreSqlServer": {
-    "Enabled": true,
-    "ConnectionStringName": "SqlServer"
+    "DefaultPersistence": {
+      "Enabled": true,
+      "Framework": "EntityFrameworkCore",
+      "ConnectionStringIdentifier": "SqlServer"
     },
     ...  
 ```
@@ -39,20 +51,22 @@ EF Postgre
 ```
 "Elsa": {
   "Features": {
-    "PersistenceEntityFrameworkCorePostgreSql": {
-    "Enabled": "true",
-    "ConnectionStringName": "PostgreSql"
+    "DefaultPersistence": {
+      "Enabled": "true",
+      "Framework": "EntityFrameworkCore",
+      "ConnectionStringIdentifier": "PostgreSql"
     },
     ...
 ```
 
-EF MongoDB
+MongoDB
 ```
 "Elsa": {
   "Features": {
-    "PersistenceMongoDb": {
-    "Enabled": true,
-    "ConnectionStringName": "MongoDb"
+    "DefaultPersistence": {
+      "Enabled": true,
+      "Framework": "",
+      "ConnectionStringIdentifier": "MongoDb"
     },
     ...
 ```
@@ -61,9 +75,10 @@ YesSql Sqlite
 ```
 "Elsa": {
   "Features": {
-    "PersistenceYesSqlSqlite": {
-    "Enabled": true,
-    "ConnectionStringName": "Sqlite"
+    "DefaultPersistence": {
+      "Enabled": true,
+      "Framework": "YesSql",
+      "ConnectionStringIdentifier": "Sqlite"
     },
     ...
 ```
@@ -72,9 +87,10 @@ YesSql MySQL
 ```
 "Elsa": {
   "Features": {
-    "PersistenceYesSqlMySql": {
-    "Enabled": true,
-    "ConnectionStringName": "MySql"
+    "DefaultPersistence": {
+      "Enabled": true,
+      "Framework": "YesSql",
+      "ConnectionStringIdentifier": "MySql"
     },
     ...
 ```
@@ -83,9 +99,10 @@ YesSql SQL Server
 ```
 "Elsa": {
   "Features": {
-    "PersistenceYesSqlSqlServer": {
-    "Enabled": true,
-    "ConnectionStringName": "SqlServer"
+    "DefaultPersistence": {
+      "Enabled": true,
+      "Framework": "YesSql",
+      "ConnectionStringIdentifier": "SqlServer"
     },
     ...
 ```
@@ -94,48 +111,11 @@ YesSql Postgre
 ```
 "Elsa": {
   "Features": {
-    "PersistenceYesSqlPostgreSql": {
-    "Enabled": true,
-    "ConnectionStringName": "PostgreSql"
-    },
-    ...
-```
-
-### Configure modular activity providers such as Webhooks
-It is required to add modular activity provider and additional persistence feature for your modular activity provider.
-Two examples below are given to set up Elsa Core and Webhooks persistence as follow.
-
-EF Sqlite
-```
-"Elsa": {
-  "Features": {
-    "PersistenceEntityFrameworkCoreSqlite": {
+    "DefaultPersistence": {
       "Enabled": true,
-      "ConnectionStringName": "Sqlite"
+      "Framework": "YesSql",
+      "ConnectionStringIdentifier": "PostgreSql"
     },
-    "Webhooks": true
-    },
-    "WebhooksPersistenceEntityFrameworkCoreSqlite": {
-      "Enabled": true,
-      "ConnectionStringName": "Sqlite"
-    }
-    ...
-```
-
-EF MongoDB
-```
-"Elsa": {
-  "Features": {
-    "PersistenceMongoDb": {
-      "Enabled": true,
-      "ConnectionStringName": "MongoDb"
-    },
-    "Webhooks": true
-    },
-    "WebhooksPersistenceMongoDb": {
-      "Enabled": true,
-      "ConnectionStringName": "MongoDb"
-    }
     ...
 ```
 

@@ -44,29 +44,51 @@ namespace Elsa
         {
             var elsaFeaturesSection = "Elsa:Features";
             var features = configuration.GetSection(elsaFeaturesSection).AsEnumerable();
+            var enabledFeatures = new List<string>();
 
-            return
-                from feature in features
-                let isEnabled = ParseFeatureFlag(configuration, feature.Key)
-                where isEnabled
-                select feature.Key.Replace($"{elsaFeaturesSection}:", string.Empty);
+            foreach (var feature in features)
+            {
+                var featureOptions = ParseFeatureFlag(configuration, feature.Key);
+                if (!featureOptions.Enabled) continue;
+
+                var key = feature.Key.Replace($"{elsaFeaturesSection}:", string.Empty);
+                enabledFeatures.Add(key);
+
+                var hasFramework = !string.IsNullOrWhiteSpace(featureOptions.Framework);
+                var hasConnection = !string.IsNullOrWhiteSpace(featureOptions.ConnectionStringIdentifier);
+
+                if (hasFramework)
+                {
+                    enabledFeatures.Add($"{key}:{featureOptions.Framework}");
+                }
+
+                if (hasConnection)
+                {
+                    enabledFeatures.Add(hasFramework 
+                        ? $"{key}:{featureOptions.Framework}:{featureOptions.ConnectionStringIdentifier}" 
+                        : $"{key}:{featureOptions.ConnectionStringIdentifier}");
+                }                
+            }
+
+            return enabledFeatures;
         }
 
-        private static bool ParseFeatureFlag(IConfiguration configuration, string feature)
+        private static FeatureOptions ParseFeatureFlag(IConfiguration configuration, string feature)
         {
+            var options = new FeatureOptions();
+
             if (configuration.GetSection($"{feature}:Enabled").Exists())
-            {
-                bool.TryParse(configuration.GetValue<string>($"{feature}:Enabled"), out var enabled);
-                return enabled;
+            {                
+                configuration.GetSection(feature).Bind(options);
+                return options;
             }
 
             if (!feature.EndsWith(":Enabled"))
             {
                 bool.TryParse(configuration.GetValue<string>($"{feature}"), out var enabled);
-                return enabled;
+                options.Enabled = enabled;
             }
-
-            return false;
+            return options;
         }
 
         private static IEnumerable<Assembly> GetAssemblies(IEnumerable<Type> assemblyMarkerTypes) => assemblyMarkerTypes.Select(x => x.Assembly).Distinct();

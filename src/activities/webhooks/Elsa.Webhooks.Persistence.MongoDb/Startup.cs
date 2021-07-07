@@ -8,14 +8,14 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Webhooks.Persistence.MongoDb
 {
-    [Feature("WebhooksPersistenceMongoDb")]
+    [Feature("Webhooks:MongoDb")]
     public class Startup : StartupBase
     {
         public override void ConfigureElsa(ElsaOptionsBuilder elsa, IConfiguration configuration)
         {
             var services = elsa.Services;
-            var section = configuration.GetSection($"Elsa:Features:WebhooksPersistenceMongoDb");
-            var connectionStringName = section.GetValue<string>("ConnectionStringName");
+            var section = configuration.GetSection($"Elsa:Features:Webhooks");
+            var connectionStringName = section.GetValue<string>("ConnectionStringIdentifier");
             var connectionString = section.GetValue<string>("ConnectionString");
 
             if (string.IsNullOrWhiteSpace(connectionString))
