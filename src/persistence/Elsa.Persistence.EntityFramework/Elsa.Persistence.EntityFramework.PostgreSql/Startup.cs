@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EntityFramework.PostgreSql
 {
-    [Feature("Persistence:EntityFrameworkCore:PostgreSql")]
+    [Feature("PersistenceEntityFrameworkCorePostgreSql")]
     public class Startup : EntityFrameworkCoreStartupBase
     {
         protected override string ProviderName => "PostgreSql";

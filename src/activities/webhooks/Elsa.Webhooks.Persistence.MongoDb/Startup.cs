@@ -8,13 +8,13 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Webhooks.Persistence.MongoDb
 {
-    [Feature("Webhooks:Persistence:MongoDb")]
+    [Feature("WebhooksPersistenceMongoDb")]
     public class Startup : StartupBase
     {
         public override void ConfigureElsa(ElsaOptionsBuilder elsa, IConfiguration configuration)
         {
             var services = elsa.Services;
-            var section = configuration.GetSection($"Elsa:Features:Webhooks:Persistence:MongoDb");
+            var section = configuration.GetSection($"Elsa:Features:WebhooksPersistenceMongoDb");
             var connectionStringName = section.GetValue<string>("ConnectionStringName");
             var connectionString = section.GetValue<string>("ConnectionString");
 

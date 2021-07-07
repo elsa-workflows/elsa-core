@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Webhooks.Persistence.EntityFramework.PostgreSql
 {
-    [Feature("Webhooks:Persistence:EntityFrameworkCore:PostgreSql")]
+    [Feature("WebhooksPersistenceEntityFrameworkCorePostgreSql")]
     public class Startup : EntityFrameworkWebhookStartupBase
     {
         protected override string ProviderName => "PostgreSql";

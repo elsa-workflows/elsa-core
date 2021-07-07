@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EntityFramework.SqlServer
 {
-    [Feature("Persistence:EntityFrameworkCore:SqlServer")]
+    [Feature("PersistenceEntityFrameworkCoreSqlServer")]
     public class Startup : EntityFrameworkCoreStartupBase
     {
         protected override string ProviderName => "SqlServer";

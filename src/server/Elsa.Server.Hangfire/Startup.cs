@@ -5,7 +5,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace Elsa.Server.Hangfire
 {
-    [Feature("Dispatcher:Hangfire")]
+    [Feature("DispatcherHangfire")]
     public class Startup : StartupBase
     {
         public override void ConfigureElsa(ElsaOptionsBuilder elsa, IConfiguration configuration)

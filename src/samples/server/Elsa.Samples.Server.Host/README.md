@@ -1,12 +1,12 @@
 ### Configure persistence for Elsa Core in the appsettings.json
 
-It is required to specify the persistence, it's enabled status and connection string name in Features
+In order to specify the persistence it's required to set enabled status and connection string name in Features node
 
 EF Sqlite
 ```
 "Elsa": {
   "Features": {
-    "Persistence:EntityFrameworkCore:Sqlite": {
+    "PersistenceEntityFrameworkCoreSqlite": {
     "Enabled": true,
     "ConnectionStringName": "Sqlite"
     },
@@ -17,7 +17,7 @@ EF MySQL
 ```
 "Elsa": {
   "Features": {
-    "Persistence:EntityFrameworkCore:MySql": {
+    "PersistenceEntityFrameworkCoreMySql": {
     "Enabled": true,
     "ConnectionStringName": "MySql"
     },
@@ -28,7 +28,7 @@ EF SQL Server
 ```
 "Elsa": {
   "Features": {
-    "Persistence:EntityFrameworkCore:SqlServer": {
+    "PersistenceEntityFrameworkCoreSqlServer": {
     "Enabled": true,
     "ConnectionStringName": "SqlServer"
     },
@@ -39,7 +39,7 @@ EF Postgre
 ```
 "Elsa": {
   "Features": {
-    "Persistence:EntityFrameworkCore:PostgreSql": {
+    "PersistenceEntityFrameworkCorePostgreSql": {
     "Enabled": "true",
     "ConnectionStringName": "PostgreSql"
     },
@@ -50,7 +50,7 @@ EF MongoDB
 ```
 "Elsa": {
   "Features": {
-    "Persistence:MongoDb": {
+    "PersistenceMongoDb": {
     "Enabled": true,
     "ConnectionStringName": "MongoDb"
     },
@@ -61,7 +61,7 @@ YesSql Sqlite
 ```
 "Elsa": {
   "Features": {
-    "Persistence:YesSql:Sqlite": {
+    "PersistenceYesSqlSqlite": {
     "Enabled": true,
     "ConnectionStringName": "Sqlite"
     },
@@ -72,7 +72,7 @@ YesSql MySQL
 ```
 "Elsa": {
   "Features": {
-    "Persistence:YesSql:MySql": {
+    "PersistenceYesSqlMySql": {
     "Enabled": true,
     "ConnectionStringName": "MySql"
     },
@@ -83,7 +83,7 @@ YesSql SQL Server
 ```
 "Elsa": {
   "Features": {
-    "Persistence:YesSql:SqlServer": {
+    "PersistenceYesSqlSqlServer": {
     "Enabled": true,
     "ConnectionStringName": "SqlServer"
     },
@@ -94,7 +94,7 @@ YesSql Postgre
 ```
 "Elsa": {
   "Features": {
-    "Persistence:YesSql:PostgreSql": {
+    "PersistenceYesSqlPostgreSql": {
     "Enabled": true,
     "ConnectionStringName": "PostgreSql"
     },
@@ -103,20 +103,19 @@ YesSql Postgre
 
 ### Configure modular activity providers such as Webhooks
 It is required to add modular activity provider and additional persistence feature for your modular activity provider.
-The persistence providers should match for Elsa Core and modular activity providers.
 Two examples below are given to set up Elsa Core and Webhooks persistence as follow.
 
 EF Sqlite
 ```
 "Elsa": {
   "Features": {
-    "Persistence:EntityFrameworkCore:Sqlite": {
+    "PersistenceEntityFrameworkCoreSqlite": {
       "Enabled": true,
       "ConnectionStringName": "Sqlite"
     },
     "Webhooks": true
     },
-    "Webhooks:Persistence:EntityFrameworkCore:Sqlite": {
+    "WebhooksPersistenceEntityFrameworkCoreSqlite": {
       "Enabled": true,
       "ConnectionStringName": "Sqlite"
     }
@@ -127,13 +126,13 @@ EF MongoDB
 ```
 "Elsa": {
   "Features": {
-    "Persistence:MongoDb": {
+    "PersistenceMongoDb": {
       "Enabled": true,
       "ConnectionStringName": "MongoDb"
     },
     "Webhooks": true
     },
-    "Webhooks:Persistence:MongoDb": {
+    "WebhooksPersistenceMongoDb": {
       "Enabled": true,
       "ConnectionStringName": "MongoDb"
     }

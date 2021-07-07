@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Scripting.JavaScript
 {
-    [Feature("JavaScript:Activities")]
+    [Feature("JavaScriptActivities")]
     public class Startup : StartupBase
     {
         public override void ConfigureElsa(ElsaOptionsBuilder elsa, IConfiguration configuration)

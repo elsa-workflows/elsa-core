@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Webhooks.Persistence.EntityFramework.SqlServer
 {
-    [Feature("Webhooks:Persistence:EntityFrameworkCore:SqlServer")]
+    [Feature("WebhooksPersistenceEntityFrameworkCoreSqlServer")]
     public class Startup : EntityFrameworkWebhookStartupBase
     {
         protected override string ProviderName => "SqlServer";
