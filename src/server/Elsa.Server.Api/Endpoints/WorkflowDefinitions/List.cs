@@ -9,6 +9,7 @@ using Elsa.Persistence.Specifications.WorkflowDefinitions;
 using Elsa.Serialization;
 using Elsa.Server.Api.Models;
 using Elsa.Server.Api.Swagger.Examples;
+using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -25,12 +26,14 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
         private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
         private readonly IContentSerializer _serializer;
         private readonly IMapper _mapper;
+        private readonly ITenantAccessor _tenantAccessor;
 
-        public List(IWorkflowDefinitionStore workflowDefinitionStore, IContentSerializer serializer, IMapper mapper)
+        public List(IWorkflowDefinitionStore workflowDefinitionStore, IContentSerializer serializer, IMapper mapper, ITenantAccessor tenantAccessor)
         {
             _workflowDefinitionStore = workflowDefinitionStore;
             _serializer = serializer;
             _mapper = mapper;
+            _tenantAccessor = tenantAccessor;
         }
 
         [HttpGet]
@@ -44,8 +47,9 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
         ]
         public async Task<ActionResult<PagedList<WorkflowDefinitionSummaryModel>>> Handle(int? page = default, int? pageSize = default, VersionOptions? version = default, CancellationToken cancellationToken = default)
         {
+            var tenantId = await _tenantAccessor.GetTenantIdAsync(cancellationToken);
             version ??= VersionOptions.Latest;
-            var specification = new VersionOptionsSpecification(version.Value);
+            var specification = new VersionOptionsSpecification(version.Value).And(new TenantSpecification<WorkflowDefinition>(tenantId));
             var totalCount = await _workflowDefinitionStore.CountAsync(specification, cancellationToken);
             var paging = page == null || pageSize == null ? default : Paging.Page(page.Value, pageSize.Value);
             var items = await _workflowDefinitionStore.FindManyAsync(specification, paging: paging, cancellationToken: cancellationToken);

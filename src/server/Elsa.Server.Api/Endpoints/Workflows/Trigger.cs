@@ -18,7 +18,12 @@ namespace Elsa.Server.Api.Endpoints.Workflows
     public class Trigger : Controller
     {
         private readonly IWorkflowLaunchpad _workflowLaunchpad;
-        public Trigger(IWorkflowLaunchpad workflowLaunchpad) => _workflowLaunchpad = workflowLaunchpad;
+        private readonly ITenantAccessor _tenantAccessor;
+        public Trigger(IWorkflowLaunchpad workflowLaunchpad,ITenantAccessor tenantAccessor)
+        {
+            _workflowLaunchpad = workflowLaunchpad;
+            _tenantAccessor = tenantAccessor;
+        }
 
         [HttpPost]
         [ElsaJsonFormatter]
@@ -32,7 +37,8 @@ namespace Elsa.Server.Api.Endpoints.Workflows
         ]
         public async Task<IActionResult> Handle(TriggerWorkflowsRequestModel request, CancellationToken cancellationToken = default)
         {
-            var context = new CollectWorkflowsContext(request.ActivityType, request.Bookmark, request.Trigger, request.CorrelationId, request.WorkflowInstanceId, request.ContextId);
+            var tenantId = await _tenantAccessor.GetTenantIdAsync(cancellationToken);
+            var context = new CollectWorkflowsContext(request.ActivityType, request.Bookmark, request.Trigger, request.CorrelationId, request.WorkflowInstanceId, request.ContextId, tenantId);
             ICollection<TriggeredWorkflowModel> triggeredWorkflows;
 
             if (request.Dispatch)
