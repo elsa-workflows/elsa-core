@@ -9,7 +9,7 @@ using YesSql.Provider.SqlServer;
 
 namespace Elsa.Persistence.YesSql
 {
-    [Feature("Persistence:YesSql:Sqlite")]
+    [Feature("PersistenceYesSqlSqlite")]
     public class SqliteStartup : YesSqlStartupBase
     {
         protected override string ProviderName => "Sqlite";
@@ -17,21 +17,21 @@ namespace Elsa.Persistence.YesSql
         protected override void Configure(global::YesSql.IConfiguration options, string connectionString) => options.UseSqLite(connectionString);
     }
     
-    [Feature("Persistence:YesSql:SqlServer")]
+    [Feature("PersistenceYesSqlSqlServer")]
     public class SqlServerStartup : YesSqlStartupBase
     {
         protected override string ProviderName => "SqlServer";
         protected override void Configure(global::YesSql.IConfiguration options, string connectionString) => options.UseSqlServer(connectionString);
     }
     
-    [Feature("Persistence:YesSql:MySql")]
+    [Feature("PersistenceYesSqlMySql")]
     public class MySqlStartup : YesSqlStartupBase
     {
         protected override string ProviderName => "MySql";
         protected override void Configure(global::YesSql.IConfiguration options, string connectionString) => options.UseMySql(connectionString);
     }
     
-    [Feature("Persistence:YesSql:PostgreSql")]
+    [Feature("PersistenceYesSqlPostgreSql")]
     public class PostgreSqlStartup : YesSqlStartupBase
     {
         protected override string ProviderName => "PostgreSql";
@@ -44,7 +44,7 @@ namespace Elsa.Persistence.YesSql
         
         public override void ConfigureElsa(ElsaOptionsBuilder elsa, IConfiguration configuration)
         {
-            var section = configuration.GetSection($"Elsa:Features:Persistence:YesSql:{ProviderName}");
+            var section = configuration.GetSection($"Elsa:Features:PersistenceYesSql{ProviderName}");
             var connectionStringName = section.GetValue<string>("ConnectionStringName");
             var connectionString = section.GetValue<string>("ConnectionString");
 

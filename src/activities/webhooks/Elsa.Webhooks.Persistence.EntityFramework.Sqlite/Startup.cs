@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Webhooks.Persistence.EntityFramework.Sqlite
 {
-    [Feature("Webhooks:Persistence:EntityFrameworkCore:Sqlite")]
+    [Feature("WebhooksPersistenceEntityFrameworkCoreSqlite")]
     public class Startup : EntityFrameworkWebhookStartupBase
     {
         protected override string ProviderName => "Sqlite";

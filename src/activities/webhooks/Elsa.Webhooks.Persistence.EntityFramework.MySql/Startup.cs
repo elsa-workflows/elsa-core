@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Webhooks.Persistence.EntityFramework.MySql
 {
-    [Feature("Webhooks:Persistence:EntityFrameworkCore:MySql")]
+    [Feature("WebhooksPersistenceEntityFrameworkCoreMySql")]
     public class Startup : EntityFrameworkWebhookStartupBase
     {
         protected override string ProviderName => "MySql";

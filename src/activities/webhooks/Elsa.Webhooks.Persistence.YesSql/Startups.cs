@@ -13,7 +13,7 @@ using YesSql.Provider.SqlServer;
 
 namespace Elsa.Webhooks.Persistence.YesSql
 {
-    [Feature("Webhooks:Persistence:YesSql:Sqlite")]
+    [Feature("WebhooksPersistenceYesSqlSqlite")]
     public class SqliteStartup : YesSqlStartupBase
     {
         protected override string ProviderName => "Sqlite";
@@ -21,21 +21,21 @@ namespace Elsa.Webhooks.Persistence.YesSql
         protected override void Configure(global::YesSql.IConfiguration options, string connectionString) => options.UseSqLite(connectionString);
     }
 
-    [Feature("Webhooks:Persistence:YesSql:SqlServer")]
+    [Feature("WebhooksPersistenceYesSqlSqlServer")]
     public class SqlServerStartup : YesSqlStartupBase
     {
         protected override string ProviderName => "SqlServer";
         protected override void Configure(global::YesSql.IConfiguration options, string connectionString) => options.UseSqlServer(connectionString);
     }
 
-    [Feature("Webhooks:Persistence:YesSql:MySql")]
+    [Feature("WebhooksPersistenceYesSqlMySql")]
     public class MySqlStartup : YesSqlStartupBase
     {
         protected override string ProviderName => "MySql";
         protected override void Configure(global::YesSql.IConfiguration options, string connectionString) => options.UseMySql(connectionString);
     }
 
-    [Feature("Webhooks:Persistence:YesSql:PostgreSql")]
+    [Feature("WebhooksPersistenceYesSqlPostgreSql")]
     public class PostgreSqlStartup : YesSqlStartupBase
     {
         protected override string ProviderName => "PostgreSql";
@@ -49,7 +49,7 @@ namespace Elsa.Webhooks.Persistence.YesSql
         public override void ConfigureElsa(ElsaOptionsBuilder elsa, IConfiguration configuration)
         {
             var services = elsa.Services;
-            var section = configuration.GetSection($"Elsa:Features:Webhooks:Persistence:YesSql:{ProviderName}");
+            var section = configuration.GetSection($"Elsa:Features:WebhooksPersistenceYesSql{ProviderName}");
             var connectionStringName = section.GetValue<string>("ConnectionStringName");
             var connectionString = section.GetValue<string>("ConnectionString");
 
