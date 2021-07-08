@@ -56,14 +56,41 @@ namespace Elsa
 
                 if (featureOptions.Items == null) continue;
 
-                foreach (var item in featureOptions.Items)
-                {
-                    key += $":{item.Value}";
-                    enabledFeatures.Add(key);
-                }                
+                //Permutations = new List<string>();
+                var values = featureOptions.Items.Values.ToArray();
+                GetPermutations(key, enabledFeatures, values, 0, values.Length - 1);                
             }
 
             return enabledFeatures;
+        }
+
+        private static void GetPermutations(string feature, ICollection<string> enabledFeatures, string[] values, int start, int end)
+        {
+            if (start == end)
+            {
+                foreach (var item in values)
+                {
+                    feature += $":{item}";
+                    if (enabledFeatures.Contains(feature)) continue;
+                    enabledFeatures.Add(feature);
+                }
+            }
+
+            for (int i = start; i <= end; i++)
+            {
+                Swap(ref values[start], ref values[i]);
+                GetPermutations(feature, enabledFeatures, values, start + 1, end);
+                Swap(ref values[start], ref values[i]);
+            }
+        }
+
+        private static void Swap(ref string item1, ref string item2)
+        {
+            if (item1 == item2) return;
+
+            var temp = item1;
+            item1 = item2;
+            item2 = temp;
         }
 
         private static FeatureOptions ParseFeatureFlag(IConfiguration configuration, string feature)
