@@ -56,15 +56,14 @@ namespace Elsa
 
                 if (featureOptions.Items == null) continue;
 
-                //Permutations = new List<string>();
                 var values = featureOptions.Items.Values.ToArray();
-                GetPermutations(key, enabledFeatures, values, 0, values.Length - 1);                
+                GetPermutations(key, values, enabledFeatures, 0, values.Length - 1);                
             }
 
             return enabledFeatures;
         }
 
-        private static void GetPermutations(string feature, ICollection<string> enabledFeatures, string[] values, int start, int end)
+        private static void GetPermutations(string feature, string[] values, ICollection<string> enabledFeatures, int start, int end)
         {
             if (start == end)
             {
@@ -79,7 +78,7 @@ namespace Elsa
             for (int i = start; i <= end; i++)
             {
                 Swap(ref values[start], ref values[i]);
-                GetPermutations(feature, enabledFeatures, values, start + 1, end);
+                GetPermutations(feature, values, enabledFeatures, start + 1, end);
                 Swap(ref values[start], ref values[i]);
             }
         }
