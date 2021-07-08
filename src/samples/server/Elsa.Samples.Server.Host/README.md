@@ -1,6 +1,6 @@
 ### Configure persistence for Elsa Core in the appsettings.json
 
-A simple way to enable a feature without persitence:
+A simple way to enable a feature without persistence:
 
 ```
 "Elsa": {

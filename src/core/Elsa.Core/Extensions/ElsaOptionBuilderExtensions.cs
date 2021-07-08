@@ -54,19 +54,12 @@ namespace Elsa
                 var key = feature.Key.Replace($"{elsaFeaturesSection}:", string.Empty);
                 enabledFeatures.Add(key);
 
-                var hasFramework = !string.IsNullOrWhiteSpace(featureOptions.Framework);
-                var hasConnection = !string.IsNullOrWhiteSpace(featureOptions.ConnectionStringIdentifier);
+                if (featureOptions.Items == null) continue;
 
-                if (hasFramework)
+                foreach (var item in featureOptions.Items)
                 {
-                    enabledFeatures.Add($"{key}:{featureOptions.Framework}");
-                }
-
-                if (hasConnection)
-                {
-                    enabledFeatures.Add(hasFramework 
-                        ? $"{key}:{featureOptions.Framework}:{featureOptions.ConnectionStringIdentifier}" 
-                        : $"{key}:{featureOptions.ConnectionStringIdentifier}");
+                    key += $":{item.Value}";
+                    enabledFeatures.Add(key);
                 }                
             }
 
@@ -75,20 +68,58 @@ namespace Elsa
 
         private static FeatureOptions ParseFeatureFlag(IConfiguration configuration, string feature)
         {
-            var options = new FeatureOptions();
+            var featureOptions = new FeatureOptions();
 
             if (configuration.GetSection($"{feature}:Enabled").Exists())
-            {                
-                configuration.GetSection(feature).Bind(options);
-                return options;
+            {
+                var featureItems = configuration.GetSection($"{feature}").AsEnumerable();
+
+                ParseFeatureItems(feature, featureOptions, featureItems);
+                ParseFeatureOptions(configuration, feature, featureOptions);
+
+                return featureOptions;
             }
 
             if (!feature.EndsWith(":Enabled"))
             {
                 bool.TryParse(configuration.GetValue<string>($"{feature}"), out var enabled);
-                options.Enabled = enabled;
+                featureOptions.Enabled = enabled;
             }
-            return options;
+            return featureOptions;
+        }
+
+        private static void ParseFeatureItems(string feature, FeatureOptions featureOptions, IEnumerable<KeyValuePair<string, string>> featureItems)
+        {
+            featureOptions.Items = new Dictionary<string, string>();
+
+            foreach (var featureItem in featureItems)
+            {
+                if (featureItem.Value == null) continue;
+
+                var itemKey = featureItem.Key.Replace($"{feature}:", string.Empty);
+
+                if (itemKey.Contains(":")) continue;
+
+                if (itemKey == "Enabled")
+                {
+                    bool.TryParse(featureItem.Value, out var enabled);
+                    featureOptions.Enabled = enabled;
+                }
+                else
+                {
+                    featureOptions.Items.Add(itemKey, featureItem.Value);
+                }
+            }
+        }
+
+        private static void ParseFeatureOptions(IConfiguration configuration, string feature, FeatureOptions featureOptions)
+        {
+            if (configuration.GetSection($"{feature}:Options").Exists())
+            {
+                var options = new Dictionary<string, string>();
+                configuration.GetSection($"{feature}:Options").Bind(options);
+                featureOptions.Options = options;
+            }
         }
 
         private static IEnumerable<Assembly> GetAssemblies(IEnumerable<Type> assemblyMarkerTypes) => assemblyMarkerTypes.Select(x => x.Assembly).Distinct();
