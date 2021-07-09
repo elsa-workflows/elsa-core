@@ -12,11 +12,19 @@ namespace Elsa
     {
         public static ElsaOptionsBuilder AddFeatures(this ElsaOptionsBuilder builder, IEnumerable<Type> assemblyMarkerTypes, IConfiguration configuration) => AddFeatures(builder, GetAssemblies(assemblyMarkerTypes), configuration);
 
+        /// <summary>
+        /// Parse all features from the appsettings.json, filter only enabled features, 
+        /// find all start up classes with matching attribute and create their instances.
+        /// </summary>
+        /// <param name="builder">ElsaOptionsBuilder</param>
+        /// <param name="assemblies">Available assembly collection</param>
+        /// <param name="configuration">IConfiguration</param>
+        /// <returns>ElsaOptionsBuilder</returns>
         public static ElsaOptionsBuilder AddFeatures(this ElsaOptionsBuilder builder, IEnumerable<Assembly> assemblies, IConfiguration configuration)
         {
             var enabledFeatures = ParseFeatures(configuration);
 
-            if (enabledFeatures == null!) // Null when configuration binding finds an empty array.
+            if (enabledFeatures == null!)
                 return builder;
 
             enabledFeatures = enabledFeatures.ToHashSet();
@@ -40,6 +48,11 @@ namespace Elsa
             return builder;
         }
 
+        /// <summary>
+        /// Parse all features from the appsettings.json and popualte enabled feature collection
+        /// </summary>
+        /// <param name="configuration">IConfiguration</param>
+        /// <returns>Enabled feature collection</returns>
         private static IEnumerable<string> ParseFeatures(IConfiguration configuration)
         {
             var elsaFeaturesSection = "Elsa:Features";
@@ -48,7 +61,7 @@ namespace Elsa
 
             foreach (var feature in features)
             {
-                var featureOptions = ParseFeatureFlag(configuration, feature.Key);
+                var featureOptions = ParseFeatureSection(configuration, feature.Key);
                 if (!featureOptions.Enabled) continue;
 
                 var key = feature.Key.Replace($"{elsaFeaturesSection}:", string.Empty);
@@ -63,6 +76,88 @@ namespace Elsa
             return enabledFeatures;
         }
 
+        /// <summary>
+        /// Parse single feature section from the appsettings.json and popualte feature model
+        /// </summary>
+        /// <param name="configuration">IConfiguration</param>
+        /// <param name="feature">Feature name</param>
+        /// <returns>Populated feature model</returns>
+        private static FeatureModel ParseFeatureSection(IConfiguration configuration, string feature)
+        {
+            var featureModel = new FeatureModel();
+
+            if (configuration.GetSection($"{feature}:Enabled").Exists())
+            {
+                var featureItems = configuration.GetSection($"{feature}").AsEnumerable();
+
+                ParseFeatureItems(feature, featureModel, featureItems);
+                ParseFeatureOptions(configuration, feature, featureModel);
+
+                return featureModel;
+            }
+
+            if (!feature.EndsWith(":Enabled"))
+            {
+                bool.TryParse(configuration.GetValue<string>($"{feature}"), out var enabled);
+                featureModel.Enabled = enabled;
+            }
+            return featureModel;
+        }
+
+        /// <summary>
+        /// Parse feature section key/value collection except Enabled and Options keys from the appsetting.json and popualte feature model
+        /// </summary>
+        /// <param name="feature">Feature name</param>
+        /// <param name="featureModel">Feature model</param>
+        /// <param name="featureItems">Feature section kay/value collection</param>
+        private static void ParseFeatureItems(string feature, FeatureModel featureModel, IEnumerable<KeyValuePair<string, string>> featureItems)
+        {
+            featureModel.Items = new Dictionary<string, string>();
+
+            foreach (var featureItem in featureItems)
+            {
+                if (featureItem.Value == null) continue;
+
+                var itemKey = featureItem.Key.Replace($"{feature}:", string.Empty);
+
+                if (itemKey.Contains(":")) continue;
+
+                if (itemKey == "Enabled")
+                {
+                    bool.TryParse(featureItem.Value, out var enabled);
+                    featureModel.Enabled = enabled;
+                }
+                else
+                {
+                    featureModel.Items.Add(itemKey, featureItem.Value);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Parse feature Options section from the appsetting.json and populate feature model
+        /// </summary>
+        /// <param name="configuration">IConfiguration</param>
+        /// <param name="feature">Feature name</param>
+        /// <param name="featureModel">Feature model</param>
+        private static void ParseFeatureOptions(IConfiguration configuration, string feature, FeatureModel featureModel)
+        {
+            if (configuration.GetSection($"{feature}:Options").Exists())
+            {
+                var options = new Dictionary<string, string>();
+                configuration.GetSection($"{feature}:Options").Bind(options);
+                featureModel.Options = options;
+            }
+        }
+
+        /// <summary>
+        /// Permutate all possible order combinations in Feature section key/value collection
+        /// </summary>
+        /// <param name="feature">Feature name</param>
+        /// <param name="values">Feature values array to permutate</param>
+        /// <param name="enabledFeatures">Enabled feature collection</param>
+        /// <param name="start">Start index</param>
+        /// <param name="end">End index</param>
         private static void GetPermutations(string feature, string[] values, ICollection<string> enabledFeatures, int start, int end)
         {
             if (start == end)
@@ -83,6 +178,11 @@ namespace Elsa
             }
         }
 
+        /// <summary>
+        /// Swap two string values
+        /// </summary>
+        /// <param name="item1"></param>
+        /// <param name="item2"></param>
         private static void Swap(ref string item1, ref string item2)
         {
             if (item1 == item2) return;
@@ -92,62 +192,13 @@ namespace Elsa
             item2 = temp;
         }
 
-        private static FeatureOptions ParseFeatureFlag(IConfiguration configuration, string feature)
-        {
-            var featureOptions = new FeatureOptions();
-
-            if (configuration.GetSection($"{feature}:Enabled").Exists())
-            {
-                var featureItems = configuration.GetSection($"{feature}").AsEnumerable();
-
-                ParseFeatureItems(feature, featureOptions, featureItems);
-                ParseFeatureOptions(configuration, feature, featureOptions);
-
-                return featureOptions;
-            }
-
-            if (!feature.EndsWith(":Enabled"))
-            {
-                bool.TryParse(configuration.GetValue<string>($"{feature}"), out var enabled);
-                featureOptions.Enabled = enabled;
-            }
-            return featureOptions;
-        }
-
-        private static void ParseFeatureItems(string feature, FeatureOptions featureOptions, IEnumerable<KeyValuePair<string, string>> featureItems)
-        {
-            featureOptions.Items = new Dictionary<string, string>();
-
-            foreach (var featureItem in featureItems)
-            {
-                if (featureItem.Value == null) continue;
-
-                var itemKey = featureItem.Key.Replace($"{feature}:", string.Empty);
-
-                if (itemKey.Contains(":")) continue;
-
-                if (itemKey == "Enabled")
-                {
-                    bool.TryParse(featureItem.Value, out var enabled);
-                    featureOptions.Enabled = enabled;
-                }
-                else
-                {
-                    featureOptions.Items.Add(itemKey, featureItem.Value);
-                }
-            }
-        }
-
-        private static void ParseFeatureOptions(IConfiguration configuration, string feature, FeatureOptions featureOptions)
-        {
-            if (configuration.GetSection($"{feature}:Options").Exists())
-            {
-                var options = new Dictionary<string, string>();
-                configuration.GetSection($"{feature}:Options").Bind(options);
-                featureOptions.Options = options;
-            }
-        }
-
         private static IEnumerable<Assembly> GetAssemblies(IEnumerable<Type> assemblyMarkerTypes) => assemblyMarkerTypes.Select(x => x.Assembly).Distinct();
+
+        private class FeatureModel
+        {
+            public bool Enabled { get; set; }
+            public Dictionary<string, string>? Items { get; set; }
+            public Dictionary<string, string>? Options { get; set; }
+        }
     }
 }
