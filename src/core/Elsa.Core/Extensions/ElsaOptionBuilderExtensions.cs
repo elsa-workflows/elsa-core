@@ -13,13 +13,9 @@ namespace Elsa
         public static ElsaOptionsBuilder AddFeatures(this ElsaOptionsBuilder builder, IEnumerable<Type> assemblyMarkerTypes, IConfiguration configuration) => AddFeatures(builder, GetAssemblies(assemblyMarkerTypes), configuration);
 
         /// <summary>
-        /// Parse all features from the appsettings.json, filter only enabled features, 
+        /// Parse all features from the configuration, filter only enabled features, 
         /// find all start up classes with matching attribute and create their instances.
         /// </summary>
-        /// <param name="builder">ElsaOptionsBuilder</param>
-        /// <param name="assemblies">Available assembly collection</param>
-        /// <param name="configuration">IConfiguration</param>
-        /// <returns>ElsaOptionsBuilder</returns>
         public static ElsaOptionsBuilder AddFeatures(this ElsaOptionsBuilder builder, IEnumerable<Assembly> assemblies, IConfiguration configuration)
         {
             var enabledFeatures = ParseFeatures(configuration);
@@ -49,10 +45,8 @@ namespace Elsa
         }
 
         /// <summary>
-        /// Parse all features from the appsettings.json and popualte enabled feature collection
+        /// Parse all features from the configuration and populate enabled feature collection.
         /// </summary>
-        /// <param name="configuration">IConfiguration</param>
-        /// <returns>Enabled feature collection</returns>
         private static IEnumerable<string> ParseFeatures(IConfiguration configuration)
         {
             var elsaFeaturesSection = "Elsa:Features";
@@ -77,11 +71,8 @@ namespace Elsa
         }
 
         /// <summary>
-        /// Parse single feature section from the appsettings.json and popualte feature model
+        /// Parse single feature section from the configuration and populate feature model.
         /// </summary>
-        /// <param name="configuration">IConfiguration</param>
-        /// <param name="feature">Feature name</param>
-        /// <returns>Populated feature model</returns>
         private static FeatureModel ParseFeatureSection(IConfiguration configuration, string feature)
         {
             var featureModel = new FeatureModel();
@@ -105,11 +96,8 @@ namespace Elsa
         }
 
         /// <summary>
-        /// Parse feature section key/value collection except Enabled and Options keys from the appsetting.json and popualte feature model
+        /// Parse feature section key/value collection except Enabled and Options keys from the configuration and populate feature model.
         /// </summary>
-        /// <param name="feature">Feature name</param>
-        /// <param name="featureModel">Feature model</param>
-        /// <param name="featureItems">Feature section kay/value collection</param>
         private static void ParseFeatureItems(string feature, FeatureModel featureModel, IEnumerable<KeyValuePair<string, string>> featureItems)
         {
             featureModel.Items = new Dictionary<string, string>();
@@ -135,11 +123,8 @@ namespace Elsa
         }
 
         /// <summary>
-        /// Parse feature Options section from the appsetting.json and populate feature model
+        /// Parse feature Options section from the configuration and populate feature model.
         /// </summary>
-        /// <param name="configuration">IConfiguration</param>
-        /// <param name="feature">Feature name</param>
-        /// <param name="featureModel">Feature model</param>
         private static void ParseFeatureOptions(IConfiguration configuration, string feature, FeatureModel featureModel)
         {
             if (configuration.GetSection($"{feature}:Options").Exists())
@@ -151,13 +136,8 @@ namespace Elsa
         }
 
         /// <summary>
-        /// Permutate all possible order combinations in Feature section key/value collection
+        /// Permutate all possible order combinations in Feature section key/value collection.
         /// </summary>
-        /// <param name="feature">Feature name</param>
-        /// <param name="values">Feature values array to permutate</param>
-        /// <param name="enabledFeatures">Enabled feature collection</param>
-        /// <param name="start">Start index</param>
-        /// <param name="end">End index</param>
         private static void GetPermutations(string feature, string[] values, ICollection<string> enabledFeatures, int start, int end)
         {
             if (start == end)
@@ -179,10 +159,8 @@ namespace Elsa
         }
 
         /// <summary>
-        /// Swap two string values
+        /// Swap two string values.
         /// </summary>
-        /// <param name="item1"></param>
-        /// <param name="item2"></param>
         private static void Swap(ref string item1, ref string item2)
         {
             if (item1 == item2) return;
