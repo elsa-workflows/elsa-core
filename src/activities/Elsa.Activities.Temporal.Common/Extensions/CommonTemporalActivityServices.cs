@@ -1,8 +1,9 @@
 using System;
 using Elsa.Activities.Temporal.Common.Bookmarks;
 using Elsa.Activities.Temporal.Common.Handlers;
+using Elsa.Activities.Temporal.Common.HostedServices;
 using Elsa.Activities.Temporal.Common.Options;
-using Elsa.Activities.Temporal.Common.StartupTasks;
+using Elsa.HostedServices;
 using Elsa.Runtime;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -31,7 +32,7 @@ namespace Elsa.Activities.Temporal
 
             options.Services
                 .AddNotificationHandlers(typeof(RemoveScheduledTriggers))
-                .AddStartupTask<StartJobs>()
+                .AddHostedService<ScopedBackgroundService<StartJobs>>()
                 .AddBookmarkProvider<TimerBookmarkProvider>()
                 .AddBookmarkProvider<CronBookmarkProvider>()
                 .AddBookmarkProvider<StartAtBookmarkProvider>();
