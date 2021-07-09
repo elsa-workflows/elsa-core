@@ -87,6 +87,9 @@ namespace Microsoft.Extensions.DependencyInjection
             services.Decorate<IWorkflowInstanceStore, EventPublishingWorkflowInstanceStore>();
             services.Decorate<IWorkflowInstanceExecutor, LockingWorkflowInstanceExecutor>();
 
+            //TenantId default source
+            services.TryAddScoped<ITenantAccessor, DefaultTenantAccessor>();
+
             return services;
         }
 

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -33,7 +33,7 @@ namespace Elsa.Activities.Signaling.Services
         public async Task<IEnumerable<CollectedWorkflow>> TriggerSignalAsync(string signal, object? input = default, string? workflowInstanceId = default, string? correlationId = default, CancellationToken cancellationToken = default)
         {
             var normalizedSignal = signal.ToLowerInvariant();
-            
+
             return await _workflowLaunchpad.CollectAndExecuteWorkflowsAsync(new CollectWorkflowsContext(
                 nameof(SignalReceived),
                 new SignalReceivedBookmark { Signal = normalizedSignal, WorkflowInstanceId = workflowInstanceId },
@@ -54,16 +54,16 @@ namespace Elsa.Activities.Signaling.Services
         }
 
         public async Task<IEnumerable<CollectedWorkflow>> DispatchSignalAsync(string signal, object? input = default, string? workflowInstanceId = default, string? correlationId = default, CancellationToken cancellationToken = default) =>
-            await _workflowLaunchpad.CollectAndDispatchWorkflowsAsync(new CollectWorkflowsContext(
-                    nameof(SignalReceived),
-                    new SignalReceivedBookmark { Signal = signal, WorkflowInstanceId = workflowInstanceId },
-                    new SignalReceivedBookmark { Signal = signal },
-                    correlationId,
-                    workflowInstanceId,
-                    default,
-                    TenantId
-                ),
-                new Signal(signal, input),
-                cancellationToken);
+             await _workflowLaunchpad.CollectAndDispatchWorkflowsAsync(new CollectWorkflowsContext(
+                     nameof(SignalReceived),
+                     new SignalReceivedBookmark { Signal = signal, WorkflowInstanceId = workflowInstanceId },
+                     new SignalReceivedBookmark { Signal = signal },
+                     correlationId,
+                     workflowInstanceId,
+                     default,
+                     TenantId
+                 ),
+                 new Signal(signal, input),
+                 cancellationToken);
     }
 }

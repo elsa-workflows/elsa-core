@@ -235,5 +235,11 @@ namespace Elsa
             ElsaOptions.ConfigureServiceBusEndpoint = setup;
             return this;
         }
+
+        public ElsaOptionsBuilder AddCustomTenantAccessor<T>() where T : class, ITenantAccessor
+        {
+            Services.AddScoped<ITenantAccessor, T>();
+            return this;
+        }
     }
 }

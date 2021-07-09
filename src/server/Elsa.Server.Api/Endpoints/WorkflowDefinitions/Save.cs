@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,10 +19,11 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
     public partial class Save : ControllerBase
     {
         private readonly IWorkflowPublisher _workflowPublisher;
-
-        public Save(IWorkflowPublisher workflowPublisher)
+        private readonly ITenantAccessor _tenantAccessor;
+        public Save(IWorkflowPublisher workflowPublisher, ITenantAccessor tenantAccessor)
         {
             _workflowPublisher = workflowPublisher;
+            _tenantAccessor = tenantAccessor;
         }
 
         [HttpPost]
@@ -35,7 +36,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             OperationId = "WorkflowDefinitions.Post",
             Tags = new[] { "WorkflowDefinitions" })
         ]
-        public async Task<ActionResult<WorkflowDefinition>> Handle([FromBody]SaveWorkflowDefinitionRequest request, [FromRoute]ApiVersion apiVersion, CancellationToken cancellationToken)
+        public async Task<ActionResult<WorkflowDefinition>> Handle([FromBody] SaveWorkflowDefinitionRequest request, [FromRoute] ApiVersion apiVersion, CancellationToken cancellationToken)
         {
             var workflowDefinitionId = request.WorkflowDefinitionId;
             var workflowDefinition = !string.IsNullOrWhiteSpace(workflowDefinitionId) ? await _workflowPublisher.GetDraftAsync(workflowDefinitionId, cancellationToken) : default;
@@ -60,6 +61,8 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             workflowDefinition.DisplayName = request.DisplayName?.Trim();
             workflowDefinition.Tag = request.Tag?.Trim();
             workflowDefinition.Channel = request.Channel?.Trim();
+
+            workflowDefinition.TenantId = await _tenantAccessor.GetTenantIdAsync(cancellationToken);
 
             if (request.Publish)
                 workflowDefinition = await _workflowPublisher.PublishAsync(workflowDefinition, cancellationToken);
