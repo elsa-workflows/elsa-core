@@ -20,6 +20,9 @@ namespace Elsa.Activities.ControlFlow
     public class Finish : Activity
     {
         [ActivityInput(Hint = "The value to set as the workflow's output", SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        public object? ActivityOutput { get; set; }
+        
+        [ActivityOutput]
         public object? Output { get; set; }
 
         [ActivityInput(
@@ -58,7 +61,7 @@ namespace Elsa.Activities.ControlFlow
             context.WorkflowInstance.Scopes = new SimpleStack<ActivityScope>(scopes.AsEnumerable().Reverse());
 
             // Return output.
-            Output = new FinishOutput(Output, OutcomeNames);
+            Output = new FinishOutput(ActivityOutput, OutcomeNames);
 
             return Noop();
         }
