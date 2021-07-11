@@ -1,0 +1,150 @@
+{
+  "$id": "1",
+  "definitionId": "1ba518a2264e4466875d6625f3270258",
+  "versionId": "7f891baac9b34913b3b6db9fdaf77318",
+  "name": "Child",
+  "version": 1,
+  "variables": {
+    "$id": "2",
+    "data": {}
+  },
+  "customAttributes": {
+    "$id": "3",
+    "data": {}
+  },
+  "isSingleton": false,
+  "persistenceBehavior": "WorkflowBurst",
+  "deleteCompletedInstances": false,
+  "isPublished": true,
+  "isLatest": true,
+  "activities": [
+    {
+      "$id": "4",
+      "activityId": "4808cd79-57a2-45ce-b278-18d75b71b63a",
+      "type": "SignalReceived",
+      "displayName": "Signal Received",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "5",
+          "name": "Signal",
+          "syntax": "Liquid",
+          "expressions": {
+            "$id": "6",
+            "Literal": "Resume",
+            "Liquid": "Resume-{{ Variables.ParentInput.Label }}"
+          }
+        },
+        {
+          "$id": "7",
+          "name": "Scope",
+          "expressions": {
+            "$id": "8"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "9",
+      "activityId": "e707372c-377a-4f1d-aa64-f52de740a4b7",
+      "type": "Finish",
+      "displayName": "Finish",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "10",
+          "name": "ActivityOutput",
+          "syntax": "JavaScript",
+          "expressions": {
+            "$id": "11",
+            "JavaScript": "({ Message: 'Hello parent!' })"
+          }
+        },
+        {
+          "$id": "12",
+          "name": "OutcomeNames",
+          "expressions": {
+            "$id": "13"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "14",
+      "activityId": "3b07fe38-2b8a-4d27-bb87-580fc088a1b1",
+      "type": "SetVariable",
+      "displayName": "Set Variable",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "15",
+          "name": "VariableName",
+          "expressions": {
+            "$id": "16",
+            "Literal": "ParentInput"
+          }
+        },
+        {
+          "$id": "17",
+          "name": "Value",
+          "syntax": "JavaScript",
+          "expressions": {
+            "$id": "18",
+            "JavaScript": "input"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "19",
+      "activityId": "563958aa-8da9-4ad2-aa65-5a8fd4a4259e",
+      "type": "WriteLine",
+      "displayName": "Write Line",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "20",
+          "name": "Text",
+          "syntax": "Liquid",
+          "expressions": {
+            "$id": "21",
+            "Liquid": "Parent says: \"{{ Variables.ParentInput.Message }}\".\r\nMy workflow instance ID is: {{ WorkflowInstanceId }}"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    }
+  ],
+  "connections": [
+    {
+      "$id": "22",
+      "sourceActivityId": "4808cd79-57a2-45ce-b278-18d75b71b63a",
+      "targetActivityId": "e707372c-377a-4f1d-aa64-f52de740a4b7",
+      "outcome": "Done"
+    },
+    {
+      "$id": "23",
+      "sourceActivityId": "3b07fe38-2b8a-4d27-bb87-580fc088a1b1",
+      "targetActivityId": "563958aa-8da9-4ad2-aa65-5a8fd4a4259e",
+      "outcome": "Done"
+    },
+    {
+      "$id": "24",
+      "sourceActivityId": "563958aa-8da9-4ad2-aa65-5a8fd4a4259e",
+      "targetActivityId": "4808cd79-57a2-45ce-b278-18d75b71b63a",
+      "outcome": "Done"
+    }
+  ],
+  "id": "7f891baac9b34913b3b6db9fdaf77318"
+}

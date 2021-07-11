@@ -1,0 +1,201 @@
+{
+  "$id": "1",
+  "definitionId": "de3fd39945b244d4b7c90fd446f34021",
+  "versionId": "5d05f8802ef94a51b2753caa2879a63b",
+  "name": "Parent",
+  "version": 1,
+  "variables": {
+    "$id": "2",
+    "data": {}
+  },
+  "customAttributes": {
+    "$id": "3",
+    "data": {}
+  },
+  "isSingleton": false,
+  "persistenceBehavior": "WorkflowBurst",
+  "deleteCompletedInstances": false,
+  "isPublished": true,
+  "isLatest": true,
+  "activities": [
+    {
+      "$id": "4",
+      "activityId": "24a5f6a2-8c98-4519-a13e-c17c13983e02",
+      "type": "HttpEndpoint",
+      "displayName": "HTTP Endpoint",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "5",
+          "name": "Path",
+          "expressions": {
+            "$id": "6",
+            "Literal": "/parent"
+          }
+        },
+        {
+          "$id": "7",
+          "name": "Methods",
+          "expressions": {
+            "$id": "8",
+            "Json": "[\"GET\"]"
+          }
+        },
+        {
+          "$id": "9",
+          "name": "ReadContent",
+          "expressions": {
+            "$id": "10"
+          }
+        },
+        {
+          "$id": "11",
+          "name": "TargetType",
+          "expressions": {
+            "$id": "12"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "13",
+      "activityId": "267a9e63-5fc6-46b1-ad43-ba05b6a63c4f",
+      "type": "RunWorkflow",
+      "displayName": "Run Workflow",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "14",
+          "name": "WorkflowDefinitionId",
+          "syntax": "Liquid",
+          "expressions": {
+            "$id": "15",
+            "Liquid": "{{ \"Child\" | workflow_definition_id: \"name\" }}"
+          }
+        },
+        {
+          "$id": "16",
+          "name": "Input",
+          "syntax": "JavaScript",
+          "expressions": {
+            "$id": "17",
+            "JavaScript": "({ Message: 'Hello child!' })"
+          }
+        },
+        {
+          "$id": "18",
+          "name": "PossibleOutcomes",
+          "expressions": {
+            "$id": "19"
+          }
+        },
+        {
+          "$id": "20",
+          "name": "Mode",
+          "expressions": {
+            "$id": "21",
+            "Literal": "Blocking"
+          }
+        },
+        {
+          "$id": "22",
+          "name": "TenantId",
+          "expressions": {
+            "$id": "23"
+          }
+        },
+        {
+          "$id": "24",
+          "name": "CorrelationId",
+          "expressions": {
+            "$id": "25"
+          }
+        },
+        {
+          "$id": "26",
+          "name": "ContextId",
+          "expressions": {
+            "$id": "27"
+          }
+        },
+        {
+          "$id": "28",
+          "name": "CustomAttributes",
+          "expressions": {
+            "$id": "29"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    },
+    {
+      "$id": "30",
+      "activityId": "a63f908f-ea65-442a-ad4f-70bb630c4c4e",
+      "type": "WriteHttpResponse",
+      "displayName": "HTTP Response",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
+        {
+          "$id": "31",
+          "name": "Content",
+          "syntax": "Liquid",
+          "expressions": {
+            "$id": "32",
+            "Liquid": "Message received from child {{ Input.WorkflowInstanceId }}: {{ Input.WorkflowOutput.Message }}"
+          }
+        },
+        {
+          "$id": "33",
+          "name": "ContentType",
+          "expressions": {
+            "$id": "34"
+          }
+        },
+        {
+          "$id": "35",
+          "name": "StatusCode",
+          "expressions": {
+            "$id": "36"
+          }
+        },
+        {
+          "$id": "37",
+          "name": "CharSet",
+          "expressions": {
+            "$id": "38"
+          }
+        },
+        {
+          "$id": "39",
+          "name": "ResponseHeaders",
+          "expressions": {
+            "$id": "40"
+          }
+        }
+      ],
+      "propertyStorageProviders": {}
+    }
+  ],
+  "connections": [
+    {
+      "$id": "41",
+      "sourceActivityId": "24a5f6a2-8c98-4519-a13e-c17c13983e02",
+      "targetActivityId": "267a9e63-5fc6-46b1-ad43-ba05b6a63c4f",
+      "outcome": "Done"
+    },
+    {
+      "$id": "42",
+      "sourceActivityId": "267a9e63-5fc6-46b1-ad43-ba05b6a63c4f",
+      "targetActivityId": "a63f908f-ea65-442a-ad4f-70bb630c4c4e",
+      "outcome": "Done"
+    }
+  ],
+  "id": "5d05f8802ef94a51b2753caa2879a63b"
+}

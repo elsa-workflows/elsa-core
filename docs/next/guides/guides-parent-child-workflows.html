@@ -1,0 +1,284 @@
+<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>Parent/Child Workflows · ELSA</title><meta name="viewport" content="width=device-width"/><meta name="generator" content="Docusaurus"/><meta name="description" content="In this guide, we will see how we can invoke other workflows from a parent workflow using the **RunWorkflow** activity."/><meta name="docsearch:version" content="next"/><meta name="docsearch:language" content="en"/><meta property="og:title" content="Parent/Child Workflows · ELSA"/><meta property="og:type" content="website"/><meta property="og:url" content="https://elsa-workflows.github.io//elsa-core/"/><meta property="og:description" content="In this guide, we will see how we can invoke other workflows from a parent workflow using the **RunWorkflow** activity."/><meta property="og:image" content="https://elsa-workflows.github.io//elsa-core/img/undraw_online.svg"/><meta name="twitter:card" content="summary"/><meta name="twitter:image" content="https://elsa-workflows.github.io//elsa-core/img/undraw_tweetstorm.svg"/><link rel="shortcut icon" href="/elsa-core/img/favicon.ico"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script type="text/javascript" src="https://buttons.github.io/buttons.js"></script><script src="/elsa-core/js/scrollSpy.js"></script><link rel="stylesheet" href="/elsa-core/css/main.css"/><script src="/elsa-core/js/codetabs.js"></script></head><body class="sideNavVisible separateOnPageNav"><div class="fixedHeaderContainer"><div class="headerWrapper wrapper"><header><a href="/elsa-core/"><img class="logo" src="/elsa-core/img/android-icon-192x192.png" alt="ELSA"/><h2 class="headerTitleWithLogo">ELSA</h2></a><a href="/elsa-core/versions"><h3>next</h3></a><div class="navigationWrapper navigationSlider"><nav class="slidingNav"><ul class="nav-site nav-site-internal"><li class="siteNavGroupActive"><a href="/elsa-core/docs/next/installation/installing-elsa-core" target="_self">Documentation</a></li><li class=""><a href="/elsa-core/docs/next/features/features" target="_self">Features</a></li></ul></nav></div></header></div></div><div class="navPusher"><div class="docMainWrapper wrapper"><div class="docsNavContainer" id="docsNav"><nav class="toc"><div class="toggleNav"><section class="navWrapper wrapper"><div class="navBreadcrumb wrapper"><div class="navToggle" id="navToggler"><div class="hamburger-menu"><div class="line1"></div><div class="line2"></div><div class="line3"></div></div></div><h2><i>›</i><span>Guides</span></h2><div class="tocToggler" id="tocToggler"><i class="icon-toc"></i></div></div><div class="navGroups"><div class="navGroup"><h3 class="navGroupCategoryTitle">Quickstart</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/quickstarts/quickstarts-console-hello-world">Hello World Console</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/quickstarts/quickstarts-aspnetcore-hello-world">Hello World HTTP</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/quickstarts/quickstarts-aspnetcore-server-api-endpoints">Elsa Server</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/quickstarts/quickstarts-aspnetcore-server-dashboard">Elsa Dashboard</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/quickstarts/quickstarts-aspnetcore-server-dashboard-and-api-endpoints">Elsa Dashboard + Server</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/quickstarts/quickstarts-elsa-and-docker">Elsa + Docker</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Installation</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/installation/installing-feeds">Package Feeds</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/installation/installing-elsa-core">Core</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/installation/installing-server">Server</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/installation/installing-persistence">Persistence</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/installation/installing-elsa-dashboard">Dashboard</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/installation/installing-elsa-designer">Designer</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Upgrading</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/upgrading/upgrading-v1.x-to-v2.0">1.x to 2.0</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/upgrading/upgrading-v2.0-to-v2.1">2.0 to 2.1</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Concepts</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/concepts/concepts-workflows">Workflows</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/concepts/concepts-workflow-variables">Workflow Variables</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/concepts/concepts-workflow-context">Workflow Context</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/concepts/concepts-correlation">Correlation</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Guides</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/guides/guides-recurring-tasks">Recurring Tasks</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/guides/guides-document-approval">Document Approval</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/guides/guides-signaling-workflows">Signaling Workflows</a></li><li class="navListItem navListItemActive"><a class="navItem" href="/elsa-core/docs/next/guides/guides-parent-child-workflows">Parent/Child Workflows</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/guides/guides-composite-activities">Composite Activities</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/guides/guides-runtime-list-values">Runtime List Values</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/guides/guides-json-workflows">JSON Workflows</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/guides/guides-blocking-activities">Blocking Activities</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/guides/guides-workflow-contexts">Workflow Contexts</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Expressions</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/expressions/expressions-javascript">JavaScript</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/expressions/expressions-liquid">Liquid</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Designer</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/designer/designer-using-the-designer">Using the Designer</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Extensibility</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/extensibility/extensibility-custom-activities">Custom Activities</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/extensibility/extensibility-custom-activity-providers">Custom Activity Providers</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/extensibility/extensibility-customize-existing-activities">Customize Activities</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/extensibility/extensibility-persistence">Persistence</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/extensibility/extensibility-workflow-storage-providers">Workflow Storage Providers</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/extensibility/extensibility-javascript">JavaScript</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/extensibility/extensibility-liquid">Liquid</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/extensibility/extensibility-expression-handlers">Expression Handlers</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/extensibility/extensibility-property-editor-types">Property Editors</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Hosting</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/hosting/hosting-distributed-hosting">Distributed Hosting</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/next/hosting/hosting-workflow-recovery">Workflow Recovery</a></li></ul></div></div></section></div><script>
+            var coll = document.getElementsByClassName('collapsible');
+            var checkActiveCategory = true;
+            for (var i = 0; i < coll.length; i++) {
+              var links = coll[i].nextElementSibling.getElementsByTagName('*');
+              if (checkActiveCategory){
+                for (var j = 0; j < links.length; j++) {
+                  if (links[j].classList.contains('navListItemActive')){
+                    coll[i].nextElementSibling.classList.toggle('hide');
+                    coll[i].childNodes[1].classList.toggle('rotate');
+                    checkActiveCategory = false;
+                    break;
+                  }
+                }
+              }
+
+              coll[i].addEventListener('click', function() {
+                var arrow = this.childNodes[1];
+                arrow.classList.toggle('rotate');
+                var content = this.nextElementSibling;
+                content.classList.toggle('hide');
+              });
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+              createToggler('#navToggler', '#docsNav', 'docsSliderActive');
+              createToggler('#tocToggler', 'body', 'tocActive');
+
+              var headings = document.querySelector('.toc-headings');
+              headings && headings.addEventListener('click', function(event) {
+                var el = event.target;
+                while(el !== headings){
+                  if (el.tagName === 'A') {
+                    document.body.classList.remove('tocActive');
+                    break;
+                  } else{
+                    el = el.parentNode;
+                  }
+                }
+              }, false);
+
+              function createToggler(togglerSelector, targetSelector, className) {
+                var toggler = document.querySelector(togglerSelector);
+                var target = document.querySelector(targetSelector);
+
+                if (!toggler) {
+                  return;
+                }
+
+                toggler.onclick = function(event) {
+                  event.preventDefault();
+
+                  target.classList.toggle(className);
+                };
+              }
+            });
+        </script></nav></div><div class="container mainContainer docsContainer"><div class="wrapper"><div class="post"><header class="postHeader"><h1 id="__docusaurus" class="postHeaderTitle">Parent/Child Workflows</h1></header><article><div><span><p>In this guide, we will see how we can invoke other workflows from a parent workflow using the <strong>RunWorkflow</strong> activity.</p>
+<p>We will see how we can run child workflows in a <strong>fire and forget</strong> fashion as well as in a <strong>wait until completed</strong> fashion.
+We'll also see how we can provide input into the child workflows and allow the child workflows to provide output back to the parent workflow.</p>
+<p>You don't need to setup an Elsa project to follow this guide. All we need is a running <a href="https://elsa-workflows.github.io/elsa-core/docs/next/quickstarts/quickstarts-elsa-and-docker">Elsa Server + Dashboard Docker container</a> by running the following command:</p>
+<pre><code class="hljs css language-bash">docker run -t -i -e ELSA__SERVER__BASEURL=<span class="hljs-string">'http://localhost:13000'</span> -p 13000:80 elsaworkflows/elsa-dashboard-and-server:latest
+</code></pre>
+<p>Next, we'll go over the following scenarios:</p>
+<ol>
+<li>Parent Child: Fire and Forget</li>
+<li>Parent Child: Block until Complete.</li>
+<li>Parent Children: Run Many Children and Block until Complete.</li>
+</ol>
+<h2><a class="anchor" aria-hidden="true" id="scenario-1-parent-child-fire-and-forget"></a><a href="#scenario-1-parent-child-fire-and-forget" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Scenario 1: Parent Child: Fire and Forget</h2>
+<p>For this scenario, we will setup one parent workflow and a child workflow.</p>
+<p>The parent workflow:</p>
+<ul>
+<li>Listens for incoming HTTP requests</li>
+<li>Runs a the child workflow.</li>
+</ul>
+<h3><a class="anchor" aria-hidden="true" id="child-workflow"></a><a href="#child-workflow" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Child Workflow</h3>
+<p>Let's start with the child workflow first. With the Dashboard open, create a new Workflow Definition called &quot;Child&quot; and add the <strong>HTTP response</strong> activity with the following settings.</p>
+<h4><a class="anchor" aria-hidden="true" id="http-response"></a><a href="#http-response" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>HTTP Response</h4>
+<ul>
+<li>Content (Liquid): <code>Parent says: &quot;{{ Input.Message }}&quot;</code></li>
+</ul>
+<p>Make sure to <strong>publish</strong> your changes.</p>
+<h3><a class="anchor" aria-hidden="true" id="parent-workflow"></a><a href="#parent-workflow" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Parent Workflow</h3>
+<p>Next, create a new Workflow Definition called &quot;Parent&quot; and add the following activities:</p>
+<h4><a class="anchor" aria-hidden="true" id="http-endpoint"></a><a href="#http-endpoint" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>HTTP Endpoint</h4>
+<ul>
+<li>Path: <code>/parent</code></li>
+<li>Methods: <code>[GET]</code></li>
+</ul>
+<h4><a class="anchor" aria-hidden="true" id="run-workflow"></a><a href="#run-workflow" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Run Workflow</h4>
+<ul>
+<li>Workflow Definition (Liquid): <code>{{ &quot;Child&quot; | workflow_definition_id: &quot;name&quot; }}</code></li>
+<li>Input (JavaScript): <code>({ Message: 'Hello child!' })</code></li>
+<li>Mode: <code>FireAndForget</code></li>
+</ul>
+<blockquote>
+<p>The <code>workflow_definition_id</code> liquid filter resolves a workflow name into a workflow definition ID. This is convenient, because now you don't have to provide the actual workflow definition ID.
+The workflow definition ID changes everytime you export and then import a workflow definition.</p>
+</blockquote>
+<h3><a class="anchor" aria-hidden="true" id="try-it-out"></a><a href="#try-it-out" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Try it out</h3>
+<p>Run the workflow by making an HTTP GET request to <code>/workflows/parent</code>. The response should be:</p>
+<pre><code class="hljs css language-text">Parent says: "Hello child!"
+</code></pre>
+<p>The following JSON files are completed workflows that you can import.</p>
+<ul>
+<li><a href="/elsa-core/docs/assets/guides/guides-parent-child-workflows-scenario-1-parent.json">Scenario 1: Parent Workflow JSON</a></li>
+<li><a href="/elsa-core/docs/assets/guides/guides-parent-child-workflows-scenario-1-parent.json">Scenario 1: Child Workflow JSON</a></li>
+</ul>
+<h2><a class="anchor" aria-hidden="true" id="scenario-2-parent-child-block-until-complete"></a><a href="#scenario-2-parent-child-block-until-complete" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Scenario 2: Parent Child: Block until Complete</h2>
+<p>In this scenario, we will update the parent workflow from scenario 1 by adding an <strong>HTTP Response</strong> after the child workflow completes.
+We will also update the <strong>Run Workflow</strong> activity's mode from <code>FireAndForget</code> to <code>Blocking</code>.</p>
+<p>The child workflow will be updated and become a long-running workflow that will suspend execution while waiting for a signal to be received.
+When we send this signal (via HTTP), the child workflow completes and sets its output. The parent workflow will receive this output and display it in the web browser.</p>
+<blockquote>
+<p>I'm assuming a clean slate here, so either make sure to delete the existing workflows from Scenario 1, use new names, or simply update them as necessary.</p>
+</blockquote>
+<h3><a class="anchor" aria-hidden="true" id="parent-workflow-1"></a><a href="#parent-workflow-1" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Parent Workflow</h3>
+<p>Update the <strong>Run Workflow</strong> activity's <strong>Mode</strong> with the <code>Blocking</code> value.</p>
+<p>Next, connect a new <strong>HTTP Response</strong> activity to the <code>Done</code> outcome and configure it as follows:</p>
+<ul>
+<li>Content (Liquid): <code>Message received from child {{ Input.WorkflowInstanceId }}: {{ Input.WorkflowOutput.Message }}</code></li>
+</ul>
+<h3><a class="anchor" aria-hidden="true" id="child-workflow-1"></a><a href="#child-workflow-1" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Child Workflow</h3>
+<p>Open the Child workflow and open the existing <strong>HTTP Response</strong> activity editor. Change its settings as follows:</p>
+<h4><a class="anchor" aria-hidden="true" id="http-response-1"></a><a href="#http-response-1" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>HTTP Response</h4>
+<ul>
+<li><p>Content (Liquid):</p>
+<pre><code class="hljs css language-handlebars"><span class="xml"><span class="hljs-tag">&lt;<span class="hljs-name">pre</span>&gt;</span>
+Parent says: "</span><span class="hljs-template-variable">{{ Input.Message }}</span><span class="xml">"
+My workflow instance ID is: </span><span class="hljs-template-variable">{{ WorkflowInstanceId }}</span><span class="xml">
+<span class="hljs-tag">&lt;<span class="hljs-name">pre</span>&gt;</span>
+</span></code></pre></li>
+<li><p>Content Type: <code>text/html</code></p></li>
+</ul>
+<p>Notice that we're writing back the workflow instance ID of the executing Child workflow. It will become apparent why in a few moments.</p>
+<p>Next, connect a new  <strong>Signal Received</strong> activity to the <code>Done</code> outcome of the existing <strong>HTTP Response</strong> activity and provide the following settings:</p>
+<h4><a class="anchor" aria-hidden="true" id="signal-received"></a><a href="#signal-received" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Signal Received</h4>
+<ul>
+<li>Signal: <code>Resume</code></li>
+</ul>
+<p>Connect another activity called <strong>Finish</strong>. This activity allows us to provide an outcome as well as an output value to the parent workflow.</p>
+<h4><a class="anchor" aria-hidden="true" id="finish"></a><a href="#finish" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Finish</h4>
+<ul>
+<li>Output Value (JavaScript): <code>({ Message: 'Hello parent!' })</code></li>
+<li>Outcome Names: (leave empty)</li>
+</ul>
+<h3><a class="anchor" aria-hidden="true" id="try-it-out-1"></a><a href="#try-it-out-1" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Try it out</h3>
+<p>When you now trigger the parent workflow (<code>GET /workflows/parent</code>), you will notice that two new workflow instances will have been created that are both in the <strong>Suspended</strong> state.</p>
+<ul>
+<li>The Parent is blocked on the Child workflow.</li>
+<li>The Child workflow is blocked on the Signal Received activity.</li>
+</ul>
+<p>Take a note of the Child workflow instance and execute the following HTTP request to send the <code>Resume</code> signal to it (I'm using <a href="https://www.postman.com/">Postman</a> to issue HTTP requests):</p>
+<p>When I ran the workflow, I received a workflow instance ID of <code>975ed020276e430f91c1338e92131402</code>. Yours will be different, so make sure to substitute the workflow instance ID parameter in the following request:</p>
+<pre><code class="hljs css language-bash">curl --location --request POST <span class="hljs-string">'https://localhost:11000/v1/signals/resume/execute'</span> \
+--header <span class="hljs-string">'Content-Type: application/json'</span> \
+--data-raw <span class="hljs-string">'{
+    "workflowInstanceId": "975ed020276e430f91c1338e92131402"
+}'</span>
+</code></pre>
+<p>The response should read:</p>
+<pre><code class="hljs css language-text">Message received from child 975ed020276e430f91c1338e92131402: Hello parent!
+</code></pre>
+<p>When you look at the workflow instances, you will see that both the Child as well as the Parent are now in the <code>Finished</code> state.</p>
+<p>The following JSON files are completed workflows that you can import.</p>
+<ul>
+<li><a href="/elsa-core/docs/assets/guides/guides-parent-child-workflows-scenario-1-parent.json">Scenario 2: Parent Workflow JSON</a></li>
+<li><a href="/elsa-core/docs/assets/guides/guides-parent-child-workflows-scenario-1-parent.json">Scenario 2: Child Workflow JSON</a></li>
+</ul>
+<h2><a class="anchor" aria-hidden="true" id="scenario-3-parent-children-run-many-children-and-block-until-complete"></a><a href="#scenario-3-parent-children-run-many-children-and-block-until-complete" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Scenario 3: Parent Children: Run Many Children and Block until Complete.</h2>
+<p>In this scenario, we will update the Parent workflow to launch 3 Child workflows from a <strong>Fork</strong> activity.
+Each branch will send a branch number, which is then used by the Child workflow to setup a signal dynamically.</p>
+<p>The Parent workflow will suspend execution until all Child workflows complete execution.</p>
+<h3><a class="anchor" aria-hidden="true" id="parent-workflow-2"></a><a href="#parent-workflow-2" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Parent Workflow</h3>
+<p>Update the Parent workflow by adding a new <strong>Fork</strong> activity between the <strong>HTTP Endpoint</strong> activity and the <strong>Run Workflow</strong> activity and specify the following settings:</p>
+<h4><a class="anchor" aria-hidden="true" id="fork"></a><a href="#fork" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Fork</h4>
+<ul>
+<li>Branches: <code>['Child 1', 'Child 2', 'Child 3']</code></li>
+</ul>
+<p>This will generate 3 branches.</p>
+<p>Now <a href="/elsa-core/docs/next/designer/designer-using-the-designer">reconnect</a> the existing <strong>Run Workflow</strong> to the <strong>Child 1</strong> outcome.</p>
+<h4><a class="anchor" aria-hidden="true" id="run-workflow-1"></a><a href="#run-workflow-1" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Run Workflow 1</h4>
+<p>Update the existing <strong>Run Workflow</strong> activity's <strong>Input</strong> setting with the following JavaScript expressions:</p>
+<pre><code class="hljs css language-javascript">({ <span class="hljs-attr">Message</span>: <span class="hljs-string">'Hello child 1!'</span>, <span class="hljs-attr">Label</span>: <span class="hljs-number">1</span> })
+</code></pre>
+<p>We will use the <code>Label</code> field in the Child workflow to construct the signal name to listen for. This is not required, but were doing it for demonstration purposes only.</p>
+<h4><a class="anchor" aria-hidden="true" id="run-workflow-2-and-3"></a><a href="#run-workflow-2-and-3" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Run Workflow (2 and 3)</h4>
+<p>Connect the <strong>Child 2</strong> and <strong>Child 3</strong> outcomes of the <strong>Fork</strong> activity to two new <strong>Run Workflow</strong> activities that have the same settings as the original one:</p>
+<p>Run Workflow 2:</p>
+<ul>
+<li>Workflow Definition (Liquid): <code>{{ &quot;Child&quot; | workflow_definition_id: &quot;name&quot; }}</code></li>
+<li>Input (JavaScript): <code>({ Message: 'Hello child 2!', Label: 2 })</code></li>
+<li>Mode: <code>Blocking</code></li>
+</ul>
+<p>Run Workflow 3</p>
+<ul>
+<li>Workflow Definition (Liquid): <code>{{ &quot;Child&quot; | workflow_definition_id: &quot;name&quot; }}</code></li>
+<li>Input (JavaScript): <code>({ Message: 'Hello child 3!', Label: 3 })</code></li>
+<li>Mode: <code>Blocking</code></li>
+</ul>
+<h4><a class="anchor" aria-hidden="true" id="join"></a><a href="#join" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Join</h4>
+<p>Connect all three <strong>Run Workflow</strong> activities to a new <strong>Join</strong> activity with the following settings:</p>
+<ul>
+<li>Mode: <code>WaitAll</code></li>
+</ul>
+<p>This ensures that the parent workflow continues only after all three child workflows are finished.</p>
+<h4><a class="anchor" aria-hidden="true" id="http-response-2"></a><a href="#http-response-2" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>HTTP Response</h4>
+<p>Finally, make sure that the <strong>HTTP Response</strong> activity is connected to the <strong>Join</strong> activity. This activity will execute once all child workflows complete.</p>
+<p>Configure it as follows:</p>
+<ul>
+<li>Content: <code>All set!</code></li>
+<li>Content Type: <code>text/plain</code></li>
+</ul>
+<p>The final result should look like this:</p>
+<p><img src="/elsa-core/docs/assets/guides/guides-parent-child-workflows-1.png" alt=""></p>
+<h3><a class="anchor" aria-hidden="true" id="child-workflow-2"></a><a href="#child-workflow-2" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Child Workflow</h3>
+<p>Now let's update the Child workflow. Because the parent workflow will be executing this child workflow multiple times within the same burst of execution, we can't use the <strong>HTTP Response</strong> activity here, because we can write HTTP response headers to the HTTP response only once.
+What we will do instead is write some text to Console Out for debugging (and entertainment purposes).</p>
+<p>Furthermore, we want to be able to trigger child workflow instances individually. Although we could simply stick with the <code>&quot;Resume&quot;</code> signal name, we can make the exercise a little bit more interesting by dynamically setting the signal name. We will use the input from the parent workflow to do so.
+Finally, we will add a <strong>Finish</strong> activity to send output back to the parent workflow.</p>
+<p>Let's go over this step-by-step.</p>
+<h4><a class="anchor" aria-hidden="true" id="set-variable"></a><a href="#set-variable" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Set Variable</h4>
+<p>In Scenario 2 we added the <strong>HTTP Response</strong> activity to the Child workflow. Let's remove this activity now and instead start the workflow with a new <strong>Set Variable</strong> activity:</p>
+<ul>
+<li>Variable Name: <code>ParentInput</code></li>
+<li>Value (JavaScript): <code>input</code></li>
+</ul>
+<p>We are storing the input from the parent workflow in a variable so that we can use it from multiple other activities.</p>
+<h4><a class="anchor" aria-hidden="true" id="write-line"></a><a href="#write-line" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Write Line</h4>
+<p>Connect a new <strong>Write Line</strong> activity with the following settings:</p>
+<ul>
+<li>Text (Liquid):</li>
+</ul>
+<pre><code class="hljs css language-liquid">Parent says: <span class="hljs-string">"{{ Variables.ParentInput.Message }}"</span>.
+My workflow<span class="hljs-built_in"> instance </span>ID is: {{ WorkflowInstanceId }}
+</code></pre>
+<h4><a class="anchor" aria-hidden="true" id="signal-received-1"></a><a href="#signal-received-1" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Signal Received</h4>
+<p>Ensure that the <strong>Write Line</strong> activity is connected to the <strong>Signal Received</strong> activity already on the workflow from Scenario 2, and update its <strong>Signal</strong> setting to the following Liquid expression:</p>
+<pre><code class="hljs css language-liquid">Resume-{{ Variables.ParentInput.<span class="hljs-keyword">Label</span><span class="bash"> }}</span>
+</code></pre>
+<p>Although this is not necessary, it demonstrates that you can use dynamic signal names if you wanted to.</p>
+<h4><a class="anchor" aria-hidden="true" id="finish-1"></a><a href="#finish-1" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Finish</h4>
+<p>Finally, ensure that the <strong>Finish</strong> activity is connected to the <strong>Signal Received</strong> activity. No other changes are necessary.</p>
+<p>Make sure to <strong>publish</strong> your changes and let's try out the updated workflows.</p>
+<h3><a class="anchor" aria-hidden="true" id="try-it-out-2"></a><a href="#try-it-out-2" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Try it out</h3>
+<p>Trigger the parent workflow by executing the following request:</p>
+<pre><code class="hljs css language-bash">curl --location --request GET <span class="hljs-string">'https://localhost:11000/workflows/parent'</span>
+</code></pre>
+<p>When you do, you should see something like the following output in the console window:</p>
+<pre><code class="hljs css language-text">Parent says: "Hello Child 3!".
+My workflow instance ID is: f26d9bcefee84b7cb4c625831e648f5a
+Parent says: "Hello Child 2!".
+My workflow instance ID is: 5706b5bdcaca43a2940d4ad70b05361f
+Parent says: "Hello Child 1!".
+My workflow instance ID is: bd345ece3aba48a69383a471185a16fd
+</code></pre>
+<p>Notice also that there are now 4 workflow instances in the <strong>Suspended</strong> state: one Parent workflow and three Child workflows:</p>
+<p><img src="/elsa-core/docs/assets/guides/guides-parent-child-workflows-2.png" alt=""></p>
+<p>Execute the following HTTP requests one-by-one (the order in which does not matter) and notice that the Parent workflow will finish only after the last Child workflow completes:</p>
+<pre><code class="hljs css language-bash">curl --location --request POST <span class="hljs-string">'https://localhost:11000/v1/signals/resume-3/execute'</span> \
+--header <span class="hljs-string">'Content-Type: application/json'</span> \
+--data-raw <span class="hljs-string">'{
+    "workflowInstanceId": "f26d9bcefee84b7cb4c625831e648f5a"
+}'</span>
+
+curl --location --request POST <span class="hljs-string">'https://localhost:11000/v1/signals/resume-2/execute'</span> \
+--header <span class="hljs-string">'Content-Type: application/json'</span> \
+--data-raw <span class="hljs-string">'{
+    "workflowInstanceId": "5706b5bdcaca43a2940d4ad70b05361f"
+}'</span>
+
+curl --location --request POST <span class="hljs-string">'https://localhost:11000/v1/signals/resume-1/execute'</span> \
+--header <span class="hljs-string">'Content-Type: application/json'</span> \
+--data-raw <span class="hljs-string">'{
+    "workflowInstanceId": "bd345ece3aba48a69383a471185a16fd"
+}'</span>
+</code></pre>
+<p>After the last child executes, the HTTP response should read <code>All set!</code>, and all workflows should have completed.</p>
+<p>The following JSON files are completed workflows that you can import.</p>
+<ul>
+<li><a href="/elsa-core/docs/assets/guides/guides-parent-child-workflows-scenario-3-parent.json">Scenario 2: Parent Workflow JSON</a></li>
+<li><a href="/elsa-core/docs/assets/guides/guides-parent-child-workflows-scenario-3-parent.json">Scenario 2: Child Workflow JSON</a></li>
+</ul>
+</span></div></article></div><div class="docs-prevnext"><a class="docs-prev button" href="/elsa-core/docs/next/guides/guides-signaling-workflows"><span class="arrow-prev">← </span><span>Signaling Workflows</span></a><a class="docs-next button" href="/elsa-core/docs/next/guides/guides-composite-activities"><span>Composite Activities</span><span class="arrow-next"> →</span></a></div></div></div><nav class="onPageNav"><ul class="toc-headings"><li><a href="#scenario-1-parent-child-fire-and-forget">Scenario 1: Parent Child: Fire and Forget</a><ul class="toc-headings"><li><a href="#child-workflow">Child Workflow</a></li><li><a href="#parent-workflow">Parent Workflow</a></li><li><a href="#try-it-out">Try it out</a></li></ul></li><li><a href="#scenario-2-parent-child-block-until-complete">Scenario 2: Parent Child: Block until Complete</a><ul class="toc-headings"><li><a href="#parent-workflow-1">Parent Workflow</a></li><li><a href="#child-workflow-1">Child Workflow</a></li><li><a href="#try-it-out-1">Try it out</a></li></ul></li><li><a href="#scenario-3-parent-children-run-many-children-and-block-until-complete">Scenario 3: Parent Children: Run Many Children and Block until Complete.</a><ul class="toc-headings"><li><a href="#parent-workflow-2">Parent Workflow</a></li><li><a href="#child-workflow-2">Child Workflow</a></li><li><a href="#try-it-out-2">Try it out</a></li></ul></li></ul></nav></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="/elsa-core/" class="nav-home"><img src="/elsa-core/img/android-icon-192x192.png" alt="ELSA" width="50" height="50"/></a><div><h5>Docs</h5><a href="/elsa-core/docs/next/installation/installing-elsa-core">Getting Started</a><a href="/elsa-core/docs/next/concepts/concepts-workflows">Concepts</a><a href="/elsa-core/docs/next/quickstarts/quickstarts-console-hello-world">Quickstarts</a><a href="/elsa-core/docs/next/guides/guides-recurring-tasks">Guides</a></div><div><h5>Community</h5><a href="https://stackoverflow.com/questions/tagged/elsa-workflows" target="_blank" rel="noreferrer noopener">Stack Overflow</a><a href="https://discord.gg/hhChk5H472" target="_blank" rel="noreferrer noopener">Discord</a></div><div><h5>More</h5><a href="https://github.com/elsa-workflows/elsa-core">GitHub</a><a class="github-button" href="https://github.com/elsa-workflows/elsa-core" data-icon="octicon-star" data-count-href="/facebook/docusaurus/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star this project on GitHub">Star</a></div></section><a href="https://dotnetfoundation.org" target="_blank" rel="noreferrer noopener" class="dotnetfoundation" title="Supported by the .NET Foundation"><img src="/elsa-core/img/dotnetfoundation.png" alt="Supported by the .NET Foundation" width="100" height="100"/></a><section class="copyright">Copyright © 2021 .NET Foundation</section></footer></div></body></html>
