@@ -18,6 +18,7 @@ import {UserTaskPlugin} from "../plugins/user-task-plugin";
 import {StatePlugin} from "../plugins/state-plugin";
 import {SendHttpRequestPlugin} from "../plugins/send-http-request-plugin";
 import {WebhookPlugin} from "../plugins/webhook-plugin";
+import {RunWorkflowPlugin} from "../plugins/run-workflow-plugin";
 
 export class PluginManager {
 
@@ -39,6 +40,7 @@ export class PluginManager {
       new SignalReceivedPlugin(),
       new SendSignalPlugin(),
       new WriteLinePlugin(),
+      new RunWorkflowPlugin(),
       new StatePlugin(),
       new RunJavascriptPlugin(),
       new UserTaskPlugin(),
