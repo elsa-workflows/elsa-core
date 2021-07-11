@@ -117,7 +117,8 @@ namespace Elsa
                 }
                 else
                 {
-                    featureModel.Items.Add(itemKey, featureItem.Value);
+                    // Escape additional double quotes from the environment/docker overriden value
+                    featureModel.Items.Add(itemKey, featureItem.Value.EscapeDoubleQuote());
                 }
             }
         }

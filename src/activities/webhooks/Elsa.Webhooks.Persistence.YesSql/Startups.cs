@@ -50,8 +50,8 @@ namespace Elsa.Webhooks.Persistence.YesSql
         {
             var services = elsa.Services;
             var section = configuration.GetSection($"Elsa:Features:Webhooks");
-            var connectionStringName = section.GetValue<string>("ConnectionStringIdentifier");
-            var connectionString = section.GetValue<string>("ConnectionString");
+            var connectionStringName = section.GetValue<string>("ConnectionStringIdentifier").EscapeDoubleQuote();
+            var connectionString = section.GetValue<string>("ConnectionString").EscapeDoubleQuote();
 
             if (string.IsNullOrWhiteSpace(connectionString))
             {

@@ -15,8 +15,8 @@ namespace Elsa.Webhooks.Persistence.MongoDb
         {
             var services = elsa.Services;
             var section = configuration.GetSection($"Elsa:Features:Webhooks");
-            var connectionStringName = section.GetValue<string>("ConnectionStringIdentifier");
-            var connectionString = section.GetValue<string>("ConnectionString");
+            var connectionStringName = section.GetValue<string>("ConnectionStringIdentifier").EscapeDoubleQuote();
+            var connectionString = section.GetValue<string>("ConnectionString").EscapeDoubleQuote();
 
             if (string.IsNullOrWhiteSpace(connectionString))
             {
@@ -30,7 +30,7 @@ namespace Elsa.Webhooks.Persistence.MongoDb
                 connectionString = "mongodb://localhost:27017/Elsa";
 
             var webhookOptionsBuilder = new WebhookOptionsBuilder(services);
-              webhookOptionsBuilder.UseWebhookMongoDbPersistence(options => options.ConnectionString = connectionString);
+            webhookOptionsBuilder.UseWebhookMongoDbPersistence(options => options.ConnectionString = connectionString);
 
             services.AddScoped(sp => webhookOptionsBuilder.WebhookOptions.WebhookDefinitionStoreFactory(sp));
             services.Decorate<IWebhookDefinitionStore, InitializingWebhookDefinitionStore>();

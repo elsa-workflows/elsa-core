@@ -19,7 +19,7 @@ namespace Elsa.Activities.AzureServiceBus
                 if (!string.IsNullOrWhiteSpace(options.ConnectionString)) 
                     return;
                 
-                var connectionStringName = section.GetValue<string>("ConnectionStringName");
+                var connectionStringName = section.GetValue<string>("ConnectionStringName").EscapeDoubleQuote();
                 options.ConnectionString = configuration.GetConnectionString(connectionStringName);
             });
         }

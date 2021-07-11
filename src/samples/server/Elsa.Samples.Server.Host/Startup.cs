@@ -69,10 +69,10 @@ namespace Elsa.Samples.Server.Host
                     .AddFeatures(startups, Configuration)
                     .ConfigureWorkflowChannels(options => elsaSection.GetSection("WorkflowChannels").Bind(options))
                 );
-            
+
             // Hangfire.
             services.AddHangfire(configuration => configuration.UseSqlServerStorage(Configuration.GetConnectionString("SqlServer")));
-            services.AddHangfireServer((sp, options)=> options.ConfigureForElsaDispatchers(sp));
+            services.AddHangfireServer((sp, options) => options.ConfigureForElsaDispatchers(sp));
 
             // Elsa API endpoints.
             services

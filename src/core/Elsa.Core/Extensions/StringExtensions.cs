@@ -23,5 +23,12 @@ namespace Elsa
             var converter = TypeDescriptor.GetConverter(targetType);
             return converter.CanConvertFrom(typeof(string)) ? converter.ConvertFrom(value) : default;
         }
+
+        public static string? EscapeDoubleQuote(this string value)
+        {
+            return value != null
+                ? value.Replace("\"", "")
+                : null;
+        }
     }
 }
