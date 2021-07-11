@@ -2,5 +2,5 @@
 
 namespace Elsa.Models
 {
-    public record FinishOutput(object? Output, IEnumerable<string> Outcomes);
+    public record FinishOutput(object? Output, ICollection<string> Outcomes);
 }

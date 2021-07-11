@@ -31,7 +31,7 @@ namespace Elsa.Activities.ControlFlow
             DefaultValue = new[] { Elsa.OutcomeNames.Done },
             DefaultSyntax = SyntaxNames.Json,
             SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
-        public IEnumerable<string> OutcomeNames { get; set; } = new[] { Elsa.OutcomeNames.Done };
+        public ICollection<string> OutcomeNames { get; set; } = new[] { Elsa.OutcomeNames.Done };
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
