@@ -12,7 +12,6 @@ namespace Elsa.Server.Hangfire.Jobs
         public async Task ExecuteAsync(TriggerWorkflowsRequest request, CancellationToken cancellationToken = default) => await _workflowLaunchpad.CollectAndExecuteWorkflowsAsync(new CollectWorkflowsContext(
                 request.ActivityType,
                 request.Bookmark,
-                request.Trigger,
                 request.CorrelationId,
                 request.WorkflowInstanceId,
                 request.ContextId,

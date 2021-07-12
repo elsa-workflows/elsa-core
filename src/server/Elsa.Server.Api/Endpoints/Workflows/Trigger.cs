@@ -38,7 +38,7 @@ namespace Elsa.Server.Api.Endpoints.Workflows
         public async Task<IActionResult> Handle(TriggerWorkflowsRequestModel request, CancellationToken cancellationToken = default)
         {
             var tenantId = await _tenantAccessor.GetTenantIdAsync(cancellationToken);
-            var context = new CollectWorkflowsContext(request.ActivityType, request.Bookmark, request.Trigger, request.CorrelationId, request.WorkflowInstanceId, request.ContextId, tenantId);
+            var context = new CollectWorkflowsContext(request.ActivityType, request.Bookmark, request.CorrelationId, request.WorkflowInstanceId, request.ContextId, tenantId);
             ICollection<TriggeredWorkflowModel> triggeredWorkflows;
 
             if (request.Dispatch)

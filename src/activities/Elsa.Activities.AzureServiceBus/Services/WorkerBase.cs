@@ -72,8 +72,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             };
 
             var bookmark = CreateBookmark(message);
-            var trigger = CreateTrigger(message);
-            var launchContext = new CollectWorkflowsContext(ActivityType, bookmark, trigger, correlationId);
+            var launchContext = new CollectWorkflowsContext(ActivityType, bookmark, correlationId);
             
             await _workflowLaunchpad.UseServiceAsync(service => service.CollectAndDispatchWorkflowsAsync(launchContext, model, cancellationToken));
         }

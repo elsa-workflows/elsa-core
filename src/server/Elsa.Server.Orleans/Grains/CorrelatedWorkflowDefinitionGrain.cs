@@ -16,7 +16,6 @@ namespace Elsa.Server.Orleans.Grains
         public async Task ExecutedCorrelatedWorkflowAsync(TriggerWorkflowsRequest request, CancellationToken cancellationToken = default) => await _workflowLaunchpad.CollectAndExecuteWorkflowsAsync(new CollectWorkflowsContext(
                 request.ActivityType,
                 request.Bookmark,
-                request.Trigger,
                 request.CorrelationId,
                 request.WorkflowInstanceId,
                 request.ContextId,

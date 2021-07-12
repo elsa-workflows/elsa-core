@@ -16,8 +16,7 @@ namespace Elsa.Services.Dispatch.Consumers
         {
             var pendingWorkflows = await _workflowLaunchpad.CollectWorkflowsAsync(new CollectWorkflowsContext(
                 message.ActivityType, 
-                message.Bookmark, 
-                message.Trigger,
+                message.Bookmark,
                 message.CorrelationId, 
                 message.WorkflowInstanceId, 
                 message.ContextId, 

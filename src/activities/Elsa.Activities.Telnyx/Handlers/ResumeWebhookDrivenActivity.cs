@@ -39,9 +39,8 @@ namespace Elsa.Activities.Telnyx.Handlers
                 return;
 
             var correlationId = GetCorrelationId(receivedPayload);
-            var trigger = CreateBookmark();
             var bookmark = CreateBookmark();
-            var context = new CollectWorkflowsContext(ActivityTypeName, bookmark, trigger, correlationId);
+            var context = new CollectWorkflowsContext(ActivityTypeName, bookmark, correlationId);
             await _workflowLaunchpad.CollectAndDispatchWorkflowsAsync(context, receivedPayload, cancellationToken);
         }
 

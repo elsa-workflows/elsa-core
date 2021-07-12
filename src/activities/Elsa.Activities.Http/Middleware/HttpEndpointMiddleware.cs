@@ -41,9 +41,8 @@ namespace Elsa.Activities.Http.Middleware
             request.TryGetCorrelationId(out var correlationId);
 
             const string activityType = nameof(HttpEndpoint);
-            var trigger = new HttpEndpointBookmark(path, method);
             var bookmark = new HttpEndpointBookmark(path, method);
-            var collectWorkflowsContext = new CollectWorkflowsContext(activityType, bookmark, trigger, correlationId, default, default, TenantId);
+            var collectWorkflowsContext = new CollectWorkflowsContext(activityType, bookmark, correlationId, default, default, TenantId);
             var pendingWorkflows = await workflowLaunchpad.CollectWorkflowsAsync(collectWorkflowsContext, cancellationToken).ToList();
 
             if (!pendingWorkflows.Any())

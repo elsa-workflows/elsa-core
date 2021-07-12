@@ -95,7 +95,7 @@ namespace Elsa.Services
         Task<IEnumerable<CollectedWorkflow>> CollectAndDispatchWorkflowsAsync(CollectWorkflowsContext context, object? input = default, CancellationToken cancellationToken = default);
     }
 
-    public record CollectWorkflowsContext(string ActivityType, IBookmark? Bookmark, IBookmark? Trigger = default, string? CorrelationId = default, string? WorkflowInstanceId = default, string? ContextId = default, string? TenantId = default);
+    public record CollectWorkflowsContext(string ActivityType, IBookmark? Bookmark, string? CorrelationId = default, string? WorkflowInstanceId = default, string? ContextId = default, string? TenantId = default);
 
     public record CollectStartableWorkflowsContext(string WorkflowDefinitionId, string? ActivityId = default, string? CorrelationId = default, string? ContextId = default, string? TenantId = default);
 }
