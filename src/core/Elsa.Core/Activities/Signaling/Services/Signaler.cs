@@ -36,7 +36,7 @@ namespace Elsa.Activities.Signaling.Services
 
             return await _workflowLaunchpad.CollectAndExecuteWorkflowsAsync(new CollectWorkflowsContext(
                 nameof(SignalReceived),
-                new SignalReceivedBookmark { Signal = normalizedSignal, WorkflowInstanceId = workflowInstanceId },
+                new SignalReceivedBookmark { Signal = normalizedSignal },
                 new SignalReceivedBookmark { Signal = normalizedSignal },
                 correlationId,
                 workflowInstanceId,
@@ -56,7 +56,7 @@ namespace Elsa.Activities.Signaling.Services
         public async Task<IEnumerable<CollectedWorkflow>> DispatchSignalAsync(string signal, object? input = default, string? workflowInstanceId = default, string? correlationId = default, CancellationToken cancellationToken = default) =>
              await _workflowLaunchpad.CollectAndDispatchWorkflowsAsync(new CollectWorkflowsContext(
                      nameof(SignalReceived),
-                     new SignalReceivedBookmark { Signal = signal, WorkflowInstanceId = workflowInstanceId },
+                     new SignalReceivedBookmark { Signal = signal },
                      new SignalReceivedBookmark { Signal = signal },
                      correlationId,
                      workflowInstanceId,

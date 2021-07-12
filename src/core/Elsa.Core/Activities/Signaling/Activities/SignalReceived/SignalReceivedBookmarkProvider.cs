@@ -11,7 +11,6 @@ namespace Elsa.Activities.Signaling
     public class SignalReceivedBookmark : IBookmark
     {
         public string Signal { get; set; } = default!;
-        public string? WorkflowInstanceId { get; set; }
     }
 
     public class SignalReceivedBookmarkProvider : BookmarkProvider<SignalReceivedBookmark, SignalReceived>
@@ -21,25 +20,11 @@ namespace Elsa.Activities.Signaling
         private async IAsyncEnumerable<BookmarkResult> GetBookmarksInternalAsync(BookmarkProviderContext<SignalReceived> context, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             var signalName = (await context.ReadActivityPropertyAsync(x => x.Signal, cancellationToken))!.ToLowerInvariant();
-            var signalScope = (await context.ReadActivityPropertyAsync(x => x.Scope, cancellationToken))!;
-
-            if (context.Mode == BookmarkIndexingMode.WorkflowBlueprint || signalScope == SignalScope.Global)
+            
+            yield return Result(new SignalReceivedBookmark
             {
-                yield return Result(new SignalReceivedBookmark
-                {
-                    Signal = signalName
-                });
-                yield break;
-            }
-
-            if (signalScope == SignalScope.Instance)
-            {
-                yield return Result(new SignalReceivedBookmark
-                {
-                    Signal = signalName,
-                    WorkflowInstanceId = context.ActivityExecutionContext.WorkflowInstance.Id
-                });
-            }
+                Signal = signalName
+            });
         }
     }
 }
