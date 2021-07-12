@@ -35,6 +35,7 @@ using Elsa.Services.Workflows;
 using Elsa.Services.WorkflowStorage;
 using Elsa.StartupTasks;
 using MediatR;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Newtonsoft.Json;
 using NodaTime;
@@ -80,6 +81,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
             optionsBuilder
                 .AddWorkflowsCore()
+                .AddConfiguration()
                 .AddCoreActivities();
 
             services.Decorate<IWorkflowDefinitionStore, InitializingWorkflowDefinitionStore>();
@@ -276,12 +278,20 @@ namespace Microsoft.Extensions.DependencyInjection
             return options;
         }
 
-        private static ElsaOptionsBuilder AddCoreActivities(this ElsaOptionsBuilder services)
+        private static ElsaOptionsBuilder AddConfiguration(this ElsaOptionsBuilder options)
         {
-            if (!services.WithCoreActivities)
-                return services;
+            // When using Elsa in console apps, no configuration will be registered by default, but some Elsa services depend on this service (even when there is nothing configured).
+            options.Services.TryAdd(new ServiceDescriptor(typeof(IConfiguration), _ => new ConfigurationBuilder().AddInMemoryCollection().Build(), ServiceLifetime.Singleton));
 
-            return services
+            return options;
+        }
+
+        private static ElsaOptionsBuilder AddCoreActivities(this ElsaOptionsBuilder options)
+        {
+            if (!options.WithCoreActivities)
+                return options;
+
+            return options
                 .AddActivitiesFrom<ElsaOptions>()
                 .AddActivitiesFrom<CompositeActivity>();
         }
