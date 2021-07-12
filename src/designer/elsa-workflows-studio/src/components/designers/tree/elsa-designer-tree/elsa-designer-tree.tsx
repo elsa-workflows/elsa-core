@@ -130,6 +130,7 @@ export class ElsaWorkflowDesigner {
 
       const displayContext: ActivityDesignDisplayContext = {
         activityModel: model,
+        activityDescriptor: descriptor,
         activityIcon: <ActivityIcon color={color}/>,
         bodyDisplay: bodyDisplay,
         displayName: displayName,
