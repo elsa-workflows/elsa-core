@@ -576,7 +576,7 @@ export class ElsaWorkflowDesigner {
           <div class="elsa-flex-shrink-0">
           ${displayContext?.activityIcon || ''}
           </div>
-          <div class="elsa-flex-1 elsa-font-medium elsa-leading-8">
+          <div class="elsa-flex-1 elsa-font-medium elsa-leading-8 elsa-overflow-hidden">
             <p class="elsa-overflow-ellipsis">${displayName}</p>
           </div>
           <div class="context-menu-button-container">
