@@ -51,6 +51,8 @@
     "dagre-d3": "^0.6.4",
     "el-transition": "^0.0.7",
     "eslint": "7.29.0",
+    "i18next": "^20.3.3",
+    "i18next-wc": "^1.1.0",
     "js-event-bus": "^1.1.0",
     "lodash": "^4.17.21",
     "moment": "^2.29.1",

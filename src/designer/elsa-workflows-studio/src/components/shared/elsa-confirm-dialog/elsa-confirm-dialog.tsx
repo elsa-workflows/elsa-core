@@ -1,4 +1,7 @@
-import {Component, h, Host, Method, State} from '@stencil/core';
+import {Component, h, Host, Method, Prop, State} from '@stencil/core';
+import {i18n} from "i18next";
+import {loadTranslations} from "../../i18n/i18n-loader";
+import {resources} from "./localizations";
 
 @Component({
   tag: 'elsa-confirm-dialog',
@@ -8,6 +11,8 @@ export class ElsaConfirmDialog {
 
   @State() caption: string;
   @State() message: string;
+  @Prop() culture: string;
+  private i18next: i18n;
 
   dialog: HTMLElsaModalDialogElement;
   fulFill: (value: (PromiseLike<boolean> | boolean)) => void;
@@ -31,6 +36,10 @@ export class ElsaConfirmDialog {
     await this.dialog.hide(true);
   }
 
+  async componentWillLoad() {
+    this.i18next = await loadTranslations(this.culture, resources);
+  }
+
   async onDismissClick() {
     this.fulFill(false);
     await this.hide();
@@ -44,6 +53,8 @@ export class ElsaConfirmDialog {
   }
 
   render() {
+    const t = x => this.i18next.t(x);
+    
     return (
       <Host>
         <elsa-modal-dialog ref={el => this.dialog = el}>
@@ -81,12 +92,12 @@ export class ElsaConfirmDialog {
               <button type="button"
                       onClick={() => this.onAcceptClick()}
                       class="elsa-w-full elsa-inline-flex elsa-justify-center elsa-rounded-md elsa-border elsa-border-transparent elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-bg-red-600 elsa-text-base elsa-font-medium elsa-text-white hover:elsa-bg-red-700 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-red-500 sm:elsa-ml-3 sm:elsa-w-auto sm:elsa-text-sm">
-                Yes
+                {t('Yes')}
               </button>
               <button type="button"
                       onClick={() => this.onDismissClick()}
                       class="elsa-mt-3 elsa-w-full elsa-inline-flex elsa-justify-center elsa-rounded-md elsa-border elsa-border-gray-300 elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-bg-white elsa-text-base elsa-font-medium elsa-text-gray-700 hover:elsa-text-gray-500 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:ring-indigo-500 sm:elsa-mt-0 sm:elsa-w-auto sm:elsa-text-sm">
-                No
+                {t('No')}
               </button>
             </div>
           </div>
