@@ -128,6 +128,7 @@ export namespace Components {
         "serverUrl": string;
     }
     interface ElsaPager {
+        "culture": string;
         "history"?: RouterHistory;
         "location": LocationSegments;
         "page": number;
@@ -195,6 +196,7 @@ export namespace Components {
         "serverUrl": string;
     }
     interface ElsaStudioWorkflowInstancesList {
+        "culture": string;
         "history": RouterHistory;
         "serverUrl": string;
     }
@@ -261,6 +263,7 @@ export namespace Components {
         "workflowModel": WorkflowModel;
     }
     interface ElsaWorkflowInstanceListScreen {
+        "culture": string;
         "history"?: RouterHistory;
         "orderBy"?: OrderBy;
         "serverUrl": string;
@@ -748,6 +751,7 @@ declare namespace LocalJSX {
         "serverUrl"?: string;
     }
     interface ElsaPager {
+        "culture"?: string;
         "history"?: RouterHistory;
         "location"?: LocationSegments;
         "onPaged"?: (event: CustomEvent<PagerData>) => void;
@@ -817,6 +821,7 @@ declare namespace LocalJSX {
         "serverUrl"?: string;
     }
     interface ElsaStudioWorkflowInstancesList {
+        "culture"?: string;
         "history"?: RouterHistory;
         "serverUrl"?: string;
     }
@@ -873,6 +878,7 @@ declare namespace LocalJSX {
         "workflowModel"?: WorkflowModel;
     }
     interface ElsaWorkflowInstanceListScreen {
+        "culture"?: string;
         "history"?: RouterHistory;
         "orderBy"?: OrderBy;
         "serverUrl"?: string;
