@@ -111,4 +111,5 @@ deploy:
       secure: WC5CCcM5ksWOJbv925FNjv91KsfqHfwEe0A61FMNB27IxvttwJsvBC9XYwK+wQnp
     skip_symbols: true
     on:
+      branch: master
       APPVEYOR_REPO_TAG: true
