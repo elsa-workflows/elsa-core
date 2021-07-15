@@ -3,7 +3,7 @@ import {LocationSegments, RouterHistory} from "@stencil/router";
 import * as collection from 'lodash/collection';
 import * as array from 'lodash/array';
 import {createElsaClient} from "../../../../services/elsa-client";
-import {OrderBy, PagedList, VersionOptions, WorkflowBlueprintSummary, WorkflowInstanceSummary, WorkflowStatus} from "../../../../models";
+import {EventTypes, OrderBy, PagedList, VersionOptions, WorkflowBlueprintSummary, WorkflowInstanceSummary, WorkflowStatus} from "../../../../models";
 import {DropdownButtonItem, DropdownButtonOrigin} from "../../../controls/elsa-dropdown-button/models";
 import {Map, parseQuery} from '../../../../utils/utils';
 import moment from "moment";
@@ -11,6 +11,7 @@ import {PagerData} from "../../../controls/elsa-pager/elsa-pager";
 import {i18n} from "i18next";
 import {resources} from "./localizations";
 import {loadTranslations} from "../../../i18n/i18n-loader";
+import {eventBus} from "../../../../services/event-bus";
 
 @Component({
   tag: 'elsa-workflow-instance-list-screen',
@@ -23,6 +24,7 @@ export class ElsaWorkflowInstanceListScreen {
   @Prop() workflowStatus?: WorkflowStatus;
   @Prop() orderBy?: OrderBy = OrderBy.Started;
   @Prop() culture: string;
+  @State() bulkActions: Array<DropdownButtonItem>;
   @State() workflowBlueprints: Array<WorkflowBlueprintSummary> = [];
   @State() workflowInstances: PagedList<WorkflowInstanceSummary> = {items: [], page: 1, pageSize: 50, totalCount: 0};
   @State() selectedWorkflowId?: string;
@@ -39,7 +41,7 @@ export class ElsaWorkflowInstanceListScreen {
 
   async componentWillLoad() {
     this.i18next = await loadTranslations(this.culture, resources);
-    
+
     if (!!this.history) {
       this.history.listen(e => this.routeChanged(e));
       this.applyQueryString(this.history.location.search);
@@ -47,6 +49,17 @@ export class ElsaWorkflowInstanceListScreen {
 
     await this.loadWorkflowBlueprints();
     await this.loadWorkflowInstances();
+
+    const t = this.t;
+
+    let bulkActions = [{
+      text: t('BulkActions.Actions.Delete'),
+      name: 'Delete',
+    }];
+
+    eventBus.emit(EventTypes.WorkflowInstanceBulkActionsLoading, this, {bulkActions});
+
+    this.bulkActions = bulkActions;
   }
 
   @Watch("workflowId")
@@ -209,6 +222,9 @@ export class ElsaWorkflowInstanceListScreen {
     switch (action.name) {
       case 'Delete':
         await this.onBulkDelete();
+        break;
+      default:
+        action.handler();
     }
   }
 
@@ -230,7 +246,7 @@ export class ElsaWorkflowInstanceListScreen {
   render() {
     const workflowInstances = this.workflowInstances.items;
     const workflowBlueprints = this.workflowBlueprints;
-    const t= this.t;
+    const t = this.t;
 
     const renderViewIcon = function () {
       return (
@@ -405,13 +421,9 @@ export class ElsaWorkflowInstanceListScreen {
     const bulkActionIcon = <svg class="elsa-mr-3 elsa-h-5 elsa-w-5 elsa-text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M13 10V3L4 14h7v7l9-11h-7z"/>
     </svg>;
-    
-    const t = this.t;
 
-    const actions: Array<DropdownButtonItem> = [{
-      text: t('BulkActions.Actions.Delete'),
-      name: 'Delete',
-    }];
+    const t = this.t;
+    const actions = this.bulkActions;
 
     return <elsa-dropdown-button text={t('BulkActions.Title')} items={actions} icon={bulkActionIcon} origin={DropdownButtonOrigin.TopLeft} onItemSelected={e => this.onBulkActionSelected(e)}/>
   }

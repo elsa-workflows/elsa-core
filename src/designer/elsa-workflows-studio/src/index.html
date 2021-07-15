@@ -23,26 +23,48 @@
 <!--<elsa-studio-root server-url="https://skynet-workflow.azurewebsites.net" monaco-lib-path="build/assets/js/monaco-editor/min"></elsa-studio-root>-->
 
 <script>
-    // const elsaStudioRoot = document.querySelector('elsa-studio-root');
-    // elsaStudioRoot.addEventListener('httpClientCreated', event => {
-    //
-    //     // Get access to the axios middleware service and register a sample middleware:
-    //     const {service} = event.detail;
-    //
-    //     // Register a sample middleware.
-    //     service.register({
-    //         onRequest(request) {
-    //             console.log('onRequest');
-    //             return request;
-    //         },
-    //
-    //         onResponse(response) {
-    //             console.log('onResponse');
-    //             return response;
-    //         }
-    //     });
-    //
-    // })
+    const elsaStudioRoot = document.querySelector('elsa-studio-root');
+
+    // Install custom plugins and icons:
+    elsaStudioRoot.addEventListener('initializing', event => {
+        const elsa = event.detail;
+        const activityIconProvider = elsa.activityIconProvider;
+        const eventBus = elsa.eventBus;
+
+        // Replace icon used for 'ReadLine' activity.
+        activityIconProvider.register('ReadLine', `<span class="elsa-rounded-lg elsa-inline-flex elsa-p-3 elsa-bg-green-50 elsa-text-green-700 elsa-ring-4 elsa-ring-white">
+      <svg class="elsa-h-6 elsa-w-6" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path stroke="none" d="M0 0h24v24H0z"/>
+        <path d="M4 12v-3a3 3 0 0 1 3 -3h13m-3 -3l3 3l-3 3"/>
+        <path d="M20 12v3a3 3 0 0 1 -3 3h-13m3 3l-3-3l3-3"/>
+        <path d="M11 11l1 -1v4"/>
+      </svg>
+    </span>`);
+        
+        eventBus.on('workflow-instance-bulk-actions-loading', e => {
+            e.bulkActions.push({ name: 'Reset', text: 'Reset', handler: () => alert(1) });
+        })
+    });
+
+    // Intercept outgoing requests and their responses:
+    elsaStudioRoot.addEventListener('httpClientCreated', event => {
+
+        // Get access to the axios middleware service and register a sample middleware:
+        const {service} = event.detail;
+
+        // Register a sample middleware.
+        service.register({
+            onRequest(request) {
+                console.log('onRequest');
+                return request;
+            },
+
+            onResponse(response) {
+                console.log('onResponse');
+                return response;
+            }
+        });
+    })
 </script>
 
 </body>

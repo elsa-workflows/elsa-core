@@ -12,6 +12,8 @@ import { ActivityContextMenuState, LayoutDirection, WorkflowDesignerMode } from 
 import { DropdownButtonItem, DropdownButtonOrigin } from "./components/controls/elsa-dropdown-button/models";
 import { AxiosInstance, AxiosRequestConfig } from "axios";
 import { Service } from "axios-middleware";
+import { PluginManager } from "./services/plugin-manager";
+import { ActivityIconProvider } from "./services/activity-icon-provider";
 import { MonacoValueChangedArgs } from "./components/controls/elsa-monaco/elsa-monaco";
 import { Map } from "./utils/utils";
 import { PagerData } from "./components/controls/elsa-pager/elsa-pager";
@@ -697,6 +699,7 @@ declare namespace LocalJSX {
     interface ElsaExternalEvents {
         "onHttpClientConfigCreated"?: (event: CustomEvent<AxiosRequestConfig>) => void;
         "onHttpClientCreated"?: (event: CustomEvent<{ service: Service, axiosInstance: AxiosInstance }>) => void;
+        "onInitializing"?: (event: CustomEvent<{eventBus: any, pluginManager: PluginManager, activityIconProvider: ActivityIconProvider }>) => void;
     }
     interface ElsaInputTags {
         "fieldId"?: string;

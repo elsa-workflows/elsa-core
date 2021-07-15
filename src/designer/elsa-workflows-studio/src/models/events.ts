@@ -15,7 +15,8 @@ export const EventTypes = {
   WorkflowRetracted: 'workflow-retracted',
   WorkflowImported: 'workflow-imported',
   HttpClientConfigCreated: 'http-client-config-created',
-  HttpClientCreated: 'http-client-created'
+  HttpClientCreated: 'http-client-created',
+  WorkflowInstanceBulkActionsLoading: 'workflow-instance-bulk-actions-loading'
 };
 
 export interface AddActivityEventArgs {
