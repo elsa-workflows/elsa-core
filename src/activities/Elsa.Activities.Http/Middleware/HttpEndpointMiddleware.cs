@@ -40,19 +40,26 @@ namespace Elsa.Activities.Http.Middleware
             var basePath = options.Value.BasePath;
             var request = httpContext.Request;
 
+            string path;
+            
             // If a base path was configured, try to match against that first.
             if (basePath != null)
             {
                 // If no match, continue with the next middleware in the pipeline.
-                if (!request.Path.StartsWithSegments(basePath.Value))
+                if (!request.Path.StartsWithSegments(basePath.Value, out _, out var remainingPath))
                 {
                     await _next(httpContext);
                     return;
                 }
+
+                path = remainingPath.Value.ToLowerInvariant();
+            }
+            else
+            {
+                path = httpContext.Request.Path.Value.ToLowerInvariant();
             }
 
             var cancellationToken = CancellationToken.None; // Prevent half-way request abortion (which also happens when WriteHttpResponse writes to the response).
-            var path = httpContext.Request.Path.Value.ToLowerInvariant();
             var method = httpContext.Request.Method!.ToLowerInvariant();
 
             request.TryGetCorrelationId(out var correlationId);
