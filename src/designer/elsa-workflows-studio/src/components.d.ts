@@ -19,6 +19,7 @@ import { ToastNotificationOptions } from "./components/shared/elsa-toast-notific
 import { WebhookDefinition } from "./models/webhook";
 export namespace Components {
     interface ElsaActivityEditorModal {
+        "culture": string;
     }
     interface ElsaActivityPickerModal {
     }
@@ -32,6 +33,7 @@ export namespace Components {
         "propertyModel": ActivityDefinitionProperty;
     }
     interface ElsaConfirmDialog {
+        "culture": string;
         "hide": () => Promise<void>;
         "show": (caption: string, message: string) => Promise<boolean>;
     }
@@ -126,6 +128,7 @@ export namespace Components {
         "serverUrl": string;
     }
     interface ElsaPager {
+        "culture": string;
         "history"?: RouterHistory;
         "location": LocationSegments;
         "page": number;
@@ -160,8 +163,10 @@ export namespace Components {
         "propertyModel": ActivityDefinitionProperty;
     }
     interface ElsaStudioHome {
+        "culture": string;
     }
     interface ElsaStudioRoot {
+        "culture": string;
         "monacoLibPath": string;
         "serverUrl": string;
     }
@@ -171,6 +176,7 @@ export namespace Components {
         "serverUrl": string;
     }
     interface ElsaStudioWebhookDefinitionsList {
+        "culture": string;
         "history": RouterHistory;
         "serverUrl": string;
     }
@@ -179,15 +185,18 @@ export namespace Components {
         "serverUrl": string;
     }
     interface ElsaStudioWorkflowDefinitionsEdit {
+        "culture": string;
         "match": MatchResults;
         "monacoLibPath": string;
         "serverUrl": string;
     }
     interface ElsaStudioWorkflowDefinitionsList {
+        "culture": string;
         "history": RouterHistory;
         "serverUrl": string;
     }
     interface ElsaStudioWorkflowInstancesList {
+        "culture": string;
         "history": RouterHistory;
         "serverUrl": string;
     }
@@ -229,6 +238,7 @@ export namespace Components {
     interface ElsaWorkflowDefinitionEditorNotifications {
     }
     interface ElsaWorkflowDefinitionEditorScreen {
+        "culture": string;
         "exportWorkflow": () => Promise<void>;
         "getServerUrl": () => Promise<string>;
         "getWorkflowDefinitionId": () => Promise<string>;
@@ -238,6 +248,7 @@ export namespace Components {
         "workflowDefinitionId": string;
     }
     interface ElsaWorkflowDefinitionsListScreen {
+        "culture": string;
         "history"?: RouterHistory;
         "serverUrl": string;
     }
@@ -252,6 +263,7 @@ export namespace Components {
         "workflowModel": WorkflowModel;
     }
     interface ElsaWorkflowInstanceListScreen {
+        "culture": string;
         "history"?: RouterHistory;
         "orderBy"?: OrderBy;
         "serverUrl": string;
@@ -264,6 +276,7 @@ export namespace Components {
         "workflowInstanceId": string;
     }
     interface ElsaWorkflowPublishButton {
+        "culture": string;
         "publishing": boolean;
         "workflowDefinition": WorkflowDefinition;
     }
@@ -625,6 +638,7 @@ declare global {
 }
 declare namespace LocalJSX {
     interface ElsaActivityEditorModal {
+        "culture"?: string;
     }
     interface ElsaActivityPickerModal {
     }
@@ -638,6 +652,7 @@ declare namespace LocalJSX {
         "propertyModel"?: ActivityDefinitionProperty;
     }
     interface ElsaConfirmDialog {
+        "culture"?: string;
     }
     interface ElsaContextMenu {
         "history"?: RouterHistory;
@@ -736,6 +751,7 @@ declare namespace LocalJSX {
         "serverUrl"?: string;
     }
     interface ElsaPager {
+        "culture"?: string;
         "history"?: RouterHistory;
         "location"?: LocationSegments;
         "onPaged"?: (event: CustomEvent<PagerData>) => void;
@@ -772,8 +788,10 @@ declare namespace LocalJSX {
         "propertyModel"?: ActivityDefinitionProperty;
     }
     interface ElsaStudioHome {
+        "culture"?: string;
     }
     interface ElsaStudioRoot {
+        "culture"?: string;
         "monacoLibPath"?: string;
         "serverUrl"?: string;
     }
@@ -783,6 +801,7 @@ declare namespace LocalJSX {
         "serverUrl"?: string;
     }
     interface ElsaStudioWebhookDefinitionsList {
+        "culture"?: string;
         "history"?: RouterHistory;
         "serverUrl"?: string;
     }
@@ -791,15 +810,18 @@ declare namespace LocalJSX {
         "serverUrl"?: string;
     }
     interface ElsaStudioWorkflowDefinitionsEdit {
+        "culture"?: string;
         "match"?: MatchResults;
         "monacoLibPath"?: string;
         "serverUrl"?: string;
     }
     interface ElsaStudioWorkflowDefinitionsList {
+        "culture"?: string;
         "history"?: RouterHistory;
         "serverUrl"?: string;
     }
     interface ElsaStudioWorkflowInstancesList {
+        "culture"?: string;
         "history"?: RouterHistory;
         "serverUrl"?: string;
     }
@@ -836,12 +858,14 @@ declare namespace LocalJSX {
     interface ElsaWorkflowDefinitionEditorNotifications {
     }
     interface ElsaWorkflowDefinitionEditorScreen {
+        "culture"?: string;
         "monacoLibPath"?: string;
         "onWorkflowSaved"?: (event: CustomEvent<WorkflowDefinition>) => void;
         "serverUrl"?: string;
         "workflowDefinitionId"?: string;
     }
     interface ElsaWorkflowDefinitionsListScreen {
+        "culture"?: string;
         "history"?: RouterHistory;
         "serverUrl"?: string;
     }
@@ -854,6 +878,7 @@ declare namespace LocalJSX {
         "workflowModel"?: WorkflowModel;
     }
     interface ElsaWorkflowInstanceListScreen {
+        "culture"?: string;
         "history"?: RouterHistory;
         "orderBy"?: OrderBy;
         "serverUrl"?: string;
@@ -865,6 +890,7 @@ declare namespace LocalJSX {
         "workflowInstanceId"?: string;
     }
     interface ElsaWorkflowPublishButton {
+        "culture"?: string;
         "onExportClicked"?: (event: CustomEvent<any>) => void;
         "onImportClicked"?: (event: CustomEvent<File>) => void;
         "onPublishClicked"?: (event: CustomEvent<any>) => void;

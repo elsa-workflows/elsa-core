@@ -8,6 +8,7 @@ import {RouterHistory} from "@stencil/router";
 export class ElsaStudioWorkflowInstancesList {
   @Prop() history: RouterHistory;
   @Prop() serverUrl: string;
+  @Prop() culture: string;
 
   render() {
     return (
@@ -20,7 +21,7 @@ export class ElsaStudioWorkflowInstancesList {
           </div>
         </div>
 
-        <elsa-workflow-instance-list-screen history={this.history} serverUrl={this.serverUrl} />
+        <elsa-workflow-instance-list-screen history={this.history} serverUrl={this.serverUrl} culture={this.culture} />
       </div>
     );
   }

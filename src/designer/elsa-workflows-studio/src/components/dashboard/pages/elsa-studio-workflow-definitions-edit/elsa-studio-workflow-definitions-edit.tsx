@@ -9,6 +9,7 @@ export class ElsaStudioWorkflowDefinitionsEdit {
   @Prop() match: MatchResults;
   @Prop() serverUrl: string;
   @Prop() monacoLibPath: string;
+  @Prop() culture: string;
 
   id?: string;
 
@@ -25,7 +26,7 @@ export class ElsaStudioWorkflowDefinitionsEdit {
     const id = this.id;
 
     return <div>
-      <elsa-workflow-definition-editor-screen server-url={this.serverUrl} workflow-definition-id={id} monaco-lib-path={this.monacoLibPath}/>
+      <elsa-workflow-definition-editor-screen server-url={this.serverUrl} workflow-definition-id={id} monaco-lib-path={this.monacoLibPath} culture={this.culture}/>
     </div>;
   }
 }

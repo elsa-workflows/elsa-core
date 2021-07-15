@@ -8,6 +8,9 @@ import {DropdownButtonItem, DropdownButtonOrigin} from "../../../controls/elsa-d
 import {Map, parseQuery} from '../../../../utils/utils';
 import moment from "moment";
 import {PagerData} from "../../../controls/elsa-pager/elsa-pager";
+import {i18n} from "i18next";
+import {resources} from "./localizations";
+import {loadTranslations} from "../../../i18n/i18n-loader";
 
 @Component({
   tag: 'elsa-workflow-instance-list-screen',
@@ -19,6 +22,7 @@ export class ElsaWorkflowInstanceListScreen {
   @Prop() workflowId?: string;
   @Prop() workflowStatus?: WorkflowStatus;
   @Prop() orderBy?: OrderBy = OrderBy.Started;
+  @Prop() culture: string;
   @State() workflowBlueprints: Array<WorkflowBlueprintSummary> = [];
   @State() workflowInstances: PagedList<WorkflowInstanceSummary> = {items: [], page: 1, pageSize: 50, totalCount: 0};
   @State() selectedWorkflowId?: string;
@@ -30,10 +34,12 @@ export class ElsaWorkflowInstanceListScreen {
   @State() currentPageSize: number = 15;
   @State() currentSearchTerm?: string;
 
+  i18next: i18n;
   confirmDialog: HTMLElsaConfirmDialogElement;
 
   async componentWillLoad() {
-
+    this.i18next = await loadTranslations(this.culture, resources);
+    
     if (!!this.history) {
       this.history.listen(e => this.routeChanged(e));
       this.applyQueryString(this.history.location.search);
@@ -60,6 +66,8 @@ export class ElsaWorkflowInstanceListScreen {
     this.selectedOrderByState = value;
     await this.loadWorkflowInstances();
   }
+
+  t = (key: string, options?: any) => this.i18next.t(key, options);
 
   applyQueryString(queryString?: string) {
     const query = parseQuery(queryString);
@@ -169,7 +177,8 @@ export class ElsaWorkflowInstanceListScreen {
   }
 
   async onDeleteClick(e: Event, workflowInstance: WorkflowInstanceSummary) {
-    const result = await this.confirmDialog.show('Delete Workflow Instance', 'Are you sure you wish to permanently delete this workflow instance?');
+    const t = this.t;
+    const result = await this.confirmDialog.show(t('DeleteDialog.Title'), t('DeleteDialog.Message'));
 
     if (!result)
       return;
@@ -180,7 +189,8 @@ export class ElsaWorkflowInstanceListScreen {
   }
 
   async onBulkDelete() {
-    const result = await this.confirmDialog.show('Delete Selected Workflow Instances', 'Are you sure you wish to permanently delete all selected workflow instances?');
+    const t = this.t;
+    const result = await this.confirmDialog.show(t('BulkDeleteDialog.Title'), t('BulkDeleteDialog.Message'));
 
     if (!result)
       return;
@@ -220,6 +230,7 @@ export class ElsaWorkflowInstanceListScreen {
   render() {
     const workflowInstances = this.workflowInstances.items;
     const workflowBlueprints = this.workflowBlueprints;
+    const t= this.t;
 
     const renderViewIcon = function () {
       return (
@@ -258,7 +269,7 @@ export class ElsaWorkflowInstanceListScreen {
                   </div>
                   <input name="searchTerm"
                          class="elsa-block elsa-w-full elsa-h-full elsa-pl-8 elsa-pr-3 elsa-py-2 elsa-rounded-md elsa-text-cool-gray-900 elsa-placeholder-cool-gray-500 focus:elsa-placeholder-cool-gray-400 sm:elsa-text-sm elsa-border-0 focus:elsa-outline-none focus:elsa-ring-0"
-                         placeholder="Search"
+                         placeholder={t('Search')}
                          type="search"/>
                 </div>
               </form>
@@ -287,34 +298,34 @@ export class ElsaWorkflowInstanceListScreen {
                   <input type="checkbox" value="true" checked={this.selectAllChecked} onChange={e => this.onSelectAllCheckChange(e)} class="focus:elsa-ring-blue-500 elsa-h-4 elsa-w-4 elsa-text-blue-600 elsa-border-gray-300 elsa-rounded"/>
                 </th>
                 <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
-                  ID
+                  {t('Table.Id')}
                 </th>
                 <th class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
-                  Correlation ID
+                  {t('Table.CorrelationId')}
                 </th>
                 <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
-                  Workflow
+                  {t('Table.Workflow')}
                 </th>
                 <th class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-right elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
-                  Version
+                  {t('Table.Version')}
                 </th>
                 <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
-                  Instance Name
+                  {t('Table.InstanceName')}
                 </th>
                 <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
-                  Status
+                  {t('Table.Status')}
                 </th>
                 <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
-                  Created
+                  {t('Table.Created')}
                 </th>
                 <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
-                  Finished
+                  {t('Table.Finished')}
                 </th>
                 <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
-                  Last Executed
+                  {t('Table.LastExecuted')}
                 </th>
                 <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
-                  Faulted
+                  {t('Table.Faulted')}
                 </th>
                 <th class="elsa-pr-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider"/>
               </tr>
@@ -374,17 +385,17 @@ export class ElsaWorkflowInstanceListScreen {
                   </td>
                   <td class="elsa-pr-6">
                     <elsa-context-menu history={this.history} menuItems={[
-                      {text: 'View', anchorUrl: viewUrl, icon: renderViewIcon()},
-                      {text: 'Delete', clickHandler: e => this.onDeleteClick(e, workflowInstance), icon: renderDeleteIcon()}
+                      {text: t('Table.ContextMenu.View'), anchorUrl: viewUrl, icon: renderViewIcon()},
+                      {text: t('Table.ContextMenu.Delete'), clickHandler: e => this.onDeleteClick(e, workflowInstance), icon: renderDeleteIcon()}
                     ]}/>
                   </td>
                 </tr>
               })}
               </tbody>
             </table>
-            <elsa-pager page={this.currentPage} pageSize={this.currentPageSize} totalCount={this.workflowInstances.totalCount} history={this.history} onPaged={this.onPaged}/>
+            <elsa-pager page={this.currentPage} pageSize={this.currentPageSize} totalCount={this.workflowInstances.totalCount} history={this.history} onPaged={this.onPaged} culture={this.culture}/>
           </div>
-          <elsa-confirm-dialog ref={el => this.confirmDialog = el}/>
+          <elsa-confirm-dialog ref={el => this.confirmDialog = el} culture={this.culture}/>
         </div>
       </div>
     );
@@ -394,26 +405,29 @@ export class ElsaWorkflowInstanceListScreen {
     const bulkActionIcon = <svg class="elsa-mr-3 elsa-h-5 elsa-w-5 elsa-text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M13 10V3L4 14h7v7l9-11h-7z"/>
     </svg>;
+    
+    const t = this.t;
 
     const actions: Array<DropdownButtonItem> = [{
-      text: 'Delete',
+      text: t('BulkActions.Actions.Delete'),
       name: 'Delete',
     }];
 
-    return <elsa-dropdown-button text="Bulk Actions" items={actions} icon={bulkActionIcon} origin={DropdownButtonOrigin.TopLeft} onItemSelected={e => this.onBulkActionSelected(e)}/>
+    return <elsa-dropdown-button text={t('BulkActions.Title')} items={actions} icon={bulkActionIcon} origin={DropdownButtonOrigin.TopLeft} onItemSelected={e => this.onBulkActionSelected(e)}/>
   }
 
   renderWorkflowFilter() {
+    const t = this.t;
     const latestWorkflowBlueprints = this.getLatestWorkflowBlueprintVersions();
     const selectedWorkflowId = this.selectedWorkflowId;
     const selectedWorkflow = latestWorkflowBlueprints.find(x => x.id == selectedWorkflowId);
-    const selectedWorkflowText = !selectedWorkflowId ? "Workflow" : !!selectedWorkflow && (selectedWorkflow.name || selectedWorkflow.displayName) ? (selectedWorkflow.displayName || selectedWorkflow.name) : "Untitled";
+    const selectedWorkflowText = !selectedWorkflowId ? t('Filters.Workflow.Label') : !!selectedWorkflow && (selectedWorkflow.name || selectedWorkflow.displayName) ? (selectedWorkflow.displayName || selectedWorkflow.name) : t('Untitled');
     const selectedWorkflowStatus = this.selectedWorkflowStatus;
     const selectedOrderBy = this.selectedOrderByState;
     const history = this.history;
 
     let items: Array<DropdownButtonItem> = latestWorkflowBlueprints.map(x => {
-      const displayName = !!x.displayName && x.displayName.length > 0 ? x.displayName : x.name || 'Untitled';
+      const displayName = !!x.displayName && x.displayName.length > 0 ? x.displayName : x.name || t('Untitled');
       const item: DropdownButtonItem = {text: displayName, value: x.id, isSelected: x.id == selectedWorkflowId};
 
       if (!!history)
@@ -422,7 +436,7 @@ export class ElsaWorkflowInstanceListScreen {
       return item;
     });
 
-    const allItem: DropdownButtonItem = {text: 'All', value: null, isSelected: !selectedWorkflowId};
+    const allItem: DropdownButtonItem = {text: t('Filters.Workflow.All'), value: null, isSelected: !selectedWorkflowId};
 
     if (!!history)
       allItem.url = this.buildFilterUrl(null, selectedWorkflowStatus, selectedOrderBy);
@@ -443,13 +457,14 @@ export class ElsaWorkflowInstanceListScreen {
   }
 
   renderStatusFilter() {
+    const t = this.t;
     const selectedWorkflowStatus = this.selectedWorkflowStatus;
-    const selectedWorkflowStatusText = !!selectedWorkflowStatus ? selectedWorkflowStatus : 'Status';
+    const selectedWorkflowStatusText = !!selectedWorkflowStatus ? selectedWorkflowStatus : t('Filters.Status.Label');
     const statuses: Array<WorkflowStatus> = [null, WorkflowStatus.Running, WorkflowStatus.Suspended, WorkflowStatus.Finished, WorkflowStatus.Faulted, WorkflowStatus.Cancelled, WorkflowStatus.Idle];
     const history = this.history;
 
     const items: Array<DropdownButtonItem> = statuses.map(x => {
-      const text = x ?? 'All';
+      const text = x ?? t('Filters.Status.All');
       const item: DropdownButtonItem = {text: text, isSelected: x == selectedWorkflowStatus, value: x};
 
       if (!!history)
@@ -469,8 +484,9 @@ export class ElsaWorkflowInstanceListScreen {
   }
 
   renderOrderByFilter() {
+    const t = this.t;
     const selectedOrderBy = this.selectedOrderByState;
-    const selectedOrderByText = !!selectedOrderBy ? `Sort by: ${selectedOrderBy}` : 'Sort';
+    const selectedOrderByText = !!selectedOrderBy ? t('Filters.Sort.SelectedLabel', {Key: selectedOrderBy}) : t('Filters.Sort.Label');
     const orderByValues: Array<OrderBy> = [OrderBy.Finished, OrderBy.LastExecuted, OrderBy.Started];
     const history = this.history;
 

@@ -1,6 +1,10 @@
 import {Component, Event, EventEmitter, h, Prop} from '@stencil/core';
 import {LocationSegments, RouterHistory, injectHistory} from "@stencil/router";
 import {parseQuery, queryToString} from "../../../utils/utils";
+import {i18n} from "i18next";
+import {resources} from "./localizations";
+import {loadTranslations} from "../../i18n/i18n-loader";
+import {GetIntlMessage} from "../../i18n/intl-message";
 
 export interface PagerData {
   page: number;
@@ -19,14 +23,19 @@ export class ElsaPager {
   @Prop() totalCount: number;
   @Prop() location: LocationSegments;
   @Prop() history?: RouterHistory;
+  @Prop() culture: string;
 
   @Event() paged: EventEmitter<PagerData>
 
+  i18next: i18n;
   basePath: string;
 
-  componentWillLoad() {
+  async componentWillLoad() {
+    this.i18next = await loadTranslations(this.culture, resources);
     this.basePath = !!this.location ? this.location.pathname : document.location.pathname;
   }
+
+  t = (key: string, options?: any) => this.i18next.t(key, options);
 
   navigate(path: string, page: number) {
     
@@ -61,6 +70,8 @@ export class ElsaPager {
     const toPage = Math.min(pageCount, fromPage + maxPageButtons);
     const self = this;
     const currentQuery = !!this.history ? parseQuery(this.history.location.search) : {page, pageSize};
+    const t = this.t;
+    const IntlMessage = GetIntlMessage(this.i18next);
 
     currentQuery['pageSize'] = pageSize;
 
@@ -76,7 +87,7 @@ export class ElsaPager {
       return <a href={`${getNavUrl(page - 1)}`}
                 onClick={e => self.onNavigateClick(e, page - 1)}
                 class="elsa-relative elsa-inline-flex elsa-items-center elsa-px-4 elsa-py-2 elsa-border elsa-border-gray-300 elsa-text-sm elsa-leading-5 elsa-font-medium elsa-rounded-md elsa-text-gray-700 elsa-bg-white hover:elsa-text-gray-500 focus:elsa-outline-none focus:elsa-shadow-outline-blue focus:elsa-border-blue-300 active:elsa-bg-gray-100 active:elsa-text-gray-700 elsa-transition elsa-ease-in-out elsa-duration-150">
-        Previous
+        {t('Previous')}
       </a>
     }
 
@@ -87,7 +98,7 @@ export class ElsaPager {
       return <a href={`/${getNavUrl(page + 1)}`}
                 onClick={e => self.onNavigateClick(e, page + 1)}
                 class="elsa-ml-3 elsa-relative elsa-inline-flex elsa-items-center elsa-px-4 elsa-py-2 elsa-border elsa-border-gray-300 elsa-text-sm elsa-leading-5 elsa-font-medium elsa-rounded-md elsa-text-gray-700 elsa-bg-white hover:elsa-text-gray-500 focus:elsa-outline-none focus:elsa-shadow-outline-blue focus:elsa-border-blue-300 active:elsa-bg-gray-100 active:elsa-text-gray-700 elsa-transition elsa-ease-in-out elsa-duration-150">
-        Next
+        {t('Next')}
       </a>
     }
 
@@ -158,13 +169,7 @@ export class ElsaPager {
         <div class="hidden sm:elsa-flex-1 sm:elsa-flex sm:elsa-items-center sm:elsa-justify-between">
           <div>
             <p class="elsa-text-sm elsa-leading-5 elsa-text-gray-700 elsa-space-x-0-5">
-              <span>Showing</span>
-              <span class="elsa-font-medium">{from}</span>
-              <span>to</span>
-              <span class="elsa-font-medium">{to}</span>
-              <span>of</span>
-              <span class="elsa-font-medium">{totalCount}</span>
-              <span>results</span>
+              <IntlMessage label="Display" from={from} to={to} total={totalCount} template={'<span>$t(From)</span> <span class="elsa-font-medium">{{from}}</span> <span>$t(To)</span> <span class="elsa-font-medium">{{to}}</span> <span>$t(Of)</span> <span class="elsa-font-medium">{{total}}</span> <span>$t(Results)</span>'} dangerous/>
             </p>
           </div>
           <div>
