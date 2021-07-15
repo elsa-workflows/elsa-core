@@ -87,7 +87,7 @@ export class ElsaStudioRoot {
           </stencil-router>
           {/*</Tunnel.Provider>*/}
         </main>
-        <elsa-external-events/>
+        <elsa-external-events serverUrl={serverUrl}/>
       </div>
     );
   }

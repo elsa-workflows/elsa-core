@@ -14,6 +14,7 @@ import { AxiosInstance, AxiosRequestConfig } from "axios";
 import { Service } from "axios-middleware";
 import { PluginManager } from "./services/plugin-manager";
 import { ActivityIconProvider } from "./services/activity-icon-provider";
+import { ElsaClient } from "./services/elsa-client";
 import { MonacoValueChangedArgs } from "./components/controls/elsa-monaco/elsa-monaco";
 import { Map } from "./utils/utils";
 import { PagerData } from "./components/controls/elsa-pager/elsa-pager";
@@ -77,6 +78,7 @@ export namespace Components {
         "workflowDefinitionId": string;
     }
     interface ElsaExternalEvents {
+        "serverUrl": string;
     }
     interface ElsaInputTags {
         "fieldId"?: string;
@@ -699,7 +701,8 @@ declare namespace LocalJSX {
     interface ElsaExternalEvents {
         "onHttpClientConfigCreated"?: (event: CustomEvent<AxiosRequestConfig>) => void;
         "onHttpClientCreated"?: (event: CustomEvent<{ service: Service, axiosInstance: AxiosInstance }>) => void;
-        "onInitializing"?: (event: CustomEvent<{eventBus: any, pluginManager: PluginManager, activityIconProvider: ActivityIconProvider }>) => void;
+        "onInitializing"?: (event: CustomEvent<{ eventBus: any, pluginManager: PluginManager, activityIconProvider: ActivityIconProvider, createElsaClient: () => ElsaClient }>) => void;
+        "serverUrl"?: string;
     }
     interface ElsaInputTags {
         "fieldId"?: string;

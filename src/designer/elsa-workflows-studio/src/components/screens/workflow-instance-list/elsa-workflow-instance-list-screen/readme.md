@@ -7,10 +7,14 @@
 
 ## Properties
 
-| Property    | Attribute    | Description | Type            | Default     |
-| ----------- | ------------ | ----------- | --------------- | ----------- |
-| `history`   | --           |             | `RouterHistory` | `undefined` |
-| `serverUrl` | `server-url` |             | `string`        | `undefined` |
+| Property         | Attribute         | Description | Type                                                                                                                                                         | Default           |
+| ---------------- | ----------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------- |
+| `culture`        | `culture`         |             | `string`                                                                                                                                                     | `undefined`       |
+| `history`        | --                |             | `RouterHistory`                                                                                                                                              | `undefined`       |
+| `orderBy`        | `order-by`        |             | `OrderBy.Finished \| OrderBy.LastExecuted \| OrderBy.Started`                                                                                                | `OrderBy.Started` |
+| `serverUrl`      | `server-url`      |             | `string`                                                                                                                                                     | `undefined`       |
+| `workflowId`     | `workflow-id`     |             | `string`                                                                                                                                                     | `undefined`       |
+| `workflowStatus` | `workflow-status` |             | `WorkflowStatus.Cancelled \| WorkflowStatus.Faulted \| WorkflowStatus.Finished \| WorkflowStatus.Idle \| WorkflowStatus.Running \| WorkflowStatus.Suspended` | `undefined`       |
 
 
 ## Dependencies

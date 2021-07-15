@@ -5,12 +5,20 @@
 <!-- Auto Generated Below -->
 
 
+## Properties
+
+| Property    | Attribute    | Description | Type     | Default     |
+| ----------- | ------------ | ----------- | -------- | ----------- |
+| `serverUrl` | `server-url` |             | `string` | `undefined` |
+
+
 ## Events
 
-| Event                     | Description | Type                                                           |
-| ------------------------- | ----------- | -------------------------------------------------------------- |
-| `httpClientConfigCreated` |             | `CustomEvent<AxiosRequestConfig>`                              |
-| `httpClientCreated`       |             | `CustomEvent<{ service: any; axiosInstance: AxiosInstance; }>` |
+| Event                     | Description | Type                                                                                                                                            |
+| ------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `httpClientConfigCreated` |             | `CustomEvent<AxiosRequestConfig>`                                                                                                               |
+| `httpClientCreated`       |             | `CustomEvent<{ service: any; axiosInstance: AxiosInstance; }>`                                                                                  |
+| `initializing`            |             | `CustomEvent<{ eventBus: any; pluginManager: PluginManager; activityIconProvider: ActivityIconProvider; createElsaClient: () => ElsaClient; }>` |
 
 
 ## Dependencies
