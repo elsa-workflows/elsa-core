@@ -7,10 +7,9 @@
 
 ## Properties
 
-| Property    | Attribute    | Description | Type           | Default     |
-| ----------- | ------------ | ----------- | -------------- | ----------- |
-| `match`     | --           |             | `MatchResults` | `undefined` |
-| `serverUrl` | `server-url` |             | `string`       | `undefined` |
+| Property | Attribute | Description | Type           | Default     |
+| -------- | --------- | ----------- | -------------- | ----------- |
+| `match`  | --        |             | `MatchResults` | `undefined` |
 
 
 ## Dependencies
@@ -25,6 +24,7 @@ graph TD;
   elsa-studio-workflow-instances-view --> elsa-workflow-instance-viewer-screen
   elsa-workflow-instance-viewer-screen --> elsa-workflow-instance-journal
   elsa-workflow-instance-viewer-screen --> elsa-designer-tree
+  elsa-workflow-instance-viewer-screen --> context-consumer
   style elsa-studio-workflow-instances-view fill:#f9f,stroke:#333,stroke-width:4px
 ```
 

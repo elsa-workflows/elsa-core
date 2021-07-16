@@ -4,7 +4,8 @@ import {ElsaStudio} from "../../../../models/services";
 import {eventBus} from "../../../../services/event-bus";
 import {pluginManager} from "../../../../services/plugin-manager";
 import {activityIconProvider} from "../../../../services/activity-icon-provider";
-import {createElsaClient, ElsaClient} from "../../../../services/elsa-client";
+import {createElsaClient, createHttpClient, ElsaClient} from "../../../../services/elsa-client";
+import {AxiosInstance} from "axios";
 
 @Component({
   tag: 'elsa-studio-root',
@@ -24,12 +25,15 @@ export class ElsaStudioRoot {
 
   componentWillLoad() {
     const elsaClientFactory: () => ElsaClient = () => createElsaClient(this.serverUrl);
+    const httpClientFactory: () => AxiosInstance = () => createHttpClient(this.serverUrl);
 
     const elsaStudio: ElsaStudio = {
+      serverUrl: this.serverUrl,
       eventBus,
       pluginManager,
       activityIconProvider,
-      elsaClientFactory
+      elsaClientFactory,
+      httpClientFactory
     };
 
     this.initializing.emit(elsaStudio);

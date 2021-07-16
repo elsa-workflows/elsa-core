@@ -257,8 +257,10 @@ export namespace Components {
     }
     interface ElsaWorkflowInstanceListScreen {
         "culture": string;
+        "getSelectedWorkflowInstanceIds": () => Promise<string[]>;
         "history"?: RouterHistory;
         "orderBy"?: OrderBy;
+        "refresh": () => Promise<void>;
         "serverUrl": string;
         "workflowId"?: string;
         "workflowStatus"?: WorkflowStatus;

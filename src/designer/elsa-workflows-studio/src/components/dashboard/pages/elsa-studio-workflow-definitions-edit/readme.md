@@ -7,12 +7,9 @@
 
 ## Properties
 
-| Property        | Attribute         | Description | Type           | Default     |
-| --------------- | ----------------- | ----------- | -------------- | ----------- |
-| `culture`       | `culture`         |             | `string`       | `undefined` |
-| `match`         | --                |             | `MatchResults` | `undefined` |
-| `monacoLibPath` | `monaco-lib-path` |             | `string`       | `undefined` |
-| `serverUrl`     | `server-url`      |             | `string`       | `undefined` |
+| Property | Attribute | Description | Type           | Default     |
+| -------- | --------- | ----------- | -------------- | ----------- |
+| `match`  | --        |             | `MatchResults` | `undefined` |
 
 
 ## Dependencies

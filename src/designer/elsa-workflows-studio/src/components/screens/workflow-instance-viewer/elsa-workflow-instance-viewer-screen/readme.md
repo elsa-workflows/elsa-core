@@ -9,6 +9,7 @@
 
 | Property             | Attribute              | Description | Type     | Default     |
 | -------------------- | ---------------------- | ----------- | -------- | ----------- |
+| `culture`            | `culture`              |             | `string` | `undefined` |
 | `serverUrl`          | `server-url`           |             | `string` | `undefined` |
 | `workflowInstanceId` | `workflow-instance-id` |             | `string` | `undefined` |
 
@@ -36,12 +37,14 @@ Type: `Promise<string>`
 
 - [elsa-workflow-instance-journal](../elsa-workflow-instance-journal)
 - [elsa-designer-tree](../../../designers/tree/elsa-designer-tree)
+- context-consumer
 
 ### Graph
 ```mermaid
 graph TD;
   elsa-workflow-instance-viewer-screen --> elsa-workflow-instance-journal
   elsa-workflow-instance-viewer-screen --> elsa-designer-tree
+  elsa-workflow-instance-viewer-screen --> context-consumer
   elsa-studio-workflow-instances-view --> elsa-workflow-instance-viewer-screen
   style elsa-workflow-instance-viewer-screen fill:#f9f,stroke:#333,stroke-width:4px
 ```

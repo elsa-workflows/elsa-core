@@ -1,4 +1,4 @@
-import {Component, h, Prop, State, Watch} from '@stencil/core';
+import {Component, h, Prop, State, Watch, Method} from '@stencil/core';
 import {LocationSegments, RouterHistory} from "@stencil/router";
 import * as collection from 'lodash/collection';
 import * as array from 'lodash/array';
@@ -58,9 +58,19 @@ export class ElsaWorkflowInstanceListScreen {
       name: 'Delete',
     }];
 
-    eventBus.emit(EventTypes.WorkflowInstanceBulkActionsLoading, this, {bulkActions});
+    eventBus.emit(EventTypes.WorkflowInstanceBulkActionsLoading, this, {sender: this, bulkActions});
 
     this.bulkActions = bulkActions;
+  }
+
+  @Method()
+  async getSelectedWorkflowInstanceIds() {
+    return this.selectedWorkflowInstanceIds;
+  }
+
+  @Method()
+  async refresh() {
+    await this.loadWorkflowInstances();
   }
 
   @Watch("workflowId")
@@ -99,7 +109,7 @@ export class ElsaWorkflowInstanceListScreen {
     const workflowBlueprintPagedList = await elsaClient.workflowRegistryApi.list(null, null, versionOptions);
     this.workflowBlueprints = workflowBlueprintPagedList.items;
   }
-
+  
   async loadWorkflowInstances() {
     const elsaClient = this.createClient();
     this.workflowInstances = await elsaClient.workflowInstancesApi.list(this.currentPage, this.currentPageSize, this.selectedWorkflowId, this.selectedWorkflowStatus, this.selectedOrderByState, this.currentSearchTerm);
@@ -212,7 +222,6 @@ export class ElsaWorkflowInstanceListScreen {
     const elsaClient = this.createClient();
     await elsaClient.workflowInstancesApi.bulkDelete({workflowInstanceIds: this.selectedWorkflowInstanceIds});
     this.selectedWorkflowInstanceIds = [];
-    this.updateSelectAllChecked();
     await this.loadWorkflowInstances();
     this.currentPage = 0;
   }
@@ -227,6 +236,8 @@ export class ElsaWorkflowInstanceListScreen {
       default:
         action.handler();
     }
+
+    this.updateSelectAllChecked();
   }
 
   async onSearch(e: Event) {
@@ -521,4 +532,5 @@ export class ElsaWorkflowInstanceListScreen {
     return <elsa-dropdown-button text={selectedOrderByText} items={items} icon={renderIcon()} origin={DropdownButtonOrigin.TopRight} onItemSelected={e => this.handleOrderByChanged(e.detail.value)}/>
   }
 }
+
 Tunnel.injectProps(ElsaWorkflowInstanceListScreen, ['serverUrl', 'culture']);

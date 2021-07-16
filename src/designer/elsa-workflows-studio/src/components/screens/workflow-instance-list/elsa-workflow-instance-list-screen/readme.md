@@ -17,6 +17,29 @@
 | `workflowStatus` | `workflow-status` |             | `WorkflowStatus.Cancelled \| WorkflowStatus.Faulted \| WorkflowStatus.Finished \| WorkflowStatus.Idle \| WorkflowStatus.Running \| WorkflowStatus.Suspended` | `undefined`       |
 
 
+## Methods
+
+### `getSelectedWorkflowInstanceIds() => Promise<string[]>`
+
+
+
+#### Returns
+
+Type: `Promise<string[]>`
+
+
+
+### `refresh() => Promise<void>`
+
+
+
+#### Returns
+
+Type: `Promise<void>`
+
+
+
+
 ## Dependencies
 
 ### Used by
@@ -30,6 +53,7 @@
 - [elsa-pager](../../../controls/elsa-pager)
 - [elsa-confirm-dialog](../../../shared/elsa-confirm-dialog)
 - [elsa-dropdown-button](../../../controls/elsa-dropdown-button)
+- context-consumer
 
 ### Graph
 ```mermaid
@@ -39,6 +63,7 @@ graph TD;
   elsa-workflow-instance-list-screen --> elsa-pager
   elsa-workflow-instance-list-screen --> elsa-confirm-dialog
   elsa-workflow-instance-list-screen --> elsa-dropdown-button
+  elsa-workflow-instance-list-screen --> context-consumer
   elsa-confirm-dialog --> elsa-modal-dialog
   elsa-dropdown-button --> stencil-route-link
   elsa-studio-workflow-instances-list --> elsa-workflow-instance-list-screen

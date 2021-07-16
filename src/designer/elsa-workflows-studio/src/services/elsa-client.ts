@@ -1,4 +1,4 @@
-﻿import axios, {AxiosRequestConfig} from "axios";
+﻿import axios, {AxiosInstance, AxiosRequestConfig} from "axios";
 import {Service} from 'axios-middleware';
 import * as collection from 'lodash/collection';
 import {eventBus} from './event-bus';
@@ -27,15 +27,16 @@ import {
 } from "../models";
 import {WebhookDefinition, WebhookDefinitionSummary} from "../models/webhook";
 
+let _httpClient: AxiosInstance = null;
 let _elsaClient: ElsaClient = null;
 
-export const createElsaClient = function (serverUrl: string): ElsaClient {
-
-  if (!!_elsaClient)
-    return _elsaClient;
+export const createHttpClient = function(baseAddress: string) : AxiosInstance
+{
+  if(!!_httpClient)
+    return _httpClient;
 
   const config: AxiosRequestConfig = {
-    baseURL: serverUrl
+    baseURL: baseAddress
   };
 
   eventBus.emit(EventTypes.HttpClientConfigCreated, this, {config});
@@ -44,6 +45,16 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
   const service = new Service(httpClient);
 
   eventBus.emit(EventTypes.HttpClientCreated, this, {service, httpClient});
+  
+  return _httpClient;
+}
+
+export const createElsaClient = function (serverUrl: string): ElsaClient {
+
+  if (!!_elsaClient)
+    return _elsaClient;
+
+  const httpClient: AxiosInstance = this.createHttpClient(serverUrl);
 
   _elsaClient = {
     activitiesApi: {
