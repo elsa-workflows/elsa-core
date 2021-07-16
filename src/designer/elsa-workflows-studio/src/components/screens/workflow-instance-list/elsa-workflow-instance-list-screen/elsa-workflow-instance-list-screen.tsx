@@ -12,6 +12,7 @@ import {i18n} from "i18next";
 import {resources} from "./localizations";
 import {loadTranslations} from "../../../i18n/i18n-loader";
 import {eventBus} from "../../../../services/event-bus";
+import Tunnel from "../../../../data/dashboard";
 
 @Component({
   tag: 'elsa-workflow-instance-list-screen',
@@ -520,3 +521,4 @@ export class ElsaWorkflowInstanceListScreen {
     return <elsa-dropdown-button text={selectedOrderByText} items={items} icon={renderIcon()} origin={DropdownButtonOrigin.TopRight} onItemSelected={e => this.handleOrderByChanged(e.detail.value)}/>
   }
 }
+Tunnel.injectProps(ElsaWorkflowInstanceListScreen, ['serverUrl', 'culture']);

@@ -5,6 +5,7 @@ import {GetIntlMessage, IntlMessage} from "../../../i18n/intl-message";
 import {loadTranslations} from "../../../i18n/i18n-loader";
 import {resources} from "./localizations";
 import {i18n} from "i18next";
+import Tunnel from "../../../../data/dashboard";
 
 @Component({
   tag: 'elsa-studio-workflow-definitions-list',
@@ -12,7 +13,6 @@ import {i18n} from "i18next";
 })
 export class ElsaStudioWorkflowDefinitionsList {
   @Prop() history: RouterHistory;
-  @Prop() serverUrl: string;
   @Prop() culture: string;
   private i18next: i18n;
 
@@ -39,8 +39,9 @@ export class ElsaStudioWorkflowDefinitionsList {
           </div>
         </div>
 
-        <elsa-workflow-definitions-list-screen history={this.history} serverUrl={this.serverUrl} culture={this.culture} />
+        <elsa-workflow-definitions-list-screen />
       </div>
     );
   }
 }
+Tunnel.injectProps(ElsaStudioWorkflowDefinitionsList, ['culture']);

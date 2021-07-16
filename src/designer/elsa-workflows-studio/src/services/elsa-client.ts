@@ -38,12 +38,12 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
     baseURL: serverUrl
   };
 
-  eventBus.emit(EventTypes.HttpClientConfigCreated, this, config);
+  eventBus.emit(EventTypes.HttpClientConfigCreated, this, {config});
 
   const httpClient = axios.create(config);
   const service = new Service(httpClient);
 
-  eventBus.emit(EventTypes.HttpClientCreated, this, service, httpClient);
+  eventBus.emit(EventTypes.HttpClientCreated, this, {service, httpClient});
 
   _elsaClient = {
     activitiesApi: {

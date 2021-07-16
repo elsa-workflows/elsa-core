@@ -2,9 +2,9 @@ import {Component, Event, EventEmitter, h, Host, Listen, Method, Prop, State, Wa
 import {eventBus} from '../../../../services/event-bus';
 import {ActivityDefinition, ActivityDescriptor, ActivityModel, ConnectionDefinition, ConnectionModel, EventTypes, VersionOptions, WorkflowDefinition, WorkflowModel, WorkflowPersistenceBehavior} from "../../../../models";
 import {createElsaClient, SaveWorkflowDefinitionRequest} from "../../../../services/elsa-client";
-import {pluginManager} from '../../../../services/plugin-manager';
 import state from '../../../../utils/store';
-import Tunnel, {WorkflowEditorState} from '../../../../data/workflow-editor';
+import WorkflowEditorTunnel, {WorkflowEditorState} from '../../../../data/workflow-editor';
+import DashboardTunnel from "../../../../data/dashboard";
 import {downloadFromBlob} from "../../../../utils/download";
 import {ActivityContextMenuState, WorkflowDesignerMode} from "../../../designers/tree/elsa-designer-tree/models";
 import {registerClickOutside} from "stencil-click-outside";
@@ -17,10 +17,6 @@ import {resources} from "./localizations";
   shadow: false,
 })
 export class ElsaWorkflowDefinitionEditorScreen {
-
-  constructor() {
-    pluginManager.initialize();
-  }
 
   @Event() workflowSaved: EventEmitter<WorkflowDefinition>;
   @Prop({attribute: 'workflow-definition-id', reflect: true}) workflowDefinitionId: string;
@@ -361,11 +357,11 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
     return (
       <Host class="elsa-flex elsa-flex-col elsa-w-full" ref={el => this.el = el}>
-        <Tunnel.Provider state={tunnelState}>
+        <WorkflowEditorTunnel.Provider state={tunnelState}>
           {this.renderCanvas()}
           {this.renderActivityPicker()}
           {this.renderActivityEditor()}
-        </Tunnel.Provider>
+        </WorkflowEditorTunnel.Provider>
       </Host>
     );
   }
@@ -531,3 +527,4 @@ export class ElsaWorkflowDefinitionEditorScreen {
     };
   }
 }
+DashboardTunnel.injectProps(ElsaWorkflowDefinitionEditorScreen, ['serverUrl', 'culture', 'monacoLibPath']);

@@ -2,6 +2,7 @@ import {Component, Event, h, Host, State} from '@stencil/core';
 import {eventBus} from '../../../../services/event-bus';
 import {ActivityDescriptor, ActivityDescriptorDisplayContext, ActivityTraits, EventTypes} from "../../../../models";
 import state from '../../../../utils/store';
+import '../../../../utils/utils';
 import {ActivityIcon} from "../../../icons/activity-icon";
 
 @Component({

@@ -10,14 +10,10 @@ import { LocationSegments, MatchResults, RouterHistory } from "@stencil/router";
 import { MenuItem } from "./components/controls/elsa-context-menu/models";
 import { ActivityContextMenuState, LayoutDirection, WorkflowDesignerMode } from "./components/designers/tree/elsa-designer-tree/models";
 import { DropdownButtonItem, DropdownButtonOrigin } from "./components/controls/elsa-dropdown-button/models";
-import { AxiosInstance, AxiosRequestConfig } from "axios";
-import { Service } from "axios-middleware";
-import { PluginManager } from "./services/plugin-manager";
-import { ActivityIconProvider } from "./services/activity-icon-provider";
-import { ElsaClient } from "./services/elsa-client";
 import { MonacoValueChangedArgs } from "./components/controls/elsa-monaco/elsa-monaco";
 import { Map } from "./utils/utils";
 import { PagerData } from "./components/controls/elsa-pager/elsa-pager";
+import { ElsaStudio } from "./models/services";
 import { ToastNotificationOptions } from "./components/shared/elsa-toast-notification/elsa-toast-notification";
 import { WebhookDefinition } from "./models/webhook";
 export namespace Components {
@@ -76,9 +72,6 @@ export namespace Components {
         "setExpression": (value: string) => Promise<void>;
         "singleLineMode": boolean;
         "workflowDefinitionId": string;
-    }
-    interface ElsaExternalEvents {
-        "serverUrl": string;
     }
     interface ElsaInputTags {
         "fieldId"?: string;
@@ -166,51 +159,44 @@ export namespace Components {
         "propertyDescriptor": ActivityPropertyDescriptor;
         "propertyModel": ActivityDefinitionProperty;
     }
+    interface ElsaStudioDashboard {
+        "culture": string;
+        "monacoLibPath": string;
+        "serverUrl": string;
+    }
     interface ElsaStudioHome {
         "culture": string;
     }
     interface ElsaStudioRoot {
+        "addPlugins": (pluginTypes: Array<any>) => Promise<void>;
         "culture": string;
         "monacoLibPath": string;
         "serverUrl": string;
     }
     interface ElsaStudioWebhookDefinitionsEdit {
-        "history": RouterHistory;
         "match": MatchResults;
-        "serverUrl": string;
     }
     interface ElsaStudioWebhookDefinitionsList {
         "culture": string;
-        "history": RouterHistory;
-        "serverUrl": string;
     }
     interface ElsaStudioWorkflowBlueprintView {
         "match": MatchResults;
-        "serverUrl": string;
     }
     interface ElsaStudioWorkflowDefinitionsEdit {
-        "culture": string;
         "match": MatchResults;
-        "monacoLibPath": string;
-        "serverUrl": string;
     }
     interface ElsaStudioWorkflowDefinitionsList {
         "culture": string;
         "history": RouterHistory;
-        "serverUrl": string;
     }
     interface ElsaStudioWorkflowInstancesList {
         "culture": string;
-        "history": RouterHistory;
-        "serverUrl": string;
     }
     interface ElsaStudioWorkflowInstancesView {
         "match": MatchResults;
-        "serverUrl": string;
     }
     interface ElsaStudioWorkflowRegistry {
-        "history": RouterHistory;
-        "serverUrl": string;
+        "culture": string;
     }
     interface ElsaSwitchCasesProperty {
         "propertyDescriptor": ActivityPropertyDescriptor;
@@ -223,6 +209,7 @@ export namespace Components {
     interface ElsaWebhookDefinitionEditorNotifications {
     }
     interface ElsaWebhookDefinitionEditorScreen {
+        "culture": string;
         "getServerUrl": () => Promise<string>;
         "getWebhookId": () => Promise<string>;
         "history"?: RouterHistory;
@@ -231,10 +218,12 @@ export namespace Components {
         "webhookId": string;
     }
     interface ElsaWebhookDefinitionsListScreen {
+        "culture": string;
         "history"?: RouterHistory;
         "serverUrl": string;
     }
     interface ElsaWorkflowBlueprintViewerScreen {
+        "culture": string;
         "getServerUrl": () => Promise<string>;
         "serverUrl": string;
         "workflowDefinitionId": string;
@@ -275,6 +264,7 @@ export namespace Components {
         "workflowStatus"?: WorkflowStatus;
     }
     interface ElsaWorkflowInstanceViewerScreen {
+        "culture": string;
         "getServerUrl": () => Promise<string>;
         "serverUrl": string;
         "workflowInstanceId": string;
@@ -285,6 +275,7 @@ export namespace Components {
         "workflowDefinition": WorkflowDefinition;
     }
     interface ElsaWorkflowRegistryListScreen {
+        "culture": string;
         "history"?: RouterHistory;
         "serverUrl": string;
     }
@@ -353,12 +344,6 @@ declare global {
     var HTMLElsaExpressionEditorElement: {
         prototype: HTMLElsaExpressionEditorElement;
         new (): HTMLElsaExpressionEditorElement;
-    };
-    interface HTMLElsaExternalEventsElement extends Components.ElsaExternalEvents, HTMLStencilElement {
-    }
-    var HTMLElsaExternalEventsElement: {
-        prototype: HTMLElsaExternalEventsElement;
-        new (): HTMLElsaExternalEventsElement;
     };
     interface HTMLElsaInputTagsElement extends Components.ElsaInputTags, HTMLStencilElement {
     }
@@ -437,6 +422,12 @@ declare global {
     var HTMLElsaSingleLinePropertyElement: {
         prototype: HTMLElsaSingleLinePropertyElement;
         new (): HTMLElsaSingleLinePropertyElement;
+    };
+    interface HTMLElsaStudioDashboardElement extends Components.ElsaStudioDashboard, HTMLStencilElement {
+    }
+    var HTMLElsaStudioDashboardElement: {
+        prototype: HTMLElsaStudioDashboardElement;
+        new (): HTMLElsaStudioDashboardElement;
     };
     interface HTMLElsaStudioHomeElement extends Components.ElsaStudioHome, HTMLStencilElement {
     }
@@ -599,7 +590,6 @@ declare global {
         "elsa-dropdown-button": HTMLElsaDropdownButtonElement;
         "elsa-dropdown-property": HTMLElsaDropdownPropertyElement;
         "elsa-expression-editor": HTMLElsaExpressionEditorElement;
-        "elsa-external-events": HTMLElsaExternalEventsElement;
         "elsa-input-tags": HTMLElsaInputTagsElement;
         "elsa-input-tags-dropdown": HTMLElsaInputTagsDropdownElement;
         "elsa-json-property": HTMLElsaJsonPropertyElement;
@@ -613,6 +603,7 @@ declare global {
         "elsa-radio-list-property": HTMLElsaRadioListPropertyElement;
         "elsa-script-property": HTMLElsaScriptPropertyElement;
         "elsa-single-line-property": HTMLElsaSingleLinePropertyElement;
+        "elsa-studio-dashboard": HTMLElsaStudioDashboardElement;
         "elsa-studio-home": HTMLElsaStudioHomeElement;
         "elsa-studio-root": HTMLElsaStudioRootElement;
         "elsa-studio-webhook-definitions-edit": HTMLElsaStudioWebhookDefinitionsEditElement;
@@ -697,12 +688,6 @@ declare namespace LocalJSX {
         "serverUrl"?: string;
         "singleLineMode"?: boolean;
         "workflowDefinitionId"?: string;
-    }
-    interface ElsaExternalEvents {
-        "onHttpClientConfigCreated"?: (event: CustomEvent<AxiosRequestConfig>) => void;
-        "onHttpClientCreated"?: (event: CustomEvent<{ service: Service, axiosInstance: AxiosInstance }>) => void;
-        "onInitializing"?: (event: CustomEvent<{ eventBus: any, pluginManager: PluginManager, activityIconProvider: ActivityIconProvider, createElsaClient: () => ElsaClient }>) => void;
-        "serverUrl"?: string;
     }
     interface ElsaInputTags {
         "fieldId"?: string;
@@ -793,51 +778,44 @@ declare namespace LocalJSX {
         "propertyDescriptor"?: ActivityPropertyDescriptor;
         "propertyModel"?: ActivityDefinitionProperty;
     }
+    interface ElsaStudioDashboard {
+        "culture"?: string;
+        "monacoLibPath"?: string;
+        "serverUrl"?: string;
+    }
     interface ElsaStudioHome {
         "culture"?: string;
     }
     interface ElsaStudioRoot {
         "culture"?: string;
         "monacoLibPath"?: string;
+        "onInitializing"?: (event: CustomEvent<ElsaStudio>) => void;
         "serverUrl"?: string;
     }
     interface ElsaStudioWebhookDefinitionsEdit {
-        "history"?: RouterHistory;
         "match"?: MatchResults;
-        "serverUrl"?: string;
     }
     interface ElsaStudioWebhookDefinitionsList {
         "culture"?: string;
-        "history"?: RouterHistory;
-        "serverUrl"?: string;
     }
     interface ElsaStudioWorkflowBlueprintView {
         "match"?: MatchResults;
-        "serverUrl"?: string;
     }
     interface ElsaStudioWorkflowDefinitionsEdit {
-        "culture"?: string;
         "match"?: MatchResults;
-        "monacoLibPath"?: string;
-        "serverUrl"?: string;
     }
     interface ElsaStudioWorkflowDefinitionsList {
         "culture"?: string;
         "history"?: RouterHistory;
-        "serverUrl"?: string;
     }
     interface ElsaStudioWorkflowInstancesList {
         "culture"?: string;
-        "history"?: RouterHistory;
-        "serverUrl"?: string;
     }
     interface ElsaStudioWorkflowInstancesView {
         "match"?: MatchResults;
-        "serverUrl"?: string;
     }
     interface ElsaStudioWorkflowRegistry {
-        "history"?: RouterHistory;
-        "serverUrl"?: string;
+        "culture"?: string;
     }
     interface ElsaSwitchCasesProperty {
         "propertyDescriptor"?: ActivityPropertyDescriptor;
@@ -848,16 +826,19 @@ declare namespace LocalJSX {
     interface ElsaWebhookDefinitionEditorNotifications {
     }
     interface ElsaWebhookDefinitionEditorScreen {
+        "culture"?: string;
         "history"?: RouterHistory;
         "serverUrl"?: string;
         "webhookDefinition"?: WebhookDefinition;
         "webhookId"?: string;
     }
     interface ElsaWebhookDefinitionsListScreen {
+        "culture"?: string;
         "history"?: RouterHistory;
         "serverUrl"?: string;
     }
     interface ElsaWorkflowBlueprintViewerScreen {
+        "culture"?: string;
         "serverUrl"?: string;
         "workflowDefinitionId"?: string;
     }
@@ -892,6 +873,7 @@ declare namespace LocalJSX {
         "workflowStatus"?: WorkflowStatus;
     }
     interface ElsaWorkflowInstanceViewerScreen {
+        "culture"?: string;
         "serverUrl"?: string;
         "workflowInstanceId"?: string;
     }
@@ -905,6 +887,7 @@ declare namespace LocalJSX {
         "workflowDefinition"?: WorkflowDefinition;
     }
     interface ElsaWorkflowRegistryListScreen {
+        "culture"?: string;
         "history"?: RouterHistory;
         "serverUrl"?: string;
     }
@@ -923,7 +906,6 @@ declare namespace LocalJSX {
         "elsa-dropdown-button": ElsaDropdownButton;
         "elsa-dropdown-property": ElsaDropdownProperty;
         "elsa-expression-editor": ElsaExpressionEditor;
-        "elsa-external-events": ElsaExternalEvents;
         "elsa-input-tags": ElsaInputTags;
         "elsa-input-tags-dropdown": ElsaInputTagsDropdown;
         "elsa-json-property": ElsaJsonProperty;
@@ -937,6 +919,7 @@ declare namespace LocalJSX {
         "elsa-radio-list-property": ElsaRadioListProperty;
         "elsa-script-property": ElsaScriptProperty;
         "elsa-single-line-property": ElsaSingleLineProperty;
+        "elsa-studio-dashboard": ElsaStudioDashboard;
         "elsa-studio-home": ElsaStudioHome;
         "elsa-studio-root": ElsaStudioRoot;
         "elsa-studio-webhook-definitions-edit": ElsaStudioWebhookDefinitionsEdit;
@@ -978,7 +961,6 @@ declare module "@stencil/core" {
             "elsa-dropdown-button": LocalJSX.ElsaDropdownButton & JSXBase.HTMLAttributes<HTMLElsaDropdownButtonElement>;
             "elsa-dropdown-property": LocalJSX.ElsaDropdownProperty & JSXBase.HTMLAttributes<HTMLElsaDropdownPropertyElement>;
             "elsa-expression-editor": LocalJSX.ElsaExpressionEditor & JSXBase.HTMLAttributes<HTMLElsaExpressionEditorElement>;
-            "elsa-external-events": LocalJSX.ElsaExternalEvents & JSXBase.HTMLAttributes<HTMLElsaExternalEventsElement>;
             "elsa-input-tags": LocalJSX.ElsaInputTags & JSXBase.HTMLAttributes<HTMLElsaInputTagsElement>;
             "elsa-input-tags-dropdown": LocalJSX.ElsaInputTagsDropdown & JSXBase.HTMLAttributes<HTMLElsaInputTagsDropdownElement>;
             "elsa-json-property": LocalJSX.ElsaJsonProperty & JSXBase.HTMLAttributes<HTMLElsaJsonPropertyElement>;
@@ -992,6 +974,7 @@ declare module "@stencil/core" {
             "elsa-radio-list-property": LocalJSX.ElsaRadioListProperty & JSXBase.HTMLAttributes<HTMLElsaRadioListPropertyElement>;
             "elsa-script-property": LocalJSX.ElsaScriptProperty & JSXBase.HTMLAttributes<HTMLElsaScriptPropertyElement>;
             "elsa-single-line-property": LocalJSX.ElsaSingleLineProperty & JSXBase.HTMLAttributes<HTMLElsaSingleLinePropertyElement>;
+            "elsa-studio-dashboard": LocalJSX.ElsaStudioDashboard & JSXBase.HTMLAttributes<HTMLElsaStudioDashboardElement>;
             "elsa-studio-home": LocalJSX.ElsaStudioHome & JSXBase.HTMLAttributes<HTMLElsaStudioHomeElement>;
             "elsa-studio-root": LocalJSX.ElsaStudioRoot & JSXBase.HTMLAttributes<HTMLElsaStudioRootElement>;
             "elsa-studio-webhook-definitions-edit": LocalJSX.ElsaStudioWebhookDefinitionsEdit & JSXBase.HTMLAttributes<HTMLElsaStudioWebhookDefinitionsEditElement>;
