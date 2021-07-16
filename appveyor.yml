@@ -34,23 +34,23 @@ cache:
   - src\designer\bindings\aspnet\Elsa.Designer.Components.Web\node_modules
   - '%APPDATA%\npm-cache'
 
-#install:
-#  - ps: >-
-#      cd .\src\designer\elsa-workflows-studio
-#
-#      npm install --force
-#
-#      cd ..\bindings\aspnet\Elsa.Designer.Components.Web
-#
-#      npm install --force
-#
-#      cd ..\..\..\..\..
+install:
+  - ps: >-
+      cd .\src\designer\elsa-workflows-studio
+
+      npm install --force
+
+      cd ..\bindings\aspnet\Elsa.Designer.Components.Web
+
+      npm install --force
+
+      cd ..\..\..\..\..
 
 #      dotnet tool install --global dotnet-sonarscanner
 
-#before_build:
-#  - cmd: >-
-#      docker-compose -f docker-compose.yaml up -d mongodb postgres
+before_build:
+  - cmd: >-
+      docker-compose -f docker-compose.yaml up -d mongodb postgres
 
 #  - ps: >-
 #      if(-Not $env:APPVEYOR_PULL_REQUEST_NUMBER) {
@@ -66,19 +66,19 @@ cache:
 #      /d:sonar.branch.name=$env:APPVEYOR_REPO_BRANCH
 #      }
 
-#build_script:
-#  - ps: >-
-#      cd .\src\designer\elsa-workflows-studio
-#
-#      npm run build
-#
-#      cd ..\bindings\aspnet\Elsa.Designer.Components.Web
-#
-#      npm run build
-#
-#      cd ..\..\..\..\..
-#
-#      dotnet build
+build_script:
+  - ps: >-
+      cd .\src\designer\elsa-workflows-studio
+
+      npm run build
+
+      cd ..\bindings\aspnet\Elsa.Designer.Components.Web
+
+      npm run build
+
+      cd ..\..\..\..\..
+
+      dotnet build
 
 # before_test:
 
@@ -86,9 +86,9 @@ cache:
 #  - ps: dotnet test --collect:"XPlat Code Coverage" --logger:xunit -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
 #  - ps: dotnet test
 
-#after_test:
-#  - ps: >-
-#      dotnet pack Elsa.sln --include-symbols /p:Version="$env:APPVEYOR_BUILD_VERSION"
+after_test:
+  - ps: >-
+      dotnet pack Elsa.sln --include-symbols /p:Version="$env:APPVEYOR_BUILD_VERSION"
 
 artifacts:
   - path: '**/*.nupkg'
