@@ -34,23 +34,23 @@ cache:
   - src\designer\bindings\aspnet\Elsa.Designer.Components.Web\node_modules
   - '%APPDATA%\npm-cache'
 
-install:
-  - ps: >-
-      cd .\src\designer\elsa-workflows-studio
-
-      npm install --force
-
-      cd ..\bindings\aspnet\Elsa.Designer.Components.Web
-
-      npm install --force
-
-      cd ..\..\..\..\..
+#install:
+#  - ps: >-
+#      cd .\src\designer\elsa-workflows-studio
+#
+#      npm install --force
+#
+#      cd ..\bindings\aspnet\Elsa.Designer.Components.Web
+#
+#      npm install --force
+#
+#      cd ..\..\..\..\..
 
 #      dotnet tool install --global dotnet-sonarscanner
 
-before_build:
-  - cmd: >-
-      docker-compose -f docker-compose.yaml up -d mongodb postgres
+#before_build:
+#  - cmd: >-
+#      docker-compose -f docker-compose.yaml up -d mongodb postgres
 
 #  - ps: >-
 #      if(-Not $env:APPVEYOR_PULL_REQUEST_NUMBER) {
@@ -66,23 +66,23 @@ before_build:
 #      /d:sonar.branch.name=$env:APPVEYOR_REPO_BRANCH
 #      }
 
-build_script:
-  - ps: >-
-      cd .\src\designer\elsa-workflows-studio
-
-      npm run build
-
-      cd ..\bindings\aspnet\Elsa.Designer.Components.Web
-
-      npm run build
-
-      cd ..\..\..\..\..
-
-      dotnet build
+#build_script:
+#  - ps: >-
+#      cd .\src\designer\elsa-workflows-studio
+#
+#      npm run build
+#
+#      cd ..\bindings\aspnet\Elsa.Designer.Components.Web
+#
+#      npm run build
+#
+#      cd ..\..\..\..\..
+#
+#      dotnet build
 
 # before_test:
 
-test_script:
+# test_script:
 #  - ps: dotnet test --collect:"XPlat Code Coverage" --logger:xunit -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
 #  - ps: dotnet test
 
@@ -96,20 +96,21 @@ artifacts:
   - path: '**/TestResults/TestResults.xml'
 
 deploy:
+  # Deploy to NuGet on builds from tags only
+  - provider: NuGet
+    name: NuGet
+    api_key:
+      secure: WC5CCcM5ksWOJbv925FNjv91KsfqHfwEe0A61FMNB27IxvttwJsvBC9XYwK+wQnp
+    skip_symbols: true
+    on:
+      APPVEYOR_REPO_TAG: true
+      
   # Deploy to MyGet on every build (in the appropriate branch)
   - provider: NuGet
+    name: MyGet
     server: https://www.myget.org/F/elsa-2/api/v2/package
     api_key:
       secure: JfESkwmLdWU7dzvoqKPUfMemb00wX8AEYxeHCsYWTX1LfTeECdmKdZxz7IVUpebb
     skip_symbols: true
     on:
       branch: master
-
-  # Deploy to NuGet on builds from tags only
-  - provider: NuGet
-    api_key:
-      secure: WC5CCcM5ksWOJbv925FNjv91KsfqHfwEe0A61FMNB27IxvttwJsvBC9XYwK+wQnp
-    skip_symbols: true
-    on:
-      branch: master
-      APPVEYOR_REPO_TAG: true
