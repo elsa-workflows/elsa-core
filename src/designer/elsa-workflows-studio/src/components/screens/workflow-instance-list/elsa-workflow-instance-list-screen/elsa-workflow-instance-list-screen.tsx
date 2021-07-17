@@ -13,6 +13,7 @@ import {resources} from "./localizations";
 import {loadTranslations} from "../../../i18n/i18n-loader";
 import {eventBus} from "../../../../services/event-bus";
 import Tunnel from "../../../../data/dashboard";
+import {confirmDialogService} from "../../../../services/confirm-dialog-service";
 
 @Component({
   tag: 'elsa-workflow-instance-list-screen',
@@ -38,7 +39,6 @@ export class ElsaWorkflowInstanceListScreen {
   @State() currentSearchTerm?: string;
 
   i18next: i18n;
-  confirmDialog: HTMLElsaConfirmDialogElement;
 
   async componentWillLoad() {
     this.i18next = await loadTranslations(this.culture, resources);
@@ -109,7 +109,7 @@ export class ElsaWorkflowInstanceListScreen {
     const workflowBlueprintPagedList = await elsaClient.workflowRegistryApi.list(null, null, versionOptions);
     this.workflowBlueprints = workflowBlueprintPagedList.items;
   }
-  
+
   async loadWorkflowInstances() {
     const elsaClient = this.createClient();
     this.workflowInstances = await elsaClient.workflowInstancesApi.list(this.currentPage, this.currentPageSize, this.selectedWorkflowId, this.selectedWorkflowStatus, this.selectedOrderByState, this.currentSearchTerm);
@@ -165,6 +165,11 @@ export class ElsaWorkflowInstanceListScreen {
   }
 
   updateSelectAllChecked() {
+    if (this.workflowInstances.items.length == 0) {
+      this.selectAllChecked = false;
+      return;
+    }
+
     this.selectAllChecked = this.workflowInstances.items.findIndex(x => this.selectedWorkflowInstanceIds.findIndex(id => id == x.id) < 0) < 0;
   }
 
@@ -202,7 +207,7 @@ export class ElsaWorkflowInstanceListScreen {
 
   async onDeleteClick(e: Event, workflowInstance: WorkflowInstanceSummary) {
     const t = this.t;
-    const result = await this.confirmDialog.show(t('DeleteDialog.Title'), t('DeleteDialog.Message'));
+    const result = await confirmDialogService.show(t('DeleteDialog.Title'), t('DeleteDialog.Message'));
 
     if (!result)
       return;
@@ -214,7 +219,7 @@ export class ElsaWorkflowInstanceListScreen {
 
   async onBulkDelete() {
     const t = this.t;
-    const result = await this.confirmDialog.show(t('BulkDeleteDialog.Title'), t('BulkDeleteDialog.Message'));
+    const result = await confirmDialogService.show(t('BulkDeleteDialog.Title'), t('BulkDeleteDialog.Message'));
 
     if (!result)
       return;
@@ -258,6 +263,7 @@ export class ElsaWorkflowInstanceListScreen {
   render() {
     const workflowInstances = this.workflowInstances.items;
     const workflowBlueprints = this.workflowBlueprints;
+    const totalCount = this.workflowInstances.totalCount
     const t = this.t;
 
     const renderViewIcon = function () {
@@ -421,9 +427,8 @@ export class ElsaWorkflowInstanceListScreen {
               })}
               </tbody>
             </table>
-            <elsa-pager page={this.currentPage} pageSize={this.currentPageSize} totalCount={this.workflowInstances.totalCount} history={this.history} onPaged={this.onPaged} culture={this.culture}/>
+            <elsa-pager page={this.currentPage} pageSize={this.currentPageSize} totalCount={totalCount} history={this.history} onPaged={this.onPaged} culture={this.culture}/>
           </div>
-          <elsa-confirm-dialog ref={el => this.confirmDialog = el} culture={this.culture}/>
         </div>
       </div>
     );

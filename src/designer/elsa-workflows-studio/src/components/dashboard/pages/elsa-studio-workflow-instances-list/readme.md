@@ -25,10 +25,8 @@ graph TD;
   elsa-workflow-instance-list-screen --> stencil-route-link
   elsa-workflow-instance-list-screen --> elsa-context-menu
   elsa-workflow-instance-list-screen --> elsa-pager
-  elsa-workflow-instance-list-screen --> elsa-confirm-dialog
   elsa-workflow-instance-list-screen --> elsa-dropdown-button
   elsa-workflow-instance-list-screen --> context-consumer
-  elsa-confirm-dialog --> elsa-modal-dialog
   elsa-dropdown-button --> stencil-route-link
   style elsa-studio-workflow-instances-list fill:#f9f,stroke:#333,stroke-width:4px
 ```

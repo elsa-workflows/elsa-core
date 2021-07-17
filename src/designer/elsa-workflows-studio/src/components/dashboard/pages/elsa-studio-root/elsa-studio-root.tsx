@@ -1,4 +1,4 @@
-import {Component, Event, Method, EventEmitter, h, Host, Prop} from '@stencil/core';
+import {Component, Event, EventEmitter, h, Method, Prop} from '@stencil/core';
 import Tunnel, {DashboardState} from "../../../../data/dashboard";
 import {ElsaStudio} from "../../../../models/services";
 import {eventBus} from "../../../../services/event-bus";
@@ -6,6 +6,7 @@ import {pluginManager} from "../../../../services/plugin-manager";
 import {activityIconProvider} from "../../../../services/activity-icon-provider";
 import {createElsaClient, createHttpClient, ElsaClient} from "../../../../services/elsa-client";
 import {AxiosInstance} from "axios";
+import {EventTypes} from "../../../../models";
 
 @Component({
   tag: 'elsa-studio-root',
@@ -18,9 +19,23 @@ export class ElsaStudioRoot {
   @Prop({attribute: 'culture', reflect: true}) culture: string;
   @Event() initializing: EventEmitter<ElsaStudio>;
 
+  confirmDialog: HTMLElsaConfirmDialogElement;
+
   @Method()
   async addPlugins(pluginTypes: Array<any>) {
     pluginManager.registerPlugins(pluginTypes);
+  }
+
+  connectedCallback() {
+    eventBus.on(EventTypes.ShowConfirmDialog, e => {
+      e.promise = this.confirmDialog.show(e.caption, e.message);
+    });
+    eventBus.on(EventTypes.HideConfirmDialog, () => this.confirmDialog.hide);
+  }
+
+  disconnectedCallback() {
+    eventBus.off(EventTypes.ShowConfirmDialog);
+    eventBus.off(EventTypes.HideConfirmDialog);
   }
 
   componentWillLoad() {
@@ -55,6 +70,7 @@ export class ElsaStudioRoot {
     return (
       <Tunnel.Provider state={tunnelState}>
         <slot/>
+        <elsa-confirm-dialog ref={el => this.confirmDialog = el} culture={this.culture}/>
       </Tunnel.Provider>
     );
   }

@@ -46,7 +46,7 @@ export const createHttpClient = function(baseAddress: string) : AxiosInstance
 
   eventBus.emit(EventTypes.HttpClientCreated, this, {service, httpClient});
   
-  return _httpClient;
+  return _httpClient = httpClient;
 }
 
 export const createElsaClient = function (serverUrl: string): ElsaClient {
@@ -54,7 +54,7 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
   if (!!_elsaClient)
     return _elsaClient;
 
-  const httpClient: AxiosInstance = this.createHttpClient(serverUrl);
+  const httpClient: AxiosInstance = createHttpClient(serverUrl);
 
   _elsaClient = {
     activitiesApi: {

@@ -16,7 +16,9 @@ export const EventTypes = {
   WorkflowImported: 'workflow-imported',
   HttpClientConfigCreated: 'http-client-config-created',
   HttpClientCreated: 'http-client-created',
-  WorkflowInstanceBulkActionsLoading: 'workflow-instance-bulk-actions-loading'
+  WorkflowInstanceBulkActionsLoading: 'workflow-instance-bulk-actions-loading',
+  ShowConfirmDialog: 'show-confirm-dialog',
+  HideConfirmDialog: 'hide-confirm-dialog'
 };
 
 export interface AddActivityEventArgs {
