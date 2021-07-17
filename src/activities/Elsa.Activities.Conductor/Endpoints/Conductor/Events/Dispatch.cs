@@ -18,8 +18,7 @@ namespace Elsa.Activities.Conductor.Endpoints.Conductor.Events
         public async Task<IActionResult> Handle(string eventName, EventModel model)
         {
             var bookmark = new EventBookmark(eventName.ToLowerInvariant());
-            var trigger = new EventBookmark(eventName.ToLowerInvariant());
-            var context = new CollectWorkflowsContext(nameof(EventReceived), bookmark, trigger, model.CorrelationId, model.WorkflowInstanceId);
+            var context = new CollectWorkflowsContext(nameof(EventReceived), bookmark, model.CorrelationId, model.WorkflowInstanceId);
             var pendingWorkflows = await _workflowLaunchpad.CollectAndDispatchWorkflowsAsync(context, model);
             
             return Accepted(pendingWorkflows);

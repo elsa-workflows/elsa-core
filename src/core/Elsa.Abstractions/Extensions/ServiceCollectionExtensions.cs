@@ -1,7 +1,7 @@
 using System.Reflection;
 using Elsa;
 using Elsa.Providers.Workflow;
-using Elsa.Providers.WorkflowContext;
+using Elsa.Providers.WorkflowContexts;
 using Elsa.Services.Bookmarks;
 
 // ReSharper disable once CheckNamespace

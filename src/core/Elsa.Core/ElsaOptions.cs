@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using Elsa.Builders;
 using Elsa.Models;
 using Elsa.Persistence;
@@ -11,18 +10,32 @@ using Elsa.Services;
 using Elsa.Services.Dispatch;
 using Elsa.Services.Messaging;
 using Elsa.Services.Startup;
+using Humanizer;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using NodaTime;
 using Rebus.Persistence.InMem;
+using Rebus.Routing.TypeBased;
 using Rebus.Transport.InMem;
 using Storage.Net;
 using Storage.Net.Blobs;
 
 namespace Elsa
 {
+    public record CompetingMessageType(Type MessageType, string? Queue = default);
+    
     public class ElsaOptions
     {
+        public static string FormatChannelQueueName<TMessage>(string channel) => FormatChannelQueueName(typeof(TMessage), channel);
+        
+        public static string FormatChannelQueueName(Type messageType, string channel)
+        {
+            var queue = !string.IsNullOrWhiteSpace(channel) ? $"{messageType.Name}{channel}" : messageType.Name;
+            return FormatQueueName(queue);
+        }
+        
+        public static string FormatQueueName(string queue) => queue.Dehumanize().Underscore().Dasherize();
+
         internal ElsaOptions()
         {
             WorkflowDefinitionStoreFactory = sp => ActivatorUtilities.CreateInstance<InMemoryWorkflowDefinitionStore>(sp);
@@ -52,7 +65,7 @@ namespace Elsa
         public IEnumerable<Type> ActivityTypes => ActivityFactory.Types;
 
         public IList<Type> WorkflowTypes { get; } = new List<Type>();
-        public IList<Type> CompetingMessageTypes { get; } = new List<Type>();
+        public IList<CompetingMessageType> CompetingMessageTypes { get; } = new List<CompetingMessageType>();
         public IList<Type> PubSubMessageTypes { get; } = new List<Type>();
         public ServiceBusOptions ServiceBusOptions { get; } = new();
         public DistributedLockingOptions DistributedLockingOptions { get; set; }
@@ -63,6 +76,7 @@ namespace Elsa
         public Duration DistributedLockTimeout { get; set; } = Duration.FromHours(1);
 
         public Type DefaultWorkflowStorageProviderType { get; set; }
+        public WorkflowChannelOptions WorkflowChannelOptions { get; set; } = new();
 
         internal Func<IServiceProvider, IBlobStorage> StorageFactory { get; set; }
         internal Func<IServiceProvider, IWorkflowDefinitionStore> WorkflowDefinitionStoreFactory { get; set; }

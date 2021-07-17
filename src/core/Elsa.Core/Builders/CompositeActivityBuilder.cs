@@ -244,10 +244,6 @@ namespace Elsa.Builders
                 connections.AddRange(compositeActivityBlueprint.Connections.Select(x => new Connection(activityDictionary[x.Source.Activity.Id], activityDictionary[x.Target.Activity.Id], x.Source.Outcome)));
                 activityPropertyProviders.AddRange(compositeActivityBlueprint.ActivityPropertyProviders);
 
-                // compositeActivityBlueprint.Activities = compositeActivityBlueprint.Activities;
-                // compositeActivityBlueprint.Connections = compositeActivityBlueprint.Connections;
-                // compositeActivityBlueprint.ActivityPropertyProviders = compositeActivityBlueprint.ActivityPropertyProviders;
-
                 // Connect the composite activity to its starting activities.
                 var startActivities = _startingActivitiesProvider.GetStartActivities(compositeActivityBlueprint).ToList();
                 connections.AddRange(startActivities.Select(x => new Connection(compositeActivityBlueprint, x, CompositeActivity.Enter)));

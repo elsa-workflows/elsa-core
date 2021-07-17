@@ -9,11 +9,11 @@
 
 ### Used by
 
- - [elsa-workflow-definition-editor-screen](../../screens/workflow-definition-editor/elsa-workflow-definition-editor-screen)
+ - [elsa-workflow-definition-editor-screen](../elsa-workflow-definition-editor-screen)
 
 ### Depends on
 
-- [elsa-modal-dialog](../../shared/elsa-modal-dialog)
+- [elsa-modal-dialog](../../../shared/elsa-modal-dialog)
 
 ### Graph
 ```mermaid

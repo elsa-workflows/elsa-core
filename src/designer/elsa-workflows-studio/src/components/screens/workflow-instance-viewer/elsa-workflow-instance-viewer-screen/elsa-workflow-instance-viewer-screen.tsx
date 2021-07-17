@@ -91,7 +91,8 @@ export class ElsaWorkflowInstanceViewerScreen {
       saveWorkflowContext: false,
       variables: {data: {}},
       type: null,
-      properties: {data: {}},
+      inputProperties: {data: {}},
+      outputProperties: {data: {}},
       propertyStorageProviders: {}
     };
 
@@ -154,7 +155,7 @@ export class ElsaWorkflowInstanceViewerScreen {
     const activityDescriptor = activityDescriptors.find(x => x.type == activityBlueprint.type);
     const activityData = workflowInstance.activityData[activityBlueprint.id] || {};
     
-    const properties: Array<ActivityDefinitionProperty> = collection.map(activityBlueprint.properties.data, (value, key) => {
+    const properties: Array<ActivityDefinitionProperty> = collection.map(activityBlueprint.inputProperties.data, (value, key) => {
       const propertyDescriptor = activityDescriptor.inputProperties.find(x => x.name == key) || activityDescriptor.outputProperties.find(x => x.name == key);
       const defaultSyntax =  propertyDescriptor.defaultSyntax || SyntaxNames.Literal;
       const expressions = {};

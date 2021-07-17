@@ -12,6 +12,6 @@ namespace Elsa.Activities.Webhooks.Options
             WebhookDefinitionStoreFactory = provider => ActivatorUtilities.CreateInstance<InMemoryWebhookDefinitionStore>(provider);
         }
 
-        internal Func<IServiceProvider, IWebhookDefinitionStore> WebhookDefinitionStoreFactory { get; set; }
+        public Func<IServiceProvider, IWebhookDefinitionStore> WebhookDefinitionStoreFactory { get; set; }
     }
 }

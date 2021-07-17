@@ -8,7 +8,6 @@ namespace Elsa.Activities.Rebus.Bookmarks
     public class MessageReceivedBookmark : IBookmark
     {
         public string MessageType { get; set; } = default!;
-        public string? CorrelationId { get; set; }
     }
 
     public class MessageReceivedTriggerProvider : BookmarkProvider<MessageReceivedBookmark, RebusMessageReceived>
@@ -18,8 +17,7 @@ namespace Elsa.Activities.Rebus.Bookmarks
             {
                 Result(new MessageReceivedBookmark
                 {
-                    MessageType = (await context.ReadActivityPropertyAsync(x => x.MessageType, cancellationToken))!.Name,
-                    CorrelationId = context.ActivityExecutionContext.WorkflowExecutionContext.CorrelationId
+                    MessageType = (await context.ReadActivityPropertyAsync(x => x.MessageType, cancellationToken))!.Name
                 })
             };
     }

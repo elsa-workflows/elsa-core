@@ -3,11 +3,9 @@ using System.Net.Mime;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Webhooks.Swagger.Examples;
-using Elsa.Models;
 using Elsa.Persistence.Specifications;
 using Elsa.Server.Api.Models;
 using Elsa.Server.Api.Services;
-using Elsa.Server.Api.Swagger.Examples;
 using Elsa.Webhooks.Models;
 using Elsa.Webhooks.Persistence;
 using Microsoft.AspNetCore.Http;
@@ -41,7 +39,7 @@ namespace Elsa.Activities.Webhooks.Endpoints.WebhookDefinitions
             OperationId = "WebhookDefinitions.List",
             Tags = new[] { "WebhookDefinitions" })
         ]
-        public async Task<ActionResult<PagedList<WorkflowDefinition>>> Handle(CancellationToken cancellationToken = default)
+        public async Task<ActionResult<PagedList<WebhookDefinition>>> Handle(CancellationToken cancellationToken = default)
         {
             var specification = Specification<WebhookDefinition>.Identity;
             var items = await _store.FindManyAsync(specification, cancellationToken: cancellationToken);

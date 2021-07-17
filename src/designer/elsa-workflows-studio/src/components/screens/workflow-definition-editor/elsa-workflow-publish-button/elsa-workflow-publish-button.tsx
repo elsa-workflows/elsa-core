@@ -1,9 +1,11 @@
 import {Component, Host, h, Prop, State, Event, EventEmitter, Watch} from '@stencil/core';
-import {enter, leave, toggle} from 'el-transition'
+import {leave, toggle} from 'el-transition'
 import {registerClickOutside} from "stencil-click-outside";
-import {VersionOptions, WorkflowDefinition} from "../../../../models";
-import {createElsaClient} from "../../../../services/elsa-client";
+import {WorkflowDefinition} from "../../../../models";
 import Tunnel from '../../../../data/workflow-editor';
+import {i18n} from "i18next";
+import {loadTranslations} from "../../../i18n/i18n-loader";
+import {resources} from "./localizations";
 
 @Component({
   tag: 'elsa-workflow-publish-button',
@@ -13,13 +15,21 @@ export class ElsaWorkflowPublishButton {
 
   @Prop() workflowDefinition: WorkflowDefinition;
   @Prop() publishing: boolean;
+  @Prop() culture: string;
   @Event({bubbles: true}) publishClicked: EventEmitter;
   @Event({bubbles: true}) unPublishClicked: EventEmitter;
   @Event({bubbles: true}) exportClicked: EventEmitter;
   @Event({bubbles: true}) importClicked: EventEmitter<File>;
 
+  i18next: i18n;
   menu: HTMLElement;
   fileInput: HTMLInputElement;
+  
+  async componentWillLoad(){
+    this.i18next = await loadTranslations(this.culture, resources);
+  }
+
+  t = (key: string) => this.i18next.t(key);
 
   closeMenu() {
     leave(this.menu);
@@ -47,6 +57,7 @@ export class ElsaWorkflowPublishButton {
   }
 
   async onImportClick(e: Event) {
+    e.preventDefault();
     this.fileInput.value = null;
     this.fileInput.click();
 
@@ -65,6 +76,8 @@ export class ElsaWorkflowPublishButton {
   }
 
   render() {
+    const t = this.t;
+    
     return (
       <Host class="elsa-block" ref={el => registerClickOutside(this, el, this.closeMenu)}>
         <span class="elsa-relative elsa-z-0 elsa-inline-flex elsa-shadow-sm elsa-rounded-md">
@@ -89,11 +102,11 @@ export class ElsaWorkflowPublishButton {
 
                 <div class="elsa-py-1" role="none">
                   <a href="#" onClick={e => this.onExportClick(e)} class="elsa-block elsa-px-4 elsa-py-2 elsa-text-sm elsa-text-gray-700 hover:elsa-bg-gray-100 hover:elsa-text-gray-900" role="menuitem">
-                    Export
+                    {t('Export')}
                   </a>
 
                   <a href="#" onClick={e => this.onImportClick(e)} class="elsa-block elsa-px-4 elsa-py-2 elsa-text-sm elsa-text-gray-700 hover:elsa-bg-gray-100 hover:elsa-text-gray-900" role="menuitem">
-                    Import
+                    {t('Import')}
                   </a>
                 </div>
 
@@ -109,16 +122,20 @@ export class ElsaWorkflowPublishButton {
   }
 
   renderPublishButton() {
+    const t = this.t;
+    
     return (
       <button type="button"
               onClick={() => this.onPublishClick()}
               class="elsa-relative elsa-inline-flex elsa-items-center elsa-px-4 elsa-py-2 elsa-rounded-l-md elsa-border elsa-border-gray-300 elsa-bg-white elsa-text-sm elsa-font-medium elsa-text-gray-700 hover:elsa-bg-gray-50 focus:elsa-z-10 focus:elsa-outline-none focus:elsa-ring-1 focus:elsa-ring-blue-500 focus:elsa-border-blue-500">
 
-        Publish
+        {t('Publish')}
       </button>);
   }
 
   renderPublishingButton() {
+    const t = this.t;
+    
     return (
       <button type="button"
               disabled={true}
@@ -128,7 +145,7 @@ export class ElsaWorkflowPublishButton {
           <circle class="elsa-opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
           <path class="elsa-opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
         </svg>
-        Publishing
+        {t('Publishing')}
       </button>);
   }
 
@@ -136,10 +153,12 @@ export class ElsaWorkflowPublishButton {
     if (!this.workflowDefinition.isPublished)
       return undefined;
 
+    const t = this.t;
+    
     return (
       <div class="elsa-py-1" role="none">
         <a href="#" onClick={e => this.onUnPublishClick(e)} class="elsa-block elsa-px-4 elsa-py-2 elsa-text-sm elsa-text-gray-700 hover:elsa-bg-gray-100 hover:elsa-text-gray-900" role="menuitem">
-          Unpublish
+          {t('Unpublish')}
         </a>
       </div>
     );

@@ -9,6 +9,7 @@
     <ItemGroup>
         <PackageReference Include="DistributedLock.Redis" Version="1.0.1" />
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
+        <PackageReference Include="System.Text.Encodings.Web" Version="5.0.1" />
     </ItemGroup>
 
     <ItemGroup>

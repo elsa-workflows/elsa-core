@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EntityFramework.Sqlite
 {
-    [Feature("Persistence:EntityFrameworkCore:Sqlite")]
+    [Feature("DefaultPersistence:EntityFrameworkCore:Sqlite")]
     public class Startup : EntityFrameworkCoreStartupBase
     {
         protected override string ProviderName => "Sqlite";

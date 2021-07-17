@@ -20,7 +20,7 @@ namespace Elsa.Activities.ControlFlow
         Description = "Merge workflow execution back into a single branch.",
         Outcomes = new[] { OutcomeNames.Done }
     )]
-    public class Join : Activity, INotificationHandler<ActivityExecuted>
+    public class Join : Activity, INotificationHandler<WorkflowExecutionPassCompleted>
     {
         private readonly IMediator _mediator;
 
@@ -145,6 +145,11 @@ namespace Elsa.Activities.ControlFlow
         private void RecordInboundTransitionsAsync(ActivityExecutionContext activityExecutionContext)
         {
             var activityId = activityExecutionContext.ActivityBlueprint.Id;
+
+            // Only record activity execution if the executed activity isn't blocking.
+            if(activityExecutionContext.WorkflowInstance.BlockingActivities.Any(x => x.ActivityId == activityId))
+                return;
+            
             var workflowExecutionContext = activityExecutionContext.WorkflowExecutionContext;
 
             // Get outbound connections of the executing activity.
@@ -186,7 +191,7 @@ namespace Elsa.Activities.ControlFlow
             return $"@{sourceActivityId}_{sourceOutcomeName}";
         }
 
-        public Task Handle(ActivityExecuted notification, CancellationToken cancellationToken)
+        public Task Handle(WorkflowExecutionPassCompleted notification, CancellationToken cancellationToken)
         {
             RecordInboundTransitionsAsync(notification.ActivityExecutionContext);
             return Task.CompletedTask;

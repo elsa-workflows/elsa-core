@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Elsa.Exceptions;
 using Elsa.Models;
 using Elsa.Persistence;
-using Elsa.Services.Dispatch;
 using Elsa.Services.Models;
 
 namespace Elsa.Services.Workflows

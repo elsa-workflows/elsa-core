@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EntityFramework.MySql
 {
-    [Feature("Persistence:EntityFrameworkCore:MySql")]
+    [Feature("DefaultPersistence:EntityFrameworkCore:MySql")]
     public class Startup : EntityFrameworkCoreStartupBase
     {
         protected override string ProviderName => "MySql";

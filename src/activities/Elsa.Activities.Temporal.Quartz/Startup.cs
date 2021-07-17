@@ -4,12 +4,12 @@ using Microsoft.Extensions.Configuration;
 
 namespace Elsa.Activities.Temporal.Quartz
 {
-    [Feature("Temporal:Quartz")]
+    [Feature("TemporalQuartz")]
     public class Startup : StartupBase
     {
         public override void ConfigureElsa(ElsaOptionsBuilder elsa, IConfiguration configuration)
         {
-            elsa.AddQuartzTemporalActivities(options => configuration.GetSection("Elsa:Temporal:Quartz").Bind(options));
+            elsa.AddQuartzTemporalActivities(options => configuration.GetSection("Elsa:TemporalQuartz").Bind(options));
         }
     }
 }

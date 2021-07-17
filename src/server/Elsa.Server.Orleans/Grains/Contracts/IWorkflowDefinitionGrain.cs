@@ -1,6 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Services.Dispatch;
+using Elsa.Services;
 using Orleans;
 
 namespace Elsa.Server.Orleans.Grains.Contracts

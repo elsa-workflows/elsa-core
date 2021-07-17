@@ -21,7 +21,7 @@ export class StatePlugin implements ElsaPlugin {
 
     const transitionsSyntax = SyntaxNames.Json;
     const transitions = props.find(x => x.name == 'Transitions') || {expressions: {'Json': '[]'}, syntax: transitionsSyntax};
-    const transitionsExpression = transitions.expressions[transitionsSyntax] || '[]';
-    context.outcomes = !!transitionsExpression['$values'] ? transitionsExpression['$values'] : parseJson(transitionsExpression) || [];
+    const transitionsExpression = transitions.expressions[transitionsSyntax] || [];
+    context.outcomes = !!transitionsExpression['$values'] ? transitionsExpression['$values'] : Array.isArray(transitionsExpression) ? transitionsExpression : parseJson(transitionsExpression) || [];
   }
 }

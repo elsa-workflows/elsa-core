@@ -1,7 +1,7 @@
 ﻿import {h} from "@stencil/core";
 
 export const ActivityIcon = props => {
-  const color = props.color || 'light-blue';
+  const color = props.color || 'sky';
   return (
     `<span class="${`elsa-rounded-lg elsa-inline-flex elsa-p-3 elsa-bg-${color}-50 elsa-text-${color}-700 elsa-ring-4 elsa-ring-white`}">
       <svg class="elsa-h-6 elsa-w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">

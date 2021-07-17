@@ -4,13 +4,13 @@ using Microsoft.Extensions.Configuration;
 
 namespace Elsa.Persistence.MongoDb
 {
-    [Feature("Persistence:MongoDb")]
+    [Feature("DefaultPersistence:MongoDb")]
     public class Startup : StartupBase
     {
         public override void ConfigureElsa(ElsaOptionsBuilder elsa, IConfiguration configuration)
         {
-            var section = configuration.GetSection($"Elsa:Persistence:MongoDb");
-            var connectionStringName = section.GetValue<string>("ConnectionStringName");
+            var section = configuration.GetSection($"Elsa:Features:DefaultPersistence");
+            var connectionStringName = section.GetValue<string>("ConnectionStringIdentifier");
             var connectionString = section.GetValue<string>("ConnectionString");
 
             if (string.IsNullOrWhiteSpace(connectionString))

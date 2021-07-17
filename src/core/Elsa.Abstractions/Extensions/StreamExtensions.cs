@@ -7,14 +7,14 @@ namespace Elsa
 {
     public static class StreamExtensions
     {
-        public static async Task<byte[]> ReadBytesToEndAsync(this Stream input, CancellationToken cancellationToken)
+        public static async Task<byte[]> ReadBytesToEndAsync(this Stream input, CancellationToken cancellationToken = default)
         {
-            using var ms = new MemoryStream();
+            await using var ms = new MemoryStream();
             await input.CopyToAsync(ms, 16 * 1024, cancellationToken);
             return ms.ToArray();
         }
         
-        public static async Task<string> ReadStringToEndAsync(this Stream input, CancellationToken cancellationToken)
+        public static async Task<string> ReadStringToEndAsync(this Stream input, CancellationToken cancellationToken = default)
         {
             var bytes = await input.ReadBytesToEndAsync(cancellationToken);
             return Encoding.UTF8.GetString(bytes);

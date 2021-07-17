@@ -9,7 +9,7 @@ using YesSql.Provider.SqlServer;
 
 namespace Elsa.Persistence.YesSql
 {
-    [Feature("Persistence:YesSql:Sqlite")]
+    [Feature("DefaultPersistence:YesSql:Sqlite")]
     public class SqliteStartup : YesSqlStartupBase
     {
         protected override string ProviderName => "Sqlite";
@@ -17,21 +17,21 @@ namespace Elsa.Persistence.YesSql
         protected override void Configure(global::YesSql.IConfiguration options, string connectionString) => options.UseSqLite(connectionString);
     }
     
-    [Feature("Persistence:YesSql:SqlServer")]
+    [Feature("DefaultPersistence:YesSql:SqlServer")]
     public class SqlServerStartup : YesSqlStartupBase
     {
         protected override string ProviderName => "SqlServer";
         protected override void Configure(global::YesSql.IConfiguration options, string connectionString) => options.UseSqlServer(connectionString);
     }
     
-    [Feature("Persistence:YesSql:MySql")]
+    [Feature("DefaultPersistence:YesSql:MySql")]
     public class MySqlStartup : YesSqlStartupBase
     {
         protected override string ProviderName => "MySql";
         protected override void Configure(global::YesSql.IConfiguration options, string connectionString) => options.UseMySql(connectionString);
     }
     
-    [Feature("Persistence:YesSql:PostgreSql")]
+    [Feature("DefaultPersistence:YesSql:PostgreSql")]
     public class PostgreSqlStartup : YesSqlStartupBase
     {
         protected override string ProviderName => "PostgreSql";
@@ -44,8 +44,8 @@ namespace Elsa.Persistence.YesSql
         
         public override void ConfigureElsa(ElsaOptionsBuilder elsa, IConfiguration configuration)
         {
-            var section = configuration.GetSection($"Elsa:Persistence:{ProviderName}");
-            var connectionStringName = section.GetValue<string>("ConnectionStringName");
+            var section = configuration.GetSection($"Elsa:Features:DefaultPersistence");
+            var connectionStringName = section.GetValue<string>("ConnectionStringIdentifier");
             var connectionString = section.GetValue<string>("ConnectionString");
 
             if (string.IsNullOrWhiteSpace(connectionString))

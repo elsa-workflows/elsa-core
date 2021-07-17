@@ -28,10 +28,9 @@ namespace Elsa.Webhooks.Persistence.MongoDb.Services
             var builder = Builders<WebhookDefinition>.IndexKeys;
             var tenantKeysDefinition = builder.Ascending(x => x.TenantId);
             var nameKeysDefinition = builder.Ascending(x => x.Name);
-            var webhookIdDefinition = builder.Ascending(x => x.Id);
-            var collection = _mongoContext.WebhookDefinitions;
-            await CreateIndexesAsync(_mongoContext.WebhookDefinitions, cancellationToken, tenantKeysDefinition, webhookIdDefinition, nameKeysDefinition);
-            await collection.Indexes.CreateOneAsync(new CreateIndexModel<WebhookDefinition>(webhookIdDefinition, new CreateIndexOptions { Unique = true }), cancellationToken: cancellationToken);
+            var pathKeysDefinition = builder.Ascending(x => x.Path);
+            var payloadKeysDefinition = builder.Ascending(x => x.PayloadTypeName);
+            await CreateIndexesAsync(_mongoContext.WebhookDefinitions, cancellationToken, tenantKeysDefinition, nameKeysDefinition, pathKeysDefinition, payloadKeysDefinition);
         }
 
         private async Task CreateIndexesAsync<T>(IMongoCollection<T> collection, CancellationToken cancellationToken, params IndexKeysDefinition<T>[] definitions)

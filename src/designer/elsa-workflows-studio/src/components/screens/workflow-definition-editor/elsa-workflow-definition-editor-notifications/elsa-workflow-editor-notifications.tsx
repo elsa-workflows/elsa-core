@@ -17,9 +17,9 @@ export class ElsaWorkflowEditorNotifications {
   }
 
   disconnectedCallback() {
-    eventBus.off(EventTypes.WorkflowPublished, this.onWorkflowPublished);
-    eventBus.off(EventTypes.WorkflowRetracted, this.onWorkflowRetracted);
-    eventBus.off(EventTypes.WorkflowImported, this.onWorkflowImported);
+    eventBus.off(EventTypes.WorkflowPublished);
+    eventBus.off(EventTypes.WorkflowRetracted);
+    eventBus.off(EventTypes.WorkflowImported);
   }
 
   onWorkflowPublished = async (workflowDefinition: WorkflowDefinition) => await this.toastNotificationElement.show({

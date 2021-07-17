@@ -20,6 +20,7 @@ namespace Elsa.Models
         public string? Name { get; set; }
         public string? DisplayName { get; set; }
         public string? Description { get; set; }
+        public string? Channel { get; set; }
         public int Version { get; set; }
         public Variables Variables { get; set; }
         public Variables CustomAttributes { get; set; }

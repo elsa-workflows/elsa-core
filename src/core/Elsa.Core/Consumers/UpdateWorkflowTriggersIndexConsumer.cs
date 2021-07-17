@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Elsa.Events;
-using Elsa.Services.Triggers;
+using Elsa.Services;
 using Rebus.Handlers;
 
 namespace Elsa.Consumers

@@ -26,7 +26,6 @@ using Elsa.Serialization;
 using Elsa.Serialization.Converters;
 using Elsa.Services;
 using Elsa.Services.Bookmarks;
-using Elsa.Services.Dispatch;
 using Elsa.Services.Dispatch.Consumers;
 using Elsa.Services.Locking;
 using Elsa.Services.Messaging;
@@ -36,6 +35,7 @@ using Elsa.Services.Workflows;
 using Elsa.Services.WorkflowStorage;
 using Elsa.StartupTasks;
 using MediatR;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Newtonsoft.Json;
 using NodaTime;
@@ -71,9 +71,9 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped(options.WorkflowTriggerStoreFactory)
                 .AddSingleton(options.DistributedLockingOptions.DistributedLockProviderFactory)
                 .AddSingleton(options.StorageFactory)
-                .AddSingleton(options.WorkflowDefinitionDispatcherFactory)
-                .AddSingleton(options.WorkflowInstanceDispatcherFactory)
-                .AddSingleton(options.CorrelatingWorkflowDispatcherFactory)
+                .AddScoped(options.WorkflowDefinitionDispatcherFactory)
+                .AddScoped(options.WorkflowInstanceDispatcherFactory)
+                .AddScoped(options.CorrelatingWorkflowDispatcherFactory)
                 .AddSingleton<IDistributedLockProvider, DistributedLockProvider>()
                 .AddStartupTask<ContinueRunningWorkflows>()
                 .AddStartupTask<CreateSubscriptions>()
@@ -81,12 +81,16 @@ namespace Microsoft.Extensions.DependencyInjection
 
             optionsBuilder
                 .AddWorkflowsCore()
+                .AddConfiguration()
                 .AddCoreActivities();
 
             services.Decorate<IWorkflowDefinitionStore, InitializingWorkflowDefinitionStore>();
             services.Decorate<IWorkflowDefinitionStore, EventPublishingWorkflowDefinitionStore>();
             services.Decorate<IWorkflowInstanceStore, EventPublishingWorkflowInstanceStore>();
             services.Decorate<IWorkflowInstanceExecutor, LockingWorkflowInstanceExecutor>();
+
+            //TenantId default source
+            services.TryAddScoped<ITenantAccessor, DefaultTenantAccessor>();
 
             return services;
         }
@@ -110,8 +114,14 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <returns></returns>
         public static ElsaOptionsBuilder AddCompetingConsumer<TConsumer, TMessage>(this ElsaOptionsBuilder elsaOptions) where TConsumer : class, IHandleMessages<TMessage>
         {
-            elsaOptions.Services.AddTransient<IHandleMessages<TMessage>, TConsumer>();
+            elsaOptions.AddCompetingConsumerService<TConsumer, TMessage>();
             elsaOptions.AddCompetingMessageType<TMessage>();
+            return elsaOptions;
+        }
+
+        private static ElsaOptionsBuilder AddCompetingConsumerService<TConsumer, TMessage>(this ElsaOptionsBuilder elsaOptions) where TConsumer : class, IHandleMessages<TMessage>
+        {
+            elsaOptions.Services.AddTransient<IHandleMessages<TMessage>, TConsumer>();
             return elsaOptions;
         }
         
@@ -239,8 +249,8 @@ namespace Microsoft.Extensions.DependencyInjection
 
             options
                 .AddCompetingConsumer<TriggerWorkflowsRequestConsumer, TriggerWorkflowsRequest>()
-                .AddCompetingConsumer<ExecuteWorkflowDefinitionRequestConsumer, ExecuteWorkflowDefinitionRequest>()
-                .AddCompetingConsumer<ExecuteWorkflowInstanceRequestConsumer, ExecuteWorkflowInstanceRequest>()
+                .AddCompetingConsumerService<ExecuteWorkflowDefinitionRequestConsumer, ExecuteWorkflowDefinitionRequest>()
+                .AddCompetingConsumerService<ExecuteWorkflowInstanceRequestConsumer, ExecuteWorkflowInstanceRequest>()
                 .AddPubSubConsumer<UpdateWorkflowTriggersIndexConsumer, WorkflowDefinitionPublished>()
                 .AddPubSubConsumer<UpdateWorkflowTriggersIndexConsumer, WorkflowDefinitionRetracted>()
                 .AddPubSubConsumer<UpdateWorkflowTriggersIndexConsumer, WorkflowDefinitionDeleted>();
@@ -268,12 +278,20 @@ namespace Microsoft.Extensions.DependencyInjection
             return options;
         }
 
-        private static ElsaOptionsBuilder AddCoreActivities(this ElsaOptionsBuilder services)
+        private static ElsaOptionsBuilder AddConfiguration(this ElsaOptionsBuilder options)
         {
-            if (!services.WithCoreActivities)
-                return services;
+            // When using Elsa in console apps, no configuration will be registered by default, but some Elsa services depend on this service (even when there is nothing configured).
+            options.Services.TryAdd(new ServiceDescriptor(typeof(IConfiguration), _ => new ConfigurationBuilder().AddInMemoryCollection().Build(), ServiceLifetime.Singleton));
 
-            return services
+            return options;
+        }
+
+        private static ElsaOptionsBuilder AddCoreActivities(this ElsaOptionsBuilder options)
+        {
+            if (!options.WithCoreActivities)
+                return options;
+
+            return options
                 .AddActivitiesFrom<ElsaOptions>()
                 .AddActivitiesFrom<CompositeActivity>();
         }

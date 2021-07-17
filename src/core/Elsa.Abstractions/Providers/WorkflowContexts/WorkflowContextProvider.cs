@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using Elsa.Providers.WorkflowContext;
 
-namespace Elsa.Services
+namespace Elsa.Providers.WorkflowContexts
 {
     public abstract class WorkflowContextProvider : IWorkflowContextProvider
     {

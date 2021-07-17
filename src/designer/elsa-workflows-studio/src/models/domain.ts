@@ -19,6 +19,7 @@ export interface WorkflowDefinition {
   activities: Array<ActivityDefinition>;
   connections: Array<ConnectionDefinition>;
   tag?: string;
+  channel?: string;
 }
 
 export interface WorkflowDefinitionSummary {
@@ -47,7 +48,8 @@ export interface ActivityBlueprint {
   loadWorkflowContext: boolean;
   saveWorkflowContext: boolean;
   source?: string;
-  properties: Variables;
+  inputProperties: Variables;
+  outputProperties: Variables;
   propertyStorageProviders: Map<string>;
 }
 
@@ -287,6 +289,10 @@ export interface PagedList<T> {
   page?: number;
   pageSize?: number;
   totalCount: number;
+}
+
+export interface ListModel<T> {
+  items: Array<T>;
 }
 
 export enum ActivityTraits {

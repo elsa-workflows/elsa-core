@@ -1,6 +1,5 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Models;
 using Elsa.Webhooks.Persistence.YesSql.Data;
 using Elsa.Webhooks.Persistence.YesSql.Documents;
 using Elsa.Webhooks.Persistence.YesSql.Indexes;
@@ -22,13 +21,13 @@ namespace Elsa.Webhooks.Persistence.YesSql.Stores
         {
         }
 
-        protected override async Task<WebhookDefinitionDocument?> FindDocumentAsync(ISession session, WebhookDefinition entity, CancellationToken cancellationToken) => await Query<WebhookDefinitionIndex>(session, x => x.WebhookDefinitionId == entity.Id).FirstOrDefaultAsync();
+        protected override async Task<WebhookDefinitionDocument?> FindDocumentAsync(ISession session, WebhookDefinition entity, CancellationToken cancellationToken) => await Query<WebhookDefinitionIndex>(session, x => x.DefinitionId == entity.Id).FirstOrDefaultAsync();
 
         protected override IQuery<WebhookDefinitionDocument> MapSpecification(ISession session, ISpecification<WebhookDefinition> specification)
         {
             return specification switch
             {
-                EntityIdSpecification<WebhookDefinition> s => Query<WebhookDefinitionIndex>(session, x => x.WebhookDefinitionId == s.Id),
+                EntityIdSpecification<WebhookDefinition> s => Query<WebhookDefinitionIndex>(session, x => x.DefinitionId == s.Id),
                 _ => AutoMapSpecification<WebhookDefinitionIndex>(session, specification)
             };
         }

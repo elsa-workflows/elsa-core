@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Services.Models;
 
-namespace Elsa.Services.Triggers
+namespace Elsa.Services
 {
     /// <summary>
     /// An object which can get a collection of the <see cref="WorkflowTrigger"/> for a specified activity blueprint and workflow.

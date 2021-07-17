@@ -4,6 +4,7 @@ using System.Dynamic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.Workflows;
 using Elsa.Models;
 using Elsa.Providers.WorkflowStorage;
 using Elsa.Scripting.Liquid.Helpers;
@@ -42,8 +43,10 @@ namespace Elsa.Scripting.Liquid.Handlers
             memberAccessStrategy.Register<JObject>();
             memberAccessStrategy.Register<JValue>(o => o.Value);
             memberAccessStrategy.Register<LiquidActivityModel>();
+            memberAccessStrategy.Register<FinishedWorkflowModel>();
             memberAccessStrategy.Register<LiquidPropertyAccessor, FluidValue>((x, name) => x.GetValueAsync(name));
             memberAccessStrategy.Register<ActivityExecutionContext, FluidValue>("Input", x => ToFluidValue(x.Input, options));
+            memberAccessStrategy.Register<ActivityExecutionContext, FluidValue>("WorkflowContextId", x => ToFluidValue(x.ContextId, options));
             memberAccessStrategy.Register<ActivityExecutionContext, FluidValue>("WorkflowInstanceId", x => ToFluidValue(x.WorkflowInstance.Id, options));
             memberAccessStrategy.Register<ActivityExecutionContext, FluidValue>("CorrelationId", x => ToFluidValue(x.CorrelationId, options));
             memberAccessStrategy.Register<ActivityExecutionContext, FluidValue>("WorkflowDefinitionId", x => ToFluidValue(x.WorkflowInstance.DefinitionId, options));

@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Services.Models;
 
-namespace Elsa.Services.Triggers
+namespace Elsa.Services
 {
     /// <summary>
     /// An object which can get all of the workflow triggers for a collection of workflow blueprints.

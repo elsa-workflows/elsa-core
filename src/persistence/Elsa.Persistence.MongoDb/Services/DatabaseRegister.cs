@@ -63,6 +63,7 @@ namespace Elsa.Persistence.MongoDb.Services
             BsonSerializer.RegisterSerializer(VariablesSerializer.Instance);
             BsonSerializer.RegisterSerializer(JObjectSerializer.Instance);
             BsonSerializer.RegisterSerializer(ObjectSerializer.Instance);
+            BsonSerializer.RegisterSerializer(TypeSerializer.Instance);
             BsonSerializer.RegisterSerializer(new InstantSerializer());
         }
     }

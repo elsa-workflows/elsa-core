@@ -1,7 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Server.Api.ActionFilters;
-using Elsa.Server.Api.Endpoints.WorkflowDefinitions;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -24,7 +23,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
 
         [HttpPost]
         [ElsaJsonFormatter]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DispatchWorkflowInstanceResponse))]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DispatchWorkflowInstanceResponseModel))]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [SwaggerOperation(
             Summary = "Dispatches the specified workflow instance.",
@@ -32,11 +31,11 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
             OperationId = "WorkflowInstances.Dispatch",
             Tags = new[] { "WorkflowInstances" })
         ]
-        public async Task<IActionResult> Handle(string workflowInstanceId, DispatchWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
+        public async Task<IActionResult> Handle(string workflowInstanceId, DispatchWorkflowInstanceRequestModel request, CancellationToken cancellationToken = default)
         {
             await _workflowLaunchpad.DispatchPendingWorkflowAsync(workflowInstanceId, request.ActivityId, request.Input, cancellationToken);
 
-            return Ok(new DispatchWorkflowInstanceResponse());
+            return Ok(new DispatchWorkflowInstanceResponseModel());
         }
     }
 }

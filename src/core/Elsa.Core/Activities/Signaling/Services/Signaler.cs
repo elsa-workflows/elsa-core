@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,46 +22,50 @@ namespace Elsa.Activities.Signaling.Services
             _tokenService = tokenService;
         }
 
-        public async Task<IEnumerable<StartedWorkflow>> TriggerSignalTokenAsync(string token, object? input = default, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<CollectedWorkflow>> TriggerSignalTokenAsync(string token, object? input = default, CancellationToken cancellationToken = default)
         {
             if (!_tokenService.TryDecryptToken(token, out SignalModel signal))
-                return Enumerable.Empty<StartedWorkflow>();
+                return Enumerable.Empty<CollectedWorkflow>();
 
             return await TriggerSignalAsync(signal.Name, input, signal.WorkflowInstanceId, cancellationToken: cancellationToken);
         }
 
-        public async Task<IEnumerable<StartedWorkflow>> TriggerSignalAsync(string signal, object? input = default, string? workflowInstanceId = default, string? correlationId = default, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<CollectedWorkflow>> TriggerSignalAsync(string signal, object? input = default, string? workflowInstanceId = default, string? correlationId = default, CancellationToken cancellationToken = default)
         {
+            var normalizedSignal = signal.ToLowerInvariant();
+
             return await _workflowLaunchpad.CollectAndExecuteWorkflowsAsync(new CollectWorkflowsContext(
                 nameof(SignalReceived),
-                new SignalReceivedBookmark { Signal = signal, WorkflowInstanceId = workflowInstanceId },
-                new SignalReceivedBookmark { Signal = signal },
+                new SignalReceivedBookmark { Signal = normalizedSignal },
                 correlationId,
                 workflowInstanceId,
                 default,
                 TenantId
-            ), new Signal(signal, input), cancellationToken);
+            ), new Signal(normalizedSignal, input), cancellationToken);
         }
 
-        public async Task<IEnumerable<PendingWorkflow>> DispatchSignalTokenAsync(string token, object? input = default, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<CollectedWorkflow>> DispatchSignalTokenAsync(string token, object? input = default, CancellationToken cancellationToken = default)
         {
             if (!_tokenService.TryDecryptToken(token, out SignalModel signal))
-                return Enumerable.Empty<PendingWorkflow>();
+                return Enumerable.Empty<CollectedWorkflow>();
 
             return await DispatchSignalAsync(signal.Name, input, signal.WorkflowInstanceId, cancellationToken: cancellationToken);
         }
 
-        public async Task<IEnumerable<PendingWorkflow>> DispatchSignalAsync(string signal, object? input = default, string? workflowInstanceId = default, string? correlationId = default, CancellationToken cancellationToken = default) =>
-            await _workflowLaunchpad.CollectAndDispatchWorkflowsAsync(new CollectWorkflowsContext(
+        public async Task<IEnumerable<CollectedWorkflow>> DispatchSignalAsync(string signal, object? input = default, string? workflowInstanceId = default, string? correlationId = default, CancellationToken cancellationToken = default)
+        {
+            var normalizedSignal = signal.ToLowerInvariant();
+            
+            return await _workflowLaunchpad.CollectAndDispatchWorkflowsAsync(new CollectWorkflowsContext(
                     nameof(SignalReceived),
-                    new SignalReceivedBookmark { Signal = signal, WorkflowInstanceId = workflowInstanceId },
-                    new SignalReceivedBookmark { Signal = signal },
+                    new SignalReceivedBookmark { Signal = normalizedSignal },
                     correlationId,
                     workflowInstanceId,
                     default,
                     TenantId
                 ),
-                new Signal(signal, input),
+                new Signal(normalizedSignal, input),
                 cancellationToken);
+        }
     }
 }
