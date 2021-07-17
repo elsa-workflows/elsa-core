@@ -1,7 +1,6 @@
-﻿import {PluginManager} from "../services/plugin-manager";
+﻿import {PluginManager, ActivityIconProvider, ConfirmDialogService} from "../services";
 import {ElsaClient} from "../services/elsa-client";
 import EventBus from "js-event-bus";
-import {ActivityIconProvider} from "../services/activity-icon-provider";
 import {AxiosInstance} from "axios";
 
 export interface ElsaStudio {
@@ -11,4 +10,5 @@ export interface ElsaStudio {
   httpClientFactory: () => AxiosInstance;
   eventBus: EventBus;
   activityIconProvider: ActivityIconProvider;
+  confirmDialogService: ConfirmDialogService;
 }

@@ -5,7 +5,7 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
-import { ActivityDefinitionProperty, ActivityDescriptor, ActivityModel, ActivityPropertyDescriptor, OrderBy, SelectListItem, VersionOptions, WorkflowBlueprint, WorkflowDefinition, WorkflowExecutionLogRecord, WorkflowModel, WorkflowStatus } from "./models";
+import { ActivityDefinitionProperty, ActivityDescriptor, ActivityModel, ActivityPropertyDescriptor, ElsaStudio, OrderBy, SelectListItem, VersionOptions, WorkflowBlueprint, WorkflowDefinition, WorkflowExecutionLogRecord, WorkflowModel, WorkflowStatus } from "./models";
 import { LocationSegments, MatchResults, RouterHistory } from "@stencil/router";
 import { MenuItem } from "./components/controls/elsa-context-menu/models";
 import { ActivityContextMenuState, LayoutDirection, WorkflowDesignerMode } from "./components/designers/tree/elsa-designer-tree/models";
@@ -13,7 +13,6 @@ import { DropdownButtonItem, DropdownButtonOrigin } from "./components/controls/
 import { MonacoValueChangedArgs } from "./components/controls/elsa-monaco/elsa-monaco";
 import { Map } from "./utils/utils";
 import { PagerData } from "./components/controls/elsa-pager/elsa-pager";
-import { ElsaStudio } from "./models/services";
 import { ToastNotificationOptions } from "./components/shared/elsa-toast-notification/elsa-toast-notification";
 import { WebhookDefinition } from "./models/webhook";
 export namespace Components {

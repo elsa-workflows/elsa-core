@@ -23,8 +23,11 @@
     <!--<elsa-workflow-definition-editor-screen></elsa-workflow-definition-editor-screen>-->
 </elsa-studio-root>
 
-<script>
+<script type="module">
     // Integration demos.
+
+    // Import publicly exposed services and models.
+    import {confirmDialogService, EventTypes} from "/build/index.esm.js";
 
     // Custom plugin that changes the icon of the ReadLine activity.
     function CustomReadLinePlugin(elsaStudio) {
@@ -43,8 +46,13 @@
     function CustomBulkActionsPlugin(elsaStudio) {
         const eventBus = elsaStudio.eventBus;
 
-        eventBus.on('workflow-instance-bulk-actions-loading', e => {
-            e.bulkActions.push({name: 'Reset', text: 'Reset', handler: () => alert('Resetting workflows!')});
+        eventBus.on(EventTypes.WorkflowInstanceBulkActionsLoading, async e => {
+            e.bulkActions.push({name: 'Reset', text: 'Reset', handler: async () => {
+                if(!await confirmDialogService.show("Reset Workflows", "Are you sure you want to do this??"))
+                    return;
+                
+                alert('Resetting workflows!');
+            }});
         })
     }
 
@@ -70,7 +78,7 @@
 
     // Get a handle to the elsa-studio-root element.
     const elsaStudioRoot = document.querySelector('elsa-studio-root');
-
+    
     // Configure Elsa.
     (async () => {
         // Wait until the component is available.

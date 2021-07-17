@@ -1,10 +1,7 @@
 import {Component, Event, EventEmitter, h, Method, Prop} from '@stencil/core';
 import Tunnel, {DashboardState} from "../../../../data/dashboard";
-import {ElsaStudio} from "../../../../models/services";
-import {eventBus} from "../../../../services/event-bus";
-import {pluginManager} from "../../../../services/plugin-manager";
-import {activityIconProvider} from "../../../../services/activity-icon-provider";
-import {createElsaClient, createHttpClient, ElsaClient} from "../../../../services/elsa-client";
+import {ElsaStudio} from "../../../../models";
+import {eventBus, pluginManager, activityIconProvider, confirmDialogService, createElsaClient, createHttpClient, ElsaClient} from "../../../../services";
 import {AxiosInstance} from "axios";
 import {EventTypes} from "../../../../models";
 
@@ -47,6 +44,7 @@ export class ElsaStudioRoot {
       eventBus,
       pluginManager,
       activityIconProvider,
+      confirmDialogService,
       elsaClientFactory,
       httpClientFactory
     };
