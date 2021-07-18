@@ -32,14 +32,16 @@
     // Custom plugin that changes the icon of the ReadLine activity.
     function CustomReadLinePlugin(elsaStudio) {
         // Replace icon used for 'ReadLine' activity.
-        elsaStudio.activityIconProvider.register('ReadLine', `<span class="elsa-rounded-lg elsa-inline-flex elsa-p-3 elsa-bg-green-50 elsa-text-green-700 elsa-ring-4 elsa-ring-white">
-      <svg class="elsa-h-6 elsa-w-6" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-        <path stroke="none" d="M0 0h24v24H0z"/>
-        <path d="M4 12v-3a3 3 0 0 1 3 -3h13m-3 -3l3 3l-3 3"/>
-        <path d="M20 12v3a3 3 0 0 1 -3 3h-13m3 3l-3-3l3-3"/>
-        <path d="M11 11l1 -1v4"/>
-      </svg>
-    </span>`);
+        elsaStudio.activityIconProvider.register(
+            'ReadLine',
+            `<span class="elsa-rounded-lg elsa-inline-flex elsa-p-3 elsa-bg-green-50 elsa-text-green-700 elsa-ring-4 elsa-ring-white">
+              <svg class="elsa-h-6 elsa-w-6" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z"/>
+                <path d="M4 12v-3a3 3 0 0 1 3 -3h13m-3 -3l3 3l-3 3"/>
+                <path d="M20 12v3a3 3 0 0 1 -3 3h-13m3 3l-3-3l3-3"/>
+                <path d="M11 11l1 -1v4"/>
+              </svg>
+            </span>`);
     }
 
     // Custom plugin that adds a menu item to the bulk actions list on the workflow instance list view.
@@ -47,12 +49,14 @@
         const eventBus = elsaStudio.eventBus;
 
         eventBus.on(EventTypes.WorkflowInstanceBulkActionsLoading, async e => {
-            e.bulkActions.push({name: 'Reset', text: 'Reset', handler: async () => {
-                if(!await confirmDialogService.show("Reset Workflows", "Are you sure you want to do this??"))
-                    return;
-                
-                alert('Resetting workflows!');
-            }});
+            e.bulkActions.push({
+                name: 'Reset', text: 'Reset', handler: async () => {
+                    if (!await confirmDialogService.show("Reset Workflows", "Are you sure you want to do this??"))
+                        return;
+
+                    alert('Resetting workflows!');
+                }
+            });
         })
     }
 
@@ -78,7 +82,7 @@
 
     // Get a handle to the elsa-studio-root element.
     const elsaStudioRoot = document.querySelector('elsa-studio-root');
-    
+
     // Configure Elsa.
     (async () => {
         // Wait until the component is available.

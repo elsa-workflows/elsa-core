@@ -1,13 +1,18 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Elsa;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace ElsaDashboard.Samples.AspNetCore.Monolith
+namespace ElsaDashboard.Samples.AspNetCore.SubPath
 {
     public class Startup
     {
@@ -17,12 +22,11 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
         }
 
         public IConfiguration Configuration { get; }
-
-        // This method gets called by the runtime. Use this method to add services to the container.
+        
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddRazorPages();
-
+            
             // Elsa Server.
             var elsaSection = Configuration.GetSection("Elsa");
 
@@ -46,8 +50,7 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
             // In a production environment, make sure to allow only origins you trust.
             services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("Content-Disposition")));
         }
-
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+        
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
@@ -61,18 +64,18 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
                 app.UseExceptionHandler("/Error");
                 app.UseHsts();
             }
-
+            
             app.UseCors();
             app.UseStaticFiles();
             app.UseRouting();
             app.UseAuthorization();
             app.UseHttpActivities();
+            
             app.UseEndpoints(endpoints =>
             {
-                // Elsa Server uses ASP.NET Core Controllers.
+                endpoints.MapRazorPages();
                 endpoints.MapControllers();
-
-                endpoints.MapFallbackToPage("/_Host");
+                endpoints.MapFallbackToPage("/ElsaDashboard");
             });
         }
     }

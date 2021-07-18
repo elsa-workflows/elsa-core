@@ -159,6 +159,7 @@ export namespace Components {
         "propertyModel": ActivityDefinitionProperty;
     }
     interface ElsaStudioDashboard {
+        "basePath": string;
         "culture": string;
         "monacoLibPath": string;
         "serverUrl": string;
@@ -780,6 +781,7 @@ declare namespace LocalJSX {
         "propertyModel"?: ActivityDefinitionProperty;
     }
     interface ElsaStudioDashboard {
+        "basePath"?: string;
         "culture"?: string;
         "monacoLibPath"?: string;
         "serverUrl"?: string;

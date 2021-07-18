@@ -9,6 +9,7 @@
 
 | Property        | Attribute         | Description | Type     | Default     |
 | --------------- | ----------------- | ----------- | -------- | ----------- |
+| `basePath`      | `base-path`       |             | `string` | `''`        |
 | `culture`       | `culture`         |             | `string` | `undefined` |
 | `monacoLibPath` | `monaco-lib-path` |             | `string` | `undefined` |
 | `serverUrl`     | `server-url`      |             | `string` | `undefined` |

@@ -327,6 +327,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "aspnetcore", "aspnetcore", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.CustomTenantIdSource", "src\samples\aspnet\Elsa.Samples.CustomTenantIdSource\Elsa.Samples.CustomTenantIdSource.csproj", "{6E191628-927B-42FB-8805-D2977D8FC4E3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElsaDashboard.Samples.AspNetCore.SubPath", "src\samples\dashboard\aspnetcore\ElsaDashboard.Samples.AspNetCore.SubPath\ElsaDashboard.Samples.AspNetCore.SubPath.csproj", "{BB715C0C-BE88-4F7F-A43F-1F8DFC9A1388}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -757,6 +759,10 @@ Global
 		{6E191628-927B-42FB-8805-D2977D8FC4E3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6E191628-927B-42FB-8805-D2977D8FC4E3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6E191628-927B-42FB-8805-D2977D8FC4E3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BB715C0C-BE88-4F7F-A43F-1F8DFC9A1388}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BB715C0C-BE88-4F7F-A43F-1F8DFC9A1388}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BB715C0C-BE88-4F7F-A43F-1F8DFC9A1388}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BB715C0C-BE88-4F7F-A43F-1F8DFC9A1388}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -900,6 +906,7 @@ Global
 		{4D4022DD-244B-47EE-95FA-7071EC687B24} = {B43B546E-23F3-46E8-ACB7-D04F05CDA180}
 		{39DE1EE2-DF4F-44EB-9F5A-551BEADD6673} = {4673732F-2853-47BD-91B8-C95C229D2C89}
 		{6E191628-927B-42FB-8805-D2977D8FC4E3} = {22E75696-6FE9-436A-9097-EE21C603F818}
+		{BB715C0C-BE88-4F7F-A43F-1F8DFC9A1388} = {39DE1EE2-DF4F-44EB-9F5A-551BEADD6673}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}
