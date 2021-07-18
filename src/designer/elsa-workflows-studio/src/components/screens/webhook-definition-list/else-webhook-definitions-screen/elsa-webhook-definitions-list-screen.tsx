@@ -4,6 +4,7 @@ import {createElsaClient} from "../../../../services/elsa-client";
 import {PagedList} from "../../../../models";
 import {WebhookDefinitionSummary} from "../../../../models/webhook";
 import {RouterHistory} from "@stencil/router";
+import Tunnel from "../../../../data/dashboard";
 
 @Component({
   tag: 'elsa-webhook-definitions-list-screen',
@@ -12,6 +13,7 @@ import {RouterHistory} from "@stencil/router";
 export class ElsaWebhookDefinitionsListScreen {
   @Prop() history?: RouterHistory;
   @Prop() serverUrl: string;
+  @Prop() culture: string;
   @State() webhookDefinitions: PagedList<WebhookDefinitionSummary> = {items: [], page: 1, pageSize: 50, totalCount: 0};
 
   confirmDialog: HTMLElsaConfirmDialogElement;
@@ -141,3 +143,4 @@ export class ElsaWebhookDefinitionsListScreen {
     );
   }
 }
+Tunnel.injectProps(ElsaWebhookDefinitionsListScreen, ['serverUrl', 'culture']);

@@ -38,12 +38,11 @@ export class ElsaPager {
   t = (key: string, options?: any) => this.i18next.t(key, options);
 
   navigate(path: string, page: number) {
-    
+
     if (this.history) {
       this.history.push(path);
       return;
-    }
-    else {
+    } else {
       this.paged.emit({page, pageSize: this.pageSize, totalCount: this.totalCount});
     }
   }
@@ -169,7 +168,13 @@ export class ElsaPager {
         <div class="hidden sm:elsa-flex-1 sm:elsa-flex sm:elsa-items-center sm:elsa-justify-between">
           <div>
             <p class="elsa-text-sm elsa-leading-5 elsa-text-gray-700 elsa-space-x-0-5">
-              <IntlMessage label="Display" from={from} to={to} total={totalCount} template={'<span>$t(From)</span> <span class="elsa-font-medium">{{from}}</span> <span>$t(To)</span> <span class="elsa-font-medium">{{to}}</span> <span>$t(Of)</span> <span class="elsa-font-medium">{{total}}</span> <span>$t(Results)</span>'} dangerous/>
+              <span>{t('From')}</span>
+              <span class="elsa-font-medium">{from}</span> 
+              <span>{t('To')}</span> 
+              <span class="elsa-font-medium">{to}</span> 
+              <span>{t('Of')}</span> 
+              <span class="elsa-font-medium">{totalCount}</span>
+              <span>{t('Results')}</span>
             </p>
           </div>
           <div>

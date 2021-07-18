@@ -7,10 +7,9 @@
 
 ## Properties
 
-| Property    | Attribute    | Description | Type            | Default     |
-| ----------- | ------------ | ----------- | --------------- | ----------- |
-| `history`   | --           |             | `RouterHistory` | `undefined` |
-| `serverUrl` | `server-url` |             | `string`        | `undefined` |
+| Property  | Attribute | Description | Type     | Default     |
+| --------- | --------- | ----------- | -------- | ----------- |
+| `culture` | `culture` |             | `string` | `undefined` |
 
 
 ## Dependencies
@@ -27,6 +26,7 @@ graph TD;
   elsa-studio-workflow-registry --> elsa-workflow-registry-list-screen
   elsa-workflow-registry-list-screen --> stencil-route-link
   elsa-workflow-registry-list-screen --> elsa-context-menu
+  elsa-workflow-registry-list-screen --> context-consumer
   style elsa-studio-workflow-registry fill:#f9f,stroke:#333,stroke-width:4px
 ```
 

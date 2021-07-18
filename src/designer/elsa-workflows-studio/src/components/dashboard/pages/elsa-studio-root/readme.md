@@ -9,28 +9,46 @@
 
 | Property        | Attribute         | Description | Type     | Default     |
 | --------------- | ----------------- | ----------- | -------- | ----------- |
+| `culture`       | `culture`         |             | `string` | `undefined` |
 | `monacoLibPath` | `monaco-lib-path` |             | `string` | `undefined` |
 | `serverUrl`     | `server-url`      |             | `string` | `undefined` |
+
+
+## Events
+
+| Event          | Description | Type                      |
+| -------------- | ----------- | ------------------------- |
+| `initializing` |             | `CustomEvent<ElsaStudio>` |
+
+
+## Methods
+
+### `addPlugins(pluginTypes: Array<any>) => Promise<void>`
+
+
+
+#### Returns
+
+Type: `Promise<void>`
+
+
 
 
 ## Dependencies
 
 ### Depends on
 
-- stencil-route-link
-- stencil-router
-- stencil-route-switch
-- stencil-route
-- [elsa-external-events](../../../controls/elsa-external-events)
+- [elsa-confirm-dialog](../../../shared/elsa-confirm-dialog)
+- [elsa-toast-notification](../../../shared/elsa-toast-notification)
+- context-consumer
 
 ### Graph
 ```mermaid
 graph TD;
-  elsa-studio-root --> stencil-route-link
-  elsa-studio-root --> stencil-router
-  elsa-studio-root --> stencil-route-switch
-  elsa-studio-root --> stencil-route
-  elsa-studio-root --> elsa-external-events
+  elsa-studio-root --> elsa-confirm-dialog
+  elsa-studio-root --> elsa-toast-notification
+  elsa-studio-root --> context-consumer
+  elsa-confirm-dialog --> elsa-modal-dialog
   style elsa-studio-root fill:#f9f,stroke:#333,stroke-width:4px
 ```
 

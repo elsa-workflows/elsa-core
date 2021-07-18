@@ -1,24 +1,26 @@
 import {Component, h, Prop, State} from '@stencil/core';
-import {RouterHistory} from "@stencil/router";
 import 'i18next-wc';
-import {IntlMessage} from "../../../i18n/intl-message";
 import {loadTranslations} from "../../../i18n/i18n-loader";
 import {resources} from "./localizations";
+import {GetIntlMessage} from "../../../i18n/intl-message";
+import {i18n} from "i18next";
+import Tunnel from "../../../../data/dashboard";
 
 @Component({
   tag: 'elsa-studio-webhook-definitions-list',
   shadow: false,
 })
 export class ElsaStudioWebhookDefinitionsList {
-  @Prop() history: RouterHistory;
-  @Prop() serverUrl: string;
   @Prop() culture: string;
-
+  private i18next: i18n;
+  
   async componentWillLoad() {
-    await loadTranslations(this.culture, resources);
+    this.i18next = await loadTranslations(this.culture, resources);
   }
 
   render() {
+    const IntlMessage = GetIntlMessage(this.i18next);
+    
     return (
       <div>
         <div class="elsa-border-b elsa-border-gray-200 elsa-px-4 elsa-py-4 sm:elsa-flex sm:elsa-items-center sm:elsa-justify-between sm:elsa-px-6 lg:elsa-px-8 elsa-bg-white">
@@ -35,8 +37,9 @@ export class ElsaStudioWebhookDefinitionsList {
           </div>
         </div>
 
-        <elsa-webhook-definitions-list-screen history={this.history} serverUrl={this.serverUrl} />
+        <elsa-webhook-definitions-list-screen />
       </div>
     );
   }
 }
+Tunnel.injectProps(ElsaStudioWebhookDefinitionsList, ['culture']);
