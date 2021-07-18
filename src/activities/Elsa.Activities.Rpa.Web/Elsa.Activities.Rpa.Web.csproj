@@ -12,6 +12,7 @@
             * OpenBrowser
             * ClickElement
             * TypeText
+            * GetText
             * CloseBrowser
         </Description>   
         <PackageTags>elsa, workflows, rpa, web, selenium</PackageTags>       
