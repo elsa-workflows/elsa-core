@@ -13,30 +13,26 @@ using OpenQA.Selenium.Support.Extensions;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Rpa.Web
 {
-    [Action(Category = "Rpa.Web", Description = "Clicks an element in the GUI")]
-    public class TypeText : WebActivityWithSelector
+    [Action(Category = "Rpa.Web", Description = "Extracts text from an element")]
+    public class GetText : WebActivityWithSelector
     {
-        public TypeText(IServiceProvider sp) : base(sp)
+        public GetText(IServiceProvider sp) : base(sp)
         {
         }
-        
-        [ActivityInput(Hint = "Indicates whether not to perform an interactive typing but just emulates a injecting text via javascript")]
-        public bool? UseJavascript { get; set; }
-        [ActivityInput(
-            UIHint = ActivityInputUIHints.MultiText,
-            SupportedSyntaxes = new[] { SyntaxNames.Literal }
-        )]
-        public string Text { get; set; }
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
             try
             {
                 var driver = _factory.GetDriver(GetDriverId(context));
-                if (UseJavascript ?? false)
-                    (await GetElement(driver)).SetText(Text);
-                else
-                    (await GetElement(driver)).SendKeys(Text);
-                return Done();
+                var element = await GetElement(driver);
+                string? output = default;
+                if (element.IsInputTag())
+                {
+                    output = element?.GetAttribute("value");                    
+                }
+                if (string.IsNullOrEmpty(output))
+                    output = element?.Text;
+                return Done(output);
             }
             catch (Exception e)
             {

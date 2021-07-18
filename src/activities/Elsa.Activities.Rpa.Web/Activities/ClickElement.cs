@@ -29,9 +29,9 @@ namespace Elsa.Activities.Rpa.Web
             {
                 var driver = _factory.GetDriver(GetDriverId(context));
                 if (UseJavascriptClick ?? false)
-                    driver.ExecuteJavaScript("arguments[0].click()", GetElement(driver));
+                    driver.ExecuteJavaScript("arguments[0].click()", await GetElement(driver));
                 else
-                    GetElement(driver).Click();
+                    (await GetElement(driver)).Click();
                 return Done();
             }
             catch (Exception e)

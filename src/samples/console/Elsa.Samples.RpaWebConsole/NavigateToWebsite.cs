@@ -4,7 +4,7 @@ using Elsa.Builders;
 using System.Dynamic;
 using HtmlAgilityPack;
 
-namespace Elsa.Samples.HelloWorldConsole
+namespace Elsa.Samples.RpaWebConsole
 {
     /// <summary>
     /// A basic workflow demostrating a website navigation

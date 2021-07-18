@@ -8,6 +8,7 @@ using OpenQA.Selenium;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Rpa.Web
@@ -25,42 +26,60 @@ namespace Elsa.Activities.Rpa.Web
         )]
         public string? SelectorType { get; set; }
         [ActivityInput(Hint = "The selector value depends on SelectorType")]
-        public string? SelectorValue { get; set; }        
+        public string? SelectorValue { get; set; }
+        public int RetryCount { get; set; } = 5;
+        public TimeSpan RetryInterval { get; set; } = TimeSpan.FromMilliseconds(500);
         public Func<HtmlNode, bool>? AdvancedSelector { get; set; }
-        internal IWebElement GetElement(IWebDriver driver)
+        internal async Task<IWebElement> GetElement(IWebDriver driver)
         {
-            var els = GetElements(driver);
+            var els = await GetElements(driver);
             if (!els.Any())
                 throw new Exception($"no element found matching the given criterias");
 #pragma warning disable CS8603 // Possible null reference return.
             return els.FirstOrDefault();
 #pragma warning restore CS8603 // Possible null reference return.
         }
-        internal IEnumerable<IWebElement?> GetElements(IWebDriver driver)
+        internal async Task<IEnumerable<IWebElement?>> GetElements(IWebDriver driver)
         {
-            if (AdvancedSelector != default)
-                return driver.FindElements(AdvancedSelector);
-            switch (SelectorType)
+            List<IWebElement?> output = new List<IWebElement>();
+            for (int i = 0; i < RetryCount; i++)
             {
-                case SelectorTypes.ById: { return driver.FindElements(By.Id(SelectorValue)); }
-                case SelectorTypes.ByName: { return driver.FindElements(By.Name(SelectorValue)); }
-                case SelectorTypes.ByXPath: { return driver.FindElements(By.XPath(SelectorValue)); }
-                case SelectorTypes.ByLinkText: { return driver.FindElements(By.LinkText(SelectorValue)); }
-                case SelectorTypes.Advanced:
-                    {                        
-                        var options = ScriptOptions.Default.AddReferences(typeof(HtmlNode).Assembly);
-                        try
-                        {
-                            Func<HtmlNode, bool> exp = CSharpScript.EvaluateAsync<Func<HtmlNode, bool>>(SelectorValue, options).GetAwaiter().GetResult();
-                            return driver.FindElements(exp);
-                        }
-                        catch (Exception e)
-                        {
-                            throw new Exception($"invalid expression {SelectorValue}", e);
-                        }
+                try
+                {
+                    if (AdvancedSelector != default)
+                        return driver.FindElements(AdvancedSelector);
+                    switch (SelectorType)
+                    {
+                        case SelectorTypes.ById: { output.AddRange(driver.FindElements(By.Id(SelectorValue))); break; }
+                        case SelectorTypes.ByName: { output.AddRange(driver.FindElements(By.Name(SelectorValue))); break; }
+                        case SelectorTypes.ByXPath: { output.AddRange(driver.FindElements(By.XPath(SelectorValue))); break; }
+                        case SelectorTypes.ByLinkText: { output.AddRange(driver.FindElements(By.LinkText(SelectorValue))); break; }
+                        case SelectorTypes.Advanced:
+                            {
+                                var options = ScriptOptions.Default.AddReferences(typeof(HtmlNode).Assembly);
+                                try
+                                {
+                                    Func<HtmlNode, bool> exp = CSharpScript.EvaluateAsync<Func<HtmlNode, bool>>(SelectorValue, options).GetAwaiter().GetResult();
+                                    output.AddRange(driver.FindElements(exp)); break;
+                                }
+                                catch (Exception e)
+                                {
+                                    throw new Exception($"invalid expression {SelectorValue}", e);
+                                }
+                            }
+                        default: return new List<IWebElement>();
                     }
-                default: return new List<IWebElement>();
+                    if (output.Any())
+                        break;
+                    else
+                        await Task.Delay(RetryInterval);
+                }
+                catch
+                {
+                    await Task.Delay(RetryInterval);
+                }
             }
+            return output;
         }
     }
 }

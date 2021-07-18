@@ -30,6 +30,7 @@ namespace Microsoft.Extensions.DependencyInjection
             .AddActivity<NavigateToUrl>()
             .AddActivity<ClickElement>()
             .AddActivity<TypeText>()
+            .AddActivity<GetText>()
             ;
     }
 }

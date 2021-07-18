@@ -1,8 +1,9 @@
 using System.Threading.Tasks;
+using Elsa.Samples.RpaWebConsole;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Samples.HelloWorldConsole
+namespace Elsa.Samples.RpaWebConsole
 {
     class Program
     {
@@ -12,6 +13,7 @@ namespace Elsa.Samples.HelloWorldConsole
             var services = new ServiceCollection()
                 .AddElsa(options => options
                     .AddRpaWebActivities()
+                    .AddConsoleActivities()
                     .AddWorkflow<NavigateToWebsite>())
                 .BuildServiceProvider();
             
