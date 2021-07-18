@@ -4,6 +4,8 @@ import {ElsaStudio} from "../../../../models";
 import {eventBus, pluginManager, activityIconProvider, confirmDialogService, createElsaClient, createHttpClient, ElsaClient} from "../../../../services";
 import {AxiosInstance} from "axios";
 import {EventTypes} from "../../../../models";
+import {ToastNotificationOptions} from "../../../shared/elsa-toast-notification/elsa-toast-notification";
+import {toastNotificationService} from "../../../../services/toast-notification-service";
 
 @Component({
   tag: 'elsa-studio-root',
@@ -17,6 +19,7 @@ export class ElsaStudioRoot {
   @Event() initializing: EventEmitter<ElsaStudio>;
 
   confirmDialog: HTMLElsaConfirmDialogElement;
+  toastNotificationElement: HTMLElsaToastNotificationElement;
 
   @Method()
   async addPlugins(pluginTypes: Array<any>) {
@@ -24,15 +27,18 @@ export class ElsaStudioRoot {
   }
 
   connectedCallback() {
-    eventBus.on(EventTypes.ShowConfirmDialog, e => {
-      e.promise = this.confirmDialog.show(e.caption, e.message);
-    });
-    eventBus.on(EventTypes.HideConfirmDialog, () => this.confirmDialog.hide);
+    eventBus.on(EventTypes.ShowConfirmDialog, e => e.promise = this.confirmDialog.show(e.caption, e.message));
+    eventBus.on(EventTypes.HideConfirmDialog, () => this.confirmDialog.hide());
+
+    eventBus.on(EventTypes.ShowToastNotification, (e: ToastNotificationOptions) => this.toastNotificationElement.show(e));
+    eventBus.on(EventTypes.HideToastNotification, () => this.toastNotificationElement.hide());
   }
 
   disconnectedCallback() {
     eventBus.off(EventTypes.ShowConfirmDialog);
     eventBus.off(EventTypes.HideConfirmDialog);
+    eventBus.off(EventTypes.ShowToastNotification);
+    eventBus.off(EventTypes.HideToastNotification);
   }
 
   componentWillLoad() {
@@ -45,6 +51,7 @@ export class ElsaStudioRoot {
       pluginManager,
       activityIconProvider,
       confirmDialogService,
+      toastNotificationService,
       elsaClientFactory,
       httpClientFactory
     };
@@ -69,6 +76,7 @@ export class ElsaStudioRoot {
       <Tunnel.Provider state={tunnelState}>
         <slot/>
         <elsa-confirm-dialog ref={el => this.confirmDialog = el} culture={this.culture}/>
+        <elsa-toast-notification ref={el => this.toastNotificationElement = el}/>
       </Tunnel.Provider>
     );
   }

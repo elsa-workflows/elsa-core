@@ -39,12 +39,14 @@ Type: `Promise<void>`
 ### Depends on
 
 - [elsa-confirm-dialog](../../../shared/elsa-confirm-dialog)
+- [elsa-toast-notification](../../../shared/elsa-toast-notification)
 - context-consumer
 
 ### Graph
 ```mermaid
 graph TD;
   elsa-studio-root --> elsa-confirm-dialog
+  elsa-studio-root --> elsa-toast-notification
   elsa-studio-root --> context-consumer
   elsa-confirm-dialog --> elsa-modal-dialog
   style elsa-studio-root fill:#f9f,stroke:#333,stroke-width:4px

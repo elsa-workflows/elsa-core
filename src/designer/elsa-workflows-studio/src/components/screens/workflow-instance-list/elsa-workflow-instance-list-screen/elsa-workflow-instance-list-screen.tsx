@@ -71,6 +71,7 @@ export class ElsaWorkflowInstanceListScreen {
   @Method()
   async refresh() {
     await this.loadWorkflowInstances();
+    this.updateSelectAllChecked();
   }
 
   @Watch("workflowId")

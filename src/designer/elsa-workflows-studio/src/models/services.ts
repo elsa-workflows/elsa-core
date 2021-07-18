@@ -2,6 +2,7 @@
 import {ElsaClient} from "../services/elsa-client";
 import EventBus from "js-event-bus";
 import {AxiosInstance} from "axios";
+import {ToastNotificationService} from "../services/toast-notification-service";
 
 export interface ElsaStudio {
   serverUrl: string;
@@ -11,4 +12,5 @@ export interface ElsaStudio {
   eventBus: EventBus;
   activityIconProvider: ActivityIconProvider;
   confirmDialogService: ConfirmDialogService;
+  toastNotificationService: ToastNotificationService;
 }

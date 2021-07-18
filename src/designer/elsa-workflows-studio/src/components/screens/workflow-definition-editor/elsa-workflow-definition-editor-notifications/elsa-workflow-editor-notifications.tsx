@@ -1,6 +1,7 @@
 import {Component, Host, h} from '@stencil/core';
-import {eventBus} from '../../../../services/event-bus';
+import {eventBus} from '../../../../services';
 import {EventTypes, WorkflowDefinition} from "../../../../models";
+import {toastNotificationService} from "../../../../services/toast-notification-service";
 
 @Component({
   tag: 'elsa-workflow-definition-editor-notifications',
@@ -22,26 +23,7 @@ export class ElsaWorkflowEditorNotifications {
     eventBus.off(EventTypes.WorkflowImported);
   }
 
-  onWorkflowPublished = async (workflowDefinition: WorkflowDefinition) => await this.toastNotificationElement.show({
-    autoCloseIn: 1500,
-    title: 'Workflow Published',
-    message: `Workflow successfully published at version ${workflowDefinition.version}.`
-  });
-
-  onWorkflowRetracted = async (workflowDefinition: WorkflowDefinition) => await this.toastNotificationElement.show({
-    autoCloseIn: 1500,
-    title: 'Workflow Retracted',
-    message: `Workflow successfully retracted at version ${workflowDefinition.version}.`
-  });
-
-  onWorkflowImported = async (workflowDefinition: WorkflowDefinition) => await this.toastNotificationElement.show({autoCloseIn: 1500, title: 'Workflow Imported', message: `Workflow successfully imported.`});
-
-  render() {
-
-    return (
-      <Host class="elsa-block">
-        <elsa-toast-notification ref={el => this.toastNotificationElement = el}/>
-      </Host>
-    );
-  }
+  onWorkflowPublished = (workflowDefinition: WorkflowDefinition) => toastNotificationService.show('Workflow Published', `Workflow successfully published at version ${workflowDefinition.version}.`, 1500);
+  onWorkflowRetracted = (workflowDefinition: WorkflowDefinition) => toastNotificationService.show('Workflow Retracted', `Workflow successfully retracted at version ${workflowDefinition.version}.`, 1500);
+  onWorkflowImported = (workflowDefinition: WorkflowDefinition) => toastNotificationService.show('Workflow Imported', `Workflow successfully imported.`, 1500);
 }
