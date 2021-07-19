@@ -1,4 +1,4 @@
-﻿import {ActivityModel, ActivityPropertyDescriptor} from "../models/";
+﻿import {ActivityModel, ActivityPropertyDescriptor, ElsaStudio} from "../models/";
 import {PropertyDisplayDriver} from "./property-display-driver";
 import {NullPropertyDriver } from "../drivers";
 import {Map} from '../utils/utils';
@@ -7,7 +7,17 @@ export type PropertyDisplayDriverMap = Map<() => PropertyDisplayDriver>;
 
 export class PropertyDisplayManager {
 
+  elsaStudio: ElsaStudio;
+  initialized: boolean;
   drivers: PropertyDisplayDriverMap = {};
+
+  initialize(elsaStudio: ElsaStudio) {
+    if (this.initialized)
+      return;
+
+    this.elsaStudio = elsaStudio;
+    this.initialized = true;
+  }
 
   addDriver<T extends PropertyDisplayDriver>(controlType: string, driver: T) {
     this.drivers[controlType] = () => driver;
@@ -24,8 +34,8 @@ export class PropertyDisplayManager {
   }
 
   getDriver(type: string) {
-    const driverFactory = this.drivers[type] || (() => new NullPropertyDriver());
-    return driverFactory();
+    const driverFactory = this.drivers[type] || ((_: ElsaStudio) => new NullPropertyDriver());
+    return driverFactory(this.elsaStudio);
   }
 }
 

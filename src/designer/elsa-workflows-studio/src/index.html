@@ -79,6 +79,22 @@
             });
         });
     }
+    
+    // Custom activity property type input control driver:
+    function CustomPropertyFieldDriver(elsaStudio){
+        this.display = (activity, property) => {
+            const prop = elsaStudio.getOrCreateProperty(activity, property.name);
+            return `<input type="text" className="disabled:elsa-opacity-50 disabled:elsa-cursor-not-allowed focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300"`;
+        };
+    }
+
+    // Custom activity property type input control plugin:
+    function CustomPropertyFieldPlugin(elsaStudio) {
+        const {propertyDisplayManager} = elsaStudio;
+
+        // Register custom driver.
+        propertyDisplayManager.addDriver('my-custom-property-type', CustomPropertyFieldDriver);
+    }
 
     // Get a handle to the elsa-studio-root element.
     const elsaStudioRoot = document.querySelector('elsa-studio-root');
@@ -89,7 +105,7 @@
         await customElements.whenDefined('elsa-studio-root');
 
         // Install plugins.
-        await elsaStudioRoot.addPlugins([CustomReadLinePlugin, CustomBulkActionsPlugin, CustomHttpMiddlewarePlugin]);
+        await elsaStudioRoot.addPlugins([CustomReadLinePlugin, CustomBulkActionsPlugin, CustomHttpMiddlewarePlugin, CustomPropertyFieldPlugin]);
     })();
 
     // Alternatively, configure Elsa during the 'initializing' event.

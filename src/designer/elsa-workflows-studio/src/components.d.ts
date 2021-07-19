@@ -166,6 +166,7 @@ export namespace Components {
         "culture": string;
     }
     interface ElsaStudioRoot {
+        "addPlugin": (pluginType: any) => Promise<void>;
         "addPlugins": (pluginTypes: Array<any>) => Promise<void>;
         "basePath": string;
         "culture": string;

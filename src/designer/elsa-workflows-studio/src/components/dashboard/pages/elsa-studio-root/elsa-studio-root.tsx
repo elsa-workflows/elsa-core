@@ -1,10 +1,11 @@
 import {Component, Event, EventEmitter, h, Method, Prop} from '@stencil/core';
 import Tunnel, {DashboardState} from "../../../../data/dashboard";
 import {ElsaStudio} from "../../../../models";
-import {eventBus, pluginManager, activityIconProvider, confirmDialogService, toastNotificationService, createElsaClient, createHttpClient, ElsaClient} from "../../../../services";
+import {eventBus, pluginManager, activityIconProvider, confirmDialogService, toastNotificationService, createElsaClient, createHttpClient, ElsaClient, propertyDisplayManager} from "../../../../services";
 import {AxiosInstance} from "axios";
 import {EventTypes} from "../../../../models";
 import {ToastNotificationOptions} from "../../../shared/elsa-toast-notification/elsa-toast-notification";
+import {getOrCreateProperty} from "../../../../utils/utils";
 
 @Component({
   tag: 'elsa-studio-root',
@@ -24,6 +25,11 @@ export class ElsaStudioRoot {
   @Method()
   async addPlugins(pluginTypes: Array<any>) {
     pluginManager.registerPlugins(pluginTypes);
+  }
+
+  @Method()
+  async addPlugin(pluginType: any) {
+    pluginManager.registerPlugin(pluginType);
   }
 
   connectedCallback() {
@@ -50,15 +56,18 @@ export class ElsaStudioRoot {
       basePath: this.basePath,
       eventBus,
       pluginManager,
+      propertyDisplayManager,
       activityIconProvider,
       confirmDialogService,
       toastNotificationService,
       elsaClientFactory,
-      httpClientFactory
+      httpClientFactory,
+      getOrCreateProperty: getOrCreateProperty 
     };
 
     this.initializing.emit(elsaStudio);
     pluginManager.initialize(elsaStudio);
+    propertyDisplayManager.initialize(elsaStudio);
   }
 
   render() {
