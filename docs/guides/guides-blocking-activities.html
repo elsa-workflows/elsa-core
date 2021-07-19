@@ -1,0 +1,878 @@
+<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>Writing Blocking Activities · ELSA</title><meta name="viewport" content="width=device-width"/><meta name="generator" content="Docusaurus"/><meta name="description" content="In this guide, we will learn how to create [blocking activities](/elsa-core/docs/concepts/concepts-workflows#blocking-activity) by implementing a sample activity that acts as a workflow trigger."/><meta name="docsearch:version" content="2.1.0"/><meta name="docsearch:language" content="en"/><meta property="og:title" content="Writing Blocking Activities · ELSA"/><meta property="og:type" content="website"/><meta property="og:url" content="https://elsa-workflows.github.io//elsa-core/"/><meta property="og:description" content="In this guide, we will learn how to create [blocking activities](/elsa-core/docs/concepts/concepts-workflows#blocking-activity) by implementing a sample activity that acts as a workflow trigger."/><meta property="og:image" content="https://elsa-workflows.github.io//elsa-core/img/undraw_online.svg"/><meta name="twitter:card" content="summary"/><meta name="twitter:image" content="https://elsa-workflows.github.io//elsa-core/img/undraw_tweetstorm.svg"/><link rel="shortcut icon" href="/elsa-core/img/favicon.ico"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script type="text/javascript" src="https://buttons.github.io/buttons.js"></script><script src="/elsa-core/js/scrollSpy.js"></script><link rel="stylesheet" href="/elsa-core/css/main.css"/><script src="/elsa-core/js/codetabs.js"></script></head><body class="sideNavVisible separateOnPageNav"><div class="fixedHeaderContainer"><div class="headerWrapper wrapper"><header><a href="/elsa-core/"><img class="logo" src="/elsa-core/img/android-icon-192x192.png" alt="ELSA"/><h2 class="headerTitleWithLogo">ELSA</h2></a><a href="/elsa-core/versions"><h3>2.1.0</h3></a><div class="navigationWrapper navigationSlider"><nav class="slidingNav"><ul class="nav-site nav-site-internal"><li class="siteNavGroupActive"><a href="/elsa-core/docs/installation/installing-elsa-core" target="_self">Documentation</a></li><li class=""><a href="/elsa-core/docs/features/features" target="_self">Features</a></li></ul></nav></div></header></div></div><div class="navPusher"><div class="docMainWrapper wrapper"><div class="docsNavContainer" id="docsNav"><nav class="toc"><div class="toggleNav"><section class="navWrapper wrapper"><div class="navBreadcrumb wrapper"><div class="navToggle" id="navToggler"><div class="hamburger-menu"><div class="line1"></div><div class="line2"></div><div class="line3"></div></div></div><h2><i>›</i><span>Guides</span></h2><div class="tocToggler" id="tocToggler"><i class="icon-toc"></i></div></div><div class="navGroups"><div class="navGroup"><h3 class="navGroupCategoryTitle">Quickstart</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/quickstarts/quickstarts-console-hello-world">Hello World Console</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/quickstarts/quickstarts-aspnetcore-hello-world">Hello World HTTP</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/quickstarts/quickstarts-aspnetcore-server-api-endpoints">Elsa Server</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/quickstarts/quickstarts-aspnetcore-server-dashboard">Elsa Dashboard</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/quickstarts/quickstarts-aspnetcore-server-dashboard-and-api-endpoints">Elsa Dashboard + Server</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/quickstarts/quickstarts-elsa-and-docker">Elsa + Docker</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Installation</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/installation/installing-feeds">Package Feeds</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/installation/installing-elsa-core">Core</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/installation/installing-server">Server</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/installation/installing-persistence">Persistence</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/installation/installing-elsa-dashboard">Dashboard</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/installation/installing-elsa-designer">Designer</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Upgrading</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/upgrading/upgrading-v1.x-to-v2.0">1.x to 2.0</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/upgrading/upgrading-v2.0-to-v2.1">2.0 to 2.1</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Concepts</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/concepts/concepts-workflows">Workflows</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/concepts/concepts-workflow-variables">Workflow Variables</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/concepts/concepts-workflow-context">Workflow Context</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/concepts/concepts-correlation">Correlation</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Guides</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/guides/guides-recurring-tasks">Recurring Tasks</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/guides/guides-document-approval">Document Approval</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/guides/guides-signaling-workflows">Signaling Workflows</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/guides/guides-parent-child-workflows">Parent/Child Workflows</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/guides/guides-composite-activities">Composite Activities</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/guides/guides-runtime-list-values">Runtime List Values</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/guides/guides-json-workflows">JSON Workflows</a></li><li class="navListItem navListItemActive"><a class="navItem" href="/elsa-core/docs/guides/guides-blocking-activities">Blocking Activities</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/guides/guides-workflow-contexts">Workflow Contexts</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Activities</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/activities/common">Common Properties</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/activities/control-flow">Control Flow</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/activities/primitives">Primitives</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Expressions</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/expressions/expressions-javascript">JavaScript</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/expressions/expressions-liquid">Liquid</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Designer</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/designer/designer-using-the-designer">Using the Designer</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Extensibility</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/extensibility/extensibility-custom-activities">Custom Activities</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/extensibility/extensibility-custom-activity-providers">Custom Activity Providers</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/extensibility/extensibility-customize-existing-activities">Customize Activities</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/extensibility/extensibility-persistence">Persistence</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/extensibility/extensibility-workflow-storage-providers">Workflow Storage Providers</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/extensibility/extensibility-javascript">JavaScript</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/extensibility/extensibility-liquid">Liquid</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/extensibility/extensibility-expression-handlers">Expression Handlers</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/extensibility/extensibility-property-editor-types">Property Editors</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Hosting</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/hosting/hosting-distributed-hosting">Distributed Hosting</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/hosting/hosting-workflow-recovery">Workflow Recovery</a></li></ul></div></div></section></div><script>
+            var coll = document.getElementsByClassName('collapsible');
+            var checkActiveCategory = true;
+            for (var i = 0; i < coll.length; i++) {
+              var links = coll[i].nextElementSibling.getElementsByTagName('*');
+              if (checkActiveCategory){
+                for (var j = 0; j < links.length; j++) {
+                  if (links[j].classList.contains('navListItemActive')){
+                    coll[i].nextElementSibling.classList.toggle('hide');
+                    coll[i].childNodes[1].classList.toggle('rotate');
+                    checkActiveCategory = false;
+                    break;
+                  }
+                }
+              }
+
+              coll[i].addEventListener('click', function() {
+                var arrow = this.childNodes[1];
+                arrow.classList.toggle('rotate');
+                var content = this.nextElementSibling;
+                content.classList.toggle('hide');
+              });
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+              createToggler('#navToggler', '#docsNav', 'docsSliderActive');
+              createToggler('#tocToggler', 'body', 'tocActive');
+
+              var headings = document.querySelector('.toc-headings');
+              headings && headings.addEventListener('click', function(event) {
+                var el = event.target;
+                while(el !== headings){
+                  if (el.tagName === 'A') {
+                    document.body.classList.remove('tocActive');
+                    break;
+                  } else{
+                    el = el.parentNode;
+                  }
+                }
+              }, false);
+
+              function createToggler(togglerSelector, targetSelector, className) {
+                var toggler = document.querySelector(togglerSelector);
+                var target = document.querySelector(targetSelector);
+
+                if (!toggler) {
+                  return;
+                }
+
+                toggler.onclick = function(event) {
+                  event.preventDefault();
+
+                  target.classList.toggle(className);
+                };
+              }
+            });
+        </script></nav></div><div class="container mainContainer docsContainer"><div class="wrapper"><div class="post"><header class="postHeader"><h1 id="__docusaurus" class="postHeaderTitle">Writing Blocking Activities</h1></header><article><div><span><p>In this guide, we will learn how to create <a href="/elsa-core/docs/concepts/concepts-workflows#blocking-activity">blocking activities</a> by implementing a sample activity that acts as a workflow trigger.</p>
+<h2><a class="anchor" aria-hidden="true" id="source-code"></a><a href="#source-code" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Source Code</h2>
+<p>The completed solution for this guide can be found <a href="https://github.com/elsa-workflows/elsa-guides/tree/master/src/ElsaGuides.BlockingActivities">here</a>.</p>
+<h2><a class="anchor" aria-hidden="true" id="blocking-activities"></a><a href="#blocking-activities" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Blocking Activities</h2>
+<p>Examples of blocking activities are the <a href="">Timer</a>, <a href="">Cron</a>, <a href="">HTTP Endpoint</a>, <a href="">Signal Received</a> and <a href="">User Task</a> activities.</p>
+<p>Blocking activities can be used to trigger the start of a workflow or resume suspended ones.
+To implement a blocking activity, we need to follow these three steps:</p>
+<ol>
+<li>Create the activity and implement its <code>OnExecuteAsync</code> and <code>OnResumeAsync</code> method.</li>
+<li>Create a bookmark provider.</li>
+<li>Create a service that triggers workflows that start with or or blocked on our custom activity.</li>
+</ol>
+<p>We will go through each step in detail by implementing a demo activity called <strong>File Received</strong>.</p>
+<h2><a class="anchor" aria-hidden="true" id="about-the-file-received-activity"></a><a href="#about-the-file-received-activity" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>About the File Received Activity</h2>
+<p>The File Received activity will wait for a file to be received. This could be coming from an API endpoint that receives files, or perhaps some background job that monitors a file system directory for new files.
+Whatever the case may be, our activity library will provide a convenient service that can be used to trigger workflows with the File Received activity.</p>
+<p>We will also allow the user to optionally specify a list of file extensions that the received file must have in order for the activity to trigger.</p>
+<p>When the activity executes, it will put the received file in its <code>Output</code> property. Other activities can then access this file and e.g. send it as an email attachment or write it to blob storage.</p>
+<h2><a class="anchor" aria-hidden="true" id="scaffolding-the-solution"></a><a href="#scaffolding-the-solution" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Scaffolding the Solution</h2>
+<p>When developing custom activities, it is often convenient to create them within the context of an actual Elsa Server project so you can try out your work while developing.
+When writing activity libraries, a convenient setup is to have a directory structure that holds the Elsa Server and the activity library in separate folders, like this:</p>
+<pre><code class="hljs"><span class="hljs-string">/ElsaGuides.BlockingActivities</span>
+   <span class="hljs-string">/src</span>
+      <span class="hljs-string">/activities</span>
+         <span class="hljs-string">/MyActivityLibrary</span>
+      <span class="hljs-string">/web</span>
+         <span class="hljs-string">/Elsa.Server.Web</span>
+   ElsaGuides.BlockingActivities.sln
+</code></pre>
+<p>The following commands will generate the above structure, solution and projects:</p>
+<pre><code class="hljs css language-bash">dotnet new web -n Elsa.Server.Web -o ElsaGuides.BlockingActivities\src\web
+dotnet new classlib -n MyActivityLibrary -f netstandard2.1 --langVersion latest -o ElsaGuides.BlockingActivities\src\activities
+dotnet new sln -n ElsaGuides.BlockingActivities -o ElsaGuides.BlockingActivities
+dotnet sln ElsaGuides.BlockingActivities/ElsaGuides.BlockingActivities.sln add ElsaGuides.BlockingActivities/src/activities/MyActivityLibrary.csproj ElsaGuides.BlockingActivities/src/web/Elsa.Server.Web.csproj
+</code></pre>
+<p>Let's add the activity library project as a project reference to the web project:</p>
+<pre><code class="hljs css language-bash">dotnet add ElsaGuides.BlockingActivities/src/web/Elsa.Server.Web.csproj reference ElsaGuides.BlockingActivities/src/activities/MyActivityLibrary.csproj
+</code></pre>
+<p>Next, let's add the necessary Elsa packages to each respective project we just created.</p>
+<p>Add the following packages to <strong>MyActivityLibrary</strong> and <strong>ElsaGuides.BlockingActivities</strong>:</p>
+<pre><code class="hljs css language-bash">dotnet add ElsaGuides.BlockingActivities/src/activities/MyActivityLibrary.csproj package Elsa.Core
+dotnet add ElsaGuides.BlockingActivities/src/web/Elsa.Server.Web.csproj package Elsa
+dotnet add ElsaGuides.BlockingActivities/src/web/Elsa.Server.Web.csproj package Elsa.Server.Api
+dotnet add ElsaGuides.BlockingActivities/src/web/Elsa.Server.Web.csproj package Elsa.Persistence.EntityFramework.Sqlite
+</code></pre>
+<h2><a class="anchor" aria-hidden="true" id="web-project-startup"></a><a href="#web-project-startup" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Web Project Startup</h2>
+<p>Now that we have a solution structure in place, it's time to configure the Elsa Server project's Startup class. Open Startup.cs and replace its contents with the following code:</p>
+<pre><code class="hljs css language-csharp"><span class="hljs-keyword">using</span> Elsa.Persistence.EntityFramework.Core.Extensions;
+<span class="hljs-keyword">using</span> Elsa.Persistence.EntityFramework.Sqlite;
+<span class="hljs-keyword">using</span> Microsoft.AspNetCore.Builder;
+<span class="hljs-keyword">using</span> Microsoft.AspNetCore.Hosting;
+<span class="hljs-keyword">using</span> Microsoft.Extensions.Configuration;
+<span class="hljs-keyword">using</span> Microsoft.Extensions.DependencyInjection;
+<span class="hljs-keyword">using</span> Microsoft.Extensions.Hosting;
+
+<span class="hljs-keyword">namespace</span> <span class="hljs-title">Elsa.Server.Web</span>
+{
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title">Startup</span>
+    {
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">Startup</span>(<span class="hljs-params">IWebHostEnvironment environment, IConfiguration configuration</span>)</span>
+        {
+            Environment = environment;
+            Configuration = configuration;
+        }
+
+        <span class="hljs-keyword">private</span> IWebHostEnvironment Environment { <span class="hljs-keyword">get</span>; }
+        <span class="hljs-keyword">private</span> IConfiguration Configuration { <span class="hljs-keyword">get</span>; }
+
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">ConfigureServices</span>(<span class="hljs-params">IServiceCollection services</span>)</span>
+        {
+            <span class="hljs-comment">// Elsa services.</span>
+            services
+                .AddElsa(elsa =&gt; elsa
+                    .UseEntityFrameworkPersistence(ef =&gt; ef.UseSqlite())
+                    .AddConsoleActivities()
+                );
+
+            <span class="hljs-comment">// Elsa API endpoints.</span>
+            services.AddElsaApiEndpoints();
+
+            <span class="hljs-comment">// Allow arbitrary client browser apps to access the API.</span>
+            <span class="hljs-comment">// In a production environment, make sure to allow only origins you trust.</span>
+            services.AddCors(cors =&gt; cors.AddDefaultPolicy(policy =&gt; policy
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowAnyOrigin()
+                .WithExposedHeaders(<span class="hljs-string">"Content-Disposition"</span>))
+            );
+        }
+
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">Configure</span>(<span class="hljs-params">IApplicationBuilder app</span>)</span>
+        {
+            <span class="hljs-keyword">if</span> (Environment.IsDevelopment())
+                app.UseDeveloperExceptionPage();
+
+            app
+                .UseCors()
+                .UseRouting()
+                .UseEndpoints(endpoints =&gt;
+                {
+                    <span class="hljs-comment">// Elsa API Endpoints are implemented as regular ASP.NET Core API controllers.</span>
+                    endpoints.MapControllers();
+                })
+                .UseWelcomePage();
+        }
+    }
+}
+</code></pre>
+<p>When you try to run the application now, you should see the standard ASP.NET Core welcome page:</p>
+<pre><code class="hljs css language-bash">dotnet run -p ElsaGuides.BlockingActivities/src/web
+</code></pre>
+<p><img src="/elsa-core/docs/assets/guides/guides-blocking-activities-1.png" alt=""></p>
+<h2><a class="anchor" aria-hidden="true" id="file-received-activity"></a><a href="#file-received-activity" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>File Received Activity</h2>
+<p>Let's now turn our focus to the MyActivityLibrary project. Remove the <code>Class1.cs</code> file that was generated automatically and instead create a new folder called <strong>Activities</strong> and create a new class called <code>FileReceived</code>:</p>
+<pre><code class="hljs css language-csharp"><span class="hljs-keyword">using</span> Elsa.Attributes;
+<span class="hljs-keyword">using</span> Elsa.Services;
+
+<span class="hljs-keyword">namespace</span> <span class="hljs-title">MyActivityLibrary.Activities</span>
+{
+    [<span class="hljs-meta">Trigger(
+        Category = <span class="hljs-meta-string">"Elsa Guides"</span>, 
+        Description = <span class="hljs-meta-string">"Triggers when a file is received"</span>
+    )</span>]
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title">FileReceived</span> : <span class="hljs-title">Activity</span>
+    {
+    }
+}
+</code></pre>
+<p>Although this activity doesn't do anything at the moment, let's see if it is available from the activity picker.
+A quick and easy way to interact with the Elsa Server is through its REST API using a tool like Postman.</p>
+<p>For example, to list all available activities, invoke the following HTTP request:</p>
+<pre><code class="hljs css language-bash">curl --location --request GET <span class="hljs-string">'https://localhost:5001/v1/activities'</span>
+</code></pre>
+<p>Another way is to launch the Elsa Dashboard docker image if you have Docker installed with the following command:</p>
+<pre><code class="hljs css language-bash">docker run -t -i -e ELSA__SERVER__BASEADDRESS=<span class="hljs-string">'http://localhost:5000'</span> -p 16000:80 elsaworkflows/elsa-dashboard:latest
+</code></pre>
+<p>With that, Elsa Dashboard will be available via <a href="http://localhost:12000">http://localhost:12000</a>:</p>
+<p><img src="/elsa-core/docs/assets/guides/guides-blocking-activities-2.png" alt=""></p>
+<p>Try and create a new workflow definition, add an activity, and try and locate the <strong>File Received</strong> activity:</p>
+<p><img src="/elsa-core/docs/assets/guides/guides-blocking-activities-3.png" alt=""></p>
+<p>No activity by the name <strong>File Received</strong>.</p>
+<p>This makes sense, because we haven't registered the activity with Elsa Server.
+To do so, go back to the Startup class and register the activity as follows:</p>
+<pre><code class="hljs css language-csharp">services
+    .AddElsa(elsa =&gt; elsa
+        .UseEntityFrameworkPersistence(ef =&gt; ef.UseSqlite())
+        .AddConsoleActivities()
+        .AddActivity&lt;FileReceived&gt;() <span class="hljs-comment">// &lt;-- Add this line.</span>
+    );
+</code></pre>
+<p>When you now restart the server and try to add the activity, you should see this:</p>
+<p><img src="/elsa-core/docs/assets/guides/guides-blocking-activities-4.png" alt=""></p>
+<p>Perfect.</p>
+<p>Now let's get it to do something.</p>
+<h2><a class="anchor" aria-hidden="true" id="suspend--resume"></a><a href="#suspend--resume" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Suspend &amp; Resume</h2>
+<p>Since we are writing a blocking activity, the activity needs to tell the workflow engine that execution should pause until a file is received.
+To do so, we might implement the <code>OnExecute</code> method of the activity like this:</p>
+<pre><code class="hljs css language-csharp"><span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">override</span> IActivityExecutionResult <span class="hljs-title">OnExecute</span>(<span class="hljs-params"></span>)</span>
+{
+    <span class="hljs-keyword">return</span> Suspend();
+}
+</code></pre>
+<p>That will work, but only when the activity is used a blocking activity and <strong>not</strong> as a starting activity. If we used this as a starting activity, what will happen is that when a file is received, the workflow will begin, but gets suspended immediately after.
+That's no good. Instead, what we want is for the workflow to continue to the next activity when a file is received.</p>
+<p>To make that work, we need to return a <code>SuspendResult</code> only if this is not the first pass. If it IS the first pass, we will simply return an OutcomeResult with the <code>&quot;Done&quot;</code> outcome. Like this:</p>
+<pre><code class="hljs css language-csharp"><span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">override</span> IActivityExecutionResult <span class="hljs-title">OnExecute</span>(<span class="hljs-params">ActivityExecutionContext context</span>)</span>
+{
+    <span class="hljs-keyword">return</span> context.WorkflowExecutionContext.IsFirstPass ? Done() : Suspend();
+}
+</code></pre>
+<p>That will achieve exactly what we need: when the activity is used as a starting activity, it will return &quot;Done&quot; and execution of the workflow will continue. But when the activity is used as a blocking activity (i.e. not as the first activity of the workflow), the activity will suspend the workflow.</p>
+<p>The big idea is that we should be able to trigger workflows when a file is received, regardless of whether we have workflows that use this as a starting trigger or as a trigger to resume existing workflow instances.</p>
+<p>Speaking of resumption, let's implement <code>OnResume</code> next:</p>
+<pre><code class="hljs css language-csharp"><span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">override</span> IActivityExecutionResult <span class="hljs-title">OnResume</span>(<span class="hljs-params"></span>)</span>
+{
+    <span class="hljs-keyword">return</span> Done();
+}
+</code></pre>
+<p>That's it. When the activity resumes, we tell the workflow to continue.</p>
+<h2><a class="anchor" aria-hidden="true" id="bookmarks"></a><a href="#bookmarks" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Bookmarks</h2>
+<p>Before we get into triggering workflows when a file is received, we first need to know about bookmarks.</p>
+<p>A bookmark is a small piece of information that tells Elsa a number of things:</p>
+<ul>
+<li>What workflow instance is the bookmark referring to.</li>
+<li>What activity ID is the bookmark referring to.</li>
+<li>What correlation ID is associated with the bookmark.</li>
+</ul>
+<p>A bookmark can also optionally carry a <strong>payload</strong> that can be used to further identify the appropriate workflow to resume.</p>
+<p>For example, we want to respond only to files having a particular file extension or multiple allowed file extensions.
+We will create a bookmark for each of these file extensions so that when we want to trigger workflows starting with or are blocked on our activity, we can match the incoming file extension against any of the recorded bookmarks.</p>
+<p>For now, we will start simple without file extension matching.</p>
+<p>Create a new directory called <code>Bookmarks</code> and create a new class called <code>FileReceivedBookmark</code> that implements <code>IBookmark</code>:</p>
+<pre><code class="hljs css language-csharp"><span class="hljs-keyword">using</span> Elsa.Bookmarks;
+
+<span class="hljs-keyword">namespace</span> <span class="hljs-title">MyActivityLibrary.Bookmarks</span>
+{
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title">FileReceivedBookmark</span> : <span class="hljs-title">IBookmark</span>
+    {
+    }
+}
+</code></pre>
+<p>To create actual bookmarks, Elsa relies on <strong>bookmark providers</strong>. Bookmark providers are invoked when Elsa indexes workflows when they get suspended.</p>
+<p>Let's create another class called <code>FileReceivedBookmarkProvider</code> in the same directory:</p>
+<pre><code class="hljs css language-csharp">using System.Collections.Generic;
+using Elsa.Services.Bookmarks;
+using MyActivityLibrary.Activities;
+
+namespace MyActivityLibrary.Bookmarks
+{
+    public class FileReceivedBookmarkProvider : BookmarkProvider&lt;FileReceivedBookmark, FileReceived&gt;
+    {
+        public override IEnumerable&lt;BookmarkResult&gt; GetBookmarks(BookmarkProviderContext&lt;FileReceived&gt; context)
+        {
+            return new[] {Result(new FileReceivedBookmark())};
+        }
+    }
+}
+</code></pre>
+<p>All this bookmark provider does is return a new instance of <code>FileReceivedBookmark</code>.</p>
+<p>Next, we need to tell Elsa about this bookmark provider.
+To do so, go back to the <code>Startup</code> class and add the following line to the <code>ConfigureServices</code> method:</p>
+<pre><code class="hljs css language-csharp">services.AddBookmarkProvider&lt;FileReceivedBookmarkProvider&gt;();
+</code></pre>
+<h2><a class="anchor" aria-hidden="true" id="trigger-file-received-workflows"></a><a href="#trigger-file-received-workflows" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Trigger File Received Workflows</h2>
+<p>Now that we have the basics in place, we should be able to add the activity to a workflow, and trigger it using the <code>IWorkflowLaunchpad</code> service like this:</p>
+<pre><code class="hljs css language-csharp">
+<span class="hljs-keyword">var</span> bookmark = <span class="hljs-keyword">new</span> FileReceivedBookmark();
+<span class="hljs-keyword">var</span> context = <span class="hljs-keyword">new</span> CollectWorkflowsContext(<span class="hljs-keyword">nameof</span>(FileReceived), bookmark);
+<span class="hljs-keyword">await</span> _workflowLaunchpad.CollectAndDispatchWorkflowsAsync(context);
+</code></pre>
+<p>To make this a bit easier for consumer code, let's create a new service called <code>IFileReceivedInvoker</code> (create it inside a new folder called <strong>Services</strong>):</p>
+<pre><code class="hljs css language-csharp"><span class="hljs-keyword">using</span> System.Collections.Generic;
+<span class="hljs-keyword">using</span> System.Threading;
+<span class="hljs-keyword">using</span> System.Threading.Tasks;
+<span class="hljs-keyword">using</span> Elsa.Services.Models;
+
+<span class="hljs-keyword">namespace</span> <span class="hljs-title">MyActivityLibrary.Services</span>
+{
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">interface</span> <span class="hljs-title">IFileReceivedInvoker</span>
+    {
+        Task&lt;IEnumerable&lt;CollectedWorkflow&gt;&gt; DispatchWorkflowsAsync(CancellationToken cancellationToken = <span class="hljs-keyword">default</span>);
+        Task&lt;IEnumerable&lt;CollectedWorkflow&gt;&gt; ExecuteWorkflowsAsync(CancellationToken cancellationToken = <span class="hljs-keyword">default</span>);
+    }
+}
+</code></pre>
+<p>Create a class that implements this interface as follows:</p>
+<pre><code class="hljs css language-csharp"><span class="hljs-keyword">using</span> System.Collections.Generic;
+<span class="hljs-keyword">using</span> System.Threading;
+<span class="hljs-keyword">using</span> System.Threading.Tasks;
+<span class="hljs-keyword">using</span> Elsa.Services;
+<span class="hljs-keyword">using</span> Elsa.Services.Models;
+<span class="hljs-keyword">using</span> MyActivityLibrary.Activities;
+<span class="hljs-keyword">using</span> MyActivityLibrary.Bookmarks;
+
+<span class="hljs-keyword">namespace</span> <span class="hljs-title">MyActivityLibrary.Services</span>
+{
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title">FileReceivedInvoker</span> : <span class="hljs-title">IFileReceivedInvoker</span>
+    {
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">readonly</span> IWorkflowLaunchpad _workflowLaunchpad;
+
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">FileReceivedInvoker</span>(<span class="hljs-params">IWorkflowLaunchpad workflowLaunchpad</span>)</span>
+        {
+            _workflowLaunchpad = workflowLaunchpad;
+        }
+        
+        <span class="hljs-keyword">public</span> <span class="hljs-keyword">async</span> Task&lt;IEnumerable&lt;CollectedWorkflow&gt;&gt; DispatchWorkflowsAsync(CancellationToken cancellationToken = <span class="hljs-keyword">default</span>)
+        {
+            <span class="hljs-keyword">var</span> context = <span class="hljs-keyword">new</span> CollectWorkflowsContext(<span class="hljs-keyword">nameof</span>(FileReceived), <span class="hljs-keyword">new</span> FileReceivedBookmark());
+            <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> _workflowLaunchpad.CollectAndDispatchWorkflowsAsync(context, <span class="hljs-literal">null</span>, cancellationToken);
+        }
+
+        <span class="hljs-keyword">public</span> <span class="hljs-keyword">async</span> Task&lt;IEnumerable&lt;CollectedWorkflow&gt;&gt; ExecuteWorkflowsAsync(CancellationToken cancellationToken = <span class="hljs-keyword">default</span>)
+        {
+            <span class="hljs-keyword">var</span> context = <span class="hljs-keyword">new</span> CollectWorkflowsContext(<span class="hljs-keyword">nameof</span>(FileReceived), <span class="hljs-keyword">new</span> FileReceivedBookmark());
+            <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> _workflowLaunchpad.CollectAndExecuteWorkflowsAsync(context, <span class="hljs-literal">null</span>, cancellationToken);
+        }
+    }
+}
+</code></pre>
+<p>Notice that this allows callers to either <strong>dispatch</strong> or <strong>execute</strong> workflows.</p>
+<blockquote>
+<p>The difference between dispatching and executing workflows has to do with <strong>when</strong> the workflow executes.
+Dispatching a workflow will not execute the workflow directly, but instead send an instruction to a message queue. A background worker will process this queue, and therefore, execute the workflow in the background.
+Executing a workflow will execute the workflow directly before returning.</p>
+</blockquote>
+<p>Make sure to register this new service with DI in <code>Startup</code>:</p>
+<pre><code class="hljs css language-csharp">services.AddScoped&lt;IFileReceivedInvoker, FileReceivedInvoker&gt;();
+</code></pre>
+<p>And that's all that we need for now to try and see if we can trigger a workflow using our custom activity.
+To try it, let's create an API endpoint in the Elsa Server project that leverages our <code>IFileReceivedInvoker</code> service and see if we can get a workflow to respond to it.</p>
+<p>Create a new folder called <code>Endpoints</code>, a subfolder called <code>Files</code> and a new controller class called <code>Post</code>:</p>
+<blockquote>
+<p>Notice that I'm using the API Endpoint pattern to structure the controllers, rather than using the traditional controller pattern.
+To learn more about this pattern, check out <a href="https://github.com/ardalis/ApiEndpoints#1-motivation">Steve Smith's motivation on API Endpoints</a>.</p>
+</blockquote>
+<pre><code class="hljs css language-csharp"><span class="hljs-keyword">using</span> System.Linq;
+<span class="hljs-keyword">using</span> System.Threading.Tasks;
+<span class="hljs-keyword">using</span> Microsoft.AspNetCore.Mvc;
+<span class="hljs-keyword">using</span> MyActivityLibrary.Services;
+
+<span class="hljs-keyword">namespace</span> <span class="hljs-title">Elsa.Server.Web.Endpoints.Files</span>
+{
+    [<span class="hljs-meta">ApiController</span>]
+    [<span class="hljs-meta">Route(<span class="hljs-meta-string">"files"</span>)</span>]
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title">Post</span> : <span class="hljs-title">Controller</span>
+    {
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">readonly</span> IFileReceivedInvoker _invoker;
+
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">Post</span>(<span class="hljs-params">IFileReceivedInvoker invoker</span>)</span>
+        {
+            _invoker = invoker;
+        }
+
+        [<span class="hljs-meta">HttpPost</span>]
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">async</span> Task&lt;IActionResult&gt; <span class="hljs-title">Handle</span>(<span class="hljs-params"></span>)</span>
+        {
+            <span class="hljs-keyword">var</span> collectedWorkflows = <span class="hljs-keyword">await</span> _invoker.DispatchWorkflowsAsync();
+            <span class="hljs-keyword">return</span> Ok(collectedWorkflows.ToList());
+        }
+    }
+}
+</code></pre>
+<p>The above is a very simple API controller that will dispatch any and all workflows that:</p>
+<ul>
+<li>Either start with the <strong>File Received</strong> activity,</li>
+<li>Or are blocked on the <strong>File Received</strong> activity.</li>
+</ul>
+<p>To try this out, start the workflow server and use the dashboard to create <strong>and publish</strong> a new workflow, something like this:</p>
+<p><img src="/elsa-core/docs/assets/guides/guides-blocking-activities-5.png" alt=""></p>
+<p>Then invoke a POST request on the <strong>/files</strong> endpoint:</p>
+<pre><code class="hljs css language-bash">curl --location --request POST <span class="hljs-string">'https://localhost:5001/files'</span>
+</code></pre>
+<p>The response should look something like this:</p>
+<pre><code class="hljs">[
+    {
+        <span class="hljs-attr">"workflowInstanceId"</span>: <span class="hljs-string">"dd3b13dabe8a44efbfb8d122c9197207"</span>,
+        <span class="hljs-attr">"activityId"</span>: <span class="hljs-string">"75d0a39a-9c3e-40ba-ba12-6358c4a25b72"</span>
+    }
+]
+</code></pre>
+<p>And when we look at the console output of the server, we should see the following line:</p>
+<pre><code class="hljs css language-bash">Files received!
+</code></pre>
+<p>Nice!</p>
+<p>We are now able to create custom activities that act as workflow triggers.</p>
+<h2><a class="anchor" aria-hidden="true" id="real-files"></a><a href="#real-files" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Real Files</h2>
+<p>Let's take it a step further and add support for actually sending a file to the workflow which we then send as an attachment via email for example.</p>
+<p>As it turns out, all we need to do to achieve this is a couple of small things:</p>
+<ol>
+<li>Update the API endpoint to read the posted file.</li>
+<li>Update the <code>IFileReceivedInvoker</code> to accept an incoming file to send as input when triggering workflows.</li>
+</ol>
+<p>Since ASP.NET Core uses the <code>IFormFile</code> abstraction to handle uploaded files, we shouldn't use it &quot;as-is&quot; when sending to workflows, since we might also want our activity to support workflows that operate outside the context of ASP.NET Core.
+To that end, let's also create a small class that represents a file, called <code>FileModel</code>:</p>
+<pre><code class="hljs css language-csharp"><span class="hljs-keyword">namespace</span> <span class="hljs-title">MyActivityLibrary.Models</span>
+{
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title">FileModel</span>
+    {
+        <span class="hljs-keyword">public</span> <span class="hljs-keyword">string</span> FileName { <span class="hljs-keyword">get</span>; <span class="hljs-keyword">set</span>; }
+        <span class="hljs-keyword">public</span> <span class="hljs-keyword">string</span> MimeType { <span class="hljs-keyword">get</span>; <span class="hljs-keyword">set</span>; }
+        <span class="hljs-keyword">public</span> <span class="hljs-keyword">byte</span>[] Content { <span class="hljs-keyword">get</span>; <span class="hljs-keyword">set</span>; }
+    }
+}
+</code></pre>
+<p>This should be enough information for most use cases, and we can always add to it later when we need to.</p>
+<p>With that model in place, let's now update the <code>IFileReceivedInvoker</code> service:</p>
+<pre><code class="hljs css language-csharp">Task&lt;IEnumerable&lt;CollectedWorkflow&gt;&gt; DispatchWorkflowsAsync(FileModel file, CancellationToken cancellationToken = <span class="hljs-keyword">default</span>);
+Task&lt;IEnumerable&lt;CollectedWorkflow&gt;&gt; ExecuteWorkflowsAsync(FileModel file, CancellationToken cancellationToken = <span class="hljs-keyword">default</span>);
+</code></pre>
+<p>The <code>FileReceivedInvoker</code> concrete implementation should be updated as well:</p>
+<pre><code class="hljs css language-csharp"><span class="hljs-keyword">public</span> <span class="hljs-keyword">async</span> Task&lt;IEnumerable&lt;CollectedWorkflow&gt;&gt; DispatchWorkflowsAsync(FileModel file, CancellationToken cancellationToken = <span class="hljs-keyword">default</span>)
+{
+    <span class="hljs-keyword">var</span> context = <span class="hljs-keyword">new</span> CollectWorkflowsContext(<span class="hljs-keyword">nameof</span>(FileReceived), <span class="hljs-keyword">new</span> FileReceivedBookmark());
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> _workflowLaunchpad.CollectAndDispatchWorkflowsAsync(context, file, cancellationToken);
+}
+
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">async</span> Task&lt;IEnumerable&lt;CollectedWorkflow&gt;&gt; ExecuteWorkflowsAsync(FileModel file, CancellationToken cancellationToken = <span class="hljs-keyword">default</span>)
+{
+    <span class="hljs-keyword">var</span> context = <span class="hljs-keyword">new</span> CollectWorkflowsContext(<span class="hljs-keyword">nameof</span>(FileReceived), <span class="hljs-keyword">new</span> FileReceivedBookmark());
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> _workflowLaunchpad.CollectAndExecuteWorkflowsAsync(context, file, cancellationToken);
+}
+</code></pre>
+<p>Notice that we are passing in the <code>file</code> parameter into the calls to <code>CollectAndDispatchWorkflowsAsync</code> and <code>CollectAndExecuteWorkflowsAsync</code> - this will make this object available as input to any and all workflows that are triggered.</p>
+<p>We can now update the <code>Post</code> controller as follows:</p>
+<pre><code class="hljs css language-csharp">[<span class="hljs-meta">HttpPost</span>]
+<span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">async</span> Task&lt;IActionResult&gt; <span class="hljs-title">Handle</span>(<span class="hljs-params">IFormFile file</span>)</span>
+{
+    <span class="hljs-keyword">var</span> fileModel = <span class="hljs-keyword">new</span> FileModel
+    {
+        FileName = Path.GetFileName(file.FileName),
+        Content = <span class="hljs-keyword">await</span> file.OpenReadStream().ReadBytesToEndAsync(),
+        MimeType = file.ContentType
+    };
+    
+    <span class="hljs-keyword">var</span> collectedWorkflows = <span class="hljs-keyword">await</span> _invoker.DispatchWorkflowsAsync(fileModel);
+    <span class="hljs-keyword">return</span> Ok(collectedWorkflows.ToList());
+}
+</code></pre>
+<p>A sample cURL request generated from Postman looks like this:</p>
+<pre><code class="hljs css language-bash">curl --location --request POST <span class="hljs-string">'https://localhost:5001/files'</span> --form <span class="hljs-string">'file=@"/C:/Users/sipke/OneDrive/Documents/document1.docx"'</span>
+</code></pre>
+<p>Good! But how do we use it from within the workflow?</p>
+<p>As it turns out, that's easy too - we just update our activity to read its input and store it in an output property. Something like this:</p>
+<pre><code class="hljs css language-csharp"><span class="hljs-keyword">using</span> Elsa.ActivityResults;
+<span class="hljs-keyword">using</span> Elsa.Attributes;
+<span class="hljs-keyword">using</span> Elsa.Services;
+<span class="hljs-keyword">using</span> Elsa.Services.Models;
+<span class="hljs-keyword">using</span> MyActivityLibrary.Models;
+
+<span class="hljs-keyword">namespace</span> <span class="hljs-title">MyActivityLibrary.Activities</span>
+{
+    [<span class="hljs-meta">Trigger(
+        Category = <span class="hljs-meta-string">"Elsa Guides"</span>,
+        Description = <span class="hljs-meta-string">"Triggers when a file is received"</span>
+    )</span>]
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title">FileReceived</span> : <span class="hljs-title">Activity</span>
+    {
+        [<span class="hljs-meta">ActivityOutput</span>] <span class="hljs-keyword">public</span> FileModel Output { <span class="hljs-keyword">get</span>; <span class="hljs-keyword">set</span>; }
+
+        <span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">override</span> IActivityExecutionResult <span class="hljs-title">OnExecute</span>(<span class="hljs-params">ActivityExecutionContext context</span>)</span>
+        {
+            <span class="hljs-keyword">return</span> context.WorkflowExecutionContext.IsFirstPass ? OnExecuteInternal(context) : Suspend();
+        }
+
+        <span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-keyword">override</span> IActivityExecutionResult <span class="hljs-title">OnResume</span>(<span class="hljs-params">ActivityExecutionContext context</span>)</span>
+        {
+            <span class="hljs-keyword">return</span> OnExecuteInternal(context);
+        }
+
+        <span class="hljs-function"><span class="hljs-keyword">private</span> IActivityExecutionResult <span class="hljs-title">OnExecuteInternal</span>(<span class="hljs-params">ActivityExecutionContext context</span>)</span>
+        {
+            <span class="hljs-keyword">var</span> file = context.GetInput&lt;FileModel&gt;();
+            Output = file;
+            <span class="hljs-keyword">return</span> Done();
+        }
+    }
+}
+</code></pre>
+<p>Notice the following:</p>
+<ol>
+<li>We refactored the activity class a bit to prevent code duplication: we introduced a private method called <code>OnExecuteInternal</code> that is invoked from both <code>OnExecute</code> (if first pass is true) as well as from <code>OnResume</code>.</li>
+<li>The <code>OnExecuteInternal</code> reads <strong>input</strong> from the received context.</li>
+<li>The input is simply stored as an <strong>output property</strong>.</li>
+</ol>
+<p>Because we store the file as an activity output value, it is now accessible to any subsequent activities in the workflow.</p>
+<p>Let's take this to our advantage and send the posted file as an email attachment.</p>
+<p>Before we can send emails, we should install another package that provides the <code>SendEmail</code> activity:</p>
+<pre><code class="hljs css language-bash">dotnet add ElsaGuides.BlockingActivities/src/web/Elsa.Server.Web.csproj package Elsa.Activities.Email
+</code></pre>
+<p>Make sure to install it into DI from <code>Startup</code>:</p>
+<pre><code class="hljs css language-csharp">.AddConsoleActivities()
+.AddEmailActivities(options =&gt; Configuration.GetSection(<span class="hljs-string">"Elsa:Smtp"</span>).Bind(options)) &lt;-- Add <span class="hljs-keyword">this</span> line.
+</code></pre>
+<p>Since we will be dealing with emails, we need to setup an SMTP server. This is easy to: simply run the following docker command:</p>
+<pre><code class="hljs css language-bash">docker run -t -i -p 3000:80 -p 2525:25 rnwood/smtp4dev:linux-amd64-3.1.0-ci0856
+</code></pre>
+<p>That will launch an SMTP server accessible on port <code>2525</code>. Let's configure <code>appsettings.json</code> with these values too:</p>
+<pre><code class="hljs css language-json">{
+  <span class="hljs-attr">"Elsa"</span>: {
+    <span class="hljs-attr">"Smtp"</span>: {
+      <span class="hljs-attr">"Host"</span>: <span class="hljs-string">"localhost"</span>,
+      <span class="hljs-attr">"Port"</span>: <span class="hljs-string">"2525"</span>,
+      <span class="hljs-attr">"DefaultSender"</span>: <span class="hljs-string">"workflows@acme.com"</span>
+    }
+  }
+}
+</code></pre>
+<p>Restart the server with the applied changes and open the workflow we created earlier.
+Add a new <strong>Send Email</strong> activity after the <strong>Write Line</strong> activity:</p>
+<p><img src="/elsa-core/docs/assets/guides/guides-blocking-activities-6.png" alt=""></p>
+<p>Notice specifically the <strong>Attachments</strong> and <strong>Body</strong> field and their JavaScript and Liquid expression respectively: here we are referencing an activity called <strong>FileReceived1</strong>.
+Let's update the <strong>File Received</strong> activity to have exactly this name, or else things won't work.</p>
+<p><img src="/elsa-core/docs/assets/guides/guides-blocking-activities-7.png" alt=""></p>
+<p>Make sure to publish the updated workflow and then upload a new file to the /files API endpoint:</p>
+<pre><code class="hljs css language-bash">curl --location --request POST <span class="hljs-string">'https://localhost:5001/files'</span> --form <span class="hljs-string">'file=@"/C:/Users/sipke/OneDrive/Documents/Document1.docx"'</span>
+</code></pre>
+<p>If everything worked out, you should be able to find a new email when navigating to SMTP4Devs web UI at <a href="http://localhost:3000/">http://localhost:3000/</a></p>
+<p><img src="/elsa-core/docs/assets/guides/guides-blocking-activities-8.png" alt=""></p>
+<p>And when we open the attachment:</p>
+<p><img src="/elsa-core/docs/assets/guides/guides-blocking-activities-9.png" alt=""></p>
+<p>That's indeed the file I posted, so no big deal.</p>
+<h2><a class="anchor" aria-hidden="true" id="its-a-wrap"></a><a href="#its-a-wrap" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>It's a wrap!</h2>
+<p>Not so fast :)</p>
+<p>Although the entire process works, there are is at least one issue, one quality improvement and one performance improvement to be made. Let me lay it on you:</p>
+<ol>
+<li>The astute reader might have noticed already: the received email body didn't display the filename:</li>
+</ol>
+<p><img src="/elsa-core/docs/assets/guides/guides-blocking-activities-10.png" alt=""></p>
+<ol start="2">
+<li><p>If you went through this guide step by step, you might have noticed that the <strong>Attachments</strong> field is able to use JavaScript intellisense, but only up to the point of typing in <code>Output()</code>. Is there a way to have intellisense &quot;know&quot; that the output is of type <code>FileModel</code>? Yes there is, and we'll see how shortly.</p></li>
+<li><p>If you open the SQLite database and inspect the WorkflowInstances table, you will quickly notice that each workflow instance will store the posted file in Base64 format. Although this might be fine for small 1kb sample files, this is absolutely no good for anything larger. Let's fix this too.</p></li>
+</ol>
+<h3><a class="anchor" aria-hidden="true" id="issue-1"></a><a href="#issue-1" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Issue 1</h3>
+<p>To fix the first issue, we need to understand why this is happening. The liquid syntax is correct. But why no file name? As it turns out, the underlying liquid interpreter, <a href="https://github.com/sebastienros/fluid">Fluid</a>, uses an allow-listing strategy. This means that we need to explicitly allow Liquid to access properties of a certain type.
+To allow access to a given type, we need to implement a simple handler that receives Liquid context that we can configure.</p>
+<p>Before we can implement such a handler, we need to install the <code>Elsa.Scripting.Liquid</code> package first:</p>
+<pre><code class="hljs css language-bash">dotnet add ElsaGuides.BlockingActivities/src/activities/MyActivityLibrary.csproj package Elsa.Scripting.Liquid
+</code></pre>
+<p>Then create a new folder called <code>Liquid</code> and create the following handler:</p>
+<pre><code class="hljs css language-csharp">using System.Threading;
+using System.Threading.Tasks;
+using Elsa.Scripting.Liquid.Messages;
+using Fluid;
+using MediatR;
+using MyActivityLibrary.Models;
+
+namespace MyActivityLibrary.Liquid
+{
+    public class LiquidHandler : INotificationHandler&lt;EvaluatingLiquidExpression&gt;
+    {
+        public Task Handle(EvaluatingLiquidExpression notification, CancellationToken cancellationToken)
+        {
+            notification.TemplateContext.Options.MemberAccessStrategy.Register&lt;FileModel&gt;();
+            return Task.CompletedTask;
+        }
+    }
+}
+</code></pre>
+<p>Go back to <code>Startup</code> to register this handler as follows:</p>
+<pre><code class="hljs css language-csharp">services.AddNotificationHandlersFrom&lt;LiquidHandler&gt;();
+</code></pre>
+<p>That will register all notification handlers found in the assembly containing the specified type.</p>
+<p>This time when you invoke the API endpoint to post a file, you should see the filename proper:</p>
+<p><img src="/elsa-core/docs/assets/guides/guides-blocking-activities-11.png" alt=""></p>
+<p>One down, two more issues to go.</p>
+<h3><a class="anchor" aria-hidden="true" id="issue-2"></a><a href="#issue-2" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Issue 2</h3>
+<p>Open the SQLite database file from the root of the application folder with a tool such as <a href="https://sqlitebrowser.org/">DB Browser for SQLite</a>.
+When you look at the <strong>WorkflowInstances</strong> table's <strong>Data</strong> column, you will see something like this:</p>
+<p><img src="/elsa-core/docs/assets/guides/guides-blocking-activities-12.png" alt=""></p>
+<p>In fact, you may notice that the file is stored for both the <strong>File Received</strong> activity as well as the <strong>Send Email</strong> activity.</p>
+<p>As it turns out, fixing this is easy. We can configure where to save activity input &amp; output on a per-property basis using a pluggable storage provider mechanism called <strong>workflow storage providers</strong>.</p>
+<p>Out of the box, Elsa ships with three such providers:</p>
+<ul>
+<li>Workflow Instance Storage (the default)</li>
+<li>Blob Storage</li>
+<li>Transient Storage</li>
+</ul>
+<p>All we need to do is open the activity settings window of the <strong>File Received</strong> and the <strong>Send Email</strong> activity and change their storage provider to either Transient or Blob Storage.</p>
+<p>Blob Storage is useful if we want the file to persist long-term, but for our demo, we don't need that so we'll go with Transient:</p>
+<p><img src="/elsa-core/docs/assets/guides/guides-blocking-activities-13.png" alt=""></p>
+<p>Do the same for the Send Email activity:</p>
+<p><img src="/elsa-core/docs/assets/guides/guides-blocking-activities-14.png" alt=""></p>
+<p>When you publish the change and post another file, you will see that the file is no longer stored as part of the workflow instance:</p>
+<p><img src="/elsa-core/docs/assets/guides/guides-blocking-activities-15.png" alt=""></p>
+<p>Only one issue left!</p>
+<h3><a class="anchor" aria-hidden="true" id="issue-3"></a><a href="#issue-3" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Issue 3</h3>
+<p>When we open the <strong>Send Email</strong> activity property window, we get a lot of intellisense, but not for the type of the Output method as depicted in the following screenshot:</p>
+<p><img src="/elsa-core/docs/assets/guides/guides-blocking-activities-16.png" alt=""></p>
+<p>To fix this, we need to provide a type definition for the <code>FileModel</code> class, since that is the type of the <code>Output</code> property of our <strong>File Received</strong> activity.
+Elsa can automatically generate a type definition based on a given class. All we have to do is implement a type definition provider and register it with DI.</p>
+<p>For this we need to add the <code>Elsa.Scripting.JavaScript</code> package:</p>
+<pre><code class="hljs css language-bash">dotnet add ElsaGuides.BlockingActivities/src/activities/MyActivityLibrary.csproj package Elsa.Scripting.JavaScript
+</code></pre>
+<p>Next, create a new folder called <code>JavaScript</code> and a new class called <code>MyTypeDefinitionProvider</code>:</p>
+<pre><code class="hljs css language-csharp"><span class="hljs-keyword">using</span> System;
+<span class="hljs-keyword">using</span> System.Collections.Generic;
+<span class="hljs-keyword">using</span> System.Threading;
+<span class="hljs-keyword">using</span> System.Threading.Tasks;
+<span class="hljs-keyword">using</span> Elsa.Scripting.JavaScript.Services;
+<span class="hljs-keyword">using</span> MyActivityLibrary.Models;
+
+<span class="hljs-keyword">namespace</span> <span class="hljs-title">MyActivityLibrary.JavaScript</span>
+{
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title">MyTypeDefinitionProvider</span> : <span class="hljs-title">TypeDefinitionProvider</span>
+    {
+        <span class="hljs-keyword">public</span> <span class="hljs-keyword">override</span> ValueTask&lt;IEnumerable&lt;Type&gt;&gt; CollectTypesAsync(TypeDefinitionContext context, CancellationToken cancellationToken = <span class="hljs-keyword">default</span>)
+        {
+            <span class="hljs-keyword">var</span> types = <span class="hljs-keyword">new</span>[] { <span class="hljs-keyword">typeof</span>(FileModel) };
+            <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> ValueTask&lt;IEnumerable&lt;Type&gt;&gt;(types);
+        }
+    }
+}
+</code></pre>
+<p>And register it with DI like this:</p>
+<pre><code class="hljs css language-csharp">services.AddJavaScriptTypeDefinitionProvider&lt;MyTypeDefinitionProvider&gt;();
+</code></pre>
+<p>Build the solution, start the server and refresh the workflow definition editor.</p>
+<p>This time around you should see intellisense recognizing the proper type for the <code>Output</code> property of the <strong>File Received</strong> activity:</p>
+<p><img src="/elsa-core/docs/assets/guides/guides-blocking-activities-17.png" alt=""></p>
+<p>This also means that we can &quot;dot&quot; into it to access its properties:</p>
+<p><img src="/elsa-core/docs/assets/guides/guides-blocking-activities-18.png" alt=""></p>
+<p>All fixed!</p>
+<h2><a class="anchor" aria-hidden="true" id="file-monitoring"></a><a href="#file-monitoring" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>File Monitoring</h2>
+<p>We have seen how to trigger the workflow with new files by posting them to an API endpoint.
+But that's not the only way we can send files to a workflow.</p>
+<p>Another scenario might be a process that monitors some directory. Every time a new file is added, we want to send it to a workflow for processing.</p>
+<p>Let's see how that might work.</p>
+<h3><a class="anchor" aria-hidden="true" id="file-monitor-service"></a><a href="#file-monitor-service" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>File Monitor Service</h3>
+<p>First, install the <code>Microsoft.AspNetCore.StaticFiles</code> package so we can get the mime type from a given file:</p>
+<pre><code class="hljs css language-bash">dotnet add ElsaGuides.BlockingActivities/src/web/Elsa.Server.Web.csproj package Microsoft.AspNetCore.StaticFiles
+</code></pre>
+<p>Next, create a new Hosted Service called <code>FileMonitorService</code> in a new folder called <code>HostedServices</code> in the web project:</p>
+<pre><code class="hljs css language-csharp"><span class="hljs-keyword">using</span> System;
+<span class="hljs-keyword">using</span> System.IO;
+<span class="hljs-keyword">using</span> System.Threading;
+<span class="hljs-keyword">using</span> System.Threading.Tasks;
+<span class="hljs-keyword">using</span> Microsoft.AspNetCore.StaticFiles;
+<span class="hljs-keyword">using</span> Microsoft.Extensions.DependencyInjection;
+<span class="hljs-keyword">using</span> Microsoft.Extensions.Hosting;
+<span class="hljs-keyword">using</span> MyActivityLibrary.Models;
+<span class="hljs-keyword">using</span> MyActivityLibrary.Services;
+
+<span class="hljs-keyword">namespace</span> <span class="hljs-title">Elsa.Server.Web.HostedServices</span>
+{
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title">FileMonitorService</span> : <span class="hljs-title">IHostedService</span>, <span class="hljs-title">IDisposable</span>
+    {
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">readonly</span> IHostEnvironment _hostEnvironment;
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">readonly</span> IContentTypeProvider _contentTypeProvider;
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">readonly</span> IServiceScopeFactory _serviceScopeFactory;
+        <span class="hljs-keyword">private</span> FileSystemWatcher _watcher;
+
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">FileMonitorService</span>(<span class="hljs-params">IHostEnvironment hostEnvironment, IContentTypeProvider contentTypeProvider, IServiceScopeFactory serviceScopeFactory</span>)</span>
+        {
+            _hostEnvironment = hostEnvironment;
+            _contentTypeProvider = contentTypeProvider;
+            _serviceScopeFactory = serviceScopeFactory;
+        }
+
+        <span class="hljs-function"><span class="hljs-keyword">public</span> Task <span class="hljs-title">StartAsync</span>(<span class="hljs-params">CancellationToken cancellationToken</span>)</span>
+        {
+            <span class="hljs-keyword">var</span> folderPath = Path.Combine(_hostEnvironment.ContentRootPath, <span class="hljs-string">"Files"</span>);
+
+            <span class="hljs-comment">// Ensure the path exists.</span>
+            Directory.CreateDirectory(folderPath);
+
+            _watcher = <span class="hljs-keyword">new</span> FileSystemWatcher(folderPath)
+            {
+                NotifyFilter = NotifyFilters.Attributes
+                    | NotifyFilters.CreationTime
+                    | NotifyFilters.DirectoryName
+                    | NotifyFilters.FileName
+                    | NotifyFilters.LastAccess
+                    | NotifyFilters.LastWrite
+                    | NotifyFilters.Security
+                    | NotifyFilters.Size
+            };
+
+            _watcher.Created += OnFileCreated;
+            _watcher.Filter = <span class="hljs-string">"*.*"</span>;
+            _watcher.IncludeSubdirectories = <span class="hljs-literal">true</span>;
+            _watcher.EnableRaisingEvents = <span class="hljs-literal">true</span>;
+
+            <span class="hljs-keyword">return</span> Task.CompletedTask;
+        }
+
+        <span class="hljs-function"><span class="hljs-keyword">public</span> Task <span class="hljs-title">StopAsync</span>(<span class="hljs-params">CancellationToken cancellationToken</span>)</span>
+        {
+            _watcher.Dispose();
+            <span class="hljs-keyword">return</span> Task.CompletedTask;
+        }
+
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">Dispose</span>(<span class="hljs-params"></span>)</span>
+        {
+            _watcher?.Dispose();
+        }
+
+        <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">async</span> <span class="hljs-keyword">void</span> <span class="hljs-title">OnFileCreated</span>(<span class="hljs-params"><span class="hljs-keyword">object</span> sender, FileSystemEventArgs e</span>)</span>
+        {
+            <span class="hljs-keyword">await</span> <span class="hljs-keyword">using</span> <span class="hljs-keyword">var</span> fileStream = File.OpenRead(e.FullPath);
+            <span class="hljs-keyword">var</span> content = <span class="hljs-keyword">await</span> fileStream.ReadBytesToEndAsync();
+            <span class="hljs-keyword">var</span> fileName = e.Name!;
+            <span class="hljs-keyword">var</span> mimeType = GetMimeType(fileName);
+
+            <span class="hljs-keyword">var</span> fileModel = <span class="hljs-keyword">new</span> FileModel
+            {
+                FileName = fileName,
+                MimeType = mimeType,
+                Content = content
+            };
+
+            <span class="hljs-keyword">using</span> <span class="hljs-keyword">var</span> scope = _serviceScopeFactory.CreateScope();
+            <span class="hljs-keyword">var</span> invoker = scope.ServiceProvider.GetRequiredService&lt;IFileReceivedInvoker&gt;();
+            <span class="hljs-keyword">await</span> invoker.DispatchWorkflowsAsync(fileModel);
+        }
+
+        <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">string</span> <span class="hljs-title">GetMimeType</span>(<span class="hljs-params"><span class="hljs-keyword">string</span> fileName</span>)</span> =&gt; _contentTypeProvider.TryGetContentType(fileName, <span class="hljs-keyword">out</span> <span class="hljs-keyword">var</span> mimeType) ? mimeType : <span class="hljs-string">"application/octet-stream"</span>;
+    }
+}
+</code></pre>
+<p>That's a lot of code, but it's all quite straightforward. All it does is setup a file monitor and listen for new files being created in the <code>&quot;Files&quot;</code> directory.
+When the event handler is invoked, we read the file contents and trigger any and all workflows that have a <strong>File Received</strong> activity on them.</p>
+<p>For this to work, we need to register the <code>IContentTypeProvider</code> (which is provided by the <code>Microsoft.AspNetCore.StaticFiles</code> package) service in <code>Startup</code> as follows:</p>
+<pre><code class="hljs css language-csharp">services.AddSingleton&lt;IContentTypeProvider, FileExtensionContentTypeProvider&gt;();
+</code></pre>
+<p>And while we are here, let's also register the <code>FileMonitorService</code>:</p>
+<pre><code class="hljs css language-csharp">services.AddHostedService&lt;FileMonitorService&gt;();
+</code></pre>
+<p>Now when we run the server and place some file into the <code>&quot;Files&quot;</code> directory, we will see that the workflow gets invoked and an email is sent with the created file attached.</p>
+<h2><a class="anchor" aria-hidden="true" id="file-extension-filter"></a><a href="#file-extension-filter" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>File Extension Filter</h2>
+<p>Everything works great, but there's one improvement that we might implement: a file extension filter.</p>
+<p>Currently, any &amp; all file types are being processed by the workflow. For some workflows this may be fine, but in other scenarios you might want to process only files of a certain file type.
+One way to go about this is to use the <strong>If</strong> activity to check against the file extension.</p>
+<p>Although this will certainly work, it is a little bit more cumbersome to the user creating the workflow.</p>
+<p>Instead, let's make this a built-in feature of our File Received activity.</p>
+<p>First off, let's add an activity input property called <code>SupportedFileExtensions</code>:</p>
+<pre><code class="hljs css language-csharp">[<span class="hljs-meta">ActivityInput(
+    Hint = <span class="hljs-meta-string">"Specify a list of file extensions to filter. LEave empty to allow any file extension."</span>,
+    UIHint = ActivityInputUIHints.MultiText, 
+    DefaultSyntax = SyntaxNames.Json,
+    DefaultValue = new string[0</span>],
+    SupportedSyntaxes = <span class="hljs-keyword">new</span>[] {SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid})]
+<span class="hljs-keyword">public</span> ICollection&lt;<span class="hljs-keyword">string</span>&gt; SupportedFileExtensions { <span class="hljs-keyword">get</span>; <span class="hljs-keyword">set</span>; } = <span class="hljs-keyword">new</span> List&lt;<span class="hljs-keyword">string</span>&gt;();
+</code></pre>
+<p>The activity itself doesn't use this property, but it will be leveraged by the <code>FileReceivedBookmarkProvider</code> class, which needs to be updated like this:</p>
+<pre><code class="hljs css language-csharp">using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Elsa.Services.Bookmarks;
+using MyActivityLibrary.Activities;
+
+namespace MyActivityLibrary.Bookmarks
+{
+    public class FileReceivedBookmarkProvider : BookmarkProvider&lt;FileReceivedBookmark, FileReceived&gt;
+    {
+        public override async ValueTask&lt;IEnumerable&lt;BookmarkResult&gt;&gt; GetBookmarksAsync(BookmarkProviderContext&lt;FileReceived&gt; context, CancellationToken cancellationToken)
+        {
+            var supportedExtensions = (await context.ReadActivityPropertyAsync&lt;FileReceived, ICollection&lt;string&gt;&gt;(x =&gt; x.SupportedFileExtensions, cancellationToken))?.ToList() ?? new List&lt;string&gt;();
+
+            return !supportedExtensions.Any() 
+                ? new[] {Result(new FileReceivedBookmark())} 
+                : supportedExtensions.Select(x =&gt; Result(new FileReceivedBookmark(x)));
+        }
+    }
+}
+</code></pre>
+<p>The modified bookmark provider reads the <code>SupportedFileExtensions</code> property of the activity being indexed. If any extension was specified, we return a bookmark for each individual extension.
+If on the other hand no file extensions were configured, we will simply return a single bookmark without an extension specified.</p>
+<p>Update the <code>FileReceivedBookmark</code> next:</p>
+<pre><code class="hljs css language-csharp"><span class="hljs-keyword">using</span> Elsa.Services.Bookmarks;
+
+<span class="hljs-keyword">namespace</span> <span class="hljs-title">MyActivityLibrary.Bookmarks</span>
+{
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title">FileReceivedBookmark</span> : <span class="hljs-title">IBookmark</span>
+    {
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">FileReceivedBookmark</span>(<span class="hljs-params"></span>)</span>
+        {
+        }
+
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">FileReceivedBookmark</span>(<span class="hljs-params"><span class="hljs-keyword">string</span> fileExtension</span>)</span>
+        {
+            FileExtension = fileExtension;
+        }
+        
+        <span class="hljs-keyword">public</span> <span class="hljs-keyword">string</span>? FileExtension { <span class="hljs-keyword">get</span>; <span class="hljs-keyword">set</span>; }
+    }
+}
+</code></pre>
+<p>This adds a <code>FileExtension</code> property that will be persisted as part of the bookmark payload, which we will use next.</p>
+<p>Finally, we need to update the <code>FileReceivedInvoker</code> implementation to take into account that there may be bookmarks specific to a given file extension.
+We also need to consider that there may be bookmarks that have no particular file extension stored, which represents a &quot;wild card&quot;, i.e any file extension is allowed.</p>
+<p>To achieve this, update the class as follows:</p>
+<pre><code class="hljs css language-csharp"><span class="hljs-keyword">using</span> System.Collections.Generic;
+<span class="hljs-keyword">using</span> System.IO;
+<span class="hljs-keyword">using</span> System.Linq;
+<span class="hljs-keyword">using</span> System.Threading;
+<span class="hljs-keyword">using</span> System.Threading.Tasks;
+<span class="hljs-keyword">using</span> Elsa.Services;
+<span class="hljs-keyword">using</span> Elsa.Services.Models;
+<span class="hljs-keyword">using</span> MyActivityLibrary.Activities;
+<span class="hljs-keyword">using</span> MyActivityLibrary.Bookmarks;
+<span class="hljs-keyword">using</span> MyActivityLibrary.Models;
+<span class="hljs-keyword">using</span> Open.Linq.AsyncExtensions;
+
+<span class="hljs-keyword">namespace</span> <span class="hljs-title">MyActivityLibrary.Services</span>
+{
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title">FileReceivedInvoker</span> : <span class="hljs-title">IFileReceivedInvoker</span>
+    {
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">readonly</span> IWorkflowLaunchpad _workflowLaunchpad;
+
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">FileReceivedInvoker</span>(<span class="hljs-params">IWorkflowLaunchpad workflowLaunchpad</span>)</span>
+        {
+            _workflowLaunchpad = workflowLaunchpad;
+        }
+
+        <span class="hljs-keyword">public</span> <span class="hljs-keyword">async</span> Task&lt;IEnumerable&lt;CollectedWorkflow&gt;&gt; DispatchWorkflowsAsync(FileModel file, CancellationToken cancellationToken = <span class="hljs-keyword">default</span>)
+        {
+            <span class="hljs-keyword">var</span> collectedWorkflows = <span class="hljs-keyword">await</span> CollectWorkflowsAsync(file, cancellationToken).Select(x =&gt; x).ToList();
+            <span class="hljs-keyword">await</span> _workflowLaunchpad.DispatchPendingWorkflowsAsync(collectedWorkflows, file, cancellationToken);
+
+            <span class="hljs-keyword">return</span> collectedWorkflows;
+        }
+
+        <span class="hljs-keyword">public</span> <span class="hljs-keyword">async</span> Task&lt;IEnumerable&lt;CollectedWorkflow&gt;&gt; ExecuteWorkflowsAsync(FileModel file, CancellationToken cancellationToken = <span class="hljs-keyword">default</span>)
+        {
+            <span class="hljs-keyword">var</span> collectedWorkflows = <span class="hljs-keyword">await</span> CollectWorkflowsAsync(file, cancellationToken).Select(x =&gt; x).ToList();
+            <span class="hljs-keyword">await</span> _workflowLaunchpad.ExecutePendingWorkflowsAsync(collectedWorkflows, file, cancellationToken);
+
+            <span class="hljs-keyword">return</span> collectedWorkflows;
+        }
+
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">async</span> Task&lt;IEnumerable&lt;CollectedWorkflow&gt;&gt; CollectWorkflowsAsync(FileModel fileModel, CancellationToken cancellationToken)
+        {
+            <span class="hljs-keyword">var</span> wildcardContext = <span class="hljs-keyword">new</span> CollectWorkflowsContext(<span class="hljs-keyword">nameof</span>(FileReceived), <span class="hljs-keyword">new</span> FileReceivedBookmark());
+            <span class="hljs-keyword">var</span> filteredContext = <span class="hljs-keyword">new</span> CollectWorkflowsContext(<span class="hljs-keyword">nameof</span>(FileReceived), <span class="hljs-keyword">new</span> FileReceivedBookmark(Path.GetExtension(fileModel.FileName)));
+
+            <span class="hljs-keyword">var</span> wildcardWorkflows = <span class="hljs-keyword">await</span> _workflowLaunchpad.CollectWorkflowsAsync(wildcardContext, cancellationToken).ToList();
+            <span class="hljs-keyword">var</span> filteredWorkflows = <span class="hljs-keyword">await</span> _workflowLaunchpad.CollectWorkflowsAsync(filteredContext, cancellationToken).ToList();
+
+            <span class="hljs-keyword">return</span> wildcardWorkflows.Concat(filteredWorkflows);
+        }
+    }
+}
+</code></pre>
+<p>The most interesting change is found in the new private method called <code>CollectWorkflowsAsync</code>.
+What it does is setup two types of &quot;queries&quot;: one for any workflows that responds to any file extension, and another one for any workflows that listen to one ore mor specific file extensions.</p>
+<p>Build and start the server, go to the workflow editor and update the <strong>File Received</strong> activity's <strong>File Extensions</strong> setting with <code>&quot;.zip&quot;</code>:</p>
+<p><img src="/elsa-core/docs/assets/guides/guides-blocking-activities-19.png" alt=""></p>
+<p>Publish the changes and try posting a file with a .zip extension and then another file with another extension. If all went well, only the .zip file should have triggered the workflow.
+Experiment: try different combinations, create multiple workflows with different settings to see how it behaves.</p>
+<h2><a class="anchor" aria-hidden="true" id="summary"></a><a href="#summary" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Summary</h2>
+<p>Implementing activities such as the File Received activity requires a bit of work, specifically the infrastructural code around it. But when done right, it offers a very powerful, flexible way to create workflows with ease.</p>
+<p>In this guide we have seen how to:</p>
+<ul>
+<li>Create a blocking activity that can be used as a workflow trigger.</li>
+<li>Create bookmarks.</li>
+<li>Trigger workflows using bookmarks.</li>
+<li>Setup liquid to allow-access properties of custom .NET types.</li>
+<li>Setup javascript intellisense.</li>
+<li>Leverage Workflow Storage Providers to configure activity input and output storage.</li>
+</ul>
+</span></div></article></div><div class="docs-prevnext"><a class="docs-prev button" href="/elsa-core/docs/guides/guides-json-workflows"><span class="arrow-prev">← </span><span>JSON Workflows</span></a><a class="docs-next button" href="/elsa-core/docs/guides/guides-workflow-contexts"><span>Workflow Contexts</span><span class="arrow-next"> →</span></a></div></div></div><nav class="onPageNav"><ul class="toc-headings"><li><a href="#source-code">Source Code</a></li><li><a href="#blocking-activities">Blocking Activities</a></li><li><a href="#about-the-file-received-activity">About the File Received Activity</a></li><li><a href="#scaffolding-the-solution">Scaffolding the Solution</a></li><li><a href="#web-project-startup">Web Project Startup</a></li><li><a href="#file-received-activity">File Received Activity</a></li><li><a href="#suspend--resume">Suspend &amp; Resume</a></li><li><a href="#bookmarks">Bookmarks</a></li><li><a href="#trigger-file-received-workflows">Trigger File Received Workflows</a></li><li><a href="#real-files">Real Files</a></li><li><a href="#its-a-wrap">It's a wrap!</a><ul class="toc-headings"><li><a href="#issue-1">Issue 1</a></li><li><a href="#issue-2">Issue 2</a></li><li><a href="#issue-3">Issue 3</a></li></ul></li><li><a href="#file-monitoring">File Monitoring</a><ul class="toc-headings"><li><a href="#file-monitor-service">File Monitor Service</a></li></ul></li><li><a href="#file-extension-filter">File Extension Filter</a></li><li><a href="#summary">Summary</a></li></ul></nav></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="/elsa-core/" class="nav-home"><img src="/elsa-core/img/android-icon-192x192.png" alt="ELSA" width="50" height="50"/></a><div><h5>Docs</h5><a href="/elsa-core/docs/next/installation/installing-elsa-core">Getting Started</a><a href="/elsa-core/docs/next/concepts/concepts-workflows">Concepts</a><a href="/elsa-core/docs/next/quickstarts/quickstarts-console-hello-world">Quickstarts</a><a href="/elsa-core/docs/next/guides/guides-recurring-tasks">Guides</a></div><div><h5>Community</h5><a href="https://stackoverflow.com/questions/tagged/elsa-workflows" target="_blank" rel="noreferrer noopener">Stack Overflow</a><a href="https://discord.gg/hhChk5H472" target="_blank" rel="noreferrer noopener">Discord</a></div><div><h5>More</h5><a href="https://github.com/elsa-workflows/elsa-core">GitHub</a><a class="github-button" href="https://github.com/elsa-workflows/elsa-core" data-icon="octicon-star" data-count-href="/facebook/docusaurus/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star this project on GitHub">Star</a></div></section><a href="https://dotnetfoundation.org" target="_blank" rel="noreferrer noopener" class="dotnetfoundation" title="Supported by the .NET Foundation"><img src="/elsa-core/img/dotnetfoundation.png" alt="Supported by the .NET Foundation" width="100" height="100"/></a><section class="copyright">Copyright © 2021 .NET Foundation</section></footer></div></body></html>

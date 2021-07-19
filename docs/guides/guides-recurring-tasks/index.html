@@ -1,0 +1,287 @@
+<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>Create &amp; run a recurring workflow · ELSA</title><meta name="viewport" content="width=device-width"/><meta name="generator" content="Docusaurus"/><meta name="description" content="In this guide, we will do the following:"/><meta name="docsearch:version" content="2.1.0"/><meta name="docsearch:language" content="en"/><meta property="og:title" content="Create &amp; run a recurring workflow · ELSA"/><meta property="og:type" content="website"/><meta property="og:url" content="https://elsa-workflows.github.io//elsa-core/"/><meta property="og:description" content="In this guide, we will do the following:"/><meta property="og:image" content="https://elsa-workflows.github.io//elsa-core/img/undraw_online.svg"/><meta name="twitter:card" content="summary"/><meta name="twitter:image" content="https://elsa-workflows.github.io//elsa-core/img/undraw_tweetstorm.svg"/><link rel="shortcut icon" href="/elsa-core/img/favicon.ico"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script type="text/javascript" src="https://buttons.github.io/buttons.js"></script><script src="/elsa-core/js/scrollSpy.js"></script><link rel="stylesheet" href="/elsa-core/css/main.css"/><script src="/elsa-core/js/codetabs.js"></script></head><body class="sideNavVisible separateOnPageNav"><div class="fixedHeaderContainer"><div class="headerWrapper wrapper"><header><a href="/elsa-core/"><img class="logo" src="/elsa-core/img/android-icon-192x192.png" alt="ELSA"/><h2 class="headerTitleWithLogo">ELSA</h2></a><a href="/elsa-core/versions"><h3>2.1.0</h3></a><div class="navigationWrapper navigationSlider"><nav class="slidingNav"><ul class="nav-site nav-site-internal"><li class="siteNavGroupActive"><a href="/elsa-core/docs/installation/installing-elsa-core" target="_self">Documentation</a></li><li class=""><a href="/elsa-core/docs/features/features" target="_self">Features</a></li></ul></nav></div></header></div></div><div class="navPusher"><div class="docMainWrapper wrapper"><div class="docsNavContainer" id="docsNav"><nav class="toc"><div class="toggleNav"><section class="navWrapper wrapper"><div class="navBreadcrumb wrapper"><div class="navToggle" id="navToggler"><div class="hamburger-menu"><div class="line1"></div><div class="line2"></div><div class="line3"></div></div></div><h2><i>›</i><span>Guides</span></h2><div class="tocToggler" id="tocToggler"><i class="icon-toc"></i></div></div><div class="navGroups"><div class="navGroup"><h3 class="navGroupCategoryTitle">Quickstart</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/quickstarts/quickstarts-console-hello-world">Hello World Console</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/quickstarts/quickstarts-aspnetcore-hello-world">Hello World HTTP</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/quickstarts/quickstarts-aspnetcore-server-api-endpoints">Elsa Server</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/quickstarts/quickstarts-aspnetcore-server-dashboard">Elsa Dashboard</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/quickstarts/quickstarts-aspnetcore-server-dashboard-and-api-endpoints">Elsa Dashboard + Server</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/quickstarts/quickstarts-elsa-and-docker">Elsa + Docker</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Installation</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/installation/installing-feeds">Package Feeds</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/installation/installing-elsa-core">Core</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/installation/installing-server">Server</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/installation/installing-persistence">Persistence</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/installation/installing-elsa-dashboard">Dashboard</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/installation/installing-elsa-designer">Designer</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Upgrading</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/upgrading/upgrading-v1.x-to-v2.0">1.x to 2.0</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/upgrading/upgrading-v2.0-to-v2.1">2.0 to 2.1</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Concepts</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/concepts/concepts-workflows">Workflows</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/concepts/concepts-workflow-variables">Workflow Variables</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/concepts/concepts-workflow-context">Workflow Context</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/concepts/concepts-correlation">Correlation</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Guides</h3><ul class=""><li class="navListItem navListItemActive"><a class="navItem" href="/elsa-core/docs/guides/guides-recurring-tasks">Recurring Tasks</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/guides/guides-document-approval">Document Approval</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/guides/guides-signaling-workflows">Signaling Workflows</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/guides/guides-parent-child-workflows">Parent/Child Workflows</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/guides/guides-composite-activities">Composite Activities</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/guides/guides-runtime-list-values">Runtime List Values</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/guides/guides-json-workflows">JSON Workflows</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/guides/guides-blocking-activities">Blocking Activities</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/guides/guides-workflow-contexts">Workflow Contexts</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Activities</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/activities/common">Common Properties</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/activities/control-flow">Control Flow</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/activities/primitives">Primitives</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Expressions</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/expressions/expressions-javascript">JavaScript</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/expressions/expressions-liquid">Liquid</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Designer</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/designer/designer-using-the-designer">Using the Designer</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Extensibility</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/extensibility/extensibility-custom-activities">Custom Activities</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/extensibility/extensibility-custom-activity-providers">Custom Activity Providers</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/extensibility/extensibility-customize-existing-activities">Customize Activities</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/extensibility/extensibility-persistence">Persistence</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/extensibility/extensibility-workflow-storage-providers">Workflow Storage Providers</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/extensibility/extensibility-javascript">JavaScript</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/extensibility/extensibility-liquid">Liquid</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/extensibility/extensibility-expression-handlers">Expression Handlers</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/extensibility/extensibility-property-editor-types">Property Editors</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Hosting</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/hosting/hosting-distributed-hosting">Distributed Hosting</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/hosting/hosting-workflow-recovery">Workflow Recovery</a></li></ul></div></div></section></div><script>
+            var coll = document.getElementsByClassName('collapsible');
+            var checkActiveCategory = true;
+            for (var i = 0; i < coll.length; i++) {
+              var links = coll[i].nextElementSibling.getElementsByTagName('*');
+              if (checkActiveCategory){
+                for (var j = 0; j < links.length; j++) {
+                  if (links[j].classList.contains('navListItemActive')){
+                    coll[i].nextElementSibling.classList.toggle('hide');
+                    coll[i].childNodes[1].classList.toggle('rotate');
+                    checkActiveCategory = false;
+                    break;
+                  }
+                }
+              }
+
+              coll[i].addEventListener('click', function() {
+                var arrow = this.childNodes[1];
+                arrow.classList.toggle('rotate');
+                var content = this.nextElementSibling;
+                content.classList.toggle('hide');
+              });
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+              createToggler('#navToggler', '#docsNav', 'docsSliderActive');
+              createToggler('#tocToggler', 'body', 'tocActive');
+
+              var headings = document.querySelector('.toc-headings');
+              headings && headings.addEventListener('click', function(event) {
+                var el = event.target;
+                while(el !== headings){
+                  if (el.tagName === 'A') {
+                    document.body.classList.remove('tocActive');
+                    break;
+                  } else{
+                    el = el.parentNode;
+                  }
+                }
+              }, false);
+
+              function createToggler(togglerSelector, targetSelector, className) {
+                var toggler = document.querySelector(togglerSelector);
+                var target = document.querySelector(targetSelector);
+
+                if (!toggler) {
+                  return;
+                }
+
+                toggler.onclick = function(event) {
+                  event.preventDefault();
+
+                  target.classList.toggle(className);
+                };
+              }
+            });
+        </script></nav></div><div class="container mainContainer docsContainer"><div class="wrapper"><div class="post"><header class="postHeader"><h1 id="__docusaurus" class="postHeaderTitle">Create &amp; run a recurring workflow</h1></header><article><div><span><p>In this guide, we will do the following:</p>
+<ul>
+<li>Create a console project.</li>
+<li>Programmatically define a workflow using the Workflow Builder API that automatically executes every 5 seconds using the <code>Timer</code> activity.</li>
+<li>Convert the project into an ASP.NET Core project and create the same workflow using the visual designer.</li>
+</ul>
+<h2><a class="anchor" aria-hidden="true" id="create-console-project"></a><a href="#create-console-project" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Create Console Project</h2>
+<p>Create a new .NET Core Console project called <code>ElsaGuides.RecurringTasks</code>:</p>
+<pre><code class="hljs css language-bash">dotnet new console -n <span class="hljs-string">"ElsaGuides.RecurringTasks"</span>
+</code></pre>
+<p>CD into the created project folder:</p>
+<pre><code class="hljs css language-bash"><span class="hljs-built_in">cd</span> ElsaGuides.RecurringTasks
+</code></pre>
+<p>And add the following packages:</p>
+<pre><code class="hljs css language-bash">dotnet add package Elsa
+dotnet add package Elsa.Activities.Temporal.Quartz
+dotnet add package Microsoft.Extensions.Hosting
+</code></pre>
+<h2><a class="anchor" aria-hidden="true" id="the-recurring-workflow"></a><a href="#the-recurring-workflow" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>The Recurring Workflow</h2>
+<p>Create a new file called <code>RecurringTaskWorkflow.cs</code> and add the following code:</p>
+<pre><code class="hljs css language-csharp"><span class="hljs-keyword">using</span> Elsa.Activities.Console;
+<span class="hljs-keyword">using</span> Elsa.Activities.Temporal;
+<span class="hljs-keyword">using</span> Elsa.Builders;
+<span class="hljs-keyword">using</span> NodaTime;
+
+<span class="hljs-keyword">namespace</span> <span class="hljs-title">ElsaGuides.RecurringTasks</span>
+{
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title">RecurringTaskWorkflow</span> : <span class="hljs-title">IWorkflow</span>
+    {
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">readonly</span> IClock _clock;
+
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">RecurringTaskWorkflow</span>(<span class="hljs-params">IClock clock</span>)</span> =&gt; _clock = clock;
+
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">Build</span>(<span class="hljs-params">IWorkflowBuilder builder</span>)</span> =&gt;
+            builder
+                .Timer(Duration.FromSeconds(<span class="hljs-number">5</span>))
+                .WriteLine(() =&gt; <span class="hljs-string">$"It's now <span class="hljs-subst">{_clock.GetCurrentInstant()}</span>. Let's do this thing!"</span>);
+    }
+}
+</code></pre>
+<h2><a class="anchor" aria-hidden="true" id="program"></a><a href="#program" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Program</h2>
+<p>Now that we have a workflow, we need to be able to execute it. Since the workflow starts with the <code>Timer</code> activity, Elsa can invoke it for us if we setup a .NET Host. Let's see how that works.</p>
+<p>Open <code>Program.cs</code> and replace its contents with the following:</p>
+<pre><code class="hljs css language-csharp"><span class="hljs-keyword">using</span> System.Threading.Tasks;
+<span class="hljs-keyword">using</span> Elsa;
+<span class="hljs-keyword">using</span> Microsoft.Extensions.DependencyInjection;
+<span class="hljs-keyword">using</span> Microsoft.Extensions.Hosting;
+<span class="hljs-keyword">using</span> Microsoft.Extensions.Logging;
+
+<span class="hljs-keyword">namespace</span> <span class="hljs-title">ElsaGuides.RecurringTasks</span>
+{
+    <span class="hljs-keyword">class</span> <span class="hljs-title">Program</span>
+    {
+        <span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-keyword">async</span> Task <span class="hljs-title">Main</span>(<span class="hljs-params"></span>)</span>
+        {
+            <span class="hljs-keyword">var</span> host = <span class="hljs-keyword">new</span> HostBuilder()
+                .ConfigureServices(ConfigureServices)
+                .UseConsoleLifetime()
+                .Build();
+
+            <span class="hljs-keyword">using</span> (host)
+            {
+                <span class="hljs-keyword">await</span> host.StartAsync();
+                <span class="hljs-keyword">await</span> host.WaitForShutdownAsync();
+            }
+        }
+
+        <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">ConfigureServices</span>(<span class="hljs-params">IServiceCollection services</span>)</span> =&gt;
+            services
+                .AddElsa(elsa =&gt; elsa
+                    .AddConsoleActivities()
+                    .AddQuartzTemporalActivities()
+                    .AddWorkflow&lt;RecurringTaskWorkflow&gt;());
+    }
+}
+</code></pre>
+<blockquote>
+<p>Notice that we don't have to invoke the workflow ourselves manually. Instead, this is taken care of by a background task that is executed within the host built with <code>HostBuilder</code>.</p>
+</blockquote>
+<h2><a class="anchor" aria-hidden="true" id="first-run"></a><a href="#first-run" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>First Run</h2>
+<p>Run the program. After 5 seconds, you will start seeing the following output:</p>
+<pre><code class="hljs css language-text">It's now 2021-05-08T11:24:06Z. Let's do this thing!
+It's now 2021-05-08T11:24:11Z. Let's do this thing!
+It's now 2021-05-08T11:24:16Z. Let's do this thing!
+</code></pre>
+<p>That's all it takes to setup a .NET application that is capable of executing recurring workflows.</p>
+<blockquote>
+<p><strong>The Real World</strong></p>
+<p>In real-world scenarios, you might want to configure a persistence provider so that workflow instances get persisted.</p>
+</blockquote>
+<h2><a class="anchor" aria-hidden="true" id="visual-workflows"></a><a href="#visual-workflows" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Visual Workflows</h2>
+<p>Now that we've seen how to create a recurring workflow using Elsa's Workflow Builder API, let's see how we can convert the project into an ASP.NET Core host that is capable of the following things:</p>
+<ul>
+<li>Host the Elsa Dashboard.</li>
+<li>Host the Elsa Server API Endpoints (for consumption by the Elsa Dashboard).</li>
+</ul>
+<p>We'll use the dashboard to visually create the same workflow.</p>
+<h3><a class="anchor" aria-hidden="true" id="convert-project"></a><a href="#convert-project" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Convert Project</h3>
+<p>Open the <code>ElsaGuides.RecurringTasks.csproj</code> file and replace its contents with the following:</p>
+<pre><code class="hljs css language-xml">
+<span class="hljs-tag">&lt;<span class="hljs-name">Project</span> <span class="hljs-attr">Sdk</span>=<span class="hljs-string">"Microsoft.NET.Sdk.Web"</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">PropertyGroup</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">TargetFramework</span>&gt;</span>net5.0<span class="hljs-tag">&lt;/<span class="hljs-name">TargetFramework</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">PropertyGroup</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">ItemGroup</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">PackageReference</span> <span class="hljs-attr">Include</span>=<span class="hljs-string">"Elsa"</span> <span class="hljs-attr">Version</span>=<span class="hljs-string">"2.0.0-rc1.27"</span>/&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">PackageReference</span> <span class="hljs-attr">Include</span>=<span class="hljs-string">"Elsa.Activities.Temporal.Quartz"</span> <span class="hljs-attr">Version</span>=<span class="hljs-string">"2.0.0-rc1.27"</span>/&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">PackageReference</span> <span class="hljs-attr">Include</span>=<span class="hljs-string">"Elsa.Designer.Components.Web"</span> <span class="hljs-attr">Version</span>=<span class="hljs-string">"2.0.0-rc1.27"</span>/&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">PackageReference</span> <span class="hljs-attr">Include</span>=<span class="hljs-string">"Elsa.Persistence.EntityFramework.Sqlite"</span> <span class="hljs-attr">Version</span>=<span class="hljs-string">"2.0.0-rc1.27"</span>/&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">PackageReference</span> <span class="hljs-attr">Include</span>=<span class="hljs-string">"Elsa.Server.Api"</span> <span class="hljs-attr">Version</span>=<span class="hljs-string">"2.0.0-rc1.27"</span>/&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">ItemGroup</span>&gt;</span>
+
+<span class="hljs-tag">&lt;/<span class="hljs-name">Project</span>&gt;</span>
+</code></pre>
+<p>Create a new file called <code>Startup.cs</code> and replace its default contents with the following:</p>
+<pre><code class="hljs css language-c#"><span class="hljs-keyword">using</span> Elsa;
+<span class="hljs-keyword">using</span> Elsa.Persistence.EntityFramework.Core.Extensions;
+<span class="hljs-keyword">using</span> Elsa.Persistence.EntityFramework.Sqlite;
+<span class="hljs-keyword">using</span> Microsoft.AspNetCore.Builder;
+<span class="hljs-keyword">using</span> Microsoft.AspNetCore.Hosting;
+<span class="hljs-keyword">using</span> Microsoft.Extensions.Configuration;
+<span class="hljs-keyword">using</span> Microsoft.Extensions.DependencyInjection;
+
+<span class="hljs-keyword">namespace</span> <span class="hljs-title">ElsaGuides.RecurringTasks</span>
+{
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title">Startup</span>
+    {
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">ConfigureServices</span>(<span class="hljs-params">IServiceCollection services</span>)</span>
+        {
+            services.AddRazorPages();
+            
+            services
+                .AddElsa(options =&gt; options
+                    .UseEntityFrameworkPersistence(ef =&gt; ef.UseSqlite())
+                    .AddConsoleActivities()
+                    .AddQuartzTemporalActivities()
+                );
+
+            services
+                .AddElsaApiEndpoints();
+        }
+        
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">Configure</span>(<span class="hljs-params">IApplicationBuilder app, IWebHostEnvironment env</span>)</span>
+        {
+            app.UseStaticFiles();
+            app.UseRouting();
+            app.UseEndpoints(endpoints =&gt;
+            {
+                endpoints.MapControllers();
+                endpoints.MapFallbackToPage(<span class="hljs-string">"/_Host"</span>);
+            });
+        }
+    }
+}
+</code></pre>
+<p>Update <code>Program.cs</code> with the following contents:</p>
+<pre><code class="hljs css language-c#"><span class="hljs-keyword">using</span> Microsoft.AspNetCore.Hosting;
+<span class="hljs-keyword">using</span> Microsoft.Extensions.Hosting;
+
+<span class="hljs-keyword">namespace</span> <span class="hljs-title">ElsaGuides.RecurringTasks</span>
+{
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title">Program</span>
+    {
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">Main</span>(<span class="hljs-params"><span class="hljs-keyword">string</span>[] args</span>)</span> =&gt; CreateHostBuilder(args).Build().Run();
+
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> IHostBuilder <span class="hljs-title">CreateHostBuilder</span>(<span class="hljs-params"><span class="hljs-keyword">string</span>[] args</span>)</span> =&gt;
+            Host.CreateDefaultBuilder(args)
+                .ConfigureWebHostDefaults(webBuilder =&gt; webBuilder
+                    .UseStaticWebAssets() <span class="hljs-comment">// See note "Blank Page?!".</span>
+                    .UseStartup&lt;Startup&gt;());
+    }
+}
+</code></pre>
+<p>Finally, create a new folder called <code>Pages</code> and add a new file called <code>_Host.cshtml</code> with the following contents:</p>
+<pre><code class="hljs css language-html">@page "/"
+@{
+    var serverUrl = $"{Request.Scheme}://{Request.Host}";
+}
+<span class="hljs-meta">&lt;!DOCTYPE <span class="hljs-meta-keyword">html</span>&gt;</span>
+<span class="hljs-tag">&lt;<span class="hljs-name">html</span> <span class="hljs-attr">lang</span>=<span class="hljs-string">"en"</span>&gt;</span>
+<span class="hljs-tag">&lt;<span class="hljs-name">head</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">meta</span> <span class="hljs-attr">charset</span>=<span class="hljs-string">"utf-8"</span>/&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">meta</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"viewport"</span> <span class="hljs-attr">content</span>=<span class="hljs-string">"width=device-width, initial-scale=1.0"</span>/&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">title</span>&gt;</span>Elsa Workflows<span class="hljs-tag">&lt;/<span class="hljs-name">title</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">link</span> <span class="hljs-attr">rel</span>=<span class="hljs-string">"icon"</span> <span class="hljs-attr">type</span>=<span class="hljs-string">"image/png"</span> <span class="hljs-attr">sizes</span>=<span class="hljs-string">"32x32"</span> <span class="hljs-attr">href</span>=<span class="hljs-string">"/_content/Elsa.Designer.Components.Web/elsa-workflows-studio/assets/images/favicon-32x32.png"</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">link</span> <span class="hljs-attr">rel</span>=<span class="hljs-string">"icon"</span> <span class="hljs-attr">type</span>=<span class="hljs-string">"image/png"</span> <span class="hljs-attr">sizes</span>=<span class="hljs-string">"16x16"</span> <span class="hljs-attr">href</span>=<span class="hljs-string">"/_content/Elsa.Designer.Components.Web/elsa-workflows-studio/assets/images/favicon-16x16.png"</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">link</span> <span class="hljs-attr">rel</span>=<span class="hljs-string">"stylesheet"</span> <span class="hljs-attr">href</span>=<span class="hljs-string">"/_content/Elsa.Designer.Components.Web/elsa-workflows-studio/assets/fonts/inter/inter.css"</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">link</span> <span class="hljs-attr">rel</span>=<span class="hljs-string">"stylesheet"</span> <span class="hljs-attr">href</span>=<span class="hljs-string">"/_content/Elsa.Designer.Components.Web/elsa-workflows-studio/assets/styles/tailwind.css"</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">src</span>=<span class="hljs-string">"/_content/Elsa.Designer.Components.Web/monaco-editor/min/vs/loader.js"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">type</span>=<span class="hljs-string">"module"</span> <span class="hljs-attr">src</span>=<span class="hljs-string">"/_content/Elsa.Designer.Components.Web/elsa-workflows-studio/elsa-workflows-studio.esm.js"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">head</span>&gt;</span>
+<span class="hljs-tag">&lt;<span class="hljs-name">body</span> <span class="hljs-attr">class</span>=<span class="hljs-string">"h-screen"</span> <span class="hljs-attr">style</span>=<span class="hljs-string">"background-size: 30px 30px; background-image: url(/_content/Elsa.Designer.Components.Web/elsa-workflows-studio/assets/images/tile.png); background-color: #FBFBFB;"</span>&gt;</span>
+<span class="hljs-tag">&lt;<span class="hljs-name">elsa-studio-root</span> <span class="hljs-attr">server-url</span>=<span class="hljs-string">"@serverUrl"</span> <span class="hljs-attr">monaco-lib-path</span>=<span class="hljs-string">"_content/Elsa.Designer.Components.Web/monaco-editor/min"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">elsa-studio-root</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">body</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">html</span>&gt;</span>
+</code></pre>
+<h2><a class="anchor" aria-hidden="true" id="second-run"></a><a href="#second-run" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Second Run</h2>
+<p>When you now run the project, you should see the Elsa Dashboard homepage and be able to create new workflows.</p>
+<blockquote>
+<p><strong>Blank Page?!</strong></p>
+<p>When I first followed my own guide, the page was simply blank when I launched the application.
+As it turns out, due to the fact that I converted the project from a console app to a web app myself, I didn't get the launchSettings.json file in the Properties folder that is created when using the web project template.
+This means that by default, the application will run in <strong>Production</strong> mode and not in <strong>Development</strong> mode.
+According to <a href="https://docs.microsoft.com/en-us/aspnet/core/razor-pages/ui-class?view=aspnetcore-5.0&amp;tabs=visual-studio">the Microsoft docs</a>, assets from Razor Class Libraries (such as <code>Elsa.Designer.Components.Web</code>) will only be served in <strong>Development</strong> mode or when the application is published.
+From the docs:</p>
+<p>&quot;When running the consuming app from build output (dotnet run), static web assets are enabled by default in the Development environment. To support assets in other environments when running from build output, call UseStaticWebAssets on the host builder in Program.cs&quot;.</p>
+<p>For this reason, I included the <code>UseStaticWebAssets</code> call in <code>Program.cs</code> to make sure this guide works smoothly.</p>
+</blockquote>
+<h2><a class="anchor" aria-hidden="true" id="visual-workflow"></a><a href="#visual-workflow" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Visual Workflow</h2>
+<p>Let's go ahead and navigate to the <strong>Workflow Definitions</strong> page and click the <strong>Create Workflow</strong> button.</p>
+<p>Add a new <code>Timer</code> activity by clicking the <strong>Start</strong> button (reload the page <a href="https://github.com/elsa-workflows/elsa-core/issues/915">if you don't see any Start button</a>). Since the <code>Timer</code> activity uses NodaTime's <code>Duration</code> type to store
+the interval, we can provide the following text value to specify an interval of 5 seconds:</p>
+<pre><code class="hljs css language-text">00:00:00:05
+</code></pre>
+<p>Instead of using a plain text value, we might also take advantage of using a JavaScript expression and directly employ NodaTime's <code>Duration</code> type to construct an interval, like this:</p>
+<pre><code class="hljs css language-javascript">Duration.FromSeconds(<span class="hljs-number">5</span>)
+</code></pre>
+<p>To switch to JavaScript mode, click on the small button with an icon representing horizontal triple dots and select &quot;JavaScript&quot;:</p>
+<p><img src="/elsa-core/docs/assets/guides/guides-recurring-tasks-animation-1.gif" alt="Switching to JavaScript mode"></p>
+<p>Click the <strong>Done</strong> outcome's &quot;plus&quot; button to create &amp; connect a new <code>WriteLine</code> activity and configure it as follows:</p>
+<ul>
+<li>Text (JavaScript): <code>`It's now ${new Date()}. Let's do this thing!`</code></li>
+</ul>
+<p>Click <strong>Save</strong> and then click <strong>Publish</strong> (at the bottom right of the screen).</p>
+<p>Elsa will now re-index the published workflows and see that there's a workflow with a <code>Timer</code> activity. Every 5 seconds, something like the following string will be written to standard out:</p>
+<pre><code class="hljs css language-bash">It<span class="hljs-string">'s now Sat May 08 2021 12:50:34 GMTZ. Let'</span>s <span class="hljs-keyword">do</span> this thing!
+</code></pre>
+<p>And that's how easy it is to setup an Elsa Dashboard + Server and create some workflows!</p>
+</span></div></article></div><div class="docs-prevnext"><a class="docs-prev button" href="/elsa-core/docs/concepts/concepts-correlation"><span class="arrow-prev">← </span><span>Correlation</span></a><a class="docs-next button" href="/elsa-core/docs/guides/guides-document-approval"><span>Document Approval</span><span class="arrow-next"> →</span></a></div></div></div><nav class="onPageNav"><ul class="toc-headings"><li><a href="#create-console-project">Create Console Project</a></li><li><a href="#the-recurring-workflow">The Recurring Workflow</a></li><li><a href="#program">Program</a></li><li><a href="#first-run">First Run</a></li><li><a href="#visual-workflows">Visual Workflows</a><ul class="toc-headings"><li><a href="#convert-project">Convert Project</a></li></ul></li><li><a href="#second-run">Second Run</a></li><li><a href="#visual-workflow">Visual Workflow</a></li></ul></nav></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="/elsa-core/" class="nav-home"><img src="/elsa-core/img/android-icon-192x192.png" alt="ELSA" width="50" height="50"/></a><div><h5>Docs</h5><a href="/elsa-core/docs/next/installation/installing-elsa-core">Getting Started</a><a href="/elsa-core/docs/next/concepts/concepts-workflows">Concepts</a><a href="/elsa-core/docs/next/quickstarts/quickstarts-console-hello-world">Quickstarts</a><a href="/elsa-core/docs/next/guides/guides-recurring-tasks">Guides</a></div><div><h5>Community</h5><a href="https://stackoverflow.com/questions/tagged/elsa-workflows" target="_blank" rel="noreferrer noopener">Stack Overflow</a><a href="https://discord.gg/hhChk5H472" target="_blank" rel="noreferrer noopener">Discord</a></div><div><h5>More</h5><a href="https://github.com/elsa-workflows/elsa-core">GitHub</a><a class="github-button" href="https://github.com/elsa-workflows/elsa-core" data-icon="octicon-star" data-count-href="/facebook/docusaurus/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star this project on GitHub">Star</a></div></section><a href="https://dotnetfoundation.org" target="_blank" rel="noreferrer noopener" class="dotnetfoundation" title="Supported by the .NET Foundation"><img src="/elsa-core/img/dotnetfoundation.png" alt="Supported by the .NET Foundation" width="100" height="100"/></a><section class="copyright">Copyright © 2021 .NET Foundation</section></footer></div></body></html>

@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>A Simple Document Approval Workflow · ELSA</title><meta name="viewport" content="width=device-width"/><meta name="generator" content="Docusaurus"/><meta name="description" content="In this guide, we will do the following:"/><meta name="docsearch:version" content="1.0.0"/><meta name="docsearch:language" content="en"/><meta property="og:title" content="A Simple Document Approval Workflow · ELSA"/><meta property="og:type" content="website"/><meta property="og:url" content="https://elsa-workflows.github.io//elsa-core/"/><meta property="og:description" content="In this guide, we will do the following:"/><meta property="og:image" content="https://elsa-workflows.github.io//elsa-core/img/undraw_online.svg"/><meta name="twitter:card" content="summary"/><meta name="twitter:image" content="https://elsa-workflows.github.io//elsa-core/img/undraw_tweetstorm.svg"/><link rel="shortcut icon" href="/elsa-core/img/favicon.ico"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script type="text/javascript" src="https://buttons.github.io/buttons.js"></script><script src="/elsa-core/js/scrollSpy.js"></script><link rel="stylesheet" href="/elsa-core/css/main.css"/><script src="/elsa-core/js/codetabs.js"></script></head><body class="sideNavVisible separateOnPageNav"><div class="fixedHeaderContainer"><div class="headerWrapper wrapper"><header><a href="/elsa-core/"><img class="logo" src="/elsa-core/img/android-icon-192x192.png" alt="ELSA"/><h2 class="headerTitleWithLogo">ELSA</h2></a><a href="/elsa-core/versions"><h3>1.0.0</h3></a><div class="navigationWrapper navigationSlider"><nav class="slidingNav"><ul class="nav-site nav-site-internal"><li class="siteNavGroupActive"><a href="/elsa-core/docs/installation/installing-elsa-core" target="_self">Documentation</a></li><li class=""><a href="/elsa-core/docs/features/features" target="_self">Features</a></li></ul></nav></div></header></div></div><div class="navPusher"><div class="docMainWrapper wrapper"><div class="docsNavContainer" id="docsNav"><nav class="toc"><div class="toggleNav"><section class="navWrapper wrapper"><div class="navBreadcrumb wrapper"><div class="navToggle" id="navToggler"><div class="hamburger-menu"><div class="line1"></div><div class="line2"></div><div class="line3"></div></div></div><h2><i>›</i><span>Guides</span></h2><div class="tocToggler" id="tocToggler"><i class="icon-toc"></i></div></div><div class="navGroups"><div class="navGroup"><h3 class="navGroupCategoryTitle">Installation</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/installation/installing-feeds">Package Feeds</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/installation/installing-elsa-core">Core</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/installation/installing-host">Host</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/installation/installing-persistence">Persistence</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/installation/installing-elsa-dashboard">Dashboard</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/installation/installing-elsa-designer">Designer</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Concepts</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/concepts/concepts-workflows">Workflows</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Guides</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/guides/guides-dashboard">Hello Dashboard</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/guides/guides-hello-world-console">Hello World Console</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/guides/guides-hello-world-http">Hello World HTTP</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/guides/guides-recurring-task">Recurring Task</a></li><li class="navListItem navListItemActive"><a class="navItem" href="/elsa-core/docs/guides/guides-document-approval">Document Approval</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Expressions</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/expressions/expressions-javascript">JavaScript</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/expressions/expressions-liquid">Liquid</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Extensibility</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/extensibility/extensibility-custom-activities">Custom Activities</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/extensibility/extensibility-persistence">Persistence</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/extensibility/extensibility-javascript">JavaScript</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/extensibility/extensibility-liquid">Liquid</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/extensibility/extensibility-expression-evaluators">Expression Evaluators</a></li></ul></div></div></section></div><script>
+<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>A Simple Document Approval Workflow · ELSA</title><meta name="viewport" content="width=device-width"/><meta name="generator" content="Docusaurus"/><meta name="description" content="In this guide, we will take a look at implementing a simple document approval workflow. Although it may be a simple one, it will show us a couple of interesting aspects:"/><meta name="docsearch:version" content="2.1.0"/><meta name="docsearch:language" content="en"/><meta property="og:title" content="A Simple Document Approval Workflow · ELSA"/><meta property="og:type" content="website"/><meta property="og:url" content="https://elsa-workflows.github.io//elsa-core/"/><meta property="og:description" content="In this guide, we will take a look at implementing a simple document approval workflow. Although it may be a simple one, it will show us a couple of interesting aspects:"/><meta property="og:image" content="https://elsa-workflows.github.io//elsa-core/img/undraw_online.svg"/><meta name="twitter:card" content="summary"/><meta name="twitter:image" content="https://elsa-workflows.github.io//elsa-core/img/undraw_tweetstorm.svg"/><link rel="shortcut icon" href="/elsa-core/img/favicon.ico"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script type="text/javascript" src="https://buttons.github.io/buttons.js"></script><script src="/elsa-core/js/scrollSpy.js"></script><link rel="stylesheet" href="/elsa-core/css/main.css"/><script src="/elsa-core/js/codetabs.js"></script></head><body class="sideNavVisible separateOnPageNav"><div class="fixedHeaderContainer"><div class="headerWrapper wrapper"><header><a href="/elsa-core/"><img class="logo" src="/elsa-core/img/android-icon-192x192.png" alt="ELSA"/><h2 class="headerTitleWithLogo">ELSA</h2></a><a href="/elsa-core/versions"><h3>2.1.0</h3></a><div class="navigationWrapper navigationSlider"><nav class="slidingNav"><ul class="nav-site nav-site-internal"><li class="siteNavGroupActive"><a href="/elsa-core/docs/installation/installing-elsa-core" target="_self">Documentation</a></li><li class=""><a href="/elsa-core/docs/features/features" target="_self">Features</a></li></ul></nav></div></header></div></div><div class="navPusher"><div class="docMainWrapper wrapper"><div class="docsNavContainer" id="docsNav"><nav class="toc"><div class="toggleNav"><section class="navWrapper wrapper"><div class="navBreadcrumb wrapper"><div class="navToggle" id="navToggler"><div class="hamburger-menu"><div class="line1"></div><div class="line2"></div><div class="line3"></div></div></div><h2><i>›</i><span>Guides</span></h2><div class="tocToggler" id="tocToggler"><i class="icon-toc"></i></div></div><div class="navGroups"><div class="navGroup"><h3 class="navGroupCategoryTitle">Quickstart</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/quickstarts/quickstarts-console-hello-world">Hello World Console</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/quickstarts/quickstarts-aspnetcore-hello-world">Hello World HTTP</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/quickstarts/quickstarts-aspnetcore-server-api-endpoints">Elsa Server</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/quickstarts/quickstarts-aspnetcore-server-dashboard">Elsa Dashboard</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/quickstarts/quickstarts-aspnetcore-server-dashboard-and-api-endpoints">Elsa Dashboard + Server</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/quickstarts/quickstarts-elsa-and-docker">Elsa + Docker</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Installation</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/installation/installing-feeds">Package Feeds</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/installation/installing-elsa-core">Core</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/installation/installing-server">Server</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/installation/installing-persistence">Persistence</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/installation/installing-elsa-dashboard">Dashboard</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/installation/installing-elsa-designer">Designer</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Upgrading</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/upgrading/upgrading-v1.x-to-v2.0">1.x to 2.0</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/upgrading/upgrading-v2.0-to-v2.1">2.0 to 2.1</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Concepts</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/concepts/concepts-workflows">Workflows</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/concepts/concepts-workflow-variables">Workflow Variables</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/concepts/concepts-workflow-context">Workflow Context</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/concepts/concepts-correlation">Correlation</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Guides</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/guides/guides-recurring-tasks">Recurring Tasks</a></li><li class="navListItem navListItemActive"><a class="navItem" href="/elsa-core/docs/guides/guides-document-approval">Document Approval</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/guides/guides-signaling-workflows">Signaling Workflows</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/guides/guides-parent-child-workflows">Parent/Child Workflows</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/guides/guides-composite-activities">Composite Activities</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/guides/guides-runtime-list-values">Runtime List Values</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/guides/guides-json-workflows">JSON Workflows</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/guides/guides-blocking-activities">Blocking Activities</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/guides/guides-workflow-contexts">Workflow Contexts</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Activities</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/activities/common">Common Properties</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/activities/control-flow">Control Flow</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/activities/primitives">Primitives</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Expressions</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/expressions/expressions-javascript">JavaScript</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/expressions/expressions-liquid">Liquid</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Designer</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/designer/designer-using-the-designer">Using the Designer</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Extensibility</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/extensibility/extensibility-custom-activities">Custom Activities</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/extensibility/extensibility-custom-activity-providers">Custom Activity Providers</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/extensibility/extensibility-customize-existing-activities">Customize Activities</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/extensibility/extensibility-persistence">Persistence</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/extensibility/extensibility-workflow-storage-providers">Workflow Storage Providers</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/extensibility/extensibility-javascript">JavaScript</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/extensibility/extensibility-liquid">Liquid</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/extensibility/extensibility-expression-handlers">Expression Handlers</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/extensibility/extensibility-property-editor-types">Property Editors</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Hosting</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/hosting/hosting-distributed-hosting">Distributed Hosting</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/hosting/hosting-workflow-recovery">Workflow Recovery</a></li></ul></div></div></section></div><script>
             var coll = document.getElementsByClassName('collapsible');
             var checkActiveCategory = true;
             for (var i = 0; i < coll.length; i++) {
@@ -54,488 +54,251 @@
                 };
               }
             });
-        </script></nav></div><div class="container mainContainer docsContainer"><div class="wrapper"><div class="post"><header class="postHeader"><h1 id="__docusaurus" class="postHeaderTitle">A Simple Document Approval Workflow</h1></header><article><div><span><p>In this guide, we will do the following:</p>
+        </script></nav></div><div class="container mainContainer docsContainer"><div class="wrapper"><div class="post"><header class="postHeader"><h1 id="__docusaurus" class="postHeaderTitle">A Simple Document Approval Workflow</h1></header><article><div><span><p>In this guide, we will take a look at implementing a simple document approval workflow. Although it may be a simple one, it will show us a couple of interesting aspects:</p>
 <ul>
-<li>Define a <strong>long-running</strong> workflow definition programmatically that executes when an HTTP request comes in at a specified URL. The workflow accepts a POST request with a JSON payload representing a document to be reviewed.</li>
-<li>See the following activities in action: <code>ReceiveHttpRequest</code>, <code>WriteHttpResponse</code>, <code>Fork</code>, <code>Join</code>, <code>SetVariable</code>, <code>Signaled</code>, <code>SendEmail</code> and <code>IfElse</code>.</li>
+<li>Implementing long-running workflows that get suspended &amp; resumed.</li>
+<li>Accessing activity input &amp; output from other activities.</li>
+<li>Implementing forked execution where a timer will send reminders until the recipient responds to the approval request.</li>
+<li>See how we can generate a signal URL to embed in email bodies.</li>
 </ul>
-<p>The purpose of the workflow is to allow authors to submit documents (modeled as JSON objects), and have a reviewer either <strong>approve</strong> or <strong>reject</strong> the document.
-Furthermore, if the reviewer takes too long to take action, she is <strong>reminded periodically</strong> to approve or reject the pending document.</p>
-<p>The JSON payload we'll be posting to the workflow would look like this:</p>
+<p>We will see how to implement such a workflow programmatically using the Workflow Builder API as well as visually using the Elsa Dashboard.</p>
+<p>Let's get into it!</p>
+<blockquote>
+<p><strong>Source Code</strong></p>
+<p>The source code of the completed project <a href="https://github.com/elsa-workflows/elsa-guides/tree/master/src/ElsaGuides.ContentApproval.Web">can be found here</a>.</p>
+<p><strong>Workflow Export</strong></p>
+<p>The visually designed workflow can be found as a <a href="https://github.com/elsa-workflows/elsa-guides/blob/master/src/ElsaGuides.ContentApproval.Web/VisualDocumentApprovalWorkflow.json">JSON export here</a>.
+To import this file, run the project, create a new workflow definition, and choose <strong>Import</strong> (as a sub-option on the <strong>Publish</strong> button),</p>
+</blockquote>
+<h2><a class="anchor" aria-hidden="true" id="workflow-requirements"></a><a href="#workflow-requirements" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Workflow Requirements</h2>
+<p>The purpose of the workflow is to allow authors to submit documents (modeled as JSON objects), and have a reviewer either <strong>approve</strong> or <strong>reject</strong> the document. Furthermore, if the reviewer takes too long to take action, they are **
+reminded periodically** to approve or reject the pending document.</p>
+<p>The JSON payload we'll be posting to the workflow looks like this:</p>
 <pre><code class="hljs css language-json">{
-    <span class="hljs-attr">"Id"</span>: <span class="hljs-string">"1"</span>,
-    <span class="hljs-attr">"Author"</span>: {
-        <span class="hljs-attr">"Name"</span>: <span class="hljs-string">"John"</span>,
-        <span class="hljs-attr">"Email"</span>: <span class="hljs-string">"john@gmail.com"</span>
-    },
-    <span class="hljs-attr">"Body"</span>: <span class="hljs-string">"This is sample document."</span>
+  <span class="hljs-attr">"Id"</span>: <span class="hljs-string">"1"</span>,
+  <span class="hljs-attr">"Author"</span>: {
+    <span class="hljs-attr">"Name"</span>: <span class="hljs-string">"John"</span>,
+    <span class="hljs-attr">"Email"</span>: <span class="hljs-string">"john@gmail.com"</span>
+  },
+  <span class="hljs-attr">"Body"</span>: <span class="hljs-string">"This is sample document."</span>
 }
 </code></pre>
-<p>Keep this structure in mind when looking at activities using JavaScript expressions accessing this model.</p>
-<p>Let's get to it!</p>
-<h2><a class="anchor" aria-hidden="true" id="create-aspnet-core-project"></a><a href="#create-aspnet-core-project" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Create ASP.NET Core Project</h2>
-<p>Create a new, empty ASP.NET Core project called <code>Elsa.Guides.ContentApproval.WebApp</code> and add the following packages:</p>
-<ul>
-<li>Elsa.Core</li>
-<li>Elsa.Activities.Email</li>
-<li>Elsa.Activities.Http</li>
-<li>Elsa.Activities.Timers</li>
-</ul>
-<h2><a class="anchor" aria-hidden="true" id="create-workflow-class"></a><a href="#create-workflow-class" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Create Workflow Class</h2>
-<p>Create the following class:</p>
-<pre><code class="hljs css language-csharp"><span class="hljs-keyword">using</span> System;
-<span class="hljs-keyword">using</span> System.Dynamic;
-<span class="hljs-keyword">using</span> System.Net;
+<p>Before we can create the workflow, we need to scaffold the project. For this demo, we will be hosting both the Elsa Server as well as the Elsa Dashboard, but you're free to create a separate Elsa Dashboard project.</p>
+<h2><a class="anchor" aria-hidden="true" id="the-project"></a><a href="#the-project" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>The Project</h2>
+<p>Create a new, empty ASP.NET Core project called <code>ElsaGuides.ContentApproval.Web</code>:</p>
+<pre><code class="hljs css language-bash">dotnet new web -n <span class="hljs-string">"ElsaGuides.ContentApproval.Web"</span>
+</code></pre>
+<p>CD into the created project folder:</p>
+<pre><code class="hljs css language-bash"><span class="hljs-built_in">cd</span> ElsaGuides.ContentApproval.Web
+</code></pre>
+<p>And add the following packages:</p>
+<pre><code class="hljs css language-bash">dotnet add package Elsa
+dotnet add package Elsa.Activities.Email
+dotnet add package Elsa.Activities.Http
+dotnet add package Elsa.Activities.Temporal.Quartz
+dotnet add package Elsa.Persistence.EntityFramework.Sqlite
+dotnet add package Elsa.Server.Api
+dotnet add package Elsa.Designer.Components.Web
+</code></pre>
+<h3><a class="anchor" aria-hidden="true" id="startup"></a><a href="#startup" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Startup</h3>
+<p>Open <code>Startup.cs</code> and replace its contents with the following:</p>
+<pre><code class="hljs css language-csharp"><span class="hljs-keyword">using</span> Elsa;
+<span class="hljs-keyword">using</span> Elsa.Persistence.EntityFramework.Core.Extensions;
+<span class="hljs-keyword">using</span> Elsa.Persistence.EntityFramework.Sqlite;
+<span class="hljs-keyword">using</span> Microsoft.AspNetCore.Builder;
+<span class="hljs-keyword">using</span> Microsoft.AspNetCore.Hosting;
+<span class="hljs-keyword">using</span> Microsoft.Extensions.Configuration;
+<span class="hljs-keyword">using</span> Microsoft.Extensions.DependencyInjection;
+
+<span class="hljs-keyword">namespace</span> <span class="hljs-title">ElsaGuides.ContentApproval.Web</span>
+{
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title">Startup</span>
+    {
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">Startup</span>(<span class="hljs-params">IWebHostEnvironment environment, IConfiguration configuration</span>)</span>
+        {
+            Environment = environment;
+            Configuration = configuration;
+        }
+
+        <span class="hljs-keyword">private</span> IWebHostEnvironment Environment { <span class="hljs-keyword">get</span>; }
+        <span class="hljs-keyword">private</span> IConfiguration Configuration { <span class="hljs-keyword">get</span>; }
+
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">ConfigureServices</span>(<span class="hljs-params">IServiceCollection services</span>)</span>
+        {
+            <span class="hljs-keyword">var</span> elsaSection = Configuration.GetSection(<span class="hljs-string">"Elsa"</span>);
+
+            services
+                .AddElsa(elsa =&gt; elsa
+                    .UseEntityFrameworkPersistence(ef =&gt; ef.UseSqlite())
+                    .AddConsoleActivities()
+                    .AddHttpActivities(elsaSection.GetSection(<span class="hljs-string">"Server"</span>).Bind)
+                    .AddEmailActivities(elsaSection.GetSection(<span class="hljs-string">"Smtp"</span>).Bind)
+                    .AddQuartzTemporalActivities()
+                    .AddWorkflowsFrom&lt;Startup&gt;()
+                );
+
+            services.AddElsaApiEndpoints();
+            services.AddRazorPages();
+        }
+
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">Configure</span>(<span class="hljs-params">IApplicationBuilder app</span>)</span>
+        {
+            app
+                .UseStaticFiles()
+                .UseHttpActivities()
+                .UseRouting()
+                .UseEndpoints(endpoints =&gt;
+                {
+                    endpoints.MapControllers();
+                    endpoints.MapFallbackToPage(<span class="hljs-string">"/_Host"</span>);
+                });
+        }
+    }
+}
+</code></pre>
+<p>Notice that we're accessing a configuration section called <code>&quot;Elsa&quot;</code>. We then use this section to retrieve sub-sections called <code>&quot;Server&quot;</code> and <code>&quot;Smtp&quot;</code>&quot;. Let's update <code>appsettings.json</code> with these sections next:</p>
+<h3><a class="anchor" aria-hidden="true" id="appsettingsjson"></a><a href="#appsettingsjson" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Appsettings.json</h3>
+<p>Open <code>appsettings.json</code> and add the following section:</p>
+<pre><code class="hljs css language-json">{
+  <span class="hljs-attr">"Elsa"</span>: {
+    <span class="hljs-attr">"Server"</span>: {
+      <span class="hljs-attr">"BaseUrl"</span>: <span class="hljs-string">"https://localhost:5001"</span>
+    },
+    <span class="hljs-attr">"Smtp"</span>: {
+      <span class="hljs-attr">"Host"</span>: <span class="hljs-string">"localhost"</span>,
+      <span class="hljs-attr">"Port"</span>: <span class="hljs-string">"2525"</span>,
+      <span class="hljs-attr">"DefaultSender"</span>: <span class="hljs-string">"noreply@acme.com"</span>
+    }
+  }
+}
+</code></pre>
+<blockquote>
+<p>The reason we are setting a &quot;base URL&quot; is because the HTTP activities library provides an absolute URL provider that can be used by activities and workflow expressions. Since this absolute URL provider can be used outside the context of an actual HTTP request (for instance, when a timer event occurs), we cannot rely on e.g. <code>IHttpContextAccessor</code>, since there won't be any HTTP context.</p>
+</blockquote>
+<h3><a class="anchor" aria-hidden="true" id="_hostcshtml"></a><a href="#_hostcshtml" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>_Host.cshtml</h3>
+<p>Notice that the application will always fall back to serve the _Host.cshtml page, which we will create next.</p>
+<ol>
+<li>Create a new folder called <code>Pages</code>.</li>
+<li>Inside <code>Pages</code>, create a new file called <code>_Host.cshtml</code>.</li>
+</ol>
+<p>Add the following content to <code>_Host.cshtml</code>:</p>
+<pre><code class="hljs css language-html">@page "/"
+@{
+    var serverUrl = $"{Request.Scheme}://{Request.Host}";
+}
+<span class="hljs-meta">&lt;!DOCTYPE <span class="hljs-meta-keyword">html</span>&gt;</span>
+<span class="hljs-tag">&lt;<span class="hljs-name">html</span> <span class="hljs-attr">lang</span>=<span class="hljs-string">"en"</span>&gt;</span>
+<span class="hljs-tag">&lt;<span class="hljs-name">head</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">meta</span> <span class="hljs-attr">charset</span>=<span class="hljs-string">"utf-8"</span>/&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">meta</span> <span class="hljs-attr">name</span>=<span class="hljs-string">"viewport"</span> <span class="hljs-attr">content</span>=<span class="hljs-string">"width=device-width, initial-scale=1.0"</span>/&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">title</span>&gt;</span>Elsa Workflows<span class="hljs-tag">&lt;/<span class="hljs-name">title</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">link</span> <span class="hljs-attr">rel</span>=<span class="hljs-string">"icon"</span> <span class="hljs-attr">type</span>=<span class="hljs-string">"image/png"</span> <span class="hljs-attr">sizes</span>=<span class="hljs-string">"32x32"</span> <span class="hljs-attr">href</span>=<span class="hljs-string">"/_content/Elsa.Designer.Components.Web/elsa-workflows-studio/assets/images/favicon-32x32.png"</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">link</span> <span class="hljs-attr">rel</span>=<span class="hljs-string">"icon"</span> <span class="hljs-attr">type</span>=<span class="hljs-string">"image/png"</span> <span class="hljs-attr">sizes</span>=<span class="hljs-string">"16x16"</span> <span class="hljs-attr">href</span>=<span class="hljs-string">"/_content/Elsa.Designer.Components.Web/elsa-workflows-studio/assets/images/favicon-16x16.png"</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">link</span> <span class="hljs-attr">rel</span>=<span class="hljs-string">"stylesheet"</span> <span class="hljs-attr">href</span>=<span class="hljs-string">"/_content/Elsa.Designer.Components.Web/elsa-workflows-studio/assets/fonts/inter/inter.css"</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">link</span> <span class="hljs-attr">rel</span>=<span class="hljs-string">"stylesheet"</span> <span class="hljs-attr">href</span>=<span class="hljs-string">"/_content/Elsa.Designer.Components.Web/elsa-workflows-studio/assets/styles/tailwind.css"</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">src</span>=<span class="hljs-string">"/_content/Elsa.Designer.Components.Web/monaco-editor/min/vs/loader.js"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">type</span>=<span class="hljs-string">"module"</span> <span class="hljs-attr">src</span>=<span class="hljs-string">"/_content/Elsa.Designer.Components.Web/elsa-workflows-studio/elsa-workflows-studio.esm.js"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">head</span>&gt;</span>
+<span class="hljs-tag">&lt;<span class="hljs-name">body</span> <span class="hljs-attr">class</span>=<span class="hljs-string">"h-screen"</span> <span class="hljs-attr">style</span>=<span class="hljs-string">"background-size: 30px 30px; background-image: url(/_content/Elsa.Designer.Components.Web/elsa-workflows-studio/assets/images/tile.png); background-color: #FBFBFB;"</span>&gt;</span>
+<span class="hljs-tag">&lt;<span class="hljs-name">elsa-studio-root</span> <span class="hljs-attr">server-url</span>=<span class="hljs-string">"@serverUrl"</span> <span class="hljs-attr">monaco-lib-path</span>=<span class="hljs-string">"_content/Elsa.Designer.Components.Web/monaco-editor/min"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">elsa-studio-root</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">body</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">html</span>&gt;</span>
+</code></pre>
+<p>At this point, you should have a functioning Elsa Server application that can execute workflows and serve the Elsa Dashboard.</p>
+<h2><a class="anchor" aria-hidden="true" id="document-approval-workflow-builder-api"></a><a href="#document-approval-workflow-builder-api" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Document Approval Workflow: Builder API</h2>
+<p>Before we create the workflow visually, let's see how we can do so programmatically first.
+Even if you never intend to write workflows in this way, it may come in handy when you need to create composite activities, which use the same builder API.</p>
+<blockquote>
+<p><strong>Composite Activities</strong></p>
+<p>The Elsa Designer currently does not support creating composite activities using the visual designer, but when that feature is released you won't have to programmatically create composite activities anymore.</p>
+</blockquote>
+<p>Create a new file called <code>DocumentApprovalWorkflow.cs</code> and add the following contents:</p>
+<pre><code class="hljs css language-csharp"><span class="hljs-keyword">using</span> System.Net;
 <span class="hljs-keyword">using</span> System.Net.Http;
 <span class="hljs-keyword">using</span> Elsa.Activities.ControlFlow;
-<span class="hljs-keyword">using</span> Elsa.Activities.Email.Activities;
-<span class="hljs-keyword">using</span> Elsa.Activities.Http.Activities;
+<span class="hljs-keyword">using</span> Elsa.Activities.Email;
+<span class="hljs-keyword">using</span> Elsa.Activities.Http;
+<span class="hljs-keyword">using</span> Elsa.Activities.Http.Extensions;
+<span class="hljs-keyword">using</span> Elsa.Activities.Http.Models;
 <span class="hljs-keyword">using</span> Elsa.Activities.Primitives;
-<span class="hljs-keyword">using</span> Elsa.Activities.Timers.Activities;
-<span class="hljs-keyword">using</span> Elsa.Activities.Workflows;
-<span class="hljs-keyword">using</span> Elsa.Expressions;
-<span class="hljs-keyword">using</span> Elsa.Services;
-<span class="hljs-keyword">using</span> Elsa.Services.Models;
+<span class="hljs-keyword">using</span> Elsa.Activities.Temporal;
+<span class="hljs-keyword">using</span> Elsa.Builders;
+<span class="hljs-keyword">using</span> NodaTime;
 
-<span class="hljs-keyword">namespace</span> <span class="hljs-title">Elsa.Guides.DocumentApproval.WebApp</span>
+<span class="hljs-keyword">namespace</span> <span class="hljs-title">ElsaGuides.ContentApproval.Web</span>
 {
     <span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title">DocumentApprovalWorkflow</span> : <span class="hljs-title">IWorkflow</span>
     {
         <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">Build</span>(<span class="hljs-params">IWorkflowBuilder builder</span>)</span>
         {
             builder
-                .StartWith&lt;ReceiveHttpRequest&gt;(
-                    x =&gt;
+                .WithDisplayName(<span class="hljs-string">"Document Approval Workflow"</span>)
+                .HttpEndpoint(activity =&gt; activity
+                    .WithPath(<span class="hljs-string">"/v1/documents"</span>)
+                    .WithMethod(HttpMethod.Post.Method)
+                    .WithReadContent())
+                .SetVariable(<span class="hljs-string">"Document"</span>, context =&gt; context.GetInput&lt;HttpRequestModel&gt;()!.Body)
+                .SendEmail(activity =&gt; activity
+                    .WithSender(<span class="hljs-string">"workflow@acme.com"</span>)
+                    .WithRecipient(<span class="hljs-string">"josh@acme.com"</span>)
+                    .WithSubject(context =&gt; <span class="hljs-string">$"Document received from <span class="hljs-subst">{context.GetVariable&lt;<span class="hljs-keyword">dynamic</span>&gt;(<span class="hljs-string">"Document"</span>)!.Author.Name}</span>"</span>)
+                    .WithBody(context =&gt;
                     {
-                        x.Method = HttpMethod.Post.Method;
-                        x.Path = <span class="hljs-keyword">new</span> Uri(<span class="hljs-string">"/documents"</span>, UriKind.Relative);
-                        x.ReadContent = <span class="hljs-literal">true</span>;
-                    }
-                )
-                .Then&lt;SetVariable&gt;(
-                    x =&gt;
-                    {
-                        x.VariableName = <span class="hljs-string">"Document"</span>;
-                        x.ValueExpression = <span class="hljs-keyword">new</span> JavaScriptExpression&lt;ExpandoObject&gt;(<span class="hljs-string">"lastResult().Body"</span>);
-                    }
-                )
-                .Then&lt;SendEmail&gt;(
-                    x =&gt;
-                    {
-                        x.From = <span class="hljs-keyword">new</span> LiteralExpression(<span class="hljs-string">"approval@acme.com"</span>);
-                        x.To = <span class="hljs-keyword">new</span> JavaScriptExpression&lt;<span class="hljs-keyword">string</span>&gt;(<span class="hljs-string">"Document.Author.Email"</span>);
-                        x.Subject =
-                            <span class="hljs-keyword">new</span> JavaScriptExpression&lt;<span class="hljs-keyword">string</span>&gt;(<span class="hljs-string">"`Document received from ${Document.Author.Name}`"</span>);
-                        x.Body = <span class="hljs-keyword">new</span> JavaScriptExpression&lt;<span class="hljs-keyword">string</span>&gt;(
-                            <span class="hljs-string">"`Document from ${Document.Author.Name} received for review. "</span> +
-                            <span class="hljs-string">"&lt;a href=\"${signalUrl('Approve')}\"&gt;Approve&lt;/a&gt; or &lt;a href=\"${signalUrl('Reject')}\"&gt;Reject&lt;/a&gt;`"</span>
-                        );
-                    }
-                )
-                .Then&lt;WriteHttpResponse&gt;(
-                    x =&gt;
-                    {
-                        x.Content = <span class="hljs-keyword">new</span> LiteralExpression(
-                            <span class="hljs-string">"&lt;h1&gt;Request for Approval Sent&lt;/h1&gt;&lt;p&gt;Your document has been received and will be reviewed shortly.&lt;/p&gt;"</span>
-                        );
-                        x.ContentType = <span class="hljs-string">"text/html"</span>;
-                        x.StatusCode = HttpStatusCode.OK;
-                        x.ResponseHeaders = <span class="hljs-keyword">new</span> LiteralExpression(<span class="hljs-string">"X-Powered-By=Elsa Workflows"</span>);
-                    }
-                )
-                .Then&lt;SetVariable&gt;(
-                    x =&gt;
-                    {
-                        x.VariableName = <span class="hljs-string">"Approved"</span>;
-                        x.ValueExpression = <span class="hljs-keyword">new</span> JavaScriptExpression&lt;<span class="hljs-keyword">bool</span>&gt;(<span class="hljs-string">"false"</span>);
-                    }
-                )
-                .Then&lt;Fork&gt;(
-                    x =&gt; { x.Branches = <span class="hljs-keyword">new</span>[] { <span class="hljs-string">"Approve"</span>, <span class="hljs-string">"Reject"</span>, <span class="hljs-string">"Remind"</span> }; },
-                    fork =&gt;
-                    {
-                        fork
-                            .When(<span class="hljs-string">"Approve"</span>)
-                            .Then&lt;Signaled&gt;(x =&gt; x.Signal = <span class="hljs-keyword">new</span> LiteralExpression(<span class="hljs-string">"Approve"</span>))
-                            .Then(<span class="hljs-string">"Join"</span>);
+                        <span class="hljs-keyword">var</span> document = context.GetVariable&lt;<span class="hljs-keyword">dynamic</span>&gt;(<span class="hljs-string">"Document"</span>)!;
+                        <span class="hljs-keyword">var</span> author = document!.Author;
+                        <span class="hljs-keyword">return</span> <span class="hljs-string">$"Document from <span class="hljs-subst">{author.Name}</span> received for review.&lt;br&gt;&lt;a href=\"<span class="hljs-subst">{context.GenerateSignalUrl(<span class="hljs-string">"Approve"</span>)}</span>\"&gt;Approve&lt;/a&gt; or &lt;a href=\"<span class="hljs-subst">{context.GenerateSignalUrl(<span class="hljs-string">"Reject"</span>)}</span>\"&gt;Reject&lt;/a&gt;"</span>;
+                    }))
+                .WriteHttpResponse(
+                    HttpStatusCode.OK,
+                    <span class="hljs-string">"&lt;h1&gt;Request for Approval Sent&lt;/h1&gt;&lt;p&gt;Your document has been received and will be reviewed shortly.&lt;/p&gt;"</span>,
+                    <span class="hljs-string">"text/html"</span>)
+                .Then&lt;Fork&gt;(activity =&gt; activity.WithBranches(<span class="hljs-string">"Approve"</span>, <span class="hljs-string">"Reject"</span>, <span class="hljs-string">"Remind"</span>), fork =&gt;
+                {
+                    fork
+                        .When(<span class="hljs-string">"Approve"</span>)
+                        .SignalReceived(<span class="hljs-string">"Approve"</span>)
+                        .SendEmail(activity =&gt; activity
+                            .WithSender(<span class="hljs-string">"workflow@acme.com"</span>)
+                            .WithRecipient(context =&gt; context.GetVariable&lt;<span class="hljs-keyword">dynamic</span>&gt;(<span class="hljs-string">"Document"</span>)!.Author.Email)
+                            .WithSubject(context =&gt; <span class="hljs-string">$"Document <span class="hljs-subst">{context.GetVariable&lt;<span class="hljs-keyword">dynamic</span>&gt;(<span class="hljs-string">"Document"</span>)!.Id}</span> Approved!"</span>)
+                            .WithBody(context =&gt; <span class="hljs-string">$"Great job <span class="hljs-subst">{context.GetVariable&lt;<span class="hljs-keyword">dynamic</span>&gt;(<span class="hljs-string">"Document"</span>)!.Author.Name}</span>, that document is perfect."</span>))
+                        .ThenNamed(<span class="hljs-string">"Join"</span>);
 
-                        fork
-                            .When(<span class="hljs-string">"Reject"</span>)
-                            .Then&lt;Signaled&gt;(x =&gt; x.Signal = <span class="hljs-keyword">new</span> LiteralExpression(<span class="hljs-string">"Reject"</span>))
-                            .Then(<span class="hljs-string">"Join"</span>);
+                    fork
+                        .When(<span class="hljs-string">"Reject"</span>)
+                        .SignalReceived(<span class="hljs-string">"Reject"</span>)
+                        .SendEmail(activity =&gt; activity
+                            .WithSender(<span class="hljs-string">"workflow@acme.com"</span>)
+                            .WithRecipient(context =&gt; context.GetVariable&lt;<span class="hljs-keyword">dynamic</span>&gt;(<span class="hljs-string">"Document"</span>)!.Author.Email)
+                            .WithSubject(context =&gt; <span class="hljs-string">$"Document <span class="hljs-subst">{context.GetVariable&lt;<span class="hljs-keyword">dynamic</span>&gt;(<span class="hljs-string">"Document"</span>)!.Id}</span> Rejected"</span>)
+                            .WithBody(context =&gt; <span class="hljs-string">$"Nice try <span class="hljs-subst">{context.GetVariable&lt;<span class="hljs-keyword">dynamic</span>&gt;(<span class="hljs-string">"Document"</span>)!.Author.Name}</span>, but that document needs work."</span>))
+                        .ThenNamed(<span class="hljs-string">"Join"</span>);
 
-                        fork
-                            .When(<span class="hljs-string">"Remind"</span>)
-                            .Then&lt;TimerEvent&gt;(
-                                x =&gt; x.TimeoutExpression = <span class="hljs-keyword">new</span> LiteralExpression&lt;TimeSpan&gt;(<span class="hljs-string">"00:00:10"</span>),
-                                name: <span class="hljs-string">"RemindTimer"</span>
-                            )
-                            .Then&lt;IfElse&gt;(
-                                x =&gt; x.ConditionExpression = <span class="hljs-keyword">new</span> JavaScriptExpression&lt;<span class="hljs-keyword">bool</span>&gt;(<span class="hljs-string">"!!Approved"</span>),
-                                ifElse =&gt;
-                                {
-                                    ifElse
-                                        .When(OutcomeNames.False)
-                                        .Then&lt;SendEmail&gt;(
-                                            x =&gt;
-                                            {
-                                                x.From = <span class="hljs-keyword">new</span> LiteralExpression(<span class="hljs-string">"reminder@acme.com"</span>);
-                                                x.To = <span class="hljs-keyword">new</span> LiteralExpression(<span class="hljs-string">"approval@acme.com"</span>);
-                                                x.Subject =
-                                                    <span class="hljs-keyword">new</span> JavaScriptExpression&lt;<span class="hljs-keyword">string</span>&gt;(
-                                                        <span class="hljs-string">"`${Document.Author.Name} is awaiting for your review!`"</span>
-                                                    );
-                                                x.Body = <span class="hljs-keyword">new</span> JavaScriptExpression&lt;<span class="hljs-keyword">string</span>&gt;(
-                                                    <span class="hljs-string">"`Don't forget to review document ${Document.Id}.&lt;br/&gt;"</span> +
-                                                    <span class="hljs-string">"&lt;a href=\"${signalUrl('Approve')}\"&gt;Approve&lt;/a&gt; or &lt;a href=\"${signalUrl('Reject')}\"&gt;Reject&lt;/a&gt;`"</span>
-                                                );
-                                            }
-                                        )
-                                        .Then(<span class="hljs-string">"RemindTimer"</span>);
-                                }
-                            );
-                    }
-                )
-                .Then&lt;Join&gt;(x =&gt; x.Mode = Join.JoinMode.WaitAny, name: <span class="hljs-string">"Join"</span>)
-                .Then&lt;SetVariable&gt;(
-                    x =&gt;
-                    {
-                        x.VariableName = <span class="hljs-string">"Approved"</span>;
-                        x.ValueExpression = <span class="hljs-keyword">new</span> JavaScriptExpression&lt;<span class="hljs-keyword">object</span>&gt;(<span class="hljs-string">"input('Signal') === 'Approve'"</span>);
-                    }
-                )
-                .Then&lt;IfElse&gt;(
-                    x =&gt; x.ConditionExpression = <span class="hljs-keyword">new</span> JavaScriptExpression&lt;<span class="hljs-keyword">bool</span>&gt;(<span class="hljs-string">"!!Approved"</span>),
-                    ifElse =&gt;
-                    {
-                        ifElse
-                            .When(OutcomeNames.True)
-                            .Then&lt;SendEmail&gt;(
-                                x =&gt;
-                                {
-                                    x.From = <span class="hljs-keyword">new</span> LiteralExpression(<span class="hljs-string">"approval@acme.com"</span>);
-                                    x.To = <span class="hljs-keyword">new</span> JavaScriptExpression&lt;<span class="hljs-keyword">string</span>&gt;(<span class="hljs-string">"Document.Author.Email"</span>);
-                                    x.Subject =
-                                        <span class="hljs-keyword">new</span> JavaScriptExpression&lt;<span class="hljs-keyword">string</span>&gt;(<span class="hljs-string">"`Document ${Document.Id} approved!`"</span>);
-                                    x.Body = <span class="hljs-keyword">new</span> JavaScriptExpression&lt;<span class="hljs-keyword">string</span>&gt;(
-                                        <span class="hljs-string">"`Great job ${Document.Author.Name}, that document is perfect! Keep it up.`"</span>
-                                    );
-                                }
-                            );
-
-                        ifElse
-                            .When(OutcomeNames.False)
-                            .Then&lt;SendEmail&gt;(
-                                x =&gt;
-                                {
-                                    x.From = <span class="hljs-keyword">new</span> LiteralExpression(<span class="hljs-string">"approval@acme.com"</span>);
-                                    x.To = <span class="hljs-keyword">new</span> JavaScriptExpression&lt;<span class="hljs-keyword">string</span>&gt;(<span class="hljs-string">"Document.Author.Email"</span>);
-                                    x.Subject =
-                                        <span class="hljs-keyword">new</span> JavaScriptExpression&lt;<span class="hljs-keyword">string</span>&gt;(<span class="hljs-string">"`Document ${Document.Id} rejected`"</span>);
-                                    x.Body = <span class="hljs-keyword">new</span> JavaScriptExpression&lt;<span class="hljs-keyword">string</span>&gt;(
-                                        <span class="hljs-string">"`Sorry ${Document.Author.Name}, that document isn't good enough. Please try again.`"</span>
-                                    );
-                                }
-                            );
-                    }
-                );
+                    fork
+                        .When(<span class="hljs-string">"Remind"</span>)
+                        .Timer(Duration.FromSeconds(<span class="hljs-number">10</span>)).WithName(<span class="hljs-string">"Reminder"</span>)
+                        .SendEmail(activity =&gt; activity
+                                .WithSender(<span class="hljs-string">"workflow@acme.com"</span>)
+                                .WithRecipient(<span class="hljs-string">"josh@acme.com"</span>)
+                                .WithSubject(context =&gt; <span class="hljs-string">$"<span class="hljs-subst">{context.GetVariable&lt;<span class="hljs-keyword">dynamic</span>&gt;(<span class="hljs-string">"Document"</span>)!.Author.Name}</span> is waiting for your review!"</span>)
+                                .WithBody(context =&gt;
+                                    <span class="hljs-string">$"Don't forget to review document <span class="hljs-subst">{context.GetVariable&lt;<span class="hljs-keyword">dynamic</span>&gt;(<span class="hljs-string">"Document"</span>)!.Id}</span>.&lt;br&gt;&lt;a href=\"<span class="hljs-subst">{context.GenerateSignalUrl(<span class="hljs-string">"Approve"</span>)}</span>\"&gt;Approve&lt;/a&gt; or &lt;a href=\"<span class="hljs-subst">{context.GenerateSignalUrl(<span class="hljs-string">"Reject"</span>)}</span>\"&gt;Reject&lt;/a&gt;"</span>))
+                            .ThenNamed(<span class="hljs-string">"Reminder"</span>);
+                })
+                .Add&lt;Join&gt;(<span class="hljs-keyword">join</span> =&gt; <span class="hljs-keyword">join</span>.WithMode(Join.JoinMode.WaitAny)).WithName(<span class="hljs-string">"Join"</span>)
+                .WriteHttpResponse(HttpStatusCode.OK, <span class="hljs-string">"Thanks for the hard work!"</span>, <span class="hljs-string">"text/html"</span>);
         }
     }
 }
 </code></pre>
-<p>That's a pretty big listing! Let's go over each activity step-by-step from top to bottom.</p>
-<h3><a class="anchor" aria-hidden="true" id="receivehttprequest"></a><a href="#receivehttprequest" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>ReceiveHttpRequest</h3>
-<pre><code class="hljs css language-csharp">.StartWith&lt;ReceiveHttpRequest&gt;(
-    x =&gt;
-    {
-        x.Method = HttpMethod.Post.Method;
-        x.Path = <span class="hljs-keyword">new</span> Uri(<span class="hljs-string">"/documents"</span>, UriKind.Relative);
-        x.ReadContent = <span class="hljs-literal">true</span>;
-    }
-)
+<p>Before we try out the workflow, let's setup an SMTP host. The easiest way to do so is by running <a href="https://github.com/rnwood/smtp4dev">Smtp4Dev</a> using Docker:</p>
+<pre><code class="hljs css language-bash">docker run -p 3000:80 -p 2525:25 rnwood/smtp4dev:linux-amd64-3.1.0-ci0856
 </code></pre>
-<p>Because of the presence of the <code>ReceiveHttpRequest</code> activity, the workflow will be executed every time a HTTP POST request is received matching the path <code>/documents</code>.</p>
-<p>We set its <code>ReadContent</code> to <code>true</code> so that the request body will be read &amp; parsed. Parsing the content body is done with an appropriate <strong>IContentFormatter</strong> that is selected based on the request body's <em>content type</em>.
-Currently, only the <code>application/json</code> and <code>text/json</code> content types are supported, but support for <code>application/x-www-form-urlencoded</code> and <code>multipart/form-data</code> will be added as well. It will parse the JSON content into an <a href="https://docs.microsoft.com/en-us/dotnet/api/system.dynamic.expandoobject?view=netcore-2.2">ExpandoObject</a>.</p>
-<p>With <code>ReadContent</code> set to true, we can access the parsed JSON from other activities in the workflow.
-The activity will store this value in its output dictionary with a key of <code>&quot;Content&quot;</code> as well as the workflow execution context's <code>LastResult</code> property.</p>
-<h3><a class="anchor" aria-hidden="true" id="setvariable"></a><a href="#setvariable" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>SetVariable</h3>
-<pre><code class="hljs css language-csharp">.Then&lt;SetVariable&gt;(
-    x =&gt;
-    {
-        x.VariableName = <span class="hljs-string">"Document"</span>;
-        x.ValueExpression = <span class="hljs-keyword">new</span> JavaScriptExpression&lt;ExpandoObject&gt;(<span class="hljs-string">"lastResult().Body"</span>);
-    }
-)
-</code></pre>
-<p>We then connect to the <code>SetVariable</code> activity that sets a custom variable on the workflow that we call <code>Document</code>. We use a <strong>JavaScript expression</strong> to assign the object we received as part of the HTTP request.</p>
-<p>The expression works like this:</p>
-<ul>
-<li>First, we invoke a function called <code>lastResult</code>. This function returns the workflow execution context's <code>LastResult</code> value. Because this was set by the <code>ReceiveHttpRequest</code>, it will contain an object holding details about the received HTTP request, including a <code>Body</code> property that contains the parsed JSON object.</li>
-</ul>
-<p>We are using the <code>SetVariable</code> activity to simplify accessing it from other activities, as we'll see in the next activity.</p>
-<h3><a class="anchor" aria-hidden="true" id="sendemail"></a><a href="#sendemail" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>SendEmail</h3>
-<pre><code class="hljs css language-csharp">.Then&lt;SendEmail&gt;(
-   x =&gt;
-   {
-       x.From = <span class="hljs-keyword">new</span> LiteralExpression(<span class="hljs-string">"approval@acme.com"</span>);
-       x.To = <span class="hljs-keyword">new</span> JavaScriptExpression&lt;<span class="hljs-keyword">string</span>&gt;(<span class="hljs-string">"Document.Author.Email"</span>);
-       x.Subject =
-           <span class="hljs-keyword">new</span> JavaScriptExpression&lt;<span class="hljs-keyword">string</span>&gt;(<span class="hljs-string">"`Document received from ${Document.Author.Name}`"</span>);
-       x.Body = <span class="hljs-keyword">new</span> JavaScriptExpression&lt;<span class="hljs-keyword">string</span>&gt;(
-           <span class="hljs-string">"`Document from ${Document.Author.Name} received for review. "</span> +
-           <span class="hljs-string">"&lt;a href=\"${signalUrl('Approve')}\"&gt;Approve&lt;/a&gt; or &lt;a href=\"${signalUrl('Reject')}\"&gt;Reject&lt;/a&gt;`"</span>
-       );
-   }
-)
-</code></pre>
-<p>The second thing we want to do is to notify the reviewer that a new document was submitted. We do this by sending an email using the <code>SendEmail</code> activity. We configure this activity using a mix of <code>LiteralExpression</code> and <code>JavaScriptExpression</code> objects.
-A <code>LiteralExpression</code> returns the literal string value passed into its constructor, and optionally converts it to a given type if you use the generic type overload. In this case, we just need to specify a literal email address: <code>&quot;approval@acme.com</code>.</p>
-<p>The expression for the <code>To</code>, <code>Subject</code> and <code>Body</code> are more interesting, because they demonstrate how to use JavaScript expressions to access the <code>Document</code> variable we defined earlier.</p>
-<p>The <code>Body</code> property expression uses a JavaScript function called <code>signalUrl</code> taking a single argument representing the name of the signal. What this does is generate an absolute URL including a security token that carries the following information:</p>
-<ul>
-<li>Workflow Instance ID</li>
-<li>Name of the signal</li>
-</ul>
-<p>When a HTTP request is made to the generated URL (e.g. by clicking on it when the email is received), Elsa will recognize this URL and <strong>trigger</strong> the workflow instance matching the workflow instance ID carried by the security token.
-More specifically, the workflow will be triggered with the <code>Signaled</code> event, which causes the workflow to resume if it is <strong>blocked</strong> on an activity of that type.
-We will get to the <code>Signaled</code> shortly.</p>
-<p>First, we want to send an HTTP response to the client and say that the document was successfully received.</p>
-<h3><a class="anchor" aria-hidden="true" id="writehttpresponse"></a><a href="#writehttpresponse" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>WriteHttpResponse</h3>
-<pre><code class="hljs css language-csharp">.Then&lt;WriteHttpResponse&gt;(
-    x =&gt;
-    {
-        x.Content = <span class="hljs-keyword">new</span> LiteralExpression(
-            <span class="hljs-string">"&lt;h1&gt;Request for Approval Sent&lt;/h1&gt;&lt;p&gt;Your document has been received and will be reviewed shortly.&lt;/p&gt;"</span>
-        );
-        x.ContentType = <span class="hljs-string">"text/html"</span>;
-        x.StatusCode = HttpStatusCode.OK;
-        x.ResponseHeaders = <span class="hljs-keyword">new</span> LiteralExpression(<span class="hljs-string">"X-Powered-By=Elsa Workflows"</span>);
-    }
-)
-</code></pre>
-<p>The <code>WriteHttpResponse</code> activity simply writes a response back to the client. The activity allows us to configure the <strong>status code</strong>, <strong>content type</strong>, <strong>content body</strong> and <strong>response headers</strong> to send back.</p>
-<h3><a class="anchor" aria-hidden="true" id="setvariable-1"></a><a href="#setvariable-1" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>SetVariable</h3>
-<pre><code class="hljs css language-csharp">.Then&lt;SetVariable&gt;(
- x =&gt;
- {
-     x.VariableName = <span class="hljs-string">"Approved"</span>;
-     x.ValueExpression = <span class="hljs-keyword">new</span> LiteralExpression&lt;<span class="hljs-keyword">bool</span>&gt;(<span class="hljs-string">"false"</span>);
- }
-) 
-</code></pre>
-<p>This time we use the <code>SetVariable</code> activity to initialize another variable called <code>Approved</code>. This variable is used later on to check whether the reviewer clicked the <code>Approve</code> or <code>Reject</code> link (triggering the appropriate signal).
-We need to initialize this variable beforehand because in the next activity, we will <strong>fork</strong> execution into 3 branches, one of which initiates a <strong>timer</strong> that periodically checks this variable.
-If the variable were undefined, the workflow would <strong>fault</strong>.</p>
-<h3><a class="anchor" aria-hidden="true" id="fork-ifelse"></a><a href="#fork-ifelse" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Fork, IfElse</h3>
-<pre><code class="hljs css language-csharp">.Then&lt;Fork&gt;(
-    x =&gt; { x.Branches = <span class="hljs-keyword">new</span>[] { <span class="hljs-string">"Approve"</span>, <span class="hljs-string">"Reject"</span>, <span class="hljs-string">"Remind"</span> }; },
-    fork =&gt;
-    {
-        fork
-            .When(<span class="hljs-string">"Approve"</span>)
-            .Then&lt;Signaled&gt;(x =&gt; x.Signal = <span class="hljs-keyword">new</span> LiteralExpression(<span class="hljs-string">"Approve"</span>))
-            .Then(<span class="hljs-string">"Join"</span>);
-
-        fork
-            .When(<span class="hljs-string">"Reject"</span>)
-            .Then&lt;Signaled&gt;(x =&gt; x.Signal = <span class="hljs-keyword">new</span> LiteralExpression(<span class="hljs-string">"Reject"</span>))
-            .Then(<span class="hljs-string">"Join"</span>);
-
-        fork
-            .When(<span class="hljs-string">"Remind"</span>)
-            .Then&lt;TimerEvent&gt;(
-                x =&gt; x.TimeoutExpression = <span class="hljs-keyword">new</span> LiteralExpression&lt;TimeSpan&gt;(<span class="hljs-string">"00:00:10"</span>),
-                name: <span class="hljs-string">"RemindTimer"</span>
-            )
-            .Then&lt;IfElse&gt;(
-                ...
-            );
-    }
-)
-</code></pre>
-<p>The <code>Fork</code> activity allows us to split workflow execution into multiple branches. In this case, we are branching off into the following branches:</p>
-<ul>
-<li>Approve</li>
-<li>Reject</li>
-<li>Remind</li>
-</ul>
-<p>For both the <strong>Approve</strong> and <strong>Reject</strong> branches, we connect to a <code>Signaled</code> activity which was mentioned earlier. Because we forked execution, the workflow will become blocked on both these two activities.
-When the reviewer clicks either link from the email, one of these activities will be triggered and resume workflow execution.
-When this happens, workflow execution continues on to the <code>Join</code> activity, which we'll cover shortly.</p>
-<blockquote>
-<h4><a class="anchor" aria-hidden="true" id="connecting-activities"></a><a href="#connecting-activities" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Connecting Activities</h4>
-<p>Notice that we can connect to activities other than whatever is specified as a generic type parameter. Instead of specifying what activity will be executed next using the type argument, we can specify the <strong>ID</strong> of an activity instead.
-In reality, the <code>Next&lt;T&gt;</code> method simply defines an activity and then automatically creates a connection between the current one and the one being defined. The <code>Next</code> method taking no type arguments, and only a single <code>name: string</code> argument, simply creates a connection between the current activity and the one specified by the ID.</p>
-</blockquote>
-<p>Not only will the workflow be blocked on the two Signaled activities, it will also block on the <code>TimerEvent</code> activity.
-This activity is configured to trigger every 10 seconds. Every 10 seconds, this branch of the workflow will continue to the <code>IfElse</code> activity.
-Notice that we specified an ID value for the <code>TimerEvent</code> activity: <code>&quot;RemindTimer&quot;&quot;</code>. Specifying an explicit ID allows us to reference activities from other parts of the workflows.</p>
-<h3><a class="anchor" aria-hidden="true" id="ifelse"></a><a href="#ifelse" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>IfElse</h3>
-<pre><code class="hljs css language-csharp">.Then&lt;IfElse&gt;(
-    x =&gt; x.ConditionExpression = <span class="hljs-keyword">new</span> JavaScriptExpression&lt;<span class="hljs-keyword">bool</span>&gt;(<span class="hljs-string">"!!Approved"</span>),
-    ifElse =&gt;
-    {
-        ifElse
-            .When(OutcomeNames.False)
-            .Then&lt;SendEmail&gt;(
-                x =&gt;
-                {
-                    x.From = <span class="hljs-keyword">new</span> LiteralExpression(<span class="hljs-string">"reminder@acme.com"</span>);
-                    x.To = <span class="hljs-keyword">new</span> LiteralExpression(<span class="hljs-string">"approval@acme.com"</span>);
-                    x.Subject =
-                        <span class="hljs-keyword">new</span> JavaScriptExpression&lt;<span class="hljs-keyword">string</span>&gt;(
-                            <span class="hljs-string">"`${Document.Author.Name} is awaiting for your review!`"</span>
-                        );
-                    x.Body = <span class="hljs-keyword">new</span> JavaScriptExpression&lt;<span class="hljs-keyword">string</span>&gt;(
-                        <span class="hljs-string">"`Don't forget to review document ${Document.Id}.&lt;br/&gt;"</span> +
-                        <span class="hljs-string">"&lt;a href=\"${signalUrl('Approve')}\"&gt;Approve&lt;/a&gt; or &lt;a href=\"${signalUrl('Reject')}\"&gt;Reject&lt;/a&gt;`"</span>
-                    );
-                }
-            )
-            .Then(<span class="hljs-string">"RemindTimer"</span>);
-    }
-);
-</code></pre>
-<p>The <code>IfElse</code> activity splits execution into 2 branches. Depending on the <code>Boolean</code> value to which its <code>ConditionExpression</code> evaluates, execution will either continue on the <code>True</code> branch or the <code>False</code> branch.
-In our case, the condition checks whether the value of the <code>Approved</code> workflow variable equals to <code>true</code>.</p>
-<p>If <code>false</code>, an email is sent using the <code>SendEmail</code> activity, which we've seen before, and <strong>loop back</strong> to the <code>TimerEvent</code> using <code>Then(&quot;Reminder&quot;)</code>. Now you see why we provided an ID value for the <code>TimerEvent</code>.</p>
-<h3><a class="anchor" aria-hidden="true" id="join"></a><a href="#join" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Join</h3>
-<pre><code class="hljs css language-csharp">.Then&lt;Join&gt;(x =&gt; x.Mode = Join.JoinMode.WaitAny, name: <span class="hljs-string">"Join"</span>)
-.Then&lt;SetVariable&gt;(
-    x =&gt;
-    {
-        x.VariableName = <span class="hljs-string">"Approved"</span>;
-        x.ValueExpression = <span class="hljs-keyword">new</span> JavaScriptExpression&lt;<span class="hljs-keyword">object</span>&gt;(<span class="hljs-string">"input('Signal') === 'Approve'"</span>);
-    }
-)
-</code></pre>
-<p>The <code>Join</code> variable merges workflow execution back into a single branch. Specifying a <code>JoinMode</code> of <code>WaitAny</code> will cause this activity to continue the workflow as soon as any of the incoming activities have executed.
-In other words, the workflow will resume as soon as either the <code>Approve</code> or <code>Reject</code> signal is triggered.
-When it does, we set the <code>Approved</code> workflow variable to either <code>true</code> or <code>false</code>, respectively.</p>
-<h3><a class="anchor" aria-hidden="true" id="ifelse-1"></a><a href="#ifelse-1" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>IfElse</h3>
-<pre><code class="hljs css language-csharp">.Then&lt;IfElse&gt;(
-    x =&gt; x.ConditionExpression = <span class="hljs-keyword">new</span> JavaScriptExpression&lt;<span class="hljs-keyword">bool</span>&gt;(<span class="hljs-string">"!!Approved"</span>),
-    ifElse =&gt;
-    {
-        ifElse
-            .When(OutcomeNames.True)
-            .Then&lt;SendEmail&gt;(
-                x =&gt;
-                {
-                    x.From = <span class="hljs-keyword">new</span> LiteralExpression(<span class="hljs-string">"approval@acme.com"</span>);
-                    x.To = <span class="hljs-keyword">new</span> JavaScriptExpression&lt;<span class="hljs-keyword">string</span>&gt;(<span class="hljs-string">"Document.Author.Email"</span>);
-                    x.Subject =
-                        <span class="hljs-keyword">new</span> JavaScriptExpression&lt;<span class="hljs-keyword">string</span>&gt;(<span class="hljs-string">"`Document ${Document.Id} approved!`"</span>);
-                    x.Body = <span class="hljs-keyword">new</span> JavaScriptExpression&lt;<span class="hljs-keyword">string</span>&gt;(
-                        <span class="hljs-string">"`Great job ${Document.Author.Name}, that document is perfect! Keep it up.`"</span>
-                    );
-                }
-            );
-
-        ifElse
-            .When(OutcomeNames.False)
-            .Then&lt;SendEmail&gt;(
-                x =&gt;
-                {
-                    x.From = <span class="hljs-keyword">new</span> LiteralExpression(<span class="hljs-string">"approval@acme.com"</span>);
-                    x.To = <span class="hljs-keyword">new</span> JavaScriptExpression&lt;<span class="hljs-keyword">string</span>&gt;(<span class="hljs-string">"Document.Author.Email"</span>);
-                    x.Subject =
-                        <span class="hljs-keyword">new</span> JavaScriptExpression&lt;<span class="hljs-keyword">string</span>&gt;(<span class="hljs-string">"`Document ${Document.Id} rejected`"</span>);
-                    x.Body = <span class="hljs-keyword">new</span> JavaScriptExpression&lt;<span class="hljs-keyword">string</span>&gt;(
-                        <span class="hljs-string">"`Sorry ${Document.Author.Name}, that document isn't good enough. Please try again.`"</span>
-                    );
-                }
-            );
-    }
-);
-</code></pre>
-<p>Finally, we simply check the value of <code>Approved</code>, and send the appropriate email to the author of the document, concluding the workflow.</p>
-<h2><a class="anchor" aria-hidden="true" id="update-startup"></a><a href="#update-startup" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Update Startup</h2>
-<p>Now that the workflow has been defined, we should update the <code>Startup</code> class as follows:</p>
-<pre><code class="hljs css language-csharp"><span class="hljs-keyword">using</span> Elsa.Activities.Email.Extensions;
-<span class="hljs-keyword">using</span> Elsa.Activities.Http.Extensions;
-<span class="hljs-keyword">using</span> Elsa.Activities.Timers.Extensions;
-<span class="hljs-keyword">using</span> Elsa.Extensions;
-<span class="hljs-keyword">using</span> Elsa.Services;
-<span class="hljs-keyword">using</span> Microsoft.AspNetCore.Builder;
-<span class="hljs-keyword">using</span> Microsoft.AspNetCore.Hosting;
-<span class="hljs-keyword">using</span> Microsoft.Extensions.Configuration;
-<span class="hljs-keyword">using</span> Microsoft.Extensions.DependencyInjection;
-
-<span class="hljs-keyword">namespace</span> <span class="hljs-title">Elsa.Guides.DocumentApproval.WebApp</span>
-{
-    <span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title">Startup</span>
-    {
-        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">Startup</span>(<span class="hljs-params">IConfiguration configuration</span>)</span>
-        {
-            Configuration = configuration;
-        }
-
-        <span class="hljs-keyword">public</span> IConfiguration Configuration { <span class="hljs-keyword">get</span>; }
-
-        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">ConfigureServices</span>(<span class="hljs-params">IServiceCollection services</span>)</span>
-        {
-            services
-                .AddElsa()
-                .AddHttpActivities(options =&gt; options.Bind(Configuration.GetSection(<span class="hljs-string">"Http"</span>)))
-                .AddEmailActivities(options =&gt; options.Bind(Configuration.GetSection(<span class="hljs-string">"Smtp"</span>)))
-                .AddTimerActivities(options =&gt; options.Bind(Configuration.GetSection(<span class="hljs-string">"BackgroundRunner"</span>)))
-                .AddWorkflow&lt;DocumentApprovalWorkflow&gt;;
-        }
-
-        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">Configure</span>(<span class="hljs-params">IApplicationBuilder app</span>)</span>
-        {
-            app.UseHttpActivities();
-        }
-    }
-}
-</code></pre>
-<h2><a class="anchor" aria-hidden="true" id="update-appsettingsjson"></a><a href="#update-appsettingsjson" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Update Appsettings.json</h2>
-<p>As you can see, we are configuring the <strong>HTTP</strong>, <strong>Email</strong> and <strong>Timer</strong> activities by binding their options with <code>Configuration</code>. Although you could certainly do the configuration manually, let's update <code>appsettings.json</code> as follows:</p>
-<pre><code class="hljs css language-json">{
-  <span class="hljs-attr">"Logging"</span>: {
-    <span class="hljs-attr">"LogLevel"</span>: {
-      <span class="hljs-attr">"Default"</span>: <span class="hljs-string">"Warning"</span>
-    }
-  },
-  <span class="hljs-attr">"AllowedHosts"</span>: <span class="hljs-string">"*"</span>,
-  <span class="hljs-attr">"Http"</span>: {
-    <span class="hljs-attr">"BaseUrl"</span>: <span class="hljs-string">"http://localhost:5000"</span>
-  },
-  <span class="hljs-attr">"Smtp"</span>: {
-    <span class="hljs-attr">"Host"</span>: <span class="hljs-string">"localhost"</span>,
-    <span class="hljs-attr">"Port"</span>: <span class="hljs-string">"2525"</span>
-  },
-  <span class="hljs-attr">"BackgroundRunner"</span>: {
-    <span class="hljs-attr">"SweepInterval"</span>: <span class="hljs-string">"PT01S"</span>
-  }
-}
-
-</code></pre>
-<h2><a class="anchor" aria-hidden="true" id="run"></a><a href="#run" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Run</h2>
-<p>In order to try out the workflow, I will be using the following two tools:</p>
-<ul>
-<li><a href="https://www.getpostman.com/">Postman</a></li>
-<li><a href="https://github.com/rnwood/smtp4dev">Smtp4Dev</a></li>
-</ul>
-<p>Postman enables us to easily post JSON content to our workflow.
-Smtp4Dev enables us to launch an SMTP service locally and intercept all outgoing email messages, without actually sending them to the recipients.
-I configured mine to listen on port <code>2525</code>.</p>
-<blockquote>
-<h3><a class="anchor" aria-hidden="true" id="docker-compose--http-files"></a><a href="#docker-compose--http-files" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Docker Compose &amp; .HTTP files</h3>
-<p>Alternatively, you can choose run the Smtp4Dev service from a docker container using the accompanying docker-compose file and then fire off HTTP requests using the <code>http-request.http</code> file. This requires Docker Desktop to be installed on your computer.</p>
-</blockquote>
-<p>First, launch the application. IF all went well, the web host will be ready for incoming HTTP requests at <a href="http://localhost:5000">http://localhost:5000</a>:</p>
-<pre><code class="hljs css language-text">Hosting environment: Production
-Content root path: C:\Projects\Elsa\elsa-guides\src\Elsa.Guides.DocumentApproval.WebApp
-Now listening on: http://localhost:5000
-Now listening on: https://localhost:5001
-Application started. Press Ctrl+C to shut down.
-</code></pre>
-<p>Next, send the following HTTP request:</p>
-<pre><code class="hljs css language-http request"><span class="hljs-keyword">POST</span> <span class="hljs-string">/documents</span> HTTP/1.1
-<span class="hljs-attribute">Host</span>: localhost:5000
+<p>When Smtp4Dev has started, you'll be able to navigate to its dashboard at <a href="http://localhost:3000/">http://localhost:3000/</a> and inspect the emails the workflow will send.</p>
+<h2><a class="anchor" aria-hidden="true" id="first-run"></a><a href="#first-run" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>First Run</h2>
+<p>Run the project and send the following HTTP request (using e.g. Postman):</p>
+<pre><code class="hljs css language-http request"><span class="hljs-keyword">POST</span> <span class="hljs-string">/v1/documents</span> HTTP/1.1
+<span class="hljs-attribute">Host</span>: localhost:5001
 <span class="hljs-attribute">Content-Type</span>: application/json
 
 <span class="json">{
@@ -547,30 +310,147 @@ Application started. Press Ctrl+C to shut down.
     <span class="hljs-attr">"Body"</span>: <span class="hljs-string">"This is sample document."</span>
 }
 </span></code></pre>
-<p>Or in cUrl format:</p>
-<pre><code class="hljs css language-bash">curl --location --request POST <span class="hljs-string">"http://localhost:5000/documents"</span> \
---header <span class="hljs-string">"Content-Type: application/json"</span> \
---data <span class="hljs-string">"{
-    \"Id\": \"3\",
-    \"Author\": {
-        \"Name\": \"John\",
-        \"Email\": \"john@gmail.com\"
-    },
-    \"Body\": \"This is sample document.\"
-}"</span>
-</code></pre>
 <p>The response should look like this:</p>
 <pre><code class="hljs css language-html"><span class="hljs-tag">&lt;<span class="hljs-name">h1</span>&gt;</span>Request for Approval Sent<span class="hljs-tag">&lt;/<span class="hljs-name">h1</span>&gt;</span>
 <span class="hljs-tag">&lt;<span class="hljs-name">p</span>&gt;</span>Your document has been received and will be reviewed shortly.<span class="hljs-tag">&lt;/<span class="hljs-name">p</span>&gt;</span>
 </code></pre>
-<p>When you launch the Smtp4Dev Web UI, you should be seeing this:</p>
-<p><img src="./assets/guides-content-approval-figure-1.png" alt=""></p>
-<p>And after around every 10 seconds, reminding email messages should come in:</p>
-<p><img src="./assets/guides-content-approval-figure-2.png" alt=""></p>
+<p>When you launch the Smtp4Dev dashboard, you should be seeing this:</p>
+<p><img src="/elsa-core/docs/assets/guides/guides-document-approval-figure-1.png" alt=""></p>
+<p>And after around every 10 seconds, reminder email messages will come in:</p>
+<p><img src="/elsa-core/docs/assets/guides/guides-document-approval-figure-2.png" alt=""></p>
 <p>This will continue until you either click the <code>Approve</code> or <code>Reject</code> link.</p>
-<h2><a class="anchor" aria-hidden="true" id="summary"></a><a href="#summary" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Summary</h2>
-<p>In this walkthrough, we've seen how to implement long-running workflows with the help of <code>ReceiveHttpRequest</code>, <code>Signaled</code> and the <code>signalUrl</code> JavaScript function,
-We've also seen how to use various other activities to implement a reminding loop.</p>
-<h2><a class="anchor" aria-hidden="true" id="source"></a><a href="#source" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Source</h2>
-<p><a href="https://github.com/elsa-workflows/elsa-guides/tree/master/src/Elsa.Guides.DocumentApproval.WebApp">https://github.com/elsa-workflows/elsa-guides/tree/master/src/Elsa.Guides.DocumentApproval.WebApp</a></p>
-</span></div></article></div><div class="docs-prevnext"><a class="docs-prev button" href="/elsa-core/docs/guides/guides-recurring-task"><span class="arrow-prev">← </span><span>Previous</span></a><a class="docs-next button" href="/elsa-core/docs/expressions/expressions-javascript"><span class="function-name-prevnext">JavaScript</span><span class="arrow-next"> →</span></a></div></div></div><nav class="onPageNav"><ul class="toc-headings"><li><a href="#create-aspnet-core-project">Create ASP.NET Core Project</a></li><li><a href="#create-workflow-class">Create Workflow Class</a><ul class="toc-headings"><li><a href="#receivehttprequest">ReceiveHttpRequest</a></li><li><a href="#setvariable">SetVariable</a></li><li><a href="#sendemail">SendEmail</a></li><li><a href="#writehttpresponse">WriteHttpResponse</a></li><li><a href="#setvariable-1">SetVariable</a></li><li><a href="#fork-ifelse">Fork, IfElse</a></li><li><a href="#ifelse">IfElse</a></li><li><a href="#join">Join</a></li><li><a href="#ifelse-1">IfElse</a></li></ul></li><li><a href="#update-startup">Update Startup</a></li><li><a href="#update-appsettingsjson">Update Appsettings.json</a></li><li><a href="#run">Run</a><ul class="toc-headings"><li><a href="#docker-compose--http-files">Docker Compose &amp; .HTTP files</a></li></ul></li><li><a href="#summary">Summary</a></li><li><a href="#source">Source</a></li></ul></nav></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="/elsa-core/" class="nav-home"><img src="/elsa-core/img/android-icon-192x192.png" alt="ELSA" width="50" height="50"/></a><div><h5>Docs</h5><a href="/elsa-core/docs/next/installation/installing-elsa-core">Getting Started</a><a href="/elsa-core/docs/next/concepts/concepts-workflows">Concepts</a><a href="/elsa-core/docs/next/quickstarts/quickstarts-console-hello-world">Quickstarts</a><a href="/elsa-core/docs/next/guides/guides-recurring-tasks">Guides</a></div><div><h5>Community</h5><a href="https://stackoverflow.com/questions/tagged/elsa-workflows" target="_blank" rel="noreferrer noopener">Stack Overflow</a><a href="https://discord.gg/hhChk5H472" target="_blank" rel="noreferrer noopener">Discord</a></div><div><h5>More</h5><a href="https://github.com/elsa-workflows/elsa-core">GitHub</a><a class="github-button" href="https://github.com/elsa-workflows/elsa-core" data-icon="octicon-star" data-count-href="/facebook/docusaurus/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star this project on GitHub">Star</a></div></section><a href="https://dotnetfoundation.org" target="_blank" rel="noreferrer noopener" class="dotnetfoundation" title="Supported by the .NET Foundation"><img src="/elsa-core/img/dotnetfoundation.png" alt="Supported by the .NET Foundation" width="100" height="100"/></a><section class="copyright">Copyright © 2021 .NET Foundation</section></footer></div></body></html>
+<blockquote>
+<p><strong>Long Running Workflows</strong></p>
+<p>Due to the fact that the workflow is blocked on Timer and SignalReceived activities, the workflow will be persisted.
+This means that even when you stop the application and then start it again, Elsa will pick up where it has left off: the Timer activity will keep resuming the workflow. Similarly, clicking the Accept or Reject link from the email messages will resume the workflow too.</p>
+</blockquote>
+<p>Go ahead and click either the <strong>Approve</strong> or <strong>Reject</strong> link.
+This should trigger a final email message, clear the Timer activity (due to the Join activity), and finish the workflow.</p>
+<p>Let's take a look at the workflow instance using the Elsa Dashboard:</p>
+<p><img src="/elsa-core/docs/assets/guides/guides-document-approval-figure-3.png" alt=""></p>
+<p>As you can see, one workflow instance was created, and it got completed.</p>
+<p>When you click on the workflow instance, you will be taken to the workflow instance viewer, which will display the workflow visually as well as the execution log:</p>
+<p><img src="/elsa-core/docs/assets/guides/guides-document-approval-figure-4.png" alt=""></p>
+<p>Now that we've seen how to create the workflow programmatically, let's do it again but this time using the designer!</p>
+<h2><a class="anchor" aria-hidden="true" id="document-approval-workflow-visual-designer"></a><a href="#document-approval-workflow-visual-designer" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Document Approval Workflow: Visual Designer</h2>
+<p>Creating the workflow visually is actually quite simple. Just add the activities one by one and configure their settings.
+However, there's one important difference between coded workflows and designed workflows: when designing visual workflows, there's (currently) no way to specify expressions using C# code as we did in the form of lambda statements in the <code>DocumentApprovalWorkflow</code> class.
+Instead, we have to use <strong>JavaScript</strong> and <strong>Liquid</strong> expressions. The latter is specifically useful when we need to generate a body of text using dynamic data.</p>
+<p>Without further ado, let's create a new workflow called using the dashboard!</p>
+<h3><a class="anchor" aria-hidden="true" id="create-workflow"></a><a href="#create-workflow" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Create Workflow</h3>
+<p>With the Elsa Dashboard in front of you, navigate to the <strong>Workflow Definitions</strong> page and click the <strong>Create</strong> button.
+You should now see an empty canvas with just a <strong>Start</strong> button and a cog wheel to configure workflow settings.</p>
+<p>Let's do that first: click the cog wheel and specify the following:</p>
+<ul>
+<li>Name: <code>VisualDocumentApprovalWorkflow</code></li>
+<li>Display Name: <code>Visual Document Approval Workflow</code></li>
+</ul>
+<p>Click <strong>Save</strong>.</p>
+<h3><a class="anchor" aria-hidden="true" id="http-endpoint"></a><a href="#http-endpoint" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>HTTP Endpoint</h3>
+<p>Now click the <strong>Start</strong> button and look for the <strong>HTTP Endpoint</strong> activity and select it.
+Configure it with the following settings:</p>
+<ul>
+<li>Path: <code>/v2/documents</code></li>
+<li>Methods: <code>POST</code></li>
+<li>Read Content: <code>true</code> (checked)</li>
+</ul>
+<h3><a class="anchor" aria-hidden="true" id="set-document-variable"></a><a href="#set-document-variable" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Set Document Variable</h3>
+<p>Click the <strong>Done</strong> outcome button on the previous activity and look for the <strong>Set Variable</strong> activity and configure it as follows:</p>
+<ul>
+<li>Variable Name: <code>Document</code></li>
+<li>Value: <code>input.Body</code> (JavaScript)</li>
+</ul>
+<h3><a class="anchor" aria-hidden="true" id="send-email-to-josh-the-approver"></a><a href="#send-email-to-josh-the-approver" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Send Email to Josh the Approver</h3>
+<p>Click the <strong>Done</strong> outcome button on the previous activity and look for the <strong>Send Email</strong> activity and configure it as follows:</p>
+<ul>
+<li>From: <code>workflow@acme.com</code></li>
+<li>To: <code>josh@acme.com</code></li>
+<li>Subject: <code>Document received from {{Variables.Document.Author.Name}}</code> (Liquid)</li>
+<li>Body: <code>Document from {{ Variables.Document.Author.Name }} received for review.&lt;br&gt;&lt;a href=&quot;{{ &quot;Approve&quot; | signal_url }}&quot;&gt;Approve&lt;/a&gt; or &lt;a href=&quot;{{ &quot;Reject&quot; | signal_url }}&quot;&gt;Reject&lt;/a&gt;</code></li>
+</ul>
+<h3><a class="anchor" aria-hidden="true" id="http-response-document-received"></a><a href="#http-response-document-received" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>HTTP Response: Document Received</h3>
+<p>Click the <strong>Done</strong> outcome button on the previous activity and look for the <strong>HTTP Response</strong> activity and configure it as follows:</p>
+<ul>
+<li>Status Code: <code>OK</code></li>
+<li>Content: <code>&lt;h1&gt;Request for Approval Sent&lt;/h1&gt;&lt;p&gt;Your document has been received and will be reviewed shortly.&lt;/p&gt;</code></li>
+<li>Content Type: <code>text/html</code></li>
+</ul>
+<h3><a class="anchor" aria-hidden="true" id="fork"></a><a href="#fork" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Fork</h3>
+<p>Click the <strong>Done</strong> outcome button on the previous activity and look for the <strong>Fork</strong> activity and configure it as follows:</p>
+<ul>
+<li>Branches: <code>Approve</code>, <code>Reject</code>, <code>Remind</code></li>
+</ul>
+<h3><a class="anchor" aria-hidden="true" id="approve-signal-received"></a><a href="#approve-signal-received" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Approve: Signal Received</h3>
+<p>Click the <strong>Approve</strong> outcome button on the previous activity and look for the <strong>Signal Received</strong> activity and configure it as follows:</p>
+<ul>
+<li>Signal: <code>Approve</code></li>
+</ul>
+<h3><a class="anchor" aria-hidden="true" id="send-approved-email-to-author"></a><a href="#send-approved-email-to-author" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Send Approved Email to Author</h3>
+<p>Click the <strong>Done</strong> outcome button on the previous activity and look for the <strong>Send Email</strong> activity and configure it as follows:</p>
+<ul>
+<li>From: <code>workflow@acme.com</code></li>
+<li>To: <code>[Document.Author.Email]</code> (JavaScript)</li>
+<li>Subject: <code>Document {{ Variables.Document.Id }} Approved!</code> (Liquid)</li>
+<li>Body: <code>Great job {{ Variables.Document.Author.Name }}, that document is perfect.</code> (Liquid)</li>
+</ul>
+<h3><a class="anchor" aria-hidden="true" id="reject-signal-received"></a><a href="#reject-signal-received" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Reject: Signal Received</h3>
+<p>Click the <strong>Reject</strong> outcome button on the <strong>Fork</strong> activity and look for the <strong>Signal Received</strong> activity and configure it as follows:</p>
+<ul>
+<li>Signal: <code>Reject</code></li>
+</ul>
+<h3><a class="anchor" aria-hidden="true" id="send-rejected-email-to-author"></a><a href="#send-rejected-email-to-author" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Send Rejected Email to Author</h3>
+<p>Click the <strong>Done</strong> outcome button on the previous activity and look for the <strong>Send Email</strong> activity and configure it as follows:</p>
+<ul>
+<li>From: <code>workflow@acme.com</code></li>
+<li>To: <code>[Document.Author.Email]</code> (JavaScript)</li>
+<li>Subject: <code>Document {{ Variables.Document.Id }} Rejected</code> (Liquid)</li>
+<li>Body: <code>Nice try {{ Variables.Document.Author.Name }}, but that document needs work.</code> (Liquid)</li>
+</ul>
+<h3><a class="anchor" aria-hidden="true" id="remind-timer"></a><a href="#remind-timer" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Remind: Timer</h3>
+<p>Click the <strong>Remind</strong> outcome button on the <strong>Fork</strong> activity and look for the <strong>Timer</strong> activity and configure it as follows:</p>
+<ul>
+<li>Timeout: <code>Duration.FromSeconds(10)</code> (JavaScript)</li>
+</ul>
+<h3><a class="anchor" aria-hidden="true" id="send-reminder-email-to-josh-the-approver"></a><a href="#send-reminder-email-to-josh-the-approver" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Send Reminder Email to Josh the Approver</h3>
+<p>Click the <strong>Done</strong> outcome button on the previous activity and look for the <strong>Send Email</strong> activity and configure it as follows:</p>
+<ul>
+<li>From: <code>workflow@acme.com</code></li>
+<li>To: <code>josh@acme.com</code></li>
+<li>Subject: <code>{{ Variables.Document.Author.Name }} is waiting for your review!</code> (Liquid)</li>
+<li>Body: <code>Don't forget to review document {{ Variables.Document.Id }}.&lt;br&gt;&lt;a href=&quot;{{ &quot;Approve&quot; | signal_url }}&quot;&gt;Approve&lt;/a&gt; or &lt;a href=&quot;{{ &quot;Reject&quot; | signal_url }}&quot;&gt;Reject&lt;/a&gt;</code> (Liquid)</li>
+</ul>
+<p>Now connect the <code>Send Email</code> activity we just added back to the <code>Timer</code> activity so that the workflow will keep sending reminders for as long as we haven't received a signal.
+To connect an outcome to an existing activity, simply press and hold the SHIFT button while clicking the outcome. Release the SHIFT button and left-click on the target activity:</p>
+<p><img src="/elsa-core/docs/assets/guides/guides-document-approval-animation-1.gif" alt=""></p>
+<h3><a class="anchor" aria-hidden="true" id="join"></a><a href="#join" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Join</h3>
+<p>Click the <strong>Done</strong> outcome button of the <strong>Send Email</strong> activity in the <strong>Approve</strong> branch and look for the <strong>Join</strong> activity and configure it as follows:</p>
+<ul>
+<li>Mode: <code>WaitAny</code></li>
+</ul>
+<p>We also need to connect the <strong>Send Email</strong> activity from the <strong>Reject</strong> branch using the same technique used to connect the reminder <strong>Send Email</strong> activity back to the <strong>Timer</strong> activity:</p>
+<p><img src="/elsa-core/docs/assets/guides/guides-document-approval-animation-2.gif" alt=""></p>
+<h3><a class="anchor" aria-hidden="true" id="http-response-all-set"></a><a href="#http-response-all-set" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>HTTP Response: All set!</h3>
+<p>Finally, we just write a simple HTTP response, completing the workflow.</p>
+<p>Click the <strong>Done</strong> outcome button of the <strong>Join</strong> activity and look for the <strong>HTTP Response</strong> activity and configure it as follows:</p>
+<ul>
+<li>Status Code: <code>OK</code></li>
+<li>Content: <code>Thanks for the hard work!</code></li>
+<li>Content Type: <code>text/html</code></li>
+</ul>
+<h2><a class="anchor" aria-hidden="true" id="second-run"></a><a href="#second-run" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Second Run</h2>
+<p>Make sure to publish your changes and then issue the following HTTP request:</p>
+<pre><code class="hljs css language-http request"><span class="hljs-keyword">POST</span> <span class="hljs-string">/v2/documents</span> HTTP/1.1
+<span class="hljs-attribute">Host</span>: localhost:5001
+<span class="hljs-attribute">Content-Type</span>: application/json
+
+<span class="json">{
+    <span class="hljs-attr">"Id"</span>: <span class="hljs-string">"4"</span>,
+    <span class="hljs-attr">"Author"</span>: {
+        <span class="hljs-attr">"Name"</span>: <span class="hljs-string">"Hannah"</span>,
+        <span class="hljs-attr">"Email"</span>: <span class="hljs-string">"hannah@gmail.com"</span>
+    },
+    <span class="hljs-attr">"Body"</span>: <span class="hljs-string">"This is another sample document."</span>
+}
+</span></code></pre>
+<p>As you'll see, it works exactly the same as with the programmatic workflow created earlier.</p>
+</span></div></article></div><div class="docs-prevnext"><a class="docs-prev button" href="/elsa-core/docs/guides/guides-recurring-tasks"><span class="arrow-prev">← </span><span>Recurring Tasks</span></a><a class="docs-next button" href="/elsa-core/docs/guides/guides-signaling-workflows"><span>Signaling Workflows</span><span class="arrow-next"> →</span></a></div></div></div><nav class="onPageNav"><ul class="toc-headings"><li><a href="#workflow-requirements">Workflow Requirements</a></li><li><a href="#the-project">The Project</a><ul class="toc-headings"><li><a href="#startup">Startup</a></li><li><a href="#appsettingsjson">Appsettings.json</a></li><li><a href="#_hostcshtml">_Host.cshtml</a></li></ul></li><li><a href="#document-approval-workflow-builder-api">Document Approval Workflow: Builder API</a></li><li><a href="#first-run">First Run</a></li><li><a href="#document-approval-workflow-visual-designer">Document Approval Workflow: Visual Designer</a><ul class="toc-headings"><li><a href="#create-workflow">Create Workflow</a></li><li><a href="#http-endpoint">HTTP Endpoint</a></li><li><a href="#set-document-variable">Set Document Variable</a></li><li><a href="#send-email-to-josh-the-approver">Send Email to Josh the Approver</a></li><li><a href="#http-response-document-received">HTTP Response: Document Received</a></li><li><a href="#fork">Fork</a></li><li><a href="#approve-signal-received">Approve: Signal Received</a></li><li><a href="#send-approved-email-to-author">Send Approved Email to Author</a></li><li><a href="#reject-signal-received">Reject: Signal Received</a></li><li><a href="#send-rejected-email-to-author">Send Rejected Email to Author</a></li><li><a href="#remind-timer">Remind: Timer</a></li><li><a href="#send-reminder-email-to-josh-the-approver">Send Reminder Email to Josh the Approver</a></li><li><a href="#join">Join</a></li><li><a href="#http-response-all-set">HTTP Response: All set!</a></li></ul></li><li><a href="#second-run">Second Run</a></li></ul></nav></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="/elsa-core/" class="nav-home"><img src="/elsa-core/img/android-icon-192x192.png" alt="ELSA" width="50" height="50"/></a><div><h5>Docs</h5><a href="/elsa-core/docs/next/installation/installing-elsa-core">Getting Started</a><a href="/elsa-core/docs/next/concepts/concepts-workflows">Concepts</a><a href="/elsa-core/docs/next/quickstarts/quickstarts-console-hello-world">Quickstarts</a><a href="/elsa-core/docs/next/guides/guides-recurring-tasks">Guides</a></div><div><h5>Community</h5><a href="https://stackoverflow.com/questions/tagged/elsa-workflows" target="_blank" rel="noreferrer noopener">Stack Overflow</a><a href="https://discord.gg/hhChk5H472" target="_blank" rel="noreferrer noopener">Discord</a></div><div><h5>More</h5><a href="https://github.com/elsa-workflows/elsa-core">GitHub</a><a class="github-button" href="https://github.com/elsa-workflows/elsa-core" data-icon="octicon-star" data-count-href="/facebook/docusaurus/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star this project on GitHub">Star</a></div></section><a href="https://dotnetfoundation.org" target="_blank" rel="noreferrer noopener" class="dotnetfoundation" title="Supported by the .NET Foundation"><img src="/elsa-core/img/dotnetfoundation.png" alt="Supported by the .NET Foundation" width="100" height="100"/></a><section class="copyright">Copyright © 2021 .NET Foundation</section></footer></div></body></html>
