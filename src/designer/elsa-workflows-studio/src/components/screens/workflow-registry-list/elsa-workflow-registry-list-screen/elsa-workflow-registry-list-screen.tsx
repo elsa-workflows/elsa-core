@@ -11,7 +11,8 @@ import Tunnel from "../../../../data/dashboard";
 })
 export class ElsaWorkflowRegistryListScreen {
   @Prop() history?: RouterHistory;
-  @Prop({attribute: 'server-url'}) serverUrl: string;
+  @Prop() serverUrl: string;
+  @Prop() basePath: string;
   @Prop() culture: string;
   @State() workflowBlueprints: PagedList<WorkflowBlueprintSummary> = {items: [], page: 1, pageSize: 50, totalCount: 0};
 
@@ -34,6 +35,7 @@ export class ElsaWorkflowRegistryListScreen {
   render() {
     const workflowBlueprints = this.workflowBlueprints.items;
     const groupings = collection.groupBy(workflowBlueprints, 'id');
+    const basePath = this.basePath;
 
     return (
       <div>
@@ -70,8 +72,8 @@ export class ElsaWorkflowRegistryListScreen {
               if (!workflowDisplayName || workflowDisplayName.trim().length == 0)
                 workflowDisplayName = 'Untitled';
 
-              const editUrl = `/workflow-registry/${workflowBlueprint.id}`;
-              const instancesUrl = `/workflow-instances?workflow=${workflowBlueprint.id}`;
+              const editUrl = `${basePath}/workflow-registry/${workflowBlueprint.id}`;
+              const instancesUrl = `${basePath}/workflow-instances?workflow=${workflowBlueprint.id}`;
 
               const editIcon = (
                 <svg class="elsa-h-5 elsa-w-5 elsa-text-gray-500" width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -113,4 +115,4 @@ export class ElsaWorkflowRegistryListScreen {
     );
   }
 }
-Tunnel.injectProps(ElsaWorkflowRegistryListScreen, ['serverUrl', 'culture']);
+Tunnel.injectProps(ElsaWorkflowRegistryListScreen, ['serverUrl', 'culture', 'basePath']);

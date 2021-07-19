@@ -16,6 +16,7 @@ export class ElsaWorkflowDefinitionsListScreen {
   @Prop() history?: RouterHistory;
   @Prop({attribute: 'server-url'}) serverUrl: string;
   @Prop() culture: string;
+  @Prop() basePath: string;
   @State() workflowDefinitions: PagedList<WorkflowDefinitionSummary> = {items: [], page: 1, pageSize: 50, totalCount: 0};
   @State() publishedWorkflowDefinitions: WorkflowDefinitionSummary[] = [];
   private i18next: i18n;
@@ -59,6 +60,7 @@ export class ElsaWorkflowDefinitionsListScreen {
     const workflowDefinitions = this.workflowDefinitions.items;
     const i18next = this.i18next;
     const IntlMessage = GetIntlMessage(i18next);
+    const basePath = this.basePath;
 
     return (
       <div>
@@ -94,7 +96,7 @@ export class ElsaWorkflowDefinitionsListScreen {
               if (!workflowDisplayName || workflowDisplayName.trim().length == 0)
                 workflowDisplayName = 'Untitled';
 
-              const editUrl = `/workflow-definitions/${workflowDefinition.definitionId}`;
+              const editUrl = `${basePath}/workflow-definitions/${workflowDefinition.definitionId}`;
               const instancesUrl = `/workflow-instances?workflow=${workflowDefinition.definitionId}`;
 
               const editIcon = (
@@ -151,4 +153,4 @@ export class ElsaWorkflowDefinitionsListScreen {
   }
 }
 
-Tunnel.injectProps(ElsaWorkflowDefinitionsListScreen, ['serverUrl', 'culture']);
+Tunnel.injectProps(ElsaWorkflowDefinitionsListScreen, ['serverUrl', 'culture', 'basePath']);

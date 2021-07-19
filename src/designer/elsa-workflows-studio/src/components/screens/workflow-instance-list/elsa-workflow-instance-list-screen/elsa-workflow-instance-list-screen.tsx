@@ -21,7 +21,8 @@ import {confirmDialogService} from "../../../../services/confirm-dialog-service"
 })
 export class ElsaWorkflowInstanceListScreen {
   @Prop() history?: RouterHistory;
-  @Prop({attribute: "server-url"}) serverUrl: string;
+  @Prop() serverUrl: string;
+  @Prop()basePath: string;
   @Prop() workflowId?: string;
   @Prop() workflowStatus?: WorkflowStatus;
   @Prop() orderBy?: OrderBy = OrderBy.Started;
@@ -262,6 +263,7 @@ export class ElsaWorkflowInstanceListScreen {
   };
 
   render() {
+    const basePath = this.basePath;
     const workflowInstances = this.workflowInstances.items;
     const workflowBlueprints = this.workflowBlueprints;
     const totalCount = this.workflowInstances.totalCount
@@ -370,7 +372,7 @@ export class ElsaWorkflowInstanceListScreen {
                 const workflowBlueprint = workflowBlueprints.find(x => x.id == workflowInstance.definitionId && x.version == workflowInstance.version) ?? {name: 'Not Found', displayName: '(Workflow definition not found)'};
                 const displayName = workflowBlueprint.displayName || workflowBlueprint.name || 'Untitled';
                 const statusColor = this.getStatusColor(workflowInstance.workflowStatus);
-                const viewUrl = `/workflow-instances/${workflowInstance.id}`;
+                const viewUrl = `${basePath}/workflow-instances/${workflowInstance.id}`;
                 const instanceName = !workflowInstance.name ? '' : workflowInstance.name;
                 const isSelected = this.selectedWorkflowInstanceIds.findIndex(x => x === workflowInstance.id) >= 0;
                 const createdAt = moment(workflowInstance.createdAt);
@@ -539,4 +541,4 @@ export class ElsaWorkflowInstanceListScreen {
   }
 }
 
-Tunnel.injectProps(ElsaWorkflowInstanceListScreen, ['serverUrl', 'culture']);
+Tunnel.injectProps(ElsaWorkflowInstanceListScreen, ['serverUrl', 'culture', 'basePath']);

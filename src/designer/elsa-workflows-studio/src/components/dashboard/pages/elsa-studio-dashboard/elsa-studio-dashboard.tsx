@@ -3,6 +3,7 @@ import {loadTranslations} from "../../../i18n/i18n-loader";
 import {resources} from "./localizations";
 import {i18n} from "i18next";
 import {GetIntlMessage} from "../../../i18n/intl-message";
+import Tunnel from "../../../../data/dashboard";
 
 @Component({
   tag: 'elsa-studio-dashboard',
@@ -10,9 +11,7 @@ import {GetIntlMessage} from "../../../i18n/intl-message";
   assetsDirs: ['assets']
 })
 export class ElsaStudioDashboard {
-
-  @Prop({attribute: 'server-url', reflect: true}) serverUrl: string;
-  @Prop({attribute: 'monaco-lib-path', reflect: true}) monacoLibPath: string;
+  
   @Prop({attribute: 'culture', reflect: true}) culture: string;
   @Prop({attribute: 'base-path', reflect: true}) basePath: string = '';
   private i18next: i18n;
@@ -23,9 +22,6 @@ export class ElsaStudioDashboard {
 
   render() {
 
-    const serverUrl = this.serverUrl;
-    const culture = this.culture;
-    const monacoLibPath = this.monacoLibPath;
     const logoPath = getAssetPath('./assets/logo.png');
     const basePath = this.basePath || '';
     const IntlMessage = GetIntlMessage(this.i18next);
@@ -69,15 +65,15 @@ export class ElsaStudioDashboard {
         <main>
           <stencil-router>
             <stencil-route-switch scrollTopOffset={0}>
-              <stencil-route url={`${basePath}/`} component="elsa-studio-home" exact={true} componentProps={{culture: culture}}/>
-              <stencil-route url={`${basePath}/workflow-registry`} component="elsa-studio-workflow-registry" componentProps={{'serverUrl': serverUrl, culture: culture}} exact={true}/>
-              <stencil-route url={`${basePath}/workflow-registry/:id`} component="elsa-studio-workflow-blueprint-view" componentProps={{'serverUrl': serverUrl, culture: culture}}/>
-              <stencil-route url={`${basePath}/workflow-definitions`} component="elsa-studio-workflow-definitions-list" componentProps={{'serverUrl': serverUrl, culture: culture}} exact={true}/>
-              <stencil-route url={`${basePath}/workflow-definitions/:id`} component="elsa-studio-workflow-definitions-edit" componentProps={{'serverUrl': serverUrl, culture: culture, 'monacoLibPath': monacoLibPath}}/>
-              <stencil-route url={`${basePath}/workflow-instances`} component="elsa-studio-workflow-instances-list" componentProps={{'serverUrl': serverUrl, culture: culture}} exact={true}/>
-              <stencil-route url={`${basePath}/workflow-instances/:id`} component="elsa-studio-workflow-instances-view" componentProps={{'serverUrl': serverUrl, culture: culture}}/>
-              <stencil-route url={`${basePath}/webhook-definitions`} component="elsa-studio-webhook-definitions-list" componentProps={{'serverUrl': serverUrl, culture: culture}} exact={true}/>
-              <stencil-route url={`${basePath}/webhook-definitions/:id`} component="elsa-studio-webhook-definitions-edit" componentProps={{'serverUrl': serverUrl, culture: culture}}/>
+              <stencil-route url={`${basePath}/`} component="elsa-studio-home" exact={true}/>
+              <stencil-route url={`${basePath}/workflow-registry`} component="elsa-studio-workflow-registry" exact={true}/>
+              <stencil-route url={`${basePath}/workflow-registry/:id`} component="elsa-studio-workflow-blueprint-view"/>
+              <stencil-route url={`${basePath}/workflow-definitions`} component="elsa-studio-workflow-definitions-list" exact={true}/>
+              <stencil-route url={`${basePath}/workflow-definitions/:id`} component="elsa-studio-workflow-definitions-edit"/>
+              <stencil-route url={`${basePath}/workflow-instances`} component="elsa-studio-workflow-instances-list" exact={true}/>
+              <stencil-route url={`${basePath}/workflow-instances/:id`} component="elsa-studio-workflow-instances-view"/>
+              <stencil-route url={`${basePath}/webhook-definitions`} component="elsa-studio-webhook-definitions-list" exact={true}/>
+              <stencil-route url={`${basePath}/webhook-definitions/:id`} component="elsa-studio-webhook-definitions-edit"/>
             </stencil-route-switch>
           </stencil-router>
         </main>
@@ -85,3 +81,4 @@ export class ElsaStudioDashboard {
     );
   }
 }
+Tunnel.injectProps(ElsaStudioDashboard, ['culture', 'basePath']);

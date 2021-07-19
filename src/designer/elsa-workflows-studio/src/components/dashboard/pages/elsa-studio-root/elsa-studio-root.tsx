@@ -1,11 +1,10 @@
 import {Component, Event, EventEmitter, h, Method, Prop} from '@stencil/core';
 import Tunnel, {DashboardState} from "../../../../data/dashboard";
 import {ElsaStudio} from "../../../../models";
-import {eventBus, pluginManager, activityIconProvider, confirmDialogService, createElsaClient, createHttpClient, ElsaClient} from "../../../../services";
+import {eventBus, pluginManager, activityIconProvider, confirmDialogService, toastNotificationService, createElsaClient, createHttpClient, ElsaClient} from "../../../../services";
 import {AxiosInstance} from "axios";
 import {EventTypes} from "../../../../models";
 import {ToastNotificationOptions} from "../../../shared/elsa-toast-notification/elsa-toast-notification";
-import {toastNotificationService} from "../../../../services/toast-notification-service";
 
 @Component({
   tag: 'elsa-studio-root',
@@ -16,6 +15,7 @@ export class ElsaStudioRoot {
   @Prop({attribute: 'server-url', reflect: true}) serverUrl: string;
   @Prop({attribute: 'monaco-lib-path', reflect: true}) monacoLibPath: string;
   @Prop({attribute: 'culture', reflect: true}) culture: string;
+  @Prop({attribute: 'base-path', reflect: true}) basePath: string = '';
   @Event() initializing: EventEmitter<ElsaStudio>;
 
   confirmDialog: HTMLElsaConfirmDialogElement;
@@ -47,6 +47,7 @@ export class ElsaStudioRoot {
 
     const elsaStudio: ElsaStudio = {
       serverUrl: this.serverUrl,
+      basePath: this.basePath,
       eventBus,
       pluginManager,
       activityIconProvider,
@@ -61,15 +62,14 @@ export class ElsaStudioRoot {
   }
 
   render() {
-
-    const serverUrl = this.serverUrl;
+    
     const culture = this.culture;
-    const monacoLibPath = this.monacoLibPath;
 
     const tunnelState: DashboardState = {
-      serverUrl,
+      serverUrl: this.serverUrl,
+      basePath: this.basePath,
       culture,
-      monacoLibPath
+      monacoLibPath: this.monacoLibPath
     };
 
     return (

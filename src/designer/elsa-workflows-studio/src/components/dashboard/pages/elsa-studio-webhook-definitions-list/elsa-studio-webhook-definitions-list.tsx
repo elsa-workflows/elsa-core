@@ -12,6 +12,7 @@ import Tunnel from "../../../../data/dashboard";
 })
 export class ElsaStudioWebhookDefinitionsList {
   @Prop() culture: string;
+  @Prop() basePath: string;
   private i18next: i18n;
   
   async componentWillLoad() {
@@ -19,6 +20,7 @@ export class ElsaStudioWebhookDefinitionsList {
   }
 
   render() {
+    const basePath = this.basePath;
     const IntlMessage = GetIntlMessage(this.i18next);
     
     return (
@@ -30,7 +32,7 @@ export class ElsaStudioWebhookDefinitionsList {
             </h1>
           </div>
           <div class="elsa-mt-4 elsa-flex sm:elsa-mt-0 sm:elsa-ml-4">
-            <stencil-route-link url="/webhook-definitions/new"
+            <stencil-route-link url={`${basePath}/webhook-definitions/new`}
                                 class="elsa-order-0 elsa-inline-flex elsa-items-center elsa-px-4 elsa-py-2 elsa-border elsa-border-transparent elsa-shadow-sm elsa-text-sm elsa-font-medium elsa-rounded-md elsa-text-white elsa-bg-blue-600 hover:elsa-bg-blue-700 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 sm:elsa-order-1 sm:elsa-ml-3">
               <IntlMessage label="CreateButton"/>
             </stencil-route-link>
@@ -42,4 +44,4 @@ export class ElsaStudioWebhookDefinitionsList {
     );
   }
 }
-Tunnel.injectProps(ElsaStudioWebhookDefinitionsList, ['culture']);
+Tunnel.injectProps(ElsaStudioWebhookDefinitionsList, ['culture', 'basePath']);

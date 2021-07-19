@@ -161,14 +161,13 @@ export namespace Components {
     interface ElsaStudioDashboard {
         "basePath": string;
         "culture": string;
-        "monacoLibPath": string;
-        "serverUrl": string;
     }
     interface ElsaStudioHome {
         "culture": string;
     }
     interface ElsaStudioRoot {
         "addPlugins": (pluginTypes: Array<any>) => Promise<void>;
+        "basePath": string;
         "culture": string;
         "monacoLibPath": string;
         "serverUrl": string;
@@ -177,6 +176,7 @@ export namespace Components {
         "match": MatchResults;
     }
     interface ElsaStudioWebhookDefinitionsList {
+        "basePath": string;
         "culture": string;
     }
     interface ElsaStudioWorkflowBlueprintView {
@@ -186,6 +186,7 @@ export namespace Components {
         "match": MatchResults;
     }
     interface ElsaStudioWorkflowDefinitionsList {
+        "basePath": string;
         "culture": string;
         "history": RouterHistory;
     }
@@ -196,6 +197,7 @@ export namespace Components {
         "match": MatchResults;
     }
     interface ElsaStudioWorkflowRegistry {
+        "basePath": string;
         "culture": string;
     }
     interface ElsaSwitchCasesProperty {
@@ -218,6 +220,7 @@ export namespace Components {
         "webhookId": string;
     }
     interface ElsaWebhookDefinitionsListScreen {
+        "basePath": string;
         "culture": string;
         "history"?: RouterHistory;
         "serverUrl": string;
@@ -241,6 +244,7 @@ export namespace Components {
         "workflowDefinitionId": string;
     }
     interface ElsaWorkflowDefinitionsListScreen {
+        "basePath": string;
         "culture": string;
         "history"?: RouterHistory;
         "serverUrl": string;
@@ -256,6 +260,7 @@ export namespace Components {
         "workflowModel": WorkflowModel;
     }
     interface ElsaWorkflowInstanceListScreen {
+        "basePath": string;
         "culture": string;
         "getSelectedWorkflowInstanceIds": () => Promise<string[]>;
         "history"?: RouterHistory;
@@ -277,6 +282,7 @@ export namespace Components {
         "workflowDefinition": WorkflowDefinition;
     }
     interface ElsaWorkflowRegistryListScreen {
+        "basePath": string;
         "culture": string;
         "history"?: RouterHistory;
         "serverUrl": string;
@@ -783,13 +789,12 @@ declare namespace LocalJSX {
     interface ElsaStudioDashboard {
         "basePath"?: string;
         "culture"?: string;
-        "monacoLibPath"?: string;
-        "serverUrl"?: string;
     }
     interface ElsaStudioHome {
         "culture"?: string;
     }
     interface ElsaStudioRoot {
+        "basePath"?: string;
         "culture"?: string;
         "monacoLibPath"?: string;
         "onInitializing"?: (event: CustomEvent<ElsaStudio>) => void;
@@ -799,6 +804,7 @@ declare namespace LocalJSX {
         "match"?: MatchResults;
     }
     interface ElsaStudioWebhookDefinitionsList {
+        "basePath"?: string;
         "culture"?: string;
     }
     interface ElsaStudioWorkflowBlueprintView {
@@ -808,6 +814,7 @@ declare namespace LocalJSX {
         "match"?: MatchResults;
     }
     interface ElsaStudioWorkflowDefinitionsList {
+        "basePath"?: string;
         "culture"?: string;
         "history"?: RouterHistory;
     }
@@ -818,6 +825,7 @@ declare namespace LocalJSX {
         "match"?: MatchResults;
     }
     interface ElsaStudioWorkflowRegistry {
+        "basePath"?: string;
         "culture"?: string;
     }
     interface ElsaSwitchCasesProperty {
@@ -836,6 +844,7 @@ declare namespace LocalJSX {
         "webhookId"?: string;
     }
     interface ElsaWebhookDefinitionsListScreen {
+        "basePath"?: string;
         "culture"?: string;
         "history"?: RouterHistory;
         "serverUrl"?: string;
@@ -855,6 +864,7 @@ declare namespace LocalJSX {
         "workflowDefinitionId"?: string;
     }
     interface ElsaWorkflowDefinitionsListScreen {
+        "basePath"?: string;
         "culture"?: string;
         "history"?: RouterHistory;
         "serverUrl"?: string;
@@ -868,6 +878,7 @@ declare namespace LocalJSX {
         "workflowModel"?: WorkflowModel;
     }
     interface ElsaWorkflowInstanceListScreen {
+        "basePath"?: string;
         "culture"?: string;
         "history"?: RouterHistory;
         "orderBy"?: OrderBy;
@@ -890,6 +901,7 @@ declare namespace LocalJSX {
         "workflowDefinition"?: WorkflowDefinition;
     }
     interface ElsaWorkflowRegistryListScreen {
+        "basePath"?: string;
         "culture"?: string;
         "history"?: RouterHistory;
         "serverUrl"?: string;

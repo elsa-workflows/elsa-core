@@ -7,12 +7,10 @@
 
 ## Properties
 
-| Property        | Attribute         | Description | Type     | Default     |
-| --------------- | ----------------- | ----------- | -------- | ----------- |
-| `basePath`      | `base-path`       |             | `string` | `''`        |
-| `culture`       | `culture`         |             | `string` | `undefined` |
-| `monacoLibPath` | `monaco-lib-path` |             | `string` | `undefined` |
-| `serverUrl`     | `server-url`      |             | `string` | `undefined` |
+| Property   | Attribute   | Description | Type     | Default     |
+| ---------- | ----------- | ----------- | -------- | ----------- |
+| `basePath` | `base-path` |             | `string` | `''`        |
+| `culture`  | `culture`   |             | `string` | `undefined` |
 
 
 ## Dependencies
@@ -23,6 +21,7 @@
 - stencil-router
 - stencil-route-switch
 - stencil-route
+- context-consumer
 
 ### Graph
 ```mermaid
@@ -31,6 +30,7 @@ graph TD;
   elsa-studio-dashboard --> stencil-router
   elsa-studio-dashboard --> stencil-route-switch
   elsa-studio-dashboard --> stencil-route
+  elsa-studio-dashboard --> context-consumer
   style elsa-studio-dashboard fill:#f9f,stroke:#333,stroke-width:4px
 ```
 

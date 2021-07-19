@@ -7,9 +7,10 @@
 
 ## Properties
 
-| Property  | Attribute | Description | Type     | Default     |
-| --------- | --------- | ----------- | -------- | ----------- |
-| `culture` | `culture` |             | `string` | `undefined` |
+| Property   | Attribute   | Description | Type     | Default     |
+| ---------- | ----------- | ----------- | -------- | ----------- |
+| `basePath` | `base-path` |             | `string` | `undefined` |
+| `culture`  | `culture`   |             | `string` | `undefined` |
 
 
 ## Dependencies

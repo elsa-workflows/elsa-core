@@ -3,6 +3,7 @@ import {h} from "@stencil/core";
 
 export interface DashboardState {
   serverUrl: string;
+  basePath: string;
   culture: string;
   monacoLibPath: string;
 }
@@ -10,6 +11,7 @@ export interface DashboardState {
 export default createProviderConsumer<DashboardState>(
   {
     serverUrl: null,
+    basePath: null,
     culture: null,
     monacoLibPath: null
   },

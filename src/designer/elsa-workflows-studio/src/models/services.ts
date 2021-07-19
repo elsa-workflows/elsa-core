@@ -6,6 +6,7 @@ import {ToastNotificationService} from "../services/toast-notification-service";
 
 export interface ElsaStudio {
   serverUrl: string;
+  basePath: string;
   pluginManager: PluginManager;
   elsaClientFactory: () => ElsaClient;
   httpClientFactory: () => AxiosInstance;

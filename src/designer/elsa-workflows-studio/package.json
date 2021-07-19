@@ -29,8 +29,8 @@
     "test": "stencil test --spec --e2e",
     "test.watch": "stencil test --spec --e2e --watchAll",
     "generate": "stencil generate",
-    "build:tailwind:dev": "cross-env NODE_ENV=development tailwind build -i ./tailwind.css -o ./src/globals/tailwind.css & copyfiles -u 2 \"./src/globals/tailwind.css\" \"./src/assets/styles\"",
-    "build:tailwind:prod": "cross-env NODE_ENV=production tailwind build -i ./tailwind.css -o ./src/globals/tailwind.css & copyfiles -u 2 \"./src/globals/tailwind.css\" \"./src/assets/styles\""
+    "build:tailwind:dev": "cross-env NODE_ENV=development tailwind build -i ./tailwind.css -o ./src/globals/tailwind.css",
+    "build:tailwind:prod": "cross-env NODE_ENV=production tailwind build -i ./tailwind.css -o ./src/globals/tailwind.css"
   },
   "dependencies": {
     "@fullhuman/postcss-purgecss": "^4.0.3",
