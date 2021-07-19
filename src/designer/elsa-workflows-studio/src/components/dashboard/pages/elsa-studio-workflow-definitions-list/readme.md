@@ -7,10 +7,11 @@
 
 ## Properties
 
-| Property  | Attribute | Description | Type            | Default     |
-| --------- | --------- | ----------- | --------------- | ----------- |
-| `culture` | `culture` |             | `string`        | `undefined` |
-| `history` | --        |             | `RouterHistory` | `undefined` |
+| Property   | Attribute   | Description | Type            | Default     |
+| ---------- | ----------- | ----------- | --------------- | ----------- |
+| `basePath` | `base-path` |             | `string`        | `undefined` |
+| `culture`  | `culture`   |             | `string`        | `undefined` |
+| `history`  | --          |             | `RouterHistory` | `undefined` |
 
 
 ## Dependencies
