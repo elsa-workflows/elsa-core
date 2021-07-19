@@ -7,7 +7,7 @@ namespace Elsa.Persistence.EntityFramework.Oracle
     public static class DbContextOptionsBuilderExtensions
     {
         /// <summary>
-        /// Configures the context to use SqlServer.
+        /// Configures the context to use Oracle.
         /// </summary>
         public static DbContextOptionsBuilder UseOracle(this DbContextOptionsBuilder builder, string connectionString) =>
             builder.UseOracle(connectionString, db => db
