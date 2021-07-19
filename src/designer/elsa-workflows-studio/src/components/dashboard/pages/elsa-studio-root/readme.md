@@ -24,6 +24,16 @@
 
 ## Methods
 
+### `addPlugin(pluginType: any) => Promise<void>`
+
+
+
+#### Returns
+
+Type: `Promise<void>`
+
+
+
 ### `addPlugins(pluginTypes: Array<any>) => Promise<void>`
 
 
