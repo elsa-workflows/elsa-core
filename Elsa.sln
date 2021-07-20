@@ -230,9 +230,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "blazor", "blazor", "{D86B94DC-A53C-4A67-A820-828DD359C49B}"
 EndProject
 
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "aspnetcore", "aspnetcore", "{C869CC72-9A98-4246-9A76-6A50F48AFD85}"
-EndProject
-
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElsaDashboard.Samples.AspNetCore.Monolith", "src\samples\dashboard\aspnetcore\ElsaDashboard.Samples.AspNetCore.Monolith\ElsaDashboard.Samples.AspNetCore.Monolith.csproj", "{F1EF5639-021A-4D22-9D4A-73D57C88EBFA}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.Persistence.YesSql", "src\samples\persistence\Elsa.Samples.Persistence.YesSql\Elsa.Samples.Persistence.YesSql.csproj", "{3A30EFFE-32D8-40B8-9C62-427037BB5424}"
