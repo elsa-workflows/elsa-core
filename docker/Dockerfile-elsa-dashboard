@@ -5,7 +5,7 @@ COPY /src .
 
 WORKDIR /app/designer/elsa-workflows-studio
 RUN npm install --force
-RUN npm run build:dashboard
+RUN npm run build
 
 WORKDIR /app/designer/bindings/aspnet/Elsa.Designer.Components.Web
 RUN npm install --force
