@@ -88,12 +88,7 @@ export function findActivity(workflowModel: WorkflowModel, activityId: string) {
   return workflowModel.activities.find(x => x.activityId === activityId);
 }
 
-export function addConnection(workflowModel: WorkflowModel, connection: ConnectionModel);
-export function addConnection(workflowModel: WorkflowModel, sourceId: string, targetId: string, outcome: string);
-export function addConnection(workflowModel: WorkflowModel, ...args: any) {
-
-  const connection = typeof (args) == 'object' ? args as ConnectionModel : {sourceId: args[0], targetId: args[1], outcome: args[3]};
-
+export function addConnection(workflowModel: WorkflowModel, connection: ConnectionModel){
   return {
     ...workflowModel,
     connections: [...workflowModel.connections, connection]
