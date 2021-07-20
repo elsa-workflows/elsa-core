@@ -43,12 +43,21 @@ namespace Elsa
             CancellationToken cancellationToken)
         {
             var provider = workflowBlueprint.ActivityPropertyProviders.GetProvider(activityId, propertyName);
+            var value = provider != null ? await provider.GetValueAsync(activityExecutionContext, cancellationToken) : null;
 
-            if (provider == null)
-                return default!;
+            if (value == null)
+            {
+                // Get default value.
+                var activityTypeService = activityExecutionContext.GetService<IActivityTypeService>();
+                var activityBlueprint = workflowBlueprint.GetActivity(activityId)!;
+                var activityType = await activityTypeService.GetActivityTypeAsync(activityBlueprint.Type, cancellationToken);
+                var activityDescriptor = await activityTypeService.DescribeActivityType(activityType, cancellationToken);
+                var propertyDescriptor = activityDescriptor.InputProperties.FirstOrDefault(x => x.Name == propertyName);
 
-            var value = await provider.GetValueAsync(activityExecutionContext, cancellationToken);
-            return value!;
+                value = propertyDescriptor?.DefaultValue;
+            }
+
+            return value;
         }
 
         public static IEnumerable<IWorkflowBlueprint> WithVersion(
