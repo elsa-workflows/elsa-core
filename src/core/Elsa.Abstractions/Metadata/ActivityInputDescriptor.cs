@@ -7,7 +7,7 @@ namespace Elsa.Metadata
     [Obsolete("Use ActivityInputDescriptor instead.")]
     public class ActivityPropertyDescriptor : ActivityInputDescriptor
     {
-        public ActivityPropertyDescriptor() : base()
+        public ActivityPropertyDescriptor()
         {
         }
 
@@ -22,8 +22,9 @@ namespace Elsa.Metadata
             object? defaultValue = default,
             string? defaultSyntax = "Literal",
             IEnumerable<string>? supportedSyntaxes = default,
-            bool? isDisabled = default)
-            : base (
+            bool isDisabled = false,
+            bool isBrowsable = true)
+            : base(
                 name,
                 type,
                 uiHint,
@@ -35,7 +36,8 @@ namespace Elsa.Metadata
                 defaultValue,
                 defaultSyntax,
                 supportedSyntaxes,
-                isDisabled
+                isDisabled,
+                isBrowsable
             )
         {
         }
@@ -59,7 +61,8 @@ namespace Elsa.Metadata
             object? defaultValue = default,
             string? defaultSyntax = "Literal",
             IEnumerable<string>? supportedSyntaxes = default,
-            bool? isDisabled = default)
+            bool isDisabled = false,
+            bool isBrowsable = true)
         {
             Name = name;
             Type = type;
@@ -73,6 +76,7 @@ namespace Elsa.Metadata
             DefaultSyntax = defaultSyntax;
             SupportedSyntaxes = supportedSyntaxes?.ToList() ?? new List<string>();
             IsDisabled = isDisabled;
+            IsBrowsable = isBrowsable;
         }
 
         public string Name { get; set; } = default!;
@@ -87,5 +91,6 @@ namespace Elsa.Metadata
         public string? DefaultSyntax { get; set; }
         public IList<string> SupportedSyntaxes { get; set; } = new List<string>();
         public bool? IsDisabled { get; set; }
+        public bool? IsBrowsable { get; set; }
     }
 }
