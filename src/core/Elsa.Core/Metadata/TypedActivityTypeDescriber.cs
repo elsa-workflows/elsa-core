@@ -85,7 +85,7 @@ namespace Elsa.Metadata
 
                 yield return new ActivityInputDescriptor
                 (
-                    (activityPropertyAttribute.Name ?? propertyInfo.Name).Pascalize(),
+                    activityPropertyAttribute.Name ?? propertyInfo.Name,
                     propertyInfo.PropertyType,
                     _uiHintResolver.GetUIHint(propertyInfo),
                     activityPropertyAttribute.Label ?? propertyInfo.Name.Humanize(LetterCasing.Title),

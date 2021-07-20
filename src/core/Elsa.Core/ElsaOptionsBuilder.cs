@@ -4,10 +4,12 @@ using System.Linq;
 using System.Reflection;
 using Elsa.Builders;
 using Elsa.Caching;
+using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Providers.WorkflowStorage;
 using Elsa.Services;
 using Elsa.Services.Messaging;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Rebus.DataBus.InMem;
@@ -54,6 +56,13 @@ namespace Elsa
         public ElsaOptionsBuilder WithContainerName(string name)
         {
             ElsaOptions.ContainerName = name;
+            return this;
+        }
+
+        public ElsaOptionsBuilder ConfigureWorkflowChannels(Action<WorkflowChannelOptions> configure)
+        {
+            ElsaOptions.WorkflowChannelOptions.Channels = new List<string>();
+            configure(ElsaOptions.WorkflowChannelOptions);
             return this;
         }
 
@@ -141,13 +150,13 @@ namespace Elsa
             return this;
         }
 
-        public ElsaOptionsBuilder AddCompetingMessageType(Type messageType)
+        public ElsaOptionsBuilder AddCompetingMessageType(Type messageType, string? queue = default)
         {
-            ElsaOptions.CompetingMessageTypes.Add(messageType);
+            ElsaOptions.CompetingMessageTypes.Add(new CompetingMessageType(messageType, queue));
             return this;
         }
 
-        public ElsaOptionsBuilder AddCompetingMessageType<T>() => AddCompetingMessageType(typeof(T));
+        public ElsaOptionsBuilder AddCompetingMessageType<T>(string? queue = default) => AddCompetingMessageType(typeof(T), queue);
 
         public ElsaOptionsBuilder AddPubSubMessageType(Type messageType)
         {
@@ -224,6 +233,12 @@ namespace Elsa
         public ElsaOptionsBuilder UseServiceBus(Action<ServiceBusEndpointConfigurationContext> setup)
         {
             ElsaOptions.ConfigureServiceBusEndpoint = setup;
+            return this;
+        }
+
+        public ElsaOptionsBuilder AddCustomTenantAccessor<T>() where T : class, ITenantAccessor
+        {
+            Services.AddScoped<ITenantAccessor, T>();
             return this;
         }
     }

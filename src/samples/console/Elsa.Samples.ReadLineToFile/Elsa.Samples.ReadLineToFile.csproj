@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net5.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="System.Text.Encodings.Web" Version="5.0.1"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\activities\Elsa.Activities.File\Elsa.Activities.File.csproj"/>
+        <ProjectReference Include="..\..\..\core\Elsa\Elsa.csproj"/>
+    </ItemGroup>
+
+</Project>

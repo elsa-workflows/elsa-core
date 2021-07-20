@@ -38,7 +38,7 @@ namespace Elsa.Providers.WorkflowStorage
             return new ValueTask();
         }
 
-        private IDictionary<string, object> GetData(WorkflowStorageContext context) => context.WorkflowInstance.ActivityData.GetItem(context.ActivityId, () => new Dictionary<string, object>());
+        private IDictionary<string, object?> GetData(WorkflowStorageContext context) => context.WorkflowInstance.ActivityData.GetItem(context.ActivityId, () => new Dictionary<string, object?>());
         private void SetState(WorkflowStorageContext context, string propertyName, object? value) => GetData(context)!.SetState(propertyName, value);
         public object? GetState(WorkflowStorageContext context, string propertyName) => GetData(context)!.GetState(propertyName);
     }

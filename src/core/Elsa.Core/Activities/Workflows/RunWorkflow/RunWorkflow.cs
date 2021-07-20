@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,6 +10,7 @@ using Elsa.Expressions;
 using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
+using NetBox.Extensions;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Workflows
@@ -46,6 +48,14 @@ namespace Elsa.Activities.Workflows
 
         [ActivityInput(Hint = "Optional input to send to the workflow to run.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public object? Input { get; set; }
+        
+        [ActivityInput(
+            Hint = "Enter one or more potential child workflow outcomes you might want to handle.",
+            UIHint = ActivityInputUIHints.MultiText,
+            DefaultSyntax = SyntaxNames.Json,
+            SupportedSyntaxes = new[] { SyntaxNames.Json }
+        )]
+        public ISet<string> PossibleOutcomes { get; set; } = new HashSet<string>();
 
         [ActivityInput(
             Label = "Correlation ID",
@@ -75,7 +85,7 @@ namespace Elsa.Activities.Workflows
             SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public RunWorkflowMode Mode { get; set; }
         
-        [ActivityOutput] public object? Output { get; set; }
+        [ActivityOutput] public FinishedWorkflowModel? Output { get; set; }
 
         public string ChildWorkflowInstanceId
         {
@@ -110,7 +120,22 @@ namespace Elsa.Activities.Workflows
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
         {
             Output = (FinishedWorkflowModel) context.WorkflowExecutionContext.Input!;
-            return Done();
+
+            var results = new List<IActivityExecutionResult> { Done() };
+
+            if (Output.WorkflowOutput is FinishOutput finishOutput)
+            {
+                // Deconstruct FinishOutput.
+                Output = new FinishedWorkflowModel
+                {
+                    WorkflowOutput = finishOutput.Output,
+                    WorkflowInstanceId = Output.WorkflowInstanceId
+                };
+                
+                results.AddRange(finishOutput.Outcomes.Except(new[] { OutcomeNames.Done }));
+            }
+
+            return Combine(results);
         }
 
         private async Task<IWorkflowBlueprint?> FindWorkflowBlueprintAsync(CancellationToken cancellationToken)

@@ -21,7 +21,7 @@ namespace Elsa.Activities.Telnyx.Activities
     [Action(
         Category = Constants.Category,
         Description = "Bridge two call control calls.",
-        Outcomes = new[] { TelnyxOutcomeNames.Bridging, TelnyxOutcomeNames.Bridged, TelnyxOutcomeNames.LegABridged, TelnyxOutcomeNames.LegBBridged, OutcomeNames.Done, TelnyxOutcomeNames.CallIsNoLongerActive },
+        Outcomes = new[] {TelnyxOutcomeNames.Bridging, TelnyxOutcomeNames.Bridged, TelnyxOutcomeNames.LegABridged, TelnyxOutcomeNames.LegBBridged, OutcomeNames.Done, TelnyxOutcomeNames.CallIsNoLongerActive},
         DisplayName = "Bridge Calls"
     )]
     public class BridgeCalls : Activity
@@ -33,32 +33,32 @@ namespace Elsa.Activities.Telnyx.Activities
             _telnyxClient = telnyxClient;
         }
 
-        [ActivityInput(Label = "Call Control ID A", Hint = "Unique identifier and token for controlling the call.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Label = "Call Control ID A", Hint = "Unique identifier and token for controlling the call.", SupportedSyntaxes = new[] {SyntaxNames.JavaScript, SyntaxNames.Liquid})]
         public string? CallControlIdA { get; set; }
 
-        [ActivityInput(Label = "Call Control ID B", Hint = "The Call Control ID of the call you want to bridge with.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(Label = "Call Control ID B", Hint = "The Call Control ID of the call you want to bridge with.", SupportedSyntaxes = new[] {SyntaxNames.JavaScript, SyntaxNames.Liquid})]
         public string? CallControlIdB { get; set; }
 
         [ActivityInput(
             Label = "Command ID",
             Hint = "Use this field to avoid duplicate commands. Telnyx will ignore commands with the same Command ID.",
             Category = PropertyCategories.Advanced,
-            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+            SupportedSyntaxes = new[] {SyntaxNames.JavaScript, SyntaxNames.Liquid})]
         public string? CommandId { get; set; }
 
         [ActivityInput(
             Hint = "Use this field to add state to every subsequent webhook. It must be a valid Base-64 encoded string.",
             Category = PropertyCategories.Advanced,
-            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+            SupportedSyntaxes = new[] {SyntaxNames.JavaScript, SyntaxNames.Liquid})]
         public string? ClientState { get; set; }
 
         [ActivityInput(
             Label = "Park After Unbridged",
             Hint = "HTTP request type used for Webhook URL",
             UIHint = ActivityInputUIHints.Dropdown,
-            Options = new[] { "", "self" },
+            Options = new[] {"", "self"},
             Category = PropertyCategories.Advanced,
-            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+            SupportedSyntaxes = new[] {SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid})]
         public string? ParkAfterUnbridged { get; set; }
 
         [ActivityOutput] public CallBridgedPayload? CallBridgedPayloadA { get; set; }
@@ -135,13 +135,13 @@ namespace Elsa.Activities.Telnyx.Activities
             if (!string.IsNullOrWhiteSpace(CallControlIdB))
                 return CallControlIdB;
 
-            var input = context.GetInput<CallAnsweredPayload>();
+            if (context.Input is CallAnsweredPayload input)
 
-            if (input != null)
-                return input.CallControlId;
+                if (input != null)
+                    return input.CallControlId;
 
-            var inboundCallActivityId = context.WorkflowExecutionContext.GetInboundConnections(Id).Where(x => x.Source.Activity.Type == nameof(Dial)).Select(x => x.Source.Activity.Id).FirstOrDefault();
-            var inboundCallActivityResponse = inboundCallActivityId != null ? await context.WorkflowExecutionContext.GetActivityPropertyAsync<Dial, DialResponse>(inboundCallActivityId, x => x.DialResponse) : default;
+            var inboundCallActivityId = context.WorkflowExecutionContext.GetInboundConnectionPath(Id).Where(x => x.Source.Activity.Type == nameof(Dial)).Select(x => x.Source.Activity.Id).FirstOrDefault();
+            var inboundCallActivityResponse = inboundCallActivityId != null ? await context.WorkflowExecutionContext.GetActivityPropertyAsync<Dial, DialResponse>(inboundCallActivityId, x => x.DialResponse!) : default;
             return inboundCallActivityResponse != null ? inboundCallActivityResponse.CallControlId : null;
         }
     }

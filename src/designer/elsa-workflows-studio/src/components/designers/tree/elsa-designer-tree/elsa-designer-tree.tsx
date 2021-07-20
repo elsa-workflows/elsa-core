@@ -49,7 +49,7 @@ export class ElsaWorkflowDesigner {
   parentActivityId?: string;
   parentActivityOutcome?: string;
   addingActivity: boolean = false;
-  activityDisplayContexts: Map<ActivityDesignDisplayContext> = {};
+  activityDisplayContexts: Map<ActivityDesignDisplayContext> = null;
   selectedActivities: Map<ActivityModel> = {};
 
   handleContextMenuChange(state: ActivityContextMenuState) {
@@ -96,8 +96,8 @@ export class ElsaWorkflowDesigner {
   }
 
   disconnectedCallback() {
-    eventBus.off(EventTypes.ActivityPicked, this.onActivityPicked);
-    eventBus.off(EventTypes.UpdateActivity, this.onUpdateActivity);
+    eventBus.off(EventTypes.ActivityPicked);
+    eventBus.off(EventTypes.UpdateActivity);
     d3.selectAll('.node').on('click', null);
     d3.selectAll('.edgePath').on('contextmenu', null);
   }
@@ -113,6 +113,9 @@ export class ElsaWorkflowDesigner {
   }
 
   componentWillRender() {
+    if(!!this.activityDisplayContexts)
+      return;
+    
     const activityModels = this.workflowModel.activities;
     const displayContexts: Map<ActivityDesignDisplayContext> = {};
     const activityDescriptors: Array<ActivityDescriptor> = state.activityDescriptors;
@@ -122,11 +125,12 @@ export class ElsaWorkflowDesigner {
       const description = model.description;
       const bodyText = description && description.length > 0 ? description : undefined;
       const bodyDisplay = bodyText ? `<p>${bodyText}</p>` : undefined;
-      const color = (descriptor.traits &= ActivityTraits.Trigger) == ActivityTraits.Trigger ? 'rose' : 'light-blue';
+      const color = (descriptor.traits &= ActivityTraits.Trigger) == ActivityTraits.Trigger ? 'rose' : 'sky';
       const displayName = model.displayName;
 
       const displayContext: ActivityDesignDisplayContext = {
         activityModel: model,
+        activityDescriptor: descriptor,
         activityIcon: <ActivityIcon color={color}/>,
         bodyDisplay: bodyDisplay,
         displayName: displayName,
@@ -150,6 +154,7 @@ export class ElsaWorkflowDesigner {
 
   updateWorkflowModel(model: WorkflowModel, emitEvent: boolean = true) {
     this.workflowModel = this.cleanWorkflowModel(model);
+    this.activityDisplayContexts = null;
 
     if (emitEvent)
       this.workflowChanged.emit(model);
@@ -378,9 +383,11 @@ export class ElsaWorkflowDesigner {
     });
 
     // Connections between activities and their outcomes.
+    const activityDisplayContexts = this.activityDisplayContexts || {};
+    
     this.workflowModel.activities.forEach(activity => {
       this.graph.setNode(activity.activityId, this.createActivityOptions(activity));
-      const displayContext = this.activityDisplayContexts[activity.activityId] || undefined;
+      const displayContext = activityDisplayContexts[activity.activityId] || undefined;
       const outcomes = !!displayContext ? displayContext.outcomes : activity.outcomes || [];
 
       outcomes.forEach(outcome => {
@@ -554,7 +561,8 @@ export class ElsaWorkflowDesigner {
   }
 
   renderActivity(activity: ActivityModel) {
-    const displayContext = this.activityDisplayContexts[activity.activityId] || undefined;
+    const activityDisplayContexts = this.activityDisplayContexts || {};
+    const displayContext = activityDisplayContexts[activity.activityId] || undefined;
     const activityContextMenuButton = !!this.activityContextMenuButton ? this.activityContextMenuButton(activity) : '';
     const activityBorderColor = !!this.activityBorderColor ? this.activityBorderColor(activity) : 'gray';
     const selectedColor = !!this.activityBorderColor ? activityBorderColor : 'blue';
@@ -568,7 +576,7 @@ export class ElsaWorkflowDesigner {
           <div class="elsa-flex-shrink-0">
           ${displayContext?.activityIcon || ''}
           </div>
-          <div class="elsa-flex-1 elsa-font-medium elsa-leading-8">
+          <div class="elsa-flex-1 elsa-font-medium elsa-leading-8 elsa-overflow-hidden">
             <p class="elsa-overflow-ellipsis">${displayName}</p>
           </div>
           <div class="context-menu-button-container">
@@ -582,7 +590,7 @@ export class ElsaWorkflowDesigner {
 
   renderActivityBody(displayContext: ActivityDesignDisplayContext) {
     return (
-      `<div class="elsa-border-t elsa-border-t-solid hidden">
+      `<div class="elsa-border-t elsa-border-t-solid">
           <div class="elsa-p-6 elsa-text-gray-400 elsa-text-sm">
             <div class="elsa-mb-2">${!!displayContext.bodyDisplay ? displayContext.bodyDisplay : ''}</div>
             <div>

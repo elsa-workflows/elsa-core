@@ -9,6 +9,7 @@
 
 | Property               | Attribute                | Description | Type     | Default     |
 | ---------------------- | ------------------------ | ----------- | -------- | ----------- |
+| `culture`              | `culture`                |             | `string` | `undefined` |
 | `monacoLibPath`        | `monaco-lib-path`        |             | `string` | `undefined` |
 | `serverUrl`            | `server-url`             |             | `string` | `undefined` |
 | `workflowDefinitionId` | `workflow-definition-id` |             | `string` | `undefined` |
@@ -75,7 +76,7 @@ Type: `Promise<void>`
 - [elsa-designer-tree](../../../designers/tree/elsa-designer-tree)
 - [elsa-workflow-settings-modal](../elsa-workflow-settings-modal)
 - [elsa-workflow-definition-editor-notifications](../elsa-workflow-definition-editor-notifications)
-- [elsa-activity-picker-modal](../../../pickers/elsa-activity-picker-modal)
+- [elsa-activity-picker-modal](../elsa-activity-picker-modal)
 - [elsa-activity-editor-modal](../elsa-activity-editor-modal)
 - [elsa-workflow-publish-button](../elsa-workflow-publish-button)
 - context-consumer
@@ -92,7 +93,6 @@ graph TD;
   elsa-workflow-definition-editor-screen --> context-consumer
   elsa-workflow-settings-modal --> elsa-modal-dialog
   elsa-workflow-settings-modal --> elsa-monaco
-  elsa-workflow-definition-editor-notifications --> elsa-toast-notification
   elsa-activity-picker-modal --> elsa-modal-dialog
   elsa-activity-editor-modal --> elsa-modal-dialog
   elsa-workflow-publish-button --> context-consumer

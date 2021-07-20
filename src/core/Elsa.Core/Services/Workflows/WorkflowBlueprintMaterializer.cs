@@ -43,7 +43,7 @@ namespace Elsa.Services.Workflows
             connections.AddRange(workflowDefinition.Connections.Select(x => ResolveConnection(x, activityBlueprints)).Where(x => x != null).Select(x => x!));
             propertyProviders.AddRange(await CreatePropertyProviders(workflowDefinition, cancellationToken));
 
-            return new WorkflowBlueprint(
+            var workflowBlueprint = new WorkflowBlueprint(
                 workflowDefinition.DefinitionId,
                 workflowDefinition.Version,
                 workflowDefinition.TenantId,
@@ -54,6 +54,7 @@ namespace Elsa.Services.Workflows
                 workflowDefinition.IsLatest,
                 workflowDefinition.IsPublished,
                 workflowDefinition.Tag,
+                workflowDefinition.Channel,
                 workflowDefinition.Variables,
                 workflowDefinition.CustomAttributes,
                 workflowDefinition.ContextOptions,
@@ -63,6 +64,11 @@ namespace Elsa.Services.Workflows
                 connections,
                 new ActivityPropertyProviders(propertyProviders.ToDictionary(x => x.Key, x => x.Value))
             );
+
+            foreach (var compositeActivityBlueprint in compositeActivityBlueprints) 
+                ((CompositeActivityBlueprint) compositeActivityBlueprint).Parent = workflowBlueprint;
+
+            return workflowBlueprint;
         }
 
         private async Task<ActivityPropertyProviders> CreatePropertyProviders(ICompositeActivityDefinition compositeActivityDefinition, CancellationToken cancellationToken)
@@ -79,7 +85,7 @@ namespace Elsa.Services.Workflows
                 foreach (var property in activityDefinition.Properties)
                 {
                     var propertyDescriptor = propertyDescriptors.FirstOrDefault(x => x.Name == property.Name);
-                    
+
                     if (propertyDescriptor == null)
                     {
                         _logger.LogWarning("Could not find the specified property '{PropertyName}' for activity type {ActivityTypeName}", property.Name, activityType.TypeName);
@@ -116,7 +122,7 @@ namespace Elsa.Services.Workflows
         {
             var list = new List<IActivityBlueprint>();
             var activityType = await _activityTypeService.GetActivityTypeAsync(activityDefinition.Type, cancellationToken);
-            
+
             if (activityDefinition is CompositeActivityDefinition compositeActivityDefinition)
             {
                 var manyActivityBlueprints = await Task.WhenAll(compositeActivityDefinition.Activities.Select(async x => await CreateBlueprintsAsync(x, cancellationToken)));
@@ -160,14 +166,14 @@ namespace Elsa.Services.Workflows
                     SaveWorkflowContextEnabled = activityDefinition.SaveWorkflowContext,
                     PropertyStorageProviders = activityDefinition.PropertyStorageProviders
                 };
-                
+
                 compositeActivity.Build(compositeActivityBuilder);
 
                 var compositeActivityBlueprint = compositeActivityBuilder.Build($"{activityDefinition.ActivityId}:activity");
 
                 list.Add(compositeActivityBlueprint);
                 list.AddRange(compositeActivityBlueprint.Activities);
-                
+
                 // Connect the composite activity to its starting activities.
                 var startActivities = _startingActivitiesProvider.GetStartActivities(compositeActivityBlueprint).ToList();
                 compositeActivityBlueprint.Connections.AddRange(startActivities.Select(x => new Connection(compositeActivityBlueprint, x, CompositeActivity.Enter)));

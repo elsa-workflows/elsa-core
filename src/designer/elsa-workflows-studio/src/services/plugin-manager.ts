@@ -17,35 +17,70 @@ import {SendSignalPlugin} from "../plugins/send-signal-plugin";
 import {UserTaskPlugin} from "../plugins/user-task-plugin";
 import {StatePlugin} from "../plugins/state-plugin";
 import {SendHttpRequestPlugin} from "../plugins/send-http-request-plugin";
+import {WebhookPlugin} from "../plugins/webhook-plugin";
+import {RunWorkflowPlugin} from "../plugins/run-workflow-plugin";
+import {ElsaStudio} from "../models/services";
 
 export class PluginManager {
 
-  plugins: ElsaPlugin = [];
+  plugins: Array<ElsaPlugin> = [];
+  pluginTypes: Array<any> = [];
+  elsaStudio: ElsaStudio;
+  initialized: boolean;
 
   constructor() {
-    this.plugins = [
-      new DefaultDriversPlugin(),
-      new ActivityIconProviderPlugin(),
-      new IfPlugin(),
-      new WhilePlugin(),
-      new ForkPlugin(),
-      new SwitchPlugin(),
-      new HttpEndpointPlugin(),
-      new SendHttpRequestPlugin(),
-      new TimerPlugin(),
-      new StartAtPlugin(),
-      new CronPlugin(),
-      new SignalReceivedPlugin(),
-      new SendSignalPlugin(),
-      new WriteLinePlugin(),
-      new StatePlugin(),
-      new RunJavascriptPlugin(),
-      new UserTaskPlugin(),
-      new SendEmailPlugin()
+    this.pluginTypes = [
+      DefaultDriversPlugin,
+      ActivityIconProviderPlugin,
+      IfPlugin,
+      WhilePlugin,
+      ForkPlugin,
+      SwitchPlugin,
+      HttpEndpointPlugin,
+      SendHttpRequestPlugin,
+      TimerPlugin,
+      StartAtPlugin,
+      CronPlugin,
+      SignalReceivedPlugin,
+      SendSignalPlugin,
+      WriteLinePlugin,
+      RunWorkflowPlugin,
+      StatePlugin,
+      RunJavascriptPlugin,
+      UserTaskPlugin,
+      SendEmailPlugin,
+      WebhookPlugin
     ];
   }
 
-  initialize() {
+  initialize(elsaStudio: ElsaStudio) {
+    if (this.initialized)
+      return;
+
+    this.elsaStudio = elsaStudio;
+
+    for (const pluginType of this.pluginTypes) {
+      this.createPlugin(pluginType);
+    }
+    this.initialized = true;
+  }
+
+  registerPlugins(pluginTypes: Array<any>) {
+
+    for (const pluginType of pluginTypes) {
+      this.registerPlugin(pluginType);
+    }
+  }
+
+  registerPlugin(pluginType: any) {
+    this.pluginTypes.push(pluginType);
+
+    if (this.initialized)
+      this.createPlugin(pluginType);
+  }
+
+  private createPlugin = (pluginType: any): ElsaPlugin => {
+    return new pluginType(this.elsaStudio) as ElsaPlugin;
   }
 }
 

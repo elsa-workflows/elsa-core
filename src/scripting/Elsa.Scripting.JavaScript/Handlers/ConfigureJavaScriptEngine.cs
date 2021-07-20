@@ -4,6 +4,8 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Persistence.Specifications;
+using Elsa.Persistence.Specifications.WorkflowExecutionLogRecords;
 using Elsa.Providers.WorkflowStorage;
 using Elsa.Scripting.JavaScript.Extensions;
 using Elsa.Scripting.JavaScript.Messages;
@@ -11,7 +13,6 @@ using Elsa.Services;
 using Elsa.Services.Models;
 using Elsa.Services.WorkflowStorage;
 using Jint;
-using Jint.Runtime.Interop;
 using MediatR;
 using Microsoft.Extensions.Configuration;
 using NodaTime;
@@ -49,9 +50,10 @@ namespace Elsa.Scripting.JavaScript.Handlers
             engine.SetValue("getWorkflowDefinitionIdByName", (Func<string, string?>) (name => GetWorkflowDefinitionIdByName(activityExecutionContext, name)));
             engine.SetValue("getWorkflowDefinitionIdByTag", (Func<string, string?>) (tag => GetWorkflowDefinitionIdByTag(activityExecutionContext, tag)));
             engine.SetValue("getActivity", (Func<string, object?>) (idOrName => GetActivityModel(activityExecutionContext, idOrName)));
+            engine.SetValue("findExecutedActivityIdByType", (Func<string, string?>) (activityTypeName => FindExecutedActivityByTypeAsync(activityExecutionContext, activityTypeName, cancellationToken).Result));
             
-            // Using .Result because Jint doesn't support Task-based functions yet.  
-            engine.SetValue("getActivityProperty", (Func<string, string?, object?>) ((activityId, propertyName) => GetActivityPropertyAsync(activityId, propertyName, activityExecutionContext).Result));
+            // Using .Result because Jint doesn't support Task-based functions.  
+            engine.SetValue("getActivityProperty", (Func<string, string, object?>) ((activityId, propertyName) => GetActivityPropertyAsync(activityId, propertyName, activityExecutionContext).Result));
 
             // Global variables.
             engine.SetValue("activityExecutionContext", activityExecutionContext);
@@ -89,7 +91,7 @@ namespace Elsa.Scripting.JavaScript.Handlers
 
             await AddActivityOutputAsync(engine, activityExecutionContext, cancellationToken);
         }
-        
+
         private async Task AddActivityOutputAsync(Engine engine, ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
         {
             var workflowExecutionContext = activityExecutionContext.WorkflowExecutionContext;
@@ -127,7 +129,7 @@ namespace Elsa.Scripting.JavaScript.Handlers
             
             foreach (var activity in workflowBlueprint.Activities.Where(x => !string.IsNullOrWhiteSpace(x.Name)))
             {
-                var state = new Dictionary<string, object>(activityExecutionContext.GetActivityData(activity.Id));
+                var state = new Dictionary<string, object?>(activityExecutionContext.GetActivityData(activity.Id));
                 engine.SetValue(activity.Name, state);
             }
         }
@@ -157,6 +159,15 @@ namespace Elsa.Scripting.JavaScript.Handlers
             var providerName = activityBlueprint.PropertyStorageProviders.GetItem(propertyName);
             var storageContext = new WorkflowStorageContext(context.WorkflowInstance, activityBlueprint.Id);
             return await storageService.LoadAsync(providerName, storageContext, propertyName, context.CancellationToken);
+        }
+        
+        private static async Task<string?> FindExecutedActivityByTypeAsync(ActivityExecutionContext activityExecutionContext, string activityTypeName, CancellationToken cancellationToken)
+        {
+            var log = activityExecutionContext.GetService<IWorkflowExecutionLog>();
+            var specification = new WorkflowInstanceIdSpecification(activityExecutionContext.WorkflowInstance.Id).And(new ActivityTypeSpecification(activityTypeName));
+            var entry = await log.FindEntryAsync(specification, cancellationToken);
+
+            return entry?.ActivityId;
         }
     }
 }

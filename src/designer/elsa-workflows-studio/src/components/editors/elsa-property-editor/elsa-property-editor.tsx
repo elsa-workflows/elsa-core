@@ -46,6 +46,7 @@ export class ElsaPropertyEditor {
                 label={label}
                 syntax={propertyModel.syntax}
                 defaultSyntax={propertyDescriptor.defaultSyntax}
+                isDisabled={propertyDescriptor.isDisabled}
                 expressions={propertyModel.expressions}
                 supportedSyntaxes={propertyDescriptor.supportedSyntaxes}
                 editor-height={this.editorHeight}>

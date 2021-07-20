@@ -1,5 +1,5 @@
 ﻿using System.Threading.Tasks;
-using Elsa.Services.Dispatch;
+using Elsa.Services;
 using Quartz;
 
 namespace Elsa.Activities.Temporal.Quartz.Jobs

@@ -4,6 +4,43 @@ using System.Linq;
 
 namespace Elsa.Metadata
 {
+    [Obsolete("Use ActivityInputDescriptor instead.")]
+    public class ActivityPropertyDescriptor : ActivityInputDescriptor
+    {
+        public ActivityPropertyDescriptor() : base()
+        {
+        }
+
+        public ActivityPropertyDescriptor(
+            string name,
+            Type type,
+            string uiHint,
+            string label,
+            string? hint = default,
+            object? options = default,
+            string? category = default,
+            object? defaultValue = default,
+            string? defaultSyntax = "Literal",
+            IEnumerable<string>? supportedSyntaxes = default,
+            bool? isDisabled = default)
+            : base (
+                name,
+                type,
+                uiHint,
+                label,
+                hint,
+                options,
+                category,
+                0,
+                defaultValue,
+                defaultSyntax,
+                supportedSyntaxes,
+                isDisabled
+            )
+        {
+        }
+    }
+
     public class ActivityInputDescriptor
     {
         public ActivityInputDescriptor()
@@ -21,7 +58,8 @@ namespace Elsa.Metadata
             float order = 0,
             object? defaultValue = default,
             string? defaultSyntax = "Literal",
-            IEnumerable<string>? supportedSyntaxes = default)
+            IEnumerable<string>? supportedSyntaxes = default,
+            bool? isDisabled = default)
         {
             Name = name;
             Type = type;
@@ -34,6 +72,7 @@ namespace Elsa.Metadata
             DefaultValue = defaultValue;
             DefaultSyntax = defaultSyntax;
             SupportedSyntaxes = supportedSyntaxes?.ToList() ?? new List<string>();
+            IsDisabled = isDisabled;
         }
 
         public string Name { get; set; } = default!;
@@ -47,5 +86,6 @@ namespace Elsa.Metadata
         public object? DefaultValue { get; set; }
         public string? DefaultSyntax { get; set; }
         public IList<string> SupportedSyntaxes { get; set; } = new List<string>();
+        public bool? IsDisabled { get; set; }
     }
 }

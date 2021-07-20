@@ -19,6 +19,8 @@ export class ElsaCheckListProperty {
   items: any[];
 
   async componentWillLoad() {
+    if (this.propertyModel.expressions[SyntaxNames.Json] == undefined)
+      this.propertyModel.expressions[SyntaxNames.Json] = JSON.stringify(this.propertyDescriptor.defaultValue);
     this.currentValue = this.propertyModel.expressions[SyntaxNames.Json] || '[]';
   }
 

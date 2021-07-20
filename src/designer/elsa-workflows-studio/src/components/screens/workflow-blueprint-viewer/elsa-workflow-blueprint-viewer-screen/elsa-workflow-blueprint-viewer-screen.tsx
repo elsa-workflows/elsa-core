@@ -10,9 +10,10 @@ import {
   WorkflowPersistenceBehavior
 } from "../../../../models";
 import {createElsaClient} from "../../../../services/elsa-client";
-import {pluginManager} from '../../../../services/plugin-manager';
 import state from '../../../../utils/store';
 import {WorkflowDesignerMode} from "../../../designers/tree/elsa-designer-tree/models";
+import Tunnel from "../../../../data/dashboard";
+import {ElsaWebhookDefinitionEditorScreen} from "../../webhook-definition-editor/elsa-webhook-definition-editor-screen/elsa-webhook-definition-editor-screen";
 
 @Component({
   tag: 'elsa-workflow-blueprint-viewer-screen',
@@ -20,12 +21,9 @@ import {WorkflowDesignerMode} from "../../../designers/tree/elsa-designer-tree/m
 })
 export class ElsaWorkflowBlueprintViewerScreen {
 
-  constructor() {
-    pluginManager.initialize();
-  }
-
   @Prop() workflowDefinitionId: string;
-  @Prop({attribute: 'server-url', reflect: true}) serverUrl: string;
+  @Prop() serverUrl: string;
+  @Prop() culture: string;
   @State() workflowBlueprint: WorkflowBlueprint;
   @State() workflowModel: WorkflowModel;
   el: HTMLElement;
@@ -54,7 +52,8 @@ export class ElsaWorkflowBlueprintViewerScreen {
       saveWorkflowContext: false,
       variables: {data: {}},
       type: null,
-      properties: {data: {}},
+      inputProperties: {data: {}},
+      outputProperties: {data: {}},
       propertyStorageProviders: {}
     };
 
@@ -110,7 +109,7 @@ export class ElsaWorkflowBlueprintViewerScreen {
   mapActivityModel(source: ActivityBlueprint): ActivityModel {
     const activityDescriptors: Array<ActivityDescriptor> = state.activityDescriptors;
     const activityDescriptor = activityDescriptors.find(x => x.type == source.type);
-    const properties: Array<ActivityDefinitionProperty> = collection.map(source.properties.data, (value, key) => {
+    const properties: Array<ActivityDefinitionProperty> = collection.map(source.inputProperties.data, (value, key) => {
       const propertyDescriptor = activityDescriptor.inputProperties.find(x => x.name == key);
       const defaultSyntax = propertyDescriptor.defaultSyntax || SyntaxNames.Literal;
       const expressions = {};
@@ -157,3 +156,4 @@ export class ElsaWorkflowBlueprintViewerScreen {
     );
   }
 }
+Tunnel.injectProps(ElsaWorkflowBlueprintViewerScreen, ['serverUrl', 'culture']);

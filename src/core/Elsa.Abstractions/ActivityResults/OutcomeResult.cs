@@ -29,10 +29,6 @@ namespace Elsa.ActivityResults
             var workflowExecutionContext = activityExecutionContext.WorkflowExecutionContext;
             var nextConnections = GetNextConnections(workflowExecutionContext, activityExecutionContext.ActivityBlueprint.Id, outcomes).ToList();
 
-            // See if we got a "default" connection (from the current activity to the next activity via the default "Done" outcome).
-            if (!outcomes.Contains(OutcomeNames.Done) && !nextConnections.Any())
-                nextConnections = GetNextConnections(workflowExecutionContext, activityExecutionContext.ActivityBlueprint.Id, new[] { OutcomeNames.Done }).ToList();
-            
             var nextActivities =
                 (
                     from connection in nextConnections

@@ -1,11 +1,10 @@
-using System.Threading;
-using System.Threading.Tasks;
 using Elsa.Server.Api.ActionFilters;
-using Elsa.Server.Api.Endpoints.WorkflowDefinitions;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Elsa.Server.Api.Endpoints.Workflows
 {
@@ -16,15 +15,17 @@ namespace Elsa.Server.Api.Endpoints.Workflows
     public class Dispatch : Controller
     {
         private readonly IWorkflowLaunchpad _workflowLaunchpad;
+        private readonly ITenantAccessor _tenantAccessor;
 
-        public Dispatch(IWorkflowLaunchpad workflowLaunchpad)
+        public Dispatch(IWorkflowLaunchpad workflowLaunchpad, ITenantAccessor tenantAccessor)
         {
             _workflowLaunchpad = workflowLaunchpad;
+            _tenantAccessor = tenantAccessor;
         }
 
         [HttpPost]
         [ElsaJsonFormatter]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DispatchWorkflowDefinitionResponse))]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DispatchWorkflowDefinitionResponseModel))]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [SwaggerOperation(
             Summary = "Executes the specified workflow definition.",
@@ -32,15 +33,16 @@ namespace Elsa.Server.Api.Endpoints.Workflows
             OperationId = "Workflows.Dispatch",
             Tags = new[] { "Workflows" })
         ]
-        public async Task<IActionResult> Handle(string workflowDefinitionId, DispatchWorkflowDefinitionRequest request, CancellationToken cancellationToken = default)
+        public async Task<IActionResult> Handle(string workflowDefinitionId, DispatchWorkflowDefinitionRequestModel request, CancellationToken cancellationToken = default)
         {
-            var startableWorkflow = await _workflowLaunchpad.CollectStartableWorkflowAsync(workflowDefinitionId, request.ActivityId, request.CorrelationId, request.ContextId, default, cancellationToken);
+            var tenantId = await _tenantAccessor.GetTenantIdAsync(cancellationToken);
+            var startableWorkflow = await _workflowLaunchpad.CollectStartableWorkflowAsync(workflowDefinitionId, request.ActivityId, request.CorrelationId, request.ContextId, tenantId, cancellationToken);
 
             if (startableWorkflow == null)
                 return NotFound();
-            
+
             var result = await _workflowLaunchpad.DispatchStartableWorkflowAsync(startableWorkflow, request.Input, cancellationToken);
-            return Ok(new DispatchWorkflowDefinitionResponse(result.WorkflowInstanceId, result.ActivityId));
+            return Ok(new DispatchWorkflowDefinitionResponseModel(result.WorkflowInstanceId, result.ActivityId));
         }
     }
 }

@@ -8,22 +8,24 @@ import {
   ActivityModel,
   Connection,
   ConnectionModel,
-  EventTypes, SimpleException,
+  EventTypes,
+  SimpleException,
   SyntaxNames,
   WorkflowBlueprint,
-  WorkflowExecutionLogRecord, WorkflowFault,
+  WorkflowExecutionLogRecord,
+  WorkflowFault,
   WorkflowInstance,
   WorkflowModel,
   WorkflowPersistenceBehavior,
   WorkflowStatus
 } from "../../../../models";
 import {ActivityStats, createElsaClient} from "../../../../services/elsa-client";
-import {pluginManager} from '../../../../services/plugin-manager';
 import state from '../../../../utils/store';
 import {ActivityContextMenuState, WorkflowDesignerMode} from "../../../designers/tree/elsa-designer-tree/models";
 import {registerClickOutside} from "stencil-click-outside";
 import moment from "moment";
 import {clip, durationToString} from "../../../../utils/utils";
+import Tunnel from "../../../../data/dashboard";
 
 @Component({
   tag: 'elsa-workflow-instance-viewer-screen',
@@ -31,12 +33,9 @@ import {clip, durationToString} from "../../../../utils/utils";
 })
 export class ElsaWorkflowInstanceViewerScreen {
 
-  constructor() {
-    pluginManager.initialize();
-  }
-
   @Prop() workflowInstanceId: string;
-  @Prop({attribute: 'server-url', reflect: true}) serverUrl: string;
+  @Prop({attribute: 'server-url'}) serverUrl: string;
+  @Prop() culture: string;
   @State() workflowInstance: WorkflowInstance;
   @State() workflowBlueprint: WorkflowBlueprint;
   @State() workflowModel: WorkflowModel;
@@ -89,7 +88,8 @@ export class ElsaWorkflowInstanceViewerScreen {
       saveWorkflowContext: false,
       variables: {data: {}},
       type: null,
-      properties: {data: {}},
+      inputProperties: {data: {}},
+      outputProperties: {data: {}},
       propertyStorageProviders: {}
     };
 
@@ -133,40 +133,46 @@ export class ElsaWorkflowInstanceViewerScreen {
   updateModels(workflowInstance: WorkflowInstance, workflowBlueprint: WorkflowBlueprint) {
     this.workflowInstance = workflowInstance;
     this.workflowBlueprint = workflowBlueprint;
-    this.workflowModel = this.mapWorkflowModel(workflowBlueprint);
+    this.workflowModel = this.mapWorkflowModel(workflowBlueprint, workflowInstance);
   }
 
-  mapWorkflowModel(workflowBlueprint: WorkflowBlueprint): WorkflowModel {
+  mapWorkflowModel(workflowBlueprint: WorkflowBlueprint, workflowInstance: WorkflowInstance): WorkflowModel {
+    const activities = workflowBlueprint.activities.filter(x => x.parentId == workflowBlueprint.id || !x.parentId).map(x => this.mapActivityModel(x, workflowInstance));
+    const connections = workflowBlueprint.connections.filter(c => activities.findIndex(a => a.activityId == c.sourceActivityId || a.activityId == c.targetActivityId) > -1).map(this.mapConnectionModel);
+
     return {
-      activities: workflowBlueprint.activities.filter(x => x.parentId == workflowBlueprint.id || !x.parentId).map(this.mapActivityModel),
-      connections: workflowBlueprint.connections.map(this.mapConnectionModel),
+      activities: activities,
+      connections: connections,
       persistenceBehavior: workflowBlueprint.persistenceBehavior,
     };
   }
 
-  mapActivityModel(source: ActivityBlueprint): ActivityModel {
+  mapActivityModel(activityBlueprint: ActivityBlueprint, workflowInstance: WorkflowInstance): ActivityModel {
     const activityDescriptors: Array<ActivityDescriptor> = state.activityDescriptors;
-    const activityDescriptor = activityDescriptors.find(x => x.type == source.type);
-    const properties: Array<ActivityDefinitionProperty> = collection.map(source.properties.data, (value, key) => {
-      const propertyDescriptor = activityDescriptor.inputProperties.find(x => x.name == key);
+    const activityDescriptor = activityDescriptors.find(x => x.type == activityBlueprint.type);
+    const activityData = workflowInstance.activityData[activityBlueprint.id] || {};
+
+    const properties: Array<ActivityDefinitionProperty> = collection.map(activityBlueprint.inputProperties.data, (value, key) => {
+      const propertyDescriptor = activityDescriptor.inputProperties.find(x => x.name == key) || activityDescriptor.outputProperties.find(x => x.name == key);
       const defaultSyntax = propertyDescriptor.defaultSyntax || SyntaxNames.Literal;
       const expressions = {};
-      expressions[defaultSyntax] = value;
-      return ({name: key, expressions: expressions, syntax: defaultSyntax});
+      const v = activityData[key] || value;
+      expressions[defaultSyntax] = v;
+      return ({name: key, value: v, expressions: expressions, syntax: defaultSyntax});
     });
 
     return {
-      activityId: source.id,
-      description: source.description,
-      displayName: source.displayName || source.name || source.type,
-      name: source.name,
-      type: source.type,
+      activityId: activityBlueprint.id,
+      description: activityBlueprint.description,
+      displayName: activityBlueprint.displayName || activityBlueprint.name || activityBlueprint.type,
+      name: activityBlueprint.name,
+      type: activityBlueprint.type,
       properties: properties,
       outcomes: [...activityDescriptor.outcomes],
-      persistWorkflow: source.persistWorkflow,
-      saveWorkflowContext: source.saveWorkflowContext,
-      loadWorkflowContext: source.loadWorkflowContext,
-      propertyStorageProviders: source.propertyStorageProviders
+      persistWorkflow: activityBlueprint.persistWorkflow,
+      saveWorkflowContext: activityBlueprint.saveWorkflowContext,
+      loadWorkflowContext: activityBlueprint.loadWorkflowContext,
+      propertyStorageProviders: activityBlueprint.propertyStorageProviders
     }
   }
 
@@ -242,18 +248,18 @@ export class ElsaWorkflowInstanceViewerScreen {
     const workflowFault = !!workflowInstance ? workflowInstance.fault : null;
     const activityData = workflowInstance.activityData[activity.activityId] || {};
     const lifecycle = activityData['_Lifecycle'] || {};
-    const executing = !!lifecycle.Executing;
-    const executed = !!lifecycle.Executed;
+    const executing = !!lifecycle.executing;
+    const executed = !!lifecycle.executed;
 
     if (!!workflowFault && workflowFault.faultedActivityId == activity.activityId)
       return 'red';
-    
-    if(executed)
+
+    if (executed)
       return 'green';
-    
-    if(executing)
+
+    if (executing)
       return 'blue';
-    
+
     return null;
   }
 
@@ -262,8 +268,8 @@ export class ElsaWorkflowInstanceViewerScreen {
     const workflowFault = !!workflowInstance ? workflowInstance.fault : null;
     const activityData = workflowInstance.activityData[activity.activityId] || {};
     const lifecycle = activityData['_Lifecycle'] || {};
-    const executing = !!lifecycle.Executing;
-    const executed = !!lifecycle.Executed;
+    const executing = !!lifecycle.executing;
+    const executed = !!lifecycle.executed;
 
     let icon: string;
 
@@ -524,3 +530,4 @@ export class ElsaWorkflowInstanceViewerScreen {
     </div>
   }
 }
+Tunnel.injectProps(ElsaWorkflowInstanceViewerScreen, ['serverUrl', 'culture']);

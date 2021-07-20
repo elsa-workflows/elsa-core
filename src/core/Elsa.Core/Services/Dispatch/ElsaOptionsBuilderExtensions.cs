@@ -7,7 +7,7 @@ namespace Elsa.Services.Dispatch
     {
         public static ElsaOptionsBuilder UseDispatcher<T>(this ElsaOptionsBuilder options) where T : class, IWorkflowDefinitionDispatcher, IWorkflowInstanceDispatcher, IWorkflowDispatcher
         {
-            options.Services.AddSingleton<T>();
+            options.Services.AddScoped<T>();
 
             options
                 .UseCorrelatingWorkflowDispatcher(sp => sp.GetRequiredService<T>())

@@ -58,7 +58,7 @@ namespace Elsa.Activities.ControlFlow
             if (notification.EvictedScope.Type != nameof(If))
                 return Task.CompletedTask;
 
-            var data = notification.WorkflowExecutionContext.WorkflowInstance.ActivityData.GetItem(notification.EvictedScope.Id, () => new Dictionary<string, object>());
+            var data = notification.WorkflowExecutionContext.WorkflowInstance.ActivityData.GetItem(notification.EvictedScope.Id, () => new Dictionary<string, object?>());
             data.SetState(nameof(EnteredScope), false);
 
             return Task.CompletedTask;

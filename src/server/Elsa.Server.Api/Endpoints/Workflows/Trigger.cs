@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Server.Api.ActionFilters;
-using Elsa.Server.Api.Endpoints.WorkflowDefinitions;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -19,11 +18,16 @@ namespace Elsa.Server.Api.Endpoints.Workflows
     public class Trigger : Controller
     {
         private readonly IWorkflowLaunchpad _workflowLaunchpad;
-        public Trigger(IWorkflowLaunchpad workflowLaunchpad) => _workflowLaunchpad = workflowLaunchpad;
+        private readonly ITenantAccessor _tenantAccessor;
+        public Trigger(IWorkflowLaunchpad workflowLaunchpad,ITenantAccessor tenantAccessor)
+        {
+            _workflowLaunchpad = workflowLaunchpad;
+            _tenantAccessor = tenantAccessor;
+        }
 
         [HttpPost]
         [ElsaJsonFormatter]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(TriggerWorkflowsResponse))]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(TriggerWorkflowsRequestModel))]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [SwaggerOperation(
             Summary = "Triggers all workflows matching the specified criteria synchronously.",
@@ -31,26 +35,27 @@ namespace Elsa.Server.Api.Endpoints.Workflows
             OperationId = "Workflows.Execute",
             Tags = new[] { "Workflows" })
         ]
-        public async Task<IActionResult> Handle(TriggerWorkflowsRequest request, CancellationToken cancellationToken = default)
+        public async Task<IActionResult> Handle(TriggerWorkflowsRequestModel request, CancellationToken cancellationToken = default)
         {
-            var context = new CollectWorkflowsContext(request.ActivityType, request.Bookmark, request.Trigger, request.CorrelationId, request.WorkflowInstanceId, request.ContextId);
-            ICollection<TriggeredWorkflow> triggeredWorkflows;
+            var tenantId = await _tenantAccessor.GetTenantIdAsync(cancellationToken);
+            var context = new CollectWorkflowsContext(request.ActivityType, request.Bookmark, request.CorrelationId, request.WorkflowInstanceId, request.ContextId, tenantId);
+            ICollection<TriggeredWorkflowModel> triggeredWorkflows;
 
             if (request.Dispatch)
             {
                 var result = await _workflowLaunchpad.CollectAndDispatchWorkflowsAsync(context, request.Input, cancellationToken).ToList();
-                triggeredWorkflows = result.Select(x => new TriggeredWorkflow(x.WorkflowInstanceId, x.ActivityId)).ToList();
+                triggeredWorkflows = result.Select(x => new TriggeredWorkflowModel(x.WorkflowInstanceId, x.ActivityId)).ToList();
             }
             else
             {
                 var result = await _workflowLaunchpad.CollectAndExecuteWorkflowsAsync(context, request.Input, cancellationToken).ToList();
-                triggeredWorkflows = result.Select(x => new TriggeredWorkflow(x.WorkflowInstanceId, x.ActivityId)).ToList();
+                triggeredWorkflows = result.Select(x => new TriggeredWorkflowModel(x.WorkflowInstanceId, x.ActivityId)).ToList();
             }
             
             if (Response.HasStarted)
                 return new EmptyResult();
 
-            return Ok(new TriggerWorkflowsResponse(triggeredWorkflows));
+            return Ok(new TriggerWorkflowsResponseModel(triggeredWorkflows));
         }
     }
 }

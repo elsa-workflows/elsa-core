@@ -1,12 +1,17 @@
 ﻿@using Microsoft.JSInterop
 @inject IJSRuntime JS;
 
-<elsa-workflow-definition-editor-screen server-url="@ServerUrl" workflow-definition-id="@WorkflowDefinitionId" monaco-lib-path="_content/Elsa.Designer.Components.Web/monaco-editor/min"></elsa-workflow-definition-editor-screen>
+<elsa-studio-root server-url="@ServerUrl" monaco-lib-path="@MonacoLibPath">
+<elsa-workflow-definition-editor-screen workflow-definition-id="@WorkflowDefinitionId"></elsa-workflow-definition-editor-screen>
+</elsa-studio-root>
 
 @code{
 
     [Parameter]
     public string ServerUrl { get; set; } = default!;
+    
+    [Parameter]
+    public string MonacoLibPath { get; set; } = "_content/Elsa.Designer.Components.Web/monaco-editor/min";
 
     [Parameter]
     public string WorkflowDefinitionId { get; set; } = default!;

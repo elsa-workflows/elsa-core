@@ -40,18 +40,12 @@ namespace Elsa.Activities.MassTransit.Consumers
 
             var bookmark = new MessageReceivedBookmark
             {
-                MessageType = message.GetType().Name,
-                CorrelationId = correlationId.ToString()
-            };
-            var trigger = new MessageReceivedBookmark
-            {
                 MessageType = message.GetType().Name
             };
 
             await _workflowLaunchpad.CollectAndExecuteWorkflowsAsync(new CollectWorkflowsContext(
                 nameof(ReceiveMassTransitMessage),
                 bookmark,
-                trigger,
                 correlationId.ToString()
             ));
         }

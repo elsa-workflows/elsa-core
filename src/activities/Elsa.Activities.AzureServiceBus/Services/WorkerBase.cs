@@ -4,7 +4,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.AzureServiceBus.Models;
 using Elsa.Activities.AzureServiceBus.Options;
-using Elsa.Exceptions;
 using Elsa.Services;
 using Elsa.Services.Bookmarks;
 using Microsoft.Azure.ServiceBus;
@@ -73,8 +72,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             };
 
             var bookmark = CreateBookmark(message);
-            var trigger = CreateTrigger(message);
-            var launchContext = new CollectWorkflowsContext(ActivityType, bookmark, trigger, correlationId);
+            var launchContext = new CollectWorkflowsContext(ActivityType, bookmark, correlationId);
             
             await _workflowLaunchpad.UseServiceAsync(service => service.CollectAndDispatchWorkflowsAsync(launchContext, model, cancellationToken));
         }
@@ -102,10 +100,8 @@ namespace Elsa.Activities.AzureServiceBus.Services
             _logger.LogDebug("Message received with ID {MessageId}", message.MessageId);
             await TriggerWorkflowsAsync(message, CancellationToken.None);
 
-            if (ReceiverClient.IsClosedOrClosing)
-                throw new WorkflowException("Can't handle message with closed receiver");
-            
-            await ReceiverClient.CompleteAsync(message.SystemProperties.LockToken);
+            if (!ReceiverClient.IsClosedOrClosing)
+                await ReceiverClient.CompleteAsync(message.SystemProperties.LockToken);
         }
     }
 }

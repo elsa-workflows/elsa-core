@@ -50,13 +50,14 @@ namespace Elsa.Builders
         public string? SourceFile { get; }
         public string? Source => SourceFile != null && LineNumber != default ? $"{Path.GetFileName(SourceFile)}:{LineNumber}" : default;
 
-        public IActivityBuilder Add<T>(
+        public virtual IActivityBuilder Add<T>(
             string activityTypeName, 
             Action<ISetupActivity<T>>? setup = default,
+            Action<IActivityBuilder>? branch = default,
             [CallerLineNumber] int lineNumber = default,
             [CallerFilePath] string? sourceFile = default)
             where T : class, IActivity =>
-            WorkflowBuilder.Add(activityTypeName, setup, null, lineNumber, sourceFile);
+            WorkflowBuilder.Add(activityTypeName, setup, branch, lineNumber, sourceFile);
 
         public IOutcomeBuilder When(string outcome) => new OutcomeBuilder(WorkflowBuilder, this, outcome);
 

@@ -22,26 +22,26 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddRazorPages();
-            
+
             // Elsa Server.
             var elsaSection = Configuration.GetSection("Elsa");
-            
+
             services
                 .AddElsa(options => options
-                        .UseEntityFrameworkPersistence(ef => ef.UseSqlite())
-                        .AddConsoleActivities()
-                        .AddHttpActivities(elsaSection.GetSection("Server").Bind)
-                        .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
-                        .AddQuartzTemporalActivities()
-                        .AddJavaScriptActivities()
-                        .AddActivitiesFrom<Startup>()
-                        .AddWorkflowsFrom<Startup>()
+                    .UseEntityFrameworkPersistence(ef => ef.UseSqlite())
+                    .AddConsoleActivities()
+                    .AddHttpActivities(elsaSection.GetSection("Server").Bind)
+                    .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
+                    .AddQuartzTemporalActivities()
+                    .AddJavaScriptActivities()
+                    .AddActivitiesFrom<Startup>()
+                    .AddFeatures(new[] { typeof(Startup) }, Configuration)
                 );
 
             services
                 .AddElsaSwagger()
                 .AddElsaApiEndpoints();
-            
+
             // Allow arbitrary client browser apps to access the API.
             // In a production environment, make sure to allow only origins you trust.
             services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("Content-Disposition")));
@@ -59,7 +59,6 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
             else
             {
                 app.UseExceptionHandler("/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
 
@@ -72,7 +71,7 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
             {
                 // Elsa Server uses ASP.NET Core Controllers.
                 endpoints.MapControllers();
-                
+
                 endpoints.MapFallbackToPage("/_Host");
             });
         }

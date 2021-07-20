@@ -1,22 +1,122 @@
 <!DOCTYPE html>
 <html dir="ltr" lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0"/>
-  <title>Elsa Dashboard</title>
-  <link rel="icon" type="image/png" sizes="32x32" href="/build/assets/images/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/build/assets/images/favicon-16x16.png">
-  <link rel="stylesheet" href="/build/assets/fonts/inter/inter.css">
-  <link href="/build/assets/styles/tailwind.css" rel="stylesheet">
-  <script src="/build/assets/js/monaco-editor/min/vs/loader.js"></script>
-  <script type="module" src="/build/elsa-workflows-studio.esm.js"></script>
-  <script nomodule src="/build/elsa-workflows-studio.js"></script>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0"/>
+    <title>Elsa Dashboard</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/build/assets/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/build/assets/images/favicon-16x16.png">
+    <link rel="stylesheet" href="/build/assets/fonts/inter/inter.css">
+    <link href="/build/elsa-workflows-studio.css" rel="stylesheet">
+    <script src="/build/assets/js/monaco-editor/min/vs/loader.js"></script>
+    <script type="module" src="/build/elsa-workflows-studio.esm.js"></script>
+    <script nomodule src="/build/elsa-workflows-studio.js"></script>
 </head>
 <body>
 
-<elsa-studio-root server-url="https://localhost:11000" monaco-lib-path="build/assets/js/monaco-editor/min"></elsa-studio-root>
-<!--<elsa-studio-root server-url="https://localhost:6082" monaco-lib-path="build/assets/js/monaco-editor/min"></elsa-studio-root>-->
-<!--<elsa-studio-root server-url="https://skynet-workflow.azurewebsites.net" monaco-lib-path="build/assets/js/monaco-editor/min"></elsa-studio-root>-->
+<elsa-studio-root server-url="https://localhost:11000" monaco-lib-path="build/assets/js/monaco-editor/min" culture="en-US" base-path="/elsa">
+    <!-- The root dashboard component -->
+    <elsa-studio-dashboard></elsa-studio-dashboard>
+
+    <!-- Instead of using the full dashboard component, you can display lower-level components instead-->
+    <!--<elsa-workflow-instance-list-screen></elsa-workflow-instance-list-screen>-->
+    <!--<elsa-workflow-definition-editor-screen></elsa-workflow-definition-editor-screen>-->
+</elsa-studio-root>
+
+<!-- Keep this to avoid Stencil from stripping classes added by dagre-d3 <!-->
+<div class="node add label-container"></div>
+
+<script type="module">
+    // Integration demos.
+
+    // Import publicly exposed services and models.
+    import {confirmDialogService, EventTypes} from "/build/index.esm.js";
+
+    // Custom plugin that changes the icon of the ReadLine activity.
+    function CustomReadLinePlugin(elsaStudio) {
+        // Replace icon used for 'ReadLine' activity.
+        elsaStudio.activityIconProvider.register(
+            'ReadLine',
+            `<span class="elsa-rounded-lg elsa-inline-flex elsa-p-3 elsa-bg-green-50 elsa-text-green-700 elsa-ring-4 elsa-ring-white">
+              <svg class="elsa-h-6 elsa-w-6" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z"/>
+                <path d="M4 12v-3a3 3 0 0 1 3 -3h13m-3 -3l3 3l-3 3"/>
+                <path d="M20 12v3a3 3 0 0 1 -3 3h-13m3 3l-3-3l3-3"/>
+                <path d="M11 11l1 -1v4"/>
+              </svg>
+            </span>`);
+    }
+
+    // Custom plugin that adds a menu item to the bulk actions list on the workflow instance list view.
+    function CustomBulkActionsPlugin(elsaStudio) {
+        const eventBus = elsaStudio.eventBus;
+
+        eventBus.on(EventTypes.WorkflowInstanceBulkActionsLoading, async e => {
+            e.bulkActions.push({
+                name: 'Reset', text: 'Reset', handler: async () => {
+                    if (!await confirmDialogService.show("Reset Workflows", "Are you sure you want to do this??"))
+                        return;
+
+                    alert('Resetting workflows!');
+                }
+            });
+        })
+    }
+
+    // Custom plugin that intercepts outgoing HTTP requests and their responses.
+    function CustomHttpMiddlewarePlugin(elsaStudio) {
+        const eventBus = elsaStudio.eventBus;
+
+        eventBus.on('http-client-created', e => {
+            // Register a sample middleware.
+            e.service.register({
+                onRequest(request) {
+                    console.log('onRequest');
+                    return request;
+                },
+
+                onResponse(response) {
+                    console.log('onResponse');
+                    return response;
+                }
+            });
+        });
+    }
+    
+    // Custom activity property type input control driver:
+    function CustomPropertyFieldDriver(elsaStudio){
+        this.display = (activity, property) => {
+            const prop = elsaStudio.getOrCreateProperty(activity, property.name);
+            return `<input type="text" className="disabled:elsa-opacity-50 disabled:elsa-cursor-not-allowed focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300"`;
+        };
+    }
+
+    // Custom activity property type input control plugin:
+    function CustomPropertyFieldPlugin(elsaStudio) {
+        const {propertyDisplayManager} = elsaStudio;
+
+        // Register custom driver.
+        propertyDisplayManager.addDriver('my-custom-property-type', CustomPropertyFieldDriver);
+    }
+
+    // Get a handle to the elsa-studio-root element.
+    const elsaStudioRoot = document.querySelector('elsa-studio-root');
+
+    // Configure Elsa.
+    (async () => {
+        // Wait until the component is available.
+        await customElements.whenDefined('elsa-studio-root');
+
+        // Install plugins.
+        await elsaStudioRoot.addPlugins([CustomReadLinePlugin, CustomBulkActionsPlugin, CustomHttpMiddlewarePlugin, CustomPropertyFieldPlugin]);
+    })();
+
+    // Alternatively, configure Elsa during the 'initializing' event.
+    // elsaStudioRoot.addEventListener('initializing', e => {
+    //     const elsa = e.detail;
+    //     elsa.pluginManager.registerPlugins([CustomReadLinePlugin, CustomBulkActionsPlugin, CustomHttpMiddlewarePlugin]);
+    // });
+</script>
 
 </body>
 </html>

@@ -1,20 +1,24 @@
-import {Component, Event, h, Host, State} from '@stencil/core';
+import {Component, Event, h, Host, Prop, State} from '@stencil/core';
 import {eventBus} from '../../../../services/event-bus';
 import state from '../../../../utils/store';
 import {ActivityDescriptor, ActivityModel, ActivityPropertyDescriptor, EventTypes, WorkflowStorageDescriptor} from "../../../../models";
 import {propertyDisplayManager} from '../../../../services/property-display-manager';
 import {checkBox, FormContext, section, selectField, SelectOption, textArea, textInput} from "../../../../utils/forms";
+import {i18n} from "i18next";
+import {loadTranslations} from "../../../i18n/i18n-loader";
+import {resources} from "./localizations";
 
 @Component({
   tag: 'elsa-activity-editor-modal',
   shadow: false,
 })
 export class ElsaActivityEditorModal {
-
+  @Prop() culture: string;
   @State() workflowStorageDescriptors: Array<WorkflowStorageDescriptor> = [];
   @State() activityModel: ActivityModel;
   @State() activityDescriptor: ActivityDescriptor;
   @State() selectedTab: string = 'Properties';
+  i18next: i18n;
   dialog: HTMLElsaModalDialogElement;
   form: HTMLFormElement;
   formContext: FormContext;
@@ -24,17 +28,25 @@ export class ElsaActivityEditorModal {
   // This prevents the issue where the designer has e.g. one activity where the user edits the properties, cancels out, then opens the editor again, seeing the entered value still there.
   timestamp: Date = new Date();
 
+  async componentWillLoad() {
+    this.i18next = await loadTranslations(this.culture, resources);
+  }
+
   componentDidLoad() {
+    const t = this.t;
+
     eventBus.on(EventTypes.ShowActivityEditor, async (activity: ActivityModel, animate: boolean) => {
       this.activityModel = JSON.parse(JSON.stringify(activity));
       this.activityDescriptor = state.activityDescriptors.find(x => x.type == activity.type);
       this.workflowStorageDescriptors = state.workflowStorageDescriptors;
       this.formContext = new FormContext(this.activityModel, newValue => this.activityModel = newValue);
-      this.selectedTab = 'Properties';
+      this.selectedTab = t('Properties');
       this.timestamp = new Date();
       await this.dialog.show(animate);
     });
   }
+
+  t = (key: string) => this.i18next.t(key);
 
   updateActivity(formData: FormData) {
     const activity = this.activityModel;
@@ -67,15 +79,16 @@ export class ElsaActivityEditorModal {
     const activityDescriptor: ActivityDescriptor = this.activityDescriptor || {displayName: '', type: '', outcomes: [], category: '', traits: 0, browsable: false, inputProperties: [], outputProperties: [], description: ''};
     const propertyCategories = activityDescriptor.inputProperties.filter(x => x.category).map(x => x.category).distinct();
     const defaultProperties = activityDescriptor.inputProperties.filter(x => !x.category || x.category.length == 0);
+    const t = this.t;
     let tabs: Array<string> = [];
 
     if (defaultProperties.length > 0) {
-      tabs.push('Properties');
+      tabs.push(t('Tabs.Properties.Name'));
     }
 
     tabs = [...tabs, ...propertyCategories];
-    tabs.push('Common');
-    tabs.push('Storage');
+    tabs.push(t('Tabs.Common.Name'));
+    tabs.push(t('Tabs.Storage.Name'));
 
     let selectedTab = this.selectedTab;
 
@@ -103,8 +116,10 @@ export class ElsaActivityEditorModal {
     const activityModel: ActivityModel = renderProps.activityModel;
     const inactiveClass = 'elsa-border-transparent elsa-text-gray-500 hover:elsa-text-gray-700 hover:elsa-border-gray-300';
     const selectedClass = 'elsa-border-blue-500 elsa-text-blue-600';
+    const t = this.t;
 
     return (
+
       <Host class="elsa-block">
         <elsa-modal-dialog ref={el => this.dialog = el}>
           <div slot="content" class="elsa-py-8 elsa-pb-0">
@@ -114,7 +129,7 @@ export class ElsaActivityEditorModal {
                   <div>
                     <div>
                       <h3 class="elsa-text-lg elsa-leading-6 elsa-font-medium elsa-text-gray-900">
-                        {activityDescriptor.displayName}
+                        {activityDescriptor.type}
                       </h3>
                       <p class="elsa-mt-1 elsa-text-sm elsa-text-gray-500">
                         {activityDescriptor.description}
@@ -142,12 +157,12 @@ export class ElsaActivityEditorModal {
                 <div class="elsa-bg-gray-50 elsa-px-4 elsa-py-3 sm:elsa-px-6 sm:elsa-flex sm:elsa-flex-row-reverse">
                   <button type="submit"
                           class="elsa-ml-3 elsa-inline-flex elsa-justify-center elsa-py-2 elsa-px-4 elsa-border elsa-border-transparent elsa-shadow-sm elsa-text-sm elsa-font-medium elsa-rounded-md elsa-text-white elsa-bg-blue-600 hover:elsa-bg-blue-700 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500">
-                    Save
+                    {t('Buttons.Save')}
                   </button>
                   <button type="button"
                           onClick={() => this.onCancelClick()}
                           class="elsa-w-full elsa-inline-flex elsa-justify-center elsa-rounded-md elsa-border elsa-border-gray-300 elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-bg-white elsa-text-base elsa-font-medium elsa-text-gray-700 hover:elsa-bg-gray-50 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 sm:elsa-mt-0 sm:elsa-ml-3 sm:elsa-w-auto sm:elsa-text-sm">
-                    Cancel
+                    {t('Buttons.Cancel')}
                   </button>
                 </div>
               </div>
@@ -171,19 +186,21 @@ export class ElsaActivityEditorModal {
 
   renderStorageTab(activityModel: ActivityModel, activityDescriptor: ActivityDescriptor) {
     const formContext = this.formContext;
+    const t = this.t;
     let storageDescriptorOptions: Array<SelectOption> = this.workflowStorageDescriptors.map(x => ({value: x.name, text: x.displayName}));
     let outputProperties = activityDescriptor.outputProperties;
+    let inputProperties = activityDescriptor.inputProperties;
 
     storageDescriptorOptions = [{value: null, text: 'Default'}, ...storageDescriptorOptions];
 
-    const renderOutputProperty = function (propertyDescriptor: ActivityPropertyDescriptor) {
+    const renderPropertyStorageSelectField = function (propertyDescriptor: ActivityPropertyDescriptor) {
       const propertyName = propertyDescriptor.name;
       const fieldName = `propertyStorageProviders.${propertyName}`;
       return selectField(formContext, fieldName, propertyName, activityModel.propertyStorageProviders[propertyName], storageDescriptorOptions, null, fieldName);
     }
 
     return (
-      <div class={`flex ${this.getHiddenClass('Storage')}`}>
+      <div class={`flex ${this.getHiddenClass(t('Tabs.Storage.Name'))}`}>
         <div class="elsa-space-y-8 elsa-w-full">
 
           {section('Workflow Context')}
@@ -194,7 +211,11 @@ export class ElsaActivityEditorModal {
           {checkBox(formContext, 'persistWorkflow', 'Save Workflow Instance', activityModel.persistWorkflow, 'When enabled, this will save the workflow instance back into storage right after executing this activity.', 'persistWorkflow')}
 
           {Object.keys(outputProperties).length > 0 ? (
-            [section('Activity Output', 'Configure the desired storage for each output property of this activity.'), outputProperties.map(renderOutputProperty)]
+            [section('Activity Output', 'Configure the desired storage for each output property of this activity.'), outputProperties.map(renderPropertyStorageSelectField)]
+          ) : undefined}
+
+          {Object.keys(inputProperties).length > 0 ? (
+            [section('Activity Input', 'Configure the desired storage for each input property of this activity.'), inputProperties.map(renderPropertyStorageSelectField)]
           ) : undefined}
         </div>
       </div>
@@ -203,13 +224,14 @@ export class ElsaActivityEditorModal {
 
   renderCommonTab(activityModel: ActivityModel) {
     const formContext = this.formContext;
+    const t = this.t;
 
     return (
-      <div class={`flex ${this.getHiddenClass('Common')}`}>
+      <div class={`flex ${this.getHiddenClass(t('Tabs.Common.Name'))}`}>
         <div class="elsa-space-y-8 elsa-w-full">
-          {textInput(formContext, 'name', 'Name', activityModel.name, 'The technical name of the activity.', 'activityName')}
-          {textInput(formContext, 'displayName', 'Display Name', activityModel.displayName, 'A friendly name of the activity.', 'activityDisplayName')}
-          {textArea(formContext, 'description', 'Description', activityModel.description, 'A custom description for this activity', 'activityDescription')}
+          {textInput(formContext, 'name', t('Tabs.Common.Fields.Name.Label'), activityModel.name, t('Tabs.Common.Fields.Name.Hint'), 'activityName')}
+          {textInput(formContext, 'displayName', t('Tabs.Common.Fields.DisplayName.Label'), activityModel.displayName, t('Tabs.Common.Fields.DisplayName.Hint'), 'activityDisplayName')}
+          {textArea(formContext, 'description', t('Tabs.Common.Fields.Description.Label'), activityModel.description, t('Tabs.Common.Fields.Description.Hint'), 'activityDescription')}
         </div>
       </div>
     );
@@ -222,9 +244,10 @@ export class ElsaActivityEditorModal {
       return undefined;
 
     const key = `activity-settings:${activityModel.activityId}`;
+    const t = this.t;
 
     return (
-      <div key={key} class={`elsa-grid elsa-grid-cols-1 elsa-gap-y-6 elsa-gap-x-4 sm:elsa-grid-cols-6 ${this.getHiddenClass('Properties')}`}>
+      <div key={key} class={`elsa-grid elsa-grid-cols-1 elsa-gap-y-6 elsa-gap-x-4 sm:elsa-grid-cols-6 ${this.getHiddenClass(t('Tabs.Properties.Name'))}`}>
         {propertyDescriptors.map(property => this.renderPropertyEditor(activityModel, property))}
       </div>
     );

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -7,7 +8,6 @@ using Elsa.Activities.Telnyx.Client.Models;
 using Elsa.Activities.Telnyx.Client.Services;
 using Elsa.Activities.Telnyx.Models;
 using Elsa.Activities.Telnyx.Services;
-using Elsa.Activities.Telnyx.Webhooks.Models;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
 using Elsa.Activities.Temporal;
 using Elsa.Attributes;
@@ -31,7 +31,7 @@ namespace Elsa.Activities.Telnyx.Activities
     )]
     public class CallRingGroup : CompositeActivity, IActivityPropertyDefaultValueProvider
     {
-        private readonly ILogger<CallRingGroup> _logger;
+        private readonly ILogger _logger;
 
         public CallRingGroup(ILogger<CallRingGroup> logger)
         {
@@ -110,6 +110,26 @@ namespace Elsa.Activities.Telnyx.Activities
         }
 
         [ActivityInput(
+            Hint = "The audio file to play while dialing.",
+            SupportedSyntaxes = new[] {SyntaxNames.JavaScript, SyntaxNames.Liquid}
+        )]
+        public Uri? MusicOnHold
+        {
+            get => GetState<Uri>();
+            set => SetState(value);
+        }
+
+        [ActivityInput(
+            Hint = "The audio file to play as intro.",
+            SupportedSyntaxes = new[] {SyntaxNames.JavaScript, SyntaxNames.Liquid}
+        )]
+        public Uri? IntroMusic
+        {
+            get => GetState<Uri>();
+            set => SetState(value);
+        }
+
+        [ActivityInput(
             Hint = "Enables Answering Machine Detection.",
             UIHint = ActivityInputUIHints.Dropdown,
             Options = new[] {"disabled", "detect", "detect_beep", "detect_words", "greeting_end"},
@@ -130,26 +150,66 @@ namespace Elsa.Activities.Telnyx.Activities
             set => SetState(value);
         }
 
-        public override void Build(ICompositeActivityBuilder builder) =>
-            builder
-                .StartWith<Fork>(fork => fork.WithBranches("Ring", "Queue Timeout"), fork =>
-                {
-                    fork.When("Ring")
-                        .While(true, iterate => iterate
-                            .Switch(cases =>
-                            {
-                                cases.Add(RingGroupStrategy.PrioritizedHunt.ToString(), () => Strategy == RingGroupStrategy.PrioritizedHunt, BuildPrioritizedHuntFlow);
-                                cases.Add(RingGroupStrategy.RingAll.ToString(), () => Strategy == RingGroupStrategy.RingAll, BuildRingAllFlow);
-                            }));
+        private bool CallerHangup
+        {
+            get => GetState<bool>();
+            set => SetState(value);
+        }
 
-                    fork.When("Queue Timeout")
-                        .IfFalse(() => IsNullOrZero(MaxQueueWaitTime), whenTrue =>
+        public override void Build(ICompositeActivityBuilder builder)
+        {
+            // Root.
+            builder
+                .Then<Fork>(fork => fork.WithBranches("Call", "Hangup"), fork =>
+                {
+                    fork.When("Hangup")
+                        .ThenTypeNamed(CallHangupPayload.ActivityTypeName)
+                        .Then(() => CallerHangup = true)
+                        .ThenNamed("ExitWithNoResponse");
+
+                    fork.When("Call")
+                        .If(() => IntroMusic != null, @if =>
                         {
-                            whenTrue
-                                .Timer(() => MaxQueueWaitTime!.Value)
-                                .Finish(TelnyxOutcomeNames.NoResponse);
-                        });
+                            @if.When(OutcomeNames.True)
+                                .Then<PlayAudio>(playAudio => playAudio.WithAudioUrl(() => IntroMusic), playAudio => { playAudio.When(TelnyxOutcomeNames.CallPlaybackEnded).ThenNamed("If1"); });
+
+                            @if.When(OutcomeNames.False).ThenNamed("If1");
+                        })
+                        .Add<If>(@if => @if.WithCondition(() => MusicOnHold != null), @if =>
+                        {
+                            @if
+                                .When(OutcomeNames.True)
+                                .Then<PlayAudio>(playAudio => playAudio.WithAudioUrl(() => MusicOnHold).WithLoop("infinity"))
+                                .ThenNamed("InnerFork");
+
+                            @if
+                                .When(OutcomeNames.False)
+                                .ThenNamed("InnerFork");
+                        }).WithName("If1")
+                        .Add<Fork>(fork => fork.WithBranches("Ring", "Queue Timeout"), fork =>
+                        {
+                            fork.When("Ring")
+                                .While(() => !CallerHangup, iterate => iterate
+                                    .Switch(cases =>
+                                    {
+                                        cases.Add(RingGroupStrategy.PrioritizedHunt.ToString(), () => Strategy == RingGroupStrategy.PrioritizedHunt, BuildPrioritizedHuntFlow);
+                                        cases.Add(RingGroupStrategy.RingAll.ToString(), () => Strategy == RingGroupStrategy.RingAll, BuildRingAllFlow);
+                                    }))
+                                .ThenNamed("ExitWithNoResponse");
+
+                            fork.When("Queue Timeout")
+                                .IfFalse(() => IsNullOrZero(MaxQueueWaitTime), ifFalse => ifFalse.StartIn(() => MaxQueueWaitTime!.Value).ThenNamed("ExitWithNoResponse"));
+                        }).WithName("InnerFork");
                 });
+
+            // No Response exit node.
+            builder.Add<If>(@if => @if.WithCondition(() => MusicOnHold != null), @if =>
+                {
+                    @if.When(OutcomeNames.True).Then<StopAudioPlayback>(stopAudioPlayback => stopAudioPlayback.When(TelnyxOutcomeNames.CallPlaybackEnded).Finish(TelnyxOutcomeNames.NoResponse));
+                    @if.When(OutcomeNames.False).Finish(TelnyxOutcomeNames.NoResponse);
+                })
+                .WithName("ExitWithNoResponse");
+        }
 
         protected override async ValueTask OnExitAsync(ActivityExecutionContext context, object? output)
         {
@@ -175,23 +235,41 @@ namespace Elsa.Activities.Telnyx.Activities
         private void BuildPrioritizedHuntFlow(IOutcomeBuilder builder) =>
             builder
                 .ForEach(() => Extensions, iterate => iterate
-                    .Then<Dial>(dial => dial
-                            .WithConnectionId(() => CallControlAppId)
-                            .WithTo(ResolveExtensionAsync)
-                            .WithTimeoutSecs(() => (int) RingTime.TotalSeconds)
-                            .WithFrom(() => From)
-                            .WithFromDisplayName(() => FromDisplayName),
-                        dial =>
-                        {
-                            dial
-                                .When(TelnyxOutcomeNames.Answered)
-                                .Then<BridgeCalls>(bridgeCalls =>
-                                    bridgeCalls.When(TelnyxOutcomeNames.Bridged)
-                                        .Finish(activity => activity.WithOutcome(TelnyxOutcomeNames.Connected).WithOutput(context => context.GetInput<BridgedCallsOutput>())));
-                        }
-                    )
+                    .If(() => CallerHangup, @if =>
+                    {
+                        @if.When(OutcomeNames.True)
+                            .Break();
+
+                        @if.When(OutcomeNames.False)
+                            .Then<Dial>(dial => dial
+                                    .WithConnectionId(() => CallControlAppId)
+                                    .WithTo(ResolveExtensionAsync)
+                                    .WithTimeoutSecs(() => (int) RingTime.TotalSeconds)
+                                    .WithFrom(() => From)
+                                    .WithFromDisplayName(() => FromDisplayName),
+                                dial =>
+                                {
+                                    dial
+                                        .When(TelnyxOutcomeNames.Answered)
+                                        .If(() => MusicOnHold != null, @if =>
+                                        {
+                                            @if.When(OutcomeNames.True)
+                                                .Then<StopAudioPlayback>(stopAudioPlayback => stopAudioPlayback
+                                                    .When(TelnyxOutcomeNames.CallPlaybackEnded)
+                                                    .ThenNamed("BridgeCalls1"));
+
+                                            @if.When(OutcomeNames.False)
+                                                .ThenNamed("BridgeCalls1");
+                                        })
+                                        .Add<BridgeCalls>(branch: bridgeCalls =>
+                                            bridgeCalls.When(TelnyxOutcomeNames.Bridged)
+                                                .Finish(activity => activity.WithOutcome(TelnyxOutcomeNames.Connected).WithOutput(context => context.GetInput<BridgedCallsOutput>()))).WithName("BridgeCalls1");
+                                }
+                            );
+                    })
                 )
-                .IfTrue(() => IsNullOrZero(MaxQueueWaitTime), whenTrue => whenTrue.Finish(TelnyxOutcomeNames.NoResponse));
+                // If we don't have a queue wait time, then break out of outer loop.
+                .IfTrue(() => IsNullOrZero(MaxQueueWaitTime), @if => @if.Break());
 
         private void BuildRingAllFlow(IOutcomeBuilder builder) =>
             builder
@@ -200,17 +278,29 @@ namespace Elsa.Activities.Telnyx.Activities
                     fork
                         .When(TelnyxOutcomeNames.Connected)
                         .ThenTypeNamed(CallAnsweredPayload.ActivityTypeName)
-                        .Then(context => CallAnsweredPayload = (CallAnsweredPayload) context.GetInput<TelnyxWebhook>()!.Data.Payload)
-                        .Then<BridgeCalls>(bridge => bridge
+                        .Then(context => CallAnsweredPayload = context.GetInput<CallAnsweredPayload>()!)
+                        .If(() => MusicOnHold != null, @if =>
+                        {
+                            @if.When(OutcomeNames.True)
+                                .Then<StopAudioPlayback>(stopAudioPlayback => stopAudioPlayback
+                                    .When(TelnyxOutcomeNames.CallPlaybackEnded)
+                                    .ThenNamed("BridgeCalls2"));
+
+                            @if.When(OutcomeNames.False)
+                                .ThenNamed("BridgeCalls2");
+                        })
+                        .Add<BridgeCalls>(bridge => bridge
                             .WithCallControlIdA(() => CallControlId)
                             .WithCallControlIdB(() => CallAnsweredPayload!.CallControlId), bridge => bridge
                             .When(TelnyxOutcomeNames.Bridged)
-                            .Finish(activity => activity.WithOutcome(TelnyxOutcomeNames.Connected).WithOutput(context => context.GetInput<BridgedCallsOutput>())));
+                            .Finish(activity => activity.WithOutcome(TelnyxOutcomeNames.Connected).WithOutput(context => context.GetInput<BridgedCallsOutput>()))).WithName("BridgeCalls2");
 
                     fork
                         .When("Timeout")
                         .StartIn(() => RingTime)
-                        .IfTrue(() => IsNullOrZero(MaxQueueWaitTime), whenTrue => whenTrue.Finish(TelnyxOutcomeNames.NoResponse));
+
+                        // If we don't have a queue wait time, then break out of outer loop.
+                        .If(@if => @if.WithCondition(() => IsNullOrZero(MaxQueueWaitTime)), @if => { @if.When(OutcomeNames.True).Break(); });
 
                     fork
                         .When("Dial Everyone")

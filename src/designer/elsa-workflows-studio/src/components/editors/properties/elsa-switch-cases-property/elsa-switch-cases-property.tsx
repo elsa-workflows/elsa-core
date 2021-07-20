@@ -104,6 +104,7 @@ export class ElsaSwitchCasesProperty {
                                 expression={expression}
                                 language={monacoLanguage}
                                 single-line={true}
+                                editorHeight="2.75em"
                                 padding="elsa-pt-1.5 elsa-pl-1 elsa-pr-28"
                                 onExpressionChanged={e => this.onCaseExpressionChanged(e, switchCase)}
                             />

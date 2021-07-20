@@ -13,7 +13,7 @@ export class ElsaMultiLineProperty {
 
   componentWillLoad() {
     const defaultSyntax = this.propertyDescriptor.defaultSyntax || SyntaxNames.Literal;
-    this.currentValue = this.propertyModel.expressions[defaultSyntax] || '';
+    this.currentValue = this.propertyModel.expressions[defaultSyntax] || undefined;
   }
 
   getEditorHeight(options: any) {

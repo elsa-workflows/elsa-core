@@ -16,14 +16,15 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore" Version="2.2.0" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
-        
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning" Version="5.0.0" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning.ApiExplorer" Version="5.0.0" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
         <PackageReference Include="NodaTime.Serialization.SystemTextJson" Version="1.0.0" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.1.4" />
         <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.1.4" />
         <PackageReference Include="Swashbuckle.AspNetCore.Filters" Version="7.0.2" />
         <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="6.1.4" />
+        <PackageReference Include="System.Text.Encodings.Web" Version="5.0.1" />
     </ItemGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' == 'net5.0'">
@@ -35,7 +36,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\activities\Elsa.Activities.Webhooks\Elsa.Activities.Webhooks.csproj" />
         <ProjectReference Include="..\..\core\Elsa\Elsa.csproj" />
     </ItemGroup>
     

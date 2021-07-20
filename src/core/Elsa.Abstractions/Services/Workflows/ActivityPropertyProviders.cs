@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Exceptions;
+using Elsa.Metadata;
 using Elsa.Services.Models;
 
 namespace Elsa.Services
@@ -52,6 +53,7 @@ namespace Elsa.Services
         {
             var properties = activity.GetType().GetProperties().Where(IsActivityInputProperty).ToList();
             var providers = GetProviders(activity.Id);
+            var defaultValueResolver = activityExecutionContext.GetService<IActivityPropertyDefaultValueResolver>();
 
             foreach (var property in properties)
             {
@@ -61,11 +63,10 @@ namespace Elsa.Services
                 try
                 {
                     var value = await provider.GetValueAsync(activityExecutionContext, cancellationToken);
-
+                    
                     if (value == null)
                     {
-                        var activityPropertyAttribute = property.GetCustomAttribute<ActivityInputAttribute>();
-                        value = activityPropertyAttribute?.DefaultValue;
+                        value = defaultValueResolver.GetDefaultValue(property);
                     }
 
                     if (value != null) property.SetValue(activity, value);

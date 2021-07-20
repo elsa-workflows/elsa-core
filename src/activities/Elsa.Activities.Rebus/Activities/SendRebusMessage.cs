@@ -27,7 +27,7 @@ namespace Elsa.Activities.Rebus
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            await _bus.SendAsync(Message, Headers);
+            await _bus.SendAsync(Message, default, Headers);
             return Done();
         }
     }

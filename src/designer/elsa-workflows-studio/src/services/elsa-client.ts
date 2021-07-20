@@ -1,27 +1,62 @@
-﻿import axios, {AxiosRequestConfig} from "axios";
+﻿import axios, {AxiosInstance, AxiosRequestConfig} from "axios";
+import {Service} from 'axios-middleware';
 import * as collection from 'lodash/collection';
+import {eventBus} from './event-bus';
 import {
   ActivityDefinition,
   ActivityDescriptor,
   ConnectionDefinition,
-  getVersionOptionsString, OrderBy,
-  PagedList, SelectListItem,
+  EventTypes,
+  getVersionOptionsString, ListModel,
+  OrderBy,
+  PagedList,
+  SelectListItem,
   Variables,
-  VersionOptions, WorkflowBlueprint, WorkflowBlueprintSummary,
+  VersionOptions,
+  WorkflowBlueprint,
+  WorkflowBlueprintSummary,
   WorkflowContextOptions,
   WorkflowDefinition,
-  WorkflowDefinitionSummary, WorkflowExecutionLogRecord, WorkflowFault, WorkflowInstance, WorkflowInstanceSummary,
-  WorkflowPersistenceBehavior, WorkflowStatus, WorkflowStorageDescriptor
+  WorkflowDefinitionSummary,
+  WorkflowExecutionLogRecord,
+  WorkflowInstance,
+  WorkflowInstanceSummary,
+  WorkflowPersistenceBehavior,
+  WorkflowStatus,
+  WorkflowStorageDescriptor
 } from "../models";
+import {WebhookDefinition, WebhookDefinitionSummary} from "../models/webhook";
 
-export const createElsaClient = function (serverUrl: string): ElsaClient {
+let _httpClient: AxiosInstance = null;
+let _elsaClient: ElsaClient = null;
+
+export const createHttpClient = function(baseAddress: string) : AxiosInstance
+{
+  if(!!_httpClient)
+    return _httpClient;
+
   const config: AxiosRequestConfig = {
-    baseURL: serverUrl
+    baseURL: baseAddress
   };
 
-  const httpClient = axios.create(config);
+  eventBus.emit(EventTypes.HttpClientConfigCreated, this, {config});
 
-  return {
+  const httpClient = axios.create(config);
+  const service = new Service(httpClient);
+
+  eventBus.emit(EventTypes.HttpClientCreated, this, {service, httpClient});
+  
+  return _httpClient = httpClient;
+}
+
+export const createElsaClient = function (serverUrl: string): ElsaClient {
+
+  if (!!_elsaClient)
+    return _elsaClient;
+
+  const httpClient: AxiosInstance = createHttpClient(serverUrl);
+
+  _elsaClient = {
     activitiesApi: {
       list: async () => {
         const response = await httpClient.get<Array<ActivityDescriptor>>('v1/activities');
@@ -33,6 +68,11 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
         const versionOptionsString = getVersionOptionsString(versionOptions);
         const response = await httpClient.get<PagedList<WorkflowDefinitionSummary>>(`v1/workflow-definitions?version=${versionOptionsString}`);
         return response.data;
+      },
+      getMany: async (ids: Array<string>, versionOptions?: VersionOptions) => {
+        const versionOptionsString = getVersionOptionsString(versionOptions);
+        const response = await httpClient.get<ListModel<WorkflowDefinitionSummary>>(`v1/workflow-definitions?ids=${ids.join(',')}&version=${versionOptionsString}`);
+        return response.data.items;
       },
       getByDefinitionAndVersion: async (definitionId: string, versionOptions: VersionOptions) => {
         const versionOptionsString = getVersionOptionsString(versionOptions);
@@ -75,6 +115,27 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
         });
         return response.data;
       }
+    },
+    webhookDefinitionsApi: {
+      list: async (page?: number, pageSize?: number) => {
+        const response = await httpClient.get<PagedList<WebhookDefinitionSummary>>(`v1/webhook-definitions`);
+        return response.data;
+      },
+      getByWebhookId: async (webhookId: string) => {
+        const response = await httpClient.get<WebhookDefinition>(`v1/webhook-definitions/${webhookId}`);
+        return response.data;
+      },
+      save: async request => {
+        const response = await httpClient.post<WebhookDefinition>('v1/webhook-definitions', request);
+        return response.data;
+      },
+      update: async request => {
+        const response = await httpClient.put<WebhookDefinition>('v1/webhook-definitions', request);
+        return response.data;
+      },
+      delete: async webhookId => {
+        await httpClient.delete(`v1/webhook-definitions/${webhookId}`);
+      },
     },
     workflowRegistryApi: {
       list: async (page?: number, pageSize?: number, versionOptions?: VersionOptions): Promise<PagedList<WorkflowBlueprintSummary>> => {
@@ -172,128 +233,167 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
         const response = await httpClient.get<Array<WorkflowStorageDescriptor>>('v1/workflow-storage-providers');
         return response.data;
       }
+    },
+    workflowChannelsApi: {
+      list: async () => {
+        const response = await httpClient.get<Array<string>>('v1/workflow-channels');
+        return response.data;
+      }
     }
   }
+
+  return _elsaClient;
 }
 
-  export interface ElsaClient {
-    activitiesApi: ActivitiesApi;
-    workflowDefinitionsApi: WorkflowDefinitionsApi;
-    workflowRegistryApi: WorkflowRegistryApi;
-    workflowInstancesApi: WorkflowInstancesApi;
-    workflowExecutionLogApi: WorkflowExecutionLogApi;
-    scriptingApi: ScriptingApi;
-    designerApi: DesignerApi;
-    activityStatsApi: ActivityStatsApi;
-    workflowStorageProvidersApi: WorkflowStorageProvidersApi;
-  }
+export interface ElsaClient {
+  activitiesApi: ActivitiesApi;
+  workflowDefinitionsApi: WorkflowDefinitionsApi;
+  workflowRegistryApi: WorkflowRegistryApi;
+  workflowInstancesApi: WorkflowInstancesApi;
+  workflowExecutionLogApi: WorkflowExecutionLogApi;
+  scriptingApi: ScriptingApi;
+  designerApi: DesignerApi;
+  activityStatsApi: ActivityStatsApi;
+  workflowStorageProvidersApi: WorkflowStorageProvidersApi;
+  webhookDefinitionsApi: WebhookDefinitionsApi;
+  workflowChannelsApi: WorkflowChannelsApi;
+}
 
-  export interface ActivitiesApi {
-    list(): Promise<Array<ActivityDescriptor>>;
-  }
+export interface ActivitiesApi {
+  list(): Promise<Array<ActivityDescriptor>>;
+}
 
-  export interface WorkflowDefinitionsApi {
+export interface WorkflowDefinitionsApi {
 
-    list(page?: number, pageSize?: number, versionOptions?: VersionOptions): Promise<PagedList<WorkflowDefinitionSummary>>;
+  list(page?: number, pageSize?: number, versionOptions?: VersionOptions): Promise<PagedList<WorkflowDefinitionSummary>>;
 
-    getByDefinitionAndVersion(definitionId: string, versionOptions: VersionOptions): Promise<WorkflowDefinition>;
+  getMany(ids: Array<string>, versionOptions?: VersionOptions): Promise<Array<WorkflowDefinitionSummary>>;
 
-    save(request: SaveWorkflowDefinitionRequest): Promise<WorkflowDefinition>;
+  getByDefinitionAndVersion(definitionId: string, versionOptions: VersionOptions): Promise<WorkflowDefinition>;
 
-    delete(definitionId: string): Promise<void>;
+  save(request: SaveWorkflowDefinitionRequest): Promise<WorkflowDefinition>;
 
-    retract(workflowDefinitionId: string): Promise<WorkflowDefinition>;
+  delete(definitionId: string): Promise<void>;
 
-    export(workflowDefinitionId: string, versionOptions: VersionOptions): Promise<ExportWorkflowResponse>;
+  retract(workflowDefinitionId: string): Promise<WorkflowDefinition>;
 
-    import(workflowDefinitionId: string, file: File): Promise<WorkflowDefinition>;
-  }
+  export(workflowDefinitionId: string, versionOptions: VersionOptions): Promise<ExportWorkflowResponse>;
 
-  export interface WorkflowRegistryApi {
-    list(page?: number, pageSize?: number, versionOptions?: VersionOptions): Promise<PagedList<WorkflowBlueprintSummary>>;
+  import(workflowDefinitionId: string, file: File): Promise<WorkflowDefinition>;
+}
 
-    get(id: string, versionOptions: VersionOptions): Promise<WorkflowBlueprint>;
-  }
+export interface WebhookDefinitionsApi {
 
-  export interface WorkflowInstancesApi {
-    list(page?: number, pageSize?: number, workflowDefinitionId?: string, workflowStatus?: WorkflowStatus, orderBy?: OrderBy, searchTerm?: string): Promise<PagedList<WorkflowInstanceSummary>>;
+  list(page?: number, pageSize?: number): Promise<PagedList<WebhookDefinitionSummary>>;
 
-    get(id: string): Promise<WorkflowInstance>;
+  getByWebhookId(webhookId: string): Promise<WebhookDefinition>;
 
-    delete(id: string): Promise<void>;
+  save(request: SaveWebhookDefinitionRequest): Promise<WebhookDefinition>;
 
-    bulkDelete(request: BulkDeleteWorkflowsRequest): Promise<BulkDeleteWorkflowsResponse>;
-  }
+  update(request: SaveWebhookDefinitionRequest): Promise<WebhookDefinition>;
 
-  export interface WorkflowExecutionLogApi {
+  delete(webhookId: string): Promise<void>;
+}
 
-    get(workflowInstanceId: string, page?: number, pageSize?: number): Promise<PagedList<WorkflowExecutionLogRecord>>;
+export interface WorkflowRegistryApi {
+  list(page?: number, pageSize?: number, versionOptions?: VersionOptions): Promise<PagedList<WorkflowBlueprintSummary>>;
 
-  }
+  get(id: string, versionOptions: VersionOptions): Promise<WorkflowBlueprint>;
+}
 
-  export interface BulkDeleteWorkflowsRequest {
-    workflowInstanceIds: Array<string>;
-  }
+export interface WorkflowInstancesApi {
+  list(page?: number, pageSize?: number, workflowDefinitionId?: string, workflowStatus?: WorkflowStatus, orderBy?: OrderBy, searchTerm?: string): Promise<PagedList<WorkflowInstanceSummary>>;
 
-  export interface BulkDeleteWorkflowsResponse {
-    deletedWorkflowCount: number;
-  }
+  get(id: string): Promise<WorkflowInstance>;
 
-  export interface ScriptingApi {
-    getJavaScriptTypeDefinitions(workflowDefinitionId: string, context?: string): Promise<string>
-  }
+  delete(id: string): Promise<void>;
 
-  export interface DesignerApi {
-    runtimeSelectItemsApi: RuntimeSelectItemsApi;
-  }
+  bulkDelete(request: BulkDeleteWorkflowsRequest): Promise<BulkDeleteWorkflowsResponse>;
+}
 
-  export interface RuntimeSelectItemsApi {
-    get(providerTypeName: string, context?: any): Promise<Array<SelectListItem>>
-  }
+export interface WorkflowExecutionLogApi {
 
-  export interface ActivityStatsApi {
-    get(workflowInstanceId: string, activityId: string): Promise<ActivityStats>;
-  }
+  get(workflowInstanceId: string, page?: number, pageSize?: number): Promise<PagedList<WorkflowExecutionLogRecord>>;
 
-  export interface WorkflowStorageProvidersApi {
-    list(): Promise<Array<WorkflowStorageDescriptor>>;
-  }
+}
 
-  export interface SaveWorkflowDefinitionRequest {
-    workflowDefinitionId?: string;
-    name?: string;
-    displayName?: string;
-    description?: string;
-    tag?: string;
-    variables?: Variables;
-    contextOptions?: WorkflowContextOptions;
-    isSingleton?: boolean;
-    persistenceBehavior?: WorkflowPersistenceBehavior;
-    deleteCompletedInstances?: boolean;
-    publish?: boolean;
-    activities: Array<ActivityDefinition>;
-    connections: Array<ConnectionDefinition>;
-  }
+export interface BulkDeleteWorkflowsRequest {
+  workflowInstanceIds: Array<string>;
+}
 
-  export interface ExportWorkflowResponse {
-    fileName: string;
-    data: Blob;
-  }
+export interface BulkDeleteWorkflowsResponse {
+  deletedWorkflowCount: number;
+}
 
-  export interface ActivityStats {
-    fault?: ActivityFault;
-    averageExecutionTime: string;
-    fastestExecutionTime: string;
-    slowestExecutionTime: string;
-    lastExecutedAt: Date;
-    eventCounts: Array<ActivityEventCount>;
-  }
+export interface ScriptingApi {
+  getJavaScriptTypeDefinitions(workflowDefinitionId: string, context?: string): Promise<string>
+}
 
-  interface ActivityEventCount {
-    eventName: string;
-    count: number;
-  }
+export interface DesignerApi {
+  runtimeSelectItemsApi: RuntimeSelectItemsApi;
+}
 
-  interface ActivityFault {
-    message: string;
-  }
+export interface RuntimeSelectItemsApi {
+  get(providerTypeName: string, context?: any): Promise<Array<SelectListItem>>
+}
+
+export interface ActivityStatsApi {
+  get(workflowInstanceId: string, activityId: string): Promise<ActivityStats>;
+}
+
+export interface WorkflowStorageProvidersApi {
+  list(): Promise<Array<WorkflowStorageDescriptor>>;
+}
+
+export interface WorkflowChannelsApi {
+  list(): Promise<Array<string>>;
+}
+
+export interface SaveWorkflowDefinitionRequest {
+  workflowDefinitionId?: string;
+  name?: string;
+  displayName?: string;
+  description?: string;
+  tag?: string;
+  channel?: string;
+  variables?: Variables;
+  contextOptions?: WorkflowContextOptions;
+  isSingleton?: boolean;
+  persistenceBehavior?: WorkflowPersistenceBehavior;
+  deleteCompletedInstances?: boolean;
+  publish?: boolean;
+  activities: Array<ActivityDefinition>;
+  connections: Array<ConnectionDefinition>;
+}
+
+export interface SaveWebhookDefinitionRequest {
+  id?: string;
+  name?: string;
+  path?: string;
+  description?: string;
+  payloadTypeName?: string;
+  isEnabled?: boolean;
+}
+
+export interface ExportWorkflowResponse {
+  fileName: string;
+  data: Blob;
+}
+
+export interface ActivityStats {
+  fault?: ActivityFault;
+  averageExecutionTime: string;
+  fastestExecutionTime: string;
+  slowestExecutionTime: string;
+  lastExecutedAt: Date;
+  eventCounts: Array<ActivityEventCount>;
+}
+
+interface ActivityEventCount {
+  eventName: string;
+  count: number;
+}
+
+interface ActivityFault {
+  message: string;
+}

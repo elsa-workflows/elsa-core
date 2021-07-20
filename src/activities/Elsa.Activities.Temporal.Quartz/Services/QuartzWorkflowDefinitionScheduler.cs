@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Elsa.Activities.Temporal.Common.Services;
 using Elsa.Activities.Temporal.Quartz.Jobs;
+using Elsa.Services;
 using Microsoft.Extensions.Logging;
 using NodaTime;
 using Quartz;
@@ -13,12 +14,15 @@ namespace Elsa.Activities.Temporal.Quartz.Services
     {
         private static readonly string RunWorkflowJobKey = nameof(RunQuartzWorkflowDefinitionJob);
         private readonly QuartzSchedulerProvider _schedulerProvider;
+        private readonly IDistributedLockProvider _distributedLockProvider;
+        private readonly ElsaOptions _elsaOptions;
         private readonly ILogger _logger;
-        private readonly SemaphoreSlim _semaphore = new(1);
 
-        public QuartzWorkflowDefinitionScheduler(QuartzSchedulerProvider schedulerProvider, ILogger<QuartzWorkflowDefinitionScheduler> logger)
+        public QuartzWorkflowDefinitionScheduler(QuartzSchedulerProvider schedulerProvider, IDistributedLockProvider distributedLockProvider, ElsaOptions elsaOptions, ILogger<QuartzWorkflowDefinitionScheduler> logger)
         {
             _schedulerProvider = schedulerProvider;
+            _distributedLockProvider = distributedLockProvider;
+            _elsaOptions = elsaOptions;
             _logger = logger;
         }
 
@@ -69,7 +73,11 @@ namespace Elsa.Activities.Temporal.Quartz.Services
         private async Task ScheduleJob(ITrigger trigger, CancellationToken cancellationToken)
         {
             var scheduler = await _schedulerProvider.GetSchedulerAsync(cancellationToken);
-            await _semaphore.WaitAsync(cancellationToken);
+            var sharedResource = $"{nameof(QuartzWorkflowInstanceScheduler)}:{trigger.Key}";
+            await using var handle = await _distributedLockProvider.AcquireLockAsync(sharedResource, _elsaOptions.DistributedLockTimeout, cancellationToken);
+
+            if (handle == null)
+                return;
 
             try
             {
@@ -82,10 +90,6 @@ namespace Elsa.Activities.Temporal.Quartz.Services
             catch (SchedulerException e)
             {
                 _logger.LogWarning(e, "Failed to schedule trigger {TriggerKey}", trigger.Key.ToString());
-            }
-            finally
-            {
-                _semaphore.Release();
             }
         }
 

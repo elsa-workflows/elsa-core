@@ -10,6 +10,7 @@ namespace Elsa.Services.Models
         bool IsPublished { get; }
         bool IsLatest { get; }
         string? Tag { get; }
+        string? Channel { get; }
         
         /// <summary>
         /// An initial set of variables available to workflow instances.

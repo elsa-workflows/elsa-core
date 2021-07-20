@@ -12,14 +12,22 @@ namespace Elsa
     {
         public static T? GetState<T>(this IDictionary<string, object?>? state, string key) => state.GetState<T>(key, () => default!);
 
-        public static T? GetState<T>(this IDictionary<string, object?>? state, string key, Func<T> defaultValue)
+        public static T GetState<T>(this IDictionary<string, object?>? state, string key, Func<T> defaultValue)
         {
             var item = state?.ContainsKey(key) == true ? state![key] : default;
 
-            if (item == null)
-                return defaultValue();
+            if (item == null) 
+            {
+                if (state != null)
+                {
+                    state.SetState(key, defaultValue());
+                    item = state![key];
+                }
+                else
+                    return defaultValue();
+            }
 
-            return item.ConvertTo<T>();
+            return item.ConvertTo<T>()!;
         }
 
         public static object? GetState(this IDictionary<string, object?>? state, string key, Type targetType)

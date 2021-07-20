@@ -395,10 +395,13 @@ export class ElsaWorkflowInstanceJournal {
 
     if (!activityModel)
       return <p>No activity selected</p>;
+    
+    // Hide expressions field from properties so that we only display the evaluated value.
+    const model = {...activityModel, properties: activityModel.properties.map(x => ({ name: x.name, value: x.value }))}
 
     return (
       <div>
-        <pre>{JSON.stringify(activityModel, null, 2)}</pre>
+        <pre>{JSON.stringify(model, null, 2)}</pre>
       </div>
     );
   };

@@ -2,6 +2,7 @@ import {Component, Event, h, Host, State} from '@stencil/core';
 import {eventBus} from '../../../../services/event-bus';
 import {ActivityDescriptor, ActivityDescriptorDisplayContext, ActivityTraits, EventTypes} from "../../../../models";
 import state from '../../../../utils/store';
+import '../../../../utils/utils';
 import {ActivityIcon} from "../../../icons/activity-icon";
 
 @Component({
@@ -22,7 +23,7 @@ export class ElsaActivityPickerModal {
   }
 
   disconnectedCallback() {
-    eventBus.off(EventTypes.ShowActivityPicker, this.onShowActivityPicker);
+    eventBus.off(EventTypes.ShowActivityPicker);
   }
 
   onShowActivityPicker = async () => {
@@ -54,7 +55,7 @@ export class ElsaActivityPickerModal {
     }
 
     this.filteredActivityDescriptorDisplayContexts = filteredActivityDescriptors.map(x => {
-      const color = (x.traits &= ActivityTraits.Trigger) == ActivityTraits.Trigger ? 'rose' : (x.traits &= ActivityTraits.Job) == ActivityTraits.Job ? 'yellow' : 'light-blue';
+      const color = (x.traits &= ActivityTraits.Trigger) == ActivityTraits.Trigger ? 'rose' : (x.traits &= ActivityTraits.Job) == ActivityTraits.Job ? 'yellow' : 'sky';
       return {
         activityDescriptor: x,
         activityIcon: <ActivityIcon color={color}/>
