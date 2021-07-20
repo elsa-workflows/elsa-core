@@ -1,10 +1,10 @@
 using System.Threading.Tasks;
-using Elsa.Samples.AutoConnectNextActivityConsole.Activities;
-using Elsa.Samples.AutoConnectNextActivityConsole.Workflows;
+using Elsa.Samples.CustomOutcomeActivityConsole.Activities;
+using Elsa.Samples.CustomOutcomeActivityConsole.Workflows;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Samples.AutoConnectNextActivityConsole
+namespace Elsa.Samples.CustomOutcomeActivityConsole
 {
     class Program
     {
@@ -15,7 +15,7 @@ namespace Elsa.Samples.AutoConnectNextActivityConsole
                 .AddElsa(options => options
                     .AddConsoleActivities()
                     .AddActivity<SomeCustomActivity>()
-                    .AddWorkflow<Demoworkflow>())
+                    .AddWorkflow<DemoWorkflow>())
                 .BuildServiceProvider();
 
             // Run startup actions (not needed when registering Elsa with a Host).
@@ -26,7 +26,7 @@ namespace Elsa.Samples.AutoConnectNextActivityConsole
             var workflowRunner = services.GetRequiredService<IBuildsAndStartsWorkflow>();
 
             // Run the workflow.
-            await workflowRunner.BuildAndStartWorkflowAsync<Demoworkflow>();
+            await workflowRunner.BuildAndStartWorkflowAsync<DemoWorkflow>();
         }
     }
 }

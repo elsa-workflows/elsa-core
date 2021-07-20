@@ -201,7 +201,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.BreakLoop", "s
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.Timers.Quartz", "src\samples\worker\Elsa.Samples.Timers.Quartz\Elsa.Samples.Timers.Quartz.csproj", "{FE724143-B24C-43DA-BBF5-15431BCA6E27}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AutoConnectNextActivityConsole", "src\samples\console\Elsa.Samples.AutoConnectNextActivityConsole\Elsa.Samples.AutoConnectNextActivityConsole.csproj", "{DB42A8DA-06CA-4402-9C87-8F7F055AB37E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.CustomOutcomeActivityConsole", "src\samples\console\Elsa.Samples.CustomOutcomeActivityConsole\Elsa.Samples.CustomOutcomeActivityConsole.csproj", "{DB42A8DA-06CA-4402-9C87-8F7F055AB37E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.UnitTests", "test\unit\Elsa.UnitTests\Elsa.UnitTests.csproj", "{F822DE2F-A91D-416E-BF4A-A6C466C1BF0A}"
 EndProject
