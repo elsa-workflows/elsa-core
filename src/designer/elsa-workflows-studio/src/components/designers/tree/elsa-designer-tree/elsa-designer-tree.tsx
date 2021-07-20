@@ -37,11 +37,11 @@ export class ElsaWorkflowDesigner {
   };
 
   el: HTMLElement;
-  svg: SVGElement;
-  inner: SVGElement;
-  svgD3Selected: d3.Selection<SVGElement, unknown, null, undefined>;
-  innerD3Selected: d3.Selection<SVGElement, unknown, null, undefined>;
-  zoomParams: { x: number; y: number; scale: number } = {x: 0, y: 0, scale: 1};
+  svg: SVGSVGElement;
+  inner: SVGGElement;
+  svgD3Selected: d3.Selection<SVGSVGElement, unknown, null, undefined>;
+  innerD3Selected: d3.Selection<SVGGElement, unknown, null, undefined>;
+  zoomParams: { x: number; y: number; scale: number, initialZoom: boolean } = {x: 0, y: 0, scale: 1, initialZoom: true};
   dagreD3Renderer: dagreD3.Render = new dagreD3.render();
 
   graph: dagreD3.graphlib.Graph = new dagreD3.graphlib.Graph().setGraph({});
@@ -351,9 +351,30 @@ export class ElsaWorkflowDesigner {
         x: transform.x,
         y: transform.y,
         scale: transform.k,
+        initialZoom: this.zoomParams.initialZoom,
       };
     });
     this.svgD3Selected.call(this.zoom);
+  }
+
+  applyInitialZoom() {
+    const { width: widthSvg }: { width: number } = this.svgD3Selected.node().getBBox();
+    const middleScreen: number = this.svgD3Selected.node().clientWidth / 2;
+    const nodeStartTransform: string = d3.select('.node.start').attr('transform');
+    const nodeStartTranslateX: number = parseInt(nodeStartTransform.replace(/translate|((\)|\())/g, '').split(',')[0]);
+
+    const zoomParamsScale: number = 1;
+    const zoomParamsY: number = 50;
+    const zoomParamsX: number = middleScreen - (widthSvg - (widthSvg - nodeStartTranslateX));
+
+    this.zoom.scaleTo(this.svgD3Selected, zoomParamsScale);
+    this.zoom.translateTo(this.svgD3Selected, zoomParamsX, zoomParamsY);
+    
+    this.svgD3Selected
+      .call(this.zoom.transform, d3.zoomIdentity.scale(zoomParamsScale)
+      .translate(zoomParamsX, zoomParamsY));
+
+    this.zoomParams.initialZoom = false;
   }
 
   setEntities() {
@@ -465,6 +486,10 @@ export class ElsaWorkflowDesigner {
     this.dagreD3Renderer(this.innerD3Selected as any, this.graph as any);
     this.svgD3Selected.call(this.zoom.scaleTo, scaleAfter);
     this.innerD3Selected.attr('transform', prevTransform);
+
+    if (this.zoomParams.initialZoom === true) {
+      this.applyInitialZoom();
+    }
 
     if (this.mode == WorkflowDesignerMode.Edit) {
       root.selectAll('.node.add').each((n: any) => {
@@ -637,8 +662,8 @@ export class ElsaWorkflowDesigner {
   render() {
     return (
       <Host class="workflow-canvas elsa-flex-1 elsa-flex" ref={el => (this.el = el)}>
-        <svg ref={el => (this.svg = el)} id="svg" style={{height: 'calc(100vh - 64px)', width: '100%', pointerEvents: this.activityContextMenuState.shown ? 'none' : ''}}>
-          <g ref={el => (this.inner = el)}/>
+        <svg ref={(el: SVGSVGElement) => (this.svg = el)} id="svg" style={{height: 'calc(100vh - 64px)', width: '100%', pointerEvents: this.activityContextMenuState.shown ? 'none' : ''}}>
+          <g ref={(el: SVGGElement) => (this.inner = el)}/>
         </svg>
       </Host>
     );
