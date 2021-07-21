@@ -7,11 +7,11 @@ using MediatR;
 
 namespace Elsa.Activities.Webhooks.Handlers
 {
-    public class EvictWorkflowRegistryCacheHandler : INotificationHandler<WebhookDefinitionSaved>
+    public class EvictWorkflowRegistrySavedCacheHandler : INotificationHandler<WebhookDefinitionSaved>
     {
         private readonly ICacheSignal _cacheSignal;
 
-        public EvictWorkflowRegistryCacheHandler(ICacheSignal cacheSignal)
+        public EvictWorkflowRegistrySavedCacheHandler(ICacheSignal cacheSignal)
         {
             _cacheSignal = cacheSignal;
         }
