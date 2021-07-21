@@ -19,7 +19,7 @@ namespace Elsa.Decorators
 {
     public class CachingWorkflowRegistry : IWorkflowRegistry, INotificationHandler<WorkflowDefinitionSaved>, INotificationHandler<WorkflowDefinitionDeleted>
     {
-        private const string CacheKey = "WorkflowRegistry";
+        public const string CacheKey = "WorkflowRegistry";
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IMemoryCache _memoryCache;
         private readonly ICacheSignal _cacheSignal;

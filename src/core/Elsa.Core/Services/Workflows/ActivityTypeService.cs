@@ -3,6 +3,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Caching;
 using Elsa.Events;
 using Elsa.Exceptions;
 using Elsa.Metadata;
@@ -14,15 +15,18 @@ namespace Elsa.Services.Workflows
 {
     public class ActivityTypeService : IActivityTypeService
     {
+        public const string CacheKey = "ActivityTypes";
         private readonly IEnumerable<IActivityTypeProvider> _providers;
         private readonly IMemoryCache _memoryCache;
         private readonly IMediator _mediator;
+        private readonly ICacheSignal _cacheSignal;
 
-        public ActivityTypeService(IEnumerable<IActivityTypeProvider> providers, IMemoryCache memoryCache, IMediator mediator)
+        public ActivityTypeService(IEnumerable<IActivityTypeProvider> providers, IMemoryCache memoryCache, IMediator mediator, ICacheSignal cacheSignal)
         {
             _providers = providers;
             _memoryCache = memoryCache;
             _mediator = mediator;
+            _cacheSignal = cacheSignal;
         }
 
         public async ValueTask<IEnumerable<ActivityType>> GetActivityTypesAsync(CancellationToken cancellationToken) => (await GetDictionaryAsync(cancellationToken)).Values;
@@ -61,8 +65,11 @@ namespace Elsa.Services.Workflows
 
         private async ValueTask<IDictionary<string, ActivityType>> GetDictionaryAsync(CancellationToken cancellationToken)
         {
-            const string key = "ActivityTypes";
-            return await _memoryCache.GetOrCreate(key, async _ => await GetActivityTypesInternalAsync(cancellationToken).ToDictionaryAsync(x => x.TypeName, cancellationToken));
+            return await _memoryCache.GetOrCreate(CacheKey, async entry =>
+            {
+                entry.Monitor(_cacheSignal.GetToken(CacheKey));
+                return await GetActivityTypesInternalAsync(cancellationToken).ToDictionaryAsync(x => x.TypeName, cancellationToken);
+            });
         }
 
         private async IAsyncEnumerable<ActivityType> GetActivityTypesInternalAsync([EnumeratorCancellation] CancellationToken cancellationToken)
