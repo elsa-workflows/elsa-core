@@ -54,6 +54,16 @@ namespace Elsa.Services.Workflows
         {
             using var loggingScope = _logger.BeginScope(new Dictionary<string, object> { ["WorkflowInstanceId"] = workflowInstance.Id });
             using var workflowExecutionScope = _serviceScopeFactory.CreateScope();
+
+            if (input != null)
+            {
+                var workflowStorageContext = new WorkflowStorageContext(workflowInstance, workflowBlueprint.Id);
+                var inputStorageProvider = _workflowStorageService.GetProviderByNameOrDefault();
+                await inputStorageProvider.SaveAsync(workflowStorageContext, nameof(WorkflowInstance.Input), input, cancellationToken);
+                workflowInstance.Input = new WorkflowInputReference(inputStorageProvider.Name);
+                await _mediator.Publish(new WorkflowInputUpdated(workflowInstance), cancellationToken);
+            }
+
             var workflowExecutionContext = new WorkflowExecutionContext(workflowExecutionScope.ServiceProvider, workflowBlueprint, workflowInstance, input);
 
             if (!string.IsNullOrWhiteSpace(workflowInstance.ContextId))
@@ -105,8 +115,8 @@ namespace Elsa.Services.Workflows
 
                 case WorkflowStatus.Suspended:
                     runWorkflowResult = await ResumeWorkflowAsync(workflowExecutionContext, activity!, cancellationToken);
-                    
-                    if(!runWorkflowResult.Executed)
+
+                    if (!runWorkflowResult.Executed)
                     {
                         _logger.LogDebug("Workflow {WorkflowInstanceId} cannot be resumed from a suspended state (perhaps it needs a specific input)", workflowInstance.Id);
                         return runWorkflowResult;

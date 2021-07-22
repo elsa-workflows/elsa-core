@@ -13,6 +13,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Configuration
             builder.Property(x => x.FinishedAt).HasConversion(ValueConverters.InstantConverter);
             builder.Property(x => x.CancelledAt).HasConversion(ValueConverters.InstantConverter);
             builder.Property(x => x.FaultedAt).HasConversion(ValueConverters.InstantConverter);
+            builder.Ignore(x => x.Input);
             builder.Ignore(x => x.Output);
             builder.Ignore(x => x.ActivityData);
             builder.Ignore(x => x.BlockingActivities);

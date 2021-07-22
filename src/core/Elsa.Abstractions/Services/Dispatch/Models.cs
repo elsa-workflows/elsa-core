@@ -6,5 +6,5 @@ namespace Elsa.Services
 
     public record ExecuteWorkflowDefinitionRequest(string WorkflowDefinitionId, string? ActivityId = default, object? Input = default, string? CorrelationId = default, string? ContextId = default, string? TenantId = default);
 
-    public record ExecuteWorkflowInstanceRequest(string WorkflowInstanceId, string? ActivityId, object? Input = default);
+    public record ExecuteWorkflowInstanceRequest(string WorkflowInstanceId, string? ActivityId = default, object? Input = default);
 }

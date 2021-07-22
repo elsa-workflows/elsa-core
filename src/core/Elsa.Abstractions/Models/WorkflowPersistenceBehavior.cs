@@ -1,5 +1,4 @@
-﻿using System;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
 namespace Elsa.Models
@@ -18,14 +17,13 @@ namespace Elsa.Models
         WorkflowBurst,
 
         /// <summary>
-        /// Workflow instances are persisted after the workflow executed scheduled activities.
+        /// Workflow instances are persisted after the workflow executed an activity.
         /// </summary>
         WorkflowPassCompleted,
 
         /// <summary>
         /// Workflow instances are persisted after each activity that executed.
         /// </summary>
-        [Obsolete("Use WorkflowPassCompleted instead")]
         ActivityExecuted
     }
 }

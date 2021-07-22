@@ -24,14 +24,15 @@ namespace Elsa.Services.Workflows
         public async Task<RunWorkflowResult> ExecuteAsync(string workflowInstanceId, string? activityId, object? input = default, CancellationToken cancellationToken = default)
         {
             var workflowInstance = await WorkflowInstanceStore.FindByIdAsync(workflowInstanceId, cancellationToken);
-            
+
             if (!ValidatePreconditions(workflowInstanceId, workflowInstance, activityId))
                 return new RunWorkflowResult(workflowInstance, activityId, false);
-            
+
             return await _workflowRunner.ResumeWorkflowAsync(
                 workflowInstance!,
                 activityId,
-                input, cancellationToken);
+                input,
+                cancellationToken);
         }
 
         public async Task<RunWorkflowResult> ExecuteAsync(WorkflowInstance workflowInstance, string? activityId, object? input = default, CancellationToken cancellationToken = default)
@@ -42,7 +43,8 @@ namespace Elsa.Services.Workflows
             return await _workflowRunner.ResumeWorkflowAsync(
                 workflowInstance!,
                 activityId,
-                input, cancellationToken);
+                input,
+                cancellationToken);
         }
 
         private bool ValidatePreconditions(string? workflowInstanceId, WorkflowInstance? workflowInstance, string? activityId)
