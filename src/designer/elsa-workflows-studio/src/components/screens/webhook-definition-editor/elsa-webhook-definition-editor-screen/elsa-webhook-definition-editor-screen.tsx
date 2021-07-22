@@ -122,12 +122,26 @@ export class ElsaWebhookDefinitionEditorScreen {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
+  navigate(path: string) {
+    if (this.history) {
+        this.history.push(path);
+        return;
+    }
+
+    document.location.pathname = path;
+  }
+
   async onSaveClicked(e: Event) {    
     e.preventDefault();
     
     await this.saveWebhook();
     eventBus.emit(EventTypes.WebhookSaved, this, this.webhookDefinitionInternal);    
-    this.sleep(1000).then(() => { this.history.push(`/webhook-definitions`, {}); });
+
+    const anchor = e.currentTarget as HTMLAnchorElement;
+
+    this.sleep(1000).then(() => { 
+      this.navigate(`/webhook-definitions`);
+    });
   } 
 
   render() {

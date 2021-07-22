@@ -7,7 +7,7 @@ using MediatR;
 
 namespace Elsa.Activities.Webhooks.Handlers
 {
-    public class EvictWorkflowRegistryCacheHandler : INotificationHandler<WebhookDefinitionSaved>
+    public class EvictWorkflowRegistryCacheHandler : INotificationHandler<WebhookDefinitionSaved>, INotificationHandler<WebhookDefinitionDeleted>
     {
         private readonly ICacheSignal _cacheSignal;
 
@@ -17,6 +17,11 @@ namespace Elsa.Activities.Webhooks.Handlers
         }
 
         public async Task Handle(WebhookDefinitionSaved notification, CancellationToken cancellationToken)
+        {
+            await _cacheSignal.TriggerTokenAsync(ActivityTypeService.CacheKey);
+        }
+
+        public async Task Handle(WebhookDefinitionDeleted notification, CancellationToken cancellationToken)
         {
             await _cacheSignal.TriggerTokenAsync(ActivityTypeService.CacheKey);
         }
