@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Models;
 using Elsa.Services.Models;
 
 namespace Elsa.Services
@@ -9,7 +10,7 @@ namespace Elsa.Services
     {
         Task<IEnumerable<RunWorkflowResult>> StartWorkflowsAsync(
             IEnumerable<TriggerFinderResult> results,
-            object? input = default,
+            WorkflowInput? input = default,
             string? contextId = default,
             CancellationToken cancellationToken = default);
     }

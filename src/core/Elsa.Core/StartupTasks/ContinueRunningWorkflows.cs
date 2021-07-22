@@ -76,7 +76,7 @@ namespace Elsa.StartupTasks
 
                 _logger.LogInformation("Resuming {WorkflowInstanceId}", instance.Id);
 
-                var input = await _workflowStorageService.LoadAsync(default, new WorkflowStorageContext(instance, instance.DefinitionId), nameof(WorkflowInstance.Input), cancellationToken);
+                var input = await GetWorkflowInputAsync(instance, cancellationToken);
                 await _workflowInstanceDispatcher.DispatchAsync(new ExecuteWorkflowInstanceRequest(instance.Id, Input: input), cancellationToken);
             }
         }
@@ -121,9 +121,22 @@ namespace Elsa.StartupTasks
                 }
 
                 var scheduledActivity = instance.CurrentActivity ?? instance.ScheduledActivities.Peek();
-                var input = await _workflowStorageService.LoadAsync(default, new WorkflowStorageContext(instance, instance.DefinitionId), nameof(WorkflowInstance.Input), cancellationToken);
+                var input = await GetWorkflowInputAsync(instance, cancellationToken);
                 await _workflowInstanceDispatcher.DispatchAsync(new ExecuteWorkflowInstanceRequest(instance.Id, scheduledActivity.ActivityId, input), cancellationToken);
             }
+        }
+
+        private async Task<WorkflowInput?> GetWorkflowInputAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken)
+        {
+            var inputReference = workflowInstance.Input;
+
+            if (inputReference == null)
+                return null;
+            
+            var inputStorageProviderName = inputReference.ProviderName;
+            var input = await _workflowStorageService.LoadAsync(inputStorageProviderName, new WorkflowStorageContext(workflowInstance, workflowInstance.DefinitionId), nameof(WorkflowInstance.Input), cancellationToken);
+
+            return new WorkflowInput(input);
         }
     }
 }

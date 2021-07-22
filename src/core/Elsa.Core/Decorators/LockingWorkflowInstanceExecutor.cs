@@ -31,7 +31,7 @@ namespace Elsa.Decorators
             _logger = logger;
         }
 
-        public async Task<RunWorkflowResult> ExecuteAsync(string workflowInstanceId, string? activityId, object? input = default, CancellationToken cancellationToken = default)
+        public async Task<RunWorkflowResult> ExecuteAsync(string workflowInstanceId, string? activityId, WorkflowInput? input = default, CancellationToken cancellationToken = default)
         {
             var workflowInstanceLockKey = $"workflow-instance:{workflowInstanceId}";
             await using var workflowInstanceLockHandle = await _distributedLockProvider.AcquireLockAsync(workflowInstanceLockKey, _elsaOptions.DistributedLockTimeout, cancellationToken);
@@ -69,7 +69,7 @@ namespace Elsa.Decorators
             }
         }
 
-        public async Task<RunWorkflowResult> ExecuteAsync(WorkflowInstance workflowInstance, string? activityId, object? input = default, CancellationToken cancellationToken = default) =>
+        public async Task<RunWorkflowResult> ExecuteAsync(WorkflowInstance workflowInstance, string? activityId, WorkflowInput? input = default, CancellationToken cancellationToken = default) =>
             await _workflowInstanceExecutor.ExecuteAsync(workflowInstance, activityId, input, cancellationToken);
     }
 }

@@ -7,6 +7,7 @@ using Elsa.Design;
 using Elsa.Expressions;
 using Elsa.Metadata;
 using Elsa.Persistence.Specifications;
+using Elsa.Providers.Activities;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Elsa.Webhooks.Models;

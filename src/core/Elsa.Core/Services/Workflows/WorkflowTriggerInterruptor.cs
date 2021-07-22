@@ -27,13 +27,13 @@ namespace Elsa.Services.Workflows
             _bookmarkFinder = bookmarkFinder;
         }
 
-        public async Task<RunWorkflowResult> InterruptActivityAsync(WorkflowInstance workflowInstance, string activityId, object? input, CancellationToken cancellationToken)
+        public async Task<RunWorkflowResult> InterruptActivityAsync(WorkflowInstance workflowInstance, string activityId, WorkflowInput? input, CancellationToken cancellationToken)
         {
             var workflowBlueprint = await GetWorkflowBlueprintAsync(workflowInstance, cancellationToken);
             return await InterruptActivityAsync(workflowBlueprint!, workflowInstance, activityId, input, cancellationToken);
         }
 
-        public async Task<RunWorkflowResult> InterruptActivityAsync(IWorkflowBlueprint workflowBlueprint, WorkflowInstance workflowInstance, string activityId, object? input, CancellationToken cancellationToken)
+        public async Task<RunWorkflowResult> InterruptActivityAsync(IWorkflowBlueprint workflowBlueprint, WorkflowInstance workflowInstance, string activityId, WorkflowInput? input, CancellationToken cancellationToken)
         {
             if (workflowInstance.WorkflowStatus != WorkflowStatus.Suspended)
                 throw new WorkflowException("Cannot interrupt workflows that are not in the Suspended state.");
@@ -46,7 +46,7 @@ namespace Elsa.Services.Workflows
             return await _workflowRunner.RunWorkflowAsync(workflowBlueprint, workflowInstance, activityId, input, cancellationToken);
         }
 
-        public async Task<IEnumerable<RunWorkflowResult>> InterruptActivityTypeAsync(IWorkflowBlueprint workflowBlueprint, WorkflowInstance workflowInstance, string activityType, object? input, CancellationToken cancellationToken)
+        public async Task<IEnumerable<RunWorkflowResult>> InterruptActivityTypeAsync(IWorkflowBlueprint workflowBlueprint, WorkflowInstance workflowInstance, string activityType, WorkflowInput? input, CancellationToken cancellationToken)
         {
             var blockingActivities = workflowInstance.BlockingActivities.Where(x => x.ActivityType == activityType).ToList();
             var results = new List<RunWorkflowResult>();
@@ -60,19 +60,19 @@ namespace Elsa.Services.Workflows
             return results;
         }
 
-        public async Task<IEnumerable<RunWorkflowResult>> InterruptActivityTypeAsync(WorkflowInstance workflowInstance, string activityType, object? input, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<RunWorkflowResult>> InterruptActivityTypeAsync(WorkflowInstance workflowInstance, string activityType, WorkflowInput? input, CancellationToken cancellationToken = default)
         {
             var workflowBlueprint = await GetWorkflowBlueprintAsync(workflowInstance, cancellationToken);
             return await InterruptActivityTypeAsync(workflowBlueprint!, workflowInstance, activityType, input, cancellationToken);
         }
 
-        public async Task<IEnumerable<RunWorkflowResult>> InterruptActivityTypeAsync(string activityType, object? input, CancellationToken cancellationToken) =>
+        public async Task<IEnumerable<RunWorkflowResult>> InterruptActivityTypeAsync(string activityType, WorkflowInput? input, CancellationToken cancellationToken) =>
             await InterruptActivityTypeInternalAsync(activityType, input, cancellationToken).ToListAsync(cancellationToken);
 
         private async Task<IWorkflowBlueprint?> GetWorkflowBlueprintAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken) =>
             await _workflowRegistry.GetAsync(workflowInstance.DefinitionId, workflowInstance.TenantId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken);
 
-        private async IAsyncEnumerable<RunWorkflowResult> InterruptActivityTypeInternalAsync(string activityType, object? input, [EnumeratorCancellation] CancellationToken cancellationToken)
+        private async IAsyncEnumerable<RunWorkflowResult> InterruptActivityTypeInternalAsync(string activityType, WorkflowInput? input, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             var bookmarks = await _bookmarkFinder.FindBookmarksAsync(activityType, Enumerable.Empty<IBookmark>(), null, null, cancellationToken);
             var workflowInstanceIds = bookmarks.Select(x => x.WorkflowInstanceId).Distinct().ToList();

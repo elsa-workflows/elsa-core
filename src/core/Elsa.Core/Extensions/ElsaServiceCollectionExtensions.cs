@@ -18,6 +18,7 @@ using Elsa.Mapping;
 using Elsa.Metadata;
 using Elsa.Persistence;
 using Elsa.Persistence.Decorators;
+using Elsa.Providers.Activities;
 using Elsa.Providers.ActivityTypes;
 using Elsa.Providers.Workflows;
 using Elsa.Providers.WorkflowStorage;

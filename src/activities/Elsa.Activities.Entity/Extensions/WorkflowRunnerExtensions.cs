@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Elsa.Activities.Entity.Bookmarks;
 using Elsa.Activities.Entity.Models;
+using Elsa.Models;
 using Elsa.Services;
 
 namespace Elsa.Activities.Entity.Extensions
@@ -29,7 +30,7 @@ namespace Elsa.Activities.Entity.Extensions
                 contextId
             );
 
-            await workflowDispatcher.DispatchAsync(new TriggerWorkflowsRequest(activityType, bookmark, input, correlationId, default, contextId, TenantId), cancellationToken);
+            await workflowDispatcher.DispatchAsync(new TriggerWorkflowsRequest(activityType, bookmark, new WorkflowInput(input), correlationId, default, contextId, TenantId), cancellationToken);
         }
     }
 }

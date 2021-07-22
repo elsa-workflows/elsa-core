@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Elsa.Activities.Conductor.Models;
 using Elsa.Activities.Conductor.Services;
 using Elsa.Metadata;
+using Elsa.Providers.Activities;
 using Elsa.Services;
 using Elsa.Services.Models;
 

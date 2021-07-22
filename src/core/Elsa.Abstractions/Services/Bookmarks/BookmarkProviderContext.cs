@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Services.Models;
 
-namespace Elsa.Services.Bookmarks
+namespace Elsa.Services
 {
     public class BookmarkProviderContext
     {

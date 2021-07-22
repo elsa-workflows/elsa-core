@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Expressions;
+using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -40,7 +41,7 @@ namespace Elsa.Activities.Signaling
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
             var workflowInstance = await _workflowInstanceManager.FindByIdAsync(WorkflowInstanceId, context.CancellationToken);
-            await _workflowTriggerInterruptor.InterruptActivityAsync(workflowInstance!, BlockingActivityId, Input, context.CancellationToken);
+            await _workflowTriggerInterruptor.InterruptActivityAsync(workflowInstance!, BlockingActivityId, new WorkflowInput(Input), context.CancellationToken);
             return Done();
         }
     }

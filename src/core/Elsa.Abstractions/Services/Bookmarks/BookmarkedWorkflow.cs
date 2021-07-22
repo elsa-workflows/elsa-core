@@ -1,6 +1,6 @@
 ﻿using Elsa.Services.Models;
 
-namespace Elsa.Services.Bookmarks
+namespace Elsa.Services
 {
     public class BookmarkedWorkflow
     {
