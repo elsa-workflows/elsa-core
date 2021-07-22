@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Server.Api.ActionFilters;
 using Elsa.Services;
+using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Open.Linq.AsyncExtensions;
@@ -38,7 +39,7 @@ namespace Elsa.Server.Api.Endpoints.Workflows
         public async Task<IActionResult> Handle(TriggerWorkflowsRequestModel request, CancellationToken cancellationToken = default)
         {
             var tenantId = await _tenantAccessor.GetTenantIdAsync(cancellationToken);
-            var context = new CollectWorkflowsContext(request.ActivityType, request.Bookmark, request.CorrelationId, request.WorkflowInstanceId, request.ContextId, tenantId);
+            var context = new WorkflowsQuery(request.ActivityType, request.Bookmark, request.CorrelationId, request.WorkflowInstanceId, request.ContextId, tenantId);
             ICollection<TriggeredWorkflowModel> triggeredWorkflows;
 
             if (request.Dispatch)

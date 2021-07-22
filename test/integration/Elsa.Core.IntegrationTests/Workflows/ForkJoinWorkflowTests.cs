@@ -97,7 +97,7 @@ namespace Elsa.Core.IntegrationTests.Workflows
             var receiveSignal = receiveSignalActivities.Single(activity => workflowBlueprintWrapper.GetActivity<SignalReceived>(activity.ActivityBlueprint.Id)!.EvaluatePropertyValueAsync(x => x.Signal).GetAwaiter().GetResult() == signal);
             
             var triggeredSignal = new Signal(signal);
-            var result = await WorkflowRunner.RunWorkflowAsync(workflowBlueprint, workflowInstance, receiveSignal.ActivityBlueprint.Id, triggeredSignal);
+            var result = await WorkflowRunner.RunWorkflowAsync(workflowBlueprint, workflowInstance, receiveSignal.ActivityBlueprint.Id, new WorkflowInput(triggeredSignal));
             return result.WorkflowInstance!;
         }
     }

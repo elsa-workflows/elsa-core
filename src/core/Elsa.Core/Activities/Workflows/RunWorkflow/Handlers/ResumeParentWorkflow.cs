@@ -1,6 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Events;
+using Elsa.Models;
 using Elsa.Providers.WorkflowStorage;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -41,7 +42,7 @@ namespace Elsa.Activities.Workflows
                 ChildWorkflowInstanceId = workflowInstanceId
             };
 
-            await _workflowScheduler.FindAndResumeWorkflowsAsync(nameof(RunWorkflow), trigger, tenantId, input, cancellationToken: cancellationToken);
+            await _workflowScheduler.FindAndResumeWorkflowsAsync(nameof(RunWorkflow), trigger, tenantId, new WorkflowInput(input), cancellationToken: cancellationToken);
         }
     }
 }

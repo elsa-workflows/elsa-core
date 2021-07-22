@@ -7,7 +7,9 @@ using Elsa.Activities.Telnyx.Webhooks.Events;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Abstract;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
 using Elsa.Activities.Telnyx.Webhooks.Services;
+using Elsa.Models;
 using Elsa.Services;
+using Elsa.Services.Models;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -41,9 +43,9 @@ namespace Elsa.Activities.Telnyx.Webhooks.Handlers
 
             var correlationId = GetCorrelationId(payload);
             var bookmark = new NotificationBookmark(eventType);
-            var context = new CollectWorkflowsContext(activityType, bookmark, correlationId);
+            var context = new WorkflowsQuery(activityType, bookmark, correlationId);
 
-            await _workflowLaunchpad.CollectAndDispatchWorkflowsAsync(context, webhook, cancellationToken);
+            await _workflowLaunchpad.CollectAndDispatchWorkflowsAsync(context, new WorkflowInput(webhook), cancellationToken);
         }
         
         private string GetCorrelationId(Payload payload)

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications.WorkflowInstances;
-using Elsa.Providers.Workflow;
+using Elsa.Providers.Workflows;
 using Elsa.Services.Models;
 using Open.Linq.AsyncExtensions;
 

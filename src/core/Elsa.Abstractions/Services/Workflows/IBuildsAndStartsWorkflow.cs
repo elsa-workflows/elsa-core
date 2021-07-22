@@ -1,6 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Builders;
+using Elsa.Models;
 using Elsa.Services.Models;
 
 namespace Elsa.Services
@@ -9,7 +10,7 @@ namespace Elsa.Services
     {
         Task<RunWorkflowResult> BuildAndStartWorkflowAsync<T>(
             string? activityId = default,
-            object? input = default,
+            WorkflowInput? input = default,
             string? correlationId = default,
             string? contextId = default,
             CancellationToken cancellationToken = default)
@@ -18,7 +19,7 @@ namespace Elsa.Services
         public Task<RunWorkflowResult> BuildAndStartWorkflowAsync(
             IWorkflow workflow,
             string? activityId = default,
-            object? input = default,
+            WorkflowInput? input = default,
             string? correlationId = default,
             string? contextId = default,
             CancellationToken cancellationToken = default);

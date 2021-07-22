@@ -49,12 +49,22 @@ namespace Elsa.Services.Workflows
             IWorkflowBlueprint workflowBlueprint,
             WorkflowInstance workflowInstance,
             string? activityId = default,
-            object? input = default,
+            WorkflowInput? input = default,
             CancellationToken cancellationToken = default)
         {
             using var loggingScope = _logger.BeginScope(new Dictionary<string, object> { ["WorkflowInstanceId"] = workflowInstance.Id });
             using var workflowExecutionScope = _serviceScopeFactory.CreateScope();
-            var workflowExecutionContext = new WorkflowExecutionContext(workflowExecutionScope.ServiceProvider, workflowBlueprint, workflowInstance, input);
+
+            if (input?.Input != null)
+            {
+                var workflowStorageContext = new WorkflowStorageContext(workflowInstance, workflowBlueprint.Id);
+                var inputStorageProvider = _workflowStorageService.GetProviderByNameOrDefault(input.StorageProviderName);
+                await inputStorageProvider.SaveAsync(workflowStorageContext, nameof(WorkflowInstance.Input), input.Input, cancellationToken);
+                workflowInstance.Input = new WorkflowInputReference(inputStorageProvider.Name);
+                await _mediator.Publish(new WorkflowInputUpdated(workflowInstance), cancellationToken);
+            }
+
+            var workflowExecutionContext = new WorkflowExecutionContext(workflowExecutionScope.ServiceProvider, workflowBlueprint, workflowInstance, input?.Input);
 
             if (!string.IsNullOrWhiteSpace(workflowInstance.ContextId))
             {
@@ -105,8 +115,8 @@ namespace Elsa.Services.Workflows
 
                 case WorkflowStatus.Suspended:
                     runWorkflowResult = await ResumeWorkflowAsync(workflowExecutionContext, activity!, cancellationToken);
-                    
-                    if(!runWorkflowResult.Executed)
+
+                    if (!runWorkflowResult.Executed)
                     {
                         _logger.LogDebug("Workflow {WorkflowInstanceId} cannot be resumed from a suspended state (perhaps it needs a specific input)", workflowInstance.Id);
                         return runWorkflowResult;

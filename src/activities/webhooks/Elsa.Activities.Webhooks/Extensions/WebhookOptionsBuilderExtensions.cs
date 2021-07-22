@@ -1,6 +1,7 @@
 using Elsa.Activities.Webhooks.ActivityTypes;
 using Elsa.Activities.Webhooks.Bookmarks;
 using Elsa.Activities.Webhooks.Handlers;
+using Elsa.Providers.Activities;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 

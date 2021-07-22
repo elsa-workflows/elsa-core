@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Elsa.Models;
 using Rebus.Handlers;
 
 namespace Elsa.Services.Dispatch.Consumers
@@ -11,7 +12,7 @@ namespace Elsa.Services.Dispatch.Consumers
 
         public async Task Handle(ExecuteWorkflowInstanceRequest message)
         {
-            await _workflowInstanceExecutor.ExecuteAsync(message.WorkflowInstanceId, message.ActivityId, message.Input);
+            await _workflowInstanceExecutor.ExecuteAsync(message.WorkflowInstanceId, message.ActivityId, new WorkflowInput(message.Input));
         }
     }
 }

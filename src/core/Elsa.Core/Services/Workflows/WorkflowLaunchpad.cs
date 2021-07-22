@@ -60,28 +60,33 @@ namespace Elsa.Services.Workflows
             _workflowFactory = workflowFactory;
         }
 
-        public async Task<IEnumerable<CollectedWorkflow>> CollectWorkflowsAsync(CollectWorkflowsContext context, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<CollectedWorkflow>> FindWorkflowsAsync(WorkflowsQuery query, CancellationToken cancellationToken = default)
         {
-            var correlationId = context.CorrelationId;
+            var correlationId = query.CorrelationId;
 
             if (!string.IsNullOrWhiteSpace(correlationId))
-                return await CollectResumableOrStartableCorrelatedWorkflowsAsync(context, cancellationToken);
+                return await CollectResumableOrStartableCorrelatedWorkflowsAsync(query, cancellationToken);
 
-            if (!string.IsNullOrWhiteSpace(context.WorkflowInstanceId))
-                return await CollectSpecificWorkflowInstanceAsync(context, cancellationToken);
+            if (!string.IsNullOrWhiteSpace(query.WorkflowInstanceId))
+                return await CollectSpecificWorkflowInstanceAsync(query, cancellationToken);
 
-            return await CollectResumableAndStartableWorkflowsAsync(context, cancellationToken);
+            return await CollectResumableAndStartableWorkflowsAsync(query, cancellationToken);
         }
 
-        public async Task<IEnumerable<StartableWorkflow>> CollectStartableWorkflowsAsync(CollectWorkflowsContext context, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<StartableWorkflow>> FindStartableWorkflowsAsync(WorkflowsQuery query, CancellationToken cancellationToken = default)
         {
-            var correlationId = context.CorrelationId ?? Guid.NewGuid().ToString("N");
-            var updatedContext = context with {CorrelationId = correlationId};
+            var correlationId = query.CorrelationId ?? Guid.NewGuid().ToString("N");
+            var updatedContext = query with {CorrelationId = correlationId};
             await using var lockHandle = await AcquireLockAsync(correlationId, cancellationToken);
             return await CollectStartableWorkflowsInternalAsync(updatedContext, cancellationToken);
         }
 
-        public async Task<StartableWorkflow?> CollectStartableWorkflowAsync(string workflowDefinitionId, string? activityId, string? correlationId = default, string? contextId = default, string? tenantId = default,
+        public async Task<StartableWorkflow?> FindStartableWorkflowAsync(
+            string workflowDefinitionId, 
+            string? activityId, 
+            string? correlationId = default, 
+            string? contextId = default, 
+            string? tenantId = default,
             CancellationToken cancellationToken = default)
         {
             var workflowBlueprint = await _workflowRegistry.GetAsync(workflowDefinitionId, tenantId, VersionOptions.Published, cancellationToken);
@@ -89,10 +94,10 @@ namespace Elsa.Services.Workflows
             if (workflowBlueprint == null)
                 return null;
 
-            return await CollectStartableWorkflowAsync(workflowBlueprint, activityId, correlationId, contextId, tenantId, cancellationToken);
+            return await FindStartableWorkflowAsync(workflowBlueprint, activityId, correlationId, contextId, tenantId, cancellationToken);
         }
 
-        public async Task<StartableWorkflow?> CollectStartableWorkflowAsync(
+        public async Task<StartableWorkflow?> FindStartableWorkflowAsync(
             IWorkflowBlueprint workflowBlueprint, 
             string? activityId, 
             string? correlationId = default, 
@@ -108,7 +113,13 @@ namespace Elsa.Services.Workflows
             return await CollectStartableWorkflowInternalAsync(workflowBlueprint, activityId, correlationId, contextId, tenantId, cancellationToken);
         }
 
-        public async Task CollectAndExecuteStartableWorkflowAsync(string workflowDefinitionId, string? activityId, string? correlationId = default, string? contextId = default, object? input = default, string? tenantId = default,
+        public async Task FindAndExecuteStartableWorkflowAsync(
+            string workflowDefinitionId, 
+            string? activityId, 
+            string? correlationId = default, 
+            string? contextId = default, 
+            WorkflowInput? input = default, 
+            string? tenantId = default,
             CancellationToken cancellationToken = default)
         {
             var workflowBlueprint = await _workflowRegistry.GetAsync(workflowDefinitionId, tenantId, VersionOptions.Published, cancellationToken);
@@ -119,16 +130,21 @@ namespace Elsa.Services.Workflows
                 return;
             }
 
-            await CollectAndExecuteStartableWorkflowAsync(workflowBlueprint, activityId, correlationId, contextId, input, cancellationToken);
+            await FindAndExecuteStartableWorkflowAsync(workflowBlueprint, activityId, correlationId, contextId, input, cancellationToken);
         }
 
-        public async Task<RunWorkflowResult> CollectAndExecuteStartableWorkflowAsync(IWorkflowBlueprint workflowBlueprint, string? activityId, string? correlationId = default, string? contextId = default, object? input = default,
+        public async Task<RunWorkflowResult> FindAndExecuteStartableWorkflowAsync(
+            IWorkflowBlueprint workflowBlueprint, 
+            string? activityId, 
+            string? correlationId = default, 
+            string? contextId = default, 
+            WorkflowInput? input = default,
             CancellationToken cancellationToken = default)
         {
             var workflowDefinitionId = workflowBlueprint.Id;
             var tenantId = workflowBlueprint.TenantId;
 
-            var startableWorkflow = await CollectStartableWorkflowAsync(workflowBlueprint, activityId, correlationId, contextId, tenantId, cancellationToken);
+            var startableWorkflow = await FindStartableWorkflowAsync(workflowBlueprint, activityId, correlationId, contextId, tenantId, cancellationToken);
 
             if (startableWorkflow == null)
                 throw new WorkflowException($"Could not start workflow with ID {workflowDefinitionId}");
@@ -136,77 +152,77 @@ namespace Elsa.Services.Workflows
             return await ExecuteStartableWorkflowAsync(startableWorkflow, input, cancellationToken);
         }
 
-        public async Task ExecutePendingWorkflowsAsync(IEnumerable<CollectedWorkflow> pendingWorkflows, object? input = default, CancellationToken cancellationToken = default)
+        public async Task ExecutePendingWorkflowsAsync(IEnumerable<CollectedWorkflow> pendingWorkflows, WorkflowInput? input = default, CancellationToken cancellationToken = default)
         {
             foreach (var pendingWorkflow in pendingWorkflows)
                 await _workflowInstanceExecutor.ExecuteAsync(pendingWorkflow.WorkflowInstanceId, pendingWorkflow.ActivityId, input, cancellationToken);
         }
 
-        public async Task ExecutePendingWorkflowAsync(CollectedWorkflow collectedWorkflow, object? input = default, CancellationToken cancellationToken = default) =>
+        public async Task ExecutePendingWorkflowAsync(CollectedWorkflow collectedWorkflow, WorkflowInput? input = default, CancellationToken cancellationToken = default) =>
             await _workflowInstanceExecutor.ExecuteAsync(collectedWorkflow.WorkflowInstanceId, collectedWorkflow.ActivityId, input, cancellationToken);
 
-        public async Task<RunWorkflowResult> ExecutePendingWorkflowAsync(string workflowInstanceId, string? activityId, object? input = default, CancellationToken cancellationToken = default) =>
+        public async Task<RunWorkflowResult> ExecutePendingWorkflowAsync(string workflowInstanceId, string? activityId, WorkflowInput? input = default, CancellationToken cancellationToken = default) =>
             await _workflowInstanceExecutor.ExecuteAsync(workflowInstanceId, activityId, input, cancellationToken);
 
-        public async Task DispatchPendingWorkflowsAsync(IEnumerable<CollectedWorkflow> pendingWorkflows, object? input, CancellationToken cancellationToken = default)
+        public async Task DispatchPendingWorkflowsAsync(IEnumerable<CollectedWorkflow> pendingWorkflows, WorkflowInput? input, CancellationToken cancellationToken = default)
         {
             foreach (var pendingWorkflow in pendingWorkflows)
                 await DispatchPendingWorkflowAsync(pendingWorkflow, input, cancellationToken);
         }
 
-        public async Task DispatchPendingWorkflowAsync(CollectedWorkflow collectedWorkflow, object? input, CancellationToken cancellationToken = default) =>
+        public async Task DispatchPendingWorkflowAsync(CollectedWorkflow collectedWorkflow, WorkflowInput? input, CancellationToken cancellationToken = default) =>
             await _workflowInstanceDispatcher.DispatchAsync(new ExecuteWorkflowInstanceRequest(collectedWorkflow.WorkflowInstanceId, collectedWorkflow.ActivityId, input), cancellationToken);
 
-        public Task DispatchPendingWorkflowAsync(string workflowInstanceId, string? activityId, object? input, CancellationToken cancellationToken = default) =>
+        public Task DispatchPendingWorkflowAsync(string workflowInstanceId, string? activityId, WorkflowInput? input, CancellationToken cancellationToken = default) =>
             DispatchPendingWorkflowAsync(new CollectedWorkflow(workflowInstanceId, activityId), input, cancellationToken);
 
-        public async Task<RunWorkflowResult> ExecuteStartableWorkflowAsync(StartableWorkflow startableWorkflow, object? input, CancellationToken cancellationToken = default) =>
+        public async Task<RunWorkflowResult> ExecuteStartableWorkflowAsync(StartableWorkflow startableWorkflow, WorkflowInput? input, CancellationToken cancellationToken = default) =>
             await _workflowRunner.RunWorkflowAsync(startableWorkflow.WorkflowBlueprint, startableWorkflow.WorkflowInstance, startableWorkflow.ActivityId, input, cancellationToken);
 
-        public async Task<CollectedWorkflow> DispatchStartableWorkflowAsync(StartableWorkflow startableWorkflow, object? input, CancellationToken cancellationToken = default)
+        public async Task<CollectedWorkflow> DispatchStartableWorkflowAsync(StartableWorkflow startableWorkflow, WorkflowInput? input, CancellationToken cancellationToken = default)
         {
             var pendingWorkflow = new CollectedWorkflow(startableWorkflow.WorkflowInstance.Id, startableWorkflow.ActivityId);
             await DispatchPendingWorkflowAsync(pendingWorkflow, input, cancellationToken);
             return pendingWorkflow;
         }
 
-        public async Task<IEnumerable<CollectedWorkflow>> CollectAndExecuteWorkflowsAsync(CollectWorkflowsContext context, object? input = default, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<CollectedWorkflow>> CollectAndExecuteWorkflowsAsync(WorkflowsQuery query, WorkflowInput? input = default, CancellationToken cancellationToken = default)
         {
-            var pendingWorkflows = await CollectWorkflowsAsync(context, cancellationToken).ToList();
+            var pendingWorkflows = await FindWorkflowsAsync(query, cancellationToken).ToList();
             await ExecutePendingWorkflowsAsync(pendingWorkflows, input, cancellationToken);
             return pendingWorkflows.Select(x => new CollectedWorkflow(x.WorkflowInstanceId, x.ActivityId));
         }
 
-        public async Task<IEnumerable<CollectedWorkflow>> CollectAndDispatchWorkflowsAsync(CollectWorkflowsContext context, object? input = default, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<CollectedWorkflow>> CollectAndDispatchWorkflowsAsync(WorkflowsQuery query, WorkflowInput? input = default, CancellationToken cancellationToken = default)
         {
-            var pendingWorkflows = await CollectWorkflowsAsync(context, cancellationToken).ToList();
+            var pendingWorkflows = await FindWorkflowsAsync(query, cancellationToken).ToList();
             await DispatchPendingWorkflowsAsync(pendingWorkflows, input, cancellationToken);
             return pendingWorkflows;
         }
 
-        public async Task<IEnumerable<CollectedWorkflow>> CollectResumableAndStartableWorkflowsAsync(CollectWorkflowsContext context, CancellationToken cancellationToken)
+        public async Task<IEnumerable<CollectedWorkflow>> CollectResumableAndStartableWorkflowsAsync(WorkflowsQuery query, CancellationToken cancellationToken)
         {
-            var bookmarkResultsQuery = context.Bookmark != null ? await _bookmarkFinder.FindBookmarksAsync(context.ActivityType, context.Bookmark, context.CorrelationId, context.TenantId, cancellationToken) : default;
+            var bookmarkResultsQuery = query.Bookmark != null ? await _bookmarkFinder.FindBookmarksAsync(query.ActivityType, query.Bookmark, query.CorrelationId, query.TenantId, cancellationToken) : default;
             var bookmarkResults = bookmarkResultsQuery?.ToList() ?? new List<BookmarkFinderResult>();
             var triggeredPendingWorkflows = bookmarkResults.Select(x => new CollectedWorkflow(x.WorkflowInstanceId, x.ActivityId)).ToList();
-            var startableWorkflows = await CollectStartableWorkflowsAsync(context, cancellationToken);
+            var startableWorkflows = await FindStartableWorkflowsAsync(query, cancellationToken);
             var pendingWorkflows = triggeredPendingWorkflows.Concat(startableWorkflows.Select(x => new CollectedWorkflow(x.WorkflowInstance.Id, x.ActivityId))).Distinct().ToList();
 
             return pendingWorkflows;
         }
         
-        private async Task<IEnumerable<StartableWorkflow>> CollectStartableWorkflowsInternalAsync(CollectWorkflowsContext context, CancellationToken cancellationToken = default)
+        private async Task<IEnumerable<StartableWorkflow>> CollectStartableWorkflowsInternalAsync(WorkflowsQuery query, CancellationToken cancellationToken = default)
         {
-            _logger.LogDebug("Triggering workflows using {ActivityType}", context.ActivityType);
+            _logger.LogDebug("Triggering workflows using {ActivityType}", query.ActivityType);
 
-            var filter = context.Bookmark;
-            var triggers = filter != null ? (await _triggerFinder.FindTriggersAsync(context.ActivityType, filter, context.TenantId, cancellationToken)).ToList() : new List<TriggerFinderResult>();
+            var filter = query.Bookmark;
+            var triggers = filter != null ? (await _triggerFinder.FindTriggersAsync(query.ActivityType, filter, query.TenantId, cancellationToken)).ToList() : new List<TriggerFinderResult>();
             var startableWorkflows = new List<StartableWorkflow>();
 
             foreach (var trigger in triggers)
             {
                 var workflowBlueprint = trigger.WorkflowBlueprint;
-                var startableWorkflow = await CollectStartableWorkflowInternalAsync(workflowBlueprint, trigger.ActivityId, context.CorrelationId!, context.ContextId, context.TenantId, cancellationToken);
+                var startableWorkflow = await CollectStartableWorkflowInternalAsync(workflowBlueprint, trigger.ActivityId, query.CorrelationId!, query.ContextId, query.TenantId, cancellationToken);
 
                 if (startableWorkflow != null)
                     startableWorkflows.Add(startableWorkflow);
@@ -260,19 +276,19 @@ namespace Elsa.Services.Workflows
             return new StartableWorkflow(workflowBlueprint, workflowInstance, startActivityId);
         }
 
-        private async Task<IEnumerable<CollectedWorkflow>> CollectSpecificWorkflowInstanceAsync(CollectWorkflowsContext context, CancellationToken cancellationToken)
+        private async Task<IEnumerable<CollectedWorkflow>> CollectSpecificWorkflowInstanceAsync(WorkflowsQuery query, CancellationToken cancellationToken)
         {
-            var bookmarkResultsQuery = context.Bookmark != null ? await _bookmarkFinder.FindBookmarksAsync(context.ActivityType, context.Bookmark, context.CorrelationId, context.TenantId, cancellationToken) : default;
-            bookmarkResultsQuery = bookmarkResultsQuery?.Where(x => x.WorkflowInstanceId == context.WorkflowInstanceId);
+            var bookmarkResultsQuery = query.Bookmark != null ? await _bookmarkFinder.FindBookmarksAsync(query.ActivityType, query.Bookmark, query.CorrelationId, query.TenantId, cancellationToken) : default;
+            bookmarkResultsQuery = bookmarkResultsQuery?.Where(x => x.WorkflowInstanceId == query.WorkflowInstanceId);
             var bookmarkResults = bookmarkResultsQuery?.ToList() ?? new List<BookmarkFinderResult>();
             var pendingWorkflows = bookmarkResults.Select(x => new CollectedWorkflow(x.WorkflowInstanceId, x.ActivityId)).ToList();
 
             return pendingWorkflows;
         }
 
-        private async Task<IEnumerable<CollectedWorkflow>> CollectResumableOrStartableCorrelatedWorkflowsAsync(CollectWorkflowsContext context, CancellationToken cancellationToken)
+        private async Task<IEnumerable<CollectedWorkflow>> CollectResumableOrStartableCorrelatedWorkflowsAsync(WorkflowsQuery query, CancellationToken cancellationToken)
         {
-            var correlationId = context.CorrelationId!;
+            var correlationId = query.CorrelationId!;
 
             await using var handle = await AcquireLockAsync(correlationId, cancellationToken);
             var correlatedWorkflowInstanceCount = !string.IsNullOrWhiteSpace(correlationId)
@@ -283,14 +299,14 @@ namespace Elsa.Services.Workflows
 
             if (correlatedWorkflowInstanceCount > 0)
             {
-                var bookmarkResults = context.Bookmark != null
-                    ? await _bookmarkFinder.FindBookmarksAsync(context.ActivityType, context.Bookmark, correlationId, context.TenantId, cancellationToken).ToList()
+                var bookmarkResults = query.Bookmark != null
+                    ? await _bookmarkFinder.FindBookmarksAsync(query.ActivityType, query.Bookmark, correlationId, query.TenantId, cancellationToken).ToList()
                     : new List<BookmarkFinderResult>();
-                _logger.LogDebug("Found {BookmarkCount} bookmarks for activity type {ActivityType}", bookmarkResults.Count, context.ActivityType);
+                _logger.LogDebug("Found {BookmarkCount} bookmarks for activity type {ActivityType}", bookmarkResults.Count, query.ActivityType);
                 return bookmarkResults.Select(x => new CollectedWorkflow(x.WorkflowInstanceId, x.ActivityId)).ToList();
             }
 
-            var startableWorkflows = await CollectStartableWorkflowsInternalAsync(context, cancellationToken);
+            var startableWorkflows = await CollectStartableWorkflowsInternalAsync(query, cancellationToken);
             return startableWorkflows.Select(x => new CollectedWorkflow(x.WorkflowInstance.Id, x.ActivityId)).ToList();
         }
 
