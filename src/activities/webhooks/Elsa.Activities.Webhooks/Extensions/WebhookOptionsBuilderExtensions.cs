@@ -13,8 +13,7 @@ namespace Elsa.Activities.Webhooks.Extensions
             elsaOptions.Services
                 .AddScoped<IActivityTypeProvider, WebhookActivityTypeProvider>()
                 .AddBookmarkProvider<WebhookBookmarkProvider>()
-                .AddNotificationHandlersFrom<EvictWorkflowRegistrySavedCacheHandler>()
-                .AddNotificationHandlersFrom<EvictWorkflowRegistryDeletedCacheHandler>();
+                .AddNotificationHandlersFrom<EvictWorkflowRegistryCacheHandler>();
 
             return elsaOptions;
         }
