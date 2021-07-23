@@ -16,7 +16,7 @@ export class ElsaMultiExpressionEditor {
   @Prop() defaultSyntax: string = SyntaxNames.Literal;
   @Prop() expressions: Map<string> = {};
   @Prop() supportedSyntaxes: Array<string> = [];
-  @Prop() isDisabled?: boolean;
+  @Prop() isReadOnly?: boolean;
   @Prop({attribute: 'editor-height', reflect: true}) editorHeight: string = '10em';
   @Prop({attribute: 'single-line', reflect: true}) singleLineMode: boolean = false;
   @Prop({attribute: 'context', reflect: true}) context?: string;
@@ -111,7 +111,7 @@ export class ElsaMultiExpressionEditor {
 
     return <div class="elsa-relative" ref={el => registerClickOutside(this, el, this.closeContextMenu)}>
       <button type="button" class={`elsa-border-0 focus:elsa-outline-none elsa-text-sm ${advancedButtonClass}`} onClick={e => this.onSettingsClick(e)}>
-        {!this.isDisabled ? this.renderContextMenuButton() : ""}
+        {!this.isReadOnly ? this.renderContextMenuButton() : ""}
       </button>
       <div>
         <div ref={el => this.contextMenu = el}

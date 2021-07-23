@@ -63,7 +63,7 @@ namespace Elsa.Builders
             return this;
         }
         
-        public new IWorkflowBuilder WithChannel(string? value)
+        public IWorkflowBuilder WithChannel(string? value)
         {
             Channel = value;
             return this;

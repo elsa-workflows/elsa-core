@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
+using Elsa.Metadata;
 using Elsa.Models;
 using Elsa.Server.Api.Endpoints.WorkflowRegistry;
 using Elsa.Server.Api.Mapping;
@@ -34,7 +35,7 @@ namespace Elsa.Server.Api.Services
             var activityProperties = await Task.WhenAll(wrapper.Activities.Select(async x => (x.ActivityBlueprint.Id, await GetActivityPropertiesAsync(wrapper, x, cancellationToken))));
             var inputPropertyDictionary = activityProperties.ToDictionary(x => x.Id, x => x.Item2.InputProperties);
             var outputPropertyDictionary = activityProperties.ToDictionary(x => x.Id, x => x.Item2.OutputProperties);
-            
+
             return _mapper.Map<WorkflowBlueprintModel>(workflowBlueprint, options =>
             {
                 options.Items[ActivityBlueprintConverter.ActivityInputPropertiesKey] = inputPropertyDictionary;
@@ -54,7 +55,7 @@ namespace Elsa.Server.Api.Services
 
             foreach (var property in activityDescriptor.InputProperties)
             {
-                var value = await TryEvaluatePropertyAsync(activityWrapper, property.Name, cancellationToken);
+                var value = await GetPropertyValueAsync(workflowBlueprintWrapper.WorkflowBlueprint, activityWrapper, property, cancellationToken);
                 inputProperties.Set(property.Name, value);
             }
 
@@ -67,18 +68,10 @@ namespace Elsa.Server.Api.Services
             return (inputProperties, outputProperties);
         }
 
-        private async Task<object?> TryEvaluatePropertyAsync(IActivityBlueprintWrapper activityWrapper, string propertyName, CancellationToken cancellationToken)
-        {
-            try
-            {
-                return await activityWrapper.EvaluatePropertyValueAsync(propertyName, cancellationToken);
-            }
-            catch
-            {
-                // ignored
-            }
-
-            return null;
-        }
+        private async Task<object?> GetPropertyValueAsync(IWorkflowBlueprint workflowBlueprint, IActivityBlueprintWrapper activityBlueprintWrapper, ActivityInputDescriptor propertyDescriptor, CancellationToken cancellationToken) =>
+            // Ony evaluate designer-critical properties, as they are necessary for proper designer display such as dynamic outcomes. These evaluations must not fail.
+            propertyDescriptor.IsDesignerCritical 
+                ? await activityBlueprintWrapper.EvaluatePropertyValueAsync(propertyDescriptor.Name, cancellationToken) 
+                : workflowBlueprint.GetActivityPropertyRawValue(activityBlueprintWrapper.ActivityBlueprint.Id, propertyDescriptor.Name);
     }
 }

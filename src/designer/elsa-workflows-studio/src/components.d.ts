@@ -108,7 +108,7 @@ export namespace Components {
         "editorHeight": string;
         "expressions": Map<string>;
         "fieldName"?: string;
-        "isDisabled"?: boolean;
+        "isReadOnly"?: boolean;
         "label": string;
         "singleLineMode": boolean;
         "supportedSyntaxes": Array<string>;
@@ -733,7 +733,7 @@ declare namespace LocalJSX {
         "editorHeight"?: string;
         "expressions"?: Map<string>;
         "fieldName"?: string;
-        "isDisabled"?: boolean;
+        "isReadOnly"?: boolean;
         "label"?: string;
         "onExpressionChanged"?: (event: CustomEvent<string>) => void;
         "onSyntaxChanged"?: (event: CustomEvent<string>) => void;
