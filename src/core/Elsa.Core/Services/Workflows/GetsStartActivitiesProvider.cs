@@ -16,13 +16,22 @@ namespace Elsa.Services.Workflows
         /// <returns>A collection of the blueprint's starting activities</returns>
         public IEnumerable<IActivityBlueprint> GetStartActivities(ICompositeActivityBlueprint compositeActivityBlueprint)
         {
+            if (!compositeActivityBlueprint.Activities.Any())
+                return Enumerable.Empty<IActivityBlueprint>();
+
             var activityIdsThatAreNotStartingActivities = GetAllActivityIdsWhichHaveInboundConnections(compositeActivityBlueprint);
 
             var query = from activity in compositeActivityBlueprint.Activities
-                        where !activityIdsThatAreNotStartingActivities.Contains(activity.Id)
-                        select activity;
+                where !activityIdsThatAreNotStartingActivities.Contains(activity.Id)
+                select activity;
 
-            return query;
+            var list = query.ToList();
+
+            if (list.Any())
+                return list;
+
+            var first = compositeActivityBlueprint.Activities.First();
+            return new[] { first };
         }
 
         /// <summary>
@@ -36,7 +45,7 @@ namespace Elsa.Services.Workflows
         /// </remarks>
         /// <param name="compositeActivityBlueprint">A composite activity blueprint</param>
         /// <returns>A lookup of activity IDs which are not starting activities</returns>
-        ILookup<string?,string?> GetAllActivityIdsWhichHaveInboundConnections(ICompositeActivityBlueprint compositeActivityBlueprint)
+        ILookup<string?, string?> GetAllActivityIdsWhichHaveInboundConnections(ICompositeActivityBlueprint compositeActivityBlueprint)
         {
             return compositeActivityBlueprint.Connections
                 .Select(x => x.Target.Activity?.Id)

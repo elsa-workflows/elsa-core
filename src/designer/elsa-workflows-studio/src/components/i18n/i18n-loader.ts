@@ -7,7 +7,7 @@ export async function loadTranslations(language: string, resources: any, default
     fallbackLng: "en",
     resources: resources,
     defaultNS: defaultNamespace || 'default',
-    debug: true
+    debug: false
   });
 
   return instance;
