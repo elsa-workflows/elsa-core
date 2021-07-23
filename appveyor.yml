@@ -48,23 +48,23 @@ install:
 
       dotnet tool install --global dotnet-sonarscanner
 
-before_build:
-  - cmd: >-
-      docker-compose -f docker-compose.yaml up -d mongodb postgres
-
-  - ps: >-
-      if(-Not $env:APPVEYOR_PULL_REQUEST_NUMBER) {
-      & dotnet-sonarscanner begin
-      /k:$env:sonarcloud_project_name
-      /v:AppVeyor_build_$env:APPVEYOR_BUILD_VERSION
-      /o:$env:sonarcloud_org_name
-      /s:$env:APPVEYOR_BUILD_FOLDER\.SonarQube.Analysis.xml
-      /d:sonar.host.url="https://sonarcloud.io"
-      /d:sonar.login=$env:sonarcloud_api_key
-      /d:sonar.cs.xunit.reportsPaths=$env:APPVEYOR_BUILD_FOLDER\**\TestResults\TestResults.xml
-      /d:sonar.cs.opencover.reportsPaths=$env:APPVEYOR_BUILD_FOLDER\**\TestResults\*\coverage.opencover.xml
-      /d:sonar.branch.name=$env:APPVEYOR_REPO_BRANCH
-      }
+#before_build:
+#  - cmd: >-
+#      docker-compose -f docker-compose.yaml up -d mongodb postgres
+#
+#  - ps: >-
+#      if(-Not $env:APPVEYOR_PULL_REQUEST_NUMBER) {
+#      & dotnet-sonarscanner begin
+#      /k:$env:sonarcloud_project_name
+#      /v:AppVeyor_build_$env:APPVEYOR_BUILD_VERSION
+#      /o:$env:sonarcloud_org_name
+#      /s:$env:APPVEYOR_BUILD_FOLDER\.SonarQube.Analysis.xml
+#      /d:sonar.host.url="https://sonarcloud.io"
+#      /d:sonar.login=$env:sonarcloud_api_key
+#      /d:sonar.cs.xunit.reportsPaths=$env:APPVEYOR_BUILD_FOLDER\**\TestResults\TestResults.xml
+#      /d:sonar.cs.opencover.reportsPaths=$env:APPVEYOR_BUILD_FOLDER\**\TestResults\*\coverage.opencover.xml
+#      /d:sonar.branch.name=$env:APPVEYOR_REPO_BRANCH
+#      }
 
 build_script:
   - ps: >-
@@ -80,9 +80,9 @@ build_script:
 
       dotnet build
 
-test_script:
-  - ps: dotnet test --collect:"XPlat Code Coverage" --logger:xunit -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
-  - ps: dotnet test
+#test_script:
+#  - ps: dotnet test --collect:"XPlat Code Coverage" --logger:xunit -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+#  - ps: dotnet test
 
 after_test:
   - ps: >-
