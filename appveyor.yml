@@ -80,9 +80,7 @@ build_script:
 
       dotnet build
 
-# before_test:
-
- test_script:
+test_script:
   - ps: dotnet test --collect:"XPlat Code Coverage" --logger:xunit -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
   - ps: dotnet test
 
