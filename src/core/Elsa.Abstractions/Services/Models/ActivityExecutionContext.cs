@@ -180,7 +180,7 @@ namespace Elsa.Services.Models
         public T GetWorkflowContext<T>() => WorkflowExecutionContext.GetWorkflowContext<T>();
         public IDictionary<string, object?> GetActivityData() => GetActivityData(ActivityId);
         public IDictionary<string, object?> GetActivityData(string activityId) => WorkflowExecutionContext.GetActivityData(activityId);
-        public Task<T?> GetActivityPropertyAsync<TActivity, T>(Expression<Func<TActivity, T>> propertyExpression, CancellationToken cancellationToken = default) where TActivity : IActivity => WorkflowExecutionContext.GetActivityPropertyAsync<TActivity, T>(ActivityId, propertyExpression, cancellationToken);
+        public Task<T?> GetActivityPropertyAsync<TActivity, T>(Expression<Func<TActivity, T>> propertyExpression, CancellationToken cancellationToken = default) where TActivity : IActivity => WorkflowExecutionContext.GetActivityPropertyAsync(ActivityId, propertyExpression, cancellationToken);
         public void Fault(Exception exception) => WorkflowExecutionContext.Fault(exception, ActivityId, Input, Resuming);
 
         private ICompositeActivityBlueprint GetContainerActivity()

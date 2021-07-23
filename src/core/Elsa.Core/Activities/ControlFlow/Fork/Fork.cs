@@ -16,7 +16,8 @@ namespace Elsa.Activities.ControlFlow
             Hint = "Enter one or more branch names.",
             UIHint = ActivityInputUIHints.MultiText,
             DefaultSyntax = SyntaxNames.Json,
-            SupportedSyntaxes = new[] { SyntaxNames.Json }
+            SupportedSyntaxes = new[] { SyntaxNames.Json },
+            IsDesignerCritical = true
         )]
         public ISet<string> Branches { get; set; } = new HashSet<string>();
 

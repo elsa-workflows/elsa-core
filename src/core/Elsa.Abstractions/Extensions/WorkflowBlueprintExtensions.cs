@@ -12,7 +12,7 @@ namespace Elsa
 {
     public static class WorkflowBlueprintExtensions
     {
-        public static ValueTask<T?> GetActivityPropertyValue<TActivity, T>(
+        public static ValueTask<T?> EvaluateActivityPropertyValue<TActivity, T>(
             this IWorkflowBlueprint workflowBlueprint,
             string activityId,
             Expression<Func<TActivity, T>> propertyExpression,
@@ -21,21 +21,21 @@ namespace Elsa
         {
             var expression = (MemberExpression) propertyExpression.Body;
             string propertyName = expression.Member.Name;
-            return GetActivityPropertyValue<T>(workflowBlueprint, activityId, propertyName, activityExecutionContext, cancellationToken);
+            return EvaluateActivityPropertyValue<T>(workflowBlueprint, activityId, propertyName, activityExecutionContext, cancellationToken);
         }
 
-        public static async ValueTask<T?> GetActivityPropertyValue<T>(
+        public static async ValueTask<T?> EvaluateActivityPropertyValue<T>(
             this IWorkflowBlueprint workflowBlueprint,
             string activityId,
             string propertyName,
             ActivityExecutionContext activityExecutionContext,
             CancellationToken cancellationToken)
         {
-            var value = await workflowBlueprint.GetActivityPropertyValue(activityId, propertyName, activityExecutionContext, cancellationToken);
+            var value = await workflowBlueprint.EvaluateActivityPropertyValue(activityId, propertyName, activityExecutionContext, cancellationToken);
             return value == null ? default : (T) value;
         }
 
-        public static async ValueTask<object?> GetActivityPropertyValue(
+        public static async ValueTask<object?> EvaluateActivityPropertyValue(
             this IWorkflowBlueprint workflowBlueprint,
             string activityId,
             string propertyName,
@@ -57,6 +57,14 @@ namespace Elsa
                 value = propertyDescriptor?.DefaultValue;
             }
 
+            return value;
+        }
+        
+        public static object? GetActivityPropertyRawValue(this IWorkflowBlueprint workflowBlueprint, string activityId, string propertyName)
+        {
+            var provider = workflowBlueprint.ActivityPropertyProviders.GetProvider(activityId, propertyName);
+            var value = provider?.RawValue;
+            
             return value;
         }
 
