@@ -2,7 +2,7 @@ import {Component, Event, EventEmitter, h, Host, Method, Prop, State, Watch} fro
 import {v4 as uuid} from 'uuid';
 import {addConnection, findActivity, getChildActivities, getInboundConnections, getOutboundConnections, Map, removeActivity, removeConnection} from '../../../../utils/utils';
 import {ActivityDescriptor, ActivityDesignDisplayContext, ActivityModel, ActivityTraits, ConnectionModel, EventTypes, WorkflowModel, WorkflowPersistenceBehavior,} from '../../../../models';
-import {eventBus} from '../../../../services/event-bus';
+import {eventBus} from '../../../../services';
 import * as d3 from 'd3';
 import dagreD3 from 'dagre-d3';
 import state from '../../../../utils/store';
@@ -125,15 +125,20 @@ export class ElsaWorkflowDesigner {
 
     this.activityDisplayContexts = displayContexts;
   }
-  
-  getActivityDisplayContext(activityModel: ActivityModel) : ActivityDesignDisplayContext{
+
+  getActivityDisplayContext(activityModel: ActivityModel): ActivityDesignDisplayContext {
     const activityDescriptors: Array<ActivityDescriptor> = state.activityDescriptors;
-    const descriptor = activityDescriptors.find(x => x.type == activityModel.type);
-    const description = activityModel.description;
+    let descriptor = activityDescriptors.find(x => x.type == activityModel.type);
+    let descriptorExists = !!descriptor;
+    
+    if(!descriptorExists)
+      descriptor = this.createNotFoundActivityDescriptor(activityModel);
+    
+    const description = descriptorExists ? activityModel.description : `(Not Found) ${descriptorExists}`;
     const bodyText = description && description.length > 0 ? description : undefined;
     const bodyDisplay = bodyText ? `<p>${bodyText}</p>` : undefined;
     const color = (descriptor.traits &= ActivityTraits.Trigger) == ActivityTraits.Trigger ? 'rose' : 'sky';
-    const displayName = activityModel.displayName;
+    const displayName = descriptorExists ? activityModel.displayName : `(Not Found) ${activityModel.displayName}`;
 
     const displayContext: ActivityDesignDisplayContext = {
       activityModel: activityModel,
@@ -146,6 +151,20 @@ export class ElsaWorkflowDesigner {
 
     eventBus.emit(EventTypes.ActivityDesignDisplaying, this, displayContext);
     return displayContext;
+  }
+
+  createNotFoundActivityDescriptor(activityModel: ActivityModel): ActivityDescriptor {
+    return {
+      outcomes: ['Done'],
+      inputProperties: [],
+      type: `(Not Found) ${activityModel.type}`,
+      outputProperties: [],
+      displayName: `(Not Found) ${activityModel.displayName || activityModel.name || activityModel.type}`,
+      traits: ActivityTraits.Action,
+      description: `(Not Found) ${activityModel.description}`,
+      category: 'Not Found',
+      browsable: false
+    };
   }
 
   showActivityEditorInternal(activity: ActivityModel, animate: boolean) {
@@ -358,7 +377,7 @@ export class ElsaWorkflowDesigner {
   }
 
   applyInitialZoom() {
-    const { width: widthSvg }: { width: number } = this.svgD3Selected.node().getBBox();
+    const {width: widthSvg}: { width: number } = this.svgD3Selected.node().getBBox();
     const middleScreen: number = this.svgD3Selected.node().clientWidth / 2;
     const nodeStartTransform: string = d3.select('.node.start').attr('transform');
     const nodeStartTranslateX: number = parseInt(nodeStartTransform.replace(/translate|((\)|\())/g, '').split(',')[0]);
@@ -369,10 +388,10 @@ export class ElsaWorkflowDesigner {
 
     this.zoom.scaleTo(this.svgD3Selected, zoomParamsScale);
     this.zoom.translateTo(this.svgD3Selected, zoomParamsX, zoomParamsY);
-    
+
     this.svgD3Selected
-      .call(this.zoom.transform, d3.zoomIdentity.scale(zoomParamsScale)
-      .translate(zoomParamsX, zoomParamsY));
+    .call(this.zoom.transform, d3.zoomIdentity.scale(zoomParamsScale)
+    .translate(zoomParamsX, zoomParamsY));
 
     this.zoomParams.initialZoom = false;
   }
