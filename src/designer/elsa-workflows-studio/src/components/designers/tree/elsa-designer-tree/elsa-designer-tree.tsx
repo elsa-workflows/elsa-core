@@ -130,10 +130,10 @@ export class ElsaWorkflowDesigner {
     const activityDescriptors: Array<ActivityDescriptor> = state.activityDescriptors;
     let descriptor = activityDescriptors.find(x => x.type == activityModel.type);
     let descriptorExists = !!descriptor;
-    
-    if(!descriptorExists)
+
+    if (!descriptorExists)
       descriptor = this.createNotFoundActivityDescriptor(activityModel);
-    
+
     const description = descriptorExists ? activityModel.description : `(Not Found) ${descriptorExists}`;
     const bodyText = description && description.length > 0 ? description : undefined;
     const bodyDisplay = bodyText ? `<p>${bodyText}</p>` : undefined;
@@ -478,7 +478,7 @@ export class ElsaWorkflowDesigner {
       this.updateActivity(activityModel);
     }
   };
-  
+
   tryRerenderTree(waitTime?: number, attempt?: number) {
     const maxTries = 3;
 
@@ -639,6 +639,7 @@ export class ElsaWorkflowDesigner {
     const selectedColor = !!this.activityBorderColor ? activityBorderColor : 'blue';
     const cssClass = !!this.selectedActivities[activity.activityId] ? `elsa-border-${selectedColor}-600` : `elsa-border-${activityBorderColor}-200 hover:elsa-border-${selectedColor}-600`;
     const displayName = displayContext.displayName || activity.displayName;
+    const typeName = activity.type;
 
     return `<div id=${`activity-${activity.activityId}`} 
     class="activity elsa-border-2 elsa-border-solid elsa-rounded elsa-bg-white elsa-text-left elsa-text-black elsa-text-lg elsa-select-none elsa-max-w-md elsa-shadow-sm elsa-relative ${cssClass}">
@@ -649,6 +650,7 @@ export class ElsaWorkflowDesigner {
           </div>
           <div class="elsa-flex-1 elsa-font-medium elsa-leading-8 elsa-overflow-hidden">
             <p class="elsa-overflow-ellipsis">${displayName}</p>
+            ${typeName !== displayName ? `<p class="elsa-text-gray-400 elsa-text-sm">${typeName}</p>` : ''}
           </div>
           <div class="context-menu-button-container">
             ${activityContextMenuButton}
