@@ -43,6 +43,7 @@ export namespace Components {
         "activityBorderColor"?: (activity: ActivityModel) => string;
         "activityContextMenu"?: ActivityContextMenuState;
         "activityContextMenuButton"?: (activity: ActivityModel) => string;
+        "enableMultipleConnectionsFromSingleSource": boolean;
         "layoutDirection": LayoutDirection;
         "mode": WorkflowDesignerMode;
         "model": WorkflowModel;
@@ -666,6 +667,7 @@ declare namespace LocalJSX {
         "activityBorderColor"?: (activity: ActivityModel) => string;
         "activityContextMenu"?: ActivityContextMenuState;
         "activityContextMenuButton"?: (activity: ActivityModel) => string;
+        "enableMultipleConnectionsFromSingleSource"?: boolean;
         "layoutDirection"?: LayoutDirection;
         "mode"?: WorkflowDesignerMode;
         "model"?: WorkflowModel;

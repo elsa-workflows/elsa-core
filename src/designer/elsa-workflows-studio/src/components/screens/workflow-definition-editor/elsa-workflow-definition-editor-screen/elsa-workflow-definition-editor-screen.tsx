@@ -390,6 +390,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
                             activityContextMenuButton={activityContextMenuButton}
                             onActivityContextMenuButtonClicked={e => this.onActivityContextMenuButtonClicked(e)}
                             activityContextMenu={this.activityContextMenuState}
+                            enableMultipleConnectionsFromSingleSource={false}
                             class="elsa-flex-1"
                             ref={el => this.designer = el}/>
         {this.renderWorkflowSettingsButton()}

@@ -23,6 +23,7 @@ export class ElsaWorkflowDesigner {
   @Prop() activityContextMenu?: ActivityContextMenuState;
   @Prop() mode: WorkflowDesignerMode = WorkflowDesignerMode.Edit;
   @Prop() layoutDirection: LayoutDirection = LayoutDirection.Vertical;
+  @Prop({attribute: 'enable-multiple-connections'}) enableMultipleConnectionsFromSingleSource: boolean;
   @Event({eventName: 'workflow-changed', bubbles: true, composed: true, cancelable: true}) workflowChanged: EventEmitter<WorkflowModel>;
   @Event() activitySelected: EventEmitter<ActivityModel>;
   @Event() activityDeselected: EventEmitter<ActivityModel>;
@@ -337,8 +338,13 @@ export class ElsaWorkflowDesigner {
 
   addConnection(sourceActivityId: string, targetActivityId: string, outcome: string) {
     const workflowModel = {...this.workflowModel};
-    const connection: ConnectionModel = {sourceId: sourceActivityId, targetId: targetActivityId, outcome: outcome};
-    workflowModel.connections.push(connection);
+    const newConnection: ConnectionModel = {sourceId: sourceActivityId, targetId: targetActivityId, outcome: outcome};
+    let connections = workflowModel.connections;
+    
+    if(!this.enableMultipleConnectionsFromSingleSource)
+      connections = [...workflowModel.connections.filter(x => !(x.sourceId === sourceActivityId && x.outcome === outcome))];
+    
+    workflowModel.connections = [...connections, newConnection];
     this.updateWorkflowModel(workflowModel);
     this.parentActivityId = null;
     this.parentActivityOutcome = null;
