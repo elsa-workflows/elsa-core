@@ -491,7 +491,7 @@ export class ElsaWorkflowDesigner {
         console.warn(`Attempt ${attempt + 1} failed while trying to render tree. Retrying ${maxTries - attempt + 1} more times.`)
 
         if (attempt < maxTries)
-          this.tryRerenderTree(waitTime, attempt + 1);
+          this.tryRerenderTree(waitTime * attempt, attempt + 1);
       }
     }, waitTime);
   }
