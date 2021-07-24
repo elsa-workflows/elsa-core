@@ -24,6 +24,10 @@ namespace Elsa.Scripting.JavaScript.Handlers
             engine.SetValue(
                 "instantFromDateTimeUtc",
                 (Func<DateTime, Instant>) Instant.FromDateTimeUtc);
+            
+            engine.SetValue(
+                "instantFromUtc",
+                (Func<int, int, int, int, int, int, Instant>) Instant.FromUtc);
 
             engine.SetValue(
                 "currentInstant",
@@ -55,12 +59,12 @@ namespace Elsa.Scripting.JavaScript.Handlers
             );
 
             engine.SetValue(
-                "plus",
+                "addDurationTo",
                 (Func<Instant, Duration, Instant>) ((instant, duration) => instant.Plus(duration))
             );
 
             engine.SetValue(
-                "minus",
+                "subtractDurationFrom",
                 (Func<Instant, Duration, Instant>) ((instant, duration) => instant.Minus(duration))
             );
 
@@ -86,7 +90,7 @@ namespace Elsa.Scripting.JavaScript.Handlers
 
             engine.SetValue(
                 "formatInstant",
-                (Func<Instant, string, CultureInfo, string>) ((instant, format, cultureInfo) =>
+                (Func<Instant, string, CultureInfo?, string>) ((instant, format, cultureInfo) =>
                     instant.ToString(format, cultureInfo ?? CultureInfo.InvariantCulture))
             );
 
@@ -99,18 +103,30 @@ namespace Elsa.Scripting.JavaScript.Handlers
                 "instantFromLocalDate",
                 (Func<LocalDate, Instant>) (value => value.AtStartOfDayInZone(DateTimeZone.Utc).ToInstant())
             );
+            
+            engine.SetValue(
+                "durationBetween",
+                (Func<Instant, Instant, Duration>) ((a, b) => a - b)
+            );
+            
+            engine.SetValue(
+                "periodFromNow",
+                (Func<Instant, Period>) GetPeriodFromNow
+            );
 
             return Task.CompletedTask;
         }
 
-        private LocalDateTime GetStartOfMonth(Instant instant)
+        private LocalDateTime GetStartOfMonth(Instant instant) => GetStartOfMonth(instant.InUtc().LocalDateTime);
+        private LocalDateTime GetStartOfMonth(LocalDateTime localDateTime) => localDateTime.With(DateAdjusters.StartOfMonth);
+        
+        private Period GetPeriodFromNow(Instant pastInstant)
         {
-            return GetStartOfMonth(instant.InUtc().LocalDateTime);
-        }
-
-        private LocalDateTime GetStartOfMonth(LocalDateTime localDateTime)
-        {
-            return localDateTime.With(DateAdjusters.StartOfMonth);
+            var now = _clock.GetCurrentInstant();
+            var today = now.InUtc().Date;
+            var pastDate = pastInstant.InUtc().Date;
+            var period = Period.Between(pastDate, today);
+            return period;
         }
     }
 }
