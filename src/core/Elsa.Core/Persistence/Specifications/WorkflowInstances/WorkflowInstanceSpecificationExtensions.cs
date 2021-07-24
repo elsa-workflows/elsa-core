@@ -7,6 +7,7 @@ namespace Elsa.Persistence.Specifications.WorkflowInstances
     {
         public static ISpecification<WorkflowInstance> WithWorkflowDefinition(this ISpecification<WorkflowInstance> specification, string workflowDefinitionId) => specification.And(new WorkflowDefinitionIdSpecification(workflowDefinitionId));
         public static ISpecification<WorkflowInstance> WithWorkflowName(this ISpecification<WorkflowInstance> specification, string name) => specification.And(new WorkflowInstanceNameMatchSpecification(name));
+        public static ISpecification<WorkflowInstance> WithCorrelationId(this ISpecification<WorkflowInstance> specification, string correlationId) => specification.And(new CorrelationIdSpecification<WorkflowInstance>(correlationId));
         public static ISpecification<WorkflowInstance> WithContextId(this ISpecification<WorkflowInstance> specification, string contextType, string contextId) => specification.And(new WorkflowInstanceContextIdMatchSpecification(contextType, contextId));
         public static ISpecification<WorkflowInstance> WithContextId(this ISpecification<WorkflowInstance> specification, Type contextType, string contextId) => specification.And(new WorkflowInstanceContextIdMatchSpecification(contextType, contextId));
         public static ISpecification<WorkflowInstance> WithContextId<TContextType>(this ISpecification<WorkflowInstance> specification, string contextId) => specification.And(new WorkflowInstanceContextIdMatchSpecification(typeof(TContextType), contextId));
