@@ -1,7 +1,9 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
+using Elsa.Exceptions;
 using Elsa.Metadata;
 using Elsa.Models;
 using Elsa.Server.Api.Endpoints.WorkflowRegistry;
@@ -68,10 +70,22 @@ namespace Elsa.Server.Api.Services
             return (inputProperties, outputProperties);
         }
 
-        private async Task<object?> GetPropertyValueAsync(IWorkflowBlueprint workflowBlueprint, IActivityBlueprintWrapper activityBlueprintWrapper, ActivityInputDescriptor propertyDescriptor, CancellationToken cancellationToken) =>
-            // Ony evaluate designer-critical properties, as they are necessary for proper designer display such as dynamic outcomes. These evaluations must not fail.
-            propertyDescriptor.IsDesignerCritical 
-                ? await activityBlueprintWrapper.EvaluatePropertyValueAsync(propertyDescriptor.Name, cancellationToken) 
-                : workflowBlueprint.GetActivityPropertyRawValue(activityBlueprintWrapper.ActivityBlueprint.Id, propertyDescriptor.Name);
+        private static async Task<object?> GetPropertyValueAsync(IWorkflowBlueprint workflowBlueprint, IActivityBlueprintWrapper activityBlueprintWrapper, ActivityInputDescriptor propertyDescriptor, CancellationToken cancellationToken)
+        {
+            if (propertyDescriptor.IsDesignerCritical)
+            {
+                try
+                {
+                    return await activityBlueprintWrapper.EvaluatePropertyValueAsync(propertyDescriptor.Name, cancellationToken);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw new WorkflowException("Failed to evaluate a designer-critical property value. Please make sure that the value does not rely on external context.", e);
+                }
+            }
+
+            return workflowBlueprint.GetActivityPropertyRawValue(activityBlueprintWrapper.ActivityBlueprint.Id, propertyDescriptor.Name);
+        }
     }
 }

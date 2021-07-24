@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Models;
 using Elsa.Server.Api.ActionFilters;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -44,12 +45,12 @@ namespace Elsa.Server.Api.Endpoints.Workflows
 
             if (request.Dispatch)
             {
-                var result = await _workflowLaunchpad.CollectAndDispatchWorkflowsAsync(context, request.Input, cancellationToken).ToList();
+                var result = await _workflowLaunchpad.CollectAndDispatchWorkflowsAsync(context, new WorkflowInput(request.Input), cancellationToken).ToList();
                 triggeredWorkflows = result.Select(x => new TriggeredWorkflowModel(x.WorkflowInstanceId, x.ActivityId)).ToList();
             }
             else
             {
-                var result = await _workflowLaunchpad.CollectAndExecuteWorkflowsAsync(context, request.Input, cancellationToken).ToList();
+                var result = await _workflowLaunchpad.CollectAndExecuteWorkflowsAsync(context, new WorkflowInput(request.Input), cancellationToken).ToList();
                 triggeredWorkflows = result.Select(x => new TriggeredWorkflowModel(x.WorkflowInstanceId, x.ActivityId)).ToList();
             }
             

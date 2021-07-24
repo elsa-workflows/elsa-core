@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Models;
 
 namespace Elsa.Server.Api.Endpoints.Workflows
 {
@@ -41,7 +42,7 @@ namespace Elsa.Server.Api.Endpoints.Workflows
             if (startableWorkflow == null)
                 return NotFound();
 
-            var result = await _workflowLaunchpad.DispatchStartableWorkflowAsync(startableWorkflow, request.Input, cancellationToken);
+            var result = await _workflowLaunchpad.DispatchStartableWorkflowAsync(startableWorkflow, new WorkflowInput(request.Input), cancellationToken);
             return Ok(new DispatchWorkflowDefinitionResponseModel(result.WorkflowInstanceId, result.ActivityId));
         }
     }

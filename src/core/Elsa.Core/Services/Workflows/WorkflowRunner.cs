@@ -102,8 +102,11 @@ namespace Elsa.Services.Workflows
 
                     if (!runWorkflowResult.Executed)
                     {
-                        _logger.LogDebug("Workflow {WorkflowInstanceId} cannot begin from an idle state (perhaps it needs a specific input)", workflowInstance.Id);
-                        return runWorkflowResult;
+                        if (workflowInstance.WorkflowStatus != WorkflowStatus.Faulted)
+                        {
+                            _logger.LogDebug("Workflow {WorkflowInstanceId} cannot begin from an idle state (perhaps it needs a specific input)", workflowInstance.Id);
+                            return runWorkflowResult;
+                        }
                     }
 
                     break;
@@ -140,7 +143,6 @@ namespace Elsa.Services.Workflows
 
             if (statusEvent != null)
             {
-                _logger.LogTrace("Publishing a status event of type {EventType} for workflow {WorkflowInstanceId}", statusEvent.GetType().Name, workflowInstance.Id);
                 await _mediator.Publish(statusEvent, cancellationToken);
             }
 
@@ -153,13 +155,23 @@ namespace Elsa.Services.Workflows
             if (activity == null)
                 activity = _startingActivitiesProvider.GetStartActivities(workflowExecutionContext.WorkflowBlueprint).FirstOrDefault() ?? workflowExecutionContext.WorkflowBlueprint.Activities.First();
 
-            if (!await CanExecuteAsync(workflowExecutionContext, activity, false, cancellationToken))
-                return new RunWorkflowResult(workflowExecutionContext.WorkflowInstance, activity.Id, false);
+            try
+            {
+                if (!await CanExecuteAsync(workflowExecutionContext, activity, false, cancellationToken))
+                    return new RunWorkflowResult(workflowExecutionContext.WorkflowInstance, activity.Id, false);
+                
+                workflowExecutionContext.Begin();
+                workflowExecutionContext.ScheduleActivity(activity.Id);
+                await RunAsync(workflowExecutionContext, Execute, cancellationToken);
+                return new RunWorkflowResult(workflowExecutionContext.WorkflowInstance, activity.Id, true);
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning(e, "Failed to run workflow {WorkflowInstanceId}", workflowExecutionContext.WorkflowInstance.Id);
+                workflowExecutionContext.Fault(e, null, null, false);
+            }
 
-            workflowExecutionContext.Begin();
-            workflowExecutionContext.ScheduleActivity(activity.Id);
-            await RunAsync(workflowExecutionContext, Execute, cancellationToken);
-            return new RunWorkflowResult(workflowExecutionContext.WorkflowInstance, activity.Id, true);
+            return new RunWorkflowResult(workflowExecutionContext.WorkflowInstance, activity.Id, false);
         }
 
         private async Task RunWorkflowAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
