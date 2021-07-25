@@ -23,17 +23,16 @@ export class ElsaActivityEditorModal {
   form: HTMLFormElement;
   formContext: FormContext;
   renderProps: any;
+  propertyElements: Array<any> = [];
 
   // Force a new key every time we show the editor to make sure Stencil creates new components.
   // This prevents the issue where the designer has e.g. one activity where the user edits the properties, cancels out, then opens the editor again, seeing the entered value still there.
   timestamp: Date = new Date();
 
-  async componentWillLoad() {
-    this.i18next = await loadTranslations(this.culture, resources);
-  }
-
-  componentDidLoad() {
+  connectedCallback() {
     const t = this.t;
+
+    this.propertyElements = [];
 
     eventBus.on(EventTypes.ShowActivityEditor, async (activity: ActivityModel, animate: boolean) => {
       this.activityModel = JSON.parse(JSON.stringify(activity));
@@ -44,6 +43,14 @@ export class ElsaActivityEditorModal {
       this.timestamp = new Date();
       await this.dialog.show(animate);
     });
+  }
+
+  disconnectedCallback() {
+    eventBus.off(EventTypes.ShowActivityEditor);
+  }
+
+  async componentWillLoad() {
+    this.i18next = await loadTranslations(this.culture, resources);
   }
 
   t = (key: string) => this.i18next.t(key);
@@ -104,6 +111,18 @@ export class ElsaActivityEditorModal {
       tabs,
       selectedTab,
       activityModel
+    }
+
+    this.propertyElements = [];
+  }
+
+  componentDidRender() {
+    debugger;
+    for (const item of this.propertyElements) {
+      const container: HTMLDivElement = item.host;
+      const input: HTMLElement = item.input;
+
+      container.append(input);
     }
   }
 
@@ -269,7 +288,16 @@ export class ElsaActivityEditorModal {
 
   renderPropertyEditor(activity: ActivityModel, property: ActivityPropertyDescriptor) {
     const key = `activity-property-input:${activity.activityId}:${property.name}`;
-    return <div key={key} class="sm:elsa-col-span-6">{propertyDisplayManager.display(activity, property)}</div>;
+    const display = propertyDisplayManager.display(activity, property);
+    const html = typeof (display) == 'string' ? display as string : null;
+    const element = !!display.tagName ? display as HTMLElement : null;
+    const jsx = !html && !element ? display : null;
+
+    return <div key={key} class="sm:elsa-col-span-6" innerHTML={html} ref={el => {
+      if (!!element && !!el) {
+        this.propertyElements.push({host: el, input: element});
+      }
+    }}>{jsx}</div>;
   }
 
   getHiddenClass(tab: string) {

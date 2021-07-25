@@ -37,12 +37,9 @@
         // Replace icon used for 'ReadLine' activity.
         elsaStudio.activityIconProvider.register(
             'ReadLine',
-            `<span class="elsa-rounded-lg elsa-inline-flex elsa-p-3 elsa-bg-green-50 elsa-text-green-700 elsa-ring-4 elsa-ring-white">
+            `<span class="elsa-rounded-lg elsa-inline-flex elsa-p-3 elsa-bg-blue-50 elsa-text-blue-700 elsa-ring-4 elsa-ring-white">
               <svg class="elsa-h-6 elsa-w-6" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                <path stroke="none" d="M0 0h24v24H0z"/>
-                <path d="M4 12v-3a3 3 0 0 1 3 -3h13m-3 -3l3 3l-3 3"/>
-                <path d="M20 12v3a3 3 0 0 1 -3 3h-13m3 3l-3-3l3-3"/>
-                <path d="M11 11l1 -1v4"/>
+                <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
               </svg>
             </span>`);
     }
@@ -82,12 +79,55 @@
             });
         });
     }
-    
+
     // Custom activity property type input control driver:
-    function CustomPropertyFieldDriver(elsaStudio){
-        this.display = (activity, property) => {
-            const prop = elsaStudio.getOrCreateProperty(activity, property.name);
-            return `<input type="text" className="disabled:elsa-opacity-50 disabled:elsa-cursor-not-allowed focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300"`;
+    function CustomPropertyFieldDriver(elsaStudio) {
+        
+        // Get convenience methods.
+        const {getOrCreateProperty, htmlToElement} = elsaStudio;
+
+        this.display = (activity, propertyDescriptor) => {
+
+            // Get the property model.
+            const propertyModel = getOrCreateProperty(activity, propertyDescriptor.name);
+
+            // Get the configured default syntax name.
+            const defaultSyntax = propertyDescriptor.defaultSyntax || 'Literal';
+
+            // Get the current property value for the default syntax.
+            const currentValue = propertyModel.expressions[defaultSyntax] || '';
+
+            // Create a property editor element (for displaying label, hint and syntax toggle).
+            // This will wrap our custom control.
+            const propertyEditor = document.createElement('elsa-property-editor');
+
+            // Our custom input element control. Can be anything you want.
+            // Using HTML string to easily construct an actual element object.
+            // Better yet would be to implement a component with Stencil, Angular or React if you;re using any of these frameworks. 
+            const inputHtml =
+                `<input type="text" 
+                   class="disabled:elsa-opacity-50 disabled:elsa-cursor-not-allowed focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300"
+                   value="${currentValue}"
+                />`;
+
+            // Create an actual input element from the HTML string.
+            const inputElement = htmlToElement(inputHtml);
+
+            // Add the custom input control element to the property editor as a child.
+            propertyEditor.append(inputElement);
+
+            // Initialize the property editor.
+            propertyEditor.propertyDescriptor = propertyDescriptor;
+            propertyEditor.propertyModel = propertyModel;
+
+            // Setup change handler for custom control that updates the property model.
+            inputElement.addEventListener('change', (e) => {
+                const input = e.currentTarget;
+                propertyModel.expressions[defaultSyntax] = input.value;
+            });
+
+            // return the created custom control.
+            return propertyEditor;
         };
     }
 
@@ -96,26 +136,26 @@
         const {propertyDisplayManager} = elsaStudio;
 
         // Register custom driver.
-        propertyDisplayManager.addDriver('my-custom-property-type', CustomPropertyFieldDriver);
+        propertyDisplayManager.addDriver('my-custom-property-type', () => new CustomPropertyFieldDriver(elsaStudio));
     }
 
     // Get a handle to the elsa-studio-root element.
     const elsaStudioRoot = document.querySelector('elsa-studio-root');
 
     // Configure Elsa.
-    (async () => {
-        // Wait until the component is available.
-        await customElements.whenDefined('elsa-studio-root');
-
-        // Install plugins.
-        await elsaStudioRoot.addPlugins([CustomReadLinePlugin, CustomBulkActionsPlugin, CustomHttpMiddlewarePlugin, CustomPropertyFieldPlugin]);
-    })();
+    // (async () => {
+    //     // Wait until the component is available.
+    //     await customElements.whenDefined('elsa-studio-root');
+    //
+    //     // Install plugins.
+    //     await elsaStudioRoot.addPlugins([CustomReadLinePlugin, CustomBulkActionsPlugin, CustomHttpMiddlewarePlugin, CustomPropertyFieldPlugin]);
+    // })();
 
     // Alternatively, configure Elsa during the 'initializing' event.
-    // elsaStudioRoot.addEventListener('initializing', e => {
-    //     const elsa = e.detail;
-    //     elsa.pluginManager.registerPlugins([CustomReadLinePlugin, CustomBulkActionsPlugin, CustomHttpMiddlewarePlugin]);
-    // });
+    elsaStudioRoot.addEventListener('initializing', e => {
+        const elsa = e.detail;
+        elsa.pluginManager.registerPlugins([CustomReadLinePlugin, CustomBulkActionsPlugin, CustomHttpMiddlewarePlugin, CustomPropertyFieldPlugin]);
+    });
 </script>
 
 </body>

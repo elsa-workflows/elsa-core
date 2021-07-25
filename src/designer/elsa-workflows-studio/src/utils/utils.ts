@@ -88,7 +88,7 @@ export function findActivity(workflowModel: WorkflowModel, activityId: string) {
   return workflowModel.activities.find(x => x.activityId === activityId);
 }
 
-export function addConnection(workflowModel: WorkflowModel, connection: ConnectionModel){
+export function addConnection(workflowModel: WorkflowModel, connection: ConnectionModel) {
   return {
     ...workflowModel,
     connections: [...workflowModel.connections, connection]
@@ -181,6 +181,13 @@ export function mapSyntaxToLanguage(syntax: string): any {
     default:
       return 'plaintext';
   }
+}
+
+export function htmlToElement(html: string): Element {
+  const template = document.createElement('template');
+  html = html.trim(); // Never return a text node of whitespace as the result.
+  template.innerHTML = html;
+  return template.content.firstElementChild;
 }
 
 export function durationToString(duration: Duration) {

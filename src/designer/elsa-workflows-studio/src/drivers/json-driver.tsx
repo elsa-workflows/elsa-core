@@ -1,4 +1,4 @@
-﻿import {PropertyDisplayDriver} from "../services/property-display-driver";
+﻿import {PropertyDisplayDriver} from "../services";
 import {ActivityModel, ActivityPropertyDescriptor} from "../models";
 import {h} from "@stencil/core";
 import {getOrCreateProperty} from "../utils/utils";

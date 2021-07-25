@@ -16,5 +16,6 @@ export interface ElsaStudio {
   activityIconProvider: ActivityIconProvider;
   confirmDialogService: ConfirmDialogService;
   toastNotificationService: ToastNotificationService;
-  getOrCreateProperty: (activity: ActivityModel, name: string, defaultExpression?: () => string, defaultSyntax?: () => string) => ActivityDefinitionProperty
+  getOrCreateProperty: (activity: ActivityModel, name: string, defaultExpression?: () => string, defaultSyntax?: () => string) => ActivityDefinitionProperty;
+  htmlToElement: (html: string) => Element;
 }

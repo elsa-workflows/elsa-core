@@ -5,7 +5,7 @@ import {eventBus, pluginManager, activityIconProvider, confirmDialogService, toa
 import {AxiosInstance} from "axios";
 import {EventTypes} from "../../../../models";
 import {ToastNotificationOptions} from "../../../shared/elsa-toast-notification/elsa-toast-notification";
-import {getOrCreateProperty} from "../../../../utils/utils";
+import {getOrCreateProperty, htmlToElement} from "../../../../utils/utils";
 
 @Component({
   tag: 'elsa-studio-root',
@@ -62,7 +62,8 @@ export class ElsaStudioRoot {
       toastNotificationService,
       elsaClientFactory,
       httpClientFactory,
-      getOrCreateProperty: getOrCreateProperty 
+      getOrCreateProperty: getOrCreateProperty,
+      htmlToElement
     };
 
     this.initializing.emit(elsaStudio);
