@@ -1,6 +1,6 @@
-import {Component, Event, EventEmitter, h, Method, Prop} from '@stencil/core';
+import {Component, Event, EventEmitter, h, Listen, Method, Prop} from '@stencil/core';
 import Tunnel, {DashboardState} from "../../../../data/dashboard";
-import {ElsaStudio} from "../../../../models";
+import {ElsaStudio, WorkflowModel} from "../../../../models";
 import {eventBus, pluginManager, activityIconProvider, confirmDialogService, toastNotificationService, createElsaClient, createHttpClient, ElsaClient, propertyDisplayManager} from "../../../../services";
 import {AxiosInstance} from "axios";
 import {EventTypes} from "../../../../models";
@@ -30,6 +30,11 @@ export class ElsaStudioRoot {
   @Method()
   async addPlugin(pluginType: any) {
     pluginManager.registerPlugin(pluginType);
+  }
+
+  @Listen('workflow-changed')
+  workflowChangedHandler(event: CustomEvent<WorkflowModel>) {
+    eventBus.emit(EventTypes.WorkflowModelChanged, this, event.detail);
   }
 
   connectedCallback() {

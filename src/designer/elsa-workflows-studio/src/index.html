@@ -83,6 +83,14 @@
             console.log('workflow-imported');
         });
     }
+    
+    function WorkflowModelChangedListenerPlugin(elsaStudio){
+        const {eventBus} = elsaStudio;
+        
+        eventBus.on('workflow-model-changed', e => {
+            console.log(`Workflow model changed. New model: ${e}`)
+        });
+    }
 
     // Custom activity property type input control driver:
     function CustomPropertyFieldDriver(elsaStudio) {
@@ -158,8 +166,13 @@
     // Alternatively, configure Elsa during the 'initializing' event.
     elsaStudioRoot.addEventListener('initializing', e => {
         const elsa = e.detail;
-        elsa.pluginManager.registerPlugins([CustomReadLinePlugin, CustomBulkActionsPlugin, CustomHttpMiddlewarePlugin, CustomPropertyFieldPlugin]);
+        elsa.pluginManager.registerPlugins([CustomReadLinePlugin, CustomBulkActionsPlugin, CustomHttpMiddlewarePlugin, CustomPropertyFieldPlugin, WorkflowModelChangedListenerPlugin]);
     });
+    
+    // Some components publish DOM events that we can handle directly:
+    elsaStudioRoot.addEventListener('workflow-changed', e => {
+        console.log('Workflow model changed! New model: ${e.detail}');
+    })
 </script>
 
 </body>

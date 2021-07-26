@@ -29,10 +29,7 @@ export class ElsaActivityEditorModal {
   timestamp: Date = new Date();
 
   connectedCallback() {
-    const t = this.t;
-
     this.propertyElements = [];
-
     eventBus.on(EventTypes.ShowActivityEditor, this.onShowActivityEditor);
   }
 
@@ -59,21 +56,21 @@ export class ElsaActivityEditorModal {
     await this.dialog.hide(true);
   }
 
-  async onSubmit(e: Event) {
+  onSubmit = async (e: Event) => {
     e.preventDefault();
     const form: any = e.target;
     const formData = new FormData(form);
     this.updateActivity(formData);
     eventBus.emit(EventTypes.UpdateActivity, this, this.activityModel);
     await this.dialog.hide(true);
-  }
+  };
 
-  onTabClick(e: Event, tab: string) {
+  onTabClick = (e: Event, tab: string) => {
     e.preventDefault();
     this.selectedTab = tab;
-  }
+  };
 
-  async onShowActivityEditor(activity: ActivityModel, animate: boolean){
+  onShowActivityEditor = async (activity: ActivityModel, animate: boolean) => {
     const t = this.t;
     this.activityModel = JSON.parse(JSON.stringify(activity));
     this.activityDescriptor = state.activityDescriptors.find(x => x.type == activity.type);
@@ -82,7 +79,7 @@ export class ElsaActivityEditorModal {
     this.selectedTab = t('Properties');
     this.timestamp = new Date();
     await this.dialog.show(animate);
-  }
+  };
 
   componentWillRender() {
     const activityDescriptor: ActivityDescriptor = this.activityDescriptor || {displayName: '', type: '', outcomes: [], category: '', traits: 0, browsable: false, inputProperties: [], outputProperties: [], description: ''};
