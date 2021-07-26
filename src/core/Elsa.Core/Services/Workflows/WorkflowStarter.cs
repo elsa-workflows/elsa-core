@@ -71,13 +71,14 @@ namespace Elsa.Services.Workflows
             WorkflowInput? input = default,
             string? correlationId = default,
             string? contextId = default,
+            string? tenantId = default,
             CancellationToken cancellationToken = default)
         {
             var workflowInstance = await _workflowFactory.InstantiateAsync(
                 workflowBlueprint,
                 correlationId,
                 contextId,
-                cancellationToken);
+                cancellationToken: cancellationToken);
 
             await _workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
             return await _workflowRunner.RunWorkflowAsync(workflowBlueprint, workflowInstance, activityId, input, cancellationToken);
@@ -91,7 +92,7 @@ namespace Elsa.Services.Workflows
             CancellationToken cancellationToken = default) where T : IWorkflow
         {
             var workflowBlueprint = _workflowBuilderFactory().Build<T>();
-            return await StartWorkflowAsync(workflowBlueprint, activityId, input, correlationId, contextId, cancellationToken);
+            return await StartWorkflowAsync(workflowBlueprint, activityId, input, correlationId, contextId, cancellationToken: cancellationToken);
         }
 
         public async Task<RunWorkflowResult> BuildAndStartWorkflowAsync(
@@ -103,7 +104,7 @@ namespace Elsa.Services.Workflows
             CancellationToken cancellationToken = default)
         {
             var workflowBlueprint = _workflowBuilderFactory().Build(workflow);
-            return await StartWorkflowAsync(workflowBlueprint, activityId, input, correlationId, contextId, cancellationToken);
+            return await StartWorkflowAsync(workflowBlueprint, activityId, input, correlationId, contextId, cancellationToken: cancellationToken);
         }
     }
 }

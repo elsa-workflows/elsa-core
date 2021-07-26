@@ -22,13 +22,14 @@ namespace Elsa.Services.Workflows
             IWorkflowBlueprint workflowBlueprint,
             string? correlationId = default,
             string? contextId = default,
+            string? tenantId = default,
             CancellationToken cancellationToken = default)
         {
             var workflowInstance = new WorkflowInstance
             {
                 Id = _idGenerator.Generate(),
                 DefinitionId = workflowBlueprint.Id,
-                TenantId = workflowBlueprint.TenantId,
+                TenantId = tenantId ?? workflowBlueprint.TenantId,
                 Version = workflowBlueprint.Version,
                 WorkflowStatus = WorkflowStatus.Idle,
                 CorrelationId = correlationId ?? Guid.NewGuid().ToString("N"),

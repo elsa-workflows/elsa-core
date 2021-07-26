@@ -1,4 +1,4 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Services.Models;
@@ -13,6 +13,7 @@ namespace Elsa.Services
             WorkflowInput? input = default,
             string? correlationId = default,
             string? contextId = default,
+            string? tenantId = default,
             CancellationToken cancellationToken = default);
     }
 }
