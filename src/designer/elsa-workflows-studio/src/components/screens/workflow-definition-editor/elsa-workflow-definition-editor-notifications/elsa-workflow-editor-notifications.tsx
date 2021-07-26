@@ -1,7 +1,6 @@
 import {Component, Host, h} from '@stencil/core';
-import {eventBus} from '../../../../services';
+import {eventBus, toastNotificationService} from '../../../../services';
 import {EventTypes, WorkflowDefinition} from "../../../../models";
-import {toastNotificationService} from "../../../../services/toast-notification-service";
 
 @Component({
   tag: 'elsa-workflow-definition-editor-notifications',
@@ -18,9 +17,9 @@ export class ElsaWorkflowEditorNotifications {
   }
 
   disconnectedCallback() {
-    eventBus.off(EventTypes.WorkflowPublished);
-    eventBus.off(EventTypes.WorkflowRetracted);
-    eventBus.off(EventTypes.WorkflowImported);
+    eventBus.detach(EventTypes.WorkflowPublished, this.onWorkflowPublished);
+    eventBus.detach(EventTypes.WorkflowRetracted, this.onWorkflowRetracted);
+    eventBus.detach(EventTypes.WorkflowImported, this.onWorkflowImported);
   }
 
   onWorkflowPublished = (workflowDefinition: WorkflowDefinition) => toastNotificationService.show('Workflow Published', `Workflow successfully published at version ${workflowDefinition.version}.`, 1500);

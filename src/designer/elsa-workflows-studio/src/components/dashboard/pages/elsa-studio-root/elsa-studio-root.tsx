@@ -33,18 +33,17 @@ export class ElsaStudioRoot {
   }
 
   connectedCallback() {
-    eventBus.on(EventTypes.ShowConfirmDialog, e => e.promise = this.confirmDialog.show(e.caption, e.message));
-    eventBus.on(EventTypes.HideConfirmDialog, () => this.confirmDialog.hide());
-
-    eventBus.on(EventTypes.ShowToastNotification, (e: ToastNotificationOptions) => this.toastNotificationElement.show(e));
-    eventBus.on(EventTypes.HideToastNotification, () => this.toastNotificationElement.hide());
+    eventBus.on(EventTypes.ShowConfirmDialog, this.onShowConfirmDialog);
+    eventBus.on(EventTypes.HideConfirmDialog, this.onHideConfirmDialog);
+    eventBus.on(EventTypes.ShowToastNotification, this.onShowToastNotification);
+    eventBus.on(EventTypes.HideToastNotification, this.onHideToastNotification);
   }
 
   disconnectedCallback() {
-    eventBus.off(EventTypes.ShowConfirmDialog);
-    eventBus.off(EventTypes.HideConfirmDialog);
-    eventBus.off(EventTypes.ShowToastNotification);
-    eventBus.off(EventTypes.HideToastNotification);
+    eventBus.detach(EventTypes.ShowConfirmDialog, this.onShowConfirmDialog);
+    eventBus.detach(EventTypes.HideConfirmDialog, this.onHideConfirmDialog);
+    eventBus.detach(EventTypes.ShowToastNotification, this.onShowToastNotification);
+    eventBus.detach(EventTypes.HideToastNotification, this.onHideToastNotification);
   }
 
   componentWillLoad() {
@@ -71,6 +70,22 @@ export class ElsaStudioRoot {
     propertyDisplayManager.initialize(elsaStudio);
   }
 
+  onShowConfirmDialog(e){
+    e.promise = this.confirmDialog.show(e.caption, e.message);
+  }
+
+  async onHideConfirmDialog(){
+    await this.confirmDialog.hide();
+  }
+
+  async onShowToastNotification(e: ToastNotificationOptions){
+    await this.toastNotificationElement.show(e);
+  }
+
+  async onHideToastNotification(){
+    await this.toastNotificationElement.hide();
+  }
+  
   render() {
     
     const culture = this.culture;

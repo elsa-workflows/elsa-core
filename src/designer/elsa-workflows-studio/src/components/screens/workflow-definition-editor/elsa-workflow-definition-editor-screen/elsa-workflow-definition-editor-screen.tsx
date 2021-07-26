@@ -1,7 +1,6 @@
 import {Component, Event, EventEmitter, h, Host, Listen, Method, Prop, State, Watch} from '@stencil/core';
-import {eventBus} from '../../../../services/event-bus';
 import {ActivityDefinition, ActivityDescriptor, ActivityModel, ConnectionDefinition, ConnectionModel, EventTypes, VersionOptions, WorkflowDefinition, WorkflowModel, WorkflowPersistenceBehavior} from "../../../../models";
-import {createElsaClient, SaveWorkflowDefinitionRequest} from "../../../../services/elsa-client";
+import {eventBus, createElsaClient, SaveWorkflowDefinitionRequest} from "../../../../services";
 import state from '../../../../utils/store';
 import WorkflowEditorTunnel, {WorkflowEditorState} from '../../../../data/workflow-editor';
 import DashboardTunnel from "../../../../data/dashboard";

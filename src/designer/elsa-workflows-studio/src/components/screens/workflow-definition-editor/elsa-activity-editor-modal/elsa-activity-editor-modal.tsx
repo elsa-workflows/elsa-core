@@ -1,8 +1,7 @@
 import {Component, Event, h, Host, Prop, State} from '@stencil/core';
-import {eventBus} from '../../../../services/event-bus';
+import {eventBus, propertyDisplayManager} from '../../../../services';
 import state from '../../../../utils/store';
 import {ActivityDescriptor, ActivityModel, ActivityPropertyDescriptor, EventTypes, WorkflowStorageDescriptor} from "../../../../models";
-import {propertyDisplayManager} from '../../../../services/property-display-manager';
 import {checkBox, FormContext, section, selectField, SelectOption, textArea, textInput} from "../../../../utils/forms";
 import {i18n} from "i18next";
 import {loadTranslations} from "../../../i18n/i18n-loader";
@@ -34,19 +33,11 @@ export class ElsaActivityEditorModal {
 
     this.propertyElements = [];
 
-    eventBus.on(EventTypes.ShowActivityEditor, async (activity: ActivityModel, animate: boolean) => {
-      this.activityModel = JSON.parse(JSON.stringify(activity));
-      this.activityDescriptor = state.activityDescriptors.find(x => x.type == activity.type);
-      this.workflowStorageDescriptors = state.workflowStorageDescriptors;
-      this.formContext = new FormContext(this.activityModel, newValue => this.activityModel = newValue);
-      this.selectedTab = t('Properties');
-      this.timestamp = new Date();
-      await this.dialog.show(animate);
-    });
+    eventBus.on(EventTypes.ShowActivityEditor, this.onShowActivityEditor);
   }
 
   disconnectedCallback() {
-    eventBus.off(EventTypes.ShowActivityEditor);
+    eventBus.detach(EventTypes.ShowActivityEditor, this.onShowActivityEditor);
   }
 
   async componentWillLoad() {
@@ -80,6 +71,17 @@ export class ElsaActivityEditorModal {
   onTabClick(e: Event, tab: string) {
     e.preventDefault();
     this.selectedTab = tab;
+  }
+
+  async onShowActivityEditor(activity: ActivityModel, animate: boolean){
+    const t = this.t;
+    this.activityModel = JSON.parse(JSON.stringify(activity));
+    this.activityDescriptor = state.activityDescriptors.find(x => x.type == activity.type);
+    this.workflowStorageDescriptors = state.workflowStorageDescriptors;
+    this.formContext = new FormContext(this.activityModel, newValue => this.activityModel = newValue);
+    this.selectedTab = t('Properties');
+    this.timestamp = new Date();
+    await this.dialog.show(animate);
   }
 
   componentWillRender() {
@@ -117,7 +119,6 @@ export class ElsaActivityEditorModal {
   }
 
   componentDidRender() {
-    debugger;
     for (const item of this.propertyElements) {
       const container: HTMLDivElement = item.host;
       const input: HTMLElement = item.input;

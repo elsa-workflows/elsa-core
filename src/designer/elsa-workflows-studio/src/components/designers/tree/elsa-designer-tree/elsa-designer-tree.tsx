@@ -97,8 +97,8 @@ export class ElsaWorkflowDesigner {
   }
 
   disconnectedCallback() {
-    eventBus.off(EventTypes.ActivityPicked);
-    eventBus.off(EventTypes.UpdateActivity);
+    eventBus.detach(EventTypes.ActivityPicked, this.onActivityPicked);
+    eventBus.detach(EventTypes.UpdateActivity, this.onUpdateActivity);
     d3.selectAll('.node').on('click', null);
     d3.selectAll('.edgePath').on('contextmenu', null);
   }

@@ -78,6 +78,10 @@
                 }
             });
         });
+
+        eventBus.on('workflow-imported', e => {
+            console.log('workflow-imported');
+        });
     }
 
     // Custom activity property type input control driver:
