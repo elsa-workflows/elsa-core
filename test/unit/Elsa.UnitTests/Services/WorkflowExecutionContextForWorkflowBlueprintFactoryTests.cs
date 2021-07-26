@@ -20,7 +20,7 @@ namespace Elsa.Services
         {
             var sut = new WorkflowExecutionContextForWorkflowBlueprintFactory(serviceProvider, workflowFactory);
             Mock.Get(workflowFactory)
-                .Setup(x => x.InstantiateAsync(workflowBlueprint, default, default, default))
+                .Setup(x => x.InstantiateAsync(workflowBlueprint, default, default, default, default))
                 .Returns(() => Task.FromResult(instance));
 
             var result = await sut.CreateWorkflowExecutionContextAsync(workflowBlueprint);

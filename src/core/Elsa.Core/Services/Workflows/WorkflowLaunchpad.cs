@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -270,7 +270,7 @@ namespace Elsa.Services.Workflows
                 workflowBlueprint,
                 correlationId,
                 contextId,
-                cancellationToken);
+                cancellationToken: cancellationToken);
 
             await _workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
             return new StartableWorkflow(workflowBlueprint, workflowInstance, startActivityId);

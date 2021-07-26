@@ -11,6 +11,7 @@ namespace Elsa.Services
             IWorkflowBlueprint workflowBlueprint, 
             string? correlationId = default,
             string? contextId = default,
+            string? tenantId = default,
             CancellationToken cancellationToken = default);
     }
 }
