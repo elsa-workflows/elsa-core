@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -84,7 +84,7 @@ namespace Elsa.Services.Workflows
         public async Task<StartableWorkflow?> CollectStartableWorkflowAsync(string workflowDefinitionId, string? activityId, string? correlationId = default, string? contextId = default, string? tenantId = default,
             CancellationToken cancellationToken = default)
         {
-            var workflowBlueprint = await _workflowRegistry.GetAsync(workflowDefinitionId, tenantId, VersionOptions.Published, cancellationToken);
+            var workflowBlueprint = await _workflowRegistry.GetAsync(workflowDefinitionId, tenantId, VersionOptions.Published, true, cancellationToken);
 
             if (workflowBlueprint == null)
                 return null;
@@ -111,7 +111,7 @@ namespace Elsa.Services.Workflows
         public async Task CollectAndExecuteStartableWorkflowAsync(string workflowDefinitionId, string? activityId, string? correlationId = default, string? contextId = default, object? input = default, string? tenantId = default,
             CancellationToken cancellationToken = default)
         {
-            var workflowBlueprint = await _workflowRegistry.GetAsync(workflowDefinitionId, tenantId, VersionOptions.Published, cancellationToken);
+            var workflowBlueprint = await _workflowRegistry.GetAsync(workflowDefinitionId, tenantId, VersionOptions.Published, true, cancellationToken);
 
             if (workflowBlueprint == null)
             {

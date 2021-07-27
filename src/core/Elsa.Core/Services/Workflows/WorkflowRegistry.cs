@@ -27,10 +27,10 @@ namespace Elsa.Services.Workflows
         public async Task<IEnumerable<IWorkflowBlueprint>> ListAsync(CancellationToken cancellationToken) => await ListInternalAsync(cancellationToken).ToListAsync(cancellationToken);
         public async Task<IEnumerable<IWorkflowBlueprint>> ListActiveAsync(CancellationToken cancellationToken) => await ListActiveInternalAsync(cancellationToken).ToListAsync(cancellationToken);
 
-        public async Task<IWorkflowBlueprint?> GetAsync(string id, string? tenantId, VersionOptions version, CancellationToken cancellationToken) =>
+        public async Task<IWorkflowBlueprint?> GetAsync(string id, string? tenantId, VersionOptions version, bool includeDisabled, CancellationToken cancellationToken) =>
             await FindAsync(x => x.Id == id && x.TenantId == tenantId && x.WithVersion(version), cancellationToken);
 
-        public async Task<IEnumerable<IWorkflowBlueprint>> FindManyAsync(Func<IWorkflowBlueprint, bool> predicate, CancellationToken cancellationToken) =>
+        public async Task<IEnumerable<IWorkflowBlueprint>> FindManyAsync(Func<IWorkflowBlueprint, bool> predicate, bool includeDisabled, CancellationToken cancellationToken) =>
             (await ListAsync(cancellationToken).Where(predicate).OrderByDescending(x => x.Version)).ToList();
 
         public async Task<IWorkflowBlueprint?> FindAsync(Func<IWorkflowBlueprint, bool> predicate, CancellationToken cancellationToken) =>

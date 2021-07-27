@@ -1,4 +1,4 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Services;
@@ -11,27 +11,31 @@ namespace Elsa
         public static Task<IWorkflowBlueprint?> GetWorkflowAsync<T>(
             this IWorkflowRegistry workflowRegistry,
             string? tenantId,
+            bool isDisabled = false,
             CancellationToken cancellationToken = default) =>
-            workflowRegistry.GetAsync(typeof(T).Name, tenantId, VersionOptions.Latest, cancellationToken);
+            workflowRegistry.GetAsync(typeof(T).Name, tenantId, VersionOptions.Latest, isDisabled, cancellationToken);
 
         public static Task<IWorkflowBlueprint?> GetWorkflowAsync<T>(
             this IWorkflowRegistry workflowRegistry,
+            bool isDisabled = false,
             CancellationToken cancellationToken = default) =>
-            workflowRegistry.GetWorkflowAsync<T>(default, cancellationToken);
+            workflowRegistry.GetWorkflowAsync<T>(default, isDisabled, cancellationToken);
         
         public static Task<IWorkflowBlueprint?> GetWorkflowAsync(
             this IWorkflowRegistry workflowRegistry,
             string id,
             VersionOptions versionOptions,
+            bool isDisabled = false,
             CancellationToken cancellationToken = default) =>
-            workflowRegistry.GetWorkflowAsync(id, default, versionOptions, cancellationToken);
+            workflowRegistry.GetWorkflowAsync(id, default, versionOptions, isDisabled, cancellationToken);
         
         public static Task<IWorkflowBlueprint?> GetWorkflowAsync(
             this IWorkflowRegistry workflowRegistry,
             string id,
             string? tenantId,
             VersionOptions versionOptions,
+            bool isDisabled = false,
             CancellationToken cancellationToken = default) =>
-            workflowRegistry.GetAsync(id, tenantId, versionOptions, cancellationToken);
+            workflowRegistry.GetAsync(id, tenantId, versionOptions, isDisabled, cancellationToken);
     }
 }

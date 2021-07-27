@@ -23,9 +23,14 @@ import {
   WorkflowInstanceSummary,
   WorkflowPersistenceBehavior,
   WorkflowStatus,
-  WorkflowStorageDescriptor
+  WorkflowStorageDescriptor,
+  WorkflowSettings
 } from "../models";
-import {WebhookDefinition, WebhookDefinitionSummary} from "../models/webhook";
+import 
+{
+  WebhookDefinition,
+  WebhookDefinitionSummary
+} from "../models/webhook";
 
 let _elsaClient: ElsaClient = null;
 
@@ -228,7 +233,20 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
         const response = await httpClient.get<Array<string>>('v1/workflow-channels');
         return response.data;
       }
-    }
+    },
+    workflowSettingsApi: {
+      list: async () => {
+        const response = await httpClient.get<Array<WorkflowSettings>>(`v1/workflow-settings`);
+        return response.data;
+      },      
+      save: async request => {
+        const response = await httpClient.post<WorkflowSettings>('v1/workflow-settings', request);
+        return response.data;
+      },
+      delete: async id => {
+        await httpClient.delete(`v1/workflow-settings/${id}`);
+      },      
+    }   
   }
 
   return _elsaClient;
@@ -246,6 +264,7 @@ export interface ElsaClient {
   workflowStorageProvidersApi: WorkflowStorageProvidersApi;
   webhookDefinitionsApi: WebhookDefinitionsApi;
   workflowChannelsApi: WorkflowChannelsApi;
+  workflowSettingsApi: WorkflowSettingsApi;
 }
 
 export interface ActivitiesApi {
@@ -338,6 +357,15 @@ export interface WorkflowChannelsApi {
   list(): Promise<Array<string>>;
 }
 
+export interface WorkflowSettingsApi {
+
+  list(): Promise<Array<WorkflowSettings>>;
+
+  save(request: SaveWorkflowSettingsRequest): Promise<WorkflowSettings>;
+
+  delete(workflowSettingsId: string): Promise<void>;
+}
+
 export interface SaveWorkflowDefinitionRequest {
   workflowDefinitionId?: string;
   name?: string;
@@ -376,6 +404,13 @@ export interface ActivityStats {
   slowestExecutionTime: string;
   lastExecutedAt: Date;
   eventCounts: Array<ActivityEventCount>;
+}
+
+export interface SaveWorkflowSettingsRequest {
+  id?: string;
+  workflowBlueprintId?: string;
+  key?: string;
+  value?: string;
 }
 
 interface ActivityEventCount {

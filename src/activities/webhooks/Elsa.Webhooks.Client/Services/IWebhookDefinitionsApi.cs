@@ -15,13 +15,13 @@ namespace Elsa.Webhooks.Client.Services
         [Get("/v1/webhook-definitions")]
         Task<IEnumerable<WebhookDefinition>> ListAsync(CancellationToken cancellationToken = default);
 
-        [Get("/v1/workflow-definitions")]
+        [Get("/v1/webhook-definitions")]
         Task<PagedList<WebhookDefinitionSummary>> ListAsync(int? page = default, int? pageSize = default, CancellationToken cancellationToken = default);
 
-        [Post("/v1/workflow-definitions")]
+        [Post("/v1/webhook-definitions")]
         Task<WebhookDefinition> SaveAsync([Body] SaveWebhookDefinitionRequest request, CancellationToken cancellationToken = default);
 
-        [Delete("/v1/workflow-definitions/{workflowDefinitionId}")]
+        [Delete("/v1/webhook-definitions/{webhookDefinitionId}")]
         Task DeleteAsync(string webhookDefinitionId, CancellationToken cancellationToken = default);
     }
 }

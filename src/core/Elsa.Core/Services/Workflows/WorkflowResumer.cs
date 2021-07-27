@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -71,6 +71,7 @@ namespace Elsa.Services.Workflows
                 workflowInstance.DefinitionId,
                 workflowInstance.TenantId,
                 VersionOptions.SpecificVersion(workflowInstance.Version),
+                true,
                 cancellationToken);
 
             if (workflowBlueprint == null)

@@ -25,12 +25,12 @@ namespace Elsa.Services
         /// <summary>
         /// Gets a single workflow blueprint with the specified ID for the specified tenant and version.
         /// </summary>
-        Task<IWorkflowBlueprint?> GetAsync(string id, string? tenantId, VersionOptions version, CancellationToken cancellationToken = default);
+        Task<IWorkflowBlueprint?> GetAsync(string id, string? tenantId, VersionOptions version, bool includeDisabled = false, CancellationToken cancellationToken = default);
         
         /// <summary>
         /// Returns all workflow blueprints that fit the specified predicate.
         /// </summary>
-        Task<IEnumerable<IWorkflowBlueprint>> FindManyAsync(Func<IWorkflowBlueprint, bool> predicate, CancellationToken cancellationToken = default);
+        Task<IEnumerable<IWorkflowBlueprint>> FindManyAsync(Func<IWorkflowBlueprint, bool> predicate, bool includeDisabled = false, CancellationToken cancellationToken = default);
         
         /// <summary>
         /// Returns a single workflow blueprint that fits the specified predicate. 

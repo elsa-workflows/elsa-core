@@ -1,4 +1,4 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Persistence;
@@ -36,7 +36,7 @@ namespace Elsa.Services.Dispatch
                 return;
             }
 
-            var workflowBlueprint = await _workflowRegistry.GetAsync(workflowInstance.DefinitionId, workflowInstance.TenantId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken);
+            var workflowBlueprint = await _workflowRegistry.GetAsync(workflowInstance.DefinitionId, workflowInstance.TenantId, VersionOptions.SpecificVersion(workflowInstance.Version), true, cancellationToken);
 
             if (workflowBlueprint == null)
             {
@@ -57,7 +57,7 @@ namespace Elsa.Services.Dispatch
 
         public async Task DispatchAsync(ExecuteWorkflowDefinitionRequest request, CancellationToken cancellationToken = default)
         {
-            var workflowBlueprint = await _workflowRegistry.GetAsync(request.WorkflowDefinitionId, request.TenantId, VersionOptions.Published, cancellationToken);
+            var workflowBlueprint = await _workflowRegistry.GetAsync(request.WorkflowDefinitionId, request.TenantId, VersionOptions.Published, true, cancellationToken);
 
             if (workflowBlueprint == null)
             {
