@@ -1,19 +1,17 @@
 import {Component, h, Prop, State, Watch, Method} from '@stencil/core';
-import {LocationSegments, RouterHistory} from "@stencil/router";
+import {injectHistory, LocationSegments, RouterHistory} from "@stencil/router";
 import * as collection from 'lodash/collection';
 import * as array from 'lodash/array';
-import {createElsaClient} from "../../../../services/elsa-client";
+import {confirmDialogService, eventBus, createElsaClient} from "../../../../services";
 import {EventTypes, OrderBy, PagedList, VersionOptions, WorkflowBlueprintSummary, WorkflowInstanceSummary, WorkflowStatus} from "../../../../models";
 import {DropdownButtonItem, DropdownButtonOrigin} from "../../../controls/elsa-dropdown-button/models";
 import {Map, parseQuery} from '../../../../utils/utils';
 import moment from "moment";
-import {PagerData} from "../../../controls/elsa-pager/elsa-pager";
+import {ElsaPager, PagerData} from "../../../controls/elsa-pager/elsa-pager";
 import {i18n} from "i18next";
 import {resources} from "./localizations";
 import {loadTranslations} from "../../../i18n/i18n-loader";
-import {eventBus} from "../../../../services/event-bus";
 import Tunnel from "../../../../data/dashboard";
-import {confirmDialogService} from "../../../../services/confirm-dialog-service";
 
 @Component({
   tag: 'elsa-workflow-instance-list-screen',
@@ -542,3 +540,4 @@ export class ElsaWorkflowInstanceListScreen {
 }
 
 Tunnel.injectProps(ElsaWorkflowInstanceListScreen, ['serverUrl', 'culture', 'basePath']);
+injectHistory(ElsaWorkflowInstanceListScreen);
