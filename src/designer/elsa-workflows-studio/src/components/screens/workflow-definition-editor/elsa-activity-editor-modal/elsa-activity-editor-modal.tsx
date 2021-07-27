@@ -112,10 +112,10 @@ export class ElsaActivityEditorModal {
       tabs,
       selectedTabName,
     };
-    
+
     eventBus.emit(EventTypes.ActivityEditorDisplaying, this, this.renderProps);
   }
-  
+
   async onCancelClick() {
     await this.dialog.hide(true);
   }
@@ -144,7 +144,7 @@ export class ElsaActivityEditorModal {
     this.timestamp = new Date();
     await this.dialog.show(animate);
   };
-  
+
   render() {
     const renderProps = this.renderProps;
     const activityDescriptor: ActivityDescriptor = renderProps.activityDescriptor;
@@ -211,7 +211,7 @@ export class ElsaActivityEditorModal {
   }
 
   renderTabs(tabs: Array<TabModel>) {
-    return tabs.map(x => x.renderContent()); 
+    return tabs.map(x => <elsa-control content={x.renderContent()}/>);
   }
 
   renderStorageTab(activityModel: ActivityModel, activityDescriptor: ActivityDescriptor) {
@@ -296,7 +296,7 @@ export class ElsaActivityEditorModal {
   renderPropertyEditor(activity: ActivityModel, property: ActivityPropertyDescriptor) {
     const key = `activity-property-input:${activity.activityId}:${property.name}`;
     const display = propertyDisplayManager.display(activity, property);
-    return <elsa-control key={key} class="sm:elsa-col-span-6" content={display} />;
+    return <elsa-control key={key} class="sm:elsa-col-span-6" content={display}/>;
   }
 
   getHiddenClass(tab: string) {
