@@ -36,14 +36,12 @@ export class ElsaActivityEditorModal {
   form: HTMLFormElement;
   formContext: FormContext;
   renderProps: ActivityEditorRenderProps = {};
-  propertyElements: Array<any> = [];
 
   // Force a new key every time we show the editor to make sure Stencil creates new components.
   // This prevents the issue where the designer has e.g. one activity where the user edits the properties, cancels out, then opens the editor again, seeing the entered value still there.
   timestamp: Date = new Date();
 
   connectedCallback() {
-    this.propertyElements = [];
     eventBus.on(EventTypes.ShowActivityEditor, this.onShowActivityEditor);
   }
 
@@ -116,8 +114,6 @@ export class ElsaActivityEditorModal {
     };
     
     eventBus.emit(EventTypes.ActivityEditorDisplaying, this, this.renderProps);
-
-    this.propertyElements = [];
   }
   
   async onCancelClick() {
@@ -148,16 +144,7 @@ export class ElsaActivityEditorModal {
     this.timestamp = new Date();
     await this.dialog.show(animate);
   };
-
-  componentDidRender() {
-    for (const item of this.propertyElements) {
-      const container: HTMLDivElement = item.host;
-      const input: HTMLElement = item.input;
-
-      container.append(input);
-    }
-  }
-
+  
   render() {
     const renderProps = this.renderProps;
     const activityDescriptor: ActivityDescriptor = renderProps.activityDescriptor;
@@ -168,7 +155,6 @@ export class ElsaActivityEditorModal {
     const t = this.t;
 
     return (
-
       <Host class="elsa-block">
         <elsa-modal-dialog ref={el => this.dialog = el}>
           <div slot="content" class="elsa-py-8 elsa-pb-0">
@@ -310,15 +296,7 @@ export class ElsaActivityEditorModal {
   renderPropertyEditor(activity: ActivityModel, property: ActivityPropertyDescriptor) {
     const key = `activity-property-input:${activity.activityId}:${property.name}`;
     const display = propertyDisplayManager.display(activity, property);
-    const html = typeof (display) == 'string' ? display as string : null;
-    const element = !!display.tagName ? display as HTMLElement : null;
-    const jsx = !html && !element ? display : null;
-
-    return <div key={key} class="sm:elsa-col-span-6" innerHTML={html} ref={el => {
-      if (!!element && !!el) {
-        this.propertyElements.push({host: el, input: element});
-      }
-    }}>{jsx}</div>;
+    return <elsa-control key={key} class="sm:elsa-col-span-6" content={display} />;
   }
 
   getHiddenClass(tab: string) {
