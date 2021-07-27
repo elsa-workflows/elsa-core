@@ -8,6 +8,7 @@ import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
 import { ActivityDefinitionProperty, ActivityDescriptor, ActivityModel, ActivityPropertyDescriptor, ElsaStudio, OrderBy, SelectListItem, VersionOptions, WorkflowBlueprint, WorkflowDefinition, WorkflowExecutionLogRecord, WorkflowModel, WorkflowStatus } from "./models";
 import { LocationSegments, MatchResults, RouterHistory } from "@stencil/router";
 import { MenuItem } from "./components/controls/elsa-context-menu/models";
+import { VNode } from "@stencil/core";
 import { ActivityContextMenuState, LayoutDirection, WorkflowDesignerMode } from "./components/designers/tree/elsa-designer-tree/models";
 import { DropdownButtonItem, DropdownButtonOrigin } from "./components/controls/elsa-dropdown-button/models";
 import { MonacoValueChangedArgs } from "./components/controls/elsa-monaco/elsa-monaco";
@@ -38,6 +39,9 @@ export namespace Components {
     interface ElsaContextMenu {
         "history": RouterHistory;
         "menuItems": Array<MenuItem>;
+    }
+    interface ElsaControl {
+        "content": VNode | string | Element;
     }
     interface ElsaDesignerTree {
         "activityBorderColor"?: (activity: ActivityModel) => string;
@@ -331,6 +335,12 @@ declare global {
         prototype: HTMLElsaContextMenuElement;
         new (): HTMLElsaContextMenuElement;
     };
+    interface HTMLElsaControlElement extends Components.ElsaControl, HTMLStencilElement {
+    }
+    var HTMLElsaControlElement: {
+        prototype: HTMLElsaControlElement;
+        new (): HTMLElsaControlElement;
+    };
     interface HTMLElsaDesignerTreeElement extends Components.ElsaDesignerTree, HTMLStencilElement {
     }
     var HTMLElsaDesignerTreeElement: {
@@ -596,6 +606,7 @@ declare global {
         "elsa-checkbox-property": HTMLElsaCheckboxPropertyElement;
         "elsa-confirm-dialog": HTMLElsaConfirmDialogElement;
         "elsa-context-menu": HTMLElsaContextMenuElement;
+        "elsa-control": HTMLElsaControlElement;
         "elsa-designer-tree": HTMLElsaDesignerTreeElement;
         "elsa-dropdown-button": HTMLElsaDropdownButtonElement;
         "elsa-dropdown-property": HTMLElsaDropdownPropertyElement;
@@ -662,6 +673,9 @@ declare namespace LocalJSX {
     interface ElsaContextMenu {
         "history"?: RouterHistory;
         "menuItems"?: Array<MenuItem>;
+    }
+    interface ElsaControl {
+        "content"?: VNode | string | Element;
     }
     interface ElsaDesignerTree {
         "activityBorderColor"?: (activity: ActivityModel) => string;
@@ -920,6 +934,7 @@ declare namespace LocalJSX {
         "elsa-checkbox-property": ElsaCheckboxProperty;
         "elsa-confirm-dialog": ElsaConfirmDialog;
         "elsa-context-menu": ElsaContextMenu;
+        "elsa-control": ElsaControl;
         "elsa-designer-tree": ElsaDesignerTree;
         "elsa-dropdown-button": ElsaDropdownButton;
         "elsa-dropdown-property": ElsaDropdownProperty;
@@ -975,6 +990,7 @@ declare module "@stencil/core" {
             "elsa-checkbox-property": LocalJSX.ElsaCheckboxProperty & JSXBase.HTMLAttributes<HTMLElsaCheckboxPropertyElement>;
             "elsa-confirm-dialog": LocalJSX.ElsaConfirmDialog & JSXBase.HTMLAttributes<HTMLElsaConfirmDialogElement>;
             "elsa-context-menu": LocalJSX.ElsaContextMenu & JSXBase.HTMLAttributes<HTMLElsaContextMenuElement>;
+            "elsa-control": LocalJSX.ElsaControl & JSXBase.HTMLAttributes<HTMLElsaControlElement>;
             "elsa-designer-tree": LocalJSX.ElsaDesignerTree & JSXBase.HTMLAttributes<HTMLElsaDesignerTreeElement>;
             "elsa-dropdown-button": LocalJSX.ElsaDropdownButton & JSXBase.HTMLAttributes<HTMLElsaDropdownButtonElement>;
             "elsa-dropdown-property": LocalJSX.ElsaDropdownProperty & JSXBase.HTMLAttributes<HTMLElsaDropdownPropertyElement>;
