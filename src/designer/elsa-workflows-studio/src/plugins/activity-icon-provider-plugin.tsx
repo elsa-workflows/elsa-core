@@ -1,8 +1,6 @@
-﻿import {ElsaPlugin} from "../services/elsa-plugin";
-import {eventBus} from '../services/event-bus';
+﻿import {eventBus, activityIconProvider, ElsaPlugin} from "../services";
 import {ActivityDescriptorDisplayContext, ActivityDesignDisplayContext, EventTypes} from "../models";
 import {h} from "@stencil/core";
-import { activityIconProvider} from "../services/activity-icon-provider";
 
 export class ActivityIconProviderPlugin implements ElsaPlugin {
   constructor() {

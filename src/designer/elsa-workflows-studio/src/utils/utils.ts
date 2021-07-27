@@ -1,6 +1,7 @@
 import {ActivityDefinition, ActivityDefinitionProperty, ActivityModel, ConnectionModel, WorkflowModel} from "../models";
 import * as collection from 'lodash/collection';
 import {Duration} from "moment";
+import {createDocument} from "@stencil/core/mock-doc";
 
 declare global {
   interface Array<T> {
@@ -188,6 +189,18 @@ export function htmlToElement(html: string): Element {
   html = html.trim(); // Never return a text node of whitespace as the result.
   template.innerHTML = html;
   return template.content.firstElementChild;
+}
+
+export function htmlDecode(value) {
+  const textarea = htmlToElement("<textarea/>");
+  textarea.innerHTML = value;
+  return textarea.textContent;
+}
+
+export function htmlEncode(value) {
+  const textarea = htmlToElement("<textarea/>");
+  textarea.textContent = value;
+  return textarea.innerHTML;
 }
 
 export function durationToString(duration: Duration) {
