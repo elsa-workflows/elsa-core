@@ -75,24 +75,13 @@ export class ElsaStudioRoot {
     propertyDisplayManager.initialize(elsaStudio);
   }
 
-  onShowConfirmDialog(e){
-    e.promise = this.confirmDialog.show(e.caption, e.message);
-  }
+  onShowConfirmDialog = (e) => e.promise = this.confirmDialog.show(e.caption, e.message)
+  onHideConfirmDialog = async () => await this.confirmDialog.hide()
+  onShowToastNotification = async (e: ToastNotificationOptions) => await this.toastNotificationElement.show(e)
+  onHideToastNotification = async () => await this.toastNotificationElement.hide()
 
-  async onHideConfirmDialog(){
-    await this.confirmDialog.hide();
-  }
-
-  async onShowToastNotification(e: ToastNotificationOptions){
-    await this.toastNotificationElement.show(e);
-  }
-
-  async onHideToastNotification(){
-    await this.toastNotificationElement.hide();
-  }
-  
   render() {
-    
+
     const culture = this.culture;
 
     const tunnelState: DashboardState = {
