@@ -7,6 +7,20 @@ import {i18n} from "i18next";
 import {loadTranslations} from "../../../i18n/i18n-loader";
 import {resources} from "./localizations";
 
+export interface TabModel {
+  tabName: string;
+  renderContent: () => any;
+}
+
+export interface ActivityEditorRenderProps {
+  activityDescriptor?: ActivityDescriptor;
+  activityModel?: ActivityModel;
+  propertyCategories?: Array<string>;
+  defaultProperties?: Array<ActivityPropertyDescriptor>;
+  tabs?: Array<TabModel>;
+  selectedTabName?: string;
+}
+
 @Component({
   tag: 'elsa-activity-editor-modal',
   shadow: false,
@@ -16,12 +30,12 @@ export class ElsaActivityEditorModal {
   @State() workflowStorageDescriptors: Array<WorkflowStorageDescriptor> = [];
   @State() activityModel: ActivityModel;
   @State() activityDescriptor: ActivityDescriptor;
-  @State() selectedTab: string = 'Properties';
+  @State() selectedTabName: string = 'Properties';
   i18next: i18n;
   dialog: HTMLElsaModalDialogElement;
   form: HTMLFormElement;
   formContext: FormContext;
-  renderProps: any;
+  renderProps: ActivityEditorRenderProps = {};
   propertyElements: Array<any> = [];
 
   // Force a new key every time we show the editor to make sure Stencil creates new components.
@@ -52,6 +66,60 @@ export class ElsaActivityEditorModal {
       propertyDisplayManager.update(activity, property, formData);
   }
 
+  componentWillRender() {
+    const activityDescriptor: ActivityDescriptor = this.activityDescriptor || {displayName: '', type: '', outcomes: [], category: '', traits: 0, browsable: false, inputProperties: [], outputProperties: [], description: ''};
+    const propertyCategories = activityDescriptor.inputProperties.filter(x => x.category).map(x => x.category).distinct();
+    const defaultProperties = activityDescriptor.inputProperties.filter(x => !x.category || x.category.length == 0);
+    const activityModel: ActivityModel = this.activityModel || {type: '', activityId: '', outcomes: [], properties: [], propertyStorageProviders: {}};
+    const t = this.t;
+    let tabs: Array<TabModel> = [];
+
+    if (defaultProperties.length > 0) {
+      tabs.push({
+        tabName: t('Tabs.Properties.Name'),
+        renderContent: () => this.renderPropertiesTab(activityModel)
+      });
+    }
+
+    for (const category of propertyCategories) {
+      const categoryTab: TabModel = {
+        tabName: category,
+        renderContent: () => this.renderCategoryTab(activityModel, activityDescriptor, category)
+      };
+
+      tabs.push(categoryTab);
+    }
+
+    tabs.push({
+      tabName: t('Tabs.Common.Name'),
+      renderContent: () => this.renderCommonTab(activityModel)
+    });
+
+    tabs.push({
+      tabName: t('Tabs.Storage.Name'),
+      renderContent: () => this.renderStorageTab(activityModel, activityDescriptor)
+    });
+
+    let selectedTabName = this.selectedTabName;
+
+    if (tabs.findIndex(x => x.tabName === selectedTabName) < 0) {
+      this.selectedTabName = selectedTabName = tabs[0].tabName;
+    }
+
+    this.renderProps = {
+      activityDescriptor,
+      activityModel,
+      propertyCategories,
+      defaultProperties,
+      tabs,
+      selectedTabName,
+    };
+    
+    eventBus.emit(EventTypes.ActivityEditorDisplaying, this, this.renderProps);
+
+    this.propertyElements = [];
+  }
+  
   async onCancelClick() {
     await this.dialog.hide(true);
   }
@@ -65,9 +133,9 @@ export class ElsaActivityEditorModal {
     await this.dialog.hide(true);
   };
 
-  onTabClick = (e: Event, tab: string) => {
+  onTabClick = (e: Event, tab: TabModel) => {
     e.preventDefault();
-    this.selectedTab = tab;
+    this.selectedTabName = tab.tabName;
   };
 
   onShowActivityEditor = async (activity: ActivityModel, animate: boolean) => {
@@ -76,44 +144,10 @@ export class ElsaActivityEditorModal {
     this.activityDescriptor = state.activityDescriptors.find(x => x.type == activity.type);
     this.workflowStorageDescriptors = state.workflowStorageDescriptors;
     this.formContext = new FormContext(this.activityModel, newValue => this.activityModel = newValue);
-    this.selectedTab = t('Properties');
+    this.selectedTabName = t('Properties');
     this.timestamp = new Date();
     await this.dialog.show(animate);
   };
-
-  componentWillRender() {
-    const activityDescriptor: ActivityDescriptor = this.activityDescriptor || {displayName: '', type: '', outcomes: [], category: '', traits: 0, browsable: false, inputProperties: [], outputProperties: [], description: ''};
-    const propertyCategories = activityDescriptor.inputProperties.filter(x => x.category).map(x => x.category).distinct();
-    const defaultProperties = activityDescriptor.inputProperties.filter(x => !x.category || x.category.length == 0);
-    const t = this.t;
-    let tabs: Array<string> = [];
-
-    if (defaultProperties.length > 0) {
-      tabs.push(t('Tabs.Properties.Name'));
-    }
-
-    tabs = [...tabs, ...propertyCategories];
-    tabs.push(t('Tabs.Common.Name'));
-    tabs.push(t('Tabs.Storage.Name'));
-
-    let selectedTab = this.selectedTab;
-
-    if (tabs.findIndex(x => x === selectedTab) < 0)
-      selectedTab = tabs[0];
-
-    const activityModel: ActivityModel = this.activityModel || {type: '', activityId: '', outcomes: [], properties: [], propertyStorageProviders: {}};
-
-    this.renderProps = {
-      activityDescriptor,
-      propertyCategories,
-      defaultProperties,
-      tabs,
-      selectedTab,
-      activityModel
-    }
-
-    this.propertyElements = [];
-  }
 
   componentDidRender() {
     for (const item of this.propertyElements) {
@@ -127,10 +161,8 @@ export class ElsaActivityEditorModal {
   render() {
     const renderProps = this.renderProps;
     const activityDescriptor: ActivityDescriptor = renderProps.activityDescriptor;
-    const propertyCategories = renderProps.propertyCategories;
     const tabs = renderProps.tabs;
-    const selectedTab = renderProps.selectedTab;
-    const activityModel: ActivityModel = renderProps.activityModel;
+    const selectedTabName = renderProps.selectedTabName;
     const inactiveClass = 'elsa-border-transparent elsa-text-gray-500 hover:elsa-text-gray-700 hover:elsa-border-gray-300';
     const selectedClass = 'elsa-border-blue-500 elsa-text-blue-600';
     const t = this.t;
@@ -156,15 +188,15 @@ export class ElsaActivityEditorModal {
                     <div class="elsa-border-b elsa-border-gray-200">
                       <nav class="-elsa-mb-px elsa-flex elsa-space-x-8" aria-label="Tabs">
                         {tabs.map(tab => {
-                          const isSelected = tab === selectedTab;
+                          const isSelected = tab.tabName === selectedTabName;
                           const cssClass = isSelected ? selectedClass : inactiveClass;
-                          return <a href="#" onClick={e => this.onTabClick(e, tab)} class={`${cssClass} elsa-whitespace-nowrap elsa-py-4 elsa-px-1 elsa-border-b-2 elsa-font-medium elsa-text-sm`}>{tab}</a>;
+                          return <a href="#" onClick={e => this.onTabClick(e, tab)} class={`${cssClass} elsa-whitespace-nowrap elsa-py-4 elsa-px-1 elsa-border-b-2 elsa-font-medium elsa-text-sm`}>{tab.tabName}</a>;
                         })}
                       </nav>
                     </div>
 
                     <div class="elsa-mt-8">
-                      {this.renderSelectedTab(activityModel, activityDescriptor, propertyCategories)}
+                      {this.renderTabs(tabs)}
                     </div>
                   </div>
 
@@ -192,13 +224,8 @@ export class ElsaActivityEditorModal {
     );
   }
 
-  renderSelectedTab(activityModel: ActivityModel, activityDescriptor: ActivityDescriptor, categories: Array<string>) {
-    return [
-      this.renderStorageTab(activityModel, activityDescriptor),
-      this.renderCommonTab(activityModel),
-      this.renderPropertiesTab(activityModel, activityDescriptor),
-      this.renderCategoryTabs(activityModel, activityDescriptor, categories),
-    ];
+  renderTabs(tabs: Array<TabModel>) {
+    return tabs.map(x => x.renderContent()); 
   }
 
   renderStorageTab(activityModel: ActivityModel, activityDescriptor: ActivityDescriptor) {
@@ -254,7 +281,7 @@ export class ElsaActivityEditorModal {
     );
   }
 
-  renderPropertiesTab(activityModel: ActivityModel, activityDescriptor: ActivityDescriptor) {
+  renderPropertiesTab(activityModel: ActivityModel) {
     const propertyDescriptors: Array<ActivityPropertyDescriptor> = this.renderProps.defaultProperties;
 
     if (propertyDescriptors.length == 0)
@@ -270,18 +297,14 @@ export class ElsaActivityEditorModal {
     );
   }
 
-  renderCategoryTabs(activityModel: ActivityModel, activityDescriptor: ActivityDescriptor, categories: Array<string>) {
+  renderCategoryTab(activityModel: ActivityModel, activityDescriptor: ActivityDescriptor, category: string) {
     const propertyDescriptors: Array<ActivityPropertyDescriptor> = activityDescriptor.inputProperties;
+    const descriptors = propertyDescriptors.filter(x => x.category == category);
+    const key = `activity-settings:${activityModel.activityId}:${category}`;
 
-    return (
-      categories.map(category => {
-        const descriptors = propertyDescriptors.filter(x => x.category == category);
-        const key = `activity-settings:${activityModel.activityId}:${category}`;
-        return <div key={key} class={`elsa-grid elsa-grid-cols-1 elsa-gap-y-6 elsa-gap-x-4 sm:elsa-grid-cols-6 ${this.getHiddenClass(category)}`}>
-          {descriptors.map(property => this.renderPropertyEditor(activityModel, property))}
-        </div>
-      })
-    );
+    return <div key={key} class={`elsa-grid elsa-grid-cols-1 elsa-gap-y-6 elsa-gap-x-4 sm:elsa-grid-cols-6 ${this.getHiddenClass(category)}`}>
+      {descriptors.map(property => this.renderPropertyEditor(activityModel, property))}
+    </div>;
   }
 
   renderPropertyEditor(activity: ActivityModel, property: ActivityPropertyDescriptor) {
@@ -299,6 +322,6 @@ export class ElsaActivityEditorModal {
   }
 
   getHiddenClass(tab: string) {
-    return this.renderProps.selectedTab == tab ? '' : 'hidden';
+    return this.renderProps.selectedTabName == tab ? '' : 'hidden';
   }
 }
