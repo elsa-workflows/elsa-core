@@ -22,7 +22,7 @@ export class ElsaControl {
         );
     }
     
-    componentDidRender(){
+    componentDidLoad(){
         if(!this.el)
             return;
         
