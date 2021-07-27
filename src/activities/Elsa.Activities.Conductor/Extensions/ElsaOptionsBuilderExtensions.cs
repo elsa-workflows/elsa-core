@@ -43,8 +43,8 @@ namespace Elsa.Activities.Conductor.Extensions
 
             elsa
                 .AddActivitiesFrom<SendCommand>()
-                .AddCompetingConsumer<SendCommandConsumer, SendCommandModel>()
-                .AddCompetingConsumer<RunTaskConsumer, RunTaskModel>();
+                .AddCompetingConsumer<SendCommandConsumer, SendCommandModel>("ConductorCommand")
+                .AddCompetingConsumer<RunTaskConsumer, RunTaskModel>("ConductorCommand");
 
             return elsa;
         }
