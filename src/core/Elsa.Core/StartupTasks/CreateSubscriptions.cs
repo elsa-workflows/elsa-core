@@ -10,14 +10,18 @@ namespace Elsa.StartupTasks
     public class CreateSubscriptions : IStartupTask
     {
         private readonly IServiceBusFactory _serviceBusFactory;
+        private readonly ElsaOptions _elsaOptions;
         private readonly IContainerNameAccessor _containerNameAccessor;
-        private readonly IList<CompetingMessageType> _competingMessageTypes;
-        private readonly IEnumerable<Type> _pubSubMessageTypes;
+        private readonly IDistributedLockProvider _distributedLockProvider;
+        private readonly IList<MessageTypeConfig> _competingMessageTypes;
+        private readonly IEnumerable<MessageTypeConfig> _pubSubMessageTypes;
 
-        public CreateSubscriptions(IServiceBusFactory serviceBusFactory, ElsaOptions elsaOptions, IContainerNameAccessor containerNameAccessor)
+        public CreateSubscriptions(IServiceBusFactory serviceBusFactory, ElsaOptions elsaOptions, IContainerNameAccessor containerNameAccessor, IDistributedLockProvider distributedLockProvider)
         {
             _serviceBusFactory = serviceBusFactory;
+            _elsaOptions = elsaOptions;
             _containerNameAccessor = containerNameAccessor;
+            _distributedLockProvider = distributedLockProvider;
             _competingMessageTypes = elsaOptions.CompetingMessageTypes.ToList();
             _pubSubMessageTypes = elsaOptions.PubSubMessageTypes;
 
@@ -27,8 +31,8 @@ namespace Elsa.StartupTasks
             // For each workflow channel, register a competing message type for workflow definition and workflow instance consumers.
             foreach (var workflowChannel in workflowChannels)
             {
-                _competingMessageTypes.Add(new CompetingMessageType(typeof(ExecuteWorkflowDefinitionRequest), ElsaOptions.FormatChannelQueueName<ExecuteWorkflowDefinitionRequest>(workflowChannel)));
-                _competingMessageTypes.Add(new CompetingMessageType(typeof(ExecuteWorkflowInstanceRequest), ElsaOptions.FormatChannelQueueName<ExecuteWorkflowInstanceRequest>(workflowChannel)));
+                _competingMessageTypes.Add(new MessageTypeConfig(typeof(ExecuteWorkflowDefinitionRequest), ElsaOptions.FormatChannelQueueName("ExecuteWorkflow", workflowChannel)));
+                _competingMessageTypes.Add(new MessageTypeConfig(typeof(ExecuteWorkflowInstanceRequest), ElsaOptions.FormatChannelQueueName("ExecuteWorkflow", workflowChannel)));
             }
         }
 
@@ -36,18 +40,23 @@ namespace Elsa.StartupTasks
 
         public async Task ExecuteAsync(CancellationToken cancellationToken)
         {
+            await using var handle = await _distributedLockProvider.AcquireLockAsync(nameof(CreateSubscriptions), _elsaOptions.DistributedLockTimeout, cancellationToken);
+
+            if (handle == null)
+                throw new Exception("Could not acquire a lock within the maximum amount of time configured");
+            
             foreach (var messageType in _competingMessageTypes)
             {
-                var bus = await _serviceBusFactory.GetServiceBusAsync(messageType.MessageType, messageType.Queue, cancellationToken);
+                var bus = await _serviceBusFactory.GetServiceBusAsync(messageType.MessageType, messageType.QueueName, cancellationToken);
                 await bus.Subscribe(messageType.MessageType);
             }
 
             var containerName = _containerNameAccessor.GetContainerName();
             foreach (var messageType in _pubSubMessageTypes)
             {
-                var queueName = $"{containerName}:{messageType.Name}";
-                var bus = await _serviceBusFactory.GetServiceBusAsync(messageType, queueName, cancellationToken);
-                await bus.Subscribe(messageType);
+                var queueName = $"{containerName}:{messageType.QueueName ?? messageType.MessageType.Name}";
+                var bus = await _serviceBusFactory.GetServiceBusAsync(messageType.MessageType, queueName, cancellationToken);
+                await bus.Subscribe(messageType.MessageType);
             }
         }
     }
