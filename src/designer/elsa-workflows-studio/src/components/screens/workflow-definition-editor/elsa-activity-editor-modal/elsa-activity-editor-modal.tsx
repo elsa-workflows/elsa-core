@@ -30,12 +30,11 @@ export class ElsaActivityEditorModal {
   @State() workflowStorageDescriptors: Array<WorkflowStorageDescriptor> = [];
   @State() activityModel: ActivityModel;
   @State() activityDescriptor: ActivityDescriptor;
-  @State() selectedTabName: string = 'Properties';
+  @State() renderProps: ActivityEditorRenderProps = {};
   i18next: i18n;
   dialog: HTMLElsaModalDialogElement;
   form: HTMLFormElement;
   formContext: FormContext;
-  renderProps: ActivityEditorRenderProps = {};
 
   // Force a new key every time we show the editor to make sure Stencil creates new components.
   // This prevents the issue where the designer has e.g. one activity where the user edits the properties, cancels out, then opens the editor again, seeing the entered value still there.
@@ -98,22 +97,25 @@ export class ElsaActivityEditorModal {
       renderContent: () => this.renderStorageTab(activityModel, activityDescriptor)
     });
 
-    let selectedTabName = this.selectedTabName;
-
-    if (tabs.findIndex(x => x.tabName === selectedTabName) < 0) {
-      this.selectedTabName = selectedTabName = tabs[0].tabName;
-    }
-
     this.renderProps = {
       activityDescriptor,
       activityModel,
       propertyCategories,
       defaultProperties,
       tabs,
-      selectedTabName,
+      selectedTabName: this.renderProps.selectedTabName
     };
 
     eventBus.emit(EventTypes.ActivityEditorDisplaying, this, this.renderProps);
+
+    let selectedTabName = this.renderProps.selectedTabName
+    tabs = this.renderProps.tabs;
+
+    if (!selectedTabName)
+      this.renderProps.selectedTabName = tabs[0].tabName;
+
+    if (tabs.findIndex(x => x.tabName === selectedTabName) < 0)
+      this.renderProps.selectedTabName = selectedTabName = tabs[0].tabName;
   }
 
   async onCancelClick() {
@@ -131,7 +133,7 @@ export class ElsaActivityEditorModal {
 
   onTabClick = (e: Event, tab: TabModel) => {
     e.preventDefault();
-    this.selectedTabName = tab.tabName;
+    this.renderProps = {...this.renderProps, selectedTabName: tab.tabName};
   };
 
   onShowActivityEditor = async (activity: ActivityModel, animate: boolean) => {
@@ -140,8 +142,8 @@ export class ElsaActivityEditorModal {
     this.activityDescriptor = state.activityDescriptors.find(x => x.type == activity.type);
     this.workflowStorageDescriptors = state.workflowStorageDescriptors;
     this.formContext = new FormContext(this.activityModel, newValue => this.activityModel = newValue);
-    this.selectedTabName = t('Properties');
     this.timestamp = new Date();
+    this.renderProps = {};
     await this.dialog.show(animate);
   };
 
@@ -211,7 +213,12 @@ export class ElsaActivityEditorModal {
   }
 
   renderTabs(tabs: Array<TabModel>) {
-    return tabs.map(x => <elsa-control content={x.renderContent()}/>);
+    return tabs.map(x =>
+      (
+        <div class={`flex ${this.getHiddenClass(x.tabName)}`}>
+          <elsa-control content={x.renderContent()}/>
+        </div>
+      ));
   }
 
   renderStorageTab(activityModel: ActivityModel, activityDescriptor: ActivityDescriptor) {
@@ -230,24 +237,21 @@ export class ElsaActivityEditorModal {
     }
 
     return (
-      <div class={`flex ${this.getHiddenClass(t('Tabs.Storage.Name'))}`}>
-        <div class="elsa-space-y-8 elsa-w-full">
+      <div class="elsa-space-y-8 elsa-w-full">
+        {section('Workflow Context')}
+        {checkBox(formContext, 'loadWorkflowContext', 'Load Workflow Context', activityModel.loadWorkflowContext, 'When enabled, this will load the workflow context into memory before executing this activity.', 'loadWorkflowContext')}
+        {checkBox(formContext, 'saveWorkflowContext', 'Save Workflow Context', activityModel.saveWorkflowContext, 'When enabled, this will save the workflow context back into storage after executing this activity.', 'saveWorkflowContext')}
 
-          {section('Workflow Context')}
-          {checkBox(formContext, 'loadWorkflowContext', 'Load Workflow Context', activityModel.loadWorkflowContext, 'When enabled, this will load the workflow context into memory before executing this activity.', 'loadWorkflowContext')}
-          {checkBox(formContext, 'saveWorkflowContext', 'Save Workflow Context', activityModel.saveWorkflowContext, 'When enabled, this will save the workflow context back into storage after executing this activity.', 'saveWorkflowContext')}
+        {section('Workflow Instance')}
+        {checkBox(formContext, 'persistWorkflow', 'Save Workflow Instance', activityModel.persistWorkflow, 'When enabled, this will save the workflow instance back into storage right after executing this activity.', 'persistWorkflow')}
 
-          {section('Workflow Instance')}
-          {checkBox(formContext, 'persistWorkflow', 'Save Workflow Instance', activityModel.persistWorkflow, 'When enabled, this will save the workflow instance back into storage right after executing this activity.', 'persistWorkflow')}
+        {Object.keys(outputProperties).length > 0 ? (
+          [section('Activity Output', 'Configure the desired storage for each output property of this activity.'), outputProperties.map(renderPropertyStorageSelectField)]
+        ) : undefined}
 
-          {Object.keys(outputProperties).length > 0 ? (
-            [section('Activity Output', 'Configure the desired storage for each output property of this activity.'), outputProperties.map(renderPropertyStorageSelectField)]
-          ) : undefined}
-
-          {Object.keys(inputProperties).length > 0 ? (
-            [section('Activity Input', 'Configure the desired storage for each input property of this activity.'), inputProperties.map(renderPropertyStorageSelectField)]
-          ) : undefined}
-        </div>
+        {Object.keys(inputProperties).length > 0 ? (
+          [section('Activity Input', 'Configure the desired storage for each input property of this activity.'), inputProperties.map(renderPropertyStorageSelectField)]
+        ) : undefined}
       </div>
     );
   }
@@ -257,12 +261,10 @@ export class ElsaActivityEditorModal {
     const t = this.t;
 
     return (
-      <div class={`flex ${this.getHiddenClass(t('Tabs.Common.Name'))}`}>
-        <div class="elsa-space-y-8 elsa-w-full">
-          {textInput(formContext, 'name', t('Tabs.Common.Fields.Name.Label'), activityModel.name, t('Tabs.Common.Fields.Name.Hint'), 'activityName')}
-          {textInput(formContext, 'displayName', t('Tabs.Common.Fields.DisplayName.Label'), activityModel.displayName, t('Tabs.Common.Fields.DisplayName.Hint'), 'activityDisplayName')}
-          {textArea(formContext, 'description', t('Tabs.Common.Fields.Description.Label'), activityModel.description, t('Tabs.Common.Fields.Description.Hint'), 'activityDescription')}
-        </div>
+      <div class="elsa-space-y-8 elsa-w-full">
+        {textInput(formContext, 'name', t('Tabs.Common.Fields.Name.Label'), activityModel.name, t('Tabs.Common.Fields.Name.Hint'), 'activityName')}
+        {textInput(formContext, 'displayName', t('Tabs.Common.Fields.DisplayName.Label'), activityModel.displayName, t('Tabs.Common.Fields.DisplayName.Hint'), 'activityDisplayName')}
+        {textArea(formContext, 'description', t('Tabs.Common.Fields.Description.Label'), activityModel.description, t('Tabs.Common.Fields.Description.Hint'), 'activityDescription')}
       </div>
     );
   }
@@ -277,7 +279,7 @@ export class ElsaActivityEditorModal {
     const t = this.t;
 
     return (
-      <div key={key} class={`elsa-grid elsa-grid-cols-1 elsa-gap-y-6 elsa-gap-x-4 sm:elsa-grid-cols-6 ${this.getHiddenClass(t('Tabs.Properties.Name'))}`}>
+      <div key={key} class={`elsa-grid elsa-grid-cols-1 elsa-gap-y-6 elsa-gap-x-4 sm:elsa-grid-cols-6`}>
         {propertyDescriptors.map(property => this.renderPropertyEditor(activityModel, property))}
       </div>
     );
@@ -288,7 +290,7 @@ export class ElsaActivityEditorModal {
     const descriptors = propertyDescriptors.filter(x => x.category == category);
     const key = `activity-settings:${activityModel.activityId}:${category}`;
 
-    return <div key={key} class={`elsa-grid elsa-grid-cols-1 elsa-gap-y-6 elsa-gap-x-4 sm:elsa-grid-cols-6 ${this.getHiddenClass(category)}`}>
+    return <div key={key} class={`elsa-grid elsa-grid-cols-1 elsa-gap-y-6 elsa-gap-x-4 sm:elsa-grid-cols-6`}>
       {descriptors.map(property => this.renderPropertyEditor(activityModel, property))}
     </div>;
   }
