@@ -30,7 +30,7 @@ namespace Elsa.Activities.Rpa.Web
                 if (UseJavascriptClick ?? false)
                     driver.ExecuteJavaScript("arguments[0].click()", await GetElement(driver));
                 else
-                    (await GetElement(driver)).Click();
+                    (await GetElement(driver))?.Click();
             });       
         }        
     }

@@ -32,9 +32,9 @@ namespace Elsa.Activities.Rpa.Web
             return await ExecuteDriver(context, async (driver) =>
             {
                 if (UseJavascript ?? false)
-                    (await GetElement(driver)).SetText(Text);
+                    (await GetElement(driver))?.SetText(Text);
                 else
-                    (await GetElement(driver)).SendKeys(Text);
+                    (await GetElement(driver))?.SendKeys(Text);
             });        
         }        
     }

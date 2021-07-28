@@ -24,12 +24,7 @@ namespace Elsa.Activities.Rpa.Web.Services
             _logger = logger;
         }
         private Dictionary<string, IWebDriver> _drivers { get; set; } = new Dictionary<string, IWebDriver>();
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="driverType"><see cref="DriverType"/></param>
-        /// <param name="options"></param>
-        /// <param name="cancellationToken"></param>
+        
         /// <returns>the driverId</returns>
         public async Task<string> OpenAsync(string driverType, object? options = default, CancellationToken cancellationToken=default)
         {
@@ -58,7 +53,7 @@ namespace Elsa.Activities.Rpa.Web.Services
                     {
                         throw new NotImplementedException();
                     }
-                default: { throw new Exception($"invalid driver type {driverType}"); }
+                default: { throw new Exception($"Invalid driver type {driverType}"); }
             }
                       
             _drivers[id]=driver;

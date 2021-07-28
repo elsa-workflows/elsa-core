@@ -93,7 +93,9 @@ namespace Elsa.Activities.Rpa.Web
             var elements = driver.ExecuteJavaScript<IEnumerable<IWebElement>>($"return $(\"{cssSelector}\")");
             return elements.FirstOrDefault(x => x.Displayed && x.Enabled);
         }
-        [Obsolete("avoid using this method as much as possible. It requires an active Remote Desktop Session to be performed")]
+        /// <summary>
+        /// "avoid using this method as much as possible. It requires an active Remote Desktop Session to be performed"
+        /// </summary>
         public static void NativeClick(this IWebElement element)
         {
             var remote = (RemoteWebElement)element;
@@ -143,7 +145,7 @@ namespace Elsa.Activities.Rpa.Web
 
         public static bool IsInputTag(this IWebElement element)
         {
-            return element.TagName.ToLower() == "input" || element.TagName.ToLower() == "textarea";
+            return string.Equals(element.TagName, "input", StringComparison.OrdinalIgnoreCase) || string.Equals(element.TagName, "textarea", StringComparison.OrdinalIgnoreCase);
         }
 
         public static TResult EnsureValue<TResult>(this IWebElement element, Func<IWebElement, TResult> function)
@@ -183,7 +185,7 @@ namespace Elsa.Activities.Rpa.Web
                 ? "+="
                 : direction == Direction.Left || direction == Direction.Up
                     ? "-="
-                    : throw new Exception("Direction not supported");
+                    : throw new ArgumentException("Direction not supported");
 
             var scrolling = direction == Direction.Right || direction == Direction.Left ? "scrollLeft" : "scrollTop";
             remote.WrappedDriver.ExecuteJavaScript($"arguments[0].{scrolling} {scroll} {offset}", element);
@@ -209,28 +211,26 @@ namespace Elsa.Activities.Rpa.Web
             var remote = (RemoteWebElement)element;
             return remote.WrappedDriver.ExecuteJavaScript<T>($"return arguments[0].{name}", element);
         }
-        public static IQueryable<HtmlNode> GetHtmlNodes(this ISearchContext element, TimeSpan timeout = default)
+        public static async Task<IQueryable<HtmlNode>?> GetHtmlNodes(this ISearchContext element, TimeSpan timeout = default)
         {
             if (timeout == default)
                 timeout = TimeSpan.FromSeconds(20);
             var doc = new HtmlDocument();
             var start = DateTime.Now;
 
-            IQueryable<HtmlNode> nodes = default;
-            string html = "";
+            IQueryable<HtmlNode>? nodes = default;
+            var html = "";
             while (string.IsNullOrEmpty(html) && (DateTime.Now - start) < timeout)
             {
-                Task.Delay(100).GetAwaiter().GetResult();
-                if (element as IWebElement != null)
+                await Task.Delay(100);
+                if (element is IWebElement webElement)
                 {
-                    var outerHtml = ((IWebElement)element).GetAttribute("outerHtml");
-                    if (outerHtml == null)
-                        outerHtml = ((IWebElement)element).GetAttribute("outerHTML");
+                    var outerHtml = webElement.GetAttribute("outerHtml") ?? webElement.GetAttribute("outerHTML");
                     if (outerHtml == null) continue;
                     html = outerHtml;
                 }
-                if (element as IWebDriver != null)
-                    html = ((IWebDriver)element).PageSource;
+                if (element is IWebDriver webDriver)
+                    html = webDriver.PageSource;
 
                 if (html == null) continue;
                 doc.LoadHtml(html);
@@ -238,16 +238,16 @@ namespace Elsa.Activities.Rpa.Web
             }
             return nodes;
         }
-        public static HtmlNode GetHtmlNode(this ISearchContext element, Func<HtmlNode, bool> query, int index = 0, TimeSpan timeout = default, ILogger logger = default)
+        public static async Task<HtmlNode> GetHtmlNode(this ISearchContext element, Func<HtmlNode, bool> query, int index = 0, TimeSpan timeout = default, ILogger logger = default)
         {
             if (timeout == default)
                 timeout = TimeSpan.FromSeconds(20);
             if (index < 0)
-                throw new ArgumentOutOfRangeException("index must be positive or zero");
+                throw new ArgumentOutOfRangeException("Index must be positive or zero");
             var doc = new HtmlDocument();
             var start = DateTime.Now;
 
-            HtmlNode node = null;
+            HtmlNode? node = null;
             while (node == null && (DateTime.Now - start) < timeout)
             {
                 try
@@ -276,31 +276,27 @@ namespace Elsa.Activities.Rpa.Web
                 }
                 finally
                 {
-                    Task.Delay(1000).GetAwaiter().GetResult();
+                    await Task.Delay(1000);
                 }
             }
             if (node == null)
-                throw new Exception("element not found. check searching criterias");
+                throw new Exception("Element not found. Check searching criterias");
             return node;
         }
         #region FindElement
-        public static IWebElement FindElement<TChild>(this IWebElement element, Func<HtmlNode, bool> query, int index = 0, TimeSpan timeout = default, ILogger logger = default)
+        public static async Task<IWebElement> FindElement<TChild>(this IWebElement element, Func<HtmlNode, bool> query, int index = 0, TimeSpan timeout = default, ILogger logger = default)
         {
-            var node = GetHtmlNode(element, query, index, timeout, logger);
+            var node = await GetHtmlNode(element, query, index, timeout, logger);
             if (node == null)
-                throw new Exception("element not found. check searching criterias");
+                throw new Exception("Element not found. Check searching criterias");
             return element.FindElement(By.XPath(GetXPath(node)));
         }
         /// <summary>
-        /// per usarlo è necessario importare il pacchetto HtmlAgilityPack
+        /// HtmlAgilityPack must be referenced in order for this extension method method to be callable
         /// </summary>
-        /// <param name="element"></param>
-        /// <param name="query"></param>
-        /// <param name="index"></param>
-        /// <returns></returns>
-        public static IWebElement FindElement(this ISearchContext element, Func<HtmlNode, bool> query, int index = 0, TimeSpan timeout = default, ILogger logger = default)
+        public static async Task<IWebElement> FindElement(this ISearchContext element, Func<HtmlNode, bool> query, int index = 0, TimeSpan timeout = default, ILogger logger = default)
         {
-            var node = GetHtmlNode(element, query, index, timeout, logger);
+            var node = await GetHtmlNode(element, query, index, timeout, logger);
             return element.FindElement(By.XPath(GetXPath(node)));
         }
         public static IWebElement FindElement(this ISearchContext element, HtmlNode node)
@@ -309,33 +305,36 @@ namespace Elsa.Activities.Rpa.Web
         }
         #endregion
         #region FindElements
-        public static IEnumerable<IWebElement> FindElements(this IWebDriver element, Func<HtmlNode, bool> query, TimeSpan timeout = default)
+        public static async Task<IEnumerable<IWebElement>> FindElements(this IWebDriver element, Func<HtmlNode, bool> query, TimeSpan timeout = default)
         {
-            var nodes = GetHtmlNodes(element, timeout);
+            var output = new List<IWebElement>();
+            var nodes = await GetHtmlNodes(element, timeout);
             if (nodes == null)
-                throw new Exception($"descendants elements not found for element {element.ToString()}. check searching criterias");
+                throw new Exception($"Descendants elements not found for element {element}. Check searching criterias");
 
             var selectedNodes = nodes.Where(query);
             foreach (var selectedNode in selectedNodes)
             {
-                yield return GetWebElement(selectedNode, element);
+                output.Add(GetWebElement(selectedNode, element));
             }
+            return output;
         }
-        public static IEnumerable<IWebElement> FindElements<TChild>(this IWebElement element, Func<HtmlNode, bool> query, TimeSpan timeout = default)
+        public static async Task<IEnumerable<IWebElement>> FindElements<TChild>(this IWebElement element, Func<HtmlNode, bool> query, TimeSpan timeout = default)
         {
-            var nodes = GetHtmlNodes(element, timeout);
+            var output = new List<IWebElement>();
+            var nodes = await GetHtmlNodes(element, timeout);
             if (nodes == null)
-                throw new Exception($"descendants elements not found for element {element.ToString()}. check searching criterias");
+                throw new Exception($"Descendants elements not found for element {element}. Check searching criterias");
 
             var selectedNodes = nodes.Where(query);
             foreach (var selectedNode in selectedNodes)
             {
-                yield return GetWebElement(selectedNode, element);
+                output.Add(GetWebElement(selectedNode, element));
             }
+            return output;
         }
         public static string GetXPath(HtmlNode node)
         {
-            //return "./" + string.Join("/", node.XPath.Split('/').Skip(2).ToArray());
             return ".//" + string.Join("/", node.XPath.Split('/').Skip(2).ToArray());
         }
         public static IWebElement GetWebElement(this HtmlNode node, ISearchContext context)

@@ -30,24 +30,22 @@ namespace Elsa.Activities.Rpa.Web
         public int RetryCount { get; set; } = 5;
         public TimeSpan RetryInterval { get; set; } = TimeSpan.FromMilliseconds(500);
         public Func<HtmlNode, bool>? AdvancedSelector { get; set; }
-        internal async Task<IWebElement> GetElement(IWebDriver driver)
+        internal async Task<IWebElement?> GetElement(IWebDriver driver)
         {
             var els = await GetElements(driver);
             if (!els.Any())
-                throw new Exception($"no element found matching the given criterias");
-#pragma warning disable CS8603 // Possible null reference return.
+                throw new Exception($"No element found matching the given criterias");
             return els.FirstOrDefault();
-#pragma warning restore CS8603 // Possible null reference return.
         }
         internal async Task<IEnumerable<IWebElement?>> GetElements(IWebDriver driver)
         {
-            List<IWebElement?> output = new List<IWebElement>();
+            var output = new List<IWebElement>();
             for (int i = 0; i < RetryCount; i++)
             {
                 try
                 {
                     if (AdvancedSelector != default)
-                        return driver.FindElements(AdvancedSelector);
+                        return await driver.FindElements(AdvancedSelector);
                     switch (SelectorType)
                     {
                         case SelectorTypes.ById: { output.AddRange(driver.FindElements(By.Id(SelectorValue))); break; }
@@ -60,11 +58,11 @@ namespace Elsa.Activities.Rpa.Web
                                 try
                                 {
                                     Func<HtmlNode, bool> exp = CSharpScript.EvaluateAsync<Func<HtmlNode, bool>>(SelectorValue, options).GetAwaiter().GetResult();
-                                    output.AddRange(driver.FindElements(exp)); break;
+                                    output.AddRange(await driver.FindElements(exp)); break;
                                 }
                                 catch (Exception e)
                                 {
-                                    throw new Exception($"invalid expression {SelectorValue}", e);
+                                    throw new Exception($"Invalid expression {SelectorValue}", e);
                                 }
                             }
                         default: return new List<IWebElement>();

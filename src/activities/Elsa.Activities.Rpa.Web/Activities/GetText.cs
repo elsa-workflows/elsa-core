@@ -25,7 +25,7 @@ namespace Elsa.Activities.Rpa.Web
             {
                 var element = await GetElement(driver);
                 string? output = default;
-                if (element.IsInputTag())
+                if (element?.IsInputTag()??false)
                 {
                     output = element?.GetAttribute("value");
                 }
