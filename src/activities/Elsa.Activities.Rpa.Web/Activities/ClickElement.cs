@@ -25,23 +25,13 @@ namespace Elsa.Activities.Rpa.Web
         public bool? UseJavascriptClick { get; set; }
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            try
+            return await ExecuteDriver(context, async(driver) =>
             {
-                var driver = _factory.GetDriver(GetDriverId(context));
                 if (UseJavascriptClick ?? false)
                     driver.ExecuteJavaScript("arguments[0].click()", await GetElement(driver));
                 else
                     (await GetElement(driver)).Click();
-                return Done();
-            }
-            catch (Exception e)
-            {
-                if (GetDriverId(context) != default)
-                {
-                    _factory.CloseBrowserAsync(GetDriverId(context)).Wait();
-                }
-                return Fault(e);
-            }            
+            });       
         }        
     }
 }

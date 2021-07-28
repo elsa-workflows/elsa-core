@@ -1,12 +1,15 @@
 using Elsa.Activities.Rpa.Web.Options;
 using Elsa.Activities.Rpa.Web.Services;
+using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using OpenQA.Selenium;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Rpa.Web
@@ -44,6 +47,28 @@ namespace Elsa.Activities.Rpa.Web
         {
             _factory = sp.GetRequiredService<IBrowserFactory>();
             _options = sp.GetRequiredService<IOptions<RpaWebOptions>>().Value;
+        }
+        protected IActivityExecutionResult Result { get; set; }
+        protected async Task<IActivityExecutionResult> ExecuteDriver(ActivityExecutionContext context, Action<IWebDriver> action)
+        {
+            var driverId = GetDriverId(context);
+            try
+            {
+                var driver = _factory.GetDriver(driverId);
+                action(driver);
+                if (Result != default)
+                    return Done(Result);
+                else
+                    return Done();
+            }
+            catch (Exception e)
+            {
+                if (driverId != default)
+                {
+                    await _factory.CloseBrowserAsync(driverId);
+                }
+                return Fault(e);
+            }
         }
     }
 }

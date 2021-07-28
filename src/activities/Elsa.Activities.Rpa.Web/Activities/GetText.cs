@@ -21,27 +21,18 @@ namespace Elsa.Activities.Rpa.Web
         }
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            try
+            return await ExecuteDriver(context, async (driver) =>
             {
-                var driver = _factory.GetDriver(GetDriverId(context));
                 var element = await GetElement(driver);
                 string? output = default;
                 if (element.IsInputTag())
                 {
-                    output = element?.GetAttribute("value");                    
+                    output = element?.GetAttribute("value");
                 }
                 if (string.IsNullOrEmpty(output))
                     output = element?.Text;
-                return Done(output);
-            }
-            catch (Exception e)
-            {
-                if (GetDriverId(context) != default)
-                {
-                    _factory.CloseBrowserAsync(GetDriverId(context)).Wait();
-                }
-                return Fault(e);
-            }            
+                Result = Done(output);
+            });      
         }        
     }
 }

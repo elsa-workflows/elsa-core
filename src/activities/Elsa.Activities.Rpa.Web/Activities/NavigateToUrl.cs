@@ -23,19 +23,10 @@ namespace Elsa.Activities.Rpa.Web
         public string? Url { get; set; }
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            try
+            return await ExecuteDriver(context, (driver) =>
             {
-                _factory.GetDriver(GetDriverId(context)).Navigate().GoToUrl(Url);
-                return Done();
-            }
-            catch (Exception e)
-            {
-                if (GetDriverId(context) != default)
-                {
-                    _factory.CloseBrowserAsync(GetDriverId(context)).Wait();
-                }
-                return Fault(e);
-            }            
+                driver.Navigate().GoToUrl(Url);
+            });          
         }
     }
 }

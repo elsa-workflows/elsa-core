@@ -29,23 +29,13 @@ namespace Elsa.Activities.Rpa.Web
         public string Text { get; set; }
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            try
+            return await ExecuteDriver(context, async (driver) =>
             {
-                var driver = _factory.GetDriver(GetDriverId(context));
                 if (UseJavascript ?? false)
                     (await GetElement(driver)).SetText(Text);
                 else
                     (await GetElement(driver)).SendKeys(Text);
-                return Done();
-            }
-            catch (Exception e)
-            {
-                if (GetDriverId(context) != default)
-                {
-                    _factory.CloseBrowserAsync(GetDriverId(context)).Wait();
-                }
-                return Fault(e);
-            }            
+            });        
         }        
     }
 }
