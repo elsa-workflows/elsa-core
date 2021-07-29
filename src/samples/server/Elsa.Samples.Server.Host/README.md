@@ -119,6 +119,11 @@ YesSql Postgre
     ...
 ```
 
+### Mandotory features
+
+"Elsa:Features:DefaultPersistence" is a mandotory feature resposible for Elsa Core persistence and must be enabled
+"Elsa:Features:WorkflowSettings" is a mandotory feature resposible for the Workflow Blueprint Settings persistence functionality and must be enabled
+
 ### Configure connection strings for each persistence
 
 ```
