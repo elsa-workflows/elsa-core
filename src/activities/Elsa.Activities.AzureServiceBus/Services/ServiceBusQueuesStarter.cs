@@ -82,7 +82,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             using var scope = _scopeFactory.CreateScope();
             var workflowRegistry = scope.ServiceProvider.GetRequiredService<IWorkflowRegistry>();
             var workflowBlueprintReflector = scope.ServiceProvider.GetRequiredService<IWorkflowBlueprintReflector>();
-            var workflows = await workflowRegistry.ListActiveAsync(false, cancellationToken);
+            var workflows = await workflowRegistry.ListActiveAsync(cancellationToken);
 
             var query =
                 from workflow in workflows

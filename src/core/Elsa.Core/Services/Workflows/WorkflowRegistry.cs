@@ -28,21 +28,21 @@ namespace Elsa.Services.Workflows
             _mediator = mediator;
         }
 
-        public async Task<IEnumerable<IWorkflowBlueprint>> ListAsync(bool includeDisabled, CancellationToken cancellationToken) => await ListInternalAsync(includeDisabled, cancellationToken).ToListAsync(cancellationToken);
-        public async Task<IEnumerable<IWorkflowBlueprint>> ListActiveAsync(bool includeDisabled, CancellationToken cancellationToken) => await ListActiveInternalAsync(includeDisabled, cancellationToken).ToListAsync(cancellationToken);
+        public async Task<IEnumerable<IWorkflowBlueprint>> ListAsync(CancellationToken cancellationToken, bool includeDisabled = false) => await ListInternalAsync(cancellationToken, includeDisabled).ToListAsync(cancellationToken);
+        public async Task<IEnumerable<IWorkflowBlueprint>> ListActiveAsync(CancellationToken cancellationToken, bool includeDisabled = false) => await ListActiveInternalAsync(cancellationToken, includeDisabled).ToListAsync(cancellationToken);
 
-        public async Task<IWorkflowBlueprint?> GetAsync(string id, string? tenantId, VersionOptions version, bool includeDisabled, CancellationToken cancellationToken) =>
-            await FindAsync(x => x.Id == id && x.TenantId == tenantId && x.WithVersion(version), includeDisabled, cancellationToken);
+        public async Task<IWorkflowBlueprint?> GetAsync(string id, string? tenantId, VersionOptions version, CancellationToken cancellationToken, bool includeDisabled = false) =>
+            await FindAsync(x => x.Id == id && x.TenantId == tenantId && x.WithVersion(version), cancellationToken, includeDisabled);
 
-        public async Task<IEnumerable<IWorkflowBlueprint>> FindManyAsync(Func<IWorkflowBlueprint, bool> predicate, bool includeDisabled, CancellationToken cancellationToken) =>
-            (await ListAsync(includeDisabled, cancellationToken).Where(predicate).OrderByDescending(x => x.Version)).ToList();
+        public async Task<IEnumerable<IWorkflowBlueprint>> FindManyAsync(Func<IWorkflowBlueprint, bool> predicate, CancellationToken cancellationToken, bool includeDisabled = false) =>
+            (await ListAsync(cancellationToken, includeDisabled).Where(predicate).OrderByDescending(x => x.Version)).ToList();
 
-        public async Task<IWorkflowBlueprint?> FindAsync(Func<IWorkflowBlueprint, bool> predicate, bool includeDisabled, CancellationToken cancellationToken) =>
-            (await ListAsync(includeDisabled, cancellationToken).Where(predicate).OrderByDescending(x => x.Version)).FirstOrDefault();
+        public async Task<IWorkflowBlueprint?> FindAsync(Func<IWorkflowBlueprint, bool> predicate, CancellationToken cancellationToken, bool includeDisabled = false) =>
+            (await ListAsync(cancellationToken, includeDisabled).Where(predicate).OrderByDescending(x => x.Version)).FirstOrDefault();
         
-        private async IAsyncEnumerable<IWorkflowBlueprint> ListActiveInternalAsync(bool includeDisabled, [EnumeratorCancellation] CancellationToken cancellationToken)
+        private async IAsyncEnumerable<IWorkflowBlueprint> ListActiveInternalAsync([EnumeratorCancellation] CancellationToken cancellationToken, bool includeDisabled)
         {
-            var workflows = await ListAsync(includeDisabled, cancellationToken);
+            var workflows = await ListAsync(cancellationToken, includeDisabled);
 
             foreach (var workflow in workflows)
             {
@@ -54,7 +54,7 @@ namespace Elsa.Services.Workflows
             }
         }
 
-        private async IAsyncEnumerable<IWorkflowBlueprint> ListInternalAsync(bool includeDisabled, [EnumeratorCancellation] CancellationToken cancellationToken)
+        private async IAsyncEnumerable<IWorkflowBlueprint> ListInternalAsync([EnumeratorCancellation] CancellationToken cancellationToken, bool includeDisabled)
         {   
             var providers = _workflowProviders;
 

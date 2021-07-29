@@ -31,7 +31,7 @@ namespace Elsa.Server.Hangfire.Dispatch
 
         public async Task DispatchAsync(ExecuteWorkflowDefinitionRequest request, CancellationToken cancellationToken = default)
         {
-            var workflowBlueprint = await _workflowRegistry.GetAsync(request.WorkflowDefinitionId, request.TenantId, VersionOptions.Published, true, cancellationToken);
+            var workflowBlueprint = await _workflowRegistry.GetAsync(request.WorkflowDefinitionId, request.TenantId, VersionOptions.Published, cancellationToken);
 
             if (workflowBlueprint == null)
             {
@@ -54,7 +54,7 @@ namespace Elsa.Server.Hangfire.Dispatch
                 return;
             }
 
-            var workflowBlueprint = await _workflowRegistry.GetAsync(workflowInstance.DefinitionId, workflowInstance.TenantId, VersionOptions.SpecificVersion(workflowInstance.Version), true, cancellationToken);
+            var workflowBlueprint = await _workflowRegistry.GetAsync(workflowInstance.DefinitionId, workflowInstance.TenantId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken);
 
             if (workflowBlueprint == null)
             {

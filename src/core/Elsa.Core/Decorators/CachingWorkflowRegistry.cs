@@ -40,36 +40,36 @@ namespace Elsa.Decorators
             _mediator = mediator;
         }
 
-        public async Task<IEnumerable<IWorkflowBlueprint>> ListAsync(bool includeDisabled, CancellationToken cancellationToken) => await ListInternalAsync(includeDisabled, cancellationToken);
-        public async Task<IEnumerable<IWorkflowBlueprint>> ListActiveAsync(bool includeDisabled, CancellationToken cancellationToken = default) => await ListActiveInternalAsync(includeDisabled, cancellationToken).ToListAsync(cancellationToken);
+        public async Task<IEnumerable<IWorkflowBlueprint>> ListAsync(CancellationToken cancellationToken, bool includeDisabled = false) => await ListInternalAsync(cancellationToken, includeDisabled);
+        public async Task<IEnumerable<IWorkflowBlueprint>> ListActiveAsync(CancellationToken cancellationToken = default, bool includeDisabled = false) => await ListActiveInternalAsync(cancellationToken, includeDisabled).ToListAsync(cancellationToken);
 
-        public async Task<IWorkflowBlueprint?> GetAsync(string id, string? tenantId, VersionOptions version, bool includeDisabled, CancellationToken cancellationToken) =>
-            await FindAsync(x => x.Id == id && x.TenantId == tenantId && x.WithVersion(version), includeDisabled, cancellationToken);
+        public async Task<IWorkflowBlueprint?> GetAsync(string id, string? tenantId, VersionOptions version, CancellationToken cancellationToken, bool includeDisabled = false) =>
+            await FindAsync(x => x.Id == id && x.TenantId == tenantId && x.WithVersion(version), cancellationToken, includeDisabled);
 
-        public async Task<IEnumerable<IWorkflowBlueprint>> FindManyAsync(Func<IWorkflowBlueprint, bool> predicate, bool includeDisabled, CancellationToken cancellationToken)
+        public async Task<IEnumerable<IWorkflowBlueprint>> FindManyAsync(Func<IWorkflowBlueprint, bool> predicate, CancellationToken cancellationToken, bool includeDisabled = false)
         {
-            var workflows = await ListInternalAsync(includeDisabled, cancellationToken);
+            var workflows = await ListInternalAsync(cancellationToken, includeDisabled);
             return workflows.Where(predicate);
         }
 
-        public async Task<IWorkflowBlueprint?> FindAsync(Func<IWorkflowBlueprint, bool> predicate, bool includeDisabled, CancellationToken cancellationToken)
+        public async Task<IWorkflowBlueprint?> FindAsync(Func<IWorkflowBlueprint, bool> predicate, CancellationToken cancellationToken, bool includeDisabled = false)
         {
-            var workflows = await ListInternalAsync(includeDisabled, cancellationToken);
+            var workflows = await ListInternalAsync(cancellationToken, includeDisabled);
             return workflows.FirstOrDefault(predicate);
         }
 
-        private async Task<ICollection<IWorkflowBlueprint>> ListInternalAsync(bool includeDisabled, CancellationToken cancellationToken)
+        private async Task<ICollection<IWorkflowBlueprint>> ListInternalAsync(CancellationToken cancellationToken, bool includeDisabled)
         {
             return await _memoryCache.GetOrCreateAsync(CacheKey, async entry =>
             {
                 entry.Monitor(_cacheSignal.GetToken(CacheKey));
-                return await _workflowRegistry.ListAsync(includeDisabled, cancellationToken).ToList();
+                return await _workflowRegistry.ListAsync(cancellationToken, includeDisabled).ToList();
             });
         }
         
-        private async IAsyncEnumerable<IWorkflowBlueprint> ListActiveInternalAsync(bool includeDisabled, [EnumeratorCancellation] CancellationToken cancellationToken)
+        private async IAsyncEnumerable<IWorkflowBlueprint> ListActiveInternalAsync([EnumeratorCancellation] CancellationToken cancellationToken, bool includeDisabled)
         {
-            var workflows = await ListInternalAsync(includeDisabled, cancellationToken);
+            var workflows = await ListInternalAsync(cancellationToken, includeDisabled);
             
             foreach (var workflow in workflows)
             {

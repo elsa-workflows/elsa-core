@@ -35,7 +35,7 @@ namespace Elsa.Services.Triggers
 
         public async Task IndexTriggersAsync(CancellationToken cancellationToken = default)
         {
-            var allWorkflowBlueprints = await _workflowRegistry.ListActiveAsync(true, cancellationToken);
+            var allWorkflowBlueprints = await _workflowRegistry.ListActiveAsync(cancellationToken, true);
             var publishedWorkflowBlueprints = allWorkflowBlueprints.Where(x => x.IsPublished && !x.IsDisabled).ToList();
             await IndexTriggersAsync(publishedWorkflowBlueprints, cancellationToken);
             await _mediator.Publish(new TriggerIndexingFinished(), cancellationToken);

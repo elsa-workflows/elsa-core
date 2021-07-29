@@ -11,7 +11,6 @@ using Elsa.Activities.Http.Parsers.Request;
 using Elsa.Activities.Http.Services;
 using Elsa.Persistence;
 using Elsa.Services;
-using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 using Open.Linq.AsyncExtensions;
@@ -74,7 +73,7 @@ namespace Elsa.Activities.Http.Middleware
                 return;
             }
 
-            var workflowBlueprint = await workflowRegistry.FindAsync(x => x.IsPublished && x.Id == pendingWorkflowInstance.DefinitionId, false, cancellationToken);
+            var workflowBlueprint = await workflowRegistry.FindAsync(x => x.IsPublished && x.Id == pendingWorkflowInstance.DefinitionId, cancellationToken);
             if (workflowBlueprint is null)
             {
                 await _next(httpContext);
