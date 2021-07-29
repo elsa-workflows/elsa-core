@@ -15,12 +15,12 @@ namespace Elsa.Services
         /// <summary>
         /// Lists all versions of all workflow blueprints.
         /// </summary>
-        Task<IEnumerable<IWorkflowBlueprint>> ListAsync(CancellationToken cancellationToken = default);
+        Task<IEnumerable<IWorkflowBlueprint>> ListAsync(bool includeDisabled = false, CancellationToken cancellationToken = default);
         
         /// <summary>
         /// Lists only those workflow blueprints that are published or have at least one non-finished workflow.
         /// </summary>
-        Task<IEnumerable<IWorkflowBlueprint>> ListActiveAsync(CancellationToken cancellationToken = default);
+        Task<IEnumerable<IWorkflowBlueprint>> ListActiveAsync(bool includeDisabled = false, CancellationToken cancellationToken = default);
         
         /// <summary>
         /// Gets a single workflow blueprint with the specified ID for the specified tenant and version.
@@ -35,6 +35,6 @@ namespace Elsa.Services
         /// <summary>
         /// Returns a single workflow blueprint that fits the specified predicate. 
         /// </summary>
-        Task<IWorkflowBlueprint?> FindAsync(Func<IWorkflowBlueprint, bool> predicate, CancellationToken cancellationToken = default);
+        Task<IWorkflowBlueprint?> FindAsync(Func<IWorkflowBlueprint, bool> predicate, bool includeDisabled = false, CancellationToken cancellationToken = default);
     }
 }

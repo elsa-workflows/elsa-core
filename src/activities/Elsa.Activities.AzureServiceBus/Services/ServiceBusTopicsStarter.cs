@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -77,7 +77,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             var workflowRegistry = scope.ServiceProvider.GetRequiredService<IWorkflowRegistry>();
             var workflowBlueprintReflector = scope.ServiceProvider.GetRequiredService<IWorkflowBlueprintReflector>();
             var workflowInstanceStore = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
-            var workflows = await workflowRegistry.ListActiveAsync(cancellationToken);
+            var workflows = await workflowRegistry.ListActiveAsync(false, cancellationToken);
 
             var query =
                 from workflow in workflows

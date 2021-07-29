@@ -9,7 +9,7 @@ namespace Elsa.Services.Models
         bool IsSingleton { get; }
         bool IsPublished { get; }
         bool IsLatest { get; }
-        bool IsDisabled { get; }
+        bool IsDisabled { get; set; }
         string? Tag { get; }
         string? Channel { get; }
         

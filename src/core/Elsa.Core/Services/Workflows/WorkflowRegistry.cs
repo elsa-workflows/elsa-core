@@ -28,21 +28,21 @@ namespace Elsa.Services.Workflows
             _mediator = mediator;
         }
 
-        public async Task<IEnumerable<IWorkflowBlueprint>> ListAsync(CancellationToken cancellationToken) => await ListInternalAsync(cancellationToken).ToListAsync(cancellationToken);
-        public async Task<IEnumerable<IWorkflowBlueprint>> ListActiveAsync(CancellationToken cancellationToken) => await ListActiveInternalAsync(cancellationToken).ToListAsync(cancellationToken);
+        public async Task<IEnumerable<IWorkflowBlueprint>> ListAsync(bool includeDisabled, CancellationToken cancellationToken) => await ListInternalAsync(includeDisabled, cancellationToken).ToListAsync(cancellationToken);
+        public async Task<IEnumerable<IWorkflowBlueprint>> ListActiveAsync(bool includeDisabled, CancellationToken cancellationToken) => await ListActiveInternalAsync(includeDisabled, cancellationToken).ToListAsync(cancellationToken);
 
         public async Task<IWorkflowBlueprint?> GetAsync(string id, string? tenantId, VersionOptions version, bool includeDisabled, CancellationToken cancellationToken) =>
-            await FindAsync(x => x.Id == id && x.TenantId == tenantId && x.WithVersion(version), cancellationToken);
+            await FindAsync(x => x.Id == id && x.TenantId == tenantId && x.WithVersion(version), includeDisabled, cancellationToken);
 
         public async Task<IEnumerable<IWorkflowBlueprint>> FindManyAsync(Func<IWorkflowBlueprint, bool> predicate, bool includeDisabled, CancellationToken cancellationToken) =>
-            (await ListAsync(cancellationToken).Where(predicate).OrderByDescending(x => x.Version)).ToList();
+            (await ListAsync(includeDisabled, cancellationToken).Where(predicate).OrderByDescending(x => x.Version)).ToList();
 
-        public async Task<IWorkflowBlueprint?> FindAsync(Func<IWorkflowBlueprint, bool> predicate, CancellationToken cancellationToken) =>
-            (await ListAsync(cancellationToken).Where(predicate).OrderByDescending(x => x.Version)).FirstOrDefault();
+        public async Task<IWorkflowBlueprint?> FindAsync(Func<IWorkflowBlueprint, bool> predicate, bool includeDisabled, CancellationToken cancellationToken) =>
+            (await ListAsync(includeDisabled, cancellationToken).Where(predicate).OrderByDescending(x => x.Version)).FirstOrDefault();
         
-        private async IAsyncEnumerable<IWorkflowBlueprint> ListActiveInternalAsync([EnumeratorCancellation] CancellationToken cancellationToken)
+        private async IAsyncEnumerable<IWorkflowBlueprint> ListActiveInternalAsync(bool includeDisabled, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            var workflows = await ListAsync(cancellationToken);
+            var workflows = await ListAsync(includeDisabled, cancellationToken);
 
             foreach (var workflow in workflows)
             {
@@ -54,19 +54,22 @@ namespace Elsa.Services.Workflows
             }
         }
 
-        private async IAsyncEnumerable<IWorkflowBlueprint> ListInternalAsync([EnumeratorCancellation] CancellationToken cancellationToken)
+        private async IAsyncEnumerable<IWorkflowBlueprint> ListInternalAsync(bool includeDisabled, [EnumeratorCancellation] CancellationToken cancellationToken)
         {   
             var providers = _workflowProviders;
 
             foreach (var provider in providers)
-            await foreach (var workflow in provider.GetWorkflowsAsync(cancellationToken).WithCancellation(cancellationToken))
-            {
-                var workflowSettingsContext = new WorkflowSettingsContext(workflow.Id);
-                await _mediator.Publish(new WorkflowSettingsLoaded(workflowSettingsContext), cancellationToken);
+                await foreach (var workflow in provider.GetWorkflowsAsync(cancellationToken).WithCancellation(cancellationToken))
+                {
+                    var workflowSettingsContext = new WorkflowSettingsContext(workflow.Id);
+                    await _mediator.Publish(new WorkflowSettingsLoaded(workflowSettingsContext), cancellationToken);
+                    workflow.IsDisabled = workflowSettingsContext.Value;
 
-                if (!workflowSettingsContext.Value)                    
+                    if (!includeDisabled && workflowSettingsContext.Value)
+                        continue;
+
                     yield return workflow;
-            }
+                }
         }
         
         private async Task<bool> WorkflowHasUnfinishedWorkflowsAsync(IWorkflowBlueprint workflowBlueprint, CancellationToken cancellationToken)

@@ -24,50 +24,64 @@ namespace Elsa.Decorators
         private readonly IMemoryCache _memoryCache;
         private readonly ICacheSignal _cacheSignal;
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
+        private readonly IMediator _mediator;
 
-        public CachingWorkflowRegistry(IWorkflowRegistry workflowRegistry, IMemoryCache memoryCache, ICacheSignal cacheSignal, IWorkflowInstanceStore workflowInstanceStore)
+        public CachingWorkflowRegistry(
+            IWorkflowRegistry workflowRegistry, 
+            IMemoryCache memoryCache, 
+            ICacheSignal cacheSignal, 
+            IWorkflowInstanceStore workflowInstanceStore, 
+            IMediator mediator)
         {
             _workflowRegistry = workflowRegistry;
             _memoryCache = memoryCache;
             _cacheSignal = cacheSignal;
             _workflowInstanceStore = workflowInstanceStore;
+            _mediator = mediator;
         }
 
-        public async Task<IEnumerable<IWorkflowBlueprint>> ListAsync(CancellationToken cancellationToken) => await ListInternalAsync(cancellationToken);
-        public async Task<IEnumerable<IWorkflowBlueprint>> ListActiveAsync(CancellationToken cancellationToken = default) => await ListActiveInternalAsync(cancellationToken).ToListAsync(cancellationToken);
+        public async Task<IEnumerable<IWorkflowBlueprint>> ListAsync(bool includeDisabled, CancellationToken cancellationToken) => await ListInternalAsync(includeDisabled, cancellationToken);
+        public async Task<IEnumerable<IWorkflowBlueprint>> ListActiveAsync(bool includeDisabled, CancellationToken cancellationToken = default) => await ListActiveInternalAsync(includeDisabled, cancellationToken).ToListAsync(cancellationToken);
 
         public async Task<IWorkflowBlueprint?> GetAsync(string id, string? tenantId, VersionOptions version, bool includeDisabled, CancellationToken cancellationToken) =>
-            await FindAsync(x => x.Id == id && x.TenantId == tenantId && x.WithVersion(version), cancellationToken);
+            await FindAsync(x => x.Id == id && x.TenantId == tenantId && x.WithVersion(version), includeDisabled, cancellationToken);
 
         public async Task<IEnumerable<IWorkflowBlueprint>> FindManyAsync(Func<IWorkflowBlueprint, bool> predicate, bool includeDisabled, CancellationToken cancellationToken)
         {
-            var workflows = await ListInternalAsync(cancellationToken);
+            var workflows = await ListInternalAsync(includeDisabled, cancellationToken);
             return workflows.Where(predicate);
         }
 
-        public async Task<IWorkflowBlueprint?> FindAsync(Func<IWorkflowBlueprint, bool> predicate, CancellationToken cancellationToken)
+        public async Task<IWorkflowBlueprint?> FindAsync(Func<IWorkflowBlueprint, bool> predicate, bool includeDisabled, CancellationToken cancellationToken)
         {
-            var workflows = await ListInternalAsync(cancellationToken);
+            var workflows = await ListInternalAsync(includeDisabled, cancellationToken);
             return workflows.FirstOrDefault(predicate);
         }
 
-        private async Task<ICollection<IWorkflowBlueprint>> ListInternalAsync(CancellationToken cancellationToken)
+        private async Task<ICollection<IWorkflowBlueprint>> ListInternalAsync(bool includeDisabled, CancellationToken cancellationToken)
         {
             return await _memoryCache.GetOrCreateAsync(CacheKey, async entry =>
             {
                 entry.Monitor(_cacheSignal.GetToken(CacheKey));
-                return await _workflowRegistry.ListAsync(cancellationToken).ToList();
+                return await _workflowRegistry.ListAsync(includeDisabled, cancellationToken).ToList();
             });
         }
         
-        private async IAsyncEnumerable<IWorkflowBlueprint> ListActiveInternalAsync([EnumeratorCancellation] CancellationToken cancellationToken)
+        private async IAsyncEnumerable<IWorkflowBlueprint> ListActiveInternalAsync(bool includeDisabled, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            var workflows = await ListInternalAsync(cancellationToken);
+            var workflows = await ListInternalAsync(includeDisabled, cancellationToken);
             
             foreach (var workflow in workflows)
             {
                 // If a workflow is not published, only consider it for processing if it has at least one non-ended workflow instance.
                 if (!workflow.IsPublished && !await WorkflowHasUnfinishedWorkflowsAsync(workflow, cancellationToken))
+                    continue;
+
+                var workflowSettingsContext = new WorkflowSettingsContext(workflow.Id);
+                await _mediator.Publish(new WorkflowSettingsLoaded(workflowSettingsContext), cancellationToken);
+                workflow.IsDisabled = workflowSettingsContext.Value;
+
+                if (!includeDisabled && workflowSettingsContext.Value)
                     continue;
 
                 yield return workflow;

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -61,7 +61,7 @@ namespace Elsa.Services.Bookmarks
             var workflowInstanceList = workflowInstances.ToList();
             var workflowInstanceIds = workflowInstanceList.Select(x => x.Id).ToList();
             var oldBookmarks = await FindBookmarksAsync(workflowInstanceIds, cancellationToken).ToList();
-            var workflowBlueprints = await _workflowRegistry.ListActiveAsync(cancellationToken);
+            var workflowBlueprints = await _workflowRegistry.ListActiveAsync(false, cancellationToken);
             var workflowBlueprintsDictionary = workflowBlueprints.ToDictionary(x => (x.Id, x.Version));
             var entities = new List<Bookmark>();
             

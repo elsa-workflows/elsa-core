@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -140,7 +140,7 @@ namespace Elsa.Activities.Workflows
 
         private async Task<IWorkflowBlueprint?> FindWorkflowBlueprintAsync(CancellationToken cancellationToken)
         {
-            var query = await _workflowRegistry.ListAsync(cancellationToken);
+            var query = await _workflowRegistry.ListAsync(false, cancellationToken);
 
             query = query.Where(x => x.WithVersion(VersionOptions.Published));
 

@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Services.Models;
@@ -21,14 +22,16 @@ namespace Elsa.WorkflowSettings.Services.WorkflowSettingsContexts
             var workflowBlueprintId = context.WorkflowBlueprintId;
             var key = context.Key;
 
+            // Read workflow settings from database store persistence
             var workflowSettings = await _workflowSettingsStore.FindByWorkflowBlueprintIdAndKeyAsync(workflowBlueprintId, key, cancellationToken);
-
-            return workflowSettings != null
-                ? bool.Parse(workflowSettings.Value)
-                : false;
+            if (workflowSettings != null) 
+            {
+                return bool.Parse(workflowSettings.Value);
+            }
+            
+            // Read workflow settings from Environment Variables
+            var value = Environment.GetEnvironmentVariable($"{workflowBlueprintId}:{key}");
+            return bool.Parse(value ?? "false");
         }
-
-        //private async 
-        
     }
 }
