@@ -1,5 +1,6 @@
 using Elsa.Activities.Webhooks.ActivityTypes;
 using Elsa.Activities.Webhooks.Bookmarks;
+using Elsa.Activities.Webhooks.Handlers;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -11,11 +12,10 @@ namespace Elsa.Activities.Webhooks.Extensions
         {
             elsaOptions.Services
                 .AddScoped<IActivityTypeProvider, WebhookActivityTypeProvider>()
-                .AddBookmarkProvider<WebhookBookmarkProvider>();
+                .AddBookmarkProvider<WebhookBookmarkProvider>()
+                .AddNotificationHandlersFrom<EvictWorkflowRegistryCacheHandler>();
 
             return elsaOptions;
         }
-
-
     }
 }

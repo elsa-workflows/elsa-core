@@ -4,11 +4,13 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Events;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Providers.Workflow;
 using Elsa.Services.Models;
+using MediatR;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Services.Workflows
@@ -17,11 +19,13 @@ namespace Elsa.Services.Workflows
     {
         private readonly IEnumerable<IWorkflowProvider> _workflowProviders;
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
+        private readonly IMediator _mediator;
 
-        public WorkflowRegistry(IEnumerable<IWorkflowProvider> workflowProviders, IWorkflowInstanceStore workflowInstanceStore)
+        public WorkflowRegistry(IEnumerable<IWorkflowProvider> workflowProviders, IWorkflowInstanceStore workflowInstanceStore, IMediator mediator)
         {
             _workflowProviders = workflowProviders;
             _workflowInstanceStore = workflowInstanceStore;
+            _mediator = mediator;
         }
 
         public async Task<IEnumerable<IWorkflowBlueprint>> ListAsync(CancellationToken cancellationToken) => await ListInternalAsync(cancellationToken).ToListAsync(cancellationToken);
@@ -46,18 +50,22 @@ namespace Elsa.Services.Workflows
                 if (!workflow.IsPublished && !await WorkflowHasUnfinishedWorkflowsAsync(workflow, cancellationToken))
                     continue;
 
-                yield return workflow;
+                yield return workflow;  
             }
         }
 
         private async IAsyncEnumerable<IWorkflowBlueprint> ListInternalAsync([EnumeratorCancellation] CancellationToken cancellationToken)
-        {
+        {   
             var providers = _workflowProviders;
 
             foreach (var provider in providers)
             await foreach (var workflow in provider.GetWorkflowsAsync(cancellationToken).WithCancellation(cancellationToken))
             {
-                yield return workflow;
+                var workflowSettingsContext = new WorkflowSettingsContext(workflow.Id);
+                await _mediator.Publish(new WorkflowSettingsLoaded(workflowSettingsContext), cancellationToken);
+
+                if (!workflowSettingsContext.Value)                    
+                    yield return workflow;
             }
         }
         

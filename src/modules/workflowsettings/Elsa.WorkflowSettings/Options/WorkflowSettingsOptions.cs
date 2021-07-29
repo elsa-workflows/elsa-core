@@ -11,7 +11,6 @@ namespace Elsa.WorkflowSettings.Options
         {
             WorkflowSettingsStoreFactory = provider => ActivatorUtilities.CreateInstance<InMemoryWorkflowSettingsStore>(provider);
         }
-
         public Func<IServiceProvider, IWorkflowSettingsStore> WorkflowSettingsStoreFactory { get; set; }
     }
 }

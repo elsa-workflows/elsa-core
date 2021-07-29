@@ -3,7 +3,7 @@ using System.Linq;
 using Elsa.WorkflowSettings.Models;
 using Swashbuckle.AspNetCore.Filters;
 
-namespace Elsa.WorkflowSettings.Swagger.Examples
+namespace Elsa.WorkflowSettings.Client.Swagger.Examples
 {
     public class WorkflowSettingsListExample : IExamplesProvider<IEnumerable<WorkflowSetting>>
     {

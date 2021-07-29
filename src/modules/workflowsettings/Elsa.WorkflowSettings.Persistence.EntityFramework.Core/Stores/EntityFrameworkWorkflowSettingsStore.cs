@@ -20,13 +20,5 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.Core.Stores
         }
 
         protected override Expression<Func<WorkflowSetting, bool>> MapSpecification(ISpecification<WorkflowSetting> specification) => AutoMapSpecification(specification);
-
-        //protected override void OnSaving(WorkflowSettingsContext dbContext, WorkflowSetting entity)
-        //{
-        //}
-
-        //protected override void OnLoading(WorkflowSettingsContext dbContext, WorkflowSetting entity)
-        //{
-        //}
     }
 }

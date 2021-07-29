@@ -1,8 +1,7 @@
 using Elsa.Attributes;
 using Elsa.Services.Startup;
-using Elsa.WorkflowSettings.Abstractions.Persistence;
+using Elsa.WorkflowSettings.Extensions;
 using Elsa.WorkflowSettings.Persistence.MongoDb.Extensions;
-using Elsa.WorkflowSettings.Persistence.Decorators;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -31,10 +30,9 @@ namespace Elsa.WorkflowSettings.Persistence.MongoDb
 
             var workflowSettingsOptionsBuilder = new WorkflowSettingsOptionsBuilder(services);
             workflowSettingsOptionsBuilder.UseWorkflowSettingsMongoDbPersistence(options => options.ConnectionString = connectionString);
-
             services.AddScoped(sp => workflowSettingsOptionsBuilder.WorkflowSettingsOptions.WorkflowSettingsStoreFactory(sp));
-            services.Decorate<IWorkflowSettingsStore, InitializingWorkflowSettingsStore>();
-            services.Decorate<IWorkflowSettingsStore, EventPublishingWorkflowSettingsStore>();
+
+            elsa.AddWorkflowSettings();
         }
     }
 }

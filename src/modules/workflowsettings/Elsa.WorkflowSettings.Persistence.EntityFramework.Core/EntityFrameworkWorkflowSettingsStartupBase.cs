@@ -1,7 +1,6 @@
 using System;
 using Elsa.Services.Startup;
-using Elsa.WorkflowSettings.Abstractions.Persistence;
-using Elsa.WorkflowSettings.Persistence.Decorators;
+using Elsa.WorkflowSettings.Extensions;
 using Elsa.WorkflowSettings.Persistence.EntityFramework.Core.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -33,11 +32,9 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.Core
 
             var workflowSettingsOptionsBuilder = new WorkflowSettingsOptionsBuilder(services);
             workflowSettingsOptionsBuilder.UseEntityFrameworkPersistence(options => Configure(options, connectionString));
-
             services.AddScoped(sp => workflowSettingsOptionsBuilder.WorkflowSettingsOptions.WorkflowSettingsStoreFactory(sp));
 
-            services.Decorate<IWorkflowSettingsStore, InitializingWorkflowSettingsStore>();
-            services.Decorate<IWorkflowSettingsStore, EventPublishingWorkflowSettingsStore>();
+            elsa.AddWorkflowSettings();
         }
 
         protected virtual string GetDefaultConnectionString() => throw new Exception($"No connection string specified for the {ProviderName} provider");

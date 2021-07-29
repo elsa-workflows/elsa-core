@@ -2,7 +2,7 @@ using System;
 using Elsa.WorkflowSettings.Models;
 using Swashbuckle.AspNetCore.Filters;
 
-namespace Elsa.WorkflowSettings.Swagger.Examples
+namespace Elsa.WorkflowSettings.Client.Swagger.Examples
 {
     public class WorkflowSettingsExample : IExamplesProvider<WorkflowSetting>
     {
