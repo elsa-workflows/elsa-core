@@ -23,7 +23,6 @@ namespace Elsa.Services.Models
             string? description,
             bool isLatest,
             bool isPublished,
-            //bool isDisabled,
             string? tag,
             string? channel,
             Variables? variables,
@@ -53,7 +52,6 @@ namespace Elsa.Services.Models
             IsSingleton = isSingleton;
             IsLatest = isLatest;
             IsPublished = isPublished;
-            //IsDisabled = isDisabled;
             Tag = tag;
             Channel = channel;
             ContextOptions = contextOptions;

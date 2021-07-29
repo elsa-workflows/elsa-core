@@ -121,9 +121,6 @@ export class ElsaWorkflowRegistryListScreen {
               if (!workflowDisplayName || workflowDisplayName.trim().length == 0)
                 workflowDisplayName = 'Untitled';
 
-              const workflowBlueprintSettings = this.workflowSettings.find(x => x.workflowBlueprintId == workflowBlueprint.id);
-              let workflowDisbled = workflowBlueprintSettings != undefined && workflowBlueprintSettings.key == 'disabled' && workflowBlueprintSettings.value == 'true';
-
               const editUrl = `/workflow-registry/${workflowBlueprint.id}`;
               const instancesUrl = `/workflow-instances?workflow=${workflowBlueprint.id}`;
 
@@ -172,11 +169,11 @@ export class ElsaWorkflowRegistryListScreen {
                   
                   <td class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-text-right">{latestVersionNumber}</td>
                   <td class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-text-right">{publishedVersionNumber}</td>
-                  <td class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-text-right">{workflowDisbled ? 'No' : 'Yes'}</td>                  
+                  <td class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-text-right">{workflowBlueprint.isDisabled ? 'No' : 'Yes'}</td>                  
                   <td class="elsa-pr-6">
                     <elsa-context-menu history={this.history} menuItems={[
                       {text: 'Edit', anchorUrl: editUrl, icon: editIcon},
-                      workflowDisbled ?
+                      workflowBlueprint.isDisabled ?
                       {text: 'Enable', clickHandler: e => this.onEnableWorkflowClick(e, workflowBlueprint.id), icon: enableIcon}                                           
                       :
                       {text: 'Disable', clickHandler: e => this.onDisableWorkflowClick(e, workflowBlueprint.id), icon: disableIcon}

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Elsa.Models;
 
 namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
@@ -11,6 +11,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
         public bool IsEnabled { get; set; }
         public bool IsPublished { get; set; }
         public bool IsLatest { get; set; }
+        public bool IsDisabled { get; set; }
         public Variables Variables { get; set; } = new();
         public WorkflowContextOptions? ContextOptions { get; set; }
         public WorkflowPersistenceBehavior PersistenceBehavior { get; set; }
@@ -59,5 +60,6 @@ namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
         public bool IsSingleton { get; set; }
         public bool IsPublished { get; set; }
         public bool IsLatest { get; set; }
+        public bool IsDisabled { get; set; }
     }
 }
