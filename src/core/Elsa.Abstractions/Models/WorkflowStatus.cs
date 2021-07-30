@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
 namespace Elsa.Models
@@ -11,6 +11,7 @@ namespace Elsa.Models
         Finished,
         Suspended,
         Faulted,
-        Cancelled
+        Cancelled,
+        Disabled
     }
 }

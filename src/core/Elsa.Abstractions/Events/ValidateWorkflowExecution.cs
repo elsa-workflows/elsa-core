@@ -9,8 +9,6 @@ namespace Elsa.Events
         {
             WorkflowExecutionContext = workflowExecutionContext;
             ActivityBlueprint = activityBlueprint;
-
-            if (workflowExecutionContext.WorkflowBlueprint.IsDisabled) PreventWorkflowExecution();
         }
 
         public WorkflowExecutionContext WorkflowExecutionContext { get; }
