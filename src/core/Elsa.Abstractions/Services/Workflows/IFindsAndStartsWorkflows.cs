@@ -1,6 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Services.Bookmarks;
+using Elsa.Models;
 
 namespace Elsa.Services
 {
@@ -10,7 +10,7 @@ namespace Elsa.Services
             string activityType,
             IBookmark bookmark,
             string? tenantId,
-            object? input = default,
+            WorkflowInput? input = default,
             string? contextId = default,
             CancellationToken cancellationToken = default);
     }

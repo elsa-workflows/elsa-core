@@ -30,7 +30,7 @@ namespace Elsa.Services.Dispatch.Consumers
                 return;
             }
             
-            var startableWorkflow = await _workflowLaunchpad.CollectStartableWorkflowAsync(workflowBlueprint, message.ActivityId, message.CorrelationId, message.ContextId, tenantId);
+            var startableWorkflow = await _workflowLaunchpad.FindStartableWorkflowAsync(workflowBlueprint, message.ActivityId, message.CorrelationId, message.ContextId, tenantId);
 
             if (startableWorkflow == null)
             {

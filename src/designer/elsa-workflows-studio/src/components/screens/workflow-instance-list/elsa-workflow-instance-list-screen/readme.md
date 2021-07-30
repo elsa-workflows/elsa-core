@@ -7,10 +7,38 @@
 
 ## Properties
 
-| Property    | Attribute    | Description | Type            | Default     |
-| ----------- | ------------ | ----------- | --------------- | ----------- |
-| `history`   | --           |             | `RouterHistory` | `undefined` |
-| `serverUrl` | `server-url` |             | `string`        | `undefined` |
+| Property         | Attribute         | Description | Type                                                                                                                                                         | Default           |
+| ---------------- | ----------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------- |
+| `basePath`       | `base-path`       |             | `string`                                                                                                                                                     | `undefined`       |
+| `culture`        | `culture`         |             | `string`                                                                                                                                                     | `undefined`       |
+| `history`        | --                |             | `RouterHistory`                                                                                                                                              | `undefined`       |
+| `orderBy`        | `order-by`        |             | `OrderBy.Finished \| OrderBy.LastExecuted \| OrderBy.Started`                                                                                                | `OrderBy.Started` |
+| `serverUrl`      | `server-url`      |             | `string`                                                                                                                                                     | `undefined`       |
+| `workflowId`     | `workflow-id`     |             | `string`                                                                                                                                                     | `undefined`       |
+| `workflowStatus` | `workflow-status` |             | `WorkflowStatus.Cancelled \| WorkflowStatus.Faulted \| WorkflowStatus.Finished \| WorkflowStatus.Idle \| WorkflowStatus.Running \| WorkflowStatus.Suspended` | `undefined`       |
+
+
+## Methods
+
+### `getSelectedWorkflowInstanceIds() => Promise<string[]>`
+
+
+
+#### Returns
+
+Type: `Promise<string[]>`
+
+
+
+### `refresh() => Promise<void>`
+
+
+
+#### Returns
+
+Type: `Promise<void>`
+
+
 
 
 ## Dependencies
@@ -24,8 +52,8 @@
 - stencil-route-link
 - [elsa-context-menu](../../../controls/elsa-context-menu)
 - [elsa-pager](../../../controls/elsa-pager)
-- [elsa-confirm-dialog](../../../shared/elsa-confirm-dialog)
 - [elsa-dropdown-button](../../../controls/elsa-dropdown-button)
+- context-consumer
 
 ### Graph
 ```mermaid
@@ -33,9 +61,8 @@ graph TD;
   elsa-workflow-instance-list-screen --> stencil-route-link
   elsa-workflow-instance-list-screen --> elsa-context-menu
   elsa-workflow-instance-list-screen --> elsa-pager
-  elsa-workflow-instance-list-screen --> elsa-confirm-dialog
   elsa-workflow-instance-list-screen --> elsa-dropdown-button
-  elsa-confirm-dialog --> elsa-modal-dialog
+  elsa-workflow-instance-list-screen --> context-consumer
   elsa-dropdown-button --> stencil-route-link
   elsa-studio-workflow-instances-list --> elsa-workflow-instance-list-screen
   style elsa-workflow-instance-list-screen fill:#f9f,stroke:#333,stroke-width:4px

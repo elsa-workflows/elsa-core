@@ -13,12 +13,10 @@ namespace Elsa.Scripting.JavaScript.Handlers
 {
     public class RenderJavaScriptTypeDefinitions : INotificationHandler<RenderingTypeScriptDefinitions>
     {
-        private readonly IConfiguration _configuration;
         private readonly IActivityTypeService _activityTypeService;
 
-        public RenderJavaScriptTypeDefinitions(IConfiguration configuration, IActivityTypeService activityTypeService)
+        public RenderJavaScriptTypeDefinitions(IActivityTypeService activityTypeService)
         {
-            _configuration = configuration;
             _activityTypeService = activityTypeService;
         }
 

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Services.Bookmarks;
+using Elsa.Models;
 
 namespace Elsa.Services
 {
@@ -9,7 +9,7 @@ namespace Elsa.Services
     {
         Task ResumeWorkflowsAsync(
             IEnumerable<BookmarkFinderResult> results,
-            object? input = default,
+            WorkflowInput? input = default,
             CancellationToken cancellationToken = default);
     }
 }

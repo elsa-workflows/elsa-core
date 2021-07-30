@@ -9,6 +9,7 @@
 
 | Property             | Attribute    | Description | Type                 | Default     |
 | -------------------- | ------------ | ----------- | -------------------- | ----------- |
+| `culture`            | `culture`    |             | `string`             | `undefined` |
 | `publishing`         | `publishing` |             | `boolean`            | `undefined` |
 | `workflowDefinition` | --           |             | `WorkflowDefinition` | `undefined` |
 

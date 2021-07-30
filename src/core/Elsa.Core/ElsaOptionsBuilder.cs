@@ -150,21 +150,21 @@ namespace Elsa
             return this;
         }
 
-        public ElsaOptionsBuilder AddCompetingMessageType(Type messageType, string? queue = default)
+        public ElsaOptionsBuilder AddCompetingMessageType(Type messageType, string? queueName = default)
         {
-            ElsaOptions.CompetingMessageTypes.Add(new CompetingMessageType(messageType, queue));
+            ElsaOptions.CompetingMessageTypes.Add(new MessageTypeConfig(messageType, queueName));
             return this;
         }
 
-        public ElsaOptionsBuilder AddCompetingMessageType<T>(string? queue = default) => AddCompetingMessageType(typeof(T), queue);
+        public ElsaOptionsBuilder AddCompetingMessageType<T>(string? queueName = default) => AddCompetingMessageType(typeof(T), queueName);
 
-        public ElsaOptionsBuilder AddPubSubMessageType(Type messageType)
+        public ElsaOptionsBuilder AddPubSubMessageType(Type messageType, string? queueName = default)
         {
-            ElsaOptions.PubSubMessageTypes.Add(messageType);
+            ElsaOptions.PubSubMessageTypes.Add(new MessageTypeConfig(messageType, queueName));
             return this;
         }
 
-        public ElsaOptionsBuilder AddPubSubMessageType<T>() => AddPubSubMessageType(typeof(T));
+        public ElsaOptionsBuilder AddPubSubMessageType<T>(string? queueName = default) => AddPubSubMessageType(typeof(T), queueName);
 
         public ElsaOptionsBuilder ConfigureDistributedLockProvider(Action<DistributedLockingOptionsBuilder> configureOptions)
         {

@@ -8,7 +8,7 @@ using Elsa.Events;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications.WorkflowInstances;
-using Elsa.Providers.Workflow;
+using Elsa.Providers.Workflows;
 using Elsa.Services.Models;
 using MediatR;
 using Open.Linq.AsyncExtensions;

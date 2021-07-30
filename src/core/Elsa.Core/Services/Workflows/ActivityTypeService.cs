@@ -7,6 +7,7 @@ using Elsa.Caching;
 using Elsa.Events;
 using Elsa.Exceptions;
 using Elsa.Metadata;
+using Elsa.Providers.Activities;
 using Elsa.Services.Models;
 using MediatR;
 using Microsoft.Extensions.Caching.Memory;

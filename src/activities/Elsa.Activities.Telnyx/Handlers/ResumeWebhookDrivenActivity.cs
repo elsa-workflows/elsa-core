@@ -7,8 +7,10 @@ using Elsa.Activities.Telnyx.Models;
 using Elsa.Activities.Telnyx.Providers.Bookmarks;
 using Elsa.Activities.Telnyx.Webhooks.Events;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
+using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Bookmarks;
+using Elsa.Services.Models;
 using MediatR;
 
 namespace Elsa.Activities.Telnyx.Handlers
@@ -40,8 +42,8 @@ namespace Elsa.Activities.Telnyx.Handlers
 
             var correlationId = GetCorrelationId(receivedPayload);
             var bookmark = CreateBookmark();
-            var context = new CollectWorkflowsContext(ActivityTypeName, bookmark, correlationId);
-            await _workflowLaunchpad.CollectAndDispatchWorkflowsAsync(context, receivedPayload, cancellationToken);
+            var context = new WorkflowsQuery(ActivityTypeName, bookmark, correlationId);
+            await _workflowLaunchpad.CollectAndDispatchWorkflowsAsync(context, new WorkflowInput(receivedPayload), cancellationToken);
         }
 
         protected virtual IBookmark CreateBookmark() => new GatherUsingSpeakBookmark();

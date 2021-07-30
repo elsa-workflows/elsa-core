@@ -26,7 +26,8 @@ namespace Elsa.Activities.StateMachine
             Hint = "Enter one or more transition names.",
             UIHint = ActivityInputUIHints.MultiText,
             DefaultSyntax = SyntaxNames.Json,
-            SupportedSyntaxes = new[] { SyntaxNames.Json }
+            SupportedSyntaxes = new[] { SyntaxNames.Json },
+            IsDesignerCritical = true
         )]
         public ISet<string> Transitions { get; set; } = new HashSet<string>();
 

@@ -22,7 +22,6 @@ RUN dotnet restore "./src/samples/dashboard/aspnetcore/ElsaDashboard.Samples.Asp
 COPY src/. ./src
 COPY *.props ./
 COPY ./Nuget.Config ./
-COPY --from=client-build /app/designer/elsa-workflows-studio ./src/designer/elsa-workflows-studio
 COPY --from=client-build /app/designer/bindings/aspnet/Elsa.Designer.Components.Web ./src/designer/bindings/aspnet/Elsa.Designer.Components.Web
 
 # build and publish (UseAppHost=false creates platform independent binaries)

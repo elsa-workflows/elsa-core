@@ -32,8 +32,9 @@ namespace Elsa.Services.Messaging
 
         public async Task<IBus> GetServiceBusAsync(Type messageType, string? queueName = default, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrWhiteSpace(queueName))
-                queueName = ElsaOptions.FormatChannelQueueName(messageType, _elsaOptions.WorkflowChannelOptions.Default);
+            queueName = string.IsNullOrWhiteSpace(queueName) 
+                ? ElsaOptions.FormatChannelQueueName(messageType, _elsaOptions.WorkflowChannelOptions.Default) 
+                : ElsaOptions.FormatQueueName(queueName);
             
             var prefixedQueueName = PrefixQueueName(queueName);
             await _semaphore.WaitAsync(cancellationToken);

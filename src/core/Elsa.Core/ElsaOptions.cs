@@ -22,19 +22,20 @@ using Storage.Net.Blobs;
 
 namespace Elsa
 {
-    public record CompetingMessageType(Type MessageType, string? Queue = default);
-    
+    public record MessageTypeConfig(Type MessageType, string? QueueName = default);
+
     public class ElsaOptions
     {
         public static string FormatChannelQueueName<TMessage>(string channel) => FormatChannelQueueName(typeof(TMessage), channel);
-        
-        public static string FormatChannelQueueName(Type messageType, string channel)
+        public static string FormatChannelQueueName(Type messageType, string channel) => FormatChannelQueueName(messageType.Name, channel);
+
+        public static string FormatChannelQueueName(string queueName, string channel)
         {
-            var queue = !string.IsNullOrWhiteSpace(channel) ? $"{messageType.Name}{channel}" : messageType.Name;
+            var queue = !string.IsNullOrWhiteSpace(channel) ? $"{queueName}{channel}" : queueName;
             return FormatQueueName(queue);
         }
         
-        public static string FormatQueueName(string queue) => queue.Dehumanize().Underscore().Dasherize();
+        public static string FormatQueueName(string queue) => queue.Humanize().Dehumanize().Underscore().Dasherize();
 
         internal ElsaOptions()
         {
@@ -65,8 +66,8 @@ namespace Elsa
         public IEnumerable<Type> ActivityTypes => ActivityFactory.Types;
 
         public IList<Type> WorkflowTypes { get; } = new List<Type>();
-        public IList<CompetingMessageType> CompetingMessageTypes { get; } = new List<CompetingMessageType>();
-        public IList<Type> PubSubMessageTypes { get; } = new List<Type>();
+        public IList<MessageTypeConfig> CompetingMessageTypes { get; } = new List<MessageTypeConfig>();
+        public IList<MessageTypeConfig> PubSubMessageTypes { get; } = new List<MessageTypeConfig>();
         public ServiceBusOptions ServiceBusOptions { get; } = new();
         public DistributedLockingOptions DistributedLockingOptions { get; set; }
 

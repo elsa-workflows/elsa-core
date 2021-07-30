@@ -284,7 +284,7 @@ export interface ActivityPropertyDescriptor {
   defaultValue?: any;
   defaultSyntax?: string;
   supportedSyntaxes: Array<string>;
-  isDisabled?: boolean;
+  isReadOnly?: boolean;
 }
 
 export interface WorkflowStorageDescriptor {

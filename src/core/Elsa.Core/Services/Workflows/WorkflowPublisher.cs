@@ -59,7 +59,7 @@ namespace Elsa.Services.Workflows
         {
             var publishedDefinition = await _workflowDefinitionStore.FindByDefinitionIdAsync(
                 workflowDefinition.DefinitionId,
-                VersionOptions.Published,
+                VersionOptions.LatestOrPublished,
                 cancellationToken);
 
             if (publishedDefinition != null)

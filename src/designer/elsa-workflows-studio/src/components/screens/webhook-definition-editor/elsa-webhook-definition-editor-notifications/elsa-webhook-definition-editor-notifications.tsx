@@ -15,7 +15,7 @@ export class ElsaWebhookEditorNotifications {
   }
 
   disconnectedCallback() {
-    eventBus.off(EventTypes.WebhookSaved);
+    eventBus.detach(EventTypes.WebhookSaved, this.onWebhookSaved);
   }
 
   onWebhookSaved = async (webhookDefinition: WebhookDefinition) => await this.toastNotificationElement.show({

@@ -18,6 +18,7 @@ using Elsa.Mapping;
 using Elsa.Metadata;
 using Elsa.Persistence;
 using Elsa.Persistence.Decorators;
+using Elsa.Providers.Activities;
 using Elsa.Providers.ActivityTypes;
 using Elsa.Providers.Workflows;
 using Elsa.Providers.WorkflowStorage;
@@ -108,14 +109,10 @@ namespace Microsoft.Extensions.DependencyInjection
         /// Registers a consumer and associated message type using the competing consumer pattern. With the competing consumer pattern, only the first consumer on a given node to obtain a message will handle that message.
         /// This is in contrast to the Publisher-Subscriber pattern, where a message will be delivered to the consumer on all nodes in a cluster. To register a Publisher-Subscriber consumer, use <seealso cref="AddPubSubConsumer{TConsumer,TMessage}"/>
         /// </summary>
-        /// <param name="elsaOptions"></param>
-        /// <typeparam name="TConsumer"></typeparam>
-        /// <typeparam name="TMessage"></typeparam>
-        /// <returns></returns>
-        public static ElsaOptionsBuilder AddCompetingConsumer<TConsumer, TMessage>(this ElsaOptionsBuilder elsaOptions) where TConsumer : class, IHandleMessages<TMessage>
+        public static ElsaOptionsBuilder AddCompetingConsumer<TConsumer, TMessage>(this ElsaOptionsBuilder elsaOptions, string? queueName = default) where TConsumer : class, IHandleMessages<TMessage>
         {
             elsaOptions.AddCompetingConsumerService<TConsumer, TMessage>();
-            elsaOptions.AddCompetingMessageType<TMessage>();
+            elsaOptions.AddCompetingMessageType<TMessage>(queueName);
             return elsaOptions;
         }
 
@@ -125,10 +122,10 @@ namespace Microsoft.Extensions.DependencyInjection
             return elsaOptions;
         }
         
-        public static ElsaOptionsBuilder AddPubSubConsumer<TConsumer, TMessage>(this ElsaOptionsBuilder elsaOptions) where TConsumer : class, IHandleMessages<TMessage>
+        public static ElsaOptionsBuilder AddPubSubConsumer<TConsumer, TMessage>(this ElsaOptionsBuilder elsaOptions, string? queueName = default) where TConsumer : class, IHandleMessages<TMessage>
         {
             elsaOptions.Services.AddTransient<IHandleMessages<TMessage>, TConsumer>();
-            elsaOptions.AddPubSubMessageType<TMessage>();
+            elsaOptions.AddPubSubMessageType<TMessage>(queueName);
             return elsaOptions;
         }
 
@@ -248,12 +245,12 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IEventPublisher, EventPublisher>();
 
             options
-                .AddCompetingConsumer<TriggerWorkflowsRequestConsumer, TriggerWorkflowsRequest>()
-                .AddCompetingConsumerService<ExecuteWorkflowDefinitionRequestConsumer, ExecuteWorkflowDefinitionRequest>()
-                .AddCompetingConsumerService<ExecuteWorkflowInstanceRequestConsumer, ExecuteWorkflowInstanceRequest>()
-                .AddPubSubConsumer<UpdateWorkflowTriggersIndexConsumer, WorkflowDefinitionPublished>()
-                .AddPubSubConsumer<UpdateWorkflowTriggersIndexConsumer, WorkflowDefinitionRetracted>()
-                .AddPubSubConsumer<UpdateWorkflowTriggersIndexConsumer, WorkflowDefinitionDeleted>();
+                .AddCompetingConsumer<TriggerWorkflowsRequestConsumer, TriggerWorkflowsRequest>("ExecuteWorkflow")
+                .AddCompetingConsumer<ExecuteWorkflowDefinitionRequestConsumer, ExecuteWorkflowDefinitionRequest>("ExecuteWorkflow")
+                .AddCompetingConsumer<ExecuteWorkflowInstanceRequestConsumer, ExecuteWorkflowInstanceRequest>("ExecuteWorkflow")
+                .AddPubSubConsumer<UpdateWorkflowTriggersIndexConsumer, WorkflowDefinitionPublished>("WorkflowDefinitionEvents")
+                .AddPubSubConsumer<UpdateWorkflowTriggersIndexConsumer, WorkflowDefinitionRetracted>("WorkflowDefinitionEvents")
+                .AddPubSubConsumer<UpdateWorkflowTriggersIndexConsumer, WorkflowDefinitionDeleted>("WorkflowDefinitionEvents");
 
             // AutoMapper.
             services

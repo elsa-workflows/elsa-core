@@ -38,11 +38,11 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
     {
     }
     
-    public record ExecuteWorkflowInstanceRequestModel(string? ActivityId, object? Input);
+    public record ExecuteWorkflowInstanceRequestModel(string? ActivityId, WorkflowInput? Input);
 
     public record ExecuteWorkflowInstanceResponseModel(bool Executed, string? ActivityId, WorkflowInstance? WorkflowInstance);
 
-    public record DispatchWorkflowInstanceRequestModel(string? ActivityId, object? Input);
+    public record DispatchWorkflowInstanceRequestModel(string? ActivityId, WorkflowInput? Input);
 
     public record DispatchWorkflowInstanceResponseModel();
 }

@@ -9,6 +9,7 @@
 
 | Property            | Attribute               | Description | Type                | Default     |
 | ------------------- | ----------------------- | ----------- | ------------------- | ----------- |
+| `culture`           | `culture`               |             | `string`            | `undefined` |
 | `history`           | --                      |             | `RouterHistory`     | `undefined` |
 | `serverUrl`         | `server-url`            |             | `string`            | `undefined` |
 | `webhookDefinition` | --                      |             | `WebhookDefinition` | `undefined` |
@@ -47,11 +48,13 @@ Type: `Promise<string>`
 ### Depends on
 
 - [elsa-webhook-definition-editor-notifications](../elsa-webhook-definition-editor-notifications)
+- context-consumer
 
 ### Graph
 ```mermaid
 graph TD;
   elsa-webhook-definition-editor-screen --> elsa-webhook-definition-editor-notifications
+  elsa-webhook-definition-editor-screen --> context-consumer
   elsa-webhook-definition-editor-notifications --> elsa-toast-notification
   elsa-studio-webhook-definitions-edit --> elsa-webhook-definition-editor-screen
   style elsa-webhook-definition-editor-screen fill:#f9f,stroke:#333,stroke-width:4px

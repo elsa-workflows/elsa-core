@@ -11,7 +11,7 @@ namespace Elsa.Activities.Http
     {
         public override void ConfigureElsa(ElsaOptionsBuilder elsa, IConfiguration configuration)
         {
-            elsa.AddHttpActivities(configuration.GetSection("Elsa:Http").Bind);
+            elsa.AddHttpActivities(configuration.GetSection("Elsa:Server").Bind);
         }
         
         public override void ConfigureApp(IApplicationBuilder app) => app.UseHttpActivities();

@@ -11,7 +11,7 @@ environment:
   sonarcloud_api_key:
     secure: qaE9kOVkGGFM7ZMf3YeliZxDU9udTCy6W5xXHJ9T+tXv5qXPMYlIdR7hyNgxW04A
 
-version: 2.1.0-preview.{build}
+version: 2.2.0-preview.{build}
 
 init:
   - cmd: git config --global core.autocrlf true
@@ -46,12 +46,12 @@ install:
 
       cd ..\..\..\..\..
 
-#      dotnet tool install --global dotnet-sonarscanner
+      dotnet tool install --global dotnet-sonarscanner
 
-before_build:
-  - cmd: >-
-      docker-compose -f docker-compose.yaml up -d mongodb postgres
-
+#before_build:
+#  - cmd: >-
+#      docker-compose -f docker-compose.yaml up -d mongodb postgres
+#
 #  - ps: >-
 #      if(-Not $env:APPVEYOR_PULL_REQUEST_NUMBER) {
 #      & dotnet-sonarscanner begin
@@ -80,9 +80,7 @@ build_script:
 
       dotnet build
 
-# before_test:
-
-test_script:
+#test_script:
 #  - ps: dotnet test --collect:"XPlat Code Coverage" --logger:xunit -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
 #  - ps: dotnet test
 
@@ -96,20 +94,21 @@ artifacts:
   - path: '**/TestResults/TestResults.xml'
 
 deploy:
+  # Deploy to NuGet on builds from tags only
+  - provider: NuGet
+    name: NuGet
+    api_key:
+      secure: WC5CCcM5ksWOJbv925FNjv91KsfqHfwEe0A61FMNB27IxvttwJsvBC9XYwK+wQnp
+    skip_symbols: true
+    on:
+      APPVEYOR_REPO_TAG: true
+      
   # Deploy to MyGet on every build (in the appropriate branch)
   - provider: NuGet
+    name: MyGet
     server: https://www.myget.org/F/elsa-2/api/v2/package
     api_key:
       secure: JfESkwmLdWU7dzvoqKPUfMemb00wX8AEYxeHCsYWTX1LfTeECdmKdZxz7IVUpebb
     skip_symbols: true
     on:
       branch: master
-
-  # Deploy to NuGet on builds from tags only
-  - provider: NuGet
-    api_key:
-      secure: WC5CCcM5ksWOJbv925FNjv91KsfqHfwEe0A61FMNB27IxvttwJsvBC9XYwK+wQnp
-    skip_symbols: true
-    on:
-      branch: master
-      APPVEYOR_REPO_TAG: true

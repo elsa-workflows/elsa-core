@@ -24,10 +24,13 @@ namespace Elsa.Services.Models
             IDictionary<string, string> propertyStorageProviders,
             string? source) : base(id, parent, name, displayName, description, type, persistWorkflow, loadWorkflowContext, saveWorkflowContext, propertyStorageProviders, source)
         {
+            Activities = new List<IActivityBlueprint>();
+            Connections = new List<IConnection>();
+            ActivityPropertyProviders = new ActivityPropertyProviders();
         }
 
-        public ICollection<IActivityBlueprint> Activities { get; set; } = default!;
-        public ICollection<IConnection> Connections { get; set; } = default!;
-        public IActivityPropertyProviders ActivityPropertyProviders { get; set; } = default!;
+        public ICollection<IActivityBlueprint> Activities { get; set; }
+        public ICollection<IConnection> Connections { get; set; }
+        public IActivityPropertyProviders ActivityPropertyProviders { get; set; }
     }
 }

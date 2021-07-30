@@ -7,11 +7,14 @@ using System.Threading.Tasks;
 using Elsa.Activities.Http.Bookmarks;
 using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.Http.Models;
+using Elsa.Activities.Http.Options;
 using Elsa.Activities.Http.Parsers.Request;
 using Elsa.Activities.Http.Services;
+using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Open.Linq.AsyncExtensions;
 
@@ -27,25 +30,56 @@ namespace Elsa.Activities.Http.Middleware
 
         public async Task InvokeAsync(
             HttpContext httpContext,
+            IOptions<HttpActivityOptions> options,
             IWorkflowLaunchpad workflowLaunchpad,
             IWorkflowInstanceStore workflowInstanceStore,
             IWorkflowRegistry workflowRegistry,
             IWorkflowBlueprintReflector workflowBlueprintReflector,
             IEnumerable<IHttpRequestBodyParser> contentParsers)
         {
-            var cancellationToken = CancellationToken.None; // Prevent half-way request abortion (which also happens when WriteHttpResponse writes to the response).
-            var path = httpContext.Request.Path.Value.ToLowerInvariant();
-            var method = httpContext.Request.Method!.ToLowerInvariant();
+            var basePath = options.Value.BasePath;
             var request = httpContext.Request;
+
+            string path;
+            
+            // If a base path was configured, try to match against that first.
+            if (basePath != null)
+            {
+                // If no match, continue with the next middleware in the pipeline.
+                if (!request.Path.StartsWithSegments(basePath.Value, out _, out var remainingPath))
+                {
+                    await _next(httpContext);
+                    return;
+                }
+
+                path = remainingPath.Value.ToLowerInvariant();
+            }
+            else
+            {
+                path = httpContext.Request.Path.Value.ToLowerInvariant();
+            }
+
+            var cancellationToken = CancellationToken.None; // Prevent half-way request abortion (which also happens when WriteHttpResponse writes to the response).
+            var method = httpContext.Request.Method!.ToLowerInvariant();
+
             request.TryGetCorrelationId(out var correlationId);
 
             const string activityType = nameof(HttpEndpoint);
             var bookmark = new HttpEndpointBookmark(path, method);
-            var collectWorkflowsContext = new CollectWorkflowsContext(activityType, bookmark, correlationId, default, default, TenantId);
-            var pendingWorkflows = await workflowLaunchpad.CollectWorkflowsAsync(collectWorkflowsContext, cancellationToken).ToList();
+            var collectWorkflowsContext = new WorkflowsQuery(activityType, bookmark, correlationId, default, default, TenantId);
+            var pendingWorkflows = await workflowLaunchpad.FindWorkflowsAsync(collectWorkflowsContext, cancellationToken).ToList();
 
             if (!pendingWorkflows.Any())
             {
+                // If a base path was configured, we are sure the requester tried to execute a workflow that doesn't exist.
+                // Therefore, sending a 404 response seems appropriate instead of continuing with any subsequent middlewares.
+                if (basePath != null)
+                {
+                    httpContext.Response.StatusCode = (int)HttpStatusCode.NotFound;
+                    return;
+                }
+                
+                // If no base path was configured on the other hand, the request could be targeting anything else and should be handled by subsequent middlewares. 
                 await _next(httpContext);
                 return;
             }
@@ -53,7 +87,7 @@ namespace Elsa.Activities.Http.Middleware
             if (pendingWorkflows.Count > 1)
             {
                 httpContext.Response.ContentType = "application/json";
-                httpContext.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                httpContext.Response.StatusCode = (int) HttpStatusCode.InternalServerError;
 
                 var responseContent = JsonConvert.SerializeObject(new
                 {
@@ -66,7 +100,7 @@ namespace Elsa.Activities.Http.Middleware
             }
 
             var pendingWorkflow = pendingWorkflows.Single();
-            var pendingWorkflowInstance = await workflowInstanceStore.FindByIdAsync(pendingWorkflow.WorkflowInstanceId);
+            var pendingWorkflowInstance = await workflowInstanceStore.FindByIdAsync(pendingWorkflow.WorkflowInstanceId, cancellationToken);
             if (pendingWorkflowInstance is null)
             {
                 await _next(httpContext);
@@ -104,15 +138,15 @@ namespace Elsa.Activities.Http.Middleware
             var useDispatch = httpContext.Request.GetUseDispatch();
             if (useDispatch)
             {
-                await workflowLaunchpad.DispatchPendingWorkflowAsync(pendingWorkflow, inputModel, cancellationToken);
+                await workflowLaunchpad.DispatchPendingWorkflowAsync(pendingWorkflow, new WorkflowInput(inputModel), cancellationToken);
 
                 httpContext.Response.ContentType = "application/json";
-                httpContext.Response.StatusCode = (int)HttpStatusCode.Accepted;
+                httpContext.Response.StatusCode = (int) HttpStatusCode.Accepted;
                 await httpContext.Response.WriteAsync(JsonConvert.SerializeObject(pendingWorkflows), cancellationToken);
             }
             else
             {
-                await workflowLaunchpad.ExecutePendingWorkflowAsync(pendingWorkflow, inputModel, cancellationToken);
+                await workflowLaunchpad.ExecutePendingWorkflowAsync(pendingWorkflow, new WorkflowInput(inputModel), cancellationToken);
                 pendingWorkflowInstance = await workflowInstanceStore.FindByIdAsync(pendingWorkflow.WorkflowInstanceId, cancellationToken);
 
                 if (pendingWorkflowInstance is not null
@@ -120,7 +154,7 @@ namespace Elsa.Activities.Http.Middleware
                     && !httpContext.Response.HasStarted)
                 {
                     httpContext.Response.ContentType = "application/json";
-                    httpContext.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                    httpContext.Response.StatusCode = (int) HttpStatusCode.InternalServerError;
 
                     var faultedResponse = JsonConvert.SerializeObject(new
                     {

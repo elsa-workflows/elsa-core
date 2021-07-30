@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Elsa.Services.Models;
 using Rebus.Handlers;
 
 namespace Elsa.Services.Dispatch.Consumers
@@ -14,7 +15,7 @@ namespace Elsa.Services.Dispatch.Consumers
 
         public async Task Handle(TriggerWorkflowsRequest message)
         {
-            var pendingWorkflows = await _workflowLaunchpad.CollectWorkflowsAsync(new CollectWorkflowsContext(
+            var pendingWorkflows = await _workflowLaunchpad.FindWorkflowsAsync(new WorkflowsQuery(
                 message.ActivityType, 
                 message.Bookmark,
                 message.CorrelationId, 

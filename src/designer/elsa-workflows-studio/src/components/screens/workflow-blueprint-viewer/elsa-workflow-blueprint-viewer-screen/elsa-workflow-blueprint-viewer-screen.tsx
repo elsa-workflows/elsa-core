@@ -10,9 +10,10 @@ import {
   WorkflowPersistenceBehavior
 } from "../../../../models";
 import {createElsaClient} from "../../../../services/elsa-client";
-import {pluginManager} from '../../../../services/plugin-manager';
 import state from '../../../../utils/store';
 import {WorkflowDesignerMode} from "../../../designers/tree/elsa-designer-tree/models";
+import Tunnel from "../../../../data/dashboard";
+import {ElsaWebhookDefinitionEditorScreen} from "../../webhook-definition-editor/elsa-webhook-definition-editor-screen/elsa-webhook-definition-editor-screen";
 
 @Component({
   tag: 'elsa-workflow-blueprint-viewer-screen',
@@ -20,12 +21,9 @@ import {WorkflowDesignerMode} from "../../../designers/tree/elsa-designer-tree/m
 })
 export class ElsaWorkflowBlueprintViewerScreen {
 
-  constructor() {
-    pluginManager.initialize();
-  }
-
   @Prop() workflowDefinitionId: string;
-  @Prop({attribute: 'server-url', reflect: true}) serverUrl: string;
+  @Prop() serverUrl: string;
+  @Prop() culture: string;
   @State() workflowBlueprint: WorkflowBlueprint;
   @State() workflowModel: WorkflowModel;
   el: HTMLElement;
@@ -158,3 +156,4 @@ export class ElsaWorkflowBlueprintViewerScreen {
     );
   }
 }
+Tunnel.injectProps(ElsaWorkflowBlueprintViewerScreen, ['serverUrl', 'culture']);

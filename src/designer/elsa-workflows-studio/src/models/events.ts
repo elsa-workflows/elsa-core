@@ -6,6 +6,7 @@ export const EventTypes = {
   ShowWorkflowSettings: 'show-workflow-settings',
   ActivityPicked: 'activity-picked',
   ShowActivityEditor: 'show-activity-editor',
+  ActivityEditorDisplaying: 'activity-editor-displaying',
   UpdateActivity: 'update-activity',
   UpdateWorkflowSettings: 'update-workflow-settings',
   WorkflowModelChanged: 'workflow-model-changed',
@@ -15,7 +16,12 @@ export const EventTypes = {
   WorkflowRetracted: 'workflow-retracted',
   WorkflowImported: 'workflow-imported',
   HttpClientConfigCreated: 'http-client-config-created',
-  HttpClientCreated: 'http-client-created'
+  HttpClientCreated: 'http-client-created',
+  WorkflowInstanceBulkActionsLoading: 'workflow-instance-bulk-actions-loading',
+  ShowConfirmDialog: 'show-confirm-dialog',
+  HideConfirmDialog: 'hide-confirm-dialog',
+  ShowToastNotification: 'show-toast-notification',
+  HideToastNotification: 'hide-toast-notification'
 };
 
 export interface AddActivityEventArgs {

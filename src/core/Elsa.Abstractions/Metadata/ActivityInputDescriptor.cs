@@ -7,7 +7,7 @@ namespace Elsa.Metadata
     [Obsolete("Use ActivityInputDescriptor instead.")]
     public class ActivityPropertyDescriptor : ActivityInputDescriptor
     {
-        public ActivityPropertyDescriptor() : base()
+        public ActivityPropertyDescriptor()
         {
         }
 
@@ -22,8 +22,9 @@ namespace Elsa.Metadata
             object? defaultValue = default,
             string? defaultSyntax = "Literal",
             IEnumerable<string>? supportedSyntaxes = default,
-            bool? isDisabled = default)
-            : base (
+            bool isReadOnly = false,
+            bool isBrowsable = true)
+            : base(
                 name,
                 type,
                 uiHint,
@@ -35,7 +36,8 @@ namespace Elsa.Metadata
                 defaultValue,
                 defaultSyntax,
                 supportedSyntaxes,
-                isDisabled
+                isReadOnly,
+                isBrowsable
             )
         {
         }
@@ -59,7 +61,9 @@ namespace Elsa.Metadata
             object? defaultValue = default,
             string? defaultSyntax = "Literal",
             IEnumerable<string>? supportedSyntaxes = default,
-            bool? isDisabled = default)
+            bool isReadOnly = false,
+            bool isBrowsable = true,
+            bool isDesignerCritical = false)
         {
             Name = name;
             Type = type;
@@ -72,7 +76,9 @@ namespace Elsa.Metadata
             DefaultValue = defaultValue;
             DefaultSyntax = defaultSyntax;
             SupportedSyntaxes = supportedSyntaxes?.ToList() ?? new List<string>();
-            IsDisabled = isDisabled;
+            IsReadOnly = isReadOnly;
+            IsBrowsable = isBrowsable;
+            IsDesignerCritical = isDesignerCritical;
         }
 
         public string Name { get; set; } = default!;
@@ -86,6 +92,8 @@ namespace Elsa.Metadata
         public object? DefaultValue { get; set; }
         public string? DefaultSyntax { get; set; }
         public IList<string> SupportedSyntaxes { get; set; } = new List<string>();
-        public bool? IsDisabled { get; set; }
+        public bool? IsReadOnly { get; set; }
+        public bool? IsBrowsable { get; set; }
+        public bool IsDesignerCritical { get; set; }
     }
 }

@@ -10,6 +10,6 @@ namespace Elsa.Server.Hangfire.Jobs
         public WorkflowDefinitionJob(IWorkflowLaunchpad launchpad) => _launchpad = launchpad;
 
         public async Task ExecuteAsync(ExecuteWorkflowDefinitionRequest request, CancellationToken cancellationToken = default) =>
-            await _launchpad.CollectAndExecuteStartableWorkflowAsync(request.WorkflowDefinitionId, request.ActivityId, request.CorrelationId, request.ContextId, request.Input, request.TenantId, cancellationToken);
+            await _launchpad.FindAndExecuteStartableWorkflowAsync(request.WorkflowDefinitionId, request.ActivityId, request.CorrelationId, request.ContextId, request.Input, request.TenantId, cancellationToken);
     }
 }
