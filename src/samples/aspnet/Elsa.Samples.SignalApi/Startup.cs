@@ -1,4 +1,5 @@
 using System.IO;
+using Elsa.Providers.Workflows;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,11 +27,13 @@ namespace Elsa.Samples.SignalApi
             
             services
                 .AddElsa(options => options
-                    .UseStorage(() => StorageFactory.Blobs.DirectoryFiles(Path.Combine(_environment.ContentRootPath, "Workflows")))
                     .AddConsoleActivities()
                     .AddHttpActivities(httpOptions => Configuration.GetSection("Elsa:Http").Bind(httpOptions))
                     .AddQuartzTemporalActivities()
                 );
+
+            // Configure blob storage for blob storage workflow storage provider. 
+            services.Configure<BlobStorageWorkflowProviderOptions>(options => options.BlobStorageFactory = () => StorageFactory.Blobs.DirectoryFiles(Path.Combine(_environment.ContentRootPath, "Workflows")));
         }
 
         public void Configure(IApplicationBuilder app)
