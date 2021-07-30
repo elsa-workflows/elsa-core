@@ -13,6 +13,7 @@ using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Expressions;
+using Elsa.Providers.WorkflowStorage;
 using Elsa.Serialization;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -66,7 +67,8 @@ namespace Elsa.Activities.Email
         [ActivityInput(
             Hint = "The attachments to send with the email message. Can be (an array of) a fully-qualified file path, URL, stream, byte array or instances of EmailAttachment.",
             UIHint = ActivityInputUIHints.MultiLine,
-            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
+            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid },
+            DefaultWorkflowStorageProvider = TransientWorkflowStorageProvider.ProviderName
         )]
         public object? Attachments { get; set; }
 
