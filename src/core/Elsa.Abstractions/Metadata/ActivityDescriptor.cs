@@ -21,12 +21,14 @@ namespace Elsa.Metadata
         public string Category { get; set; }
         public ActivityTraits Traits { get; set; }
         public string[] Outcomes { get; set; }
+        
         [Obsolete("Use InputProperties instead.")]
         public ActivityInputDescriptor[] Properties 
         { 
             get => InputProperties;
             set => InputProperties = value;
         }
+        
         public ActivityInputDescriptor[] InputProperties { get; set; }
         public ActivityOutputDescriptor[] OutputProperties { get; set; }
     }

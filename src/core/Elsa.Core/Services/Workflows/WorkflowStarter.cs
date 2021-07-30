@@ -65,6 +65,23 @@ namespace Elsa.Services.Workflows
             return runWorkflowResults;
         }
 
+        public async Task<IEnumerable<RunWorkflowResult>> StartWorkflowsAsync(
+            IEnumerable<IWorkflowBlueprint> workflowBlueprints, 
+            WorkflowInput? input = default, 
+            string? contextId = default, 
+            CancellationToken cancellationToken = default)
+        {
+            var runWorkflowResults = new List<RunWorkflowResult>();
+            
+            foreach (var workflowBlueprint in workflowBlueprints)
+            {
+                var runWorkflowResult = await StartWorkflowAsync(workflowBlueprint, null, input, contextId: contextId, cancellationToken: cancellationToken);
+                runWorkflowResults.Add(runWorkflowResult);
+            }
+
+            return runWorkflowResults;
+        }
+
         public async Task<RunWorkflowResult> StartWorkflowAsync(
             IWorkflowBlueprint workflowBlueprint,
             string? activityId = default,

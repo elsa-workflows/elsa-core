@@ -63,7 +63,9 @@ namespace Elsa.Metadata
             IEnumerable<string>? supportedSyntaxes = default,
             bool isReadOnly = false,
             bool isBrowsable = true,
-            bool isDesignerCritical = false)
+            bool isDesignerCritical = false,
+            string? defaultWorkflowStorageProvider = default,
+            bool disableWorkflowProviderSelection = false)
         {
             Name = name;
             Type = type;
@@ -79,6 +81,8 @@ namespace Elsa.Metadata
             IsReadOnly = isReadOnly;
             IsBrowsable = isBrowsable;
             IsDesignerCritical = isDesignerCritical;
+            DefaultWorkflowStorageProvider = defaultWorkflowStorageProvider;
+            DisableWorkflowProviderSelection = disableWorkflowProviderSelection;
         }
 
         public string Name { get; set; } = default!;
@@ -95,5 +99,7 @@ namespace Elsa.Metadata
         public bool? IsReadOnly { get; set; }
         public bool? IsBrowsable { get; set; }
         public bool IsDesignerCritical { get; set; }
+        public string? DefaultWorkflowStorageProvider { get; set; }
+        public bool DisableWorkflowProviderSelection { get; set; }
     }
 }

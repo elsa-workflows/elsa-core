@@ -59,7 +59,7 @@ namespace Elsa.Services.Workflows
 
         public async ValueTask<ActivityDescriptor> DescribeActivityType(ActivityType activityType, CancellationToken cancellationToken)
         {
-            var descriptor = activityType.Describe();
+            var descriptor = await activityType.DescribeAsync();
             await _mediator.Publish(new DescribingActivityType(activityType, descriptor), cancellationToken);
             return descriptor;
         }
