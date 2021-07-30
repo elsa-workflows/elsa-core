@@ -136,7 +136,14 @@ namespace Elsa.Activities.Email
                         {
                             var fileName = emailAttachment.FileName ?? $"Attachment-{++index}";
                             var contentType = emailAttachment.ContentType ?? "application/binary";
-                            bodyBuilder.Attachments.Add(fileName, emailAttachment.Content, ContentType.Parse(contentType));
+                            var parsedContentType = ContentType.Parse(contentType);
+                            
+                            if(emailAttachment.Content is byte[] bytes)
+                                bodyBuilder.Attachments.Add(fileName, bytes, parsedContentType);
+                            
+                            else if(emailAttachment.Content is Stream stream)
+                                await bodyBuilder.Attachments.AddAsync(fileName, stream, parsedContentType, cancellationToken);
+                            
                             break;
                         }
                         default:
