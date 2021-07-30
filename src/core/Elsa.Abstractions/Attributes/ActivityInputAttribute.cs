@@ -3,13 +3,8 @@ using System;
 namespace Elsa.Attributes
 {
     [AttributeUsage(AttributeTargets.Property)]
-    public class ActivityInputAttribute : Attribute
+    public class ActivityInputAttribute : ActivityPropertyAttributeBase
     {
-        /// <summary>
-        /// The technical name of the activity property.
-        /// </summary>
-        public string? Name { get; set; }
-        
         /// <summary>
         /// The user-friendly name of the activity property.
         /// </summary>
@@ -19,11 +14,6 @@ namespace Elsa.Attributes
         /// A hint to workflow tooling what input control to use. 
         /// </summary>
         public string? UIHint { get; set; }
-        
-        /// <summary>
-        /// A brief description about this property for workflow tooling to use when displaying activity editors.
-        /// </summary>
-        public string? Hint { get; set; }
 
         /// <summary>
         /// A value representing options specific to a given UI hint.
@@ -79,15 +69,5 @@ namespace Elsa.Attributes
         /// A value indicating whether this property MUST be evaluated at runtime to support the workflow designer.
         /// </summary>
         public bool IsDesignerCritical { get; set; }
-        
-        /// <summary>
-        /// The workflow storage provider to use by default to store the output value.
-        /// </summary>
-        public string? DefaultWorkflowStorageProvider { get; set; }
-
-        /// <summary>
-        /// A flag indicating whether or not the user is allowed to select a workflow provider.
-        /// </summary>
-        public bool DisableWorkflowProviderSelection { get; set; }
     }
 }
