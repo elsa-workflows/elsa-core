@@ -9,6 +9,7 @@ using Elsa.Serialization;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Storage.Net.Blobs;
 
 namespace Elsa.Providers.Workflows
@@ -20,9 +21,9 @@ namespace Elsa.Providers.Workflows
         private readonly IContentSerializer _contentSerializer;
         private readonly ILogger _logger;
 
-        public BlobStorageWorkflowProvider(IBlobStorage storage, IWorkflowBlueprintMaterializer workflowBlueprintMaterializer, IContentSerializer contentSerializer, ILogger<BlobStorageWorkflowProvider> logger)
+        public BlobStorageWorkflowProvider(IOptions<BlobStorageWorkflowProviderOptions> options, IWorkflowBlueprintMaterializer workflowBlueprintMaterializer, IContentSerializer contentSerializer, ILogger<BlobStorageWorkflowProvider> logger)
         {
-            _storage = storage;
+            _storage = options.Value.BlobStorageFactory();
             _workflowBlueprintMaterializer = workflowBlueprintMaterializer;
             _contentSerializer = contentSerializer;
             _logger = logger;

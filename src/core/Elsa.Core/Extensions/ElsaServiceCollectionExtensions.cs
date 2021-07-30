@@ -41,6 +41,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Newtonsoft.Json;
 using NodaTime;
 using Rebus.Handlers;
+using Storage.Net;
 using BackgroundWorker = Elsa.Services.BackgroundWorker;
 using IDistributedLockProvider = Elsa.Services.IDistributedLockProvider;
 
@@ -71,7 +72,6 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped(options.WorkflowExecutionLogStoreFactory)
                 .AddScoped(options.WorkflowTriggerStoreFactory)
                 .AddSingleton(options.DistributedLockingOptions.DistributedLockProviderFactory)
-                .AddSingleton(options.StorageFactory)
                 .AddScoped(options.WorkflowDefinitionDispatcherFactory)
                 .AddScoped(options.WorkflowInstanceDispatcherFactory)
                 .AddScoped(options.CorrelatingWorkflowDispatcherFactory)
@@ -138,9 +138,9 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<T>()
                 .AddSingleton<IWorkflowStorageProvider>(sp => sp.GetRequiredService<T>());
 
-        private static ElsaOptionsBuilder AddWorkflowsCore(this ElsaOptionsBuilder options)
+        private static ElsaOptionsBuilder AddWorkflowsCore(this ElsaOptionsBuilder elsaOptions)
         {
-            var services = options.Services;
+            var services = elsaOptions.Services;
 
             services
                 .TryAddSingleton<IClock>(SystemClock.Instance);
@@ -205,6 +205,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddWorkflowProvider<ProgrammaticWorkflowProvider>()
                 .AddWorkflowProvider<BlobStorageWorkflowProvider>()
                 .AddWorkflowProvider<DatabaseWorkflowProvider>();
+
+            services.Configure<BlobStorageWorkflowProviderOptions>(o => o.BlobStorageFactory = StorageFactory.Blobs.InMemory);
             
             // Workflow Storage Providers.
             services
@@ -212,6 +214,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddWorkflowStorageProvider<TransientWorkflowStorageProvider>()
                 .AddWorkflowStorageProvider<WorkflowInstanceWorkflowStorageProvider>()
                 .AddWorkflowStorageProvider<BlobStorageWorkflowStorageProvider>();
+            
+            services.Configure<BlobStorageWorkflowStorageProviderOptions>(o => o.BlobStorageFactory = StorageFactory.Blobs.InMemory);
 
             // Metadata.
             services
@@ -244,7 +248,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<ICommandSender, CommandSender>()
                 .AddSingleton<IEventPublisher, EventPublisher>();
 
-            options
+            elsaOptions
                 .AddCompetingConsumer<TriggerWorkflowsRequestConsumer, TriggerWorkflowsRequest>("ExecuteWorkflow")
                 .AddCompetingConsumer<ExecuteWorkflowDefinitionRequestConsumer, ExecuteWorkflowDefinitionRequest>("ExecuteWorkflow")
                 .AddCompetingConsumer<ExecuteWorkflowInstanceRequestConsumer, ExecuteWorkflowInstanceRequest>("ExecuteWorkflow")
@@ -272,7 +276,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTransient<ICompositeActivityBuilder, CompositeActivityBuilder>()
                 .AddTransient<Func<IWorkflowBuilder>>(sp => sp.GetRequiredService<IWorkflowBuilder>);
 
-            return options;
+            return elsaOptions;
         }
 
         private static ElsaOptionsBuilder AddConfiguration(this ElsaOptionsBuilder options)
