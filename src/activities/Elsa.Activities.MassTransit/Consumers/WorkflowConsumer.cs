@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Elsa.Activities.MassTransit.Bookmarks;
 using Elsa.Activities.MassTransit.Consumers.MessageCorrelation;
+using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
 using MassTransit;
@@ -44,11 +45,15 @@ namespace Elsa.Activities.MassTransit.Consumers
                 MessageType = message.GetType().Name
             };
 
-            await _workflowLaunchpad.CollectAndExecuteWorkflowsAsync(new WorkflowsQuery(
+            var workflowQuery = new WorkflowsQuery(
                 nameof(ReceiveMassTransitMessage),
                 bookmark,
                 correlationId.ToString()
-            ));
+            );
+
+            var workflowInput = new WorkflowInput { Input = message };
+
+            await _workflowLaunchpad.CollectAndExecuteWorkflowsAsync(workflowQuery, workflowInput, context.CancellationToken);
         }
     }
 }
