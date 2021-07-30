@@ -13,6 +13,7 @@ using Elsa.Activities.Http.Services;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services;
+using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
