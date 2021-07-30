@@ -343,7 +343,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.WorkflowSettings.Persi
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.WorkflowSettings.Persistence.YesSql", "src\modules\workflowsettings\Elsa.WorkflowSettings.Persistence.YesSql\Elsa.WorkflowSettings.Persistence.YesSql.csproj", "{EAD438C1-0FCC-4BB0-937B-840CA4487A06}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.WorkflowSettings.Client", "src\modules\workflowsettings\Elsa.WorkflowSettings.Client\Elsa.WorkflowSettings.Client.csproj", "{86FA6FDB-C7E4-4079-B04D-B499576023C8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.WorkflowSettings.Client", "src\modules\workflowsettings\Elsa.WorkflowSettings.Client\Elsa.WorkflowSettings.Client.csproj", "{86FA6FDB-C7E4-4079-B04D-B499576023C8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.WorkflowSettings.Persistence.EntityFramework.SqlServer", "src\modules\workflowsettings\Elsa.WorkflowSettings.Persistence.EntityFramework.SqlServer\Elsa.WorkflowSettings.Persistence.EntityFramework.SqlServer.csproj", "{770456A5-547D-43AE-AB00-CF17BA799AF7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.WorkflowSettings.Persistence.EntityFramework.MySql", "src\modules\workflowsettings\Elsa.WorkflowSettings.Persistence.EntityFramework.MySql\Elsa.WorkflowSettings.Persistence.EntityFramework.MySql.csproj", "{F51C54C3-7C68-41E9-BC05-798589740F39}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.WorkflowSettings.Persistence.EntityFramework.PostgreSql", "src\modules\workflowsettings\Elsa.WorkflowSettings.Persistence.EntityFramework.PostgreSql\Elsa.WorkflowSettings.Persistence.EntityFramework.PostgreSql.csproj", "{F006F3CC-22E9-4FDD-A8D4-2E8CBDFDA54A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -803,6 +809,18 @@ Global
 		{86FA6FDB-C7E4-4079-B04D-B499576023C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{86FA6FDB-C7E4-4079-B04D-B499576023C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{86FA6FDB-C7E4-4079-B04D-B499576023C8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{770456A5-547D-43AE-AB00-CF17BA799AF7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{770456A5-547D-43AE-AB00-CF17BA799AF7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{770456A5-547D-43AE-AB00-CF17BA799AF7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{770456A5-547D-43AE-AB00-CF17BA799AF7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F51C54C3-7C68-41E9-BC05-798589740F39}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F51C54C3-7C68-41E9-BC05-798589740F39}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F51C54C3-7C68-41E9-BC05-798589740F39}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F51C54C3-7C68-41E9-BC05-798589740F39}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F006F3CC-22E9-4FDD-A8D4-2E8CBDFDA54A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F006F3CC-22E9-4FDD-A8D4-2E8CBDFDA54A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F006F3CC-22E9-4FDD-A8D4-2E8CBDFDA54A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F006F3CC-22E9-4FDD-A8D4-2E8CBDFDA54A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -955,6 +973,9 @@ Global
 		{DA50F9ED-4980-4017-AB0E-BB2049CB699A} = {513B0FAD-F92F-4C7B-B756-D735F8C3C5E1}
 		{EAD438C1-0FCC-4BB0-937B-840CA4487A06} = {513B0FAD-F92F-4C7B-B756-D735F8C3C5E1}
 		{86FA6FDB-C7E4-4079-B04D-B499576023C8} = {513B0FAD-F92F-4C7B-B756-D735F8C3C5E1}
+		{770456A5-547D-43AE-AB00-CF17BA799AF7} = {513B0FAD-F92F-4C7B-B756-D735F8C3C5E1}
+		{F51C54C3-7C68-41E9-BC05-798589740F39} = {513B0FAD-F92F-4C7B-B756-D735F8C3C5E1}
+		{F006F3CC-22E9-4FDD-A8D4-2E8CBDFDA54A} = {513B0FAD-F92F-4C7B-B756-D735F8C3C5E1}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}
