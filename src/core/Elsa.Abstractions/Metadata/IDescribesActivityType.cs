@@ -6,6 +6,6 @@ namespace Elsa.Metadata
 {
     public interface IDescribesActivityType
     {
-        Task<ActivityDescriptor?> DescribeAsync(Type activityType, CancellationToken cancellationToken = default);
+        Task<ActivityDescriptor> DescribeAsync(Type activityType, CancellationToken cancellationToken = default);
     }
 }

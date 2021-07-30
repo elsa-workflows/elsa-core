@@ -79,5 +79,15 @@ namespace Elsa.Attributes
         /// A value indicating whether this property MUST be evaluated at runtime to support the workflow designer.
         /// </summary>
         public bool IsDesignerCritical { get; set; }
+        
+        /// <summary>
+        /// The workflow storage provider to use by default to store the output value.
+        /// </summary>
+        public string? DefaultWorkflowStorageProvider { get; set; }
+
+        /// <summary>
+        /// A flag indicating whether or not the user is allowed to select a workflow provider.
+        /// </summary>
+        public bool DisableWorkflowProviderSelection { get; set; }
     }
 }

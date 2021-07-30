@@ -225,8 +225,8 @@ export class ElsaActivityEditorModal {
     const formContext = this.formContext;
     const t = this.t;
     let storageDescriptorOptions: Array<SelectOption> = this.workflowStorageDescriptors.map(x => ({value: x.name, text: x.displayName}));
-    let outputProperties = activityDescriptor.outputProperties;
-    let inputProperties = activityDescriptor.inputProperties;
+    let outputProperties = activityDescriptor.outputProperties.filter(x => !x.disableWorkflowProviderSelection);
+    let inputProperties = activityDescriptor.inputProperties.filter(x => !x.disableWorkflowProviderSelection);
 
     storageDescriptorOptions = [{value: null, text: 'Default'}, ...storageDescriptorOptions];
 
