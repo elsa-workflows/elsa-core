@@ -8,6 +8,6 @@ namespace Elsa.Scripting.Liquid.Options
     {
         public Dictionary<string, Type> FilterRegistrations { get; }  = new();
         public IList<Action<LiquidParser>> ParserConfiguration { get; } = new List<Action<LiquidParser>>();
-        public bool EnableConfigurationAccess { get; set; } = false;
+        public bool EnableConfigurationAccess { get; set; }
     }
 }
