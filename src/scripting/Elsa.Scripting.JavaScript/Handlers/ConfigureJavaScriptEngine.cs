@@ -16,6 +16,7 @@ using Elsa.Services.WorkflowStorage;
 using Jint;
 using MediatR;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using NodaTime;
 
 namespace Elsa.Scripting.JavaScript.Handlers
@@ -27,12 +28,12 @@ namespace Elsa.Scripting.JavaScript.Handlers
         private readonly IWorkflowStorageService _workflowStorageService;
         private readonly ScriptOptions _scriptOptions;
 
-        public ConfigureJavaScriptEngine(IConfiguration configuration, IActivityTypeService activityTypeService, IWorkflowStorageService workflowStorageService, ScriptOptions scriptOptions)
+        public ConfigureJavaScriptEngine(IConfiguration configuration, IActivityTypeService activityTypeService, IWorkflowStorageService workflowStorageService, IOptions<ScriptOptions> scriptOptions)
         {
             _configuration = configuration;
             _activityTypeService = activityTypeService;
             _workflowStorageService = workflowStorageService;
-            _scriptOptions = scriptOptions;
+            _scriptOptions = scriptOptions.Value;
         }
 
         public async Task Handle(EvaluatingJavaScriptExpression notification, CancellationToken cancellationToken)
