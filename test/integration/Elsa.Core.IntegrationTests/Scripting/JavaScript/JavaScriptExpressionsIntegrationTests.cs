@@ -123,11 +123,9 @@ namespace Elsa.Core.IntegrationTests.Scripting.JavaScript
         {
             public void Build(IWorkflowBuilder builder)
             {
-                builder.StartWith<AddExpressionToActivityState>(setup =>
-                {
-                    setup.Set(x => x.Expression, _ => "getConfig('SomeSecret')");
-                    setup.Set(x => x.ExpressionSyntax, _ => "JavaScript");
-                });
+                builder.StartWith<AddExpressionToActivityState>(setup => setup
+                    .Set(x => x.Expression, _ => "getConfig('SomeSecret')")
+                    .Set(x => x.ExpressionSyntax, _ => "JavaScript"));
             }
         }
 
@@ -135,11 +133,9 @@ namespace Elsa.Core.IntegrationTests.Scripting.JavaScript
         {
             public void Build(IWorkflowBuilder builder)
             {
-                builder.StartWith<AddExpressionToActivityState>(setup =>
-                {
-                    setup.Set(x => x.Expression, _ => "System.Console.WriteLine");
-                    setup.Set(x => x.ExpressionSyntax, _ => "JavaScript");
-                });
+                builder.StartWith<AddExpressionToActivityState>(setup => setup
+                    .Set(x => x.Expression, _ => "System.Console.WriteLine")
+                    .Set(x => x.ExpressionSyntax, _ => "JavaScript"));
             }
         }
         
