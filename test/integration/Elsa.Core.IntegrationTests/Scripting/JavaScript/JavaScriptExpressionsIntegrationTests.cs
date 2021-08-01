@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Elsa.Activities.Console;
 using Elsa.Activities.Primitives;
 using Elsa.ActivityResults;
+using Elsa.Attributes;
 using Elsa.Builders;
 using Elsa.Core.IntegrationTests.Autofixture;
 using Elsa.Expressions;
@@ -42,7 +43,7 @@ namespace Elsa.Core.IntegrationTests.Scripting.JavaScript
                     .Build())
                 .AddSingleton<AssertableActivityState>()
                 .AddElsa(elsa => elsa
-                    .AddActivity<WriteConfigActivity>()
+                    .AddActivity<AddExpressionToActivityState>()
                     .AddWorkflow<ConfigurationAccessWorkflow>())
                 .BuildServiceProvider();
 
@@ -51,7 +52,7 @@ namespace Elsa.Core.IntegrationTests.Scripting.JavaScript
 
             await workflowStarter.BuildAndStartWorkflowAsync<ConfigurationAccessWorkflow>();
 
-            Assert.Single(activityState.Messages, "Config secret: ");
+            Assert.Single(activityState.Messages, "");
         }
 
         [Fact(DisplayName = "JavaScript expressions can have configuration access enabled")]
@@ -66,7 +67,7 @@ namespace Elsa.Core.IntegrationTests.Scripting.JavaScript
                     .Build())
                 .AddSingleton<AssertableActivityState>()
                 .AddElsa(elsa => elsa
-                    .AddActivity<WriteConfigActivity>()
+                    .AddActivity<AddExpressionToActivityState>()
                     .AddWorkflow<ConfigurationAccessWorkflow>())
                 .WithJavaScriptOptions(x =>
                 {
@@ -79,23 +80,33 @@ namespace Elsa.Core.IntegrationTests.Scripting.JavaScript
 
             await workflowStarter.BuildAndStartWorkflowAsync<ConfigurationAccessWorkflow>();
 
-            Assert.Single(activityState.Messages, "Config secret: I am a secret");
+            Assert.Single(activityState.Messages, "I am a secret");
         }
 
         private class ConfigurationAccessWorkflow : IWorkflow
         {
             public void Build(IWorkflowBuilder builder)
             {
-                builder.StartWith<WriteConfigActivity>();
+                builder.StartWith<AddExpressionToActivityState>(setup =>
+                {
+                    setup.Set(x => x.Expression, _ => "getConfig('SomeSecret')");
+                    setup.Set(x => x.ExpressionSyntax, _ => "JavaScript");
+                });
             }
         }
 
-        private class WriteConfigActivity : Activity
+        private class AddExpressionToActivityState : Activity
         {
             private IExpressionEvaluator _expressionEvaluator;
             private AssertableActivityState _activityState;
 
-            public WriteConfigActivity(IExpressionEvaluator evaluator, AssertableActivityState activityState)
+            [ActivityInput]
+            public string Expression { get; set; }
+
+            [ActivityInput]
+            public string ExpressionSyntax { get; set; }
+
+            public AddExpressionToActivityState(IExpressionEvaluator evaluator, AssertableActivityState activityState)
             {
                 _expressionEvaluator = evaluator;
                 _activityState = activityState;
@@ -103,10 +114,9 @@ namespace Elsa.Core.IntegrationTests.Scripting.JavaScript
 
             protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
             {
-                var javaScriptExpression = "getConfig('SomeSecret')";
-                var expressionResult = await _expressionEvaluator.TryEvaluateAsync<string>(javaScriptExpression, "JavaScript", context);
+                var expressionResult = await _expressionEvaluator.TryEvaluateAsync<string>(Expression, ExpressionSyntax, context);
 
-                _activityState.Messages.Add($"Config secret: {expressionResult.Value ?? ""}");
+                _activityState.Messages.Add(expressionResult.Value ?? "");
 
                 return Done();
             }
