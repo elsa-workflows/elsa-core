@@ -1,14 +1,19 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.Console;
 using Elsa.Activities.Primitives;
+using Elsa.ActivityResults;
+using Elsa.Builders;
 using Elsa.Core.IntegrationTests.Autofixture;
+using Elsa.Expressions;
 using Elsa.Models;
 using Elsa.Serialization;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Elsa.Testing.Shared;
 using Elsa.Testing.Shared.Helpers;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Xunit;
@@ -23,6 +28,88 @@ namespace Elsa.Core.IntegrationTests.Scripting.JavaScript
             var hostBuilder = hostBuilderBuilder.GetHostBuilder();
             hostBuilder.ConfigureServices((ctx, services) => services.AddHostedService<HostedWorkflowRunner>());
             var host = await hostBuilder.StartAsync();
+        }
+
+        [Fact(DisplayName = "JavaScript expressions cannot access configuration by default")]
+        public async Task JavaScriptCannotAccessConfigurationByDefault()
+        {
+            var services = new ServiceCollection()
+                .AddSingleton<IConfiguration>(_ => new ConfigurationBuilder()
+                    .AddInMemoryCollection(new Dictionary<string, string>
+                    {
+                        { "SomeSecret", "I am a secret" },
+                    })
+                    .Build())
+                .AddSingleton<AssertableActivityState>()
+                .AddElsa(elsa => elsa
+                    .AddActivity<WriteConfigActivity>()
+                    .AddWorkflow<ConfigurationAccessWorkflow>())
+                .BuildServiceProvider();
+
+            var workflowStarter = services.GetRequiredService<IBuildsAndStartsWorkflow>();
+            var activityState = services.GetRequiredService<AssertableActivityState>();
+
+            await workflowStarter.BuildAndStartWorkflowAsync<ConfigurationAccessWorkflow>();
+
+            Assert.Single(activityState.Messages, "Config secret: ");
+        }
+
+        [Fact(DisplayName = "JavaScript expressions can have configuration access enabled")]
+        public async Task JavaScriptExpressionsHaveConfigurationAccessEnabled()
+        {
+            var services = new ServiceCollection()
+                .AddSingleton<IConfiguration>(_ => new ConfigurationBuilder()
+                    .AddInMemoryCollection(new Dictionary<string, string>
+                    {
+                        { "SomeSecret", "I am a secret" },
+                    })
+                    .Build())
+                .AddSingleton<AssertableActivityState>()
+                .AddElsa(elsa => elsa
+                    .AddActivity<WriteConfigActivity>()
+                    .AddWorkflow<ConfigurationAccessWorkflow>())
+                .WithJavaScriptOptions(x =>
+                {
+                    x.EnableConfigurationAccess = true;
+                })
+                .BuildServiceProvider();
+
+            var workflowStarter = services.GetRequiredService<IBuildsAndStartsWorkflow>();
+            var activityState = services.GetRequiredService<AssertableActivityState>();
+
+            await workflowStarter.BuildAndStartWorkflowAsync<ConfigurationAccessWorkflow>();
+
+            Assert.Single(activityState.Messages, "Config secret: I am a secret");
+        }
+
+        private class ConfigurationAccessWorkflow : IWorkflow
+        {
+            public void Build(IWorkflowBuilder builder)
+            {
+                builder.StartWith<WriteConfigActivity>();
+            }
+        }
+
+        private class WriteConfigActivity : Activity
+        {
+            private IExpressionEvaluator _expressionEvaluator;
+            private AssertableActivityState _activityState;
+
+            public WriteConfigActivity(IExpressionEvaluator evaluator, AssertableActivityState activityState)
+            {
+                _expressionEvaluator = evaluator;
+                _activityState = activityState;
+            }
+
+            protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
+            {
+                var javaScriptExpression = "getConfig('SomeSecret')";
+                var expressionResult = await _expressionEvaluator.TryEvaluateAsync<string>(javaScriptExpression, "JavaScript", context);
+
+                _activityState.Messages.Add($"Config secret: {expressionResult.Value ?? ""}");
+
+                return Done();
+            }
         }
 
         private class HostedWorkflowRunner : IHostedService
