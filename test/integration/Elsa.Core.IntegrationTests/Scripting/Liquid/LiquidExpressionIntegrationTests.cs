@@ -70,11 +70,9 @@ namespace Elsa.Core.IntegrationTests.Scripting.Liquid
         {
             public void Build(IWorkflowBuilder builder)
             {
-                builder.StartWith<AddExpressionToActivityState>(setup =>
-                {
-                    setup.Set(x => x.Expression, _ => "{{Configuration.SomeSecret}}");
-                    setup.Set(x => x.ExpressionSyntax, _ => "Liquid");
-                });
+                builder.StartWith<AddExpressionToActivityState>(setup => setup
+                    .Set(x => x.Expression, _ => "{{Configuration.SomeSecret}}")
+                    .Set(x => x.ExpressionSyntax, _ => "Liquid"));
             }
         }
     }
