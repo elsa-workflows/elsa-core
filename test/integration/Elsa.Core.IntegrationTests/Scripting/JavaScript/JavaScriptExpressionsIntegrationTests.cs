@@ -1,13 +1,9 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.Console;
 using Elsa.Activities.Primitives;
-using Elsa.ActivityResults;
-using Elsa.Attributes;
 using Elsa.Builders;
 using Elsa.Core.IntegrationTests.Autofixture;
-using Elsa.Expressions;
 using Elsa.Models;
 using Elsa.Serialization;
 using Elsa.Services;

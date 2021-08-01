@@ -1,18 +1,11 @@
-using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
-using Elsa.ActivityResults;
 using Elsa.Builders;
-using Elsa.Expressions;
 using Elsa.Scripting.Liquid.Extensions;
-using Elsa.Scripting.Liquid.Options;
 using Elsa.Services;
-using Elsa.Services.Models;
 using Elsa.Testing.Shared.Helpers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using Xunit;
 
 namespace Elsa.Core.IntegrationTests.Scripting.Liquid
