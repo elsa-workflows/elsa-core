@@ -1,21 +1,26 @@
+using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Builders;
 using Elsa.Expressions;
 using Elsa.Scripting.Liquid.Extensions;
+using Elsa.Scripting.Liquid.Options;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Elsa.Testing.Shared.Helpers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Xunit;
 
 namespace Elsa.Core.IntegrationTests.Scripting.Liquid
 {
+    [CollectionDefinition(nameof(LiquidExpressionIntegrationTests), DisableParallelization = true)]
     public class LiquidExpressionIntegrationTests
     {
-        [Fact]
+        [Fact(DisplayName = "A Liquid expressions cannot access configuration by default")]
         public async Task LiquidExpressionsCannotAccessConfigurationByDefault()
         {
             var services = new ServiceCollection()
@@ -27,7 +32,7 @@ namespace Elsa.Core.IntegrationTests.Scripting.Liquid
                     .Build())
                 .AddSingleton<AssertableActivityState>()
                 .AddElsa(elsa => elsa
-                    .AddActivity<WriteConfigActivity>()
+                    .AddActivity<AddExpressionToActivityState>()
                     .AddWorkflow<ConfigurationAccessWorkflow>())
                 .BuildServiceProvider();
 
@@ -36,10 +41,12 @@ namespace Elsa.Core.IntegrationTests.Scripting.Liquid
 
             await workflowStarter.BuildAndStartWorkflowAsync<ConfigurationAccessWorkflow>();
 
-            Assert.Single(activityState.Messages, "Config secret: ");
+            Assert.Single(activityState.Messages, "");
+
+            await services.DisposeAsync();
         }
 
-        [Fact]
+        [Fact(DisplayName = "B Configuration access can be enabled for Liquid expressions")]
         public async Task ConfigureAccessCanBeEnabledForLiquidExpressions()
         {
             var services = new ServiceCollection()
@@ -51,7 +58,7 @@ namespace Elsa.Core.IntegrationTests.Scripting.Liquid
                     .Build())
                 .AddSingleton<AssertableActivityState>()
                 .AddElsa(elsa => elsa
-                    .AddActivity<WriteConfigActivity>()
+                    .AddActivity<AddExpressionToActivityState>()
                     .AddWorkflow<ConfigurationAccessWorkflow>())
                 .EnableLiquidConfigurationAccess()
                 .BuildServiceProvider();
@@ -61,36 +68,20 @@ namespace Elsa.Core.IntegrationTests.Scripting.Liquid
 
             await workflowStarter.BuildAndStartWorkflowAsync<ConfigurationAccessWorkflow>();
 
-            Assert.Single(activityState.Messages, "Config secret: I am a secret");
+            Assert.Single(activityState.Messages, "I am a secret");
+
+            await services.DisposeAsync();
         }
 
         private class ConfigurationAccessWorkflow : IWorkflow
         {
             public void Build(IWorkflowBuilder builder)
             {
-                builder.StartWith<WriteConfigActivity>();
-            }
-        }
-
-        private class WriteConfigActivity : Activity
-        {
-            private IExpressionEvaluator _expressionEvaluator;
-            private AssertableActivityState _activityState;
-
-            public WriteConfigActivity(IExpressionEvaluator evaluator, AssertableActivityState activityState)
-            {
-                _expressionEvaluator = evaluator;
-                _activityState = activityState;
-            }
-
-            protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
-            {
-                var liquidExpression = "{{Configuration.SomeSecret}}";
-                var expressionResult = await _expressionEvaluator.TryEvaluateAsync<string>(liquidExpression, "Liquid", context);
-
-                _activityState.Messages.Add($"Config secret: {expressionResult.Value ?? ""}");
-
-                return Done();
+                builder.StartWith<AddExpressionToActivityState>(setup =>
+                {
+                    setup.Set(x => x.Expression, _ => "{{Configuration.SomeSecret}}");
+                    setup.Set(x => x.ExpressionSyntax, _ => "Liquid");
+                });
             }
         }
     }
