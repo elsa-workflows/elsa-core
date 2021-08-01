@@ -16,6 +16,7 @@ using Fluid;
 using Fluid.Values;
 using MediatR;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
 
 namespace Elsa.Scripting.Liquid.Handlers
@@ -26,11 +27,11 @@ namespace Elsa.Scripting.Liquid.Handlers
         private readonly IWorkflowStorageService _workflowStorageService;
         private readonly LiquidOptions _liquidOptions;
 
-        public ConfigureLiquidEngine(IConfiguration configuration, IWorkflowStorageService workflowStorageService, LiquidOptions liquidOptions)
+        public ConfigureLiquidEngine(IConfiguration configuration, IWorkflowStorageService workflowStorageService, IOptions<LiquidOptions> liquidOptions)
         {
             _configuration = configuration;
             _workflowStorageService = workflowStorageService;
-            _liquidOptions = liquidOptions;
+            _liquidOptions = liquidOptions.Value;
         }
 
         public Task Handle(EvaluatingLiquidExpression notification, CancellationToken cancellationToken)
