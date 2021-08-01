@@ -25,10 +25,49 @@ namespace Elsa.Core.IntegrationTests.Scripting.JavaScript
             var hostBuilder = hostBuilderBuilder.GetHostBuilder();
             hostBuilder.ConfigureServices((ctx, services) => services.AddHostedService<HostedWorkflowRunner>());
             var host = await hostBuilder.StartAsync();
-            await host.StopAsync();
         }
 
-        [Fact(DisplayName = "JavaScript expressions cannot access configuration by default")]
+        [Fact(DisplayName = "JavaScript cannot access CLR by default")]
+        public async Task JavaScriptCannotAccessClrByDefault()
+        {
+            var services = new ServiceCollection()
+                .AddSingleton<AssertableActivityState>()
+                .AddElsa(elsa => elsa
+                    .AddActivity<AddExpressionToActivityState>()
+                    .AddWorkflow<ClrAccessWorkflow>())
+                .BuildServiceProvider();
+
+            var workflowStarter = services.GetRequiredService<IBuildsAndStartsWorkflow>();
+            var activityState = services.GetRequiredService<AssertableActivityState>();
+
+            await workflowStarter.BuildAndStartWorkflowAsync<ClrAccessWorkflow>();
+
+            Assert.Single(activityState.Messages, "");
+        }
+
+        [Fact(DisplayName = "JavaScript can have CLR access enabled")]
+        public async Task JavaScriptCanHaveClrAccessEnabled()
+        {
+            var services = new ServiceCollection()
+                .AddSingleton<AssertableActivityState>()
+                .AddElsa(elsa => elsa
+                    .AddActivity<AddExpressionToActivityState>()
+                    .AddWorkflow<ClrAccessWorkflow>())
+                .WithJavaScriptOptions(options =>
+                {
+                    options.AllowClr = true;
+                })
+                .BuildServiceProvider();
+
+            var workflowStarter = services.GetRequiredService<IBuildsAndStartsWorkflow>();
+            var activityState = services.GetRequiredService<AssertableActivityState>();
+
+            await workflowStarter.BuildAndStartWorkflowAsync<ClrAccessWorkflow>();
+
+            Assert.Single(activityState.Messages, "System.Dynamic.ExpandoObject");
+        }
+
+        [Fact(DisplayName = "JavaScript cannot access configuration by default")]
         public async Task JavaScriptCannotAccessConfigurationByDefault()
         {
             var services = new ServiceCollection()
@@ -50,12 +89,10 @@ namespace Elsa.Core.IntegrationTests.Scripting.JavaScript
             await workflowStarter.BuildAndStartWorkflowAsync<ConfigurationAccessWorkflow>();
 
             Assert.Single(activityState.Messages, "");
-
-            await services.DisposeAsync();
         }
 
-        [Fact(DisplayName = "JavaScript expressions can have configuration access enabled")]
-        public async Task JavaScriptExpressionsHaveConfigurationAccessEnabled()
+        [Fact(DisplayName = "JavaScript can have configuration access enabled")]
+        public async Task JavaScriptHaveConfigurationAccessEnabled()
         {
             var services = new ServiceCollection()
                 .AddSingleton<IConfiguration>(_ => new ConfigurationBuilder()
@@ -80,8 +117,6 @@ namespace Elsa.Core.IntegrationTests.Scripting.JavaScript
             await workflowStarter.BuildAndStartWorkflowAsync<ConfigurationAccessWorkflow>();
 
             Assert.Single(activityState.Messages, "I am a secret");
-
-            await services.DisposeAsync();
         }
 
         private class ConfigurationAccessWorkflow : IWorkflow
@@ -91,6 +126,18 @@ namespace Elsa.Core.IntegrationTests.Scripting.JavaScript
                 builder.StartWith<AddExpressionToActivityState>(setup =>
                 {
                     setup.Set(x => x.Expression, _ => "getConfig('SomeSecret')");
+                    setup.Set(x => x.ExpressionSyntax, _ => "JavaScript");
+                });
+            }
+        }
+
+        private class ClrAccessWorkflow : IWorkflow
+        {
+            public void Build(IWorkflowBuilder builder)
+            {
+                builder.StartWith<AddExpressionToActivityState>(setup =>
+                {
+                    setup.Set(x => x.Expression, _ => "System.Console.WriteLine");
                     setup.Set(x => x.ExpressionSyntax, _ => "JavaScript");
                 });
             }
