@@ -29,6 +29,7 @@ namespace Elsa.Core.IntegrationTests.Scripting.JavaScript
             var hostBuilder = hostBuilderBuilder.GetHostBuilder();
             hostBuilder.ConfigureServices((ctx, services) => services.AddHostedService<HostedWorkflowRunner>());
             var host = await hostBuilder.StartAsync();
+            await host.StopAsync();
         }
 
         [Fact(DisplayName = "JavaScript expressions cannot access configuration by default")]
@@ -53,6 +54,8 @@ namespace Elsa.Core.IntegrationTests.Scripting.JavaScript
             await workflowStarter.BuildAndStartWorkflowAsync<ConfigurationAccessWorkflow>();
 
             Assert.Single(activityState.Messages, "");
+
+            await services.DisposeAsync();
         }
 
         [Fact(DisplayName = "JavaScript expressions can have configuration access enabled")]
@@ -81,6 +84,8 @@ namespace Elsa.Core.IntegrationTests.Scripting.JavaScript
             await workflowStarter.BuildAndStartWorkflowAsync<ConfigurationAccessWorkflow>();
 
             Assert.Single(activityState.Messages, "I am a secret");
+
+            await services.DisposeAsync();
         }
 
         private class ConfigurationAccessWorkflow : IWorkflow
@@ -94,34 +99,7 @@ namespace Elsa.Core.IntegrationTests.Scripting.JavaScript
                 });
             }
         }
-
-        private class AddExpressionToActivityState : Activity
-        {
-            private IExpressionEvaluator _expressionEvaluator;
-            private AssertableActivityState _activityState;
-
-            [ActivityInput]
-            public string Expression { get; set; }
-
-            [ActivityInput]
-            public string ExpressionSyntax { get; set; }
-
-            public AddExpressionToActivityState(IExpressionEvaluator evaluator, AssertableActivityState activityState)
-            {
-                _expressionEvaluator = evaluator;
-                _activityState = activityState;
-            }
-
-            protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
-            {
-                var expressionResult = await _expressionEvaluator.TryEvaluateAsync<string>(Expression, ExpressionSyntax, context);
-
-                _activityState.Messages.Add(expressionResult.Value ?? "");
-
-                return Done();
-            }
-        }
-
+        
         private class HostedWorkflowRunner : IHostedService
         {
             private readonly IStartsWorkflow _workflowRunner;
