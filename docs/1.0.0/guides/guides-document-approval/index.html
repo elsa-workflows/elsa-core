@@ -80,6 +80,8 @@ Furthermore, if the reviewer takes too long to take action, she is <strong>remin
 <li>Elsa.Activities.Email</li>
 <li>Elsa.Activities.Http</li>
 <li>Elsa.Activities.Timers</li>
+<li>Elsa.Activities.Workflows</li>
+<li>Elsa.Activities.ControlFlow</li>
 </ul>
 <h2><a class="anchor" aria-hidden="true" id="create-workflow-class"></a><a href="#create-workflow-class" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Create Workflow Class</h2>
 <p>Create the following class:</p>
@@ -87,13 +89,14 @@ Furthermore, if the reviewer takes too long to take action, she is <strong>remin
 <span class="hljs-keyword">using</span> System.Dynamic;
 <span class="hljs-keyword">using</span> System.Net;
 <span class="hljs-keyword">using</span> System.Net.Http;
-<span class="hljs-keyword">using</span> Elsa.Activities.ControlFlow;
+<span class="hljs-keyword">using</span> Elsa.Activities;
+<span class="hljs-keyword">using</span> Elsa.Activities.ControlFlow.Activities;
 <span class="hljs-keyword">using</span> Elsa.Activities.Email.Activities;
 <span class="hljs-keyword">using</span> Elsa.Activities.Http.Activities;
-<span class="hljs-keyword">using</span> Elsa.Activities.Primitives;
 <span class="hljs-keyword">using</span> Elsa.Activities.Timers.Activities;
-<span class="hljs-keyword">using</span> Elsa.Activities.Workflows;
+<span class="hljs-keyword">using</span> Elsa.Activities.Workflows.Activities;
 <span class="hljs-keyword">using</span> Elsa.Expressions;
+<span class="hljs-keyword">using</span> Elsa.Scripting.JavaScript;
 <span class="hljs-keyword">using</span> Elsa.Services;
 <span class="hljs-keyword">using</span> Elsa.Services.Models;
 
@@ -453,15 +456,15 @@ When it does, we set the <code>Approved</code> workflow variable to either <code
 <p>Finally, we simply check the value of <code>Approved</code>, and send the appropriate email to the author of the document, concluding the workflow.</p>
 <h2><a class="anchor" aria-hidden="true" id="update-startup"></a><a href="#update-startup" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Update Startup</h2>
 <p>Now that the workflow has been defined, we should update the <code>Startup</code> class as follows:</p>
-<pre><code class="hljs css language-csharp"><span class="hljs-keyword">using</span> Elsa.Activities.Email.Extensions;
+<pre><code class="hljs css language-csharp"><span class="hljs-keyword">using</span> Microsoft.AspNetCore.Builder;
+<span class="hljs-keyword">using</span> Microsoft.AspNetCore.Hosting;
+<span class="hljs-keyword">using</span> Microsoft.Extensions.DependencyInjection;
+<span class="hljs-keyword">using</span> Elsa.Activities.ControlFlow.Extensions;
+<span class="hljs-keyword">using</span> Elsa.Activities.Email.Extensions;
 <span class="hljs-keyword">using</span> Elsa.Activities.Http.Extensions;
 <span class="hljs-keyword">using</span> Elsa.Activities.Timers.Extensions;
-<span class="hljs-keyword">using</span> Elsa.Extensions;
-<span class="hljs-keyword">using</span> Elsa.Services;
-<span class="hljs-keyword">using</span> Microsoft.AspNetCore.Builder;
-<span class="hljs-keyword">using</span> Microsoft.AspNetCore.Hosting;
+<span class="hljs-keyword">using</span> Elsa.Activities.Workflows.Extensions;
 <span class="hljs-keyword">using</span> Microsoft.Extensions.Configuration;
-<span class="hljs-keyword">using</span> Microsoft.Extensions.DependencyInjection;
 
 <span class="hljs-keyword">namespace</span> <span class="hljs-title">Elsa.Guides.DocumentApproval.WebApp</span>
 {
@@ -477,11 +480,14 @@ When it does, we set the <code>Approved</code> workflow variable to either <code
         <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">ConfigureServices</span>(<span class="hljs-params">IServiceCollection services</span>)</span>
         {
             services
-                .AddElsa()
+                .AddElsaCore()
+                .AddJavaScriptExpressionEvaluator()
+                .AddControlFlowActivities()
+                .AddWorkflowActivities()
                 .AddHttpActivities(options =&gt; options.Bind(Configuration.GetSection(<span class="hljs-string">"Http"</span>)))
                 .AddEmailActivities(options =&gt; options.Bind(Configuration.GetSection(<span class="hljs-string">"Smtp"</span>)))
                 .AddTimerActivities(options =&gt; options.Bind(Configuration.GetSection(<span class="hljs-string">"BackgroundRunner"</span>)))
-                .AddWorkflow&lt;DocumentApprovalWorkflow&gt;;
+                .AddWorkflow&lt;DocumentApprovalWorkflow&gt;();
         }
 
         <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">Configure</span>(<span class="hljs-params">IApplicationBuilder app</span>)</span>
@@ -508,7 +514,7 @@ When it does, we set the <code>Approved</code> workflow variable to either <code
     <span class="hljs-attr">"Port"</span>: <span class="hljs-string">"2525"</span>
   },
   <span class="hljs-attr">"BackgroundRunner"</span>: {
-    <span class="hljs-attr">"SweepInterval"</span>: <span class="hljs-string">"PT01S"</span>
+    <span class="hljs-attr">"SweepInterval"</span>: <span class="hljs-string">"0:00:00:10"</span>
   }
 }
 

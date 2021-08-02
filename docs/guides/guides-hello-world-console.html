@@ -31,7 +31,7 @@
             <span class="hljs-keyword">var</span> services = <span class="hljs-keyword">new</span> ServiceCollection()
 
                 <span class="hljs-comment">// Add essential workflow services.</span>
-                .AddElsa()
+                .AddElsaCore()
 
                 <span class="hljs-comment">// Add Console activities (ReadLine and WriteLine).</span>
                 .AddConsoleActivities()
@@ -53,7 +53,7 @@
             <span class="hljs-keyword">await</span> invoker.StartAsync(workflowDefinition);
 
             <span class="hljs-comment">// Prevent the console from shutting down until user hits a key.</span>
-            System.Console.ReadLine();
+            Console.ReadLine();
         }
     }
 }
