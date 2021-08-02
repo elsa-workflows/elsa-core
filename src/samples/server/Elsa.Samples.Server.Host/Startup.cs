@@ -60,6 +60,15 @@ namespace Elsa.Samples.Server.Host
                 typeof(Webhooks.Persistence.YesSql.SqlServerStartup),
                 typeof(Webhooks.Persistence.YesSql.MySqlStartup),
                 typeof(Webhooks.Persistence.YesSql.PostgreSqlStartup),
+                typeof(WorkflowSettings.Persistence.EntityFramework.Sqlite.Startup),
+                typeof(WorkflowSettings.Persistence.EntityFramework.SqlServer.Startup),
+                typeof(WorkflowSettings.Persistence.EntityFramework.MySql.Startup),
+                typeof(WorkflowSettings.Persistence.EntityFramework.PostgreSql.Startup),
+                typeof(WorkflowSettings.Persistence.MongoDb.Startup),
+                typeof(WorkflowSettings.Persistence.YesSql.SqliteStartup),
+                typeof(WorkflowSettings.Persistence.YesSql.SqlServerStartup),
+                typeof(WorkflowSettings.Persistence.YesSql.MySqlStartup),
+                typeof(WorkflowSettings.Persistence.YesSql.PostgreSqlStartup),
             };
 
             services
