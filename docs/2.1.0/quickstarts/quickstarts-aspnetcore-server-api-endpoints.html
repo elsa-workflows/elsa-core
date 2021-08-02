@@ -1,0 +1,498 @@
+<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>Elsa Server · ELSA</title><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="generator" content="Docusaurus"/><meta name="description" content="In this quickstart, we will take a look at a minimum ASP.NET Core application that sets up an Elsa Server."/><meta name="docsearch:version" content="2.1.0"/><meta name="docsearch:language" content="en"/><meta property="og:title" content="Elsa Server · ELSA"/><meta property="og:type" content="website"/><meta property="og:url" content="https://elsa-workflows.github.io//elsa-core/"/><meta property="og:description" content="In this quickstart, we will take a look at a minimum ASP.NET Core application that sets up an Elsa Server."/><meta property="og:image" content="https://elsa-workflows.github.io//elsa-core/img/undraw_online.svg"/><meta name="twitter:card" content="summary"/><meta name="twitter:image" content="https://elsa-workflows.github.io//elsa-core/img/undraw_tweetstorm.svg"/><link rel="shortcut icon" href="/elsa-core/img/favicon.ico"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script type="text/javascript" src="https://buttons.github.io/buttons.js"></script><script src="/elsa-core/js/scrollSpy.js"></script><link rel="stylesheet" href="/elsa-core/css/main.css"/><script src="/elsa-core/js/codetabs.js"></script></head><body class="sideNavVisible separateOnPageNav"><div class="fixedHeaderContainer"><div class="headerWrapper wrapper"><header><a href="/elsa-core/"><img class="logo" src="/elsa-core/img/android-icon-192x192.png" alt="ELSA"/><h2 class="headerTitleWithLogo">ELSA</h2></a><a href="/elsa-core/versions"><h3>2.1.0</h3></a><div class="navigationWrapper navigationSlider"><nav class="slidingNav"><ul class="nav-site nav-site-internal"><li class="siteNavGroupActive"><a href="/elsa-core/docs/2.1.0/installation/installing-elsa-core" target="_self">Documentation</a></li><li class=""><a href="/elsa-core/docs/2.1.0/features/features" target="_self">Features</a></li></ul></nav></div></header></div></div><div class="navPusher"><div class="docMainWrapper wrapper"><div class="docsNavContainer" id="docsNav"><nav class="toc"><div class="toggleNav"><section class="navWrapper wrapper"><div class="navBreadcrumb wrapper"><div class="navToggle" id="navToggler"><div class="hamburger-menu"><div class="line1"></div><div class="line2"></div><div class="line3"></div></div></div><h2><i>›</i><span>Quickstart</span></h2><div class="tocToggler" id="tocToggler"><i class="icon-toc"></i></div></div><div class="navGroups"><div class="navGroup"><h3 class="navGroupCategoryTitle">Quickstart</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/quickstarts/quickstarts-console-hello-world">Hello World Console</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/quickstarts/quickstarts-aspnetcore-hello-world">Hello World HTTP</a></li><li class="navListItem navListItemActive"><a class="navItem" href="/elsa-core/docs/2.1.0/quickstarts/quickstarts-aspnetcore-server-api-endpoints">Elsa Server</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/quickstarts/quickstarts-aspnetcore-server-dashboard">Elsa Dashboard</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/quickstarts/quickstarts-aspnetcore-server-dashboard-and-api-endpoints">Elsa Dashboard + Server</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/quickstarts/quickstarts-elsa-and-docker">Elsa + Docker</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Installation</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/installation/installing-feeds">Package Feeds</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/installation/installing-elsa-core">Core</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/installation/installing-server">Server</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/installation/installing-persistence">Persistence</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/installation/installing-elsa-dashboard">Dashboard</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/installation/installing-elsa-designer">Designer</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Upgrading</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/upgrading/upgrading-v1.x-to-v2.0">1.x to 2.0</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/upgrading/upgrading-v2.0-to-v2.1">2.0 to 2.1</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Concepts</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/concepts/concepts-workflows">Workflows</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/concepts/concepts-workflow-variables">Workflow Variables</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/concepts/concepts-workflow-context">Workflow Context</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/concepts/concepts-correlation">Correlation</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Guides</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/guides/guides-recurring-tasks">Recurring Tasks</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/guides/guides-document-approval">Document Approval</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/guides/guides-signaling-workflows">Signaling Workflows</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/guides/guides-parent-child-workflows">Parent/Child Workflows</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/guides/guides-composite-activities">Composite Activities</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/guides/guides-runtime-list-values">Runtime List Values</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/guides/guides-json-workflows">JSON Workflows</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/guides/guides-blocking-activities">Blocking Activities</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/guides/guides-workflow-contexts">Workflow Contexts</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Activities</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/activities/common">Common Properties</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/activities/control-flow">Control Flow</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/activities/primitives">Primitives</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Expressions</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/expressions/expressions-javascript">JavaScript</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/expressions/expressions-liquid">Liquid</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Designer</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/designer/designer-using-the-designer">Using the Designer</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Extensibility</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/extensibility/extensibility-custom-activities">Custom Activities</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/extensibility/extensibility-custom-activity-providers">Custom Activity Providers</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/extensibility/extensibility-customize-existing-activities">Customize Activities</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/extensibility/extensibility-persistence">Persistence</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/extensibility/extensibility-workflow-storage-providers">Workflow Storage Providers</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/extensibility/extensibility-javascript">JavaScript</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/extensibility/extensibility-liquid">Liquid</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/extensibility/extensibility-expression-handlers">Expression Handlers</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/extensibility/extensibility-property-editor-types">Property Editors</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Hosting</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/hosting/hosting-distributed-hosting">Distributed Hosting</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/hosting/hosting-workflow-recovery">Workflow Recovery</a></li></ul></div></div></section></div><script>
+            var coll = document.getElementsByClassName('collapsible');
+            var checkActiveCategory = true;
+            for (var i = 0; i < coll.length; i++) {
+              var links = coll[i].nextElementSibling.getElementsByTagName('*');
+              if (checkActiveCategory){
+                for (var j = 0; j < links.length; j++) {
+                  if (links[j].classList.contains('navListItemActive')){
+                    coll[i].nextElementSibling.classList.toggle('hide');
+                    coll[i].childNodes[1].classList.toggle('rotate');
+                    checkActiveCategory = false;
+                    break;
+                  }
+                }
+              }
+
+              coll[i].addEventListener('click', function() {
+                var arrow = this.childNodes[1];
+                arrow.classList.toggle('rotate');
+                var content = this.nextElementSibling;
+                content.classList.toggle('hide');
+              });
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+              createToggler('#navToggler', '#docsNav', 'docsSliderActive');
+              createToggler('#tocToggler', 'body', 'tocActive');
+
+              var headings = document.querySelector('.toc-headings');
+              headings && headings.addEventListener('click', function(event) {
+                var el = event.target;
+                while(el !== headings){
+                  if (el.tagName === 'A') {
+                    document.body.classList.remove('tocActive');
+                    break;
+                  } else{
+                    el = el.parentNode;
+                  }
+                }
+              }, false);
+
+              function createToggler(togglerSelector, targetSelector, className) {
+                var toggler = document.querySelector(togglerSelector);
+                var target = document.querySelector(targetSelector);
+
+                if (!toggler) {
+                  return;
+                }
+
+                toggler.onclick = function(event) {
+                  event.preventDefault();
+
+                  target.classList.toggle(className);
+                };
+              }
+            });
+        </script></nav></div><div class="container mainContainer docsContainer"><div class="wrapper"><div class="post"><header class="postHeader"><h1 id="__docusaurus" class="postHeaderTitle">Elsa Server</h1></header><article><div><span><p>In this quickstart, we will take a look at a minimum ASP.NET Core application that sets up an Elsa Server.
+We will also install some more commonly used activities such as <code>Timer</code>, <code>Cron</code> and <code>SendEmail</code> to implement simple recurring workflows.</p>
+<blockquote>
+<p>The purpose of this application is to be a workflow server. This means that it will host and execute workflows, but it will not host the dashboard UI.
+Setting up the dashboard UI is explained <a href="/elsa-core/docs/2.1.0/quickstarts/quickstarts-aspnetcore-server-dashboard">here</a>.
+It's of course also possible to combine the workflow host with a web app that hosts the dashboard UI, which is explained <a href="/elsa-core/docs/2.1.0/quickstarts/quickstarts-aspnetcore-server-dashboard-and-api-endpoints">here</a>.</p>
+</blockquote>
+<p>We will:</p>
+<ul>
+<li>Create an ASP.NET Core application.</li>
+<li>Configure a persistence provider with EF Core and the SQLite provider.</li>
+<li>Register various activities for use in workflows.</li>
+<li>Create a simple workflow using the Workflow Builder API.</li>
+<li>Expose the Elsa API Endpoints for consumption by external applications (including the Elsa Dashboard).</li>
+<li>Try out the Elsa API Endpoints using Postman.</li>
+</ul>
+<h2><a class="anchor" aria-hidden="true" id="the-project"></a><a href="#the-project" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>The Project</h2>
+<p>Create a new, empty ASP.NET Core project called <code>ElsaQuickstarts.Server.ApiEndpoints</code>:</p>
+<pre><code class="hljs css language-bash">dotnet new web -n <span class="hljs-string">"ElsaQuickstarts.Server.ApiEndpoints"</span>
+</code></pre>
+<p>CD into the created project folder:</p>
+<pre><code class="hljs css language-bash"><span class="hljs-built_in">cd</span> ElsaQuickstarts.Server.ApiEndpoints
+</code></pre>
+<p>Add the following packages:</p>
+<pre><code class="hljs css language-bash">dotnet add package Elsa
+dotnet add package Elsa.Activities.Http
+dotnet add package Elsa.Activities.Temporal.Quartz
+dotnet add package Elsa.Persistence.EntityFramework.Sqlite
+dotnet add package Elsa.Server.Api
+</code></pre>
+<h2><a class="anchor" aria-hidden="true" id="heartbeat-workflow"></a><a href="#heartbeat-workflow" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Heartbeat Workflow</h2>
+<p>Just for demo purposes, we will create a simple &quot;heartbeat&quot; workflow that will write the current time to standard at a regular interval.
+This will show us a number of things:</p>
+<ol>
+<li>Elsa supports both programmatic as well as dynamic workflows (e.g. created visually using the Elsa Dashboard).</li>
+<li>If we have the Elsa Dashboard setup, we can view this Heartbeat workflow visually, even though we created it here programmatically.</li>
+<li>We can interact with the Elsa API endpoints using Postman and query the workflow instances generated by the Heartbeat workflow.</li>
+</ol>
+<p>Go ahead and create a new file called <code>HeartbeatWorkflow.cs</code> and add the following code:</p>
+<pre><code class="hljs css language-csharp"><span class="hljs-keyword">using</span> Elsa.Activities.Console;
+<span class="hljs-keyword">using</span> Elsa.Activities.Temporal;
+<span class="hljs-keyword">using</span> Elsa.Builders;
+<span class="hljs-keyword">using</span> NodaTime;
+
+<span class="hljs-keyword">namespace</span> <span class="hljs-title">ElsaQuickstarts.Server.ApiEndpoints</span>
+{
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title">HeartbeatWorkflow</span> : <span class="hljs-title">IWorkflow</span>
+    {
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">readonly</span> IClock _clock;
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">HeartbeatWorkflow</span>(<span class="hljs-params">IClock clock</span>)</span> =&gt; _clock = clock;
+
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">Build</span>(<span class="hljs-params">IWorkflowBuilder builder</span>)</span> =&gt;
+            builder
+                .Timer(Duration.FromSeconds(<span class="hljs-number">10</span>))
+                .WriteLine(context =&gt; <span class="hljs-string">$"Heartbeat at <span class="hljs-subst">{_clock.GetCurrentInstant()}</span>"</span>);
+    }
+}
+</code></pre>
+<p>The above workflow has two activities.
+The first activity <code>Timer</code> will cause this workflow to execute every 10 seconds.
+The second activity <code>WriteLine</code> writes the current time to standard out. Notice that it uses an overload that takes a delegate instead of a string literal. This allows you to provide property values at runtime that are dynamic. This is similar to providing workflow expressions using JavaScript and Liquid expressions in Elsa 1. The difference of course being that you can now use plain old C# syntax when writing workflows using the Workflow Builder API as is shown here.</p>
+<p>Notice also that the <code>HeartbeatWorkflow</code> class can accept constructor-injected services, just like any other type you would register with the DI system.</p>
+<blockquote>
+<p>In case you are wondering about <code>IClock</code> - it's an abstraction provided by <a href="https://nodatime.org/">NodaTime</a>, an alternative date and time API for .NET.</p>
+</blockquote>
+<h2><a class="anchor" aria-hidden="true" id="startup"></a><a href="#startup" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Startup</h2>
+<p>Next, open <code>Startup.cs</code> and replace its contents with the following:</p>
+<pre><code class="hljs css language-csharp"><span class="hljs-keyword">using</span> Elsa;
+<span class="hljs-keyword">using</span> Elsa.Persistence.EntityFramework.Core.Extensions;
+<span class="hljs-keyword">using</span> Elsa.Persistence.EntityFramework.Sqlite;
+<span class="hljs-keyword">using</span> Microsoft.AspNetCore.Builder;
+<span class="hljs-keyword">using</span> Microsoft.AspNetCore.Hosting;
+<span class="hljs-keyword">using</span> Microsoft.Extensions.Configuration;
+<span class="hljs-keyword">using</span> Microsoft.Extensions.DependencyInjection;
+<span class="hljs-keyword">using</span> Microsoft.Extensions.Hosting;
+
+<span class="hljs-keyword">namespace</span> <span class="hljs-title">ElsaQuickstarts.Server.ApiEndpoints</span>
+{
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title">Startup</span>
+    {
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">Startup</span>(<span class="hljs-params">IWebHostEnvironment environment, IConfiguration configuration</span>)</span>
+        {
+            Environment = environment;
+            Configuration = configuration;
+        }
+
+        <span class="hljs-keyword">private</span> IWebHostEnvironment Environment { <span class="hljs-keyword">get</span>; }
+        <span class="hljs-keyword">private</span> IConfiguration Configuration { <span class="hljs-keyword">get</span>; }
+
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">ConfigureServices</span>(<span class="hljs-params">IServiceCollection services</span>)</span>
+        {
+            <span class="hljs-keyword">var</span> elsaSection = Configuration.GetSection(<span class="hljs-string">"Elsa"</span>);
+
+            <span class="hljs-comment">// Elsa services.</span>
+            services
+                .AddElsa(elsa =&gt; elsa
+                    .UseEntityFrameworkPersistence(ef =&gt; ef.UseSqlite())
+                    .AddConsoleActivities()
+                    .AddHttpActivities(elsaSection.GetSection(<span class="hljs-string">"Server"</span>).Bind)
+                    .AddQuartzTemporalActivities()
+                    .AddJavaScriptActivities()
+                    .AddWorkflowsFrom&lt;Startup&gt;()
+                );
+
+            <span class="hljs-comment">// Elsa API endpoints.</span>
+            services.AddElsaApiEndpoints();
+
+            <span class="hljs-comment">// Allow arbitrary client browser apps to access the API.</span>
+            <span class="hljs-comment">// In a production environment, make sure to allow only origins you trust.</span>
+            services.AddCors(cors =&gt; cors.AddDefaultPolicy(policy =&gt; policy
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowAnyOrigin()
+                .WithExposedHeaders(<span class="hljs-string">"Content-Disposition"</span>))
+            );
+        }
+
+        <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">Configure</span>(<span class="hljs-params">IApplicationBuilder app</span>)</span>
+        {
+            <span class="hljs-keyword">if</span> (Environment.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+            }
+
+            app
+                .UseCors()
+                .UseHttpActivities()
+                .UseRouting()
+                .UseEndpoints(endpoints =&gt;
+                {
+                    <span class="hljs-comment">// Elsa API Endpoints are implemented as regular ASP.NET Core API controllers.</span>
+                    endpoints.MapControllers();
+                });
+        }
+    }
+}
+</code></pre>
+<blockquote>
+<p>When using the Entity Framework Core provider, Elsa will use pooled DB contexts by default and will automatically run migrations for you.
+If you do not wish to use pooled DB contexts, use the <code>UseNonPooledEntityFrameworkPersistence</code> method instead.
+If you prefer to run the migrations yourself, make sure to pass <code>autoRunMigrations: false</code> when using the <code>UseEntityFrameworkPersistence</code> method (it is an optional parameter set to <code>true</code> by default).</p>
+</blockquote>
+<p>Notice that we're accessing a configuration section called <code>&quot;Elsa&quot;</code>. We then use this section to retrieve sub-sections called <code>&quot;Http&quot;</code> and <code>&quot;Smtp&quot;</code>&quot;.
+Let's update <code>appsettings.json</code> with these sections next:</p>
+<h2><a class="anchor" aria-hidden="true" id="appsettingsjson"></a><a href="#appsettingsjson" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Appsettings.json</h2>
+<p>Open <code>appsettings.json</code> and add the following section:</p>
+<pre><code class="hljs css language-json">{
+  <span class="hljs-attr">"Elsa"</span>: {
+    <span class="hljs-attr">"Http"</span>: {
+      <span class="hljs-attr">"BaseUrl"</span>: <span class="hljs-string">"https://localhost:5001"</span>
+    }
+  }
+}
+</code></pre>
+<blockquote>
+<p>The reason we are setting a &quot;base URL&quot; is because the HTTP activities library provides an absolute URL provider that can be used by activities and workflow expressions.
+Since this absolute URL provider can be used outside the context of an actual HTTP request (for instance, when a timer event occurs), we cannot rely on e.g. <code>IHttpContextAccessor</code>, since there won't be any HTTP context.</p>
+</blockquote>
+<h2><a class="anchor" aria-hidden="true" id="run"></a><a href="#run" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Run</h2>
+<p>Run the program and wait until you see the following output:</p>
+<pre><code class="hljs css language-text">Now listening on: http://localhost:5000
+Now listening on: https://localhost:5001
+Application started. Press Ctrl+C to shut down.
+</code></pre>
+<p>If you wait for about 10 seconds, you should start seeing the following output:</p>
+<pre><code class="hljs css language-bash">info: Elsa.Bookmarks.BookmarkIndexer[0]
+      Indexed 0 bookmarks <span class="hljs-keyword">in</span> 00:00:00.0077348
+Heartbeat at 2021-05-07T19:43:47Z
+info: Elsa.Bookmarks.BookmarkIndexer[0]
+      Indexing bookmarks
+</code></pre>
+<h2><a class="anchor" aria-hidden="true" id="postman"></a><a href="#postman" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Postman</h2>
+<p>Start <a href="https://www.postman.com/">Postman</a> or any other tool that enables you to send HTTP requests.
+We'll now try out some of the exposed APIs.</p>
+<h3><a class="anchor" aria-hidden="true" id="list-workflow-blueprints"></a><a href="#list-workflow-blueprints" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>List Workflow Blueprints</h3>
+<p>First, let's query the <strong>workflow registry</strong>:</p>
+<pre><code class="hljs css language-http request">GET /v1/workflow-registry
+Host: localhost:5001
+</code></pre>
+<p>The JSON response will include a &quot;summary&quot; view of all workflows registered (currently just one):</p>
+<pre><code class="hljs css language-json">{
+    <span class="hljs-attr">"items"</span>: [
+        {
+            <span class="hljs-attr">"id"</span>: <span class="hljs-string">"HeartbeatWorkflow"</span>,
+            <span class="hljs-attr">"name"</span>: <span class="hljs-string">"HeartbeatWorkflow"</span>,
+            <span class="hljs-attr">"displayName"</span>: <span class="hljs-string">"HeartbeatWorkflow"</span>,
+            <span class="hljs-attr">"description"</span>: <span class="hljs-literal">null</span>,
+            <span class="hljs-attr">"version"</span>: <span class="hljs-number">1</span>,
+            <span class="hljs-attr">"tenantId"</span>: <span class="hljs-literal">null</span>,
+            <span class="hljs-attr">"isSingleton"</span>: <span class="hljs-literal">false</span>,
+            <span class="hljs-attr">"isEnabled"</span>: <span class="hljs-literal">false</span>,
+            <span class="hljs-attr">"isPublished"</span>: <span class="hljs-literal">true</span>,
+            <span class="hljs-attr">"isLatest"</span>: <span class="hljs-literal">true</span>
+        }
+    ],
+    <span class="hljs-attr">"page"</span>: <span class="hljs-literal">null</span>,
+    <span class="hljs-attr">"pageSize"</span>: <span class="hljs-literal">null</span>,
+    <span class="hljs-attr">"totalCount"</span>: <span class="hljs-number">1</span>
+}
+</code></pre>
+<h3><a class="anchor" aria-hidden="true" id="get-single-workflow-blueprint"></a><a href="#get-single-workflow-blueprint" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Get Single Workflow Blueprint</h3>
+<p>To get the full workflow blueprint definition, issue the following HTTP request:</p>
+<pre><code class="hljs css language-http request">GET /v1/workflow-registry/HeartbeatWorkflow
+Host: localhost:5001
+</code></pre>
+<p>The response will include more detail, including activities and connections:</p>
+<pre><code class="hljs css language-json">{
+    <span class="hljs-attr">"$id"</span>: <span class="hljs-string">"1"</span>,
+    <span class="hljs-attr">"version"</span>: <span class="hljs-number">1</span>,
+    <span class="hljs-attr">"isSingleton"</span>: <span class="hljs-literal">false</span>,
+    <span class="hljs-attr">"isEnabled"</span>: <span class="hljs-literal">false</span>,
+    <span class="hljs-attr">"isPublished"</span>: <span class="hljs-literal">true</span>,
+    <span class="hljs-attr">"isLatest"</span>: <span class="hljs-literal">true</span>,
+    <span class="hljs-attr">"variables"</span>: {
+        <span class="hljs-attr">"$id"</span>: <span class="hljs-string">"2"</span>,
+        <span class="hljs-attr">"data"</span>: {}
+    },
+    <span class="hljs-attr">"persistenceBehavior"</span>: <span class="hljs-string">"WorkflowBurst"</span>,
+    <span class="hljs-attr">"deleteCompletedInstances"</span>: <span class="hljs-literal">false</span>,
+    <span class="hljs-attr">"customAttributes"</span>: {
+        <span class="hljs-attr">"$id"</span>: <span class="hljs-string">"3"</span>,
+        <span class="hljs-attr">"data"</span>: {}
+    },
+    <span class="hljs-attr">"activities"</span>: [
+        {
+            <span class="hljs-attr">"$id"</span>: <span class="hljs-string">"4"</span>,
+            <span class="hljs-attr">"id"</span>: <span class="hljs-string">"activity-1"</span>,
+            <span class="hljs-attr">"type"</span>: <span class="hljs-string">"Timer"</span>,
+            <span class="hljs-attr">"parentId"</span>: <span class="hljs-string">"HeartbeatWorkflow"</span>,
+            <span class="hljs-attr">"persistWorkflow"</span>: <span class="hljs-literal">false</span>,
+            <span class="hljs-attr">"loadWorkflowContext"</span>: <span class="hljs-literal">false</span>,
+            <span class="hljs-attr">"saveWorkflowContext"</span>: <span class="hljs-literal">false</span>,
+            <span class="hljs-attr">"properties"</span>: {
+                <span class="hljs-attr">"$id"</span>: <span class="hljs-string">"5"</span>,
+                <span class="hljs-attr">"data"</span>: {
+                    <span class="hljs-attr">"Timeout"</span>: <span class="hljs-string">"0:00:10"</span>
+                }
+            }
+        },
+        {
+            <span class="hljs-attr">"$id"</span>: <span class="hljs-string">"6"</span>,
+            <span class="hljs-attr">"id"</span>: <span class="hljs-string">"activity-2"</span>,
+            <span class="hljs-attr">"type"</span>: <span class="hljs-string">"WriteLine"</span>,
+            <span class="hljs-attr">"parentId"</span>: <span class="hljs-string">"HeartbeatWorkflow"</span>,
+            <span class="hljs-attr">"persistWorkflow"</span>: <span class="hljs-literal">false</span>,
+            <span class="hljs-attr">"loadWorkflowContext"</span>: <span class="hljs-literal">false</span>,
+            <span class="hljs-attr">"saveWorkflowContext"</span>: <span class="hljs-literal">false</span>,
+            <span class="hljs-attr">"properties"</span>: {
+                <span class="hljs-attr">"$id"</span>: <span class="hljs-string">"7"</span>,
+                <span class="hljs-attr">"data"</span>: {
+                    <span class="hljs-attr">"Text"</span>: <span class="hljs-string">"Heartbeat at 2021-05-07T19:58:22Z"</span>
+                }
+            }
+        }
+    ],
+    <span class="hljs-attr">"connections"</span>: [
+        {
+            <span class="hljs-attr">"$id"</span>: <span class="hljs-string">"8"</span>,
+            <span class="hljs-attr">"sourceActivityId"</span>: <span class="hljs-string">"activity-1"</span>,
+            <span class="hljs-attr">"targetActivityId"</span>: <span class="hljs-string">"activity-2"</span>,
+            <span class="hljs-attr">"outcome"</span>: <span class="hljs-string">"Done"</span>
+        }
+    ],
+    <span class="hljs-attr">"id"</span>: <span class="hljs-string">"HeartbeatWorkflow"</span>,
+    <span class="hljs-attr">"name"</span>: <span class="hljs-string">"HeartbeatWorkflow"</span>,
+    <span class="hljs-attr">"displayName"</span>: <span class="hljs-string">"HeartbeatWorkflow"</span>,
+    <span class="hljs-attr">"type"</span>: <span class="hljs-string">"HeartbeatWorkflow"</span>,
+    <span class="hljs-attr">"parentId"</span>: <span class="hljs-string">"HeartbeatWorkflow"</span>,
+    <span class="hljs-attr">"persistWorkflow"</span>: <span class="hljs-literal">true</span>,
+    <span class="hljs-attr">"loadWorkflowContext"</span>: <span class="hljs-literal">false</span>,
+    <span class="hljs-attr">"saveWorkflowContext"</span>: <span class="hljs-literal">false</span>,
+    <span class="hljs-attr">"properties"</span>: {
+        <span class="hljs-attr">"$id"</span>: <span class="hljs-string">"9"</span>,
+        <span class="hljs-attr">"data"</span>: {}
+    }
+}
+</code></pre>
+<h3><a class="anchor" aria-hidden="true" id="list-workflow-instances"></a><a href="#list-workflow-instances" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>List Workflow Instances</h3>
+<p>As the <code>HeartbeatWorkflow</code> executes, a new workflow instance will be created every 10 seconds. To get a list of workflow instances, issue the following request:</p>
+<pre><code class="hljs css language-http request">GET /v1/workflow-instances?workflow=HeartbeatWorkflow&amp;page=0&amp;pageSize=2
+Host: localhost:5001
+</code></pre>
+<p>The response should look similar to this:</p>
+<pre><code class="hljs css language-json">{
+    <span class="hljs-attr">"items"</span>: [
+        {
+            <span class="hljs-attr">"id"</span>: <span class="hljs-string">"e380d0a7fd4a4b6ba236fbdc0adf0ddb"</span>,
+            <span class="hljs-attr">"definitionId"</span>: <span class="hljs-string">"HeartbeatWorkflow"</span>,
+            <span class="hljs-attr">"tenantId"</span>: <span class="hljs-literal">null</span>,
+            <span class="hljs-attr">"version"</span>: <span class="hljs-number">1</span>,
+            <span class="hljs-attr">"workflowStatus"</span>: <span class="hljs-string">"Finished"</span>,
+            <span class="hljs-attr">"correlationId"</span>: <span class="hljs-literal">null</span>,
+            <span class="hljs-attr">"contextType"</span>: <span class="hljs-literal">null</span>,
+            <span class="hljs-attr">"contextId"</span>: <span class="hljs-literal">null</span>,
+            <span class="hljs-attr">"name"</span>: <span class="hljs-literal">null</span>,
+            <span class="hljs-attr">"createdAt"</span>: <span class="hljs-string">"2021-05-07T19:43:46.4198083Z"</span>,
+            <span class="hljs-attr">"lastExecutedAt"</span>: <span class="hljs-string">"2021-05-07T19:43:47.4602325Z"</span>,
+            <span class="hljs-attr">"finishedAt"</span>: <span class="hljs-string">"2021-05-07T19:43:47.4626325Z"</span>,
+            <span class="hljs-attr">"cancelledAt"</span>: <span class="hljs-literal">null</span>,
+            <span class="hljs-attr">"faultedAt"</span>: <span class="hljs-literal">null</span>
+        },
+        {
+            <span class="hljs-attr">"id"</span>: <span class="hljs-string">"418d0b535a89413e9ca2014a3b476b93"</span>,
+            <span class="hljs-attr">"definitionId"</span>: <span class="hljs-string">"HeartbeatWorkflow"</span>,
+            <span class="hljs-attr">"tenantId"</span>: <span class="hljs-literal">null</span>,
+            <span class="hljs-attr">"version"</span>: <span class="hljs-number">1</span>,
+            <span class="hljs-attr">"workflowStatus"</span>: <span class="hljs-string">"Finished"</span>,
+            <span class="hljs-attr">"correlationId"</span>: <span class="hljs-literal">null</span>,
+            <span class="hljs-attr">"contextType"</span>: <span class="hljs-literal">null</span>,
+            <span class="hljs-attr">"contextId"</span>: <span class="hljs-literal">null</span>,
+            <span class="hljs-attr">"name"</span>: <span class="hljs-literal">null</span>,
+            <span class="hljs-attr">"createdAt"</span>: <span class="hljs-string">"2021-05-07T19:43:56.175008Z"</span>,
+            <span class="hljs-attr">"lastExecutedAt"</span>: <span class="hljs-string">"2021-05-07T19:43:56.3284055Z"</span>,
+            <span class="hljs-attr">"finishedAt"</span>: <span class="hljs-string">"2021-05-07T19:43:56.3285439Z"</span>,
+            <span class="hljs-attr">"cancelledAt"</span>: <span class="hljs-literal">null</span>,
+            <span class="hljs-attr">"faultedAt"</span>: <span class="hljs-literal">null</span>
+        }
+    ],
+    <span class="hljs-attr">"page"</span>: <span class="hljs-number">0</span>,
+    <span class="hljs-attr">"pageSize"</span>: <span class="hljs-number">2</span>,
+    <span class="hljs-attr">"totalCount"</span>: <span class="hljs-number">110</span>
+}
+</code></pre>
+<h3><a class="anchor" aria-hidden="true" id="list-activities"></a><a href="#list-activities" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>List Activities</h3>
+<p>To get a full list of available activities, you can issue the following HTTP request:</p>
+<pre><code class="hljs css language-http request">GET /v1/activities
+Host: localhost:5001
+</code></pre>
+<p>The following is a partial response to give you an idea of what it looks like:</p>
+<pre><code class="hljs css language-json">[
+    {
+        <span class="hljs-attr">"type"</span>: <span class="hljs-string">"ReadLine"</span>,
+        <span class="hljs-attr">"displayName"</span>: <span class="hljs-string">"Read Line"</span>,
+        <span class="hljs-attr">"description"</span>: <span class="hljs-string">"Read text from standard in."</span>,
+        <span class="hljs-attr">"category"</span>: <span class="hljs-string">"Console"</span>,
+        <span class="hljs-attr">"traits"</span>: <span class="hljs-number">1</span>,
+        <span class="hljs-attr">"outcomes"</span>: [
+            <span class="hljs-string">"Done"</span>
+        ],
+        <span class="hljs-attr">"properties"</span>: []
+    },
+    {
+        <span class="hljs-attr">"type"</span>: <span class="hljs-string">"WriteLine"</span>,
+        <span class="hljs-attr">"displayName"</span>: <span class="hljs-string">"Write Line"</span>,
+        <span class="hljs-attr">"description"</span>: <span class="hljs-string">"Write text to standard out."</span>,
+        <span class="hljs-attr">"category"</span>: <span class="hljs-string">"Console"</span>,
+        <span class="hljs-attr">"traits"</span>: <span class="hljs-number">1</span>,
+        <span class="hljs-attr">"outcomes"</span>: [
+            <span class="hljs-string">"Done"</span>
+        ],
+        <span class="hljs-attr">"properties"</span>: [
+            {
+                <span class="hljs-attr">"name"</span>: <span class="hljs-string">"Text"</span>,
+                <span class="hljs-attr">"type"</span>: <span class="hljs-string">"System.String"</span>,
+                <span class="hljs-attr">"uiHint"</span>: <span class="hljs-string">"single-line"</span>,
+                <span class="hljs-attr">"label"</span>: <span class="hljs-string">"Text"</span>,
+                <span class="hljs-attr">"hint"</span>: <span class="hljs-string">"The text to write."</span>,
+                <span class="hljs-attr">"supportedSyntaxes"</span>: [
+                    <span class="hljs-string">"JavaScript"</span>,
+                    <span class="hljs-string">"Liquid"</span>
+                ]
+            }
+        ]
+    },
+    {
+        <span class="hljs-attr">"type"</span>: <span class="hljs-string">"HttpEndpoint"</span>,
+        <span class="hljs-attr">"displayName"</span>: <span class="hljs-string">"HTTP Endpoint"</span>,
+        <span class="hljs-attr">"description"</span>: <span class="hljs-string">"Handle an incoming HTTP request."</span>,
+        <span class="hljs-attr">"category"</span>: <span class="hljs-string">"HTTP"</span>,
+        <span class="hljs-attr">"traits"</span>: <span class="hljs-number">2</span>,
+        <span class="hljs-attr">"outcomes"</span>: [
+            <span class="hljs-string">"Done"</span>
+        ],
+        <span class="hljs-attr">"properties"</span>: [
+            {
+                <span class="hljs-attr">"name"</span>: <span class="hljs-string">"Path"</span>,
+                <span class="hljs-attr">"type"</span>: <span class="hljs-string">"Microsoft.AspNetCore.Http.PathString"</span>,
+                <span class="hljs-attr">"uiHint"</span>: <span class="hljs-string">"single-line"</span>,
+                <span class="hljs-attr">"label"</span>: <span class="hljs-string">"Path"</span>,
+                <span class="hljs-attr">"hint"</span>: <span class="hljs-string">"The relative path that triggers this activity."</span>,
+                <span class="hljs-attr">"supportedSyntaxes"</span>: [
+                    <span class="hljs-string">"JavaScript"</span>,
+                    <span class="hljs-string">"Liquid"</span>
+                ]
+            },
+            {
+                <span class="hljs-attr">"name"</span>: <span class="hljs-string">"Methods"</span>,
+                <span class="hljs-attr">"type"</span>: <span class="hljs-string">"System.Collections.Generic.HashSet`1[System.String]"</span>,
+                <span class="hljs-attr">"uiHint"</span>: <span class="hljs-string">"check-list"</span>,
+                <span class="hljs-attr">"label"</span>: <span class="hljs-string">"Methods"</span>,
+                <span class="hljs-attr">"hint"</span>: <span class="hljs-string">"The HTTP methods that trigger this activity."</span>,
+                <span class="hljs-attr">"options"</span>: [
+                    <span class="hljs-string">"GET"</span>,
+                    <span class="hljs-string">"POST"</span>,
+                    <span class="hljs-string">"PUT"</span>,
+                    <span class="hljs-string">"DELETE"</span>,
+                    <span class="hljs-string">"PATCH"</span>,
+                    <span class="hljs-string">"OPTIONS"</span>,
+                    <span class="hljs-string">"HEAD"</span>
+                ],
+                <span class="hljs-attr">"defaultValue"</span>: [
+                    <span class="hljs-string">"GET"</span>
+                ],
+                <span class="hljs-attr">"defaultSyntax"</span>: <span class="hljs-string">"Json"</span>,
+                <span class="hljs-attr">"supportedSyntaxes"</span>: [
+                    <span class="hljs-string">"Json"</span>,
+                    <span class="hljs-string">"JavaScript"</span>,
+                    <span class="hljs-string">"Liquid"</span>
+                ]
+            },
+            {
+                <span class="hljs-attr">"name"</span>: <span class="hljs-string">"ReadContent"</span>,
+                <span class="hljs-attr">"type"</span>: <span class="hljs-string">"System.Boolean"</span>,
+                <span class="hljs-attr">"uiHint"</span>: <span class="hljs-string">"checkbox"</span>,
+                <span class="hljs-attr">"label"</span>: <span class="hljs-string">"Read Content"</span>,
+                <span class="hljs-attr">"hint"</span>: <span class="hljs-string">"A value indicating whether the HTTP request content body should be read and stored as part of the HTTP request model. The stored format depends on the content-type header."</span>,
+                <span class="hljs-attr">"supportedSyntaxes"</span>: [
+                    <span class="hljs-string">"Literal"</span>,
+                    <span class="hljs-string">"JavaScript"</span>,
+                    <span class="hljs-string">"Liquid"</span>
+                ]
+            },
+            {
+                <span class="hljs-attr">"name"</span>: <span class="hljs-string">"TargetType"</span>,
+                <span class="hljs-attr">"type"</span>: <span class="hljs-string">"System.Type"</span>,
+                <span class="hljs-attr">"uiHint"</span>: <span class="hljs-string">"single-line"</span>,
+                <span class="hljs-attr">"label"</span>: <span class="hljs-string">"Target Type"</span>,
+                <span class="hljs-attr">"category"</span>: <span class="hljs-string">"Advanced"</span>,
+                <span class="hljs-attr">"supportedSyntaxes"</span>: []
+            }
+        ]
+    }
+]
+</code></pre>
+<h2><a class="anchor" aria-hidden="true" id="next-steps"></a><a href="#next-steps" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Next Steps</h2>
+<p>In this guide, we've seen how to setup an Elsa Server Host that can host and execute workflows and exposes a set of API endpoints for use by external applications (such as the Elsa Dashboard, which we haven't seen here but is covered <a href="/elsa-core/docs/2.1.0/quickstarts/quickstarts-aspnetcore-server-dashboard">here</a>).</p>
+<p>Now that you've seen how to setup an ASP.NET Core server with Elsa workflows support, you might want to learn more about the following:</p>
+<ul>
+<li><a href="/elsa-core/docs/2.1.0/quickstarts/quickstarts-aspnetcore-server-dashboard">How to setup an ASP.NET Core host with Elsa Dashboard.</a></li>
+<li><a href="/elsa-core/docs/2.1.0/quickstarts/quickstarts-aspnetcore-server-dashboard-and-api-endpoints">How to setup an ASP.NET Core host with Elsa Dashboard + API Endpoints.</a></li>
+</ul>
+</span></div></article></div><div class="docs-prevnext"><a class="docs-prev button" href="/elsa-core/docs/2.1.0/quickstarts/quickstarts-aspnetcore-hello-world"><span class="arrow-prev">← </span><span>Hello World HTTP</span></a><a class="docs-next button" href="/elsa-core/docs/2.1.0/quickstarts/quickstarts-aspnetcore-server-dashboard"><span>Elsa Dashboard</span><span class="arrow-next"> →</span></a></div></div></div><nav class="onPageNav"><ul class="toc-headings"><li><a href="#the-project">The Project</a></li><li><a href="#heartbeat-workflow">Heartbeat Workflow</a></li><li><a href="#startup">Startup</a></li><li><a href="#appsettingsjson">Appsettings.json</a></li><li><a href="#run">Run</a></li><li><a href="#postman">Postman</a><ul class="toc-headings"><li><a href="#list-workflow-blueprints">List Workflow Blueprints</a></li><li><a href="#get-single-workflow-blueprint">Get Single Workflow Blueprint</a></li><li><a href="#list-workflow-instances">List Workflow Instances</a></li><li><a href="#list-activities">List Activities</a></li></ul></li><li><a href="#next-steps">Next Steps</a></li></ul></nav></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="/elsa-core/" class="nav-home"><img src="/elsa-core/img/android-icon-192x192.png" alt="ELSA" width="50" height="50"/></a><div><h5>Docs</h5><a href="/elsa-core/docs/next/installation/installing-elsa-core">Getting Started</a><a href="/elsa-core/docs/next/concepts/concepts-workflows">Concepts</a><a href="/elsa-core/docs/next/quickstarts/quickstarts-console-hello-world">Quickstarts</a><a href="/elsa-core/docs/next/guides/guides-recurring-tasks">Guides</a></div><div><h5>Community</h5><a href="https://stackoverflow.com/questions/tagged/elsa-workflows" target="_blank" rel="noreferrer noopener">Stack Overflow</a><a href="https://discord.gg/hhChk5H472" target="_blank" rel="noreferrer noopener">Discord</a></div><div><h5>More</h5><a href="https://github.com/elsa-workflows/elsa-core">GitHub</a><a class="github-button" href="https://github.com/elsa-workflows/elsa-core" data-icon="octicon-star" data-count-href="/facebook/docusaurus/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star this project on GitHub">Star</a></div></section><a href="https://dotnetfoundation.org" target="_blank" rel="noreferrer noopener" class="dotnetfoundation" title="Supported by the .NET Foundation"><img src="/elsa-core/img/dotnetfoundation.png" alt="Supported by the .NET Foundation" width="100" height="100"/></a><section class="copyright">Copyright © 2021 .NET Foundation</section></footer></div></body></html>

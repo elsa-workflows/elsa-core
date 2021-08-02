@@ -1,0 +1,118 @@
+<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>Primitives · ELSA</title><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="generator" content="Docusaurus"/><meta name="description" content="* [Set Context ID](#set-context-id)"/><meta name="docsearch:version" content="2.1.0"/><meta name="docsearch:language" content="en"/><meta property="og:title" content="Primitives · ELSA"/><meta property="og:type" content="website"/><meta property="og:url" content="https://elsa-workflows.github.io//elsa-core/"/><meta property="og:description" content="* [Set Context ID](#set-context-id)"/><meta property="og:image" content="https://elsa-workflows.github.io//elsa-core/img/undraw_online.svg"/><meta name="twitter:card" content="summary"/><meta name="twitter:image" content="https://elsa-workflows.github.io//elsa-core/img/undraw_tweetstorm.svg"/><link rel="shortcut icon" href="/elsa-core/img/favicon.ico"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script type="text/javascript" src="https://buttons.github.io/buttons.js"></script><script src="/elsa-core/js/scrollSpy.js"></script><link rel="stylesheet" href="/elsa-core/css/main.css"/><script src="/elsa-core/js/codetabs.js"></script></head><body class="sideNavVisible separateOnPageNav"><div class="fixedHeaderContainer"><div class="headerWrapper wrapper"><header><a href="/elsa-core/"><img class="logo" src="/elsa-core/img/android-icon-192x192.png" alt="ELSA"/><h2 class="headerTitleWithLogo">ELSA</h2></a><a href="/elsa-core/versions"><h3>2.1.0</h3></a><div class="navigationWrapper navigationSlider"><nav class="slidingNav"><ul class="nav-site nav-site-internal"><li class="siteNavGroupActive"><a href="/elsa-core/docs/2.1.0/installation/installing-elsa-core" target="_self">Documentation</a></li><li class=""><a href="/elsa-core/docs/2.1.0/features/features" target="_self">Features</a></li></ul></nav></div></header></div></div><div class="navPusher"><div class="docMainWrapper wrapper"><div class="docsNavContainer" id="docsNav"><nav class="toc"><div class="toggleNav"><section class="navWrapper wrapper"><div class="navBreadcrumb wrapper"><div class="navToggle" id="navToggler"><div class="hamburger-menu"><div class="line1"></div><div class="line2"></div><div class="line3"></div></div></div><h2><i>›</i><span>Activities</span></h2><div class="tocToggler" id="tocToggler"><i class="icon-toc"></i></div></div><div class="navGroups"><div class="navGroup"><h3 class="navGroupCategoryTitle">Quickstart</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/quickstarts/quickstarts-console-hello-world">Hello World Console</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/quickstarts/quickstarts-aspnetcore-hello-world">Hello World HTTP</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/quickstarts/quickstarts-aspnetcore-server-api-endpoints">Elsa Server</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/quickstarts/quickstarts-aspnetcore-server-dashboard">Elsa Dashboard</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/quickstarts/quickstarts-aspnetcore-server-dashboard-and-api-endpoints">Elsa Dashboard + Server</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/quickstarts/quickstarts-elsa-and-docker">Elsa + Docker</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Installation</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/installation/installing-feeds">Package Feeds</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/installation/installing-elsa-core">Core</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/installation/installing-server">Server</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/installation/installing-persistence">Persistence</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/installation/installing-elsa-dashboard">Dashboard</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/installation/installing-elsa-designer">Designer</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Upgrading</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/upgrading/upgrading-v1.x-to-v2.0">1.x to 2.0</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/upgrading/upgrading-v2.0-to-v2.1">2.0 to 2.1</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Concepts</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/concepts/concepts-workflows">Workflows</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/concepts/concepts-workflow-variables">Workflow Variables</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/concepts/concepts-workflow-context">Workflow Context</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/concepts/concepts-correlation">Correlation</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Guides</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/guides/guides-recurring-tasks">Recurring Tasks</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/guides/guides-document-approval">Document Approval</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/guides/guides-signaling-workflows">Signaling Workflows</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/guides/guides-parent-child-workflows">Parent/Child Workflows</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/guides/guides-composite-activities">Composite Activities</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/guides/guides-runtime-list-values">Runtime List Values</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/guides/guides-json-workflows">JSON Workflows</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/guides/guides-blocking-activities">Blocking Activities</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/guides/guides-workflow-contexts">Workflow Contexts</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Activities</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/activities/common">Common Properties</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/activities/control-flow">Control Flow</a></li><li class="navListItem navListItemActive"><a class="navItem" href="/elsa-core/docs/2.1.0/activities/primitives">Primitives</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Expressions</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/expressions/expressions-javascript">JavaScript</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/expressions/expressions-liquid">Liquid</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Designer</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/designer/designer-using-the-designer">Using the Designer</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Extensibility</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/extensibility/extensibility-custom-activities">Custom Activities</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/extensibility/extensibility-custom-activity-providers">Custom Activity Providers</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/extensibility/extensibility-customize-existing-activities">Customize Activities</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/extensibility/extensibility-persistence">Persistence</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/extensibility/extensibility-workflow-storage-providers">Workflow Storage Providers</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/extensibility/extensibility-javascript">JavaScript</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/extensibility/extensibility-liquid">Liquid</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/extensibility/extensibility-expression-handlers">Expression Handlers</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/extensibility/extensibility-property-editor-types">Property Editors</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Hosting</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/hosting/hosting-distributed-hosting">Distributed Hosting</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/hosting/hosting-workflow-recovery">Workflow Recovery</a></li></ul></div></div></section></div><script>
+            var coll = document.getElementsByClassName('collapsible');
+            var checkActiveCategory = true;
+            for (var i = 0; i < coll.length; i++) {
+              var links = coll[i].nextElementSibling.getElementsByTagName('*');
+              if (checkActiveCategory){
+                for (var j = 0; j < links.length; j++) {
+                  if (links[j].classList.contains('navListItemActive')){
+                    coll[i].nextElementSibling.classList.toggle('hide');
+                    coll[i].childNodes[1].classList.toggle('rotate');
+                    checkActiveCategory = false;
+                    break;
+                  }
+                }
+              }
+
+              coll[i].addEventListener('click', function() {
+                var arrow = this.childNodes[1];
+                arrow.classList.toggle('rotate');
+                var content = this.nextElementSibling;
+                content.classList.toggle('hide');
+              });
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+              createToggler('#navToggler', '#docsNav', 'docsSliderActive');
+              createToggler('#tocToggler', 'body', 'tocActive');
+
+              var headings = document.querySelector('.toc-headings');
+              headings && headings.addEventListener('click', function(event) {
+                var el = event.target;
+                while(el !== headings){
+                  if (el.tagName === 'A') {
+                    document.body.classList.remove('tocActive');
+                    break;
+                  } else{
+                    el = el.parentNode;
+                  }
+                }
+              }, false);
+
+              function createToggler(togglerSelector, targetSelector, className) {
+                var toggler = document.querySelector(togglerSelector);
+                var target = document.querySelector(targetSelector);
+
+                if (!toggler) {
+                  return;
+                }
+
+                toggler.onclick = function(event) {
+                  event.preventDefault();
+
+                  target.classList.toggle(className);
+                };
+              }
+            });
+        </script></nav></div><div class="container mainContainer docsContainer"><div class="wrapper"><div class="post"><header class="postHeader"><h1 id="__docusaurus" class="postHeaderTitle">Primitives</h1></header><article><div><span><ul>
+<li><a href="#set-context-id">Set Context ID</a></li>
+<li><a href="#set-name">Set Name</a></li>
+<li><a href="#set-transient-variable">Set Transient Variable</a></li>
+<li><a href="#set-variable">Set Variable</a></li>
+</ul>
+<h2><a class="anchor" aria-hidden="true" id="set-context-id"></a><a href="#set-context-id" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Set Context ID</h2>
+<p>Sets the workflow instance's <code>ContextId</code> property using the specified value.</p>
+<p>This property works in conjunction with the configured Workflow Context of the workflow definition.
+When set, Elsa will try and load the workflow context using a custom workflow context provider defined by the application with  the specified context ID.</p>
+<p>A context ID typically represents a unique identifier associated with a custom domain model.</p>
+<p>More details about workflow context can be found <a href="/elsa-core/docs/2.1.0/concepts/concepts-workflow-context">here</a>.</p>
+<h4><a class="anchor" aria-hidden="true" id="properties"></a><a href="#properties" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Properties</h4>
+<table>
+<thead>
+<tr><th>Name</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>Context Id</td><td>The value to set as the Context ID.</td></tr>
+</tbody>
+</table>
+<h2><a class="anchor" aria-hidden="true" id="set-name"></a><a href="#set-name" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Set Name</h2>
+<p>Sets the <code>Name</code> property of the workflow instance to the specified value.
+Setting a workflow name can be helpful when trying to identify workflow instances that are associated with domain models.</p>
+<p>For example, if you have a workflow that handles a customer, you might set the workflow instance's <code>Name</code> property to the customer's name.
+You can then search for workflow instances associated with this name.</p>
+<h4><a class="anchor" aria-hidden="true" id="properties-1"></a><a href="#properties-1" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Properties</h4>
+<table>
+<thead>
+<tr><th>Name</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>Value</td><td>The value to set as the workflow instance's name.</td></tr>
+</tbody>
+</table>
+<h2><a class="anchor" aria-hidden="true" id="set-transient-variable"></a><a href="#set-transient-variable" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Set Transient Variable</h2>
+<p>Sets a workflow variable that is stored <strong>transiently</strong>. This means that the variable will only exist for the duration of the current <a href="/elsa-core/docs/2.1.0/concepts/concepts-workflows#burst-of-execution">burst of execution</a>.</p>
+<p>This is in contrast to the <a href="#set-variable">Set Variable</a> activity, which will store the variable as part of the workflow instance.</p>
+<h4><a class="anchor" aria-hidden="true" id="properties-2"></a><a href="#properties-2" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Properties</h4>
+<table>
+<thead>
+<tr><th>Property</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>Variable Name</td><td>The name of the variable to set.</td></tr>
+<tr><td>Value</td><td>The value to store in the variable.</td></tr>
+</tbody>
+</table>
+<h2><a class="anchor" aria-hidden="true" id="set-variable"></a><a href="#set-variable" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Set Variable</h2>
+<p>Sets a workflow variable that is stored <strong>persistently</strong> as part of the workflow instance.</p>
+<p>This is in contrast to the <a href="#set-transient-variable">Set Transient Variable</a> activity, which will store the variable <strong>transiently</strong>.</p>
+<h4><a class="anchor" aria-hidden="true" id="properties-3"></a><a href="#properties-3" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Properties</h4>
+<table>
+<thead>
+<tr><th>Property</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>Variable Name</td><td>The name of the variable to set.</td></tr>
+<tr><td>Value</td><td>The value to store in the variable.</td></tr>
+</tbody>
+</table>
+</span></div></article></div><div class="docs-prevnext"><a class="docs-prev button" href="/elsa-core/docs/2.1.0/activities/control-flow"><span class="arrow-prev">← </span><span>Control Flow</span></a><a class="docs-next button" href="/elsa-core/docs/2.1.0/activities/signaling"><span>Next</span><span class="arrow-next"> →</span></a></div></div></div><nav class="onPageNav"><ul class="toc-headings"><li><a href="#set-context-id">Set Context ID</a></li><li><a href="#set-name">Set Name</a></li><li><a href="#set-transient-variable">Set Transient Variable</a></li><li><a href="#set-variable">Set Variable</a></li></ul></nav></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="/elsa-core/" class="nav-home"><img src="/elsa-core/img/android-icon-192x192.png" alt="ELSA" width="50" height="50"/></a><div><h5>Docs</h5><a href="/elsa-core/docs/next/installation/installing-elsa-core">Getting Started</a><a href="/elsa-core/docs/next/concepts/concepts-workflows">Concepts</a><a href="/elsa-core/docs/next/quickstarts/quickstarts-console-hello-world">Quickstarts</a><a href="/elsa-core/docs/next/guides/guides-recurring-tasks">Guides</a></div><div><h5>Community</h5><a href="https://stackoverflow.com/questions/tagged/elsa-workflows" target="_blank" rel="noreferrer noopener">Stack Overflow</a><a href="https://discord.gg/hhChk5H472" target="_blank" rel="noreferrer noopener">Discord</a></div><div><h5>More</h5><a href="https://github.com/elsa-workflows/elsa-core">GitHub</a><a class="github-button" href="https://github.com/elsa-workflows/elsa-core" data-icon="octicon-star" data-count-href="/facebook/docusaurus/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star this project on GitHub">Star</a></div></section><a href="https://dotnetfoundation.org" target="_blank" rel="noreferrer noopener" class="dotnetfoundation" title="Supported by the .NET Foundation"><img src="/elsa-core/img/dotnetfoundation.png" alt="Supported by the .NET Foundation" width="100" height="100"/></a><section class="copyright">Copyright © 2021 .NET Foundation</section></footer></div></body></html>

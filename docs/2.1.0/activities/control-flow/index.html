@@ -1,0 +1,153 @@
+<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>Control Flow · ELSA</title><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="generator" content="Docusaurus"/><meta name="description" content="* [Break](#break)"/><meta name="docsearch:version" content="2.1.0"/><meta name="docsearch:language" content="en"/><meta property="og:title" content="Control Flow · ELSA"/><meta property="og:type" content="website"/><meta property="og:url" content="https://elsa-workflows.github.io//elsa-core/"/><meta property="og:description" content="* [Break](#break)"/><meta property="og:image" content="https://elsa-workflows.github.io//elsa-core/img/undraw_online.svg"/><meta name="twitter:card" content="summary"/><meta name="twitter:image" content="https://elsa-workflows.github.io//elsa-core/img/undraw_tweetstorm.svg"/><link rel="shortcut icon" href="/elsa-core/img/favicon.ico"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script type="text/javascript" src="https://buttons.github.io/buttons.js"></script><script src="/elsa-core/js/scrollSpy.js"></script><link rel="stylesheet" href="/elsa-core/css/main.css"/><script src="/elsa-core/js/codetabs.js"></script></head><body class="sideNavVisible separateOnPageNav"><div class="fixedHeaderContainer"><div class="headerWrapper wrapper"><header><a href="/elsa-core/"><img class="logo" src="/elsa-core/img/android-icon-192x192.png" alt="ELSA"/><h2 class="headerTitleWithLogo">ELSA</h2></a><a href="/elsa-core/versions"><h3>2.1.0</h3></a><div class="navigationWrapper navigationSlider"><nav class="slidingNav"><ul class="nav-site nav-site-internal"><li class="siteNavGroupActive"><a href="/elsa-core/docs/2.1.0/installation/installing-elsa-core" target="_self">Documentation</a></li><li class=""><a href="/elsa-core/docs/2.1.0/features/features" target="_self">Features</a></li></ul></nav></div></header></div></div><div class="navPusher"><div class="docMainWrapper wrapper"><div class="docsNavContainer" id="docsNav"><nav class="toc"><div class="toggleNav"><section class="navWrapper wrapper"><div class="navBreadcrumb wrapper"><div class="navToggle" id="navToggler"><div class="hamburger-menu"><div class="line1"></div><div class="line2"></div><div class="line3"></div></div></div><h2><i>›</i><span>Activities</span></h2><div class="tocToggler" id="tocToggler"><i class="icon-toc"></i></div></div><div class="navGroups"><div class="navGroup"><h3 class="navGroupCategoryTitle">Quickstart</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/quickstarts/quickstarts-console-hello-world">Hello World Console</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/quickstarts/quickstarts-aspnetcore-hello-world">Hello World HTTP</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/quickstarts/quickstarts-aspnetcore-server-api-endpoints">Elsa Server</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/quickstarts/quickstarts-aspnetcore-server-dashboard">Elsa Dashboard</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/quickstarts/quickstarts-aspnetcore-server-dashboard-and-api-endpoints">Elsa Dashboard + Server</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/quickstarts/quickstarts-elsa-and-docker">Elsa + Docker</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Installation</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/installation/installing-feeds">Package Feeds</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/installation/installing-elsa-core">Core</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/installation/installing-server">Server</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/installation/installing-persistence">Persistence</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/installation/installing-elsa-dashboard">Dashboard</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/installation/installing-elsa-designer">Designer</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Upgrading</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/upgrading/upgrading-v1.x-to-v2.0">1.x to 2.0</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/upgrading/upgrading-v2.0-to-v2.1">2.0 to 2.1</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Concepts</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/concepts/concepts-workflows">Workflows</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/concepts/concepts-workflow-variables">Workflow Variables</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/concepts/concepts-workflow-context">Workflow Context</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/concepts/concepts-correlation">Correlation</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Guides</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/guides/guides-recurring-tasks">Recurring Tasks</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/guides/guides-document-approval">Document Approval</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/guides/guides-signaling-workflows">Signaling Workflows</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/guides/guides-parent-child-workflows">Parent/Child Workflows</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/guides/guides-composite-activities">Composite Activities</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/guides/guides-runtime-list-values">Runtime List Values</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/guides/guides-json-workflows">JSON Workflows</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/guides/guides-blocking-activities">Blocking Activities</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/guides/guides-workflow-contexts">Workflow Contexts</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Activities</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/activities/common">Common Properties</a></li><li class="navListItem navListItemActive"><a class="navItem" href="/elsa-core/docs/2.1.0/activities/control-flow">Control Flow</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/activities/primitives">Primitives</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Expressions</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/expressions/expressions-javascript">JavaScript</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/expressions/expressions-liquid">Liquid</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Designer</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/designer/designer-using-the-designer">Using the Designer</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Extensibility</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/extensibility/extensibility-custom-activities">Custom Activities</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/extensibility/extensibility-custom-activity-providers">Custom Activity Providers</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/extensibility/extensibility-customize-existing-activities">Customize Activities</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/extensibility/extensibility-persistence">Persistence</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/extensibility/extensibility-workflow-storage-providers">Workflow Storage Providers</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/extensibility/extensibility-javascript">JavaScript</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/extensibility/extensibility-liquid">Liquid</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/extensibility/extensibility-expression-handlers">Expression Handlers</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/extensibility/extensibility-property-editor-types">Property Editors</a></li></ul></div><div class="navGroup"><h3 class="navGroupCategoryTitle">Hosting</h3><ul class=""><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/hosting/hosting-distributed-hosting">Distributed Hosting</a></li><li class="navListItem"><a class="navItem" href="/elsa-core/docs/2.1.0/hosting/hosting-workflow-recovery">Workflow Recovery</a></li></ul></div></div></section></div><script>
+            var coll = document.getElementsByClassName('collapsible');
+            var checkActiveCategory = true;
+            for (var i = 0; i < coll.length; i++) {
+              var links = coll[i].nextElementSibling.getElementsByTagName('*');
+              if (checkActiveCategory){
+                for (var j = 0; j < links.length; j++) {
+                  if (links[j].classList.contains('navListItemActive')){
+                    coll[i].nextElementSibling.classList.toggle('hide');
+                    coll[i].childNodes[1].classList.toggle('rotate');
+                    checkActiveCategory = false;
+                    break;
+                  }
+                }
+              }
+
+              coll[i].addEventListener('click', function() {
+                var arrow = this.childNodes[1];
+                arrow.classList.toggle('rotate');
+                var content = this.nextElementSibling;
+                content.classList.toggle('hide');
+              });
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+              createToggler('#navToggler', '#docsNav', 'docsSliderActive');
+              createToggler('#tocToggler', 'body', 'tocActive');
+
+              var headings = document.querySelector('.toc-headings');
+              headings && headings.addEventListener('click', function(event) {
+                var el = event.target;
+                while(el !== headings){
+                  if (el.tagName === 'A') {
+                    document.body.classList.remove('tocActive');
+                    break;
+                  } else{
+                    el = el.parentNode;
+                  }
+                }
+              }, false);
+
+              function createToggler(togglerSelector, targetSelector, className) {
+                var toggler = document.querySelector(togglerSelector);
+                var target = document.querySelector(targetSelector);
+
+                if (!toggler) {
+                  return;
+                }
+
+                toggler.onclick = function(event) {
+                  event.preventDefault();
+
+                  target.classList.toggle(className);
+                };
+              }
+            });
+        </script></nav></div><div class="container mainContainer docsContainer"><div class="wrapper"><div class="post"><header class="postHeader"><h1 id="__docusaurus" class="postHeaderTitle">Control Flow</h1></header><article><div><span><ul>
+<li><a href="#break">Break</a></li>
+<li><a href="#finish">Finish</a></li>
+<li><a href="#for">For</a></li>
+<li><a href="#for-each">For Each</a></li>
+<li><a href="#fork">Fork</a></li>
+<li><a href="#if">If</a></li>
+<li><a href="#join">Join</a></li>
+<li><a href="#parallel-for-each">Parallel For Each</a></li>
+<li><a href="#switch">Switch</a></li>
+<li><a href="#while">While</a></li>
+</ul>
+<h2><a class="anchor" aria-hidden="true" id="break"></a><a href="#break" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Break</h2>
+<p>Breaks the current iteration of a given <a href="#for">For</a>, <a href="#for-each">For Each</a> or <a href="#while">While</a> activity.</p>
+<p>For example, if you have a <a href="#while">While</a> activity with a <code>Condition</code> value of <code>true</code> (representing an infinite loop), you can break out of this loop using the <strong>Break</strong> activity.</p>
+<h4><a class="anchor" aria-hidden="true" id="properties"></a><a href="#properties" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Properties</h4>
+<p>This activity has no additional properties other than the <a href="/elsa-core/docs/2.1.0/activities/common">shared set of activity properties</a>.</p>
+<h2><a class="anchor" aria-hidden="true" id="finish"></a><a href="#finish" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Finish</h2>
+<p>Signals the workflow runner that the <strong>current</strong> composite activity should be stopped.</p>
+<p>Since <strong>workflows are composite activities</strong>, this means that when this activity is used within a workflow, the workflow instance will enter the <strong>Finished</strong> state.
+When used in a child composite activity, that activity will stop execution and yield back control to its container. However, <strong>it will not stop workflow execution itself</strong>.</p>
+<p>The activity also removes any blocking activities within the scope of the currently executing composite activity <strong>including any child scopes</strong>.</p>
+<p>For example, if you have a workflow with one or more custom composite activities and any of them are blocked on some activity, they will all be removed and the workflow will complete.
+But if you have a custom composite activity that executes a <strong>Finish</strong> activity, only blocking activities within its immediate and descendant scopes will be removed.</p>
+<p>Furthermore, the <strong>Finish</strong> activity provides the means to <strong>send back output</strong> from a custom composite activity <strong>to its parent</strong>.</p>
+<p>To see how this works, check out the <a href="/elsa-core/docs/2.1.0/guides/guides-parent-child-workflows">Parent/Child Workflows</a> guide.</p>
+<p>It also allows you to schedule any additional outcomes other than <strong>Done</strong> on the parent composite activity (which is useful only from custom composite activities since workflows are root composite activities).</p>
+<h4><a class="anchor" aria-hidden="true" id="properties-1"></a><a href="#properties-1" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Properties</h4>
+<table>
+<thead>
+<tr><th>Property</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>Activity Output</td><td>The object to return as output from the currently executing composite activity to the parent composite activity.</td></tr>
+<tr><td>Outcome Names</td><td>Zero or more outcomes to schedule on the parent composite activity.</td></tr>
+</tbody>
+</table>
+<h4><a class="anchor" aria-hidden="true" id="outcomes"></a><a href="#outcomes" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Outcomes</h4>
+<table>
+<thead>
+<tr><th>Outcome</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>Done</td><td>Always scheduled when the activity completed.</td></tr>
+<tr><td>*</td><td>Any additional outcomes that are configured in the <code>Outcome Names</code> property</td></tr>
+</tbody>
+</table>
+<h2><a class="anchor" aria-hidden="true" id="for"></a><a href="#for" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>For</h2>
+<p>Models a looping construct that is similar to C#'s <code>for</code> statement where the loop executes from a starting number to a final number using a given step value.</p>
+<h4><a class="anchor" aria-hidden="true" id="properties-2"></a><a href="#properties-2" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Properties</h4>
+<table>
+<thead>
+<tr><th>Property</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>Start</td><td>The number to start from when performing the loop.</td></tr>
+<tr><td>End</td><td>The number to stop at when performing the loop.</td></tr>
+<tr><td>Step</td><td>The number to use when incrementing the current value.</td></tr>
+<tr><td>Operator</td><td>The operator to use when comparing the current value against the End value.</td></tr>
+</tbody>
+</table>
+<h4><a class="anchor" aria-hidden="true" id="outcomes-1"></a><a href="#outcomes-1" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Outcomes</h4>
+<table>
+<thead>
+<tr><th>Outcome</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>Iterate</td><td>Scheduled for each iteration of the loop. When an iteration ends, the activity will automatically determine if another iteration should be scheduled.</td></tr>
+<tr><td>Done</td><td>Scheduled when the loop has finished.</td></tr>
+</tbody>
+</table>
+<h2><a class="anchor" aria-hidden="true" id="for-each"></a><a href="#for-each" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>For Each</h2>
+<p>Models a looping construct that is similar to C#'s <code>foreach</code> statement where the loop iterates over a collection of objects.</p>
+<blockquote>
+<p>There's currently a limitation that prevents the use of the <code>Literal</code> and <code>Liquid</code> syntaxes when providing a value. Therefore, when using the designer, make sure to use the <code>Json</code> or <code>JavaScript</code> syntax.</p>
+</blockquote>
+<p>When providing an expression using <code>Json</code> or <code>JavaScript</code>, make sure that the expression evaluates to an <code>array</code>.</p>
+<h4><a class="anchor" aria-hidden="true" id="properties-3"></a><a href="#properties-3" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Properties</h4>
+<table>
+<thead>
+<tr><th>Property</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>Items</td><td>A collection of objects to iterate over.</td></tr>
+</tbody>
+</table>
+<h4><a class="anchor" aria-hidden="true" id="outcomes-2"></a><a href="#outcomes-2" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Outcomes</h4>
+<table>
+<thead>
+<tr><th>Outcome</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>Iterate</td><td>Scheduled for each iteration of the loop. When an iteration ends, the activity will automatically determine if another iteration should be scheduled.</td></tr>
+<tr><td>Done</td><td>Scheduled when the loop has finished.</td></tr>
+</tbody>
+</table>
+</span></div></article></div><div class="docs-prevnext"><a class="docs-prev button" href="/elsa-core/docs/2.1.0/activities/common"><span class="arrow-prev">← </span><span>Common Properties</span></a><a class="docs-next button" href="/elsa-core/docs/2.1.0/activities/primitives"><span>Primitives</span><span class="arrow-next"> →</span></a></div></div></div><nav class="onPageNav"><ul class="toc-headings"><li><a href="#break">Break</a></li><li><a href="#finish">Finish</a></li><li><a href="#for">For</a></li><li><a href="#for-each">For Each</a></li></ul></nav></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="/elsa-core/" class="nav-home"><img src="/elsa-core/img/android-icon-192x192.png" alt="ELSA" width="50" height="50"/></a><div><h5>Docs</h5><a href="/elsa-core/docs/next/installation/installing-elsa-core">Getting Started</a><a href="/elsa-core/docs/next/concepts/concepts-workflows">Concepts</a><a href="/elsa-core/docs/next/quickstarts/quickstarts-console-hello-world">Quickstarts</a><a href="/elsa-core/docs/next/guides/guides-recurring-tasks">Guides</a></div><div><h5>Community</h5><a href="https://stackoverflow.com/questions/tagged/elsa-workflows" target="_blank" rel="noreferrer noopener">Stack Overflow</a><a href="https://discord.gg/hhChk5H472" target="_blank" rel="noreferrer noopener">Discord</a></div><div><h5>More</h5><a href="https://github.com/elsa-workflows/elsa-core">GitHub</a><a class="github-button" href="https://github.com/elsa-workflows/elsa-core" data-icon="octicon-star" data-count-href="/facebook/docusaurus/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star this project on GitHub">Star</a></div></section><a href="https://dotnetfoundation.org" target="_blank" rel="noreferrer noopener" class="dotnetfoundation" title="Supported by the .NET Foundation"><img src="/elsa-core/img/dotnetfoundation.png" alt="Supported by the .NET Foundation" width="100" height="100"/></a><section class="copyright">Copyright © 2021 .NET Foundation</section></footer></div></body></html>
