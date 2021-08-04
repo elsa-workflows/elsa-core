@@ -8,8 +8,10 @@ using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Expressions;
 using Elsa.Models;
+using Elsa.Providers.WorkflowStorage;
 using Elsa.Services;
 using Elsa.Services.Models;
+using Elsa.Services.WorkflowStorage;
 using NetBox.Extensions;
 
 // ReSharper disable once CheckNamespace
@@ -24,11 +26,13 @@ namespace Elsa.Activities.Workflows
     {
         private readonly IStartsWorkflow _startsWorkflow;
         private readonly IWorkflowRegistry _workflowRegistry;
+        private readonly IWorkflowStorageService _workflowStorageService;
 
-        public RunWorkflow(IStartsWorkflow startsWorkflow, IWorkflowRegistry workflowRegistry)
+        public RunWorkflow(IStartsWorkflow startsWorkflow, IWorkflowRegistry workflowRegistry, IWorkflowStorageService workflowStorageService)
         {
             _startsWorkflow = startsWorkflow;
             _workflowRegistry = workflowRegistry;
+            _workflowStorageService = workflowStorageService;
         }
 
         [ActivityInput(
@@ -48,7 +52,7 @@ namespace Elsa.Activities.Workflows
 
         [ActivityInput(Hint = "Optional input to send to the workflow to run.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public object? Input { get; set; }
-        
+
         [ActivityInput(
             Hint = "Enter one or more potential child workflow outcomes you might want to handle.",
             UIHint = ActivityInputUIHints.MultiText,
@@ -84,7 +88,7 @@ namespace Elsa.Activities.Workflows
             Hint = "Fire And Forget: run the child workflow and continue the current one. Blocking: Run the child workflow and suspend the current one until the child workflow finishes.",
             SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public RunWorkflowMode Mode { get; set; }
-        
+
         [ActivityOutput] public FinishedWorkflowModel? Output { get; set; }
 
         public string ChildWorkflowInstanceId
@@ -102,36 +106,58 @@ namespace Elsa.Activities.Workflows
                 return Outcome("Not Found");
 
             var result = await _startsWorkflow.StartWorkflowAsync(workflowBlueprint!, TenantId, new WorkflowInput(Input), CorrelationId, ContextId, cancellationToken: cancellationToken);
-            var workflowInstance = result.WorkflowInstance!;
-            var workflowStatus = result.WorkflowInstance!.WorkflowStatus;
-
-            ChildWorkflowInstanceId = workflowInstance.Id;
+            var childWorkflowInstance = result.WorkflowInstance!;
+            var childWorkflowStatus = childWorkflowInstance.WorkflowStatus;
+            ChildWorkflowInstanceId = childWorkflowInstance.Id;
 
             return Mode switch
             {
                 RunWorkflowMode.FireAndForget => Done(),
-                RunWorkflowMode.Blocking when workflowStatus == WorkflowStatus.Finished => Done(),
-                RunWorkflowMode.Blocking when workflowStatus == WorkflowStatus.Suspended => Suspend(),
-                RunWorkflowMode.Blocking when workflowStatus == WorkflowStatus.Faulted => Fault($"Workflow {workflowInstance.Id} faulted"),
+                RunWorkflowMode.Blocking when childWorkflowStatus == WorkflowStatus.Finished => await ResumeSynchronouslyAsync(childWorkflowInstance, cancellationToken),
+                RunWorkflowMode.Blocking when childWorkflowStatus == WorkflowStatus.Suspended => Suspend(),
+                RunWorkflowMode.Blocking when childWorkflowStatus == WorkflowStatus.Faulted => Fault($"Workflow {childWorkflowInstance.Id} faulted"),
                 _ => throw new ArgumentOutOfRangeException(nameof(Mode))
             };
         }
 
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
         {
-            Output = (FinishedWorkflowModel) context.WorkflowExecutionContext.Input!;
+            var model = (FinishedWorkflowModel) context.WorkflowExecutionContext.Input!;
+            return OnResumeInternal(model);
+        }
 
+        private async Task<IActivityExecutionResult> ResumeSynchronouslyAsync(WorkflowInstance childWorkflowInstance, CancellationToken cancellationToken)
+        {
+            var outputReference = childWorkflowInstance.Output;
+            
+            var output = outputReference != null 
+                ? await _workflowStorageService.LoadAsync(outputReference.ProviderName, new WorkflowStorageContext(childWorkflowInstance, outputReference.ActivityId), "Output", cancellationToken) 
+                : null;
+
+            var model = new FinishedWorkflowModel
+            {
+                WorkflowOutput = output,
+                WorkflowInstanceId = childWorkflowInstance.Id
+            };
+
+            return OnResumeInternal(model);
+        }
+
+        private IActivityExecutionResult OnResumeInternal(FinishedWorkflowModel output)
+        {
             var results = new List<IActivityExecutionResult> { Done() };
 
-            if (Output.WorkflowOutput is FinishOutput finishOutput)
+            Output = output;
+
+            if (output.WorkflowOutput is FinishOutput finishOutput)
             {
                 // Deconstruct FinishOutput.
                 Output = new FinishedWorkflowModel
                 {
                     WorkflowOutput = finishOutput.Output,
-                    WorkflowInstanceId = Output.WorkflowInstanceId
+                    WorkflowInstanceId = output.WorkflowInstanceId
                 };
-                
+
                 results.AddRange(finishOutput.Outcomes.Except(new[] { OutcomeNames.Done }));
             }
 
