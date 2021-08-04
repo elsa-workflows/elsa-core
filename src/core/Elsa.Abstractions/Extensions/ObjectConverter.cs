@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using Elsa.Exceptions;
 using Newtonsoft.Json.Linq;
 using NodaTime;
 using NodaTime.Text;
@@ -53,8 +54,16 @@ namespace Elsa
                 if (underlyingSourceType != typeof(string))
                     return Enum.ToObject(underlyingTargetType, value);
             }
+
+            try
+            {
+                return Convert.ChangeType(value, underlyingTargetType);
+            }
+            catch (InvalidCastException e)
+            {
+                throw new TypeConversionException($"Failed to convert an object of type {sourceType} to {underlyingTargetType}", value, underlyingTargetType, e);
+            }
             
-            return Convert.ChangeType(value, underlyingTargetType);
         }
     }
 }
