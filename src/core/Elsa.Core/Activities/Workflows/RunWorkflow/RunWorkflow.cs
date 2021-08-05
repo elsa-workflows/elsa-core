@@ -158,7 +158,8 @@ namespace Elsa.Activities.Workflows
                     WorkflowInstanceId = output.WorkflowInstanceId
                 };
 
-                results.AddRange(finishOutput.Outcomes.Except(new[] { OutcomeNames.Done }));
+                var outcomeNames = finishOutput.Outcomes.Except(new[] { OutcomeNames.Done });
+                results.Add(Outcomes(outcomeNames));
             }
 
             return Combine(results);
