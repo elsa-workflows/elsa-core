@@ -17,7 +17,7 @@ namespace Elsa.Scripting.Liquid.Filters
 
         public async ValueTask<FluidValue> ProcessAsync(FluidValue input, FilterArguments arguments, TemplateContext context)
         {
-            var queryType = arguments.Values.FirstOrDefault()?.ToStringValue() ?? "name";
+            var queryType = arguments.Values?.FirstOrDefault()?.ToStringValue() ?? "name";
             var queryValue = input.ToStringValue().ToLowerInvariant();
 
             Func<IWorkflowBlueprint, bool> predicate = queryType switch
