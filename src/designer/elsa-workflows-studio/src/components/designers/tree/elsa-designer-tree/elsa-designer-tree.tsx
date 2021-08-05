@@ -1,4 +1,4 @@
-import {Component, Event, EventEmitter, h, Host, Method, Prop, State, Watch} from '@stencil/core';
+import {Component, Event, EventEmitter, h, Host, Method, Prop, State, Watch, Listen} from '@stencil/core';
 import {v4 as uuid} from 'uuid';
 import {addConnection, findActivity, getChildActivities, getInboundConnections, getOutboundConnections, Map, removeActivity, removeConnection} from '../../../../utils/utils';
 import {ActivityDescriptor, ActivityDesignDisplayContext, ActivityModel, ActivityTraits, ConnectionModel, EventTypes, WorkflowModel, WorkflowPersistenceBehavior,} from '../../../../models';
@@ -89,7 +89,30 @@ export class ElsaWorkflowDesigner {
   @Method()
   async showActivityEditor(activity: ActivityModel, animate: boolean) {
     this.showActivityEditorInternal(activity, animate);
+  }   
+
+  @Listen('keydown', { target: 'document' })
+  handleKeyDown(event: KeyboardEvent){    
+    if((event.ctrlKey || event.metaKey) && event.key === 'c') {
+      this.copyActivitiesToClipboard();
+    }
+    if((event.ctrlKey || event.metaKey) && event.key === 'v') {
+      this.pasteActivitiesFromClipboard();
+    }
   }
+
+  copyActivitiesToClipboard()
+  {
+    debugger
+    //alert("CTRL+C Pressed");
+    alert(this.selectedActivities);
+  }
+
+  pasteActivitiesFromClipboard()
+  {
+    debugger
+    //alert("CTRL+V Pressed");
+  } 
 
   connectedCallback() {
     eventBus.on(EventTypes.ActivityPicked, this.onActivityPicked);
@@ -576,21 +599,35 @@ export class ElsaWorkflowDesigner {
       const activity = node.activity;
       const activityId = activity.activityId;
 
-      d3.select(node.elem).on('click', () => {
+      d3.select(node.elem).on('click', e => {
         // If a parent activity was selected to connect to:
         if (this.mode == WorkflowDesignerMode.Edit && this.parentActivityId && this.parentActivityOutcome) {
           this.addConnection(this.parentActivityId, activityId, this.parentActivityOutcome);
         } else {
-          // When clicking an activity:
-          if (!!this.selectedActivities[activityId])
-            delete this.selectedActivities[activityId];
-          else {
-            for (const key in this.selectedActivities) {
-              this.activityDeselected.emit(this.selectedActivities[key]);
+          // When clicking an activity with shift:
+          if (e.shiftKey)
+          {
+            if (!!this.selectedActivities[activityId])
+              delete this.selectedActivities[activityId];
+            else
+            {
+              this.selectedActivities[activityId] = activity;
+              this.activitySelected.emit(activity);
             }
-            this.selectedActivities = {};
-            this.selectedActivities[activityId] = activity;
-            this.activitySelected.emit(activity);
+          }
+          // When clicking an activity:          
+          else
+          {
+            if (!!this.selectedActivities[activityId])
+              delete this.selectedActivities[activityId];
+            else {
+              for (const key in this.selectedActivities) {
+                this.activityDeselected.emit(this.selectedActivities[key]);
+              }
+              this.selectedActivities = {};
+              this.selectedActivities[activityId] = activity;
+              this.activitySelected.emit(activity);
+            }
           }
 
           this.rerenderTree();
@@ -601,6 +638,7 @@ export class ElsaWorkflowDesigner {
         d3.select(node.elem)
         .select('.context-menu-button-container button')
         .on('click', evt => {
+          debugger
           evt.stopPropagation();
           this.handleContextMenuChange({x: evt.clientX, y: evt.clientY, shown: true, activity: node.activity});
         });
@@ -647,7 +685,8 @@ export class ElsaWorkflowDesigner {
     const displayName = displayContext.displayName || activity.displayName;
     const typeName = activity.type;
 
-    return `<div id=${`activity-${activity.activityId}`} 
+
+    return `<div id=${`activity-${activity.activityId}`}
     class="activity elsa-border-2 elsa-border-solid elsa-rounded elsa-bg-white elsa-text-left elsa-text-black elsa-text-lg elsa-select-none elsa-max-w-md elsa-shadow-sm elsa-relative ${cssClass}">
       <div class="elsa-p-5">
         <div class="elsa-flex elsa-justify-between elsa-space-x-8">
