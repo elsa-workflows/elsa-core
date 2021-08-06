@@ -3,6 +3,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Serialization;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Storage.Net.Blobs;
 
@@ -15,9 +16,9 @@ namespace Elsa.Providers.WorkflowStorage
         private readonly IBlobStorage _blobStorage;
         private readonly JsonSerializerSettings _serializerSettings;
 
-        public BlobStorageWorkflowStorageProvider(IBlobStorage blobStorage)
+        public BlobStorageWorkflowStorageProvider(IOptions<BlobStorageWorkflowStorageProviderOptions> options)
         {
-            _blobStorage = blobStorage;
+            _blobStorage = options.Value.BlobStorageFactory();
             _serializerSettings = DefaultContentSerializer.CreateDefaultJsonSerializationSettings();
             _serializerSettings.TypeNameHandling = TypeNameHandling.All;
         }

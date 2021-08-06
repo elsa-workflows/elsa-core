@@ -7,11 +7,9 @@
 
 ## Properties
 
-| Property        | Attribute         | Description | Type           | Default     |
-| --------------- | ----------------- | ----------- | -------------- | ----------- |
-| `match`         | --                |             | `MatchResults` | `undefined` |
-| `monacoLibPath` | `monaco-lib-path` |             | `string`       | `undefined` |
-| `serverUrl`     | `server-url`      |             | `string`       | `undefined` |
+| Property | Attribute | Description | Type           | Default     |
+| -------- | --------- | ----------- | -------------- | ----------- |
+| `match`  | --        |             | `MatchResults` | `undefined` |
 
 
 ## Dependencies
@@ -33,9 +31,9 @@ graph TD;
   elsa-workflow-definition-editor-screen --> context-consumer
   elsa-workflow-settings-modal --> elsa-modal-dialog
   elsa-workflow-settings-modal --> elsa-monaco
-  elsa-workflow-definition-editor-notifications --> elsa-toast-notification
   elsa-activity-picker-modal --> elsa-modal-dialog
   elsa-activity-editor-modal --> elsa-modal-dialog
+  elsa-activity-editor-modal --> elsa-control
   elsa-workflow-publish-button --> context-consumer
   style elsa-studio-workflow-definitions-edit fill:#f9f,stroke:#333,stroke-width:4px
 ```

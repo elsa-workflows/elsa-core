@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 
-namespace Elsa.Services.Bookmarks
+namespace Elsa.Services
 {
     public interface IBookmarkIndexer
     {

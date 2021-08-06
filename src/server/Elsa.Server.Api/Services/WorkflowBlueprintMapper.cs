@@ -1,7 +1,10 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
+using Elsa.Exceptions;
+using Elsa.Metadata;
 using Elsa.Models;
 using Elsa.Server.Api.Endpoints.WorkflowRegistry;
 using Elsa.Server.Api.Mapping;
@@ -34,7 +37,7 @@ namespace Elsa.Server.Api.Services
             var activityProperties = await Task.WhenAll(wrapper.Activities.Select(async x => (x.ActivityBlueprint.Id, await GetActivityPropertiesAsync(wrapper, x, cancellationToken))));
             var inputPropertyDictionary = activityProperties.ToDictionary(x => x.Id, x => x.Item2.InputProperties);
             var outputPropertyDictionary = activityProperties.ToDictionary(x => x.Id, x => x.Item2.OutputProperties);
-            
+
             return _mapper.Map<WorkflowBlueprintModel>(workflowBlueprint, options =>
             {
                 options.Items[ActivityBlueprintConverter.ActivityInputPropertiesKey] = inputPropertyDictionary;
@@ -54,7 +57,7 @@ namespace Elsa.Server.Api.Services
 
             foreach (var property in activityDescriptor.InputProperties)
             {
-                var value = await TryEvaluatePropertyAsync(activityWrapper, property.Name, cancellationToken);
+                var value = await GetPropertyValueAsync(workflowBlueprintWrapper.WorkflowBlueprint, activityWrapper, property, cancellationToken);
                 inputProperties.Set(property.Name, value);
             }
 
@@ -67,18 +70,22 @@ namespace Elsa.Server.Api.Services
             return (inputProperties, outputProperties);
         }
 
-        private async Task<object?> TryEvaluatePropertyAsync(IActivityBlueprintWrapper activityWrapper, string propertyName, CancellationToken cancellationToken)
+        private static async Task<object?> GetPropertyValueAsync(IWorkflowBlueprint workflowBlueprint, IActivityBlueprintWrapper activityBlueprintWrapper, ActivityInputDescriptor propertyDescriptor, CancellationToken cancellationToken)
         {
-            try
+            if (propertyDescriptor.IsDesignerCritical)
             {
-                return await activityWrapper.EvaluatePropertyValueAsync(propertyName, cancellationToken);
-            }
-            catch
-            {
-                // ignored
+                try
+                {
+                    return await activityBlueprintWrapper.EvaluatePropertyValueAsync(propertyDescriptor.Name, cancellationToken);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw new WorkflowException("Failed to evaluate a designer-critical property value. Please make sure that the value does not rely on external context.", e);
+                }
             }
 
-            return null;
+            return workflowBlueprint.GetActivityPropertyRawValue(activityBlueprintWrapper.ActivityBlueprint.Id, propertyDescriptor.Name);
         }
     }
 }

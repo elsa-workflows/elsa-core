@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Elsa;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
@@ -60,7 +59,6 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
             else
             {
                 app.UseExceptionHandler("/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
 

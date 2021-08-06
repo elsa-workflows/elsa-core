@@ -1,5 +1,4 @@
-﻿import {ElsaPlugin} from "../services/elsa-plugin";
-import {eventBus} from '../services/event-bus';
+﻿import {eventBus, ElsaPlugin} from "../services";
 import {ActivityDesignDisplayContext, EventTypes, SyntaxNames} from "../models";
 import {h} from "@stencil/core";
 import {parseJson} from "../utils/utils";

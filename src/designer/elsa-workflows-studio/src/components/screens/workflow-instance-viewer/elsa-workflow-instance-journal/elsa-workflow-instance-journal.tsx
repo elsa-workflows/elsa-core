@@ -289,7 +289,7 @@ export class ElsaWorkflowInstanceJournal {
         <li>
           <div onClick={() => this.onRecordClick(record)} class={`${recordClass} elsa-border-2 elsa-cursor-pointer elsa-p-4 elsa-rounded`}>
             <div class="elsa-relative elsa-pb-10">
-              {isLastItem ? undefined : <div class="elsa-flex elsa-absolute top-8 elsa-left-4 -elsa-ml-px elsa-h-full elsa-w-0.5 elsa-bg-gray-200">
+              {isLastItem ? undefined : <div class="elsa-flex elsa-absolute top-8 elsa-left-4 -elsa-ml-px elsa-h-full elsa-w-0.5">
                 <div class="elsa-flex elsa-flex-1 elsa-items-center elsa-relative elsa-right-10">
                   <span class="elsa-flex-1 elsa-text-sm elsa-text-gray-500 elsa-w-max elsa-bg-white elsa-p-1 elsa-rounded">{deltaTimeText}</span>
                 </div>

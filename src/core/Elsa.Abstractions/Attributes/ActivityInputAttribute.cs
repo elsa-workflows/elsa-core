@@ -3,13 +3,8 @@ using System;
 namespace Elsa.Attributes
 {
     [AttributeUsage(AttributeTargets.Property)]
-    public class ActivityInputAttribute : Attribute
+    public class ActivityInputAttribute : ActivityPropertyAttributeBase
     {
-        /// <summary>
-        /// The technical name of the activity property.
-        /// </summary>
-        public string? Name { get; set; }
-        
         /// <summary>
         /// The user-friendly name of the activity property.
         /// </summary>
@@ -19,11 +14,6 @@ namespace Elsa.Attributes
         /// A hint to workflow tooling what input control to use. 
         /// </summary>
         public string? UIHint { get; set; }
-        
-        /// <summary>
-        /// A brief description about this property for workflow tooling to use when displaying activity editors.
-        /// </summary>
-        public string? Hint { get; set; }
 
         /// <summary>
         /// A value representing options specific to a given UI hint.
@@ -64,5 +54,20 @@ namespace Elsa.Attributes
         /// The syntax to use by default when evaluating the value. Only used when the property definition doesn't have a syntax specified. 
         /// </summary>
         public string[]? SupportedSyntaxes { get; set; }
+        
+        /// <summary>
+        /// A value indicating whether this property should be displayed but as read-only.
+        /// </summary>
+        public bool? IsReadOnly { get; set; }
+        
+        /// <summary>
+        /// A value indicating whether this property should be visible.
+        /// </summary>
+        public bool? IsBrowsable { get; set; }
+        
+        /// <summary>
+        /// A value indicating whether this property MUST be evaluated at runtime to support the workflow designer.
+        /// </summary>
+        public bool IsDesignerCritical { get; set; }
     }
 }

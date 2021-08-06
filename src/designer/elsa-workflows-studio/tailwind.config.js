@@ -8,7 +8,7 @@ module.exports = {
     enabled: !dev,
     content: ['./src/**/*.tsx', './src/**/*.html'],
     options: {
-      safelist: ['hidden', 'jtk-connector', 'rose', 'sky', /gray/, /pink/, /blue/, /green/, /red/, /yellow/, /rose/]
+      safelist: ['hidden', 'jtk-connector', 'rose', 'sky', /gray/, /pink/, /blue/, /green/, /red/, /yellow/, /rose/, 'label-container', 'node', 'start', 'activity']
     },
   },
   prefix: 'elsa-',

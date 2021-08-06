@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Models;
 
 namespace Elsa.Server.Api.Endpoints.Workflows
 {
@@ -36,12 +37,12 @@ namespace Elsa.Server.Api.Endpoints.Workflows
         public async Task<IActionResult> Handle(string workflowDefinitionId, DispatchWorkflowDefinitionRequestModel request, CancellationToken cancellationToken = default)
         {
             var tenantId = await _tenantAccessor.GetTenantIdAsync(cancellationToken);
-            var startableWorkflow = await _workflowLaunchpad.CollectStartableWorkflowAsync(workflowDefinitionId, request.ActivityId, request.CorrelationId, request.ContextId, tenantId, cancellationToken);
+            var startableWorkflow = await _workflowLaunchpad.FindStartableWorkflowAsync(workflowDefinitionId, request.ActivityId, request.CorrelationId, request.ContextId, tenantId, cancellationToken);
 
             if (startableWorkflow == null)
                 return NotFound();
 
-            var result = await _workflowLaunchpad.DispatchStartableWorkflowAsync(startableWorkflow, request.Input, cancellationToken);
+            var result = await _workflowLaunchpad.DispatchStartableWorkflowAsync(startableWorkflow, new WorkflowInput(request.Input), cancellationToken);
             return Ok(new DispatchWorkflowDefinitionResponseModel(result.WorkflowInstanceId, result.ActivityId));
         }
     }

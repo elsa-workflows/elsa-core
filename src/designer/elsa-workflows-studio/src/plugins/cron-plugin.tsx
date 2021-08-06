@@ -1,7 +1,7 @@
-﻿import {ElsaPlugin} from "../services/elsa-plugin";
-import {eventBus} from '../services/event-bus';
+﻿import {eventBus, ElsaPlugin} from "../services";
 import {ActivityDesignDisplayContext, EventTypes} from "../models";
 import {h} from "@stencil/core";
+import {htmlEncode} from "../utils/utils";
 
 export class CronPlugin implements ElsaPlugin {
   constructor() {
@@ -16,7 +16,7 @@ export class CronPlugin implements ElsaPlugin {
 
     const props = activityModel.properties || [];
     const condition = props.find(x => x.name == 'CronExpression') || { name: 'CronExpression', expressions: {'Literal': ''}, syntax: 'Literal'};
-    const expression = condition.expressions[condition.syntax] || '';
+    const expression = htmlEncode(condition.expressions[condition.syntax] || '');
     context.bodyDisplay = `<p>${expression}</p>`;
   }
 }

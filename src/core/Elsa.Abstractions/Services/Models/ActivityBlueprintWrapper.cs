@@ -26,7 +26,7 @@ namespace Elsa.Services.Models
             // Computed property setters that depend on actual workflow state might fault, since we might be using a fake activity execution context.
             try
             {
-                return await workflowBlueprint.GetActivityPropertyValue(activityId, propertyName, ActivityExecutionContext, cancellationToken);
+                return await workflowBlueprint.EvaluateActivityPropertyValue(activityId, propertyName, ActivityExecutionContext, cancellationToken);
             }
             catch (Exception)
             {
@@ -52,7 +52,7 @@ namespace Elsa.Services.Models
             // Computed property setters that depend on actual workflow state might fault, since we might be using a fake activity execution context.
             try
             {
-                return await workflowBlueprint.GetActivityPropertyValue(activityId, propertyExpression, ActivityExecutionContext, cancellationToken);
+                return await workflowBlueprint.EvaluateActivityPropertyValue(activityId, propertyExpression, ActivityExecutionContext, cancellationToken);
             }
             catch (Exception)
             {

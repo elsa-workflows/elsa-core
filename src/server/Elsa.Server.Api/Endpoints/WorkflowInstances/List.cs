@@ -46,6 +46,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
         public async Task<ActionResult<PagedList<WorkflowInstanceSummaryModel>>> Handle(
             [FromQuery(Name = "workflow")] string? workflowDefinitionId = default,
             [FromQuery(Name = "status")] WorkflowStatus? workflowStatus = default,
+            [FromQuery] string? correlationId = default,
             [FromQuery] OrderBy? orderBy = default,
             [FromQuery] string? searchTerm = default,
             int page = 0,
@@ -57,6 +58,9 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
 
             if (!string.IsNullOrWhiteSpace(workflowDefinitionId))
                 specification = specification.WithWorkflowDefinition(workflowDefinitionId);
+            
+            if (!string.IsNullOrWhiteSpace(correlationId))
+                specification = specification.WithCorrelationId(correlationId);
 
             if (workflowStatus != null)
                 specification = specification.WithStatus(workflowStatus.Value);

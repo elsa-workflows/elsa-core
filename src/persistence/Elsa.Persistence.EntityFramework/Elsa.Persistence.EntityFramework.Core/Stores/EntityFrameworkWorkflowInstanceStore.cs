@@ -58,6 +58,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
         {
             var data = new
             {
+                entity.Input,
                 entity.Output,
                 entity.Variables,
                 entity.ActivityData,
@@ -77,6 +78,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
         {
             var data = new
             {
+                entity.Input,
                 entity.Output,
                 entity.Variables,
                 entity.ActivityData,
@@ -92,6 +94,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
             if (!string.IsNullOrWhiteSpace(json))
                 data = JsonConvert.DeserializeAnonymousType(json, data, DefaultContentSerializer.CreateDefaultJsonSerializationSettings())!;
 
+            entity.Input = data.Input;
             entity.Output = data.Output;
             entity.Variables = data.Variables;
             entity.ActivityData = data.ActivityData;

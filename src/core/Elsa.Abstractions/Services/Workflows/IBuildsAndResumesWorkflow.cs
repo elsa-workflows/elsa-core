@@ -11,7 +11,7 @@ namespace Elsa.Services
         Task<RunWorkflowResult> BuildAndResumeWorkflowAsync<T>(
             WorkflowInstance workflowInstance,
             string? activityId = default,
-            object? input = default,
+            WorkflowInput? input = default,
             CancellationToken cancellationToken = default)
             where T : IWorkflow;
 
@@ -19,7 +19,7 @@ namespace Elsa.Services
             IWorkflow workflow,
             WorkflowInstance workflowInstance,
             string? activityId = default,
-            object? input = default,
+            WorkflowInput? input = default,
             CancellationToken cancellationToken = default);
     }
 }

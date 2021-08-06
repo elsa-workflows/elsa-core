@@ -1,7 +1,7 @@
-﻿import {ElsaPlugin} from "../services/elsa-plugin";
-import {eventBus} from '../services/event-bus';
+﻿import {eventBus, ElsaPlugin} from "../services";
 import {ActivityDesignDisplayContext, EventTypes, SyntaxNames} from "../models";
 import {h} from "@stencil/core";
+import {htmlEncode} from "../utils/utils";
 
 export class SendEmailPlugin implements ElsaPlugin {
   constructor() {
@@ -18,7 +18,7 @@ export class SendEmailPlugin implements ElsaPlugin {
     const to = props.find(x => x.name == 'To') || {expressions: {'Json': ''}, syntax: SyntaxNames.Json};
     const expression = to.expressions[to.syntax || SyntaxNames.Json] || '';
     const description = activityModel.description;
-    const bodyText = description && description.length > 0 ? description : expression;
+    const bodyText = htmlEncode(description && description.length > 0 ? description : expression);
     context.bodyDisplay = `<p>To: ${bodyText}</p>`;
   }
 }

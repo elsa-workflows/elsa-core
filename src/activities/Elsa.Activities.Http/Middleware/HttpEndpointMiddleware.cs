@@ -10,6 +10,7 @@ using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.Options;
 using Elsa.Activities.Http.Parsers.Request;
 using Elsa.Activities.Http.Services;
+using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -66,8 +67,8 @@ namespace Elsa.Activities.Http.Middleware
 
             const string activityType = nameof(HttpEndpoint);
             var bookmark = new HttpEndpointBookmark(path, method);
-            var collectWorkflowsContext = new CollectWorkflowsContext(activityType, bookmark, correlationId, default, default, TenantId);
-            var pendingWorkflows = await workflowLaunchpad.CollectWorkflowsAsync(collectWorkflowsContext, cancellationToken).ToList();
+            var collectWorkflowsContext = new WorkflowsQuery(activityType, bookmark, correlationId, default, default, TenantId);
+            var pendingWorkflows = await workflowLaunchpad.FindWorkflowsAsync(collectWorkflowsContext, cancellationToken).ToList();
 
             if (!pendingWorkflows.Any())
             {
@@ -138,7 +139,7 @@ namespace Elsa.Activities.Http.Middleware
             var useDispatch = httpContext.Request.GetUseDispatch();
             if (useDispatch)
             {
-                await workflowLaunchpad.DispatchPendingWorkflowAsync(pendingWorkflow, inputModel, cancellationToken);
+                await workflowLaunchpad.DispatchPendingWorkflowAsync(pendingWorkflow, new WorkflowInput(inputModel), cancellationToken);
 
                 httpContext.Response.ContentType = "application/json";
                 httpContext.Response.StatusCode = (int) HttpStatusCode.Accepted;
@@ -146,7 +147,7 @@ namespace Elsa.Activities.Http.Middleware
             }
             else
             {
-                await workflowLaunchpad.ExecutePendingWorkflowAsync(pendingWorkflow, inputModel, cancellationToken);
+                await workflowLaunchpad.ExecutePendingWorkflowAsync(pendingWorkflow, new WorkflowInput(inputModel), cancellationToken);
                 pendingWorkflowInstance = await workflowInstanceStore.FindByIdAsync(pendingWorkflow.WorkflowInstanceId, cancellationToken);
 
                 if (pendingWorkflowInstance is not null

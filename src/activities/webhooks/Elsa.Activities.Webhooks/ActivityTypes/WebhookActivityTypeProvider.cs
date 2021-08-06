@@ -7,6 +7,7 @@ using Elsa.Design;
 using Elsa.Expressions;
 using Elsa.Metadata;
 using Elsa.Persistence.Specifications;
+using Elsa.Providers.Activities;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Elsa.Webhooks.Models;
@@ -53,52 +54,57 @@ namespace Elsa.Activities.Webhooks.ActivityTypes
             var activityTypeName = webhook.Name.EndsWith(WebhooksActivityTypeSuffix) ? webhook.Name : $"{webhook.Name}{WebhooksActivityTypeSuffix}";
             var activityDisplayName = activityTypeName.Humanize();
             
-            var descriptor = new ActivityDescriptor
+            ValueTask<ActivityDescriptor> CreateDescriptorAsync()
             {
-                Type = activityTypeName,
-                DisplayName = activityDisplayName,
-                Category = WebhooksActivityCategory,
-                Outcomes = new[] { OutcomeNames.Done },
-                Traits = ActivityTraits.Trigger,
-                InputProperties = new[]
+                var descriptor = new ActivityDescriptor
                 {
-                    new ActivityInputDescriptor(
-                        nameof(HttpEndpoint.Path),
-                        typeof(PathString),
-                        ActivityInputUIHints.SingleLine,
-                        "Path",
-                        "The relative path that triggers this activity.",
-                        null,
-                        default,
-                        0,
-                        webhook.Path,
-                        SyntaxNames.Literal,
-                        new[] { SyntaxNames.Literal },
-                        true
+                    Type = activityTypeName!,
+                    DisplayName = activityDisplayName!,
+                    Category = WebhooksActivityCategory,
+                    Outcomes = new[] { OutcomeNames.Done },
+                    Traits = ActivityTraits.Trigger,
+                    InputProperties = new[]
+                    {
+                        new ActivityInputDescriptor(
+                            nameof(HttpEndpoint.Path),
+                            typeof(PathString),
+                            ActivityInputUIHints.SingleLine,
+                            "Path",
+                            "The relative path that triggers this activity.",
+                            null,
+                            default,
+                            0,
+                            webhook.Path,
+                            SyntaxNames.Literal,
+                            new[] { SyntaxNames.Literal },
+                            true
                         ),
-                    new ActivityInputDescriptor(
-                        nameof(HttpEndpoint.Methods),
-                        typeof(HashSet<string>),
-                        ActivityInputUIHints.CheckList,
-                        "Request Method",
-                        "Specify what request method this webhook should handle. Leave empty to handle both GET and POST requests",
-                        new[] { "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD" },
-                        default,
-                        1,
-                        new[] { "GET", "POST" },
-                        SyntaxNames.Json,
-                        new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid }
+                        new ActivityInputDescriptor(
+                            nameof(HttpEndpoint.Methods),
+                            typeof(HashSet<string>),
+                            ActivityInputUIHints.CheckList,
+                            "Request Method",
+                            "Specify what request method this webhook should handle. Leave empty to handle both GET and POST requests",
+                            new[] { "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD" },
+                            default,
+                            1,
+                            new[] { "GET", "POST" },
+                            SyntaxNames.Json,
+                            new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid }
                         )
-                },
-                OutputProperties = new[]
-                {
-                    new ActivityOutputDescriptor
-                    (
-                       "Request",
-                       typeof(Models.WebhookRequestModel),
-                       "The received HTTP request."
-                    )
-                }
+                    },
+                    OutputProperties = new[]
+                    {
+                        new ActivityOutputDescriptor
+                        (
+                            "Request",
+                            typeof(Models.WebhookRequestModel),
+                            "The received HTTP request."
+                        )
+                    }
+                };
+
+                return new ValueTask<ActivityDescriptor>(descriptor);
             };
 
             async ValueTask<IActivity> ActivateActivityAsync(ActivityExecutionContext context)
@@ -122,7 +128,7 @@ namespace Elsa.Activities.Webhooks.ActivityTypes
                     [WebhookMarkerAttribute] = true,
                     ["Path"] = webhook.Path,
                 },
-                Describe = () => descriptor
+                DescribeAsync = CreateDescriptorAsync
             };
         }
     }

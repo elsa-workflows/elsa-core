@@ -1,9 +1,10 @@
-import {Component, Event, EventEmitter, h, Host, Listen, Method, Prop, State, Watch} from '@stencil/core';
+import {Component, Event, h, Host, Method, Prop, State, Watch} from '@stencil/core';
 import {eventBus} from '../../../../services/event-bus';
-import {EventTypes, WebhookDefinition, WebhookModel} from "../../../../models/webhook";
+import {EventTypes, WebhookDefinition} from "../../../../models/webhook";
 import {createElsaClient, SaveWebhookDefinitionRequest} from "../../../../services/elsa-client";
 import {RouterHistory} from '@stencil/router';
-import {checkBox, FormContext, selectField, SelectOption, textArea, textInput} from "../../../../utils/forms";
+import {checkBox, FormContext, textArea, textInput} from "../../../../utils/forms";
+import Tunnel from "../../../../data/dashboard";
 
 @Component({
   tag: 'elsa-webhook-definition-editor-screen',
@@ -14,6 +15,7 @@ export class ElsaWebhookDefinitionEditorScreen {
   @Prop() webhookDefinition: WebhookDefinition;
   @Prop({attribute: 'webhook-definition-id', reflect: true}) webhookId: string;
   @Prop({attribute: 'server-url', reflect: true}) serverUrl: string;
+  @Prop() culture: string;
   @Prop() history?: RouterHistory;
   @State() webhookDefinitionInternal: WebhookDefinition;
   @State() saving: boolean;
@@ -120,12 +122,26 @@ export class ElsaWebhookDefinitionEditorScreen {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
+  navigate(path: string) {
+    if (this.history) {
+        this.history.push(path);
+        return;
+    }
+
+    document.location.pathname = path;
+  }
+
   async onSaveClicked(e: Event) {    
     e.preventDefault();
     
     await this.saveWebhook();
     eventBus.emit(EventTypes.WebhookSaved, this, this.webhookDefinitionInternal);    
-    this.sleep(1000).then(() => { this.history.push(`/webhook-definitions`, {}); });
+
+    const anchor = e.currentTarget as HTMLAnchorElement;
+
+    this.sleep(1000).then(() => { 
+      this.navigate(`/webhook-definitions`);
+    });
   } 
 
   render() {
@@ -257,3 +273,4 @@ export class ElsaWebhookDefinitionEditorScreen {
     };
   }
 }
+Tunnel.injectProps(ElsaWebhookDefinitionEditorScreen, ['serverUrl', 'culture']);

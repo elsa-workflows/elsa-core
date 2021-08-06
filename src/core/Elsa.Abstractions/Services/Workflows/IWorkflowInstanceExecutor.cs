@@ -10,7 +10,7 @@ namespace Elsa.Services
     /// </summary>
     public interface IWorkflowInstanceExecutor
     {
-        Task<RunWorkflowResult> ExecuteAsync(string workflowInstanceId, string? activityId, object? input = default, CancellationToken cancellationToken = default);
-        Task<RunWorkflowResult> ExecuteAsync(WorkflowInstance workflowInstance, string? activityId, object? input = default, CancellationToken cancellationToken = default);
+        Task<RunWorkflowResult> ExecuteAsync(string workflowInstanceId, string? activityId, WorkflowInput? input = default, CancellationToken cancellationToken = default);
+        Task<RunWorkflowResult> ExecuteAsync(WorkflowInstance workflowInstance, string? activityId, WorkflowInput? input = default, CancellationToken cancellationToken = default);
     }
 }

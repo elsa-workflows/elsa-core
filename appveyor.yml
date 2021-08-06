@@ -11,7 +11,7 @@ environment:
   sonarcloud_api_key:
     secure: qaE9kOVkGGFM7ZMf3YeliZxDU9udTCy6W5xXHJ9T+tXv5qXPMYlIdR7hyNgxW04A
 
-version: 2.1.1.{build}
+version: 2.3.0-preview.{build}
 
 init:
   - cmd: git config --global core.autocrlf true
@@ -46,12 +46,12 @@ install:
 
       cd ..\..\..\..\..
 
-#      dotnet tool install --global dotnet-sonarscanner
+      dotnet tool install --global dotnet-sonarscanner
 
-before_build:
-  - cmd: >-
-      docker-compose -f docker-compose.yaml up -d mongodb postgres
-
+#before_build:
+#  - cmd: >-
+#      docker-compose -f docker-compose.yaml up -d mongodb postgres
+#
 #  - ps: >-
 #      if(-Not $env:APPVEYOR_PULL_REQUEST_NUMBER) {
 #      & dotnet-sonarscanner begin
@@ -80,9 +80,7 @@ build_script:
 
       dotnet build
 
-# before_test:
-
-# test_script:
+#test_script:
 #  - ps: dotnet test --collect:"XPlat Code Coverage" --logger:xunit -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
 #  - ps: dotnet test
 

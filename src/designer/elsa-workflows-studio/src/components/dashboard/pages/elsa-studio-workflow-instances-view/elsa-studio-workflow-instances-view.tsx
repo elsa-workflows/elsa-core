@@ -7,7 +7,6 @@ import {MatchResults} from '@stencil/router';
 })
 export class ElsaStudioWorkflowInstancesView {
   @Prop() match: MatchResults;
-  @Prop() serverUrl: string;
 
   id?: string;
 
@@ -19,7 +18,7 @@ export class ElsaStudioWorkflowInstancesView {
     const id = this.id;
 
     return <div>
-      <elsa-workflow-instance-viewer-screen server-url={this.serverUrl} workflowInstanceId={id}/>
+      <elsa-workflow-instance-viewer-screen workflowInstanceId={id}/>
     </div>;
   }
 }

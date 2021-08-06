@@ -1,37 +1,43 @@
 {
-    "$id": "1",
-    "workflowDefinitionId": "SampleWorkflow",
-    "workflowDefinitionVersionId": "1",
-    "version": 1,
-    "variables": {
-      "$id": "2",
-      "data": {}
-    },
-    "isEnabled": true,
-    "isPublished": true,
-    "isLatest": true,
-    "activities": {
-      "$id": "3",
-      "$values": [
+  "$id": "1",
+  "definitionId": "SampleWorkflow",
+  "versionId": "2dc7ae69b9f44fdab4c540618988fb67",
+  "version": 1,
+  "variables": {
+    "$id": "2",
+    "data": {}
+  },
+  "customAttributes": {
+    "$id": "3",
+    "data": {}
+  },
+  "isSingleton": false,
+  "persistenceBehavior": "WorkflowBurst",
+  "deleteCompletedInstances": false,
+  "isPublished": true,
+  "isLatest": true,
+  "activities": [
+    {
+      "$id": "4",
+      "activityId": "f22654ea-0cf7-4d0c-a7eb-1ec490bde7d6",
+      "type": "WriteLine",
+      "displayName": "Write Line",
+      "persistWorkflow": false,
+      "loadWorkflowContext": false,
+      "saveWorkflowContext": false,
+      "properties": [
         {
-          "$id": "4",
-          "activityId": "activity-1",
-          "type": "WriteLine",
-          "properties": {
-            "$id": "5",
-            "Text": {
-              "$id": "6",
-              "type": "System.String, mscorlib",
-              "syntax": "Liquid",
-              "expression": "Hello World!"
-            }
+          "$id": "5",
+          "name": "Text",
+          "expressions": {
+            "$id": "6",
+            "Literal": "Hello World!"
           }
         }
-      ]
-    },
-    "connections": {
-      "$id": "7",
-      "$values": []
+      ],
+      "propertyStorageProviders": {}
     }
-  }
-  
+  ],
+  "connections": [],
+  "id": "2dc7ae69b9f44fdab4c540618988fb67"
+}

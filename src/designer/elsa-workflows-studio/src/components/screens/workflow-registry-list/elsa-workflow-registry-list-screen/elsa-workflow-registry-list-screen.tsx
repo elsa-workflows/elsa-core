@@ -3,6 +3,7 @@ import * as collection from 'lodash/collection';
 import {createElsaClient} from "../../../../services/elsa-client";
 import {PagedList, VersionOptions, WorkflowBlueprintSummary} from "../../../../models";
 import {RouterHistory} from "@stencil/router";
+import Tunnel from "../../../../data/dashboard";
 
 @Component({
   tag: 'elsa-workflow-registry-list-screen',
@@ -11,6 +12,8 @@ import {RouterHistory} from "@stencil/router";
 export class ElsaWorkflowRegistryListScreen {
   @Prop() history?: RouterHistory;
   @Prop() serverUrl: string;
+  @Prop() basePath: string;
+  @Prop() culture: string;
   @State() workflowBlueprints: PagedList<WorkflowBlueprintSummary> = {items: [], page: 1, pageSize: 50, totalCount: 0};
 
   async componentWillLoad() {
@@ -32,6 +35,7 @@ export class ElsaWorkflowRegistryListScreen {
   render() {
     const workflowBlueprints = this.workflowBlueprints.items;
     const groupings = collection.groupBy(workflowBlueprints, 'id');
+    const basePath = this.basePath;
 
     return (
       <div>
@@ -39,7 +43,8 @@ export class ElsaWorkflowRegistryListScreen {
           <table class="elsa-min-w-full">
             <thead>
             <tr class="elsa-border-t elsa-border-gray-200">
-              <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-text-left elsa-uppercase elsa-tracking-wider"><span class="lg:elsa-pl-2">Name</span></th>
+              <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-text-left elsa-uppercase elsa-tracking-wider"><span
+                class="lg:elsa-pl-2">Name</span></th>
               <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-text-left elsa-uppercase elsa-tracking-wider">
                 Instances
               </th>
@@ -67,11 +72,12 @@ export class ElsaWorkflowRegistryListScreen {
               if (!workflowDisplayName || workflowDisplayName.trim().length == 0)
                 workflowDisplayName = 'Untitled';
 
-              const editUrl = `/workflow-registry/${workflowBlueprint.id}`;
-              const instancesUrl = `/workflow-instances?workflow=${workflowBlueprint.id}`;
+              const editUrl = `${basePath}/workflow-registry/${workflowBlueprint.id}`;
+              const instancesUrl = `${basePath}/workflow-instances?workflow=${workflowBlueprint.id}`;
 
               const editIcon = (
-                <svg class="elsa-h-5 elsa-w-5 elsa-text-gray-500" width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="elsa-h-5 elsa-w-5 elsa-text-gray-500" width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                     stroke-linejoin="round">
                   <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                   <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                 </svg>
@@ -90,7 +96,7 @@ export class ElsaWorkflowRegistryListScreen {
                       <stencil-route-link url={instancesUrl} anchorClass="elsa-truncate hover:elsa-text-gray-600">Instances</stencil-route-link>
                     </div>
                   </td>
-                  
+
                   <td class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-text-right">{latestVersionNumber}</td>
                   <td class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-text-right">{publishedVersionNumber}</td>
                   <td class="elsa-pr-6">
@@ -109,3 +115,4 @@ export class ElsaWorkflowRegistryListScreen {
     );
   }
 }
+Tunnel.injectProps(ElsaWorkflowRegistryListScreen, ['serverUrl', 'culture', 'basePath']);

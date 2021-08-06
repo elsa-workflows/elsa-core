@@ -1,5 +1,4 @@
-﻿using Elsa.Services.Bookmarks;
-using Elsa.Services.Models;
+﻿using Elsa.Services.Models;
 
 namespace Elsa.Services
 {

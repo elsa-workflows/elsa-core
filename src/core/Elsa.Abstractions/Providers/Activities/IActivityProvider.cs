@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Services.Models;
 
-namespace Elsa.Services
+namespace Elsa.Providers.Activities
 {
     public interface IActivityTypeProvider
     {

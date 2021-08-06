@@ -15,26 +15,24 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using NodaTime;
 using Rebus.Persistence.InMem;
-using Rebus.Routing.TypeBased;
 using Rebus.Transport.InMem;
-using Storage.Net;
-using Storage.Net.Blobs;
 
 namespace Elsa
 {
-    public record CompetingMessageType(Type MessageType, string? Queue = default);
-    
+    public record MessageTypeConfig(Type MessageType, string? QueueName = default);
+
     public class ElsaOptions
     {
         public static string FormatChannelQueueName<TMessage>(string channel) => FormatChannelQueueName(typeof(TMessage), channel);
-        
-        public static string FormatChannelQueueName(Type messageType, string channel)
+        public static string FormatChannelQueueName(Type messageType, string channel) => FormatChannelQueueName(messageType.Name, channel);
+
+        public static string FormatChannelQueueName(string queueName, string channel)
         {
-            var queue = !string.IsNullOrWhiteSpace(channel) ? $"{messageType.Name}{channel}" : messageType.Name;
+            var queue = !string.IsNullOrWhiteSpace(channel) ? $"{queueName}{channel}" : queueName;
             return FormatQueueName(queue);
         }
         
-        public static string FormatQueueName(string queue) => queue.Dehumanize().Underscore().Dasherize();
+        public static string FormatQueueName(string queue) => queue.Humanize().Dehumanize().Underscore().Dasherize();
 
         internal ElsaOptions()
         {
@@ -45,7 +43,6 @@ namespace Elsa
             WorkflowDefinitionDispatcherFactory = sp => ActivatorUtilities.CreateInstance<QueuingWorkflowDispatcher>(sp);
             WorkflowInstanceDispatcherFactory = sp => ActivatorUtilities.CreateInstance<QueuingWorkflowDispatcher>(sp);
             CorrelatingWorkflowDispatcherFactory = sp => ActivatorUtilities.CreateInstance<QueuingWorkflowDispatcher>(sp);
-            StorageFactory = sp => Storage.Net.StorageFactory.Blobs.InMemory();
             JsonSerializerConfigurer = (sp, serializer) => { };
             DefaultWorkflowStorageProviderType = typeof(WorkflowInstanceWorkflowStorageProvider);
             DistributedLockingOptions = new DistributedLockingOptions();
@@ -65,8 +62,8 @@ namespace Elsa
         public IEnumerable<Type> ActivityTypes => ActivityFactory.Types;
 
         public IList<Type> WorkflowTypes { get; } = new List<Type>();
-        public IList<CompetingMessageType> CompetingMessageTypes { get; } = new List<CompetingMessageType>();
-        public IList<Type> PubSubMessageTypes { get; } = new List<Type>();
+        public IList<MessageTypeConfig> CompetingMessageTypes { get; } = new List<MessageTypeConfig>();
+        public IList<MessageTypeConfig> PubSubMessageTypes { get; } = new List<MessageTypeConfig>();
         public ServiceBusOptions ServiceBusOptions { get; } = new();
         public DistributedLockingOptions DistributedLockingOptions { get; set; }
 
@@ -77,8 +74,7 @@ namespace Elsa
 
         public Type DefaultWorkflowStorageProviderType { get; set; }
         public WorkflowChannelOptions WorkflowChannelOptions { get; set; } = new();
-
-        internal Func<IServiceProvider, IBlobStorage> StorageFactory { get; set; }
+        
         internal Func<IServiceProvider, IWorkflowDefinitionStore> WorkflowDefinitionStoreFactory { get; set; }
         internal Func<IServiceProvider, IWorkflowInstanceStore> WorkflowInstanceStoreFactory { get; set; }
         internal Func<IServiceProvider, IWorkflowExecutionLogStore> WorkflowExecutionLogStoreFactory { get; set; }

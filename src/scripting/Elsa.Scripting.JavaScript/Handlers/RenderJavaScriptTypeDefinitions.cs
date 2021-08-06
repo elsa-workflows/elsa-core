@@ -13,12 +13,10 @@ namespace Elsa.Scripting.JavaScript.Handlers
 {
     public class RenderJavaScriptTypeDefinitions : INotificationHandler<RenderingTypeScriptDefinitions>
     {
-        private readonly IConfiguration _configuration;
         private readonly IActivityTypeService _activityTypeService;
 
-        public RenderJavaScriptTypeDefinitions(IConfiguration configuration, IActivityTypeService activityTypeService)
+        public RenderJavaScriptTypeDefinitions(IActivityTypeService activityTypeService)
         {
-            _configuration = configuration;
             _activityTypeService = activityTypeService;
         }
 
@@ -76,7 +74,7 @@ namespace Elsa.Scripting.JavaScript.Handlers
                 var activityTypeDictionary = activityTypes.ToDictionary(x => x.activityTypeName, x => x.Item2);
 
                 foreach (var activityType in activityTypeDictionary.Values)
-                    RenderActivityTypeDeclaration(activityType, output);
+                    await RenderActivityTypeDeclarationAsync(activityType, output);
 
                 output.AppendLine("declare interface Activities {");
 
@@ -91,10 +89,10 @@ namespace Elsa.Scripting.JavaScript.Handlers
                 output.AppendLine("declare const activities: Activities");
             }
 
-            void RenderActivityTypeDeclaration(ActivityType type, StringBuilder writer)
+            async Task RenderActivityTypeDeclarationAsync(ActivityType type, StringBuilder writer)
             {
                 var typeName = type.TypeName;
-                var descriptor = type.Describe();
+                var descriptor = await type.DescribeAsync();
                 var inputProperties = descriptor.InputProperties;
                 var outputProperties = descriptor.OutputProperties;
 

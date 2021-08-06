@@ -50,7 +50,7 @@ namespace Elsa.Services.Models
         /// </summary>
         public Func<ActivityExecutionContext, IActivity,ValueTask<IActivityExecutionResult>> ResumeAsync { get; set; } = (_, _) => new ValueTask<IActivityExecutionResult>(new DoneResult());
 
-        public Func<ActivityDescriptor> Describe { get; set; } = () => new ActivityDescriptor();
+        public Func<ValueTask<ActivityDescriptor>> DescribeAsync { get; set; } = () => new ValueTask<ActivityDescriptor>(new ActivityDescriptor());
         public bool IsBrowsable { get; set; } = true;
 
         public IDictionary<string, object> Attributes { get; set; } = new Dictionary<string, object>();

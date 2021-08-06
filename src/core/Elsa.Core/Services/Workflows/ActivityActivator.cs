@@ -52,7 +52,8 @@ namespace Elsa.Services.Workflows
 
             foreach (var property in properties)
             {
-                var providerName = propertyStorageProviderDictionary.GetItem(property.Name);
+                var attr = property.GetCustomAttribute<ActivityPropertyAttributeBase>();
+                var providerName = propertyStorageProviderDictionary.GetItem(property.Name) ?? attr.DefaultWorkflowStorageProvider;
                 var value = await _workflowStorageService.LoadAsync( providerName, workflowStorageContext, property.Name, cancellationToken);
 
                 if (value != null)
@@ -72,7 +73,8 @@ namespace Elsa.Services.Workflows
             foreach (var property in properties)
             {
                 var value = property.GetValue(activity);
-                var providerName = propertyStorageProviderDictionary.GetItem(property.Name);
+                var attr = property.GetCustomAttribute<ActivityPropertyAttributeBase>();
+                var providerName = propertyStorageProviderDictionary.GetItem(property.Name) ?? attr.DefaultWorkflowStorageProvider;
                 await _workflowStorageService.SaveAsync(providerName, workflowStorageContext, property.Name, value, cancellationToken);
             }
         }

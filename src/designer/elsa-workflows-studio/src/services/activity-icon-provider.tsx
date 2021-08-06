@@ -63,8 +63,8 @@ export class ActivityIconProvider {
     'Webhook': () => <WebhookIcon/>
   };
 
-  register(activityType: string, icon: () => any) {
-    this.map[activityType] = icon;
+  register(activityType: string, icon: string) {
+    this.map[activityType] = () => icon;
   }
 
   getIcon(activityType: string): any {

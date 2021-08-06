@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Services;
 using Elsa.Services.Bookmarks;
 
 namespace Elsa.Activities.MassTransit.Bookmarks

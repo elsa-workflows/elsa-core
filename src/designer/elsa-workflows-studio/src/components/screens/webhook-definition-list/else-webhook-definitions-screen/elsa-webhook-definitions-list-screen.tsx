@@ -4,6 +4,7 @@ import {createElsaClient} from "../../../../services/elsa-client";
 import {PagedList} from "../../../../models";
 import {WebhookDefinitionSummary} from "../../../../models/webhook";
 import {RouterHistory} from "@stencil/router";
+import Tunnel from "../../../../data/dashboard";
 
 @Component({
   tag: 'elsa-webhook-definitions-list-screen',
@@ -12,6 +13,8 @@ import {RouterHistory} from "@stencil/router";
 export class ElsaWebhookDefinitionsListScreen {
   @Prop() history?: RouterHistory;
   @Prop() serverUrl: string;
+  @Prop() basePath: string;
+  @Prop() culture: string;
   @State() webhookDefinitions: PagedList<WebhookDefinitionSummary> = {items: [], page: 1, pageSize: 50, totalCount: 0};
 
   confirmDialog: HTMLElsaConfirmDialogElement;
@@ -45,6 +48,7 @@ export class ElsaWebhookDefinitionsListScreen {
   render() {
     const webhookDefinitions = this.webhookDefinitions;
     const list = collection.orderBy(webhookDefinitions, 'name');
+    const basePath = this.basePath;
 
     return (
       <div>
@@ -77,7 +81,7 @@ export class ElsaWebhookDefinitionsListScreen {
               if (!webhookDisplayName || webhookDisplayName.trim().length == 0)
               webhookDisplayName = 'Untitled';
 
-              const editUrl = `/webhook-definitions/${webhookDefinition.id}`;
+              const editUrl = `${basePath}/webhook-definitions/${webhookDefinition.id}`;
 
               const editIcon = (
                 <svg class="elsa-h-5 elsa-w-5 elsa-text-gray-500" width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -141,3 +145,4 @@ export class ElsaWebhookDefinitionsListScreen {
     );
   }
 }
+Tunnel.injectProps(ElsaWebhookDefinitionsListScreen, ['serverUrl', 'culture', 'basePath']);

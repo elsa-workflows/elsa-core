@@ -1,6 +1,7 @@
 import {ActivityDefinition, ActivityDefinitionProperty, ActivityModel, ConnectionModel, WorkflowModel} from "../models";
 import * as collection from 'lodash/collection';
 import {Duration} from "moment";
+import {createDocument} from "@stencil/core/mock-doc";
 
 declare global {
   interface Array<T> {
@@ -88,12 +89,7 @@ export function findActivity(workflowModel: WorkflowModel, activityId: string) {
   return workflowModel.activities.find(x => x.activityId === activityId);
 }
 
-export function addConnection(workflowModel: WorkflowModel, connection: ConnectionModel);
-export function addConnection(workflowModel: WorkflowModel, sourceId: string, targetId: string, outcome: string);
-export function addConnection(workflowModel: WorkflowModel, ...args: any) {
-
-  const connection = typeof (args) == 'object' ? args as ConnectionModel : {sourceId: args[0], targetId: args[1], outcome: args[3]};
-
+export function addConnection(workflowModel: WorkflowModel, connection: ConnectionModel) {
   return {
     ...workflowModel,
     connections: [...workflowModel.connections, connection]
@@ -186,6 +182,25 @@ export function mapSyntaxToLanguage(syntax: string): any {
     default:
       return 'plaintext';
   }
+}
+
+export function htmlToElement(html: string): Element {
+  const template = document.createElement('template');
+  html = html.trim(); // Never return a text node of whitespace as the result.
+  template.innerHTML = html;
+  return template.content.firstElementChild;
+}
+
+export function htmlDecode(value) {
+  const textarea = htmlToElement("<textarea/>");
+  textarea.innerHTML = value;
+  return textarea.textContent;
+}
+
+export function htmlEncode(value) {
+  const textarea = htmlToElement("<textarea/>");
+  textarea.textContent = value;
+  return textarea.innerHTML;
 }
 
 export function durationToString(duration: Duration) {

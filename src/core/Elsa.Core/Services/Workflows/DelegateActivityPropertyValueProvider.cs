@@ -14,6 +14,8 @@ namespace Elsa.Services.Workflows
 
         public Func<ActivityExecutionContext, ValueTask<object?>> ValueProvider { get; }
 
+        public string? RawValue => ValueProvider.ToString();
+
         public async ValueTask<object?> GetValueAsync(
             ActivityExecutionContext context,
             CancellationToken cancellationToken = default) =>

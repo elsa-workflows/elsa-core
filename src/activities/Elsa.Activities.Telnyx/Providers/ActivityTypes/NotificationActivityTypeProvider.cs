@@ -9,6 +9,7 @@ using Elsa.Activities.Telnyx.Webhooks.Attributes;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Abstract;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
 using Elsa.Metadata;
+using Elsa.Providers.Activities;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -58,19 +59,26 @@ namespace Elsa.Activities.Telnyx.Providers.ActivityTypes
 
         private async Task<ActivityType> CreateWebhookActivityTypeAsync(Type payloadType, WebhookAttribute webhookAttribute, CancellationToken cancellationToken)
         {
-            var descriptor = await _describesActivityType.DescribeAsync<Webhook>(cancellationToken);
+            async ValueTask<ActivityDescriptor> CreateDescriptorAsync()
+            {
+                var des = await _describesActivityType.DescribeAsync<Webhook>(cancellationToken);
 
-            descriptor.Description = webhookAttribute.Description;
-            descriptor.DisplayName = webhookAttribute.DisplayName;
-            descriptor.Type = webhookAttribute.ActivityType;
+                des.Description = webhookAttribute.Description;
+                des.DisplayName = webhookAttribute.DisplayName;
+                des.Type = webhookAttribute.ActivityType;
 
-            var outputProperties = descriptor.OutputProperties.Where(x => x.Name != nameof(Webhook.Output)).ToList();
-            outputProperties.Add(new ActivityOutputDescriptor(nameof(Webhook.Output), payloadType));
-            descriptor.OutputProperties = outputProperties.ToArray();
+                var outputProperties = des.OutputProperties.Where(x => x.Name != nameof(Webhook.Output)).ToList();
+                outputProperties.Add(new ActivityOutputDescriptor(nameof(Webhook.Output), payloadType));
+                des.OutputProperties = outputProperties.ToArray();
+
+                return des;
+            }
+            
+            var descriptor = await CreateDescriptorAsync();
 
             return new ActivityType
             {
-                Describe = () => descriptor,
+                DescribeAsync = CreateDescriptorAsync,
                 Description = descriptor.Description,
                 DisplayName = descriptor.DisplayName,
                 TypeName = descriptor.Type,

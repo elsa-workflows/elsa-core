@@ -30,7 +30,8 @@ namespace Elsa.Activities.ControlFlow
             UIHint = ActivityInputUIHints.MultiText,
             DefaultValue = new[] { Elsa.OutcomeNames.Done },
             DefaultSyntax = SyntaxNames.Json,
-            SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+            SupportedSyntaxes = new[] { SyntaxNames.Json },
+            IsDesignerCritical = true)]
         public ICollection<string> OutcomeNames { get; set; } = new[] { Elsa.OutcomeNames.Done };
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)

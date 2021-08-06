@@ -10,7 +10,7 @@ namespace Elsa.Services
         Task<RunWorkflowResult> ResumeWorkflowAsync(
             WorkflowInstance workflowInstance,
             string? activityId = default,
-            object? input = default,
+            WorkflowInput? input = default,
             CancellationToken cancellationToken = default);
     }
 }

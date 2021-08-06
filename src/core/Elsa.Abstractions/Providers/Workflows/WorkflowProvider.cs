@@ -2,10 +2,9 @@
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Providers.Workflow;
 using Elsa.Services.Models;
 
-namespace Elsa.Services
+namespace Elsa.Providers.Workflows
 {
     public abstract class WorkflowProvider : IWorkflowProvider
     {

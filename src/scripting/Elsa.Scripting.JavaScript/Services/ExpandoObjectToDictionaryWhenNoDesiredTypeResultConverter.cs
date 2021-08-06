@@ -3,7 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
+using Elsa.Serialization;
 using Newtonsoft.Json;
+using NodaTime;
+using NodaTime.Serialization.JsonNet;
 
 namespace Elsa.Scripting.JavaScript.Services
 {
@@ -14,8 +17,15 @@ namespace Elsa.Scripting.JavaScript.Services
 
         public object? ConvertToDesiredType(object? evaluationResult, Type desiredType)
         {
-            if(evaluationResult is ExpandoObject expando && desiredType == typeof(object))
-                return RecursivelyPrepareExpandoObjectForReturn(expando);
+            if(evaluationResult is ExpandoObject expando)
+            {
+                if(desiredType == typeof(object))
+                    return RecursivelyPrepareExpandoObjectForReturn(expando);
+
+                var serializationSettings = new JsonSerializerSettings().ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
+                var json = JsonConvert.SerializeObject(evaluationResult, desiredType, serializationSettings);
+                return JsonConvert.DeserializeObject(json, desiredType, serializationSettings);
+            }
 
             return _wrapped.ConvertToDesiredType(evaluationResult, desiredType);
         }
@@ -48,8 +58,8 @@ namespace Elsa.Scripting.JavaScript.Services
 
         public ExpandoObjectToDictionaryWhenNoDesiredTypeResultConverter(IConvertsEnumerableToObject enumerableConverter, IConvertsJintEvaluationResult wrapped)
         {
-            this._wrapped = wrapped ?? throw new ArgumentNullException(nameof(wrapped));
-            this._enumerableConverter = enumerableConverter ?? throw new ArgumentNullException(nameof(enumerableConverter));
+            _wrapped = wrapped ?? throw new ArgumentNullException(nameof(wrapped));
+            _enumerableConverter = enumerableConverter ?? throw new ArgumentNullException(nameof(enumerableConverter));
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Signaling.Models;
+using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -34,14 +35,14 @@ namespace Elsa.Activities.Signaling.Services
         {
             var normalizedSignal = signal.ToLowerInvariant();
 
-            return await _workflowLaunchpad.CollectAndExecuteWorkflowsAsync(new CollectWorkflowsContext(
+            return await _workflowLaunchpad.CollectAndExecuteWorkflowsAsync(new WorkflowsQuery(
                 nameof(SignalReceived),
                 new SignalReceivedBookmark { Signal = normalizedSignal },
                 correlationId,
                 workflowInstanceId,
                 default,
                 TenantId
-            ), new Signal(normalizedSignal, input), cancellationToken);
+            ), new WorkflowInput(new Signal(normalizedSignal, input)), cancellationToken);
         }
 
         public async Task<IEnumerable<CollectedWorkflow>> DispatchSignalTokenAsync(string token, object? input = default, CancellationToken cancellationToken = default)
@@ -56,7 +57,7 @@ namespace Elsa.Activities.Signaling.Services
         {
             var normalizedSignal = signal.ToLowerInvariant();
             
-            return await _workflowLaunchpad.CollectAndDispatchWorkflowsAsync(new CollectWorkflowsContext(
+            return await _workflowLaunchpad.CollectAndDispatchWorkflowsAsync(new WorkflowsQuery(
                     nameof(SignalReceived),
                     new SignalReceivedBookmark { Signal = normalizedSignal },
                     correlationId,
@@ -64,7 +65,7 @@ namespace Elsa.Activities.Signaling.Services
                     default,
                     TenantId
                 ),
-                new Signal(normalizedSignal, input),
+                new WorkflowInput(new Signal(normalizedSignal, input)),
                 cancellationToken);
         }
     }

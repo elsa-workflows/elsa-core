@@ -40,10 +40,10 @@ namespace Elsa.Activities.AzureServiceBus.Extensions
                 .AddBookmarkProvider<TopicMessageReceivedBookmarkProvider>()
                 ;
 
-            options.AddCompetingConsumer<RestartServiceBusQueuesConsumer, WorkflowDefinitionPublished>();
-            options.AddCompetingConsumer<RestartServiceBusQueuesConsumer, WorkflowDefinitionRetracted>();
-            options.AddCompetingConsumer<RestartServiceBusTopicsConsumer, WorkflowDefinitionPublished>();
-            options.AddCompetingConsumer<RestartServiceBusTopicsConsumer, WorkflowDefinitionRetracted>();
+            options.AddPubSubConsumer<RestartServiceBusQueuesConsumer, WorkflowDefinitionPublished>("WorkflowDefinitionEvents");
+            options.AddPubSubConsumer<RestartServiceBusQueuesConsumer, WorkflowDefinitionRetracted>("WorkflowDefinitionEvents");
+            options.AddPubSubConsumer<RestartServiceBusTopicsConsumer, WorkflowDefinitionPublished>("WorkflowDefinitionEvents");
+            options.AddPubSubConsumer<RestartServiceBusTopicsConsumer, WorkflowDefinitionRetracted>("WorkflowDefinitionEvents");
 
             options
                 .AddActivity<AzureServiceBusQueueMessageReceived>()

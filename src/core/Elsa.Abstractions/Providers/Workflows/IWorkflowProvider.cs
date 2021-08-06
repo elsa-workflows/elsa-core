@@ -3,7 +3,7 @@ using System.Threading;
 using Elsa.Services;
 using Elsa.Services.Models;
 
-namespace Elsa.Providers.Workflow
+namespace Elsa.Providers.Workflows
 {
     /// <summary>
     /// Represents a source of workflows for the <see cref="IWorkflowRegistry"/>

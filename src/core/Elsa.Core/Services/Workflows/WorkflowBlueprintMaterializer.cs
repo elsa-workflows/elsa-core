@@ -79,7 +79,7 @@ namespace Elsa.Services.Workflows
             foreach (var activityDefinition in activityDefinitions)
             {
                 var activityType = await _activityTypeService.GetActivityTypeAsync(activityDefinition.Type, cancellationToken);
-                var activityDescriptor = activityType.Describe();
+                var activityDescriptor = await activityType.DescribeAsync();
                 var propertyDescriptors = activityDescriptor.InputProperties;
 
                 foreach (var property in activityDefinition.Properties)
@@ -155,19 +155,19 @@ namespace Elsa.Services.Workflows
             else if (typeof(CompositeActivity).IsAssignableFrom(activityType.Type))
             {
                 var compositeActivity = (CompositeActivity) ActivatorUtilities.CreateInstance(_serviceProvider, activityType.Type);
-                var compositeActivityBuilder = new CompositeActivityBuilder(_serviceProvider, _startingActivitiesProvider, activityType.Type, activityType.TypeName)
-                {
-                    ActivityId = activityDefinition.ActivityId,
-                    Name = activityDefinition.Name,
-                    DisplayName = activityDefinition.DisplayName,
-                    Description = activityDefinition.Description,
-                    PersistWorkflowEnabled = activityDefinition.PersistWorkflow,
-                    LoadWorkflowContextEnabled = activityDefinition.LoadWorkflowContext,
-                    SaveWorkflowContextEnabled = activityDefinition.SaveWorkflowContext,
-                    PropertyStorageProviders = activityDefinition.PropertyStorageProviders
-                };
+                var compositeActivityBuilder = new CompositeActivityBuilder(_serviceProvider, _startingActivitiesProvider, activityType.Type, activityType.TypeName);
 
                 compositeActivity.Build(compositeActivityBuilder);
+                
+                // Ensure the composite activity is assigned the same properties as the activity definition referencing this activity.
+                compositeActivityBuilder.ActivityId = activityDefinition.ActivityId;
+                compositeActivityBuilder.Name = activityDefinition.Name;
+                compositeActivityBuilder.DisplayName = activityDefinition.DisplayName;
+                compositeActivityBuilder.Description = activityDefinition.Description;
+                compositeActivityBuilder.PersistWorkflowEnabled = activityDefinition.PersistWorkflow;
+                compositeActivityBuilder.LoadWorkflowContextEnabled = activityDefinition.LoadWorkflowContext;
+                compositeActivityBuilder.SaveWorkflowContextEnabled = activityDefinition.SaveWorkflowContext;
+                compositeActivityBuilder.PropertyStorageProviders = activityDefinition.PropertyStorageProviders;
 
                 var compositeActivityBlueprint = compositeActivityBuilder.Build($"{activityDefinition.ActivityId}:activity");
 
