@@ -340,10 +340,10 @@ export class ElsaWorkflowDesigner {
     const workflowModel = {...this.workflowModel};
     const newConnection: ConnectionModel = {sourceId: sourceActivityId, targetId: targetActivityId, outcome: outcome};
     let connections = workflowModel.connections;
-    
+
     if(!this.enableMultipleConnectionsFromSingleSource)
       connections = [...workflowModel.connections.filter(x => !(x.sourceId === sourceActivityId && x.outcome === outcome))];
-    
+
     workflowModel.connections = [...connections, newConnection];
     this.updateWorkflowModel(workflowModel);
     this.parentActivityId = null;
@@ -488,7 +488,7 @@ export class ElsaWorkflowDesigner {
   tryRerenderTree(waitTime?: number, attempt?: number) {
     const maxTries = 3;
 
-    waitTime = waitTime || 50;
+    waitTime = waitTime || 100;
     attempt = attempt || 0;
     setTimeout(() => {
       try {
@@ -647,7 +647,7 @@ export class ElsaWorkflowDesigner {
     const displayName = displayContext.displayName || activity.displayName;
     const typeName = activity.type;
 
-    return `<div id=${`activity-${activity.activityId}`} 
+    return `<div id=${`activity-${activity.activityId}`}
     class="activity elsa-border-2 elsa-border-solid elsa-rounded elsa-bg-white elsa-text-left elsa-text-black elsa-text-lg elsa-select-none elsa-max-w-md elsa-shadow-sm elsa-relative ${cssClass}">
       <div class="elsa-p-5">
         <div class="elsa-flex elsa-justify-between elsa-space-x-8">
