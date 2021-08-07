@@ -257,6 +257,7 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.CustomActivityOutcomes", "src\samples\console\Elsa.Samples.CustomActivityOutcomes\Elsa.Samples.CustomActivityOutcomes.csproj", "{30A9B140-14F5-4D00-84ED-1447F96D13C8}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.CustomActivityOutcomes", "src\samples\console\Elsa.Samples.CustomActivityOutcomes\Elsa.Samples.CustomActivityOutcomes.csproj", "{30A9B140-14F5-4D00-84ED-1447F96D13C8}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.File", "src\activities\Elsa.Activities.File\Elsa.Activities.File.csproj", "{BE284508-9582-4FCB-B0DD-0761AB940AD7}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.ReadLineToFile", "src\samples\console\Elsa.Samples.ReadLineToFile\Elsa.Samples.ReadLineToFile.csproj", "{3EB488DF-3C28-4DAD-B43E-6062E39629AB}"
@@ -292,8 +293,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Providers.Redis", "src\providers\Elsa.Providers.Redis\Elsa.Providers.Redis.csproj", "{9ACA06DA-9AFE-41A2-8109-EFED8B9B14A1}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.DistributedLocking.Redis", "src\locking\Elsa.DistributedLocking.Redis\Elsa.DistributedLocking.Redis.csproj", "{D1644D32-AA51-4D10-942E-F2722DB963B4}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.Conductor", "src\activities\Elsa.Activities.Conductor\Elsa.Activities.Conductor.csproj", "{E62077E1-59F4-4937-B45B-59F86417BCF8}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SampleClientApp.Web", "src\samples\server\SampleClientApp.Web\SampleClientApp.Web.csproj", "{7756E22A-AD59-46C1-A019-1D28D7217347}"
 EndProject
