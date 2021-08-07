@@ -13,7 +13,7 @@ using Newtonsoft.Json;
 
 namespace Elsa.Persistence.EntityFramework.Core.Stores
 {
-    public class EntityFrameworkWorkflowInstanceStore : EntityFrameworkStore<WorkflowInstance>, IWorkflowInstanceStore
+    public class EntityFrameworkWorkflowInstanceStore : ElsaContextEntityFrameworkStore<WorkflowInstance>, IWorkflowInstanceStore
     {
         private readonly IContentSerializer _contentSerializer;
 
@@ -58,10 +58,10 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
         {
             var data = new
             {
+                entity.Input,
                 entity.Output,
                 entity.Variables,
                 entity.ActivityData,
-                entity.ActivityOutput,
                 entity.BlockingActivities,
                 entity.ScheduledActivities,
                 entity.Scopes,
@@ -78,10 +78,10 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
         {
             var data = new
             {
+                entity.Input,
                 entity.Output,
                 entity.Variables,
                 entity.ActivityData,
-                entity.ActivityOutput,
                 entity.BlockingActivities,
                 entity.ScheduledActivities,
                 entity.Scopes,
@@ -94,10 +94,10 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
             if (!string.IsNullOrWhiteSpace(json))
                 data = JsonConvert.DeserializeAnonymousType(json, data, DefaultContentSerializer.CreateDefaultJsonSerializationSettings())!;
 
+            entity.Input = data.Input;
             entity.Output = data.Output;
             entity.Variables = data.Variables;
             entity.ActivityData = data.ActivityData;
-            entity.ActivityOutput = data.ActivityOutput;
             entity.BlockingActivities = data.BlockingActivities;
             entity.ScheduledActivities = data.ScheduledActivities;
             entity.Scopes = data.Scopes;

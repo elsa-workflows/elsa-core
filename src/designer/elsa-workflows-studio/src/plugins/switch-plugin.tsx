@@ -12,15 +12,28 @@ export class SwitchPlugin implements ElsaPlugin {
 
   onActivityDesignDisplaying(context: ActivityDesignDisplayContext) {
     const activityModel = context.activityModel;
+    const activityDescriptor = context.activityDescriptor;
+    const propertyDescriptors = activityDescriptor.inputProperties;
+    const switchCaseProperties = propertyDescriptors.filter(x => x.uiHint == 'switch-case-builder');
     
-    if (activityModel.type !== 'Switch')
+    if (switchCaseProperties.length == 0)
       return;
 
-    const props = activityModel.properties || [];
+    let outcomesHash: any = {};
     const syntax = 'Switch';
-    const casesProp = props.find(x => x.name == 'Cases') || { expressions: {'Switch': ''}, syntax: syntax };
-    const expression = casesProp.expressions[syntax] || '[]';
-    const cases: Array<SwitchCase> = !!expression['$values'] ? expression['$values'] : parseJson(expression) || [];
-    context.outcomes = [...cases.map(x => x.name), 'Default'];
+
+    for (const propertyDescriptor of switchCaseProperties) {
+      const props = activityModel.properties || [];
+      const casesProp = props.find(x => x.name == propertyDescriptor.name) || {expressions: {'Switch': ''}, syntax: syntax};
+
+      const expression: any = casesProp.expressions[syntax] || [];
+      const cases: Array<SwitchCase> = !!expression['$values'] ? expression['$values'] : Array.isArray(expression) ? expression : parseJson(expression) || [];
+
+      for(const c of cases)
+        outcomesHash[c.name] = true;
+    }
+
+    const outcomes = Object.keys(outcomesHash);
+    context.outcomes = [...outcomes, 'Default'];
   }
 }

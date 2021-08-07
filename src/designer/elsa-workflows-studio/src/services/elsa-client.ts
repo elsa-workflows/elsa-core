@@ -1,27 +1,62 @@
-﻿import axios, {AxiosRequestConfig} from "axios";
+﻿import axios, {AxiosInstance, AxiosRequestConfig} from "axios";
+import {Service} from 'axios-middleware';
 import * as collection from 'lodash/collection';
+import {eventBus} from './event-bus';
 import {
   ActivityDefinition,
   ActivityDescriptor,
   ConnectionDefinition,
-  getVersionOptionsString, OrderBy,
-  PagedList, SelectListItem,
+  EventTypes,
+  getVersionOptionsString, ListModel,
+  OrderBy,
+  PagedList,
+  SelectListItem,
   Variables,
-  VersionOptions, WorkflowBlueprint, WorkflowBlueprintSummary,
+  VersionOptions,
+  WorkflowBlueprint,
+  WorkflowBlueprintSummary,
   WorkflowContextOptions,
   WorkflowDefinition,
-  WorkflowDefinitionSummary, WorkflowExecutionLogRecord, WorkflowFault, WorkflowInstance, WorkflowInstanceSummary,
-  WorkflowPersistenceBehavior, WorkflowStatus
+  WorkflowDefinitionSummary,
+  WorkflowExecutionLogRecord,
+  WorkflowInstance,
+  WorkflowInstanceSummary,
+  WorkflowPersistenceBehavior,
+  WorkflowStatus,
+  WorkflowStorageDescriptor
 } from "../models";
+import {WebhookDefinition, WebhookDefinitionSummary} from "../models/webhook";
 
-export const createElsaClient = function (serverUrl: string): ElsaClient {
+let _httpClient: AxiosInstance = null;
+let _elsaClient: ElsaClient = null;
+
+export const createHttpClient = function(baseAddress: string) : AxiosInstance
+{
+  if(!!_httpClient)
+    return _httpClient;
+
   const config: AxiosRequestConfig = {
-    baseURL: serverUrl
+    baseURL: baseAddress
   };
 
-  const httpClient = axios.create(config);
+  eventBus.emit(EventTypes.HttpClientConfigCreated, this, {config});
 
-  return {
+  const httpClient = axios.create(config);
+  const service = new Service(httpClient);
+
+  eventBus.emit(EventTypes.HttpClientCreated, this, {service, httpClient});
+  
+  return _httpClient = httpClient;
+}
+
+export const createElsaClient = function (serverUrl: string): ElsaClient {
+
+  if (!!_elsaClient)
+    return _elsaClient;
+
+  const httpClient: AxiosInstance = createHttpClient(serverUrl);
+
+  _elsaClient = {
     activitiesApi: {
       list: async () => {
         const response = await httpClient.get<Array<ActivityDescriptor>>('v1/activities');
@@ -33,6 +68,11 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
         const versionOptionsString = getVersionOptionsString(versionOptions);
         const response = await httpClient.get<PagedList<WorkflowDefinitionSummary>>(`v1/workflow-definitions?version=${versionOptionsString}`);
         return response.data;
+      },
+      getMany: async (ids: Array<string>, versionOptions?: VersionOptions) => {
+        const versionOptionsString = getVersionOptionsString(versionOptions);
+        const response = await httpClient.get<ListModel<WorkflowDefinitionSummary>>(`v1/workflow-definitions?ids=${ids.join(',')}&version=${versionOptionsString}`);
+        return response.data.items;
       },
       getByDefinitionAndVersion: async (definitionId: string, versionOptions: VersionOptions) => {
         const versionOptionsString = getVersionOptionsString(versionOptions);
@@ -75,6 +115,27 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
         });
         return response.data;
       }
+    },
+    webhookDefinitionsApi: {
+      list: async (page?: number, pageSize?: number) => {
+        const response = await httpClient.get<PagedList<WebhookDefinitionSummary>>(`v1/webhook-definitions`);
+        return response.data;
+      },
+      getByWebhookId: async (webhookId: string) => {
+        const response = await httpClient.get<WebhookDefinition>(`v1/webhook-definitions/${webhookId}`);
+        return response.data;
+      },
+      save: async request => {
+        const response = await httpClient.post<WebhookDefinition>('v1/webhook-definitions', request);
+        return response.data;
+      },
+      update: async request => {
+        const response = await httpClient.put<WebhookDefinition>('v1/webhook-definitions', request);
+        return response.data;
+      },
+      delete: async webhookId => {
+        await httpClient.delete(`v1/webhook-definitions/${webhookId}`);
+      },
     },
     workflowRegistryApi: {
       list: async (page?: number, pageSize?: number, versionOptions?: VersionOptions): Promise<PagedList<WorkflowBlueprintSummary>> => {
@@ -166,8 +227,22 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
         const response = await httpClient.get(`v1/workflow-instances/${workflowInstanceId}/activity-stats/${activityId}`);
         return response.data;
       }
+    },
+    workflowStorageProvidersApi: {
+      list: async () => {
+        const response = await httpClient.get<Array<WorkflowStorageDescriptor>>('v1/workflow-storage-providers');
+        return response.data;
+      }
+    },
+    workflowChannelsApi: {
+      list: async () => {
+        const response = await httpClient.get<Array<string>>('v1/workflow-channels');
+        return response.data;
+      }
     }
   }
+
+  return _elsaClient;
 }
 
 export interface ElsaClient {
@@ -179,6 +254,9 @@ export interface ElsaClient {
   scriptingApi: ScriptingApi;
   designerApi: DesignerApi;
   activityStatsApi: ActivityStatsApi;
+  workflowStorageProvidersApi: WorkflowStorageProvidersApi;
+  webhookDefinitionsApi: WebhookDefinitionsApi;
+  workflowChannelsApi: WorkflowChannelsApi;
 }
 
 export interface ActivitiesApi {
@@ -188,6 +266,8 @@ export interface ActivitiesApi {
 export interface WorkflowDefinitionsApi {
 
   list(page?: number, pageSize?: number, versionOptions?: VersionOptions): Promise<PagedList<WorkflowDefinitionSummary>>;
+
+  getMany(ids: Array<string>, versionOptions?: VersionOptions): Promise<Array<WorkflowDefinitionSummary>>;
 
   getByDefinitionAndVersion(definitionId: string, versionOptions: VersionOptions): Promise<WorkflowDefinition>;
 
@@ -200,6 +280,19 @@ export interface WorkflowDefinitionsApi {
   export(workflowDefinitionId: string, versionOptions: VersionOptions): Promise<ExportWorkflowResponse>;
 
   import(workflowDefinitionId: string, file: File): Promise<WorkflowDefinition>;
+}
+
+export interface WebhookDefinitionsApi {
+
+  list(page?: number, pageSize?: number): Promise<PagedList<WebhookDefinitionSummary>>;
+
+  getByWebhookId(webhookId: string): Promise<WebhookDefinition>;
+
+  save(request: SaveWebhookDefinitionRequest): Promise<WebhookDefinition>;
+
+  update(request: SaveWebhookDefinitionRequest): Promise<WebhookDefinition>;
+
+  delete(webhookId: string): Promise<void>;
 }
 
 export interface WorkflowRegistryApi {
@@ -248,12 +341,21 @@ export interface ActivityStatsApi {
   get(workflowInstanceId: string, activityId: string): Promise<ActivityStats>;
 }
 
+export interface WorkflowStorageProvidersApi {
+  list(): Promise<Array<WorkflowStorageDescriptor>>;
+}
+
+export interface WorkflowChannelsApi {
+  list(): Promise<Array<string>>;
+}
+
 export interface SaveWorkflowDefinitionRequest {
   workflowDefinitionId?: string;
   name?: string;
   displayName?: string;
   description?: string;
   tag?: string;
+  channel?: string;
   variables?: Variables;
   contextOptions?: WorkflowContextOptions;
   isSingleton?: boolean;
@@ -262,6 +364,15 @@ export interface SaveWorkflowDefinitionRequest {
   publish?: boolean;
   activities: Array<ActivityDefinition>;
   connections: Array<ConnectionDefinition>;
+}
+
+export interface SaveWebhookDefinitionRequest {
+  id?: string;
+  name?: string;
+  path?: string;
+  description?: string;
+  payloadTypeName?: string;
+  isEnabled?: boolean;
 }
 
 export interface ExportWorkflowResponse {
@@ -283,6 +394,6 @@ interface ActivityEventCount {
   count: number;
 }
 
-interface ActivityFault{
+interface ActivityFault {
   message: string;
 }

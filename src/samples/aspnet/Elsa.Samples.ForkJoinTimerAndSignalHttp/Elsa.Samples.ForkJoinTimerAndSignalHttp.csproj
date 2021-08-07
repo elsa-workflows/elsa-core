@@ -4,6 +4,10 @@
         <TargetFramework>net5.0</TargetFramework>
         <IsPackable>false</IsPackable>
     </PropertyGroup>
+    
+    <ItemGroup>
+        <PackageReference Include="System.Text.Encodings.Web" Version="5.0.1"/>
+    </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.Http\Elsa.Activities.Http.csproj" />

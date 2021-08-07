@@ -33,18 +33,17 @@ namespace Elsa.Client.Models
         [DataMember(Order = 14)] public Variables Variables { get; set; }
         [DataMember(Order = 15)] public object? Output { get; set; }
         [DataMember(Order = 16)] public IDictionary<string, JObject> ActivityData { get; set; } = new Dictionary<string, JObject>();
-        [DataMember(Order = 17)] public IDictionary<string, object> ActivityOutput { get; set; } = new Dictionary<string, object>();
 
-        [DataMember(Order = 18)]
+        [DataMember(Order = 17)]
         public HashSet<BlockingActivity> BlockingActivities
         {
             get => _blockingActivities;
             set => _blockingActivities = new HashSet<BlockingActivity>(value, BlockingActivityEqualityComparer.Instance);
         }
 
-        [DataMember(Order = 19)] public WorkflowFault? Fault { get; set; }
-        [DataMember(Order = 20)] public SimpleStack<ScheduledActivity> ScheduledActivities { get; set; }
-        [DataMember(Order = 21)] public SimpleStack<ActivityScope> Scopes { get; set; }
-        [DataMember(Order = 22)] public ScheduledActivity? CurrentActivity { get; set; }
+        [DataMember(Order = 18)] public WorkflowFault? Fault { get; set; }
+        [DataMember(Order = 19)] public SimpleStack<ScheduledActivity> ScheduledActivities { get; set; }
+        [DataMember(Order = 20)] public SimpleStack<ActivityScope> Scopes { get; set; }
+        [DataMember(Order = 21)] public ScheduledActivity? CurrentActivity { get; set; }
     }
 }

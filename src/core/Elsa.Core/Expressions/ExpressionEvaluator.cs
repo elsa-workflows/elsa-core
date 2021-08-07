@@ -62,7 +62,7 @@ namespace Elsa.Expressions
             }
             catch (Exception e)
             {
-                _logger.LogWarning(e, "Failed to evaluate expression {Expression} using syntax {Syntax}", expression, syntax);
+                _logger.LogDebug(e, "Failed to evaluate expression {Expression} using syntax {Syntax}", expression, syntax);
                 throw;
             }
         }

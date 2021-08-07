@@ -10,12 +10,7 @@ namespace Elsa.Design
         public const string Dropdown = "dropdown";
         public const string MultiText = "multi-text";
         public const string CodeEditor = "code-editor";
-        
-        /// <summary>
-        /// A list that allows the user to enter zero or more values.
-        /// </summary>
-        public const string DynamicList = "dynamic-list";
-        
+
         /// <summary>
         /// An editor that allows the user to write a blob of JSON.
         /// </summary>

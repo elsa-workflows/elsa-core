@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Elsa.Activities.Conductor.Models;
 using Elsa.Activities.Conductor.Services;
 using Elsa.Metadata;
+using Elsa.Providers.Activities;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -39,20 +40,27 @@ namespace Elsa.Activities.Conductor.Providers.ActivityTypes
 
         private async Task<ActivityType> CreateActivityTypeAsync(TaskDefinition taskDefinition, CancellationToken cancellationToken)
         {
-            var descriptor = await _describesActivityType.DescribeAsync<RunTask>(cancellationToken);
+            async ValueTask<ActivityDescriptor> CreateDescriptorAsync()
+            {
+                var des = await _describesActivityType.DescribeAsync<RunTask>(cancellationToken);
 
-            descriptor.Type = taskDefinition.Name;
-            descriptor.DisplayName = taskDefinition.DisplayName ?? taskDefinition.Name;
-            descriptor.Description = taskDefinition.Description;
-            descriptor.InputProperties = Array.Empty<ActivityInputDescriptor>();
-            descriptor.Outcomes = taskDefinition.Outcomes?.ToArray() ?? new[] { OutcomeNames.Done };
+                des.Type = taskDefinition.Name;
+                des.DisplayName = taskDefinition.DisplayName ?? taskDefinition.Name;
+                des.Description = taskDefinition.Description;
+                des.InputProperties = Array.Empty<ActivityInputDescriptor>();
+                des.Outcomes = taskDefinition.Outcomes?.ToArray() ?? new[] { OutcomeNames.Done };
+
+                return des;
+            }
+
+            var descriptor = await CreateDescriptorAsync();
 
             return new ActivityType
             {
                 Type = typeof(RunTask),
                 TypeName = descriptor.Type,
                 DisplayName = descriptor.DisplayName,
-                Describe = () => descriptor,
+                DescribeAsync = CreateDescriptorAsync,
                 Description = descriptor.Description,
                 ActivateAsync = async context =>
                 {

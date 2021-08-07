@@ -3,7 +3,8 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Bookmarks;
+using Elsa.Services;
+using Elsa.Services.Bookmarks;
 
 namespace Elsa.Activities.Conductor.Providers.Bookmarks
 {

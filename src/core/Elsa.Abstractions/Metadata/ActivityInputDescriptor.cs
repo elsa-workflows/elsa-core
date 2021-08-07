@@ -4,6 +4,45 @@ using System.Linq;
 
 namespace Elsa.Metadata
 {
+    [Obsolete("Use ActivityInputDescriptor instead.")]
+    public class ActivityPropertyDescriptor : ActivityInputDescriptor
+    {
+        public ActivityPropertyDescriptor()
+        {
+        }
+
+        public ActivityPropertyDescriptor(
+            string name,
+            Type type,
+            string uiHint,
+            string label,
+            string? hint = default,
+            object? options = default,
+            string? category = default,
+            object? defaultValue = default,
+            string? defaultSyntax = "Literal",
+            IEnumerable<string>? supportedSyntaxes = default,
+            bool isReadOnly = false,
+            bool isBrowsable = true)
+            : base(
+                name,
+                type,
+                uiHint,
+                label,
+                hint,
+                options,
+                category,
+                0,
+                defaultValue,
+                defaultSyntax,
+                supportedSyntaxes,
+                isReadOnly,
+                isBrowsable
+            )
+        {
+        }
+    }
+
     public class ActivityInputDescriptor
     {
         public ActivityInputDescriptor()
@@ -21,7 +60,12 @@ namespace Elsa.Metadata
             float order = 0,
             object? defaultValue = default,
             string? defaultSyntax = "Literal",
-            IEnumerable<string>? supportedSyntaxes = default)
+            IEnumerable<string>? supportedSyntaxes = default,
+            bool isReadOnly = false,
+            bool isBrowsable = true,
+            bool isDesignerCritical = false,
+            string? defaultWorkflowStorageProvider = default,
+            bool disableWorkflowProviderSelection = false)
         {
             Name = name;
             Type = type;
@@ -34,6 +78,11 @@ namespace Elsa.Metadata
             DefaultValue = defaultValue;
             DefaultSyntax = defaultSyntax;
             SupportedSyntaxes = supportedSyntaxes?.ToList() ?? new List<string>();
+            IsReadOnly = isReadOnly;
+            IsBrowsable = isBrowsable;
+            IsDesignerCritical = isDesignerCritical;
+            DefaultWorkflowStorageProvider = defaultWorkflowStorageProvider;
+            DisableWorkflowProviderSelection = disableWorkflowProviderSelection;
         }
 
         public string Name { get; set; } = default!;
@@ -47,5 +96,10 @@ namespace Elsa.Metadata
         public object? DefaultValue { get; set; }
         public string? DefaultSyntax { get; set; }
         public IList<string> SupportedSyntaxes { get; set; } = new List<string>();
+        public bool? IsReadOnly { get; set; }
+        public bool? IsBrowsable { get; set; }
+        public bool IsDesignerCritical { get; set; }
+        public string? DefaultWorkflowStorageProvider { get; set; }
+        public bool DisableWorkflowProviderSelection { get; set; }
     }
 }

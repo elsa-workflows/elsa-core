@@ -9,11 +9,19 @@
 
 | Property     | Attribute     | Description | Type               | Default     |
 | ------------ | ------------- | ----------- | ------------------ | ----------- |
+| `culture`    | `culture`     |             | `string`           | `undefined` |
 | `history`    | --            |             | `RouterHistory`    | `undefined` |
 | `location`   | --            |             | `LocationSegments` | `undefined` |
 | `page`       | `page`        |             | `number`           | `undefined` |
 | `pageSize`   | `page-size`   |             | `number`           | `undefined` |
 | `totalCount` | `total-count` |             | `number`           | `undefined` |
+
+
+## Events
+
+| Event   | Description | Type                     |
+| ------- | ----------- | ------------------------ |
+| `paged` |             | `CustomEvent<PagerData>` |
 
 
 ## Dependencies

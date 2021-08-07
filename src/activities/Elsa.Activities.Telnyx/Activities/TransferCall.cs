@@ -144,6 +144,8 @@ namespace Elsa.Activities.Telnyx.Activities
             SupportedSyntaxes = new[] {SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid}
         )]
         public string? WebhookUrlMethod { get; set; }
+        
+        [ActivityOutput] public CallPayload? Output { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
@@ -154,13 +156,14 @@ namespace Elsa.Activities.Telnyx.Activities
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
         {
             var payload = context.GetInput<CallPayload>();
+            Output = payload;
 
             return payload switch
             {
-                CallAnsweredPayload callAnsweredPayload => Outcome(TelnyxOutcomeNames.Answered, callAnsweredPayload),
-                CallBridgedPayload callBridgedPayload => Outcome(TelnyxOutcomeNames.Bridged, callBridgedPayload),
-                CallHangupPayload callHangupPayload => Outcome(TelnyxOutcomeNames.Hangup, callHangupPayload),
-                CallInitiatedPayload callInitiatedPayload => Outcome(TelnyxOutcomeNames.CallInitiated, callInitiatedPayload),
+                CallAnsweredPayload => Outcome(TelnyxOutcomeNames.Answered),
+                CallBridgedPayload => Outcome(TelnyxOutcomeNames.Bridged),
+                CallHangupPayload => Outcome(TelnyxOutcomeNames.Hangup),
+                CallInitiatedPayload => Outcome(TelnyxOutcomeNames.CallInitiated),
                 _ => throw new ArgumentOutOfRangeException(nameof(payload))
             };
         }

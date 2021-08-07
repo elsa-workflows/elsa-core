@@ -5,13 +5,14 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
 {
     public partial class Save
     {
-        public sealed record SaveRequest
+        public sealed record SaveWorkflowDefinitionRequest
         {
             public string? WorkflowDefinitionId { get; init; }
             public string? Name { get; init; }
             public string? DisplayName { get; init; }
             public string? Description { get; init; }
             public string? Tag { get; init; }
+            public string? Channel { get; init; }
             public Variables? Variables { get; init; }
             public WorkflowContextOptions? ContextOptions { get; init; }
             public bool IsSingleton { get; init; }

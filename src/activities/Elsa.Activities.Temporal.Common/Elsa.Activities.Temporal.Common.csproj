@@ -25,9 +25,4 @@
         <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Models" />
-      <Folder Include="Serialization" />
-    </ItemGroup>
-
 </Project>

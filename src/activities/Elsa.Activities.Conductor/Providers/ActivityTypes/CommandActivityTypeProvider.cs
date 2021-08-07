@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Elsa.Activities.Conductor.Models;
 using Elsa.Activities.Conductor.Services;
 using Elsa.Metadata;
+using Elsa.Providers.Activities;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -39,19 +40,26 @@ namespace Elsa.Activities.Conductor.Providers.ActivityTypes
 
         private async Task<ActivityType> CreateActivityTypeAsync(CommandDefinition command, CancellationToken cancellationToken)
         {
-            var descriptor = await _describesActivityType.DescribeAsync<SendCommand>(cancellationToken);
+            async ValueTask<ActivityDescriptor> CreateDescriptorAsync()
+            {
+                var des = await _describesActivityType.DescribeAsync<SendCommand>(cancellationToken);
 
-            descriptor.Type = command.Name;
-            descriptor.DisplayName = command.DisplayName ?? command.Name;
-            descriptor.Description = command.Description;
-            descriptor.InputProperties = descriptor.InputProperties.Where(x => x.Name != nameof(SendCommand.CommandName)).ToArray(); 
+                des.Type = command.Name;
+                des.DisplayName = command.DisplayName ?? command.Name;
+                des.Description = command.Description;
+                des.InputProperties = des.InputProperties.Where(x => x.Name != nameof(SendCommand.CommandName)).ToArray();
+
+                return des;
+            }
+
+            var descriptor = await CreateDescriptorAsync();
 
             return new ActivityType
             {
                 Type = typeof(SendCommand),
                 TypeName = descriptor.Type,
                 DisplayName = descriptor.DisplayName,
-                Describe = () => descriptor,
+                DescribeAsync = CreateDescriptorAsync,
                 Description = descriptor.Description,
                 ActivateAsync = async context =>
                 {
@@ -65,7 +73,7 @@ namespace Elsa.Activities.Conductor.Providers.ActivityTypes
             };
         }
 
-        private async Task<IEnumerable<CommandDefinition>> GetCommandsAsync(CancellationToken cancellationToken) => 
+        private async Task<IEnumerable<CommandDefinition>> GetCommandsAsync(CancellationToken cancellationToken) =>
             await _scopedCommandsProviders.UseServiceAsync(async commandProviders => await GetCommandsAsync(commandProviders, cancellationToken).ToListAsync(cancellationToken));
 
         private static async IAsyncEnumerable<CommandDefinition> GetCommandsAsync(IEnumerable<ICommandsProvider> commandProviders, [EnumeratorCancellation] CancellationToken cancellationToken)

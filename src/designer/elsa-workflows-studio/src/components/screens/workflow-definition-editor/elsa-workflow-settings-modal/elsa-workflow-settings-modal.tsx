@@ -5,6 +5,7 @@ import {EventTypes, Variables, WorkflowContextFidelity, WorkflowContextOptions, 
 import {MonacoValueChangedArgs} from "../../../controls/elsa-monaco/elsa-monaco";
 import {MarkerSeverity} from "monaco-editor";
 import {checkBox, FormContext, selectField, SelectOption, textArea, textInput} from "../../../../utils/forms";
+import {createElsaClient} from "../../../../services/elsa-client";
 
 interface VariableDefinition {
   name?: string;
@@ -17,6 +18,7 @@ interface VariableDefinition {
 })
 export class ElsaWorkflowDefinitionSettingsModal {
 
+  @Prop({attribute: 'server-url', reflect: true}) serverUrl: string;
   @Prop() workflowDefinition: WorkflowDefinition;
   @State() workflowDefinitionInternal: WorkflowDefinition;
   @State() selectedTab: string = 'Settings';
@@ -24,6 +26,7 @@ export class ElsaWorkflowDefinitionSettingsModal {
   dialog: HTMLElsaModalDialogElement;
   monacoEditor: HTMLElsaMonacoElement;
   formContext: FormContext;
+  workflowChannels: Array<string>;
 
   @Watch('workflowDefinition')
   handleWorkflowDefinitionChanged(newValue: WorkflowDefinition) {
@@ -31,8 +34,11 @@ export class ElsaWorkflowDefinitionSettingsModal {
     this.formContext = new FormContext(this.workflowDefinitionInternal, newValue => this.workflowDefinitionInternal = newValue);
   }
 
-  componentWillLoad() {
+  async componentWillLoad() {
     this.handleWorkflowDefinitionChanged(this.workflowDefinition);
+
+    const client = createElsaClient(this.serverUrl);
+    this.workflowChannels = await client.workflowChannelsApi.list();
   }
 
   componentDidLoad() {
@@ -74,7 +80,7 @@ export class ElsaWorkflowDefinitionSettingsModal {
 
   render() {
 
-    const tabs = ['Settings', 'Variables', 'Workflow Context'];
+    const tabs = ['Settings', 'Variables', 'Workflow Context', 'Advanced'];
     const selectedTab = this.selectedTab;
     const inactiveClass = 'elsa-border-transparent elsa-text-gray-500 hover:elsa-text-gray-700 hover:elsa-border-gray-300';
     const selectedClass = 'elsa-border-blue-500 elsa-text-blue-600';
@@ -129,6 +135,8 @@ export class ElsaWorkflowDefinitionSettingsModal {
         return this.renderWorkflowContextTab();
       case 'Variables':
         return this.renderVariablesTab();
+      case 'Advanced':
+        return this.renderAdvancedTab();
       case 'Settings':
       default:
         return this.renderSettingsTab();
@@ -138,6 +146,22 @@ export class ElsaWorkflowDefinitionSettingsModal {
   renderSettingsTab() {
     const workflowDefinition = this.workflowDefinitionInternal;
     const formContext = this.formContext;
+
+    return (
+      <div class="elsa-flex elsa-px-8">
+        <div class="elsa-space-y-8 elsa-w-full">
+          {textInput(formContext, 'name', 'Name', workflowDefinition.name, 'The technical name of the workflow.', 'workflowName')}
+          {textInput(formContext, 'displayName', 'Display Name', workflowDefinition.displayName, 'A user-friendly display name of the workflow.', 'workflowDisplayName')}
+          {textArea(formContext, 'description', 'Description', workflowDefinition.description, null, 'workflowDescription')}
+        </div>
+      </div>
+    );
+  }
+
+  renderAdvancedTab() {
+    const workflowDefinition = this.workflowDefinitionInternal;
+    const formContext = this.formContext;
+    const workflowChannelOptions: Array<SelectOption> = [{text: '', value: null}, ...this.workflowChannels.map(x => ({text: x, value: x}))];
 
     const persistenceBehaviorOptions: Array<SelectOption> = [{
       text: 'Suspended',
@@ -151,16 +175,14 @@ export class ElsaWorkflowDefinitionSettingsModal {
     }, {
       text: 'Activity Executed',
       value: 'ActivityExecuted'
-    }]
+    }];
 
     return (
       <div class="elsa-flex elsa-px-8">
         <div class="elsa-space-y-8 elsa-w-full">
-          {textInput(formContext, 'name', 'Name', workflowDefinition.name, 'The technical name of the workflow.', 'workflowName')}
-          {textInput(formContext, 'displayName', 'Display Name', workflowDefinition.displayName, 'A user-friendly display name of the workflow.', 'workflowDisplayName')}
-          {textArea(formContext, 'description', 'Description', workflowDefinition.description, null, 'workflowDescription')}
           {textInput(formContext, 'tag', 'Tag', workflowDefinition.tag, 'Tags can be used to query workflow definitions with.', 'tag')}
           {selectField(formContext, 'persistenceBehavior', 'Persistence Behavior', workflowDefinition.persistenceBehavior, persistenceBehaviorOptions, 'The persistence behavior controls how often a workflow instance is persisted during workflow execution.', 'workflowContextFidelity')}
+          {workflowChannelOptions.length > 0 ? selectField(formContext, 'channel', 'Channel', workflowDefinition.channel, workflowChannelOptions, 'Select a channel for this workflow to execute in.', 'channel') : undefined}
           {checkBox(formContext, 'isSingleton', 'Singleton', workflowDefinition.isSingleton, 'Singleton workflows will only have one active instance executing at a time.')}
         </div>
       </div>

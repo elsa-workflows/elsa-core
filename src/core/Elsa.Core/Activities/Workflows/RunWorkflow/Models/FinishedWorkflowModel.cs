@@ -4,6 +4,6 @@ namespace Elsa.Activities.Workflows
     public class FinishedWorkflowModel
     {
         public string WorkflowInstanceId { get; set; } = default!;
-        public object? Output { get; set; }
+        public object? WorkflowOutput { get; set; }
     }
 }

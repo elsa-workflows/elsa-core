@@ -9,13 +9,33 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\..\activities\Elsa.Activities.AzureServiceBus\Elsa.Activities.AzureServiceBus.csproj" />
+        <ProjectReference Include="..\..\..\activities\Elsa.Activities.BlobStorage\Elsa.Activities.BlobStorage.csproj" />
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.Conductor\Elsa.Activities.Conductor.csproj" />
+        <ProjectReference Include="..\..\..\activities\Elsa.Activities.Dropbox\Elsa.Activities.Dropbox.csproj" />
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.Email\Elsa.Activities.Email.csproj" />
+        <ProjectReference Include="..\..\..\activities\Elsa.Activities.Entity\Elsa.Activities.Entity.csproj" />
+        <ProjectReference Include="..\..\..\activities\Elsa.Activities.File\Elsa.Activities.File.csproj" />
+        <ProjectReference Include="..\..\..\activities\Elsa.Activities.Http\Elsa.Activities.Http.csproj" />
+        <ProjectReference Include="..\..\..\activities\Elsa.Activities.MassTransit\Elsa.Activities.MassTransit.csproj" />
+        <ProjectReference Include="..\..\..\activities\Elsa.Activities.Rebus\Elsa.Activities.Rebus.csproj" />
+        <ProjectReference Include="..\..\..\activities\Elsa.Activities.Telnyx\Elsa.Activities.Telnyx.csproj" />
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.Temporal.Hangfire\Elsa.Activities.Temporal.Hangfire.csproj" />
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.Temporal.Quartz\Elsa.Activities.Temporal.Quartz.csproj" />
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.UserTask\Elsa.Activities.UserTask.csproj" />
+        <ProjectReference Include="..\..\..\activities\webhooks\Elsa.Activities.Webhooks\Elsa.Activities.Webhooks.csproj" />
+        <ProjectReference Include="..\..\..\activities\webhooks\Elsa.Webhooks.Persistence.EntityFramework.MySql\Elsa.Webhooks.Persistence.EntityFramework.MySql.csproj" />
+        <ProjectReference Include="..\..\..\activities\webhooks\Elsa.Webhooks.Persistence.EntityFramework.PostgreSql\Elsa.Webhooks.Persistence.EntityFramework.PostgreSql.csproj" />
+        <ProjectReference Include="..\..\..\activities\webhooks\Elsa.Webhooks.Persistence.EntityFramework.Sqlite\Elsa.Webhooks.Persistence.EntityFramework.Sqlite.csproj" />
+        <ProjectReference Include="..\..\..\activities\webhooks\Elsa.Webhooks.Persistence.EntityFramework.SqlServer\Elsa.Webhooks.Persistence.EntityFramework.SqlServer.csproj" />
+        <ProjectReference Include="..\..\..\activities\webhooks\Elsa.Webhooks.Persistence.MongoDb\Elsa.Webhooks.Persistence.MongoDb.csproj" />
+        <ProjectReference Include="..\..\..\activities\webhooks\Elsa.Webhooks.Persistence.YesSql\Elsa.Webhooks.Persistence.YesSql.csproj" />
         <ProjectReference Include="..\..\..\caching\Elsa.Caching.Rebus\Elsa.Caching.Rebus.csproj" />
+        <ProjectReference Include="..\..\..\indexing\Elsa.Indexing.Elasticsearch\Elsa.Indexing.Elasticsearch.csproj" />
+        <ProjectReference Include="..\..\..\locking\Elsa.DistributedLocking.AzureBlob\Elsa.DistributedLocking.AzureBlob.csproj" />
+        <ProjectReference Include="..\..\..\locking\Elsa.DistributedLocking.Redis\Elsa.DistributedLocking.Redis.csproj" />
         <ProjectReference Include="..\..\..\locking\Elsa.DistributedLocking.SqlServer\Elsa.DistributedLocking.SqlServer.csproj" />
+        <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.MySql\Elsa.Persistence.EntityFramework.MySql.csproj" />
         <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.PostgreSql\Elsa.Persistence.EntityFramework.PostgreSql.csproj" />
         <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.Sqlite\Elsa.Persistence.EntityFramework.Sqlite.csproj" />
         <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.SqlServer\Elsa.Persistence.EntityFramework.SqlServer.csproj" />
@@ -25,13 +45,14 @@
         <ProjectReference Include="..\..\..\server\Elsa.Server.Api\Elsa.Server.Api.csproj" />
         <ProjectReference Include="..\..\..\server\Elsa.Server.Hangfire\Elsa.Server.Hangfire.csproj" />
         <ProjectReference Include="..\..\..\server\Elsa.Server.Orleans\Elsa.Server.Orleans.csproj" />
+        <ProjectReference Include="..\..\..\servicebus\Elsa.Rebus.AzureServiceBus\Elsa.Rebus.AzureServiceBus.csproj" />
         <ProjectReference Include="..\..\..\servicebus\Elsa.Rebus.RabbitMq\Elsa.Rebus.RabbitMq.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Hangfire.InMemory" Version="0.3.4" />
-      <PackageReference Include="Hangfire.SqlServer" Version="1.7.22" />
-      <PackageReference Include="Quartz.Serialization.Json" Version="3.3.2" />
+        <PackageReference Include="Hangfire.InMemory" Version="0.3.4" />
+        <PackageReference Include="Hangfire.SqlServer" Version="1.7.22" />
+        <PackageReference Include="Quartz.Serialization.Json" Version="3.3.2" />
     </ItemGroup>
 
 </Project>

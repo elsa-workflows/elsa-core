@@ -42,7 +42,8 @@ namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
         public bool PersistWorkflow { get; set; }
         public bool LoadWorkflowContext { get; set; }
         public bool SaveWorkflowContext { get; set; }
-        public Variables Properties { get; set; } = new();
+        public Variables InputProperties { get; set; } = new();
+        public Variables OutputProperties { get; set; } = new();
 
         public override string ToString() => Type;
     }

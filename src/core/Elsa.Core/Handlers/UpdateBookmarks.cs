@@ -1,8 +1,9 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Bookmarks;
 using Elsa.Events;
+using Elsa.Services;
+using Elsa.Services.Bookmarks;
 using MediatR;
 
 namespace Elsa.Handlers

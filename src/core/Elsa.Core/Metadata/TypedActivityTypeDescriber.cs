@@ -4,7 +4,6 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using AutoMapper.Internal;
 using Elsa.Attributes;
 using Humanizer;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,7 +25,7 @@ namespace Elsa.Metadata
             _serviceScopeFactory = serviceScopeFactory;
         }
 
-        public async Task<ActivityDescriptor?> DescribeAsync(Type activityType, CancellationToken cancellationToken = default)
+        public async Task<ActivityDescriptor> DescribeAsync(Type activityType, CancellationToken cancellationToken = default)
         {
             var activityAttribute = activityType.GetCustomAttribute<ActivityAttribute>(false);
             var typeName = activityAttribute?.Type ?? activityType.Name;
@@ -86,7 +85,7 @@ namespace Elsa.Metadata
 
                 yield return new ActivityInputDescriptor
                 (
-                    (activityPropertyAttribute.Name ?? propertyInfo.Name).Pascalize(),
+                    activityPropertyAttribute.Name ?? propertyInfo.Name,
                     propertyInfo.PropertyType,
                     _uiHintResolver.GetUIHint(propertyInfo),
                     activityPropertyAttribute.Label ?? propertyInfo.Name.Humanize(LetterCasing.Title),
@@ -96,7 +95,12 @@ namespace Elsa.Metadata
                     activityPropertyAttribute.Order,
                     _defaultValueResolver.GetDefaultValue(propertyInfo),
                     activityPropertyAttribute.DefaultSyntax,
-                    activityPropertyAttribute.SupportedSyntaxes
+                    activityPropertyAttribute.SupportedSyntaxes,
+                    activityPropertyAttribute.IsReadOnly ?? false,
+                    activityPropertyAttribute.IsBrowsable ?? true,
+                    activityPropertyAttribute.IsDesignerCritical,
+                    activityPropertyAttribute.DefaultWorkflowStorageProvider,
+                    activityPropertyAttribute.DisableWorkflowProviderSelection
                 );
             }
         }
@@ -114,7 +118,9 @@ namespace Elsa.Metadata
                 (
                     (activityPropertyAttribute.Name ?? propertyInfo.Name).Pascalize(),
                     propertyInfo.PropertyType,
-                    activityPropertyAttribute.Hint
+                    activityPropertyAttribute.Hint,
+                    activityPropertyAttribute.DefaultWorkflowStorageProvider,
+                    activityPropertyAttribute.DisableWorkflowProviderSelection
                 );
             }
         }

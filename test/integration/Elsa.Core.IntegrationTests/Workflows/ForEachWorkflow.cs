@@ -2,7 +2,6 @@
 using System.Linq;
 using Elsa.Activities.Console;
 using Elsa.Activities.ControlFlow;
-using Elsa.Activities.Signaling;
 using Elsa.Builders;
 
 namespace Elsa.Core.IntegrationTests.Workflows

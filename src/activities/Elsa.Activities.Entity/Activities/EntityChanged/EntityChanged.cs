@@ -27,7 +27,16 @@ namespace Elsa.Activities.Entity
         )]
         public EntityChangedAction? Action { get; set; }
 
-        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => context.WorkflowExecutionContext.IsFirstPass ? Done(context.Input) : Suspend();
-        protected override IActivityExecutionResult OnResume(ActivityExecutionContext context) => Done(context.Input);
+        [ActivityOutput] public object? Output { get; set; }
+
+        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => context.WorkflowExecutionContext.IsFirstPass ? ExecuteInternal(context) : Suspend();
+
+        protected override IActivityExecutionResult OnResume(ActivityExecutionContext context) => ExecuteInternal(context);
+
+        private IActivityExecutionResult ExecuteInternal(ActivityExecutionContext context)
+        {
+            Output = context.Input;
+            return Done();
+        }
     }
 }

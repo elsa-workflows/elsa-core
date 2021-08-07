@@ -13,6 +13,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Configuration
             builder.Ignore(x => x.Variables);
             builder.Ignore(x => x.CustomAttributes);
             builder.Ignore(x => x.ContextOptions);
+            builder.Ignore(x => x.Channel);
             builder.Property<string>("Data");
             builder.HasIndex(x => new {x.DefinitionId, x.Version}).HasDatabaseName($"IX_{nameof(WorkflowDefinition)}_{nameof(WorkflowDefinition.DefinitionId)}_{nameof(WorkflowDefinition.VersionId)}").IsUnique();
             builder.HasIndex(x => x.TenantId).HasDatabaseName($"IX_{nameof(WorkflowDefinition)}_{nameof(WorkflowDefinition.TenantId)}");

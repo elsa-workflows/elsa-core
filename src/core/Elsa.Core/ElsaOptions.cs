@@ -1,24 +1,39 @@
 using System;
 using System.Collections.Generic;
 using Elsa.Builders;
-using Elsa.Dispatch;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.InMemory;
+using Elsa.Providers.WorkflowStorage;
 using Elsa.Serialization;
 using Elsa.Services;
+using Elsa.Services.Dispatch;
+using Elsa.Services.Messaging;
+using Elsa.Services.Startup;
+using Humanizer;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using NodaTime;
 using Rebus.Persistence.InMem;
 using Rebus.Transport.InMem;
-using Storage.Net;
-using Storage.Net.Blobs;
 
 namespace Elsa
 {
+    public record MessageTypeConfig(Type MessageType, string? QueueName = default);
+
     public class ElsaOptions
     {
+        public static string FormatChannelQueueName<TMessage>(string channel) => FormatChannelQueueName(typeof(TMessage), channel);
+        public static string FormatChannelQueueName(Type messageType, string channel) => FormatChannelQueueName(messageType.Name, channel);
+
+        public static string FormatChannelQueueName(string queueName, string channel)
+        {
+            var queue = !string.IsNullOrWhiteSpace(channel) ? $"{queueName}{channel}" : queueName;
+            return FormatQueueName(queue);
+        }
+        
+        public static string FormatQueueName(string queue) => queue.Humanize().Dehumanize().Underscore().Dasherize();
+
         internal ElsaOptions()
         {
             WorkflowDefinitionStoreFactory = sp => ActivatorUtilities.CreateInstance<InMemoryWorkflowDefinitionStore>(sp);
@@ -28,8 +43,8 @@ namespace Elsa
             WorkflowDefinitionDispatcherFactory = sp => ActivatorUtilities.CreateInstance<QueuingWorkflowDispatcher>(sp);
             WorkflowInstanceDispatcherFactory = sp => ActivatorUtilities.CreateInstance<QueuingWorkflowDispatcher>(sp);
             CorrelatingWorkflowDispatcherFactory = sp => ActivatorUtilities.CreateInstance<QueuingWorkflowDispatcher>(sp);
-            StorageFactory = sp => Storage.Net.StorageFactory.Blobs.InMemory();
             JsonSerializerConfigurer = (sp, serializer) => { };
+            DefaultWorkflowStorageProviderType = typeof(WorkflowInstanceWorkflowStorageProvider);
             DistributedLockingOptions = new DistributedLockingOptions();
             ConfigureServiceBusEndpoint = ConfigureInMemoryServiceBusEndpoint;
 
@@ -47,8 +62,8 @@ namespace Elsa
         public IEnumerable<Type> ActivityTypes => ActivityFactory.Types;
 
         public IList<Type> WorkflowTypes { get; } = new List<Type>();
-        public IList<Type> CompetingMessageTypes { get; } = new List<Type>();
-        public IList<Type> PubSubMessageTypes { get; } = new List<Type>();
+        public IList<MessageTypeConfig> CompetingMessageTypes { get; } = new List<MessageTypeConfig>();
+        public IList<MessageTypeConfig> PubSubMessageTypes { get; } = new List<MessageTypeConfig>();
         public ServiceBusOptions ServiceBusOptions { get; } = new();
         public DistributedLockingOptions DistributedLockingOptions { get; set; }
 
@@ -57,7 +72,9 @@ namespace Elsa
         /// </summary>
         public Duration DistributedLockTimeout { get; set; } = Duration.FromHours(1);
 
-        internal Func<IServiceProvider, IBlobStorage> StorageFactory { get; set; }
+        public Type DefaultWorkflowStorageProviderType { get; set; }
+        public WorkflowChannelOptions WorkflowChannelOptions { get; set; } = new();
+        
         internal Func<IServiceProvider, IWorkflowDefinitionStore> WorkflowDefinitionStoreFactory { get; set; }
         internal Func<IServiceProvider, IWorkflowInstanceStore> WorkflowInstanceStoreFactory { get; set; }
         internal Func<IServiceProvider, IWorkflowExecutionLogStore> WorkflowExecutionLogStoreFactory { get; set; }
@@ -68,7 +85,8 @@ namespace Elsa
         internal Func<IServiceProvider, IWorkflowInstanceDispatcher> WorkflowInstanceDispatcherFactory { get; set; }
         internal Func<IServiceProvider, IWorkflowDispatcher> CorrelatingWorkflowDispatcherFactory { get; set; }
         internal Action<ServiceBusEndpointConfigurationContext> ConfigureServiceBusEndpoint { get; set; }
-        
+        internal ICollection<IStartup> Startups { get; } = new List<IStartup>();
+
         private static void ConfigureInMemoryServiceBusEndpoint(ServiceBusEndpointConfigurationContext context)
         {
             var serviceProvider = context.ServiceProvider;

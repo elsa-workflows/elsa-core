@@ -2,7 +2,7 @@
 
     <Import Project="..\..\..\common.props" />
     <Import Project="..\..\..\configureawait.props" />
-    
+
     <PropertyGroup>
         <TargetFramework>net5.0</TargetFramework>
         <Description>
@@ -15,22 +15,20 @@
     <ItemGroup>
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
     </ItemGroup>
-    
+
     <ItemGroup>
-      <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
-      <ProjectReference Include="..\..\scripting\Elsa.Scripting.JavaScript\Elsa.Scripting.JavaScript.csproj" />
-      <ProjectReference Include="..\..\scripting\Elsa.Scripting.Liquid\Elsa.Scripting.Liquid.csproj" />
-      <ProjectReference Include="..\Elsa.Activities.Temporal.Common\Elsa.Activities.Temporal.Common.csproj" />
+        <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
+        <ProjectReference Include="..\..\scripting\Elsa.Scripting.JavaScript\Elsa.Scripting.JavaScript.csproj" />
+        <ProjectReference Include="..\..\scripting\Elsa.Scripting.Liquid\Elsa.Scripting.Liquid.csproj" />
+        <ProjectReference Include="..\Elsa.Activities.Temporal.Common\Elsa.Activities.Temporal.Common.csproj" />
     </ItemGroup>
-    
+
     <ItemGroup>
-      <PackageReference Include="Refit" Version="6.0.38" />
-      <PackageReference Include="Refit.HttpClientFactory" Version="6.0.38" />
-      <PackageReference Include="Refit.Newtonsoft.Json" Version="6.0.38" />
-    </ItemGroup>
-    
-    <ItemGroup>
-      <Folder Include="Providers" />
+        <PackageReference Include="libphonenumber-csharp" Version="8.12.25" />
+        <PackageReference Include="Refit" Version="6.0.38" />
+        <PackageReference Include="Refit.HttpClientFactory" Version="6.0.38" />
+        <PackageReference Include="Refit.Newtonsoft.Json" Version="6.0.38" />
+        <PackageReference Include="System.Text.Encodings.Web" Version="5.0.1" />
     </ItemGroup>
 
 </Project>

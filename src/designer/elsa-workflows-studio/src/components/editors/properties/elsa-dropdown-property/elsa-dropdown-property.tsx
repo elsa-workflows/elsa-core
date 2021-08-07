@@ -18,7 +18,7 @@ export class ElsaDropdownProperty {
 
   async componentWillLoad() {
     const defaultSyntax = this.propertyDescriptor.defaultSyntax || SyntaxNames.Literal;
-    this.currentValue = this.propertyModel.expressions[defaultSyntax] || '';
+    this.currentValue = this.propertyModel.expressions[defaultSyntax] || undefined;
     this.items = await getSelectListItems(this.serverUrl, this.propertyDescriptor);
   }
 
@@ -33,19 +33,24 @@ export class ElsaDropdownProperty {
   }
   
   render() {
+
     const propertyDescriptor = this.propertyDescriptor;
     const propertyModel = this.propertyModel;
     const propertyName = propertyDescriptor.name;
     const fieldId = propertyName;
     const fieldName = propertyName;
-    const currentValue = this.currentValue;
+    let currentValue = this.currentValue;
     const items = this.items;
+
+    if (currentValue == undefined) {
+      const defaultValue = this.propertyDescriptor.defaultValue;
+      currentValue = defaultValue ? defaultValue.toString() : undefined;
+    }
 
     return (
       <elsa-property-editor propertyDescriptor={propertyDescriptor}
                             propertyModel={propertyModel}
                             onDefaultSyntaxValueChanged={e => this.onDefaultSyntaxValueChanged(e)}
-                            editor-height="2.75em"
                             single-line={true}>
         <select id={fieldId} name={fieldName} onChange={e => this.onChange(e)} class="elsa-mt-1 elsa-block focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-w-full elsa-shadow-sm sm:elsa-max-w-xs sm:elsa-text-sm elsa-border-gray-300 elsa-rounded-md">
           {items.map(item => {

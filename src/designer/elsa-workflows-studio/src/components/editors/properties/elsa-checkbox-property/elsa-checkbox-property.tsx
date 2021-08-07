@@ -33,13 +33,12 @@ export class ElsaCheckBoxProperty {
     const fieldId = propertyName;
     const fieldName = propertyName;
     const fieldLabel = propertyDescriptor.label || propertyName;
-    const isChecked = this.isChecked;
+    let isChecked = this.isChecked;
 
     return (
       <elsa-property-editor propertyDescriptor={propertyDescriptor}
                             propertyModel={propertyModel}
                             onDefaultSyntaxValueChanged={e => this.onDefaultSyntaxValueChanged(e)}
-                            editor-height="2.75em"
                             single-line={true}
                             showLabel={false}>
         <div class="elsa-max-w-lg">

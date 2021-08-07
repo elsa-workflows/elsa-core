@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using Elsa.Activities.Rebus.Bookmarks;
 using Elsa.Services;
+using Elsa.Services.Models;
 using Rebus.Extensions;
 using Rebus.Handlers;
 using Rebus.Messages;
@@ -23,13 +24,13 @@ namespace Elsa.Activities.Rebus.Consumers
         public async Task Handle(T message)
         {
             var correlationId = MessageContext.Current.TransportMessage.Headers.GetValueOrNull(Headers.CorrelationId);
-            await _workflowLaunchpad.CollectAndExecuteWorkflowsAsync(new CollectWorkflowsContext(
+            await _workflowLaunchpad.CollectAndExecuteWorkflowsAsync(new WorkflowsQuery(
                 nameof(RebusMessageReceived),
-                new MessageReceivedBookmark { MessageType = message.GetType().Name, CorrelationId = correlationId },
                 new MessageReceivedBookmark { MessageType = message.GetType().Name },
                 correlationId,
                 default,
-                TenantId));
+                TenantId),
+                new Models.WorkflowInput(message));
         }
     }
 }

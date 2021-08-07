@@ -18,11 +18,11 @@ namespace Elsa.Samples.ProgrammaticCompositeActivitiesConsole.Activities
         {
             builder
                 .StartWith(GetInstructions)
-                .WriteLine(context => (string)context.Input)
+                .WriteLine(context => (string)context.GetInput<ActivityOutput>()!.Value)
                 .ReadLine()
                 .Finish(context => context.GetInput<string>().Capitalize());
         }
 
-        private static void GetInstructions(ActivityExecutionContext context) => context.Output = "Turn left or right?";
+        private static void GetInstructions(ActivityExecutionContext context) => context.Output = new ActivityOutput("Turn left or right?");
     }
 }

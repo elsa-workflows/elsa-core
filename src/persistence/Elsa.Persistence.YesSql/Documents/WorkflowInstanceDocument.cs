@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Elsa.Comparers;
 using Elsa.Models;
-using Newtonsoft.Json.Linq;
+using Elsa.Services.Models;
 using NodaTime;
 
 namespace Elsa.Persistence.YesSql.Documents
@@ -25,9 +25,10 @@ namespace Elsa.Persistence.YesSql.Documents
         public Instant? CancelledAt { get; set; }
         public Instant? FaultedAt { get; set; }
         public Variables Variables { get; set; } = new();
-        public object? Output { get; set; }
+        public object? InputData { get; set; }
+        public WorkflowInputReference? Input { get; set; }
+        public WorkflowOutputReference? Output { get; set; }
         public IDictionary<string, object> ActivityData { get; set; } = new Dictionary<string, object>();
-        public IDictionary<string, object> ActivityOutput { get; set; } = new Dictionary<string, object>();
 
         public HashSet<BlockingActivity> BlockingActivities
         {

@@ -4,6 +4,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Events;
+using Elsa.Providers.WorkflowStorage;
+using Elsa.Services.Models;
+using Elsa.Services.WorkflowStorage;
 using MediatR;
 
 namespace Elsa.Handlers
@@ -13,23 +16,56 @@ namespace Elsa.Handlers
     /// </summary>
     public class PersistActivityPropertyState : INotificationHandler<ActivityExecuted>
     {
-        public Task Handle(ActivityExecuted notification, CancellationToken cancellationToken)
+        private readonly IWorkflowStorageService _workflowStorageService;
+
+        public PersistActivityPropertyState(IWorkflowStorageService workflowStorageService)
+        {
+            _workflowStorageService = workflowStorageService;
+        }
+        
+        public async Task Handle(ActivityExecuted notification, CancellationToken cancellationToken)
         {
             var activity = notification.Activity;
             var activityType = activity.GetType();
-            var properties = activityType.GetProperties()
-                .Where(x => (x.GetCustomAttribute<ActivityInputAttribute>() != null || x.GetCustomAttribute<ActivityOutputAttribute>() != null) && x.GetCustomAttribute<NonPersistableAttribute>() == null);
             var activityExecutionContext = notification.ActivityExecutionContext;
+            var persistableProperties = activityType.GetProperties().Where(x => x.GetCustomAttribute<NonPersistableAttribute>() == null).ToList();
+            var inputProperties = persistableProperties.Where(x => x.GetCustomAttribute<ActivityInputAttribute>() != null);
+            var outputProperties = persistableProperties.Where(x => x.GetCustomAttribute<ActivityOutputAttribute>() != null);
 
-            foreach (var property in properties)
+            // Persist input properties.
+            foreach (var property in inputProperties)
             {
                 var value = property.GetValue(activity);
-
-                // TODO: Implement #898 (activity persistence providers).
-                activityExecutionContext.SetState(property.Name, value);
+                var inputAttr = property.GetCustomAttribute<ActivityInputAttribute>();
+                var defaultProviderName = inputAttr.DefaultWorkflowStorageProvider; 
+                await SavePropertyAsync(activityExecutionContext, property.Name, value, defaultProviderName, cancellationToken);
             }
+            
+            // Persist output properties.
+            foreach (var property in outputProperties)
+            {
+                var value = property.GetValue(activity);
+                var outputAttr = property.GetCustomAttribute<ActivityOutputAttribute>();
+                var defaultProviderName = outputAttr.DefaultWorkflowStorageProvider; 
+                await SavePropertyAsync(activityExecutionContext, property.Name, value, defaultProviderName, cancellationToken);
+            }
+            
+            // Handle "inline" activities with output.
+            if (activityExecutionContext.Output != null) 
+                await SavePropertyAsync(activityExecutionContext, "Output", activityExecutionContext.Output, default, cancellationToken);
+        }
 
-            return Task.CompletedTask;
+        private async Task SavePropertyAsync(ActivityExecutionContext context, string propertyName, object? value, string? defaultProviderName, CancellationToken cancellationToken)
+        {
+            var propertyStorageProviderDictionary = context.ActivityBlueprint.PropertyStorageProviders;
+            var providerName = propertyStorageProviderDictionary.GetItem(propertyName) ?? defaultProviderName;
+            var workflowStorageContext = new WorkflowStorageContext(context.WorkflowInstance, context.ActivityId);
+
+            await _workflowStorageService.SaveAsync(providerName, workflowStorageContext, propertyName, value, cancellationToken);
+            
+            // By convention, properties named "Output" will be stored as the workflow output.
+            if (propertyName == "Output")
+                context.WorkflowInstance.Output = new WorkflowOutputReference(providerName, context.ActivityId);
         }
     }
 }

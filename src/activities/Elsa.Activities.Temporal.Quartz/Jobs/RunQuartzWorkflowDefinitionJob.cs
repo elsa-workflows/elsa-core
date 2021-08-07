@@ -1,5 +1,4 @@
 ﻿using System.Threading.Tasks;
-using Elsa.Dispatch;
 using Elsa.Services;
 using Quartz;
 

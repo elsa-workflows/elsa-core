@@ -9,6 +9,7 @@
 
 | Property               | Attribute                | Description | Type     | Default     |
 | ---------------------- | ------------------------ | ----------- | -------- | ----------- |
+| `culture`              | `culture`                |             | `string` | `undefined` |
 | `serverUrl`            | `server-url`             |             | `string` | `undefined` |
 | `workflowDefinitionId` | `workflow-definition-id` |             | `string` | `undefined` |
 
@@ -35,11 +36,13 @@ Type: `Promise<string>`
 ### Depends on
 
 - [elsa-designer-tree](../../../designers/tree/elsa-designer-tree)
+- context-consumer
 
 ### Graph
 ```mermaid
 graph TD;
   elsa-workflow-blueprint-viewer-screen --> elsa-designer-tree
+  elsa-workflow-blueprint-viewer-screen --> context-consumer
   elsa-studio-workflow-blueprint-view --> elsa-workflow-blueprint-viewer-screen
   style elsa-workflow-blueprint-viewer-screen fill:#f9f,stroke:#333,stroke-width:4px
 ```

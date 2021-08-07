@@ -13,5 +13,7 @@ namespace Elsa.Activities.Telnyx.Webhooks.Payloads.Call
         public string SipHangupCause { get; init; } = default!;
         public string HangupSource { get; init; } = default!;
         public string HangupCause { get; init; } = default!;
+        public string From { get; set; } = default!;
+        public string To { get; set; } = default!;
     }
 }

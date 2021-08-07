@@ -40,7 +40,7 @@ namespace Elsa.Server.Api.Endpoints.Signals
             if (Response.HasStarted)
                 return new EmptyResult();
 
-            return Ok(new ExecuteSignalResponse(result.Select(x => new StartedWorkflow(x.WorkflowInstanceId, x.ActivityId)).ToList()));
+            return Ok(new ExecuteSignalResponse(result.Select(x => new CollectedWorkflow(x.WorkflowInstanceId, x.ActivityId)).ToList()));
         }
     }
 }

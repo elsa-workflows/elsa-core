@@ -1,67 +1,102 @@
-import {Component, h, Prop, getAssetPath} from '@stencil/core';
+import {Component, Event, EventEmitter, h, Listen, Method, Prop} from '@stencil/core';
+import Tunnel, {DashboardState} from "../../../../data/dashboard";
+import {ElsaStudio, WorkflowModel} from "../../../../models";
+import {eventBus, pluginManager, activityIconProvider, confirmDialogService, toastNotificationService, createElsaClient, createHttpClient, ElsaClient, propertyDisplayManager} from "../../../../services";
+import {AxiosInstance} from "axios";
+import {EventTypes} from "../../../../models";
+import {ToastNotificationOptions} from "../../../shared/elsa-toast-notification/elsa-toast-notification";
+import {getOrCreateProperty, htmlToElement} from "../../../../utils/utils";
 
 @Component({
   tag: 'elsa-studio-root',
-  shadow: false,
-  assetsDirs: ['assets']
+  shadow: false
 })
 export class ElsaStudioRoot {
 
   @Prop({attribute: 'server-url', reflect: true}) serverUrl: string;
   @Prop({attribute: 'monaco-lib-path', reflect: true}) monacoLibPath: string;
+  @Prop({attribute: 'culture', reflect: true}) culture: string;
+  @Prop({attribute: 'base-path', reflect: true}) basePath: string = '';
+  @Event() initializing: EventEmitter<ElsaStudio>;
+
+  confirmDialog: HTMLElsaConfirmDialogElement;
+  toastNotificationElement: HTMLElsaToastNotificationElement;
+
+  @Method()
+  async addPlugins(pluginTypes: Array<any>) {
+    pluginManager.registerPlugins(pluginTypes);
+  }
+
+  @Method()
+  async addPlugin(pluginType: any) {
+    pluginManager.registerPlugin(pluginType);
+  }
+
+  @Listen('workflow-changed')
+  workflowChangedHandler(event: CustomEvent<WorkflowModel>) {
+    eventBus.emit(EventTypes.WorkflowModelChanged, this, event.detail);
+  }
+
+  connectedCallback() {
+    eventBus.on(EventTypes.ShowConfirmDialog, this.onShowConfirmDialog);
+    eventBus.on(EventTypes.HideConfirmDialog, this.onHideConfirmDialog);
+    eventBus.on(EventTypes.ShowToastNotification, this.onShowToastNotification);
+    eventBus.on(EventTypes.HideToastNotification, this.onHideToastNotification);
+  }
+
+  disconnectedCallback() {
+    eventBus.detach(EventTypes.ShowConfirmDialog, this.onShowConfirmDialog);
+    eventBus.detach(EventTypes.HideConfirmDialog, this.onHideConfirmDialog);
+    eventBus.detach(EventTypes.ShowToastNotification, this.onShowToastNotification);
+    eventBus.detach(EventTypes.HideToastNotification, this.onHideToastNotification);
+  }
+
+  componentWillLoad() {
+    const elsaClientFactory: () => ElsaClient = () => createElsaClient(this.serverUrl);
+    const httpClientFactory: () => AxiosInstance = () => createHttpClient(this.serverUrl);
+
+    const elsaStudio: ElsaStudio = {
+      serverUrl: this.serverUrl,
+      basePath: this.basePath,
+      eventBus,
+      pluginManager,
+      propertyDisplayManager,
+      activityIconProvider,
+      confirmDialogService,
+      toastNotificationService,
+      elsaClientFactory,
+      httpClientFactory,
+      getOrCreateProperty: getOrCreateProperty,
+      htmlToElement
+    };
+
+    this.initializing.emit(elsaStudio);
+    pluginManager.initialize(elsaStudio);
+    propertyDisplayManager.initialize(elsaStudio);
+  }
+
+  onShowConfirmDialog = (e) => e.promise = this.confirmDialog.show(e.caption, e.message)
+  onHideConfirmDialog = async () => await this.confirmDialog.hide()
+  onShowToastNotification = async (e: ToastNotificationOptions) => await this.toastNotificationElement.show(e)
+  onHideToastNotification = async () => await this.toastNotificationElement.hide()
 
   render() {
 
-    const serverUrl = this.serverUrl;
-    const monacoLibPath = this.monacoLibPath;
-    const logoPath = getAssetPath('./assets/logo.png');
+    const culture = this.culture;
 
-    // TODO: Tunneling doesn't appear to be working in combination with the router.
-    // const tunnelState: DashboardState = {
-    //   serverUrl: serverUrl,
-    // };
+    const tunnelState: DashboardState = {
+      serverUrl: this.serverUrl,
+      basePath: this.basePath,
+      culture,
+      monacoLibPath: this.monacoLibPath
+    };
 
     return (
-      <div class="elsa-h-screen elsa-bg-gray-100">
-        <nav class="elsa-bg-gray-800">
-          <div class="elsa-px-4 sm:elsa-px-6 lg:elsa-px-8">
-            <div class="elsa-flex elsa-items-center elsa-justify-between elsa-h-16">
-              <div class="elsa-flex elsa-items-center">
-                <div class="elsa-flex-shrink-0">
-                  <img class="elsa-h-8 elsa-w-8" src={logoPath} alt="Workflow"/>
-                </div>
-                <div class="hidden md:elsa-block">
-                  <div class="elsa-ml-10 elsa-flex elsa-items-baseline elsa-space-x-4">
-                    <stencil-route-link url="/workflow-definitions" anchorClass="elsa-text-gray-300 hover:elsa-bg-gray-700 hover:elsa-text-white elsa-px-3 elsa-py-2 elsa-rounded-md elsa-text-sm elsa-font-medium" activeClass="elsa-text-white elsa-bg-gray-900">Workflow Definitions
-                    </stencil-route-link>
-                    <stencil-route-link url="/workflow-instances" anchorClass="elsa-text-gray-300 hover:elsa-bg-gray-700 hover:elsa-text-white elsa-px-3 elsa-py-2 elsa-rounded-md elsa-text-sm elsa-font-medium" activeClass="elsa-text-white elsa-bg-gray-900">Workflow Instances
-                    </stencil-route-link>
-                    <stencil-route-link url="/workflow-registry" anchorClass="elsa-text-gray-300 hover:elsa-bg-gray-700 hover:elsa-text-white elsa-px-3 elsa-py-2 elsa-rounded-md elsa-text-sm elsa-font-medium" activeClass="elsa-text-white elsa-bg-gray-900">Workflow Registry
-                    </stencil-route-link>
-                    {/*<stencil-route-link url="/custom-activities" class="elsa-text-gray-300 hover:elsa-bg-gray-700 hover:elsa-text-white elsa-px-3 elsa-py-2 elsa-rounded-md elsa-text-sm elsa-font-medium">Custom Activities</stencil-route-link>*/}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </nav>
-
-        <main>
-          {/*<Tunnel.Provider state={tunnelState}>*/}
-          <stencil-router>
-            <stencil-route-switch scrollTopOffset={0}>
-              <stencil-route url="/" component="elsa-studio-home" exact={true}/>
-              <stencil-route url="/workflow-registry" component="elsa-studio-workflow-registry" componentProps={{'serverUrl': serverUrl}} exact={true}/>
-              <stencil-route url="/workflow-registry/:id" component="elsa-studio-workflow-blueprint-view" componentProps={{'serverUrl': serverUrl}} />
-              <stencil-route url="/workflow-definitions" component="elsa-studio-workflow-definitions-list" componentProps={{'serverUrl': serverUrl}} exact={true}/>
-              <stencil-route url="/workflow-definitions/:id" component="elsa-studio-workflow-definitions-edit" componentProps={{'serverUrl': serverUrl, 'monacoLibPath': monacoLibPath}}/>
-              <stencil-route url="/workflow-instances" component="elsa-studio-workflow-instances-list" componentProps={{'serverUrl': serverUrl}} exact={true}/>
-              <stencil-route url="/workflow-instances/:id" component="elsa-studio-workflow-instances-view" componentProps={{'serverUrl': serverUrl}}/>
-            </stencil-route-switch>
-          </stencil-router>
-          {/*</Tunnel.Provider>*/}
-        </main>
-      </div>
+      <Tunnel.Provider state={tunnelState}>
+        <slot/>
+        <elsa-confirm-dialog ref={el => this.confirmDialog = el} culture={this.culture}/>
+        <elsa-toast-notification ref={el => this.toastNotificationElement = el}/>
+      </Tunnel.Provider>
     );
   }
 }

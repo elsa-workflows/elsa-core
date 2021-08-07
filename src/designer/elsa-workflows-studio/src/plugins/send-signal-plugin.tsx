@@ -1,7 +1,7 @@
-﻿import {ElsaPlugin} from "../services/elsa-plugin";
-import {eventBus} from '../services/event-bus';
+﻿import {eventBus, ElsaPlugin} from "../services";
 import {ActivityDesignDisplayContext, EventTypes, SyntaxNames} from "../models";
 import {h} from "@stencil/core";
+import {htmlEncode} from "../utils/utils";
 
 export class SendSignalPlugin implements ElsaPlugin {
   constructor() {
@@ -17,6 +17,7 @@ export class SendSignalPlugin implements ElsaPlugin {
     const props = activityModel.properties || [];
     const signalName = props.find(x => x.name == 'Signal') || { name: 'Signal', expressions: { 'Literal': '', syntax: SyntaxNames.Literal } };
     const syntax = signalName.syntax || SyntaxNames.Literal;
-    context.bodyDisplay = `<p>${signalName.expressions[syntax]}</p>`;
+    const bodyDisplay = htmlEncode(signalName.expressions[syntax]);
+    context.bodyDisplay = `<p>${bodyDisplay}</p>`;
   }
 }

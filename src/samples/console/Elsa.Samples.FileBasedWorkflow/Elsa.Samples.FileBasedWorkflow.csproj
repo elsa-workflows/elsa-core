@@ -7,7 +7,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.1" />
+        <PackageReference Include="System.Text.Encodings.Web" Version="5.0.1" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.1" />
     </ItemGroup>
 
     <ItemGroup>
@@ -15,9 +16,9 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="Workflows\hello-world-workflow.json">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
+        <None Update="Workflows\hello-world-workflow.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
 </Project>

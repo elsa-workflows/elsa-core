@@ -11,11 +11,13 @@ namespace Elsa.Activities.Rebus
     {
         [ActivityInput(Hint = "The type of message to receive.")]
         public Type MessageType { get; set; } = default!;
-        
+
+        [ActivityOutput] public object? Output { get; set; }
+
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
-            var message = context.Input;
-            return Done(message);
+            Output = context.Input;
+            return Done();
         }
     }
 }

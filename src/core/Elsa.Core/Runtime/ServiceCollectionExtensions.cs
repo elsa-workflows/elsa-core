@@ -17,15 +17,15 @@ namespace Elsa.Runtime
         public static IServiceCollection AddStartupTask<TStartupTask>(this IServiceCollection services) where TStartupTask : class, IStartupTask
         {
             return services
-                .AddScoped<IStartupTask, TStartupTask>()
-                .AddScoped<TStartupTask>();
+                .AddScoped<TStartupTask>()
+                .AddScoped<IStartupTask, TStartupTask>(sp => sp.GetRequiredService<TStartupTask>());
         }
-        
+
         public static IServiceCollection AddStartupTask<TStartupTask>(this IServiceCollection services, Func<IServiceProvider, TStartupTask> factory) where TStartupTask : class, IStartupTask
         {
             return services
-                .AddScoped<IStartupTask, TStartupTask>(factory)
-                .AddScoped<TStartupTask>();
+                .AddScoped(factory)
+                .AddScoped<IStartupTask, TStartupTask>(sp => sp.GetRequiredService<TStartupTask>());
         }
     }
 }

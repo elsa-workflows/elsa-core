@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using Elsa.Scripting.JavaScript.Services;
 
 namespace Elsa.Scripting.JavaScript.Typings
@@ -15,7 +14,7 @@ namespace Elsa.Scripting.JavaScript.Typings
                 yield break;
             
             foreach (var variable in workflowDefinition.Variables!.Data.Values)
-                yield return variable!.GetType();
+                yield return variable?.GetType() ?? typeof(object);
         }
     }
 }

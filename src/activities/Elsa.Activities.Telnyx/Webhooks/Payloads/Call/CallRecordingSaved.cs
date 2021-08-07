@@ -13,5 +13,6 @@ namespace Elsa.Activities.Telnyx.Webhooks.Payloads.Call
         public CallRecordingUrls RecordingUrls { get; set; } = default!;
         public Instant RecordingEndedAt { get; set; }
         public Instant RecordingStartedAt { get; set; }
+        public Duration Duration => RecordingEndedAt - RecordingStartedAt;
     }
 }

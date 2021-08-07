@@ -29,11 +29,11 @@ namespace Elsa.Activities.Http
     public class SendHttpRequest : Activity
     {
         private readonly HttpClient _httpClient;
-        private readonly IEnumerable<IHttpResponseBodyParser> _parsers;
+        private readonly IEnumerable<IHttpResponseContentReader> _parsers;
 
         public SendHttpRequest(
             IHttpClientFactory httpClientFactory,
-            IEnumerable<IHttpResponseBodyParser> parsers)
+            IEnumerable<IHttpResponseContentReader> parsers)
         {
             _httpClient = httpClientFactory.CreateClient(nameof(SendHttpRequest));
             _parsers = parsers;
@@ -68,7 +68,7 @@ namespace Elsa.Activities.Http
         [ActivityInput(
             UIHint = ActivityInputUIHints.Dropdown,
             Hint = "The content type to send with the request.",
-            Options = new[] { "text/plain", "text/html", "application/json", "application/xml", "application/x-www-form-urlencoded" },
+            Options = new[] { "", "text/plain", "text/html", "application/json", "application/xml", "application/x-www-form-urlencoded" },
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? ContentType { get; set; }
@@ -102,13 +102,16 @@ namespace Elsa.Activities.Http
         )]
         public ICollection<int>? SupportedStatusCodes { get; set; } = new HashSet<int>(new[] { 200 });
 
+        [ActivityOutput] public HttpResponseModel? Response { get; set; }
+        [ActivityOutput] public object? ResponseContent { get; set; }
+
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
             var request = CreateRequest();
             var cancellationToken = context.CancellationToken;
             var response = (await _httpClient.SendAsync(request, cancellationToken))!;
             var hasContent = response.Content != null!;
-            var contentType = response?.Content?.Headers?.ContentType?.MediaType;
+            var contentType = response.Content?.Headers.ContentType?.MediaType;
 
             var responseModel = new HttpResponseModel
             {
@@ -120,28 +123,29 @@ namespace Elsa.Activities.Http
 
             if (hasContent && ReadContent)
             {
-                var formatter = SelectContentParser(contentType!);
-                responseModel.Content = await formatter.ParseAsync(response, cancellationToken);
+                var formatter = SelectContentParser(contentType);
+                ResponseContent = await formatter.ReadAsync(response, cancellationToken);
             }
 
             var statusCode = (int) response.StatusCode;
             var statusOutcome = statusCode.ToString();
-            var isSupportedStatusCode = SupportedStatusCodes?.Contains(statusCode) == true;
+            var supportedStatusCodes = SupportedStatusCodes;
+            var isSupportedStatusCode = supportedStatusCodes == null || !supportedStatusCodes.Any() || SupportedStatusCodes?.Contains(statusCode) == true;
             var outcomes = new List<string> { OutcomeNames.Done, statusOutcome };
 
             if (!isSupportedStatusCode)
                 outcomes.Add("Unsupported Status Code");
 
-            return Combine(Output(responseModel), Outcomes(outcomes));
+            Response = responseModel;
+            return Outcomes(outcomes);
         }
 
-        private IHttpResponseBodyParser SelectContentParser(string contentType)
+        private IHttpResponseContentReader SelectContentParser(string? contentType)
         {
-            string? simpleContentType = contentType?.Split(';').First();
+            var simpleContentType = contentType?.Split(';').First() ?? "";
             var formatters = _parsers.OrderByDescending(x => x.Priority).ToList();
-            return formatters.FirstOrDefault(
-                x => x.SupportedContentTypes.Contains(simpleContentType, StringComparer.OrdinalIgnoreCase)
-            ) ?? formatters.Last();
+            
+            return formatters.FirstOrDefault(x => x.GetSupportsContentType(simpleContentType)) ?? formatters.Last();
         }
 
         private HttpRequestMessage CreateRequest()
@@ -149,7 +153,7 @@ namespace Elsa.Activities.Http
             var method = Method ?? HttpMethods.Get;
             var methodSupportsBody = GetMethodSupportsBody(method);
             var url = Url;
-            var request = new HttpRequestMessage(new HttpMethod(Method), url);
+            var request = new HttpRequestMessage(new HttpMethod(method), url);
             var authorizationHeaderValue = Authorization;
             var requestHeaders = new HeaderDictionary(RequestHeaders.ToDictionary(x => x.Key, x => new StringValues(x.Value.Split(','))));
 

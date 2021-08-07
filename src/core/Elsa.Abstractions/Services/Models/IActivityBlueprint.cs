@@ -1,4 +1,6 @@
-﻿namespace Elsa.Services.Models
+﻿using System.Collections.Generic;
+
+namespace Elsa.Services.Models
 {
     public interface IActivityBlueprint
     {
@@ -11,7 +13,7 @@
         bool PersistWorkflow { get; }
         bool LoadWorkflowContext { get; set; }
         bool SaveWorkflowContext { get; set; }
-        bool PersistOutput { get; set; }
         string? Source { get; set; }
+        IDictionary<string, string> PropertyStorageProviders { get; }
     }
 }

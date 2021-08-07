@@ -8,14 +8,15 @@ namespace Elsa.Server.Api.Mapping
 {
     public class ActivityBlueprintConverter : ITypeConverter<IActivityBlueprint, ActivityBlueprintModel?>
     {
-        public const string ActivityPropertiesKey = "ActivityProperties";
-        
+        public const string ActivityInputPropertiesKey = "ActivityInputProperties";
+        public const string ActivityOutputPropertiesKey = "ActivityOutputProperties";
+
         public ActivityBlueprintModel Convert(IActivityBlueprint source, ActivityBlueprintModel? destination, ResolutionContext context)
         {
             destination ??= new ActivityBlueprintModel();
-            
+
             destination.Id = source.Id;
-            destination.    Name = source.Name;
+            destination.Name = source.Name;
             destination.DisplayName = source.DisplayName;
             destination.Description = source.Description;
             destination.Type = source.Type;
@@ -23,17 +24,21 @@ namespace Elsa.Server.Api.Mapping
             destination.PersistWorkflow = source.PersistWorkflow;
             destination.LoadWorkflowContext = source.LoadWorkflowContext;
             destination.SaveWorkflowContext = source.SaveWorkflowContext;
-            destination.Properties = GetProperties(source, context);
-            
+            destination.InputProperties = GetInputProperties(source, context);
+            destination.OutputProperties = GetOutputProperties(source, context);
+
             return destination;
         }
 
-        private Variables GetProperties(IActivityBlueprint activityBlueprint, ResolutionContext context)
+        private Variables GetInputProperties(IActivityBlueprint activityBlueprint, ResolutionContext context) => GetProperties(activityBlueprint, context, ActivityInputPropertiesKey);
+        private Variables GetOutputProperties(IActivityBlueprint activityBlueprint, ResolutionContext context) => GetProperties(activityBlueprint, context, ActivityOutputPropertiesKey);
+        
+        private Variables GetProperties(IActivityBlueprint activityBlueprint, ResolutionContext context, string contextKey)
         {
-            if (!context.Items.ContainsKey(ActivityPropertiesKey)) 
+            if (!context.Items.ContainsKey(contextKey))
                 return new Variables();
-            
-            var dictionary = (IDictionary<string, Variables>) context.Items[ActivityPropertiesKey];
+
+            var dictionary = (IDictionary<string, Variables>) context.Items[contextKey];
             return dictionary[activityBlueprint.Id];
         }
     }

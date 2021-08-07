@@ -5,10 +5,13 @@ namespace Elsa.Scripting.JavaScript.Services
 {
     public class TypeConverterResultConverter : IConvertsJintEvaluationResult
     {
-        readonly IConvertsJintEvaluationResult wrapped;
+        private readonly IConvertsJintEvaluationResult _wrapped;
 
         public object? ConvertToDesiredType(object? evaluationResult, Type desiredType)
         {
+            if (desiredType == typeof(object))
+                return evaluationResult;
+            
             var converter = TypeDescriptor.GetConverter(evaluationResult!);
 
             if (converter.CanConvertTo(desiredType))
@@ -19,12 +22,12 @@ namespace Elsa.Scripting.JavaScript.Services
             if (targetConverter.CanConvertFrom(evaluationResult!.GetType()))
                 return targetConverter.ConvertFrom(evaluationResult!);
 
-            return wrapped.ConvertToDesiredType(evaluationResult, desiredType);
+            return _wrapped.ConvertToDesiredType(evaluationResult, desiredType);
         }
 
         public TypeConverterResultConverter(IConvertsJintEvaluationResult wrapped)
         {
-            this.wrapped = wrapped ?? throw new ArgumentNullException(nameof(wrapped));
+            this._wrapped = wrapped ?? throw new ArgumentNullException(nameof(wrapped));
         }
     }
 }

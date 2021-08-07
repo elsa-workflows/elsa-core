@@ -7,8 +7,9 @@ namespace Elsa.ActivityResults
 {
     public class OutcomeResult : ActivityExecutionResult
     {
-        public OutcomeResult(IEnumerable<string>? outcomes = default, string? parentId = default)
+        public OutcomeResult(IEnumerable<string>? outcomes = default, object? input = null, string? parentId = default)
         {
+            Input = input;
             ParentId = parentId;
             var outcomeList = outcomes?.ToList() ?? new List<string>(1);
 
@@ -19,6 +20,7 @@ namespace Elsa.ActivityResults
         }
 
         public IEnumerable<string> Outcomes { get; }
+        public object? Input { get; }
         public string? ParentId { get; }
 
         protected override void Execute(ActivityExecutionContext activityExecutionContext)
@@ -27,10 +29,6 @@ namespace Elsa.ActivityResults
             var workflowExecutionContext = activityExecutionContext.WorkflowExecutionContext;
             var nextConnections = GetNextConnections(workflowExecutionContext, activityExecutionContext.ActivityBlueprint.Id, outcomes).ToList();
 
-            // See if we got a "default" connection (from the current activity to the next activity via the default "Done" outcome).
-            if (!outcomes.Contains(OutcomeNames.Done) && !nextConnections.Any())
-                nextConnections = GetNextConnections(workflowExecutionContext, activityExecutionContext.ActivityBlueprint.Id, new[] { OutcomeNames.Done }).ToList();
-            
             var nextActivities =
                 (
                     from connection in nextConnections
@@ -43,7 +41,7 @@ namespace Elsa.ActivityResults
             foreach (var nextConnection in nextConnections)
                 workflowExecutionContext.ExecutionLog.Add(nextConnection);
 
-            workflowExecutionContext.ScheduleActivities(nextActivities, activityExecutionContext.Output);
+            workflowExecutionContext.ScheduleActivities(nextActivities, Input);
         }
 
         public static IEnumerable<string> GetNextActivities(

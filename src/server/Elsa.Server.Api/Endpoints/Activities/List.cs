@@ -43,6 +43,14 @@ namespace Elsa.Server.Api.Endpoints.Activities
             return Json(descriptors, _serializerSettingsProvider.GetSettings());
         }
 
-        private async Task<ActivityDescriptor> DescribeActivity(ActivityType activityType, CancellationToken cancellationToken) => await _activityTypeService.DescribeActivityType(activityType, cancellationToken);
+        private async Task<ActivityDescriptor> DescribeActivity(ActivityType activityType, CancellationToken cancellationToken)
+        {
+            var activityDescriptor = await _activityTypeService.DescribeActivityType(activityType, cancellationToken);
+
+            // Filter out any non-browsable properties.
+            activityDescriptor.InputProperties = activityDescriptor.InputProperties.Where(x => x.IsBrowsable == true).ToArray();
+            
+            return activityDescriptor;
+        }
     }
 }

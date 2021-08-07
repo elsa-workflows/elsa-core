@@ -7,7 +7,7 @@ using Elsa.Persistence.Specifications;
 
 namespace Elsa.Persistence.EntityFramework.Core.Stores
 {
-    public class EntityFrameworkBookmarkStore : EntityFrameworkStore<Bookmark>, IBookmarkStore
+    public class EntityFrameworkBookmarkStore : ElsaContextEntityFrameworkStore<Bookmark>, IBookmarkStore
     {
         public EntityFrameworkBookmarkStore(IElsaContextFactory dbContextFactory, IMapper mapper) : base(dbContextFactory, mapper)
         {

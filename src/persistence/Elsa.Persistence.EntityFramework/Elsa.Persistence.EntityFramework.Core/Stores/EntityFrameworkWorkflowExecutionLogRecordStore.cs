@@ -7,7 +7,7 @@ using Elsa.Persistence.Specifications;
 
 namespace Elsa.Persistence.EntityFramework.Core.Stores
 {
-    public class EntityFrameworkWorkflowExecutionLogRecordStore : EntityFrameworkStore<WorkflowExecutionLogRecord>, IWorkflowExecutionLogStore
+    public class EntityFrameworkWorkflowExecutionLogRecordStore : ElsaContextEntityFrameworkStore<WorkflowExecutionLogRecord>, IWorkflowExecutionLogStore
     {
         public EntityFrameworkWorkflowExecutionLogRecordStore(IElsaContextFactory dbContextFactory, IMapper mapper) : base(dbContextFactory, mapper)
         {

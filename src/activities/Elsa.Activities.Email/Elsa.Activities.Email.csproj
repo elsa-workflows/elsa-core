@@ -16,10 +16,12 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
+        <ProjectReference Include="..\..\scripting\Elsa.Scripting.JavaScript\Elsa.Scripting.JavaScript.csproj" />
     </ItemGroup>
 
     <ItemGroup>
       <PackageReference Include="MailKit" Version="2.12.0" />
+      <PackageReference Include="Microsoft.Extensions.Http" Version="5.0.0" />
     </ItemGroup>
 
 </Project>

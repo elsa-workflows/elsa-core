@@ -35,7 +35,7 @@ namespace Elsa.Builders
         public IActivityBuilder Then<T>(string activityTypeName, Action<IActivityBuilder>? branch = default, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default)
             where T : class, IActivity
         {
-            var activityBuilder = WorkflowBuilder.Add<T>(activityTypeName, branch, null, lineNumber, sourceFile);
+            var activityBuilder = WorkflowBuilder.Add<T>(activityTypeName, branch, null, null, lineNumber, sourceFile);
             Then(activityBuilder);
             return activityBuilder;
         }

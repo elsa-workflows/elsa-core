@@ -42,7 +42,7 @@ namespace Elsa.Activities.Http
             if (response.HasStarted)
                 return Fault(T["Response has already started"]!);
 
-            return new RedirectResult(_httpContextAccessor, Location, Permanent);
+            return Combine(new RedirectResult(_httpContextAccessor, Location, Permanent), Done());
         }
     }
 }

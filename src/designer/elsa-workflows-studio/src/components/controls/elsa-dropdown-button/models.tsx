@@ -10,4 +10,5 @@ export interface DropdownButtonItem {
   text: string;
   url?: string;
   isSelected?: boolean;
+  handler?: () => {};
 }

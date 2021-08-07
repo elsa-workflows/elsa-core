@@ -1,4 +1,5 @@
 ﻿using Elsa.ActivityResults;
+using Elsa.Attributes;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
@@ -11,6 +12,8 @@ namespace Elsa.Samples.CustomActivities
     public class ReadQueryString : Activity
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
+        
+        [ActivityOutput] public IQueryCollection? Output { get; set; }
 
         public ReadQueryString(IHttpContextAccessor httpContextAccessor)
         {
@@ -19,9 +22,8 @@ namespace Elsa.Samples.CustomActivities
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
-            var query = _httpContextAccessor.HttpContext!.Request.Query;
-            
-            return Done(query);
+            Output = _httpContextAccessor.HttpContext!.Request.Query;
+            return Done();
         }
     }
 }

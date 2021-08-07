@@ -9,7 +9,7 @@ namespace Elsa.Activities.Http.JavaScript
     {
         public override IEnumerable<Type> CollectTypes(TypeDefinitionContext context)
         {
-            return new[] { typeof(HttpRequestModel) };
+            return new[] { typeof(HttpRequestModel), typeof(HttpResponseHeaders), typeof(HttpResponseModel) };
         }
     }
 }

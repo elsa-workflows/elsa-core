@@ -23,7 +23,7 @@ namespace Elsa.Activities.Rebus.StartupTasks
         {
             foreach (var messageType in _messageTypes)
             {
-                var bus = await _serviceBusFactory.GetServiceBusAsync(messageType, cancellationToken);
+                var bus = await _serviceBusFactory.GetServiceBusAsync(messageType, cancellationToken: cancellationToken);
                 await bus.Subscribe(messageType);
             }
         }

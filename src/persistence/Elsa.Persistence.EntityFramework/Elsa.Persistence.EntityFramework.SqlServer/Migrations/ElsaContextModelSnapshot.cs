@@ -17,7 +17,7 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
             modelBuilder
                 .HasDefaultSchema("Elsa")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128)
-                .HasAnnotation("ProductVersion", "5.0.5")
+                .HasAnnotation("ProductVersion", "5.0.6")
                 .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
             modelBuilder.Entity("Elsa.Models.Bookmark", b =>
@@ -116,6 +116,9 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
 
                     b.Property<string>("Name")
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("OutputStorageProviderName")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("PersistenceBehavior")
                         .HasColumnType("int");
@@ -226,6 +229,7 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("CorrelationId")
+                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTimeOffset>("CreatedAt")
@@ -243,6 +247,9 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
 
                     b.Property<DateTimeOffset?>("FinishedAt")
                         .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("LastExecutedActivityId")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTimeOffset?>("LastExecutedAt")
                         .HasColumnType("datetimeoffset");

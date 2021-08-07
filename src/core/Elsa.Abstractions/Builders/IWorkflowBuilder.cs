@@ -23,6 +23,8 @@ namespace Elsa.Builders
         IWorkflowBuilder WithVariable(string name, object value);
         IWorkflowBuilder WithCustomAttribute(string name, object value);
         IWorkflowBuilder WithTenantId(string value);
+        IWorkflowBuilder WithTag(string value);
+        IWorkflowBuilder WithChannel(string value);
 
         IWorkflowBlueprint BuildBlueprint(string activityIdPrefix = "activity");
         IWorkflowBlueprint Build(IWorkflow workflow, string activityIdPrefix = "activity");

@@ -12,7 +12,7 @@ namespace Elsa.Services.Models
             Variables = new Variables();
             CustomAttributes = new Variables();
         }
-    
+
         public WorkflowBlueprint(
             string id,
             int version,
@@ -24,6 +24,7 @@ namespace Elsa.Services.Models
             bool isLatest,
             bool isPublished,
             string? tag,
+            string? channel,
             Variables? variables,
             Variables? customAttributes,
             WorkflowContextOptions? contextOptions,
@@ -31,7 +32,18 @@ namespace Elsa.Services.Models
             bool deleteCompletedInstances,
             IEnumerable<IActivityBlueprint> activities,
             IEnumerable<IConnection> connections,
-            IActivityPropertyProviders activityPropertyValueProviders) : base(id, default, name, displayName, description, id, true, false, false, false, default)
+            IActivityPropertyProviders activityPropertyValueProviders) : base(
+            id, 
+            default, 
+            name, 
+            displayName, 
+            description, 
+            id, 
+            true, 
+            false, 
+            false, 
+            new Dictionary<string, string>(),
+            default)
         {
             Id = id;
             Parent = this;
@@ -41,6 +53,7 @@ namespace Elsa.Services.Models
             IsLatest = isLatest;
             IsPublished = isPublished;
             Tag = tag;
+            Channel = channel;
             ContextOptions = contextOptions;
             Variables = variables ?? new Variables();
             CustomAttributes = customAttributes ?? new Variables();
@@ -51,13 +64,19 @@ namespace Elsa.Services.Models
             Connections = connections.ToList();
             ActivityPropertyProviders = activityPropertyValueProviders;
         }
-        
+
         public int Version { get; set; }
         public string? TenantId { get; set; }
         public bool IsSingleton { get; set; }
         public bool IsPublished { get; set; }
         public bool IsLatest { get; set; }
         public string? Tag { get; set; }
+        
+        /// <summary>
+        /// The channel, or queue, to place workflow instances of this workflow blueprint in. Channels can be used by the workflow dispatcher to prioritize workflows. 
+        /// </summary>
+        public string? Channel { get; }
+        
         public Variables Variables { get; set; }
         public WorkflowContextOptions? ContextOptions { get; set; }
         public WorkflowPersistenceBehavior PersistenceBehavior { get; set; }

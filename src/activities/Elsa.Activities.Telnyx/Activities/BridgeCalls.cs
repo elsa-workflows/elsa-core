@@ -63,6 +63,7 @@ namespace Elsa.Activities.Telnyx.Activities
 
         [ActivityOutput] public CallBridgedPayload? CallBridgedPayloadA { get; set; }
         [ActivityOutput] public CallBridgedPayload? CallBridgedPayloadB { get; set; }
+        [ActivityOutput] public CallBridgedPayload? Output { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
@@ -70,13 +71,13 @@ namespace Elsa.Activities.Telnyx.Activities
             CallBridgedPayloadB = null;
 
             var callControlIdA = CallControlIdA = context.GetCallControlId(CallControlIdA);
-            var callControlIdB = CallControlIdB = GetCallControlB(context);
+            var callControlIdB = CallControlIdB = await GetCallControlBAsync(context);
 
             if (callControlIdB == null)
                 throw new WorkflowException("Cannot bridge calls because the second leg's call control ID was not specified and no incoming activities provided this value");
 
             CallControlIdA = callControlIdA;
-            
+
             var request = new BridgeCallsRequest(
                 callControlIdB,
                 ClientState,
@@ -105,19 +106,21 @@ namespace Elsa.Activities.Telnyx.Activities
 
             if (payload.CallControlId == CallControlIdA)
             {
-                CallBridgedPayloadA = payload;        
-                results.Add(Outcome(TelnyxOutcomeNames.LegABridged, payload));
+                CallBridgedPayloadA = payload;
+                Output = payload;
+                results.Add(Outcome(TelnyxOutcomeNames.LegABridged));
             }
 
             if (payload.CallControlId == CallControlIdB)
             {
                 CallBridgedPayloadB = payload;
-                results.Add(Outcome(TelnyxOutcomeNames.LegBBridged, payload));
+                Output = payload;
+                results.Add(Outcome(TelnyxOutcomeNames.LegBBridged));
             }
 
             if (CallBridgedPayloadA != null && CallBridgedPayloadB != null)
             {
-                results.Add(Outcome(TelnyxOutcomeNames.Bridged));
+                results.Add(Outcome(TelnyxOutcomeNames.Bridged, new BridgedCallsOutput(CallBridgedPayloadA, CallBridgedPayloadB)));
             }
             else
             {
@@ -127,21 +130,23 @@ namespace Elsa.Activities.Telnyx.Activities
             return Combine(results);
         }
 
-        private string? GetCallControlB(ActivityExecutionContext context)
+        private async Task<string?> GetCallControlBAsync(ActivityExecutionContext context)
         {
             if (!string.IsNullOrWhiteSpace(CallControlIdB))
                 return CallControlIdB;
 
-            var input = context.GetInput<CallAnsweredPayload>();
+            if (context.Input is CallAnsweredPayload input)
 
-            if (input != null)
-                return input.CallControlId;
+                if (input != null)
+                    return input.CallControlId;
 
-            var inboundCallActivityId = context.WorkflowExecutionContext.GetInboundConnections(Id).Where(x => x.Source.Activity.Type == nameof(Dial)).Select(x => x.Source.Activity.Id).FirstOrDefault();
-            var inboundCallActivityResponse = inboundCallActivityId != null ? context.WorkflowExecutionContext.GetActivityProperty<Dial, DialResponse>(inboundCallActivityId, x => x.DialResponse) : default;
+            var inboundCallActivityId = context.WorkflowExecutionContext.GetInboundConnectionPath(Id).Where(x => x.Source.Activity.Type == nameof(Dial)).Select(x => x.Source.Activity.Id).FirstOrDefault();
+            var inboundCallActivityResponse = inboundCallActivityId != null ? await context.WorkflowExecutionContext.GetActivityPropertyAsync<Dial, DialResponse>(inboundCallActivityId, x => x.DialResponse!) : default;
             return inboundCallActivityResponse != null ? inboundCallActivityResponse.CallControlId : null;
         }
     }
+
+    public record BridgedCallsOutput(CallBridgedPayload PayloadA, CallBridgedPayload PayloadB);
 
     public static class BridgeCallsExtensions
     {

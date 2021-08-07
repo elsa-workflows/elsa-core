@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Elsa;
 using Elsa.Models;
 using Elsa.Server.Api;
@@ -48,7 +49,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
             services.AddSingleton<ConnectionConverter>();
             services.AddSingleton<ActivityBlueprintConverter>();
-            services.AddSingleton<IWorkflowBlueprintMapper, WorkflowBlueprintMapper>();
+            services.AddScoped<IWorkflowBlueprintMapper, WorkflowBlueprintMapper>();
             services.AddSingleton<IEndpointContentSerializerSettingsProvider, EndpointContentSerializerSettingsProvider>();
             services.AddAutoMapperProfile<AutoMapperProfile>();
             return services;
@@ -76,6 +77,8 @@ namespace Microsoft.Extensions.DependencyInjection
                         Type = PrimitiveType.String.ToString().ToLower(),
                         Example = new OpenApiString("System.String, mscorlib")
                     });
+                    
+                    c.ResolveConflictingActions(d => d.First());
 
                     configure?.Invoke(c);
                 });

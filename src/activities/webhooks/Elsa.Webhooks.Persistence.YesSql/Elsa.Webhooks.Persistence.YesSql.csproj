@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\..\..\common.props" />
+  <Import Project="..\..\..\..\configureawait.props" />
+
+  <PropertyGroup>
+      <TargetFramework>net5.0</TargetFramework>
+    <Description>
+      Elsa is a set of workflow libraries and tools that enable lean and mean workflowing capabilities in any .NET Core application.
+      This package provides the YesSQL provider for Webhook persistence.
+    </Description>
+    <PackageTags>elsa, workflows, webhooks, yessql</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AutoMapper" Version="10.1.1" />
+    <PackageReference Include="YesSql.Core" Version="3.0.6" />
+    <PackageReference Include="YesSql.Provider.Sqlite" Version="3.0.6" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.YesSql\Elsa.Persistence.YesSql.csproj" />
+    <ProjectReference Include="..\Elsa.Activities.Webhooks\Elsa.Activities.Webhooks.csproj" />
+    <ProjectReference Include="..\Elsa.Webhooks.Abstractions\Elsa.Webhooks.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>

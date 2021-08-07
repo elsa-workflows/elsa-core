@@ -1,13 +1,15 @@
 import {Component, Event, EventEmitter, h, Host, Listen, Method, Prop, State, Watch} from '@stencil/core';
-import {eventBus} from '../../../../services/event-bus';
 import {ActivityDefinition, ActivityDescriptor, ActivityModel, ConnectionDefinition, ConnectionModel, EventTypes, VersionOptions, WorkflowDefinition, WorkflowModel, WorkflowPersistenceBehavior} from "../../../../models";
-import {createElsaClient, SaveWorkflowDefinitionRequest} from "../../../../services/elsa-client";
-import {pluginManager} from '../../../../services/plugin-manager';
+import {eventBus, createElsaClient, SaveWorkflowDefinitionRequest} from "../../../../services";
 import state from '../../../../utils/store';
-import Tunnel, {WorkflowEditorState} from '../../../../data/workflow-editor';
+import WorkflowEditorTunnel, {WorkflowEditorState} from '../../../../data/workflow-editor';
+import DashboardTunnel from "../../../../data/dashboard";
 import {downloadFromBlob} from "../../../../utils/download";
 import {ActivityContextMenuState, WorkflowDesignerMode} from "../../../designers/tree/elsa-designer-tree/models";
 import {registerClickOutside} from "stencil-click-outside";
+import {i18n} from "i18next";
+import {loadTranslations} from "../../../i18n/i18n-loader";
+import {resources} from "./localizations";
 
 @Component({
   tag: 'elsa-workflow-definition-editor-screen',
@@ -15,14 +17,11 @@ import {registerClickOutside} from "stencil-click-outside";
 })
 export class ElsaWorkflowDefinitionEditorScreen {
 
-  constructor() {
-    pluginManager.initialize();
-  }
-
   @Event() workflowSaved: EventEmitter<WorkflowDefinition>;
   @Prop({attribute: 'workflow-definition-id', reflect: true}) workflowDefinitionId: string;
   @Prop({attribute: 'server-url', reflect: true}) serverUrl: string;
   @Prop({attribute: 'monaco-lib-path', reflect: true}) monacoLibPath: string;
+  @Prop() culture: string;
   @State() workflowDefinition: WorkflowDefinition;
   @State() workflowModel: WorkflowModel;
   @State() publishing: boolean;
@@ -41,6 +40,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
     activity: null,
   };
 
+  i18next: i18n;
   el: HTMLElement;
   designer: HTMLElsaDesignerTreeElement;
 
@@ -109,8 +109,10 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   @Watch("serverUrl")
   async serverUrlChangedHandler(newValue: string) {
-    if (newValue && newValue.length > 0)
+    if (newValue && newValue.length > 0) {
       await this.loadActivityDescriptors();
+      await this.loadWorkflowStorageDescriptors();
+    }
   }
 
   @Watch("monacoLibPath")
@@ -125,9 +127,18 @@ export class ElsaWorkflowDefinitionEditorScreen {
   }
 
   async componentWillLoad() {
+    this.i18next = await loadTranslations(this.culture, resources);
     await this.serverUrlChangedHandler(this.serverUrl);
     await this.workflowDefinitionIdChangedHandler(this.workflowDefinitionId);
     await this.monacoLibPathChangedHandler(this.monacoLibPath);
+  }
+
+  async componentDidLoad() {
+
+    if (!this.designer) {
+      this.designer = this.el.querySelector("elsa-designer-tree") as HTMLElsaDesignerTreeElement;
+      this.designer.model = this.workflowModel;
+    }
   }
 
   connectedCallback() {
@@ -137,17 +148,17 @@ export class ElsaWorkflowDefinitionEditorScreen {
   disconnectedCallback() {
     eventBus.detach(EventTypes.UpdateWorkflowSettings, this.onUpdateWorkflowSettings);
   }
-
-  componentDidLoad() {
-    if (!this.designer) {
-      this.designer = this.el.querySelector("elsa-designer-tree") as HTMLElsaDesignerTreeElement;
-      this.designer.model = this.workflowModel;
-    }
-  }
+  
+  t = (key: string) => this.i18next.t(key);
 
   async loadActivityDescriptors() {
     const client = createElsaClient(this.serverUrl);
     state.activityDescriptors = await client.activitiesApi.list();
+  }
+
+  async loadWorkflowStorageDescriptors() {
+    const client = createElsaClient(this.serverUrl);
+    state.workflowStorageDescriptors = await client.workflowStorageProvidersApi.list();
   }
 
   updateWorkflowDefinition(value: WorkflowDefinition) {
@@ -191,6 +202,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
       isSingleton: workflowDefinition.isSingleton,
       name: workflowDefinition.name,
       tag: workflowDefinition.tag,
+      channel: workflowDefinition.channel,
       persistenceBehavior: workflowDefinition.persistenceBehavior,
       publish: publish || false,
       variables: workflowDefinition.variables,
@@ -203,8 +215,8 @@ export class ElsaWorkflowDefinitionEditorScreen {
         persistWorkflow: x.persistWorkflow,
         loadWorkflowContext: x.loadWorkflowContext,
         saveWorkflowContext: x.saveWorkflowContext,
-        persistOutput: x.persistOutput,
-        properties: x.properties
+        properties: x.properties,
+        propertyStorageProviders: x.propertyStorageProviders
       })),
       connections: workflowModel.connections.map<ConnectionDefinition>(x => ({
         sourceActivityId: x.sourceId,
@@ -217,6 +229,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
     this.publishing = publish;
 
     try {
+      console.debug("Saving workflow...");
       workflowDefinition = await client.workflowDefinitionsApi.save(request);
       this.workflowDefinition = workflowDefinition;
       this.workflowModel = this.mapWorkflowModel(workflowDefinition);
@@ -266,7 +279,8 @@ export class ElsaWorkflowDefinitionEditorScreen {
   mapActivityModel(source: ActivityDefinition): ActivityModel {
     const activityDescriptors: Array<ActivityDescriptor> = state.activityDescriptors;
     const activityDescriptor = activityDescriptors.find(x => x.type == source.type);
-    
+    const outcomes = !!activityDescriptor ? activityDescriptor.outcomes : ['Done'];
+
     return {
       activityId: source.activityId,
       description: source.description,
@@ -274,11 +288,11 @@ export class ElsaWorkflowDefinitionEditorScreen {
       name: source.name,
       type: source.type,
       properties: source.properties,
-      outcomes: [...activityDescriptor.outcomes],
-      persistOutput: source.persistOutput,
+      outcomes: [...outcomes],
       persistWorkflow: source.persistWorkflow,
       saveWorkflowContext: source.saveWorkflowContext,
-      loadWorkflowContext: source.loadWorkflowContext
+      loadWorkflowContext: source.loadWorkflowContext,
+      propertyStorageProviders: source.propertyStorageProviders
     }
   }
 
@@ -296,11 +310,6 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   onShowWorkflowSettingsClick() {
     eventBus.emit(EventTypes.ShowWorkflowSettings);
-  }
-
-  private onUpdateWorkflowSettings = async (workflowDefinition: WorkflowDefinition) => {
-    this.updateWorkflowDefinition(workflowDefinition);
-    await this.saveWorkflowInternal(this.workflowModel);
   }
 
   async onPublishClicked() {
@@ -335,6 +344,11 @@ export class ElsaWorkflowDefinitionEditorScreen {
     this.activityContextMenuState = e.detail;
   }
 
+  private onUpdateWorkflowSettings = async (workflowDefinition: WorkflowDefinition) => {
+    this.updateWorkflowDefinition(workflowDefinition);
+    await this.saveWorkflowInternal(this.workflowModel);
+  }
+
   render() {
     const tunnelState: WorkflowEditorState = {
       serverUrl: this.serverUrl,
@@ -343,11 +357,11 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
     return (
       <Host class="elsa-flex elsa-flex-col elsa-w-full" ref={el => this.el = el}>
-        <Tunnel.Provider state={tunnelState}>
+        <WorkflowEditorTunnel.Provider state={tunnelState}>
           {this.renderCanvas()}
           {this.renderActivityPicker()}
           {this.renderActivityEditor()}
-        </Tunnel.Provider>
+        </WorkflowEditorTunnel.Provider>
       </Host>
     );
   }
@@ -375,6 +389,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
                             activityContextMenuButton={activityContextMenuButton}
                             onActivityContextMenuButtonClicked={e => this.onActivityContextMenuButtonClicked(e)}
                             activityContextMenu={this.activityContextMenuState}
+                            enableMultipleConnectionsFromSingleSource={false}
                             class="elsa-flex-1"
                             ref={el => this.designer = el}/>
         {this.renderWorkflowSettingsButton()}
@@ -393,6 +408,8 @@ export class ElsaWorkflowDefinitionEditorScreen {
   }
 
   renderActivityContextMenu() {
+    const t = this.t;
+    
     return <div
       data-transition-enter="elsa-transition elsa-ease-out elsa-duration-100"
       data-transition-enter-start="elsa-transform elsa-opacity-0 elsa-scale-95"
@@ -415,7 +432,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
             href="#"
             class="elsa-block elsa-px-4 elsa-py-2 elsa-text-sm elsa-leading-5 elsa-text-gray-700 hover:elsa-bg-gray-100 hover:elsa-text-gray-900 focus:elsa-outline-none focus:elsa-bg-gray-100 focus:elsa-text-gray-900"
             role="menuitem">
-            Edit
+            {t('ActivityContextMenu.Edit')}
           </a>
         </div>
         <div class="elsa-border-t elsa-border-gray-100"/>
@@ -425,7 +442,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
             href="#"
             class="elsa-block elsa-px-4 elsa-py-2 elsa-text-sm elsa-leading-5 elsa-text-gray-700 hover:elsa-bg-gray-100 hover:elsa-text-gray-900 focus:elsa-outline-none focus:elsa-bg-gray-100 focus:elsa-text-gray-900"
             role="menuitem">
-            Delete
+            {t('ActivityContextMenu.Delete')}
           </a>
         </div>
       </div>
@@ -437,7 +454,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
   }
 
   renderActivityEditor() {
-    return <elsa-activity-editor-modal/>;
+    return <elsa-activity-editor-modal culture={this.culture}/>;
   }
 
   renderWorkflowSettingsButton() {
@@ -462,8 +479,9 @@ export class ElsaWorkflowDefinitionEditorScreen {
     if (this.publishing)
       return undefined;
 
+    const t = this.t;
     const message =
-      this.unPublishing ? 'Unpublishing...' : this.unPublished ? 'Unpublished'
+      this.unPublishing ? t('Unpublishing...') : this.unPublished ? t('Unpublished')
         : this.saving ? 'Saving...' : this.saved ? 'Saved'
           : this.importing ? 'Importing...' : this.imported ? 'Imported'
             : null;
@@ -496,6 +514,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
       onUnPublishClicked={() => this.onUnPublishClicked()}
       onExportClicked={() => this.onExportClicked()}
       onImportClicked={e => this.onImportClicked(e.detail)}
+      culture={this.culture}
     />;
   }
 
@@ -509,3 +528,4 @@ export class ElsaWorkflowDefinitionEditorScreen {
     };
   }
 }
+DashboardTunnel.injectProps(ElsaWorkflowDefinitionEditorScreen, ['serverUrl', 'culture', 'monacoLibPath']);

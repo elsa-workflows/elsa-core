@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Elsa.Activities.Http.Models;
+using Elsa.Activities.Http.Providers.DefaultValues;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
@@ -33,10 +34,11 @@ namespace Elsa.Activities.Http
             UIHint = ActivityInputUIHints.CheckList,
             Hint = "The HTTP methods that trigger this activity.",
             Options = new[] { "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD" },
-            DefaultValue = new[] { "GET" },
+            DefaultValueProvider = typeof(HttpEndpointDefaultMethodsProvider),
             DefaultSyntax = SyntaxNames.Json,
             SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
-        public HashSet<string> Methods { get; set; } = new(new[] { "GET" });
+
+        public HashSet<string> Methods { get; set; } = new HashSet<string> { "GET" };
 
         /// <summary>
         /// A value indicating whether the HTTP request content body should be read and stored as part of the HTTP request model.
@@ -55,16 +57,15 @@ namespace Elsa.Activities.Http
         public Type? TargetType { get; set; }
 
         [ActivityOutput(Hint = "The received HTTP request.")]
-        public HttpRequestModel? Request { get; set; }
+        public HttpRequestModel? Output { get; set; }
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => context.WorkflowExecutionContext.IsFirstPass ? ExecuteInternal(context) : Suspend();
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context) => ExecuteInternal(context);
 
         private IActivityExecutionResult ExecuteInternal(ActivityExecutionContext context)
         {
-            var model = context.GetInput<HttpRequestModel>()!;
-            Request = model;
-            return Done(model);
+            Output = context.GetInput<HttpRequestModel>();
+            return Done();
         }
     }
 }

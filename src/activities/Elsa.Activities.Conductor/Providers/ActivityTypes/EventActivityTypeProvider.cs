@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Elsa.Activities.Conductor.Models;
 using Elsa.Activities.Conductor.Services;
 using Elsa.Metadata;
+using Elsa.Providers.Activities;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -39,20 +40,27 @@ namespace Elsa.Activities.Conductor.Providers.ActivityTypes
 
         private async Task<ActivityType> CreateActivityTypeAsync(EventDefinition eventDefinition, CancellationToken cancellationToken)
         {
-            var descriptor = await _describesActivityType.DescribeAsync<EventReceived>(cancellationToken);
+            async ValueTask<ActivityDescriptor> CreateDescriptorAsync()
+            {
+                var des = await _describesActivityType.DescribeAsync<EventReceived>(cancellationToken);
 
-            descriptor.Type = eventDefinition.Name;
-            descriptor.DisplayName = eventDefinition.DisplayName ?? eventDefinition.Name;
-            descriptor.Description = eventDefinition.Description;
-            descriptor.InputProperties = Array.Empty<ActivityInputDescriptor>();
-            descriptor.Outcomes = eventDefinition.Outcomes?.ToArray() ?? new[] { OutcomeNames.Done };
+                des.Type = eventDefinition.Name;
+                des.DisplayName = eventDefinition.DisplayName ?? eventDefinition.Name;
+                des.Description = eventDefinition.Description;
+                des.InputProperties = Array.Empty<ActivityInputDescriptor>();
+                des.Outcomes = eventDefinition.Outcomes?.ToArray() ?? new[] { OutcomeNames.Done };
+
+                return des;
+            }
+
+            var descriptor = await CreateDescriptorAsync();
 
             return new ActivityType
             {
                 Type = typeof(EventReceived),
                 TypeName = descriptor.Type,
                 DisplayName = descriptor.DisplayName,
-                Describe = () => descriptor,
+                DescribeAsync = CreateDescriptorAsync,
                 Description = descriptor.Description,
                 ActivateAsync = async context =>
                 {

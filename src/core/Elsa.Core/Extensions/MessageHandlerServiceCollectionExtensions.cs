@@ -15,6 +15,8 @@ namespace Elsa
         {
             return services.AddTransient(typeof(INotificationHandler<T>), typeof(THandler));
         }
+
+        public static IServiceCollection AddNotificationHandlersFrom<TMarker>(this IServiceCollection services) => services.AddNotificationHandlers(typeof(TMarker));
         
         public static IServiceCollection AddNotificationHandlers(this IServiceCollection services, params Type[] markerTypes)
         {

@@ -10,7 +10,7 @@
 | Property             | Attribute       | Description | Type                         | Default     |
 | -------------------- | --------------- | ----------- | ---------------------------- | ----------- |
 | `context`            | `context`       |             | `string`                     | `undefined` |
-| `editorHeight`       | `editor-height` |             | `string`                     | `'6em'`     |
+| `editorHeight`       | `editor-height` |             | `string`                     | `'10em'`    |
 | `propertyDescriptor` | --              |             | `ActivityPropertyDescriptor` | `undefined` |
 | `propertyModel`      | --              |             | `ActivityDefinitionProperty` | `undefined` |
 | `showLabel`          | `show-label`    |             | `boolean`                    | `true`      |
@@ -31,6 +31,7 @@
  - [elsa-check-list-property](../properties/elsa-check-list-property)
  - [elsa-checkbox-property](../properties/elsa-checkbox-property)
  - [elsa-dropdown-property](../properties/elsa-dropdown-property)
+ - [elsa-json-property](../properties/elsa-json-property)
  - [elsa-multi-line-property](../properties/elsa-multi-line-property)
  - [elsa-multi-text-property](../properties/elsa-multi-text-property)
  - [elsa-radio-list-property](../properties/elsa-radio-list-property)
@@ -50,6 +51,7 @@ graph TD;
   elsa-check-list-property --> elsa-property-editor
   elsa-checkbox-property --> elsa-property-editor
   elsa-dropdown-property --> elsa-property-editor
+  elsa-json-property --> elsa-property-editor
   elsa-multi-line-property --> elsa-property-editor
   elsa-multi-text-property --> elsa-property-editor
   elsa-radio-list-property --> elsa-property-editor

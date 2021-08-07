@@ -1,7 +1,9 @@
 ﻿using System.Threading.Tasks;
 using Elsa.Activities.Conductor.Models;
 using Elsa.Activities.Conductor.Providers.Bookmarks;
+using Elsa.Models;
 using Elsa.Services;
+using Elsa.Services.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Elsa.Activities.Conductor.Endpoints.Conductor.Events
@@ -18,9 +20,8 @@ namespace Elsa.Activities.Conductor.Endpoints.Conductor.Events
         public async Task<IActionResult> Handle(string eventName, EventModel model)
         {
             var bookmark = new EventBookmark(eventName.ToLowerInvariant());
-            var trigger = new EventBookmark(eventName.ToLowerInvariant());
-            var context = new CollectWorkflowsContext(nameof(EventReceived), bookmark, trigger, model.CorrelationId, model.WorkflowInstanceId);
-            var pendingWorkflows = await _workflowLaunchpad.CollectAndDispatchWorkflowsAsync(context, model);
+            var context = new WorkflowsQuery(nameof(EventReceived), bookmark, model.CorrelationId, model.WorkflowInstanceId);
+            var pendingWorkflows = await _workflowLaunchpad.CollectAndDispatchWorkflowsAsync(context, new WorkflowInput(model));
             
             return Accepted(pendingWorkflows);
         }

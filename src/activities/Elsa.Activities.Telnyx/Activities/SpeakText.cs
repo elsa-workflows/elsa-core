@@ -98,9 +98,9 @@ namespace Elsa.Activities.Telnyx.Activities
                 Voice,
                 Payload,
                 EmptyToNull(PayloadType),
+                EmptyToNull(ServiceLevel),
                 EmptyToNull(ClientState),
                 EmptyToNull(CommandId),
-                EmptyToNull(ServiceLevel),
                 null
             );
 

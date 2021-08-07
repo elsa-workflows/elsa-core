@@ -3,24 +3,34 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
+using Elsa.Serialization;
 using Newtonsoft.Json;
+using NodaTime;
+using NodaTime.Serialization.JsonNet;
 
 namespace Elsa.Scripting.JavaScript.Services
 {
     public class ExpandoObjectToDictionaryWhenNoDesiredTypeResultConverter : IConvertsJintEvaluationResult
     {
-        readonly IConvertsJintEvaluationResult wrapped;
-        readonly IConvertsEnumerableToObject enumerableConverter;
+        private readonly IConvertsJintEvaluationResult _wrapped;
+        private readonly IConvertsEnumerableToObject _enumerableConverter;
 
         public object? ConvertToDesiredType(object? evaluationResult, Type desiredType)
         {
-            if(evaluationResult is ExpandoObject expando && desiredType == typeof(object))
-                return RecursivelyPrepareExpandoObjectForReturn(expando);
+            if(evaluationResult is ExpandoObject expando)
+            {
+                if(desiredType == typeof(object))
+                    return RecursivelyPrepareExpandoObjectForReturn(expando);
 
-            return wrapped.ConvertToDesiredType(evaluationResult, desiredType);
+                var serializationSettings = new JsonSerializerSettings().ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
+                var json = JsonConvert.SerializeObject(evaluationResult, desiredType, serializationSettings);
+                return JsonConvert.DeserializeObject(json, desiredType, serializationSettings);
+            }
+
+            return _wrapped.ConvertToDesiredType(evaluationResult, desiredType);
         }
 
-        object? RecursivelyPrepareExpandoObjectForReturn(ExpandoObject obj)
+        private object? RecursivelyPrepareExpandoObjectForReturn(ExpandoObject obj)
         {
             IDictionary<string,object?> ExpandoToDictionary(ExpandoObject expando)
             {
@@ -35,7 +45,7 @@ namespace Elsa.Scripting.JavaScript.Services
                                       let val = (IEnumerable) kvp.Value
                                       let replacementValue = (val is ExpandoObject expando)
                                             ? RecursivelyPrepareExpandoObjectForReturn(expando)
-                                            : enumerableConverter.ConvertEnumerable(val)
+                                            : _enumerableConverter.ConvertEnumerable(val)
                                       select new { Key = kvp.Key, Value = replacementValue })
                 .ToDictionary(k => k.Key, v => v.Value);
 
@@ -48,8 +58,8 @@ namespace Elsa.Scripting.JavaScript.Services
 
         public ExpandoObjectToDictionaryWhenNoDesiredTypeResultConverter(IConvertsEnumerableToObject enumerableConverter, IConvertsJintEvaluationResult wrapped)
         {
-            this.wrapped = wrapped ?? throw new ArgumentNullException(nameof(wrapped));
-            this.enumerableConverter = enumerableConverter ?? throw new ArgumentNullException(nameof(enumerableConverter));
+            _wrapped = wrapped ?? throw new ArgumentNullException(nameof(wrapped));
+            _enumerableConverter = enumerableConverter ?? throw new ArgumentNullException(nameof(enumerableConverter));
         }
     }
 }

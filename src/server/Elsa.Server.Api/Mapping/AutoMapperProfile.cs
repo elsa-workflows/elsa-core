@@ -13,9 +13,9 @@ namespace Elsa.Server.Api.Mapping
         {
             CreateMap<IWorkflowBlueprint, WorkflowBlueprintModel>();
             CreateMap<IWorkflowBlueprint, WorkflowBlueprintSummaryModel>();
-            CreateMap<IActivityBlueprint, ActivityBlueprintModel>().ConvertUsing<ActivityBlueprintConverter>();
+            CreateMap<IActivityBlueprint, ActivityBlueprintModel?>().ConvertUsing<ActivityBlueprintConverter>();
             CreateMap<ICompositeActivityBlueprint, CompositeActivityBlueprintModel>();
-            CreateMap<IConnection, ConnectionModel>().ConvertUsing<ConnectionConverter>();
+            CreateMap<IConnection, ConnectionModel?>().ConvertUsing<ConnectionConverter>();
             CreateMap<WorkflowInstance, WorkflowInstanceSummaryModel>();
             CreateMap<WorkflowDefinition, WorkflowDefinitionSummaryModel>();
         }

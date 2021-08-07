@@ -11,9 +11,10 @@
 | ------------------- | ---------------- | ----------- | ---------------------------- | --------------------- |
 | `context`           | `context`        |             | `string`                     | `undefined`           |
 | `defaultSyntax`     | `default-syntax` |             | `string`                     | `SyntaxNames.Literal` |
-| `editorHeight`      | `editor-height`  |             | `string`                     | `'6em'`               |
+| `editorHeight`      | `editor-height`  |             | `string`                     | `'10em'`              |
 | `expressions`       | --               |             | `{ [key: string]: string; }` | `{}`                  |
 | `fieldName`         | `field-name`     |             | `string`                     | `undefined`           |
+| `isReadOnly`        | `is-read-only`   |             | `boolean`                    | `undefined`           |
 | `label`             | `label`          |             | `string`                     | `undefined`           |
 | `singleLineMode`    | `single-line`    |             | `boolean`                    | `false`               |
 | `supportedSyntaxes` | --               |             | `string[]`                   | `[]`                  |

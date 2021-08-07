@@ -30,6 +30,7 @@ namespace Elsa.Activities.Http.Liquid
             options.Scope.SetValue("Request", new ObjectValue(new LiquidRequestAccessor()));
 
             options.MemberAccessStrategy.Register<HttpResponseModel>();
+            options.MemberAccessStrategy.Register<HttpRequestModel>();
             options.MemberAccessStrategy.Register<LiquidRequestAccessor, FluidValue>((_, name, _) =>
             {
                 var request = _httpContextAccessor.HttpContext?.Request;

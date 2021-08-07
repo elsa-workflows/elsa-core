@@ -15,7 +15,7 @@ namespace Elsa.Activities.Telnyx.Activities
     public class Webhook : Activity
     {
         [ActivityOutput] public TelnyxWebhook? Model { get; set; }
-        [ActivityOutput] public Payload? Payload { get; set; }
+        [ActivityOutput] public Payload? Output { get; set; }
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => context.WorkflowExecutionContext.IsFirstPass ? ExecuteInternal(context) : Suspend();
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context) => ExecuteInternal(context);
@@ -26,19 +26,23 @@ namespace Elsa.Activities.Telnyx.Activities
 
             if (webhookModel.Data.Payload is CallPayload callPayload)
             {
-                context.WorkflowExecutionContext.CorrelationId ??= callPayload.CallSessionId;
+                context.WorkflowExecutionContext.CorrelationId = callPayload.CallSessionId;
 
                 if (!context.HasCallControlId())
                     context.SetCallControlId(callPayload.CallControlId);
 
                 if (callPayload is CallInitiatedPayload callInitiatedPayload)
+                {
                     if (!context.HasFromNumber())
                         context.SetFromNumber(callInitiatedPayload.To);
+
+                    context.SetCallerNumber(callInitiatedPayload.From);
+                }
             }
 
             Model = webhookModel;
-            Payload = webhookModel.Data.Payload;
-            return Done(webhookModel);
+            Output = webhookModel.Data.Payload;
+            return Done();
         }
     }
 }

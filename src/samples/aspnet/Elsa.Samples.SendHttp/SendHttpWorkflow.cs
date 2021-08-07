@@ -1,5 +1,4 @@
 using Elsa.Activities.Http;
-using Elsa.Activities.Http.Models;
 using Elsa.Builders;
 using System;
 using System.Text.Json;
@@ -20,7 +19,7 @@ namespace Elsa.Samples.SendHttp
                     .WithReadContent(true))
                 .WithName("TestHttpRequest")
                 .WriteHttpResponse(setup => setup.WithStatusCode(System.Net.HttpStatusCode.OK)
-                    .WithContent(x => JsonSerializer.Serialize(x.GetOutputFrom<HttpResponseModel>("TestHttpRequest").Content)));
+                    .WithContent(async context => JsonSerializer.Serialize(await context.GetNamedActivityPropertyAsync<SendHttpRequest, object>("TestHttpRequest", x => x.ResponseContent))));
         }
     }
 }

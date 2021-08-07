@@ -1,24 +1,23 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Bookmarks;
+using Elsa.Services;
+using Elsa.Services.Bookmarks;
 
 namespace Elsa.Activities.Entity.Bookmarks
 {
     public class EntityChangedBookmark : IBookmark
     {
-        public EntityChangedBookmark(string? entityName, EntityChangedAction? action, string? contextId, string? correlationId)
+        public EntityChangedBookmark(string? entityName, EntityChangedAction? action, string? contextId)
         {
             EntityName = entityName;
             Action = action;
             ContextId = contextId;
-            CorrelationId = correlationId;
         }
 
         public string? EntityName { get; }
         public EntityChangedAction? Action { get; }
         public string? ContextId { get; }
-        public string? CorrelationId { get; }
     }
 
     public class EntityChangedWorkflowTriggerProvider : BookmarkProvider<EntityChangedBookmark, EntityChanged>
@@ -27,10 +26,9 @@ namespace Elsa.Activities.Entity.Bookmarks
             new[]
             {
                 Result(new EntityChangedBookmark(
-                    entityName: await context.ReadActivityPropertyAsync(x => x.EntityName, cancellationToken),
-                    action: await context.ReadActivityPropertyAsync(x => x.Action, cancellationToken),
-                    contextId: context.ActivityExecutionContext.WorkflowExecutionContext.WorkflowInstance.ContextId,
-                    correlationId: context.ActivityExecutionContext.WorkflowExecutionContext.WorkflowInstance.CorrelationId
+                    await context.ReadActivityPropertyAsync(x => x.EntityName, cancellationToken),
+                    await context.ReadActivityPropertyAsync(x => x.Action, cancellationToken),
+                    context.ActivityExecutionContext.WorkflowExecutionContext.WorkflowInstance.ContextId
                 ))
             };
     }

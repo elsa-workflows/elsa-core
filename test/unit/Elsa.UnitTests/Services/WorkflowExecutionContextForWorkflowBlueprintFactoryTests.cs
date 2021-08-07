@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Services.Models;
+using Elsa.Services.Workflows;
 using Elsa.Testing.Shared;
 using Elsa.Testing.Shared.AutoFixture.Attributes;
 using Moq;
@@ -19,7 +20,7 @@ namespace Elsa.Services
         {
             var sut = new WorkflowExecutionContextForWorkflowBlueprintFactory(serviceProvider, workflowFactory);
             Mock.Get(workflowFactory)
-                .Setup(x => x.InstantiateAsync(workflowBlueprint, default, default, default))
+                .Setup(x => x.InstantiateAsync(workflowBlueprint, default, default, default, default))
                 .Returns(() => Task.FromResult(instance));
 
             var result = await sut.CreateWorkflowExecutionContextAsync(workflowBlueprint);

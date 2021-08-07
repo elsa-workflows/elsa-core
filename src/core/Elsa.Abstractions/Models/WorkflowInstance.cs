@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using Elsa.Comparers;
-using Newtonsoft.Json.Linq;
+using Elsa.Services.Models;
 using NodaTime;
 
 namespace Elsa.Models
@@ -30,9 +30,9 @@ namespace Elsa.Models
         public Instant? CancelledAt { get; set; }
         public Instant? FaultedAt { get; set; }
         public Variables Variables { get; set; }
-        public object? Output { get; set; }
-        public IDictionary<string, IDictionary<string, object>> ActivityData { get; set; } = new Dictionary<string, IDictionary<string, object>>();
-        public IDictionary<string, object> ActivityOutput { get; set; } = new Dictionary<string, object>();
+        public WorkflowInputReference? Input { get; set; }
+        public WorkflowOutputReference? Output { get; set; }
+        public IDictionary<string, IDictionary<string, object?>> ActivityData { get; set; } = new Dictionary<string, IDictionary<string, object?>>();
 
         public HashSet<BlockingActivity> BlockingActivities
         {
@@ -44,5 +44,6 @@ namespace Elsa.Models
         public SimpleStack<ScheduledActivity> ScheduledActivities { get; set; }
         public SimpleStack<ActivityScope> Scopes { get; set; }
         public ScheduledActivity? CurrentActivity { get; set; }
+        public string? LastExecutedActivityId { get; set; }
     }
 }
