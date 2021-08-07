@@ -234,6 +234,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElsaDashboard.Samples.AspNe
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.Persistence.YesSql", "src\samples\persistence\Elsa.Samples.Persistence.YesSql\Elsa.Samples.Persistence.YesSql.csproj", "{3A30EFFE-32D8-40B8-9C62-427037BB5424}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.Persistence.YesSql", "src\samples\persistence\Elsa.Samples.Persistence.YesSql\Elsa.Samples.Persistence.YesSql.csproj", "{3A30EFFE-32D8-40B8-9C62-427037BB5424}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Designer.Components.Web", "src\designer\bindings\aspnet\Elsa.Designer.Components.Web\Elsa.Designer.Components.Web.csproj", "{3DF05CFC-AC77-489F-9A42-C4FDB599AA69}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{D7F75477-D477-4899-BA3B-67D6B56515B0}"
@@ -244,6 +246,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{D7F754
 		docker\Dockerfile-elsa-dashboard-and-server = docker\Dockerfile-elsa-dashboard-and-server
 		docker\README.md = docker\README.md
 	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Persistence.EntityFramework.MySql", "src\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.MySql\Elsa.Persistence.EntityFramework.MySql.csproj", "{D55BC08B-CA82-478A-99F7-EDE90AC33160}"
 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Persistence.EntityFramework.MySql", "src\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.MySql\Elsa.Persistence.EntityFramework.MySql.csproj", "{D55BC08B-CA82-478A-99F7-EDE90AC33160}"
@@ -252,6 +256,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.SendHttp", "sr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.CustomActivityOutcomes", "src\samples\console\Elsa.Samples.CustomActivityOutcomes\Elsa.Samples.CustomActivityOutcomes.csproj", "{30A9B140-14F5-4D00-84ED-1447F96D13C8}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.CustomActivityOutcomes", "src\samples\console\Elsa.Samples.CustomActivityOutcomes\Elsa.Samples.CustomActivityOutcomes.csproj", "{30A9B140-14F5-4D00-84ED-1447F96D13C8}"
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.File", "src\activities\Elsa.Activities.File\Elsa.Activities.File.csproj", "{BE284508-9582-4FCB-B0DD-0761AB940AD7}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.ReadLineToFile", "src\samples\console\Elsa.Samples.ReadLineToFile\Elsa.Samples.ReadLineToFile.csproj", "{3EB488DF-3C28-4DAD-B43E-6062E39629AB}"
@@ -285,6 +290,15 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "providers", "providers", "{EC5D4AFD-3F7F-4B51-9C38-F18C60618731}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Providers.Redis", "src\providers\Elsa.Providers.Redis\Elsa.Providers.Redis.csproj", "{9ACA06DA-9AFE-41A2-8109-EFED8B9B14A1}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.DistributedLocking.Redis", "src\locking\Elsa.DistributedLocking.Redis\Elsa.DistributedLocking.Redis.csproj", "{D1644D32-AA51-4D10-942E-F2722DB963B4}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.Conductor", "src\activities\Elsa.Activities.Conductor\Elsa.Activities.Conductor.csproj", "{E62077E1-59F4-4937-B45B-59F86417BCF8}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SampleClientApp.Web", "src\samples\server\SampleClientApp.Web\SampleClientApp.Web.csproj", "{7756E22A-AD59-46C1-A019-1D28D7217347}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElsaDashboard.Web", "src\dashboards\ElsaDashboard\ElsaDashboard.Web.csproj", "{1129868E-BA72-44C4-941C-A28D9001504B}"
+EndProject
 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.DistributedLocking.Redis", "src\locking\Elsa.DistributedLocking.Redis\Elsa.DistributedLocking.Redis.csproj", "{D1644D32-AA51-4D10-942E-F2722DB963B4}"
@@ -326,6 +340,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "html", "html", "{8E6215AB-F
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElsaDashboard.Samples.BlazorServer", "src\samples\dashboard\blazor\ElsaDashboard.Samples.BlazorServer\ElsaDashboard.Samples.BlazorServer.csproj", "{6A03B177-09E0-4421-9704-945E6248AB69}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElsaDashboard.Samples.BlazorServer", "src\samples\dashboard\blazor\ElsaDashboard.Samples.BlazorServer\ElsaDashboard.Samples.BlazorServer.csproj", "{6A03B177-09E0-4421-9704-945E6248AB69}"
+EndProject
 
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Persistence.EntityFramework.Oracle", "src\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.Oracle\Elsa.Persistence.EntityFramework.Oracle.csproj", "{FE6FC5F9-349A-4A3A-B291-CE0614030D5C}"
 EndProject
@@ -341,6 +357,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElsaDashboard.Samples.AspNe
 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.MassTransitRabbitMq", "src\samples\aspnet\Elsa.Samples.MassTransitRabbitMq\Elsa.Samples.MassTransitRabbitMq.csproj", "{6BDC89F4-2E0A-4534-9BE4-10E771D06C93}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.Rpa.Web", "src\activities\Elsa.Activities.Rpa.Web\Elsa.Activities.Rpa.Web.csproj", "{6242E81F-688E-4098-948A-F0C59593328A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.RpaWebConsole", "src\samples\console\Elsa.Samples.RpaWebConsole\Elsa.Samples.RpaWebConsole.csproj", "{F8567ECC-2D5D-453E-99FB-BE6B9DB2854F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -764,6 +784,14 @@ Global
 		{84751112-C2B7-41D4-98F5-D87D7C2E1DAE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{84751112-C2B7-41D4-98F5-D87D7C2E1DAE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{84751112-C2B7-41D4-98F5-D87D7C2E1DAE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6242E81F-688E-4098-948A-F0C59593328A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6242E81F-688E-4098-948A-F0C59593328A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6242E81F-688E-4098-948A-F0C59593328A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6242E81F-688E-4098-948A-F0C59593328A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F8567ECC-2D5D-453E-99FB-BE6B9DB2854F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F8567ECC-2D5D-453E-99FB-BE6B9DB2854F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F8567ECC-2D5D-453E-99FB-BE6B9DB2854F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F8567ECC-2D5D-453E-99FB-BE6B9DB2854F}.Release|Any CPU.Build.0 = Release|Any CPU
 
 		{FE6FC5F9-349A-4A3A-B291-CE0614030D5C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{FE6FC5F9-349A-4A3A-B291-CE0614030D5C}.Debug|Any CPU.Build.0 = Debug|Any CPU
@@ -927,6 +955,8 @@ Global
 		{8E6215AB-FDD3-4011-B598-B6BB63F294BB} = {4673732F-2853-47BD-91B8-C95C229D2C89}
 		{6A03B177-09E0-4421-9704-945E6248AB69} = {D86B94DC-A53C-4A67-A820-828DD359C49B}
 		{84751112-C2B7-41D4-98F5-D87D7C2E1DAE} = {22E75696-6FE9-436A-9097-EE21C603F818}
+		{6242E81F-688E-4098-948A-F0C59593328A} = {B43B546E-23F3-46E8-ACB7-D04F05CDA180}
+		{F8567ECC-2D5D-453E-99FB-BE6B9DB2854F} = {FC9F520F-BA51-4AD2-BFEE-EF787798E734}
 
 		{FE6FC5F9-349A-4A3A-B291-CE0614030D5C} = {C865B0FD-E505-48F0-BFAF-0D4D7C1B5CA1}
 
