@@ -18,7 +18,6 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
 
             modelBuilder.Entity<ActivityDefinitionEntity>(entity =>
             {
-
                 entity.Property(x => x.Description)
                     .HasColumnType("NCLOB");
 
@@ -27,39 +26,25 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
 
                 entity.Property(x => x.Name)
                     .HasColumnType("NCLOB");
-
-
-
             });
-
 
             modelBuilder.Entity<ActivityInstanceEntity>(entity =>
             {
-
                 entity.Property(x => x.Output)
                     .HasColumnType("NCLOB");
 
                 entity.Property(x => x.State)
                     .HasColumnType("NCLOB");
-
-
             });
-
-
 
             modelBuilder.Entity<ConnectionDefinitionEntity>(entity =>
             {
-
                 entity.Property(x => x.Outcome)
                     .HasColumnType("NCLOB");
-
-
             });
-
 
             modelBuilder.Entity<WorkflowDefinitionVersionEntity>(entity =>
             {
-
                 entity.Property(x => x.Description)
                     .HasColumnType("NCLOB");
 
@@ -68,16 +53,10 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
 
                 entity.Property(x => x.Variables)
                     .HasColumnType("NCLOB");
-
-
-
-
             });
-
 
             modelBuilder.Entity<WorkflowInstanceEntity>(entity =>
             {
-
                 entity.Property(x => x.ExecutionLog)
                     .HasColumnType("NCLOB");
 
@@ -89,14 +68,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.DbContexts
 
                 entity.Property(x => x.Scope)
                     .HasColumnType("NCLOB");
-
-
             });
-
-
-
-
-
 
             base.OnModelCreating(modelBuilder);
         }
