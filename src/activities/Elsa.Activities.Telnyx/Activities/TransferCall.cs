@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Elsa.Activities.Telnyx.Client.Models;
 using Elsa.Activities.Telnyx.Client.Services;
 using Elsa.Activities.Telnyx.Extensions;
+using Elsa.Activities.Telnyx.Services;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
@@ -33,10 +34,12 @@ namespace Elsa.Activities.Telnyx.Activities
     public class TransferCall : Activity
     {
         private readonly ITelnyxClient _telnyxClient;
+        public readonly IExtensionProvider _extensionProvider;
 
-        public TransferCall(ITelnyxClient telnyxClient)
+        public TransferCall(ITelnyxClient telnyxClient, IExtensionProvider extensionProvider)
         {
             _telnyxClient = telnyxClient;
+            _extensionProvider = extensionProvider;
         }
 
         [ActivityInput(
@@ -171,9 +174,11 @@ namespace Elsa.Activities.Telnyx.Activities
         private async ValueTask TransferCallAsync(ActivityExecutionContext context)
         {
             var fromNumber = context.GetFromNumber(From);
+            var extension = await _extensionProvider.GetAsync(To, context.CancellationToken);
+            var to = extension?.Destination ?? To;
 
             var request = new TransferCallRequest(
-                To,
+                to,
                 fromNumber,
                 FromDisplayName,
                 AudioUrl,
