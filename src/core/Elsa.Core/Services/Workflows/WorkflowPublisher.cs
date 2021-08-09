@@ -4,7 +4,10 @@ using System.Threading.Tasks;
 using Elsa.Events;
 using Elsa.Models;
 using Elsa.Persistence;
+using Elsa.Persistence.Specifications;
+using Elsa.Persistence.Specifications.WorkflowDefinitions;
 using MediatR;
+using Open.Linq.AsyncExtensions;
 using WorkflowDefinitionIdSpecification = Elsa.Persistence.Specifications.WorkflowInstances.WorkflowDefinitionIdSpecification;
 
 namespace Elsa.Services.Workflows
@@ -57,18 +60,18 @@ namespace Elsa.Services.Workflows
 
         public async Task<WorkflowDefinition> PublishAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken = default)
         {
-            var publishedDefinition = await _workflowDefinitionStore.FindByDefinitionIdAsync(
-                workflowDefinition.DefinitionId,
-                VersionOptions.LatestOrPublished,
-                cancellationToken);
+            var definitionId = workflowDefinition.DefinitionId;
+            
+            // Reset current latest and published definitions.
+            var publishedAndOrLatestDefinitions = await _workflowDefinitionStore.FindManyAsync(new LatestOrPublishedWorkflowDefinitionIdSpecification(definitionId), cancellationToken: cancellationToken).ToList();
 
-            if (publishedDefinition != null)
+            foreach (var publishedAndOrLatestDefinition in publishedAndOrLatestDefinitions)
             {
-                publishedDefinition.IsPublished = false;
-                publishedDefinition.IsLatest = false;
-                await _workflowDefinitionStore.SaveAsync(publishedDefinition, cancellationToken);
+                publishedAndOrLatestDefinition.IsPublished = false;
+                publishedAndOrLatestDefinition.IsLatest = false;
+                await _workflowDefinitionStore.SaveAsync(publishedAndOrLatestDefinition, cancellationToken);
             }
-
+            
             if (workflowDefinition.IsPublished)
                 workflowDefinition.Version++;
             else

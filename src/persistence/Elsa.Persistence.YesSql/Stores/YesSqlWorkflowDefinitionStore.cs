@@ -10,6 +10,7 @@ using Elsa.Persistence.YesSql.Indexes;
 using Elsa.Persistence.YesSql.Services;
 using Microsoft.Extensions.Logging;
 using YesSql;
+using YesSql.Services;
 using IIdGenerator = Elsa.Services.IIdGenerator;
 
 namespace Elsa.Persistence.YesSql.Stores
@@ -27,6 +28,10 @@ namespace Elsa.Persistence.YesSql.Stores
             return specification switch
             {
                 EntityIdSpecification<WorkflowDefinition> s => Query<WorkflowDefinitionIndex>(session, x => x.DefinitionId == s.Id),
+                LatestOrPublishedWorkflowDefinitionIdSpecification s => Query<WorkflowDefinitionIndex>(session, x => x.DefinitionId == s.WorkflowDefinitionId),
+                WorkflowDefinitionIdSpecification s => Query<WorkflowDefinitionIndex>(session, x => x.DefinitionId == s.Id),
+                ManyWorkflowDefinitionIdsSpecification s => Query<WorkflowDefinitionIndex>(session, x => x.DefinitionId.IsIn(s.Ids)),
+                WorkflowDefinitionVersionIdSpecification s => Query<WorkflowDefinitionIndex>(session, x => x.DefinitionVersionId == s.VersionId),
                 VersionOptionsSpecification s => Query<WorkflowDefinitionIndex>(session).WithVersion(s.VersionOptions),
                 _ => AutoMapSpecification<WorkflowDefinitionIndex>(session, specification)
             };
