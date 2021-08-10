@@ -1,6 +1,8 @@
 using Elsa;
+using Elsa.Caching.Rebus.Extensions;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
+using Elsa.Rebus.AzureServiceBus;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -25,10 +27,14 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
 
             // Elsa Server.
             var elsaSection = Configuration.GetSection("Elsa");
+            
+            var serviceBusConnectionString = Configuration.GetConnectionString("ASB");
 
             services
                 .AddElsa(options => options
                     .UseEntityFrameworkPersistence(ef => ef.UseSqlite())
+                    .UseAzureServiceBus(serviceBusConnectionString)
+                    .UseRebusCacheSignal()
                     .AddConsoleActivities()
                     .AddHttpActivities(elsaSection.GetSection("Server").Bind)
                     .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
@@ -36,6 +42,7 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
                     .AddJavaScriptActivities()
                     .AddActivitiesFrom<Startup>()
                     .AddFeatures(new[] { typeof(Startup) }, Configuration)
+                    .WithContainerName(elsaSection.GetSection("Server:ContainerName").Get<string>())
                 );
 
             services

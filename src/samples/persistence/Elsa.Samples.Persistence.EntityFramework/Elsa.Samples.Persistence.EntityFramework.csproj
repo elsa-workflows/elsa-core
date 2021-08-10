@@ -15,4 +15,8 @@
       <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.MySql\Elsa.Persistence.EntityFramework.MySql.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="System.Text.Encodings.Web" Version="5.0.1" />
+    </ItemGroup>
+
 </Project>

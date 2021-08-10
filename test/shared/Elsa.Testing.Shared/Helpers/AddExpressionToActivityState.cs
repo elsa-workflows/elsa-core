@@ -9,14 +9,11 @@ namespace Elsa.Testing.Shared.Helpers
 {
     public class AddExpressionToActivityState : Activity
     {
-        private IExpressionEvaluator _expressionEvaluator;
-        private AssertableActivityState _activityState;
+        private readonly IExpressionEvaluator _expressionEvaluator;
+        private readonly AssertableActivityState _activityState;
 
-        [ActivityInput]
-        public string Expression { get; set; }
-
-        [ActivityInput]
-        public string ExpressionSyntax { get; set; }
+        [ActivityInput] public string Expression { get; set; } = default!;
+        [ActivityInput] public string ExpressionSyntax { get; set; } = default!;
 
         public AddExpressionToActivityState(IExpressionEvaluator evaluator, AssertableActivityState activityState)
         {
