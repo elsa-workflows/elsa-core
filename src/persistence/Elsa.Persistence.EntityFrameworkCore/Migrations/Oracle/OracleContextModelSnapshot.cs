@@ -177,7 +177,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Migrations.Oracle
                         .HasColumnType("NUMBER(10)");
 
                     b.Property<string>("VersionId")
-                        .HasColumnType("NCLOB");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.HasKey("Id");
 
