@@ -543,7 +543,6 @@ export class ElsaWorkflowDefinitionEditorScreen {
   private renderPropertiesPanel() {
     return (
       <elsa-workflow-properties-panel
-        class="elsa-w-3/12 elsa-bg-white"
         workflowDefinition={this.workflowDefinition}
       />);
   }

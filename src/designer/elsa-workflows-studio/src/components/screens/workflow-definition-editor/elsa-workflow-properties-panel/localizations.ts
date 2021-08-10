@@ -5,7 +5,7 @@
       'Untitled': 'Untitled',
       'Id': 'Id',
       'Version': 'Latest Version',
-      'PublishedVersion': 'Latest Version',
+      'PublishedVersion': 'Published Version',
       'Status': 'Status',
       'Published': 'Published',
       'Draft': 'Draft',
