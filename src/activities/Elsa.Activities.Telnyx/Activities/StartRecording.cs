@@ -1,10 +1,12 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Elsa.Activities.Telnyx.Client.Models;
 using Elsa.Activities.Telnyx.Client.Services;
 using Elsa.Activities.Telnyx.Extensions;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Builders;
 using Elsa.Design;
 using Elsa.Exceptions;
 using Elsa.Expressions;
@@ -103,5 +105,32 @@ namespace Elsa.Activities.Telnyx.Activities
         }
 
         private static string? EmptyToNull(string? value) => value is "" ? null : value;
+    }
+    
+    public static class StartRecordingExtensions
+    {
+        public static ISetupActivity<StartRecording> WithCallControlId(this ISetupActivity<StartRecording> setup, Func<ActivityExecutionContext, ValueTask<string?>> value) => setup.Set(x => x.CallControlId, value);
+        public static ISetupActivity<StartRecording> WithCallControlId(this ISetupActivity<StartRecording> setup, Func<ActivityExecutionContext, string?> value) => setup.Set(x => x.CallControlId, value);
+        public static ISetupActivity<StartRecording> WithCallControlId(this ISetupActivity<StartRecording> setup, Func<ValueTask<string?>> value) => setup.Set(x => x.CallControlId, value);
+        public static ISetupActivity<StartRecording> WithCallControlId(this ISetupActivity<StartRecording> setup, Func<string?> value) => setup.Set(x => x.CallControlId, value);
+        public static ISetupActivity<StartRecording> WithCallControlId(this ISetupActivity<StartRecording> setup, string? value) => setup.Set(x => x.CallControlId, value);
+        
+        public static ISetupActivity<StartRecording> WithChannels(this ISetupActivity<StartRecording> setup, Func<ActivityExecutionContext, ValueTask<string?>> value) => setup.Set(x => x.Channels, value);
+        public static ISetupActivity<StartRecording> WithChannels(this ISetupActivity<StartRecording> setup, Func<ActivityExecutionContext, string?> value) => setup.Set(x => x.Channels, value);
+        public static ISetupActivity<StartRecording> WithChannels(this ISetupActivity<StartRecording> setup, Func<ValueTask<string?>> value) => setup.Set(x => x.Channels, value);
+        public static ISetupActivity<StartRecording> WithChannels(this ISetupActivity<StartRecording> setup, Func<string?> value) => setup.Set(x => x.Channels, value);
+        public static ISetupActivity<StartRecording> WithChannels(this ISetupActivity<StartRecording> setup, string? value) => setup.Set(x => x.Channels, value);
+        
+        public static ISetupActivity<StartRecording> WithFormat(this ISetupActivity<StartRecording> setup, Func<ActivityExecutionContext, ValueTask<string?>> value) => setup.Set(x => x.Format, value);
+        public static ISetupActivity<StartRecording> WithFormat(this ISetupActivity<StartRecording> setup, Func<ActivityExecutionContext, string?> value) => setup.Set(x => x.Format, value);
+        public static ISetupActivity<StartRecording> WithFormat(this ISetupActivity<StartRecording> setup, Func<ValueTask<string?>> value) => setup.Set(x => x.Format, value);
+        public static ISetupActivity<StartRecording> WithFormat(this ISetupActivity<StartRecording> setup, Func<string?> value) => setup.Set(x => x.Format, value);
+        public static ISetupActivity<StartRecording> WithFormat(this ISetupActivity<StartRecording> setup, string? value) => setup.Set(x => x.Format, value);
+        
+        public static ISetupActivity<StartRecording> WithPlayBeep(this ISetupActivity<StartRecording> setup, Func<ActivityExecutionContext, ValueTask<bool?>> value) => setup.Set(x => x.PlayBeep, value);
+        public static ISetupActivity<StartRecording> WithPlayBeep(this ISetupActivity<StartRecording> setup, Func<ActivityExecutionContext, bool?> value) => setup.Set(x => x.PlayBeep, value);
+        public static ISetupActivity<StartRecording> WithPlayBeep(this ISetupActivity<StartRecording> setup, Func<ValueTask<bool?>> value) => setup.Set(x => x.PlayBeep, value);
+        public static ISetupActivity<StartRecording> WithPlayBeep(this ISetupActivity<StartRecording> setup, Func<bool?> value) => setup.Set(x => x.PlayBeep, value);
+        public static ISetupActivity<StartRecording> WithPlayBeep(this ISetupActivity<StartRecording> setup, bool? value) => setup.Set(x => x.PlayBeep, value);
     }
 }
