@@ -544,6 +544,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
     return (
       <elsa-workflow-properties-panel
         workflowDefinition={this.workflowDefinition}
+        expandButtonPosition={2}
       />);
   }
 }

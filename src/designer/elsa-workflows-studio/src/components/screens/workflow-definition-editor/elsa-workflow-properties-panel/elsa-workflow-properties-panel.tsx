@@ -15,7 +15,8 @@ export class ElsaWorkflowPropertiesPanel {
 
   @Prop() workflowDefinition: WorkflowDefinition;
   @Prop() culture: string;
-  @Prop({attribute: 'server-url'}) serverUrl: string;
+  @Prop() serverUrl: string;
+  @Prop() expandButtonPosition = 1;
   @State() publishedVersion: number;
   @State() expanded: boolean;
   private i18next: i18n;
@@ -23,7 +24,7 @@ export class ElsaWorkflowPropertiesPanel {
 
   @Watch('workflowDefinition')
   async workflowDefinitionChangedHandler(newWorkflow: WorkflowDefinition, oldWorkflow: WorkflowDefinition) {
-    if (newWorkflow.isPublished !== oldWorkflow.isPublished) {
+    if (newWorkflow.isPublished !== oldWorkflow.isPublished && newWorkflow.isPublished) {
       await this.loadPublishedVersion();
     }
   }
@@ -35,15 +36,16 @@ export class ElsaWorkflowPropertiesPanel {
 
   render() {
     const t = (x, params?) => this.i18next.t(x, params);
-    const {workflowDefinition, expanded} = this;
-    const name = workflowDefinition.name || this.i18next.t('Untitled');
+    const {workflowDefinition, expanded, expandButtonPosition} = this;
+    const name = workflowDefinition.name || this.i18next.t("Untitled");
     const {isPublished} = workflowDefinition;
+    const expandPositionClass = expandButtonPosition == 1 ? "elsa-right-12" : "elsa-right-28";
 
     return (
       <Host>
         <button type="button"
                 onClick={this.toggle}
-                class={`${expanded ? "hidden" : "elsa-right-28"} workflow-settings-button elsa-fixed elsa-top-20 elsa-inline-flex elsa-items-center elsa-p-2 elsa-rounded-full elsa-border elsa-border-transparent elsa-bg-white shadow elsa-text-gray-400 hover:elsa-text-blue-500 focus:elsa-text-blue-500 hover:elsa-ring-2 hover:elsa-ring-offset-2 hover:elsa-ring-blue-500 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 elsa-z-10`}>
+                class={`${expanded ? "hidden" : expandPositionClass} workflow-settings-button elsa-fixed elsa-top-20 elsa-inline-flex elsa-items-center elsa-p-2 elsa-rounded-full elsa-border elsa-border-transparent elsa-bg-white shadow elsa-text-gray-400 hover:elsa-text-blue-500 focus:elsa-text-blue-500 hover:elsa-ring-2 hover:elsa-ring-offset-2 hover:elsa-ring-blue-500 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 elsa-z-10`}>
           <svg xmlns="http://www.w3.org/2000/svg" class="elsa-h-8 elsa-w-8" fill="none" viewBox="0 0 24 24"
                stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
@@ -116,14 +118,6 @@ export class ElsaWorkflowPropertiesPanel {
         </section>
       </Host>
     );
-  }
-
-  onExpandClick = () => {
-    this.expanded = true;
-  }
-
-  onCollapseClick = () => {
-    this.expanded = false;
   }
 
   createClient() {
