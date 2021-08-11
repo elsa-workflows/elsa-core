@@ -34,12 +34,10 @@ namespace Elsa.Activities.Telnyx.Activities
     public class TransferCall : Activity
     {
         private readonly ITelnyxClient _telnyxClient;
-        public readonly IExtensionProvider _extensionProvider;
 
-        public TransferCall(ITelnyxClient telnyxClient, IExtensionProvider extensionProvider)
+        public TransferCall(ITelnyxClient telnyxClient)
         {
             _telnyxClient = telnyxClient;
-            _extensionProvider = extensionProvider;
         }
 
         [ActivityInput(
@@ -174,8 +172,7 @@ namespace Elsa.Activities.Telnyx.Activities
         private async ValueTask TransferCallAsync(ActivityExecutionContext context)
         {
             var fromNumber = context.GetFromNumber(From);
-            var extension = await _extensionProvider.GetAsync(To, context.CancellationToken);
-            var to = extension?.Destination ?? To;
+            var to = To;
 
             var request = new TransferCallRequest(
                 to,
