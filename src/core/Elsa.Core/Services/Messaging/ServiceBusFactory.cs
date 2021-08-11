@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
@@ -13,7 +13,7 @@ using Rebus.ServiceProvider;
 
 namespace Elsa.Services.Messaging
 {
-    public class ServiceBusFactory : IServiceBusFactory
+    public class ServiceBusFactory : IServiceBusFactory, IDisposable
     {
         private readonly ElsaOptions _elsaOptions;
         private readonly ILoggerFactory _loggerFactory;
@@ -28,6 +28,18 @@ namespace Elsa.Services.Messaging
             _loggerFactory = loggerFactory;
             _serviceProvider = serviceProvider;
             _handlerActivator = new DependencyInjectionHandlerActivator(serviceProvider);
+        }
+
+        public void Dispose()
+        {
+            foreach (var key in _serviceBuses.Keys)
+            {
+                if (_serviceBuses.Remove(key, out var bus))
+                {
+                    bus.Dispose();
+                }
+            }
+            _serviceBuses.Clear();
         }
 
         public async Task<IBus> GetServiceBusAsync(Type messageType, string? queueName = default, CancellationToken cancellationToken = default)
