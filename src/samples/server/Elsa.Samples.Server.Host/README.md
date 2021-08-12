@@ -123,7 +123,9 @@ YesSql Postgre
 
 "Elsa:Features:DefaultPersistence" is a mandatory feature resposible for Elsa Core persistence and must be enabled
 
-### Workflow Settings for programmatic workflows are stored in Environment Variables and readonly, they can be set in the format as follows:
+### Workflow Settings is an optional feature and is controlled by IWorkflowSettingsProvider that currently has the database and configuration providers.
+### The database provider uses one of available database persistence while the configuration one uses Environment Variables using IConfiguration
+### The Environment Variable for the configuration provider can be set in the format as follows:
 
 Name: "<WorkflowBlueprintId>:disabled"
 Value: <boolean>
