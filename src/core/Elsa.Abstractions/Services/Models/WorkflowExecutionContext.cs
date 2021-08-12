@@ -32,11 +32,6 @@ namespace Elsa.Services.Models
             IsFirstPass = true;
             Serializer = serviceProvider.GetRequiredService<JsonSerializer>();
             Mediator = serviceProvider.GetRequiredService<IMediator>();
-
-            if (workflowBlueprint.IsDisabled)
-            {
-                WorkflowInstance.WorkflowStatus = WorkflowStatus.Disabled;
-            }
         }
 
         public IWorkflowBlueprint WorkflowBlueprint { get; }

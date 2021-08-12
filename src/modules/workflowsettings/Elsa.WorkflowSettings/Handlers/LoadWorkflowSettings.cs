@@ -1,30 +1,34 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Events;
-using Elsa.Services.Models;
-using Elsa.WorkflowSettings.Abstractions.Services.WorkflowSettingsContexts;
+using Elsa.WorkflowSettings.Abstractions.Services.WorkflowSettings;
+using Elsa.WorkflowSettings.Models;
 using MediatR;
 
 namespace Elsa.WorkflowSettings.Handlers
 {
-    public class LoadWorkflowSettings : INotificationHandler<WorkflowSettingsLoaded>
+    public class LoadWorkflowSettings : INotificationHandler<WorkflowBlueprintLoaded>
     {
-        private readonly IWorkflowSettingsContextManager _workflowSettingsContextManager;
+        private readonly IWorkflowSettingsManager _workflowSettingsManager;
 
-        public LoadWorkflowSettings(IWorkflowSettingsContextManager workflowSettingsContextManager)
+        public LoadWorkflowSettings(IWorkflowSettingsManager workflowSettingsManager)
         {
-            _workflowSettingsContextManager = workflowSettingsContextManager;
+            _workflowSettingsManager = workflowSettingsManager;
         }
 
-        public async Task Handle(WorkflowSettingsLoaded notification, CancellationToken cancellationToken)
+        public async Task Handle(WorkflowBlueprintLoaded notification, CancellationToken cancellationToken)
         {
-            var workflowSettingsContext = notification.WorkflowSettingsContext;
-            workflowSettingsContext.Value = await LoadWorkflowSettingsAsync(workflowSettingsContext, cancellationToken);
+            var workflowSetting = new WorkflowSetting
+            {
+                WorkflowBlueprintId = notification.WorkflowBlueprint.Id,
+                Key = notification.WorkflowBlueprint.Name ?? "disabled"
+            };
+            notification.WorkflowBlueprint.Value = await LoadWorkflowSettingsAsync(workflowSetting, cancellationToken);
         }
 
-        private async ValueTask<bool> LoadWorkflowSettingsAsync(WorkflowSettingsContext workflowSettingsContext, CancellationToken cancellationToken)
+        private async ValueTask<string?> LoadWorkflowSettingsAsync(WorkflowSetting workflowSetting, CancellationToken cancellationToken)
         {            
-            return await _workflowSettingsContextManager.LoadContext(workflowSettingsContext, cancellationToken);
+            return await _workflowSettingsManager.LoadSettingAsync(workflowSetting, cancellationToken);
         }
     }
 }

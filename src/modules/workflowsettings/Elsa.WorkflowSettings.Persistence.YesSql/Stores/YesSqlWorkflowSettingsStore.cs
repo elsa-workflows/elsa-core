@@ -22,13 +22,13 @@ namespace Elsa.WorkflowSettings.Persistence.YesSql.Stores
         {
         }
 
-        protected override async Task<WorkflowSettingsDocument?> FindDocumentAsync(ISession session, WorkflowSetting entity, CancellationToken cancellationToken) => await Query<WorkflowSettingsIndex>(session, x => x.DefinitionId == entity.Id).FirstOrDefaultAsync();
+        protected override async Task<WorkflowSettingsDocument?> FindDocumentAsync(ISession session, WorkflowSetting entity, CancellationToken cancellationToken) => await Query<WorkflowSettingsIndex>(session, x => x.SettingId == entity.Id).FirstOrDefaultAsync();
 
         protected override IQuery<WorkflowSettingsDocument> MapSpecification(ISession session, ISpecification<WorkflowSetting> specification)
         {
             return specification switch
             {
-                EntityIdSpecification<WorkflowSetting> s => Query<WorkflowSettingsIndex>(session, x => x.DefinitionId == s.Id),
+                EntityIdSpecification<WorkflowSetting> s => Query<WorkflowSettingsIndex>(session, x => x.SettingId == s.Id),
                 _ => AutoMapSpecification<WorkflowSettingsIndex>(session, specification)
             };
         }

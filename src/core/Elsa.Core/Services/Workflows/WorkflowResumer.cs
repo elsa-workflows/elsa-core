@@ -76,6 +76,11 @@ namespace Elsa.Services.Workflows
             if (workflowBlueprint == null)
                 throw new WorkflowException($"Workflow instance {workflowInstance.Id} references workflow definition {workflowInstance.DefinitionId} version {workflowInstance.Version}, but no such workflow definition was found.");
 
+            if (workflowBlueprint.IsDisabled)
+            {
+                return new RunWorkflowResult(workflowInstance, activityId, false);
+            }
+
             return await _workflowRunner.RunWorkflowAsync(workflowBlueprint, workflowInstance, activityId, input, cancellationToken);
         }
     }

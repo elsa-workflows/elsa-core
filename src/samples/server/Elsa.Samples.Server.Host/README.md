@@ -119,12 +119,11 @@ YesSql Postgre
     ...
 ```
 
-### Mandotory features
+### Mandatory features
 
-"Elsa:Features:DefaultPersistence" is a mandotory feature resposible for Elsa Core persistence and must be enabled
-"Elsa:Features:WorkflowSettings" is a mandotory feature resposible for the Workflow Blueprint Settings persistence functionality and must be enabled
+"Elsa:Features:DefaultPersistence" is a mandatory feature resposible for Elsa Core persistence and must be enabled
 
-### Workflow Settings for programmatical workflows are stored in Environment Variables and readonly, they can be set in the format as follows:
+### Workflow Settings for programmatic workflows are stored in Environment Variables and readonly, they can be set in the format as follows:
 
 Name: "<WorkflowBlueprintId>:disabled"
 Value: <boolean>

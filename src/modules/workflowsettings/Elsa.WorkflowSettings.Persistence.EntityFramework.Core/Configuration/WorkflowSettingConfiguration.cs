@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Elsa.WorkflowSettings.Persistence.EntityFramework.Core.Configuration
 {
-    public class WorkflowSettingsConfiguration : IEntityTypeConfiguration<WorkflowSetting>
+    public class WorkflowSettingConfiguration : IEntityTypeConfiguration<WorkflowSetting>
     {
         public void Configure(EntityTypeBuilder<WorkflowSetting> builder)
         {

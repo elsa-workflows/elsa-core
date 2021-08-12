@@ -3,6 +3,7 @@ using Elsa.Caching;
 using Elsa.WorkflowSettings.Abstractions.Persistence;
 using Elsa.WorkflowSettings.Options;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Elsa.WorkflowSettings
 {
@@ -12,8 +13,7 @@ namespace Elsa.WorkflowSettings
         {
             WorkflowSettingsOptions = new WorkflowSettingsOptions();
             Services = services;
-            services.AddMemoryCache();
-            services.AddSingleton<ICacheSignal, CacheSignal>();
+            services.TryAddSingleton<ICacheSignal, CacheSignal>();
         }
 
         public WorkflowSettingsOptions WorkflowSettingsOptions { get; }

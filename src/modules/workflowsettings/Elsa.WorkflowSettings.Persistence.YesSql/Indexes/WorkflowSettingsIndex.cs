@@ -6,9 +6,7 @@ namespace Elsa.WorkflowSettings.Persistence.YesSql.Indexes
 {
     public class WorkflowSettingsIndex : MapIndex
     {
-        public string DefinitionId { get; set; } = default!;
-        //public string? TenantId { get; set; }
-        //public bool IsEnabled { get; set; }
+        public string SettingId { get; set; } = default!;
     }
 
     public class WorkflowSettingsIndexProvider : IndexProvider<WorkflowSettingsDocument>
@@ -21,9 +19,7 @@ namespace Elsa.WorkflowSettings.Persistence.YesSql.Indexes
                 .Map(
                     workflowSettings => new WorkflowSettingsIndex
                     {
-                        DefinitionId = workflowSettings.DefinitionId,
-                        //TenantId = webhookDefinition.TenantId,
-                        //IsEnabled = webhookDefinition.IsEnabled
+                        SettingId = workflowSettings.SettingId
                     }
                 );
         }

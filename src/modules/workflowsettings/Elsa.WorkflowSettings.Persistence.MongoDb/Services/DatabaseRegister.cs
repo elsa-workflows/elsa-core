@@ -15,8 +15,6 @@ namespace Elsa.WorkflowSettings.Persistence.MongoDb.Services
 
             if (firstPass == false)
                 return;
-
-            RegisterSerializers();
         }
 
         private static bool Map()
@@ -45,12 +43,5 @@ namespace Elsa.WorkflowSettings.Persistence.MongoDb.Services
             return true;
         }
 
-        private static void RegisterSerializers()
-        {
-            //BsonSerializer.RegisterSerializer(VariablesSerializer.Instance);
-            //BsonSerializer.RegisterSerializer(JObjectSerializer.Instance);
-            //BsonSerializer.RegisterSerializer(ObjectSerializer.Instance);
-            //BsonSerializer.RegisterSerializer(new InstantSerializer());
-        }
     }
 }

@@ -24,64 +24,54 @@ namespace Elsa.Decorators
         private readonly IMemoryCache _memoryCache;
         private readonly ICacheSignal _cacheSignal;
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
-        private readonly IMediator _mediator;
 
         public CachingWorkflowRegistry(
             IWorkflowRegistry workflowRegistry, 
             IMemoryCache memoryCache, 
             ICacheSignal cacheSignal, 
-            IWorkflowInstanceStore workflowInstanceStore, 
-            IMediator mediator)
+            IWorkflowInstanceStore workflowInstanceStore)
         {
             _workflowRegistry = workflowRegistry;
             _memoryCache = memoryCache;
             _cacheSignal = cacheSignal;
             _workflowInstanceStore = workflowInstanceStore;
-            _mediator = mediator;
         }
 
-        public async Task<IEnumerable<IWorkflowBlueprint>> ListAsync(CancellationToken cancellationToken, bool includeDisabled = false) => await ListInternalAsync(cancellationToken, includeDisabled);
-        public async Task<IEnumerable<IWorkflowBlueprint>> ListActiveAsync(CancellationToken cancellationToken = default, bool includeDisabled = false) => await ListActiveInternalAsync(cancellationToken, includeDisabled).ToListAsync(cancellationToken);
+        public async Task<IEnumerable<IWorkflowBlueprint>> ListAsync(CancellationToken cancellationToken) => await ListInternalAsync(cancellationToken);
+        public async Task<IEnumerable<IWorkflowBlueprint>> ListActiveAsync(CancellationToken cancellationToken = default) => await ListActiveInternalAsync(cancellationToken).ToListAsync(cancellationToken);
 
         public async Task<IWorkflowBlueprint?> GetAsync(string id, string? tenantId, VersionOptions version, CancellationToken cancellationToken, bool includeDisabled = false) =>
-            await FindAsync(x => x.Id == id && x.TenantId == tenantId && x.WithVersion(version), cancellationToken, includeDisabled);
+            await FindAsync(x => x.Id == id && x.TenantId == tenantId && x.WithVersion(version), cancellationToken);
 
-        public async Task<IEnumerable<IWorkflowBlueprint>> FindManyAsync(Func<IWorkflowBlueprint, bool> predicate, CancellationToken cancellationToken, bool includeDisabled = false)
+        public async Task<IEnumerable<IWorkflowBlueprint>> FindManyAsync(Func<IWorkflowBlueprint, bool> predicate, CancellationToken cancellationToken)
         {
-            var workflows = await ListInternalAsync(cancellationToken, includeDisabled);
+            var workflows = await ListInternalAsync(cancellationToken);
             return workflows.Where(predicate);
         }
 
-        public async Task<IWorkflowBlueprint?> FindAsync(Func<IWorkflowBlueprint, bool> predicate, CancellationToken cancellationToken, bool includeDisabled = false)
+        public async Task<IWorkflowBlueprint?> FindAsync(Func<IWorkflowBlueprint, bool> predicate, CancellationToken cancellationToken)
         {
-            var workflows = await ListInternalAsync(cancellationToken, includeDisabled);
+            var workflows = await ListInternalAsync(cancellationToken);
             return workflows.FirstOrDefault(predicate);
         }
 
-        private async Task<ICollection<IWorkflowBlueprint>> ListInternalAsync(CancellationToken cancellationToken, bool includeDisabled)
+        private async Task<ICollection<IWorkflowBlueprint>> ListInternalAsync(CancellationToken cancellationToken)
         {
             return await _memoryCache.GetOrCreateAsync(CacheKey, async entry =>
             {
                 entry.Monitor(_cacheSignal.GetToken(CacheKey));
-                return await _workflowRegistry.ListAsync(cancellationToken, includeDisabled).ToList();
+                return await _workflowRegistry.ListAsync(cancellationToken).ToList();
             });
         }
         
-        private async IAsyncEnumerable<IWorkflowBlueprint> ListActiveInternalAsync([EnumeratorCancellation] CancellationToken cancellationToken, bool includeDisabled)
+        private async IAsyncEnumerable<IWorkflowBlueprint> ListActiveInternalAsync([EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            var workflows = await ListInternalAsync(cancellationToken, includeDisabled);
+            var workflows = await ListInternalAsync(cancellationToken);
             
             foreach (var workflow in workflows)
             {
                 // If a workflow is not published, only consider it for processing if it has at least one non-ended workflow instance.
                 if (!workflow.IsPublished && !await WorkflowHasUnfinishedWorkflowsAsync(workflow, cancellationToken))
-                    continue;
-
-                var workflowSettingsContext = new WorkflowSettingsContext(workflow.Id);
-                await _mediator.Publish(new WorkflowSettingsLoaded(workflowSettingsContext), cancellationToken);
-                workflow.IsDisabled = workflowSettingsContext.Value;
-
-                if (!includeDisabled && workflowSettingsContext.Value)
                     continue;
 
                 yield return workflow;

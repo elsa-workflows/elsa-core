@@ -116,7 +116,7 @@ namespace Elsa.Services.Workflows
                     runWorkflowResult = new RunWorkflowResult(workflowInstance, activityId, true);
                     break;
 
-                case WorkflowStatus.Suspended:
+                case WorkflowStatus.Suspended:                    
                     runWorkflowResult = await ResumeWorkflowAsync(workflowExecutionContext, activity!, cancellationToken);
 
                     if (!runWorkflowResult.Executed)
@@ -126,10 +126,7 @@ namespace Elsa.Services.Workflows
                     }
 
                     break;
-                case WorkflowStatus.Disabled:
-                    runWorkflowResult = new RunWorkflowResult(workflowInstance, activityId, false);
 
-                    break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
@@ -142,7 +139,6 @@ namespace Elsa.Services.Workflows
                 WorkflowStatus.Finished => new WorkflowCompleted(workflowExecutionContext),
                 WorkflowStatus.Faulted => new WorkflowFaulted(workflowExecutionContext),
                 WorkflowStatus.Suspended => new WorkflowSuspended(workflowExecutionContext),
-                WorkflowStatus.Disabled => new WorkflowDisabled(workflowExecutionContext),
                 _ => default(INotification)
             };
 

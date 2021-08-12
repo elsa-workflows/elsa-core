@@ -11,6 +11,18 @@
     </Description>
     <PackageTags>elsa, workflows, webhooks</PackageTags>
   </PropertyGroup>
+  
+  <ItemGroup>
+    <Compile Remove="Endpoints\**" />
+    <Compile Remove="Models\**" />
+    <Compile Remove="Services\**" />
+    <EmbeddedResource Remove="Endpoints\**" />
+    <EmbeddedResource Remove="Models\**" />
+    <EmbeddedResource Remove="Services\**" />
+    <None Remove="Endpoints\**" />
+    <None Remove="Models\**" />
+    <None Remove="Services\**" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Refit" Version="6.0.38" />

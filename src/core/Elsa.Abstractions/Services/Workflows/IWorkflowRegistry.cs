@@ -15,12 +15,12 @@ namespace Elsa.Services
         /// <summary>
         /// Lists all versions of all workflow blueprints.
         /// </summary>
-        Task<IEnumerable<IWorkflowBlueprint>> ListAsync(CancellationToken cancellationToken = default, bool includeDisabled = false);
+        Task<IEnumerable<IWorkflowBlueprint>> ListAsync(CancellationToken cancellationToken = default);
         
         /// <summary>
         /// Lists only those workflow blueprints that are published or have at least one non-finished workflow.
         /// </summary>
-        Task<IEnumerable<IWorkflowBlueprint>> ListActiveAsync(CancellationToken cancellationToken = default, bool includeDisabled = false);
+        Task<IEnumerable<IWorkflowBlueprint>> ListActiveAsync(CancellationToken cancellationToken = default);
         
         /// <summary>
         /// Gets a single workflow blueprint with the specified ID for the specified tenant and version.
@@ -30,11 +30,11 @@ namespace Elsa.Services
         /// <summary>
         /// Returns all workflow blueprints that fit the specified predicate.
         /// </summary>
-        Task<IEnumerable<IWorkflowBlueprint>> FindManyAsync(Func<IWorkflowBlueprint, bool> predicate, CancellationToken cancellationToken = default, bool includeDisabled = false);
+        Task<IEnumerable<IWorkflowBlueprint>> FindManyAsync(Func<IWorkflowBlueprint, bool> predicate, CancellationToken cancellationToken = default);
         
         /// <summary>
         /// Returns a single workflow blueprint that fits the specified predicate. 
         /// </summary>
-        Task<IWorkflowBlueprint?> FindAsync(Func<IWorkflowBlueprint, bool> predicate, CancellationToken cancellationToken = default, bool includeDisabled = false);
+        Task<IWorkflowBlueprint?> FindAsync(Func<IWorkflowBlueprint, bool> predicate, CancellationToken cancellationToken = default);
     }
 }

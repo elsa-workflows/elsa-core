@@ -19,13 +19,5 @@ namespace Elsa.Webhooks.Persistence.EntityFramework.Core.Stores
         }
 
         protected override Expression<Func<WebhookDefinition, bool>> MapSpecification(ISpecification<WebhookDefinition> specification) => AutoMapSpecification(specification);
-
-        //protected override void OnSaving(WebhookContext dbContext, WebhookDefinition entity)
-        //{
-        //}
-
-        //protected override void OnLoading(WebhookContext dbContext, WebhookDefinition entity)
-        //{
-        //}
     }
 }

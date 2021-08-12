@@ -37,10 +37,10 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.Core.Extensions
         /// https://docs.microsoft.com/en-us/ef/core/performance/advanced-performance-topics?tabs=with-constant#dbcontext-pooling.
         /// </para>
         /// </remarks>
-        /// <param name="webhookOptions">An Elsa options builder</param>
+        /// <param name="workflowSettingsOptions">An Elsa options builder</param>
         /// <param name="configure">A configuration builder callback</param>
         /// <param name="autoRunMigrations">If <c>true</c> then database migrations will be auto-executed on startup</param>
-        /// <typeparam name="TWebhookContext">The concrete type of <see cref="ElsaContext"/> to use.</typeparam>
+        /// <typeparam name="TWorkflowSettingsContext">The concrete type of <see cref="WorkflowSettingsContext"/> to use.</typeparam>
         /// <returns>The Elsa options builder, so calls may be chained</returns>
         public static WorkflowSettingsOptionsBuilder UseEntityFrameworkPersistence<TWorkflowSettingsContext>(this WorkflowSettingsOptionsBuilder workflowSettingsOptions,
             Action<DbContextOptionsBuilder> configure,
@@ -56,7 +56,7 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.Core.Extensions
         /// https://docs.microsoft.com/en-us/ef/core/performance/advanced-performance-topics?tabs=with-constant#dbcontext-pooling.
         /// </para>
         /// </remarks>
-        /// <param name="webhookOptions">An Elsa options builder</param>
+        /// <param name="workflowSettingsOptions">An Elsa options builder</param>
         /// <param name="configure">A configuration builder callback, which also provides access to a service provider</param>
         /// <param name="autoRunMigrations">If <c>true</c> then database migrations will be auto-executed on startup</param>
         /// <returns>The Elsa options builder, so calls may be chained</returns>
@@ -74,10 +74,10 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.Core.Extensions
         /// https://docs.microsoft.com/en-us/ef/core/performance/advanced-performance-topics?tabs=with-constant#dbcontext-pooling.
         /// </para>
         /// </remarks>
-        /// <param name="webhookOptions">An Elsa options builder</param>
+        /// <param name="workflowSettingsOptions">An Elsa options builder</param>
         /// <param name="configure">A configuration builder callback, which also provides access to a service provider</param>
         /// <param name="autoRunMigrations">If <c>true</c> then database migrations will be auto-executed on startup</param>
-        /// <typeparam name="TWebhookContext">The concrete type of <see cref="ElsaContext"/> to use.</typeparam>
+        /// <typeparam name="TWorkflowSettingsContext">The concrete type of <see cref="WorkflowSettingsContext"/> to use.</typeparam>
         /// <returns>The Elsa options builder, so calls may be chained</returns>
         public static WorkflowSettingsOptionsBuilder UseEntityFrameworkPersistence<TWorkflowSettingsContext>(this WorkflowSettingsOptionsBuilder workflowSettingsOptions,
             Action<IServiceProvider, DbContextOptionsBuilder> configure,
@@ -99,7 +99,7 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.Core.Extensions
         /// which is suitable for your use-case.
         /// </para>
         /// </remarks>
-        /// <param name="webhookOptions">An Elsa options builder</param>
+        /// <param name="workflowSettingsOptions">An Elsa options builder</param>
         /// <param name="configure">A configuration builder callback</param>
         /// <param name="serviceLifetime">The service lifetime which will be used for each DB Context instance</param>
         /// <param name="autoRunMigrations">If <c>true</c> then database migrations will be auto-executed on startup</param>
@@ -125,11 +125,11 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.Core.Extensions
         /// which is suitable for your use-case.
         /// </para>
         /// </remarks>
-        /// <param name="webhookOptions">An Elsa options builder</param>
+        /// <param name="workflowSettingsOptions">An Elsa options builder</param>
         /// <param name="configure">A configuration builder callback</param>
         /// <param name="serviceLifetime">The service lifetime which will be used for each DB Context instance</param>
         /// <param name="autoRunMigrations">If <c>true</c> then database migrations will be auto-executed on startup</param>
-        /// <typeparam name="TWebhookContext">The concrete type of <see cref="ElsaContext"/> to use.</typeparam>
+        /// <typeparam name="TWorkflowSettingsContext">The concrete type of <see cref="WorkflowSettingsContext"/> to use.</typeparam>
         /// <returns>The Elsa options builder, so calls may be chained</returns>
         public static WorkflowSettingsOptionsBuilder UseNonPooledEntityFrameworkPersistence<TWorkflowSettingsContext>(this WorkflowSettingsOptionsBuilder workflowSettingsOptions,
             Action<DbContextOptionsBuilder> configure,
@@ -152,7 +152,7 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.Core.Extensions
         /// which is suitable for your use-case.
         /// </para>
         /// </remarks>
-        /// <param name="webhookOptions">An Elsa options builder</param>
+        /// <param name="workflowSettingsOptions">An Elsa options builder</param>
         /// <param name="configure">A configuration builder callback, which also provides access to a service provider</param>
         /// <param name="serviceLifetime">The service lifetime which will be used for each DB Context instance</param>
         /// <param name="autoRunMigrations">If <c>true</c> then database migrations will be auto-executed on startup</param>
@@ -178,11 +178,11 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.Core.Extensions
         /// which is suitable for your use-case.
         /// </para>
         /// </remarks>
-        /// <param name="webhookOptions">An Elsa options builder</param>
+        /// <param name="workflowSettingsOptions">An Elsa options builder</param>
         /// <param name="configure">A configuration builder callback, which also provides access to a service provider</param>
         /// <param name="serviceLifetime">The service lifetime which will be used for each DB Context instance</param>
         /// <param name="autoRunMigrations">If <c>true</c> then database migrations will be auto-executed on startup</param>
-        /// <typeparam name="TWebhookContext">The concrete type of <see cref="ElsaContext"/> to use.</typeparam>
+        /// <typeparam name="TWorkflowSettingsContext">The concrete type of <see cref="WorkflowSettingsContext"/> to use.</typeparam>
         /// <returns>The Elsa options builder, so calls may be chained</returns>
         public static WorkflowSettingsOptionsBuilder UseNonPooledEntityFrameworkPersistence<TWorkflowSettingsContext>(this WorkflowSettingsOptionsBuilder workflowSettingsOptions,
             Action<IServiceProvider, DbContextOptionsBuilder> configure,

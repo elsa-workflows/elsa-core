@@ -1,5 +1,4 @@
-
-namespace Elsa.Services.Models
+namespace Elsa.WorkflowSettings.Services.Models
 {
     public class WorkflowSettingsContext
     {
@@ -16,6 +15,6 @@ namespace Elsa.Services.Models
 
         public string WorkflowBlueprintId { get; }
         public string Key { get; }
-        public bool Value { get; set; }
+        public object? Value { get; set; }
     }
 }

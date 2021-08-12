@@ -176,7 +176,6 @@ namespace Elsa.Builders
                 Description,
                 IsLatest,
                 IsPublished,
-                //IsDisabled,
                 Tag,
                 Channel,
                 Variables,

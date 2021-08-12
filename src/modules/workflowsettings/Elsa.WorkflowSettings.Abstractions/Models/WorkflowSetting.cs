@@ -6,6 +6,6 @@ namespace Elsa.WorkflowSettings.Models
     {
         public string WorkflowBlueprintId { get; set; } = default!;
         public string Key { get; set; } = default!;
-        public string Value { get; set; } = default!;
+        public string? Value { get; set; }
     }
 }

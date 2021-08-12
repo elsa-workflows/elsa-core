@@ -11,7 +11,6 @@ namespace Elsa.Models
         Finished,
         Suspended,
         Faulted,
-        Cancelled,
-        Disabled
+        Cancelled
     }
 }
