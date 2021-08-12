@@ -1,0 +1,14 @@
+POST https://localhost:5001/api/tokens
+Content-Type: application/json
+
+{
+    "userName": "Jason"
+}
+
+###
+
+GET https://localhost:5001/workflows/safe-hello
+Authorization: Bearer eyJhbGciOiJodHRwOi8vd3d3LnczLm9yZy8yMDAxLzA0L3htbGRzaWctbW9yZSNobWFjLXNoYTI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiSmFzb24iLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6ImE3ODM4OWMwLTZiZWEtNGJjMS1iNzkzLTc5MDk3NTg4MWYzYSIsImV4cCI6MTYyODgwMTEyNywiaXNzIjoieW91ci1pZGVudGl0eS1zZXJ2ZXIiLCJhdWQiOiJ5b3VyLWlkZW50aXR5LXNlcnZlciJ9.SjNq6KqXtitnKG1_CheIBMZLNjYcal_shH6UkUc8k5Q
+###
+
+

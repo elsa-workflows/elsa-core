@@ -45,5 +45,23 @@ namespace Elsa.Activities.Http
         public static ISetupActivity<HttpEndpoint> WithTargetType(this ISetupActivity<HttpEndpoint> activity, Func<Type?> value) => activity.Set(x => x.TargetType, value).WithReadContent();
         public static ISetupActivity<HttpEndpoint> WithTargetType(this ISetupActivity<HttpEndpoint> activity, Type? value) => activity.Set(x => x.TargetType, value).WithReadContent();
         public static ISetupActivity<HttpEndpoint> WithTargetType<T>(this ISetupActivity<HttpEndpoint> activity) => activity.Set(x => x.TargetType, typeof(T)).WithReadContent();
+        
+        public static ISetupActivity<HttpEndpoint> WithAuthorize(this ISetupActivity<HttpEndpoint> activity, Func<ActivityExecutionContext, ValueTask<bool>> value) => activity.Set(x => x.Authorize, value);
+        public static ISetupActivity<HttpEndpoint> WithAuthorize(this ISetupActivity<HttpEndpoint> activity, Func<ValueTask<bool>> value) => activity.Set(x => x.Authorize, value);
+        public static ISetupActivity<HttpEndpoint> WithAuthorize(this ISetupActivity<HttpEndpoint> activity, Func<ActivityExecutionContext, bool> value) => activity.Set(x => x.Authorize, value);
+        public static ISetupActivity<HttpEndpoint> WithAuthorize(this ISetupActivity<HttpEndpoint> activity, Func<bool> value) => activity.Set(x => x.Authorize, value);
+        public static ISetupActivity<HttpEndpoint> WithAuthorize(this ISetupActivity<HttpEndpoint> activity, bool value = true) => activity.Set(x => x.Authorize, value);
+        
+        public static ISetupActivity<HttpEndpoint> WithPolicy(this ISetupActivity<HttpEndpoint> activity, Func<ActivityExecutionContext, ValueTask<string?>> value) => activity.Set(x => x.Policy, value);
+        public static ISetupActivity<HttpEndpoint> WithPolicy(this ISetupActivity<HttpEndpoint> activity, Func<ValueTask<string?>> value) => activity.Set(x => x.Policy, value);
+        public static ISetupActivity<HttpEndpoint> WithPolicy(this ISetupActivity<HttpEndpoint> activity, Func<ActivityExecutionContext, string?> value) => activity.Set(x => x.Policy, value);
+        public static ISetupActivity<HttpEndpoint> WithPolicy(this ISetupActivity<HttpEndpoint> activity, Func<string?> value) => activity.Set(x => x.Policy, value);
+        public static ISetupActivity<HttpEndpoint> WithPolicy(this ISetupActivity<HttpEndpoint> activity, string? value) => activity.Set(x => x.Policy, value);
+        
+        public static ISetupActivity<HttpEndpoint> WithAuthenticationSchemes(this ISetupActivity<HttpEndpoint> activity, Func<ActivityExecutionContext, ValueTask<ICollection<string>?>> value) => activity.Set(x => x.AuthenticationSchemes, value);
+        public static ISetupActivity<HttpEndpoint> WithAuthenticationSchemes(this ISetupActivity<HttpEndpoint> activity, Func<ValueTask<ICollection<string>?>> value) => activity.Set(x => x.AuthenticationSchemes, value);
+        public static ISetupActivity<HttpEndpoint> WithAuthenticationSchemes(this ISetupActivity<HttpEndpoint> activity, Func<ActivityExecutionContext, ICollection<string>?> value) => activity.Set(x => x.AuthenticationSchemes, value);
+        public static ISetupActivity<HttpEndpoint> WithAuthenticationSchemes(this ISetupActivity<HttpEndpoint> activity, Func<ICollection<string>?> value) => activity.Set(x => x.AuthenticationSchemes, value);
+        public static ISetupActivity<HttpEndpoint> WithAuthenticationSchemes(this ISetupActivity<HttpEndpoint> activity, ICollection<string>? value) => activity.Set(x => x.AuthenticationSchemes, value);
     }
 }

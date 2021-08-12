@@ -56,6 +56,31 @@ namespace Elsa.Activities.Http
         [ActivityInput(Category = PropertyCategories.Advanced)]
         public Type? TargetType { get; set; }
 
+        [ActivityInput(
+            Hint = "Check to allow authenticated requests only",
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid },
+            Category = "Security"
+        )]
+        public bool Authorize { get; set; }
+
+        [ActivityInput(
+            Hint = "Provide a policy to evaluate. If the policy fails, the request is forbidden.",
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid },
+            Category = "Security"
+        )] 
+        public string? Policy { get; set; }
+
+        [ActivityInput(
+            Hint = "Enter a list of authentication schemes from which user information is constructed.",
+            UIHint = ActivityInputUIHints.MultiText,
+            SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid },
+            DefaultSyntax = SyntaxNames.Json,
+            Category = "Security"
+        )] 
+        public ICollection<string>? AuthenticationSchemes { get; set; }
+
+        [ActivityInput(Category = "Security")] public string? Roles { get; set; }
+
         [ActivityOutput(Hint = "The received HTTP request.")]
         public HttpRequestModel? Output { get; set; }
 
