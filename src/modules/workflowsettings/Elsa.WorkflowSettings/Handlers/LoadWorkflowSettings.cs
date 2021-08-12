@@ -23,10 +23,11 @@ namespace Elsa.WorkflowSettings.Handlers
                 WorkflowBlueprintId = notification.WorkflowBlueprint.Id,
                 Key = notification.WorkflowBlueprint.Name ?? "disabled"
             };
-            notification.WorkflowBlueprint.Value = await LoadWorkflowSettingsAsync(workflowSetting, cancellationToken);
+            var result = await LoadWorkflowSettingsAsync(workflowSetting, cancellationToken);
+            notification.WorkflowBlueprint.Value = result.Value;
         }
 
-        private async ValueTask<string?> LoadWorkflowSettingsAsync(WorkflowSetting workflowSetting, CancellationToken cancellationToken)
+        private async ValueTask<WorkflowSetting> LoadWorkflowSettingsAsync(WorkflowSetting workflowSetting, CancellationToken cancellationToken)
         {            
             return await _workflowSettingsManager.LoadSettingAsync(workflowSetting, cancellationToken);
         }

@@ -1,3 +1,4 @@
+using Elsa.WorkflowSettings.Models;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -8,6 +9,6 @@ namespace Elsa.WorkflowSettings.Abstractions.Providers
     /// </summary>
     public interface IWorkflowSettingsProvider
     {
-        ValueTask<object> GetWorkflowSettingAsync(string workflowBlueprintId, string key, CancellationToken cancellationToken);
+        ValueTask<WorkflowSetting> GetWorkflowSettingAsync(string workflowBlueprintId, string key, CancellationToken cancellationToken);
     }
 }
