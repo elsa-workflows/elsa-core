@@ -26,6 +26,8 @@ namespace Elsa.Samples.HttpEndpointSecurity
             services.AddControllers();
 
             // Authentication & Authorization.
+            JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
+
             services
                 .AddAuthentication(auth =>
                 {
