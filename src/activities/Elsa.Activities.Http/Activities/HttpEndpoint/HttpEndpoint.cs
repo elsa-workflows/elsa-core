@@ -70,17 +70,6 @@ namespace Elsa.Activities.Http
         )] 
         public string? Policy { get; set; }
 
-        [ActivityInput(
-            Hint = "Enter a list of authentication schemes from which user information is constructed.",
-            UIHint = ActivityInputUIHints.MultiText,
-            SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid },
-            DefaultSyntax = SyntaxNames.Json,
-            Category = "Security"
-        )] 
-        public ICollection<string>? AuthenticationSchemes { get; set; }
-
-        [ActivityInput(Category = "Security")] public string? Roles { get; set; }
-
         [ActivityOutput(Hint = "The received HTTP request.")]
         public HttpRequestModel? Output { get; set; }
 
