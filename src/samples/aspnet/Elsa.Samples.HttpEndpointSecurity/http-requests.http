@@ -1,0 +1,31 @@
+POST https://localhost:5001/api/tokens
+Content-Type: application/json
+
+{
+    "userName": "Jason",
+    "hasMagic": false
+}
+
+###
+
+POST https://localhost:5001/api/tokens
+Content-Type: application/json
+
+{
+    "userName": "Janet",
+    "hasMagic": true
+}
+
+###
+
+# Jason does not have magic.
+GET https://localhost:5001/workflows/safe-hello
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJKYXNvbiIsImp0aSI6IjU3ZDUzOGE4LWQwNmYtNDg2Zi05MzAzLTMyODIxMmZlOWI4MCIsImV4cCI6MTY2MDM5NDg3NSwiaXNzIjoieW91ci1pZGVudGl0eS1zZXJ2ZXIiLCJhdWQiOiJ5b3VyLWFwaS1zZXJ2ZXIifQ.-6mjl-AMXLVSKrM7ofySNbGdf7YgvUmWILloAXB56q8
+
+###
+
+# Janet does have magic.
+GET https://localhost:5001/workflows/safe-hello
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJKYW5ldCIsImp0aSI6IjNhMmNlZDg5LWQzYWMtNGQ5NC04YzQzLTU2OWZhZmE1YjYwMCIsImhhcy1tYWdpYyI6InRydWUiLCJleHAiOjE2NjAzOTUyNTksImlzcyI6InlvdXItaWRlbnRpdHktc2VydmVyIiwiYXVkIjoieW91ci1hcGktc2VydmVyIn0.bdBXGdqmiWr5mLcgAvjiKVNxcBgr5w63TJ0OLwZ3kf4
+
+###
