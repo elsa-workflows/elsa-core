@@ -79,6 +79,7 @@ Type: `Promise<void>`
 - [elsa-activity-picker-modal](../elsa-activity-picker-modal)
 - [elsa-activity-editor-modal](../elsa-activity-editor-modal)
 - [elsa-workflow-publish-button](../elsa-workflow-publish-button)
+- [elsa-workflow-properties-panel](../elsa-workflow-properties-panel)
 - context-consumer
 
 ### Graph
@@ -90,6 +91,7 @@ graph TD;
   elsa-workflow-definition-editor-screen --> elsa-activity-picker-modal
   elsa-workflow-definition-editor-screen --> elsa-activity-editor-modal
   elsa-workflow-definition-editor-screen --> elsa-workflow-publish-button
+  elsa-workflow-definition-editor-screen --> elsa-workflow-properties-panel
   elsa-workflow-definition-editor-screen --> context-consumer
   elsa-workflow-settings-modal --> elsa-modal-dialog
   elsa-workflow-settings-modal --> elsa-monaco
@@ -97,6 +99,7 @@ graph TD;
   elsa-activity-editor-modal --> elsa-modal-dialog
   elsa-activity-editor-modal --> elsa-control
   elsa-workflow-publish-button --> context-consumer
+  elsa-workflow-properties-panel --> context-consumer
   elsa-studio-workflow-definitions-edit --> elsa-workflow-definition-editor-screen
   style elsa-workflow-definition-editor-screen fill:#f9f,stroke:#333,stroke-width:4px
 ```
