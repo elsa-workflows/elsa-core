@@ -57,11 +57,5 @@ namespace Elsa.Activities.Http
         public static ISetupActivity<HttpEndpoint> WithPolicy(this ISetupActivity<HttpEndpoint> activity, Func<ActivityExecutionContext, string?> value) => activity.Set(x => x.Policy, value);
         public static ISetupActivity<HttpEndpoint> WithPolicy(this ISetupActivity<HttpEndpoint> activity, Func<string?> value) => activity.Set(x => x.Policy, value);
         public static ISetupActivity<HttpEndpoint> WithPolicy(this ISetupActivity<HttpEndpoint> activity, string? value) => activity.Set(x => x.Policy, value);
-        
-        public static ISetupActivity<HttpEndpoint> WithAuthenticationSchemes(this ISetupActivity<HttpEndpoint> activity, Func<ActivityExecutionContext, ValueTask<ICollection<string>?>> value) => activity.Set(x => x.AuthenticationSchemes, value);
-        public static ISetupActivity<HttpEndpoint> WithAuthenticationSchemes(this ISetupActivity<HttpEndpoint> activity, Func<ValueTask<ICollection<string>?>> value) => activity.Set(x => x.AuthenticationSchemes, value);
-        public static ISetupActivity<HttpEndpoint> WithAuthenticationSchemes(this ISetupActivity<HttpEndpoint> activity, Func<ActivityExecutionContext, ICollection<string>?> value) => activity.Set(x => x.AuthenticationSchemes, value);
-        public static ISetupActivity<HttpEndpoint> WithAuthenticationSchemes(this ISetupActivity<HttpEndpoint> activity, Func<ICollection<string>?> value) => activity.Set(x => x.AuthenticationSchemes, value);
-        public static ISetupActivity<HttpEndpoint> WithAuthenticationSchemes(this ISetupActivity<HttpEndpoint> activity, ICollection<string>? value) => activity.Set(x => x.AuthenticationSchemes, value);
     }
 }
