@@ -13,7 +13,7 @@ namespace Elsa.Samples.HttpEndpointSecurity.Endpoints.Tokens
         [HttpPost]
         public IActionResult Handle(CreateTokenRequestModel model)
         {
-            var token = _tokenService.CreateToken(model.UserName);
+            var token = _tokenService.CreateToken(model.UserName, model.HasMagic);
             return Ok(token);
         }
     }

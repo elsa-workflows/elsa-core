@@ -1,4 +1,4 @@
 namespace Elsa.Samples.HttpEndpointSecurity.Endpoints.Tokens
 {
-    public record CreateTokenRequestModel(string UserName);
+    public record CreateTokenRequestModel(string UserName, bool HasMagic);
 }

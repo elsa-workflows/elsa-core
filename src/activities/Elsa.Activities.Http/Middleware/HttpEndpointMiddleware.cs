@@ -37,7 +37,7 @@ namespace Elsa.Activities.Http.Middleware
             IWorkflowInstanceStore workflowInstanceStore,
             IWorkflowRegistry workflowRegistry,
             IWorkflowBlueprintReflector workflowBlueprintReflector,
-            IAuthorizationService authorizationService,
+            IHttpEndpointAuthorizationHandler authorizationHandler,
             IEnumerable<IHttpRequestBodyParser> contentParsers)
         {
             var basePath = options.Value.BasePath;
@@ -88,7 +88,7 @@ namespace Elsa.Activities.Http.Middleware
             var contentParser = orderedContentParsers.FirstOrDefault(x => x.SupportedContentTypes.Contains(simpleContentType, StringComparer.OrdinalIgnoreCase)) ?? orderedContentParsers.LastOrDefault() ?? new DefaultHttpRequestBodyParser();
             var activityWrapper = workflowBlueprintWrapper.GetUnfilteredActivity<HttpEndpoint>(pendingWorkflow.ActivityId!)!;
 
-            if (!await AuthorizeAsync(httpContext, activityWrapper, workflowBlueprint, pendingWorkflow, authorizationService, cancellationToken))
+            if (!await AuthorizeAsync(httpContext, activityWrapper, workflowBlueprint, pendingWorkflow, authorizationHandler, cancellationToken))
             {
                 httpContext.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
                 return;
@@ -151,7 +151,7 @@ namespace Elsa.Activities.Http.Middleware
             IActivityBlueprintWrapper<HttpEndpoint> httpEndpoint,
             IWorkflowBlueprint workflowBlueprint,
             CollectedWorkflow pendingWorkflow,
-            IAuthorizationService authorizationService,
+            IHttpEndpointAuthorizationHandler authorizationHandler,
             CancellationToken cancellationToken)
         {
             var authorize = await httpEndpoint.EvaluatePropertyValueAsync(x => x.Authorize, cancellationToken);
@@ -159,23 +159,7 @@ namespace Elsa.Activities.Http.Middleware
             if (!authorize)
                 return true;
 
-            // TODO: Extract this into a validation provider with a default implementation as per the below.
-            var user = httpContext.User;
-            var policyName = await httpEndpoint.EvaluatePropertyValueAsync(x => x.Policy, cancellationToken);
-
-            if (string.IsNullOrWhiteSpace(policyName))
-                return user.Identity.IsAuthenticated;
-
-            // TODO: Create record type.
-            var resource = new
-            {
-                WorkflowBlueprint = workflowBlueprint,
-                ActivityBlueprint = httpEndpoint.ActivityBlueprint,
-                WorkflowInstanceId = pendingWorkflow.WorkflowInstanceId
-            };
-            
-            var authorizationResult = await authorizationService.AuthorizeAsync(user, resource, policyName);
-            return authorizationResult.Succeeded;
+            return await authorizationHandler.AuthorizeAsync(new AuthorizeHttpEndpointContext(httpContext, httpEndpoint, workflowBlueprint, pendingWorkflow.WorkflowInstanceId, cancellationToken));
         }
 
         private async Task<bool> HandleNoWorkflowsFoundAsync(HttpContext httpContext, IList<CollectedWorkflow> pendingWorkflows, PathString? basePath)

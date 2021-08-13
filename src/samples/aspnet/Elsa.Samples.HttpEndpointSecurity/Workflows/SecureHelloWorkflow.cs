@@ -1,3 +1,4 @@
+using System.Net;
 using Elsa.Activities.Http;
 using Elsa.Builders;
 using Microsoft.AspNetCore.Http;
@@ -12,12 +13,13 @@ namespace Elsa.Samples.HttpEndpointSecurity.Workflows
                 .HttpEndpoint(setup => setup
                     .WithPath("/safe-hello")
                     .WithMethod("GET")
-                    .WithAuthorize())
-                .WriteHttpResponse(setup => setup.WithStatusCode(System.Net.HttpStatusCode.OK)
+                    .WithAuthorize()
+                    .WithPolicy("HasMagic"))
+                .WriteHttpResponse(setup => setup.WithStatusCode(HttpStatusCode.OK)
                     .WithContent(context =>
                     {
-                        var httpContext = context.GetService<IHttpContextAccessor>().HttpContext;
-                        var user = httpContext!.User;
+                        var httpContext = context.GetService<IHttpContextAccessor>().HttpContext!;
+                        var user = httpContext.User;
                         return $"Hello {user.Identity!.Name}!";
                     }));
         }

@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using Elsa.Samples.HttpEndpointSecurity.Options;
 using Elsa.Samples.HttpEndpointSecurity.Services;
@@ -23,10 +24,15 @@ namespace Elsa.Samples.HttpEndpointSecurity
         {
             // Controllers.
             services.AddControllers();
-            
+
             // Authentication & Authorization.
             services
-                .AddAuthentication(auth => { auth.DefaultScheme = JwtBearerDefaults.AuthenticationScheme; })
+                .AddAuthentication(auth =>
+                {
+                    auth.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+                    auth.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                    auth.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                })
                 .AddJwtBearer(options =>
                 {
                     options.TokenValidationParameters = new TokenValidationParameters
@@ -36,12 +42,17 @@ namespace Elsa.Samples.HttpEndpointSecurity
                         ValidateLifetime = true,
                         ValidateIssuerSigningKey = true,
                         ValidIssuer = Configuration["Jwt:Issuer"],
-                        ValidAudience = Configuration["Jwt:Issuer"],
-                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["Jwt:SecretKey"]))
+                        ValidAudience = Configuration["Jwt:Audience"],
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["Jwt:SecretKey"])),
+                        NameClaimType = JwtRegisteredClaimNames.Sub,
                     };
                 });
 
-            services.AddAuthorization();
+            // Add a custom policy.
+            services
+                .AddAuthorization(auth => auth
+                    .AddPolicy("HasMagic", policy => policy
+                        .RequireClaim("has-magic", "true")));
 
             services.Configure<JwtOptions>(options => Configuration.GetSection("Jwt").Bind(options));
 

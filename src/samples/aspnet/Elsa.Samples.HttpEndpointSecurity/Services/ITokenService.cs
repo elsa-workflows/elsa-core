@@ -2,7 +2,7 @@
 {
     public interface ITokenService
     {
-        string CreateToken(string userName);
+        string CreateToken(string userName, bool hasMagic);
         bool ValidateToken(string token);
     }
 }

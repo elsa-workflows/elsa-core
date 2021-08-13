@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -16,18 +17,21 @@ namespace Elsa.Samples.HttpEndpointSecurity.Services
         {
             _options = options.Value;
         }
-        
-        public string CreateToken(string userName)
+
+        public string CreateToken(string userName, bool hasMagic)
         {
-            var claims = new[]
+            var claims = new List<Claim>()
             {
-                new Claim(ClaimTypes.Name, userName),
-                new Claim(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString())
+                new(JwtRegisteredClaimNames.Sub, userName),
+                new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
+            if (hasMagic)
+                claims.Add(new Claim("has-magic", "true"));
+
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.SecretKey));
-            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256Signature);
-            var tokenDescriptor = new JwtSecurityToken(_options.Issuer, _options.Issuer, claims, expires: DateTime.Now.AddMinutes(30), signingCredentials: credentials);
+            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+            var tokenDescriptor = new JwtSecurityToken(_options.Issuer, _options.Audience, claims, expires: DateTime.Now.AddYears(1), signingCredentials: credentials);
             return new JwtSecurityTokenHandler().WriteToken(tokenDescriptor);
         }
 
