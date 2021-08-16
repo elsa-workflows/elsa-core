@@ -7,7 +7,7 @@ export class WebhookPlugin implements ElsaPlugin {
   constructor() {
     eventBus.on(EventTypes.ActivityDesignDisplaying, this.onActivityDisplaying);
   }
-
+  
   onActivityDisplaying(context: ActivityDesignDisplayContext) {
     const activityModel = context.activityModel;
     

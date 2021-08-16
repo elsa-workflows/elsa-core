@@ -1,10 +1,10 @@
 import {Component, Event, h, Host, Method, Prop, State, Watch} from '@stencil/core';
-import {eventBus} from '../../../../services/event-bus';
-import {EventTypes, WebhookDefinition} from "../../../../models/webhook";
-import {createElsaClient, SaveWebhookDefinitionRequest} from "../../../../services/elsa-client";
+import {eventBus} from '../../../../../../services/event-bus';
+import {EventTypes, WebhookDefinition} from "../../../../models";
+import {createElsaWebhooksClient, SaveWebhookDefinitionRequest} from "../../../../services/elsa-client";
 import {RouterHistory} from '@stencil/router';
-import {checkBox, FormContext, textArea, textInput} from "../../../../utils/forms";
-import Tunnel from "../../../../data/dashboard";
+import {checkBox, FormContext, textArea, textInput} from "../../../../../../utils/forms";
+import Tunnel from "../../../../../../data/dashboard";
 
 @Component({
   tag: 'elsa-webhook-definition-editor-screen',
@@ -48,7 +48,7 @@ export class ElsaWebhookDefinitionEditorScreen {
     const webhookId = newValue;
     let webhookDefinition: WebhookDefinition = ElsaWebhookDefinitionEditorScreen.createWebhookDefinition();
     webhookDefinition.id = webhookId;    
-    const client = createElsaClient(this.serverUrl);
+    const client = createElsaWebhooksClient(this.serverUrl);
 
     if (webhookId && webhookId.length > 0) {
       try {
@@ -80,7 +80,7 @@ export class ElsaWebhookDefinitionEditorScreen {
     if (!this.serverUrl || this.serverUrl.length == 0)
       return;
 
-    const client = createElsaClient(this.serverUrl);
+    const client = createElsaWebhooksClient(this.serverUrl);
     
     let webhookDefinition = this.webhookDefinitionInternal;
 

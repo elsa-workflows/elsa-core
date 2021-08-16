@@ -15,13 +15,17 @@ export const EventTypes = {
   WorkflowPublished: 'workflow-published',
   WorkflowRetracted: 'workflow-retracted',
   WorkflowImported: 'workflow-imported',
+  WorkflowUpdated: 'workflow-updated',
   HttpClientConfigCreated: 'http-client-config-created',
   HttpClientCreated: 'http-client-created',
   WorkflowInstanceBulkActionsLoading: 'workflow-instance-bulk-actions-loading',
   ShowConfirmDialog: 'show-confirm-dialog',
   HideConfirmDialog: 'hide-confirm-dialog',
   ShowToastNotification: 'show-toast-notification',
-  HideToastNotification: 'hide-toast-notification'
+  HideToastNotification: 'hide-toast-notification',
+  WebhooksEnabled: 'webhooks-enabled',
+  WorkflowSettingsEnabled: 'workflow-settings-enabled',
+  WorkflowSettingsUpdated: 'workflow-settings-updated',
 };
 
 export interface AddActivityEventArgs {
@@ -44,4 +48,18 @@ export interface ActivityDesignDisplayContext {
 export interface ActivityDescriptorDisplayContext {
   activityDescriptor: ActivityDescriptor;
   activityIcon: any;
+}
+
+export interface WebhooksEnabledContext {
+  isEnabled: boolean;
+}
+
+export interface WorkflowSettingsEnabledContext {
+  isEnabled: boolean;
+}
+
+export interface WorkflowSettingsUpdatedContext {
+  workflowBlueprintId?: string;
+  key?: string;
+  value?: string;
 }

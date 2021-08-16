@@ -1,10 +1,10 @@
 import {Component, h, Prop, State} from '@stencil/core';
 import 'i18next-wc';
-import {loadTranslations} from "../../../i18n/i18n-loader";
+import {loadTranslations} from "../../../../../../components/i18n/i18n-loader";
 import {resources} from "./localizations";
-import {GetIntlMessage} from "../../../i18n/intl-message";
+import {GetIntlMessage} from "../../../../../../components/i18n/intl-message";
 import {i18n} from "i18next";
-import Tunnel from "../../../../data/dashboard";
+import Tunnel from "../../../../../../data/dashboard";
 
 @Component({
   tag: 'elsa-studio-webhook-definitions-list',

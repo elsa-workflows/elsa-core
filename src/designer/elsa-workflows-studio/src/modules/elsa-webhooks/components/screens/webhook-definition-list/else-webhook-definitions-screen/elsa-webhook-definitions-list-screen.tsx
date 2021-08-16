@@ -1,10 +1,10 @@
 import {Component, h, Prop, State} from '@stencil/core';
 import * as collection from 'lodash/collection';
-import {createElsaClient} from "../../../../services/elsa-client";
-import {PagedList} from "../../../../models";
-import {WebhookDefinitionSummary} from "../../../../models/webhook";
+import {createElsaWebhooksClient} from "../../../../services/elsa-client";
+import {PagedList} from "../../../../../../models";
+import {WebhookDefinitionSummary} from "../../../../models";
 import {RouterHistory} from "@stencil/router";
-import Tunnel from "../../../../data/dashboard";
+import Tunnel from "../../../../../../data/dashboard";
 
 @Component({
   tag: 'elsa-webhook-definitions-list-screen',
@@ -29,20 +29,16 @@ export class ElsaWebhookDefinitionsListScreen {
     if (!result)
       return;
 
-    const elsaClient = this.createClient();
+    const elsaClient = createElsaWebhooksClient(this.serverUrl);
     await elsaClient.webhookDefinitionsApi.delete(webhookDefinition.id);
     await this.loadWebhookDefinitions();
   }
 
   async loadWebhookDefinitions() {
-    const elsaClient = this.createClient();
+    const elsaClient = createElsaWebhooksClient(this.serverUrl);
     const page = 0;
     const pageSize = 50;
     this.webhookDefinitions = await elsaClient.webhookDefinitionsApi.list(page, pageSize);
-  }
-
-  createClient() {
-    return createElsaClient(this.serverUrl);
   }
 
   render() {

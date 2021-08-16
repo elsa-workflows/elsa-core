@@ -1,4 +1,4 @@
-import {Map} from '../../utils/utils';
+import {Map} from '../../../utils/utils';
 
 export interface WebhookDefinition {
   id?: string;

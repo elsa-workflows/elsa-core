@@ -4,6 +4,8 @@ import {resources} from "./localizations";
 import {i18n} from "i18next";
 import {GetIntlMessage} from "../../../i18n/intl-message";
 import Tunnel from "../../../../data/dashboard";
+import {EventTypes, WebhooksEnabledContext} from '../../../../models';
+import {eventBus} from '../../../../services';
 
 @Component({
   tag: 'elsa-studio-dashboard',
@@ -15,9 +17,21 @@ export class ElsaStudioDashboard {
   @Prop({attribute: 'culture', reflect: true}) culture: string;
   @Prop({attribute: 'base-path', reflect: true}) basePath: string = '';
   private i18next: i18n;
+  private isWebhooksEnabled: boolean;
 
   async componentWillLoad() {
     this.i18next = await loadTranslations(this.culture, resources);
+    await this.checkWebhooksEnabled();
+  }
+  
+  async checkWebhooksEnabled()
+  {
+    const webhooksEnabledContext: WebhooksEnabledContext = {
+      isEnabled:false
+    };
+
+    eventBus.emit(EventTypes.WebhooksEnabled, this, webhooksEnabledContext);
+    this.isWebhooksEnabled = webhooksEnabledContext.isEnabled;
   }
 
   render() {
@@ -25,6 +39,25 @@ export class ElsaStudioDashboard {
     const logoPath = getAssetPath('./assets/logo.png');
     const basePath = this.basePath || '';
     const IntlMessage = GetIntlMessage(this.i18next);
+
+    const renderWebhooksMenu = (isWebhooksEnabled: boolean) => {
+      if (isWebhooksEnabled)
+        return (
+          <stencil-route-link url={`${basePath}/webhook-definitions`} anchorClass="elsa-text-gray-300 hover:elsa-bg-gray-700 hover:elsa-text-white elsa-px-3 elsa-py-2 elsa-rounded-md elsa-text-sm elsa-font-medium"
+            activeClass="elsa-text-white elsa-bg-gray-900">
+            <IntlMessage label="WebhookDefinitions"/>
+          </stencil-route-link>);
+    }
+
+    const registerWebhooksRouteList = (isWebhooksEnabled: boolean) => {
+      if (isWebhooksEnabled)
+        return (<stencil-route url={`${basePath}/webhook-definitions`} component="elsa-studio-webhook-definitions-list" exact={true}/>);
+    }
+
+    const registerWebhooksRouteEdit = (isWebhooksEnabled: boolean) => {
+      if (isWebhooksEnabled)
+        return (<stencil-route url={`${basePath}/webhook-definitions/:id`} component="elsa-studio-webhook-definitions-edit"/>);
+    }
 
     return (
       <div class="elsa-h-screen elsa-bg-gray-100">
@@ -50,11 +83,7 @@ export class ElsaStudioDashboard {
                       <IntlMessage label="WorkflowRegistry"/>
                     </stencil-route-link>
 
-                    {/*<stencil-route-link url="/custom-activities" class="elsa-text-gray-300 hover:elsa-bg-gray-700 hover:elsa-text-white elsa-px-3 elsa-py-2 elsa-rounded-md elsa-text-sm elsa-font-medium">Custom Activities</stencil-route-link>*/}
-                    <stencil-route-link url={`${basePath}/webhook-definitions`} anchorClass="elsa-text-gray-300 hover:elsa-bg-gray-700 hover:elsa-text-white elsa-px-3 elsa-py-2 elsa-rounded-md elsa-text-sm elsa-font-medium"
-                                        activeClass="elsa-text-white elsa-bg-gray-900">
-                      <IntlMessage label="WebhookDefinitions"/>
-                    </stencil-route-link>
+                    {renderWebhooksMenu(this.isWebhooksEnabled)}
                   </div>
                 </div>
               </div>
@@ -72,8 +101,8 @@ export class ElsaStudioDashboard {
               <stencil-route url={`${basePath}/workflow-definitions/:id`} component="elsa-studio-workflow-definitions-edit"/>
               <stencil-route url={`${basePath}/workflow-instances`} component="elsa-studio-workflow-instances-list" exact={true}/>
               <stencil-route url={`${basePath}/workflow-instances/:id`} component="elsa-studio-workflow-instances-view"/>
-              <stencil-route url={`${basePath}/webhook-definitions`} component="elsa-studio-webhook-definitions-list" exact={true}/>
-              <stencil-route url={`${basePath}/webhook-definitions/:id`} component="elsa-studio-webhook-definitions-edit"/>
+              {registerWebhooksRouteList(this.isWebhooksEnabled)}
+              {registerWebhooksRouteEdit(this.isWebhooksEnabled)}
             </stencil-route-switch>
           </stencil-router>
         </main>

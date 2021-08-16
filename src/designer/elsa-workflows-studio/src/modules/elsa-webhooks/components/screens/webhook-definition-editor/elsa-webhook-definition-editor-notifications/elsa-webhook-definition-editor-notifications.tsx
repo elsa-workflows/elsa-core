@@ -1,6 +1,6 @@
 import {Component, Host, h} from '@stencil/core';
-import {eventBus} from '../../../../services/event-bus';
-import {EventTypes, WebhookDefinition} from "../../../../models/webhook";
+import {eventBus} from '../../../../../../services/event-bus';
+import {EventTypes, WebhookDefinition} from "../../../../models";
 
 @Component({
   tag: 'elsa-webhook-definition-editor-notifications',

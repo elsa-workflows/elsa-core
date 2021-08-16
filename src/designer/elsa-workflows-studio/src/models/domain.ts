@@ -179,13 +179,6 @@ export interface ActivityDefinitionProperty {
   value?: any;
 }
 
-export interface WorkflowSettings {
-  id?: string;
-  workflowBlueprintId?: string;
-  key?: string;
-  value?: string;
-}
-
 interface BlockingActivity {
   activityId: string;
   activityType: string;
