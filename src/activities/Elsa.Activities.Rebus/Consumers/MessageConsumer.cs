@@ -29,7 +29,8 @@ namespace Elsa.Activities.Rebus.Consumers
                 new MessageReceivedBookmark { MessageType = message.GetType().Name },
                 correlationId,
                 default,
-                TenantId));
+                TenantId),
+                new Models.WorkflowInput(message));
         }
     }
 }

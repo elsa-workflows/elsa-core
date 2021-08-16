@@ -4,18 +4,15 @@ using System.Linq;
 using System.Reflection;
 using Elsa.Builders;
 using Elsa.Caching;
-using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Providers.WorkflowStorage;
 using Elsa.Services;
 using Elsa.Services.Messaging;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Rebus.DataBus.InMem;
 using Rebus.Persistence.InMem;
 using Rebus.Transport.InMem;
-using Storage.Net.Blobs;
 
 namespace Elsa
 {
@@ -169,14 +166,6 @@ namespace Elsa
         public ElsaOptionsBuilder ConfigureDistributedLockProvider(Action<DistributedLockingOptionsBuilder> configureOptions)
         {
             configureOptions(DistributedLockingOptionsBuilder);
-            return this;
-        }
-
-        public ElsaOptionsBuilder UseStorage(Func<IBlobStorage> factory) => UseStorage(_ => factory());
-
-        public ElsaOptionsBuilder UseStorage(Func<IServiceProvider, IBlobStorage> factory)
-        {
-            ElsaOptions.StorageFactory = factory;
             return this;
         }
 

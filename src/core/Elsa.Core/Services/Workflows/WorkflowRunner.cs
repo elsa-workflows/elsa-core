@@ -187,11 +187,8 @@ namespace Elsa.Services.Workflows
 
             var blockingActivities = workflowExecutionContext.WorkflowInstance.BlockingActivities.Where(x => x.ActivityId == activityBlueprint.Id).ToList();
 
-            foreach (var blockingActivity in blockingActivities)
-            {
-                workflowExecutionContext.WorkflowInstance.BlockingActivities.Remove(blockingActivity);
-                await _mediator.Publish(new BlockingActivityRemoved(workflowExecutionContext, blockingActivity), cancellationToken);
-            }
+            foreach (var blockingActivity in blockingActivities) 
+                await workflowExecutionContext.RemoveBlockingActivityAsync(blockingActivity);
 
             workflowExecutionContext.Resume();
             workflowExecutionContext.ScheduleActivity(activityBlueprint.Id);

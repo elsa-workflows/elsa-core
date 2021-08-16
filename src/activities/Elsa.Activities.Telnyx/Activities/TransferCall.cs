@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Elsa.Activities.Telnyx.Client.Models;
 using Elsa.Activities.Telnyx.Client.Services;
 using Elsa.Activities.Telnyx.Extensions;
+using Elsa.Activities.Telnyx.Services;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
@@ -171,9 +172,10 @@ namespace Elsa.Activities.Telnyx.Activities
         private async ValueTask TransferCallAsync(ActivityExecutionContext context)
         {
             var fromNumber = context.GetFromNumber(From);
+            var to = To;
 
             var request = new TransferCallRequest(
-                To,
+                to,
                 fromNumber,
                 FromDisplayName,
                 AudioUrl,

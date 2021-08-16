@@ -1,6 +1,7 @@
 using System.IO;
 using System.Threading.Tasks;
 using Elsa.Models;
+using Elsa.Providers.Workflows;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Storage.Net;
@@ -20,8 +21,11 @@ namespace Elsa.Samples.FileBasedWorkflow
             // Create a service container with Elsa services.
             var services = new ServiceCollection()
                 .AddElsa(options => options
-                    .UseStorage(() => StorageFactory.Blobs.DirectoryFiles(currentDirectory))
                     .AddConsoleActivities())
+                
+                // Configure blob storage for blob storage workflow storage provider.
+                .Configure<BlobStorageWorkflowProviderOptions>(options => options.BlobStorageFactory = () => StorageFactory.Blobs.DirectoryFiles(currentDirectory))
+                
                 .BuildServiceProvider();
 
             // Run startup actions (not needed when registering Elsa with a Host).

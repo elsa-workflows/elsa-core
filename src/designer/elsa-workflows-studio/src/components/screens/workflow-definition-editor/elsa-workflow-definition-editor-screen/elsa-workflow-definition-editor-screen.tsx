@@ -1,5 +1,16 @@
 import {Component, Event, EventEmitter, h, Host, Listen, Method, Prop, State, Watch} from '@stencil/core';
-import {ActivityDefinition, ActivityDescriptor, ActivityModel, ConnectionDefinition, ConnectionModel, EventTypes, VersionOptions, WorkflowDefinition, WorkflowModel, WorkflowPersistenceBehavior} from "../../../../models";
+import {
+  ActivityDefinition,
+  ActivityDescriptor,
+  ActivityModel,
+  ConnectionDefinition,
+  ConnectionModel,
+  EventTypes,
+  VersionOptions,
+  WorkflowDefinition,
+  WorkflowModel,
+  WorkflowPersistenceBehavior
+} from "../../../../models";
 import {eventBus, createElsaClient, SaveWorkflowDefinitionRequest} from "../../../../services";
 import state from '../../../../utils/store';
 import WorkflowEditorTunnel, {WorkflowEditorState} from '../../../../data/workflow-editor';
@@ -148,7 +159,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
   disconnectedCallback() {
     eventBus.detach(EventTypes.UpdateWorkflowSettings, this.onUpdateWorkflowSettings);
   }
-  
+
   t = (key: string) => this.i18next.t(key);
 
   async loadActivityDescriptors() {
@@ -392,6 +403,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
                             enableMultipleConnectionsFromSingleSource={false}
                             class="elsa-flex-1"
                             ref={el => this.designer = el}/>
+        {this.renderPropertiesPanel()}
         {this.renderWorkflowSettingsButton()}
         {this.renderActivityContextMenu()}
         <elsa-workflow-settings-modal workflowDefinition={this.workflowDefinition}/>
@@ -409,7 +421,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   renderActivityContextMenu() {
     const t = this.t;
-    
+
     return <div
       data-transition-enter="elsa-transition elsa-ease-out elsa-duration-100"
       data-transition-enter-start="elsa-transform elsa-opacity-0 elsa-scale-95"
@@ -526,6 +538,14 @@ export class ElsaWorkflowDefinitionEditorScreen {
       connections: [],
       persistenceBehavior: WorkflowPersistenceBehavior.WorkflowBurst,
     };
+  }
+
+  private renderPropertiesPanel() {
+    return (
+      <elsa-workflow-properties-panel
+        workflowDefinition={this.workflowDefinition}
+        expandButtonPosition={2}
+      />);
   }
 }
 DashboardTunnel.injectProps(ElsaWorkflowDefinitionEditorScreen, ['serverUrl', 'culture', 'monacoLibPath']);

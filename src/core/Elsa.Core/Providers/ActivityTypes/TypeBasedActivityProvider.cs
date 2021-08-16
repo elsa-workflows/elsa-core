@@ -47,9 +47,6 @@ namespace Elsa.Providers.ActivityTypes
         {
             var info = await _describesActivityType.DescribeAsync(activityType, cancellationToken);
 
-            if (info == null)
-                return default;
-
             return new ActivityType
             {
                 TypeName = info.Type,
@@ -57,7 +54,7 @@ namespace Elsa.Providers.ActivityTypes
                 Description = info.Description,
                 DisplayName = info.DisplayName,
                 ActivateAsync = async context => await ActivateActivity(context, activityType),
-                Describe = () => info, 
+                DescribeAsync = async () => (await _describesActivityType.DescribeAsync(activityType, cancellationToken))!, 
                 CanExecuteAsync = async (context, instance) => await instance.CanExecuteAsync(context),
                 ExecuteAsync = async (context, instance) => await instance.ExecuteAsync(context),
                 ResumeAsync = async (context, instance) => await instance.ResumeAsync(context)

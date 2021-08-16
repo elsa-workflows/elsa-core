@@ -29,24 +29,36 @@ namespace Elsa.Handlers
             var activityType = activity.GetType();
             var activityExecutionContext = notification.ActivityExecutionContext;
             var persistableProperties = activityType.GetProperties().Where(x => x.GetCustomAttribute<NonPersistableAttribute>() == null).ToList();
-            var properties = persistableProperties.Where(x => x.GetCustomAttribute<ActivityInputAttribute>() != null || x.GetCustomAttribute<ActivityOutputAttribute>() != null);
+            var inputProperties = persistableProperties.Where(x => x.GetCustomAttribute<ActivityInputAttribute>() != null);
+            var outputProperties = persistableProperties.Where(x => x.GetCustomAttribute<ActivityOutputAttribute>() != null);
 
-            // Persist input & output properties.
-            foreach (var property in properties)
+            // Persist input properties.
+            foreach (var property in inputProperties)
             {
                 var value = property.GetValue(activity);
-                await SavePropertyAsync(activityExecutionContext, property.Name, value, cancellationToken);
+                var inputAttr = property.GetCustomAttribute<ActivityInputAttribute>();
+                var defaultProviderName = inputAttr.DefaultWorkflowStorageProvider; 
+                await SavePropertyAsync(activityExecutionContext, property.Name, value, defaultProviderName, cancellationToken);
+            }
+            
+            // Persist output properties.
+            foreach (var property in outputProperties)
+            {
+                var value = property.GetValue(activity);
+                var outputAttr = property.GetCustomAttribute<ActivityOutputAttribute>();
+                var defaultProviderName = outputAttr.DefaultWorkflowStorageProvider; 
+                await SavePropertyAsync(activityExecutionContext, property.Name, value, defaultProviderName, cancellationToken);
             }
             
             // Handle "inline" activities with output.
             if (activityExecutionContext.Output != null) 
-                await SavePropertyAsync(activityExecutionContext, "Output", activityExecutionContext.Output, cancellationToken);
+                await SavePropertyAsync(activityExecutionContext, "Output", activityExecutionContext.Output, default, cancellationToken);
         }
 
-        private async Task SavePropertyAsync(ActivityExecutionContext context, string propertyName, object? value, CancellationToken cancellationToken)
+        private async Task SavePropertyAsync(ActivityExecutionContext context, string propertyName, object? value, string? defaultProviderName, CancellationToken cancellationToken)
         {
             var propertyStorageProviderDictionary = context.ActivityBlueprint.PropertyStorageProviders;
-            var providerName = propertyStorageProviderDictionary.GetItem(propertyName);
+            var providerName = propertyStorageProviderDictionary.GetItem(propertyName) ?? defaultProviderName;
             var workflowStorageContext = new WorkflowStorageContext(context.WorkflowInstance, context.ActivityId);
 
             await _workflowStorageService.SaveAsync(providerName, workflowStorageContext, propertyName, value, cancellationToken);

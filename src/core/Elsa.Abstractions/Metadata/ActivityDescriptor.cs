@@ -10,9 +10,9 @@ namespace Elsa.Metadata
             Category = "Miscellaneous";
             Traits = ActivityTraits.Action;
             DisplayName = "Activity";
-            InputProperties = new ActivityInputDescriptor[0];
-            OutputProperties = new ActivityOutputDescriptor[0];
-            Outcomes = new string[0];
+            InputProperties = Array.Empty<ActivityInputDescriptor>();
+            OutputProperties = Array.Empty<ActivityOutputDescriptor>();
+            Outcomes = Array.Empty<string>();
         }
 
         public string Type { get; set; }
@@ -21,12 +21,14 @@ namespace Elsa.Metadata
         public string Category { get; set; }
         public ActivityTraits Traits { get; set; }
         public string[] Outcomes { get; set; }
+        
         [Obsolete("Use InputProperties instead.")]
         public ActivityInputDescriptor[] Properties 
         { 
             get => InputProperties;
             set => InputProperties = value;
         }
+        
         public ActivityInputDescriptor[] InputProperties { get; set; }
         public ActivityOutputDescriptor[] OutputProperties { get; set; }
     }

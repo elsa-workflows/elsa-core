@@ -36,5 +36,9 @@ namespace Elsa.Activities.Email
         public static ISetupActivity<SendEmail> WithBody(this ISetupActivity<SendEmail> activity, Func<ActivityExecutionContext, string> value) => activity.Set(x => x.Body, value);
         public static ISetupActivity<SendEmail> WithBody(this ISetupActivity<SendEmail> activity, Func<string> value) => activity.Set(x => x.Body, value);
         public static ISetupActivity<SendEmail> WithBody(this ISetupActivity<SendEmail> activity, string value) => activity.Set(x => x.Body, value);
+        
+        public static ISetupActivity<SendEmail> WithAttachments(this ISetupActivity<SendEmail> activity, Func<ActivityExecutionContext, object> value) => activity.Set(x => x.Attachments, value);
+        public static ISetupActivity<SendEmail> WithAttachments(this ISetupActivity<SendEmail> activity, Func<object> value) => activity.Set(x => x.Attachments, value);
+        public static ISetupActivity<SendEmail> WithAttachments(this ISetupActivity<SendEmail> activity, object value) => activity.Set(x => x.Attachments, value);
     }
 }

@@ -44,9 +44,13 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
 
             var json = _contentSerializer.Serialize(workflowDefinition);
             var bytes = Encoding.UTF8.GetBytes(json);
-            var workflowName = workflowDefinition.Name is null or "" ? workflowDefinition.DefinitionId : workflowDefinition.Name.Trim();
-            var fileName = $"workflow-definition-{workflowName.Underscore().Dasherize().ToLowerInvariant()}.json";
+            var hasWorkflowName = !string.IsNullOrWhiteSpace(workflowDefinition.Name);
+            var workflowName = hasWorkflowName ? workflowDefinition.Name!.Trim() : workflowDefinition.DefinitionId;
             
+            var fileName = hasWorkflowName
+                ? $"{workflowName.Underscore().Dasherize().ToLowerInvariant()}.json"
+                : $"workflow-definition-{workflowName.Underscore().Dasherize().ToLowerInvariant()}.json";
+
             return File(bytes, "application/json", fileName);
         }
     }

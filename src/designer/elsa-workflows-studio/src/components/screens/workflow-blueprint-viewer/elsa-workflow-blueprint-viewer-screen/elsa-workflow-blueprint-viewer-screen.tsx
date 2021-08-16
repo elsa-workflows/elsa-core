@@ -151,6 +151,7 @@ export class ElsaWorkflowBlueprintViewerScreen {
     return (
       <div class="elsa-flex-1 elsa-flex">
         <elsa-designer-tree model={this.workflowModel} class="elsa-flex-1" ref={el => this.designer = el} mode={WorkflowDesignerMode.Blueprint}/>
+        <elsa-workflow-blueprint-side-panel workflowId={this.workflowDefinitionId} />
       </div>
     );
   }

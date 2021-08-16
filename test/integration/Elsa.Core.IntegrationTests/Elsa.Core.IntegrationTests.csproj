@@ -13,6 +13,7 @@
     <PackageReference Include="Moq" Version="4.16.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.9.4" />
     <PackageReference Include="NodaTime.Testing" Version="3.0.5" />
+    <PackageReference Include="System.Text.Encodings.Web" Version="5.0.1" />
     <PackageReference Include="xunit" Version="2.4.1" />
     <PackageReference Include="XunitXml.TestLogger" Version="3.0.66" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">

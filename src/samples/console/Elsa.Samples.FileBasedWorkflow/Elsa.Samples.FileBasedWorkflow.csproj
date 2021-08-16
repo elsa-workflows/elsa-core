@@ -7,17 +7,17 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="System.Text.Encodings.Web" Version="5.0.1"/>
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.1"/>
+        <PackageReference Include="System.Text.Encodings.Web" Version="5.0.1" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.1" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\..\core\Elsa\Elsa.csproj"/>
+        <ProjectReference Include="..\..\..\core\Elsa\Elsa.csproj" />
     </ItemGroup>
 
     <ItemGroup>
         <None Update="Workflows\hello-world-workflow.json">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
     </ItemGroup>
 

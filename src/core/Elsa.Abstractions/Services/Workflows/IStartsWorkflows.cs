@@ -13,5 +13,11 @@ namespace Elsa.Services
             WorkflowInput? input = default,
             string? contextId = default,
             CancellationToken cancellationToken = default);
+        
+        Task<IEnumerable<RunWorkflowResult>> StartWorkflowsAsync(
+            IEnumerable<IWorkflowBlueprint> workflowBlueprints,
+            WorkflowInput? input = default,
+            string? contextId = default,
+            CancellationToken cancellationToken = default);
     }
 }
