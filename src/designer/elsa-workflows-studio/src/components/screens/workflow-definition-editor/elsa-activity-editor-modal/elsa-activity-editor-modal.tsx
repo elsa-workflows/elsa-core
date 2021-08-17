@@ -55,6 +55,7 @@ export class ElsaActivityEditorModal {
   t = (key: string) => this.i18next.t(key);
 
   updateActivity(formData: FormData) {
+    debugger
     const activity = this.activityModel;
     const activityDescriptor = this.activityDescriptor;
     const inputProperties: Array<ActivityPropertyDescriptor> = activityDescriptor.inputProperties;
@@ -123,6 +124,7 @@ export class ElsaActivityEditorModal {
   }
 
   onSubmit = async (e: Event) => {
+    debugger
     e.preventDefault();
     const form: any = e.target;
     const formData = new FormData(form);
