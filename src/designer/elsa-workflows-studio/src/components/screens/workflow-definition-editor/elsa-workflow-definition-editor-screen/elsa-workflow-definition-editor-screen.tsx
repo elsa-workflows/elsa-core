@@ -237,7 +237,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
     try {
       console.debug("Saving workflow...");
-      debugger
+      
       workflowDefinition = await client.workflowDefinitionsApi.save(request);
       this.workflowDefinition = workflowDefinition;
       this.workflowModel = this.mapWorkflowModel(workflowDefinition);
@@ -353,7 +353,6 @@ export class ElsaWorkflowDefinitionEditorScreen {
   }
 
   async onPasteActivityClick(e: Event) {
-    debugger
     e.preventDefault();
     let activityModel = this.connectionContextMenuState.activity;
     eventBus.emit(EventTypes.PasteActivity, this, activityModel);

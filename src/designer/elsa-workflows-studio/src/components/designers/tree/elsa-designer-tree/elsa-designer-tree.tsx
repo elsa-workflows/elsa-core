@@ -142,13 +142,10 @@ export class ElsaWorkflowDesigner {
 
   async addActivitiesFromClipboard(copiedActivities: Array<ActivityModel>)
   {
-    debugger
-
-    let sourceActivityId: string;    
+    let sourceActivityId: string;
     this.parentActivityId = null;
     this.parentActivityOutcome = null;
 
-    debugger
     for (const key in this.selectedActivities) {
       sourceActivityId = this.selectedActivities[key].activityId;
     }
@@ -165,12 +162,12 @@ export class ElsaWorkflowDesigner {
 
       eventBus.emit(EventTypes.UpdateActivity, this, copiedActivities[key]);
       
-      debugger
       this.parentActivityId = copiedActivities[key].activityId;
       this.parentActivityOutcome = copiedActivities[key].outcomes[0];
     }
 
     this.selectedActivities = {};
+    // Set to null to avoid conflict with on Activity node click event
     this.parentActivityId = null;
     this.parentActivityOutcome = null;
   }
@@ -370,7 +367,6 @@ export class ElsaWorkflowDesigner {
   }
 
   addActivity(activity: ActivityModel, sourceActivityId?: string, targetActivityId?: string, outcome?: string) {
-    debugger
     outcome = outcome || 'Done';
 
     const workflowModel = {...this.workflowModel, activities: [...this.workflowModel.activities, activity]};
@@ -566,7 +562,6 @@ export class ElsaWorkflowDesigner {
   };
 
   onUpdateActivity = args => {
-    debugger
     const activityModel = args as ActivityModel;
 
     if (this.addingActivity) {
@@ -583,13 +578,11 @@ export class ElsaWorkflowDesigner {
   };
 
   onPasteActivity = async args => {
-    debugger
     const activityModel = args as ActivityModel;
 
     this.selectedActivities = {};
     activityModel.outcomes[0] = this.parentActivityOutcome;
     this.selectedActivities[activityModel.activityId] = activityModel;
-    //this.activitySelected.emit(activityModel);
     this.pasteActivitiesFromClipboard();
   };  
 
@@ -629,7 +622,6 @@ export class ElsaWorkflowDesigner {
 
         d3.select(node.elem)
         .on('click', e => {
-          debugger
           e.preventDefault();
           root.selectAll('.node.add svg').classed('elsa-text-green-400', false).classed('elsa-text-gray-400', true).classed('hover:elsa-text-blue-500', true);
           this.parentActivityId = node.activity.activityId;
@@ -650,7 +642,6 @@ export class ElsaWorkflowDesigner {
           d3.select(node.elem).select('svg').classed('elsa-text-green-400', false).classed('hover:elsa-text-blue-500', true);
         })
         .on('contextmenu', e => {
-          debugger
           e.preventDefault();
           e.stopPropagation();
           this.parentActivityId = node.activity.activityId;
