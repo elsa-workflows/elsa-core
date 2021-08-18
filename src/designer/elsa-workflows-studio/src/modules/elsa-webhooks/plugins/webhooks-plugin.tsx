@@ -18,5 +18,5 @@ export class ElsaWebhooksPlugin {
 
   onWebhooksEnabled(context: WebhooksEnabledContext) {
     context.isEnabled = true;
-  }    
+  }
 }

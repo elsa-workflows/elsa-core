@@ -232,7 +232,6 @@ export namespace Components {
         "serverUrl": string;
     }
     interface ElsaWebhooksPlugin {
-        "serverUrl": string;
     }
     interface ElsaWorkflowBlueprintSidePanel {
         "serverUrl": string;
@@ -911,7 +910,6 @@ declare namespace LocalJSX {
         "serverUrl"?: string;
     }
     interface ElsaWebhooksPlugin {
-        "serverUrl"?: string;
     }
     interface ElsaWorkflowBlueprintSidePanel {
         "serverUrl"?: string;

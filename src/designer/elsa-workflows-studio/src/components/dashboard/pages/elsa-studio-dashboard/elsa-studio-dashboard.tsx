@@ -23,11 +23,10 @@ export class ElsaStudioDashboard {
     this.i18next = await loadTranslations(this.culture, resources);
     await this.checkWebhooksEnabled();
   }
-  
-  async checkWebhooksEnabled()
-  {
+
+  async checkWebhooksEnabled() {
     const webhooksEnabledContext: WebhooksEnabledContext = {
-      isEnabled:false
+      isEnabled: false
     };
 
     eventBus.emit(EventTypes.WebhooksEnabled, this, webhooksEnabledContext);
@@ -43,20 +42,23 @@ export class ElsaStudioDashboard {
     const renderWebhooksMenu = (isWebhooksEnabled: boolean) => {
       if (isWebhooksEnabled)
         return (
-          <stencil-route-link url={`${basePath}/webhook-definitions`} anchorClass="elsa-text-gray-300 hover:elsa-bg-gray-700 hover:elsa-text-white elsa-px-3 elsa-py-2 elsa-rounded-md elsa-text-sm elsa-font-medium"
-            activeClass="elsa-text-white elsa-bg-gray-900">
+          <stencil-route-link url={`${basePath}/webhook-definitions`}
+                              anchorClass="elsa-text-gray-300 hover:elsa-bg-gray-700 hover:elsa-text-white elsa-px-3 elsa-py-2 elsa-rounded-md elsa-text-sm elsa-font-medium"
+                              activeClass="elsa-text-white elsa-bg-gray-900">
             <IntlMessage label="WebhookDefinitions"/>
           </stencil-route-link>);
     }
 
     const registerWebhooksRouteList = (isWebhooksEnabled: boolean) => {
       if (isWebhooksEnabled)
-        return (<stencil-route url={`${basePath}/webhook-definitions`} component="elsa-studio-webhook-definitions-list" exact={true}/>);
+        return (<stencil-route url={`${basePath}/webhook-definitions`} component="elsa-studio-webhook-definitions-list"
+                               exact={true}/>);
     }
 
     const registerWebhooksRouteEdit = (isWebhooksEnabled: boolean) => {
       if (isWebhooksEnabled)
-        return (<stencil-route url={`${basePath}/webhook-definitions/:id`} component="elsa-studio-webhook-definitions-edit"/>);
+        return (<stencil-route url={`${basePath}/webhook-definitions/:id`}
+                               component="elsa-studio-webhook-definitions-edit"/>);
     }
 
     return (
@@ -66,19 +68,23 @@ export class ElsaStudioDashboard {
             <div class="elsa-flex elsa-items-center elsa-justify-between elsa-h-16">
               <div class="elsa-flex elsa-items-center">
                 <div class="elsa-flex-shrink-0">
-                  <stencil-route-link url={`${basePath}/`}><img class="elsa-h-8 elsa-w-8" src={logoPath} alt="Workflow"/></stencil-route-link>
+                  <stencil-route-link url={`${basePath}/`}><img class="elsa-h-8 elsa-w-8" src={logoPath}
+                                                                alt="Workflow"/></stencil-route-link>
                 </div>
                 <div class="hidden md:elsa-block">
                   <div class="elsa-ml-10 elsa-flex elsa-items-baseline elsa-space-x-4">
-                    <stencil-route-link url={`${basePath}/workflow-definitions`} anchorClass="elsa-text-gray-300 hover:elsa-bg-gray-700 hover:elsa-text-white elsa-px-3 elsa-py-2 elsa-rounded-md elsa-text-sm elsa-font-medium"
+                    <stencil-route-link url={`${basePath}/workflow-definitions`}
+                                        anchorClass="elsa-text-gray-300 hover:elsa-bg-gray-700 hover:elsa-text-white elsa-px-3 elsa-py-2 elsa-rounded-md elsa-text-sm elsa-font-medium"
                                         activeClass="elsa-text-white elsa-bg-gray-900">
                       <IntlMessage label="WorkflowDefinitions"/>
                     </stencil-route-link>
-                    <stencil-route-link url={`${basePath}/workflow-instances`} anchorClass="elsa-text-gray-300 hover:elsa-bg-gray-700 hover:elsa-text-white elsa-px-3 elsa-py-2 elsa-rounded-md elsa-text-sm elsa-font-medium"
+                    <stencil-route-link url={`${basePath}/workflow-instances`}
+                                        anchorClass="elsa-text-gray-300 hover:elsa-bg-gray-700 hover:elsa-text-white elsa-px-3 elsa-py-2 elsa-rounded-md elsa-text-sm elsa-font-medium"
                                         activeClass="elsa-text-white elsa-bg-gray-900">
                       <IntlMessage label="WorkflowInstances"/>
                     </stencil-route-link>
-                    <stencil-route-link url={`${basePath}/workflow-registry`} anchorClass="elsa-text-gray-300 hover:elsa-bg-gray-700 hover:elsa-text-white elsa-px-3 elsa-py-2 elsa-rounded-md elsa-text-sm elsa-font-medium"
+                    <stencil-route-link url={`${basePath}/workflow-registry`}
+                                        anchorClass="elsa-text-gray-300 hover:elsa-bg-gray-700 hover:elsa-text-white elsa-px-3 elsa-py-2 elsa-rounded-md elsa-text-sm elsa-font-medium"
                                         activeClass="elsa-text-white elsa-bg-gray-900">
                       <IntlMessage label="WorkflowRegistry"/>
                     </stencil-route-link>
@@ -95,12 +101,17 @@ export class ElsaStudioDashboard {
           <stencil-router>
             <stencil-route-switch scrollTopOffset={0}>
               <stencil-route url={`${basePath}/`} component="elsa-studio-home" exact={true}/>
-              <stencil-route url={`${basePath}/workflow-registry`} component="elsa-studio-workflow-registry" exact={true}/>
+              <stencil-route url={`${basePath}/workflow-registry`} component="elsa-studio-workflow-registry"
+                             exact={true}/>
               <stencil-route url={`${basePath}/workflow-registry/:id`} component="elsa-studio-workflow-blueprint-view"/>
-              <stencil-route url={`${basePath}/workflow-definitions`} component="elsa-studio-workflow-definitions-list" exact={true}/>
-              <stencil-route url={`${basePath}/workflow-definitions/:id`} component="elsa-studio-workflow-definitions-edit"/>
-              <stencil-route url={`${basePath}/workflow-instances`} component="elsa-studio-workflow-instances-list" exact={true}/>
-              <stencil-route url={`${basePath}/workflow-instances/:id`} component="elsa-studio-workflow-instances-view"/>
+              <stencil-route url={`${basePath}/workflow-definitions`} component="elsa-studio-workflow-definitions-list"
+                             exact={true}/>
+              <stencil-route url={`${basePath}/workflow-definitions/:id`}
+                             component="elsa-studio-workflow-definitions-edit"/>
+              <stencil-route url={`${basePath}/workflow-instances`} component="elsa-studio-workflow-instances-list"
+                             exact={true}/>
+              <stencil-route url={`${basePath}/workflow-instances/:id`}
+                             component="elsa-studio-workflow-instances-view"/>
               {registerWebhooksRouteList(this.isWebhooksEnabled)}
               {registerWebhooksRouteEdit(this.isWebhooksEnabled)}
             </stencil-route-switch>
@@ -110,4 +121,5 @@ export class ElsaStudioDashboard {
     );
   }
 }
+
 Tunnel.injectProps(ElsaStudioDashboard, ['culture', 'basePath']);

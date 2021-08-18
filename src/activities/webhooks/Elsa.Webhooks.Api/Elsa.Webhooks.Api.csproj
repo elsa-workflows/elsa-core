@@ -1,12 +1,20 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
-  </PropertyGroup>
+    <Import Project="..\..\..\..\common.props"/>
+    <Import Project="..\..\..\..\configureawait.props"/>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\server\Elsa.Server.Api\Elsa.Server.Api.csproj" />
-    <ProjectReference Include="..\Elsa.Activities.Webhooks\Elsa.Activities.Webhooks.csproj" />
-  </ItemGroup>
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+        <Description>
+            Elsa is a set of workflow libraries and tools that enable lean and mean workflowing capabilities in any .NET Core application.
+            This package provides Webhook API endpoints for managing webhook definitions.
+        </Description>
+        <PackageTags>elsa, workflows, webhooks</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\server\Elsa.Server.Api\Elsa.Server.Api.csproj"/>
+        <ProjectReference Include="..\Elsa.Activities.Webhooks\Elsa.Activities.Webhooks.csproj"/>
+    </ItemGroup>
 
 </Project>

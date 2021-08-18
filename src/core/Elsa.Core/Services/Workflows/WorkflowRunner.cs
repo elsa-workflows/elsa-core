@@ -116,7 +116,7 @@ namespace Elsa.Services.Workflows
                     runWorkflowResult = new RunWorkflowResult(workflowInstance, activityId, true);
                     break;
 
-                case WorkflowStatus.Suspended:                    
+                case WorkflowStatus.Suspended:
                     runWorkflowResult = await ResumeWorkflowAsync(workflowExecutionContext, activity!, cancellationToken);
 
                     if (!runWorkflowResult.Executed)
@@ -160,7 +160,7 @@ namespace Elsa.Services.Workflows
             {
                 if (!await CanExecuteAsync(workflowExecutionContext, activity, false, cancellationToken))
                     return new RunWorkflowResult(workflowExecutionContext.WorkflowInstance, activity.Id, false);
-                
+
                 workflowExecutionContext.Begin();
                 workflowExecutionContext.ScheduleActivity(activity.Id);
                 await RunAsync(workflowExecutionContext, Execute, cancellationToken);
@@ -187,7 +187,7 @@ namespace Elsa.Services.Workflows
 
             var blockingActivities = workflowExecutionContext.WorkflowInstance.BlockingActivities.Where(x => x.ActivityId == activityBlueprint.Id).ToList();
 
-            foreach (var blockingActivity in blockingActivities) 
+            foreach (var blockingActivity in blockingActivities)
                 await workflowExecutionContext.RemoveBlockingActivityAsync(blockingActivity);
 
             workflowExecutionContext.Resume();

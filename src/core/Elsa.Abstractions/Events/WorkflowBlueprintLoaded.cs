@@ -4,7 +4,7 @@ namespace Elsa.Events
 {
     public class WorkflowBlueprintLoaded : WorkflowBlueprintNotification
     {
-        public WorkflowBlueprintLoaded(WorkflowBlueprint workflowBlueprint) : base(workflowBlueprint)
+        public WorkflowBlueprintLoaded(IWorkflowBlueprint workflowBlueprint) : base(workflowBlueprint)
         {
         }
     }

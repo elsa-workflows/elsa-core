@@ -12,11 +12,6 @@
         </Description>        
         <PackageTags>elsa, workflows</PackageTags>
     </PropertyGroup>
-    
-    <ItemGroup>
-      <Compile Remove="Events\WorkflowSettingsLoaded.cs" />
-      <Compile Remove="Events\WorkflowSettingsNotification.cs" />
-    </ItemGroup>
 
     <ItemGroup>       
         <PackageReference Include="DistributedLock.Core" Version="1.0.1" />       

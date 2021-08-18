@@ -60,11 +60,5 @@ namespace Elsa.Webhooks.Persistence.YesSql.Extensions
 
             return store;
         }
-
-        private static ISession CreateSession(IServiceProvider serviceProvider)
-        {
-            var provider = serviceProvider.GetRequiredService<Elsa.Persistence.YesSql.Services.ISessionProvider>();
-            return provider.CreateSession();
-        }
     }
 }

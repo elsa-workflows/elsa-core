@@ -8,11 +8,7 @@ namespace Elsa.Events
     /// </summary>
     public abstract class WorkflowBlueprintNotification : INotification
     {
-        protected WorkflowBlueprintNotification(WorkflowBlueprint workflowBlueprint)
-        {
-            WorkflowBlueprint = workflowBlueprint;
-        }
-
-        public WorkflowBlueprint WorkflowBlueprint { get; }
+        protected WorkflowBlueprintNotification(IWorkflowBlueprint workflowBlueprint) => WorkflowBlueprint = workflowBlueprint;
+        public IWorkflowBlueprint WorkflowBlueprint { get; }
     }
 }
