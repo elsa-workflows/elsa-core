@@ -95,6 +95,7 @@ namespace Elsa.Services.Workflows
                 workflowBlueprint,
                 correlationId,
                 contextId,
+                tenantId,
                 cancellationToken: cancellationToken);
 
             await _workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);

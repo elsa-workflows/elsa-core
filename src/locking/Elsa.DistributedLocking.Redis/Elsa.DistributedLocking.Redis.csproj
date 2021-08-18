@@ -14,11 +14,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
+      <PackageReference Include="DistributedLock.Redis" Version="1.0.1" />
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="DistributedLock.Redis" Version="1.0.1" />
+      <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
     </ItemGroup>
 
 </Project>

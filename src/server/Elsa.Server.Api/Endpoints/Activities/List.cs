@@ -48,7 +48,7 @@ namespace Elsa.Server.Api.Endpoints.Activities
             var activityDescriptor = await _activityTypeService.DescribeActivityType(activityType, cancellationToken);
 
             // Filter out any non-browsable properties.
-            activityDescriptor.InputProperties = activityDescriptor.InputProperties.Where(x => x.IsBrowsable == true).ToArray();
+            activityDescriptor.InputProperties = activityDescriptor.InputProperties.Where(x => x.IsBrowsable is true or null).ToArray();
             
             return activityDescriptor;
         }

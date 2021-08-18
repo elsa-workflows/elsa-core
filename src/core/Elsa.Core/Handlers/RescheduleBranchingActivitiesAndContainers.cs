@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Events;
 using Elsa.Models;
+using Elsa.Services.Models;
 using MediatR;
 
 namespace Elsa.Handlers
@@ -16,21 +17,65 @@ namespace Elsa.Handlers
         {
             var activityExecutionContext = notification.ActivityExecutionContext;
             var workflowExecutionContext = activityExecutionContext.WorkflowExecutionContext;
+            var workflowInstance = workflowExecutionContext.WorkflowInstance;
+            var scope = GetScope(activityExecutionContext);
 
-            // Check to see if a suspension / completion has been instructed. If so, do nothing.
+            // Check to see if a suspension / completion has been instructed.
             if (workflowExecutionContext.HasScheduledActivities || workflowExecutionContext.Status != WorkflowStatus.Running)
-                return Task.CompletedTask;
+            {
+                // If any blocking activity is within the current scope, exit.
+                var anyInScope = scope == null || IsAnyBlockingActivityInScope(workflowExecutionContext, scope.ActivityId);
+                
+                if(anyInScope || workflowExecutionContext.Status == WorkflowStatus.Finished)
+                    return Task.CompletedTask;
+            }
             
-            // Check if we are within a scope.
-            if(!workflowExecutionContext.WorkflowInstance.Scopes.Any())
+            if (scope == null)
+            {
+                // No scope to reschedule.
                 return Task.CompletedTask;
+            }
 
             // Re-schedule the current scope activity.
-            var scope = workflowExecutionContext.WorkflowInstance.Scopes.Pop();
-            workflowExecutionContext.WorkflowInstance.ActivityData.GetItem(scope.ActivityId)!.SetState("Unwinding", true);
+            workflowInstance.Scopes.Remove(scope);
+            workflowInstance.ActivityData.GetItem(scope.ActivityId)!.SetState("Unwinding", true);
             workflowExecutionContext.ScheduleActivity(scope.ActivityId);
-            
+
             return Task.CompletedTask;
+        }
+
+        private bool IsAnyBlockingActivityInScope(WorkflowExecutionContext workflowExecutionContext, string scopeActivityId)
+        {
+            // Get all blocking activity IDs.
+            var blockingActivityIds = workflowExecutionContext.WorkflowInstance.BlockingActivities.Select(x => x.ActivityId).ToHashSet();
+
+            // For each blocking activity, check if it is within the current scope (taking the first one).
+            foreach (var blockingActivityId in blockingActivityIds)
+            {
+                var inboundActivityIds = new[] { blockingActivityId }.Concat(workflowExecutionContext.GetInboundActivityPath(blockingActivityId)).ToHashSet();
+                if (inboundActivityIds.Contains(scopeActivityId))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private ActivityScope? GetScope(ActivityExecutionContext context)
+        {
+            var workflowExecutionContext = context.WorkflowExecutionContext;
+            
+            // Check if we are within a scope.
+            if (!workflowExecutionContext.WorkflowInstance.Scopes.Any())
+                return null;
+
+            // Select the scope that is within the activity's inbound trajectory. Include current activity for consideration (it might itself be a scope).
+            var activityId = context.ActivityId;
+            var inboundActivityIds = new[] { activityId }.Concat(workflowExecutionContext.GetInboundActivityPath(activityId)).ToHashSet();
+            var workflowInstance = workflowExecutionContext.WorkflowInstance;
+            var scopes = workflowInstance.Scopes;
+            var scope = scopes.FirstOrDefault(x => inboundActivityIds.Contains(x.ActivityId));
+
+            return scope;
         }
     }
 }

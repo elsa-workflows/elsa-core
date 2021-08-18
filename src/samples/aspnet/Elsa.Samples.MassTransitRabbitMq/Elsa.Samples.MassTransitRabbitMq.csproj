@@ -11,4 +11,8 @@
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.MassTransit\Elsa.Activities.MassTransit.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="System.Text.Encodings.Web" Version="5.0.1" />
+    </ItemGroup>
+
 </Project>

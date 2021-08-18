@@ -9,12 +9,14 @@ using Elsa.Persistence.Specifications.WorkflowExecutionLogRecords;
 using Elsa.Providers.WorkflowStorage;
 using Elsa.Scripting.JavaScript.Extensions;
 using Elsa.Scripting.JavaScript.Messages;
+using Elsa.Scripting.JavaScript.Options;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Elsa.Services.WorkflowStorage;
 using Jint;
 using MediatR;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using NodaTime;
 
 namespace Elsa.Scripting.JavaScript.Handlers
@@ -24,12 +26,14 @@ namespace Elsa.Scripting.JavaScript.Handlers
         private readonly IConfiguration _configuration;
         private readonly IActivityTypeService _activityTypeService;
         private readonly IWorkflowStorageService _workflowStorageService;
+        private readonly ScriptOptions _scriptOptions;
 
-        public ConfigureJavaScriptEngine(IConfiguration configuration, IActivityTypeService activityTypeService, IWorkflowStorageService workflowStorageService)
+        public ConfigureJavaScriptEngine(IConfiguration configuration, IActivityTypeService activityTypeService, IWorkflowStorageService workflowStorageService, IOptions<ScriptOptions> scriptOptions)
         {
             _configuration = configuration;
             _activityTypeService = activityTypeService;
             _workflowStorageService = workflowStorageService;
+            _scriptOptions = scriptOptions.Value;
         }
 
         public async Task Handle(EvaluatingJavaScriptExpression notification, CancellationToken cancellationToken)
@@ -44,7 +48,6 @@ namespace Elsa.Scripting.JavaScript.Handlers
             engine.SetValue("parseGuid", (Func<string, Guid>) (Guid.Parse));
             engine.SetValue("setVariable", (Action<string, object>) ((name, value) => activityExecutionContext.SetVariable(name, value)));
             engine.SetValue("getVariable", (Func<string, object?>) (name => activityExecutionContext.GetVariable(name)));
-            engine.SetValue("getConfig", (Func<string, object?>) (name => _configuration.GetSection(name).Value));
             engine.SetValue("isNullOrWhiteSpace", (Func<string, bool>) (string.IsNullOrWhiteSpace));
             engine.SetValue("isNullOrEmpty", (Func<string, bool>) (string.IsNullOrEmpty));
             engine.SetValue("getWorkflowDefinitionIdByName", (Func<string, string?>) (name => GetWorkflowDefinitionIdByName(activityExecutionContext, name)));
@@ -52,6 +55,9 @@ namespace Elsa.Scripting.JavaScript.Handlers
             engine.SetValue("getActivity", (Func<string, object?>) (idOrName => GetActivityModel(activityExecutionContext, idOrName)));
             engine.SetValue("findExecutedActivityIdByType", (Func<string, string?>) (activityTypeName => FindExecutedActivityByTypeAsync(activityExecutionContext, activityTypeName, cancellationToken).Result));
             
+            if (_scriptOptions.EnableConfigurationAccess)
+                engine.SetValue("getConfig", (Func<string, object?>)(name => _configuration.GetSection(name).Value));
+
             // Using .Result because Jint doesn't support Task-based functions.  
             engine.SetValue("getActivityProperty", (Func<string, string, object?>) ((activityId, propertyName) => GetActivityPropertyAsync(activityId, propertyName, activityExecutionContext).Result));
 

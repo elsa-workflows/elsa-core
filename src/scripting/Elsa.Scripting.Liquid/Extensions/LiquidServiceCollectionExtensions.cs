@@ -35,5 +35,16 @@ namespace Elsa.Scripting.Liquid.Extensions
             services.Configure<LiquidOptions>(options => options.ParserConfiguration.Add(configure));
             return services;
         }
+
+        /// <summary>
+        /// Enables access to .NET configuration via the Configuration keyword. Do not
+        /// enable this option if you execute user supplied (or otherwise untrusted)
+        /// workflows.
+        /// </summary>
+        public static IServiceCollection EnableLiquidConfigurationAccess(this IServiceCollection services)
+        {
+            services.Configure<LiquidOptions>(options => options.EnableConfigurationAccess = true);
+            return services;
+        }
     }
 }
