@@ -20,7 +20,8 @@ namespace Elsa.Scripting.Liquid.Extensions
                 .AddLiquidFilter<JsonFilter>("json")
                 .AddLiquidFilter<Base64Filter>("base64")
                 .AddLiquidFilter<WorkflowDefinitionIdFilter>("workflow_definition_id")
-                .AddLiquidFilter<SignalTokenFilter>("signal_token");
+                .AddLiquidFilter<SignalTokenFilter>("signal_token")
+                .AddLiquidFilter<ActivityOutputFilter>("output");
         }
         
         public static IServiceCollection AddLiquidFilter<T>(this IServiceCollection services, string name) where T : class, ILiquidFilter
