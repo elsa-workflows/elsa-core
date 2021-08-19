@@ -1,4 +1,5 @@
 using System;
+using AutoMapper.Internal;
 
 namespace Elsa.Scripting.JavaScript.Services
 {
@@ -6,7 +7,8 @@ namespace Elsa.Scripting.JavaScript.Services
     {
         public object? ConvertToDesiredType(object? evaluationResult, Type desiredType)
         {
-            return Convert.ChangeType(evaluationResult, desiredType);
+            var underlyingType = Nullable.GetUnderlyingType(desiredType) ?? desiredType;
+            return Convert.ChangeType(evaluationResult, underlyingType);
         }
     }
 }
