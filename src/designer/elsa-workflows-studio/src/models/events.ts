@@ -24,7 +24,7 @@ export const EventTypes = {
   ShowToastNotification: 'show-toast-notification',
   HideToastNotification: 'hide-toast-notification',
   ConfigureFeature: 'configure-feature',
-  //WorkflowSettingsUpdated: 'workflow-settings-updated',
+  FeatureUpdated: 'feature-updated',
 };
 
 export interface AddActivityEventArgs {
@@ -50,18 +50,12 @@ export interface ActivityDescriptorDisplayContext {
 }
 
 export interface ConfigureFeatureContext {
-  isEnabled: boolean;
   featureName: string;
   basePath: string;
   menuItems: FeatureMenuItem[];
   routes: FeatureMenuItem[];
   headers: FeatureMenuItem[];
   columns: FeatureMenuItem[];
-  hasContextItems: boolean
-}
-
-export interface WorkflowSettingsUpdatedContext {
-  workflowBlueprintId?: string;
-  key?: string;
-  value?: string;
+  hasContextItems: boolean;
+  variables: {data: {}};
 }

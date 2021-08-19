@@ -19,9 +19,7 @@ export class ElsaStudioDashboard {
   @Prop({attribute: 'features', reflect: true}) featuresString : string;
   @Prop({attribute: 'base-path', reflect: true}) basePath: string = '';
   private i18next: i18n;
-  private parsedFeatures: Array<string> = [];
-  private featureMenuItems: Array<FeatureMenuItem> = [];
-  private featureRoutes: Array<FeatureMenuItem> = [];
+  private featureContexts: Array<ConfigureFeatureContext> = [];
 
   async componentWillLoad() {
     this.i18next = await loadTranslations(this.culture, resources);
@@ -29,26 +27,26 @@ export class ElsaStudioDashboard {
   }
 
   async configureFeatures() {
-    debugger
-    this.parsedFeatures = this.featuresString.split(',');
+    const parsedFeatures: string[] = this.featuresString.split(',');
 
-    for (const featureName of this.parsedFeatures)
+    for (const featureName of parsedFeatures)
     {
-      const context: ConfigureFeatureContext = {
-        isEnabled: false,
+      const featureContext: ConfigureFeatureContext = {
         featureName: featureName,
         basePath: this.basePath,
         menuItems: [],
         routes: [],
         headers: [],
         columns: [],
-        hasContextItems: false
+        hasContextItems: false,
+        variables: null
       }
 
-      eventBus.emit(EventTypes.ConfigureFeature, this, context);
+      eventBus.emit(EventTypes.ConfigureFeature, this, featureContext);
 
-      this.featureMenuItems = [...this.featureMenuItems, ...context.menuItems]
-      this.featureRoutes = [...this.featureRoutes, ...context.routes]
+      featureContext.menuItems = [...featureContext.menuItems]
+      featureContext.routes = [...featureContext.routes]
+      this.featureContexts.push(featureContext);
     }
   }
 
@@ -57,6 +55,11 @@ export class ElsaStudioDashboard {
     const logoPath = getAssetPath('./assets/logo.png');
     const basePath = this.basePath || '';
     const IntlMessage = GetIntlMessage(this.i18next);
+
+    let feature = this.featureContexts.find(x => x.featureName == 'webhooks');
+    let featureEnabled = !!feature;  
+    let featureMenuItems = featureEnabled ? feature.menuItems : [];
+    let featureRoutes = featureEnabled ? feature.routes : [];
 
     const renderFeatureMenuItem = (item: FeatureMenuItem, basePath: string) => {
       return (<stencil-route-link url={`${basePath}/${item.url}`} anchorClass="elsa-text-gray-300 hover:elsa-bg-gray-700 hover:elsa-text-white elsa-px-3 elsa-py-2 elsa-rounded-md elsa-text-sm elsa-font-medium" activeClass="elsa-text-white elsa-bg-gray-900">
@@ -95,7 +98,7 @@ export class ElsaStudioDashboard {
                                         activeClass="elsa-text-white elsa-bg-gray-900">
                       <IntlMessage label="WorkflowRegistry"/>
                     </stencil-route-link>
-                    {this.featureMenuItems.map(item => renderFeatureMenuItem(item, basePath))}
+                    {featureMenuItems.map(item => renderFeatureMenuItem(item, basePath))}
                   </div>
                 </div>
               </div>
@@ -118,7 +121,7 @@ export class ElsaStudioDashboard {
                              exact={true}/>
               <stencil-route url={`${basePath}/workflow-instances/:id`}
                              component="elsa-studio-workflow-instances-view"/>
-              {this.featureRoutes.map(item => renderFeatureRoute(item, basePath))}
+              {featureRoutes.map(item => renderFeatureRoute(item, basePath))}
             </stencil-route-switch>
           </stencil-router>
         </main>

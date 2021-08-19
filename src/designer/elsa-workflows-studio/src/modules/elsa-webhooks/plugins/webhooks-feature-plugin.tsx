@@ -18,12 +18,9 @@ export class ElsaWebhooksFeaturePlugin {
   }
 
   onWebhooksEnabled(context: ConfigureFeatureContext) {
-    debugger
     if (context.featureName != "webhooks")
       return;
 
-    context.isEnabled = true;
-    
     context.menuItems.push({url: "webhook-definitions", label: "WebhookDefinitions", component: null, exact: false})
     context.routes.push({url: "webhook-definitions", label: null, component: "elsa-studio-webhook-definitions-list", exact: true},
                         {url: "webhook-definitions/:id", label: null, component: "elsa-studio-webhook-definitions-edit", exact: false});
