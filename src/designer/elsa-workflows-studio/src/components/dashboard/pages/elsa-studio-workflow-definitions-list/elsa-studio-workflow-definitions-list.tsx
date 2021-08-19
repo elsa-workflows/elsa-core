@@ -46,4 +46,4 @@ export class ElsaStudioWorkflowDefinitionsList {
     );
   }
 }
-Tunnel.injectProps(ElsaStudioWorkflowDefinitionsList, ['culture', 'basePath']);
+(ElsaStudioWorkflowDefinitionsList, ['culture', 'basePath']);

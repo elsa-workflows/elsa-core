@@ -19,19 +19,22 @@ namespace Elsa.WorkflowSettings.Handlers
 
         public async Task Handle(WorkflowBlueprintLoaded notification, CancellationToken cancellationToken)
         {
-            var workflowSetting = new WorkflowSetting
-            {
-                WorkflowBlueprintId = notification.WorkflowBlueprint.Id,
-                Key = "disabled"
-            };
+            var result = await LoadWorkflowSettingsAsync(notification.WorkflowBlueprint.Id, notification.WorkflowBlueprint.Key, cancellationToken);
 
-            var result = await LoadWorkflowSettingsAsync(workflowSetting, cancellationToken);
-            notification.WorkflowBlueprint.IsDisabled = Convert.ToBoolean(result.Value ?? "false");
+            switch (notification.WorkflowBlueprint.Key)
+            {
+                case "disabled":
+                    notification.WorkflowBlueprint.IsDisabled = Convert.ToBoolean(result.Value ?? "false");
+                    break;
+                default:
+                    throw new NotImplementedException($"The key {notification.WorkflowBlueprint.Key} is not supported");
+            }
+            
         }
 
-        private async ValueTask<WorkflowSetting> LoadWorkflowSettingsAsync(WorkflowSetting workflowSetting, CancellationToken cancellationToken)
+        private async ValueTask<WorkflowSetting> LoadWorkflowSettingsAsync(string workflowBlueprintId, string key, CancellationToken cancellationToken)
         {
-            return await _workflowSettingsManager.LoadSettingAsync(workflowSetting, cancellationToken);
+            return await _workflowSettingsManager.LoadSettingAsync(workflowBlueprintId, key, cancellationToken);
         }
     }
 }

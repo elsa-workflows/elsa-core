@@ -1,7 +1,7 @@
-import {eventBus, ElsaPlugin} from "../services";
-import {ActivityDesignDisplayContext, EventTypes, SyntaxNames} from "../models";
 import {h} from "@stencil/core";
-import {htmlEncode} from "../utils/utils";
+import {eventBus, ElsaPlugin} from "../../../services";
+import {ActivityDesignDisplayContext, EventTypes, SyntaxNames} from "../../../models";
+import {htmlEncode} from "../../../utils/utils";
 
 export class WebhookPlugin implements ElsaPlugin {
   constructor() {

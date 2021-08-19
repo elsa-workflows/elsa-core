@@ -539,5 +539,5 @@ export class ElsaWorkflowInstanceListScreen {
   }
 }
 
-Tunnel.injectProps(ElsaWorkflowInstanceListScreen, ['serverUrl', 'culture', 'basePath']);
+Tunnel.injectProps(ElsaWorkflowInstanceListScreen, ['serverUrl', 'culture', 'basePath', 'featuresString']);
 injectHistory(ElsaWorkflowInstanceListScreen);

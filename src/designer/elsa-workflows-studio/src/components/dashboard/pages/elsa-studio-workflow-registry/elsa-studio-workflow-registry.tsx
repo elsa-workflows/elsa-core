@@ -43,4 +43,4 @@ export class ElsaStudioWorkflowRegistry {
   }
 }
 
-Tunnel.injectProps(ElsaStudioWorkflowRegistry, ['culture', 'basePath']);
+Tunnel.injectProps(ElsaStudioWorkflowRegistry, ['culture', 'basePath', 'featuresString']);

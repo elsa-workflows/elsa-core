@@ -273,4 +273,4 @@ export class ElsaWebhookDefinitionEditorScreen {
     };
   }
 }
-Tunnel.injectProps(ElsaWebhookDefinitionEditorScreen, ['serverUrl', 'culture']);
+Tunnel.injectProps(ElsaWebhookDefinitionEditorScreen, ['serverUrl', 'culture', 'featuresString']);

@@ -4,8 +4,9 @@ import {resources} from "./localizations";
 import {i18n} from "i18next";
 import {GetIntlMessage} from "../../../i18n/intl-message";
 import Tunnel from "../../../../data/dashboard";
-import {EventTypes, WebhooksEnabledContext} from '../../../../models';
+import {EventTypes, ConfigureFeatureContext, FeatureMenuItem} from '../../../../models';
 import {eventBus} from '../../../../services';
+import * as collection from 'lodash/collection';
 
 @Component({
   tag: 'elsa-studio-dashboard',
@@ -15,22 +16,40 @@ import {eventBus} from '../../../../services';
 export class ElsaStudioDashboard {
 
   @Prop({attribute: 'culture', reflect: true}) culture: string;
+  @Prop({attribute: 'features', reflect: true}) featuresString : string;
   @Prop({attribute: 'base-path', reflect: true}) basePath: string = '';
   private i18next: i18n;
-  private isWebhooksEnabled: boolean;
+  private parsedFeatures: Array<string> = [];
+  private featureMenuItems: Array<FeatureMenuItem> = [];
+  private featureRoutes: Array<FeatureMenuItem> = [];
 
   async componentWillLoad() {
     this.i18next = await loadTranslations(this.culture, resources);
-    await this.checkWebhooksEnabled();
+    await this.configureFeatures();
   }
 
-  async checkWebhooksEnabled() {
-    const webhooksEnabledContext: WebhooksEnabledContext = {
-      isEnabled: false
-    };
+  async configureFeatures() {
+    debugger
+    this.parsedFeatures = this.featuresString.split(',');
 
-    eventBus.emit(EventTypes.WebhooksEnabled, this, webhooksEnabledContext);
-    this.isWebhooksEnabled = webhooksEnabledContext.isEnabled;
+    for (const featureName of this.parsedFeatures)
+    {
+      const context: ConfigureFeatureContext = {
+        isEnabled: false,
+        featureName: featureName,
+        basePath: this.basePath,
+        menuItems: [],
+        routes: [],
+        headers: [],
+        columns: [],
+        hasContextItems: false
+      }
+
+      eventBus.emit(EventTypes.ConfigureFeature, this, context);
+
+      this.featureMenuItems = [...this.featureMenuItems, ...context.menuItems]
+      this.featureRoutes = [...this.featureRoutes, ...context.routes]
+    }
   }
 
   render() {
@@ -39,27 +58,15 @@ export class ElsaStudioDashboard {
     const basePath = this.basePath || '';
     const IntlMessage = GetIntlMessage(this.i18next);
 
-    const renderWebhooksMenu = (isWebhooksEnabled: boolean) => {
-      if (isWebhooksEnabled)
-        return (
-          <stencil-route-link url={`${basePath}/webhook-definitions`}
-                              anchorClass="elsa-text-gray-300 hover:elsa-bg-gray-700 hover:elsa-text-white elsa-px-3 elsa-py-2 elsa-rounded-md elsa-text-sm elsa-font-medium"
-                              activeClass="elsa-text-white elsa-bg-gray-900">
-            <IntlMessage label="WebhookDefinitions"/>
-          </stencil-route-link>);
+    const renderFeatureMenuItem = (item: FeatureMenuItem, basePath: string) => {
+      return (<stencil-route-link url={`${basePath}/${item.url}`} anchorClass="elsa-text-gray-300 hover:elsa-bg-gray-700 hover:elsa-text-white elsa-px-3 elsa-py-2 elsa-rounded-md elsa-text-sm elsa-font-medium" activeClass="elsa-text-white elsa-bg-gray-900">
+                <IntlMessage label={`${item.label}`}/>
+              </stencil-route-link>)
     }
 
-    const registerWebhooksRouteList = (isWebhooksEnabled: boolean) => {
-      if (isWebhooksEnabled)
-        return (<stencil-route url={`${basePath}/webhook-definitions`} component="elsa-studio-webhook-definitions-list"
-                               exact={true}/>);
-    }
-
-    const registerWebhooksRouteEdit = (isWebhooksEnabled: boolean) => {
-      if (isWebhooksEnabled)
-        return (<stencil-route url={`${basePath}/webhook-definitions/:id`}
-                               component="elsa-studio-webhook-definitions-edit"/>);
-    }
+    const renderFeatureRoute = (item: FeatureMenuItem, basePath: string) => {
+      return (<stencil-route url={`${basePath}/${item.url}`} component={`${item.component}`} exact={item.exact}/>)
+    }    
 
     return (
       <div class="elsa-h-screen elsa-bg-gray-100">
@@ -88,8 +95,7 @@ export class ElsaStudioDashboard {
                                         activeClass="elsa-text-white elsa-bg-gray-900">
                       <IntlMessage label="WorkflowRegistry"/>
                     </stencil-route-link>
-
-                    {renderWebhooksMenu(this.isWebhooksEnabled)}
+                    {this.featureMenuItems.map(item => renderFeatureMenuItem(item, basePath))}
                   </div>
                 </div>
               </div>
@@ -112,8 +118,7 @@ export class ElsaStudioDashboard {
                              exact={true}/>
               <stencil-route url={`${basePath}/workflow-instances/:id`}
                              component="elsa-studio-workflow-instances-view"/>
-              {registerWebhooksRouteList(this.isWebhooksEnabled)}
-              {registerWebhooksRouteEdit(this.isWebhooksEnabled)}
+              {this.featureRoutes.map(item => renderFeatureRoute(item, basePath))}
             </stencil-route-switch>
           </stencil-router>
         </main>
@@ -122,4 +127,4 @@ export class ElsaStudioDashboard {
   }
 }
 
-Tunnel.injectProps(ElsaStudioDashboard, ['culture', 'basePath']);
+Tunnel.injectProps(ElsaStudioDashboard, ['culture', 'basePath', 'featuresString']);

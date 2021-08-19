@@ -8,16 +8,16 @@ namespace Elsa.WorkflowSettings.Providers
 {
     public class ConfigurationWorkflowSettingsProvider : WorkflowSettingsProvider
     {
-        private readonly IConfiguration _configuarion;
+        private readonly IConfiguration _configuration;
 
         public ConfigurationWorkflowSettingsProvider(IConfiguration configuarion)
         {
-            _configuarion = configuarion;
+            _configuration = configuarion;
         }
 
         public override ValueTask<WorkflowSetting> GetWorkflowSettingAsync(string workflowBlueprintId, string key, CancellationToken cancellationToken)
         {
-            var value = _configuarion[$"{workflowBlueprintId}:{key}"];
+            var value = _configuration[$"{workflowBlueprintId}:{key}"];
             return new ValueTask<WorkflowSetting>(new WorkflowSetting { Value = value });
         }
     }

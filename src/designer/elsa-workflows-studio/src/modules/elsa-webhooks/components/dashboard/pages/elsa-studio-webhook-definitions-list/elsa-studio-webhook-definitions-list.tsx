@@ -44,4 +44,4 @@ export class ElsaStudioWebhookDefinitionsList {
     );
   }
 }
-Tunnel.injectProps(ElsaStudioWebhookDefinitionsList, ['culture', 'basePath']);
+Tunnel.injectProps(ElsaStudioWebhookDefinitionsList, ['culture', 'basePath', 'featuresString']);

@@ -530,4 +530,4 @@ export class ElsaWorkflowInstanceViewerScreen {
     </div>
   }
 }
-Tunnel.injectProps(ElsaWorkflowInstanceViewerScreen, ['serverUrl', 'culture']);
+Tunnel.injectProps(ElsaWorkflowInstanceViewerScreen, ['serverUrl', 'culture', 'featuresString']);

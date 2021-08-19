@@ -6,6 +6,6 @@ namespace Elsa.WorkflowSettings.Abstractions.Services.WorkflowSettings
 {
     public interface IWorkflowSettingsManager
     {
-        ValueTask<WorkflowSetting> LoadSettingAsync(WorkflowSetting workflowSetting, CancellationToken cancellationToken = default);
+        ValueTask<WorkflowSetting> LoadSettingAsync(string workflowBlueprintId, string key, CancellationToken cancellationToken = default);
     }
 }

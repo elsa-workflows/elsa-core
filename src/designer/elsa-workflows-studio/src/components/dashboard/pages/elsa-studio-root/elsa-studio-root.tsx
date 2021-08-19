@@ -16,6 +16,7 @@ export class ElsaStudioRoot {
   @Prop({attribute: 'server-url', reflect: true}) serverUrl: string;
   @Prop({attribute: 'monaco-lib-path', reflect: true}) monacoLibPath: string;
   @Prop({attribute: 'culture', reflect: true}) culture: string;
+  @Prop({attribute: 'features', reflect: true}) featuresString: string;
   @Prop({attribute: 'base-path', reflect: true}) basePath: string = '';
   @Event() initializing: EventEmitter<ElsaStudio>;
 
@@ -58,6 +59,7 @@ export class ElsaStudioRoot {
     const elsaStudio: ElsaStudio = {
       serverUrl: this.serverUrl,
       basePath: this.basePath,
+      features: this.featuresString,
       eventBus,
       pluginManager,
       propertyDisplayManager,
@@ -72,7 +74,7 @@ export class ElsaStudioRoot {
 
     this.initializing.emit(elsaStudio);
     pluginManager.initialize(elsaStudio);
-    propertyDisplayManager.initialize(elsaStudio);
+    propertyDisplayManager.initialize(elsaStudio);    
   }
 
   onShowConfirmDialog = (e) => e.promise = this.confirmDialog.show(e.caption, e.message)
@@ -87,6 +89,7 @@ export class ElsaStudioRoot {
     const tunnelState: DashboardState = {
       serverUrl: this.serverUrl,
       basePath: this.basePath,
+      featuresString: this.featuresString,
       culture,
       monacoLibPath: this.monacoLibPath
     };

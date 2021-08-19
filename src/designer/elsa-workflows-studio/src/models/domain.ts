@@ -323,6 +323,13 @@ export class SyntaxNames {
   static Output = 'Output';
 }
 
+export interface FeatureMenuItem {
+  url: string;
+  label: string;
+  component: string;
+  exact: boolean;
+}
+
 export const getVersionOptionsString = (versionOptions?: VersionOptions) => {
 
   if (!versionOptions)

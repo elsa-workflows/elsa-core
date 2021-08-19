@@ -2,7 +2,7 @@ using Elsa.Persistence.YesSql.Documents;
 
 namespace Elsa.WorkflowSettings.Persistence.YesSql.Documents
 {
-    public class WorkflowSettingsDocument : YesSqlDocument
+    public class WorkflowSettingDocument : YesSqlDocument
     {
         public string SettingId { get; set; } = default!;
         public string WorkflowBlueprintId { get; set; } = default!;

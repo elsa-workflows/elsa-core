@@ -17,18 +17,17 @@ import {SendSignalPlugin} from "../plugins/send-signal-plugin";
 import {UserTaskPlugin} from "../plugins/user-task-plugin";
 import {StatePlugin} from "../plugins/state-plugin";
 import {SendHttpRequestPlugin} from "../plugins/send-http-request-plugin";
-import {WebhookPlugin} from "../plugins/webhook-plugin";
 import {RunWorkflowPlugin} from "../plugins/run-workflow-plugin";
+import {WebhookPlugin} from "../modules/elsa-webhooks/plugins/webhook-plugin";
 import {ElsaStudio} from "../models/services";
 
 export class PluginManager {
-
   plugins: Array<ElsaPlugin> = [];
   pluginTypes: Array<any> = [];
   elsaStudio: ElsaStudio;
   initialized: boolean;
 
-  constructor() {
+  constructor() {    
     this.pluginTypes = [
       DefaultDriversPlugin,
       ActivityIconProviderPlugin,

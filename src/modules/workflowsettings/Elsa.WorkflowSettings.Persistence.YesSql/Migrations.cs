@@ -9,9 +9,9 @@ namespace Elsa.WorkflowSettings.Persistence.YesSql
     {
         public int Create()
         {
-            SchemaBuilder.CreateMapIndexTable<WorkflowSettingsIndex>(
+            SchemaBuilder.CreateMapIndexTable<WorkflowSettingIndex>(
                 table => table
-                    .Column<string>(nameof(WorkflowSettingsIndex.SettingId)),
+                    .Column<string>(nameof(WorkflowSettingIndex.SettingId)),
                 CollectionNames.WorkflowSettings);
 
             return 1;

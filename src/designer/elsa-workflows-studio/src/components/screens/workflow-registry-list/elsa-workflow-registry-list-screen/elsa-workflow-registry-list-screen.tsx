@@ -1,8 +1,9 @@
-import {Component, h, Prop, State} from '@stencil/core';
+import {Component, h, Prop, State, Event, EventEmitter} from '@stencil/core';
 import * as collection from 'lodash/collection';
 import {createElsaClient} from "../../../../services/elsa-client";
-import {EventTypes, PagedList, VersionOptions, WorkflowBlueprintSummary, WorkflowSettingsEnabledContext, WorkflowSettingsUpdatedContext} from "../../../../models";
+import {EventTypes, PagedList, VersionOptions, WorkflowBlueprintSummary, ConfigureFeatureContext, WorkflowSettingsUpdatedContext} from "../../../../models";
 import {MenuItem} from "../../../../components/controls/elsa-context-menu/models";
+import {FeatureMenuItem} from '../../../../models';
 import {RouterHistory} from "@stencil/router";
 import {eventBus} from '../../../../services';
 import Tunnel from "../../../../data/dashboard";
@@ -16,14 +17,19 @@ export class ElsaWorkflowRegistryListScreen {
   @Prop() serverUrl: string;
   @Prop() basePath: string;
   @Prop() culture: string;
+  @Prop({attribute: 'features', reflect: true}) featuresString : string;
   @State() workflowBlueprints: PagedList<WorkflowBlueprintSummary> = {items: [], page: 1, pageSize: 50, totalCount: 0};
-  private isWorkflowSettingsEnabled: boolean;
+  //@Event() todoCompleted: EventEmitter<WorkflowSettingsUpdatedContext>;
 
   confirmDialog: HTMLElsaConfirmDialogElement;
+  private parsedFeatures: Array<string> = [];
+  private featureHeaders: Array<FeatureMenuItem> = [];
+  private featureColumns: Array<FeatureMenuItem> = [];
+  private hasContextItems: boolean;
 
   async componentWillLoad() {
     await this.loadWorkflowBlueprints();
-    await this.checkWorkflowSettingsEnabled();
+    await this.configureFeatures();
   }
 
   connectedCallback() {
@@ -34,14 +40,29 @@ export class ElsaWorkflowRegistryListScreen {
     eventBus.detach(EventTypes.WorkflowUpdated, this.onLoadWorkflowBlueprints);
   }  
 
-  async checkWorkflowSettingsEnabled()
-  {
-    const workflowSettingsEnabledContext: WorkflowSettingsEnabledContext = {
-      isEnabled:false
-    };
+  async configureFeatures() {
+    
+    this.parsedFeatures = this.featuresString.split(',');
 
-    eventBus.emit(EventTypes.WorkflowSettingsEnabled, this, workflowSettingsEnabledContext);
-    this.isWorkflowSettingsEnabled = workflowSettingsEnabledContext.isEnabled;
+    for (const featureName of this.parsedFeatures)
+    {
+      const context: ConfigureFeatureContext = {
+        isEnabled: false,
+        featureName: featureName,
+        basePath: this.basePath,
+        menuItems: [],
+        routes: [],
+        headers: [],
+        columns: [],
+        hasContextItems: false
+      }
+
+      eventBus.emit(EventTypes.ConfigureFeature, this, context);
+
+      this.featureHeaders = [...this.featureHeaders, ...context.headers]
+      this.featureColumns = [...this.featureColumns, ...context.columns]
+      this.hasContextItems = context.hasContextItems;
+    }
   }
 
   async onDisableWorkflowClick(e: Event, workflowBlueprintId: string) {
@@ -62,15 +83,18 @@ export class ElsaWorkflowRegistryListScreen {
     await this.updateWorkflowSettings(workflowBlueprintId, 'disabled', 'false');
   }
 
+
+
   async updateWorkflowSettings(workflowBlueprintId: string, key: string, value: string)
   {
+    debugger
     const workflowSettingsUpdatedContext: WorkflowSettingsUpdatedContext = {
       workflowBlueprintId: workflowBlueprintId,
       key: key,
       value: value
     };
 
-    eventBus.emit(EventTypes.WorkflowSettingsUpdated, this, workflowSettingsUpdatedContext);
+    //eventBus.emit(EventTypes.WorkflowSettingsUpdated, this, workflowSettingsUpdatedContext);
   }  
 
   async onLoadWorkflowBlueprints()
@@ -95,18 +119,15 @@ export class ElsaWorkflowRegistryListScreen {
     const groupings = collection.groupBy(workflowBlueprints, 'id');
     const basePath = this.basePath;
 
-    const renderWorkflowSettingsEnabledHeader = (isWorkflowSettingsEnabled: boolean) => {
-      if (isWorkflowSettingsEnabled)
-        return (<th class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-text-right elsa-uppercase elsa-tracking-wider">Enabled</th>);
+    const renderFeatureHeader = (item: FeatureMenuItem) => {
+      return (<th class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-text-right elsa-uppercase elsa-tracking-wider">{item.label}</th>)
     }
 
-    const renderWorkflowSettingsEnabledValue = (isWorkflowSettingsEnabled: boolean, isWorkflowBlueprintDisabled: boolean) => {
-      if (isWorkflowSettingsEnabled)
-        return (<td class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-text-right">{isWorkflowBlueprintDisabled ? 'No' : 'Yes'}</td>);
-    }
+    const renderFeatureColumn = (isWorkflowBlueprintDisabled: boolean) => {
+      return (<td class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-text-right">{isWorkflowBlueprintDisabled ? 'No' : 'Yes'}</td>)
+    }    
 
     const renderContextMenu = (
-      isWorkflowSettingsEnabled: boolean, 
       workflowBlueprintId: string, 
       isWorkflowBlueprintDisabled: boolean, 
       history: RouterHistory, 
@@ -115,20 +136,20 @@ export class ElsaWorkflowRegistryListScreen {
       enableIcon: any, 
       disableIcon: any) => {
 
-      let menuItems: Array<MenuItem> = [];
-      menuItems.push(...[{text: 'Edit', anchorUrl: editUrl, icon: editIcon}]);
-
-      if (isWorkflowSettingsEnabled)
+      let menuItems: MenuItem[] = [];
+      menuItems = [...menuItems, ...[{text: 'Edit', anchorUrl: editUrl, icon: editIcon}]];
+      
+      if (this.hasContextItems)
       {
         if (isWorkflowBlueprintDisabled)
-          menuItems.push(...[{text: 'Enable', clickHandler: e => this.onEnableWorkflowClick(e, workflowBlueprintId), icon: enableIcon}]);
+          menuItems = [...menuItems, ...[{text: 'Enable', clickHandler: e => this.onEnableWorkflowClick(e, workflowBlueprintId), icon: enableIcon}]];
         else
-          menuItems.push(...[{text: 'Disable', clickHandler: e => this.onDisableWorkflowClick(e, workflowBlueprintId), icon: disableIcon}]);
-      }
+          menuItems = [...menuItems, ...[{text: 'Disable', clickHandler: e => this.onDisableWorkflowClick(e, workflowBlueprintId), icon: disableIcon}]];
 
-      return (<td class="elsa-pr-6">
-          <elsa-context-menu history={history} menuItems={menuItems}/>
-        </td>)
+        return (<td class="elsa-pr-6">
+            <elsa-context-menu history={history} menuItems={menuItems}/>
+          </td>)
+      }
     }
 
     return (
@@ -148,7 +169,7 @@ export class ElsaWorkflowRegistryListScreen {
               <th class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-text-right elsa-uppercase elsa-tracking-wider">
                 Published Version
               </th>
-              {renderWorkflowSettingsEnabledHeader(this.isWorkflowSettingsEnabled)}
+              {this.featureHeaders.map(item => renderFeatureHeader(item))}
               <th class="elsa-pr-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-text-left elsa-uppercase elsa-tracking-wider"/>
             </tr>
             </thead>
@@ -209,8 +230,8 @@ export class ElsaWorkflowRegistryListScreen {
 
                   <td class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-text-right">{latestVersionNumber}</td>
                   <td class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-text-right">{publishedVersionNumber}</td>
-                  {renderWorkflowSettingsEnabledValue(this.isWorkflowSettingsEnabled, workflowBlueprint.isDisabled)}
-                  {renderContextMenu(this.isWorkflowSettingsEnabled, workflowBlueprint.id, workflowBlueprint.isDisabled, this.history, editUrl, editIcon, enableIcon, disableIcon)}
+                  {this.featureColumns.map(item => renderFeatureColumn(workflowBlueprint.isDisabled))}
+                  {renderContextMenu(workflowBlueprint.id, workflowBlueprint.isDisabled, this.history, editUrl, editIcon, enableIcon, disableIcon)}
                 </tr>
               );
             })}
@@ -223,4 +244,4 @@ export class ElsaWorkflowRegistryListScreen {
     );
   }
 }
-Tunnel.injectProps(ElsaWorkflowRegistryListScreen, ['serverUrl', 'culture', 'basePath']);
+Tunnel.injectProps(ElsaWorkflowRegistryListScreen, ['serverUrl', 'culture', 'basePath', 'featuresString']);

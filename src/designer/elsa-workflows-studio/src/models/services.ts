@@ -8,6 +8,7 @@ import {ActivityModel} from "./view";
 export interface ElsaStudio {
   serverUrl: string;
   basePath: string;
+  features: string;
   pluginManager: PluginManager;
   propertyDisplayManager: PropertyDisplayManager;
   elsaClientFactory: () => ElsaClient;

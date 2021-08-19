@@ -1,30 +1,36 @@
-import {Component, Prop, State} from '@stencil/core';
+import {Component, Prop, State, h} from '@stencil/core';
 import {createElsaWorkflowSettingsClient, SaveWorkflowSettingsRequest} from "../services/elsa-client";
 import {eventBus} from "../../../services";
-import {EventTypes, WorkflowSettingsEnabledContext, WorkflowSettingsUpdatedContext} from "../../../models";
+import {EventTypes, ConfigureFeatureContext, WorkflowSettingsUpdatedContext} from "../../../models";
 import {WorkflowSettings} from "../models";
 
 @Component({
-    tag: 'elsa-workflow-settings-plugin',
+    tag: 'elsa-workflow-settings-feature-plugin',
     shadow: false,
 })
-export class ElsaWorkflowSettingsPlugin {
-  @Prop() serverUrl: string;
-  @State() workflowSettings: Array<WorkflowSettings>;
+export class ElsaWorkflowSettingsFeaturePlugin {
+  @Prop() serverUrl: string;  
+  @State() workflowSettings: WorkflowSettings[];
 
   connectedCallback() {
-    eventBus.on(EventTypes.WorkflowSettingsEnabled, this.onWorkflowSettingsEnabled);
-    eventBus.on(EventTypes.WorkflowSettingsUpdated, this.onWorkflowSettingsUpdated);
+    eventBus.on(EventTypes.ConfigureFeature, this.onWorkflowSettingsEnabled);
+    //eventBus.on(EventTypes.WorkflowSettingsUpdated, this.onWorkflowSettingsUpdated);
   }
 
   disconnectedCallback() {
-    eventBus.detach(EventTypes.WorkflowSettingsEnabled, this.onWorkflowSettingsEnabled);
-    eventBus.detach(EventTypes.WorkflowSettingsUpdated, this.onWorkflowSettingsUpdated);
+    eventBus.detach(EventTypes.ConfigureFeature, this.onWorkflowSettingsEnabled);
+    //eventBus.detach(EventTypes.WorkflowSettingsUpdated, this.onWorkflowSettingsUpdated);
   }
+  
+  onWorkflowSettingsEnabled(context: ConfigureFeatureContext) {
+    if (context.featureName != "settings")
+      return;
 
-  onWorkflowSettingsEnabled(context: WorkflowSettingsEnabledContext) {
     context.isEnabled = true;
-  }
+    context.headers.push({url: null, label: "Enabled", component: null, exact: false})
+    context.columns.push({url: null, label: "Enabled", component: null, exact: false})
+    context.hasContextItems = true;
+  }  
 
   async onWorkflowSettingsUpdated(context: WorkflowSettingsUpdatedContext) {
 

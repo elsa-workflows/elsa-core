@@ -8,7 +8,7 @@ namespace Elsa.WorkflowSettings.Persistence.YesSql.Mapping
     {
         public AutoMapperProfile()
         {
-            CreateMap<WorkflowSetting, WorkflowSettingsDocument>()
+            CreateMap<WorkflowSetting, WorkflowSettingDocument>()
                 .ForMember(d => d.SettingId, d => d.MapFrom(s => s.Id))
                 .ForMember(d => d.Id, d => d.Ignore())
                 .ReverseMap()

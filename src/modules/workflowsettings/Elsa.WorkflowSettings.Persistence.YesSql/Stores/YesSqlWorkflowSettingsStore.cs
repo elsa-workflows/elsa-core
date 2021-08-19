@@ -16,27 +16,27 @@ using IIdGenerator = Elsa.Services.IIdGenerator;
 
 namespace Elsa.WorkflowSettings.Persistence.YesSql.Stores
 {
-    public class YesSqlWorkflowSettingsStore : YesSqlStore<WorkflowSetting, WorkflowSettingsDocument>, IWorkflowSettingsStore
+    public class YesSqlWorkflowSettingsStore : YesSqlStore<WorkflowSetting, WorkflowSettingDocument>, IWorkflowSettingsStore
     {
         public YesSqlWorkflowSettingsStore(ISessionProvider sessionProvider, IIdGenerator idGenerator, IMapper mapper, ILogger<YesSqlWorkflowSettingsStore> logger) : base(sessionProvider, idGenerator, mapper, logger, CollectionNames.WorkflowSettings)
         {
         }
 
-        protected override async Task<WorkflowSettingsDocument?> FindDocumentAsync(ISession session, WorkflowSetting entity, CancellationToken cancellationToken) => await Query<WorkflowSettingsIndex>(session, x => x.SettingId == entity.Id).FirstOrDefaultAsync();
+        protected override async Task<WorkflowSettingDocument?> FindDocumentAsync(ISession session, WorkflowSetting entity, CancellationToken cancellationToken) => await Query<WorkflowSettingIndex>(session, x => x.SettingId == entity.Id).FirstOrDefaultAsync();
 
-        protected override IQuery<WorkflowSettingsDocument> MapSpecification(ISession session, ISpecification<WorkflowSetting> specification)
+        protected override IQuery<WorkflowSettingDocument> MapSpecification(ISession session, ISpecification<WorkflowSetting> specification)
         {
             return specification switch
             {
-                EntityIdSpecification<WorkflowSetting> s => Query<WorkflowSettingsIndex>(session, x => x.SettingId == s.Id),
-                _ => AutoMapSpecification<WorkflowSettingsIndex>(session, specification)
+                EntityIdSpecification<WorkflowSetting> s => Query<WorkflowSettingIndex>(session, x => x.SettingId == s.Id),
+                _ => AutoMapSpecification<WorkflowSettingIndex>(session, specification)
             };
         }
 
-        protected override IQuery<WorkflowSettingsDocument> OrderBy(IQuery<WorkflowSettingsDocument> query, IOrderBy<WorkflowSetting> orderBy, ISpecification<WorkflowSetting> specification)
+        protected override IQuery<WorkflowSettingDocument> OrderBy(IQuery<WorkflowSettingDocument> query, IOrderBy<WorkflowSetting> orderBy, ISpecification<WorkflowSetting> specification)
         {
-            var expression = orderBy.OrderByExpression.ConvertType<WorkflowSetting, WorkflowSettingsDocument>().ConvertType<WorkflowSettingsDocument, WorkflowSettingsIndex>();
-            var indexedQuery = query.With<WorkflowSettingsIndex>();
+            var expression = orderBy.OrderByExpression.ConvertType<WorkflowSetting, WorkflowSettingDocument>().ConvertType<WorkflowSettingDocument, WorkflowSettingIndex>();
+            var indexedQuery = query.With<WorkflowSettingIndex>();
             return orderBy.SortDirection == SortDirection.Ascending ? indexedQuery.OrderBy(expression) : indexedQuery.OrderByDescending(expression);
         }
     }

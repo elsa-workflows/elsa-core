@@ -1,5 +1,5 @@
 ﻿import {ActivityModel} from "./view";
-import {ActivityDescriptor} from "./domain";
+import {ActivityDescriptor,FeatureMenuItem} from "./domain";
 
 export const EventTypes = {
   ShowActivityPicker: 'show-activity-picker',
@@ -23,9 +23,8 @@ export const EventTypes = {
   HideConfirmDialog: 'hide-confirm-dialog',
   ShowToastNotification: 'show-toast-notification',
   HideToastNotification: 'hide-toast-notification',
-  WebhooksEnabled: 'webhooks-enabled',
-  WorkflowSettingsEnabled: 'workflow-settings-enabled',
-  WorkflowSettingsUpdated: 'workflow-settings-updated',
+  ConfigureFeature: 'configure-feature',
+  //WorkflowSettingsUpdated: 'workflow-settings-updated',
 };
 
 export interface AddActivityEventArgs {
@@ -50,12 +49,15 @@ export interface ActivityDescriptorDisplayContext {
   activityIcon: any;
 }
 
-export interface WebhooksEnabledContext {
+export interface ConfigureFeatureContext {
   isEnabled: boolean;
-}
-
-export interface WorkflowSettingsEnabledContext {
-  isEnabled: boolean;
+  featureName: string;
+  basePath: string;
+  menuItems: FeatureMenuItem[];
+  routes: FeatureMenuItem[];
+  headers: FeatureMenuItem[];
+  columns: FeatureMenuItem[];
+  hasContextItems: boolean
 }
 
 export interface WorkflowSettingsUpdatedContext {
