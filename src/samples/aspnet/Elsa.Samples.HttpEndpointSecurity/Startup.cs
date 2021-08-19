@@ -53,8 +53,8 @@ namespace Elsa.Samples.HttpEndpointSecurity
             // Add a custom policy.
             services
                 .AddAuthorization(auth => auth
-                    .AddPolicy("HasMagic", policy => policy
-                        .RequireClaim("has-magic", "true")));
+                    .AddPolicy("IsAdmin", policy => policy
+                        .RequireClaim("is-admin", "true")));
 
             services.Configure<JwtOptions>(options => Configuration.GetSection("Jwt").Bind(options));
 
