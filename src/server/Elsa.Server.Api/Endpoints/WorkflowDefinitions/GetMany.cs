@@ -52,7 +52,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             {
                 version ??= VersionOptions.Latest;
                 var splitIds = ids.Split(',', StringSplitOptions.RemoveEmptyEntries);
-                var specification = new VersionOptionsSpecification(version.Value).And(new ManyWorkflowDefinitionIdsSpecification(splitIds));
+                var specification = new ManyWorkflowDefinitionIdsSpecification(splitIds, version.Value);
                 var items = await _workflowDefinitionStore.FindManyAsync(specification, cancellationToken: cancellationToken);
                 summaries = _mapper.Map<IList<WorkflowDefinitionSummaryModel>>(items);
             }
