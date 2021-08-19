@@ -39,17 +39,19 @@ namespace Elsa.Activities.Telnyx.Activities
             Hint = "When 'dual', final audio file will be stereo recorded with the first leg on channel A, and the rest on channel B.",
             UIHint = ActivityInputUIHints.Dropdown,
             Options = new[] {"single", "dual"},
+            DefaultValue = "single",
             SupportedSyntaxes = new[] {SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid}
         )]
-        public string Channels { get; set; } = default!;
+        public string Channels { get; set; } = "single";
 
         [ActivityInput(
             Hint = "The audio file format used when storing the call recording. Can be either 'mp3' or 'wav'.",
             UIHint = ActivityInputUIHints.Dropdown,
             Options = new[] {"wav", "mp3"},
+            DefaultValue = "wav",
             SupportedSyntaxes = new[] {SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid}
         )]
-        public string Format { get; set; } = default!;
+        public string Format { get; set; } = "wav";
 
         [ActivityInput(
             Hint = "Use this field to add state to every subsequent webhook. It must be a valid Base-64 encoded string.",
