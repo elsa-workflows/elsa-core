@@ -23,7 +23,7 @@ namespace Elsa.Persistence.Specifications.WorkflowDefinitions
             Expression<Func<WorkflowDefinition, bool>> predicate = x => Ids.Contains(x.DefinitionId);
 
             if (VersionOptions != null)
-                predicate = predicate.And(x => x.WithVersion(VersionOptions));
+                predicate = predicate.WithVersion(VersionOptions);
             
             return predicate;
         }

@@ -18,12 +18,12 @@ namespace Elsa.Persistence.Specifications.WorkflowDefinitions
 
         public override Expression<Func<WorkflowDefinition, bool>> ToExpression()
         {
-            Expression<Func<WorkflowDefinition, bool>> queryable =  x => x.DefinitionId == Id;
+            Expression<Func<WorkflowDefinition, bool>> predicate =  x => x.DefinitionId == Id;
 
             if (VersionOptions != null)
-                queryable = queryable.And(x => x.WithVersion(VersionOptions));
+                predicate = predicate.WithVersion(VersionOptions.Value);
             
-            return queryable;
+            return predicate;
         }
     }
 }
