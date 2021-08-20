@@ -31,8 +31,8 @@ export class ElsaWorkflowSettingsFeaturePlugin {
     context.hasContextItems = true;
   }  
 
-  async onWorkflowSettingsUpdated(context: string) {
-    let data: string[] = JSON.parse(context);    
+  async onWorkflowSettingsUpdated(context: ConfigureFeatureContext) {
+    let data: string[] = context.data;
     if (data[0] != "settings")
       return;
 

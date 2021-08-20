@@ -57,5 +57,5 @@ export interface ConfigureFeatureContext {
   headers: FeatureMenuItem[];
   columns: FeatureMenuItem[];
   hasContextItems: boolean;
-  variables: {data: {}};
+  data: string[];
 }

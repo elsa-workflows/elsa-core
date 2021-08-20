@@ -50,7 +50,7 @@ export class ElsaWorkflowRegistryListScreen {
         headers: [],
         columns: [],
         hasContextItems: false,
-        variables: null
+        data: []
       }
 
       eventBus.emit(EventTypes.ConfigureFeature, this, featureContext);
@@ -82,8 +82,14 @@ export class ElsaWorkflowRegistryListScreen {
 
   async updateFeature(workflowBlueprintId: string, key: string, value: string)
   {
-    let data = JSON.stringify(["settings", workflowBlueprintId, key, value]);
-    eventBus.emit(EventTypes.FeatureUpdated, this, data);
+    let feature = this.featureContexts.find(x => x.featureName == 'settings');
+    let featureEnabled = !!feature;
+
+    if (featureEnabled)
+    {
+      feature.data = ["settings", workflowBlueprintId, key, value];
+      eventBus.emit(EventTypes.FeatureUpdated, this, feature);
+    }
   }  
 
   async onLoadWorkflowBlueprints()

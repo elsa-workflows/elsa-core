@@ -39,7 +39,7 @@ export class ElsaStudioDashboard {
         headers: [],
         columns: [],
         hasContextItems: false,
-        variables: null
+        data: []
       }
 
       eventBus.emit(EventTypes.ConfigureFeature, this, featureContext);
