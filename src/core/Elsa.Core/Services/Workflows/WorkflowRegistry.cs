@@ -65,7 +65,6 @@ namespace Elsa.Services.Workflows
             foreach (var provider in providers)
             await foreach (var workflow in provider.GetWorkflowsAsync(cancellationToken).WithCancellation(cancellationToken))
             {
-                workflow.Key = "disabled";
                 await _mediator.Publish(new WorkflowBlueprintLoaded(workflow), cancellationToken);
                 yield return workflow;
             }
