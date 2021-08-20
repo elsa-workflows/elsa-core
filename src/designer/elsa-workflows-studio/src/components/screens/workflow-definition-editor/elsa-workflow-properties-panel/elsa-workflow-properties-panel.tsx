@@ -24,7 +24,7 @@ export class ElsaWorkflowPropertiesPanel {
 
   @Watch('workflowDefinition')
   async workflowDefinitionChangedHandler(newWorkflow: WorkflowDefinition, oldWorkflow: WorkflowDefinition) {
-    if (newWorkflow.version !== oldWorkflow.version)
+    if (newWorkflow.version !== oldWorkflow.version || newWorkflow.isPublished !== oldWorkflow.isPublished || newWorkflow.isLatest !== oldWorkflow.isLatest)
       await this.loadPublishedVersion();
   }
 
