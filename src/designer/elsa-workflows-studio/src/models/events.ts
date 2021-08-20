@@ -21,7 +21,10 @@ export const EventTypes = {
   ShowConfirmDialog: 'show-confirm-dialog',
   HideConfirmDialog: 'hide-confirm-dialog',
   ShowToastNotification: 'show-toast-notification',
-  HideToastNotification: 'hide-toast-notification'
+  HideToastNotification: 'hide-toast-notification',
+  ClipboardPermissionDenied: 'clipboard-permission-denied',
+  ClipboardCopied: 'clipboard-copied',
+  PasteActivity: 'paste-activity',
 };
 
 export interface AddActivityEventArgs {

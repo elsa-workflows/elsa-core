@@ -6,6 +6,9 @@
       "ActivityContextMenu":{
         "Edit": "Edit",
         "Delete": "Delete"
+      },
+      "ConnectionContextMenu":{
+        "Paste": "Paste",
       }
     }
   },
@@ -16,6 +19,9 @@
       "ActivityContextMenu":{
         "Edit": "Bewerken",
         "Delete": "Verwijderen"
+      },
+      "ConnectionContextMenu":{
+        "Paste": "Plakken",
       }
     }
   }
