@@ -3,12 +3,13 @@ import {ElsaClient, ToastNotificationService} from "../services";
 import EventBus from "js-event-bus";
 import {AxiosInstance} from "axios";
 import {ActivityDefinitionProperty} from "./domain";
+import {ConfigureFeatureContext} from "./events";
 import {ActivityModel} from "./view";
 
 export interface ElsaStudio {
   serverUrl: string;
   basePath: string;
-  features: string;
+  features: Array<ConfigureFeatureContext>;
   pluginManager: PluginManager;
   propertyDisplayManager: PropertyDisplayManager;
   elsaClientFactory: () => ElsaClient;

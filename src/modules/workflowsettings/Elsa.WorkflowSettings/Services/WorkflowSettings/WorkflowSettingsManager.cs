@@ -16,22 +16,22 @@ namespace Elsa.WorkflowSettings.Services.WorkflowSettingsContexts
             _workflowSettingsProviders = workflowSettingsProviders;
         }
 
-        public async ValueTask<WorkflowSetting> LoadSettingAsync(string workflowBlueprintId, string key, CancellationToken cancellationToken = default)
+        public async Task<WorkflowSetting> LoadSettingAsync(string workflowBlueprintId, string key, CancellationToken cancellationToken = default)
         {
             var providers = _workflowSettingsProviders;
 
-            var value = new ValueTask<WorkflowSetting>(new WorkflowSetting());
+            var value = new WorkflowSetting();
 
             foreach (var provider in providers)
             {
                 var providerValue = await provider.GetWorkflowSettingAsync(workflowBlueprintId, key, cancellationToken);
                 if (providerValue.Value != null)
                 {
-                    value = new ValueTask<WorkflowSetting>(providerValue);
+                    value = providerValue;
                 }
             }
 
-            return await value;
+            return value;
         }
     }
 }
