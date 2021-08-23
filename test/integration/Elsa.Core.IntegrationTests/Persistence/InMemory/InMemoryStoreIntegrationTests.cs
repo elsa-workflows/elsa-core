@@ -54,16 +54,6 @@ namespace Elsa.Core.IntegrationTests.Persistence.InMemory
             var host = await hostBuilder.StartAsync();
         }
 
-        [Theory(DisplayName = "A persistable-on-workflow-pass-completed workflow instance should be persisted-to and readable-from an in-memory store after being run"), AutoMoqData]
-        public async Task APersistableOnWorkflowPassCompletedWorkflowInstanceShouldBeRoundTrippable([WithPersistableWorkflow] ElsaHostBuilderBuilder hostBuilderBuilder)
-        {
-            var hostBuilder = hostBuilderBuilder.GetHostBuilder();
-            hostBuilder.ConfigureServices((ctx, services) => {
-                services.AddHostedService<HostedWorkflowRunner<PersistableWorkflow.OnWorkflowPassCompleted>>();
-            });
-            var host = await hostBuilder.StartAsync();
-        }
-
         class HostedWorkflowRunner<TWorkflow> : IHostedService where TWorkflow : PersistableWorkflow
         {
             readonly IBuildsAndStartsWorkflow _workflowRunner;

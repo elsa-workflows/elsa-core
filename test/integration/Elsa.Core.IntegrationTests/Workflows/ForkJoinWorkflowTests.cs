@@ -29,7 +29,7 @@ namespace Elsa.Core.IntegrationTests.Workflows
             async Task<bool> GetActivityHasExecutedAsync(string name)
             {
                 var activity = workflowBlueprint.Activities.First(x => x.Name == name);
-                var entry = await WorkflowExecutionLog.FindEntryAsync(new ActivityIdSpecification(activity.Id));
+                var entry = await WorkflowExecutionLogStore.FindAsync(new ActivityIdSpecification(activity.Id));
                 return entry != null;
             }
             
@@ -71,7 +71,7 @@ namespace Elsa.Core.IntegrationTests.Workflows
             async Task<bool> GetActivityHasExecutedAsync(string name)
             {
                 var activity = workflowBlueprint!.Activities.First(x => x.Name == name);
-                var entry = await WorkflowExecutionLog.FindEntryAsync(new ActivityIdSpecification(activity.Id));
+                var entry = await WorkflowExecutionLogStore.FindAsync(new ActivityIdSpecification(activity.Id));
                 return entry != null;
             }
             

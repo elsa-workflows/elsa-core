@@ -1,7 +1,14 @@
 import {Component, Event, Host, Prop, State, Watch, h} from '@stencil/core';
 import {eventBus} from "../../../../services/event-bus";
 import {Map} from "../../../../utils/utils";
-import {EventTypes, Variables, WorkflowContextFidelity, WorkflowContextOptions, WorkflowDefinition, WorkflowPersistenceBehavior} from "../../../../models";
+import {
+  EventTypes,
+  Variables,
+  WorkflowContextFidelity,
+  WorkflowContextOptions,
+  WorkflowDefinition,
+  WorkflowPersistenceBehavior
+} from "../../../../models";
 import {MonacoValueChangedArgs} from "../../../controls/elsa-monaco/elsa-monaco";
 import {MarkerSeverity} from "monaco-editor";
 import {checkBox, FormContext, selectField, SelectOption, textArea, textInput} from "../../../../utils/forms";
@@ -97,7 +104,8 @@ export class ElsaWorkflowDefinitionSettingsModal {
                     {tabs.map(tab => {
                       const isSelected = tab === selectedTab;
                       const cssClass = isSelected ? selectedClass : inactiveClass;
-                      return <a href="#" onClick={e => this.onTabClick(e, tab)} class={`${cssClass} elsa-whitespace-nowrap elsa-py-4 elsa-px-1 elsa-border-b-2 elsa-font-medium elsa-text-sm`}>{tab}</a>;
+                      return <a href="#" onClick={e => this.onTabClick(e, tab)}
+                                class={`${cssClass} elsa-whitespace-nowrap elsa-py-4 elsa-px-1 elsa-border-b-2 elsa-font-medium elsa-text-sm`}>{tab}</a>;
                     })}
                   </nav>
                 </div>
@@ -161,7 +169,10 @@ export class ElsaWorkflowDefinitionSettingsModal {
   renderAdvancedTab() {
     const workflowDefinition = this.workflowDefinitionInternal;
     const formContext = this.formContext;
-    const workflowChannelOptions: Array<SelectOption> = [{text: '', value: null}, ...this.workflowChannels.map(x => ({text: x, value: x}))];
+    const workflowChannelOptions: Array<SelectOption> = [{
+      text: '',
+      value: null
+    }, ...this.workflowChannels.map(x => ({text: x, value: x}))];
 
     const persistenceBehaviorOptions: Array<SelectOption> = [{
       text: 'Suspended',
@@ -169,9 +180,6 @@ export class ElsaWorkflowDefinitionSettingsModal {
     }, {
       text: 'Workflow Burst',
       value: 'WorkflowBurst'
-    }, {
-      text: 'Workflow Pass Completed',
-      value: 'WorkflowPassCompleted'
     }, {
       text: 'Activity Executed',
       value: 'ActivityExecuted'
@@ -199,7 +207,8 @@ export class ElsaWorkflowDefinitionSettingsModal {
     return (
       <div class="elsa-flex elsa-px-8">
         <div class="elsa-space-y-8 elsa-w-full elsa-h-30">
-          <elsa-monaco value={value} language={language} editor-height="30em" onValueChanged={e => this.onMonacoValueChanged(e.detail)} ref={el => this.monacoEditor = el}/>
+          <elsa-monaco value={value} language={language} editor-height="30em"
+                       onValueChanged={e => this.onMonacoValueChanged(e.detail)} ref={el => this.monacoEditor = el}/>
         </div>
       </div>
     );
