@@ -15,7 +15,7 @@ namespace Elsa.Scripting.JavaScript.Handlers
             _activityTypeService = activityTypeService;
         }
 
-        public async Task Handle(RenderingTypeScriptDefinitions notification, CancellationToken cancellationToken)
+        public Task Handle(RenderingTypeScriptDefinitions notification, CancellationToken cancellationToken)
         {
             var output = notification.Output;
 
@@ -37,6 +37,8 @@ namespace Elsa.Scripting.JavaScript.Handlers
             output.AppendLine("declare function instantFromLocalDate(localDate: LocalDate): LocalDate;");
             output.AppendLine("declare function durationBetween(a: Instant, b: Instant): Duration;");
             output.AppendLine("declare function periodFromNow(pastInstant: Instant): Period;");
+            
+            return Task.CompletedTask;
         }
     }
 }
