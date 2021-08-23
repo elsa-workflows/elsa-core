@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
 using Elsa.Persistence.Specifications.WorkflowExecutionLogRecords;
 using Elsa.Providers.WorkflowStorage;
@@ -169,9 +170,9 @@ namespace Elsa.Scripting.JavaScript.Handlers
         
         private static async Task<string?> FindExecutedActivityByTypeAsync(ActivityExecutionContext activityExecutionContext, string activityTypeName, CancellationToken cancellationToken)
         {
-            var log = activityExecutionContext.GetService<IWorkflowExecutionLog>();
+            var log = activityExecutionContext.GetService<IWorkflowExecutionLogStore>();
             var specification = new WorkflowInstanceIdSpecification(activityExecutionContext.WorkflowInstance.Id).And(new ActivityTypeSpecification(activityTypeName));
-            var entry = await log.FindEntryAsync(specification, cancellationToken);
+            var entry = await log.FindAsync(specification, cancellationToken);
 
             return entry?.ActivityId;
         }

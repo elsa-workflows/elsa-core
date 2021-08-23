@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Elsa.Builders;
+using Elsa.Persistence;
 using Elsa.Services;
 using Elsa.Services.Bookmarks;
 using Elsa.Services.WorkflowStorage;
@@ -36,6 +37,7 @@ namespace Elsa.Testing.Shared.Unit
             WorkflowRegistry = ServiceScope.ServiceProvider.GetRequiredService<IWorkflowRegistry>();
             BookmarkFinder = ServiceScope.ServiceProvider.GetRequiredService<IBookmarkFinder>();
             WorkflowExecutionLog = ServiceScope.ServiceProvider.GetRequiredService<IWorkflowExecutionLog>();
+            WorkflowExecutionLogStore = ServiceScope.ServiceProvider.GetRequiredService<IWorkflowExecutionLogStore>();
             WorkflowStorageService = ServiceScope.ServiceProvider.GetRequiredService<IWorkflowStorageService>();
         }
 
@@ -47,6 +49,7 @@ namespace Elsa.Testing.Shared.Unit
         protected IStartsWorkflow WorkflowStarter { get; }
         protected IResumesWorkflow WorkflowResumer { get; }
         protected IWorkflowExecutionLog WorkflowExecutionLog { get; }
+        protected IWorkflowExecutionLogStore WorkflowExecutionLogStore { get; }
         protected IWorkflowBlueprintMaterializer WorkflowBlueprintMaterializer { get; }
         protected IWorkflowBuilder WorkflowBuilder { get; }
         protected IWorkflowRegistry WorkflowRegistry { get; }

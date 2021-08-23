@@ -80,6 +80,9 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
         {
             var list = entities.ToList();
 
+            if (!list.Any())
+                return;
+
             await DoWork(async dbContext =>
             {
                 var dbSet = dbContext.Set<T>();
