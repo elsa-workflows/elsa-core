@@ -65,28 +65,26 @@ namespace Elsa.Activities.Email.Services
 
         private async Task SendOnlineMessage(MimeMessage message, CancellationToken cancellationToken)
         {
-            using (var client = new SmtpClient())
-            {
-                client.ServerCertificateValidationCallback = CertificateValidationCallback;
+            using var client = new SmtpClient();
+            client.ServerCertificateValidationCallback = CertificateValidationCallback;
 
-                await client.ConnectAsync(_options.Host, _options.Port, _options.SecureSocketOptions, cancellationToken);
+            await client.ConnectAsync(_options.Host, _options.Port, _options.SecureSocketOptions, cancellationToken);
                 
-                if (_options.RequireCredentials)
+            if (_options.RequireCredentials)
+            {
+                if (_options.UseDefaultCredentials)
                 {
-                    if (_options.UseDefaultCredentials)
-                    {
-                        // There's no notion of 'UseDefaultCredentials' in MailKit, so empty credentials are passed in.
-                        await client.AuthenticateAsync(string.Empty, string.Empty, cancellationToken);
-                    }
-                    else if (!string.IsNullOrWhiteSpace(_options.UserName))
-                    {
-                        await client.AuthenticateAsync(_options.UserName, _options.Password, cancellationToken);
-                    }
+                    // There's no notion of 'UseDefaultCredentials' in MailKit, so empty credentials are passed in.
+                    await client.AuthenticateAsync(string.Empty, string.Empty, cancellationToken);
                 }
-                
-                await client.SendAsync(message, cancellationToken);
-                await client.DisconnectAsync(true, cancellationToken);
+                else if (!string.IsNullOrWhiteSpace(_options.UserName))
+                {
+                    await client.AuthenticateAsync(_options.UserName, _options.Password, cancellationToken);
+                }
             }
+                
+            await client.SendAsync(message, cancellationToken);
+            await client.DisconnectAsync(true, cancellationToken);
         }
 
         private async Task SendOfflineMessage(MimeMessage message, string pickupDirectory)
