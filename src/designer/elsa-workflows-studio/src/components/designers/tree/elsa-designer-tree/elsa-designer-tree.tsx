@@ -70,7 +70,7 @@ export class ElsaWorkflowDesigner {
   handleConnectionContextMenuChange(state: ActivityContextMenuState) {
     this.connectionContextMenuState = state;
     this.connectionContextMenuButtonClicked.emit(state);
-  }  
+  }
 
   @Watch('model')
   handleModelChanged(newValue: WorkflowModel) {
@@ -108,17 +108,17 @@ export class ElsaWorkflowDesigner {
   @Method()
   async showActivityEditor(activity: ActivityModel, animate: boolean) {
     this.showActivityEditorInternal(activity, animate);
-  }   
-
-  @Listen('keydown', { target: 'document' })
-  async handleKeyDown(event: KeyboardEvent){    
-    if((event.ctrlKey || event.metaKey) && event.key === 'c') {
-      await this.copyActivitiesToClipboard();
-    }
-    if((event.ctrlKey || event.metaKey) && event.key === 'v') {
-      await this.pasteActivitiesFromClipboard();
-    }
   }
+
+  // @Listen('keydown', { target: 'document' })
+  // async handleKeyDown(event: KeyboardEvent){
+  //   if((event.ctrlKey || event.metaKey) && event.key === 'c') {
+  //     await this.copyActivitiesToClipboard();
+  //   }
+  //   if((event.ctrlKey || event.metaKey) && event.key === 'v') {
+  //     await this.pasteActivitiesFromClipboard();
+  //   }
+  // }
 
   async copyActivitiesToClipboard()
   {
@@ -133,7 +133,7 @@ export class ElsaWorkflowDesigner {
 
     let copiedActivities: Array<ActivityModel> = [];
 
-    await navigator.clipboard.readText().then(data => { 
+    await navigator.clipboard.readText().then(data => {
       copiedActivities = JSON.parse(data);
     });
 
@@ -158,10 +158,10 @@ export class ElsaWorkflowDesigner {
 
     for (const key in copiedActivities) {
       this.addingActivity = true;
-      copiedActivities[key].activityId = uuid();    
+      copiedActivities[key].activityId = uuid();
 
       eventBus.emit(EventTypes.UpdateActivity, this, copiedActivities[key]);
-      
+
       this.parentActivityId = copiedActivities[key].activityId;
       this.parentActivityOutcome = copiedActivities[key].outcomes[0];
     }
@@ -174,7 +174,7 @@ export class ElsaWorkflowDesigner {
 
   checkClipboardPermissions()
   {
-    navigator.permissions.query({ name: "clipboard-read" }).then((result) => { 
+    navigator.permissions.query({ name: "clipboard-read" }).then((result) => {
       if (result.state == 'denied')
         eventBus.emit(EventTypes.ClipboardPermissionDenied, this);
     });
@@ -184,7 +184,7 @@ export class ElsaWorkflowDesigner {
     eventBus.on(EventTypes.ActivityPicked, this.onActivityPicked);
     eventBus.on(EventTypes.UpdateActivity, this.onUpdateActivity);
     eventBus.on(EventTypes.PasteActivity, this.onPasteActivity);
-    
+
   }
 
   disconnectedCallback() {
@@ -584,7 +584,7 @@ export class ElsaWorkflowDesigner {
     activityModel.outcomes[0] = this.parentActivityOutcome;
     this.selectedActivities[activityModel.activityId] = activityModel;
     this.pasteActivitiesFromClipboard();
-  };  
+  };
 
   tryRerenderTree(waitTime?: number, attempt?: number) {
     const maxTries = 3;
@@ -645,7 +645,7 @@ export class ElsaWorkflowDesigner {
           e.preventDefault();
           e.stopPropagation();
           this.parentActivityId = node.activity.activityId;
-          this.parentActivityOutcome = node.outcome;          
+          this.parentActivityOutcome = node.outcome;
           this.handleConnectionContextMenuChange({x: e.clientX, y: e.clientY, shown: true, activity: node.activity});
         });
       });
@@ -700,7 +700,7 @@ export class ElsaWorkflowDesigner {
               this.activitySelected.emit(activity);
             }
           }
-          // When clicking an activity:          
+          // When clicking an activity:
           else
           {
             if (!!this.selectedActivities[activityId])
