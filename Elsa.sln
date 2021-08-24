@@ -260,7 +260,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "aspnetcore", "aspnetcore", 
 		docker\Dockerfile = docker\Dockerfile
 		docker\Dockerfile-elsa-dashboard = docker\Dockerfile-elsa-dashboard
 		docker\Dockerfile-elsa-dashboard-and-server = docker\Dockerfile-elsa-dashboard-and-server
-		docker\README.md = docker\README.md
 	EndProjectSection
 
 EndProject
