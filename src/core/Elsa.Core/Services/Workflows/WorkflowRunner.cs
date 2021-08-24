@@ -75,10 +75,8 @@ namespace Elsa.Services.Workflows
             // If the workflow instance has a CurrentActivity, it means the workflow instance is being retried.
             var currentActivity = workflowInstance.CurrentActivity;
 
-            if (currentActivity != null)
-            {
+            if (activityId == null && currentActivity != null) 
                 activityId = currentActivity.ActivityId;
-            }
 
             var activity = activityId != null ? workflowBlueprint.GetActivity(activityId) : default;
 

@@ -24,9 +24,8 @@ export class ElsaWorkflowPropertiesPanel {
 
   @Watch('workflowDefinition')
   async workflowDefinitionChangedHandler(newWorkflow: WorkflowDefinition, oldWorkflow: WorkflowDefinition) {
-    if (newWorkflow.isPublished !== oldWorkflow.isPublished && newWorkflow.isPublished) {
+    if (newWorkflow.version !== oldWorkflow.version || newWorkflow.isPublished !== oldWorkflow.isPublished || newWorkflow.isLatest !== oldWorkflow.isLatest)
       await this.loadPublishedVersion();
-    }
   }
 
   async componentWillLoad() {
@@ -72,7 +71,8 @@ export class ElsaWorkflowPropertiesPanel {
                         class="workflow-settings-button elsa-absolute elsa-top-4 elsa-left-2 elsa-inline-flex elsa-items-center elsa-p-2 elsa-rounded-full elsa-border elsa-border-transparent elsa-bg-white shadow elsa-text-gray-400 hover:elsa-text-blue-500 focus:elsa-text-blue-500 hover:elsa-ring-2 hover:elsa-ring-offset-2 hover:elsa-ring-blue-500 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 elsa-z-10">
                   <svg xmlns="http://www.w3.org/2000/svg" class="elsa-h-8 elsa-w-8" fill="none" viewBox="0 0 24 24"
                        stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M13 5l7 7-7 7M5 5l7 7-7 7"/>
                   </svg>
                 </button>
                 <div
@@ -130,6 +130,7 @@ export class ElsaWorkflowPropertiesPanel {
 
     const publishedWorkflowDefinitions = await elsaClient.workflowDefinitionsApi.getMany([workflowDefinition.definitionId], {isPublished: true});
     const publishedDefinition: WorkflowDefinitionSummary = workflowDefinition.isPublished ? workflowDefinition : publishedWorkflowDefinitions.find(x => x.definitionId == workflowDefinition.definitionId);
+
     if (publishedDefinition) {
       this.publishedVersion = publishedDefinition.version;
     }

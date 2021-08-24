@@ -106,7 +106,11 @@ namespace Elsa.Activities.Http.Middleware
             if (readContent)
             {
                 var targetType = await activityWrapper.EvaluatePropertyValueAsync(x => x.TargetType, cancellationToken);
-                inputModel = inputModel with { Body = await contentParser.ParseAsync(request, targetType, cancellationToken) };
+                inputModel = inputModel with
+                {
+                    RawBody = await request.ReadContentAsStringAsync(cancellationToken),
+                    Body = await contentParser.ParseAsync(request, targetType, cancellationToken)
+                };
             }
 
             var useDispatch = httpContext.Request.GetUseDispatch();

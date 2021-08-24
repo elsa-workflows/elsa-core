@@ -21,10 +21,15 @@ export const EventTypes = {
   WorkflowInstanceBulkActionsLoading: 'workflow-instance-bulk-actions-loading',
   ShowConfirmDialog: 'show-confirm-dialog',
   HideConfirmDialog: 'hide-confirm-dialog',
+  ShowModalDialog: 'show-modal-dialog',
+  HideModalDialog: 'hide-modal-dialog',
   ShowToastNotification: 'show-toast-notification',
   HideToastNotification: 'hide-toast-notification',
   ConfigureFeature: 'configure-feature',
   FeatureUpdated: 'feature-updated',
+  ClipboardPermissionDenied: 'clipboard-permission-denied',
+  ClipboardCopied: 'clipboard-copied',
+  PasteActivity: 'paste-activity'
 };
 
 export interface AddActivityEventArgs {

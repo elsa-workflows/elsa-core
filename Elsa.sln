@@ -258,7 +258,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "aspnetcore", "aspnetcore", 
 		docker\Dockerfile = docker\Dockerfile
 		docker\Dockerfile-elsa-dashboard = docker\Dockerfile-elsa-dashboard
 		docker\Dockerfile-elsa-dashboard-and-server = docker\Dockerfile-elsa-dashboard-and-server
-		docker\README.md = docker\README.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "github", "github", "{3BF2C5A9-AC69-4587-833F-C16CFC97E100}"
@@ -346,6 +345,10 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Webhooks.Api", "src\activities\webhooks\Elsa.Webhooks.Api\Elsa.Webhooks.Api.csproj", "{9D4B7BD1-AC36-4C94-9770-C42E4030E699}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.WorkflowSettings.Api", "src\modules\workflowsettings\Elsa.WorkflowSettings.Api\Elsa.WorkflowSettings.Api.csproj", "{7595784C-97DA-4C75-BCBC-D99C30E63973}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElsaDashboard.Samples.AspNetCore.SubPath", "src\samples\dashboard\aspnetcore\ElsaDashboard.Samples.AspNetCore.SubPath\ElsaDashboard.Samples.AspNetCore.SubPath.csproj", "{BB715C0C-BE88-4F7F-A43F-1F8DFC9A1388}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.MassTransitRabbitMq", "src\samples\aspnet\Elsa.Samples.MassTransitRabbitMq\Elsa.Samples.MassTransitRabbitMq.csproj", "{6BDC89F4-2E0A-4534-9BE4-10E771D06C93}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.Rpa.Web", "src\activities\Elsa.Activities.Rpa.Web\Elsa.Activities.Rpa.Web.csproj", "{6242E81F-688E-4098-948A-F0C59593328A}"
 EndProject
