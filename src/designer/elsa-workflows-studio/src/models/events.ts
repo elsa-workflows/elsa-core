@@ -1,5 +1,5 @@
 ﻿import {ActivityModel} from "./view";
-import {ActivityDescriptor,FeatureMenuItem} from "./domain";
+import {ActivityDescriptor} from "./domain";
 
 export const EventTypes = {
   ShowActivityPicker: 'show-activity-picker',
@@ -51,11 +51,7 @@ export interface ActivityDescriptorDisplayContext {
 
 export interface ConfigureFeatureContext {
   featureName: string;
-  basePath: string;
-  menuItems: FeatureMenuItem[];
-  routes: FeatureMenuItem[];
-  headers: FeatureMenuItem[];
-  columns: FeatureMenuItem[];
-  hasContextItems: boolean;
-  data: string[];
+  component: string;
+  data: any;
+  params: any;
 }

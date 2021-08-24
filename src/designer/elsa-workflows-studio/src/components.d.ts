@@ -166,7 +166,6 @@ export namespace Components {
     interface ElsaStudioDashboard {
         "basePath": string;
         "culture": string;
-        "featuresString": string;
     }
     interface ElsaStudioHome {
         "culture": string;
@@ -304,7 +303,6 @@ export namespace Components {
     interface ElsaWorkflowRegistryListScreen {
         "basePath": string;
         "culture": string;
-        "featuresString": string;
         "history"?: RouterHistory;
         "serverUrl": string;
     }
@@ -852,7 +850,6 @@ declare namespace LocalJSX {
     interface ElsaStudioDashboard {
         "basePath"?: string;
         "culture"?: string;
-        "featuresString"?: string;
     }
     interface ElsaStudioHome {
         "culture"?: string;
@@ -980,7 +977,6 @@ declare namespace LocalJSX {
     interface ElsaWorkflowRegistryListScreen {
         "basePath"?: string;
         "culture"?: string;
-        "featuresString"?: string;
         "history"?: RouterHistory;
         "serverUrl"?: string;
     }

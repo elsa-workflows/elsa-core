@@ -145,4 +145,4 @@ export class ElsaWorkflowPropertiesPanel {
   }
 }
 
-Tunnel.injectProps(ElsaWorkflowPropertiesPanel, ['serverUrl', 'culture', 'featuresString']);
+Tunnel.injectProps(ElsaWorkflowPropertiesPanel, ['serverUrl', 'culture']);

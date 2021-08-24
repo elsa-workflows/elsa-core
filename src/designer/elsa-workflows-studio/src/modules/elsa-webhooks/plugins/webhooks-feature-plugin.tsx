@@ -1,7 +1,6 @@
 import {Component, h} from '@stencil/core';
 import {eventBus} from "../../../services";
-import {EventTypes, ConfigureFeatureContext, FeatureMenuItem} from "../../../models";
-import {IntlMessage} from '../../../components/i18n/intl-message';
+import {EventTypes, ConfigureFeatureContext} from "../../../models";
 
 @Component({
     tag: 'elsa-webhooks-feature-plugin',
@@ -21,8 +20,13 @@ export class ElsaWebhooksFeaturePlugin {
     if (context.featureName != "webhooks")
       return;
 
-    context.menuItems.push({url: "webhook-definitions", label: "WebhookDefinitions", component: null, exact: false})
-    context.routes.push({url: "webhook-definitions", label: null, component: "elsa-studio-webhook-definitions-list", exact: true},
-                        {url: "webhook-definitions/:id", label: null, component: "elsa-studio-webhook-definitions-edit", exact: false});
+    if (context.component != "ElsaStudioDashboard")
+      return;
+
+    const menuItems: any[] = [["webhook-definitions", "WebhookDefinitions"]];
+    const routes: any[] = [["webhook-definitions", "elsa-studio-webhook-definitions-list", true],
+                         ["webhook-definitions/:id", "elsa-studio-webhook-definitions-edit", false]];
+
+    context.data = {menuItems, routes};
   }
 }

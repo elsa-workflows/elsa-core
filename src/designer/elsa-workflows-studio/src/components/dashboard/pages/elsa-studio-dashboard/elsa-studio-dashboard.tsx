@@ -4,9 +4,8 @@ import {resources} from "./localizations";
 import {i18n} from "i18next";
 import {GetIntlMessage} from "../../../i18n/intl-message";
 import Tunnel from "../../../../data/dashboard";
-import {EventTypes, ConfigureFeatureContext, FeatureMenuItem} from '../../../../models';
-import {eventBus} from '../../../../services';
-import * as collection from 'lodash/collection';
+import {ConfigureFeatureContext} from '../../../../models';
+import {featureProvider} from '../../../../services';
 
 @Component({
   tag: 'elsa-studio-dashboard',
@@ -16,38 +15,13 @@ import * as collection from 'lodash/collection';
 export class ElsaStudioDashboard {
 
   @Prop({attribute: 'culture', reflect: true}) culture: string;
-  @Prop({attribute: 'features', reflect: true}) featuresString : string;
   @Prop({attribute: 'base-path', reflect: true}) basePath: string = '';
   private i18next: i18n;
-  private featureContexts: Array<ConfigureFeatureContext> = [];
+  private webhooksFeature: ConfigureFeatureContext;
 
   async componentWillLoad() {
     this.i18next = await loadTranslations(this.culture, resources);
-    await this.configureFeatures();
-  }
-
-  async configureFeatures() {
-    const parsedFeatures: string[] = this.featuresString.split(',');
-
-    for (const featureName of parsedFeatures)
-    {
-      const featureContext: ConfigureFeatureContext = {
-        featureName: featureName,
-        basePath: this.basePath,
-        menuItems: [],
-        routes: [],
-        headers: [],
-        columns: [],
-        hasContextItems: false,
-        data: []
-      }
-
-      eventBus.emit(EventTypes.ConfigureFeature, this, featureContext);
-
-      featureContext.menuItems = [...featureContext.menuItems]
-      featureContext.routes = [...featureContext.routes]
-      this.featureContexts.push(featureContext);
-    }
+    this.webhooksFeature = featureProvider.load("webhooks", "ElsaStudioDashboard");
   }
 
   render() {
@@ -56,19 +30,17 @@ export class ElsaStudioDashboard {
     const basePath = this.basePath || '';
     const IntlMessage = GetIntlMessage(this.i18next);
 
-    let feature = this.featureContexts.find(x => x.featureName == 'webhooks');
-    let featureEnabled = !!feature;  
-    let featureMenuItems = featureEnabled ? feature.menuItems : [];
-    let featureRoutes = featureEnabled ? feature.routes : [];
+    let menuItems = this.webhooksFeature != null ? this.webhooksFeature.data.menuItems : [];
+    let routes = this.webhooksFeature != null ? this.webhooksFeature.data.routes : [];
 
-    const renderFeatureMenuItem = (item: FeatureMenuItem, basePath: string) => {
-      return (<stencil-route-link url={`${basePath}/${item.url}`} anchorClass="elsa-text-gray-300 hover:elsa-bg-gray-700 hover:elsa-text-white elsa-px-3 elsa-py-2 elsa-rounded-md elsa-text-sm elsa-font-medium" activeClass="elsa-text-white elsa-bg-gray-900">
-                <IntlMessage label={`${item.label}`}/>
+    const renderFeatureMenuItem = (item: any, basePath: string) => {
+      return (<stencil-route-link url={`${basePath}/${item[0]}`} anchorClass="elsa-text-gray-300 hover:elsa-bg-gray-700 hover:elsa-text-white elsa-px-3 elsa-py-2 elsa-rounded-md elsa-text-sm elsa-font-medium" activeClass="elsa-text-white elsa-bg-gray-900">
+                <IntlMessage label={`${item[1]}`}/>
               </stencil-route-link>)
     }
 
-    const renderFeatureRoute = (item: FeatureMenuItem, basePath: string) => {
-      return (<stencil-route url={`${basePath}/${item.url}`} component={`${item.component}`} exact={item.exact}/>)
+    const renderFeatureRoute = (item: any, basePath: string) => {
+      return (<stencil-route url={`${basePath}/${item[0]}`} component={`${item[1]}`} exact={item[2]}/>)
     }    
 
     return (
@@ -98,7 +70,7 @@ export class ElsaStudioDashboard {
                                         activeClass="elsa-text-white elsa-bg-gray-900">
                       <IntlMessage label="WorkflowRegistry"/>
                     </stencil-route-link>
-                    {featureMenuItems.map(item => renderFeatureMenuItem(item, basePath))}
+                    {menuItems.map(item => renderFeatureMenuItem(item, basePath))}
                   </div>
                 </div>
               </div>
@@ -121,7 +93,7 @@ export class ElsaStudioDashboard {
                              exact={true}/>
               <stencil-route url={`${basePath}/workflow-instances/:id`}
                              component="elsa-studio-workflow-instances-view"/>
-              {featureRoutes.map(item => renderFeatureRoute(item, basePath))}
+              {routes.map(item => renderFeatureRoute(item, basePath))}
             </stencil-route-switch>
           </stencil-router>
         </main>
@@ -130,4 +102,4 @@ export class ElsaStudioDashboard {
   }
 }
 
-Tunnel.injectProps(ElsaStudioDashboard, ['culture', 'basePath', 'featuresString']);
+Tunnel.injectProps(ElsaStudioDashboard, ['culture', 'basePath']);

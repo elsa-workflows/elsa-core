@@ -548,4 +548,4 @@ export class ElsaWorkflowDefinitionEditorScreen {
       />);
   }
 }
-DashboardTunnel.injectProps(ElsaWorkflowDefinitionEditorScreen, ['serverUrl', 'culture', 'monacoLibPath', 'featuresString']);
+DashboardTunnel.injectProps(ElsaWorkflowDefinitionEditorScreen, ['serverUrl', 'culture', 'monacoLibPath']);

@@ -1,9 +1,9 @@
 import {Component, Event, EventEmitter, h, Listen, Method, Prop} from '@stencil/core';
 import Tunnel, {DashboardState} from "../../../../data/dashboard";
 import {ElsaStudio, WorkflowModel} from "../../../../models";
-import {eventBus, pluginManager, activityIconProvider, confirmDialogService, toastNotificationService, createElsaClient, createHttpClient, ElsaClient, propertyDisplayManager} from "../../../../services";
+import {eventBus, pluginManager, activityIconProvider, confirmDialogService, toastNotificationService, createElsaClient, createHttpClient, ElsaClient, propertyDisplayManager, featureProvider} from "../../../../services";
 import {AxiosInstance} from "axios";
-import {EventTypes,ConfigureFeatureContext} from "../../../../models";
+import {EventTypes} from "../../../../models";
 import {ToastNotificationOptions} from "../../../shared/elsa-toast-notification/elsa-toast-notification";
 import {getOrCreateProperty, htmlToElement} from "../../../../utils/utils";
 
@@ -22,7 +22,6 @@ export class ElsaStudioRoot {
 
   confirmDialog: HTMLElsaConfirmDialogElement;
   toastNotificationElement: HTMLElsaToastNotificationElement;
-  private featureContexts: Array<ConfigureFeatureContext> = [];
 
   @Method()
   async addPlugins(pluginTypes: Array<any>) {
@@ -56,12 +55,12 @@ export class ElsaStudioRoot {
   componentWillLoad() {
     const elsaClientFactory: () => ElsaClient = () => createElsaClient(this.serverUrl);
     const httpClientFactory: () => AxiosInstance = () => createHttpClient(this.serverUrl);
-    this.configureFeatures();
 
     const elsaStudio: ElsaStudio = {
       serverUrl: this.serverUrl,
       basePath: this.basePath,
-      features: this.featureContexts,
+      featuresString: this.featuresString,
+      featureProvider,
       eventBus,
       pluginManager,
       propertyDisplayManager,
@@ -76,39 +75,14 @@ export class ElsaStudioRoot {
 
     this.initializing.emit(elsaStudio);
     pluginManager.initialize(elsaStudio);
-    propertyDisplayManager.initialize(elsaStudio);    
+    propertyDisplayManager.initialize(elsaStudio);
+    featureProvider.initialize(elsaStudio);
   }
 
   onShowConfirmDialog = (e) => e.promise = this.confirmDialog.show(e.caption, e.message)
   onHideConfirmDialog = async () => await this.confirmDialog.hide()
   onShowToastNotification = async (e: ToastNotificationOptions) => await this.toastNotificationElement.show(e)
   onHideToastNotification = async () => await this.toastNotificationElement.hide()
-
-  async configureFeatures() {
-    
-    const parsedFeatures: string[] = this.featuresString.split(',');
-
-    for (const featureName of parsedFeatures)
-    {
-      const featureContext: ConfigureFeatureContext = {
-        featureName: featureName,
-        basePath: this.basePath,
-        menuItems: [],
-        routes: [],
-        headers: [],
-        columns: [],
-        hasContextItems: false,
-        data: []
-      }
-
-      eventBus.emit(EventTypes.ConfigureFeature, this, featureContext);
-
-      featureContext.headers = [...featureContext.headers];
-      featureContext.columns = [...featureContext.columns];
-      featureContext.hasContextItems = featureContext.hasContextItems;
-      this.featureContexts.push(featureContext);
-    }
-  }
 
   render() {
 

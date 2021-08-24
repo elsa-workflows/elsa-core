@@ -26,31 +26,36 @@ export class ElsaWorkflowSettingsFeaturePlugin {
     if (context.featureName != "settings")
       return;
 
-    context.headers.push({url: null, label: "Enabled", component: null, exact: false})
-    context.columns.push({url: null, label: "Enabled", component: null, exact: false})
-    context.hasContextItems = true;
+    if (context.component != "ElsaWorkflowRegistryListScreen")
+      return;
+
+    const headers: any[] = [["Enabled"]];
+    const hasContextItems: boolean = true;
+  
+    context.data = {headers, hasContextItems};
   }  
 
   async onWorkflowSettingsUpdated(context: ConfigureFeatureContext) {
-    let data: string[] = context.data;
-    if (data[0] != "settings")
+    if (context.featureName != "settings")
+      return;
+
+    if (context.component != "ElsaWorkflowRegistryListScreen")
       return;
 
     const elsaClient = createElsaWorkflowSettingsClient(this.serverUrl);    
     this.workflowSettings = await elsaClient.workflowSettingsApi.list();
 
-    const workflowBlueprintSettings = this.workflowSettings.find(x => x.workflowBlueprintId == data[1] && x.key == data[2]);
+    const workflowBlueprintSettings = this.workflowSettings.find(x => x.workflowBlueprintId == context.params[0] && x.key == context.params[1]);
     if (workflowBlueprintSettings != undefined)
       await elsaClient.workflowSettingsApi.delete(workflowBlueprintSettings.id);
     
     const request: SaveWorkflowSettingsRequest = {
-      workflowBlueprintId : data[1],
-      key: data[2],
-      value: data[3]
+      workflowBlueprintId : context.params[0],
+      key: context.params[1],
+      value: context.params[2]
     };
 
     await elsaClient.workflowSettingsApi.save(request);
-
     eventBus.emit(EventTypes.WorkflowUpdated, this);
   }
 }

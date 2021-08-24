@@ -153,4 +153,4 @@ export class ElsaWorkflowDefinitionsListScreen {
   }
 }
 
-Tunnel.injectProps(ElsaWorkflowDefinitionsListScreen, ['serverUrl', 'culture', 'basePath', 'featuresString']);
+Tunnel.injectProps(ElsaWorkflowDefinitionsListScreen, ['serverUrl', 'culture', 'basePath']);

@@ -3,10 +3,10 @@ import * as collection from 'lodash/collection';
 import {createElsaClient} from "../../../../services/elsa-client";
 import {EventTypes, PagedList, VersionOptions, WorkflowBlueprintSummary, ConfigureFeatureContext} from "../../../../models";
 import {MenuItem} from "../../../../components/controls/elsa-context-menu/models";
-import {FeatureMenuItem} from '../../../../models';
 import {RouterHistory} from "@stencil/router";
 import {eventBus} from '../../../../services';
 import Tunnel from "../../../../data/dashboard";
+import {featureProvider} from '../../../../services';
 
 @Component({
   tag: 'elsa-workflow-registry-list-screen',
@@ -17,15 +17,14 @@ export class ElsaWorkflowRegistryListScreen {
   @Prop() serverUrl: string;
   @Prop() basePath: string;
   @Prop() culture: string;
-  @Prop({attribute: 'features', reflect: true}) featuresString : string;
   @State() workflowBlueprints: PagedList<WorkflowBlueprintSummary> = {items: [], page: 1, pageSize: 50, totalCount: 0};
 
   confirmDialog: HTMLElsaConfirmDialogElement;
-  private featureContexts: Array<ConfigureFeatureContext> = [];
+  private settingsFeature: ConfigureFeatureContext;
 
   async componentWillLoad() {
     await this.loadWorkflowBlueprints();
-    await this.configureFeatures();
+    this.settingsFeature = featureProvider.load("settings", "ElsaWorkflowRegistryListScreen");
   }
 
   connectedCallback() {
@@ -35,32 +34,6 @@ export class ElsaWorkflowRegistryListScreen {
   disconnectedCallback() {
     eventBus.detach(EventTypes.WorkflowUpdated, this.onLoadWorkflowBlueprints);
   }  
-
-  async configureFeatures() {
-    
-    const parsedFeatures: string[] = this.featuresString.split(',');
-
-    for (const featureName of parsedFeatures)
-    {
-      const featureContext: ConfigureFeatureContext = {
-        featureName: featureName,
-        basePath: this.basePath,
-        menuItems: [],
-        routes: [],
-        headers: [],
-        columns: [],
-        hasContextItems: false,
-        data: []
-      }
-
-      eventBus.emit(EventTypes.ConfigureFeature, this, featureContext);
-
-      featureContext.headers = [...featureContext.headers];
-      featureContext.columns = [...featureContext.columns];
-      featureContext.hasContextItems = featureContext.hasContextItems;
-      this.featureContexts.push(featureContext);
-    }
-  }
 
   async onDisableWorkflowClick(e: Event, workflowBlueprintId: string) {
     const result = await this.confirmDialog.show('Disable Workflow', 'Are you sure you wish to disable this workflow?');
@@ -82,14 +55,8 @@ export class ElsaWorkflowRegistryListScreen {
 
   async updateFeature(workflowBlueprintId: string, key: string, value: string)
   {
-    let feature = this.featureContexts.find(x => x.featureName == 'settings');
-    let featureEnabled = !!feature;
-
-    if (featureEnabled)
-    {
-      feature.data = ["settings", workflowBlueprintId, key, value];
-      eventBus.emit(EventTypes.FeatureUpdated, this, feature);
-    }
+    this.settingsFeature.params = [workflowBlueprintId, key, value];
+    eventBus.emit(EventTypes.FeatureUpdated, this, this.settingsFeature);
   }  
 
   async onLoadWorkflowBlueprints()
@@ -114,18 +81,14 @@ export class ElsaWorkflowRegistryListScreen {
     const groupings = collection.groupBy(workflowBlueprints, 'id');
     const basePath = this.basePath;
     
-    let feature = this.featureContexts.find(x => x.featureName == 'settings');
-    let featureEnabled = !!feature;
-    let hasFeatureContextItems = featureEnabled ? feature.hasContextItems : false;
-    let featureHeaders = featureEnabled ? feature.headers : [];
-    let featureColumns = featureEnabled ? feature.columns : [];
+    let headers = this.settingsFeature != null ? this.settingsFeature.data.headers : [];
+    let hasFeatureContextItems = this.settingsFeature != null ? this.settingsFeature.data.hasContextItems : false;
 
-    const renderFeatureHeader = (item: FeatureMenuItem) => {
-      debugger
-      return (<th class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-text-right elsa-uppercase elsa-tracking-wider">{item.label}</th>)
+    const renderFeatureHeader = (item: any) => {
+      return (<th class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-text-right elsa-uppercase elsa-tracking-wider">{item[0]}</th>)
     }
 
-    const renderFeatureColumn = (isWorkflowBlueprintDisabled: boolean) => {
+    const renderFeatureColumn = (item: any, isWorkflowBlueprintDisabled: boolean) => {
       return (<td class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-text-right">{isWorkflowBlueprintDisabled ? 'No' : 'Yes'}</td>)
     }    
 
@@ -170,7 +133,7 @@ export class ElsaWorkflowRegistryListScreen {
               <th class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-text-right elsa-uppercase elsa-tracking-wider">
                 Published Version
               </th>
-              {featureHeaders.map(item => renderFeatureHeader(item))}
+              {headers.map(item => renderFeatureHeader(item))}
               <th class="elsa-pr-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-text-left elsa-uppercase elsa-tracking-wider"/>
             </tr>
             </thead>
@@ -231,7 +194,7 @@ export class ElsaWorkflowRegistryListScreen {
 
                   <td class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-text-right">{latestVersionNumber}</td>
                   <td class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-text-right">{publishedVersionNumber}</td>
-                  {featureColumns.map(item => renderFeatureColumn(workflowBlueprint.isDisabled))}
+                  {headers.map(item => renderFeatureColumn(item, workflowBlueprint.isDisabled))}
                   {renderContextMenu(workflowBlueprint.id, workflowBlueprint.isDisabled, this.history, editUrl, editIcon, enableIcon, disableIcon)}
                 </tr>
               );
@@ -245,4 +208,4 @@ export class ElsaWorkflowRegistryListScreen {
     );
   }
 }
-Tunnel.injectProps(ElsaWorkflowRegistryListScreen, ['serverUrl', 'culture', 'basePath', 'featuresString']);
+Tunnel.injectProps(ElsaWorkflowRegistryListScreen, ['serverUrl', 'culture', 'basePath']);

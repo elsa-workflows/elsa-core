@@ -156,4 +156,4 @@ export class ElsaWorkflowBlueprintViewerScreen {
     );
   }
 }
-Tunnel.injectProps(ElsaWorkflowBlueprintViewerScreen, ['serverUrl', 'culture', 'featuresString']);
+Tunnel.injectProps(ElsaWorkflowBlueprintViewerScreen, ['serverUrl', 'culture']);

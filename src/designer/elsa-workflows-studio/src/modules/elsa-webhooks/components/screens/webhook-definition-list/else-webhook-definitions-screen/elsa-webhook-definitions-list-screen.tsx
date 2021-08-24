@@ -141,4 +141,4 @@ export class ElsaWebhookDefinitionsListScreen {
     );
   }
 }
-Tunnel.injectProps(ElsaWebhookDefinitionsListScreen, ['serverUrl', 'culture', 'basePath', 'featuresString']);
+Tunnel.injectProps(ElsaWebhookDefinitionsListScreen, ['serverUrl', 'culture', 'basePath']);
