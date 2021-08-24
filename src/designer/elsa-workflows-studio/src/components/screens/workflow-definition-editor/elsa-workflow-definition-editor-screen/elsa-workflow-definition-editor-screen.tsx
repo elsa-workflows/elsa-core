@@ -152,7 +152,6 @@ export class ElsaWorkflowDefinitionEditorScreen {
   }
 
   async componentDidLoad() {
-
     if (!this.designer) {
       this.designer = this.el.querySelector("elsa-designer-tree") as HTMLElsaDesignerTreeElement;
       this.designer.model = this.workflowModel;
@@ -248,7 +247,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
     try {
       console.debug("Saving workflow...");
-      
+
       workflowDefinition = await client.workflowDefinitionsApi.save(request);
       this.workflowDefinition = workflowDefinition;
       this.workflowModel = this.mapWorkflowModel(workflowDefinition);
@@ -355,6 +354,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
     e.preventDefault();
     await this.designer.removeActivity(this.activityContextMenuState.activity);
     this.handleContextMenuChange({x: 0, y: 0, shown: false, activity: null});
+    eventBus.emit(EventTypes.HideModalDialog);
   }
 
   async onEditActivityClick(e: Event) {
