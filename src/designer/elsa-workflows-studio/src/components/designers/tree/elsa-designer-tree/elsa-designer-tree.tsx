@@ -61,8 +61,10 @@ export class ElsaWorkflowDesigner {
   addingActivity: boolean = false;
   activityDisplayContexts: Map<ActivityDesignDisplayContext> = null;
   selectedActivities: Map<ActivityModel> = {};
+  ignoreCopyPasteActivities: boolean = false;
 
   handleContextMenuChange(state: ActivityContextMenuState) {
+    this.ignoreCopyPasteActivities = true;
     this.activityContextMenuState = state;
     this.activityContextMenuButtonClicked.emit(state);
   }
@@ -100,6 +102,20 @@ export class ElsaWorkflowDesigner {
     this.connectionContextMenuState = newValue;
   }
 
+  @Listen('keydown', { target: 'window' })
+  async handleKeyDown(event: KeyboardEvent){
+    if (this.ignoreCopyPasteActivities)
+    return;
+
+    if((event.ctrlKey || event.metaKey) && event.key === 'c') {
+      await this.copyActivitiesToClipboard();
+    }
+    if((event.ctrlKey || event.metaKey) && event.key === 'v') {
+
+      await this.pasteActivitiesFromClipboard();
+    }
+  }
+
   @Method()
   async removeActivity(activity: ActivityModel) {
     this.removeActivityInternal(activity);
@@ -109,16 +125,6 @@ export class ElsaWorkflowDesigner {
   async showActivityEditor(activity: ActivityModel, animate: boolean) {
     this.showActivityEditorInternal(activity, animate);
   }
-
-  // @Listen('keydown', { target: 'document' })
-  // async handleKeyDown(event: KeyboardEvent){
-  //   if((event.ctrlKey || event.metaKey) && event.key === 'c') {
-  //     await this.copyActivitiesToClipboard();
-  //   }
-  //   if((event.ctrlKey || event.metaKey) && event.key === 'v') {
-  //     await this.pasteActivitiesFromClipboard();
-  //   }
-  // }
 
   async copyActivitiesToClipboard()
   {
@@ -136,7 +142,6 @@ export class ElsaWorkflowDesigner {
     await navigator.clipboard.readText().then(data => {
       copiedActivities = JSON.parse(data);
     });
-
     this.addActivitiesFromClipboard(copiedActivities)
   }
 
@@ -184,13 +189,16 @@ export class ElsaWorkflowDesigner {
     eventBus.on(EventTypes.ActivityPicked, this.onActivityPicked);
     eventBus.on(EventTypes.UpdateActivity, this.onUpdateActivity);
     eventBus.on(EventTypes.PasteActivity, this.onPasteActivity);
-
+    eventBus.on(EventTypes.HideModalDialog, this.onCopyPasteActivityEnabled);
+    eventBus.on(EventTypes.ShowWorkflowSettings, this.onCopyPasteActivityDisabled);
   }
 
   disconnectedCallback() {
     eventBus.detach(EventTypes.ActivityPicked, this.onActivityPicked);
     eventBus.detach(EventTypes.UpdateActivity, this.onUpdateActivity);
     eventBus.detach(EventTypes.PasteActivity, this.onPasteActivity);
+    eventBus.detach(EventTypes.HideModalDialog, this.onCopyPasteActivityEnabled);
+    eventBus.detach(EventTypes.ShowWorkflowSettings, this.onCopyPasteActivityDisabled);
     d3.selectAll('.node').on('click', null);
     d3.selectAll('.edgePath').on('contextmenu', null);
   }
@@ -586,6 +594,14 @@ export class ElsaWorkflowDesigner {
     this.pasteActivitiesFromClipboard();
   };
 
+  onCopyPasteActivityEnabled = () => {
+    this.ignoreCopyPasteActivities = false
+  }
+
+  onCopyPasteActivityDisabled = () => {
+    this.ignoreCopyPasteActivities = true
+  }
+
   tryRerenderTree(waitTime?: number, attempt?: number) {
     const maxTries = 3;
 
@@ -769,7 +785,7 @@ export class ElsaWorkflowDesigner {
     const displayName = displayContext.displayName || activity.displayName;
     const typeName = activity.type;
 
-    return `<div id=${`activity-${activity.activityId}`}
+    return `<div id=${`activity-${activity.activityId}`}  
     class="activity elsa-border-2 elsa-border-solid elsa-rounded elsa-bg-white elsa-text-left elsa-text-black elsa-text-lg elsa-select-none elsa-max-w-md elsa-shadow-sm elsa-relative ${cssClass}">
       <div class="elsa-p-5">
         <div class="elsa-flex elsa-justify-between elsa-space-x-8">
