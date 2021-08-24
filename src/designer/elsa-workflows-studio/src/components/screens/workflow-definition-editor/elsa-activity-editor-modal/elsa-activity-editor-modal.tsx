@@ -121,7 +121,7 @@ export class ElsaActivityEditorModal {
   async onCancelClick() {
     await this.dialog.hide(true);
   }
-
+  
   onSubmit = async (e: Event) => {
     e.preventDefault();
     const form: any = e.target;

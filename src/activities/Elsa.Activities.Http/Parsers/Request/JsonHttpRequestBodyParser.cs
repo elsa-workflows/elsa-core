@@ -7,7 +7,7 @@ using Elsa.Activities.Http.Services;
 using Elsa.Serialization;
 using Microsoft.AspNetCore.Http;
 
-namespace Elsa.Activities.Http.Parsers
+namespace Elsa.Activities.Http.Parsers.Request
 {
     public class JsonHttpRequestBodyParser : IHttpRequestBodyParser
     {

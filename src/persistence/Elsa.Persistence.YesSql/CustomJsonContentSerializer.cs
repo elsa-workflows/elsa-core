@@ -13,11 +13,13 @@ namespace Elsa.Persistence.YesSql
 {
     public class CustomJsonContentSerializer : IContentSerializer
     {
-        private static readonly JsonSerializerSettings JsonSettings;
+        public object? Deserialize(string content, Type type) => JsonConvert.DeserializeObject(content, type, CreateSerializerSettings());
+        public dynamic? DeserializeDynamic(string content) => JsonConvert.DeserializeObject<dynamic>(content, CreateSerializerSettings());
+        public string Serialize(object item) => JsonConvert.SerializeObject(item, CreateSerializerSettings());
 
-        static CustomJsonContentSerializer()
+        private static JsonSerializerSettings CreateSerializerSettings()
         {
-            JsonSettings = new JsonSerializerSettings
+            var settings = new JsonSerializerSettings
             {
                 TypeNameHandling = TypeNameHandling.Auto,
                 NullValueHandling = NullValueHandling.Ignore,
@@ -26,24 +28,28 @@ namespace Elsa.Persistence.YesSql
                 TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Simple
             };
             
-            JsonSettings.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
-            JsonSettings.Converters.Add(new VersionOptionsJsonConverter());
-            JsonSettings.Converters.Add(new TypeJsonConverter());
-            JsonSettings.Converters.Add(new StringEnumConverter(new DefaultNamingStrategy()));
-            JsonSettings.NullValueHandling = NullValueHandling.Ignore;
+            settings.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
+            settings.Converters.Add(new VersionOptionsJsonConverter());
+            settings.Converters.Add(new TypeJsonConverter());
+            settings.Converters.Add(new StringEnumConverter(new DefaultNamingStrategy()));
+            settings.NullValueHandling = NullValueHandling.Ignore;
 
-            JsonSettings.ContractResolver = new DefaultContractResolver
+            settings.ContractResolver = new DefaultContractResolver
             {
                 NamingStrategy = new DefaultNamingStrategy
                 {
-                    ProcessDictionaryKeys = true,
-                    ProcessExtensionDataNames = true
+                    ProcessDictionaryKeys = false,
+                    ProcessExtensionDataNames = true,
+                    OverrideSpecifiedNames = false
                 }
             };
-        }
+            
+            settings.Converters.Add(new FlagEnumConverter(new DefaultNamingStrategy()));
+            settings.Converters.Add(new TypeJsonConverter());
+            settings.Converters.Add(new VersionOptionsJsonConverter());
+            settings.Converters.Add(new InlineFunctionJsonConverter());
 
-        public object? Deserialize(string content, Type type) => JsonConvert.DeserializeObject(content, type, JsonSettings);
-        public dynamic? DeserializeDynamic(string content) => JsonConvert.DeserializeObject<dynamic>(content, JsonSettings);
-        public string Serialize(object item) => JsonConvert.SerializeObject(item, JsonSettings);
+            return settings;
+        }
     }
 }

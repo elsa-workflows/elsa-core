@@ -11,7 +11,7 @@ import Tunnel from "../../../../data/dashboard";
   assetsDirs: ['assets']
 })
 export class ElsaStudioDashboard {
-  
+
   @Prop({attribute: 'culture', reflect: true}) culture: string;
   @Prop({attribute: 'base-path', reflect: true}) basePath: string = '';
   private i18next: i18n;

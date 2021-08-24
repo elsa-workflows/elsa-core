@@ -3,6 +3,7 @@ using Elsa.Activities.Signaling.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Expressions;
+using Elsa.Persistence;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -20,10 +21,12 @@ namespace Elsa.Activities.Signaling
     public class SendSignal : Activity
     {
         private readonly ISignaler _signaler;
+        private readonly IWorkflowInstanceStore _workflowInstanceStore;
 
-        public SendSignal(ISignaler signaler)
+        public SendSignal(ISignaler signaler, IWorkflowInstanceStore workflowInstanceStore)
         {
             _signaler = signaler;
+            _workflowInstanceStore = workflowInstanceStore;
         }
 
         [ActivityInput(Hint = "An expression that evaluates to the name of the signal to trigger.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
@@ -37,7 +40,11 @@ namespace Elsa.Activities.Signaling
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            await _signaler.TriggerSignalAsync(Signal, Input,  correlationId: CorrelationId, cancellationToken: context.CancellationToken);
+            // Persist the workflow before sending the signal. This fixes a use case where a responding workflow sends a response signal handled by this workflow in a separate branch for example.
+            await _workflowInstanceStore.SaveAsync(context.WorkflowInstance, context.CancellationToken);
+            
+            // Trigger the signal synchronously. If we dispatched the signal instead, we don;t have to explicitly save the workflow instance. For future reconsideration.  
+            await _signaler.DispatchSignalAsync(Signal, Input,  correlationId: CorrelationId, cancellationToken: context.CancellationToken);
             return Done();
         }
     }

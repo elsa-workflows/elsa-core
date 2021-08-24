@@ -11,7 +11,7 @@ namespace Elsa.Activities.Telnyx.Handlers
         public ResumeTransferCall(IWorkflowLaunchpad workflowLaunchpad) : base(workflowLaunchpad)
         {
         }
-
-        protected override IEnumerable<Type> GetSupportedPayloadTypes() => new[] {typeof(CallAnsweredPayload), typeof(CallInitiatedPayload), typeof(CallBridgedPayload), typeof(CallHangupPayload)};
+        
+        protected override IEnumerable<Type> GetSupportedPayloadTypes() => new[] {typeof(CallAnsweredPayload), typeof(CallHangupPayload)};
     }
 }

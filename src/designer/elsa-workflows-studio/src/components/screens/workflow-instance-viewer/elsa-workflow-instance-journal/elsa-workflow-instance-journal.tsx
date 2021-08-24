@@ -91,9 +91,9 @@ export class ElsaWorkflowInstanceJournal {
   async componentWillLoad() {
     await this.workflowInstanceIdChangedHandler(this.workflowInstanceId);
   }
-  
+
   filterRecords(){
-    return 
+    return
   }
 
   selectActivityRecordInternal(record?: WorkflowExecutionLogRecord) {
@@ -166,7 +166,7 @@ export class ElsaWorkflowInstanceJournal {
       <section class={`${panelHiddenClass} elsa-fixed elsa-top-0 elsa-right-0 elsa-bottom-0 elsa-overflow-hidden`} aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
         <div class="elsa-absolute elsa-inset-0 elsa-overflow-hidden">
           <div class="elsa-absolute elsa-inset-0" aria-hidden="true"/>
-          <div class="elsa-fixed elsa-inset-y-0 elsa-right-0 elsa-pl-10 max-elsa-w-full elsa-flex sm:elsa-pl-16">
+          <div class="elsa-fixed elsa-inset-y-0 elsa-top-16 elsa-right-0 elsa-pl-10 max-elsa-w-full elsa-flex sm:elsa-pl-16">
 
             <div ref={el => this.el = el}
                  data-transition-enter="elsa-transform elsa-transition elsa-ease-in-out elsa-duration-500 sm:elsa-duration-700"
@@ -395,7 +395,7 @@ export class ElsaWorkflowInstanceJournal {
 
     if (!activityModel)
       return <p>No activity selected</p>;
-    
+
     // Hide expressions field from properties so that we only display the evaluated value.
     const model = {...activityModel, properties: activityModel.properties.map(x => ({ name: x.name, value: x.value }))}
 

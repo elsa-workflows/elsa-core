@@ -1,4 +1,4 @@
-import {Component, Event, EventEmitter, h, Host, Method, Prop, State, Watch} from '@stencil/core';
+import {Component, Event, EventEmitter, h, Host, Method, Prop, State, Watch, Listen} from '@stencil/core';
 import {v4 as uuid} from 'uuid';
 import {addConnection, findActivity, getChildActivities, getInboundConnections, getOutboundConnections, Map, removeActivity, removeConnection} from '../../../../utils/utils';
 import {ActivityDescriptor, ActivityDesignDisplayContext, ActivityModel, ActivityTraits, ConnectionModel, EventTypes, WorkflowModel, WorkflowPersistenceBehavior,} from '../../../../models';
@@ -21,6 +21,7 @@ export class ElsaWorkflowDesigner {
   @Prop() activityContextMenuButton?: (activity: ActivityModel) => string;
   @Prop() activityBorderColor?: (activity: ActivityModel) => string;
   @Prop() activityContextMenu?: ActivityContextMenuState;
+  @Prop() connectionContextMenu?: ActivityContextMenuState;
   @Prop() mode: WorkflowDesignerMode = WorkflowDesignerMode.Edit;
   @Prop() layoutDirection: LayoutDirection = LayoutDirection.Vertical;
   @Prop({attribute: 'enable-multiple-connections'}) enableMultipleConnectionsFromSingleSource: boolean;
@@ -28,9 +29,17 @@ export class ElsaWorkflowDesigner {
   @Event() activitySelected: EventEmitter<ActivityModel>;
   @Event() activityDeselected: EventEmitter<ActivityModel>;
   @Event() activityContextMenuButtonClicked: EventEmitter<ActivityContextMenuState>;
+  @Event() connectionContextMenuButtonClicked: EventEmitter<ActivityContextMenuState>;
   @State() workflowModel: WorkflowModel;
 
   @State() activityContextMenuState: ActivityContextMenuState = {
+    shown: false,
+    x: 0,
+    y: 0,
+    activity: null,
+  };
+
+  @State() connectionContextMenuState: ActivityContextMenuState = {
     shown: false,
     x: 0,
     y: 0,
@@ -52,10 +61,17 @@ export class ElsaWorkflowDesigner {
   addingActivity: boolean = false;
   activityDisplayContexts: Map<ActivityDesignDisplayContext> = null;
   selectedActivities: Map<ActivityModel> = {};
+  ignoreCopyPasteActivities: boolean = false;
 
   handleContextMenuChange(state: ActivityContextMenuState) {
+    this.ignoreCopyPasteActivities = true;
     this.activityContextMenuState = state;
     this.activityContextMenuButtonClicked.emit(state);
+  }
+
+  handleConnectionContextMenuChange(state: ActivityContextMenuState) {
+    this.connectionContextMenuState = state;
+    this.connectionContextMenuButtonClicked.emit(state);
   }
 
   @Watch('model')
@@ -81,6 +97,25 @@ export class ElsaWorkflowDesigner {
     this.activityContextMenuState = newValue;
   }
 
+  @Watch('connectionContextMenu')
+  handleConnectionContextMenuChanged(newValue: ActivityContextMenuState) {
+    this.connectionContextMenuState = newValue;
+  }
+
+  @Listen('keydown', { target: 'window' })
+  async handleKeyDown(event: KeyboardEvent){
+    if (this.ignoreCopyPasteActivities)
+    return;
+
+    if((event.ctrlKey || event.metaKey) && event.key === 'c') {
+      await this.copyActivitiesToClipboard();
+    }
+    if((event.ctrlKey || event.metaKey) && event.key === 'v') {
+
+      await this.pasteActivitiesFromClipboard();
+    }
+  }
+
   @Method()
   async removeActivity(activity: ActivityModel) {
     this.removeActivityInternal(activity);
@@ -91,14 +126,79 @@ export class ElsaWorkflowDesigner {
     this.showActivityEditorInternal(activity, animate);
   }
 
+  async copyActivitiesToClipboard()
+  {
+    this.checkClipboardPermissions();
+    await navigator.clipboard.writeText(JSON.stringify(this.selectedActivities));
+    eventBus.emit(EventTypes.ClipboardCopied, this);
+  }
+
+  async pasteActivitiesFromClipboard()
+  {
+    this.checkClipboardPermissions();
+
+    let copiedActivities: Array<ActivityModel> = [];
+
+    await navigator.clipboard.readText().then(data => {
+      copiedActivities = JSON.parse(data);
+    });
+    this.addActivitiesFromClipboard(copiedActivities)
+  }
+
+  async addActivitiesFromClipboard(copiedActivities: Array<ActivityModel>)
+  {
+    let sourceActivityId: string;
+    this.parentActivityId = null;
+    this.parentActivityOutcome = null;
+
+    for (const key in this.selectedActivities) {
+      sourceActivityId = this.selectedActivities[key].activityId;
+    }
+
+    if (sourceActivityId != undefined)
+    {
+      this.parentActivityId = sourceActivityId;
+      this.parentActivityOutcome = this.selectedActivities[sourceActivityId].outcomes[0];
+    }
+
+    for (const key in copiedActivities) {
+      this.addingActivity = true;
+      copiedActivities[key].activityId = uuid();
+
+      eventBus.emit(EventTypes.UpdateActivity, this, copiedActivities[key]);
+
+      this.parentActivityId = copiedActivities[key].activityId;
+      this.parentActivityOutcome = copiedActivities[key].outcomes[0];
+    }
+
+    this.selectedActivities = {};
+    // Set to null to avoid conflict with on Activity node click event
+    this.parentActivityId = null;
+    this.parentActivityOutcome = null;
+  }
+
+  checkClipboardPermissions()
+  {
+    navigator.permissions.query({ name: "clipboard-read" }).then((result) => {
+      if (result.state == 'denied')
+        eventBus.emit(EventTypes.ClipboardPermissionDenied, this);
+    });
+  }
+
   connectedCallback() {
     eventBus.on(EventTypes.ActivityPicked, this.onActivityPicked);
     eventBus.on(EventTypes.UpdateActivity, this.onUpdateActivity);
+    eventBus.on(EventTypes.PasteActivity, this.onPasteActivity);
+    eventBus.on(EventTypes.HideModalDialog, this.onCopyPasteActivityEnabled);
+    eventBus.on(EventTypes.ShowWorkflowSettings, this.onCopyPasteActivityDisabled);
   }
 
   disconnectedCallback() {
     eventBus.detach(EventTypes.ActivityPicked, this.onActivityPicked);
     eventBus.detach(EventTypes.UpdateActivity, this.onUpdateActivity);
+    eventBus.detach(EventTypes.PasteActivity, this.onPasteActivity);
+    eventBus.detach(EventTypes.HideModalDialog, this.onCopyPasteActivityEnabled);
+    eventBus.detach(EventTypes.ShowWorkflowSettings, this.onCopyPasteActivityDisabled);
     d3.selectAll('.node').on('click', null);
     d3.selectAll('.edgePath').on('contextmenu', null);
   }
@@ -340,10 +440,10 @@ export class ElsaWorkflowDesigner {
     const workflowModel = {...this.workflowModel};
     const newConnection: ConnectionModel = {sourceId: sourceActivityId, targetId: targetActivityId, outcome: outcome};
     let connections = workflowModel.connections;
-    
+
     if(!this.enableMultipleConnectionsFromSingleSource)
       connections = [...workflowModel.connections.filter(x => !(x.sourceId === sourceActivityId && x.outcome === outcome))];
-    
+
     workflowModel.connections = [...connections, newConnection];
     this.updateWorkflowModel(workflowModel);
     this.parentActivityId = null;
@@ -485,10 +585,27 @@ export class ElsaWorkflowDesigner {
     }
   };
 
+  onPasteActivity = async args => {
+    const activityModel = args as ActivityModel;
+
+    this.selectedActivities = {};
+    activityModel.outcomes[0] = this.parentActivityOutcome;
+    this.selectedActivities[activityModel.activityId] = activityModel;
+    this.pasteActivitiesFromClipboard();
+  };
+
+  onCopyPasteActivityEnabled = () => {
+    this.ignoreCopyPasteActivities = false
+  }
+
+  onCopyPasteActivityDisabled = () => {
+    this.ignoreCopyPasteActivities = true
+  }
+
   tryRerenderTree(waitTime?: number, attempt?: number) {
     const maxTries = 3;
 
-    waitTime = waitTime || 50;
+    waitTime = waitTime || 100;
     attempt = attempt || 0;
     setTimeout(() => {
       try {
@@ -539,6 +656,13 @@ export class ElsaWorkflowDesigner {
         })
         .on("mouseout", e => {
           d3.select(node.elem).select('svg').classed('elsa-text-green-400', false).classed('hover:elsa-text-blue-500', true);
+        })
+        .on('contextmenu', e => {
+          e.preventDefault();
+          e.stopPropagation();
+          this.parentActivityId = node.activity.activityId;
+          this.parentActivityOutcome = node.outcome;
+          this.handleConnectionContextMenuChange({x: e.clientX, y: e.clientY, shown: true, activity: node.activity});
         });
       });
 
@@ -576,21 +700,35 @@ export class ElsaWorkflowDesigner {
       const activity = node.activity;
       const activityId = activity.activityId;
 
-      d3.select(node.elem).on('click', () => {
+      d3.select(node.elem).on('click', e => {
         // If a parent activity was selected to connect to:
         if (this.mode == WorkflowDesignerMode.Edit && this.parentActivityId && this.parentActivityOutcome) {
           this.addConnection(this.parentActivityId, activityId, this.parentActivityOutcome);
         } else {
-          // When clicking an activity:
-          if (!!this.selectedActivities[activityId])
-            delete this.selectedActivities[activityId];
-          else {
-            for (const key in this.selectedActivities) {
-              this.activityDeselected.emit(this.selectedActivities[key]);
+          // When clicking an activity with shift:
+          if (e.shiftKey)
+          {
+            if (!!this.selectedActivities[activityId])
+              delete this.selectedActivities[activityId];
+            else
+            {
+              this.selectedActivities[activityId] = activity;
+              this.activitySelected.emit(activity);
             }
-            this.selectedActivities = {};
-            this.selectedActivities[activityId] = activity;
-            this.activitySelected.emit(activity);
+          }
+          // When clicking an activity:
+          else
+          {
+            if (!!this.selectedActivities[activityId])
+              delete this.selectedActivities[activityId];
+            else {
+              for (const key in this.selectedActivities) {
+                this.activityDeselected.emit(this.selectedActivities[key]);
+              }
+              this.selectedActivities = {};
+              this.selectedActivities[activityId] = activity;
+              this.activitySelected.emit(activity);
+            }
           }
 
           this.rerenderTree();
@@ -647,7 +785,7 @@ export class ElsaWorkflowDesigner {
     const displayName = displayContext.displayName || activity.displayName;
     const typeName = activity.type;
 
-    return `<div id=${`activity-${activity.activityId}`} 
+    return `<div id=${`activity-${activity.activityId}`}  
     class="activity elsa-border-2 elsa-border-solid elsa-rounded elsa-bg-white elsa-text-left elsa-text-black elsa-text-lg elsa-select-none elsa-max-w-md elsa-shadow-sm elsa-relative ${cssClass}">
       <div class="elsa-p-5">
         <div class="elsa-flex elsa-justify-between elsa-space-x-8">

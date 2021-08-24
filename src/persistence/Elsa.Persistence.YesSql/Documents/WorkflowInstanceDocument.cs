@@ -28,7 +28,7 @@ namespace Elsa.Persistence.YesSql.Documents
         public object? InputData { get; set; }
         public WorkflowInputReference? Input { get; set; }
         public WorkflowOutputReference? Output { get; set; }
-        public IDictionary<string, object> ActivityData { get; set; } = new Dictionary<string, object>();
+        public IDictionary<string, IDictionary<string, object?>> ActivityData { get; set; } = new Dictionary<string, IDictionary<string, object?>>();
 
         public HashSet<BlockingActivity> BlockingActivities
         {

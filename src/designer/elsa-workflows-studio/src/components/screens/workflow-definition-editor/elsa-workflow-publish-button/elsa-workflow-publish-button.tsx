@@ -24,7 +24,7 @@ export class ElsaWorkflowPublishButton {
   i18next: i18n;
   menu: HTMLElement;
   fileInput: HTMLInputElement;
-  
+
   async componentWillLoad(){
     this.i18next = await loadTranslations(this.culture, resources);
   }
@@ -77,7 +77,7 @@ export class ElsaWorkflowPublishButton {
 
   render() {
     const t = this.t;
-    
+
     return (
       <Host class="elsa-block" ref={el => registerClickOutside(this, el, this.closeMenu)}>
         <span class="elsa-relative elsa-z-0 elsa-inline-flex elsa-shadow-sm elsa-rounded-md">
@@ -123,7 +123,7 @@ export class ElsaWorkflowPublishButton {
 
   renderPublishButton() {
     const t = this.t;
-    
+
     return (
       <button type="button"
               onClick={() => this.onPublishClick()}
@@ -135,7 +135,7 @@ export class ElsaWorkflowPublishButton {
 
   renderPublishingButton() {
     const t = this.t;
-    
+
     return (
       <button type="button"
               disabled={true}
@@ -154,7 +154,7 @@ export class ElsaWorkflowPublishButton {
       return undefined;
 
     const t = this.t;
-    
+
     return (
       <div class="elsa-py-1" role="none">
         <a href="#" onClick={e => this.onUnPublishClick(e)} class="elsa-block elsa-px-4 elsa-py-2 elsa-text-sm elsa-text-gray-700 hover:elsa-bg-gray-100 hover:elsa-text-gray-900" role="menuitem">

@@ -25,6 +25,8 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
 
             // Elsa Server.
             var elsaSection = Configuration.GetSection("Elsa");
+            
+            var serviceBusConnectionString = Configuration.GetConnectionString("ASB");
 
             services
                 .AddElsa(options => options
@@ -36,6 +38,7 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
                     .AddJavaScriptActivities()
                     .AddActivitiesFrom<Startup>()
                     .AddFeatures(new[] { typeof(Startup) }, Configuration)
+                    .WithContainerName(elsaSection.GetSection("Server:ContainerName").Get<string>())
                 );
 
             services

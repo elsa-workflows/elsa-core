@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Elsa.Activities.Signaling.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Open.Linq.AsyncExtensions;
 
@@ -8,6 +9,7 @@ namespace Elsa.Activities.Http.Endpoints.Signals
     [ApiController]
     [Route("signals/dispatch/{token}")]
     [Produces("application/json")]
+    [Authorize()]
     public class DispatchEndpoint : ControllerBase
     {
         private readonly ISignaler _signaler;

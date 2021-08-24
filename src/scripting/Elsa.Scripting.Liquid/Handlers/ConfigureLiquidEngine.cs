@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
@@ -9,12 +9,14 @@ using Elsa.Models;
 using Elsa.Providers.WorkflowStorage;
 using Elsa.Scripting.Liquid.Helpers;
 using Elsa.Scripting.Liquid.Messages;
+using Elsa.Scripting.Liquid.Options;
 using Elsa.Services.Models;
 using Elsa.Services.WorkflowStorage;
 using Fluid;
 using Fluid.Values;
 using MediatR;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
 
 namespace Elsa.Scripting.Liquid.Handlers
@@ -23,11 +25,13 @@ namespace Elsa.Scripting.Liquid.Handlers
     {
         private readonly IConfiguration _configuration;
         private readonly IWorkflowStorageService _workflowStorageService;
+        private readonly LiquidOptions _liquidOptions;
 
-        public ConfigureLiquidEngine(IConfiguration configuration, IWorkflowStorageService workflowStorageService)
+        public ConfigureLiquidEngine(IConfiguration configuration, IWorkflowStorageService workflowStorageService, IOptions<LiquidOptions> liquidOptions)
         {
             _configuration = configuration;
             _workflowStorageService = workflowStorageService;
+            _liquidOptions = liquidOptions.Value;
         }
 
         public Task Handle(EvaluatingLiquidExpression notification, CancellationToken cancellationToken)
@@ -48,18 +52,23 @@ namespace Elsa.Scripting.Liquid.Handlers
             memberAccessStrategy.Register<ActivityExecutionContext, FluidValue>("Input", x => ToFluidValue(x.Input, options));
             memberAccessStrategy.Register<ActivityExecutionContext, FluidValue>("WorkflowContextId", x => ToFluidValue(x.ContextId, options));
             memberAccessStrategy.Register<ActivityExecutionContext, FluidValue>("WorkflowInstanceId", x => ToFluidValue(x.WorkflowInstance.Id, options));
+            memberAccessStrategy.Register<ActivityExecutionContext, FluidValue>("ActivityId", x => ToFluidValue(x.ActivityId, options));
             memberAccessStrategy.Register<ActivityExecutionContext, FluidValue>("CorrelationId", x => ToFluidValue(x.CorrelationId, options));
             memberAccessStrategy.Register<ActivityExecutionContext, FluidValue>("WorkflowDefinitionId", x => ToFluidValue(x.WorkflowInstance.DefinitionId, options));
             memberAccessStrategy.Register<ActivityExecutionContext, FluidValue>("WorkflowDefinitionVersion", x => ToFluidValue(x.WorkflowInstance.Version, options));
             memberAccessStrategy.Register<ActivityExecutionContext, LiquidPropertyAccessor>("Variables", x => new LiquidPropertyAccessor(name => ToFluidValue(x.WorkflowExecutionContext.GetMergedVariables(), name, options)));
             memberAccessStrategy.Register<ActivityExecutionContext, LiquidPropertyAccessor>("Activities", x => new LiquidPropertyAccessor(name => ToFluidValue(GetActivityModel(x, name), options)!));
-            memberAccessStrategy.Register<ActivityExecutionContext, LiquidActivityModel>(GetActivityModel);
+            memberAccessStrategy.Register<ActivityExecutionContext, LiquidActivityModel>((x, a) => GetActivityModel(x, a));
             memberAccessStrategy.Register<LiquidActivityModel, object?>((model, name) => GetActivityProperty(model, name, cancellationToken));
             memberAccessStrategy.Register<LiquidObjectAccessor<JObject>, JObject>((x, name) => x.GetValueAsync(name));
             memberAccessStrategy.Register<ExpandoObject, object>((x, name) => ((IDictionary<string, object>) x)[name]);
             memberAccessStrategy.Register<JObject, object?>((source, name) => source.GetValue(name, StringComparison.OrdinalIgnoreCase));
-            memberAccessStrategy.Register<ActivityExecutionContext, LiquidPropertyAccessor>("Configuration", x => new LiquidPropertyAccessor(name => ToFluidValue(GetConfigurationValue(name), options)!));
-            memberAccessStrategy.Register<ConfigurationSectionWrapper, ConfigurationSectionWrapper?>((source, name) => source.GetSection(name));
+
+            if (_liquidOptions.EnableConfigurationAccess)
+            {
+                memberAccessStrategy.Register<ActivityExecutionContext, LiquidPropertyAccessor>("Configuration", x => new LiquidPropertyAccessor(name => ToFluidValue(GetConfigurationValue(name), options)!));
+                memberAccessStrategy.Register<ConfigurationSectionWrapper, ConfigurationSectionWrapper?>((source, name) => source.GetSection(name));
+            }
 
             return Task.CompletedTask;
         }

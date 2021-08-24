@@ -20,7 +20,8 @@ namespace Elsa.Scripting.Liquid.Extensions
                 .AddLiquidFilter<JsonFilter>("json")
                 .AddLiquidFilter<Base64Filter>("base64")
                 .AddLiquidFilter<WorkflowDefinitionIdFilter>("workflow_definition_id")
-                .AddLiquidFilter<SignalTokenFilter>("signal_token");
+                .AddLiquidFilter<SignalTokenFilter>("signal_token")
+                .AddLiquidFilter<ActivityOutputFilter>("output");
         }
         
         public static IServiceCollection AddLiquidFilter<T>(this IServiceCollection services, string name) where T : class, ILiquidFilter
@@ -33,6 +34,17 @@ namespace Elsa.Scripting.Liquid.Extensions
         public static IServiceCollection RegisterLiquidTag(this IServiceCollection services, Action<LiquidParser> configure)
         {
             services.Configure<LiquidOptions>(options => options.ParserConfiguration.Add(configure));
+            return services;
+        }
+
+        /// <summary>
+        /// Enables access to .NET configuration via the Configuration keyword. Do not
+        /// enable this option if you execute user supplied (or otherwise untrusted)
+        /// workflows.
+        /// </summary>
+        public static IServiceCollection EnableLiquidConfigurationAccess(this IServiceCollection services)
+        {
+            services.Configure<LiquidOptions>(options => options.EnableConfigurationAccess = true);
             return services;
         }
     }

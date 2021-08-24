@@ -1,5 +1,7 @@
 import {Component, Host, h, Prop, State, Listen, Method} from '@stencil/core';
 import {enter, leave, toggle} from 'el-transition'
+import {eventBus} from "../../../services";
+import {EventTypes} from "../../../models";
 
 @Component({
   tag: 'elsa-modal-dialog',
@@ -22,6 +24,7 @@ export class ElsaModalDialog {
 
   @Method()
   async hide(animate: boolean) {
+    eventBus.emit(EventTypes.HideModalDialog);
     this.hideInternal(animate);
   }
 

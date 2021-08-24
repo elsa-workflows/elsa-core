@@ -75,10 +75,8 @@ namespace Elsa.Services.Workflows
             // If the workflow instance has a CurrentActivity, it means the workflow instance is being retried.
             var currentActivity = workflowInstance.CurrentActivity;
 
-            if (currentActivity != null)
-            {
+            if (activityId == null && currentActivity != null) 
                 activityId = currentActivity.ActivityId;
-            }
 
             var activity = activityId != null ? workflowBlueprint.GetActivity(activityId) : default;
 
@@ -186,11 +184,8 @@ namespace Elsa.Services.Workflows
 
             var blockingActivities = workflowExecutionContext.WorkflowInstance.BlockingActivities.Where(x => x.ActivityId == activityBlueprint.Id).ToList();
 
-            foreach (var blockingActivity in blockingActivities)
-            {
-                workflowExecutionContext.WorkflowInstance.BlockingActivities.Remove(blockingActivity);
-                await _mediator.Publish(new BlockingActivityRemoved(workflowExecutionContext, blockingActivity), cancellationToken);
-            }
+            foreach (var blockingActivity in blockingActivities) 
+                await workflowExecutionContext.RemoveBlockingActivityAsync(blockingActivity);
 
             workflowExecutionContext.Resume();
             workflowExecutionContext.ScheduleActivity(activityBlueprint.Id);

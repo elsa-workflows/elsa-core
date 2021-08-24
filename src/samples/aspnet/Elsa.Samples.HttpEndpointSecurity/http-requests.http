@@ -1,0 +1,31 @@
+POST https://localhost:5001/api/tokens
+Content-Type: application/json
+
+{
+    "userName": "Jason",
+    "isAdmin": false
+}
+
+###
+
+POST https://localhost:5001/api/tokens
+Content-Type: application/json
+
+{
+    "userName": "Janet",
+    "isAdmin": true
+}
+
+###
+
+# Jason is not an admin.
+GET https://localhost:5001/workflows/safe-hello
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJKYXNvbiIsImp0aSI6IjdjNzc5ODFiLWM1MWItNDU1Yi1iMzYzLWQyODQ2ZTE2NGZmMyIsImV4cCI6MTY2MDg5NjI2OCwiaXNzIjoieW91ci1pZGVudGl0eS1zZXJ2ZXIiLCJhdWQiOiJ5b3VyLWFwaS1zZXJ2ZXIifQ.n4BdO5MXZhrxQYBCyah_6MEzGg9VIqYHs1aNASS--gg
+
+###
+
+# Janet is an admin.
+GET https://localhost:5001/workflows/safe-hello
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJKYW5ldCIsImp0aSI6IjNkM2Y4ZjFiLTM3MGUtNGY2Yy05NTQ0LTQ1YWM1OTVmZjljMSIsImlzLWFkbWluIjoidHJ1ZSIsImV4cCI6MTY2MDg5NjI5NSwiaXNzIjoieW91ci1pZGVudGl0eS1zZXJ2ZXIiLCJhdWQiOiJ5b3VyLWFwaS1zZXJ2ZXIifQ.Jb_TVHIj_v2yR5CdImGXdzYUt2BSsPMNFXtF_ouMUzk
+
+###

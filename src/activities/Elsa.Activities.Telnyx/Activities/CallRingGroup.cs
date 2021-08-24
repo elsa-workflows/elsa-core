@@ -26,7 +26,7 @@ namespace Elsa.Activities.Telnyx.Activities
     [Action(
         Category = Constants.Category,
         Description = "Call a ring group.",
-        Outcomes = new[] {TelnyxOutcomeNames.Connected, TelnyxOutcomeNames.NoResponse},
+        Outcomes = new[] { TelnyxOutcomeNames.Connected, TelnyxOutcomeNames.NoResponse },
         DisplayName = "Call Ring Group"
     )]
     public class CallRingGroup : CompositeActivity, IActivityPropertyDefaultValueProvider
@@ -38,14 +38,14 @@ namespace Elsa.Activities.Telnyx.Activities
             _logger = logger;
         }
 
-        [ActivityInput(UIHint = ActivityInputUIHints.MultiText, DefaultSyntax = SyntaxNames.Json, SupportedSyntaxes = new[] {SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid})]
+        [ActivityInput(UIHint = ActivityInputUIHints.MultiText, DefaultSyntax = SyntaxNames.Json, SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public IList<string> Extensions
         {
             get => GetState<IList<string>>(() => new List<string>());
             set => SetState(value);
         }
 
-        [ActivityInput(Label = "Call Control ID", Hint = "Unique identifier and token for controlling the call.", Category = PropertyCategories.Advanced, SupportedSyntaxes = new[] {SyntaxNames.JavaScript, SyntaxNames.Liquid})]
+        [ActivityInput(Label = "Call Control ID", Hint = "Unique identifier and token for controlling the call.", Category = PropertyCategories.Advanced, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string CallControlId
         {
             get => GetState<string>()!;
@@ -56,7 +56,7 @@ namespace Elsa.Activities.Telnyx.Activities
             Label = "Call Control App ID",
             Hint = "The ID of the Call Control App (formerly ID of the connection) to be used when dialing the destination.",
             Category = PropertyCategories.Advanced,
-            SupportedSyntaxes = new[] {SyntaxNames.JavaScript, SyntaxNames.Liquid}
+            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? CallControlAppId
         {
@@ -64,7 +64,7 @@ namespace Elsa.Activities.Telnyx.Activities
             set => SetState(value);
         }
 
-        [ActivityInput(SupportedSyntaxes = new[] {SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid})]
+        [ActivityInput(SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public RingGroupStrategy Strategy
         {
             get => GetState<RingGroupStrategy>();
@@ -73,7 +73,7 @@ namespace Elsa.Activities.Telnyx.Activities
 
         [ActivityInput(
             Hint = "The 'from' number to be used as the caller id presented to the destination ('To' number). The number should be in +E164 format. This attribute will default to the 'From' number of the original call if omitted.",
-            SupportedSyntaxes = new[] {SyntaxNames.JavaScript, SyntaxNames.Liquid}
+            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? From
         {
@@ -84,7 +84,7 @@ namespace Elsa.Activities.Telnyx.Activities
         [ActivityInput(
             Hint =
                 "The string to be used as the caller id name (SIP From Display Name) presented to the destination ('To' number). The string should have a maximum of 128 characters, containing only letters, numbers, spaces, and -_~!.+ special characters. If omitted, the display name will be the same as the number in the 'From' field.",
-            SupportedSyntaxes = new[] {SyntaxNames.JavaScript, SyntaxNames.Liquid}
+            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? FromDisplayName
         {
@@ -92,7 +92,7 @@ namespace Elsa.Activities.Telnyx.Activities
             set => SetState(value);
         }
 
-        [ActivityInput(DefaultValueProvider = typeof(CallRingGroup), SupportedSyntaxes = new[] {SyntaxNames.JavaScript, SyntaxNames.Liquid})]
+        [ActivityInput(DefaultValueProvider = typeof(CallRingGroup), SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public Duration RingTime
         {
             get => GetState(() => Duration.FromSeconds(20));
@@ -101,7 +101,7 @@ namespace Elsa.Activities.Telnyx.Activities
 
         [ActivityInput(
             Hint = "The maximum time to wait for anyone to pickup before giving up.",
-            SupportedSyntaxes = new[] {SyntaxNames.JavaScript, SyntaxNames.Liquid}
+            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public Duration? MaxQueueWaitTime
         {
@@ -111,7 +111,7 @@ namespace Elsa.Activities.Telnyx.Activities
 
         [ActivityInput(
             Hint = "The audio file to play while dialing.",
-            SupportedSyntaxes = new[] {SyntaxNames.JavaScript, SyntaxNames.Liquid}
+            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public Uri? MusicOnHold
         {
@@ -121,7 +121,7 @@ namespace Elsa.Activities.Telnyx.Activities
 
         [ActivityInput(
             Hint = "The audio file to play as intro.",
-            SupportedSyntaxes = new[] {SyntaxNames.JavaScript, SyntaxNames.Liquid}
+            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public Uri? IntroMusic
         {
@@ -132,10 +132,10 @@ namespace Elsa.Activities.Telnyx.Activities
         [ActivityInput(
             Hint = "Enables Answering Machine Detection.",
             UIHint = ActivityInputUIHints.Dropdown,
-            Options = new[] {"disabled", "detect", "detect_beep", "detect_words", "greeting_end"},
+            Options = new[] { "disabled", "detect", "detect_beep", "detect_words", "greeting_end" },
             DefaultValue = "disabled",
             Category = PropertyCategories.Advanced,
-            SupportedSyntaxes = new[] {SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid})]
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string? AnsweringMachineDetection { get; set; } = "disabled";
 
         private CallAnsweredPayload? CallAnsweredPayload
@@ -163,9 +163,16 @@ namespace Elsa.Activities.Telnyx.Activities
                 .Then<Fork>(fork => fork.WithBranches("Call", "Hangup"), fork =>
                 {
                     fork.When("Hangup")
-                        .ThenTypeNamed(CallHangupPayload.ActivityTypeName)
-                        .Then(() => CallerHangup = true)
-                        .ThenNamed("ExitWithNoResponse");
+                        .ThenTypeNamed(CallHangupPayload.ActivityTypeName).WithName("CallerHangupEvent")
+                        .If(context => context.GetInput<CallHangupPayload>()!.HangupSource == "caller", @if =>
+                        {
+                            @if.When(OutcomeNames.True)
+                                .Then(() => CallerHangup = true)
+                                .ThenNamed("ExitWithNoResponse");
+                            
+                            @if.When(OutcomeNames.False)
+                                .ThenNamed("CallerHangupEvent");
+                        });
 
                     fork.When("Call")
                         .If(() => IntroMusic != null, @if =>
@@ -195,7 +202,7 @@ namespace Elsa.Activities.Telnyx.Activities
                                         cases.Add(RingGroupStrategy.PrioritizedHunt.ToString(), () => Strategy == RingGroupStrategy.PrioritizedHunt, BuildPrioritizedHuntFlow);
                                         cases.Add(RingGroupStrategy.RingAll.ToString(), () => Strategy == RingGroupStrategy.RingAll, BuildRingAllFlow);
                                     }))
-                                .ThenNamed("ExitWithNoResponse");
+                                .IfTrue(() => IsNullOrZero(MaxQueueWaitTime), ifTrue => @ifTrue.ThenNamed("ExitWithNoResponse"));
 
                             fork.When("Queue Timeout")
                                 .IfFalse(() => IsNullOrZero(MaxQueueWaitTime), ifFalse => ifFalse.StartIn(() => MaxQueueWaitTime!.Value).ThenNamed("ExitWithNoResponse"));
@@ -244,7 +251,7 @@ namespace Elsa.Activities.Telnyx.Activities
                             .Then<Dial>(dial => dial
                                     .WithConnectionId(() => CallControlAppId)
                                     .WithTo(ResolveExtensionAsync)
-                                    .WithTimeoutSecs(() => (int) RingTime.TotalSeconds)
+                                    .WithTimeoutSecs(() => (int)RingTime.TotalSeconds)
                                     .WithFrom(() => From)
                                     .WithFromDisplayName(() => FromDisplayName),
                                 dial =>
@@ -309,7 +316,7 @@ namespace Elsa.Activities.Telnyx.Activities
                                 .WithSuspendWorkflow(false)
                                 .WithConnectionId(() => CallControlAppId)
                                 .WithTo(ResolveExtensionAsync)
-                                .WithTimeoutSecs(() => (int) RingTime.TotalSeconds)
+                                .WithTimeoutSecs(() => (int)RingTime.TotalSeconds)
                                 .WithFrom(() => From)
                                 .WithFromDisplayName(() => FromDisplayName)
                             )
@@ -332,7 +339,7 @@ namespace Elsa.Activities.Telnyx.Activities
             var extension = context.GetInput<string>()!;
             var extensionProvider = context.GetService<IExtensionProvider>();
             var resolvedExtension = await extensionProvider.GetAsync(extension, context.CancellationToken);
-            return resolvedExtension?.Number ?? extension;
+            return resolvedExtension?.Destination ?? extension;
         }
 
         private static bool IsNullOrZero(Duration? duration) => duration == null || duration.Value == Duration.Zero;

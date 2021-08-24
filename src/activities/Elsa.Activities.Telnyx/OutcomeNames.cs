@@ -3,7 +3,6 @@
     public static class TelnyxOutcomeNames
     {
         public const string CallIsNoLongerActive = "Call Is No Longer Active";
-        public const string Pending = "Pending";
         public const string Connected = "Connected";
         public const string NoResponse = "No Response";
         public const string Dialing = "Dialing";
@@ -20,8 +19,6 @@
         public const string MachineDetectionEnded = "Machine Detection Ended";
         public const string MachineGreetingEnded = "Machine Greeting Ended";
         public const string FinishedSpeaking = "Finished Speaking";
-        public const string Speaking = "Speaking";
-        public const string Recording = "Recording";
         public const string FinishedRecording = "Finished Recording";
         public const string CallPlaybackEnding = "Playback Ending";
         public const string CallPlaybackEnded = "Playback Ended";

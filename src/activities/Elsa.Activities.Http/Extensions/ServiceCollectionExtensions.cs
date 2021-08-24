@@ -13,6 +13,7 @@ using Elsa.Scripting.Liquid.Extensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -33,6 +34,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
             services.TryAddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddHttpClient(nameof(SendHttpRequest));
+            services.AddAuthorizationCore();
 
             services
                 .AddSingleton<IHttpRequestBodyParser, DefaultHttpRequestBodyParser>()
@@ -43,6 +45,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IHttpResponseContentReader, FileResponseContentReader>()
                 .AddSingleton<IActionContextAccessor, ActionContextAccessor>()
                 .AddSingleton<IAbsoluteUrlProvider, DefaultAbsoluteUrlProvider>()
+                .AddSingleton(sp => sp.GetRequiredService<IOptions<HttpActivityOptions>>().Value.HttpEndpointAuthorizationHandlerFactory(sp))
                 .AddBookmarkProvider<HttpEndpointBookmarkProvider>()
                 .AddHttpContextAccessor()
                 .AddNotificationHandlers(typeof(ConfigureJavaScriptEngine))
