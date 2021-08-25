@@ -29,10 +29,12 @@ export class ElsaWorkflowRegistryListScreen {
 
   connectedCallback() {
     eventBus.on(EventTypes.WorkflowUpdated, this.onLoadWorkflowBlueprints);
+    eventBus.on(EventTypes.FeatureUpdated, this.onLoadWorkflowBlueprints);
   }
 
   disconnectedCallback() {
     eventBus.detach(EventTypes.WorkflowUpdated, this.onLoadWorkflowBlueprints);
+    eventBus.detach(EventTypes.FeatureUpdated, this.onLoadWorkflowBlueprints);
   }  
 
   async onDisableWorkflowClick(e: Event, workflowBlueprintId: string) {
@@ -56,7 +58,7 @@ export class ElsaWorkflowRegistryListScreen {
   async updateFeature(workflowBlueprintId: string, key: string, value: string)
   {
     this.settingsFeature.params = [workflowBlueprintId, key, value];
-    eventBus.emit(EventTypes.FeatureUpdated, this, this.settingsFeature);
+    eventBus.emit(EventTypes.FeatureUpdating, this, this.settingsFeature);
   }  
 
   async onLoadWorkflowBlueprints()

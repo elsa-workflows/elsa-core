@@ -26,6 +26,7 @@ export const EventTypes = {
   ShowToastNotification: 'show-toast-notification',
   HideToastNotification: 'hide-toast-notification',
   ConfigureFeature: 'configure-feature',
+  FeatureUpdating: 'feature-updating',
   FeatureUpdated: 'feature-updated',
   ClipboardPermissionDenied: 'clipboard-permission-denied',
   ClipboardCopied: 'clipboard-copied',

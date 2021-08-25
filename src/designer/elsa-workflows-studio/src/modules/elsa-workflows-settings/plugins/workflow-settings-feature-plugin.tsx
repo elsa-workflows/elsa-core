@@ -14,12 +14,12 @@ export class ElsaWorkflowSettingsFeaturePlugin {
 
   connectedCallback() {
     eventBus.on(EventTypes.ConfigureFeature, this.onWorkflowSettingsEnabled);
-    eventBus.on(EventTypes.FeatureUpdated, this.onWorkflowSettingsUpdated);
+    eventBus.on(EventTypes.FeatureUpdating, this.onWorkflowSettingsUpdating);
   }
 
   disconnectedCallback() {
     eventBus.detach(EventTypes.ConfigureFeature, this.onWorkflowSettingsEnabled);
-    eventBus.detach(EventTypes.FeatureUpdated, this.onWorkflowSettingsUpdated);
+    eventBus.detach(EventTypes.FeatureUpdating, this.onWorkflowSettingsUpdating);
   }
   
   onWorkflowSettingsEnabled(context: ConfigureFeatureContext) {
@@ -35,7 +35,7 @@ export class ElsaWorkflowSettingsFeaturePlugin {
     context.data = {headers, hasContextItems};
   }  
 
-  async onWorkflowSettingsUpdated(context: ConfigureFeatureContext) {
+  async onWorkflowSettingsUpdating(context: ConfigureFeatureContext) {
     if (context.featureName != "settings")
       return;
 
@@ -56,6 +56,6 @@ export class ElsaWorkflowSettingsFeaturePlugin {
     };
 
     await elsaClient.workflowSettingsApi.save(request);
-    eventBus.emit(EventTypes.WorkflowUpdated, this);
+    eventBus.emit(EventTypes.FeatureUpdated, this);
   }
 }

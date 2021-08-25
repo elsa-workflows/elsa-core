@@ -346,10 +346,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Webhooks.Api", "src\ac
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.WorkflowSettings.Api", "src\modules\workflowsettings\Elsa.WorkflowSettings.Api\Elsa.WorkflowSettings.Api.csproj", "{7595784C-97DA-4C75-BCBC-D99C30E63973}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElsaDashboard.Samples.AspNetCore.SubPath", "src\samples\dashboard\aspnetcore\ElsaDashboard.Samples.AspNetCore.SubPath\ElsaDashboard.Samples.AspNetCore.SubPath.csproj", "{BB715C0C-BE88-4F7F-A43F-1F8DFC9A1388}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.MassTransitRabbitMq", "src\samples\aspnet\Elsa.Samples.MassTransitRabbitMq\Elsa.Samples.MassTransitRabbitMq.csproj", "{6BDC89F4-2E0A-4534-9BE4-10E771D06C93}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.Rpa.Web", "src\activities\Elsa.Activities.Rpa.Web\Elsa.Activities.Rpa.Web.csproj", "{6242E81F-688E-4098-948A-F0C59593328A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.RpaWebConsole", "src\samples\console\Elsa.Samples.RpaWebConsole\Elsa.Samples.RpaWebConsole.csproj", "{F8567ECC-2D5D-453E-99FB-BE6B9DB2854F}"
