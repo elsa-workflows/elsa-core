@@ -176,7 +176,7 @@ export class ElsaWorkflowInstanceJournal {
                  data-transition-leave-start="elsa-translate-x-0"
                  data-transition-leave-end="elsa-translate-x-full"
                  class="elsa-w-screen elsa-max-w-2xl">
-              <div class="elsa-h-full elsa-flex elsa-flex-col elsa-py-6 elsa-bg-white elsa-shadow-xl elsa-overflow-y-scroll">
+              <div class="elsa-h-full elsa-flex elsa-flex-col elsa-py-6 elsa-bg-white elsa-shadow-xl">
                 <div class="elsa-px-4 sm:elsa-px-6">
                   <div class="elsa-flex elsa-flex-col elsa-items-end">
                     <div class="elsa-ml-3 h-7 elsa-flex elsa-items-center">
@@ -204,7 +204,7 @@ export class ElsaWorkflowInstanceJournal {
                   </div>
 
                 </div>
-                <div class="elsa-mt-6 elsa-relative elsa-flex-1 elsa-px-4 sm:elsa-px-6">
+                <div class="elsa-mt-6 elsa-relative elsa-flex-1 elsa-px-4 sm:elsa-px-6 elsa-overflow-y-scroll">
                   <div class="elsa-absolute elsa-inset-0 elsa-px-4 sm:elsa-px-6">
                     {selectedTab.view()}
                   </div>
