@@ -6,7 +6,6 @@ import {MenuItem} from "../../../../components/controls/elsa-context-menu/models
 import {RouterHistory} from "@stencil/router";
 import {eventBus} from '../../../../services';
 import Tunnel from "../../../../data/dashboard";
-import {featureProvider} from '../../../../services';
 
 @Component({
   tag: 'elsa-workflow-registry-list-screen',
@@ -20,11 +19,14 @@ export class ElsaWorkflowRegistryListScreen {
   @State() workflowBlueprints: PagedList<WorkflowBlueprintSummary> = {items: [], page: 1, pageSize: 50, totalCount: 0};
 
   confirmDialog: HTMLElsaConfirmDialogElement;
-  private settingsFeature: ConfigureFeatureContext;
+  private feature: ConfigureFeatureContext  = {
+    data: null,
+    params: null
+  };
 
   async componentWillLoad() {
     await this.loadWorkflowBlueprints();
-    this.settingsFeature = featureProvider.load("settings", "ElsaWorkflowRegistryListScreen");
+    eventBus.emit(EventTypes.FeatureLoadColumns, this, this.feature);
   }
 
   connectedCallback() {
@@ -57,8 +59,8 @@ export class ElsaWorkflowRegistryListScreen {
 
   async updateFeature(workflowBlueprintId: string, key: string, value: string)
   {
-    this.settingsFeature.params = [workflowBlueprintId, key, value];
-    eventBus.emit(EventTypes.FeatureUpdating, this, this.settingsFeature);
+    this.feature.params = [workflowBlueprintId, key, value];
+    eventBus.emit(EventTypes.FeatureUpdating, this, this.feature);
   }  
 
   async onLoadWorkflowBlueprints()
@@ -83,8 +85,8 @@ export class ElsaWorkflowRegistryListScreen {
     const groupings = collection.groupBy(workflowBlueprints, 'id');
     const basePath = this.basePath;
     
-    let headers = this.settingsFeature != null ? this.settingsFeature.data.headers : [];
-    let hasFeatureContextItems = this.settingsFeature != null ? this.settingsFeature.data.hasContextItems : false;
+    let headers = this.feature.data != null ? this.feature.data.headers : [];
+    let hasFeatureContextItems = this.feature.data != null ? this.feature.data.hasContextItems : false;
 
     const renderFeatureHeader = (item: any) => {
       return (<th class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-text-right elsa-uppercase elsa-tracking-wider">{item[0]}</th>)

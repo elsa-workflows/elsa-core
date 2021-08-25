@@ -1,7 +1,7 @@
 import {Component, Event, EventEmitter, h, Listen, Method, Prop} from '@stencil/core';
 import Tunnel, {DashboardState} from "../../../../data/dashboard";
 import {ElsaStudio, WorkflowModel} from "../../../../models";
-import {eventBus, pluginManager, activityIconProvider, confirmDialogService, toastNotificationService, createElsaClient, createHttpClient, ElsaClient, propertyDisplayManager, featureProvider} from "../../../../services";
+import {eventBus, pluginManager, activityIconProvider, confirmDialogService, toastNotificationService, createElsaClient, createHttpClient, ElsaClient, propertyDisplayManager} from "../../../../services";
 import {AxiosInstance} from "axios";
 import {EventTypes} from "../../../../models";
 import {ToastNotificationOptions} from "../../../shared/elsa-toast-notification/elsa-toast-notification";
@@ -60,7 +60,6 @@ export class ElsaStudioRoot {
       serverUrl: this.serverUrl,
       basePath: this.basePath,
       featuresString: this.featuresString,
-      featureProvider,
       eventBus,
       pluginManager,
       propertyDisplayManager,
@@ -76,7 +75,6 @@ export class ElsaStudioRoot {
     this.initializing.emit(elsaStudio);
     pluginManager.initialize(elsaStudio);
     propertyDisplayManager.initialize(elsaStudio);
-    featureProvider.initialize(elsaStudio);
   }
 
   onShowConfirmDialog = (e) => e.promise = this.confirmDialog.show(e.caption, e.message)
@@ -91,7 +89,6 @@ export class ElsaStudioRoot {
     const tunnelState: DashboardState = {
       serverUrl: this.serverUrl,
       basePath: this.basePath,
-      featuresString: this.featuresString,
       culture,
       monacoLibPath: this.monacoLibPath
     };

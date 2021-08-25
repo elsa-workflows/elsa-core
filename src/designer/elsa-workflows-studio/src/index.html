@@ -15,7 +15,7 @@
 <body>
 
 <!--<elsa-studio-root server-url="https://localhost:6080" monaco-lib-path="build/assets/js/monaco-editor/min" culture="en-US">-->
-<elsa-studio-root server-url="https://skynet-workflow.azurewebsites.net" monaco-lib-path="build/assets/js/monaco-editor/min" culture="en-US" features="webhooks,settings">
+<elsa-studio-root server-url="https://skynet-workflow.azurewebsites.net" monaco-lib-path="build/assets/js/monaco-editor/min" culture="en-US">
   <!-- "features" attribute allows to specify what features are enabled: webhooks,settings -->
   <!-- The root dashboard component -->
   <elsa-studio-dashboard></elsa-studio-dashboard>
@@ -23,8 +23,6 @@
     <!-- Instead of using the full dashboard component, you can display lower-level components instead-->
     <!--<elsa-workflow-instance-list-screen></elsa-workflow-instance-list-screen>-->
     <!--<elsa-workflow-definition-editor-screen></elsa-workflow-definition-editor-screen>-->
-    <elsa-webhooks-feature-plugin></elsa-webhooks-feature-plugin>
-    <elsa-workflow-settings-feature-plugin></elsa-workflow-settings-feature-plugin>
 </elsa-studio-root>
 
 <!-- Keep this to avoid Stencil from stripping classes added by dagre-d3 <!-->
@@ -208,6 +206,18 @@
     };
   }
 
+  function WebhooksPlugin(elsaStudio) {
+    var tag = document.createElement("elsa-webhooks-plugin");
+    const elsaStudioRoot = document.querySelector('elsa-studio-root');
+    elsaStudioRoot.appendChild(tag);
+  }
+
+  function WorkflowSettingsPlugin(elsaStudio) {
+    var tag = document.createElement("elsa-workflow-settings-plugin");
+    const elsaStudioRoot = document.querySelector('elsa-studio-root');
+    elsaStudioRoot.appendChild(tag);
+  }
+
   // Get a handle to the elsa-studio-root element.
   const elsaStudioRoot = document.querySelector('elsa-studio-root');
 
@@ -223,7 +233,7 @@
   // Alternatively, configure Elsa during the 'initializing' event.
   elsaStudioRoot.addEventListener('initializing', e => {
     const elsa = e.detail;
-    elsa.pluginManager.registerPlugins([CustomReadLinePlugin, CustomBulkActionsPlugin, CustomHttpMiddlewarePlugin, CustomPropertyFieldPlugin, WorkflowModelChangedListenerPlugin, CustomActivityEditorPlugin]);
+    elsa.pluginManager.registerPlugins([CustomReadLinePlugin, CustomBulkActionsPlugin, CustomHttpMiddlewarePlugin, CustomPropertyFieldPlugin, WorkflowModelChangedListenerPlugin, CustomActivityEditorPlugin, WebhooksPlugin, WorkflowSettingsPlugin]);
   });
 
   // Some components publish DOM events that we can handle directly:

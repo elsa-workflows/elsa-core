@@ -4,8 +4,8 @@ import {resources} from "./localizations";
 import {i18n} from "i18next";
 import {GetIntlMessage} from "../../../i18n/intl-message";
 import Tunnel from "../../../../data/dashboard";
-import {ConfigureFeatureContext} from '../../../../models';
-import {featureProvider} from '../../../../services';
+import {EventTypes, ConfigureFeatureContext} from '../../../../models';
+import {eventBus} from '../../../../services';
 
 @Component({
   tag: 'elsa-studio-dashboard',
@@ -17,11 +17,14 @@ export class ElsaStudioDashboard {
   @Prop({attribute: 'culture', reflect: true}) culture: string;
   @Prop({attribute: 'base-path', reflect: true}) basePath: string = '';
   private i18next: i18n;
-  private webhooksFeature: ConfigureFeatureContext;
+  private feature: ConfigureFeatureContext  = {
+    data: null,
+    params: null
+  };
 
   async componentWillLoad() {
     this.i18next = await loadTranslations(this.culture, resources);
-    this.webhooksFeature = featureProvider.load("webhooks", "ElsaStudioDashboard");
+    eventBus.emit(EventTypes.FeatureLoadMenu, this, this.feature);
   }
 
   render() {
@@ -30,8 +33,8 @@ export class ElsaStudioDashboard {
     const basePath = this.basePath || '';
     const IntlMessage = GetIntlMessage(this.i18next);
 
-    let menuItems = this.webhooksFeature != null ? this.webhooksFeature.data.menuItems : [];
-    let routes = this.webhooksFeature != null ? this.webhooksFeature.data.routes : [];
+    let menuItems = this.feature.data != null ? this.feature.data.menuItems : [];
+    let routes = this.feature.data != null ? this.feature.data.routes : [];
 
     const renderFeatureMenuItem = (item: any, basePath: string) => {
       return (<stencil-route-link url={`${basePath}/${item[0]}`} anchorClass="elsa-text-gray-300 hover:elsa-bg-gray-700 hover:elsa-text-white elsa-px-3 elsa-py-2 elsa-rounded-md elsa-text-sm elsa-font-medium" activeClass="elsa-text-white elsa-bg-gray-900">

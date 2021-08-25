@@ -7,4 +7,3 @@ export * from './event-bus';
 export * from './plugin-manager';
 export * from './property-display-driver';
 export * from './property-display-manager';
-export * from './feature-provider';

@@ -1,4 +1,4 @@
-﻿import {PluginManager, ActivityIconProvider, ConfirmDialogService, PropertyDisplayManager, FeatureProvider} from "../services";
+﻿import {PluginManager, ActivityIconProvider, ConfirmDialogService, PropertyDisplayManager} from "../services";
 import {ElsaClient, ToastNotificationService} from "../services";
 import EventBus from "js-event-bus";
 import {AxiosInstance} from "axios";
@@ -9,7 +9,6 @@ export interface ElsaStudio {
   serverUrl: string;
   basePath: string;
   featuresString: string;
-  featureProvider: FeatureProvider;
   pluginManager: PluginManager;
   propertyDisplayManager: PropertyDisplayManager;
   elsaClientFactory: () => ElsaClient;

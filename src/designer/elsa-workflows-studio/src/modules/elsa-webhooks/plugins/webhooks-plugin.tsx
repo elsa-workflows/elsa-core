@@ -1,13 +1,19 @@
-import {h} from "@stencil/core";
+import {Component, h} from '@stencil/core';
 import {eventBus, ElsaPlugin} from "../../../services";
-import {ActivityDesignDisplayContext, EventTypes, SyntaxNames} from "../../../models";
+import {EventTypes, SyntaxNames, ActivityDesignDisplayContext, ConfigureFeatureContext} from "../../../models";
 import {htmlEncode} from "../../../utils/utils";
 
-export class WebhookPlugin implements ElsaPlugin {
+@Component({
+    tag: 'elsa-webhooks-plugin',
+    shadow: false,
+})
+export class WebhooksPlugin implements ElsaPlugin {
+
   constructor() {
     eventBus.on(EventTypes.ActivityDesignDisplaying, this.onActivityDisplaying);
+    eventBus.on(EventTypes.FeatureLoadMenu, this.onLoadMenu);
   }
-  
+
   onActivityDisplaying(context: ActivityDesignDisplayContext) {
     const activityModel = context.activityModel;
     
@@ -19,5 +25,14 @@ export class WebhookPlugin implements ElsaPlugin {
     const syntax = path.syntax || SyntaxNames.Literal;
     const bodyDisplay = htmlEncode(path.expressions[syntax]);
     context.bodyDisplay = `<p>${bodyDisplay}</p>`;
+  }  
+
+  onLoadMenu(context: ConfigureFeatureContext) {
+
+    const menuItems: any[] = [["webhook-definitions", "WebhookDefinitions"]];
+    const routes: any[] = [["webhook-definitions", "elsa-studio-webhook-definitions-list", true],
+                         ["webhook-definitions/:id", "elsa-studio-webhook-definitions-edit", false]];
+
+    context.data = {menuItems, routes};
   }
 }

@@ -18,7 +18,7 @@ import {UserTaskPlugin} from "../plugins/user-task-plugin";
 import {StatePlugin} from "../plugins/state-plugin";
 import {SendHttpRequestPlugin} from "../plugins/send-http-request-plugin";
 import {RunWorkflowPlugin} from "../plugins/run-workflow-plugin";
-import {WebhookPlugin} from "../modules/elsa-webhooks/plugins/webhook-plugin";
+import {WebhooksPlugin} from "../modules/elsa-webhooks/plugins/webhooks-plugin";
 import {ElsaStudio} from "../models/services";
 
 export class PluginManager {
@@ -47,8 +47,7 @@ export class PluginManager {
       StatePlugin,
       RunJavascriptPlugin,
       UserTaskPlugin,
-      SendEmailPlugin,
-      WebhookPlugin
+      SendEmailPlugin
     ];
   }
 
@@ -65,7 +64,6 @@ export class PluginManager {
   }
 
   registerPlugins(pluginTypes: Array<any>) {
-
     for (const pluginType of pluginTypes) {
       this.registerPlugin(pluginType);
     }

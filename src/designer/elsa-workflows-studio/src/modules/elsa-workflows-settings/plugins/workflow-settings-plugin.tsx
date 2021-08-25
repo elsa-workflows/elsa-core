@@ -1,33 +1,28 @@
 import {Component, Prop, State, h} from '@stencil/core';
 import {createElsaWorkflowSettingsClient, SaveWorkflowSettingsRequest} from "../services/elsa-client";
-import {eventBus} from "../../../services";
+import {eventBus, ElsaPlugin} from "../../../services";
 import {EventTypes, ConfigureFeatureContext} from "../../../models";
 import {WorkflowSettings} from "../models";
 
 @Component({
-    tag: 'elsa-workflow-settings-feature-plugin',
+    tag: 'elsa-workflow-settings-plugin',
     shadow: false,
 })
-export class ElsaWorkflowSettingsFeaturePlugin {
+export class WorkflowSettingsPlugin implements ElsaPlugin {
   @Prop() serverUrl: string;  
   @State() workflowSettings: WorkflowSettings[];
 
   connectedCallback() {
-    eventBus.on(EventTypes.ConfigureFeature, this.onWorkflowSettingsEnabled);
-    eventBus.on(EventTypes.FeatureUpdating, this.onWorkflowSettingsUpdating);
+    eventBus.on(EventTypes.FeatureLoadColumns, this.onLoadColumns);
+    eventBus.on(EventTypes.FeatureUpdating, this.onUpdating);
   }
 
   disconnectedCallback() {
-    eventBus.detach(EventTypes.ConfigureFeature, this.onWorkflowSettingsEnabled);
-    eventBus.detach(EventTypes.FeatureUpdating, this.onWorkflowSettingsUpdating);
+    eventBus.detach(EventTypes.FeatureLoadColumns, this.onLoadColumns);
+    eventBus.detach(EventTypes.FeatureUpdating, this.onUpdating);
   }
   
-  onWorkflowSettingsEnabled(context: ConfigureFeatureContext) {
-    if (context.featureName != "settings")
-      return;
-
-    if (context.component != "ElsaWorkflowRegistryListScreen")
-      return;
+  onLoadColumns(context: ConfigureFeatureContext) {
 
     const headers: any[] = [["Enabled"]];
     const hasContextItems: boolean = true;
@@ -35,12 +30,7 @@ export class ElsaWorkflowSettingsFeaturePlugin {
     context.data = {headers, hasContextItems};
   }  
 
-  async onWorkflowSettingsUpdating(context: ConfigureFeatureContext) {
-    if (context.featureName != "settings")
-      return;
-
-    if (context.component != "ElsaWorkflowRegistryListScreen")
-      return;
+  async onUpdating(context: ConfigureFeatureContext) {
 
     const elsaClient = createElsaWorkflowSettingsClient(this.serverUrl);    
     this.workflowSettings = await elsaClient.workflowSettingsApi.list();

@@ -26,6 +26,8 @@ export const EventTypes = {
   ShowToastNotification: 'show-toast-notification',
   HideToastNotification: 'hide-toast-notification',
   ConfigureFeature: 'configure-feature',
+  FeatureLoadMenu: 'feature-load-menu',
+  FeatureLoadColumns: 'feature-load-columns',
   FeatureUpdating: 'feature-updating',
   FeatureUpdated: 'feature-updated',
   ClipboardPermissionDenied: 'clipboard-permission-denied',
@@ -56,8 +58,6 @@ export interface ActivityDescriptorDisplayContext {
 }
 
 export interface ConfigureFeatureContext {
-  featureName: string;
-  component: string;
   data: any;
   params: any;
 }
