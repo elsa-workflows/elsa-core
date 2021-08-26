@@ -1,4 +1,4 @@
-import {Component, Event, EventEmitter, h, Host, Method, Prop, State, Watch, Listen} from '@stencil/core';
+import {Component, Event, EventEmitter, h, Host, Method, Prop, State, Watch, Listen, Element} from '@stencil/core';
 import {v4 as uuid} from 'uuid';
 import {addConnection, findActivity, getChildActivities, getInboundConnections, getOutboundConnections, Map, removeActivity, removeConnection} from '../../../../utils/utils';
 import {ActivityDescriptor, ActivityDesignDisplayContext, ActivityModel, ActivityTraits, ConnectionModel, EventTypes, WorkflowModel, WorkflowPersistenceBehavior,} from '../../../../models';
@@ -31,6 +31,9 @@ export class ElsaWorkflowDesigner {
   @Event() activityContextMenuButtonClicked: EventEmitter<ActivityContextMenuState>;
   @Event() connectionContextMenuButtonClicked: EventEmitter<ActivityContextMenuState>;
   @State() workflowModel: WorkflowModel;
+
+  @Element() elem: HTMLElement;
+
 
   @State() activityContextMenuState: ActivityContextMenuState = {
     shown: false,
@@ -210,7 +213,19 @@ export class ElsaWorkflowDesigner {
   componentDidLoad() {
     this.svgD3Selected = d3.select(this.svg);
     this.innerD3Selected = d3.select(this.inner);
-    this.tryRerenderTree(500);
+    const rect = this.el.getBoundingClientRect();
+    if (rect.height === 0 || rect.width === 0) {
+      const observer = new ResizeObserver(entries => {
+        for (let entry of entries) {
+          this.rerenderTree();
+          observer.unobserve(this.el);
+        }
+      });
+
+      observer.observe(this.el);
+    } else {
+      this.rerenderTree();
+    }
   }
 
   componentWillRender() {
@@ -785,7 +800,7 @@ export class ElsaWorkflowDesigner {
     const displayName = displayContext.displayName || activity.displayName;
     const typeName = activity.type;
 
-    return `<div id=${`activity-${activity.activityId}`}  
+    return `<div id=${`activity-${activity.activityId}`}
     class="activity elsa-border-2 elsa-border-solid elsa-rounded elsa-bg-white elsa-text-left elsa-text-black elsa-text-lg elsa-select-none elsa-max-w-md elsa-shadow-sm elsa-relative ${cssClass}">
       <div class="elsa-p-5">
         <div class="elsa-flex elsa-justify-between elsa-space-x-8">
