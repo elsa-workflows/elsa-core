@@ -45,7 +45,7 @@ export const createHttpClient = function(baseAddress: string) : AxiosInstance
   const service = new Service(httpClient);
 
   eventBus.emit(EventTypes.HttpClientCreated, this, {service, httpClient});
-  
+
   return _httpClient = httpClient;
 }
 
@@ -362,8 +362,8 @@ export interface SaveWorkflowDefinitionRequest {
   persistenceBehavior?: WorkflowPersistenceBehavior;
   deleteCompletedInstances?: boolean;
   publish?: boolean;
-  activities: Array<ActivityDefinition>;
-  connections: Array<ConnectionDefinition>;
+  activities?: Array<ActivityDefinition>;
+  connections?: Array<ConnectionDefinition>;
 }
 
 export interface SaveWebhookDefinitionRequest {
