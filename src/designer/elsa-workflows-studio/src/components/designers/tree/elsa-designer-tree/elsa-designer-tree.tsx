@@ -89,7 +89,7 @@ export class ElsaWorkflowDesigner {
       map[activity.activityId] = activity;
 
     this.selectedActivities = map;
-    this.tryRerenderTree();
+    this.rerenderTree();
   }
 
   @Watch('activityContextMenu')
@@ -295,7 +295,7 @@ export class ElsaWorkflowDesigner {
     if (emitEvent)
       this.workflowChanged.emit(model);
 
-    this.tryRerenderTree();
+    this.rerenderTree();
   }
 
   cleanWorkflowModel(model: WorkflowModel): WorkflowModel {
@@ -612,23 +612,6 @@ export class ElsaWorkflowDesigner {
 
   onCopyPasteActivityDisabled = () => {
     this.ignoreCopyPasteActivities = true
-  }
-
-  tryRerenderTree(waitTime?: number, attempt?: number) {
-    const maxTries = 3;
-
-    waitTime = waitTime || 100;
-    attempt = attempt || 0;
-    setTimeout(() => {
-      try {
-        this.rerenderTree()
-      } catch (e) {
-        console.warn(`Attempt ${attempt + 1} failed while trying to render tree. Retrying ${maxTries - attempt + 1} more times.`)
-
-        if (attempt < maxTries)
-          this.tryRerenderTree(waitTime * attempt, attempt + 1);
-      }
-    }, waitTime);
   }
 
   renderNodes() {
