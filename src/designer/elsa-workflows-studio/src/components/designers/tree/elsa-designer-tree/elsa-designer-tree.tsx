@@ -1,4 +1,4 @@
-import {Component, Event, EventEmitter, h, Host, Method, Prop, State, Watch, Listen, Element} from '@stencil/core';
+import {Component, Event, EventEmitter, h, Host, Method, Prop, State, Watch, Listen} from '@stencil/core';
 import {v4 as uuid} from 'uuid';
 import {addConnection, findActivity, getChildActivities, getInboundConnections, getOutboundConnections, Map, removeActivity, removeConnection} from '../../../../utils/utils';
 import {ActivityDescriptor, ActivityDesignDisplayContext, ActivityModel, ActivityTraits, ConnectionModel, EventTypes, WorkflowModel, WorkflowPersistenceBehavior,} from '../../../../models';
@@ -31,9 +31,6 @@ export class ElsaWorkflowDesigner {
   @Event() activityContextMenuButtonClicked: EventEmitter<ActivityContextMenuState>;
   @Event() connectionContextMenuButtonClicked: EventEmitter<ActivityContextMenuState>;
   @State() workflowModel: WorkflowModel;
-
-  @Element() elem: HTMLElement;
-
 
   @State() activityContextMenuState: ActivityContextMenuState = {
     shown: false,
