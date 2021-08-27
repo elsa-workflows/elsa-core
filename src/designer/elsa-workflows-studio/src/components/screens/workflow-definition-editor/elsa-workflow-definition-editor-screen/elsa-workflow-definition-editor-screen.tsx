@@ -1,4 +1,5 @@
 import {Component, Event, EventEmitter, h, Host, Listen, Method, Prop, State, Watch} from '@stencil/core';
+import { RouterHistory, injectHistory } from '@stencil/router';
 import {
   ActivityDefinition,
   ActivityDescriptor,
@@ -33,6 +34,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
   @Prop({attribute: 'server-url', reflect: true}) serverUrl: string;
   @Prop({attribute: 'monaco-lib-path', reflect: true}) monacoLibPath: string;
   @Prop() culture: string;
+  @Prop() history: RouterHistory;
   @State() workflowDefinition: WorkflowDefinition;
   @State() workflowModel: WorkflowModel;
   @State() publishing: boolean;
@@ -56,7 +58,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
     x: 0,
     y: 0,
     activity: null,
-  };  
+  };
 
   i18next: i18n;
   el: HTMLElement;
@@ -209,6 +211,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
     const client = createElsaClient(this.serverUrl);
     let workflowDefinition = this.workflowDefinition;
+    const isNew = typeof workflowDefinition.definitionId === 'undefined' && typeof this.workflowDefinitionId === 'undefined';
 
     const request: SaveWorkflowDefinitionRequest = {
       workflowDefinitionId: workflowDefinition.definitionId || this.workflowDefinitionId,
@@ -257,6 +260,9 @@ export class ElsaWorkflowDefinitionEditorScreen {
       this.publishing = false;
       setTimeout(() => this.saved = false, 500);
       this.workflowSaved.emit(workflowDefinition);
+      if (isNew) {
+        this.history.push(`/workflow-definitions/${workflowDefinition.definitionId}`, {});
+      }
     } catch (e) {
       console.error(e);
       this.saving = false;
@@ -328,7 +334,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   handleConnectionContextMenuChange(state: ActivityContextMenuState) {
     this.connectionContextMenuState = state;
-  }  
+  }
 
   onShowWorkflowSettingsClick() {
     eventBus.emit(EventTypes.ShowWorkflowSettings);
@@ -488,7 +494,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   renderConnectionContextMenu() {
     const t = this.t;
-    
+
     return <div
       data-transition-enter="elsa-transition elsa-ease-out elsa-duration-100"
       data-transition-enter-start="elsa-transform elsa-opacity-0 elsa-scale-95"
@@ -516,7 +522,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
         </div>
       </div>
     </div>
-  }  
+  }
 
   renderActivityPicker() {
     return <elsa-activity-picker-modal/>;
@@ -605,4 +611,5 @@ export class ElsaWorkflowDefinitionEditorScreen {
       />);
   }
 }
+injectHistory(ElsaWorkflowDefinitionEditorScreen);
 DashboardTunnel.injectProps(ElsaWorkflowDefinitionEditorScreen, ['serverUrl', 'culture', 'monacoLibPath']);
