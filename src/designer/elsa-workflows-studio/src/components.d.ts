@@ -249,6 +249,7 @@ export namespace Components {
         "exportWorkflow": () => Promise<void>;
         "getServerUrl": () => Promise<string>;
         "getWorkflowDefinitionId": () => Promise<string>;
+        "history": RouterHistory;
         "importWorkflow": (file: File) => Promise<void>;
         "monacoLibPath": string;
         "serverUrl": string;
@@ -906,6 +907,7 @@ declare namespace LocalJSX {
     }
     interface ElsaWorkflowDefinitionEditorScreen {
         "culture"?: string;
+        "history"?: RouterHistory;
         "monacoLibPath"?: string;
         "onWorkflowSaved"?: (event: CustomEvent<WorkflowDefinition>) => void;
         "serverUrl"?: string;
