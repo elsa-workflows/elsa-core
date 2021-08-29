@@ -281,7 +281,7 @@ To do so, go back to the <code>Startup</code> class and add the following line t
 <p>Now that we have the basics in place, we should be able to add the activity to a workflow, and trigger it using the <code>IWorkflowLaunchpad</code> service like this:</p>
 <pre><code class="hljs css language-csharp">
 <span class="hljs-keyword">var</span> bookmark = <span class="hljs-keyword">new</span> FileReceivedBookmark();
-<span class="hljs-keyword">var</span> context = <span class="hljs-keyword">new</span> CollectWorkflowsContext(<span class="hljs-keyword">nameof</span>(FileReceived), bookmark);
+<span class="hljs-keyword">var</span> context = <span class="hljs-keyword">new</span> WorkflowsQuery(<span class="hljs-keyword">nameof</span>(FileReceived), bookmark);
 <span class="hljs-keyword">await</span> _workflowLaunchpad.CollectAndDispatchWorkflowsAsync(context);
 </code></pre>
 <p>To make this a bit easier for consumer code, let's create a new service called <code>IFileReceivedInvoker</code> (create it inside a new folder called <strong>Services</strong>):</p>
@@ -321,13 +321,13 @@ To do so, go back to the <code>Startup</code> class and add the following line t
         
         <span class="hljs-keyword">public</span> <span class="hljs-keyword">async</span> Task&lt;IEnumerable&lt;CollectedWorkflow&gt;&gt; DispatchWorkflowsAsync(CancellationToken cancellationToken = <span class="hljs-keyword">default</span>)
         {
-            <span class="hljs-keyword">var</span> context = <span class="hljs-keyword">new</span> CollectWorkflowsContext(<span class="hljs-keyword">nameof</span>(FileReceived), <span class="hljs-keyword">new</span> FileReceivedBookmark());
+            <span class="hljs-keyword">var</span> context = <span class="hljs-keyword">new</span> WorkflowsQuery(<span class="hljs-keyword">nameof</span>(FileReceived), <span class="hljs-keyword">new</span> FileReceivedBookmark());
             <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> _workflowLaunchpad.CollectAndDispatchWorkflowsAsync(context, <span class="hljs-literal">null</span>, cancellationToken);
         }
 
         <span class="hljs-keyword">public</span> <span class="hljs-keyword">async</span> Task&lt;IEnumerable&lt;CollectedWorkflow&gt;&gt; ExecuteWorkflowsAsync(CancellationToken cancellationToken = <span class="hljs-keyword">default</span>)
         {
-            <span class="hljs-keyword">var</span> context = <span class="hljs-keyword">new</span> CollectWorkflowsContext(<span class="hljs-keyword">nameof</span>(FileReceived), <span class="hljs-keyword">new</span> FileReceivedBookmark());
+            <span class="hljs-keyword">var</span> context = <span class="hljs-keyword">new</span> WorkflowsQuery(<span class="hljs-keyword">nameof</span>(FileReceived), <span class="hljs-keyword">new</span> FileReceivedBookmark());
             <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> _workflowLaunchpad.CollectAndExecuteWorkflowsAsync(context, <span class="hljs-literal">null</span>, cancellationToken);
         }
     }
@@ -426,13 +426,13 @@ Task&lt;IEnumerable&lt;CollectedWorkflow&gt;&gt; ExecuteWorkflowsAsync(FileModel
 <p>The <code>FileReceivedInvoker</code> concrete implementation should be updated as well:</p>
 <pre><code class="hljs css language-csharp"><span class="hljs-keyword">public</span> <span class="hljs-keyword">async</span> Task&lt;IEnumerable&lt;CollectedWorkflow&gt;&gt; DispatchWorkflowsAsync(FileModel file, CancellationToken cancellationToken = <span class="hljs-keyword">default</span>)
 {
-    <span class="hljs-keyword">var</span> context = <span class="hljs-keyword">new</span> CollectWorkflowsContext(<span class="hljs-keyword">nameof</span>(FileReceived), <span class="hljs-keyword">new</span> FileReceivedBookmark());
+    <span class="hljs-keyword">var</span> context = <span class="hljs-keyword">new</span> WorkflowsQuery(<span class="hljs-keyword">nameof</span>(FileReceived), <span class="hljs-keyword">new</span> FileReceivedBookmark());
     <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> _workflowLaunchpad.CollectAndDispatchWorkflowsAsync(context, file, cancellationToken);
 }
 
 <span class="hljs-keyword">public</span> <span class="hljs-keyword">async</span> Task&lt;IEnumerable&lt;CollectedWorkflow&gt;&gt; ExecuteWorkflowsAsync(FileModel file, CancellationToken cancellationToken = <span class="hljs-keyword">default</span>)
 {
-    <span class="hljs-keyword">var</span> context = <span class="hljs-keyword">new</span> CollectWorkflowsContext(<span class="hljs-keyword">nameof</span>(FileReceived), <span class="hljs-keyword">new</span> FileReceivedBookmark());
+    <span class="hljs-keyword">var</span> context = <span class="hljs-keyword">new</span> WorkflowsQuery(<span class="hljs-keyword">nameof</span>(FileReceived), <span class="hljs-keyword">new</span> FileReceivedBookmark());
     <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> _workflowLaunchpad.CollectAndExecuteWorkflowsAsync(context, file, cancellationToken);
 }
 </code></pre>
@@ -847,8 +847,8 @@ We also need to consider that there may be bookmarks that have no particular fil
 
         <span class="hljs-keyword">private</span> <span class="hljs-keyword">async</span> Task&lt;IEnumerable&lt;CollectedWorkflow&gt;&gt; CollectWorkflowsAsync(FileModel fileModel, CancellationToken cancellationToken)
         {
-            <span class="hljs-keyword">var</span> wildcardContext = <span class="hljs-keyword">new</span> CollectWorkflowsContext(<span class="hljs-keyword">nameof</span>(FileReceived), <span class="hljs-keyword">new</span> FileReceivedBookmark());
-            <span class="hljs-keyword">var</span> filteredContext = <span class="hljs-keyword">new</span> CollectWorkflowsContext(<span class="hljs-keyword">nameof</span>(FileReceived), <span class="hljs-keyword">new</span> FileReceivedBookmark(Path.GetExtension(fileModel.FileName)));
+            <span class="hljs-keyword">var</span> wildcardContext = <span class="hljs-keyword">new</span> WorkflowsQuery(<span class="hljs-keyword">nameof</span>(FileReceived), <span class="hljs-keyword">new</span> FileReceivedBookmark());
+            <span class="hljs-keyword">var</span> filteredContext = <span class="hljs-keyword">new</span> WorkflowsQuery(<span class="hljs-keyword">nameof</span>(FileReceived), <span class="hljs-keyword">new</span> FileReceivedBookmark(Path.GetExtension(fileModel.FileName)));
 
             <span class="hljs-keyword">var</span> wildcardWorkflows = <span class="hljs-keyword">await</span> _workflowLaunchpad.CollectWorkflowsAsync(wildcardContext, cancellationToken).ToList();
             <span class="hljs-keyword">var</span> filteredWorkflows = <span class="hljs-keyword">await</span> _workflowLaunchpad.CollectWorkflowsAsync(filteredContext, cancellationToken).ToList();
