@@ -100,7 +100,7 @@ export class ElsaWorkflowPropertiesPanel {
                           </div>
                           <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
                             <dt class="elsa-text-gray-500">{t('PublishedVersion')}</dt>
-                            <dd class="elsa-text-gray-900">{this.publishedVersion || '-'}</dd>
+                            <dd class="elsa-text-gray-900">{isPublished ? this.publishedVersion : '-'}</dd>
                           </div>
                           <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
                             <dt class="elsa-text-gray-500">{t('Status')}</dt>
