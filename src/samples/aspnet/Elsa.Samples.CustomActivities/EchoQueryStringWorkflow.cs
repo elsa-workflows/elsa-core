@@ -19,7 +19,7 @@ namespace Elsa.Samples.CustomActivities
 
         private string GenerateSomeHtml(ActivityExecutionContext context)
         {
-            var query = (IQueryCollection)context.Input; // the output of the ReadQueryString activity will be available as input to this one.
+            var query = (IQueryCollection)context.Input!; // The output of the ReadQueryString activity will be available as input to this one.
             var items = query!.Select(x => $"<li>{x.Key}: {x.Value}</li>");
 
             return $"<ul>{string.Join("\n", items)}</ul>";

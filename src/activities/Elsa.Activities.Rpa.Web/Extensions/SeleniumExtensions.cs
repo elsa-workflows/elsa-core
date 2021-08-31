@@ -42,7 +42,7 @@ namespace Elsa.Activities.Rpa.Web
             return doc;
         }
 
-        public static IAlert TryGetAlert(this ITargetLocator locator)
+        public static IAlert? TryGetAlert(this ITargetLocator locator)
         {
             try
             {
@@ -53,10 +53,7 @@ namespace Elsa.Activities.Rpa.Web
                 return null;
             }
         }
-        public static bool HasAlert(this IWebDriver driver)
-        {
-            return driver.SwitchTo().TryGetAlert() != null;
-        }
+        public static bool HasAlert(this IWebDriver driver) => driver.SwitchTo().TryGetAlert() != null;
 
         public static void DoubleClick(this IWebElement element)
         {
@@ -148,7 +145,7 @@ namespace Elsa.Activities.Rpa.Web
             return string.Equals(element.TagName, "input", StringComparison.OrdinalIgnoreCase) || string.Equals(element.TagName, "textarea", StringComparison.OrdinalIgnoreCase);
         }
 
-        public static TResult EnsureValue<TResult>(this IWebElement element, Func<IWebElement, TResult> function)
+        public static TResult? EnsureValue<TResult>(this IWebElement element, Func<IWebElement, TResult> function)
         {
             try
             {
@@ -156,11 +153,11 @@ namespace Elsa.Activities.Rpa.Web
             }
             catch
             {
-                return default(TResult);
+                return default;
             }
         }
 
-        public static TResult EnsureOperation<TResult>(this IWebDriver driver, Func<IWebDriver, TResult> function)
+        public static TResult? EnsureOperation<TResult>(this IWebDriver driver, Func<IWebDriver, TResult> function)
         {
             try
             {
@@ -168,7 +165,7 @@ namespace Elsa.Activities.Rpa.Web
             }
             catch
             {
-                return default(TResult);
+                return default;
             }
         }
 
@@ -238,7 +235,7 @@ namespace Elsa.Activities.Rpa.Web
             }
             return nodes;
         }
-        public static async Task<HtmlNode> GetHtmlNode(this ISearchContext element, Func<HtmlNode, bool> query, int index = 0, TimeSpan timeout = default, ILogger logger = default)
+        public static async Task<HtmlNode> GetHtmlNode(this ISearchContext element, Func<HtmlNode, bool> query, int index = 0, TimeSpan timeout = default, ILogger? logger = default)
         {
             if (timeout == default)
                 timeout = TimeSpan.FromSeconds(20);
@@ -284,7 +281,7 @@ namespace Elsa.Activities.Rpa.Web
             return node;
         }
         #region FindElement
-        public static async Task<IWebElement> FindElement<TChild>(this IWebElement element, Func<HtmlNode, bool> query, int index = 0, TimeSpan timeout = default, ILogger logger = default)
+        public static async Task<IWebElement> FindElement<TChild>(this IWebElement element, Func<HtmlNode, bool> query, int index = 0, TimeSpan timeout = default, ILogger? logger = default)
         {
             var node = await GetHtmlNode(element, query, index, timeout, logger);
             if (node == null)
@@ -294,7 +291,7 @@ namespace Elsa.Activities.Rpa.Web
         /// <summary>
         /// HtmlAgilityPack must be referenced in order for this extension method method to be callable
         /// </summary>
-        public static async Task<IWebElement> FindElement(this ISearchContext element, Func<HtmlNode, bool> query, int index = 0, TimeSpan timeout = default, ILogger logger = default)
+        public static async Task<IWebElement> FindElement(this ISearchContext element, Func<HtmlNode, bool> query, int index = 0, TimeSpan timeout = default, ILogger? logger = default)
         {
             var node = await GetHtmlNode(element, query, index, timeout, logger);
             return element.FindElement(By.XPath(GetXPath(node)));

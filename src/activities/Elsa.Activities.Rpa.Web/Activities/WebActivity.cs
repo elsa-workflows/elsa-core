@@ -19,9 +19,11 @@ namespace Elsa.Activities.Rpa.Web
     {
         internal readonly IBrowserFactory _factory;
         internal readonly RpaWebOptions _options;
-        [ActivityInput(Hint = "The driver ID assigned when instantiating the browser")]
+        
+        [ActivityInput(Hint = "The driver ID assigned when instantiating the browser.")]
         public string? DriverId { get; set; }
-        protected IActivityExecutionResult Result { get; set; }
+        protected IActivityExecutionResult? Result { get; set; }
+        
         public WebActivity(IServiceProvider sp)
         {
             _factory = sp.GetRequiredService<IBrowserFactory>();
@@ -31,38 +33,36 @@ namespace Elsa.Activities.Rpa.Web
         {
             if (DriverId != default)
                 return DriverId;
-            else
-            {
-                var activities = context.WorkflowInstance.ActivityData as IDictionary<string, IDictionary<string, object>>;
-                if (activities == default)
-                    return default;
-                var query =
-                    from activity in activities
-                    from variable in activity.Value
-                    where variable.Key == RpaWebConventions.DriverIdKey
-                    select variable.Value as string;
-                DriverId = query.FirstOrDefault();
-                return DriverId;
-            }
+            
+            var activities = context.WorkflowInstance.ActivityData;
+                
+            var query =
+                from activity in activities
+                from variable in activity.Value
+                where variable.Key == RpaWebConventions.DriverIdKey
+                select variable.Value as string;
+            DriverId = query.FirstOrDefault();
+            return DriverId;
         }
         protected async Task<IActivityExecutionResult> ExecuteDriver(ActivityExecutionContext context, Func<IWebDriver,Task> action)
         {
-            var driverId = GetDriverId(context);
+            var driverId = GetDriverId(context)!;
+            
             try
             {
                 var driver = _factory.GetDriver(driverId);
                 await action(driver);
+                
                 if (Result != default)
                     return Result;
-                else
-                    return Done();
+                
+                return Done();
             }
             catch (Exception e)
             {
-                if (driverId != default)
-                {
+                if (driverId != default!) 
                     await _factory.CloseBrowserAsync(driverId);
-                }
+                
                 return Fault(e);
             }
         }
