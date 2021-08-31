@@ -1,7 +1,7 @@
 import {Component, Prop, State, h} from '@stencil/core';
 import {createElsaWorkflowSettingsClient, SaveWorkflowSettingsRequest} from "../services/elsa-client";
 import {eventBus, ElsaPlugin} from "../../../services";
-import {EventTypes, ConfigureFeatureContext} from "../../../models";
+import {EventTypes, ConfigureWorkflowRegistryColumnsContext, ConfigureWorkflowRegistryUpdatingContext} from "../../../models";
 import {WorkflowSettings} from "../models";
 
 @Component({
@@ -13,16 +13,16 @@ export class WorkflowSettingsPlugin implements ElsaPlugin {
   @State() workflowSettings: WorkflowSettings[];
 
   connectedCallback() {
-    eventBus.on(EventTypes.FeatureLoadColumns, this.onLoadColumns);
-    eventBus.on(EventTypes.FeatureUpdating, this.onUpdating);
+    eventBus.on(EventTypes.WorkflowRegistryLoadingColumns, this.onLoadingColumns);
+    eventBus.on(EventTypes.WorkflowRegistryUpdating, this.onUpdating);
   }
 
   disconnectedCallback() {
-    eventBus.detach(EventTypes.FeatureLoadColumns, this.onLoadColumns);
-    eventBus.detach(EventTypes.FeatureUpdating, this.onUpdating);
+    eventBus.detach(EventTypes.WorkflowRegistryLoadingColumns, this.onLoadingColumns);
+    eventBus.detach(EventTypes.WorkflowRegistryUpdating, this.onUpdating);
   }
   
-  onLoadColumns(context: ConfigureFeatureContext) {
+  onLoadingColumns(context: ConfigureWorkflowRegistryColumnsContext) {
 
     const headers: any[] = [["Enabled"]];
     const hasContextItems: boolean = true;
@@ -30,7 +30,7 @@ export class WorkflowSettingsPlugin implements ElsaPlugin {
     context.data = {headers, hasContextItems};
   }  
 
-  async onUpdating(context: ConfigureFeatureContext) {
+  async onUpdating(context: ConfigureWorkflowRegistryUpdatingContext) {
 
     const elsaClient = createElsaWorkflowSettingsClient(this.serverUrl);    
     this.workflowSettings = await elsaClient.workflowSettingsApi.list();
@@ -46,6 +46,6 @@ export class WorkflowSettingsPlugin implements ElsaPlugin {
     };
 
     await elsaClient.workflowSettingsApi.save(request);
-    eventBus.emit(EventTypes.FeatureUpdated, this);
+    eventBus.emit(EventTypes.WorkflowRegistryUpdated, this);
   }
 }

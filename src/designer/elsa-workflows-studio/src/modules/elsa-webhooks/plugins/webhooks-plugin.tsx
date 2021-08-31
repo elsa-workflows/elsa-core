@@ -1,6 +1,6 @@
 import {Component, h} from '@stencil/core';
 import {eventBus, ElsaPlugin} from "../../../services";
-import {EventTypes, SyntaxNames, ActivityDesignDisplayContext, ConfigureFeatureContext} from "../../../models";
+import {EventTypes, SyntaxNames, ActivityDesignDisplayContext, ConfigureDashboardMenuContext} from "../../../models";
 import {htmlEncode} from "../../../utils/utils";
 
 @Component({
@@ -11,7 +11,7 @@ export class WebhooksPlugin implements ElsaPlugin {
 
   constructor() {
     eventBus.on(EventTypes.ActivityDesignDisplaying, this.onActivityDisplaying);
-    eventBus.on(EventTypes.FeatureLoadMenu, this.onLoadMenu);
+    eventBus.on(EventTypes.DashboardLoadingMenu, this.onLoadingMenu);
   }
 
   onActivityDisplaying(context: ActivityDesignDisplayContext) {
@@ -27,7 +27,7 @@ export class WebhooksPlugin implements ElsaPlugin {
     context.bodyDisplay = `<p>${bodyDisplay}</p>`;
   }  
 
-  onLoadMenu(context: ConfigureFeatureContext) {
+  onLoadingMenu(context: ConfigureDashboardMenuContext) {
 
     const menuItems: any[] = [["webhook-definitions", "WebhookDefinitions"]];
     const routes: any[] = [["webhook-definitions", "elsa-studio-webhook-definitions-list", true],

@@ -1,7 +1,7 @@
 import {Component, h, Prop, State, Event, EventEmitter} from '@stencil/core';
 import * as collection from 'lodash/collection';
 import {createElsaClient} from "../../../../services/elsa-client";
-import {EventTypes, PagedList, VersionOptions, WorkflowBlueprintSummary, ConfigureFeatureContext} from "../../../../models";
+import {EventTypes, PagedList, VersionOptions, WorkflowBlueprintSummary, ConfigureWorkflowRegistryColumnsContext, ConfigureWorkflowRegistryUpdatingContext} from "../../../../models";
 import {MenuItem} from "../../../../components/controls/elsa-context-menu/models";
 import {RouterHistory} from "@stencil/router";
 import {eventBus} from '../../../../services';
@@ -19,24 +19,23 @@ export class ElsaWorkflowRegistryListScreen {
   @State() workflowBlueprints: PagedList<WorkflowBlueprintSummary> = {items: [], page: 1, pageSize: 50, totalCount: 0};
 
   confirmDialog: HTMLElsaConfirmDialogElement;
-  private feature: ConfigureFeatureContext  = {
-    data: null,
-    params: null
+  private workflowRegistryColumns: ConfigureWorkflowRegistryColumnsContext  = {
+    data: null
   };
 
   async componentWillLoad() {
     await this.loadWorkflowBlueprints();
-    eventBus.emit(EventTypes.FeatureLoadColumns, this, this.feature);
+    eventBus.emit(EventTypes.WorkflowRegistryLoadingColumns, this, this.workflowRegistryColumns);
   }
 
   connectedCallback() {
     eventBus.on(EventTypes.WorkflowUpdated, this.onLoadWorkflowBlueprints);
-    eventBus.on(EventTypes.FeatureUpdated, this.onLoadWorkflowBlueprints);
+    eventBus.on(EventTypes.WorkflowRegistryUpdated, this.onLoadWorkflowBlueprints);
   }
 
   disconnectedCallback() {
     eventBus.detach(EventTypes.WorkflowUpdated, this.onLoadWorkflowBlueprints);
-    eventBus.detach(EventTypes.FeatureUpdated, this.onLoadWorkflowBlueprints);
+    eventBus.detach(EventTypes.WorkflowRegistryUpdated, this.onLoadWorkflowBlueprints);
   }  
 
   async onDisableWorkflowClick(e: Event, workflowBlueprintId: string) {
@@ -59,8 +58,10 @@ export class ElsaWorkflowRegistryListScreen {
 
   async updateFeature(workflowBlueprintId: string, key: string, value: string)
   {
-    this.feature.params = [workflowBlueprintId, key, value];
-    eventBus.emit(EventTypes.FeatureUpdating, this, this.feature);
+    const workflowRegistryUpdating: ConfigureWorkflowRegistryUpdatingContext  = {
+      params: [workflowBlueprintId, key, value]
+    };
+    eventBus.emit(EventTypes.WorkflowRegistryUpdating, this, workflowRegistryUpdating);
   }  
 
   async onLoadWorkflowBlueprints()
@@ -85,8 +86,8 @@ export class ElsaWorkflowRegistryListScreen {
     const groupings = collection.groupBy(workflowBlueprints, 'id');
     const basePath = this.basePath;
     
-    let headers = this.feature.data != null ? this.feature.data.headers : [];
-    let hasFeatureContextItems = this.feature.data != null ? this.feature.data.hasContextItems : false;
+    let headers = this.workflowRegistryColumns.data != null ? this.workflowRegistryColumns.data.headers : [];
+    let hasFeatureContextItems = this.workflowRegistryColumns.data != null ? this.workflowRegistryColumns.data.hasContextItems : false;
 
     const renderFeatureHeader = (item: any) => {
       return (<th class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-text-right elsa-uppercase elsa-tracking-wider">{item[0]}</th>)

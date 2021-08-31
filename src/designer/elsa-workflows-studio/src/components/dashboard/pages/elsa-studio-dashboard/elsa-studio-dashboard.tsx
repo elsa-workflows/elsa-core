@@ -4,7 +4,7 @@ import {resources} from "./localizations";
 import {i18n} from "i18next";
 import {GetIntlMessage} from "../../../i18n/intl-message";
 import Tunnel from "../../../../data/dashboard";
-import {EventTypes, ConfigureFeatureContext} from '../../../../models';
+import {EventTypes, ConfigureDashboardMenuContext} from '../../../../models';
 import {eventBus} from '../../../../services';
 
 @Component({
@@ -17,14 +17,13 @@ export class ElsaStudioDashboard {
   @Prop({attribute: 'culture', reflect: true}) culture: string;
   @Prop({attribute: 'base-path', reflect: true}) basePath: string = '';
   private i18next: i18n;
-  private feature: ConfigureFeatureContext  = {
-    data: null,
-    params: null
+  private dashboardMenu: ConfigureDashboardMenuContext  = {
+    data: null
   };
 
   async componentWillLoad() {
     this.i18next = await loadTranslations(this.culture, resources);
-    eventBus.emit(EventTypes.FeatureLoadMenu, this, this.feature);
+    eventBus.emit(EventTypes.DashboardLoadingMenu, this, this.dashboardMenu);
   }
 
   render() {
@@ -33,8 +32,8 @@ export class ElsaStudioDashboard {
     const basePath = this.basePath || '';
     const IntlMessage = GetIntlMessage(this.i18next);
 
-    let menuItems = this.feature.data != null ? this.feature.data.menuItems : [];
-    let routes = this.feature.data != null ? this.feature.data.routes : [];
+    let menuItems = this.dashboardMenu.data != null ? this.dashboardMenu.data.menuItems : [];
+    let routes = this.dashboardMenu.data != null ? this.dashboardMenu.data.routes : [];
 
     const renderFeatureMenuItem = (item: any, basePath: string) => {
       return (<stencil-route-link url={`${basePath}/${item[0]}`} anchorClass="elsa-text-gray-300 hover:elsa-bg-gray-700 hover:elsa-text-white elsa-px-3 elsa-py-2 elsa-rounded-md elsa-text-sm elsa-font-medium" activeClass="elsa-text-white elsa-bg-gray-900">

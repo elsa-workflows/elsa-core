@@ -26,10 +26,10 @@ export const EventTypes = {
   ShowToastNotification: 'show-toast-notification',
   HideToastNotification: 'hide-toast-notification',
   ConfigureFeature: 'configure-feature',
-  FeatureLoadMenu: 'feature-load-menu',
-  FeatureLoadColumns: 'feature-load-columns',
-  FeatureUpdating: 'feature-updating',
-  FeatureUpdated: 'feature-updated',
+  DashboardLoadingMenu: 'dashboard.loading-menu',
+  WorkflowRegistryLoadingColumns: 'workflow-registry.loading-columns',
+  WorkflowRegistryUpdating: 'workflow-registry.updating',
+  WorkflowRegistryUpdated: 'workflow-registry.updated',
   ClipboardPermissionDenied: 'clipboard-permission-denied',
   ClipboardCopied: 'clipboard-copied',
   PasteActivity: 'paste-activity'
@@ -57,7 +57,14 @@ export interface ActivityDescriptorDisplayContext {
   activityIcon: any;
 }
 
-export interface ConfigureFeatureContext {
+export interface ConfigureDashboardMenuContext {
   data: any;
+}
+
+export interface ConfigureWorkflowRegistryColumnsContext {
+  data: any;
+}
+
+export interface ConfigureWorkflowRegistryUpdatingContext {
   params: any;
 }
