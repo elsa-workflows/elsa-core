@@ -55,7 +55,7 @@ namespace Elsa
 
         private static void ConfigureQuartz(IServiceCollectionQuartzConfigurator quartz, Action<IServiceCollectionQuartzConfigurator>? configureQuartz)
         {
-            quartz.UseMicrosoftDependencyInjectionScopedJobFactory();
+            quartz.UseMicrosoftDependencyInjectionJobFactory();
             quartz.AddJob<RunQuartzWorkflowDefinitionJob>(job => job.StoreDurably().WithIdentity(nameof(RunQuartzWorkflowDefinitionJob)));
             quartz.AddJob<RunQuartzWorkflowInstanceJob>(job => job.StoreDurably().WithIdentity(nameof(RunQuartzWorkflowInstanceJob)));
             quartz.UseSimpleTypeLoader();
