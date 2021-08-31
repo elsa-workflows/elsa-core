@@ -254,6 +254,7 @@ namespace Elsa.Services.Workflows
                 var runtimeActivityInstance = await activityExecutionContext.ActivateActivityAsync(cancellationToken);
                 var activityType = runtimeActivityInstance.ActivityType;
                 using var executionScope = AmbientActivityExecutionContext.EnterScope(activityExecutionContext);
+                await _mediator.Publish(new ActivityActivating(activityExecutionContext), cancellationToken);
                 var activity = await activityType.ActivateAsync(activityExecutionContext);
 
                 if (!burstStarted)

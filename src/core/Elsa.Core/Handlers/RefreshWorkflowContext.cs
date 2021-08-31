@@ -8,7 +8,7 @@ using MediatR;
 
 namespace Elsa.Handlers
 {
-    public class RefreshWorkflowContext : INotificationHandler<WorkflowExecuting>, INotificationHandler<ActivityExecuting>
+    public class RefreshWorkflowContext : INotificationHandler<WorkflowExecuting>, INotificationHandler<ActivityActivating>
     {
         private readonly IWorkflowContextManager _workflowContextManager;
 
@@ -23,11 +23,12 @@ namespace Elsa.Handlers
             workflowExecutionContext.WorkflowContext = await LoadWorkflowContextAsync(workflowExecutionContext, WorkflowContextFidelity.Burst, false, cancellationToken);
         }
     
-        public async Task Handle(ActivityExecuting notification, CancellationToken cancellationToken)
+        public async Task Handle(ActivityActivating notification, CancellationToken cancellationToken)
         {
-            var workflowExecutionContext = notification.WorkflowExecutionContext;
+            var activityExecutionContext = notification.ActivityExecutionContext;
+            var workflowExecutionContext = activityExecutionContext.WorkflowExecutionContext;
             var workflowBlueprint = workflowExecutionContext.WorkflowBlueprint;
-            var activityBlueprint = notification.ActivityBlueprint;
+            var activityBlueprint = activityExecutionContext.ActivityBlueprint;
             
             if (workflowBlueprint.ContextOptions?.ContextFidelity == WorkflowContextFidelity.Activity || activityBlueprint.LoadWorkflowContext || workflowExecutionContext.ContextHasChanged)
             {
