@@ -5,7 +5,7 @@ using Elsa.Builders;
 namespace Elsa.Samples.InfiniteLoopDetection
 {
     /// <summary>
-    /// A workflow that is triggered when HTTP requests are made to /hello and writes a response.
+    /// A workflow that never ends. Except when the infinite loop is detected by the runtime. 
     /// </summary>
     public class InfiniteLoopingWorkflow : IWorkflow
     {
