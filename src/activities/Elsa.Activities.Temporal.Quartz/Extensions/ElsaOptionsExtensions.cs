@@ -1,5 +1,6 @@
 ﻿using System;
 using Elsa.Activities.Temporal;
+using Elsa.Options;
 using Quartz;
 
 // ReSharper disable once CheckNamespace

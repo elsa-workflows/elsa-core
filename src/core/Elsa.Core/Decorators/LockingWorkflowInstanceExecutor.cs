@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Exceptions;
 using Elsa.Models;
+using Elsa.Options;
 using Elsa.Persistence;
 using Elsa.Services;
 using Elsa.Services.Models;

@@ -1,5 +1,6 @@
 using System;
 using Elsa;
+using Elsa.Options;
 using Elsa.Runtime;
 using Elsa.Scripting.Liquid.Extensions;
 

@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Options;
 using Elsa.Serialization;
 using Microsoft.Extensions.Logging;
 using Rebus.Bus;

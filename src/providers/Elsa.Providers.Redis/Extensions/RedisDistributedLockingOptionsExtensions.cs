@@ -1,4 +1,5 @@
 using System;
+using Elsa.Options;
 using Medallion.Threading;
 using Medallion.Threading.Redis;
 using Microsoft.Extensions.DependencyInjection;

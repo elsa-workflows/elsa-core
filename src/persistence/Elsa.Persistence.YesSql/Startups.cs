@@ -1,5 +1,6 @@
 using System;
 using Elsa.Attributes;
+using Elsa.Options;
 using Elsa.Services.Startup;
 using Microsoft.Extensions.Configuration;
 using YesSql.Provider.MySql;

@@ -1,4 +1,5 @@
-﻿using Rebus.Config;
+﻿using Elsa.Options;
+using Rebus.Config;
 
 namespace Elsa
 {

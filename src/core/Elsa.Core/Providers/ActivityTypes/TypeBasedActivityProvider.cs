@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Metadata;
+using Elsa.Options;
 using Elsa.Providers.Activities;
 using Elsa.Services;
 using Elsa.Services.Models;

@@ -17,7 +17,7 @@ using NodaTime;
 using Rebus.Persistence.InMem;
 using Rebus.Transport.InMem;
 
-namespace Elsa
+namespace Elsa.Options
 {
     public record MessageTypeConfig(Type MessageType, string? QueueName = default);
 

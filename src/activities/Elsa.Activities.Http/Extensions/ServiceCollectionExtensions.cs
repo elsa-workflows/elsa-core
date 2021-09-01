@@ -9,6 +9,7 @@ using Elsa.Activities.Http.Parsers;
 using Elsa.Activities.Http.Parsers.Request;
 using Elsa.Activities.Http.Parsers.Response;
 using Elsa.Activities.Http.Services;
+using Elsa.Options;
 using Elsa.Scripting.Liquid.Extensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Infrastructure;

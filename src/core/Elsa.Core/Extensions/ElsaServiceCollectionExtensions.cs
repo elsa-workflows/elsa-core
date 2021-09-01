@@ -16,6 +16,7 @@ using Elsa.Handlers;
 using Elsa.HostedServices;
 using Elsa.Mapping;
 using Elsa.Metadata;
+using Elsa.Options;
 using Elsa.Persistence;
 using Elsa.Persistence.Decorators;
 using Elsa.Providers.Activities;
@@ -30,6 +31,7 @@ using Elsa.Services.Bookmarks;
 using Elsa.Services.Dispatch.Consumers;
 using Elsa.Services.Locking;
 using Elsa.Services.Messaging;
+using Elsa.Services.Stability;
 using Elsa.Services.Triggers;
 using Elsa.Services.WorkflowContexts;
 using Elsa.Services.Workflows;
@@ -75,6 +77,10 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped(options.WorkflowDefinitionDispatcherFactory)
                 .AddScoped(options.WorkflowInstanceDispatcherFactory)
                 .AddScoped(options.CorrelatingWorkflowDispatcherFactory)
+                .AddScoped<ILoopDetectorProvider, LoopDetectorProvider>()
+                .AddScoped<ILoopHandlerProvider, LoopHandlerProvider>()
+                .AddScoped<ActivityExecutionCountLoopDetector>()
+                .AddScoped<CooldownLoopHandler>()
                 .AddSingleton<IDistributedLockProvider, DistributedLockProvider>()
                 .AddStartupTask<ContinueRunningWorkflows>()
                 .AddStartupTask<CreateSubscriptions>()

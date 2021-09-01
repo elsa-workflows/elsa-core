@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Exceptions;
 using Elsa.Models;
+using Elsa.Options;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
 using Elsa.Persistence.Specifications.WorkflowInstances;
