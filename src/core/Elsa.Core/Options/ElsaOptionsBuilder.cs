@@ -14,7 +14,7 @@ using Rebus.DataBus.InMem;
 using Rebus.Persistence.InMem;
 using Rebus.Transport.InMem;
 
-namespace Elsa
+namespace Elsa.Options
 {
     public class ElsaOptionsBuilder
     {

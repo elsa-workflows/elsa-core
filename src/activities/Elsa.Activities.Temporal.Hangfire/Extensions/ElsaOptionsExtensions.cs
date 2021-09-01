@@ -1,6 +1,7 @@
 ﻿using System;
 using Hangfire;
 using Elsa.Activities.Temporal;
+using Elsa.Options;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa

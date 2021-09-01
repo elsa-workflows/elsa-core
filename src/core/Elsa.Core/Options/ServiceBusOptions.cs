@@ -1,6 +1,6 @@
 ﻿using Rebus.Config;
 
-namespace Elsa
+namespace Elsa.Options
 {
     public class ServiceBusOptions
     {

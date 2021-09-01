@@ -1,5 +1,6 @@
 using Elsa.Attributes;
 using Elsa.Caching.Rebus.Extensions;
+using Elsa.Options;
 using Elsa.Services.Startup;
 using Microsoft.Extensions.Configuration;
 

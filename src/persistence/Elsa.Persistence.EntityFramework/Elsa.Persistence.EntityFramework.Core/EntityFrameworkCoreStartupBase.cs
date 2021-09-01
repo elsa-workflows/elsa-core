@@ -1,4 +1,5 @@
 using System;
+using Elsa.Options;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Services.Startup;
 using Microsoft.EntityFrameworkCore;

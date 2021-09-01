@@ -3,7 +3,7 @@ using System.IO;
 using Medallion.Threading;
 using Medallion.Threading.FileSystem;
 
-namespace Elsa
+namespace Elsa.Options
 {
     public class DistributedLockingOptions
     {

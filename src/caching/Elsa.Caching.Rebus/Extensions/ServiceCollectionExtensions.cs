@@ -1,6 +1,7 @@
 ﻿using Elsa.Caching.Rebus.Consumers;
 using Elsa.Caching.Rebus.Messages;
 using Elsa.Caching.Rebus.Services;
+using Elsa.Options;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Caching.Rebus.Extensions

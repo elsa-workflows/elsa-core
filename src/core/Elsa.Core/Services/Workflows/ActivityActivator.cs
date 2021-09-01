@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.ControlFlow;
 using Elsa.Attributes;
+using Elsa.Options;
 using Elsa.Providers.WorkflowStorage;
 using Elsa.Services.Models;
 using Elsa.Services.WorkflowStorage;

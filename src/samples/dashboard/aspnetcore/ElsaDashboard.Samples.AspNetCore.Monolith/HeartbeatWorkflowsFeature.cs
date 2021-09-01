@@ -1,5 +1,6 @@
 using Elsa;
 using Elsa.Attributes;
+using Elsa.Options;
 using Elsa.Services.Startup;
 using ElsaDashboard.Samples.AspNetCore.Monolith.Workflows;
 using Microsoft.Extensions.Configuration;

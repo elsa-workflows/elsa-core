@@ -2,7 +2,7 @@
 using Medallion.Threading;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa
+namespace Elsa.Options
 {
     public class DistributedLockingOptionsBuilder
     {

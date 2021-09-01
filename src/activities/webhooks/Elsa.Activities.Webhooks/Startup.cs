@@ -1,5 +1,6 @@
 using Elsa.Activities.Webhooks.Extensions;
 using Elsa.Attributes;
+using Elsa.Options;
 using Elsa.Services.Startup;
 using Microsoft.Extensions.Configuration;
 

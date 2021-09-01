@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Elsa
+namespace Elsa.Options
 {
     public class WorkflowChannelOptions
     {

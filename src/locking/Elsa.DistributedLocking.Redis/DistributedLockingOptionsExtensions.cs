@@ -1,3 +1,4 @@
+using Elsa.Options;
 using Medallion.Threading.Redis;
 using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
