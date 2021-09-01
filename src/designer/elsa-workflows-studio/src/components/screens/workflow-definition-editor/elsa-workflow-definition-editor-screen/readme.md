@@ -7,12 +7,13 @@
 
 ## Properties
 
-| Property               | Attribute                | Description | Type     | Default     |
-| ---------------------- | ------------------------ | ----------- | -------- | ----------- |
-| `culture`              | `culture`                |             | `string` | `undefined` |
-| `monacoLibPath`        | `monaco-lib-path`        |             | `string` | `undefined` |
-| `serverUrl`            | `server-url`             |             | `string` | `undefined` |
-| `workflowDefinitionId` | `workflow-definition-id` |             | `string` | `undefined` |
+| Property               | Attribute                | Description | Type            | Default     |
+| ---------------------- | ------------------------ | ----------- | --------------- | ----------- |
+| `culture`              | `culture`                |             | `string`        | `undefined` |
+| `history`              | --                       |             | `RouterHistory` | `undefined` |
+| `monacoLibPath`        | `monaco-lib-path`        |             | `string`        | `undefined` |
+| `serverUrl`            | `server-url`             |             | `string`        | `undefined` |
+| `workflowDefinitionId` | `workflow-definition-id` |             | `string`        | `undefined` |
 
 
 ## Events
