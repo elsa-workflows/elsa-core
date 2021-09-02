@@ -5,6 +5,7 @@ using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Expressions;
+using Elsa.Providers.WorkflowStorage;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -46,6 +47,7 @@ namespace Elsa.Activities.ControlFlow
             {
                 CurrentIndex = null;
                 Break = false;
+                context.JournalData.Add("Break Condition", true);
                 return Done();
             }
 
@@ -62,6 +64,15 @@ namespace Elsa.Activities.ControlFlow
 
                 CurrentIndex = currentIndex + 1;
                 Output = currentValue;
+                context.JournalData.Add("Current Index", currentIndex);
+
+                // Only log current value if the workflow storage for the Output property is undefined or "WorkflowInstance". Otherwise we run into the risk of serializing large blobs.
+                // TODO: We could consider storing the current value using the workflow storage provider mechanism to support storing every value individually.  
+                var outputStorageProviderName = context.GetOutputStorageProviderName(this, nameof(Output));
+
+                if(string.IsNullOrEmpty(outputStorageProviderName) || outputStorageProviderName == WorkflowInstanceWorkflowStorageProvider.ProviderName)
+                    context.JournalData.Add("Current Value", currentValue);
+                
                 return Outcome(OutcomeNames.Iterate, currentValue);
             }
 

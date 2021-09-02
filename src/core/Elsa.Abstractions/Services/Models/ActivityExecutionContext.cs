@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Attributes;
 using Elsa.Models;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -126,7 +129,7 @@ namespace Elsa.Services.Models
         /// <summary>
         /// Journal data will be added to the workflow execution log for the "Executed" event.  
         /// </summary>
-        public IDictionary<string, object> JournalData { get; private set; } = new Dictionary<string, object>(); 
+        public IDictionary<string, object?> JournalData { get; private set; } = new Dictionary<string, object?>(); 
 
         public ActivityScope GetScope(string activityId) => WorkflowExecutionContext.GetScope(activityId);
         public ActivityScope GetNamedScope(string activityName) => WorkflowExecutionContext.GetNamedScope(activityName);
@@ -187,6 +190,21 @@ namespace Elsa.Services.Models
         public IDictionary<string, object?> GetActivityData(string activityId) => WorkflowExecutionContext.GetActivityData(activityId);
         public Task<T?> GetActivityPropertyAsync<TActivity, T>(Expression<Func<TActivity, T>> propertyExpression, CancellationToken cancellationToken = default) where TActivity : IActivity => WorkflowExecutionContext.GetActivityPropertyAsync(ActivityId, propertyExpression, cancellationToken);
         public void Fault(Exception exception) => WorkflowExecutionContext.Fault(exception, ActivityId, Input, Resuming);
+
+        public string? GetOutputStorageProviderName(IActivity activity, string propertyName)
+        {
+            var activityType = activity.GetType();
+            var persistableProperties = activityType.GetProperties().Where(x => x.GetCustomAttribute<NonPersistableAttribute>() == null).ToList();
+            var property = persistableProperties.FirstOrDefault(x => x.Name == propertyName);
+
+            if (property == null)
+                return null;
+            
+            var inputAttr = property.GetCustomAttribute<ActivityOutputAttribute>();
+            var defaultProviderName = inputAttr.DefaultWorkflowStorageProvider;
+            var propertyStorageProviderDictionary = ActivityBlueprint.PropertyStorageProviders;
+            return propertyStorageProviderDictionary.GetItem(propertyName) ?? defaultProviderName;
+        }
 
         private ICompositeActivityBlueprint GetContainerActivity()
         {
