@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="..\..\..\..\common.props" />
+    <Import Project="..\..\..\..\configureawait.props" />
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.1</TargetFramework>
+        <Description>
+            Elsa Workflow Settings is an optional part of Elsa Workflows.
+            This package contains Workflow Settings abstractions.
+        </Description>
+        <PackageTags>elsa, workflow settings, orchard</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <Compile Remove="Events\WorkflowSettingsLoaded.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="LinqKit.Core" Version="1.1.24" />
+        <PackageReference Include="MediatR" Version="9.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Primitives" Version="5.0.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\core\Elsa.Core\Elsa.Core.csproj" />
+    </ItemGroup>
+
+</Project>

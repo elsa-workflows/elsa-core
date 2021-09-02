@@ -15,7 +15,7 @@ import { MonacoValueChangedArgs } from "./components/controls/elsa-monaco/elsa-m
 import { Map } from "./utils/utils";
 import { PagerData } from "./components/controls/elsa-pager/elsa-pager";
 import { ToastNotificationOptions } from "./components/shared/elsa-toast-notification/elsa-toast-notification";
-import { WebhookDefinition } from "./models/webhook";
+import { WebhookDefinition } from "./modules/elsa-webhooks/models";
 export namespace Components {
     interface ElsaActivityEditorModal {
         "culture": string;
@@ -176,6 +176,7 @@ export namespace Components {
         "addPlugins": (pluginTypes: Array<any>) => Promise<void>;
         "basePath": string;
         "culture": string;
+        "featuresString": string;
         "monacoLibPath": string;
         "serverUrl": string;
     }
@@ -798,6 +799,7 @@ declare namespace LocalJSX {
     interface ElsaStudioRoot {
         "basePath"?: string;
         "culture"?: string;
+        "featuresString"?: string;
         "monacoLibPath"?: string;
         "onInitializing"?: (event: CustomEvent<ElsaStudio>) => void;
         "serverUrl"?: string;

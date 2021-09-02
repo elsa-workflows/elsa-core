@@ -3,7 +3,6 @@ using Elsa.Activities.Webhooks.Bookmarks;
 using Elsa.Activities.Webhooks.Handlers;
 using Elsa.Options;
 using Elsa.Providers.Activities;
-using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Activities.Webhooks.Extensions
@@ -19,7 +18,5 @@ namespace Elsa.Activities.Webhooks.Extensions
 
             return elsaOptions;
         }
-
-
     }
 }
