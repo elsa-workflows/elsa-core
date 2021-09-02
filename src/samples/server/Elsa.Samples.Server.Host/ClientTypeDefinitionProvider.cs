@@ -9,11 +9,11 @@ using NodaTime;
 
 namespace Elsa.Samples.Server.Host
 {
-    public class CustomerTypeDefinitionProvider : TypeDefinitionProvider
+    public class ClientTypeDefinitionProvider : TypeDefinitionProvider
     {
         private static readonly IDictionary<Type, string> TypeMap = new Dictionary<Type, string>
         {
-            [typeof(Customer)] = "Customer"
+            [typeof(Client)] = "Client"
         };
 
         public override bool SupportsType(TypeDefinitionContext context, Type type) => TypeMap.ContainsKey(type);
@@ -22,7 +22,7 @@ namespace Elsa.Samples.Server.Host
 
         public override IEnumerable<Type> CollectTypes(TypeDefinitionContext context) => new[]
         {
-            typeof(Customer)
+            typeof(Client)
         };
     }
 }

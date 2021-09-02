@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -82,7 +84,12 @@ namespace Elsa.Scripting.JavaScript.Handlers
                 {
                     var activityType = activityTypeDictionary[activity.Type];
                     var typeScriptType = activityType.TypeName;
-                    output.AppendLine($"{activity.Name}: {typeScriptType};");
+                    var targetType = GetActivityTargetType(activity);
+
+                    if (targetType == null)
+                        output.AppendLine($"{activity.Name}: {typeScriptType};");
+                    else
+                        output.AppendLine($"{activity.Name}: {typeScriptType}<{targetType}>;");
                 }
 
                 output.AppendLine("}");
@@ -96,21 +103,42 @@ namespace Elsa.Scripting.JavaScript.Handlers
                 var inputProperties = descriptor.InputProperties;
                 var outputProperties = descriptor.OutputProperties;
 
-                writer.AppendLine($"declare interface {typeName} {{");
+                if (typeName == "HttpEndpoint")
+                    writer.AppendLine($"declare interface {typeName}<T> {{");
+                else
+                    writer.AppendLine($"declare interface {typeName} {{");
 
                 foreach (var property in inputProperties)
-                    RenderActivityProperty(writer, property.Name, property.Type);
+                    RenderActivityProperty(writer, typeName, property.Name, property.Type);
 
                 foreach (var property in outputProperties)
-                    RenderActivityProperty(writer, property.Name, property.Type);
+                    RenderActivityProperty(writer, typeName, property.Name, property.Type);
 
                 writer.AppendLine("}");
             }
 
-            void RenderActivityProperty(StringBuilder writer, string propertyName, Type propertyType)
+            void RenderActivityProperty(StringBuilder writer, string typeName, string propertyName, Type propertyType)
             {
                 var typeScriptType = notification.GetTypeScriptType(propertyType);
-                writer.AppendLine($"{propertyName}(): {typeScriptType};");
+
+                if (typeName == "HttpEndpoint" && propertyName == "Output")
+                    writer.AppendLine($"{propertyName}(): {typeScriptType}<T>;");
+                else
+                    writer.AppendLine($"{propertyName}(): {typeScriptType};");
+            }
+
+            string? GetActivityTargetType(Models.ActivityDefinition activity)
+            {
+                var targetTypeProperty = activity.Properties.FirstOrDefault(x => x.Name == "TargetType");
+                if (targetTypeProperty == null) return null;
+
+                var targetTypeValue = targetTypeProperty.Expressions.FirstOrDefault().Value;
+                if (targetTypeValue == null) return null;
+
+                var targetType = Type.GetType(targetTypeValue);
+                if (targetType == null) return null;
+
+                return targetType.Name;
             }
         }
     }

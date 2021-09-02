@@ -32,37 +32,18 @@ namespace Elsa.Scripting.JavaScript.Services
             providerContext.GetTypeScriptType = ((provider, type) => GetTypeScriptType(providerContext, type, types, provider));
 
             // Render type declarations for anything except those listed in TypeConverters.
-            int i = 0;
             foreach (var type in types)
             {
                 var shouldRenderDeclaration = ShouldRenderTypeDeclaration(providerContext, type);
-                if (i == 192)
-                {
-                    var d = 1;
-                }
                 if (shouldRenderDeclaration)
                     RenderTypeDeclaration(providerContext, type, types, builder);
-                i++;
             }
 
-            if (i == 193)
-            {
-                var d = 1;
-            }
             string GetTypeScriptTypeInternal(Type type) => GetTypeScriptType(providerContext, type, types);
-            if (i == 193)
-            {
-                var d = 1;
-            }
+
             var renderingTypeScriptDefinitions = new RenderingTypeScriptDefinitions(workflowDefinition, GetTypeScriptTypeInternal, context, builder);
-            if (i == 193)
-            {
-                var d = 1;
-            }
             await _mediator.Publish(renderingTypeScriptDefinitions, cancellationToken);
 
-            var sss = builder.ToString();
-            return sss;
             return builder.ToString();
         }
 
@@ -107,11 +88,6 @@ namespace Elsa.Scripting.JavaScript.Services
             // Collect method return and argument types.
             var methods = type.GetMethods(BindingFlags.Public);
 
-            if (type.FullName == "Elsa.Samples.Server.Host.Customer")
-            {
-                var a = 1;
-            }
-
             foreach (var method in methods)
             {
                 var returnType = method.ReturnType;
@@ -146,18 +122,20 @@ namespace Elsa.Scripting.JavaScript.Services
             var properties = type.GetProperties();
             var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static).Where(x => !x.IsSpecialName).ToList();
 
-            output.AppendLine($"declare {symbol} {typeName} {{");
+            if (type.Name == "HttpRequestModel")
+                output.AppendLine($"declare {symbol} {typeName}<T> {{");
+            else
+                output.AppendLine($"declare {symbol} {typeName} {{");
 
             foreach (var property in properties)
             {
                 var typeScriptType = GetTypeScriptType(context, property.PropertyType, collectedTypes);
                 var propertyName = property.PropertyType.IsNullableType() ? $"{property.Name}?" : property.Name;
-                output.AppendLine($"{propertyName}: {typeScriptType};");
-            }
-
-            if (type.FullName == "Elsa.Samples.Server.Host.Customer")
-            {
-                var a = 1;
+                
+                if (type.Name == "HttpRequestModel" && propertyName == "Body")
+                    output.AppendLine($"{propertyName}: T;");
+                else
+                    output.AppendLine($"{propertyName}: {typeScriptType};");
             }
 
             foreach (var method in methods)
@@ -181,12 +159,10 @@ namespace Elsa.Scripting.JavaScript.Services
                 var returnType = method.ReflectedType;
                 if (returnType != typeof(void))
                 {
-                    if (type.FullName == "Elsa.Samples.Server.Host.Customer")
-                    {
-                        var a = 1;
-                    }
-
-                    output.AppendFormat(":{0}", GetTypeScriptType(context, returnType, collectedTypes));
+                    if (type.Name == "HttpRequestModel")
+                        output.Append(":T");
+                    else
+                        output.AppendFormat(":{0}", GetTypeScriptType(context, returnType, collectedTypes));
                 }
 
                 output.AppendLine(";");
@@ -206,11 +182,6 @@ namespace Elsa.Scripting.JavaScript.Services
                 providers = providers.Where(x => x != excludeProvider);
             
             var provider = providers.FirstOrDefault(x => x.SupportsType(context, type));
-
-            if (type.FullName == "Elsa.Samples.Server.Host.Customer")
-            {
-                var a = 1;
-            }
 
             var typeScriptType = provider != null ? provider.GetTypeDefinition(context, type) : collectedTypes.Contains(type) ? type.Name : "any";
             return GetSafeSymbol(typeScriptType);
