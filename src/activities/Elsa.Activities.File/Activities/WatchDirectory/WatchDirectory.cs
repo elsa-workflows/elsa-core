@@ -18,6 +18,9 @@ namespace Elsa.Activities.File
         [ActivityInput(Hint = "The path of the directory to watch")]
         public string Path { get; set; }
 
+        [ActivityInput(Hint = "The file pattern for interested files")]
+        public string Pattern { get; set; }
+
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
             return base.OnExecute(context);
