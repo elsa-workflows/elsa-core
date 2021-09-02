@@ -33,6 +33,7 @@ namespace Elsa.Activities.ControlFlow
             if (Break)
             {
                 Break = false;
+                context.JournalData.Add("Break Condition", true);
                 return Done();
             }
 
