@@ -15,6 +15,7 @@ namespace Elsa.Activities.File.Services
         {
             Path = path;
             Pattern = pattern;
+            _logger = logger;
             _watcher = new FileSystemWatcher()
             {
                 Path = path,
