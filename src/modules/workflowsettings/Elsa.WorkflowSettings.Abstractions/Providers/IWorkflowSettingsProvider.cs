@@ -1,6 +1,7 @@
 using Elsa.WorkflowSettings.Models;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.WorkflowSettings.Abstractions.Persistence;
 
 namespace Elsa.WorkflowSettings.Abstractions.Providers
 {
