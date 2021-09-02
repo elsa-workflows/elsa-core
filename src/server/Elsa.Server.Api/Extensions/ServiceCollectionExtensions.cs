@@ -77,8 +77,6 @@ namespace Microsoft.Extensions.DependencyInjection
                         Type = PrimitiveType.String.ToString().ToLower(),
                         Example = new OpenApiString("System.String, mscorlib")
                     });
-                    
-                    c.ResolveConflictingActions(d => d.First());
 
                     configure?.Invoke(c);
                 });

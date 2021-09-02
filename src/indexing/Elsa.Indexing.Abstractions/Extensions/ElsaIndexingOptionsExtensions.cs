@@ -1,5 +1,6 @@
 using System;
 using System.Reflection;
+using Elsa.Options;
 using MediatR.Registration;
 
 namespace Elsa.Indexing.Extensions

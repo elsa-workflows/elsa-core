@@ -5,6 +5,7 @@ using Elsa;
 using Elsa.Activities.Dropbox.Activities;
 using Elsa.Activities.Dropbox.Options;
 using Elsa.Activities.Dropbox.Services;
+using Elsa.Options;
 using Microsoft.Extensions.Options;
 
 // ReSharper disable once CheckNamespace

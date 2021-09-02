@@ -124,6 +124,7 @@ namespace Elsa.Services.Workflows
                     }
 
                     break;
+
                 default:
                     throw new ArgumentOutOfRangeException();
             }
@@ -157,7 +158,7 @@ namespace Elsa.Services.Workflows
             {
                 if (!await CanExecuteAsync(workflowExecutionContext, activity, false, cancellationToken))
                     return new RunWorkflowResult(workflowExecutionContext.WorkflowInstance, activity.Id, false);
-                
+
                 workflowExecutionContext.Begin();
                 workflowExecutionContext.ScheduleActivity(activity.Id);
                 await RunAsync(workflowExecutionContext, Execute, cancellationToken);
@@ -184,7 +185,7 @@ namespace Elsa.Services.Workflows
 
             var blockingActivities = workflowExecutionContext.WorkflowInstance.BlockingActivities.Where(x => x.ActivityId == activityBlueprint.Id).ToList();
 
-            foreach (var blockingActivity in blockingActivities) 
+            foreach (var blockingActivity in blockingActivities)
                 await workflowExecutionContext.RemoveBlockingActivityAsync(blockingActivity);
 
             workflowExecutionContext.Resume();
@@ -254,6 +255,7 @@ namespace Elsa.Services.Workflows
                 var runtimeActivityInstance = await activityExecutionContext.ActivateActivityAsync(cancellationToken);
                 var activityType = runtimeActivityInstance.ActivityType;
                 using var executionScope = AmbientActivityExecutionContext.EnterScope(activityExecutionContext);
+                await _mediator.Publish(new ActivityActivating(activityExecutionContext), cancellationToken);
                 var activity = await activityType.ActivateAsync(activityExecutionContext);
 
                 if (!burstStarted)

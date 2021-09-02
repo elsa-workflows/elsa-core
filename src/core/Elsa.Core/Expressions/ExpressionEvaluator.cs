@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Exceptions;
 using Elsa.Models;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Logging;
@@ -63,7 +64,7 @@ namespace Elsa.Expressions
             catch (Exception e)
             {
                 _logger.LogDebug(e, "Failed to evaluate expression {Expression} using syntax {Syntax}", expression, syntax);
-                throw;
+                throw new ExpressionEvaluationException("Failed to evaluate expression", expression, syntax, e);
             }
         }
     }

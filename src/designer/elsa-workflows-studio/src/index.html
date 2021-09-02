@@ -14,8 +14,7 @@
 </head>
 <body>
 
-<!--<elsa-studio-root server-url="https://localhost:6080" monaco-lib-path="build/assets/js/monaco-editor/min" culture="en-US">-->
-<elsa-studio-root server-url="https://skynet-workflow.azurewebsites.net" monaco-lib-path="build/assets/js/monaco-editor/min" culture="en-US">
+<elsa-studio-root server-url="https://localhost:15265" monaco-lib-path="build/assets/js/monaco-editor/min" culture="en-US">
   <!-- The root dashboard component -->
   <elsa-studio-dashboard></elsa-studio-dashboard>
 
@@ -31,7 +30,7 @@
   // Integration demos.
 
   // Import publicly exposed services and models.
-  import {confirmDialogService, EventTypes} from "/build/index.esm.js";
+  import {confirmDialogService, EventTypes, WebhooksPlugin, WorkflowSettingsPlugin} from "/build/index.esm.js";
 
   // Custom plugin that changes the icon of the ReadLine activity.
   function CustomReadLinePlugin(elsaStudio) {
@@ -208,19 +207,19 @@
   // Get a handle to the elsa-studio-root element.
   const elsaStudioRoot = document.querySelector('elsa-studio-root');
 
-  // Configure Elsa.
-  // (async () => {
-  //     // Wait until the component is available.
-  //     await customElements.whenDefined('elsa-studio-root');
-  //
-  //     // Install plugins.
-  //     await elsaStudioRoot.addPlugins([CustomReadLinePlugin, CustomBulkActionsPlugin, CustomHttpMiddlewarePlugin, CustomPropertyFieldPlugin]);
-  // })();
-
   // Alternatively, configure Elsa during the 'initializing' event.
   elsaStudioRoot.addEventListener('initializing', e => {
     const elsa = e.detail;
-    elsa.pluginManager.registerPlugins([CustomReadLinePlugin, CustomBulkActionsPlugin, CustomHttpMiddlewarePlugin, CustomPropertyFieldPlugin, WorkflowModelChangedListenerPlugin, CustomActivityEditorPlugin]);
+    elsa.pluginManager.registerPlugins([
+      CustomReadLinePlugin,
+      CustomBulkActionsPlugin,
+      CustomHttpMiddlewarePlugin,
+      CustomPropertyFieldPlugin,
+      WorkflowModelChangedListenerPlugin,
+      CustomActivityEditorPlugin,
+      WebhooksPlugin,
+      WorkflowSettingsPlugin
+    ]);
   });
 
   // Some components publish DOM events that we can handle directly:

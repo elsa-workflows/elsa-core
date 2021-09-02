@@ -25,7 +25,7 @@ namespace Elsa.Services
         /// <summary>
         /// Gets a single workflow blueprint with the specified ID for the specified tenant and version.
         /// </summary>
-        Task<IWorkflowBlueprint?> GetAsync(string id, string? tenantId, VersionOptions version, CancellationToken cancellationToken = default);
+        Task<IWorkflowBlueprint?> GetAsync(string id, string? tenantId, VersionOptions version, CancellationToken cancellationToken = default, bool includeDisabled = false);
         
         /// <summary>
         /// Returns all workflow blueprints that fit the specified predicate.

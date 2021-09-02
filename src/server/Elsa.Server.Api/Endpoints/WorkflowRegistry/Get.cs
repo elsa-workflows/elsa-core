@@ -1,4 +1,4 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Serialization;
@@ -42,7 +42,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
         public async Task<ActionResult<WorkflowBlueprintModel>> Handle(string id, VersionOptions? versionOptions = default, CancellationToken cancellationToken = default)
         {
             versionOptions ??= VersionOptions.Latest;
-            var workflowBlueprint = await _workflowRegistry.GetAsync(id, null, versionOptions.Value, cancellationToken);
+            var workflowBlueprint = await _workflowRegistry.GetAsync(id, null, versionOptions.Value, cancellationToken, true);
 
             if (workflowBlueprint == null)
                 return NotFound();

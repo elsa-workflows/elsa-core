@@ -16,4 +16,4 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
                     .UseStaticWebAssets()
                     .UseStartup<Startup>(); });
     }
-}
+}   

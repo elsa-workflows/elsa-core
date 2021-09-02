@@ -4,6 +4,7 @@ using System;
 using Elsa;
 using Elsa.Activities.JavaScript;
 using Elsa.Expressions;
+using Elsa.Options;
 using Elsa.Scripting.JavaScript.Typings;
 
 // ReSharper disable once CheckNamespace

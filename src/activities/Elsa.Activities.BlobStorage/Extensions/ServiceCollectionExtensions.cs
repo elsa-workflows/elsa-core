@@ -1,5 +1,6 @@
 using Elsa;
 using Elsa.Activities.BlobStorage;
+using Elsa.Options;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection

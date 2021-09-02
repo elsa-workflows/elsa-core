@@ -1,5 +1,6 @@
 using Elsa.Activities.UserTask.Extensions;
 using Elsa.Attributes;
+using Elsa.Options;
 using Elsa.Services.Startup;
 using Microsoft.Extensions.Configuration;
 

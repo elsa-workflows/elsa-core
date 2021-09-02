@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -36,7 +36,7 @@ namespace Elsa.Services.Triggers
         public async Task IndexTriggersAsync(CancellationToken cancellationToken = default)
         {
             var allWorkflowBlueprints = await _workflowRegistry.ListActiveAsync(cancellationToken);
-            var publishedWorkflowBlueprints = allWorkflowBlueprints.Where(x => x.IsPublished).ToList();
+            var publishedWorkflowBlueprints = allWorkflowBlueprints.Where(x => x.IsPublished && !x.IsDisabled).ToList();
             await IndexTriggersAsync(publishedWorkflowBlueprints, cancellationToken);
             await _mediator.Publish(new TriggerIndexingFinished(), cancellationToken);
         }
@@ -51,7 +51,7 @@ namespace Elsa.Services.Triggers
 
             _stopwatch.Stop();
             _logger.LogInformation("Indexed {TriggerCount} triggers in {ElapsedTime}", triggers.Count, _stopwatch.Elapsed);
-
+              
             await _triggerStore.StoreAsync(triggers, cancellationToken);
         }
     }

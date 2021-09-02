@@ -19,14 +19,16 @@ namespace Elsa.Activities.Rpa.Web
         public TypeText(IServiceProvider sp) : base(sp)
         {
         }
-        
+
         [ActivityInput(Hint = "Indicates whether not to perform an interactive typing but just emulates a injecting text via javascript")]
         public bool? UseJavascript { get; set; }
+
         [ActivityInput(
             UIHint = ActivityInputUIHints.MultiText,
             SupportedSyntaxes = new[] { SyntaxNames.Literal }
         )]
-        public string Text { get; set; }
+        public string Text { get; set; } = default!;
+
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
             return await ExecuteDriver(context, async (driver) =>
@@ -35,7 +37,7 @@ namespace Elsa.Activities.Rpa.Web
                     (await GetElement(driver))?.SetText(Text);
                 else
                     (await GetElement(driver))?.SendKeys(Text);
-            });        
-        }        
+            });
+        }
     }
 }

@@ -1,4 +1,5 @@
 using Elsa.Activities.UserTask.Bookmarks;
+using Elsa.Options;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Activities.UserTask.Extensions

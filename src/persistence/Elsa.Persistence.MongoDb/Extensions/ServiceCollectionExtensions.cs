@@ -1,4 +1,5 @@
 using System;
+using Elsa.Options;
 using Elsa.Persistence.MongoDb.Options;
 using Elsa.Persistence.MongoDb.Services;
 using Elsa.Persistence.MongoDb.Stores;
