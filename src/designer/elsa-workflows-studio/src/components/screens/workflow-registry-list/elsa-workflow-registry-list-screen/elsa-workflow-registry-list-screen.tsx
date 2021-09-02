@@ -90,7 +90,6 @@ export class ElsaWorkflowRegistryListScreen {
     const groupings = collection.groupBy(workflowBlueprints, 'id');
     const basePath = this.basePath;
 
-    debugger;
     let headers = this.workflowRegistryColumns.data != null ? this.workflowRegistryColumns.data.headers : [];
     let hasFeatureContextItems = this.workflowRegistryColumns.data != null ? this.workflowRegistryColumns.data.hasContextItems : false;
 

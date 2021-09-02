@@ -1,6 +1,5 @@
 using Elsa.Persistence.MongoDb.Stores;
 using Elsa.Services;
-using Elsa.WorkflowSettings.Abstractions.Persistence;
 using Elsa.WorkflowSettings.Models;
 using MongoDB.Driver;
 

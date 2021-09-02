@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.WorkflowSettings.Abstractions.Persistence;
 using Elsa.WorkflowSettings.Extensions;
+using Elsa.WorkflowSettings.Persistence;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;

@@ -1,8 +1,8 @@
-using Elsa.WorkflowSettings.Models;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.WorkflowSettings.Models;
 
-namespace Elsa.WorkflowSettings.Abstractions.Providers
+namespace Elsa.WorkflowSettings.Providers
 {
     public abstract class WorkflowSettingsProvider : IWorkflowSettingsProvider
     {

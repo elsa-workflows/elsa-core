@@ -1,8 +1,9 @@
-using Elsa.WorkflowSettings.Models;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.WorkflowSettings.Models;
+using Elsa.WorkflowSettings.Persistence;
 
-namespace Elsa.WorkflowSettings.Abstractions.Providers
+namespace Elsa.WorkflowSettings.Providers
 {
     /// <summary>
     /// Represents a source of workflow settings for the <see cref="IWorkflowSettingsStore"/>

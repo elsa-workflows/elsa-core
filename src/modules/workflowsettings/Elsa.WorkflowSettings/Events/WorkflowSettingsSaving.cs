@@ -1,6 +1,6 @@
 using Elsa.WorkflowSettings.Models;
 
-namespace Elsa.WorkflowSettings.Abstractions.Events
+namespace Elsa.WorkflowSettings.Events
 {
     public class WorkflowSettingsSaving : WorkflowSettingsNotification
     {

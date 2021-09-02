@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Elsa.Caching;
 using Elsa.Decorators;
 using Elsa.Services;
-using Elsa.WorkflowSettings.Abstractions.Events;
+using Elsa.WorkflowSettings.Events;
 using MediatR;
 
 namespace Elsa.WorkflowSettings.Handlers

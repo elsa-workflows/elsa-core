@@ -1,11 +1,10 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.WorkflowSettings.Abstractions.Providers;
-using Elsa.WorkflowSettings.Abstractions.Services.WorkflowSettings;
 using Elsa.WorkflowSettings.Models;
+using Elsa.WorkflowSettings.Providers;
 
-namespace Elsa.WorkflowSettings.Services.WorkflowSettingsContexts
+namespace Elsa.WorkflowSettings.Services.WorkflowSettings
 {
     public class WorkflowSettingsManager : IWorkflowSettingsManager
     {

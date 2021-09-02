@@ -1,4 +1,5 @@
 using System;
+using Elsa.Options;
 using Elsa.Services.Startup;
 using Elsa.WorkflowSettings.Extensions;
 using Elsa.WorkflowSettings.Persistence.EntityFramework.Core.Extensions;
