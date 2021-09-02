@@ -36,6 +36,7 @@ namespace Elsa.Activities.Console
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
             await _output.WriteLineAsync(Text);
+            context.JournalData.Add(nameof(Text), Text);
             return Done();
         }
     }

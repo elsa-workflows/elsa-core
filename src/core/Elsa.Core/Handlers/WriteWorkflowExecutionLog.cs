@@ -6,6 +6,7 @@ using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
 using MediatR;
+using Newtonsoft.Json.Linq;
 
 namespace Elsa.Handlers
 {
@@ -30,11 +31,14 @@ namespace Elsa.Handlers
         public async Task Handle(ActivityExecutionResultExecuted notification, CancellationToken cancellationToken)
         {
             var activityExecutionContext = notification.ActivityExecutionContext;
-            
-            var data = new
+
+            var data = new JObject
             {
-                Outcomes = activityExecutionContext.Outcomes,
+                ["Outcomes"] = JToken.FromObject(activityExecutionContext.Outcomes)
             };
+
+            foreach (var entry in activityExecutionContext.JournalData) 
+                data[entry.Key] = JToken.FromObject(entry.Value);
 
             var resuming = activityExecutionContext.Resuming;
             await WriteEntryAsync(resuming ? "Resumed" : "Executed", default, activityExecutionContext, data, cancellationToken);

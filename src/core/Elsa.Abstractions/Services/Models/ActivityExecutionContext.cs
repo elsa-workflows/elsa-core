@@ -123,6 +123,11 @@ namespace Elsa.Services.Models
         public ActivityScope? CurrentScope => WorkflowExecutionContext.CurrentScope;
         public object? Output { get; set; }
 
+        /// <summary>
+        /// Journal data will be added to the workflow execution log for the "Executed" event.  
+        /// </summary>
+        public IDictionary<string, object> JournalData { get; private set; } = new Dictionary<string, object>(); 
+
         public ActivityScope GetScope(string activityId) => WorkflowExecutionContext.GetScope(activityId);
         public ActivityScope GetNamedScope(string activityName) => WorkflowExecutionContext.GetNamedScope(activityName);
 

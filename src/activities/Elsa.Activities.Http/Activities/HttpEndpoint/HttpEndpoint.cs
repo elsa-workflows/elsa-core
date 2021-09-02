@@ -78,7 +78,8 @@ namespace Elsa.Activities.Http
 
         private IActivityExecutionResult ExecuteInternal(ActivityExecutionContext context)
         {
-            Output = context.GetInput<HttpRequestModel>();
+            Output = context.GetInput<HttpRequestModel>()!;
+            context.JournalData.Add("Inbound Request", Output);
             return Done();
         }
     }
