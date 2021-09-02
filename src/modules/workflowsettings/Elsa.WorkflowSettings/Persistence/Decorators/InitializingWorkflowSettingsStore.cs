@@ -4,7 +4,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Persistence.Specifications;
 using Elsa.Services;
-using Elsa.WorkflowSettings.Abstractions.Persistence;
 using Elsa.WorkflowSettings.Models;
 
 namespace Elsa.WorkflowSettings.Persistence.Decorators

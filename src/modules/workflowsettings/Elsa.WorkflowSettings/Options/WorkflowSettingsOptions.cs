@@ -1,5 +1,5 @@
 using System;
-using Elsa.WorkflowSettings.Abstractions.Persistence;
+using Elsa.WorkflowSettings.Persistence;
 using Elsa.WorkflowSettings.Persistence.InMemory;
 using Microsoft.Extensions.DependencyInjection;
 

@@ -1,9 +1,8 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.WorkflowSettings.Abstractions.Persistence;
-using Elsa.WorkflowSettings.Abstractions.Providers;
 using Elsa.WorkflowSettings.Extensions;
 using Elsa.WorkflowSettings.Models;
+using Elsa.WorkflowSettings.Persistence;
 
 namespace Elsa.WorkflowSettings.Providers
 {

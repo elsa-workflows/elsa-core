@@ -1,11 +1,9 @@
 using Elsa.Options;
-using Elsa.WorkflowSettings.Abstractions.Persistence;
-using Elsa.WorkflowSettings.Abstractions.Providers;
-using Elsa.WorkflowSettings.Abstractions.Services.WorkflowSettings;
 using Elsa.WorkflowSettings.Handlers;
+using Elsa.WorkflowSettings.Persistence;
 using Elsa.WorkflowSettings.Persistence.Decorators;
 using Elsa.WorkflowSettings.Providers;
-using Elsa.WorkflowSettings.Services.WorkflowSettingsContexts;
+using Elsa.WorkflowSettings.Services.WorkflowSettings;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.WorkflowSettings.Extensions

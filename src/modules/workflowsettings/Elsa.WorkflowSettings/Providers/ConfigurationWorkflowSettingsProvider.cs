@@ -1,6 +1,5 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.WorkflowSettings.Abstractions.Providers;
 using Elsa.WorkflowSettings.Models;
 using Microsoft.Extensions.Configuration;
 

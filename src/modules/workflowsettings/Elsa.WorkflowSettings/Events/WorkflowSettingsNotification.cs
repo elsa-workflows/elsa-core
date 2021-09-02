@@ -1,7 +1,7 @@
 using Elsa.WorkflowSettings.Models;
 using MediatR;
 
-namespace Elsa.WorkflowSettings.Abstractions.Events
+namespace Elsa.WorkflowSettings.Events
 {
     public abstract class WorkflowSettingsNotification : INotification
     {

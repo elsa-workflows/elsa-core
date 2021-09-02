@@ -4,7 +4,6 @@ using Elsa.Persistence.EntityFramework.Core.Stores;
 using Elsa.Persistence.Specifications;
 using Elsa.Serialization;
 using Elsa.WorkflowSettings.Models;
-using Elsa.WorkflowSettings.Abstractions.Persistence;
 using AutoMapper;
 using Elsa.WorkflowSettings.Persistence.EntityFramework.Core.Services;
 

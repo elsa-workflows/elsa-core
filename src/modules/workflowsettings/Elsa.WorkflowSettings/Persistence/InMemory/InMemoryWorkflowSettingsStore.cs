@@ -1,6 +1,5 @@
 using Elsa.Persistence.InMemory;
 using Elsa.Services;
-using Elsa.WorkflowSettings.Abstractions.Persistence;
 using Elsa.WorkflowSettings.Models;
 using Microsoft.Extensions.Caching.Memory;
 

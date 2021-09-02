@@ -6,7 +6,6 @@ using Elsa.Persistence.YesSql.Services;
 using Elsa.Persistence.YesSql.Stores;
 using Elsa.WorkflowSettings.Models;
 using Elsa.WorkflowSettings.Persistence.YesSql.Documents;
-using Elsa.WorkflowSettings.Abstractions.Persistence;
 using Elsa.WorkflowSettings.Persistence.YesSql.Data;
 using Elsa.WorkflowSettings.Persistence.YesSql.Indexes;
 using AutoMapper;

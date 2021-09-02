@@ -1,7 +1,7 @@
 using System;
 using Elsa.Caching;
-using Elsa.WorkflowSettings.Abstractions.Persistence;
 using Elsa.WorkflowSettings.Options;
+using Elsa.WorkflowSettings.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
