@@ -105,6 +105,7 @@ namespace Elsa.Activities.Workflows
             if (workflowBlueprint == null || workflowBlueprint.Id == context.WorkflowInstance.DefinitionId)
                 return Outcome("Not Found");
 
+            context.JournalData.Add("Workflow Blueprint ID", workflowBlueprint.Id);
             var result = await _startsWorkflow.StartWorkflowAsync(workflowBlueprint!, TenantId, new WorkflowInput(Input), CorrelationId, ContextId, cancellationToken: cancellationToken);
             var childWorkflowInstance = result.WorkflowInstance!;
             var childWorkflowStatus = childWorkflowInstance.WorkflowStatus;
@@ -113,7 +114,7 @@ namespace Elsa.Activities.Workflows
             return Mode switch
             {
                 RunWorkflowMode.FireAndForget => Done(),
-                RunWorkflowMode.Blocking when childWorkflowStatus == WorkflowStatus.Finished => await ResumeSynchronouslyAsync(childWorkflowInstance, cancellationToken),
+                RunWorkflowMode.Blocking when childWorkflowStatus == WorkflowStatus.Finished => await ResumeSynchronouslyAsync(context, childWorkflowInstance, cancellationToken),
                 RunWorkflowMode.Blocking when childWorkflowStatus == WorkflowStatus.Suspended => Suspend(),
                 RunWorkflowMode.Blocking when childWorkflowStatus == WorkflowStatus.Faulted => Fault($"Workflow {childWorkflowInstance.Id} faulted"),
                 _ => throw new ArgumentOutOfRangeException(nameof(Mode))
@@ -123,10 +124,10 @@ namespace Elsa.Activities.Workflows
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
         {
             var model = (FinishedWorkflowModel) context.WorkflowExecutionContext.Input!;
-            return OnResumeInternal(model);
+            return OnResumeInternal(context, model);
         }
 
-        private async Task<IActivityExecutionResult> ResumeSynchronouslyAsync(WorkflowInstance childWorkflowInstance, CancellationToken cancellationToken)
+        private async Task<IActivityExecutionResult> ResumeSynchronouslyAsync(ActivityExecutionContext context, WorkflowInstance childWorkflowInstance, CancellationToken cancellationToken)
         {
             var outputReference = childWorkflowInstance.Output;
             
@@ -139,11 +140,14 @@ namespace Elsa.Activities.Workflows
                 WorkflowOutput = output,
                 WorkflowInstanceId = childWorkflowInstance.Id
             };
+            
+            context.LogOutputProperty(this, "Output", output);
+            context.JournalData.Add("Child Workflow Instance ID", childWorkflowInstance.Id);
 
-            return OnResumeInternal(model);
+            return OnResumeInternal(context, model);
         }
 
-        private IActivityExecutionResult OnResumeInternal(FinishedWorkflowModel output)
+        private IActivityExecutionResult OnResumeInternal(ActivityExecutionContext context, FinishedWorkflowModel output)
         {
             var results = new List<IActivityExecutionResult> { Done() };
 

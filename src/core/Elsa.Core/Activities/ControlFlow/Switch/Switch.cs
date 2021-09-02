@@ -50,6 +50,7 @@ namespace Elsa.Activities.ControlFlow
                 else
                 {
                     EnteredScope = false;
+                    context.JournalData.Add("Unwinding", true);
                     return Done();
                 }
             }

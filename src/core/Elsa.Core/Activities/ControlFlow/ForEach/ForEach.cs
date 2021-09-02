@@ -65,13 +65,7 @@ namespace Elsa.Activities.ControlFlow
                 CurrentIndex = currentIndex + 1;
                 Output = currentValue;
                 context.JournalData.Add("Current Index", currentIndex);
-
-                // Only log current value if the workflow storage for the Output property is undefined or "WorkflowInstance". Otherwise we run into the risk of serializing large blobs.
-                // TODO: We could consider storing the current value using the workflow storage provider mechanism to support storing every value individually.  
-                var outputStorageProviderName = context.GetOutputStorageProviderName(this, nameof(Output));
-
-                if(string.IsNullOrEmpty(outputStorageProviderName) || outputStorageProviderName == WorkflowInstanceWorkflowStorageProvider.ProviderName)
-                    context.JournalData.Add("Current Value", currentValue);
+                context.LogOutputProperty(this, nameof(Output), Output);
                 
                 return Outcome(OutcomeNames.Iterate, currentValue);
             }

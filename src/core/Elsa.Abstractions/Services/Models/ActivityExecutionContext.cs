@@ -206,6 +206,19 @@ namespace Elsa.Services.Models
             return propertyStorageProviderDictionary.GetItem(propertyName) ?? defaultProviderName;
         }
 
+        /// <summary>
+        /// Logs the specified output property value to the workflow journal.
+        /// </summary>
+        public void LogOutputProperty(IActivity activity, string outputPropertyName, object? value)
+        {
+            // Only log output value if the workflow storage for the Output property is undefined or "WorkflowInstance". Otherwise we run into the risk of serializing large blobs.
+            // TODO: We could consider storing the current value using the workflow storage provider mechanism to support storing every value individually.  
+            var outputStorageProviderName = GetOutputStorageProviderName(activity, outputPropertyName);
+
+            if(string.IsNullOrEmpty(outputStorageProviderName) || outputStorageProviderName == "WorkflowInstance")
+                JournalData.Add("Output", value);
+        }
+
         private ICompositeActivityBlueprint GetContainerActivity()
         {
             var current = ActivityBlueprint;

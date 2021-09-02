@@ -6,6 +6,7 @@ using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Expressions;
 using Elsa.Models;
+using Elsa.Providers.WorkflowStorage;
 using Elsa.Services;
 using Elsa.Services.Models;
 
@@ -63,6 +64,7 @@ namespace Elsa.Activities.ControlFlow
 
             // Return output.
             Output = new FinishOutput(ActivityOutput, OutcomeNames);
+            context.LogOutputProperty(this, nameof(Output), Output);
 
             return Noop();
         }
