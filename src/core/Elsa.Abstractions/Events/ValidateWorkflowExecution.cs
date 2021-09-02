@@ -1,4 +1,4 @@
-﻿using Elsa.Services.Models;
+using Elsa.Services.Models;
 using MediatR;
 
 namespace Elsa.Events

@@ -13,7 +13,6 @@ import {createElsaClient} from "../../../../services/elsa-client";
 import state from '../../../../utils/store';
 import {WorkflowDesignerMode} from "../../../designers/tree/elsa-designer-tree/models";
 import Tunnel from "../../../../data/dashboard";
-import {ElsaWebhookDefinitionEditorScreen} from "../../webhook-definition-editor/elsa-webhook-definition-editor-screen/elsa-webhook-definition-editor-screen";
 
 @Component({
   tag: 'elsa-workflow-blueprint-viewer-screen',

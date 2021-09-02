@@ -93,7 +93,7 @@ namespace Elsa.Services.Workflows
         {
             var workflowBlueprint = await _workflowRegistry.GetAsync(workflowDefinitionId, tenantId, VersionOptions.Published, cancellationToken);
 
-            if (workflowBlueprint == null)
+            if (workflowBlueprint == null || workflowBlueprint.IsDisabled)
                 return null;
 
             return await FindStartableWorkflowAsync(workflowBlueprint, activityId, correlationId, contextId, tenantId, cancellationToken);
