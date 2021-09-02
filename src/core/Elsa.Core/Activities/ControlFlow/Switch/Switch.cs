@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -17,7 +18,7 @@ namespace Elsa.Activities.ControlFlow
         DisplayName = "Switch",
         Category = "Control Flow",
         Description = "Evaluate multiple conditions and continue execution depending on the results.",
-        Outcomes = new[] { OutcomeNames.Default }
+        Outcomes = new[] { OutcomeNames.Default, OutcomeNames.Done }
     )]
     public class Switch : Activity, INotificationHandler<ScopeEvicted>
     {
@@ -55,8 +56,9 @@ namespace Elsa.Activities.ControlFlow
 
             var matches = Cases.Where(x => x.Condition).Select(x => x.Name).ToList();
             var hasAnyMatches = matches.Any();
-            var results = Mode == SwitchMode.MatchFirst ? hasAnyMatches ? new[] { matches.First() } : new string[0] : matches.ToArray();
+            var results = Mode == SwitchMode.MatchFirst ? hasAnyMatches ? new[] { matches.First() } : Array.Empty<string>() : matches.ToArray();
             var outcomes = hasAnyMatches ? results : new[] { OutcomeNames.Default };
+            context.JournalData.Add("Matches", matches);
 
             return Outcomes(outcomes);
         }
