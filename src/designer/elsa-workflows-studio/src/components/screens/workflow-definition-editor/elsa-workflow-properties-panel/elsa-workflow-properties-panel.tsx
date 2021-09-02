@@ -5,6 +5,7 @@ import {i18n} from "i18next";
 import {loadTranslations} from "../../../i18n/i18n-loader";
 import {resources} from "./localizations";
 import {createElsaClient} from "../../../../services";
+import {v4 as uuid} from 'uuid';
 import Tunnel from "../../../../data/dashboard";
 
 interface Tab {
@@ -39,8 +40,8 @@ export class ElsaWorkflowPropertiesPanel {
   @State() expanded: boolean;
   @State() selectedTabId: string = 'testProperties';
   private i18next: i18n;
-  el: HTMLElement;  
-
+  private testId: string;
+  el: HTMLElement;
   tabs: Array<Tab> = [];
 
   @Watch('workflowDefinition')
@@ -59,6 +60,13 @@ export class ElsaWorkflowPropertiesPanel {
     e.preventDefault();
 
     this.selectedTabId = tab.id;
+  } 
+
+  async onExecuteWorkflowClick() {
+    debugger
+    const elsaClient = this.createClient();
+    this.testId = uuid();
+    await elsaClient.workflowsApi.test(this.workflowDefinition.definitionId, this.testId);
   }  
 
   render() {
@@ -202,7 +210,8 @@ export class ElsaWorkflowPropertiesPanel {
         <div class="elsa-h-full">
           <div class="elsa-mt-16 elsa-p-6">
             <div class="elsa-px-4 elsa-py-3 elsa-bg-gray-50 elsa-text-left sm:px-6">
-              <button type="submit"
+              <button type="button"
+                      onClick={() => this.onExecuteWorkflowClick()}
                       class="elsa-ml-0 elsa-w-full elsa-inline-flex elsa-justify-center elsa-rounded-md elsa-border elsa-border-transparent elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-bg-blue-600 elsa-text-base elsa-font-medium elsa-text-white hover:elsa-bg-blue-700 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 sm:elsa-ml-3 sm:elsa-w-auto sm:elsa-text-sm">
                 Execute Workflow
               </button>

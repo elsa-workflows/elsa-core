@@ -57,6 +57,13 @@ namespace Elsa.Activities.Http
         public Type? TargetType { get; set; }
 
         [ActivityInput(
+            Category = PropertyCategories.Advanced,
+            UIHint = ActivityInputUIHints.MultiLine,
+            DefaultSyntax = SyntaxNames.Json,
+            SupportedSyntaxes = new[] { SyntaxNames.Json })]
+        public string? Schema { get; set; }
+
+        [ActivityInput(
             Hint = "Check to allow authenticated requests only",
             SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid },
             Category = "Security"

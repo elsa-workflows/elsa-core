@@ -116,6 +116,18 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
         return response.data;
       }
     },
+    workflowsApi: {
+      test: async (workflowDefinitionId, testId) => {
+
+          httpClient.interceptors.request.use(function (config) {
+            config.headers['Accept'] = 'application/json';
+            config.data = Object.assign({}, config.data, {});
+            return config;
+          })
+          const response = await httpClient.post<WorkflowDefinition>(`v1/workflows/${workflowDefinitionId}/${testId}/test`);
+          return response.data;
+      }
+    },    
     webhookDefinitionsApi: {
       list: async (page?: number, pageSize?: number) => {
         const response = await httpClient.get<PagedList<WebhookDefinitionSummary>>(`v1/webhook-definitions`);
@@ -257,6 +269,7 @@ export interface ElsaClient {
   workflowStorageProvidersApi: WorkflowStorageProvidersApi;
   webhookDefinitionsApi: WebhookDefinitionsApi;
   workflowChannelsApi: WorkflowChannelsApi;
+  workflowsApi: WorkflowsApi;
 }
 
 export interface ActivitiesApi {
@@ -280,6 +293,11 @@ export interface WorkflowDefinitionsApi {
   export(workflowDefinitionId: string, versionOptions: VersionOptions): Promise<ExportWorkflowResponse>;
 
   import(workflowDefinitionId: string, file: File): Promise<WorkflowDefinition>;
+}
+
+export interface WorkflowsApi {
+
+  test(workflowDefinitionId: string, testId: string): Promise<WorkflowDefinition>;
 }
 
 export interface WebhookDefinitionsApi {

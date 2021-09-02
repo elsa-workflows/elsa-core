@@ -97,6 +97,22 @@ namespace Elsa.Services.Workflows
             return await FindStartableWorkflowAsync(workflowBlueprint, activityId, correlationId, contextId, tenantId, cancellationToken);
         }
 
+        public async Task<StartableWorkflow?> FindTestableWorkflowAsync(
+            string workflowDefinitionId,
+            string? activityId,
+            string? correlationId = default,
+            string? contextId = default,
+            string? tenantId = default,
+            CancellationToken cancellationToken = default)
+        {
+            var workflowBlueprint = await _workflowRegistry.GetAsync(workflowDefinitionId, tenantId, VersionOptions.Latest, cancellationToken);
+
+            if (workflowBlueprint == null)
+                return null;
+
+            return await FindTestableWorkflowAsync(workflowBlueprint, activityId, correlationId, contextId, tenantId, cancellationToken);
+        }
+
         public async Task<StartableWorkflow?> FindStartableWorkflowAsync(
             IWorkflowBlueprint workflowBlueprint, 
             string? activityId, 
@@ -107,6 +123,22 @@ namespace Elsa.Services.Workflows
         {
             correlationId ??= Guid.NewGuid().ToString("N");
             
+            // Acquire a lock on correlation ID to prevent duplicate workflow instances from being created.
+            await using var correlationLockHandle = await AcquireLockAsync(correlationId, cancellationToken);
+
+            return await CollectStartableWorkflowInternalAsync(workflowBlueprint, activityId, correlationId, contextId, tenantId, cancellationToken);
+        }
+
+        public async Task<StartableWorkflow?> FindTestableWorkflowAsync(
+            IWorkflowBlueprint workflowBlueprint,
+            string? activityId,
+            string? correlationId = default,
+            string? contextId = default,
+            string? tenantId = default,
+            CancellationToken cancellationToken = default)
+        {
+            correlationId ??= Guid.NewGuid().ToString("N");
+
             // Acquire a lock on correlation ID to prevent duplicate workflow instances from being created.
             await using var correlationLockHandle = await AcquireLockAsync(correlationId, cancellationToken);
 
@@ -177,6 +209,9 @@ namespace Elsa.Services.Workflows
             DispatchPendingWorkflowAsync(new CollectedWorkflow(workflowInstanceId, activityId), input, cancellationToken);
 
         public async Task<RunWorkflowResult> ExecuteStartableWorkflowAsync(StartableWorkflow startableWorkflow, WorkflowInput? input, CancellationToken cancellationToken = default) =>
+            await _workflowRunner.RunWorkflowAsync(startableWorkflow.WorkflowBlueprint, startableWorkflow.WorkflowInstance, startableWorkflow.ActivityId, input, cancellationToken);
+
+        public async Task<RunWorkflowResult> ExecuteTestableWorkflowAsync(StartableWorkflow startableWorkflow, WorkflowInput? input, CancellationToken cancellationToken = default) =>
             await _workflowRunner.RunWorkflowAsync(startableWorkflow.WorkflowBlueprint, startableWorkflow.WorkflowInstance, startableWorkflow.ActivityId, input, cancellationToken);
 
         public async Task<CollectedWorkflow> DispatchStartableWorkflowAsync(StartableWorkflow startableWorkflow, WorkflowInput? input, CancellationToken cancellationToken = default)

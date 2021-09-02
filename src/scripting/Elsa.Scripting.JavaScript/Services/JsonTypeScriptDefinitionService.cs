@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -12,12 +12,12 @@ using MediatR;
 
 namespace Elsa.Scripting.JavaScript.Services
 {
-    public class TypeScriptDefinitionService : ITypeScriptDefinitionService
+    public class JsonTypeScriptDefinitionService : ITypeScriptDefinitionService
     {
         private readonly IEnumerable<ITypeDefinitionProvider> _providers;
         private readonly IMediator _mediator;
 
-        public TypeScriptDefinitionService(IEnumerable<ITypeDefinitionProvider> providers, IMediator mediator)
+        public JsonTypeScriptDefinitionService(IEnumerable<ITypeDefinitionProvider> providers, IMediator mediator)
         {
             _providers = providers;
             _mediator = mediator;
@@ -28,7 +28,7 @@ namespace Elsa.Scripting.JavaScript.Services
             var builder = new StringBuilder();
             var providerContext = new TypeDefinitionContext(workflowDefinition, context);
             var types = await CollectTypesAsync(providerContext, cancellationToken);
-            
+
             providerContext.GetTypeScriptType = ((provider, type) => GetTypeScriptType(providerContext, type, types, provider));
 
             // Render type declarations for anything except those listed in TypeConverters.
@@ -106,13 +106,13 @@ namespace Elsa.Scripting.JavaScript.Services
         {
             var symbol = type switch
             {
-                {IsInterface: true} => "interface",
-                {IsClass: true} => "class",
-                {IsValueType: true} => "class",
-                {IsEnum: true} => "enum",
+                { IsInterface: true } => "interface",
+                { IsClass: true } => "class",
+                { IsValueType: true } => "class",
+                { IsEnum: true } => "enum",
                 _ => "interface"
             };
-            
+
             RenderTypeDeclaration(context, symbol, type, collectedTypes, output);
         }
 
@@ -167,7 +167,7 @@ namespace Elsa.Scripting.JavaScript.Services
 
             if (excludeProvider != null)
                 providers = providers.Where(x => x != excludeProvider);
-            
+
             var provider = providers.FirstOrDefault(x => x.SupportsType(context, type));
             var typeScriptType = provider != null ? provider.GetTypeDefinition(context, type) : collectedTypes.Contains(type) ? type.Name : "any";
             return GetSafeSymbol(typeScriptType);

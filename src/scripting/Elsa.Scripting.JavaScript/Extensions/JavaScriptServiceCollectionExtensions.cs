@@ -14,7 +14,7 @@ namespace Microsoft.Extensions.DependencyInjection
         public static IServiceCollection AddJavaScriptExpressionEvaluator(this IServiceCollection services)
         {
             return services
-                .AddScoped<ITypeScriptDefinitionService, TypeScriptDefinitionService>()
+                .AddScoped<ITypeScriptDefinitionService, DotNetTypeScriptDefinitionService>()
                 .AddScoped<IJavaScriptService, JintJavaScriptEvaluator>()
                 .AddTransient(s => new JintEvaluationResultConverterFactory(s).GetConverter())
                 .AddTransient<IConvertsEnumerableToObject>(s => new EnumerableResultConverter(default))
