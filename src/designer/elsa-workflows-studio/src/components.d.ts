@@ -15,7 +15,7 @@ import { MonacoValueChangedArgs } from "./components/controls/elsa-monaco/elsa-m
 import { Map } from "./utils/utils";
 import { PagerData } from "./components/controls/elsa-pager/elsa-pager";
 import { ToastNotificationOptions } from "./components/shared/elsa-toast-notification/elsa-toast-notification";
-import { WebhookDefinition } from "./modules/elsa-webhooks/models";
+import { WebhookDefinition } from "./models/webhook";
 export namespace Components {
     interface ElsaActivityEditorModal {
         "culture": string;
