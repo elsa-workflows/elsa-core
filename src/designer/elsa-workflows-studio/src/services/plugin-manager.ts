@@ -18,8 +18,7 @@ import {UserTaskPlugin} from "../plugins/user-task-plugin";
 import {StatePlugin} from "../plugins/state-plugin";
 import {SendHttpRequestPlugin} from "../plugins/send-http-request-plugin";
 import {RunWorkflowPlugin} from "../plugins/run-workflow-plugin";
-import {WebhooksPlugin} from "../modules/elsa-webhooks/plugins/webhooks-plugin";
-import {ElsaStudio} from "../models/services";
+import {ElsaStudio} from "../models";
 
 export class PluginManager {
   plugins: Array<ElsaPlugin> = [];
@@ -27,7 +26,7 @@ export class PluginManager {
   elsaStudio: ElsaStudio;
   initialized: boolean;
 
-  constructor() {    
+  constructor() {
     this.pluginTypes = [
       DefaultDriversPlugin,
       ActivityIconProviderPlugin,

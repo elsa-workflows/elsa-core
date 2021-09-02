@@ -233,8 +233,6 @@ export namespace Components {
         "history"?: RouterHistory;
         "serverUrl": string;
     }
-    interface ElsaWebhooksPlugin {
-    }
     interface ElsaWorkflowBlueprintSidePanel {
         "serverUrl": string;
         "workflowId": string;
@@ -310,9 +308,6 @@ export namespace Components {
     interface ElsaWorkflowSettingsModal {
         "serverUrl": string;
         "workflowDefinition": WorkflowDefinition;
-    }
-    interface ElsaWorkflowSettingsPlugin {
-        "serverUrl": string;
     }
 }
 declare global {
@@ -556,12 +551,6 @@ declare global {
         prototype: HTMLElsaWebhookDefinitionsListScreenElement;
         new (): HTMLElsaWebhookDefinitionsListScreenElement;
     };
-    interface HTMLElsaWebhooksPluginElement extends Components.ElsaWebhooksPlugin, HTMLStencilElement {
-    }
-    var HTMLElsaWebhooksPluginElement: {
-        prototype: HTMLElsaWebhooksPluginElement;
-        new (): HTMLElsaWebhooksPluginElement;
-    };
     interface HTMLElsaWorkflowBlueprintSidePanelElement extends Components.ElsaWorkflowBlueprintSidePanel, HTMLStencilElement {
     }
     var HTMLElsaWorkflowBlueprintSidePanelElement: {
@@ -634,12 +623,6 @@ declare global {
         prototype: HTMLElsaWorkflowSettingsModalElement;
         new (): HTMLElsaWorkflowSettingsModalElement;
     };
-    interface HTMLElsaWorkflowSettingsPluginElement extends Components.ElsaWorkflowSettingsPlugin, HTMLStencilElement {
-    }
-    var HTMLElsaWorkflowSettingsPluginElement: {
-        prototype: HTMLElsaWorkflowSettingsPluginElement;
-        new (): HTMLElsaWorkflowSettingsPluginElement;
-    };
     interface HTMLElementTagNameMap {
         "elsa-activity-editor-modal": HTMLElsaActivityEditorModalElement;
         "elsa-activity-picker-modal": HTMLElsaActivityPickerModalElement;
@@ -681,7 +664,6 @@ declare global {
         "elsa-webhook-definition-editor-notifications": HTMLElsaWebhookDefinitionEditorNotificationsElement;
         "elsa-webhook-definition-editor-screen": HTMLElsaWebhookDefinitionEditorScreenElement;
         "elsa-webhook-definitions-list-screen": HTMLElsaWebhookDefinitionsListScreenElement;
-        "elsa-webhooks-plugin": HTMLElsaWebhooksPluginElement;
         "elsa-workflow-blueprint-side-panel": HTMLElsaWorkflowBlueprintSidePanelElement;
         "elsa-workflow-blueprint-viewer-screen": HTMLElsaWorkflowBlueprintViewerScreenElement;
         "elsa-workflow-definition-editor-notifications": HTMLElsaWorkflowDefinitionEditorNotificationsElement;
@@ -694,7 +676,6 @@ declare global {
         "elsa-workflow-publish-button": HTMLElsaWorkflowPublishButtonElement;
         "elsa-workflow-registry-list-screen": HTMLElsaWorkflowRegistryListScreenElement;
         "elsa-workflow-settings-modal": HTMLElsaWorkflowSettingsModalElement;
-        "elsa-workflow-settings-plugin": HTMLElsaWorkflowSettingsPluginElement;
     }
 }
 declare namespace LocalJSX {
@@ -914,8 +895,6 @@ declare namespace LocalJSX {
         "history"?: RouterHistory;
         "serverUrl"?: string;
     }
-    interface ElsaWebhooksPlugin {
-    }
     interface ElsaWorkflowBlueprintSidePanel {
         "serverUrl"?: string;
         "workflowId"?: string;
@@ -987,9 +966,6 @@ declare namespace LocalJSX {
         "serverUrl"?: string;
         "workflowDefinition"?: WorkflowDefinition;
     }
-    interface ElsaWorkflowSettingsPlugin {
-        "serverUrl"?: string;
-    }
     interface IntrinsicElements {
         "elsa-activity-editor-modal": ElsaActivityEditorModal;
         "elsa-activity-picker-modal": ElsaActivityPickerModal;
@@ -1031,7 +1007,6 @@ declare namespace LocalJSX {
         "elsa-webhook-definition-editor-notifications": ElsaWebhookDefinitionEditorNotifications;
         "elsa-webhook-definition-editor-screen": ElsaWebhookDefinitionEditorScreen;
         "elsa-webhook-definitions-list-screen": ElsaWebhookDefinitionsListScreen;
-        "elsa-webhooks-plugin": ElsaWebhooksPlugin;
         "elsa-workflow-blueprint-side-panel": ElsaWorkflowBlueprintSidePanel;
         "elsa-workflow-blueprint-viewer-screen": ElsaWorkflowBlueprintViewerScreen;
         "elsa-workflow-definition-editor-notifications": ElsaWorkflowDefinitionEditorNotifications;
@@ -1044,7 +1019,6 @@ declare namespace LocalJSX {
         "elsa-workflow-publish-button": ElsaWorkflowPublishButton;
         "elsa-workflow-registry-list-screen": ElsaWorkflowRegistryListScreen;
         "elsa-workflow-settings-modal": ElsaWorkflowSettingsModal;
-        "elsa-workflow-settings-plugin": ElsaWorkflowSettingsPlugin;
     }
 }
 export { LocalJSX as JSX };
@@ -1091,7 +1065,6 @@ declare module "@stencil/core" {
             "elsa-webhook-definition-editor-notifications": LocalJSX.ElsaWebhookDefinitionEditorNotifications & JSXBase.HTMLAttributes<HTMLElsaWebhookDefinitionEditorNotificationsElement>;
             "elsa-webhook-definition-editor-screen": LocalJSX.ElsaWebhookDefinitionEditorScreen & JSXBase.HTMLAttributes<HTMLElsaWebhookDefinitionEditorScreenElement>;
             "elsa-webhook-definitions-list-screen": LocalJSX.ElsaWebhookDefinitionsListScreen & JSXBase.HTMLAttributes<HTMLElsaWebhookDefinitionsListScreenElement>;
-            "elsa-webhooks-plugin": LocalJSX.ElsaWebhooksPlugin & JSXBase.HTMLAttributes<HTMLElsaWebhooksPluginElement>;
             "elsa-workflow-blueprint-side-panel": LocalJSX.ElsaWorkflowBlueprintSidePanel & JSXBase.HTMLAttributes<HTMLElsaWorkflowBlueprintSidePanelElement>;
             "elsa-workflow-blueprint-viewer-screen": LocalJSX.ElsaWorkflowBlueprintViewerScreen & JSXBase.HTMLAttributes<HTMLElsaWorkflowBlueprintViewerScreenElement>;
             "elsa-workflow-definition-editor-notifications": LocalJSX.ElsaWorkflowDefinitionEditorNotifications & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionEditorNotificationsElement>;
@@ -1104,7 +1077,6 @@ declare module "@stencil/core" {
             "elsa-workflow-publish-button": LocalJSX.ElsaWorkflowPublishButton & JSXBase.HTMLAttributes<HTMLElsaWorkflowPublishButtonElement>;
             "elsa-workflow-registry-list-screen": LocalJSX.ElsaWorkflowRegistryListScreen & JSXBase.HTMLAttributes<HTMLElsaWorkflowRegistryListScreenElement>;
             "elsa-workflow-settings-modal": LocalJSX.ElsaWorkflowSettingsModal & JSXBase.HTMLAttributes<HTMLElsaWorkflowSettingsModalElement>;
-            "elsa-workflow-settings-plugin": LocalJSX.ElsaWorkflowSettingsPlugin & JSXBase.HTMLAttributes<HTMLElsaWorkflowSettingsPluginElement>;
         }
     }
 }

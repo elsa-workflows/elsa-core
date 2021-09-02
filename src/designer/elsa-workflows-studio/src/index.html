@@ -18,9 +18,9 @@
   <!-- The root dashboard component -->
   <elsa-studio-dashboard></elsa-studio-dashboard>
 
-    <!-- Instead of using the full dashboard component, you can display lower-level components instead-->
-    <!--<elsa-workflow-instance-list-screen></elsa-workflow-instance-list-screen>-->
-    <!--<elsa-workflow-definition-editor-screen></elsa-workflow-definition-editor-screen>-->
+  <!-- Instead of using the full dashboard component, you can display lower-level components instead-->
+  <!--<elsa-workflow-instance-list-screen></elsa-workflow-instance-list-screen>-->
+  <!--<elsa-workflow-definition-editor-screen></elsa-workflow-definition-editor-screen>-->
 </elsa-studio-root>
 
 <!-- Keep this to avoid Stencil from stripping classes added by dagre-d3 <!-->
@@ -30,7 +30,7 @@
   // Integration demos.
 
   // Import publicly exposed services and models.
-  import {confirmDialogService, EventTypes} from "/build/index.esm.js";
+  import {confirmDialogService, EventTypes, WebhooksPlugin, WorkflowSettingsPlugin} from "/build/index.esm.js";
 
   // Custom plugin that changes the icon of the ReadLine activity.
   function CustomReadLinePlugin(elsaStudio) {
@@ -204,34 +204,22 @@
     };
   }
 
-  function WebhooksPlugin(elsaStudio) {
-    var tag = document.createElement("elsa-webhooks-plugin");
-    const elsaStudioRoot = document.querySelector('elsa-studio-root');
-    elsaStudioRoot.appendChild(tag);
-  }
-
-  function WorkflowSettingsPlugin(elsaStudio) {
-    var tag = document.createElement("elsa-workflow-settings-plugin");
-    const elsaStudioRoot = document.querySelector('elsa-studio-root');
-    elsaStudioRoot.appendChild(tag);
-  }
-
   // Get a handle to the elsa-studio-root element.
   const elsaStudioRoot = document.querySelector('elsa-studio-root');
-
-  // Configure Elsa.
-  // (async () => {
-  //     // Wait until the component is available.
-  //     await customElements.whenDefined('elsa-studio-root');
-  //
-  //     // Install plugins.
-  //     await elsaStudioRoot.addPlugins([CustomReadLinePlugin, CustomBulkActionsPlugin, CustomHttpMiddlewarePlugin, CustomPropertyFieldPlugin]);
-  // })();
 
   // Alternatively, configure Elsa during the 'initializing' event.
   elsaStudioRoot.addEventListener('initializing', e => {
     const elsa = e.detail;
-    elsa.pluginManager.registerPlugins([CustomReadLinePlugin, CustomBulkActionsPlugin, CustomHttpMiddlewarePlugin, CustomPropertyFieldPlugin, WorkflowModelChangedListenerPlugin, CustomActivityEditorPlugin, WebhooksPlugin, WorkflowSettingsPlugin]);
+    elsa.pluginManager.registerPlugins([
+      CustomReadLinePlugin,
+      CustomBulkActionsPlugin,
+      CustomHttpMiddlewarePlugin,
+      CustomPropertyFieldPlugin,
+      WorkflowModelChangedListenerPlugin,
+      CustomActivityEditorPlugin,
+      WebhooksPlugin,
+      WorkflowSettingsPlugin
+    ]);
   });
 
   // Some components publish DOM events that we can handle directly:
