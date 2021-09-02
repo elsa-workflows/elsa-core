@@ -1,3 +1,4 @@
+using Elsa.Services;
 using Elsa.Services.Bookmarks;
 using System;
 using System.Collections.Generic;
@@ -7,27 +8,30 @@ using System.Threading.Tasks;
 
 namespace Elsa.Activities.File.Bookmarks
 {
-    public class WatchDirectoryBookmark : IBookmark
+    public class FileCreatedBookmark : IBookmark
     {
-        public WatchDirectoryBookmark()
+        public FileCreatedBookmark()
         { }
 
-        public WatchDirectoryBookmark(string path)
+        public FileCreatedBookmark(string path)
         {
             Path = path;
         }
 
         public string Path { get; set; }
+
+        public string Pattern { get; set; }
     }
 
-    public class WatchDirectoryBookmarkProvider : BookmarkProvider<WatchDirectoryBookmark, WatchDirectory>
+    public class FileCreatedBookmarkProvider : BookmarkProvider<FileCreatedBookmark, WatchDirectory>
     {
         public override async ValueTask<IEnumerable<BookmarkResult>> GetBookmarksAsync(BookmarkProviderContext<WatchDirectory> context, CancellationToken cancellationToken) =>
             new[]
             {
-                Result(new WatchDirectoryBookmark()
+                Result(new FileCreatedBookmark()
                 {
-                    Path = (await context.ReadActivityPropertyAsync(a => a.Path))
+                    Path = await context.ReadActivityPropertyAsync(a => a.Path),
+                    Pattern = await context.ReadActivityPropertyAsync(a => a.Pattern)
                 })
             };
     }
