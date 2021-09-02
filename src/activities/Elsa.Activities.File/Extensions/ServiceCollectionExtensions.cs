@@ -1,5 +1,9 @@
 using Elsa;
 using Elsa.Activities.File;
+using Elsa.Activities.File.Bookmarks;
+using Elsa.Activities.File.Services;
+using Elsa.Activities.File.StartupTasks;
+using Elsa.Runtime;
 using System;
 
 // ReSharper disable once CheckNamespace
@@ -24,6 +28,10 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddActivity<ReadFile>()
                 .AddActivity<TempFile>()
                 .AddActivity<WatchDirectory>();
+
+            builder.Services.AddSingleton<FileSystemWatchersStarter>()
+                .AddBookmarkProvider<FileCreatedBookmarkProvider>()
+                .AddStartupTask<StartFileSystemWatchers>();
 
             return builder;
         }
