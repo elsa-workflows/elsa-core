@@ -39,10 +39,15 @@ namespace Elsa.Activities.Temporal
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
-            if (context.WorkflowExecutionContext.IsFirstPass)
-                return Done();
-
             var now = _clock.GetCurrentInstant();
+            
+            if (context.WorkflowExecutionContext.IsFirstPass)
+            {
+                context.JournalData.Add("Executed At", now);
+                context.JournalData.Add("First Pass", true);
+                return Done();
+            }
+            
             var executeAt = Instant;
 
             ExecuteAt = executeAt;
@@ -50,12 +55,19 @@ namespace Elsa.Activities.Temporal
             if (executeAt <= now)
             {
                 _logger.LogDebug("Scheduled trigger time lies in the past ('{Delta}'). Skipping scheduling", now - ExecuteAt);
+                context.JournalData.Add("Executed At", now);    
+                context.JournalData.Add("Skipped Scheduling", true);
                 return Done();
             }
 
+            context.JournalData.Add("Scheduled Execution Time", executeAt);
             return Combine(Suspend(), new ScheduleWorkflowResult(executeAt));
         }
 
-        protected override IActivityExecutionResult OnResume() => Done();
+        protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
+        {
+            context.JournalData.Add("Executed At", _clock.GetCurrentInstant());
+            return Done();
+        }
     }
 }
