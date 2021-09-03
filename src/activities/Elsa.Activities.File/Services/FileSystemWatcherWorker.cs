@@ -1,6 +1,9 @@
 using AutoMapper;
+using Elsa.Activities.File.Bookmarks;
 using Elsa.Activities.File.Models;
+using Elsa.Models;
 using Elsa.Services;
+using Elsa.Services.Models;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -33,7 +36,6 @@ namespace Elsa.Activities.File.Services
                 Filter = pattern
             };
             _watcher.Created += FileCreated;
-            _watcher.Changed += FileChanged;
             _watcher.EnableRaisingEvents = true;
         }
 
@@ -41,14 +43,12 @@ namespace Elsa.Activities.File.Services
 
         public string Pattern { get; private set; }
 
-        private void FileChanged(object sender, FileSystemEventArgs e)
-        {
-            var model = _mapper.Map<FileSystemEvent>(e);
-        }
-
         private void FileCreated(object sender, FileSystemEventArgs e)
         {
             var model = _mapper.Map<FileSystemEvent>(e);
+            var bookmark = new FileCreatedBookmark(Path, Pattern);
+            var launchContext = new WorkflowsQuery(nameof(WatchDirectory), bookmark);
+            _workflowLaunchpad.UseService(s => s.CollectAndDispatchWorkflowsAsync(launchContext, new WorkflowInput(model)));
         }
     }
 }
