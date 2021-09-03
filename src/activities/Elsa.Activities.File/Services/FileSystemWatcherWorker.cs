@@ -1,5 +1,6 @@
 using AutoMapper;
 using Elsa.Activities.File.Models;
+using Elsa.Services;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -13,13 +14,19 @@ namespace Elsa.Activities.File.Services
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
         private readonly FileSystemWatcher _watcher;
+        private readonly Scoped<IWorkflowLaunchpad> _workflowLaunchpad;
 
-        public FileSystemWatcherWorker(string path, string pattern, ILogger<FileSystemWatcherWorker> logger, IMapper mapper)
+        public FileSystemWatcherWorker(string path, 
+            string pattern, 
+            ILogger<FileSystemWatcherWorker> logger, 
+            IMapper mapper,
+            Scoped<IWorkflowLaunchpad> workflowLaunchpad)
         {
             Path = path;
             Pattern = pattern;
             _logger = logger;
             _mapper = mapper;
+            _workflowLaunchpad = workflowLaunchpad;
             _watcher = new FileSystemWatcher()
             {
                 Path = path,
