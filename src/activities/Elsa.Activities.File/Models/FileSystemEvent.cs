@@ -3,13 +3,13 @@ using System.IO;
 
 namespace Elsa.Activities.File.Models
 {
-    public class FileSystemChanged
+    public class FileSystemEvent
     {
-        public FileSystemChanged()
+        public FileSystemEvent()
         {
         }
 
-        public FileSystemChanged(WatcherChangeTypes changeType, string directory, string fileName, string fullPath)
+        public FileSystemEvent(WatcherChangeTypes changeType, string directory, string fileName, string fullPath)
         {
             ChangeType = changeType;
             Directory = directory;
