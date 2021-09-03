@@ -13,9 +13,10 @@ namespace Elsa.Activities.File.Bookmarks
         public FileCreatedBookmark()
         { }
 
-        public FileCreatedBookmark(string path)
+        public FileCreatedBookmark(string path, string pattern)
         {
             Path = path;
+            Pattern = pattern;
         }
 
         public string Path { get; set; }
