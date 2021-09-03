@@ -92,10 +92,6 @@ export class ElsaWorkflowInstanceJournal {
     await this.workflowInstanceIdChangedHandler(this.workflowInstanceId);
   }
 
-  filterRecords(){
-    return
-  }
-
   selectActivityRecordInternal(record?: WorkflowExecutionLogRecord) {
     const activity = !!record ? this.workflowBlueprint.activities.find(x => x.id === record.activityId) : null;
     this.selectedRecordId = !!record ? record.id : null;
@@ -240,19 +236,19 @@ export class ElsaWorkflowInstanceJournal {
       const recordClass = record.id === selectedRecordId ? 'elsa-border-blue-600' : 'hover:elsa-bg-gray-100 elsa-border-transparent';
       const recordData = record.data || {};
       const filteredRecordData = {};
-      const wellknownDataKeys = {State: true, Input: null, Outcomes: true, Exception: true};
+      const wellKnownDataKeys = {State: true, Input: null, Outcomes: true, Exception: true};
 
       for (const key in recordData) {
 
         if (!recordData.hasOwnProperty(key))
           continue;
 
-        if (!!wellknownDataKeys[key])
+        if (!!wellKnownDataKeys[key])
           continue;
 
         const value = recordData[key];
 
-        if (!value)
+        if (!value && value != 0)
           continue;
 
         let valueText = null;

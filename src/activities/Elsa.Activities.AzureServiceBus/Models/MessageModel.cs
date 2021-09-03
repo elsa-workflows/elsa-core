@@ -20,5 +20,23 @@ namespace Elsa.Activities.AzureServiceBus.Models
         public string? ReplyToSessionId { get; set; }
         public DateTime ScheduledEnqueueTimeUtc { get; set; }
         public IDictionary<string, object> UserProperties { get; set; } = new Dictionary<string,object>();
+
+        public object ExtractHeaders() =>
+            new
+            {
+                Label,
+                To,
+                ContentType,
+                CorrelationId,
+                MessageId,
+                PartitionKey,
+                ReplyTo,
+                UserProperties,
+                ExpiresAtUtc,
+                TimeToLive,
+                ViaPartitionKey,
+                ReplyToSessionId,
+                ScheduledEnqueueTimeUtc
+            };
     }
 }

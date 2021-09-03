@@ -2,6 +2,7 @@ using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Expressions;
 using Elsa.Services;
+using Elsa.Services.Models;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Primitives
@@ -21,9 +22,10 @@ namespace Elsa.Activities.Primitives
         
         [ActivityOutput] public string? Output { get; set; }
 
-        protected override IActivityExecutionResult OnExecute()
+        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
             Output = Value;
+            context.JournalData.Add("Correlation ID", Value);
             return Combine(Done(), new CorrelateResult(Value));
         }
     }

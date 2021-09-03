@@ -155,6 +155,8 @@ namespace Elsa.Activities.Telnyx.Activities
         {
             var payload = context.GetInput<CallPayload>();
             Output = payload;
+            
+            context.LogOutputProperty(this, "Received Payload", payload);
 
             return payload switch
             {
