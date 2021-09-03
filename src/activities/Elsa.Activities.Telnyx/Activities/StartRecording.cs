@@ -102,6 +102,7 @@ namespace Elsa.Activities.Telnyx.Activities
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
         {
             SavedRecordingPayload = context.GetInput<CallRecordingSaved>();
+            context.LogOutputProperty(this, "Received Payload", SavedRecordingPayload);
             return Outcome(TelnyxOutcomeNames.FinishedRecording);
         }
 

@@ -88,6 +88,7 @@ namespace Elsa.Activities.Telnyx.Activities
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
         {
             PlaybackEndedPayload = context.GetInput<CallPlaybackEndedPayload>();
+            context.LogOutputProperty(this, "Received Payload", PlaybackEndedPayload);
             return Outcome(TelnyxOutcomeNames.CallPlaybackEnded);
         }
 

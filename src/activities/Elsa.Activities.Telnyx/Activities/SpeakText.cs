@@ -123,6 +123,7 @@ namespace Elsa.Activities.Telnyx.Activities
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
         {
             SpeakEndedPayload = context.GetInput<CallSpeakEnded>();
+            context.LogOutputProperty(this, "Received Payload", SpeakEndedPayload);
             return Outcome(TelnyxOutcomeNames.FinishedSpeaking);
         }
 

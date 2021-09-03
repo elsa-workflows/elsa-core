@@ -38,7 +38,7 @@ namespace Elsa.Handlers
             };
 
             foreach (var entry in activityExecutionContext.JournalData) 
-                data[entry.Key] = JToken.FromObject(entry.Value);
+                data[entry.Key] = entry.Value != null ? JToken.FromObject(entry.Value) : JValue.CreateNull();
 
             var resuming = activityExecutionContext.Resuming;
             await WriteEntryAsync(resuming ? "Resumed" : "Executed", default, activityExecutionContext, data, cancellationToken);

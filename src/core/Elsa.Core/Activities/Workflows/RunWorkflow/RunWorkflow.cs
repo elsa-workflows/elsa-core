@@ -104,12 +104,15 @@ namespace Elsa.Activities.Workflows
 
             if (workflowBlueprint == null || workflowBlueprint.Id == context.WorkflowInstance.DefinitionId)
                 return Outcome("Not Found");
-
-            context.JournalData.Add("Workflow Blueprint ID", workflowBlueprint.Id);
+            
             var result = await _startsWorkflow.StartWorkflowAsync(workflowBlueprint!, TenantId, new WorkflowInput(Input), CorrelationId, ContextId, cancellationToken: cancellationToken);
             var childWorkflowInstance = result.WorkflowInstance!;
             var childWorkflowStatus = childWorkflowInstance.WorkflowStatus;
             ChildWorkflowInstanceId = childWorkflowInstance.Id;
+            
+            context.JournalData.Add("Workflow Blueprint ID", workflowBlueprint.Id);
+            context.JournalData.Add("Workflow Instance ID", childWorkflowInstance.Id);
+            context.JournalData.Add("Workflow Instance Status", childWorkflowInstance.WorkflowStatus);
 
             return Mode switch
             {
