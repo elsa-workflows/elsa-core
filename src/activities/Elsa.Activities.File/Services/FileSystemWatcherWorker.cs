@@ -1,3 +1,5 @@
+using AutoMapper;
+using Elsa.Activities.File.Models;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -9,13 +11,15 @@ namespace Elsa.Activities.File.Services
     public class FileSystemWatcherWorker
     {
         private readonly ILogger _logger;
+        private readonly IMapper _mapper;
         private readonly FileSystemWatcher _watcher;
 
-        public FileSystemWatcherWorker(string path, string pattern, ILogger<FileSystemWatcherWorker> logger)
+        public FileSystemWatcherWorker(string path, string pattern, ILogger<FileSystemWatcherWorker> logger, IMapper mapper)
         {
             Path = path;
             Pattern = pattern;
             _logger = logger;
+            _mapper = mapper;
             _watcher = new FileSystemWatcher()
             {
                 Path = path,
@@ -32,10 +36,12 @@ namespace Elsa.Activities.File.Services
 
         private void FileChanged(object sender, FileSystemEventArgs e)
         {
+            var model = _mapper.Map<FileSystemEvent>(e);
         }
 
         private void FileCreated(object sender, FileSystemEventArgs e)
         {
+            var model = _mapper.Map<FileSystemEvent>(e);
         }
     }
 }
