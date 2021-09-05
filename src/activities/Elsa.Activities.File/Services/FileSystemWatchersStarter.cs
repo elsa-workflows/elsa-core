@@ -1,3 +1,7 @@
+using AutoMapper;
+using Elsa.Activities.File.Bookmarks;
+using Elsa.Activities.File.Models;
+using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,19 +21,25 @@ namespace Elsa.Activities.File.Services
     public class FileSystemWatchersStarter
     {
         private readonly ILogger<FileSystemWatchersStarter> _logger;
+        private readonly IMapper _mapper;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly SemaphoreSlim _semaphore = new(1);
         private readonly IServiceProvider _serviceProvider;
-        private readonly ICollection<FileSystemWatcherWorker> _workers;
+        private readonly ICollection<FileSystemWatcher> _watchers;
+        private readonly Scoped<IWorkflowLaunchpad> _workflowLaunchpad;
 
         public FileSystemWatchersStarter(ILogger<FileSystemWatchersStarter> logger,
+            IMapper mapper,
             IServiceScopeFactory scopeFactory,
-            IServiceProvider serviceProvider)
+            IServiceProvider serviceProvider,
+            Scoped<IWorkflowLaunchpad> workflowLaunchpad)
         {
             _logger = logger;
+            _mapper = mapper;
             _scopeFactory = scopeFactory;
             _serviceProvider = serviceProvider;
-            _workers = new List<FileSystemWatcherWorker>();
+            _watchers = new List<FileSystemWatcher>();
+            _workflowLaunchpad = workflowLaunchpad;
         }
 
         public async Task CreateAndAddWatchersAsync(CancellationToken cancellationToken = default)
@@ -41,9 +51,10 @@ namespace Elsa.Activities.File.Services
                 var activities = GetActivityInstancesAsync<WatchDirectory>(cancellationToken);
                 await foreach (var a in activities)
                 {
+                    var changeTypes = await a.EvaluatePropertyValueAsync(x => x.ChangeTypes, cancellationToken);
                     var path = await a.EvaluatePropertyValueAsync(x => x.Path, cancellationToken);
                     var pattern = await a.EvaluatePropertyValueAsync(x => x.Pattern, cancellationToken);
-                    CreateAndAddWatcher(path, pattern);
+                    CreateAndAddWatcher(path, pattern, changeTypes);
                 }
             }
             finally
@@ -52,12 +63,18 @@ namespace Elsa.Activities.File.Services
             }
         }
 
-        private void CreateAndAddWatcher(string path, string pattern)
+        private void CreateAndAddWatcher(string path, string pattern, WatcherChangeTypes changeTypes)
         {
             try
             {
-                var worker = ActivatorUtilities.CreateInstance<FileSystemWatcherWorker>(_serviceProvider, path, pattern);
-                _workers.Add(worker);
+                var watcher = new FileSystemWatcher()
+                {
+                    Path = path,
+                    Filter = pattern,
+                };
+                watcher.Created += FileCreated;
+                watcher.EnableRaisingEvents = true;
+                _watchers.Add(watcher);
             }
             finally
             {
@@ -89,5 +106,19 @@ namespace Elsa.Activities.File.Services
                 }
             }
         }
+
+        #region Watcher delegates
+        private void FileCreated(object sender, FileSystemEventArgs e)
+        {
+            var watcher = (FileSystemWatcher)sender;
+            var path = watcher.Path;
+            var pattern = watcher.Filter;
+
+            var model = _mapper.Map<FileSystemEvent>(e);
+            var bookmark = new FileCreatedBookmark(path, pattern);
+            var launchContext = new WorkflowsQuery(nameof(WatchDirectory), bookmark);
+            _workflowLaunchpad.UseService(s => s.CollectAndDispatchWorkflowsAsync(launchContext, new WorkflowInput(model)));
+        }
+        #endregion
     }
 }
