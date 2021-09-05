@@ -1,4 +1,5 @@
 using Elsa.Services;
+using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -16,7 +17,7 @@ namespace Elsa.Activities.File.Services
     public class FileSystemWatchersStarter
     {
         private readonly ILogger<FileSystemWatchersStarter> _logger;
-        private readonly IServiceScopeFactory _scopeactory;
+        private readonly IServiceScopeFactory _scopeFactory;
         private readonly SemaphoreSlim _semaphore = new(1);
         private readonly IServiceProvider _serviceProvider;
         private readonly ICollection<FileSystemWatcherWorker> _workers;
@@ -26,7 +27,7 @@ namespace Elsa.Activities.File.Services
             IServiceProvider serviceProvider)
         {
             _logger = logger;
-            _scopeactory = scopeFactory;
+            _scopeFactory = scopeFactory;
             _serviceProvider = serviceProvider;
             _workers = new List<FileSystemWatcherWorker>();
         }
@@ -37,28 +38,12 @@ namespace Elsa.Activities.File.Services
 
             try
             {
-                using (var scope = _scopeactory.CreateScope())
+                var activities = GetActivityInstancesAsync<WatchDirectory>(cancellationToken);
+                await foreach (var a in activities)
                 {
-                    var workflowRegistry = scope.ServiceProvider.GetRequiredService<IWorkflowRegistry>();
-                    var workflowBlueprintReflector = scope.ServiceProvider.GetRequiredService<IWorkflowBlueprintReflector>();
-                    var workflows = await workflowRegistry.ListActiveAsync(cancellationToken);
-
-                    var query = from workflow in workflows
-                                from activity in workflow.Activities
-                                where activity.Type == nameof(WatchDirectory)
-                                select workflow;
-
-                    foreach (var workflow in query)
-                    {
-                        var workflowBlueprintWrapper = await workflowBlueprintReflector.ReflectAsync(scope.ServiceProvider, workflow, cancellationToken);
-
-                        foreach (var activity in workflowBlueprintWrapper.Filter<WatchDirectory>())
-                        {
-                            var path = await activity.EvaluatePropertyValueAsync(x => x.Path, cancellationToken);
-                            var pattern = await activity.EvaluatePropertyValueAsync(x => x.Pattern, cancellationToken);
-                            CreateAndAddWatcher(path, pattern);
-                        }
-                    }
+                    var path = await a.EvaluatePropertyValueAsync(x => x.Path, cancellationToken);
+                    var pattern = await a.EvaluatePropertyValueAsync(x => x.Pattern, cancellationToken);
+                    CreateAndAddWatcher(path, pattern);
                 }
             }
             finally
@@ -77,6 +62,31 @@ namespace Elsa.Activities.File.Services
             finally
             {
 
+            }
+        }
+
+        private async IAsyncEnumerable<IActivityBlueprintWrapper<WatchDirectory>> GetActivityInstancesAsync<TActivity>([EnumeratorCancellation] CancellationToken cancellationToken) where TActivity : IActivity
+        {
+            using (var scope = _scopeFactory.CreateScope())
+            {
+                var workflowRegistry = scope.ServiceProvider.GetRequiredService<IWorkflowRegistry>();
+                var workflowBlueprintReflector = scope.ServiceProvider.GetRequiredService<IWorkflowBlueprintReflector>();
+                var workflows = await workflowRegistry.ListActiveAsync(cancellationToken);
+
+                var query = from workflow in workflows
+                            from activity in workflow.Activities
+                            where activity.Type == nameof(WatchDirectory)
+                            select workflow;
+
+                foreach (var workflow in query)
+                {
+                    var workflowBlueprintWrapper = await workflowBlueprintReflector.ReflectAsync(scope.ServiceProvider, workflow, cancellationToken);
+
+                    foreach (var activity in workflowBlueprintWrapper.Filter<WatchDirectory>())
+                    {
+                        yield return activity;
+                    }
+                }
             }
         }
     }
