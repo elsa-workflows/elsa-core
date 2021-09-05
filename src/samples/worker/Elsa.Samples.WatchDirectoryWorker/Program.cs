@@ -18,6 +18,7 @@ namespace Elsa.Samples.WatchDirectoryWorker
                 {
                     services
                         .AddElsa(options => options
+                            .AddConsoleActivities()
                             .AddFileActivities()
                             .AddWorkflow<WatchDirectoryWorkflow>());
                 });
