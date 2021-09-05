@@ -16,6 +16,6 @@ namespace Elsa.Activities.File.StartupTasks
 
         public int Order => 2000;
 
-        public Task ExecuteAsync(CancellationToken cancellationToken = default) => _starter.CreateWatchersAsync(cancellationToken);
+        public Task ExecuteAsync(CancellationToken cancellationToken = default) => _starter.CreateAndAddWatchersAsync(cancellationToken);
     }
 }

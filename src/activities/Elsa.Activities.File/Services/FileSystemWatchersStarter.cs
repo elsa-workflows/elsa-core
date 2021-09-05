@@ -32,7 +32,7 @@ namespace Elsa.Activities.File.Services
             _workers = new List<FileSystemWatcherWorker>();
         }
 
-        public async Task CreateWatchersAsync(CancellationToken cancellationToken = default)
+        public async Task CreateAndAddWatchersAsync(CancellationToken cancellationToken = default)
         {
             await _semaphore.WaitAsync();
 
