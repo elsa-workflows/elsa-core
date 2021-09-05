@@ -1,3 +1,4 @@
+using Elsa.Activities.File.Models;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Services;
@@ -21,9 +22,14 @@ namespace Elsa.Activities.File
         [ActivityInput(Hint = "The file pattern for interested files")]
         public string Pattern { get; set; }
 
+        [ActivityOutput]
+        public FileSystemEvent? Output { get; set; }
+
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
-            return base.OnExecute(context);
+            var model = (FileSystemEvent)context.Input!;
+            Output = model;
+            return Done();
         }
     }
 }
