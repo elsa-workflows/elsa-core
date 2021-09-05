@@ -2,6 +2,7 @@ using Elsa.Services;
 using Elsa.Services.Bookmarks;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,14 +27,12 @@ namespace Elsa.Activities.File.Bookmarks
 
     public class FileCreatedBookmarkProvider : BookmarkProvider<FileCreatedBookmark, WatchDirectory>
     {
-        public override async ValueTask<IEnumerable<BookmarkResult>> GetBookmarksAsync(BookmarkProviderContext<WatchDirectory> context, CancellationToken cancellationToken) =>
-            new[]
-            {
-                Result(new FileCreatedBookmark()
-                {
-                    Path = await context.ReadActivityPropertyAsync(a => a.Path),
-                    Pattern = await context.ReadActivityPropertyAsync(a => a.Pattern)
-                })
-            };
+        public override async ValueTask<IEnumerable<BookmarkResult>> GetBookmarksAsync(BookmarkProviderContext<WatchDirectory> context, CancellationToken cancellationToken)
+        {
+            var path = await context.ReadActivityPropertyAsync(a => a.Path);
+            var pattern = await context.ReadActivityPropertyAsync(a => a.Pattern);
+            var result = Result(new FileCreatedBookmark(path, pattern));
+            return new[] { result };
+        }
     }
 }
