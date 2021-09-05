@@ -43,6 +43,7 @@ namespace Elsa.Activities.Signaling
             var triggeredSignal = context.GetInput<Signal>()!;
             SignalInput = triggeredSignal.Input;
             Output = triggeredSignal.Input;
+            context.LogOutputProperty(this, nameof(Output), Output);
             return Done();
         }
     }

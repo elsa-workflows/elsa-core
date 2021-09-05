@@ -52,11 +52,15 @@ namespace Elsa.Activities.ControlFlow
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            var workflowExecutionContext = context.WorkflowExecutionContext;
-
-            if (!IsDone(workflowExecutionContext))
+            var isDone = IsDone(context);
+            
+            context.JournalData.Add("Completed", isDone);
+            context.JournalData.Add("Current Inbound Transitions", InboundTransitions);
+            
+            if (!isDone)
                 return Noop();
-
+            
+            var workflowExecutionContext = context.WorkflowExecutionContext;
             var ancestorActivityIds = workflowExecutionContext.GetInboundActivityPath(Id).ToList();
             var activities = workflowExecutionContext.WorkflowBlueprint.Activities.ToDictionary(x => x.Id);
             var ancestors = ancestorActivityIds.Select(x => activities[x]).ToList();
@@ -70,9 +74,10 @@ namespace Elsa.Activities.ControlFlow
             return Done();
         }
 
-        private bool IsDone(WorkflowExecutionContext workflowExecutionContext)
+        private bool IsDone(ActivityExecutionContext context)
         {
             var recordedInboundTransitions = InboundTransitions;
+            var workflowExecutionContext = context.WorkflowExecutionContext;
             var inboundConnections = workflowExecutionContext.GetInboundConnections(Id);
 
             return Mode switch

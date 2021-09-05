@@ -58,12 +58,12 @@ namespace Elsa.Attributes
         /// <summary>
         /// A value indicating whether this property should be displayed but as read-only.
         /// </summary>
-        public bool? IsReadOnly { get; set; }
-        
+        public bool IsReadOnly { get; set; }
+
         /// <summary>
         /// A value indicating whether this property should be visible.
         /// </summary>
-        public bool? IsBrowsable { get; set; }
+        public bool IsBrowsable { get; set; } = true;
         
         /// <summary>
         /// A value indicating whether this property MUST be evaluated at runtime to support the workflow designer.

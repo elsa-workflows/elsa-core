@@ -230,11 +230,14 @@ namespace Elsa.Activities.Telnyx.Activities
         protected override async ValueTask OnExitAsync(ActivityExecutionContext context, object? output)
         {
             // Hang up any pending calls.
+            context.JournalData.Add("Exiting", true);
 
             var answeredCallControlId = AgentCallAnsweredPayload?.CallControlId;
             var outgoingCalls = CollectedDialResponses.Where(x => x.CallControlId != answeredCallControlId).ToList();
             var client = context.GetService<ITelnyxClient>();
 
+            context.JournalData.Add("Outgoing Calls", outgoingCalls);
+            
             foreach (var outgoingCall in outgoingCalls)
             {
                 try
@@ -361,6 +364,7 @@ namespace Elsa.Activities.Telnyx.Activities
             var dialResponse = context.GetInput<DialResponse>()!;
             collection.Add(dialResponse);
             CollectedDialResponses = collection;
+            context.JournalData.Add("Collected Dial Responses", collection);
         }
 
         private static async ValueTask<string?> ResolveExtensionAsync(ActivityExecutionContext context)

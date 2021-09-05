@@ -10,6 +10,7 @@ using Elsa.Exceptions;
 using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
+using Microsoft.AspNetCore.Mvc.Formatters;
 using Refit;
 
 // ReSharper disable once CheckNamespace
@@ -90,6 +91,7 @@ namespace Elsa.Activities.Telnyx.Activities
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
         {
             ReceivedPayload = context.GetInput<CallAnsweredPayload>();
+            context.LogOutputProperty(this, "Received Payload", ReceivedPayload);
             return Outcome(TelnyxOutcomeNames.Answered);
         }
     }
