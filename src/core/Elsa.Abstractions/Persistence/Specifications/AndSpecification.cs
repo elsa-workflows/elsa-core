@@ -4,18 +4,18 @@ using LinqKit;
 
 namespace Elsa.Persistence.Specifications
 {
-    internal struct AndSpecification<T> : ISpecification<T>
+    public struct AndSpecification<T> : ISpecification<T>
     {
-        private readonly ISpecification<T> _left;
-        private readonly ISpecification<T> _right;
-
         public AndSpecification(ISpecification<T> left, ISpecification<T> right)
         {
-            _right = right;
-            _left = left;
+            Right = right;
+            Left = left;
         }
 
-        public bool IsSatisfiedBy(T entity) => _left.IsSatisfiedBy(entity) && _right.IsSatisfiedBy(entity);
-        public Expression<Func<T, bool>> ToExpression() => _left.ToExpression().And(_right.ToExpression());
+        public bool IsSatisfiedBy(T entity) => Left.IsSatisfiedBy(entity) && Right.IsSatisfiedBy(entity);
+        public Expression<Func<T, bool>> ToExpression() => Left.ToExpression().And(Right.ToExpression());
+
+        public ISpecification<T> Left { get; }
+        public ISpecification<T> Right { get; }
     }
 }
