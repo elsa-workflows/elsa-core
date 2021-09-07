@@ -52,9 +52,10 @@ namespace Elsa.Activities.File.Services
                 await foreach (var a in activities)
                 {
                     var changeTypes = await a.EvaluatePropertyValueAsync(x => x.ChangeTypes, cancellationToken);
+                    var notifyFilters = await a.EvaluatePropertyValueAsync(x => x.NotifyFilters, cancellationToken);
                     var path = await a.EvaluatePropertyValueAsync(x => x.Path, cancellationToken);
                     var pattern = await a.EvaluatePropertyValueAsync(x => x.Pattern, cancellationToken);
-                    CreateAndAddWatcher(path, pattern, changeTypes);
+                    CreateAndAddWatcher(path, pattern, changeTypes, notifyFilters);
                 }
             }
             finally
@@ -63,23 +64,34 @@ namespace Elsa.Activities.File.Services
             }
         }
 
-        private void CreateAndAddWatcher(string path, string pattern, WatcherChangeTypes changeTypes)
+        private void CreateAndAddWatcher(string? path, string? pattern, WatcherChangeTypes changeTypes, NotifyFilters notifyFilters)
         {
-            try
-            {
-                var watcher = new FileSystemWatcher()
-                {
-                    Path = path,
-                    Filter = pattern,
-                };
-                watcher.Created += FileCreated;
-                watcher.EnableRaisingEvents = true;
-                _watchers.Add(watcher);
-            }
-            finally
-            {
+            if (string.IsNullOrWhiteSpace(path))
+                throw new ArgumentException("File watcher path must not be null or empty");
 
-            }
+            EnsurePathExists(path);
+
+            var watcher = new FileSystemWatcher()
+            {
+                Path = path,
+                Filter = pattern,
+                NotifyFilter = notifyFilters
+            };
+
+            if (changeTypes == WatcherChangeTypes.Created || changeTypes == WatcherChangeTypes.All)
+                watcher.Created += FileCreated;
+
+            if (changeTypes == WatcherChangeTypes.Changed || changeTypes == WatcherChangeTypes.All)
+                watcher.Changed += FileChanged;
+
+            if (changeTypes == WatcherChangeTypes.Deleted || changeTypes == WatcherChangeTypes.All)
+                watcher.Deleted += FileDeleted;
+
+            if (changeTypes == WatcherChangeTypes.Renamed || changeTypes == WatcherChangeTypes.All)
+                watcher.Renamed += FileRenamed;
+
+            watcher.EnableRaisingEvents = true;
+            _watchers.Add(watcher);
         }
 
         private async IAsyncEnumerable<IActivityBlueprintWrapper<WatchDirectory>> GetActivityInstancesAsync<TActivity>([EnumeratorCancellation] CancellationToken cancellationToken) where TActivity : IActivity
@@ -107,6 +119,17 @@ namespace Elsa.Activities.File.Services
             }
         }
 
+        private void EnsurePathExists(string? path)
+        {
+            _logger.LogDebug($"Checking ${path} exists");
+
+            if (!Directory.Exists(path))
+            {
+                _logger.LogInformation($"Creating directory {path}");
+                Directory.CreateDirectory(path);
+            }
+        }
+
         #region Watcher delegates
         private void FileCreated(object sender, FileSystemEventArgs e)
         {
@@ -124,6 +147,11 @@ namespace Elsa.Activities.File.Services
         }
 
         private void FileDeleted(object sender, FileSystemEventArgs e)
+        {
+            StartWorkflow((FileSystemWatcher)sender, e);
+        }
+
+        private void FileRenamed(object sender, RenamedEventArgs e)
         {
             StartWorkflow((FileSystemWatcher)sender, e);
         }
