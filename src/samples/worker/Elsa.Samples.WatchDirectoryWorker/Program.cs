@@ -20,7 +20,10 @@ namespace Elsa.Samples.WatchDirectoryWorker
                         .AddElsa(options => options
                             .AddConsoleActivities()
                             .AddFileActivities()
-                            .AddWorkflow<WatchDirectoryWorkflow>());
+                            .AddWorkflow<WatchDirectoryCreatedWorkflow>()
+                            .AddWorkflow<WatchDirectoryChangedWorkflow>()
+                            .AddWorkflow<WatchDirectoryDatWorkflow>()
+                            .AddWorkflow<WatchDirectoryDeletedWorkflow>());
                 });
     }
 }
