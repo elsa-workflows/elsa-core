@@ -110,7 +110,26 @@ namespace Elsa.Activities.File.Services
         #region Watcher delegates
         private void FileCreated(object sender, FileSystemEventArgs e)
         {
-            var watcher = (FileSystemWatcher)sender;
+            StartWorkflow((FileSystemWatcher)sender, e);
+        }
+
+        private void FileChanged(object sender, FileSystemEventArgs e)
+        {
+            if (e.ChangeType != WatcherChangeTypes.Changed)
+            {
+                return;
+            }
+
+            StartWorkflow((FileSystemWatcher)sender, e);
+        }
+
+        private void FileDeleted(object sender, FileSystemEventArgs e)
+        {
+            StartWorkflow((FileSystemWatcher)sender, e);
+        }
+
+        private void StartWorkflow(FileSystemWatcher watcher, FileSystemEventArgs e)
+        {
             var path = watcher.Path;
             var pattern = watcher.Filter;
 
