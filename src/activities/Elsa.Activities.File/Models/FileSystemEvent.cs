@@ -5,19 +5,6 @@ namespace Elsa.Activities.File.Models
 {
     public class FileSystemEvent
     {
-        public FileSystemEvent()
-        {
-        }
-
-        public FileSystemEvent(WatcherChangeTypes changeType, string directory, string fileName, string fullPath)
-        {
-            ChangeType = changeType;
-            Directory = directory;
-            FileName = fileName;
-            FullPath = fullPath;
-            TimeStamp = DateTime.Now;
-        }
-
         public WatcherChangeTypes ChangeType { get; set; }
 
         public string Directory { get; set; } = default!;
@@ -25,6 +12,10 @@ namespace Elsa.Activities.File.Models
         public string FileName { get; set; } = default!;
 
         public string FullPath { get; set; } = default!;
+
+        public string OldFileName { get; set; } = default!;
+
+        public string OldFullPath { get; set; } = default!;
 
         public DateTime TimeStamp { get; set; } = default!;
     }

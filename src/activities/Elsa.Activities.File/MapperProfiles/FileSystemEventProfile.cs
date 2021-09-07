@@ -22,6 +22,13 @@ namespace Elsa.Activities.File.MapperProfiles
                 o => o.MapFrom(s => s.FullPath))
                 .ForMember(d => d.TimeStamp,
                 o => o.MapFrom(s => DateTime.Now));
+
+            CreateMap<RenamedEventArgs, FileSystemEvent>()
+                .IncludeBase<FileSystemEventArgs, FileSystemEvent>()
+                .ForMember(d => d.OldFileName,
+                o => o.MapFrom(s => s.OldName))
+                .ForMember(d => d.OldFullPath,
+                 o => o.MapFrom(s => Path.GetDirectoryName(s.OldFullPath)));
         }
     }
 }
