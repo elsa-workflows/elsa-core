@@ -158,12 +158,13 @@ namespace Elsa.Activities.File.Services
 
         private void StartWorkflow(FileSystemWatcher watcher, FileSystemEventArgs e)
         {
+            var changeTypes = e.ChangeType;
             var notifyFilter = watcher.NotifyFilter;
             var path = watcher.Path;
             var pattern = watcher.Filter;
 
             var model = _mapper.Map<FileSystemEvent>(e);
-            var bookmark = new FileSystemEventBookmark(path, pattern, notifyFilter);
+            var bookmark = new FileSystemEventBookmark(path, pattern, changeTypes, notifyFilter);
             var launchContext = new WorkflowsQuery(nameof(WatchDirectory), bookmark);
             _workflowLaunchpad.UseService(s => s.CollectAndDispatchWorkflowsAsync(launchContext, new WorkflowInput(model)));
         }
