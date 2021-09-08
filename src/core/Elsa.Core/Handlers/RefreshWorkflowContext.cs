@@ -20,7 +20,7 @@ namespace Elsa.Handlers
         public async Task Handle(WorkflowExecuting notification, CancellationToken cancellationToken)
         {
             var workflowExecutionContext = notification.WorkflowExecutionContext;
-            workflowExecutionContext.WorkflowContext = await LoadWorkflowContextAsync(workflowExecutionContext, WorkflowContextFidelity.Burst, false, cancellationToken);
+            workflowExecutionContext.WorkflowContext = await LoadWorkflowContextAsync(workflowExecutionContext, default, true, cancellationToken);
         }
     
         public async Task Handle(ActivityActivating notification, CancellationToken cancellationToken)
@@ -37,7 +37,7 @@ namespace Elsa.Handlers
             }
         }
         
-        private async ValueTask<object?> LoadWorkflowContextAsync(WorkflowExecutionContext workflowExecutionContext, WorkflowContextFidelity fidelity, bool always, CancellationToken cancellationToken)
+        private async ValueTask<object?> LoadWorkflowContextAsync(WorkflowExecutionContext workflowExecutionContext, WorkflowContextFidelity? fidelity, bool always, CancellationToken cancellationToken)
         {
             var workflowInstance = workflowExecutionContext.WorkflowInstance;
             var workflowBlueprint = workflowExecutionContext.WorkflowBlueprint;
