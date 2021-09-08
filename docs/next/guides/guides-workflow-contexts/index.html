@@ -380,17 +380,12 @@ A value of <code>Burst</code> means that the workflow context is only loaded onc
 <ul>
 <li>Target Type: <code>ElsaGuides.WorkflowContexts.Web.Models.BlogPost, ElsaGuides.WorkflowContexts.Web</code></li>
 </ul></li>
-<li>Common
-<ul>
-<li>Name: <code>HttpEndpoint1</code></li>
-</ul></li>
 <li>Storage
 <ul>
 <li>Save Workflow Context: <code>on</code></li>
 </ul></li>
 </ul>
-<p>The Target Type setting together with Read Content tell the activity to parse the received JSON into an actual <code>BlogPost</code> instance.
-Notice also that we <strong>named</strong> the activity <code>HttpEndpoint1</code>, which allows us to access this activity's output from JavaScript by name.</p>
+<p>The Target Type setting together with Read Content tell the activity to parse the received JSON into an actual <code>BlogPost</code> instance.</p>
 <h3><a class="anchor" aria-hidden="true" id="http-response-1"></a><a href="#http-response-1" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>HTTP Response 1</h3>
 <p>Connect a new <strong>HTTP Response</strong> activity to the <strong>Done</strong> outcome and configure it as follows:</p>
 <ul>
