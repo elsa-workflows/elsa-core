@@ -6,7 +6,13 @@ using MediatR;
 
 namespace Elsa.Activities.Temporal.Common.Handlers
 {
-    public class RemoveScheduledTriggers : INotificationHandler<BlockingActivityRemoved>, INotificationHandler<WorkflowDefinitionPublished>, INotificationHandler<WorkflowDefinitionRetracted>, INotificationHandler<WorkflowDefinitionDeleted>
+    public class RemoveScheduledTriggers :
+        INotificationHandler<BlockingActivityRemoved>,
+        INotificationHandler<WorkflowDefinitionPublished>,
+        INotificationHandler<WorkflowDefinitionRetracted>,
+        INotificationHandler<WorkflowDefinitionDeleted>,
+        INotificationHandler<WorkflowCancelled>,
+        INotificationHandler<WorkflowInstanceCancelled>
     {
         private readonly IWorkflowDefinitionScheduler _workflowDefinitionScheduler;
         private readonly IWorkflowInstanceScheduler _workflowInstanceScheduler;
@@ -20,14 +26,16 @@ namespace Elsa.Activities.Temporal.Common.Handlers
         public async Task Handle(BlockingActivityRemoved notification, CancellationToken cancellationToken)
         {
             // TODO: Consider introducing a "stereotype" field for activities to exit early in case they are not stereotyped as "temporal".
-            
+
             await _workflowInstanceScheduler.UnscheduleAsync(
                 notification.WorkflowExecutionContext.WorkflowInstance.Id,
                 notification.BlockingActivity.ActivityId,
                 cancellationToken);
         }
 
-        public Task Handle(WorkflowDefinitionPublished notification, CancellationToken cancellationToken) => _workflowDefinitionScheduler.UnscheduleAsync(notification.WorkflowDefinition.DefinitionId , cancellationToken);
+        public async Task Handle(WorkflowCancelled notification, CancellationToken cancellationToken) => await _workflowInstanceScheduler.UnscheduleAsync(notification.WorkflowExecutionContext.WorkflowInstance.Id, cancellationToken);
+        public async Task Handle(WorkflowInstanceCancelled notification, CancellationToken cancellationToken) => await _workflowInstanceScheduler.UnscheduleAsync(notification.WorkflowInstance.Id, cancellationToken);
+        public Task Handle(WorkflowDefinitionPublished notification, CancellationToken cancellationToken) => _workflowDefinitionScheduler.UnscheduleAsync(notification.WorkflowDefinition.DefinitionId, cancellationToken);
         public Task Handle(WorkflowDefinitionRetracted notification, CancellationToken cancellationToken) => _workflowDefinitionScheduler.UnscheduleAsync(notification.WorkflowDefinition.DefinitionId, cancellationToken);
         public Task Handle(WorkflowDefinitionDeleted notification, CancellationToken cancellationToken) => _workflowDefinitionScheduler.UnscheduleAsync(notification.WorkflowDefinition.DefinitionId, cancellationToken);
     }

@@ -128,12 +128,12 @@ namespace Elsa.Services.Workflows
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-
+            
             await _mediator.Publish(new WorkflowExecuted(workflowExecutionContext), cancellationToken);
 
             var statusEvent = workflowExecutionContext.Status switch
             {
-                WorkflowStatus.Cancelled => new WorkflowCancelled(workflowExecutionContext),
+                WorkflowStatus.Cancelled => new WorkflowCancelled(workflowExecutionContext), // TODO: Publish WorkflowInstanceCancelled event also
                 WorkflowStatus.Finished => new WorkflowCompleted(workflowExecutionContext),
                 WorkflowStatus.Faulted => new WorkflowFaulted(workflowExecutionContext),
                 WorkflowStatus.Suspended => new WorkflowSuspended(workflowExecutionContext),

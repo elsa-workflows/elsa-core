@@ -95,6 +95,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services.Decorate<IWorkflowDefinitionStore, EventPublishingWorkflowDefinitionStore>();
             services.Decorate<IWorkflowInstanceStore, EventPublishingWorkflowInstanceStore>();
             services.Decorate<IWorkflowInstanceExecutor, LockingWorkflowInstanceExecutor>();
+            services.Decorate<IWorkflowInstanceCanceller, LockingWorkflowInstanceCanceller>();
 
             //TenantId default source
             services.TryAddScoped<ITenantAccessor, DefaultTenantAccessor>();
@@ -174,6 +175,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped<IWorkflowInstanceExecutor, WorkflowInstanceExecutor>()
                 .AddScoped<IWorkflowTriggerInterruptor, WorkflowTriggerInterruptor>()
                 .AddScoped<IWorkflowReviver, WorkflowReviver>()
+                .AddScoped<IWorkflowInstanceCanceller, WorkflowInstanceCanceller>()
                 .AddSingleton<IWorkflowFactory, WorkflowFactory>()
                 .AddTransient<IWorkflowBlueprintMaterializer, WorkflowBlueprintMaterializer>()
                 .AddSingleton<IWorkflowBlueprintReflector, WorkflowBlueprintReflector>()
