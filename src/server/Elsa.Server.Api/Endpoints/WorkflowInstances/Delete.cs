@@ -1,6 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Persistence;
+using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -13,11 +14,11 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
     [Produces("application/json")]
     public class Delete : Controller
     {
-        private readonly IWorkflowInstanceStore _workflowInstanceStore;
+        private readonly IWorkflowInstanceDeleter _workflowInstanceDeleter;
 
-        public Delete(IWorkflowInstanceStore workflowInstanceStore)
+        public Delete(IWorkflowInstanceDeleter workflowInstanceDeleter)
         {
-            _workflowInstanceStore = workflowInstanceStore;
+            _workflowInstanceDeleter = workflowInstanceDeleter;
         }
 
         [HttpDelete]
@@ -31,12 +32,11 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
         ]
         public async Task<IActionResult> Handle(string id, CancellationToken cancellationToken = default)
         {
-            var workflowInstance = await _workflowInstanceStore.FindByIdAsync(id, cancellationToken);
+            var result = await _workflowInstanceDeleter.DeleteAsync(id, cancellationToken);
 
-            if (workflowInstance == null)
+            if (result.Status == DeleteWorkflowInstanceResultStatus.NotFound)
                 return NotFound();
-            
-            await _workflowInstanceStore.DeleteAsync(workflowInstance, cancellationToken);
+
             return NoContent();
         }
     }
