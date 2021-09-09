@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Elsa.Exceptions;
 using Elsa.Options;
 using Elsa.Services;
-using Elsa.Services.Models;
 
 namespace Elsa.Decorators
 {
@@ -23,23 +22,12 @@ namespace Elsa.Decorators
         public async Task<CancelWorkflowInstanceResult> CancelAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
         {
             var workflowInstanceLockKey = $"workflow-instance:{workflowInstanceId}";
-            var currentWorkflowInstanceLockHandle = AmbientLockContext.GetCurrentWorkflowInstanceLock(workflowInstanceId);
-            var workflowInstanceLockHandle = currentWorkflowInstanceLockHandle ?? await _distributedLockProvider.AcquireLockAsync(workflowInstanceLockKey, _elsaOptions.DistributedLockTimeout, cancellationToken);
+            await using var workflowInstanceLockHandle = await _distributedLockProvider.AcquireLockAsync(workflowInstanceLockKey, _elsaOptions.DistributedLockTimeout, cancellationToken);
 
             if (workflowInstanceLockHandle == null)
                 throw new LockAcquisitionException("Could not acquire a lock within the configured amount of time");
 
-            try
-            {
-                AmbientLockContext.SetCurrentWorkflowInstanceLock(workflowInstanceId, workflowInstanceLockHandle);
-
-                return await _workflowInstanceCanceller.CancelAsync(workflowInstanceId, cancellationToken);
-            }
-            finally
-            {
-                AmbientLockContext.DeleteCurrentWorkflowInstanceLock(workflowInstanceId);
-                await workflowInstanceLockHandle.DisposeAsync();
-            }
+            return await _workflowInstanceCanceller.CancelAsync(workflowInstanceId, cancellationToken);
         }
     }
 }
