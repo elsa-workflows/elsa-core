@@ -29,9 +29,8 @@ import {
 let _httpClient: AxiosInstance = null;
 let _elsaClient: ElsaClient = null;
 
-export const createHttpClient = function(baseAddress: string) : AxiosInstance
-{
-  if(!!_httpClient)
+export const createHttpClient = function (baseAddress: string): AxiosInstance {
+  if (!!_httpClient)
     return _httpClient;
 
   const config: AxiosRequestConfig = {
@@ -44,7 +43,7 @@ export const createHttpClient = function(baseAddress: string) : AxiosInstance
   const service = new Service(httpClient);
 
   eventBus.emit(EventTypes.HttpClientCreated, this, {service, httpClient});
-  
+
   return _httpClient = httpClient;
 }
 
@@ -159,8 +158,15 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
         const response = await httpClient.get(`v1/workflow-instances/${id}`);
         return response.data;
       },
+      cancel: async id => {
+        await httpClient.post(`v1/workflow-instances/${id}/cancel`);
+      },
       delete: async id => {
         await httpClient.delete(`v1/workflow-instances/${id}`);
+      },
+      bulkCancel: async request => {
+        const response = await httpClient.post(`v1/workflow-instances/bulk/cancel`, request);
+        return response.data;
       },
       bulkDelete: async request => {
         const response = await httpClient.delete(`v1/workflow-instances/bulk`, {
@@ -195,7 +201,10 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
     designerApi: {
       runtimeSelectItemsApi: {
         get: async (providerTypeName: string, context?: any): Promise<Array<SelectListItem>> => {
-          const response = await httpClient.post('v1/designer/runtime-select-list-items', {providerTypeName: providerTypeName, context: context});
+          const response = await httpClient.post('v1/designer/runtime-select-list-items', {
+            providerTypeName: providerTypeName,
+            context: context
+          });
           return response.data;
         }
       }
@@ -270,7 +279,11 @@ export interface WorkflowInstancesApi {
 
   get(id: string): Promise<WorkflowInstance>;
 
+  cancel(id: string): Promise<void>;
+
   delete(id: string): Promise<void>;
+
+  bulkCancel(request: BulkCancelWorkflowsRequest): Promise<BulkCancelWorkflowsResponse>;
 
   bulkDelete(request: BulkDeleteWorkflowsRequest): Promise<BulkDeleteWorkflowsResponse>;
 }
@@ -279,6 +292,14 @@ export interface WorkflowExecutionLogApi {
 
   get(workflowInstanceId: string, page?: number, pageSize?: number): Promise<PagedList<WorkflowExecutionLogRecord>>;
 
+}
+
+export interface BulkCancelWorkflowsRequest {
+  workflowInstanceIds: Array<string>;
+}
+
+export interface BulkCancelWorkflowsResponse {
+  cancelledWorkflowCount: number;
 }
 
 export interface BulkDeleteWorkflowsRequest {
