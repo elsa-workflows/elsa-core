@@ -4,7 +4,6 @@ using Elsa.Events;
 using Elsa.Models;
 using Elsa.Persistence;
 using MediatR;
-using Microsoft.Extensions.Logging;
 using NodaTime;
 
 namespace Elsa.Services.Workflows
@@ -36,6 +35,7 @@ namespace Elsa.Services.Workflows
             workflowInstance.CancelledAt = _clock.GetCurrentInstant();
 
             await _workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
+            await _mediator.Publish(new WorkflowInstanceDeleted(workflowInstance), cancellationToken);
             
             return new CancelWorkflowInstanceResult(CancelWorkflowInstanceResultStatus.Ok, workflowInstance);
         }
