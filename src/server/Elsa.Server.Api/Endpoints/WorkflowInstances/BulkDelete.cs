@@ -23,10 +23,9 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
 
         [HttpDelete]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
         [SwaggerOperation(
-            Summary = "Deletes a workflow instance.",
-            Description = "Deletes a workflow instance.",
+            Summary = "Deletes a set of workflow instances.",
+            Description = "Deletes a set of workflow instances.",
             OperationId = "WorkflowInstances.BulkDelete",
             Tags = new[] { "WorkflowInstances" })
         ]
