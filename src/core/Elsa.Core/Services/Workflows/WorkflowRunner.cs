@@ -75,7 +75,7 @@ namespace Elsa.Services.Workflows
             // If the workflow instance has a CurrentActivity, it means the workflow instance is being retried.
             var currentActivity = workflowInstance.CurrentActivity;
 
-            if (activityId == null && currentActivity != null) 
+            if (activityId == null && currentActivity != null)
                 activityId = currentActivity.ActivityId;
 
             var activity = activityId != null ? workflowBlueprint.GetActivity(activityId) : default;
@@ -128,22 +128,20 @@ namespace Elsa.Services.Workflows
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-            
+
             await _mediator.Publish(new WorkflowExecuted(workflowExecutionContext), cancellationToken);
 
-            var statusEvent = workflowExecutionContext.Status switch
+            var statusEvents = workflowExecutionContext.Status switch
             {
-                WorkflowStatus.Cancelled => new WorkflowCancelled(workflowExecutionContext), // TODO: Publish WorkflowInstanceCancelled event also
-                WorkflowStatus.Finished => new WorkflowCompleted(workflowExecutionContext),
-                WorkflowStatus.Faulted => new WorkflowFaulted(workflowExecutionContext),
-                WorkflowStatus.Suspended => new WorkflowSuspended(workflowExecutionContext),
-                _ => default(INotification)
+                WorkflowStatus.Cancelled => new INotification[] { new WorkflowCancelled(workflowExecutionContext), new WorkflowInstanceCancelled(workflowInstance) },
+                WorkflowStatus.Finished => new INotification[] { new WorkflowCompleted(workflowExecutionContext) },
+                WorkflowStatus.Faulted => new INotification[] { new WorkflowFaulted(workflowExecutionContext) },
+                WorkflowStatus.Suspended => new INotification[] { new WorkflowSuspended(workflowExecutionContext) },
+                _ => Array.Empty<INotification>()
             };
-
-            if (statusEvent != null)
-            {
+            
+            foreach (var statusEvent in statusEvents) 
                 await _mediator.Publish(statusEvent, cancellationToken);
-            }
 
             await _mediator.Publish(new WorkflowExecutionFinished(workflowExecutionContext), cancellationToken);
             return runWorkflowResult;
