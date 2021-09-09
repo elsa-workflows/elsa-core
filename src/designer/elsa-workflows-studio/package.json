@@ -34,7 +34,7 @@
   },
   "dependencies": {
     "@fullhuman/postcss-purgecss": "^4.0.3",
-    "@stencil/core": "^2.7.1",
+    "@stencil/core": "^2.8.0",
     "@stencil/postcss": "^2.0.0",
     "@stencil/router": "^1.0.1",
     "@stencil/state-tunnel": "^1.0.1",
