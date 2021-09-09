@@ -43,7 +43,7 @@ export class ElsaStudioDashboard {
 
     const renderFeatureRoute = (item: any, basePath: string) => {
       return (<stencil-route url={`${basePath}/${item[0]}`} component={`${item[1]}`} exact={item[2]}/>)
-    }    
+    }
 
     return (
       <div class="elsa-h-screen elsa-bg-gray-100">
