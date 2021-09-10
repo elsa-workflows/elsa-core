@@ -68,6 +68,9 @@
           'Finished': 'Finished',
           'LastExecuted': 'Last Executed',
           'Started': 'Started'
+        },
+        'PageSize': {
+          'SelectedLabel': 'Page size: {{Size}}',
         }
       }
     }

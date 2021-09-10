@@ -26,6 +26,11 @@ import Tunnel from "../../../../data/dashboard";
   shadow: false,
 })
 export class ElsaWorkflowInstanceListScreen {
+  static readonly DEFAULT_PAGE_SIZE = 15;
+  static readonly MIN_PAGE_SIZE = 5;
+  static readonly MAX_PAGE_SIZE = 100;
+  static readonly START_PAGE = 0;
+
   @Prop() history?: RouterHistory;
   @Prop() serverUrl: string;
   @Prop() basePath: string;
@@ -42,11 +47,11 @@ export class ElsaWorkflowInstanceListScreen {
   @State() selectedWorkflowInstanceIds: Array<string> = [];
   @State() selectAllChecked: boolean;
   @State() currentPage: number = 0;
-  @State() currentPageSize: number = 15;
+  @State() currentPageSize: number = ElsaWorkflowInstanceListScreen.DEFAULT_PAGE_SIZE;
   @State() currentSearchTerm?: string;
 
   i18next: i18n;
-
+  
   async componentWillLoad() {
     this.i18next = await loadTranslations(this.culture, resources);
 
@@ -96,6 +101,14 @@ export class ElsaWorkflowInstanceListScreen {
     await this.loadWorkflowInstances();
   }
 
+  @Watch("currentPageSize")
+  async handlePageSizeChanged(value: number) {
+    this.currentPageSize = value;
+	this.currentPageSize = isNaN(this.currentPageSize) ? ElsaWorkflowInstanceListScreen.DEFAULT_PAGE_SIZE : this.currentPageSize;
+	this.currentPageSize = Math.max(Math.min(this.currentPageSize, ElsaWorkflowInstanceListScreen.MAX_PAGE_SIZE), ElsaWorkflowInstanceListScreen.MIN_PAGE_SIZE);
+    await this.loadWorkflowInstances();
+  }
+
   @Watch("orderBy")
   async handleOrderByChanged(value: OrderBy) {
     this.selectedOrderByState = value;
@@ -111,7 +124,10 @@ export class ElsaWorkflowInstanceListScreen {
     this.selectedWorkflowStatus = query.status;
     this.selectedOrderByState = query.orderBy ?? OrderBy.Started;
     this.currentPage = !!query.page ? parseInt(query.page) : 0;
-    this.currentPageSize = !!query.pageSize ? parseInt(query.pageSize) : 15;
+	this.currentPage = isNaN(this.currentPage) ? ElsaWorkflowInstanceListScreen.START_PAGE : this.currentPage;
+    this.currentPageSize = !!query.pageSize ? parseInt(query.pageSize) : ElsaWorkflowInstanceListScreen.DEFAULT_PAGE_SIZE;
+	this.currentPageSize = isNaN(this.currentPageSize) ? ElsaWorkflowInstanceListScreen.DEFAULT_PAGE_SIZE : this.currentPageSize;
+	this.currentPageSize = Math.max(Math.min(this.currentPageSize, ElsaWorkflowInstanceListScreen.MAX_PAGE_SIZE), ElsaWorkflowInstanceListScreen.MIN_PAGE_SIZE);
   }
 
   async loadWorkflowBlueprints() {
@@ -122,8 +138,16 @@ export class ElsaWorkflowInstanceListScreen {
   }
 
   async loadWorkflowInstances() {
+	this.currentPage = isNaN(this.currentPage) ? ElsaWorkflowInstanceListScreen.START_PAGE : this.currentPage;
+	this.currentPage = Math.max(this.currentPage, ElsaWorkflowInstanceListScreen.START_PAGE);
+	this.currentPageSize = isNaN(this.currentPageSize) ? ElsaWorkflowInstanceListScreen.DEFAULT_PAGE_SIZE : this.currentPageSize;
     const elsaClient = this.createClient();
     this.workflowInstances = await elsaClient.workflowInstancesApi.list(this.currentPage, this.currentPageSize, this.selectedWorkflowId, this.selectedWorkflowStatus, this.selectedOrderByState, this.currentSearchTerm);
+	const maxPage = Math.floor(this.workflowInstances.totalCount / this.currentPageSize);
+	if (this.currentPage > maxPage) {
+      this.currentPage = maxPage;
+      this.workflowInstances = await elsaClient.workflowInstancesApi.list(this.currentPage, this.currentPageSize, this.selectedWorkflowId, this.selectedWorkflowStatus, this.selectedOrderByState, this.currentSearchTerm);
+	}
   }
 
   createClient() {
@@ -135,7 +159,7 @@ export class ElsaWorkflowInstanceListScreen {
     return collection.map(groups, x => array.first(collection.sortBy(x, 'version', 'desc')));
   }
 
-  buildFilterUrl(workflowId?: string, workflowStatus?: WorkflowStatus, orderBy?: OrderBy) {
+  buildFilterUrl(workflowId?: string, workflowStatus?: WorkflowStatus, orderBy?: OrderBy, pageSize?: number) {
     const filters: Map<string> = {};
 
     if (!!workflowId)
@@ -150,8 +174,12 @@ export class ElsaWorkflowInstanceListScreen {
     if (!!this.currentPage)
       filters['page'] = this.currentPage.toString();
 
-    if (!!this.currentPageSize)
-      filters['pageSize'] = this.currentPageSize.toString();
+    var newPageSize = !!pageSize ? pageSize : this.currentPageSize;
+	newPageSize = Math.max(Math.min(newPageSize, 100), ElsaWorkflowInstanceListScreen.MIN_PAGE_SIZE);
+    filters['pageSize'] = newPageSize.toString();
+  
+    if (newPageSize != this.currentPageSize)
+		filters['page'] = Math.floor(this.currentPage * this.currentPageSize / newPageSize).toString();
 
     const queryString = collection.map(filters, (v, k) => `${k}=${v}`).join('&');
     return `/workflow-instances?${queryString}`;
@@ -375,6 +403,7 @@ export class ElsaWorkflowInstanceListScreen {
           <div class="elsa-flex-1">
             &nbsp;
           </div>
+          {this.renderPageSizeFilter()}
           {this.renderWorkflowFilter()}
           {this.renderStatusFilter()}
           {this.renderOrderByFilter()}
@@ -562,7 +591,7 @@ export class ElsaWorkflowInstanceListScreen {
       const item: DropdownButtonItem = {text: displayName, value: x.id, isSelected: x.id == selectedWorkflowId};
 
       if (!!history)
-        item.url = this.buildFilterUrl(x.id, selectedWorkflowStatus, selectedOrderBy);
+        item.url = this.buildFilterUrl(x.id, selectedWorkflowStatus, selectedOrderBy, null);
 
       return item;
     });
@@ -570,7 +599,7 @@ export class ElsaWorkflowInstanceListScreen {
     const allItem: DropdownButtonItem = {text: t('Filters.Workflow.All'), value: null, isSelected: !selectedWorkflowId};
 
     if (!!history)
-      allItem.url = this.buildFilterUrl(null, selectedWorkflowStatus, selectedOrderBy);
+      allItem.url = this.buildFilterUrl(null, selectedWorkflowStatus, selectedOrderBy, null);
 
     items = [allItem, ...items];
 
@@ -602,7 +631,7 @@ export class ElsaWorkflowInstanceListScreen {
       const item: DropdownButtonItem = {text: text, isSelected: x == selectedWorkflowStatus, value: x};
 
       if (!!history)
-        item.url = this.buildFilterUrl(this.selectedWorkflowId, x, this.selectedOrderByState);
+        item.url = this.buildFilterUrl(this.selectedWorkflowId, x, this.selectedOrderByState, null);
 
       return item;
     });
@@ -620,6 +649,32 @@ export class ElsaWorkflowInstanceListScreen {
                                  onItemSelected={e => this.handleWorkflowStatusChanged(e.detail.value)}/>
   }
 
+  renderPageSizeFilter() {
+    const t = this.t;
+    const currentPageSize = this.currentPageSize;
+    const currentPageSizeText = t('Filters.PageSize.SelectedLabel', {Size: currentPageSize});
+    const pageSizes: Array<number> = [5, 10, 15, 20, 30, 50, 100];
+    const history = this.history;
+
+    const items: Array<DropdownButtonItem> = pageSizes.map(x => {
+      const text = ""+x;
+      const item: DropdownButtonItem = {text: text, isSelected: x == currentPageSize, value: x};
+
+      if (!!history)
+        item.url = this.buildFilterUrl(this.selectedWorkflowId, this.selectedWorkflowStatus, this.selectedOrderByState, x);
+
+      return item;
+    });
+
+    const renderIcon = function () {
+      return <svg class="elsa-mr-3 elsa-h-5 elsa-w-5 elsa-text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 8h9m-9 4h9m5"/>
+      </svg>
+    };
+
+    return <elsa-dropdown-button text={currentPageSizeText} items={items} icon={renderIcon()} origin={DropdownButtonOrigin.TopRight} onItemSelected={e => this.handlePageSizeChanged(e.detail.value)}/>
+  }
+
   renderOrderByFilter() {
     const t = this.t;
     const selectedOrderBy = this.selectedOrderByState;
@@ -631,7 +686,7 @@ export class ElsaWorkflowInstanceListScreen {
       const item: DropdownButtonItem = {text: x, value: x, isSelected: x == selectedOrderBy};
 
       if (!!history)
-        item.url = this.buildFilterUrl(this.selectedWorkflowId, this.selectedWorkflowStatus, x);
+        item.url = this.buildFilterUrl(this.selectedWorkflowId, this.selectedWorkflowStatus, x, null);
 
       return item;
     });
