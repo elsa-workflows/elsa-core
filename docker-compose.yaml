@@ -2,37 +2,50 @@ version: '3.7'
 
 services:
 
-  mongodb:
-    image: mongo
-    ports:
-      - "27017:27017"
+    mongodb:
+        image: mongo
+        ports:
+            - "27017:27017"
 
-  postgres:
-    image: postgres:13.3-alpine
-    restart: always
-    environment:
-      - POSTGRES_USER=root
-      - POSTGRES_PASSWORD=Password12!
-      - POSTGRES_DB=elsa
-    ports:
-      - "5432:5432"
+    postgres:
+        image: postgres:13.3-alpine
+        restart: always
+        environment:
+            - POSTGRES_USER=root
+            - POSTGRES_PASSWORD=Password12!
+            - POSTGRES_DB=elsa
+        ports:
+            - "5432:5432"
+          
+    mysql:
+        image: mysql:5.7
+        restart: always
+        environment:
+            MYSQL_DATABASE: 'elsa'
+            MYSQL_USER: 'user'
+            MYSQL_PASSWORD: 'password'
+            MYSQL_ROOT_PASSWORD: 'password'
+        ports:
+            - '3306:3306'
+        expose:
+            - '3306'
 
-  azureblobstorage:
-    image: mcr.microsoft.com/azure-blob-storage
+    azureblobstorage:
+        image: mcr.microsoft.com/azure-blob-storage
 
-  redis:
-    image: redis
-    ports:
-      - "6379:6379"
+    redis:
+        image: redis
+        ports:
+            - "6379:6379"
 
-  rabbitmq:
-    image: "rabbitmq:3-management"
-    ports:
-      - "15672:15672"
-      - "5672:5672"
+    rabbitmq:
+        image: "rabbitmq:3-management"
+        ports:
+            - "15672:15672"
+            - "5672:5672"
 
-  smtp4dev:
-    image: rnwood/smtp4dev:linux-amd64-3.1.0-ci0856
-    ports:
-      - "3000:80"
-      - "2525:25"
+    smtp4dev:
+        image: rnwood/smtp4dev:linux-amd64-3.1.0-ci0856
+        ports:
+            - "3000:80"
+            - "2525:25"
