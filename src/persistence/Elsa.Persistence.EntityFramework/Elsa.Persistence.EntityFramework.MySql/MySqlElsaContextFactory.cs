@@ -3,6 +3,7 @@ using System.Linq;
 using Elsa.Persistence.EntityFramework.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
+using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
 
 namespace Elsa.Persistence.EntityFramework.MySql
 {
@@ -19,7 +20,8 @@ namespace Elsa.Persistence.EntityFramework.MySql
                 serverVersion != null ? ServerVersion.Parse(serverVersion) : ServerVersion.AutoDetect(connectionString),
                 db => db
                     .MigrationsAssembly(typeof(MySqlElsaContextFactory).Assembly.GetName().Name)
-                    .MigrationsHistoryTable(ElsaContext.MigrationsHistoryTable, ElsaContext.ElsaSchema));
+                    .MigrationsHistoryTable(ElsaContext.MigrationsHistoryTable)
+                    .SchemaBehavior(MySqlSchemaBehavior.Ignore));
             
             return new ElsaContext(builder.Options);
         }
