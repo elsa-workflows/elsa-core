@@ -46,7 +46,7 @@ namespace Elsa.Activities.File
         {
             var model = (FileSystemEvent)context.Input!;
             Output = model;
-            return Done(model);
+            return Done(Output);
         }
     }
 }
