@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -22,6 +22,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\activities\Elsa.Activities.Console\Elsa.Activities.Console.csproj" />
     <ProjectReference Include="..\..\..\activities\Elsa.Activities.File\Elsa.Activities.File.csproj" />
+    <ProjectReference Include="..\..\..\activities\Elsa.Activities.Temporal.Quartz\Elsa.Activities.Temporal.Quartz.csproj" />
     <ProjectReference Include="..\..\..\core\Elsa\Elsa.csproj" />
   </ItemGroup>
 
