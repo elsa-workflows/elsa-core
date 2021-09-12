@@ -5,6 +5,7 @@ using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
 using System;
+using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -16,14 +17,16 @@ namespace Elsa.Activities.File
         Outcomes = new[] { OutcomeNames.Done })]
     public class OutFile : Activity
     {
+        [Required]
         [ActivityInput(Hint = "Bytes to write to file.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript }, DefaultSyntax = SyntaxNames.JavaScript)]
-        public byte[] Bytes { get; set; } = default!;
+        public byte[]? Bytes { get; set; }
 
+        [Required]
         [ActivityInput(Hint = "Path to create file at.", UIHint = ActivityInputUIHints.SingleLine, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
-        public string Path { get; set; } = default!;
+        public string? Path { get; set; }
 
-        [ActivityInput(Hint = "How the output file should be written to.", UIHint = ActivityInputUIHints.Dropdown)]
-        public CopyMode Mode { get; set; } = CopyMode.CreateNew;
+        [ActivityInput(Hint = "How the output file should be written to.", UIHint = ActivityInputUIHints.Dropdown, DefaultValue = CopyMode.CreateNew)]
+        public CopyMode Mode { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {

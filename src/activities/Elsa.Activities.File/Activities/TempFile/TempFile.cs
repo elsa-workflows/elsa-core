@@ -1,6 +1,7 @@
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Services;
+using System.ComponentModel.DataAnnotations;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.File
@@ -10,6 +11,7 @@ namespace Elsa.Activities.File
         Outcomes = new[] { OutcomeNames.Done })]
     public class TempFile : Activity
     {
+        [Required]
         [ActivityOutput(Hint = "Path of the created temporary file.")]
         public string Path { get; set; } = default!;
 
