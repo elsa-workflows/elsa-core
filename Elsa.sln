@@ -358,6 +358,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElsaDashboard.Samples.Blazo
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.HttpEndpointSecurity", "src\samples\aspnet\Elsa.Samples.HttpEndpointSecurity\Elsa.Samples.HttpEndpointSecurity.csproj", "{82B115DA-E3D0-49D7-AD08-DE9387656756}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.WatchDirectoryWorker", "src\samples\worker\Elsa.Samples.WatchDirectoryWorker\Elsa.Samples.WatchDirectoryWorker.csproj", "{8EC3CF51-EBC1-4B45-881E-4B1B8190D579}"
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.InfiniteLoopDetection", "src\samples\aspnet\Elsa.Samples.InfiniteLoopDetection\Elsa.Samples.InfiniteLoopDetection.csproj", "{A2572DBF-AF11-4A02-AF99-B343871F2D85}"
 EndProject
 Global
@@ -846,6 +847,10 @@ Global
 		{82B115DA-E3D0-49D7-AD08-DE9387656756}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{82B115DA-E3D0-49D7-AD08-DE9387656756}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{82B115DA-E3D0-49D7-AD08-DE9387656756}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8EC3CF51-EBC1-4B45-881E-4B1B8190D579}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8EC3CF51-EBC1-4B45-881E-4B1B8190D579}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8EC3CF51-EBC1-4B45-881E-4B1B8190D579}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8EC3CF51-EBC1-4B45-881E-4B1B8190D579}.Release|Any CPU.Build.0 = Release|Any CPU
 		{A2572DBF-AF11-4A02-AF99-B343871F2D85}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A2572DBF-AF11-4A02-AF99-B343871F2D85}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A2572DBF-AF11-4A02-AF99-B343871F2D85}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -1009,6 +1014,7 @@ Global
 		{DCB3C4DD-2B7D-44E9-A366-F36F4ABFF488} = {D86B94DC-A53C-4A67-A820-828DD359C49B}
 		{9A4B1C48-16FB-4A65-AE98-5CDE7BCB506C} = {D86B94DC-A53C-4A67-A820-828DD359C49B}
 		{82B115DA-E3D0-49D7-AD08-DE9387656756} = {22E75696-6FE9-436A-9097-EE21C603F818}
+		{8EC3CF51-EBC1-4B45-881E-4B1B8190D579} = {E42743A0-FBDD-4150-9D53-6000496D9B87}
 		{A2572DBF-AF11-4A02-AF99-B343871F2D85} = {22E75696-6FE9-436A-9097-EE21C603F818}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
