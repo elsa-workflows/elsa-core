@@ -269,7 +269,7 @@ This project is supported by the [.NET Foundation](https://dotnetfoundation.org)
 <a href="http://www.interfirst.com/"><img src="./doc/sponsors/interfirst.svg" alt="Interfirst" width="600" height="120" /></a>
 
 
-[Nexxbiz](https://www.nexxbiz.io/), accelerating delivery
+[nexxbiz](https://www.nexxbiz.io/), accelerating delivery
 
-<a href="https://www.nexxbiz.io/"><img src="./doc/sponsors/nexxbiz.webp" alt="Nexxbiz" /></a>
+<a href="https://www.nexxbiz.io/"><img src="./doc/sponsors/nexxbiz.svg" width="300" height="300" alt="nexxbiz" /></a>
 
