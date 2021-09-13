@@ -117,14 +117,14 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
       }
     },
     workflowsApi: {
-      test: async (workflowDefinitionId, testId) => {
+      test: async (workflowDefinitionId, version, signalRConnectionId) => {
 
           httpClient.interceptors.request.use(function (config) {
             config.headers['Accept'] = 'application/json';
             config.data = Object.assign({}, config.data, {});
             return config;
           })
-          const response = await httpClient.post<WorkflowDefinition>(`v1/workflows/${workflowDefinitionId}/${testId}/test`);
+          const response = await httpClient.post<void>(`v1/workflows/${workflowDefinitionId}/${version}/${signalRConnectionId}/test`);
           return response.data;
       }
     },    
@@ -297,7 +297,7 @@ export interface WorkflowDefinitionsApi {
 
 export interface WorkflowsApi {
 
-  test(workflowDefinitionId: string, testId: string): Promise<WorkflowDefinition>;
+  test(workflowDefinitionId: string, version: number, signalRConnectionId: string): Promise<void>;
 }
 
 export interface WebhookDefinitionsApi {

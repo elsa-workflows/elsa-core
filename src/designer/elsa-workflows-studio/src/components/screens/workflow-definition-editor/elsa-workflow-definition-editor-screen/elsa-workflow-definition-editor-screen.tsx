@@ -9,7 +9,8 @@ import {
   VersionOptions,
   WorkflowDefinition,
   WorkflowModel,
-  WorkflowPersistenceBehavior
+  WorkflowPersistenceBehavior,
+  WorkflowTestActivityMessage
 } from "../../../../models";
 import {eventBus, createElsaClient, SaveWorkflowDefinitionRequest} from "../../../../services";
 import state from '../../../../utils/store';
@@ -43,6 +44,8 @@ export class ElsaWorkflowDefinitionEditorScreen {
   @State() importing: boolean;
   @State() imported: boolean;
   @State() networkError: string;
+  @State() selectedActivityId?: string;
+  @State() workflowTestActivityMessages: Array<WorkflowTestActivityMessage> = [];
 
   @State() activityContextMenuState: ActivityContextMenuState = {
     shown: false,
@@ -54,6 +57,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
   i18next: i18n;
   el: HTMLElement;
   designer: HTMLElsaDesignerTreeElement;
+  propertiesPanel: HTMLElsaWorkflowPropertiesPanelElement;  
 
   @Method()
   async getServerUrl(): Promise<string> {
@@ -149,11 +153,11 @@ export class ElsaWorkflowDefinitionEditorScreen {
     if (!this.designer) {
       this.designer = this.el.querySelector("elsa-designer-tree") as HTMLElsaDesignerTreeElement;
       this.designer.model = this.workflowModel;
-    }
+    }    
   }
 
   connectedCallback() {
-    eventBus.on(EventTypes.UpdateWorkflowSettings, this.onUpdateWorkflowSettings);
+    eventBus.on(EventTypes.UpdateWorkflowSettings, this.onUpdateWorkflowSettings);    
   }
 
   disconnectedCallback() {
@@ -355,9 +359,35 @@ export class ElsaWorkflowDefinitionEditorScreen {
     this.activityContextMenuState = e.detail;
   }
 
+  async onActivitySelected(e: CustomEvent<ActivityModel>) {
+    this.selectedActivityId = e.detail.activityId;
+    var message = this.workflowTestActivityMessages.find(x => x.activityId == this.selectedActivityId);
+
+    if (!!message)
+      await this.propertiesPanel.selectTestActivity(message);
+  }
+
+  async onActivityDeselected(e: CustomEvent<ActivityModel>) {
+    if (this.selectedActivityId == e.detail.activityId)
+      this.selectedActivityId = null;
+
+    await this.propertiesPanel.selectTestActivity(null);
+  }
+
   private onUpdateWorkflowSettings = async (workflowDefinition: WorkflowDefinition) => {
     this.updateWorkflowDefinition(workflowDefinition);
     await this.saveWorkflowInternal(this.workflowModel);
+  }
+
+  onTestActivityMessageReceived(e: CustomEvent<WorkflowTestActivityMessage>) {
+    const message = e.detail;
+    if (!!message) {
+      this.workflowTestActivityMessages = this.workflowTestActivityMessages.filter(x => x.activityId !== message.activityId);
+      this.workflowTestActivityMessages = [...this.workflowTestActivityMessages, message];
+      this.selectedActivityId = message.activityId;
+    }
+    else
+      this.workflowTestActivityMessages = [];
   }
 
   render() {
@@ -401,6 +431,9 @@ export class ElsaWorkflowDefinitionEditorScreen {
                             onActivityContextMenuButtonClicked={e => this.onActivityContextMenuButtonClicked(e)}
                             activityContextMenu={this.activityContextMenuState}
                             enableMultipleConnectionsFromSingleSource={false}
+                            selectedActivityIds={[this.selectedActivityId]}
+                            onActivitySelected={e => this.onActivitySelected(e)}
+                            onActivityDeselected={e => this.onActivityDeselected(e)}
                             class="elsa-flex-1"
                             ref={el => this.designer = el}/>
         {this.renderPropertiesPanel()}
@@ -542,8 +575,9 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   private renderPropertiesPanel() {
     return (
-      <elsa-workflow-properties-panel
+      <elsa-workflow-properties-panel ref={el => this.propertiesPanel = el}
         workflowDefinition={this.workflowDefinition}
+        onTestActivityMessageReceived={e => this.onTestActivityMessageReceived(e)}        
         expandButtonPosition={2}
       />);
   }

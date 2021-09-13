@@ -33,12 +33,13 @@ namespace Elsa.Models
         public WorkflowInputReference? Input { get; set; }
         public WorkflowOutputReference? Output { get; set; }
         public IDictionary<string, IDictionary<string, object?>> ActivityData { get; set; } = new Dictionary<string, IDictionary<string, object?>>();
+        public IDictionary<string, object?> MetaData { get; set; } = new Dictionary<string, object?>();
 
         public HashSet<BlockingActivity> BlockingActivities
         {
             get => _blockingActivities;
             set => _blockingActivities = new HashSet<BlockingActivity>(value, BlockingActivityEqualityComparer.Instance);
-        }
+        }  
 
         public WorkflowFault? Fault { get; set; }
         public SimpleStack<ScheduledActivity> ScheduledActivities { get; set; }

@@ -1,7 +1,17 @@
 import {Component, Event, EventEmitter, h, Host, Method, Prop, State, Watch} from '@stencil/core';
 import {v4 as uuid} from 'uuid';
 import {addConnection, findActivity, getChildActivities, getInboundConnections, getOutboundConnections, Map, removeActivity, removeConnection} from '../../../../utils/utils';
-import {ActivityDescriptor, ActivityDesignDisplayContext, ActivityModel, ActivityTraits, ConnectionModel, EventTypes, WorkflowModel, WorkflowPersistenceBehavior,} from '../../../../models';
+import {
+  ActivityDescriptor, 
+  ActivityDesignDisplayContext, 
+  ActivityModel, 
+  ActivityTraits, 
+  ConnectionModel, 
+  EventTypes, 
+  WorkflowModel, 
+  WorkflowPersistenceBehavior,
+  WorkflowTestActivityMessage} 
+  from '../../../../models';
 import {eventBus} from '../../../../services';
 import * as d3 from 'd3';
 import dagreD3 from 'dagre-d3';

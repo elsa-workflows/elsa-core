@@ -5,6 +5,7 @@ using Elsa;
 using Elsa.Activities.JavaScript;
 using Elsa.Expressions;
 using Elsa.Scripting.JavaScript.Typings;
+using Elsa.Scripting.JavaScript.Providers;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -14,7 +15,9 @@ namespace Microsoft.Extensions.DependencyInjection
         public static IServiceCollection AddJavaScriptExpressionEvaluator(this IServiceCollection services)
         {
             return services
-                .AddScoped<ITypeScriptDefinitionService, DotNetTypeScriptDefinitionService>()
+                .AddScoped<ITypeScriptDefinitionService, TypeScriptDefinitionService>()
+                .AddTypeScriptDefinitionProvider<JsonTypeScriptDefinitionProvider>()
+                .AddTypeScriptDefinitionProvider<DotNetTypeScriptDefinitionProvider>()
                 .AddScoped<IJavaScriptService, JintJavaScriptEvaluator>()
                 .AddTransient(s => new JintEvaluationResultConverterFactory(s).GetConverter())
                 .AddTransient<IConvertsEnumerableToObject>(s => new EnumerableResultConverter(default))
@@ -29,6 +32,8 @@ namespace Microsoft.Extensions.DependencyInjection
         }
 
         public static IServiceCollection AddJavaScriptTypeDefinitionProvider<T>(this IServiceCollection services) where T: class, ITypeDefinitionProvider => services.AddScoped<ITypeDefinitionProvider, T>();
+
+        public static IServiceCollection AddTypeScriptDefinitionProvider<T>(this IServiceCollection services) where T : class, ITypeScriptDefinitionProvider => services.AddScoped<ITypeScriptDefinitionProvider, T>();
 
         public static IServiceCollection WithJavaScriptOptions(this IServiceCollection services, Action<ScriptOptions> configureOptions)
         {

@@ -99,16 +99,21 @@ namespace Elsa.Services.Workflows
 
         public async Task<StartableWorkflow?> FindTestableWorkflowAsync(
             string workflowDefinitionId,
+            int version,
             string? activityId,
             string? correlationId = default,
             string? contextId = default,
             string? tenantId = default,
+            string? signalRConnectionId = default,
             CancellationToken cancellationToken = default)
         {
-            var workflowBlueprint = await _workflowRegistry.GetAsync(workflowDefinitionId, tenantId, VersionOptions.Latest, cancellationToken);
+            var workflowBlueprint = await _workflowRegistry.GetAsync(workflowDefinitionId, tenantId, VersionOptions.SpecificVersion(version), cancellationToken);
 
             if (workflowBlueprint == null)
                 return null;
+
+            workflowBlueprint.IsTestRun = true;
+            workflowBlueprint.SignalRConnectionId = signalRConnectionId;
 
             return await FindTestableWorkflowAsync(workflowBlueprint, activityId, correlationId, contextId, tenantId, cancellationToken);
         }
@@ -149,7 +154,7 @@ namespace Elsa.Services.Workflows
             string workflowDefinitionId, 
             string? activityId, 
             string? correlationId = default, 
-            string? contextId = default, 
+            string? contextId = default,
             WorkflowInput? input = default, 
             string? tenantId = default,
             CancellationToken cancellationToken = default)
@@ -169,7 +174,7 @@ namespace Elsa.Services.Workflows
             IWorkflowBlueprint workflowBlueprint, 
             string? activityId, 
             string? correlationId = default, 
-            string? contextId = default, 
+            string? contextId = default,
             WorkflowInput? input = default,
             CancellationToken cancellationToken = default)
         {
@@ -270,7 +275,7 @@ namespace Elsa.Services.Workflows
             IWorkflowBlueprint workflowBlueprint, 
             string? activityId, 
             string correlationId, 
-            string? contextId = default, 
+            string? contextId = default,
             string? tenantId = default,
             CancellationToken cancellationToken = default)
         {

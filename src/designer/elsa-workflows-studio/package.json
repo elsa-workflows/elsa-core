@@ -34,6 +34,7 @@
   },
   "dependencies": {
     "@fullhuman/postcss-purgecss": "^4.0.3",
+    "@microsoft/signalr": "^5.0.9",
     "@stencil/core": "^2.6.0",
     "@stencil/postcss": "^2.0.0",
     "@stencil/router": "^1.0.1",
@@ -71,6 +72,7 @@
   "devDependencies": {
     "@types/d3": "^7.0.0",
     "@types/dagre-d3": "^0.6.2",
+    "@types/node": "^16.7.13",
     "copyfiles": "^2.4.1",
     "cross-env": "^7.0.3"
   },

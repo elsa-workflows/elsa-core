@@ -1,0 +1,32 @@
+using System.Collections.Generic;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using Elsa.Models;
+using Elsa.Scripting.JavaScript.Providers;
+
+namespace Elsa.Scripting.JavaScript.Services
+{
+    public class TypeScriptDefinitionService : ITypeScriptDefinitionService
+    {
+        private readonly IEnumerable<ITypeScriptDefinitionProvider> _typeScriptDefinitionProviders;
+
+        public TypeScriptDefinitionService(IEnumerable<ITypeScriptDefinitionProvider> typeScriptDefinitionProviders)
+        {
+            _typeScriptDefinitionProviders = typeScriptDefinitionProviders;
+        }
+
+        public async Task<string> GenerateTypeScriptDefinitionsAsync(WorkflowDefinition? workflowDefinition = default, string? context = default, CancellationToken cancellationToken = default)
+        {
+            var providers = _typeScriptDefinitionProviders;
+            var builder = new StringBuilder();
+
+            foreach (var provider in providers)
+            {
+                builder = await provider.GenerateTypeScriptDefinitionsAsync(builder, workflowDefinition, context, cancellationToken);
+            }
+
+            return builder.ToString();
+        }
+    }
+}

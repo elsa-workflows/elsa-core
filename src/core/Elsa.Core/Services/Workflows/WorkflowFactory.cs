@@ -36,8 +36,11 @@ namespace Elsa.Services.Workflows
                 ContextId = contextId,
                 CreatedAt = _clock.GetCurrentInstant(),
                 Variables = new Variables(workflowBlueprint.Variables),
-                ContextType = workflowBlueprint.ContextOptions?.ContextType ?.GetContextTypeName()
+                ContextType = workflowBlueprint.ContextOptions?.ContextType?.GetContextTypeName()
             };
+
+            workflowInstance.MetaData.Add("isTestRun", workflowBlueprint.IsTestRun);
+            workflowInstance.MetaData.Add("signalRConnectionId", workflowBlueprint.SignalRConnectionId);                
 
             return Task.FromResult(workflowInstance);
         }

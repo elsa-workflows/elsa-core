@@ -11,7 +11,7 @@ namespace Elsa.Server.Api.Endpoints.Workflows
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{apiVersion:apiVersion}/workflows/{workflowDefinitionId}/{testId}/test")]
+    [Route("v{apiVersion:apiVersion}/workflows/{workflowDefinitionId}/{version}/{signalRConnectionId}/test")]
     [Produces("application/json")]
     public class Test : Controller
     {
@@ -34,15 +34,15 @@ namespace Elsa.Server.Api.Endpoints.Workflows
             OperationId = "WorkflowDefinitions.Test",
             Tags = new[] { "WorkflowDefinitions" })
         ]
-        public async Task<IActionResult> Handle(string workflowDefinitionId, string testId, ExecuteWorkflowDefinitionRequestModel request, CancellationToken cancellationToken = default)
+        public async Task<IActionResult> Handle(string workflowDefinitionId, int version,  string signalRConnectionId, ExecuteWorkflowDefinitionRequestModel request, CancellationToken cancellationToken = default)
         {
             var tenantId = await _tenantAccessor.GetTenantIdAsync(cancellationToken);
-            var startableWorkflow = await _workflowLaunchpad.FindTestableWorkflowAsync(workflowDefinitionId, request.ActivityId, request.CorrelationId, request.ContextId, tenantId, cancellationToken);
+            var testableWorkflow = await _workflowLaunchpad.FindTestableWorkflowAsync(workflowDefinitionId, version, request.ActivityId, request.CorrelationId, request.ContextId, tenantId, signalRConnectionId, cancellationToken);            
 
-            if (startableWorkflow == null)
+            if (testableWorkflow == null)
                 return NotFound();
 
-            var result = await _workflowLaunchpad.ExecuteTestableWorkflowAsync(startableWorkflow, new WorkflowInput(request.Input), cancellationToken);
+            var result = await _workflowLaunchpad.ExecuteTestableWorkflowAsync(testableWorkflow, new WorkflowInput(request.Input), cancellationToken);
 
             if (Response.HasStarted)
                 return new EmptyResult();

@@ -38,7 +38,6 @@ export class ElsaExpressionEditor {
 
   async componentDidLoad() {
     const elsaClient = createElsaClient(this.serverUrl);
-    debugger
     const libSource = await elsaClient.scriptingApi.getJavaScriptTypeDefinitions(this.workflowDefinitionId, this.context);
     const libUri = 'defaultLib:lib.es6.d.ts';
     await this.monacoEditor.addJavaScriptLib(libSource, libUri);

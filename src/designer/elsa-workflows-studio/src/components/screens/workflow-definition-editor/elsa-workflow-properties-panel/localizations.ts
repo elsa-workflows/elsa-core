@@ -9,7 +9,9 @@
       'Status': 'Status',
       'Published': 'Published',
       'Draft': 'Draft',
-      'Properties': '{{name}} Properties'
+      'Properties': '{{name}} Properties',
+      'ExecuteWorkflow': 'Execute Workflow',
+      'UseAsSchema': 'Use as Schema'
     }
   },
   'nl-NL': {
@@ -22,7 +24,9 @@
       'Status': 'Status',
       'Published': 'Published',
       'Draft': 'Draft',
-      'Properties': '{{name}} Properties'
+      'Properties': '{{name}} Properties',
+      'ExecuteWorkflow': 'Werkstroom uitvoeren',
+      'UseAsSchema': 'Gebruik als schema'
     }
   }
 };

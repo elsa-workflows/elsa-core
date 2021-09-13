@@ -1,12 +1,13 @@
-import {Component, Prop, h, State, Watch, Host} from '@stencil/core';
+import {Component, Event, EventEmitter, h, Host, Method, Prop, State, Watch} from '@stencil/core';
+import {HubConnection, HubConnectionBuilder} from '@microsoft/signalr';
 import {enter, leave} from "el-transition"
-import {WorkflowDefinition, WorkflowDefinitionSummary} from "../../../../models";
+import {WorkflowDefinition, WorkflowDefinitionSummary, WorkflowTestActivityMessage} from "../../../../models";
 import {i18n} from "i18next";
 import {loadTranslations} from "../../../i18n/i18n-loader";
 import {resources} from "./localizations";
 import {createElsaClient} from "../../../../services";
-import {v4 as uuid} from 'uuid';
 import Tunnel from "../../../../data/dashboard";
+import { isJSDocThisTag } from 'typescript';
 
 interface Tab {
   id: string;
@@ -39,10 +40,24 @@ export class ElsaWorkflowPropertiesPanel {
   @State() publishedVersion: number;
   @State() expanded: boolean;
   @State() selectedTabId: string = 'testProperties';
-  private i18next: i18n;
-  private testId: string;
+  @State() hubConnection: HubConnection;
+  @Event() testActivityMessageReceived: EventEmitter<WorkflowTestActivityMessage>;
+
+  i18next: i18n;
+  signalRConnectionId: string;
   el: HTMLElement;
   tabs: Array<Tab> = [];
+  testActivity: WorkflowTestActivityMessage;
+
+  t = (key: string) => this.i18next.t(key);
+
+  @Method()
+  async selectTestActivity(message?: WorkflowTestActivityMessage) {
+    const messageInternal = !!message ? message : null;
+    this.selectTestActivityMessageInternal(messageInternal);
+    this.selectedTabId = 'testProperties';
+    this.selectedTabId = 'test';
+  }
 
   @Watch('workflowDefinition')
   async workflowDefinitionChangedHandler(newWorkflow: WorkflowDefinition, oldWorkflow: WorkflowDefinition) {
@@ -54,19 +69,45 @@ export class ElsaWorkflowPropertiesPanel {
   async componentWillLoad() {
     this.i18next = await loadTranslations(this.culture, resources);
     await this.loadPublishedVersion();
+    this.connectMessageHub();
+  }
+
+  private connectMessageHub(): void {
+    this.hubConnection = new HubConnectionBuilder()
+      .withUrl(this.serverUrl + "/hubs/workflowTest")
+      .build();
+
+    this.hubConnection.on('Connected', (message) => {
+      this.signalRConnectionId = message;
+    });
+
+    this.hubConnection.on('DispatchMessage', (message) => {
+      this.testActivityMessageReceived.emit(message);
+    });
+
+    this.hubConnection.start()
+      .then(() => this.hubConnection.invoke("Connecting"))
+      .catch((err) => console.log('error while establishing SignalR connection: ' + err));
   }
 
   onTabClick(e: Event, tab: Tab) {
     e.preventDefault();
 
     this.selectedTabId = tab.id;
-  } 
+  }
 
   async onExecuteWorkflowClick() {
-    debugger
+    this.testActivityMessageReceived.emit(null);
     const elsaClient = this.createClient();
-    this.testId = uuid();
-    await elsaClient.workflowsApi.test(this.workflowDefinition.definitionId, this.testId);
+    await elsaClient.workflowsApi.test(this.workflowDefinition.definitionId, this.workflowDefinition.version, this.signalRConnectionId);
+  }
+
+  async onUseAsSchemaClick() {
+
+  }
+
+  selectTestActivityMessageInternal(message?: WorkflowTestActivityMessage) {
+    this.testActivity = message;
   }  
 
   render() {
@@ -205,22 +246,76 @@ export class ElsaWorkflowPropertiesPanel {
   }
 
   renderTestTab = () => {
+
+    const t = (x, params?) => this.i18next.t(x, params);
+
     return (
       <div class="elsa-h-full elsa-flex elsa-flex-col elsa-py-6 elsa-bg-white elsa-shadow-xl elsa-overflow-y-scroll elsa-bg-white">
         <div class="elsa-h-full">
-          <div class="elsa-mt-16 elsa-p-6">
+          <div class="elsa-p-6">
             <div class="elsa-px-4 elsa-py-3 elsa-bg-gray-50 elsa-text-left sm:px-6">
               <button type="button"
                       onClick={() => this.onExecuteWorkflowClick()}
                       class="elsa-ml-0 elsa-w-full elsa-inline-flex elsa-justify-center elsa-rounded-md elsa-border elsa-border-transparent elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-bg-blue-600 elsa-text-base elsa-font-medium elsa-text-white hover:elsa-bg-blue-700 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 sm:elsa-ml-3 sm:elsa-w-auto sm:elsa-text-sm">
-                Execute Workflow
+                {t('ExecuteWorkflow')}
               </button>
             </div>
+            {this.renderActivityMessage()}
+            {this.renderUseAsSchemaButton()}
           </div>
         </div>
       </div>
     );
   }
+
+
+  renderActivityMessage() {
+
+    const t = (x, params?) => this.i18next.t(x, params);
+    const {testActivity} = this;
+
+    if (testActivity)
+      
+      return (
+        <dl
+          class="elsa-mt-2 elsa-border-t elsa-border-b elsa-border-gray-200 elsa-divide-y elsa-divide-gray-200">
+          <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
+            <dt class="elsa-text-gray-500">{t('Instance Id')}</dt>
+            <dd class="elsa-text-gray-900">{testActivity.workflowInstanceId}</dd>
+          </div>
+          <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
+            <dt class="elsa-text-gray-500">{t('Correlation Id')}</dt>
+            <dd class="elsa-text-gray-900">{testActivity.correlationId}</dd>
+          </div>                      
+          <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
+            <dt class="elsa-text-gray-500">{t('Activity Id')}</dt>
+            <dd class="elsa-text-gray-900">{testActivity.activityId}</dd>
+          </div>
+          <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
+            <dt class="elsa-text-gray-500">{t('Status')}</dt>
+            <dd class="elsa-text-gray-900 elsa-break-all">{testActivity.status || '-'}</dd>
+          </div>
+        </dl>
+    );
+  }
+
+  renderUseAsSchemaButton() {
+
+    const t = (x, params?) => this.i18next.t(x, params);
+    const {testActivity} = this;
+
+    if (testActivity)
+      
+      return (
+        <div class="elsa-px-4 elsa-py-3 elsa-bg-gray-50 elsa-text-left sm:px-6">
+          <button type="button"
+                  onClick={() => this.onUseAsSchemaClick()}
+                  class="elsa-ml-0 elsa-w-full elsa-inline-flex elsa-justify-center elsa-rounded-md elsa-border elsa-border-transparent elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-bg-blue-600 elsa-text-base elsa-font-medium elsa-text-white hover:elsa-bg-blue-700 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 sm:elsa-ml-3 sm:elsa-w-auto sm:elsa-text-sm">
+            {t('UseAsSchema')}
+          </button>
+        </div>
+    );
+  }  
 
   createClient() {
     return createElsaClient(this.serverUrl);

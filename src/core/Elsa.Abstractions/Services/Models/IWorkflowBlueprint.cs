@@ -1,4 +1,4 @@
-﻿using Elsa.Models;
+using Elsa.Models;
 
 namespace Elsa.Services.Models
 {
@@ -9,9 +9,11 @@ namespace Elsa.Services.Models
         bool IsSingleton { get; }
         bool IsPublished { get; }
         bool IsLatest { get; }
+        bool IsTestRun { get; set; }
         string? Tag { get; }
         string? Channel { get; }
-        
+        string? SignalRConnectionId { get; set; }
+
         /// <summary>
         /// An initial set of variables available to workflow instances.
         /// </summary>

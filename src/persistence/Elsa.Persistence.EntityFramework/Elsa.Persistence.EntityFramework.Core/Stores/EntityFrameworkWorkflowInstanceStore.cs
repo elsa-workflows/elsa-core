@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
@@ -62,6 +62,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
                 entity.Output,
                 entity.Variables,
                 entity.ActivityData,
+                entity.MetaData,
                 entity.BlockingActivities,
                 entity.ScheduledActivities,
                 entity.Scopes,
@@ -82,6 +83,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
                 entity.Output,
                 entity.Variables,
                 entity.ActivityData,
+                entity.MetaData,
                 entity.BlockingActivities,
                 entity.ScheduledActivities,
                 entity.Scopes,
@@ -98,6 +100,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
             entity.Output = data.Output;
             entity.Variables = data.Variables;
             entity.ActivityData = data.ActivityData;
+            entity.MetaData = data.MetaData;
             entity.BlockingActivities = data.BlockingActivities;
             entity.ScheduledActivities = data.ScheduledActivities;
             entity.Scopes = data.Scopes;

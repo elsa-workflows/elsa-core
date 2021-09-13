@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -10,6 +11,8 @@ using Elsa.Services;
 using Elsa.Services.Models;
 using MediatR;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace Elsa.Scripting.JavaScript.Handlers
 {
@@ -84,12 +87,15 @@ namespace Elsa.Scripting.JavaScript.Handlers
                 {
                     var activityType = activityTypeDictionary[activity.Type];
                     var typeScriptType = activityType.TypeName;
+                    var schema = GetActivitySchema(activity);
                     var targetType = GetActivityTargetType(activity);
 
-                    if (targetType == null)
-                        output.AppendLine($"{activity.Name}: {typeScriptType};");
-                    else
+                    if (!string.IsNullOrWhiteSpace(schema))
+                        output.AppendLine($"{activity.Name}: {typeScriptType}<{schema}>;");                    
+                    else if (!string.IsNullOrWhiteSpace(targetType))
                         output.AppendLine($"{activity.Name}: {typeScriptType}<{targetType}>;");
+                    else
+                        output.AppendLine($"{activity.Name}: {typeScriptType};");                    
                 }
 
                 output.AppendLine("}");
@@ -125,6 +131,26 @@ namespace Elsa.Scripting.JavaScript.Handlers
                     writer.AppendLine($"{propertyName}(): {typeScriptType}<T>;");
                 else
                     writer.AppendLine($"{propertyName}(): {typeScriptType};");
+            }
+
+            string? GetActivitySchema(Models.ActivityDefinition activity)
+            {
+                var schemaProperty = activity.Properties.FirstOrDefault(x => x.Name == "Schema");
+                if (schemaProperty == null || schemaProperty.Expressions.Count == 0)
+                    return null;
+
+                var json = schemaProperty.Expressions["Json"];
+                if (json == null)
+                    return null;
+
+                if (string.IsNullOrWhiteSpace(json))
+                    return null;
+
+#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
+                dynamic data = JsonConvert.DeserializeObject<ExpandoObject>(json, new ExpandoObjectConverter());
+#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
+                string title = data != null ? data.title : "Schema";
+                return title;
             }
 
             string? GetActivityTargetType(Models.ActivityDefinition activity)

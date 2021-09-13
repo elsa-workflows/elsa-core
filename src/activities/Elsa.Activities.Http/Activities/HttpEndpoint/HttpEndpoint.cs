@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.Providers.DefaultValues;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Expressions;
+using Elsa.Metadata;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
@@ -19,7 +21,7 @@ namespace Elsa.Activities.Http
         Description = "Handle an incoming HTTP request.",
         Outcomes = new[] { OutcomeNames.Done }
     )]
-    public class HttpEndpoint : Activity
+    public class HttpEndpoint : Activity, IActivityPropertyOptionsProvider
     {
         /// <summary>
         /// The path that triggers this activity. 
@@ -58,9 +60,8 @@ namespace Elsa.Activities.Http
 
         [ActivityInput(
             Category = PropertyCategories.Advanced,
-            UIHint = ActivityInputUIHints.MultiLine,
-            DefaultSyntax = SyntaxNames.Json,
-            SupportedSyntaxes = new[] { SyntaxNames.Json })]
+            UIHint = ActivityInputUIHints.CodeEditor,
+            OptionsProvider = typeof(HttpEndpoint))]
         public string? Schema { get; set; }
 
         [ActivityInput(
@@ -80,7 +81,8 @@ namespace Elsa.Activities.Http
         [ActivityOutput(Hint = "The received HTTP request.")]
         public HttpRequestModel? Output { get; set; }
 
-        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => context.WorkflowExecutionContext.IsFirstPass ? ExecuteInternal(context) : Suspend();
+        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => 
+            context.WorkflowExecutionContext.IsFirstPass && !context.WorkflowExecutionContext.WorkflowBlueprint.IsTestRun ? ExecuteInternal(context) : Suspend();
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context) => ExecuteInternal(context);
 
         private IActivityExecutionResult ExecuteInternal(ActivityExecutionContext context)
@@ -88,5 +90,13 @@ namespace Elsa.Activities.Http
             Output = context.GetInput<HttpRequestModel>();
             return Done();
         }
+
+        object IActivityPropertyOptionsProvider.GetOptions(PropertyInfo property) =>
+            new
+            {
+                EditorHeight = "Large",
+                Context = nameof(HttpEndpoint),
+                Syntax = SyntaxNames.Json
+            };
     }
 }
