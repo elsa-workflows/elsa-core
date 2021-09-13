@@ -212,7 +212,7 @@
   // Get a handle to the elsa-studio-root element.
   const elsaStudioRoot = document.querySelector('elsa-studio-root');
 
-  // Alternatively, configure Elsa during the 'initializing' event.
+  // Configure Elsa during the 'initializing' event.
   elsaStudioRoot.addEventListener('initializing', e => {
     const elsa = e.detail;
     elsa.pluginManager.registerPlugins([
