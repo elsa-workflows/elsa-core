@@ -9,7 +9,7 @@ import {
   WorkflowBlueprint, WorkflowModel,
   WorkflowPersistenceBehavior
 } from "../../../../models";
-import {createElsaClient} from "../../../../services/elsa-client";
+import {createElsaClient} from "../../../../services";
 import state from '../../../../utils/store';
 import {WorkflowDesignerMode} from "../../../designers/tree/elsa-designer-tree/models";
 import Tunnel from "../../../../data/dashboard";

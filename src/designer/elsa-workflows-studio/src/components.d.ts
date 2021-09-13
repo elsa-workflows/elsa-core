@@ -233,6 +233,12 @@ export namespace Components {
         "history"?: RouterHistory;
         "serverUrl": string;
     }
+    interface ElsaWorkflowBlueprintPropertiesPanel {
+        "culture": string;
+        "expandButtonPosition": number;
+        "serverUrl": string;
+        "workflowBlueprint": WorkflowBlueprint;
+    }
     interface ElsaWorkflowBlueprintSidePanel {
         "serverUrl": string;
         "workflowId": string;
@@ -552,6 +558,12 @@ declare global {
         prototype: HTMLElsaWebhookDefinitionsListScreenElement;
         new (): HTMLElsaWebhookDefinitionsListScreenElement;
     };
+    interface HTMLElsaWorkflowBlueprintPropertiesPanelElement extends Components.ElsaWorkflowBlueprintPropertiesPanel, HTMLStencilElement {
+    }
+    var HTMLElsaWorkflowBlueprintPropertiesPanelElement: {
+        prototype: HTMLElsaWorkflowBlueprintPropertiesPanelElement;
+        new (): HTMLElsaWorkflowBlueprintPropertiesPanelElement;
+    };
     interface HTMLElsaWorkflowBlueprintSidePanelElement extends Components.ElsaWorkflowBlueprintSidePanel, HTMLStencilElement {
     }
     var HTMLElsaWorkflowBlueprintSidePanelElement: {
@@ -665,6 +677,7 @@ declare global {
         "elsa-webhook-definition-editor-notifications": HTMLElsaWebhookDefinitionEditorNotificationsElement;
         "elsa-webhook-definition-editor-screen": HTMLElsaWebhookDefinitionEditorScreenElement;
         "elsa-webhook-definitions-list-screen": HTMLElsaWebhookDefinitionsListScreenElement;
+        "elsa-workflow-blueprint-properties-panel": HTMLElsaWorkflowBlueprintPropertiesPanelElement;
         "elsa-workflow-blueprint-side-panel": HTMLElsaWorkflowBlueprintSidePanelElement;
         "elsa-workflow-blueprint-viewer-screen": HTMLElsaWorkflowBlueprintViewerScreenElement;
         "elsa-workflow-definition-editor-notifications": HTMLElsaWorkflowDefinitionEditorNotificationsElement;
@@ -896,6 +909,12 @@ declare namespace LocalJSX {
         "history"?: RouterHistory;
         "serverUrl"?: string;
     }
+    interface ElsaWorkflowBlueprintPropertiesPanel {
+        "culture"?: string;
+        "expandButtonPosition"?: number;
+        "serverUrl"?: string;
+        "workflowBlueprint"?: WorkflowBlueprint;
+    }
     interface ElsaWorkflowBlueprintSidePanel {
         "serverUrl"?: string;
         "workflowId"?: string;
@@ -1009,6 +1028,7 @@ declare namespace LocalJSX {
         "elsa-webhook-definition-editor-notifications": ElsaWebhookDefinitionEditorNotifications;
         "elsa-webhook-definition-editor-screen": ElsaWebhookDefinitionEditorScreen;
         "elsa-webhook-definitions-list-screen": ElsaWebhookDefinitionsListScreen;
+        "elsa-workflow-blueprint-properties-panel": ElsaWorkflowBlueprintPropertiesPanel;
         "elsa-workflow-blueprint-side-panel": ElsaWorkflowBlueprintSidePanel;
         "elsa-workflow-blueprint-viewer-screen": ElsaWorkflowBlueprintViewerScreen;
         "elsa-workflow-definition-editor-notifications": ElsaWorkflowDefinitionEditorNotifications;
@@ -1067,6 +1087,7 @@ declare module "@stencil/core" {
             "elsa-webhook-definition-editor-notifications": LocalJSX.ElsaWebhookDefinitionEditorNotifications & JSXBase.HTMLAttributes<HTMLElsaWebhookDefinitionEditorNotificationsElement>;
             "elsa-webhook-definition-editor-screen": LocalJSX.ElsaWebhookDefinitionEditorScreen & JSXBase.HTMLAttributes<HTMLElsaWebhookDefinitionEditorScreenElement>;
             "elsa-webhook-definitions-list-screen": LocalJSX.ElsaWebhookDefinitionsListScreen & JSXBase.HTMLAttributes<HTMLElsaWebhookDefinitionsListScreenElement>;
+            "elsa-workflow-blueprint-properties-panel": LocalJSX.ElsaWorkflowBlueprintPropertiesPanel & JSXBase.HTMLAttributes<HTMLElsaWorkflowBlueprintPropertiesPanelElement>;
             "elsa-workflow-blueprint-side-panel": LocalJSX.ElsaWorkflowBlueprintSidePanel & JSXBase.HTMLAttributes<HTMLElsaWorkflowBlueprintSidePanelElement>;
             "elsa-workflow-blueprint-viewer-screen": LocalJSX.ElsaWorkflowBlueprintViewerScreen & JSXBase.HTMLAttributes<HTMLElsaWorkflowBlueprintViewerScreenElement>;
             "elsa-workflow-definition-editor-notifications": LocalJSX.ElsaWorkflowDefinitionEditorNotifications & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionEditorNotificationsElement>;
