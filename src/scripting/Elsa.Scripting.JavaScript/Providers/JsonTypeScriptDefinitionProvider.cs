@@ -39,7 +39,7 @@ namespace Elsa.Scripting.JavaScript.Services
                 var schemaProperty = activity.Properties.FirstOrDefault(x => x.Name == "Schema");
                 if (schemaProperty == null || schemaProperty.Expressions.Count == 0) continue;
 
-                var json = schemaProperty.Expressions["Json"];
+                var json = schemaProperty.Expressions.FirstOrDefault().Value;
                 if (json == null) continue;
 
                 if (string.IsNullOrWhiteSpace(json)) continue;

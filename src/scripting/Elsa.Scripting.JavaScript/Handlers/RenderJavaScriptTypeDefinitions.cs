@@ -1,6 +1,4 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
 using System.Text;
@@ -10,7 +8,6 @@ using Elsa.Scripting.JavaScript.Events;
 using Elsa.Services;
 using Elsa.Services.Models;
 using MediatR;
-using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
@@ -139,7 +136,7 @@ namespace Elsa.Scripting.JavaScript.Handlers
                 if (schemaProperty == null || schemaProperty.Expressions.Count == 0)
                     return null;
 
-                var json = schemaProperty.Expressions["Json"];
+                var json = schemaProperty.Expressions.FirstOrDefault().Value;
                 if (json == null)
                     return null;
 

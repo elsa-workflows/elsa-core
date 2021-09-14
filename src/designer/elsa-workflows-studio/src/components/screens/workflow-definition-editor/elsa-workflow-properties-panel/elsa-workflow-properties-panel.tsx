@@ -97,6 +97,7 @@ export class ElsaWorkflowPropertiesPanel {
   }
 
   async onExecuteWorkflowClick() {
+    debugger
     this.testActivityMessageReceived.emit(null);
     const elsaClient = this.createClient();
     await elsaClient.workflowsApi.test(this.workflowDefinition.definitionId, this.workflowDefinition.version, this.signalRConnectionId);
