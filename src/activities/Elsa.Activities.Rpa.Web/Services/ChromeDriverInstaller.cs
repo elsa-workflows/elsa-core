@@ -70,7 +70,7 @@ namespace Elsa.Activities.Rpa.Web.Services
                 throw new PlatformNotSupportedException("Your operating system is not supported.");
             }
 
-            string targetPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            string targetPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
             targetPath = Path.Combine(targetPath, driverName);
             if (!forceDownload && File.Exists(targetPath))
             {
@@ -84,7 +84,7 @@ namespace Elsa.Activities.Rpa.Web.Services
                         RedirectStandardOutput = true,
                         RedirectStandardError = true,
                     }
-                );
+                )!;
                 string existingChromeDriverVersion = await process.StandardOutput.ReadToEndAsync();
                 string error = await process.StandardError.ReadToEndAsync();
                 process.WaitForExit();
@@ -118,7 +118,7 @@ namespace Elsa.Activities.Rpa.Web.Services
             using (var zipArchive = new ZipArchive(zipFileStream, ZipArchiveMode.Read))
             using (var chromeDriverWriter = new FileStream(targetPath, FileMode.Create))
             {
-                var entry = zipArchive.GetEntry(driverName);
+                var entry = zipArchive.GetEntry(driverName)!;
                 using Stream chromeDriverStream = entry.Open();
                 await chromeDriverStream.CopyToAsync(chromeDriverWriter);
             }
@@ -136,7 +136,7 @@ namespace Elsa.Activities.Rpa.Web.Services
                         RedirectStandardOutput = true,
                         RedirectStandardError = true,
                     }
-                );
+                )!;
                 string error = await process.StandardError.ReadToEndAsync();
                 process.WaitForExit();
                 process.Kill();
@@ -152,7 +152,7 @@ namespace Elsa.Activities.Rpa.Web.Services
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                string chromePath = (string)Registry.GetValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\chrome.exe", null, null);
+                var chromePath = (string?)Registry.GetValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\chrome.exe", null, null);
                 if (chromePath == null)
                 {
                     throw new Exception("Google Chrome not found in registry");
@@ -175,7 +175,7 @@ namespace Elsa.Activities.Rpa.Web.Services
                             RedirectStandardOutput = true,
                             RedirectStandardError = true,
                         }
-                    );
+                    )!;
                     string output = await process.StandardOutput.ReadToEndAsync();
                     string error = await process.StandardError.ReadToEndAsync();
                     process.WaitForExit();
@@ -207,7 +207,7 @@ namespace Elsa.Activities.Rpa.Web.Services
                             RedirectStandardOutput = true,
                             RedirectStandardError = true,
                         }
-                    );
+                    )!;
                     string output = await process.StandardOutput.ReadToEndAsync();
                     string error = await process.StandardError.ReadToEndAsync();
                     process.WaitForExit();

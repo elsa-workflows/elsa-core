@@ -45,7 +45,6 @@ namespace Elsa.Services.Models
         public bool SaveWorkflowContext { get; set; }
         public IDictionary<string, string> PropertyStorageProviders { get; set; } = new Dictionary<string, string>();
         public string? Source { get; set; }
-        public string Key { get; set; }
         public override string ToString() => Type;
     }
 }
