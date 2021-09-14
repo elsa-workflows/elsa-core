@@ -11,7 +11,7 @@
     <PackageReference Include="Autofixture.AutoMoq" Version="4.17.0" />
     <PackageReference Include="autofixture.xunit2" Version="4.17.0" />
     <PackageReference Include="Moq" Version="4.16.1" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.9.4" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.11.0" />
     <PackageReference Include="NodaTime.Testing" Version="3.0.5" />
     <PackageReference Include="System.Text.Encodings.Web" Version="5.0.1" />
     <PackageReference Include="xunit" Version="2.4.1" />
@@ -20,15 +20,15 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="coverlet.collector" Version="3.0.3">
+    <PackageReference Include="coverlet.collector" Version="3.1.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="YesSql.Core" Version="3.0.6" />
-    <PackageReference Include="YesSql.Provider.Sqlite" Version="3.0.6" />
-    <PackageReference Include="YesSql.Provider.PostgreSql" Version="3.0.6" />
+    <PackageReference Include="YesSql.Core" Version="3.0.7" />
+    <PackageReference Include="YesSql.Provider.Sqlite" Version="3.0.7" />
+    <PackageReference Include="YesSql.Provider.PostgreSql" Version="3.0.7" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
-    <PackageReference Include="Hangfire.AspNetCore" Version="1.7.22" />
+    <PackageReference Include="Hangfire.AspNetCore" Version="1.7.25" />
     <PackageReference Include="Hangfire.InMemory" Version="0.3.4" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="5.0.9" />
   </ItemGroup>

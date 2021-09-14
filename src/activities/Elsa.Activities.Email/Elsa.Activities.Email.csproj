@@ -20,7 +20,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="MailKit" Version="2.12.0" />
+      <PackageReference Include="MailKit" Version="2.15.0" />
       <PackageReference Include="Microsoft.Extensions.Http" Version="5.0.0" />
     </ItemGroup>
 

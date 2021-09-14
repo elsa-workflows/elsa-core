@@ -13,11 +13,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="YesSql.Core" Version="3.0.6" />
-        <PackageReference Include="YesSql.Provider.MySql" Version="3.0.6" />
-        <PackageReference Include="YesSql.Provider.PostgreSql" Version="3.0.6" />
-        <PackageReference Include="YesSql.Provider.Sqlite" Version="3.0.6" />
-        <PackageReference Include="YesSql.Provider.SqlServer" Version="3.0.6" />
+        <PackageReference Include="YesSql.Core" Version="3.0.7" />
+        <PackageReference Include="YesSql.Provider.MySql" Version="3.0.7" />
+        <PackageReference Include="YesSql.Provider.PostgreSql" Version="3.0.7" />
+        <PackageReference Include="YesSql.Provider.Sqlite" Version="3.0.7" />
+        <PackageReference Include="YesSql.Provider.SqlServer" Version="3.0.7" />
     </ItemGroup>
 
   <ItemGroup>

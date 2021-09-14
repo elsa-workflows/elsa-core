@@ -60,8 +60,8 @@
 
     <ItemGroup>
         <PackageReference Include="Hangfire.InMemory" Version="0.3.4" />
-        <PackageReference Include="Hangfire.SqlServer" Version="1.7.22" />
-        <PackageReference Include="Quartz.Serialization.Json" Version="3.3.2" />
+        <PackageReference Include="Hangfire.SqlServer" Version="1.7.25" />
+        <PackageReference Include="Quartz.Serialization.Json" Version="3.3.3" />
     </ItemGroup>
 
 </Project>
