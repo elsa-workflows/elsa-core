@@ -26,8 +26,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../../src/core/Elsa.Abstractions/Elsa.Abstractions.csproj" />
-    <ProjectReference Include="../../shared/Elsa.Testing.Shared/Elsa.Testing.Shared.csproj" />
+    <ProjectReference Include="..\..\..\src\core\Elsa.Abstractions\Elsa.Abstractions.csproj" />
+    <ProjectReference Include="..\..\shared\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj" />
     <ProjectReference Include="..\..\..\src\activities\Elsa.Activities.Http\Elsa.Activities.Http.csproj" />
   </ItemGroup>
 

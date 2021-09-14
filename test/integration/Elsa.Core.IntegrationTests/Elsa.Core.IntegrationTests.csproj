@@ -30,7 +30,7 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
     <PackageReference Include="Hangfire.AspNetCore" Version="1.7.22" />
     <PackageReference Include="Hangfire.InMemory" Version="0.3.4" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="5.0.6" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="5.0.9" />
   </ItemGroup>
 
   <ItemGroup>
