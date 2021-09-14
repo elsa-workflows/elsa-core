@@ -14,6 +14,7 @@ using Elsa.Webhooks.Models;
 using Elsa.Webhooks.Persistence;
 using Humanizer;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Activities.Webhooks.ActivityTypes
 {
@@ -23,23 +24,23 @@ namespace Elsa.Activities.Webhooks.ActivityTypes
         private const string WebhooksActivityTypeSuffix = "Webhook";
         private const string WebhooksActivityCategory = "Webhooks";
 
-        private readonly IWebhookDefinitionStore _webhookDefinitionStore;
         private readonly IActivityActivator _activityActivator;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
 
-        public WebhookActivityTypeProvider(
-            IWebhookDefinitionStore webhookDefinitionStore,
-            IActivityActivator activityActivator)
+        public WebhookActivityTypeProvider(IActivityActivator activityActivator, IServiceScopeFactory serviceScopeFactory)
         {
-            _webhookDefinitionStore = webhookDefinitionStore;
             _activityActivator = activityActivator;
+            _serviceScopeFactory = serviceScopeFactory;
         }
 
         public async ValueTask<IEnumerable<ActivityType>> GetActivityTypesAsync(CancellationToken cancellationToken = default)
         {
+            using var scope = _serviceScopeFactory.CreateScope();
+            var webhookDefinitionStore = scope.ServiceProvider.GetRequiredService<IWebhookDefinitionStore>();
             var specification = Specification<WebhookDefinition>.Identity;
-            var definitions = await _webhookDefinitionStore.FindManyAsync(specification, cancellationToken: cancellationToken);
-
+            var definitions = await webhookDefinitionStore.FindManyAsync(specification, cancellationToken: cancellationToken);
             var activityTypes = new List<ActivityType>();
+
             foreach (var definition in definitions)
             {
                 var activity = CreateWebhookActivityType(definition);
@@ -53,7 +54,7 @@ namespace Elsa.Activities.Webhooks.ActivityTypes
         {
             var activityTypeName = webhook.Name.EndsWith(WebhooksActivityTypeSuffix) ? webhook.Name : $"{webhook.Name}{WebhooksActivityTypeSuffix}";
             var activityDisplayName = activityTypeName.Humanize();
-            
+
             ValueTask<ActivityDescriptor> CreateDescriptorAsync()
             {
                 var descriptor = new ActivityDescriptor
@@ -105,7 +106,7 @@ namespace Elsa.Activities.Webhooks.ActivityTypes
                 };
 
                 return new ValueTask<ActivityDescriptor>(descriptor);
-            };
+            }
 
             async ValueTask<IActivity> ActivateActivityAsync(ActivityExecutionContext context)
             {
