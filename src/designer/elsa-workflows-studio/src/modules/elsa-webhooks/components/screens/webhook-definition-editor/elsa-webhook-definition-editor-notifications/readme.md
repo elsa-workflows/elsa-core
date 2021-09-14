@@ -13,7 +13,7 @@
 
 ### Depends on
 
-- [elsa-toast-notification](../../../shared/elsa-toast-notification)
+- [elsa-toast-notification](../../../../../../components/shared/elsa-toast-notification)
 
 ### Graph
 ```mermaid

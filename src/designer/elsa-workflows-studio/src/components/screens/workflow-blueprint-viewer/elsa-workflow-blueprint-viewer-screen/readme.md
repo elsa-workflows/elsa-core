@@ -45,9 +45,9 @@ graph TD;
   elsa-workflow-blueprint-viewer-screen --> elsa-designer-tree
   elsa-workflow-blueprint-viewer-screen --> elsa-workflow-blueprint-side-panel
   elsa-workflow-blueprint-viewer-screen --> context-consumer
-  elsa-workflow-blueprint-side-panel --> elsa-workflow-properties-panel
+  elsa-workflow-blueprint-side-panel --> elsa-workflow-blueprint-properties-panel
   elsa-workflow-blueprint-side-panel --> context-consumer
-  elsa-workflow-properties-panel --> context-consumer
+  elsa-workflow-blueprint-properties-panel --> context-consumer
   elsa-studio-workflow-blueprint-view --> elsa-workflow-blueprint-viewer-screen
   style elsa-workflow-blueprint-viewer-screen fill:#f9f,stroke:#333,stroke-width:4px
 ```

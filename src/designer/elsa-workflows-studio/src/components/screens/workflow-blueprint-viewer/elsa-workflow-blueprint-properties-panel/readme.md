@@ -7,20 +7,19 @@
 
 ## Properties
 
-| Property               | Attribute                | Description | Type                 | Default     |
-| ---------------------- | ------------------------ | ----------- | -------------------- | ----------- |
-| `culture`              | `culture`                |             | `string`             | `undefined` |
-| `expandButtonPosition` | `expand-button-position` |             | `number`             | `1`         |
-| `serverUrl`            | `server-url`             |             | `string`             | `undefined` |
-| `workflowDefinition`   | --                       |             | `WorkflowDefinition` | `undefined` |
+| Property               | Attribute                | Description | Type                | Default     |
+| ---------------------- | ------------------------ | ----------- | ------------------- | ----------- |
+| `culture`              | `culture`                |             | `string`            | `undefined` |
+| `expandButtonPosition` | `expand-button-position` |             | `number`            | `1`         |
+| `serverUrl`            | `server-url`             |             | `string`            | `undefined` |
+| `workflowBlueprint`    | --                       |             | `WorkflowBlueprint` | `undefined` |
 
 
 ## Dependencies
 
 ### Used by
 
- - [elsa-workflow-blueprint-side-panel](../../workflow-blueprint-viewer/elsa-workflow-blueprint-side-panel)
- - [elsa-workflow-definition-editor-screen](../elsa-workflow-definition-editor-screen)
+ - [elsa-workflow-blueprint-side-panel](../elsa-workflow-blueprint-side-panel)
 
 ### Depends on
 
@@ -29,10 +28,9 @@
 ### Graph
 ```mermaid
 graph TD;
-  elsa-workflow-properties-panel --> context-consumer
-  elsa-workflow-blueprint-side-panel --> elsa-workflow-properties-panel
-  elsa-workflow-definition-editor-screen --> elsa-workflow-properties-panel
-  style elsa-workflow-properties-panel fill:#f9f,stroke:#333,stroke-width:4px
+  elsa-workflow-blueprint-properties-panel --> context-consumer
+  elsa-workflow-blueprint-side-panel --> elsa-workflow-blueprint-properties-panel
+  style elsa-workflow-blueprint-properties-panel fill:#f9f,stroke:#333,stroke-width:4px
 ```
 
 ----------------------------------------------

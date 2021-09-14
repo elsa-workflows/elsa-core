@@ -8,7 +8,7 @@ module.exports = {
     enabled: !dev,
     content: ['./src/**/*.tsx', './src/**/*.html'],
     options: {
-      safelist: ['hidden', 'jtk-connector', 'rose', 'sky', /gray/, /pink/, /blue/, /green/, /red/, /yellow/, /rose/, 'label-container', 'node', 'start', 'activity']
+      safelist: ['hidden', 'jtk-connector', 'rose', 'sky', /gray/, /pink/, /blue/, /green/, /red/, /yellow/, /rose/, 'label-container', 'node', 'start', 'activity', 'border-blue-600', 'border-green-600', 'border-red-600']
     },
   },
   prefix: 'elsa-',
@@ -31,7 +31,7 @@ module.exports = {
       opacity: ['disabled'],
       cursor: ['disabled'],
     },
-    borderColor: ['responsive', 'hover', 'focus'],    
+    borderColor: ['responsive', 'hover', 'focus'],
   },
   plugins: [
     require('@tailwindcss/forms'),

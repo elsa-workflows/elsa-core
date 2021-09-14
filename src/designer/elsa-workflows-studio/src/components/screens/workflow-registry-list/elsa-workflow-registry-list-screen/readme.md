@@ -23,16 +23,19 @@
 
 ### Depends on
 
-- stencil-route-link
 - [elsa-context-menu](../../../controls/elsa-context-menu)
+- stencil-route-link
+- [elsa-confirm-dialog](../../../shared/elsa-confirm-dialog)
 - context-consumer
 
 ### Graph
 ```mermaid
 graph TD;
-  elsa-workflow-registry-list-screen --> stencil-route-link
   elsa-workflow-registry-list-screen --> elsa-context-menu
+  elsa-workflow-registry-list-screen --> stencil-route-link
+  elsa-workflow-registry-list-screen --> elsa-confirm-dialog
   elsa-workflow-registry-list-screen --> context-consumer
+  elsa-confirm-dialog --> elsa-modal-dialog
   elsa-studio-workflow-registry --> elsa-workflow-registry-list-screen
   style elsa-workflow-registry-list-screen fill:#f9f,stroke:#333,stroke-width:4px
 ```
