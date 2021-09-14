@@ -46,14 +46,5 @@ namespace Elsa.Core.IntegrationTests.Workflows
                 base.Build(builder);
             }
         }
-
-        public class OnWorkflowPassCompleted : PersistableWorkflow
-        {
-            public override void Build(IWorkflowBuilder builder)
-            {
-                builder.WithPersistenceBehavior(WorkflowPersistenceBehavior.WorkflowPassCompleted);
-                base.Build(builder);
-            }
-        }
     }
 }

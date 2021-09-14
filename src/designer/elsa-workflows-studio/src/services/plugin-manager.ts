@@ -17,12 +17,10 @@ import {SendSignalPlugin} from "../plugins/send-signal-plugin";
 import {UserTaskPlugin} from "../plugins/user-task-plugin";
 import {StatePlugin} from "../plugins/state-plugin";
 import {SendHttpRequestPlugin} from "../plugins/send-http-request-plugin";
-import {WebhookPlugin} from "../plugins/webhook-plugin";
 import {RunWorkflowPlugin} from "../plugins/run-workflow-plugin";
-import {ElsaStudio} from "../models/services";
+import {ElsaStudio} from "../models";
 
 export class PluginManager {
-
   plugins: Array<ElsaPlugin> = [];
   pluginTypes: Array<any> = [];
   elsaStudio: ElsaStudio;
@@ -48,8 +46,7 @@ export class PluginManager {
       StatePlugin,
       RunJavascriptPlugin,
       UserTaskPlugin,
-      SendEmailPlugin,
-      WebhookPlugin
+      SendEmailPlugin
     ];
   }
 
@@ -66,7 +63,6 @@ export class PluginManager {
   }
 
   registerPlugins(pluginTypes: Array<any>) {
-
     for (const pluginType of pluginTypes) {
       this.registerPlugin(pluginType);
     }

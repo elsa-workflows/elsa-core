@@ -42,6 +42,8 @@ namespace Elsa.Activities.Telnyx.Activities
 
             Model = webhookModel;
             Output = webhookModel.Data.Payload;
+            
+            context.LogOutputProperty(this, "Webhook Payload", webhookModel);
             return Done();
         }
     }

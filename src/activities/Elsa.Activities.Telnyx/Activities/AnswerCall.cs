@@ -10,6 +10,7 @@ using Elsa.Exceptions;
 using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
+using Microsoft.AspNetCore.Mvc.Formatters;
 using Refit;
 
 // ReSharper disable once CheckNamespace
@@ -18,7 +19,7 @@ namespace Elsa.Activities.Telnyx.Activities
     [Job(
         Category = Constants.Category,
         Description = "Answer an incoming call. You must issue this command before executing subsequent commands on an incoming call",
-        Outcomes = new[] { TelnyxOutcomeNames.Pending, TelnyxOutcomeNames.Answered, TelnyxOutcomeNames.CallIsNoLongerActive },
+        Outcomes = new[] { TelnyxOutcomeNames.Answered, TelnyxOutcomeNames.CallIsNoLongerActive },
         DisplayName = "Answer Call"
     )]
     public class AnswerCall : Activity
@@ -76,7 +77,7 @@ namespace Elsa.Activities.Telnyx.Activities
                 var callControlId = context.GetCallControlId(CallControlId);
                 var request = new AnswerCallRequest(BillingGroupId, ClientState, CommandId, WebhookUrl, WebhookUrlMethod);
                 await _telnyxClient.Calls.AnswerCallAsync(callControlId, request, context.CancellationToken);
-                return Combine(Outcome(TelnyxOutcomeNames.Pending), Suspend());
+                return Suspend();
             }
             catch (ApiException e)
             {
@@ -90,6 +91,7 @@ namespace Elsa.Activities.Telnyx.Activities
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
         {
             ReceivedPayload = context.GetInput<CallAnsweredPayload>();
+            context.LogOutputProperty(this, "Received Payload", ReceivedPayload);
             return Outcome(TelnyxOutcomeNames.Answered);
         }
     }

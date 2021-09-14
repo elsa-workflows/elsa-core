@@ -4,8 +4,8 @@ using Elsa.Persistence.EntityFramework.Core.Stores;
 using Elsa.Persistence.Specifications;
 using Elsa.Serialization;
 using Elsa.Webhooks.Persistence.EntityFramework.Core.Services;
-using AutoMapper;
 using Elsa.Webhooks.Models;
+using AutoMapper;
 
 namespace Elsa.Webhooks.Persistence.EntityFramework.Core.Stores
 {
@@ -19,13 +19,5 @@ namespace Elsa.Webhooks.Persistence.EntityFramework.Core.Stores
         }
 
         protected override Expression<Func<WebhookDefinition, bool>> MapSpecification(ISpecification<WebhookDefinition> specification) => AutoMapSpecification(specification);
-
-        protected override void OnSaving(WebhookContext dbContext, WebhookDefinition entity)
-        {
-        }
-
-        protected override void OnLoading(WebhookContext dbContext, WebhookDefinition entity)
-        {
-        }
     }
 }

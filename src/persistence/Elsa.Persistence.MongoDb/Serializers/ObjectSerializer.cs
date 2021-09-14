@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Elsa.Serialization.Converters;
 using MongoDB.Bson.Serialization;
 using Newtonsoft.Json;
@@ -19,6 +19,7 @@ namespace Elsa.Persistence.MongoDb.Serializers
                 NullValueHandling = NullValueHandling.Ignore,
                 TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Simple,
                 TypeNameHandling = TypeNameHandling.Auto,
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
             }.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
             
             _serializerSettings.Converters.Add(new TypeJsonConverter());

@@ -92,10 +92,6 @@ export class ElsaWorkflowInstanceJournal {
     await this.workflowInstanceIdChangedHandler(this.workflowInstanceId);
   }
 
-  filterRecords(){
-    return
-  }
-
   selectActivityRecordInternal(record?: WorkflowExecutionLogRecord) {
     const activity = !!record ? this.workflowBlueprint.activities.find(x => x.id === record.activityId) : null;
     this.selectedRecordId = !!record ? record.id : null;
@@ -176,7 +172,7 @@ export class ElsaWorkflowInstanceJournal {
                  data-transition-leave-start="elsa-translate-x-0"
                  data-transition-leave-end="elsa-translate-x-full"
                  class="elsa-w-screen elsa-max-w-2xl">
-              <div class="elsa-h-full elsa-flex elsa-flex-col elsa-py-6 elsa-bg-white elsa-shadow-xl elsa-overflow-y-scroll">
+              <div class="elsa-h-full elsa-flex elsa-flex-col elsa-py-6 elsa-bg-white elsa-shadow-xl">
                 <div class="elsa-px-4 sm:elsa-px-6">
                   <div class="elsa-flex elsa-flex-col elsa-items-end">
                     <div class="elsa-ml-3 h-7 elsa-flex elsa-items-center">
@@ -204,7 +200,7 @@ export class ElsaWorkflowInstanceJournal {
                   </div>
 
                 </div>
-                <div class="elsa-mt-6 elsa-relative elsa-flex-1 elsa-px-4 sm:elsa-px-6">
+                <div class="elsa-mt-6 elsa-relative elsa-flex-1 elsa-px-4 sm:elsa-px-6 elsa-overflow-y-scroll">
                   <div class="elsa-absolute elsa-inset-0 elsa-px-4 sm:elsa-px-6">
                     {selectedTab.view()}
                   </div>
@@ -240,19 +236,19 @@ export class ElsaWorkflowInstanceJournal {
       const recordClass = record.id === selectedRecordId ? 'elsa-border-blue-600' : 'hover:elsa-bg-gray-100 elsa-border-transparent';
       const recordData = record.data || {};
       const filteredRecordData = {};
-      const wellknownDataKeys = {State: true, Input: null, Outcomes: true, Exception: true};
+      const wellKnownDataKeys = {State: true, Input: null, Outcomes: true, Exception: true};
 
       for (const key in recordData) {
 
         if (!recordData.hasOwnProperty(key))
           continue;
 
-        if (!!wellknownDataKeys[key])
+        if (!!wellKnownDataKeys[key])
           continue;
 
         const value = recordData[key];
 
-        if (!value)
+        if (!value && value != 0)
           continue;
 
         let valueText = null;

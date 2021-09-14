@@ -15,7 +15,7 @@ export class SwitchPlugin implements ElsaPlugin {
     const activityDescriptor = context.activityDescriptor;
     const propertyDescriptors = activityDescriptor.inputProperties;
     const switchCaseProperties = propertyDescriptors.filter(x => x.uiHint == 'switch-case-builder');
-    
+
     if (switchCaseProperties.length == 0)
       return;
 
@@ -34,6 +34,6 @@ export class SwitchPlugin implements ElsaPlugin {
     }
 
     const outcomes = Object.keys(outcomesHash);
-    context.outcomes = [...outcomes, 'Default'];
+    context.outcomes = [...outcomes, 'Default', 'Done'];
   }
 }

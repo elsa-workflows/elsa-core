@@ -165,6 +165,7 @@ namespace Elsa.Activities.Telnyx.Activities
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
         {
             ReceivedPayload = context.GetInput<CallGatherEndedPayload>();
+            context.LogOutputProperty(this, "Received Payload", ReceivedPayload);
             return Outcome(TelnyxOutcomeNames.GatherCompleted);
         }
 

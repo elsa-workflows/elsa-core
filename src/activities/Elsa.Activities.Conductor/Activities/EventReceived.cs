@@ -47,6 +47,7 @@ namespace Elsa.Activities.Conductor
                 outcomes = new[] { Elsa.OutcomeNames.Done };
 
             Payload = eventModel.Payload;
+            context.JournalData.Add("Payload", eventModel.Payload);
             return base.Outcomes(outcomes!);
         }
     }

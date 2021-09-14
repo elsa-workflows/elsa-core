@@ -11,6 +11,11 @@
   <script src="/build/assets/js/monaco-editor/min/vs/loader.js"></script>
   <script type="module" src="/build/elsa-workflows-studio.esm.js"></script>
   <script nomodule src="/build/elsa-workflows-studio.js"></script>
+  <style>
+    elsa-studio-dashboard nav.elsa-bg-gray-800 {
+      background-color: teal;
+    }
+  </style>
 </head>
 <body>
 
@@ -30,7 +35,7 @@
   // Integration demos.
 
   // Import publicly exposed services and models.
-  import {confirmDialogService, EventTypes} from "/build/index.esm.js";
+  import {confirmDialogService, EventTypes, WebhooksPlugin, WorkflowSettingsPlugin} from "/build/index.esm.js";
 
   // Custom plugin that changes the icon of the ReadLine activity.
   function CustomReadLinePlugin(elsaStudio) {
@@ -207,19 +212,19 @@
   // Get a handle to the elsa-studio-root element.
   const elsaStudioRoot = document.querySelector('elsa-studio-root');
 
-  // Configure Elsa.
-  // (async () => {
-  //     // Wait until the component is available.
-  //     await customElements.whenDefined('elsa-studio-root');
-  //
-  //     // Install plugins.
-  //     await elsaStudioRoot.addPlugins([CustomReadLinePlugin, CustomBulkActionsPlugin, CustomHttpMiddlewarePlugin, CustomPropertyFieldPlugin]);
-  // })();
-
-  // Alternatively, configure Elsa during the 'initializing' event.
+  // Configure Elsa during the 'initializing' event.
   elsaStudioRoot.addEventListener('initializing', e => {
     const elsa = e.detail;
-    elsa.pluginManager.registerPlugins([CustomReadLinePlugin, CustomBulkActionsPlugin, CustomHttpMiddlewarePlugin, CustomPropertyFieldPlugin, WorkflowModelChangedListenerPlugin, CustomActivityEditorPlugin]);
+    elsa.pluginManager.registerPlugins([
+      CustomReadLinePlugin,
+      CustomBulkActionsPlugin,
+      CustomHttpMiddlewarePlugin,
+      CustomPropertyFieldPlugin,
+      WorkflowModelChangedListenerPlugin,
+      CustomActivityEditorPlugin,
+      WebhooksPlugin,
+      WorkflowSettingsPlugin
+    ]);
   });
 
   // Some components publish DOM events that we can handle directly:

@@ -52,12 +52,13 @@ namespace Elsa.Scripting.Liquid.Handlers
             memberAccessStrategy.Register<ActivityExecutionContext, FluidValue>("Input", x => ToFluidValue(x.Input, options));
             memberAccessStrategy.Register<ActivityExecutionContext, FluidValue>("WorkflowContextId", x => ToFluidValue(x.ContextId, options));
             memberAccessStrategy.Register<ActivityExecutionContext, FluidValue>("WorkflowInstanceId", x => ToFluidValue(x.WorkflowInstance.Id, options));
+            memberAccessStrategy.Register<ActivityExecutionContext, FluidValue>("ActivityId", x => ToFluidValue(x.ActivityId, options));
             memberAccessStrategy.Register<ActivityExecutionContext, FluidValue>("CorrelationId", x => ToFluidValue(x.CorrelationId, options));
             memberAccessStrategy.Register<ActivityExecutionContext, FluidValue>("WorkflowDefinitionId", x => ToFluidValue(x.WorkflowInstance.DefinitionId, options));
             memberAccessStrategy.Register<ActivityExecutionContext, FluidValue>("WorkflowDefinitionVersion", x => ToFluidValue(x.WorkflowInstance.Version, options));
             memberAccessStrategy.Register<ActivityExecutionContext, LiquidPropertyAccessor>("Variables", x => new LiquidPropertyAccessor(name => ToFluidValue(x.WorkflowExecutionContext.GetMergedVariables(), name, options)));
             memberAccessStrategy.Register<ActivityExecutionContext, LiquidPropertyAccessor>("Activities", x => new LiquidPropertyAccessor(name => ToFluidValue(GetActivityModel(x, name), options)!));
-            memberAccessStrategy.Register<ActivityExecutionContext, LiquidActivityModel>(GetActivityModel);
+            memberAccessStrategy.Register<ActivityExecutionContext, LiquidActivityModel>((x, a) => GetActivityModel(x, a));
             memberAccessStrategy.Register<LiquidActivityModel, object?>((model, name) => GetActivityProperty(model, name, cancellationToken));
             memberAccessStrategy.Register<LiquidObjectAccessor<JObject>, JObject>((x, name) => x.GetValueAsync(name));
             memberAccessStrategy.Register<ExpandoObject, object>((x, name) => ((IDictionary<string, object>) x)[name]);

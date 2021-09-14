@@ -1,5 +1,6 @@
 using System;
 using Azure.Storage.Blobs;
+using Elsa.Options;
 using Medallion.Threading;
 using Medallion.Threading.Azure;
 

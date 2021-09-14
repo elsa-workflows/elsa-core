@@ -78,7 +78,8 @@ namespace Elsa.Activities.Http.Middleware
             var isTestRun = pendingWorkflowInstance.MetaData.FirstOrDefault(x => x.Key == "isTestRun").Value;
             var workflowBlueprint = (isTestRun != null && Convert.ToBoolean(isTestRun)) ? 
                 await workflowRegistry.FindAsync(x => x.Id == pendingWorkflowInstance.DefinitionId, cancellationToken) : 
-                await workflowRegistry.FindAsync(x => x.IsPublished && x.Id == pendingWorkflowInstance.DefinitionId, cancellationToken);
+                await workflowRegistry.FindAsync(x => x.IsPublished && x.Id == pendingWorkflowInstance.DefinitionId && !x.IsDisabled, cancellationToken);
+
             if (workflowBlueprint is null)
             {
                 await _next(httpContext);
@@ -109,7 +110,11 @@ namespace Elsa.Activities.Http.Middleware
             if (readContent)
             {
                 var targetType = await activityWrapper.EvaluatePropertyValueAsync(x => x.TargetType, cancellationToken);
-                inputModel = inputModel with { Body = await contentParser.ParseAsync(request, targetType, cancellationToken) };
+                inputModel = inputModel with
+                {
+                    RawBody = await request.ReadContentAsStringAsync(cancellationToken),
+                    Body = await contentParser.ParseAsync(request, targetType, cancellationToken)
+                };
             }
 
             var useDispatch = httpContext.Request.GetUseDispatch();
@@ -127,7 +132,7 @@ namespace Elsa.Activities.Http.Middleware
                 pendingWorkflowInstance = await workflowInstanceStore.FindByIdAsync(pendingWorkflow.WorkflowInstanceId, cancellationToken);
 
                 if (pendingWorkflowInstance is not null
-                    && pendingWorkflowInstance.WorkflowStatus == Elsa.Models.WorkflowStatus.Faulted
+                    && pendingWorkflowInstance.WorkflowStatus == WorkflowStatus.Faulted
                     && !httpContext.Response.HasStarted)
                 {
                     httpContext.Response.ContentType = "application/json";
@@ -136,6 +141,7 @@ namespace Elsa.Activities.Http.Middleware
                     var faultedResponse = JsonConvert.SerializeObject(new
                     {
                         errorMessage = $"Workflow faulted at {pendingWorkflowInstance.FaultedAt!} with error: {pendingWorkflowInstance.Fault!.Message}",
+                        exception = pendingWorkflowInstance.Fault?.Exception,
                         workflow = new
                         {
                             name = pendingWorkflowInstance.Name,

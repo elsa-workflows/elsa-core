@@ -75,10 +75,8 @@ namespace Elsa.Services.Workflows
             // If the workflow instance has a CurrentActivity, it means the workflow instance is being retried.
             var currentActivity = workflowInstance.CurrentActivity;
 
-            if (currentActivity != null)
-            {
+            if (activityId == null && currentActivity != null)
                 activityId = currentActivity.ActivityId;
-            }
 
             var activity = activityId != null ? workflowBlueprint.GetActivity(activityId) : default;
 
@@ -126,25 +124,24 @@ namespace Elsa.Services.Workflows
                     }
 
                     break;
+
                 default:
                     throw new ArgumentOutOfRangeException();
             }
 
             await _mediator.Publish(new WorkflowExecuted(workflowExecutionContext), cancellationToken);
 
-            var statusEvent = workflowExecutionContext.Status switch
+            var statusEvents = workflowExecutionContext.Status switch
             {
-                WorkflowStatus.Cancelled => new WorkflowCancelled(workflowExecutionContext),
-                WorkflowStatus.Finished => new WorkflowCompleted(workflowExecutionContext),
-                WorkflowStatus.Faulted => new WorkflowFaulted(workflowExecutionContext),
-                WorkflowStatus.Suspended => new WorkflowSuspended(workflowExecutionContext),
-                _ => default(INotification)
+                WorkflowStatus.Cancelled => new INotification[] { new WorkflowCancelled(workflowExecutionContext), new WorkflowInstanceCancelled(workflowInstance) },
+                WorkflowStatus.Finished => new INotification[] { new WorkflowCompleted(workflowExecutionContext) },
+                WorkflowStatus.Faulted => new INotification[] { new WorkflowFaulted(workflowExecutionContext) },
+                WorkflowStatus.Suspended => new INotification[] { new WorkflowSuspended(workflowExecutionContext) },
+                _ => Array.Empty<INotification>()
             };
-
-            if (statusEvent != null)
-            {
+            
+            foreach (var statusEvent in statusEvents) 
                 await _mediator.Publish(statusEvent, cancellationToken);
-            }
 
             await _mediator.Publish(new WorkflowExecutionFinished(workflowExecutionContext), cancellationToken);
             return runWorkflowResult;
@@ -159,7 +156,7 @@ namespace Elsa.Services.Workflows
             {
                 if (!await CanExecuteAsync(workflowExecutionContext, activity, false, cancellationToken))
                     return new RunWorkflowResult(workflowExecutionContext.WorkflowInstance, activity.Id, false);
-                
+
                 workflowExecutionContext.Begin();
                 workflowExecutionContext.ScheduleActivity(activity.Id);
                 await RunAsync(workflowExecutionContext, Execute, cancellationToken);
@@ -186,7 +183,7 @@ namespace Elsa.Services.Workflows
 
             var blockingActivities = workflowExecutionContext.WorkflowInstance.BlockingActivities.Where(x => x.ActivityId == activityBlueprint.Id).ToList();
 
-            foreach (var blockingActivity in blockingActivities) 
+            foreach (var blockingActivity in blockingActivities)
                 await workflowExecutionContext.RemoveBlockingActivityAsync(blockingActivity);
 
             workflowExecutionContext.Resume();
@@ -256,6 +253,7 @@ namespace Elsa.Services.Workflows
                 var runtimeActivityInstance = await activityExecutionContext.ActivateActivityAsync(cancellationToken);
                 var activityType = runtimeActivityInstance.ActivityType;
                 using var executionScope = AmbientActivityExecutionContext.EnterScope(activityExecutionContext);
+                await _mediator.Publish(new ActivityActivating(activityExecutionContext), cancellationToken);
                 var activity = await activityType.ActivateAsync(activityExecutionContext);
 
                 if (!burstStarted)

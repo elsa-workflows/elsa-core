@@ -96,8 +96,8 @@ namespace Elsa.Metadata
                     _defaultValueResolver.GetDefaultValue(propertyInfo),
                     activityPropertyAttribute.DefaultSyntax,
                     activityPropertyAttribute.SupportedSyntaxes,
-                    activityPropertyAttribute.IsReadOnly ?? false,
-                    activityPropertyAttribute.IsBrowsable ?? true,
+                    activityPropertyAttribute.IsReadOnly,
+                    activityPropertyAttribute.IsBrowsable,
                     activityPropertyAttribute.IsDesignerCritical,
                     activityPropertyAttribute.DefaultWorkflowStorageProvider,
                     activityPropertyAttribute.DisableWorkflowProviderSelection

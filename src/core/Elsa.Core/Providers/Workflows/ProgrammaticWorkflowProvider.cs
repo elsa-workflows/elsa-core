@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Builders;
+using Elsa.Options;
 using Elsa.Services;
 using Elsa.Services.Models;
 

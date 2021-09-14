@@ -29,7 +29,8 @@ namespace Elsa.Activities.Rpa.Web.Services
         public async Task<string> OpenAsync(string driverType, object? options = default, CancellationToken cancellationToken=default)
         {
             var id = Guid.NewGuid().ToString();
-            IWebDriver driver = default;
+            IWebDriver driver;
+            
             switch(driverType)
             {
                 case DriverType.Chrome:
@@ -64,10 +65,11 @@ namespace Elsa.Activities.Rpa.Web.Services
             return _drivers[driverId];
         }
 
-        public async Task CloseBrowserAsync(string? driverId)
+        public Task CloseBrowserAsync(string? driverId)
         {
-            GetDriver(driverId).Dispose();
-            _drivers.Remove(driverId);
+            GetDriver(driverId!).Dispose();
+            _drivers.Remove(driverId!);
+            return Task.CompletedTask;
         }
     }
 }

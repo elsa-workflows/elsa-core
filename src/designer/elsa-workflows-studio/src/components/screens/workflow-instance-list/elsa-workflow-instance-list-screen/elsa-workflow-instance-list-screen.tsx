@@ -3,7 +3,15 @@ import {injectHistory, LocationSegments, RouterHistory} from "@stencil/router";
 import * as collection from 'lodash/collection';
 import * as array from 'lodash/array';
 import {confirmDialogService, eventBus, createElsaClient} from "../../../../services";
-import {EventTypes, OrderBy, PagedList, VersionOptions, WorkflowBlueprintSummary, WorkflowInstanceSummary, WorkflowStatus} from "../../../../models";
+import {
+  EventTypes,
+  OrderBy,
+  PagedList,
+  VersionOptions,
+  WorkflowBlueprintSummary,
+  WorkflowInstanceSummary,
+  WorkflowStatus
+} from "../../../../models";
 import {DropdownButtonItem, DropdownButtonOrigin} from "../../../controls/elsa-dropdown-button/models";
 import {Map, parseQuery} from '../../../../utils/utils';
 import moment from "moment";
@@ -18,9 +26,14 @@ import Tunnel from "../../../../data/dashboard";
   shadow: false,
 })
 export class ElsaWorkflowInstanceListScreen {
+  static readonly DEFAULT_PAGE_SIZE = 15;
+  static readonly MIN_PAGE_SIZE = 5;
+  static readonly MAX_PAGE_SIZE = 100;
+  static readonly START_PAGE = 0;
+
   @Prop() history?: RouterHistory;
   @Prop() serverUrl: string;
-  @Prop()basePath: string;
+  @Prop() basePath: string;
   @Prop() workflowId?: string;
   @Prop() workflowStatus?: WorkflowStatus;
   @Prop() orderBy?: OrderBy = OrderBy.Started;
@@ -34,11 +47,11 @@ export class ElsaWorkflowInstanceListScreen {
   @State() selectedWorkflowInstanceIds: Array<string> = [];
   @State() selectAllChecked: boolean;
   @State() currentPage: number = 0;
-  @State() currentPageSize: number = 15;
+  @State() currentPageSize: number = ElsaWorkflowInstanceListScreen.DEFAULT_PAGE_SIZE;
   @State() currentSearchTerm?: string;
 
   i18next: i18n;
-
+  
   async componentWillLoad() {
     this.i18next = await loadTranslations(this.culture, resources);
 
@@ -53,6 +66,9 @@ export class ElsaWorkflowInstanceListScreen {
     const t = this.t;
 
     let bulkActions = [{
+      text: t('BulkActions.Actions.Cancel'),
+      name: 'Cancel',
+    }, {
       text: t('BulkActions.Actions.Delete'),
       name: 'Delete',
     }];
@@ -85,6 +101,14 @@ export class ElsaWorkflowInstanceListScreen {
     await this.loadWorkflowInstances();
   }
 
+  @Watch("currentPageSize")
+  async handlePageSizeChanged(value: number) {
+    this.currentPageSize = value;
+	this.currentPageSize = isNaN(this.currentPageSize) ? ElsaWorkflowInstanceListScreen.DEFAULT_PAGE_SIZE : this.currentPageSize;
+	this.currentPageSize = Math.max(Math.min(this.currentPageSize, ElsaWorkflowInstanceListScreen.MAX_PAGE_SIZE), ElsaWorkflowInstanceListScreen.MIN_PAGE_SIZE);
+    await this.loadWorkflowInstances();
+  }
+
   @Watch("orderBy")
   async handleOrderByChanged(value: OrderBy) {
     this.selectedOrderByState = value;
@@ -100,7 +124,10 @@ export class ElsaWorkflowInstanceListScreen {
     this.selectedWorkflowStatus = query.status;
     this.selectedOrderByState = query.orderBy ?? OrderBy.Started;
     this.currentPage = !!query.page ? parseInt(query.page) : 0;
-    this.currentPageSize = !!query.pageSize ? parseInt(query.pageSize) : 15;
+	this.currentPage = isNaN(this.currentPage) ? ElsaWorkflowInstanceListScreen.START_PAGE : this.currentPage;
+    this.currentPageSize = !!query.pageSize ? parseInt(query.pageSize) : ElsaWorkflowInstanceListScreen.DEFAULT_PAGE_SIZE;
+	this.currentPageSize = isNaN(this.currentPageSize) ? ElsaWorkflowInstanceListScreen.DEFAULT_PAGE_SIZE : this.currentPageSize;
+	this.currentPageSize = Math.max(Math.min(this.currentPageSize, ElsaWorkflowInstanceListScreen.MAX_PAGE_SIZE), ElsaWorkflowInstanceListScreen.MIN_PAGE_SIZE);
   }
 
   async loadWorkflowBlueprints() {
@@ -111,8 +138,16 @@ export class ElsaWorkflowInstanceListScreen {
   }
 
   async loadWorkflowInstances() {
+	this.currentPage = isNaN(this.currentPage) ? ElsaWorkflowInstanceListScreen.START_PAGE : this.currentPage;
+	this.currentPage = Math.max(this.currentPage, ElsaWorkflowInstanceListScreen.START_PAGE);
+	this.currentPageSize = isNaN(this.currentPageSize) ? ElsaWorkflowInstanceListScreen.DEFAULT_PAGE_SIZE : this.currentPageSize;
     const elsaClient = this.createClient();
     this.workflowInstances = await elsaClient.workflowInstancesApi.list(this.currentPage, this.currentPageSize, this.selectedWorkflowId, this.selectedWorkflowStatus, this.selectedOrderByState, this.currentSearchTerm);
+	const maxPage = Math.floor(this.workflowInstances.totalCount / this.currentPageSize);
+	if (this.currentPage > maxPage) {
+      this.currentPage = maxPage;
+      this.workflowInstances = await elsaClient.workflowInstancesApi.list(this.currentPage, this.currentPageSize, this.selectedWorkflowId, this.selectedWorkflowStatus, this.selectedOrderByState, this.currentSearchTerm);
+	}
   }
 
   createClient() {
@@ -124,7 +159,7 @@ export class ElsaWorkflowInstanceListScreen {
     return collection.map(groups, x => array.first(collection.sortBy(x, 'version', 'desc')));
   }
 
-  buildFilterUrl(workflowId?: string, workflowStatus?: WorkflowStatus, orderBy?: OrderBy) {
+  buildFilterUrl(workflowId?: string, workflowStatus?: WorkflowStatus, orderBy?: OrderBy, pageSize?: number) {
     const filters: Map<string> = {};
 
     if (!!workflowId)
@@ -139,8 +174,12 @@ export class ElsaWorkflowInstanceListScreen {
     if (!!this.currentPage)
       filters['page'] = this.currentPage.toString();
 
-    if (!!this.currentPageSize)
-      filters['pageSize'] = this.currentPageSize.toString();
+    var newPageSize = !!pageSize ? pageSize : this.currentPageSize;
+	newPageSize = Math.max(Math.min(newPageSize, 100), ElsaWorkflowInstanceListScreen.MIN_PAGE_SIZE);
+    filters['pageSize'] = newPageSize.toString();
+  
+    if (newPageSize != this.currentPageSize)
+		filters['page'] = Math.floor(this.currentPage * this.currentPageSize / newPageSize).toString();
 
     const queryString = collection.map(filters, (v, k) => `${k}=${v}`).join('&');
     return `/workflow-instances?${queryString}`;
@@ -205,6 +244,18 @@ export class ElsaWorkflowInstanceListScreen {
     this.updateSelectAllChecked();
   }
 
+  async onCancelClick(e: Event, workflowInstance: WorkflowInstanceSummary) {
+    const t = this.t;
+    const result = await confirmDialogService.show(t('CancelDialog.Title'), t('CancelDialog.Message'));
+
+    if (!result)
+      return;
+
+    const elsaClient = this.createClient();
+    await elsaClient.workflowInstancesApi.cancel(workflowInstance.id);
+    await this.loadWorkflowInstances();
+  }
+
   async onDeleteClick(e: Event, workflowInstance: WorkflowInstanceSummary) {
     const t = this.t;
     const result = await confirmDialogService.show(t('DeleteDialog.Title'), t('DeleteDialog.Message'));
@@ -215,6 +266,20 @@ export class ElsaWorkflowInstanceListScreen {
     const elsaClient = this.createClient();
     await elsaClient.workflowInstancesApi.delete(workflowInstance.id);
     await this.loadWorkflowInstances();
+  }
+
+  async onBulkCancel() {
+    const t = this.t;
+    const result = await confirmDialogService.show(t('BulkCancelDialog.Title'), t('BulkCancelDialog.Message'));
+
+    if (!result)
+      return;
+
+    const elsaClient = this.createClient();
+    await elsaClient.workflowInstancesApi.bulkCancel({workflowInstanceIds: this.selectedWorkflowInstanceIds});
+    this.selectedWorkflowInstanceIds = [];
+    await this.loadWorkflowInstances();
+    this.currentPage = 0;
   }
 
   async onBulkDelete() {
@@ -235,6 +300,9 @@ export class ElsaWorkflowInstanceListScreen {
     const action = e.detail;
 
     switch (action.name) {
+      case 'Cancel':
+        await this.onBulkCancel();
+        break;
       case 'Delete':
         await this.onBulkDelete();
         break;
@@ -269,16 +337,29 @@ export class ElsaWorkflowInstanceListScreen {
 
     const renderViewIcon = function () {
       return (
-        <svg class="elsa-h-5 elsa-w-5 elsa-text-gray-500" width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg class="elsa-h-5 elsa-w-5 elsa-text-gray-500" width="24" height="24" viewBox="0 0 24 24"
+             xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
           <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
         </svg>
       );
     };
 
+    const renderCancelIcon = function () {
+      return (
+        <svg class="elsa-h-5 elsa-w-5 elsa-text-gray-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="2"
+             stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/>
+        </svg>
+      );
+    };
+
     const renderDeleteIcon = function () {
       return (
-        <svg class="elsa-h-5 elsa-w-5 elsa-text-gray-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <svg class="elsa-h-5 elsa-w-5 elsa-text-gray-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="2"
+             stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
           <path stroke="none" d="M0 0h24v24H0z"/>
           <line x1="4" y1="7" x2="20" y2="7"/>
           <line x1="10" y1="11" x2="10" y2="17"/>
@@ -291,15 +372,18 @@ export class ElsaWorkflowInstanceListScreen {
 
     return (
       <div>
-        <div class="elsa-relative elsa-z-10 elsa-flex-shrink-0 elsa-flex elsa-h-16 elsa-bg-white elsa-border-b elsa-border-gray-200">
+        <div
+          class="elsa-relative elsa-z-10 elsa-flex-shrink-0 elsa-flex elsa-h-16 elsa-bg-white elsa-border-b elsa-border-gray-200">
           <div class="elsa-flex-1 elsa-px-4 elsa-flex elsa-justify-between sm:elsa-px-6 lg:elsa-px-8">
             <div class="elsa-flex-1 elsa-flex">
               <form class="elsa-w-full elsa-flex md:ml-0" onSubmit={e => this.onSearch(e)}>
                 <label htmlFor="search_field" class="elsa-sr-only">Search</label>
                 <div class="elsa-relative elsa-w-full elsa-text-cool-gray-400 focus-within:elsa-text-cool-gray-600">
-                  <div class="elsa-absolute elsa-inset-y-0 elsa-left-0 elsa-flex elsa-items-center elsa-pointer-events-none">
+                  <div
+                    class="elsa-absolute elsa-inset-y-0 elsa-left-0 elsa-flex elsa-items-center elsa-pointer-events-none">
                     <svg class="elsa-h-5 elsa-w-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" clip-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"/>
+                      <path fill-rule="evenodd" clip-rule="evenodd"
+                            d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"/>
                     </svg>
                   </div>
                   <input name="searchTerm"
@@ -319,6 +403,7 @@ export class ElsaWorkflowInstanceListScreen {
           <div class="elsa-flex-1">
             &nbsp;
           </div>
+          {this.renderPageSizeFilter()}
           {this.renderWorkflowFilter()}
           {this.renderStatusFilter()}
           {this.renderOrderByFilter()}
@@ -329,45 +414,62 @@ export class ElsaWorkflowInstanceListScreen {
             <table class="elsa-min-w-full">
               <thead>
               <tr class="elsa-border-t elsa-border-gray-200">
-                <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
-                  <input type="checkbox" value="true" checked={this.selectAllChecked} onChange={e => this.onSelectAllCheckChange(e)} class="focus:elsa-ring-blue-500 elsa-h-4 elsa-w-4 elsa-text-blue-600 elsa-border-gray-300 elsa-rounded"/>
+                <th
+                  class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
+                  <input type="checkbox" value="true" checked={this.selectAllChecked}
+                         onChange={e => this.onSelectAllCheckChange(e)}
+                         class="focus:elsa-ring-blue-500 elsa-h-4 elsa-w-4 elsa-text-blue-600 elsa-border-gray-300 elsa-rounded"/>
                 </th>
-                <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
+                <th
+                  class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
                   {t('Table.Id')}
                 </th>
-                <th class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
+                <th
+                  class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
                   {t('Table.CorrelationId')}
                 </th>
-                <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
+                <th
+                  class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
                   {t('Table.Workflow')}
                 </th>
-                <th class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-right elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
+                <th
+                  class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-right elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
                   {t('Table.Version')}
                 </th>
-                <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
+                <th
+                  class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
                   {t('Table.InstanceName')}
                 </th>
-                <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
+                <th
+                  class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
                   {t('Table.Status')}
                 </th>
-                <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
+                <th
+                  class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
                   {t('Table.Created')}
                 </th>
-                <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
+                <th
+                  class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
                   {t('Table.Finished')}
                 </th>
-                <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
+                <th
+                  class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
                   {t('Table.LastExecuted')}
                 </th>
-                <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
+                <th
+                  class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
                   {t('Table.Faulted')}
                 </th>
-                <th class="elsa-pr-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider"/>
+                <th
+                  class="elsa-pr-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider"/>
               </tr>
               </thead>
               <tbody class="elsa-bg-white elsa-divide-y elsa-divide-gray-100">
               {workflowInstances.map(workflowInstance => {
-                const workflowBlueprint = workflowBlueprints.find(x => x.id == workflowInstance.definitionId && x.version == workflowInstance.version) ?? {name: 'Not Found', displayName: '(Workflow definition not found)'};
+                const workflowBlueprint = workflowBlueprints.find(x => x.id == workflowInstance.definitionId && x.version == workflowInstance.version) ?? {
+                  name: 'Not Found',
+                  displayName: '(Workflow definition not found)'
+                };
                 const displayName = workflowBlueprint.displayName || workflowBlueprint.name || 'Untitled';
                 const statusColor = this.getStatusColor(workflowInstance.workflowStatus);
                 const viewUrl = `${basePath}/workflow-instances/${workflowInstance.id}`;
@@ -379,56 +481,81 @@ export class ElsaWorkflowInstanceListScreen {
                 const faultedAt = !!workflowInstance.faultedAt ? moment(workflowInstance.faultedAt) : null;
 
                 return <tr>
-                  <td class="elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-font-medium elsa-text-gray-900">
-                    <input type="checkbox" value={workflowInstance.id} checked={isSelected} onChange={e => this.onWorkflowInstanceCheckChange(e, workflowInstance)}
+                  <td
+                    class="elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-font-medium elsa-text-gray-900">
+                    <input type="checkbox" value={workflowInstance.id} checked={isSelected}
+                           onChange={e => this.onWorkflowInstanceCheckChange(e, workflowInstance)}
                            class="focus:elsa-ring-blue-500 elsa-h-4 elsa-w-4 elsa-text-blue-600 elsa-border-gray-300 elsa-rounded"/>
                   </td>
-                  <td class="elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-font-medium elsa-text-gray-900">
-                    <stencil-route-link url={viewUrl} anchorClass="elsa-truncate hover:elsa-text-gray-600">{workflowInstance.id}</stencil-route-link>
+                  <td
+                    class="elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-font-medium elsa-text-gray-900">
+                    <stencil-route-link url={viewUrl}
+                                        anchorClass="elsa-truncate hover:elsa-text-gray-600">{workflowInstance.id}</stencil-route-link>
                   </td>
-                  <td class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-font-medium elsa-text-gray-900">
+                  <td
+                    class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-font-medium elsa-text-gray-900">
                     {!!workflowInstance.correlationId ? workflowInstance.correlationId : ''}
                   </td>
-                  <td class="elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-font-medium elsa-text-gray-900 elsa-text-left">
-                    <stencil-route-link url={`/workflow-registry/${workflowInstance.definitionId}`} anchorClass="elsa-truncate hover:elsa-text-gray-600">
+                  <td
+                    class="elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-font-medium elsa-text-gray-900 elsa-text-left">
+                    <stencil-route-link url={`/workflow-registry/${workflowInstance.definitionId}`}
+                                        anchorClass="elsa-truncate hover:elsa-text-gray-600">
                       {displayName}
                     </stencil-route-link>
                   </td>
-                  <td class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-right elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-uppercase">
+                  <td
+                    class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-right elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-uppercase">
                     {workflowInstance.version}
                   </td>
-                  <td class="elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-font-medium elsa-text-gray-900 elsa-text-left">
-                    <stencil-route-link url={viewUrl} anchorClass="elsa-truncate hover:elsa-text-gray-600">{instanceName}</stencil-route-link>
+                  <td
+                    class="elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-font-medium elsa-text-gray-900 elsa-text-left">
+                    <stencil-route-link url={viewUrl}
+                                        anchorClass="elsa-truncate hover:elsa-text-gray-600">{instanceName}</stencil-route-link>
                   </td>
-                  <td class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-text-right">
+                  <td
+                    class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-text-right">
                     <div class="elsa-flex elsa-items-center elsa-space-x-3 lg:elsa-pl-2">
                       <div class={`flex-shrink-0 elsa-w-2-5 elsa-h-2-5 elsa-rounded-full elsa-bg-${statusColor}-600`}/>
                       <span>{workflowInstance.workflowStatus}</span>
                     </div>
                   </td>
-                  <td class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-text-left">
+                  <td
+                    class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-text-left">
                     {createdAt.format('DD-MM-YYYY HH:mm:ss')}
                   </td>
-                  <td class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-text-left">
+                  <td
+                    class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-text-left">
                     {!!finishedAt ? finishedAt.format('DD-MM-YYYY HH:mm:ss') : '-'}
                   </td>
-                  <td class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-text-left">
+                  <td
+                    class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-text-left">
                     {!!lastExecutedAt ? lastExecutedAt.format('DD-MM-YYYY HH:mm:ss') : '-'}
                   </td>
-                  <td class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-text-left">
+                  <td
+                    class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-text-left">
                     {!!faultedAt ? faultedAt.format('DD-MM-YYYY HH:mm:ss') : '-'}
                   </td>
                   <td class="elsa-pr-6">
                     <elsa-context-menu history={this.history} menuItems={[
                       {text: t('Table.ContextMenu.View'), anchorUrl: viewUrl, icon: renderViewIcon()},
-                      {text: t('Table.ContextMenu.Delete'), clickHandler: e => this.onDeleteClick(e, workflowInstance), icon: renderDeleteIcon()}
+                      {
+                        text: t('Table.ContextMenu.Cancel'),
+                        clickHandler: e => this.onCancelClick(e, workflowInstance),
+                        icon: renderCancelIcon()
+                      },
+                      {
+                        text: t('Table.ContextMenu.Delete'),
+                        clickHandler: e => this.onDeleteClick(e, workflowInstance),
+                        icon: renderDeleteIcon()
+                      }
                     ]}/>
                   </td>
                 </tr>
               })}
               </tbody>
             </table>
-            <elsa-pager page={this.currentPage} pageSize={this.currentPageSize} totalCount={totalCount} history={this.history} onPaged={this.onPaged} culture={this.culture}/>
+            <elsa-pager page={this.currentPage} pageSize={this.currentPageSize} totalCount={totalCount}
+                        history={this.history} onPaged={this.onPaged} culture={this.culture}/>
           </div>
         </div>
       </div>
@@ -436,14 +563,17 @@ export class ElsaWorkflowInstanceListScreen {
   }
 
   renderBulkActions() {
-    const bulkActionIcon = <svg class="elsa-mr-3 elsa-h-5 elsa-w-5 elsa-text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    const bulkActionIcon = <svg class="elsa-mr-3 elsa-h-5 elsa-w-5 elsa-text-gray-400" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M13 10V3L4 14h7v7l9-11h-7z"/>
     </svg>;
 
     const t = this.t;
     const actions = this.bulkActions;
 
-    return <elsa-dropdown-button text={t('BulkActions.Title')} items={actions} icon={bulkActionIcon} origin={DropdownButtonOrigin.TopLeft} onItemSelected={e => this.onBulkActionSelected(e)}/>
+    return <elsa-dropdown-button text={t('BulkActions.Title')} items={actions} icon={bulkActionIcon}
+                                 origin={DropdownButtonOrigin.TopLeft}
+                                 onItemSelected={e => this.onBulkActionSelected(e)}/>
   }
 
   renderWorkflowFilter() {
@@ -461,7 +591,7 @@ export class ElsaWorkflowInstanceListScreen {
       const item: DropdownButtonItem = {text: displayName, value: x.id, isSelected: x.id == selectedWorkflowId};
 
       if (!!history)
-        item.url = this.buildFilterUrl(x.id, selectedWorkflowStatus, selectedOrderBy);
+        item.url = this.buildFilterUrl(x.id, selectedWorkflowStatus, selectedOrderBy, null);
 
       return item;
     });
@@ -469,12 +599,13 @@ export class ElsaWorkflowInstanceListScreen {
     const allItem: DropdownButtonItem = {text: t('Filters.Workflow.All'), value: null, isSelected: !selectedWorkflowId};
 
     if (!!history)
-      allItem.url = this.buildFilterUrl(null, selectedWorkflowStatus, selectedOrderBy);
+      allItem.url = this.buildFilterUrl(null, selectedWorkflowStatus, selectedOrderBy, null);
 
     items = [allItem, ...items];
 
     const renderIcon = function () {
-      return <svg class="elsa-mr-3 elsa-h-5 elsa-w-5 elsa-text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      return <svg class="elsa-mr-3 elsa-h-5 elsa-w-5 elsa-text-gray-400" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor">
         <path stroke="none" d="M0 0h24v24H0z"/>
         <rect x="4" y="4" width="6" height="6" rx="1"/>
         <rect x="14" y="4" width="6" height="6" rx="1"/>
@@ -483,7 +614,9 @@ export class ElsaWorkflowInstanceListScreen {
       </svg>;
     };
 
-    return <elsa-dropdown-button text={selectedWorkflowText} items={items} icon={renderIcon()} origin={DropdownButtonOrigin.TopRight} onItemSelected={e => this.handleWorkflowIdChanged(e.detail.value)}/>
+    return <elsa-dropdown-button text={selectedWorkflowText} items={items} icon={renderIcon()}
+                                 origin={DropdownButtonOrigin.TopRight}
+                                 onItemSelected={e => this.handleWorkflowIdChanged(e.detail.value)}/>
   }
 
   renderStatusFilter() {
@@ -498,19 +631,48 @@ export class ElsaWorkflowInstanceListScreen {
       const item: DropdownButtonItem = {text: text, isSelected: x == selectedWorkflowStatus, value: x};
 
       if (!!history)
-        item.url = this.buildFilterUrl(this.selectedWorkflowId, x, this.selectedOrderByState);
+        item.url = this.buildFilterUrl(this.selectedWorkflowId, x, this.selectedOrderByState, null);
+
+      return item;
+    });
+
+    const renderIcon = function () {
+      return <svg class="elsa-mr-3 elsa-h-5 elsa-w-5 elsa-text-gray-400" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor">
+        <circle cx="12" cy="12" r="10"/>
+        <polygon points="10 8 16 12 10 16 10 8"/>
+      </svg>
+    };
+
+    return <elsa-dropdown-button text={selectedWorkflowStatusText} items={items} icon={renderIcon()}
+                                 origin={DropdownButtonOrigin.TopRight}
+                                 onItemSelected={e => this.handleWorkflowStatusChanged(e.detail.value)}/>
+  }
+
+  renderPageSizeFilter() {
+    const t = this.t;
+    const currentPageSize = this.currentPageSize;
+    const currentPageSizeText = t('Filters.PageSize.SelectedLabel', {Size: currentPageSize});
+    const pageSizes: Array<number> = [5, 10, 15, 20, 30, 50, 100];
+    const history = this.history;
+
+    const items: Array<DropdownButtonItem> = pageSizes.map(x => {
+      const text = ""+x;
+      const item: DropdownButtonItem = {text: text, isSelected: x == currentPageSize, value: x};
+
+      if (!!history)
+        item.url = this.buildFilterUrl(this.selectedWorkflowId, this.selectedWorkflowStatus, this.selectedOrderByState, x);
 
       return item;
     });
 
     const renderIcon = function () {
       return <svg class="elsa-mr-3 elsa-h-5 elsa-w-5 elsa-text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <circle cx="12" cy="12" r="10"/>
-        <polygon points="10 8 16 12 10 16 10 8"/>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 8h9m-9 4h9m5"/>
       </svg>
     };
 
-    return <elsa-dropdown-button text={selectedWorkflowStatusText} items={items} icon={renderIcon()} origin={DropdownButtonOrigin.TopRight} onItemSelected={e => this.handleWorkflowStatusChanged(e.detail.value)}/>
+    return <elsa-dropdown-button text={currentPageSizeText} items={items} icon={renderIcon()} origin={DropdownButtonOrigin.TopRight} onItemSelected={e => this.handlePageSizeChanged(e.detail.value)}/>
   }
 
   renderOrderByFilter() {
@@ -524,18 +686,22 @@ export class ElsaWorkflowInstanceListScreen {
       const item: DropdownButtonItem = {text: x, value: x, isSelected: x == selectedOrderBy};
 
       if (!!history)
-        item.url = this.buildFilterUrl(this.selectedWorkflowId, this.selectedWorkflowStatus, x);
+        item.url = this.buildFilterUrl(this.selectedWorkflowId, this.selectedWorkflowStatus, x, null);
 
       return item;
     });
 
     const renderIcon = function () {
-      return <svg class="elsa-mr-3 elsa-h-5 elsa-w-5 elsa-text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"/>
+      return <svg class="elsa-mr-3 elsa-h-5 elsa-w-5 elsa-text-gray-400" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"/>
       </svg>
     };
 
-    return <elsa-dropdown-button text={selectedOrderByText} items={items} icon={renderIcon()} origin={DropdownButtonOrigin.TopRight} onItemSelected={e => this.handleOrderByChanged(e.detail.value)}/>
+    return <elsa-dropdown-button text={selectedOrderByText} items={items} icon={renderIcon()}
+                                 origin={DropdownButtonOrigin.TopRight}
+                                 onItemSelected={e => this.handleOrderByChanged(e.detail.value)}/>
   }
 }
 

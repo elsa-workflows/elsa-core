@@ -3,7 +3,7 @@ Content-Type: application/json
 
 {
     "userName": "Jason",
-    "hasMagic": false
+    "isAdmin": false
 }
 
 ###
@@ -13,19 +13,19 @@ Content-Type: application/json
 
 {
     "userName": "Janet",
-    "hasMagic": true
+    "isAdmin": true
 }
 
 ###
 
-# Jason does not have magic.
+# Jason is not an admin.
 GET https://localhost:5001/workflows/safe-hello
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJKYXNvbiIsImp0aSI6IjU3ZDUzOGE4LWQwNmYtNDg2Zi05MzAzLTMyODIxMmZlOWI4MCIsImV4cCI6MTY2MDM5NDg3NSwiaXNzIjoieW91ci1pZGVudGl0eS1zZXJ2ZXIiLCJhdWQiOiJ5b3VyLWFwaS1zZXJ2ZXIifQ.-6mjl-AMXLVSKrM7ofySNbGdf7YgvUmWILloAXB56q8
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJKYXNvbiIsImp0aSI6IjdjNzc5ODFiLWM1MWItNDU1Yi1iMzYzLWQyODQ2ZTE2NGZmMyIsImV4cCI6MTY2MDg5NjI2OCwiaXNzIjoieW91ci1pZGVudGl0eS1zZXJ2ZXIiLCJhdWQiOiJ5b3VyLWFwaS1zZXJ2ZXIifQ.n4BdO5MXZhrxQYBCyah_6MEzGg9VIqYHs1aNASS--gg
 
 ###
 
-# Janet does have magic.
+# Janet is an admin.
 GET https://localhost:5001/workflows/safe-hello
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJKYW5ldCIsImp0aSI6IjNhMmNlZDg5LWQzYWMtNGQ5NC04YzQzLTU2OWZhZmE1YjYwMCIsImhhcy1tYWdpYyI6InRydWUiLCJleHAiOjE2NjAzOTUyNTksImlzcyI6InlvdXItaWRlbnRpdHktc2VydmVyIiwiYXVkIjoieW91ci1hcGktc2VydmVyIn0.bdBXGdqmiWr5mLcgAvjiKVNxcBgr5w63TJ0OLwZ3kf4
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJKYW5ldCIsImp0aSI6IjNkM2Y4ZjFiLTM3MGUtNGY2Yy05NTQ0LTQ1YWM1OTVmZjljMSIsImlzLWFkbWluIjoidHJ1ZSIsImV4cCI6MTY2MDg5NjI5NSwiaXNzIjoieW91ci1pZGVudGl0eS1zZXJ2ZXIiLCJhdWQiOiJ5b3VyLWFwaS1zZXJ2ZXIifQ.Jb_TVHIj_v2yR5CdImGXdzYUt2BSsPMNFXtF_ouMUzk
 
 ###

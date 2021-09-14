@@ -15,7 +15,7 @@ import { MonacoValueChangedArgs } from "./components/controls/elsa-monaco/elsa-m
 import { Map } from "./utils/utils";
 import { PagerData } from "./components/controls/elsa-pager/elsa-pager";
 import { ToastNotificationOptions } from "./components/shared/elsa-toast-notification/elsa-toast-notification";
-import { WebhookDefinition } from "./models/webhook";
+import { WebhookDefinition } from "./modules/elsa-webhooks/models";
 export namespace Components {
     interface ElsaActivityEditorModal {
         "culture": string;
@@ -47,6 +47,7 @@ export namespace Components {
         "activityBorderColor"?: (activity: ActivityModel) => string;
         "activityContextMenu"?: ActivityContextMenuState;
         "activityContextMenuButton"?: (activity: ActivityModel) => string;
+        "connectionContextMenu"?: ActivityContextMenuState;
         "enableMultipleConnectionsFromSingleSource": boolean;
         "layoutDirection": LayoutDirection;
         "mode": WorkflowDesignerMode;
@@ -175,6 +176,7 @@ export namespace Components {
         "addPlugins": (pluginTypes: Array<any>) => Promise<void>;
         "basePath": string;
         "culture": string;
+        "featuresString": string;
         "monacoLibPath": string;
         "serverUrl": string;
     }
@@ -231,6 +233,12 @@ export namespace Components {
         "history"?: RouterHistory;
         "serverUrl": string;
     }
+    interface ElsaWorkflowBlueprintPropertiesPanel {
+        "culture": string;
+        "expandButtonPosition": number;
+        "serverUrl": string;
+        "workflowBlueprint": WorkflowBlueprint;
+    }
     interface ElsaWorkflowBlueprintSidePanel {
         "serverUrl": string;
         "workflowId": string;
@@ -248,6 +256,7 @@ export namespace Components {
         "exportWorkflow": () => Promise<void>;
         "getServerUrl": () => Promise<string>;
         "getWorkflowDefinitionId": () => Promise<string>;
+        "history": RouterHistory;
         "importWorkflow": (file: File) => Promise<void>;
         "monacoLibPath": string;
         "serverUrl": string;
@@ -550,6 +559,12 @@ declare global {
         prototype: HTMLElsaWebhookDefinitionsListScreenElement;
         new (): HTMLElsaWebhookDefinitionsListScreenElement;
     };
+    interface HTMLElsaWorkflowBlueprintPropertiesPanelElement extends Components.ElsaWorkflowBlueprintPropertiesPanel, HTMLStencilElement {
+    }
+    var HTMLElsaWorkflowBlueprintPropertiesPanelElement: {
+        prototype: HTMLElsaWorkflowBlueprintPropertiesPanelElement;
+        new (): HTMLElsaWorkflowBlueprintPropertiesPanelElement;
+    };
     interface HTMLElsaWorkflowBlueprintSidePanelElement extends Components.ElsaWorkflowBlueprintSidePanel, HTMLStencilElement {
     }
     var HTMLElsaWorkflowBlueprintSidePanelElement: {
@@ -663,6 +678,7 @@ declare global {
         "elsa-webhook-definition-editor-notifications": HTMLElsaWebhookDefinitionEditorNotificationsElement;
         "elsa-webhook-definition-editor-screen": HTMLElsaWebhookDefinitionEditorScreenElement;
         "elsa-webhook-definitions-list-screen": HTMLElsaWebhookDefinitionsListScreenElement;
+        "elsa-workflow-blueprint-properties-panel": HTMLElsaWorkflowBlueprintPropertiesPanelElement;
         "elsa-workflow-blueprint-side-panel": HTMLElsaWorkflowBlueprintSidePanelElement;
         "elsa-workflow-blueprint-viewer-screen": HTMLElsaWorkflowBlueprintViewerScreenElement;
         "elsa-workflow-definition-editor-notifications": HTMLElsaWorkflowDefinitionEditorNotificationsElement;
@@ -706,6 +722,7 @@ declare namespace LocalJSX {
         "activityBorderColor"?: (activity: ActivityModel) => string;
         "activityContextMenu"?: ActivityContextMenuState;
         "activityContextMenuButton"?: (activity: ActivityModel) => string;
+        "connectionContextMenu"?: ActivityContextMenuState;
         "enableMultipleConnectionsFromSingleSource"?: boolean;
         "layoutDirection"?: LayoutDirection;
         "mode"?: WorkflowDesignerMode;
@@ -713,6 +730,7 @@ declare namespace LocalJSX {
         "onActivityContextMenuButtonClicked"?: (event: CustomEvent<ActivityContextMenuState>) => void;
         "onActivityDeselected"?: (event: CustomEvent<ActivityModel>) => void;
         "onActivitySelected"?: (event: CustomEvent<ActivityModel>) => void;
+        "onConnectionContextMenuButtonClicked"?: (event: CustomEvent<ActivityContextMenuState>) => void;
         "onWorkflow-changed"?: (event: CustomEvent<WorkflowModel>) => void;
         "selectedActivityIds"?: Array<string>;
     }
@@ -838,6 +856,7 @@ declare namespace LocalJSX {
     interface ElsaStudioRoot {
         "basePath"?: string;
         "culture"?: string;
+        "featuresString"?: string;
         "monacoLibPath"?: string;
         "onInitializing"?: (event: CustomEvent<ElsaStudio>) => void;
         "serverUrl"?: string;
@@ -891,6 +910,12 @@ declare namespace LocalJSX {
         "history"?: RouterHistory;
         "serverUrl"?: string;
     }
+    interface ElsaWorkflowBlueprintPropertiesPanel {
+        "culture"?: string;
+        "expandButtonPosition"?: number;
+        "serverUrl"?: string;
+        "workflowBlueprint"?: WorkflowBlueprint;
+    }
     interface ElsaWorkflowBlueprintSidePanel {
         "serverUrl"?: string;
         "workflowId"?: string;
@@ -904,6 +929,7 @@ declare namespace LocalJSX {
     }
     interface ElsaWorkflowDefinitionEditorScreen {
         "culture"?: string;
+        "history"?: RouterHistory;
         "monacoLibPath"?: string;
         "onWorkflowSaved"?: (event: CustomEvent<WorkflowDefinition>) => void;
         "serverUrl"?: string;
@@ -1004,6 +1030,7 @@ declare namespace LocalJSX {
         "elsa-webhook-definition-editor-notifications": ElsaWebhookDefinitionEditorNotifications;
         "elsa-webhook-definition-editor-screen": ElsaWebhookDefinitionEditorScreen;
         "elsa-webhook-definitions-list-screen": ElsaWebhookDefinitionsListScreen;
+        "elsa-workflow-blueprint-properties-panel": ElsaWorkflowBlueprintPropertiesPanel;
         "elsa-workflow-blueprint-side-panel": ElsaWorkflowBlueprintSidePanel;
         "elsa-workflow-blueprint-viewer-screen": ElsaWorkflowBlueprintViewerScreen;
         "elsa-workflow-definition-editor-notifications": ElsaWorkflowDefinitionEditorNotifications;
@@ -1062,6 +1089,7 @@ declare module "@stencil/core" {
             "elsa-webhook-definition-editor-notifications": LocalJSX.ElsaWebhookDefinitionEditorNotifications & JSXBase.HTMLAttributes<HTMLElsaWebhookDefinitionEditorNotificationsElement>;
             "elsa-webhook-definition-editor-screen": LocalJSX.ElsaWebhookDefinitionEditorScreen & JSXBase.HTMLAttributes<HTMLElsaWebhookDefinitionEditorScreenElement>;
             "elsa-webhook-definitions-list-screen": LocalJSX.ElsaWebhookDefinitionsListScreen & JSXBase.HTMLAttributes<HTMLElsaWebhookDefinitionsListScreenElement>;
+            "elsa-workflow-blueprint-properties-panel": LocalJSX.ElsaWorkflowBlueprintPropertiesPanel & JSXBase.HTMLAttributes<HTMLElsaWorkflowBlueprintPropertiesPanelElement>;
             "elsa-workflow-blueprint-side-panel": LocalJSX.ElsaWorkflowBlueprintSidePanel & JSXBase.HTMLAttributes<HTMLElsaWorkflowBlueprintSidePanelElement>;
             "elsa-workflow-blueprint-viewer-screen": LocalJSX.ElsaWorkflowBlueprintViewerScreen & JSXBase.HTMLAttributes<HTMLElsaWorkflowBlueprintViewerScreenElement>;
             "elsa-workflow-definition-editor-notifications": LocalJSX.ElsaWorkflowDefinitionEditorNotifications & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionEditorNotificationsElement>;

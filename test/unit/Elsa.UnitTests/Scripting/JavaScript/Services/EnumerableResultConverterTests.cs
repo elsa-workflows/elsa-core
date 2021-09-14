@@ -11,8 +11,7 @@ namespace Elsa.Scripting.JavaScript.Services
         public void ConvertToDesiredTypeCanConvertArrayOfStringAndNumberObjectsToAListOfDictionaries(EnumerableResultConverter sut)
         {
             var engine = new Engine();
-            engine.Execute(@"[{""foo"":5},{""bar"":15}]");
-            var tuples = engine.GetCompletionValue().ToObject();
+            var tuples = engine.Evaluate(@"[{""foo"":5},{""bar"":15}]").ToObject();
 
             var expected = new List<Dictionary<string,double>> {
                 new () { { "foo", 5 } },
@@ -24,10 +23,8 @@ namespace Elsa.Scripting.JavaScript.Services
         [Theory(DisplayName = "The ConvertToDesiredType method should be able to convert a JS array of strings to a List of strings."), AutoMoqData]
         public void ConvertToDesiredTypeCanConvertArrayOfStringsToAListOfStrings(EnumerableResultConverter sut)
         {
-
             var engine = new Engine();
-            engine.Execute(@"[""foo"",""bar""]");
-            var tuples = engine.GetCompletionValue().ToObject();
+            var tuples = engine.Evaluate(@"[""foo"",""bar""]").ToObject();
 
             var expected = new List<string> { "foo", "bar" };
             Assert.Equal(expected, sut.ConvertToDesiredType(tuples, typeof(List<string>)));
@@ -38,8 +35,7 @@ namespace Elsa.Scripting.JavaScript.Services
         {
 
             var engine = new Engine();
-            engine.Execute(@"[""foo"",""bar""]");
-            var tuples = engine.GetCompletionValue().ToObject();
+            var tuples = engine.Evaluate(@"[""foo"",""bar""]").ToObject();
 
             var expected = new [] { "foo", "bar" };
             Assert.Equal(expected, sut.ConvertToDesiredType(tuples, typeof(object)));

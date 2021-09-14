@@ -4,6 +4,7 @@ using Elsa.Activities.Temporal.Common.Handlers;
 using Elsa.Activities.Temporal.Common.HostedServices;
 using Elsa.Activities.Temporal.Common.Options;
 using Elsa.HostedServices;
+using Elsa.Options;
 using Elsa.Runtime;
 using Microsoft.Extensions.DependencyInjection;
 

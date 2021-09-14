@@ -10,6 +10,7 @@ namespace Elsa.Services.Models
         bool IsPublished { get; }
         bool IsLatest { get; }
         bool IsTestRun { get; set; }
+        bool IsDisabled { get; set; }
         string? Tag { get; }
         string? Channel { get; }
         string? SignalRConnectionId { get; set; }

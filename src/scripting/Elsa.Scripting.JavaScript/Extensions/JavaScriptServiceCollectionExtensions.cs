@@ -4,6 +4,7 @@ using System;
 using Elsa;
 using Elsa.Activities.JavaScript;
 using Elsa.Expressions;
+using Elsa.Options;
 using Elsa.Scripting.JavaScript.Typings;
 using Elsa.Scripting.JavaScript.Providers;
 

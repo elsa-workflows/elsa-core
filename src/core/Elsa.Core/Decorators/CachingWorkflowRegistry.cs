@@ -25,7 +25,11 @@ namespace Elsa.Decorators
         private readonly ICacheSignal _cacheSignal;
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
 
-        public CachingWorkflowRegistry(IWorkflowRegistry workflowRegistry, IMemoryCache memoryCache, ICacheSignal cacheSignal, IWorkflowInstanceStore workflowInstanceStore)
+        public CachingWorkflowRegistry(
+            IWorkflowRegistry workflowRegistry, 
+            IMemoryCache memoryCache, 
+            ICacheSignal cacheSignal, 
+            IWorkflowInstanceStore workflowInstanceStore)
         {
             _workflowRegistry = workflowRegistry;
             _memoryCache = memoryCache;
@@ -36,7 +40,7 @@ namespace Elsa.Decorators
         public async Task<IEnumerable<IWorkflowBlueprint>> ListAsync(CancellationToken cancellationToken) => await ListInternalAsync(cancellationToken);
         public async Task<IEnumerable<IWorkflowBlueprint>> ListActiveAsync(CancellationToken cancellationToken = default) => await ListActiveInternalAsync(cancellationToken).ToListAsync(cancellationToken);
 
-        public async Task<IWorkflowBlueprint?> GetAsync(string id, string? tenantId, VersionOptions version, CancellationToken cancellationToken) =>
+        public async Task<IWorkflowBlueprint?> GetAsync(string id, string? tenantId, VersionOptions version, CancellationToken cancellationToken, bool includeDisabled = false) =>
             await FindAsync(x => x.Id == id && x.TenantId == tenantId && x.WithVersion(version), cancellationToken);
 
         public async Task<IEnumerable<IWorkflowBlueprint>> FindManyAsync(Func<IWorkflowBlueprint, bool> predicate, CancellationToken cancellationToken)

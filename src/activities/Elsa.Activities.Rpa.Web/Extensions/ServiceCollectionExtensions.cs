@@ -3,6 +3,7 @@ using Elsa.Activities.Rpa.Web;
 using Elsa.Activities.Rpa.Web.Options;
 using Elsa.Activities.Rpa.Web.Services;
 using System;
+using Elsa.Options;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection

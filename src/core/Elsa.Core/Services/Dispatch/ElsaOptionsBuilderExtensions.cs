@@ -1,4 +1,5 @@
 ﻿using System;
+using Elsa.Options;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Services.Dispatch

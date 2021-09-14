@@ -31,7 +31,7 @@ namespace Elsa.Activities.Dropbox.Activities
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            await _filesApi.UploadAsync(
+            var response = await _filesApi.UploadAsync(
                 new UploadRequest
                 {
                     Mode = new UploadMode
@@ -44,6 +44,7 @@ namespace Elsa.Activities.Dropbox.Activities
                 context.CancellationToken
             );
 
+            context.JournalData.Add("Response", response);
             return Done();
         }
     }

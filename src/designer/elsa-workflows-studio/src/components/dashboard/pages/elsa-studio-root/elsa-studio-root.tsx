@@ -17,6 +17,7 @@ export class ElsaStudioRoot {
   @Prop({attribute: 'monaco-lib-path', reflect: true}) monacoLibPath: string;
   @Prop({attribute: 'culture', reflect: true}) culture: string;
   @Prop({attribute: 'base-path', reflect: true}) basePath: string = '';
+  @Prop({attribute: 'features', reflect: true}) featuresString: string;
   @Event() initializing: EventEmitter<ElsaStudio>;
 
   confirmDialog: HTMLElsaConfirmDialogElement;
@@ -58,12 +59,13 @@ export class ElsaStudioRoot {
     const elsaStudio: ElsaStudio = {
       serverUrl: this.serverUrl,
       basePath: this.basePath,
+      featuresString: this.featuresString,
       eventBus,
       pluginManager,
       propertyDisplayManager,
       activityIconProvider,
       confirmDialogService,
-      toastNotificationService,
+      toastNotificationService,  
       elsaClientFactory,
       httpClientFactory,
       getOrCreateProperty: getOrCreateProperty,

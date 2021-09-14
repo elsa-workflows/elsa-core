@@ -15,16 +15,25 @@
         'Finished': 'Finished',
         'LastExecuted': 'Last Executed',
         'Faulted': 'Faulted',
-        'ContextMenu':{
+        'ContextMenu': {
           'View': 'View',
+          'Cancel': 'Cancel',
           'Delete': 'Delete'
         }
       },
-      'DeleteDialog':{
+      'CancelDialog': {
+        'Title': 'Cancel Workflow Instance',
+        'Message': 'Are you sure you wish to cancel this workflow instance?'
+      },
+      'DeleteDialog': {
         'Title': 'Delete Workflow Instance',
         'Message': 'Are you sure you wish to permanently delete this workflow instance?'
       },
-      'BulkDeleteDialog':{
+      'BulkCancelDialog': {
+        'Title': 'Cancel Selected Workflow Instances',
+        'Message': 'Are you sure you wish to cancel all selected workflow instances?'
+      },
+      'BulkDeleteDialog': {
         'Title': 'Delete Selected Workflow Instances',
         'Message': 'Are you sure you wish to permanently delete all selected workflow instances?'
       },
@@ -34,6 +43,7 @@
       'BulkActions': {
         'Title': 'Bulk Actions',
         'Actions': {
+          'Cancel': 'Cancel',
           'Delete': 'Delete'
         }
       },
@@ -58,13 +68,14 @@
           'Finished': 'Finished',
           'LastExecuted': 'Last Executed',
           'Started': 'Started'
+        },
+        'PageSize': {
+          'SelectedLabel': 'Page size: {{Size}}',
         }
       }
     }
   },
   'nl-NL': {
-    'default': {
-      
-    }
+    'default': {}
   }
 };

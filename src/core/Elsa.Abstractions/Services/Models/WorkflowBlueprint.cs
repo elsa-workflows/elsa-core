@@ -71,6 +71,7 @@ namespace Elsa.Services.Models
         public bool IsPublished { get; set; }
         public bool IsLatest { get; set; }
         public bool IsTestRun { get; set; }
+        public bool IsDisabled { get; set; }
         public string? Tag { get; set; }
         public string? SignalRConnectionId { get; set; }
 

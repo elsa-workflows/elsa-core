@@ -87,6 +87,7 @@ export interface WorkflowBlueprintSummary {
   isSingleton: boolean;
   isPublished: boolean;
   isLatest: boolean;
+  isDisabled: boolean;
   tag?: string;
 }
 

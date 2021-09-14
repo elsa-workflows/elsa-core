@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
@@ -21,6 +22,8 @@ namespace Elsa.Activities.ControlFlow
         )]
         public ISet<string> Branches { get; set; } = new HashSet<string>();
 
-        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => Outcomes(Branches);
+        // Schedule the branches in reverse order so that the first branch will execute before the second one, etc.
+        // This is important for scenarios where the user needs to schedule a blocking activity like a signal received event before actually sending a signal from a second second branch, causing a response signal to be triggered from another workflow (as an example).
+        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => Outcomes(Branches.Reverse());
     }
 }

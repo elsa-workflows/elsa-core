@@ -18,7 +18,7 @@ namespace Elsa.Samples.HttpEndpointSecurity.Services
             _options = options.Value;
         }
 
-        public string CreateToken(string userName, bool hasMagic)
+        public string CreateToken(string userName, bool isAdmin)
         {
             var claims = new List<Claim>()
             {
@@ -26,8 +26,8 @@ namespace Elsa.Samples.HttpEndpointSecurity.Services
                 new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
-            if (hasMagic)
-                claims.Add(new Claim("has-magic", "true"));
+            if (isAdmin)
+                claims.Add(new Claim("is-admin", "true"));
 
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.SecretKey));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);

@@ -5,6 +5,7 @@ using Elsa.Activities.AzureServiceBus.Options;
 using Elsa.Activities.AzureServiceBus.Services;
 using Elsa.Activities.AzureServiceBus.StartupTasks;
 using Elsa.Events;
+using Elsa.Options;
 using Elsa.Runtime;
 using Elsa.Services;
 using Microsoft.Azure.ServiceBus;

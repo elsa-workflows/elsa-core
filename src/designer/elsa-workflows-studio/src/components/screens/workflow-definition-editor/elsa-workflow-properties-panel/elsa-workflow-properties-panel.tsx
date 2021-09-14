@@ -61,9 +61,8 @@ export class ElsaWorkflowPropertiesPanel {
 
   @Watch('workflowDefinition')
   async workflowDefinitionChangedHandler(newWorkflow: WorkflowDefinition, oldWorkflow: WorkflowDefinition) {
-    if (newWorkflow.isPublished !== oldWorkflow.isPublished && newWorkflow.isPublished) {
+    if (newWorkflow.version !== oldWorkflow.version || newWorkflow.isPublished !== oldWorkflow.isPublished || newWorkflow.isLatest !== oldWorkflow.isLatest)
       await this.loadPublishedVersion();
-    }
   }
 
   async componentWillLoad() {
@@ -158,30 +157,48 @@ export class ElsaWorkflowPropertiesPanel {
                 data-transition-leave-start="elsa-translate-x-0"
                 data-transition-leave-end="elsa-translate-x-full"
                 class="elsa-w-screen elsa-max-w-lg elsa-h-full">
-              <div class="elsa-h-full elsa-flex elsa-flex-col elsa-py-6 elsa-bg-white elsa-shadow-xl elsa-overflow-y-scroll">
-                <div class="elsa-px-4 sm:elsa-px-6">
-                  <div class="elsa-flex elsa-flex-col elsa-items-end">
-                    <div class="elsa-ml-3 h-7 elsa-flex elsa-items-center">
-                      <button type="button"
-                              onClick={this.toggle}
-                              class="workflow-settings-button elsa-absolute elsa-top-4 elsa-left-2 elsa-inline-flex elsa-items-center elsa-p-2 elsa-rounded-full elsa-border elsa-border-transparent elsa-bg-white shadow elsa-text-gray-400 hover:elsa-text-blue-500 focus:elsa-text-blue-500 hover:elsa-ring-2 hover:elsa-ring-offset-2 hover:elsa-ring-blue-500 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 elsa-z-10">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="elsa-h-8 elsa-w-8" fill="none" viewBox="0 0 24 24"
-                              stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"/>
-                        </svg>
-                      </button>
-                    </div>
-                  </div>              
-
-                  <div>
-                    <div>
-                      <div class="elsa-border-b elsa-border-gray-200">
-                        <nav class="-elsa-mb-px elsa-flex elsa-space-x-8" aria-label="Tabs">
-                          {tabs.map(tab => {
-                            const className = tab.id == selectedTabId ? 'elsa-border-blue-500 elsa-text-blue-600' : 'elsa-border-transparent elsa-text-gray-500 hover:elsa-text-gray-700 hover:elsa-border-gray-300';
-                            return <a href="#" onClick={e => this.onTabClick(e, tab)} class={`${className} elsa-whitespace-nowrap elsa-py-4 elsa-px-1 elsa-border-b-2 elsa-font-medium elsa-text-sm`}>{tab.text}</a>;
-                          })}
-                        </nav>
+                <button type="button"
+                        onClick={this.toggle}
+                        class="workflow-settings-button elsa-absolute elsa-top-4 elsa-left-2 elsa-inline-flex elsa-items-center elsa-p-2 elsa-rounded-full elsa-border elsa-border-transparent elsa-bg-white shadow elsa-text-gray-400 hover:elsa-text-blue-500 focus:elsa-text-blue-500 hover:elsa-ring-2 hover:elsa-ring-offset-2 hover:elsa-ring-blue-500 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 elsa-z-10">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="elsa-h-8 elsa-w-8" fill="none" viewBox="0 0 24 24"
+                       stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M13 5l7 7-7 7M5 5l7 7-7 7"/>
+                  </svg>
+                </button>
+                <div
+                  class="elsa-h-full elsa-flex elsa-flex-col elsa-py-6 elsa-bg-white elsa-shadow-xl elsa-overflow-y-scroll elsa-bg-white">
+                  <div class="elsa-h-full">
+                    <div class="elsa-mt-16 elsa-p-6">
+                      <div class="elsa-font-medium elsa-leading-8 elsa-overflow-hidden">
+                        <p
+                          class="elsa-overflow-ellipsis">{t('Properties', {name: workflowDefinition.displayName || name})}</p>
+                      </div>
+                      <div>
+                        <dl
+                          class="elsa-mt-2 elsa-border-t elsa-border-b elsa-border-gray-200 elsa-divide-y elsa-divide-gray-200">
+                          <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
+                            <dt class="elsa-text-gray-500">{t('Name')}</dt>
+                            <dd class="elsa-text-gray-900">{name}</dd>
+                          </div>
+                          <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
+                            <dt class="elsa-text-gray-500">{t('Id')}</dt>
+                            <dd class="elsa-text-gray-900 elsa-break-all">{workflowDefinition.definitionId || '-'}</dd>
+                          </div>
+                          <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
+                            <dt class="elsa-text-gray-500">{t('Version')}</dt>
+                            <dd class="elsa-text-gray-900">{workflowDefinition.version}</dd>
+                          </div>
+                          <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
+                            <dt class="elsa-text-gray-500">{t('PublishedVersion')}</dt>
+                            <dd class="elsa-text-gray-900">{this.publishedVersion || '-'}</dd>
+                          </div>
+                          <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
+                            <dt class="elsa-text-gray-500">{t('Status')}</dt>
+                            <dd
+                              class={`${isPublished ? 'elsa-text-green-600' : 'elsa-text-yellow-700'}`}>{isPublished ? t('Published') : t('Draft')}</dd>
+                          </div>
+                        </dl>
                       </div>
                     </div>
                   </div>
@@ -328,6 +345,7 @@ export class ElsaWorkflowPropertiesPanel {
 
     const publishedWorkflowDefinitions = await elsaClient.workflowDefinitionsApi.getMany([workflowDefinition.definitionId], {isPublished: true});
     const publishedDefinition: WorkflowDefinitionSummary = workflowDefinition.isPublished ? workflowDefinition : publishedWorkflowDefinitions.find(x => x.definitionId == workflowDefinition.definitionId);
+
     if (publishedDefinition) {
       this.publishedVersion = publishedDefinition.version;
     }

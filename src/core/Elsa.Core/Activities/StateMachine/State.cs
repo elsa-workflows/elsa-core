@@ -34,6 +34,7 @@ namespace Elsa.Activities.StateMachine
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
             context.SetVariable("CurrentState", StateName);
+            context.JournalData.Add("Current State", StateName);
             return Outcomes(Transitions);
         }
     }

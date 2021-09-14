@@ -14,7 +14,7 @@ namespace Elsa.Samples.HttpEndpointSecurity.Workflows
                     .WithPath("/safe-hello")
                     .WithMethod("GET")
                     .WithAuthorize()
-                    .WithPolicy("HasMagic"))
+                    .WithPolicy("IsAdmin"))
                 .WriteHttpResponse(setup => setup.WithStatusCode(HttpStatusCode.OK)
                     .WithContent(context =>
                     {

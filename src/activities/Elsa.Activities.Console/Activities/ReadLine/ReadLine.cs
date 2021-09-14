@@ -37,18 +37,19 @@ namespace Elsa.Activities.Console
                 return Suspend();
 
             var receivedInput = await _input.ReadLineAsync();
-            return Execute(receivedInput);
+            return Execute(context, receivedInput);
         }
 
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
         {
             var receivedInput = (string) context.Input!;
-            return Execute(receivedInput);
+            return Execute(context, receivedInput);
         }
 
-        private IActivityExecutionResult Execute(string receivedInput)
+        private IActivityExecutionResult Execute(ActivityExecutionContext context, string receivedInput)
         {
             Output = receivedInput;
+            context.JournalData.Add("Input", receivedInput);
             return Done();
         }
     }

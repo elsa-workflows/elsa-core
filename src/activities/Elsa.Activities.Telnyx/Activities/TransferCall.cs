@@ -23,9 +23,6 @@ namespace Elsa.Activities.Telnyx.Activities
         Description = "Transfer a call to a new destination",
         Outcomes = new[]
         {
-            TelnyxOutcomeNames.Transferring, 
-            TelnyxOutcomeNames.CallInitiated, 
-            TelnyxOutcomeNames.Bridged, 
             TelnyxOutcomeNames.Answered, 
             TelnyxOutcomeNames.Hangup
         },
@@ -158,13 +155,13 @@ namespace Elsa.Activities.Telnyx.Activities
         {
             var payload = context.GetInput<CallPayload>();
             Output = payload;
+            
+            context.LogOutputProperty(this, "Received Payload", payload);
 
             return payload switch
             {
                 CallAnsweredPayload => Outcome(TelnyxOutcomeNames.Answered),
-                CallBridgedPayload => Outcome(TelnyxOutcomeNames.Bridged),
                 CallHangupPayload => Outcome(TelnyxOutcomeNames.Hangup),
-                CallInitiatedPayload => Outcome(TelnyxOutcomeNames.CallInitiated),
                 _ => throw new ArgumentOutOfRangeException(nameof(payload))
             };
         }

@@ -21,12 +21,14 @@ namespace Elsa.Activities.Rpa.Web
 
         [ActivityInput(Hint = "The URL to navigate to")]
         public string? Url { get; set; }
+
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            return await ExecuteDriver(context, async(driver) =>
+            return await ExecuteDriver(context, driver =>
             {
                 driver.Navigate().GoToUrl(Url);
-            });          
+                return Task.CompletedTask;
+            });
         }
     }
 }

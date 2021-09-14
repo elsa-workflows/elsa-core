@@ -19,7 +19,7 @@ namespace Elsa.Activities.Telnyx.Activities
     [Job(
         Category = Constants.Category,
         Description = "Convert text to speech and play it back on the call.",
-        Outcomes = new[] { TelnyxOutcomeNames.Speaking, TelnyxOutcomeNames.CallIsNoLongerActive, TelnyxOutcomeNames.FinishedSpeaking },
+        Outcomes = new[] { TelnyxOutcomeNames.CallIsNoLongerActive, TelnyxOutcomeNames.FinishedSpeaking },
         DisplayName = "Speak Text"
     )]
     public class SpeakText : Activity
@@ -109,7 +109,7 @@ namespace Elsa.Activities.Telnyx.Activities
             try
             {
                 await _telnyxClient.Calls.SpeakTextAsync(callControlId, request, context.CancellationToken);
-                return Combine(Outcome(TelnyxOutcomeNames.Speaking), Suspend());
+                return Suspend();
             }
             catch (ApiException e)
             {
@@ -123,6 +123,7 @@ namespace Elsa.Activities.Telnyx.Activities
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
         {
             SpeakEndedPayload = context.GetInput<CallSpeakEnded>();
+            context.LogOutputProperty(this, "Received Payload", SpeakEndedPayload);
             return Outcome(TelnyxOutcomeNames.FinishedSpeaking);
         }
 

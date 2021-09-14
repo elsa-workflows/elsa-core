@@ -28,6 +28,8 @@ namespace Elsa.Activities.AzureServiceBus
         
         [ActivityOutput]
         public object? Output { get; set; }
+        
+        
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => context.WorkflowExecutionContext.IsFirstPass ? ExecuteInternal(context) : Suspend();
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context) => ExecuteInternal(context);
@@ -36,6 +38,10 @@ namespace Elsa.Activities.AzureServiceBus
         {
             var message = (MessageModel) context.Input!;
             Output = message.ReadBody(MessageType, _serializer);
+            
+            context.LogOutputProperty(this, nameof(Output), Output);
+            context.JournalData.Add("Headers", message.ExtractHeaders());
+            
             return Done();
         }
     }

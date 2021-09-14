@@ -38,6 +38,7 @@ namespace Elsa.Activities.Telnyx.Activities
             ResolvedExtension = resolvedExtension;
             var result = resolvedExtension != null ? Outcome("Resolved") : (IActivityExecutionResult) Outcome("Unresolved");
             Output = resolvedExtension?.Destination ?? Extension;
+            context.LogOutputProperty(this, "Output", Output);
             return Combine(result, Done());
         }
     }

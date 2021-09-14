@@ -47,6 +47,7 @@ namespace Elsa.Activities.ControlFlow
             {
                 CurrentValue = null;
                 Break = false;
+                context.JournalData.Add("Break Condition", true);
                 return Done();
             }
 
@@ -68,6 +69,7 @@ namespace Elsa.Activities.ControlFlow
 
                 scope.Variables.Set(nameof(CurrentValue), currentValue);
                 Output = currentValue;
+                context.JournalData.Add("Current Index", currentValue);
                 return Outcome(OutcomeNames.Iterate);
             }
 

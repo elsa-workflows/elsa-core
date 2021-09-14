@@ -3,15 +3,15 @@ using System.Data;
 using Elsa.Activities.Webhooks;
 using Elsa.Webhooks.Persistence.YesSql.Services;
 using Elsa.Persistence.YesSql;
+using Elsa.Persistence.YesSql.Data;
 using Elsa.Runtime;
 using Elsa.Webhooks.Persistence.YesSql.Indexes;
+using Elsa.Webhooks.Persistence.YesSql.Mapping;
 using Elsa.Webhooks.Persistence.YesSql.Stores;
 using Microsoft.Extensions.DependencyInjection;
 using YesSql;
 using YesSql.Indexes;
 using YesSql.Provider.Sqlite;
-using Elsa.Persistence.YesSql.Data;
-using Elsa.Webhooks.Persistence.YesSql.Mapping;
 
 namespace Elsa.Webhooks.Persistence.YesSql.Extensions
 {
@@ -59,12 +59,6 @@ namespace Elsa.Webhooks.Persistence.YesSql.Extensions
             store.RegisterIndexes(indexes);
 
             return store;
-        }
-
-        private static ISession CreateSession(IServiceProvider serviceProvider)
-        {
-            var provider = serviceProvider.GetRequiredService<Elsa.Persistence.YesSql.Services.ISessionProvider>();
-            return provider.CreateSession();
         }
     }
 }

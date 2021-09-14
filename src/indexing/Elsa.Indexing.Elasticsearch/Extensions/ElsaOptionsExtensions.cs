@@ -1,4 +1,5 @@
 using System;
+using Elsa.Options;
 
 namespace Elsa.Indexing.Extensions
 {

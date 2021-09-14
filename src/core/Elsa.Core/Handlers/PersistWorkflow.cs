@@ -9,11 +9,8 @@ using Microsoft.Extensions.Logging;
 namespace Elsa.Handlers
 {
     public class PersistWorkflow :
-        INotificationHandler<WorkflowExecuted>,
-        INotificationHandler<WorkflowSuspended>,
         INotificationHandler<WorkflowFaulted>,
         INotificationHandler<WorkflowExecutionPassCompleted>,
-        INotificationHandler<WorkflowExecutionBurstCompleted>,
         INotificationHandler<WorkflowExecutionFinished>,
         INotificationHandler<WorkflowInputUpdated>
     {
@@ -26,35 +23,11 @@ namespace Elsa.Handlers
             _logger = logger;
         }
 
-        public async Task Handle(WorkflowSuspended notification, CancellationToken cancellationToken)
-        {
-            var behavior = notification.WorkflowExecutionContext.WorkflowBlueprint.PersistenceBehavior;
-            
-            if (behavior == WorkflowPersistenceBehavior.Suspended)
-                await SaveWorkflowAsync(notification.WorkflowExecutionContext.WorkflowInstance, cancellationToken);
-        }
-
-        public async Task Handle(WorkflowExecutionBurstCompleted notification, CancellationToken cancellationToken)
-        {
-            var behavior = notification.WorkflowExecutionContext.WorkflowBlueprint.PersistenceBehavior;
-            
-            if (behavior == WorkflowPersistenceBehavior.WorkflowBurst)
-                await SaveWorkflowAsync(notification.WorkflowExecutionContext.WorkflowInstance, cancellationToken);
-        }
-
         public async Task Handle(WorkflowExecutionPassCompleted notification, CancellationToken cancellationToken)
         {
             var behavior = notification.WorkflowExecutionContext.WorkflowBlueprint.PersistenceBehavior;
 
-            if (behavior == WorkflowPersistenceBehavior.WorkflowPassCompleted || behavior == WorkflowPersistenceBehavior.ActivityExecuted || notification.ActivityExecutionContext.ActivityBlueprint.PersistWorkflow)
-                await SaveWorkflowAsync(notification.WorkflowExecutionContext.WorkflowInstance, cancellationToken);
-        }
-
-        public async Task Handle(WorkflowExecuted notification, CancellationToken cancellationToken)
-        {
-            var behavior = notification.WorkflowExecutionContext.WorkflowBlueprint.PersistenceBehavior;
-
-            if (behavior == WorkflowPersistenceBehavior.WorkflowPassCompleted || behavior == WorkflowPersistenceBehavior.WorkflowBurst)
+            if (behavior == WorkflowPersistenceBehavior.ActivityExecuted || notification.ActivityExecutionContext.ActivityBlueprint.PersistWorkflow)
                 await SaveWorkflowAsync(notification.WorkflowExecutionContext.WorkflowInstance, cancellationToken);
         }
 
