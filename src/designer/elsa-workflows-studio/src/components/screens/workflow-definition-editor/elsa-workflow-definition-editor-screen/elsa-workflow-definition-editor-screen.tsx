@@ -1,5 +1,5 @@
 import {Component, Event, EventEmitter, h, Host, Listen, Method, Prop, State, Watch} from '@stencil/core';
-import { RouterHistory, injectHistory } from '@stencil/router';
+import {RouterHistory, injectHistory} from '@stencil/router';
 import {
   ActivityDefinition,
   ActivityDescriptor,
@@ -468,7 +468,8 @@ export class ElsaWorkflowDefinitionEditorScreen {
         })
       }
     >
-      <div class="elsa-rounded-md elsa-bg-white elsa-shadow-xs" role="menu" aria-orientation="vertical" aria-labelledby="pinned-project-options-menu-0">
+      <div class="elsa-rounded-md elsa-bg-white elsa-shadow-xs" role="menu" aria-orientation="vertical"
+           aria-labelledby="pinned-project-options-menu-0">
         <div class="elsa-py-1">
           <a
             onClick={e => this.onEditActivityClick(e)}
@@ -510,7 +511,8 @@ export class ElsaWorkflowDefinitionEditorScreen {
         })
       }
     >
-      <div class="elsa-rounded-md elsa-bg-white elsa-shadow-xs" role="menu" aria-orientation="vertical" aria-labelledby="pinned-project-options-menu-0">
+      <div class="elsa-rounded-md elsa-bg-white elsa-shadow-xs" role="menu" aria-orientation="vertical"
+           aria-labelledby="pinned-project-options-menu-0">
         <div class="elsa-py-1">
           <a
             onClick={e => this.onPasteActivityClick(e)}
@@ -536,7 +538,8 @@ export class ElsaWorkflowDefinitionEditorScreen {
     return (
       <button onClick={() => this.onShowWorkflowSettingsClick()} type="button"
               class="workflow-settings-button elsa-fixed elsa-top-20 elsa-right-12 elsa-inline-flex elsa-items-center elsa-p-2 elsa-rounded-full elsa-border elsa-border-transparent elsa-bg-white shadow elsa-text-gray-400 hover:elsa-text-blue-500 focus:elsa-text-blue-500 hover:elsa-ring-2 hover:elsa-ring-offset-2 hover:elsa-ring-blue-500 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" fill="none" class="elsa-h-8 elsa-w-8">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" fill="none"
+             class="elsa-h-8 elsa-w-8">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -605,11 +608,19 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   private renderPropertiesPanel() {
     return (
-      <elsa-workflow-properties-panel
-        workflowDefinition={this.workflowDefinition}
+      <elsa-flyout-panel
         expandButtonPosition={2}
-      />);
+      >
+        <elsa-tab-header tab="general" slot="header">General</elsa-tab-header>
+        <elsa-tab-content tab="general" slot="content">
+          <elsa-workflow-properties-panel
+            workflowDefinition={this.workflowDefinition}
+          />
+        </elsa-tab-content>
+      </elsa-flyout-panel>
+    );
   }
 }
+
 injectHistory(ElsaWorkflowDefinitionEditorScreen);
 DashboardTunnel.injectProps(ElsaWorkflowDefinitionEditorScreen, ['serverUrl', 'culture', 'monacoLibPath']);

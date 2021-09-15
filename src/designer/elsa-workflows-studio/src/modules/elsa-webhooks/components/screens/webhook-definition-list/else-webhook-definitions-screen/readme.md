@@ -24,8 +24,8 @@
 ### Depends on
 
 - stencil-route-link
-- [elsa-context-menu](../../../controls/elsa-context-menu)
-- [elsa-confirm-dialog](../../../shared/elsa-confirm-dialog)
+- [elsa-context-menu](../../../../../../components/controls/elsa-context-menu)
+- [elsa-confirm-dialog](../../../../../../components/shared/elsa-confirm-dialog)
 - context-consumer
 
 ### Graph

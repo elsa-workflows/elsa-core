@@ -150,10 +150,17 @@ export class ElsaWorkflowBlueprintViewerScreen {
   renderCanvas() {
     return (
       <div class="elsa-flex-1 elsa-flex">
-        <elsa-designer-tree model={this.workflowModel} class="elsa-flex-1" ref={el => this.designer = el} mode={WorkflowDesignerMode.Blueprint}/>
-        <elsa-workflow-blueprint-side-panel workflowId={this.workflowDefinitionId} />
+        <elsa-designer-tree model={this.workflowModel} class="elsa-flex-1" ref={el => this.designer = el}
+                            mode={WorkflowDesignerMode.Blueprint}/>
+        <elsa-flyout-panel>
+          <elsa-tab-header tab="general" slot="header">General</elsa-tab-header>
+          <elsa-tab-content tab="general" slot="content">
+            <elsa-workflow-blueprint-side-panel workflowId={this.workflowDefinitionId}/>
+          </elsa-tab-content>
+        </elsa-flyout-panel>
       </div>
     );
   }
 }
+
 Tunnel.injectProps(ElsaWorkflowBlueprintViewerScreen, ['serverUrl', 'culture']);
