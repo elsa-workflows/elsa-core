@@ -32,7 +32,8 @@ export const EventTypes = {
   WorkflowRegistryUpdated: 'workflow-registry.updated',
   ClipboardPermissionDenied: 'clipboard-permission-denied',
   ClipboardCopied: 'clipboard-copied',
-  PasteActivity: 'paste-activity'
+  PasteActivity: 'paste-activity',
+  TestActivityMessageReceived: 'test-activity-message-received'
 };
 
 export interface AddActivityEventArgs {

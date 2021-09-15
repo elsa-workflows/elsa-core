@@ -10,8 +10,7 @@ import {
   VersionOptions,
   WorkflowDefinition,
   WorkflowModel,
-  WorkflowPersistenceBehavior,
-  WorkflowTestActivityMessage
+  WorkflowPersistenceBehavior
 } from "../../../../models";
 import {eventBus, createElsaClient, SaveWorkflowDefinitionRequest} from "../../../../services";
 import state from '../../../../utils/store';
@@ -47,7 +46,6 @@ export class ElsaWorkflowDefinitionEditorScreen {
   @State() imported: boolean;
   @State() networkError: string;
   @State() selectedActivityId?: string;
-  @State() workflowTestActivityMessages: Array<WorkflowTestActivityMessage> = [];
 
   @State() activityContextMenuState: ActivityContextMenuState = {
     shown: false,
@@ -386,16 +384,12 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   async onActivitySelected(e: CustomEvent<ActivityModel>) {
     this.selectedActivityId = e.detail.activityId;
-    var message = this.workflowTestActivityMessages.find(x => x.activityId == this.selectedActivityId);
-
-    if (!!message)
-      await this.propertiesPanel.selectTestActivity(message);
+    await this.propertiesPanel.selectTestActivity(this.selectedActivityId);
   }
 
   async onActivityDeselected(e: CustomEvent<ActivityModel>) {
     if (this.selectedActivityId == e.detail.activityId)
       this.selectedActivityId = null;
-
     await this.propertiesPanel.selectTestActivity(null);
   }
   
@@ -406,17 +400,6 @@ export class ElsaWorkflowDefinitionEditorScreen {
   private onUpdateWorkflowSettings = async (workflowDefinition: WorkflowDefinition) => {
     this.updateWorkflowDefinition(workflowDefinition);
     await this.saveWorkflowInternal(this.workflowModel);
-  }
-
-  onTestActivityMessageReceived(e: CustomEvent<WorkflowTestActivityMessage>) {
-    const message = e.detail;
-    if (!!message) {
-      this.workflowTestActivityMessages = this.workflowTestActivityMessages.filter(x => x.activityId !== message.activityId);
-      this.workflowTestActivityMessages = [...this.workflowTestActivityMessages, message];
-      this.selectedActivityId = message.activityId;
-    }
-    else
-      this.workflowTestActivityMessages = [];
   }
 
   render() {
@@ -639,8 +622,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
   private renderPropertiesPanel() {
     return (
       <elsa-workflow-properties-panel ref={el => this.propertiesPanel = el}
-        workflowDefinition={this.workflowDefinition}
-        onTestActivityMessageReceived={e => this.onTestActivityMessageReceived(e)}        
+        workflowDefinition={this.workflowDefinition}  
         expandButtonPosition={2}
       />);
   }

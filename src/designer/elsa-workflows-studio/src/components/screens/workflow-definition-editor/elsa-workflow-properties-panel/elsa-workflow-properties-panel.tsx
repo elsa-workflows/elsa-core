@@ -2,11 +2,11 @@ import {Component, Prop, Event, EventEmitter, h, Method, State, Watch, Host} fro
 import {HubConnection, HubConnectionBuilder} from '@microsoft/signalr';
 import {enter, leave} from "el-transition"
 import * as collection from 'lodash/collection';
-import {WorkflowDefinition, WorkflowDefinitionSummary, WorkflowTestActivityMessage} from "../../../../models";
+import {EventTypes, WorkflowDefinition, WorkflowDefinitionSummary, WorkflowTestActivityMessage} from "../../../../models";
 import {i18n} from "i18next";
 import {loadTranslations} from "../../../i18n/i18n-loader";
 import {resources} from "./localizations";
-import {createElsaClient, WorkflowTestExecuteRequest, WorkflowTestSaveRequest} from "../../../../services";
+import {createElsaClient, eventBus, WorkflowTestExecuteRequest, WorkflowTestSaveRequest} from "../../../../services";
 import Tunnel from "../../../../data/dashboard";
 
 interface Tab {
@@ -41,7 +41,7 @@ export class ElsaWorkflowPropertiesPanel {
   @State() expanded: boolean;
   @State() selectedTabId: string = 'testProperties';
   @State() hubConnection: HubConnection;
-  @Event() testActivityMessageReceived: EventEmitter<WorkflowTestActivityMessage>;
+  @State() workflowTestActivityMessages: Array<WorkflowTestActivityMessage> = [];
 
   i18next: i18n;
   signalRConnectionId: string;
@@ -50,7 +50,8 @@ export class ElsaWorkflowPropertiesPanel {
   testActivity: WorkflowTestActivityMessage;
 
   @Method()
-  async selectTestActivity(message?: WorkflowTestActivityMessage) {
+  async selectTestActivity(activityId?: string) {
+    const message = this.workflowTestActivityMessages.find(x => x.activityId == activityId)
     const messageInternal = !!message ? message : null;
     this.selectTestActivityMessageInternal(messageInternal);
     this.selectedTabId = 'testProperties';
@@ -80,7 +81,9 @@ export class ElsaWorkflowPropertiesPanel {
 
     this.hubConnection.on('DispatchMessage', (message) => {
       message.data = JSON.parse(message.data);
-      this.testActivityMessageReceived.emit(message);
+      this.workflowTestActivityMessages = this.workflowTestActivityMessages.filter(x => x.activityId !== message.activityId);
+      this.workflowTestActivityMessages = [...this.workflowTestActivityMessages, message];      
+      eventBus.emit(EventTypes.TestActivityMessageReceived, this, message);
     });
 
     this.hubConnection.start()
@@ -94,7 +97,8 @@ export class ElsaWorkflowPropertiesPanel {
   }
 
   async onExecuteWorkflowClick() {
-    this.testActivityMessageReceived.emit(null);
+    this.workflowTestActivityMessages = [];
+    eventBus.emit(EventTypes.TestActivityMessageReceived, this, null);
     const elsaClient = this.createClient();
 
     const request: WorkflowTestExecuteRequest = {

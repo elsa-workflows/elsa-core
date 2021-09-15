@@ -5,7 +5,7 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
-import { ActivityDefinitionProperty, ActivityDescriptor, ActivityModel, ActivityPropertyDescriptor, ElsaStudio, OrderBy, SelectListItem, VersionOptions, WorkflowBlueprint, WorkflowDefinition, WorkflowExecutionLogRecord, WorkflowModel, WorkflowStatus, WorkflowTestActivityMessage } from "./models";
+import { ActivityDefinitionProperty, ActivityDescriptor, ActivityModel, ActivityPropertyDescriptor, ElsaStudio, OrderBy, SelectListItem, VersionOptions, WorkflowBlueprint, WorkflowDefinition, WorkflowExecutionLogRecord, WorkflowModel, WorkflowStatus } from "./models";
 import { LocationSegments, MatchResults, RouterHistory } from "@stencil/router";
 import { MenuItem } from "./components/controls/elsa-context-menu/models";
 import { VNode } from "@stencil/core";
@@ -298,7 +298,7 @@ export namespace Components {
     interface ElsaWorkflowPropertiesPanel {
         "culture": string;
         "expandButtonPosition": number;
-        "selectTestActivity": (message?: WorkflowTestActivityMessage) => Promise<void>;
+        "selectTestActivity": (activityId?: string) => Promise<void>;
         "serverUrl": string;
         "workflowDefinition": WorkflowDefinition;
     }
@@ -966,7 +966,6 @@ declare namespace LocalJSX {
     interface ElsaWorkflowPropertiesPanel {
         "culture"?: string;
         "expandButtonPosition"?: number;
-        "onTestActivityMessageReceived"?: (event: CustomEvent<WorkflowTestActivityMessage>) => void;
         "serverUrl"?: string;
         "workflowDefinition"?: WorkflowDefinition;
     }

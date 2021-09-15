@@ -59,6 +59,7 @@ export class ElsaWorkflowDesigner {
   @Event() activityContextMenuButtonClicked: EventEmitter<ActivityContextMenuState>;
   @Event() connectionContextMenuButtonClicked: EventEmitter<ActivityContextMenuState>;
   @State() workflowModel: WorkflowModel;
+  @State() workflowTestActivityMessages: Array<WorkflowTestActivityMessage> = [];
 
   @State() activityContextMenuState: ActivityContextMenuState = {
     shown: false,
@@ -214,6 +215,7 @@ export class ElsaWorkflowDesigner {
     eventBus.on(EventTypes.PasteActivity, this.onPasteActivity);
     eventBus.on(EventTypes.HideModalDialog, this.onCopyPasteActivityEnabled);
     eventBus.on(EventTypes.ShowWorkflowSettings, this.onCopyPasteActivityDisabled);
+    eventBus.on(EventTypes.TestActivityMessageReceived, this.onTestActivityMessageReceived);
   }
 
   disconnectedCallback() {
@@ -222,6 +224,7 @@ export class ElsaWorkflowDesigner {
     eventBus.detach(EventTypes.PasteActivity, this.onPasteActivity);
     eventBus.detach(EventTypes.HideModalDialog, this.onCopyPasteActivityEnabled);
     eventBus.detach(EventTypes.ShowWorkflowSettings, this.onCopyPasteActivityDisabled);
+    eventBus.detach(EventTypes.TestActivityMessageReceived, this.onTestActivityMessageReceived);
     d3.selectAll('.node').on('click', null);
     d3.selectAll('.edgePath').on('contextmenu', null);
   }
@@ -655,6 +658,18 @@ export class ElsaWorkflowDesigner {
     this.ignoreCopyPasteActivities = true
   }
 
+  onTestActivityMessageReceived = async args => {
+    const message = args as WorkflowTestActivityMessage;
+    if (!!message) {
+      this.workflowTestActivityMessages = this.workflowTestActivityMessages.filter(x => x.activityId !== message.activityId);
+      this.workflowTestActivityMessages = [...this.workflowTestActivityMessages, message];
+    }
+    else
+      this.workflowTestActivityMessages = [];
+
+    this.rerenderTree();
+  };
+
   renderNodes() {
     const prevTransform = this.innerD3Selected.attr('transform');
     const scaleAfter = this.zoomParams.scale;
@@ -808,6 +823,20 @@ export class ElsaWorkflowDesigner {
       </svg>`;
   }
 
+  renderActivityTestIcon(activityId: string) {
+
+    var testActivityMessage = this.workflowTestActivityMessages.find(x => x.activityId == activityId);
+    if (testActivityMessage == undefined)
+      return "";
+
+    const color = testActivityMessage.status == "Executed" ? "green" : "red";
+
+    return `<svg class="elsa-h-8 elsa-w-8 elsa-text-${color}-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path stroke="none" d="M0 0h24v24H0z"/>
+        <circle cx="12" cy="12" r="9" fill="${color}" />
+      </svg>`;
+  }
+
   renderActivity(activity: ActivityModel) {
     const activityDisplayContexts = this.activityDisplayContexts || {};
     const displayContext = activityDisplayContexts[activity.activityId] || undefined;
@@ -820,6 +849,7 @@ export class ElsaWorkflowDesigner {
 
     return `<div id=${`activity-${activity.activityId}`}
     class="activity elsa-border-2 elsa-border-solid elsa-rounded elsa-bg-white elsa-text-left elsa-text-black elsa-text-lg elsa-select-none elsa-max-w-md elsa-shadow-sm elsa-relative ${cssClass}">
+      ${this.renderActivityTestIcon(activity.activityId)}
       <div class="elsa-p-5">
         <div class="elsa-flex elsa-justify-between elsa-space-x-8">
           <div class="elsa-flex-shrink-0">
