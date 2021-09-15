@@ -150,7 +150,8 @@ namespace Elsa.Services.Workflows
             // Acquire a lock on correlation ID to prevent duplicate workflow instances from being created.
             await using var correlationLockHandle = await AcquireLockAsync(correlationId, cancellationToken);
 
-            return await CollectStartableWorkflowInternalAsync(workflowBlueprint, activityId, correlationId, contextId, tenantId, cancellationToken);
+            var startableWorkflowDefinition = await CollectStartableWorkflowInternalAsync(workflowBlueprint, activityId, correlationId, contextId, tenantId, cancellationToken);
+            return startableWorkflowDefinition != null ? await InstantiateStartableWorkflow(startableWorkflowDefinition, cancellationToken) : default;
         }
 
         public async Task FindAndExecuteStartableWorkflowAsync(

@@ -328,6 +328,7 @@ export interface WorkflowTestActivityMessage {
   correlationId: string;
   activityId: string;
   status: string;
+  data?: any;
 }
 
 export const getVersionOptionsString = (versionOptions?: VersionOptions) => {

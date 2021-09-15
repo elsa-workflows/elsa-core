@@ -63,6 +63,7 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
     },
     workflowDefinitionsApi: {
       list: async (page?: number, pageSize?: number, versionOptions?: VersionOptions) => {
+        debugger
         const versionOptionsString = getVersionOptionsString(versionOptions);
         const response = await httpClient.get<PagedList<WorkflowDefinitionSummary>>(`v1/workflow-definitions?version=${versionOptionsString}`);
         return response.data;
@@ -114,39 +115,19 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
         return response.data;
       }
     },
-    workflowsApi: {
-      test: async (workflowDefinitionId, version, signalRConnectionId) => {
-
-          httpClient.interceptors.request.use(function (config) {
-            config.headers['Accept'] = 'application/json';
-            config.data = Object.assign({}, config.data, {});
-            return config;
-          })
-          const response = await httpClient.post<void>(`v1/workflows/${workflowDefinitionId}/${version}/${signalRConnectionId}/test`);
-          return response.data;
-      }
-    },    
-    webhookDefinitionsApi: {
-      list: async (page?: number, pageSize?: number) => {
-        const response = await httpClient.get<PagedList<WebhookDefinitionSummary>>(`v1/webhook-definitions`);
-        return response.data;
-      },
-      getByWebhookId: async (webhookId: string) => {
-        const response = await httpClient.get<WebhookDefinition>(`v1/webhook-definitions/${webhookId}`);
-        return response.data;
+    workflowTestApi: {
+      execute: async (request) => {
+        httpClient.interceptors.request.use(function (config) {
+          config.headers['Accept'] = 'application/json';
+          config.data = Object.assign({}, config.data, {});
+          return config;
+        })
+        await httpClient.post<void>(`v1/workflow-test/execute`, request);
       },
       save: async request => {
-        const response = await httpClient.post<WebhookDefinition>('v1/webhook-definitions', request);
-        return response.data;
-      },
-      update: async request => {
-        const response = await httpClient.put<WebhookDefinition>('v1/webhook-definitions', request);
-        return response.data;
-      },
-      delete: async webhookId => {
-        await httpClient.delete(`v1/webhook-definitions/${webhookId}`);
-      },
-    },
+        await httpClient.post<void>(`v1/workflow-test/save`, request);
+      },      
+    },    
     workflowRegistryApi: {
       list: async (page?: number, pageSize?: number, versionOptions?: VersionOptions): Promise<PagedList<WorkflowBlueprintSummary>> => {
         const versionOptionsString = getVersionOptionsString(versionOptions);
@@ -276,7 +257,7 @@ export interface ElsaClient {
   activityStatsApi: ActivityStatsApi;
   workflowStorageProvidersApi: WorkflowStorageProvidersApi;
   workflowChannelsApi: WorkflowChannelsApi;
-  workflowsApi: WorkflowsApi;
+  workflowTestApi: WorkflowTestApi;
 }
 
 export interface ActivitiesApi {
@@ -302,22 +283,11 @@ export interface WorkflowDefinitionsApi {
   import(workflowDefinitionId: string, file: File): Promise<WorkflowDefinition>;
 }
 
-export interface WorkflowsApi {
+export interface WorkflowTestApi {
 
-  test(workflowDefinitionId: string, version: number, signalRConnectionId: string): Promise<void>;
-}
+  execute(request: WorkflowTestExecuteRequest): Promise<void>;
 
-export interface WebhookDefinitionsApi {
-
-  list(page?: number, pageSize?: number): Promise<PagedList<WebhookDefinitionSummary>>;
-
-  getByWebhookId(webhookId: string): Promise<WebhookDefinition>;
-
-  save(request: SaveWebhookDefinitionRequest): Promise<WebhookDefinition>;
-
-  update(request: SaveWebhookDefinitionRequest): Promise<WebhookDefinition>;
-
-  delete(webhookId: string): Promise<void>;
+  save(request: WorkflowTestSaveRequest): Promise<void>;
 }
 
 export interface WorkflowRegistryApi {
@@ -401,6 +371,19 @@ export interface SaveWorkflowDefinitionRequest {
   publish?: boolean;
   activities: Array<ActivityDefinition>;
   connections: Array<ConnectionDefinition>;
+}
+
+export interface WorkflowTestExecuteRequest {
+  workflowDefinitionId?: string, 
+  version?: number, 
+  signalRConnectionId?: string
+}
+
+export interface WorkflowTestSaveRequest {
+  workflowDefinitionId?: string, 
+  version?: number, 
+  activityId?: string,
+  json?: any
 }
 
 export interface ExportWorkflowResponse {

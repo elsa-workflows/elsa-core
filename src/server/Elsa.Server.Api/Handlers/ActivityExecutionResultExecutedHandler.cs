@@ -1,10 +1,12 @@
-using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Events;
+using Elsa.Models;
 using Elsa.Server.Api.Models;
 using Elsa.Server.Api.Services;
 using MediatR;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Elsa.Server.Api.Handlers
 {
@@ -19,16 +21,29 @@ namespace Elsa.Server.Api.Handlers
 
         public async Task Handle(ActivityExecutionResultExecuted notification, CancellationToken cancellationToken)
         {
-            var signalRConnectionId = notification.ActivityExecutionContext.WorkflowExecutionContext.WorkflowBlueprint.SignalRConnectionId;
+            var context = notification.ActivityExecutionContext;
+
+            var signalRConnectionId = context.WorkflowExecutionContext.WorkflowBlueprint.SignalRConnectionId;
             if (string.IsNullOrWhiteSpace(signalRConnectionId)) return;
+
+            var data = new JObject
+            {
+                ["Outcomes"] = JToken.FromObject(context.Outcomes)
+            };
+
+            foreach (var entry in context.JournalData)
+                data[entry.Key] = entry.Value != null ? JToken.FromObject(entry.Value) : JValue.CreateNull();
 
             var message = new WorkflowTestMessage
             {
                 SignalRConnectionId = signalRConnectionId,
-                WorkflowInstanceId = notification.ActivityExecutionContext.WorkflowInstance.Id,
-                CorrelationId = notification.ActivityExecutionContext.CorrelationId,
-                ActivityId = notification.ActivityExecutionContext.ActivityId,
-                Status = notification.ActivityExecutionContext.WorkflowExecutionContext.Status.ToString()
+                WorkflowInstanceId = context.WorkflowInstance.Id,
+                CorrelationId = context.CorrelationId,
+                ActivityId = context.ActivityId,
+                Status = context.WorkflowExecutionContext.Status == WorkflowStatus.Running
+                    ? "Executed"
+                    : context.WorkflowExecutionContext.Status.ToString(),
+                Data = JsonConvert.SerializeObject(data, Formatting.Indented)
             };
 
             await _workflowTestService.DispatchMessage(message);

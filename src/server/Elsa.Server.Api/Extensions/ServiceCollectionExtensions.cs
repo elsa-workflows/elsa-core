@@ -55,6 +55,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton<IEndpointContentSerializerSettingsProvider, EndpointContentSerializerSettingsProvider>();
             services.AddAutoMapperProfile<AutoMapperProfile>();
             services.AddNotificationHandlersFrom<ActivityExecutionResultExecutedHandler>();
+            services.AddNotificationHandlersFrom<WorkflowRegistryCacheHandler>();            
             services.AddSignalR();
             return services;
         }
