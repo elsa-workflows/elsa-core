@@ -329,9 +329,9 @@ export namespace Components {
     }
     interface ElsaWorkflowTestPanel {
         "culture": string;
-        "selectTestActivity": (activityId?: string) => Promise<void>;
         "serverUrl": string;
         "workflowDefinition": WorkflowDefinition;
+        "workflowTestActivityId": string;
     }
 }
 declare global {
@@ -1048,6 +1048,7 @@ declare namespace LocalJSX {
         "culture"?: string;
         "serverUrl"?: string;
         "workflowDefinition"?: WorkflowDefinition;
+        "workflowTestActivityId"?: string;
     }
     interface IntrinsicElements {
         "elsa-activity-editor-modal": ElsaActivityEditorModal;

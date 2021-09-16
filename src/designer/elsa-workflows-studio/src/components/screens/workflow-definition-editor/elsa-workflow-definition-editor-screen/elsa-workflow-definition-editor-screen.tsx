@@ -64,8 +64,6 @@ export class ElsaWorkflowDefinitionEditorScreen {
   i18next: i18n;
   el: HTMLElement;
   designer: HTMLElsaDesignerTreeElement;
-  testPanel: HTMLElsaWorkflowTestPanelElement;  
-  flyoutPanel: HTMLElsaFlyoutPanelElement;
 
   @Method()
   async getServerUrl(): Promise<string> {
@@ -385,13 +383,11 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   async onActivitySelected(e: CustomEvent<ActivityModel>) {
     this.selectedActivityId = e.detail.activityId;
-    await this.testPanel.selectTestActivity(this.selectedActivityId);
   }
 
   async onActivityDeselected(e: CustomEvent<ActivityModel>) {
     if (this.selectedActivityId == e.detail.activityId)
       this.selectedActivityId = null;
-    await this.testPanel.selectTestActivity(null);
   }
   
   onConnectionContextMenuButtonClicked(e: CustomEvent<ActivityContextMenuState>) {
@@ -625,7 +621,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   private renderPanel() {
     return (
-      <elsa-flyout-panel ref={el => this.flyoutPanel = el}>
+      <elsa-flyout-panel>
         <elsa-tab-header tab="general" slot="header">General</elsa-tab-header>
         <elsa-tab-content tab="general" slot="content">
           <elsa-workflow-properties-panel
@@ -634,8 +630,9 @@ export class ElsaWorkflowDefinitionEditorScreen {
         </elsa-tab-content>
         <elsa-tab-header tab="test" slot="header">Test</elsa-tab-header>
         <elsa-tab-content tab="test" slot="content">
-          <elsa-workflow-test-panel ref={el => this.testPanel = el}
+          <elsa-workflow-test-panel
             workflowDefinition={this.workflowDefinition}
+            workflowTestActivityId={this.selectedActivityId}
           />
         </elsa-tab-content>        
       </elsa-flyout-panel>

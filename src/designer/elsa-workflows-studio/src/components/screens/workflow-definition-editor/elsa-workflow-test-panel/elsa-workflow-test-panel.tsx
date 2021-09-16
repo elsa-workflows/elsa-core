@@ -22,35 +22,29 @@ interface Tab {
 export class ElsaWorkflowTestPanel {
 
   @Prop() workflowDefinition: WorkflowDefinition;
+  @Prop() workflowTestActivityId: string;
   @Prop() culture: string;
   @Prop() serverUrl: string;
-  @State() publishedVersion: number;
   @State() hubConnection: HubConnection;
   @State() workflowTestActivityMessages: Array<WorkflowTestActivityMessage> = [];
 
   i18next: i18n;
-  signalRConnectionId: string;
-  el: HTMLElement;
-  tabs: Array<Tab> = [];
-  testActivity: WorkflowTestActivityMessage;
-
-  @Method()
-  async selectTestActivity(activityId?: string) {
-    const message = this.workflowTestActivityMessages.find(x => x.activityId == activityId)
-    const messageInternal = !!message ? message : null;
-    this.selectTestActivityMessageInternal(messageInternal);
-    this.render();
-  }
+  signalRConnectionId: string;  
+  message: WorkflowTestActivityMessage;
 
   @Watch('workflowDefinition')
   async workflowDefinitionChangedHandler(newWorkflow: WorkflowDefinition, oldWorkflow: WorkflowDefinition) {
-    if (newWorkflow.version !== oldWorkflow.version || newWorkflow.isPublished !== oldWorkflow.isPublished || newWorkflow.isLatest !== oldWorkflow.isLatest)
-      await this.loadPublishedVersion();
   }
+
+  @Watch('workflowTestActivityId')
+  async workflowTestActivityMessageChangedHandler(newMessage: string, oldMessage: string) {
+    const message = this.workflowTestActivityMessages.find(x => x.activityId == newMessage);
+    debugger;
+    this.message = !!message ? message : null;
+  }  
 
   async componentWillLoad() {
     this.i18next = await loadTranslations(this.culture, resources);
-    await this.loadPublishedVersion();
     this.connectMessageHub();
   }
 
@@ -76,6 +70,7 @@ export class ElsaWorkflowTestPanel {
   }
 
   async onExecuteWorkflowClick() {
+    this.message = null;
     this.workflowTestActivityMessages = [];
     eventBus.emit(EventTypes.TestActivityMessageReceived, this, null);
     const elsaClient = this.createClient();
@@ -90,17 +85,13 @@ export class ElsaWorkflowTestPanel {
   }
 
   async onUseAsSchemaClick() {    
-    const value = this.testActivity.data["Inbound Request"];
+    const value = this.message.data["Inbound Request"];
     const request: WorkflowTestUpdateRequest = {
-      activityId: this.testActivity.activityId,
+      activityId: this.message.activityId,
       jsonSchema: JSON.stringify(convert(value), null, 4)
     };
 
     eventBus.emit(EventTypes.ActivityJsonSchemaUpdated, this, request);
-  }
-
-  selectTestActivityMessageInternal(message?: WorkflowTestActivityMessage) {
-    this.testActivity = message;
   }
 
   render() {
@@ -121,10 +112,10 @@ export class ElsaWorkflowTestPanel {
 
 
   renderActivityTestMessage() {
-debugger
-    const {testActivity} = this;
 
-    if (testActivity == undefined)
+    const {message} = this;
+
+    if (message == undefined || !message)
       return    
       
     const t = (x, params?) => this.i18next.t(x, params);
@@ -132,14 +123,14 @@ debugger
     const wellKnownDataKeys = {State: true, Input: null, Outcomes: true, Exception: true};
     let dataKey = null;
 
-    for (const key in testActivity.data) {
-      if (!testActivity.data.hasOwnProperty(key))
+    for (const key in message.data) {
+      if (!message.data.hasOwnProperty(key))
         continue;
 
       if (!!wellKnownDataKeys[key])
         continue;
 
-      const value = testActivity.data[key];
+      const value = message.data[key];
 
       if (!value && value != 0)
         continue;
@@ -165,11 +156,11 @@ debugger
       <dl class="elsa-border-b elsa-border-gray-200 elsa-divide-y elsa-divide-gray-200">
       <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
         <dt class="elsa-text-gray-500">{'Correlation Id'}</dt>
-        <dd class="elsa-text-gray-900">{testActivity.correlationId}</dd>
+        <dd class="elsa-text-gray-900">{message.correlationId}</dd>
       </div>
       <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
         <dt class="elsa-text-gray-500">{t('Status')}</dt>
-        <dd class="elsa-text-gray-900">{testActivity.status}</dd>
+        <dd class="elsa-text-gray-900">{message.status}</dd>
       </div>
       {collection.map(filteredData, (v, k) => (
         <div>
@@ -195,20 +186,20 @@ debugger
 
   renderActivityTestError() {
 
-    const {testActivity} = this;
+    const {message} = this;
 
-    if (testActivity == undefined)
+    if (message == undefined || !message)
       return    
       
     const t = (x, params?) => this.i18next.t(x, params);
 
-    if (!testActivity.error)
+    if (!message.error)
       return;
 
     return (
       <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
         <dt class="elsa-text-gray-500">{t('Error')}</dt>
-        <dd class="elsa-mt-1 elsa-text-sm elsa-text-gray-900 elsa-mb-2 elsa-overflow-x-auto">{testActivity.error}</dd>
+        <dd class="elsa-mt-1 elsa-text-sm elsa-text-gray-900 elsa-mb-2 elsa-overflow-x-auto">{message.error}</dd>
       </div>
     );
   }  
@@ -216,18 +207,6 @@ debugger
   createClient() {
     return createElsaClient(this.serverUrl);
   }
-
-  async loadPublishedVersion() {
-    const elsaClient = this.createClient();
-    const {workflowDefinition} = this;
-
-    const publishedWorkflowDefinitions = await elsaClient.workflowDefinitionsApi.getMany([workflowDefinition.definitionId], {isPublished: true});
-    const publishedDefinition: WorkflowDefinitionSummary = workflowDefinition.isPublished ? workflowDefinition : publishedWorkflowDefinitions.find(x => x.definitionId == workflowDefinition.definitionId);
-
-    if (publishedDefinition) {
-      this.publishedVersion = publishedDefinition.version;
-    }
-  }  
 }
 
 Tunnel.injectProps(ElsaWorkflowTestPanel, ['serverUrl', 'culture']);
