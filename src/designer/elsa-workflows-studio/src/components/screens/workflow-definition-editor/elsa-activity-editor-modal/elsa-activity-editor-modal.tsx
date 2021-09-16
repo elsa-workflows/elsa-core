@@ -121,7 +121,7 @@ export class ElsaActivityEditorModal {
   async onCancelClick() {
     await this.dialog.hide(true);
   }
-  
+
   onSubmit = async (e: Event) => {
     e.preventDefault();
     const form: any = e.target;
@@ -137,7 +137,6 @@ export class ElsaActivityEditorModal {
   };
 
   onShowActivityEditor = async (activity: ActivityModel, animate: boolean) => {
-    const t = this.t;
     this.activityModel = JSON.parse(JSON.stringify(activity));
     this.activityDescriptor = state.activityDescriptors.find(x => x.type == activity.type);
     this.workflowStorageDescriptors = state.workflowStorageDescriptors;
@@ -146,6 +145,12 @@ export class ElsaActivityEditorModal {
     this.renderProps = {};
     await this.dialog.show(animate);
   };
+
+  onKeyDown = async (event: KeyboardEvent) => {
+    if (event.ctrlKey && event.key === 'Enter') {
+      (this.dialog.querySelector('button[type="submit"]') as HTMLButtonElement).click();
+    }
+  }
 
   render() {
     const renderProps = this.renderProps;
@@ -160,7 +165,7 @@ export class ElsaActivityEditorModal {
       <Host class="elsa-block">
         <elsa-modal-dialog ref={el => this.dialog = el}>
           <div slot="content" class="elsa-py-8 elsa-pb-0">
-            <form onSubmit={e => this.onSubmit(e)} ref={el => this.form = el} key={this.timestamp.getTime().toString()}>
+            <form onSubmit={e => this.onSubmit(e)} ref={el => this.form = el} key={this.timestamp.getTime().toString()} onKeyDown={this.onKeyDown}>
               <div class="elsa-flex elsa-px-8">
                 <div class="elsa-space-y-8 elsa-divide-y elsa-divide-gray-200 elsa-w-full">
                   <div>

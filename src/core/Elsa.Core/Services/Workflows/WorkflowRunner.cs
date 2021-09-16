@@ -28,6 +28,7 @@ namespace Elsa.Services.Workflows
         private readonly ILogger _logger;
         private readonly IGetsStartActivities _startingActivitiesProvider;
         private readonly IWorkflowStorageService _workflowStorageService;
+        private readonly IWorkflowExecutionLog _workflowExecutionLog;
 
         public WorkflowRunner(
             IWorkflowContextManager workflowContextManager,
@@ -35,12 +36,14 @@ namespace Elsa.Services.Workflows
             IServiceScopeFactory serviceScopeFactory,
             IGetsStartActivities startingActivitiesProvider,
             IWorkflowStorageService workflowStorageService,
+            IWorkflowExecutionLog workflowExecutionLog,
             ILogger<WorkflowRunner> logger)
         {
             _mediator = mediator;
             _serviceScopeFactory = serviceScopeFactory;
             _startingActivitiesProvider = startingActivitiesProvider;
             _workflowStorageService = workflowStorageService;
+            _workflowExecutionLog = workflowExecutionLog;
             _logger = logger;
             _workflowContextManager = workflowContextManager;
         }
@@ -165,7 +168,8 @@ namespace Elsa.Services.Workflows
             catch (Exception e)
             {
                 _logger.LogWarning(e, "Failed to run workflow {WorkflowInstanceId}", workflowExecutionContext.WorkflowInstance.Id);
-                workflowExecutionContext.Fault(e, null, null, false);
+                workflowExecutionContext.Fault(e, activity.Id, null, false);
+                await _workflowExecutionLog.AddEntryAsync("Faulted", workflowExecutionContext.WorkflowInstance, activity, null, SimpleException.FromException(e), null, cancellationToken);
             }
 
             return new RunWorkflowResult(workflowExecutionContext.WorkflowInstance, activity.Id, false);

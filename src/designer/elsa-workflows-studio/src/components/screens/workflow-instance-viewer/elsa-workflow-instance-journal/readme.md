@@ -12,6 +12,7 @@
 | `activityDescriptors` | --                     |             | `ActivityDescriptor[]` | `[]`        |
 | `serverUrl`           | `server-url`           |             | `string`               | `undefined` |
 | `workflowBlueprint`   | --                     |             | `WorkflowBlueprint`    | `undefined` |
+| `workflowInstance`    | --                     |             | `WorkflowInstance`     | `undefined` |
 | `workflowInstanceId`  | `workflow-instance-id` |             | `string`               | `undefined` |
 | `workflowModel`       | --                     |             | `WorkflowModel`        | `undefined` |
 
@@ -25,27 +26,7 @@
 
 ## Methods
 
-### `hide() => Promise<void>`
-
-
-
-#### Returns
-
-Type: `Promise<void>`
-
-
-
 ### `selectActivityRecord(activityId?: string) => Promise<void>`
-
-
-
-#### Returns
-
-Type: `Promise<void>`
-
-
-
-### `show() => Promise<void>`
 
 
 
@@ -62,9 +43,18 @@ Type: `Promise<void>`
 
  - [elsa-workflow-instance-viewer-screen](../elsa-workflow-instance-viewer-screen)
 
+### Depends on
+
+- [elsa-flyout-panel](../../../shared/elsa-flyout-panel)
+- [elsa-tab-header](../../../shared/elsa-tab-header)
+- [elsa-tab-content](../../../shared/elsa-tab-content)
+
 ### Graph
 ```mermaid
 graph TD;
+  elsa-workflow-instance-journal --> elsa-flyout-panel
+  elsa-workflow-instance-journal --> elsa-tab-header
+  elsa-workflow-instance-journal --> elsa-tab-content
   elsa-workflow-instance-viewer-screen --> elsa-workflow-instance-journal
   style elsa-workflow-instance-journal fill:#f9f,stroke:#333,stroke-width:4px
 ```

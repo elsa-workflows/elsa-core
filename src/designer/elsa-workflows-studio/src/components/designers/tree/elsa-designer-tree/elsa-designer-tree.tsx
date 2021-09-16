@@ -268,7 +268,7 @@ export class ElsaWorkflowDesigner {
     this.activityDisplayContexts = displayContexts;
 
     // Rebuild D3 model if component completed its initial load.
-    if(!!this.svgD3Selected)
+    if (!!this.svgD3Selected)
       this.rerenderTree();
   }
 
@@ -795,7 +795,24 @@ export class ElsaWorkflowDesigner {
             }
           }
 
-          this.rerenderTree();
+          // Delay the rerender of the tree to permit the double click action to be captured
+          setTimeout(() => {
+            this.rerenderTree();
+          }, 90);
+        }
+      }).on('dblclick', async e => {
+        e.stopPropagation();
+        if (this.mode == WorkflowDesignerMode.Edit) {
+          await this.showActivityEditor(activity, true);
+          if (!this.selectedActivities[activityId]) {
+            for (const key in this.selectedActivities) {
+              this.activityDeselected.emit(this.selectedActivities[key]);
+            }
+            this.selectedActivities = {};
+            this.selectedActivities[activityId] = activity;
+            this.activitySelected.emit(activity);
+            this.rerenderTree();
+          }
         }
       });
 

@@ -21,15 +21,15 @@
 
 ### Depends on
 
-- [elsa-workflow-properties-panel](../../workflow-definition-editor/elsa-workflow-properties-panel)
+- [elsa-workflow-blueprint-properties-panel](../elsa-workflow-blueprint-properties-panel)
 - context-consumer
 
 ### Graph
 ```mermaid
 graph TD;
-  elsa-workflow-blueprint-side-panel --> elsa-workflow-properties-panel
+  elsa-workflow-blueprint-side-panel --> elsa-workflow-blueprint-properties-panel
   elsa-workflow-blueprint-side-panel --> context-consumer
-  elsa-workflow-properties-panel --> context-consumer
+  elsa-workflow-blueprint-properties-panel --> context-consumer
   elsa-workflow-blueprint-viewer-screen --> elsa-workflow-blueprint-side-panel
   style elsa-workflow-blueprint-side-panel fill:#f9f,stroke:#333,stroke-width:4px
 ```

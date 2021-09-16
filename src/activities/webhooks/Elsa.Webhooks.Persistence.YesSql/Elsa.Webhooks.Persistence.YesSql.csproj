@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\..\..\..\common.props"/>
-    <Import Project="..\..\..\..\configureawait.props"/>
+    <Import Project="..\..\..\..\common.props" />
+    <Import Project="..\..\..\..\configureawait.props" />
 
     <PropertyGroup>
         <TargetFramework>net5.0</TargetFramework>
@@ -13,15 +13,15 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AutoMapper" Version="10.1.1"/>
-        <PackageReference Include="YesSql.Core" Version="3.0.6"/>
-        <PackageReference Include="YesSql.Provider.Sqlite" Version="3.0.6"/>
+        <PackageReference Include="AutoMapper" Version="10.1.1" />
+        <PackageReference Include="YesSql.Core" Version="3.0.7" />
+        <PackageReference Include="YesSql.Provider.Sqlite" Version="3.0.7" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.YesSql\Elsa.Persistence.YesSql.csproj"/>
-        <ProjectReference Include="..\Elsa.Activities.Webhooks\Elsa.Activities.Webhooks.csproj"/>
-        <ProjectReference Include="..\Elsa.Webhooks.Abstractions\Elsa.Webhooks.Abstractions.csproj"/>
+        <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.YesSql\Elsa.Persistence.YesSql.csproj" />
+        <ProjectReference Include="..\Elsa.Activities.Webhooks\Elsa.Activities.Webhooks.csproj" />
+        <ProjectReference Include="..\Elsa.Webhooks.Abstractions\Elsa.Webhooks.Abstractions.csproj" />
     </ItemGroup>
 
 </Project>

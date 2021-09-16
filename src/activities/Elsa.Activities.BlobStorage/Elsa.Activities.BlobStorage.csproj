@@ -14,7 +14,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Storage.Net" Version="9.2.7" />
+        <PackageReference Include="Storage.Net" Version="9.3.0" />
     </ItemGroup>
 
     <ItemGroup>

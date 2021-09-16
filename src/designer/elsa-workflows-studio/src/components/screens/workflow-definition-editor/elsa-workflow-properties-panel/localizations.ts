@@ -2,6 +2,7 @@
   'en': {
     default: {
       'Name': 'Name',
+      'DisplayName': 'Display Name',
       'Untitled': 'Untitled',
       'Id': 'Id',
       'Version': 'Latest Version',
@@ -17,6 +18,7 @@
   'nl-NL': {
     default: {
       'Name': 'Naam',
+      'DisplayName': 'Weergavenaam',
       'Untitled': 'Untitled',
       'Id': 'Id',
       'Version': 'Laatste Versie',
