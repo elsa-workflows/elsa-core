@@ -334,10 +334,6 @@ export class ElsaWorkflowPropertiesPanel {
       <dl
         class="elsa-mt-2 elsa-border-t elsa-border-b elsa-border-gray-200 elsa-divide-y elsa-divide-gray-200">
         <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
-          <dt class="elsa-text-gray-500">{t('Instance Id')}</dt>
-          <dd class="elsa-text-gray-900">{testActivity.workflowInstanceId}</dd>
-        </div>
-        <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
           <dt class="elsa-text-gray-500">{t('Correlation Id')}</dt>
           <dd class="elsa-text-gray-900">{testActivity.correlationId}</dd>
         </div>                      

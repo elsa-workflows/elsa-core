@@ -5,6 +5,6 @@ namespace Elsa.Server.Api.Services
 {
     public interface IWorkflowTestService
     {
-        Task DispatchMessage(WorkflowTestMessage message);
+        Task DispatchMessage(string signalRConnectionId, WorkflowTestMessage message);
     }
 }

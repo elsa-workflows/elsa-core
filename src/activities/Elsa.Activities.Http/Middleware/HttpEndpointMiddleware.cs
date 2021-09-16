@@ -76,8 +76,8 @@ namespace Elsa.Activities.Http.Middleware
             }
 
             var isTestRun = pendingWorkflowInstance.MetaData.FirstOrDefault(x => x.Key == "isTestRun").Value;
-            var workflowBlueprint = (isTestRun != null && Convert.ToBoolean(isTestRun)) ? 
-                await workflowRegistry.FindAsync(x => x.Id == pendingWorkflowInstance.DefinitionId, cancellationToken) : 
+            var workflowBlueprint = (isTestRun != null && Convert.ToBoolean(isTestRun)) ?
+                await workflowRegistry.FindAsync(x => x.Id == pendingWorkflowInstance.DefinitionId, cancellationToken) :
                 await workflowRegistry.FindAsync(x => x.IsPublished && x.Id == pendingWorkflowInstance.DefinitionId && !x.IsDisabled, cancellationToken);
 
             if (workflowBlueprint is null)

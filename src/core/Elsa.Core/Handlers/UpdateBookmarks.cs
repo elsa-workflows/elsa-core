@@ -1,9 +1,9 @@
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Events;
 using Elsa.Services;
-using Elsa.Services.Bookmarks;
 using MediatR;
 
 namespace Elsa.Handlers
@@ -20,7 +20,10 @@ namespace Elsa.Handlers
         public async Task Handle(WorkflowInstanceSaved notification, CancellationToken cancellationToken)
         {
             var workflowInstance = notification.WorkflowInstance;
-            await _bookmarkIndexer.IndexBookmarksAsync(workflowInstance, cancellationToken);
+
+            //var isTestRun = workflowInstance.MetaData.FirstOrDefault(x => x.Key == "isTestRun");
+            //if (!Convert.ToBoolean(isTestRun.Value))
+                await _bookmarkIndexer.IndexBookmarksAsync(workflowInstance, cancellationToken);
         }
 
         public async Task Handle(ManyWorkflowInstancesDeleted notification, CancellationToken cancellationToken)

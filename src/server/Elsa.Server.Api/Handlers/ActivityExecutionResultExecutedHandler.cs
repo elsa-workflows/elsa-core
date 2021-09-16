@@ -36,8 +36,6 @@ namespace Elsa.Server.Api.Handlers
 
             var message = new WorkflowTestMessage
             {
-                SignalRConnectionId = signalRConnectionId,
-                WorkflowInstanceId = context.WorkflowInstance.Id,
                 CorrelationId = context.CorrelationId,
                 ActivityId = context.ActivityId,
                 Status = context.WorkflowExecutionContext.Status == WorkflowStatus.Running
@@ -46,7 +44,7 @@ namespace Elsa.Server.Api.Handlers
                 Data = JsonConvert.SerializeObject(data, Formatting.Indented)
             };
 
-            await _workflowTestService.DispatchMessage(message);
+            await _workflowTestService.DispatchMessage(signalRConnectionId, message);
         }
     }
 }

@@ -1,14 +1,10 @@
-using System;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using AutoMapper.Internal;
 using Elsa.Models;
-using Elsa.Scripting.JavaScript.Events;
 using Elsa.Scripting.JavaScript.Providers;
 using MediatR;
 using Newtonsoft.Json;
@@ -46,7 +42,8 @@ namespace Elsa.Scripting.JavaScript.Services
 #pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
                 dynamic data = JsonConvert.DeserializeObject<ExpandoObject>(json, new ExpandoObjectConverter());
 #pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
-                string title = data != null ? data.title : "Schema";
+                string? title = data != null ? data.title : null;
+                title = title != null ? title : "schema";
 
                 var schema = await JsonSchema.FromJsonAsync(json);
                 var generator = new TypeScriptGenerator(schema, new TypeScriptGeneratorSettings {

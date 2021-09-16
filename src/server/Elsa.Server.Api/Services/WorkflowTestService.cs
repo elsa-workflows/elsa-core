@@ -14,9 +14,9 @@ namespace Elsa.Server.Api.Services
             _hubContext = hubContext;
         }
 
-        public async Task DispatchMessage(WorkflowTestMessage message)
+        public async Task DispatchMessage(string signalRConnectionId, WorkflowTestMessage message)
         {
-            await _hubContext.Clients.Client(message.SignalRConnectionId).SendAsync("DispatchMessage", message);
+            await _hubContext.Clients.Client(signalRConnectionId).SendAsync("DispatchMessage", message);
         }
     }
 }
