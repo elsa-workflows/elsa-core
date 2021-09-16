@@ -330,6 +330,11 @@ export interface WorkflowTestActivityMessage {
   data?: any;
 }
 
+export interface WorkflowTestUpdateRequest { 
+  activityId?: string,
+  jsonSchema?: string
+}
+
 export const getVersionOptionsString = (versionOptions?: VersionOptions) => {
 
   if (!versionOptions)

@@ -1,13 +1,14 @@
-import {Component, Prop, Event, EventEmitter, h, Method, State, Watch, Host} from '@stencil/core';
+import {Component, Prop, h, Method, State, Watch, Host} from '@stencil/core';
 import {HubConnection, HubConnectionBuilder} from '@microsoft/signalr';
 import {enter, leave} from "el-transition"
 import * as collection from 'lodash/collection';
-import {EventTypes, WorkflowDefinition, WorkflowDefinitionSummary, WorkflowTestActivityMessage} from "../../../../models";
+import {EventTypes, WorkflowDefinition, WorkflowDefinitionSummary, WorkflowTestActivityMessage, WorkflowTestUpdateRequest} from "../../../../models";
 import {i18n} from "i18next";
 import {loadTranslations} from "../../../i18n/i18n-loader";
 import {resources} from "./localizations";
-import {createElsaClient, eventBus, WorkflowTestExecuteRequest, WorkflowTestSaveRequest} from "../../../../services";
+import {createElsaClient, eventBus, WorkflowTestExecuteRequest} from "../../../../services";
 import Tunnel from "../../../../data/dashboard";
+import {convert} from 'json-to-json-schema';
 
 interface Tab {
   id: string;
@@ -110,19 +111,14 @@ export class ElsaWorkflowPropertiesPanel {
     await elsaClient.workflowTestApi.execute(request);
   }
 
-  async onUseAsSchemaClick() {
-    
-    const elsaClient = this.createClient();
+  async onUseAsSchemaClick() {    
     const value = this.testActivity.data["Inbound Request"];
-
-    const request: WorkflowTestSaveRequest = {
-      workflowDefinitionId: this.workflowDefinition.definitionId,
-      version: this.workflowDefinition.version,
+    const request: WorkflowTestUpdateRequest = {
       activityId: this.testActivity.activityId,
-      json: value
+      jsonSchema: JSON.stringify(convert(value), null, 4)
     };
 
-    await elsaClient.workflowTestApi.save(request);
+    eventBus.emit(EventTypes.ActivityJsonSchemaUpdated, this, request);
   }
 
   selectTestActivityMessageInternal(message?: WorkflowTestActivityMessage) {
@@ -337,10 +333,6 @@ export class ElsaWorkflowPropertiesPanel {
           <dt class="elsa-text-gray-500">{t('Correlation Id')}</dt>
           <dd class="elsa-text-gray-900">{testActivity.correlationId}</dd>
         </div>                      
-        <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
-          <dt class="elsa-text-gray-500">{t('Activity Id')}</dt>
-          <dd class="elsa-text-gray-900">{testActivity.activityId}</dd>
-        </div>
         <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
           <dt class="elsa-text-gray-500">{t('Status')}</dt>
           <dd class="elsa-text-gray-900 elsa-break-all">{testActivity.status || '-'}</dd>

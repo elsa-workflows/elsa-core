@@ -19,7 +19,9 @@ import {
   EventTypes,
   WorkflowModel,
   WorkflowPersistenceBehavior,
-  WorkflowTestActivityMessage
+  WorkflowTestActivityMessage,
+  WorkflowTestUpdateRequest,
+  SyntaxNames
 } from '../../../../models';
 import {eventBus} from '../../../../services';
 import * as d3 from 'd3';
@@ -216,6 +218,7 @@ export class ElsaWorkflowDesigner {
     eventBus.on(EventTypes.HideModalDialog, this.onCopyPasteActivityEnabled);
     eventBus.on(EventTypes.ShowWorkflowSettings, this.onCopyPasteActivityDisabled);
     eventBus.on(EventTypes.TestActivityMessageReceived, this.onTestActivityMessageReceived);
+    eventBus.on(EventTypes.ActivityJsonSchemaUpdated, this.onActivityJsonSchemaUpdate);
   }
 
   disconnectedCallback() {
@@ -225,6 +228,7 @@ export class ElsaWorkflowDesigner {
     eventBus.detach(EventTypes.HideModalDialog, this.onCopyPasteActivityEnabled);
     eventBus.detach(EventTypes.ShowWorkflowSettings, this.onCopyPasteActivityDisabled);
     eventBus.detach(EventTypes.TestActivityMessageReceived, this.onTestActivityMessageReceived);
+    eventBus.detach(EventTypes.ActivityJsonSchemaUpdated, this.onActivityJsonSchemaUpdate);
     d3.selectAll('.node').on('click', null);
     d3.selectAll('.edgePath').on('contextmenu', null);
   }
@@ -669,6 +673,18 @@ export class ElsaWorkflowDesigner {
 
     this.rerenderTree();
   };
+
+  onActivityJsonSchemaUpdate = (args) => {
+    let workflowModel = {...this.workflowModel};
+    const request = args as WorkflowTestUpdateRequest;
+    const activity = workflowModel.activities.find(x => x.activityId == request.activityId);
+    if (activity)
+    {
+      const property = activity.properties.find(x => x.name == 'Schema');
+      property.expressions[SyntaxNames.Literal] = request.jsonSchema;
+      this.updateWorkflowModel(workflowModel);
+    }
+  };  
 
   renderNodes() {
     const prevTransform = this.innerD3Selected.attr('transform');

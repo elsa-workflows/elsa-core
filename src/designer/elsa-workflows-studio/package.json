@@ -55,6 +55,7 @@
     "i18next": "^20.3.3",
     "i18next-wc": "^1.1.0",
     "js-event-bus": "^1.1.0",
+    "json-to-json-schema": "^0.0.4",
     "lodash": "^4.17.21",
     "moment": "^2.29.1",
     "monaco-editor": "^0.25.2",

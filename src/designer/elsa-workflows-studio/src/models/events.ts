@@ -33,7 +33,8 @@ export const EventTypes = {
   ClipboardPermissionDenied: 'clipboard-permission-denied',
   ClipboardCopied: 'clipboard-copied',
   PasteActivity: 'paste-activity',
-  TestActivityMessageReceived: 'test-activity-message-received'
+  TestActivityMessageReceived: 'test-activity-message-received',
+  ActivityJsonSchemaUpdated: 'activity-json-schema-updated'
 };
 
 export interface AddActivityEventArgs {
