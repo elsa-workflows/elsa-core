@@ -328,6 +328,7 @@ export interface WorkflowTestActivityMessage {
   activityId: string;
   status: string;
   data?: any;
+  error?: string;
 }
 
 export interface WorkflowTestUpdateRequest { 

@@ -10,7 +10,7 @@ using Newtonsoft.Json.Linq;
 
 namespace Elsa.Server.Api.Handlers
 {
-    public class ActivityExecutionResultExecutedHandler : INotificationHandler<ActivityExecutionResultExecuted>
+    public class ActivityExecutionResultExecutedHandler : INotificationHandler<ActivityExecutionResultExecuted>, INotificationHandler<ActivityExecutionResultFailed>
     {
         private readonly IWorkflowTestService _workflowTestService;
 
@@ -42,6 +42,23 @@ namespace Elsa.Server.Api.Handlers
                     ? "Executed"
                     : context.WorkflowExecutionContext.Status.ToString(),
                 Data = JsonConvert.SerializeObject(data, Formatting.Indented)
+            };
+
+            await _workflowTestService.DispatchMessage(signalRConnectionId, message);
+        }
+
+        public async Task Handle(ActivityExecutionResultFailed notification, CancellationToken cancellationToken)
+        {
+            var context = notification.ActivityExecutionContext;
+            var signalRConnectionId = context.WorkflowExecutionContext.WorkflowBlueprint.SignalRConnectionId;
+            if (string.IsNullOrWhiteSpace(signalRConnectionId)) return;
+
+            var message = new WorkflowTestMessage
+            {
+                CorrelationId = context.CorrelationId,
+                ActivityId = context.ActivityId,
+                Status = "Failed",
+                Error = notification.Exception.InnerException?.InnerException?.ToString()
             };
 
             await _workflowTestService.DispatchMessage(signalRConnectionId, message);

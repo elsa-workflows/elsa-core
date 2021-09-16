@@ -277,7 +277,7 @@ export class ElsaWorkflowPropertiesPanel {
                 {t('ExecuteWorkflow')}
               </button>
             </div>
-            {this.renderActivityMessage()}
+            {this.renderActivityTestMessage()}            
           </div>
         </div>
       </div>
@@ -285,7 +285,7 @@ export class ElsaWorkflowPropertiesPanel {
   }
 
 
-  renderActivityMessage() {
+  renderActivityTestMessage() {
 
     const {testActivity} = this;
 
@@ -330,7 +330,7 @@ export class ElsaWorkflowPropertiesPanel {
       <dl
         class="elsa-mt-2 elsa-border-t elsa-border-b elsa-border-gray-200 elsa-divide-y elsa-divide-gray-200">
         <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
-          <dt class="elsa-text-gray-500">{t('Correlation Id')}</dt>
+          <dt class="elsa-text-gray-500">{'Correlation Id'}</dt>
           <dd class="elsa-text-gray-900">{testActivity.correlationId}</dd>
         </div>                      
         <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
@@ -356,9 +356,30 @@ export class ElsaWorkflowPropertiesPanel {
             }
           </div>
         ))}
+        {this.renderActivityTestError()}        
       </dl>
     );
   }
+
+  renderActivityTestError() {
+
+    const {testActivity} = this;
+
+    if (testActivity == undefined)
+      return    
+      
+    const t = (x, params?) => this.i18next.t(x, params);
+
+    if (!testActivity.error)
+      return;
+
+    return (
+      <div class="sm:elsa-col-span-2">
+        <dt class="elsa-text-sm elsa-font-medium elsa-text-gray-500 elsa-capitalize">{t('Error')}</dt>
+        <dd class="elsa-mt-1 elsa-text-sm elsa-text-gray-900 elsa-mb-2 elsa-overflow-x-auto">{testActivity.error}</dd>
+      </div>
+    );
+  }  
 
   createClient() {
     return createElsaClient(this.serverUrl);
