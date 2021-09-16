@@ -64,7 +64,8 @@ export class ElsaWorkflowDefinitionEditorScreen {
   i18next: i18n;
   el: HTMLElement;
   designer: HTMLElsaDesignerTreeElement;
-  propertiesPanel: HTMLElsaWorkflowPropertiesPanelElement;  
+  testPanel: HTMLElsaWorkflowTestPanelElement;  
+  flyoutPanel: HTMLElsaFlyoutPanelElement;
 
   @Method()
   async getServerUrl(): Promise<string> {
@@ -384,13 +385,13 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   async onActivitySelected(e: CustomEvent<ActivityModel>) {
     this.selectedActivityId = e.detail.activityId;
-    await this.propertiesPanel.selectTestActivity(this.selectedActivityId);
+    await this.testPanel.selectTestActivity(this.selectedActivityId);
   }
 
   async onActivityDeselected(e: CustomEvent<ActivityModel>) {
     if (this.selectedActivityId == e.detail.activityId)
       this.selectedActivityId = null;
-    await this.propertiesPanel.selectTestActivity(null);
+    await this.testPanel.selectTestActivity(null);
   }
   
   onConnectionContextMenuButtonClicked(e: CustomEvent<ActivityContextMenuState>) {
@@ -449,7 +450,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
                             onActivityDeselected={e => this.onActivityDeselected(e)}
                             class="elsa-flex-1"
                             ref={el => this.designer = el}/>
-        {this.renderPropertiesPanel()}
+        {this.renderPanel()}
         {this.renderWorkflowSettingsButton()}
         {this.renderActivityContextMenu()}
         {this.renderConnectionContextMenu()}
@@ -622,17 +623,21 @@ export class ElsaWorkflowDefinitionEditorScreen {
     };
   }
 
-  private renderPropertiesPanel() {
+  private renderPanel() {
     return (
-      <elsa-flyout-panel
-        expandButtonPosition={2}
-      >
+      <elsa-flyout-panel ref={el => this.flyoutPanel = el}>
         <elsa-tab-header tab="general" slot="header">General</elsa-tab-header>
         <elsa-tab-content tab="general" slot="content">
           <elsa-workflow-properties-panel
             workflowDefinition={this.workflowDefinition}
           />
         </elsa-tab-content>
+        <elsa-tab-header tab="test" slot="header">Test</elsa-tab-header>
+        <elsa-tab-content tab="test" slot="content">
+          <elsa-workflow-test-panel ref={el => this.testPanel = el}
+            workflowDefinition={this.workflowDefinition}
+          />
+        </elsa-tab-content>        
       </elsa-flyout-panel>
     );
   }

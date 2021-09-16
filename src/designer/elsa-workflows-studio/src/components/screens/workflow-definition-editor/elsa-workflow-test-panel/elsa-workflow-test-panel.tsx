@@ -39,6 +39,7 @@ export class ElsaWorkflowTestPanel {
     const message = this.workflowTestActivityMessages.find(x => x.activityId == activityId)
     const messageInternal = !!message ? message : null;
     this.selectTestActivityMessageInternal(messageInternal);
+    this.render();
   }
 
   @Watch('workflowDefinition')
@@ -108,27 +109,19 @@ export class ElsaWorkflowTestPanel {
 
     return (
       <Host>
-      <div class="elsa-h-full elsa-flex elsa-flex-col elsa-py-6 elsa-bg-white elsa-shadow-xl elsa-overflow-y-scroll elsa-bg-white">
-        <div class="elsa-h-full">
-          <div class="elsa-p-6">
-            <div class="elsa-px-4 elsa-py-3 elsa-bg-gray-50 elsa-text-left sm:px-6">
-              <button type="button"
-                      onClick={() => this.onExecuteWorkflowClick()}
-                      class="elsa-ml-0 elsa-w-full elsa-inline-flex elsa-justify-center elsa-rounded-md elsa-border elsa-border-transparent elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-bg-blue-600 elsa-text-base elsa-font-medium elsa-text-white hover:elsa-bg-blue-700 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 sm:elsa-ml-3 sm:elsa-w-auto sm:elsa-text-sm">
-                {t('ExecuteWorkflow')}
-              </button>
-            </div>
-            {this.renderActivityTestMessage()}            
-          </div>
-        </div>
-      </div>
+        <button type="button"
+                onClick={() => this.onExecuteWorkflowClick()}
+                class="elsa-ml-0 elsa-w-full elsa-inline-flex elsa-justify-center elsa-rounded-md elsa-border elsa-border-transparent elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-bg-blue-600 elsa-text-base elsa-font-medium elsa-text-white hover:elsa-bg-blue-700 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 sm:elsa-ml-3 sm:elsa-w-auto sm:elsa-text-sm">
+          {t('ExecuteWorkflow')}
+        </button>
+        {this.renderActivityTestMessage()}
       </Host>
     );
   }
 
 
   renderActivityTestMessage() {
-
+debugger
     const {testActivity} = this;
 
     if (testActivity == undefined)
@@ -169,34 +162,31 @@ export class ElsaWorkflowTestPanel {
     const isInboundRequest = dataKey === "Inbound Request";
 
     return (
-      <dl
-        class="elsa-mt-2 elsa-border-t elsa-border-b elsa-border-gray-200 elsa-divide-y elsa-divide-gray-200">
-        <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
-          <dt class="elsa-text-gray-500">{'Correlation Id'}</dt>
-          <dd class="elsa-text-gray-900">{testActivity.correlationId}</dd>
-        </div>                      
-        <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
-          <dt class="elsa-text-gray-500">{t('Status')}</dt>
-          <dd class="elsa-text-gray-900 elsa-break-all">{testActivity.status || '-'}</dd>
-        </div>
-        {collection.map(filteredData, (v, k) => (
-          <div>
-            <div class="sm:elsa-col-span-2">
-              <dt class="elsa-text-sm elsa-font-medium elsa-text-gray-500 elsa-capitalize">{k}</dt>
-              <dd class="elsa-mt-1 elsa-text-sm elsa-text-gray-900 elsa-mb-2 elsa-overflow-x-auto">{v}</dd>
-            </div>
-            {isInboundRequest ? 
-              <div class="elsa-px-4 elsa-py-3 elsa-bg-gray-50 elsa-text-left sm:px-6">
-                <button type="button"
-                        onClick={() => this.onUseAsSchemaClick()}
-                        class="elsa-ml-0 elsa-w-full elsa-inline-flex elsa-justify-center elsa-rounded-md elsa-border elsa-border-transparent elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-bg-blue-600 elsa-text-base elsa-font-medium elsa-text-white hover:elsa-bg-blue-700 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 sm:elsa-ml-3 sm:elsa-w-auto sm:elsa-text-sm">
-                  {t('UseAsSchema')}
-                </button>
-              </div>
-              :
-              null
-            }
+      <dl class="elsa-border-b elsa-border-gray-200 elsa-divide-y elsa-divide-gray-200">
+      <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
+        <dt class="elsa-text-gray-500">{'Correlation Id'}</dt>
+        <dd class="elsa-text-gray-900">{testActivity.correlationId}</dd>
+      </div>
+      <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
+        <dt class="elsa-text-gray-500">{t('Status')}</dt>
+        <dd class="elsa-text-gray-900">{testActivity.status}</dd>
+      </div>
+      {collection.map(filteredData, (v, k) => (
+        <div>
+          <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
+            <dt class="elsa-text-gray-500">{k}</dt>
+            <dd class="elsa-mt-1 elsa-text-sm elsa-text-gray-900 elsa-mb-2 elsa-overflow-x-auto">{v}</dd>
           </div>
+          {isInboundRequest ? 
+            <button type="button"
+                    onClick={() => this.onUseAsSchemaClick()}
+                    class="elsa-ml-0 elsa-w-full elsa-inline-flex elsa-justify-center elsa-rounded-md elsa-border elsa-border-transparent elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-bg-blue-600 elsa-text-base elsa-font-medium elsa-text-white hover:elsa-bg-blue-700 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 sm:elsa-ml-3 sm:elsa-w-auto sm:elsa-text-sm">
+              {t('UseAsSchema')}
+            </button>
+            :
+            null
+          }
+        </div>
         ))}
         {this.renderActivityTestError()}        
       </dl>
@@ -216,8 +206,8 @@ export class ElsaWorkflowTestPanel {
       return;
 
     return (
-      <div class="sm:elsa-col-span-2">
-        <dt class="elsa-text-sm elsa-font-medium elsa-text-gray-500 elsa-capitalize">{t('Error')}</dt>
+      <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
+        <dt class="elsa-text-gray-500">{t('Error')}</dt>
         <dd class="elsa-mt-1 elsa-text-sm elsa-text-gray-900 elsa-mb-2 elsa-overflow-x-auto">{testActivity.error}</dd>
       </div>
     );
