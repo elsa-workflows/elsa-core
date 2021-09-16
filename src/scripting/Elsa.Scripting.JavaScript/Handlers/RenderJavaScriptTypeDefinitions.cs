@@ -1,5 +1,4 @@
 using System;
-using System.Dynamic;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -8,8 +7,6 @@ using Elsa.Scripting.JavaScript.Events;
 using Elsa.Services;
 using Elsa.Services.Models;
 using MediatR;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 
 namespace Elsa.Scripting.JavaScript.Handlers
 {
@@ -143,11 +140,7 @@ namespace Elsa.Scripting.JavaScript.Handlers
                 if (string.IsNullOrWhiteSpace(json))
                     return null;
 
-#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
-                dynamic data = JsonConvert.DeserializeObject<ExpandoObject>(json, new ExpandoObjectConverter());
-#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
-                string title = data != null ? data.title : "Schema";
-                return title;
+                return "Json";
             }
 
             string? GetActivityTargetType(Models.ActivityDefinition activity)
