@@ -11,4 +11,10 @@ namespace Elsa.Testing.Shared.AutoFixture.Customizations
 
         public StubElsaContextCustomization(ParameterInfo? parameter) : base(parameter) {}
     }
+    
+    public class StubActivityBlueprintCustomization : SpecimenBuilderForParameterCustomization
+    {
+        protected override ISpecimenBuilder GetUnfilteredSpecimenBuilder() => new StubActivityBlueprintSpecimenBuilder();
+        public StubActivityBlueprintCustomization(ParameterInfo? parameter) : base(parameter) {}
+    }
 }
