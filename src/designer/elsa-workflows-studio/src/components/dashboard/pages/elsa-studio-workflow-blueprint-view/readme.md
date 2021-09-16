@@ -23,6 +23,9 @@
 graph TD;
   elsa-studio-workflow-blueprint-view --> elsa-workflow-blueprint-viewer-screen
   elsa-workflow-blueprint-viewer-screen --> elsa-designer-tree
+  elsa-workflow-blueprint-viewer-screen --> elsa-flyout-panel
+  elsa-workflow-blueprint-viewer-screen --> elsa-tab-header
+  elsa-workflow-blueprint-viewer-screen --> elsa-tab-content
   elsa-workflow-blueprint-viewer-screen --> elsa-workflow-blueprint-side-panel
   elsa-workflow-blueprint-viewer-screen --> context-consumer
   elsa-workflow-blueprint-side-panel --> elsa-workflow-blueprint-properties-panel

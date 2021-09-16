@@ -2306,6 +2306,10 @@ select {
   display: grid;
 }
 
+.elsa-hidden {
+  display: none;
+}
+
 .elsa-h-1 {
   height: 0.25rem;
 }
@@ -16963,10 +16967,6 @@ select {
   transition-duration: 300ms;
 }
 
-.elsa-duration-500 {
-  transition-duration: 500ms;
-}
-
 .elsa-ease-in {
   transition-timing-function: cubic-bezier(0.4, 0, 1, 1);
 }
@@ -25334,10 +25334,6 @@ svg.jtk-connector.jtk-hover path {
   .sm\:elsa-px-10 {
     padding-left: 2.5rem;
     padding-right: 2.5rem;
-  }
-
-  .sm\:elsa-pl-16 {
-    padding-left: 4rem;
   }
 
   .sm\:elsa-text-left {

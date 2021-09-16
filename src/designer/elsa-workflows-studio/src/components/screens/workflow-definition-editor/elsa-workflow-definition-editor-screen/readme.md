@@ -80,6 +80,9 @@ Type: `Promise<void>`
 - [elsa-activity-picker-modal](../elsa-activity-picker-modal)
 - [elsa-activity-editor-modal](../elsa-activity-editor-modal)
 - [elsa-workflow-publish-button](../elsa-workflow-publish-button)
+- [elsa-flyout-panel](../../../shared/elsa-flyout-panel)
+- [elsa-tab-header](../../../shared/elsa-tab-header)
+- [elsa-tab-content](../../../shared/elsa-tab-content)
 - [elsa-workflow-properties-panel](../elsa-workflow-properties-panel)
 - context-consumer
 
@@ -92,6 +95,9 @@ graph TD;
   elsa-workflow-definition-editor-screen --> elsa-activity-picker-modal
   elsa-workflow-definition-editor-screen --> elsa-activity-editor-modal
   elsa-workflow-definition-editor-screen --> elsa-workflow-publish-button
+  elsa-workflow-definition-editor-screen --> elsa-flyout-panel
+  elsa-workflow-definition-editor-screen --> elsa-tab-header
+  elsa-workflow-definition-editor-screen --> elsa-tab-content
   elsa-workflow-definition-editor-screen --> elsa-workflow-properties-panel
   elsa-workflow-definition-editor-screen --> context-consumer
   elsa-workflow-settings-modal --> elsa-modal-dialog
