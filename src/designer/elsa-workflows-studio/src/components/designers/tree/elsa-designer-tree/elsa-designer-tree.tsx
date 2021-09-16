@@ -873,7 +873,7 @@ export class ElsaWorkflowDesigner {
     const activityBorderColor = !!this.activityBorderColor ? this.activityBorderColor(activity) : 'gray';
     const selectedColor = !!this.activityBorderColor ? activityBorderColor : 'blue';
     const cssClass = !!this.selectedActivities[activity.activityId] ? `elsa-border-${selectedColor}-600` : `elsa-border-${activityBorderColor}-200 hover:elsa-border-${selectedColor}-600`;
-    const displayName = displayContext.displayName || activity.displayName;
+    const displayName = displayContext != undefined ? displayContext.displayName : activity.displayName;
     const typeName = activity.type;
 
     return `<div id=${`activity-${activity.activityId}`}
@@ -897,17 +897,17 @@ export class ElsaWorkflowDesigner {
       </div>`;
   }
 
-  renderActivityBody(displayContext: ActivityDesignDisplayContext) {
+  renderActivityBody(displayContext: ActivityDesignDisplayContext) {    
     return (
       `<div class="elsa-border-t elsa-border-t-solid">
           <div class="elsa-p-6 elsa-text-gray-400 elsa-text-sm">
-            <div class="elsa-mb-2">${!!displayContext.bodyDisplay ? displayContext.bodyDisplay : ''}</div>
+            <div class="elsa-mb-2">${displayContext != undefined ? displayContext.bodyDisplay : ''}</div>
             <div>
               <span class="elsa-inline-flex elsa-items-center elsa-px-2.5 elsa-py-0.5 elsa-rounded-full elsa-text-xs elsa-font-medium elsa-bg-gray-100 elsa-text-gray-500">
                 <svg class="-elsa-ml-0.5 elsa-mr-1.5 elsa-h-2 elsa-w-2 elsa-text-gray-400" fill="currentColor" viewBox="0 0 8 8">
                   <circle cx="4" cy="4" r="3" />
                 </svg>
-                ${displayContext.activityModel.activityId}
+                ${displayContext != undefined ? displayContext.activityModel.activityId : ''}
               </span>
             </div>
           </div>
