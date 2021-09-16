@@ -14,11 +14,11 @@ namespace Elsa.Testing.Shared.AutoFixture.Behaviors
 
         class PostprocessingTransformation<T> : ISpecimenBuilderTransformation where T : class
         {
-            readonly Action<T,ISpecimenContext> builderCustomizer;
+            readonly Action<T,ISpecimenContext> _builderCustomizer;
             
             public ISpecimenBuilderNode Transform(ISpecimenBuilder builder)
             {
-                var command = new PostprocessingCommand<T>(builderCustomizer);
+                var command = new PostprocessingCommand<T>(_builderCustomizer);
                 var spec = IsInstanceOf.Type<T>();
                 
                 return new Postprocessor(builder, command, spec);
@@ -26,23 +26,23 @@ namespace Elsa.Testing.Shared.AutoFixture.Behaviors
 
             public PostprocessingTransformation(Action<T,ISpecimenContext> builderCustomizer)
             {
-                this.builderCustomizer = builderCustomizer ?? throw new ArgumentNullException(nameof(builderCustomizer));
+                _builderCustomizer = builderCustomizer ?? throw new ArgumentNullException(nameof(builderCustomizer));
             }
         }
 
         class PostprocessingCommand<T> : ISpecimenCommand where T : class
         {
-            readonly Action<T,ISpecimenContext> builderCustomizer;
+            readonly Action<T,ISpecimenContext> _builderCustomizer;
             
             public void Execute(object specimen, ISpecimenContext context)
             {
                 var builder = (T) specimen;
-                builderCustomizer(builder, context);
+                _builderCustomizer(builder, context);
             }
 
             public PostprocessingCommand(Action<T,ISpecimenContext> builderCustomizer)
             {
-                this.builderCustomizer = builderCustomizer ?? throw new ArgumentNullException(nameof(builderCustomizer));
+                _builderCustomizer = builderCustomizer ?? throw new ArgumentNullException(nameof(builderCustomizer));
             }
         }
     }

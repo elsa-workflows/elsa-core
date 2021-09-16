@@ -9,21 +9,21 @@ namespace Elsa.Testing.Shared.AutoFixture.SpecimenBuilders
 {
     public class MockBookmarkProvidersSpecimenBuilder : ISpecimenBuilder
     {
-        readonly int howMany;
+        readonly int _howMany;
 
         public object Create(object request, ISpecimenContext context)
         {
             if (!request.IsAnAutofixtureRequestForType<IEnumerable<IBookmarkProvider>>())
                 return new NoSpecimen();
 
-            return Enumerable.Range(0, howMany)
+            return Enumerable.Range(0, _howMany)
                 .Select(x => Mock.Of<IBookmarkProvider>())
                 .ToList();
         }
 
         public MockBookmarkProvidersSpecimenBuilder(int howMany)
         {
-            this.howMany = howMany;
+            _howMany = howMany;
         }
     }
 }

@@ -7,14 +7,14 @@ namespace Elsa.Testing.Shared.AutoFixture.Attributes
 {
     public class MockBookmarkProvidersAttribute : CustomizeAttribute
     {
-        readonly int howMany;
+        readonly int _howMany;
 
         public override ICustomization GetCustomization(ParameterInfo parameter)
-            => new MockBookmarkProvidersCustomization(parameter, howMany);
+            => new MockBookmarkProvidersCustomization(parameter, _howMany);
 
         public MockBookmarkProvidersAttribute(int howMany = 3)
         {
-            this.howMany = howMany;
+            _howMany = howMany;
         }
     }
 }
