@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,10 +19,7 @@ namespace Elsa.Handlers
         public async Task Handle(WorkflowInstanceSaved notification, CancellationToken cancellationToken)
         {
             var workflowInstance = notification.WorkflowInstance;
-
-            //var isTestRun = workflowInstance.MetaData.FirstOrDefault(x => x.Key == "isTestRun");
-            //if (!Convert.ToBoolean(isTestRun.Value))
-                await _bookmarkIndexer.IndexBookmarksAsync(workflowInstance, cancellationToken);
+            await _bookmarkIndexer.IndexBookmarksAsync(workflowInstance, cancellationToken);
         }
 
         public async Task Handle(ManyWorkflowInstancesDeleted notification, CancellationToken cancellationToken)
