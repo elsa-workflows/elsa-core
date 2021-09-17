@@ -51,7 +51,7 @@ export class ElsaWorkflowInstanceListScreen {
   @State() currentSearchTerm?: string;
 
   i18next: i18n;
-  
+
   async componentWillLoad() {
     this.i18next = await loadTranslations(this.culture, resources);
 
@@ -73,7 +73,7 @@ export class ElsaWorkflowInstanceListScreen {
       name: 'Delete',
     }];
 
-    eventBus.emit(EventTypes.WorkflowInstanceBulkActionsLoading, this, {sender: this, bulkActions});
+    await eventBus.emit(EventTypes.WorkflowInstanceBulkActionsLoading, this, {sender: this, bulkActions});
 
     this.bulkActions = bulkActions;
   }
@@ -104,8 +104,8 @@ export class ElsaWorkflowInstanceListScreen {
   @Watch("currentPageSize")
   async handlePageSizeChanged(value: number) {
     this.currentPageSize = value;
-	this.currentPageSize = isNaN(this.currentPageSize) ? ElsaWorkflowInstanceListScreen.DEFAULT_PAGE_SIZE : this.currentPageSize;
-	this.currentPageSize = Math.max(Math.min(this.currentPageSize, ElsaWorkflowInstanceListScreen.MAX_PAGE_SIZE), ElsaWorkflowInstanceListScreen.MIN_PAGE_SIZE);
+    this.currentPageSize = isNaN(this.currentPageSize) ? ElsaWorkflowInstanceListScreen.DEFAULT_PAGE_SIZE : this.currentPageSize;
+    this.currentPageSize = Math.max(Math.min(this.currentPageSize, ElsaWorkflowInstanceListScreen.MAX_PAGE_SIZE), ElsaWorkflowInstanceListScreen.MIN_PAGE_SIZE);
     await this.loadWorkflowInstances();
   }
 
@@ -124,30 +124,30 @@ export class ElsaWorkflowInstanceListScreen {
     this.selectedWorkflowStatus = query.status;
     this.selectedOrderByState = query.orderBy ?? OrderBy.Started;
     this.currentPage = !!query.page ? parseInt(query.page) : 0;
-	this.currentPage = isNaN(this.currentPage) ? ElsaWorkflowInstanceListScreen.START_PAGE : this.currentPage;
+    this.currentPage = isNaN(this.currentPage) ? ElsaWorkflowInstanceListScreen.START_PAGE : this.currentPage;
     this.currentPageSize = !!query.pageSize ? parseInt(query.pageSize) : ElsaWorkflowInstanceListScreen.DEFAULT_PAGE_SIZE;
-	this.currentPageSize = isNaN(this.currentPageSize) ? ElsaWorkflowInstanceListScreen.DEFAULT_PAGE_SIZE : this.currentPageSize;
-	this.currentPageSize = Math.max(Math.min(this.currentPageSize, ElsaWorkflowInstanceListScreen.MAX_PAGE_SIZE), ElsaWorkflowInstanceListScreen.MIN_PAGE_SIZE);
+    this.currentPageSize = isNaN(this.currentPageSize) ? ElsaWorkflowInstanceListScreen.DEFAULT_PAGE_SIZE : this.currentPageSize;
+    this.currentPageSize = Math.max(Math.min(this.currentPageSize, ElsaWorkflowInstanceListScreen.MAX_PAGE_SIZE), ElsaWorkflowInstanceListScreen.MIN_PAGE_SIZE);
   }
 
   async loadWorkflowBlueprints() {
-    const elsaClient = this.createClient();
+    const elsaClient = await this.createClient();
     const versionOptions: VersionOptions = {allVersions: true};
     const workflowBlueprintPagedList = await elsaClient.workflowRegistryApi.list(null, null, versionOptions);
     this.workflowBlueprints = workflowBlueprintPagedList.items;
   }
 
   async loadWorkflowInstances() {
-	this.currentPage = isNaN(this.currentPage) ? ElsaWorkflowInstanceListScreen.START_PAGE : this.currentPage;
-	this.currentPage = Math.max(this.currentPage, ElsaWorkflowInstanceListScreen.START_PAGE);
-	this.currentPageSize = isNaN(this.currentPageSize) ? ElsaWorkflowInstanceListScreen.DEFAULT_PAGE_SIZE : this.currentPageSize;
-    const elsaClient = this.createClient();
+    this.currentPage = isNaN(this.currentPage) ? ElsaWorkflowInstanceListScreen.START_PAGE : this.currentPage;
+    this.currentPage = Math.max(this.currentPage, ElsaWorkflowInstanceListScreen.START_PAGE);
+    this.currentPageSize = isNaN(this.currentPageSize) ? ElsaWorkflowInstanceListScreen.DEFAULT_PAGE_SIZE : this.currentPageSize;
+    const elsaClient = await this.createClient();
     this.workflowInstances = await elsaClient.workflowInstancesApi.list(this.currentPage, this.currentPageSize, this.selectedWorkflowId, this.selectedWorkflowStatus, this.selectedOrderByState, this.currentSearchTerm);
-	const maxPage = Math.floor(this.workflowInstances.totalCount / this.currentPageSize);
-	if (this.currentPage > maxPage) {
+    const maxPage = Math.floor(this.workflowInstances.totalCount / this.currentPageSize);
+    if (this.currentPage > maxPage) {
       this.currentPage = maxPage;
       this.workflowInstances = await elsaClient.workflowInstancesApi.list(this.currentPage, this.currentPageSize, this.selectedWorkflowId, this.selectedWorkflowStatus, this.selectedOrderByState, this.currentSearchTerm);
-	}
+    }
   }
 
   createClient() {
@@ -175,11 +175,11 @@ export class ElsaWorkflowInstanceListScreen {
       filters['page'] = this.currentPage.toString();
 
     var newPageSize = !!pageSize ? pageSize : this.currentPageSize;
-	newPageSize = Math.max(Math.min(newPageSize, 100), ElsaWorkflowInstanceListScreen.MIN_PAGE_SIZE);
+    newPageSize = Math.max(Math.min(newPageSize, 100), ElsaWorkflowInstanceListScreen.MIN_PAGE_SIZE);
     filters['pageSize'] = newPageSize.toString();
-  
+
     if (newPageSize != this.currentPageSize)
-		filters['page'] = Math.floor(this.currentPage * this.currentPageSize / newPageSize).toString();
+      filters['page'] = Math.floor(this.currentPage * this.currentPageSize / newPageSize).toString();
 
     const queryString = collection.map(filters, (v, k) => `${k}=${v}`).join('&');
     return `/workflow-instances?${queryString}`;
@@ -251,7 +251,7 @@ export class ElsaWorkflowInstanceListScreen {
     if (!result)
       return;
 
-    const elsaClient = this.createClient();
+    const elsaClient = await this.createClient();
     await elsaClient.workflowInstancesApi.cancel(workflowInstance.id);
     await this.loadWorkflowInstances();
   }
@@ -263,7 +263,7 @@ export class ElsaWorkflowInstanceListScreen {
     if (!result)
       return;
 
-    const elsaClient = this.createClient();
+    const elsaClient = await this.createClient();
     await elsaClient.workflowInstancesApi.delete(workflowInstance.id);
     await this.loadWorkflowInstances();
   }
@@ -275,7 +275,7 @@ export class ElsaWorkflowInstanceListScreen {
     if (!result)
       return;
 
-    const elsaClient = this.createClient();
+    const elsaClient = await this.createClient();
     await elsaClient.workflowInstancesApi.bulkCancel({workflowInstanceIds: this.selectedWorkflowInstanceIds});
     this.selectedWorkflowInstanceIds = [];
     await this.loadWorkflowInstances();
@@ -289,7 +289,7 @@ export class ElsaWorkflowInstanceListScreen {
     if (!result)
       return;
 
-    const elsaClient = this.createClient();
+    const elsaClient = await this.createClient();
     await elsaClient.workflowInstancesApi.bulkDelete({workflowInstanceIds: this.selectedWorkflowInstanceIds});
     this.selectedWorkflowInstanceIds = [];
     await this.loadWorkflowInstances();
@@ -351,7 +351,8 @@ export class ElsaWorkflowInstanceListScreen {
         <svg class="elsa-h-5 elsa-w-5 elsa-text-gray-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="2"
              stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/>
         </svg>
       );
     };
@@ -657,7 +658,7 @@ export class ElsaWorkflowInstanceListScreen {
     const history = this.history;
 
     const items: Array<DropdownButtonItem> = pageSizes.map(x => {
-      const text = ""+x;
+      const text = "" + x;
       const item: DropdownButtonItem = {text: text, isSelected: x == currentPageSize, value: x};
 
       if (!!history)
@@ -667,12 +668,15 @@ export class ElsaWorkflowInstanceListScreen {
     });
 
     const renderIcon = function () {
-      return <svg class="elsa-mr-3 elsa-h-5 elsa-w-5 elsa-text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      return <svg class="elsa-mr-3 elsa-h-5 elsa-w-5 elsa-text-gray-400" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 8h9m-9 4h9m5"/>
       </svg>
     };
 
-    return <elsa-dropdown-button text={currentPageSizeText} items={items} icon={renderIcon()} origin={DropdownButtonOrigin.TopRight} onItemSelected={e => this.handlePageSizeChanged(e.detail.value)}/>
+    return <elsa-dropdown-button text={currentPageSizeText} items={items} icon={renderIcon()}
+                                 origin={DropdownButtonOrigin.TopRight}
+                                 onItemSelected={e => this.handlePageSizeChanged(e.detail.value)}/>
   }
 
   renderOrderByFilter() {

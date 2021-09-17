@@ -76,7 +76,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   @Method()
   async exportWorkflow() {
-    const client = createElsaClient(this.serverUrl);
+    const client = await createElsaClient(this.serverUrl);
     const workflowDefinition = this.workflowDefinition;
     const versionOptions: VersionOptions = {version: workflowDefinition.version};
     const response = await client.workflowDefinitionsApi.export(workflowDefinition.definitionId, versionOptions);
@@ -85,7 +85,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   @Method()
   async importWorkflow(file: File) {
-    const client = createElsaClient(this.serverUrl);
+    const client = await createElsaClient(this.serverUrl);
 
     this.importing = true;
     this.imported = false;
@@ -99,7 +99,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
       this.importing = false;
       this.imported = true;
       setTimeout(() => this.imported = false, 500);
-      eventBus.emit(EventTypes.WorkflowImported, this, this.workflowDefinition);
+      await eventBus.emit(EventTypes.WorkflowImported, this, this.workflowDefinition);
     } catch (e) {
       console.error(e);
       this.importing = false;
@@ -114,7 +114,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
     const workflowDefinitionId = newValue;
     let workflowDefinition: WorkflowDefinition = ElsaWorkflowDefinitionEditorScreen.createWorkflowDefinition();
     workflowDefinition.definitionId = workflowDefinitionId;
-    const client = createElsaClient(this.serverUrl);
+    const client = await createElsaClient(this.serverUrl);
 
     if (workflowDefinitionId && workflowDefinitionId.length > 0) {
       try {
@@ -171,12 +171,12 @@ export class ElsaWorkflowDefinitionEditorScreen {
   t = (key: string) => this.i18next.t(key);
 
   async loadActivityDescriptors() {
-    const client = createElsaClient(this.serverUrl);
+    const client = await createElsaClient(this.serverUrl);
     state.activityDescriptors = await client.activitiesApi.list();
   }
 
   async loadWorkflowStorageDescriptors() {
-    const client = createElsaClient(this.serverUrl);
+    const client = await createElsaClient(this.serverUrl);
     state.workflowStorageDescriptors = await client.workflowStorageProvidersApi.list();
   }
 
@@ -189,14 +189,14 @@ export class ElsaWorkflowDefinitionEditorScreen {
     this.publishing = true;
     await this.saveWorkflow(true);
     this.publishing = false;
-    eventBus.emit(EventTypes.WorkflowPublished, this, this.workflowDefinition);
+    await eventBus.emit(EventTypes.WorkflowPublished, this, this.workflowDefinition);
   }
 
   async unPublishWorkflow() {
     this.unPublishing = true;
     await this.unpublishWorkflow();
     this.unPublishing = false;
-    eventBus.emit(EventTypes.WorkflowRetracted, this, this.workflowDefinition);
+    await eventBus.emit(EventTypes.WorkflowRetracted, this, this.workflowDefinition);
   }
 
   async saveWorkflow(publish?: boolean) {
@@ -209,7 +209,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
     workflowModel = workflowModel || this.workflowModel;
 
-    const client = createElsaClient(this.serverUrl);
+    const client = await createElsaClient(this.serverUrl);
     let workflowDefinition = this.workflowDefinition;
     const isNew = typeof workflowDefinition.definitionId === 'undefined' && typeof this.workflowDefinitionId === 'undefined';
 
@@ -273,7 +273,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
   }
 
   async unpublishWorkflow() {
-    const client = createElsaClient(this.serverUrl);
+    const client = await createElsaClient(this.serverUrl);
     const workflowDefinitionId = this.workflowDefinition.definitionId;
     this.unPublishing = true;
 
@@ -336,8 +336,8 @@ export class ElsaWorkflowDefinitionEditorScreen {
     this.connectionContextMenuState = state;
   }
 
-  onShowWorkflowSettingsClick() {
-    eventBus.emit(EventTypes.ShowWorkflowSettings);
+  async onShowWorkflowSettingsClick() {
+    await eventBus.emit(EventTypes.ShowWorkflowSettings);
   }
 
   async onPublishClicked() {
@@ -360,7 +360,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
     e.preventDefault();
     await this.designer.removeActivity(this.activityContextMenuState.activity);
     this.handleContextMenuChange({x: 0, y: 0, shown: false, activity: null});
-    eventBus.emit(EventTypes.HideModalDialog);
+    await eventBus.emit(EventTypes.HideModalDialog);
   }
 
   async onEditActivityClick(e: Event) {
@@ -372,7 +372,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
   async onPasteActivityClick(e: Event) {
     e.preventDefault();
     let activityModel = this.connectionContextMenuState.activity;
-    eventBus.emit(EventTypes.PasteActivity, this, activityModel);
+    await eventBus.emit(EventTypes.PasteActivity, this, activityModel);
     this.handleConnectionContextMenuChange({x: 0, y: 0, shown: false, activity: null});
   }
 

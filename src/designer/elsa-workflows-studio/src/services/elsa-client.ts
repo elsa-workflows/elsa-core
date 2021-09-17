@@ -29,7 +29,7 @@ import {
 let _httpClient: AxiosInstance = null;
 let _elsaClient: ElsaClient = null;
 
-export const createHttpClient = function (baseAddress: string): AxiosInstance {
+export const createHttpClient = async function (baseAddress: string): Promise<AxiosInstance> {
   if (!!_httpClient)
     return _httpClient;
 
@@ -37,22 +37,22 @@ export const createHttpClient = function (baseAddress: string): AxiosInstance {
     baseURL: baseAddress
   };
 
-  eventBus.emit(EventTypes.HttpClientConfigCreated, this, {config});
+  await eventBus.emit(EventTypes.HttpClientConfigCreated, this, {config});
 
   const httpClient = axios.create(config);
   const service = new Service(httpClient);
 
-  eventBus.emit(EventTypes.HttpClientCreated, this, {service, httpClient});
+  await eventBus.emit(EventTypes.HttpClientCreated, this, {service, httpClient});
 
   return _httpClient = httpClient;
 }
 
-export const createElsaClient = function (serverUrl: string): ElsaClient {
+export const createElsaClient = async function (serverUrl: string): Promise<ElsaClient> {
 
   if (!!_elsaClient)
     return _elsaClient;
 
-  const httpClient: AxiosInstance = createHttpClient(serverUrl);
+  const httpClient: AxiosInstance = await createHttpClient(serverUrl);
 
   _elsaClient = {
     activitiesApi: {

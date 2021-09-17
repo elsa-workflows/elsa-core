@@ -52,7 +52,7 @@ export class ElsaWorkflowInstanceJournal {
   @Watch('workflowInstanceId')
   async workflowInstanceIdChangedHandler(newValue: string) {
     const workflowInstanceId = newValue;
-    const client = createElsaClient(this.serverUrl);
+    const client = await createElsaClient(this.serverUrl);
 
     if (workflowInstanceId && workflowInstanceId.length > 0) {
       try {

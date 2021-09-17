@@ -125,7 +125,7 @@ export class ElsaWorkflowBlueprintPropertiesPanel {
   }
 
   async loadPublishedVersion() {
-    const elsaClient = this.createClient();
+    const elsaClient = await this.createClient();
     const {workflowBlueprint} = this;
 
     const publishedWorkflowDefinitions = await elsaClient.workflowDefinitionsApi.getMany([workflowBlueprint.id], {isPublished: true});
