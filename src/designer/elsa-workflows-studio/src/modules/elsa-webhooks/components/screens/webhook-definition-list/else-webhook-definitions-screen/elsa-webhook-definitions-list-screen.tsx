@@ -126,7 +126,6 @@ export class ElsaWebhookDefinitionsListScreen {
                   <td class="elsa-pr-6">
                     <elsa-context-menu history={this.history} menuItems={[
                       {text: 'Edit', anchorUrl: editUrl, icon: editIcon},
-                      {text: 'Publish', anchorUrl: editUrl, icon: editIcon},
                       {text: 'Delete', clickHandler: e => this.onDeleteClick(e, webhookDefinition), icon: deleteIcon}
                     ]}/>
                   </td>

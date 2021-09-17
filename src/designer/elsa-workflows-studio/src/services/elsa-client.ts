@@ -88,6 +88,10 @@ export const createElsaClient = async function (serverUrl: string): Promise<Elsa
         const response = await httpClient.post<WorkflowDefinition>(`v1/workflow-definitions/${workflowDefinitionId}/retract`);
         return response.data;
       },
+      publish: async workflowDefinitionId => {
+        const response = await httpClient.post<WorkflowDefinition>(`v1/workflow-definitions/${workflowDefinitionId}/publish`);
+        return response.data;
+      },
       export: async (workflowDefinitionId, versionOptions): Promise<ExportWorkflowResponse> => {
         const versionOptionsString = getVersionOptionsString(versionOptions);
         const response = await httpClient.post(`v1/workflow-definitions/${workflowDefinitionId}/${versionOptionsString}/export`, null, {
@@ -262,6 +266,8 @@ export interface WorkflowDefinitionsApi {
   delete(definitionId: string): Promise<void>;
 
   retract(workflowDefinitionId: string): Promise<WorkflowDefinition>;
+
+  publish(workflowDefinitionId: string): Promise<WorkflowDefinition>;
 
   export(workflowDefinitionId: string, versionOptions: VersionOptions): Promise<ExportWorkflowResponse>;
 

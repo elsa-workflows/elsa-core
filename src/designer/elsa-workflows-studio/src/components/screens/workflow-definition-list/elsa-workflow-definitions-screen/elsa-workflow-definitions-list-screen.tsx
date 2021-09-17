@@ -28,19 +28,13 @@ export class ElsaWorkflowDefinitionsListScreen {
     await this.loadWorkflowDefinitions();
   }
   async onPublishClick (e: Event, workflowDefinition: WorkflowDefinitionSummary) {
-    const elsaClient = this.createClient();
-
-    // const request: SaveWorkflowDefinitionRequest = {
-    //   workflowDefinitionId: workflowDefinition.definitionId,
-    //   publish: true,
-    // }
-    //
-    // await elsaClient.workflowDefinitionsApi.save(request);
-    // await this.loadWorkflowDefinitions();
+    const elsaClient = await this.createClient();
+    await elsaClient.workflowDefinitionsApi.publish(workflowDefinition.definitionId);
+    await this.loadWorkflowDefinitions();
   }
 
   async onUnPublishClick (e: Event, workflowDefinition: WorkflowDefinitionSummary) {
-    const elsaClient = this.createClient();
+    const elsaClient = await this.createClient();
     await elsaClient.workflowDefinitionsApi.retract(workflowDefinition.definitionId);
     await this.loadWorkflowDefinitions();
   }
