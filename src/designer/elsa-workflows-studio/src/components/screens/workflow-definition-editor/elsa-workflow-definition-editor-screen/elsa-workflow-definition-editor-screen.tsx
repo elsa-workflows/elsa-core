@@ -460,8 +460,8 @@ export class ElsaWorkflowDefinitionEditorScreen {
       data-transition-leave="elsa-transition elsa-ease-in elsa-duration-75"
       data-transition-leave-start="elsa-transform elsa-opacity-100 elsa-scale-100"
       data-transition-leave-end="elsa-transform elsa-opacity-0 elsa-scale-95"
-      class={`${this.activityContextMenuState.shown ? '' : 'hidden'} context-menu elsa-z-10 elsa-mx-3 elsa-w-48 elsa-mt-1 elsa-rounded-md elsa-shadow-lg elsa-absolute`}
-      style={{left: `${this.activityContextMenuState.x}px`, top: `${this.activityContextMenuState.y - 64}px`}}
+      class={`${this.activityContextMenuState.shown ? '' : 'hidden'} context-menu elsa-z-10 elsa-mx-3 elsa-w-48 elsa-mt-1 elsa-rounded-md elsa-shadow-lg elsa-fixed`}
+      style={{left: `${this.activityContextMenuState.x}px`, top: `${this.activityContextMenuState.y}px`}}
       ref={el =>
         registerClickOutside(this, el, () => {
           this.handleContextMenuChange({x: 0, y: 0, shown: false, activity: null});
