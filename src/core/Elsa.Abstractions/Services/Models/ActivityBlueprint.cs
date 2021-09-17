@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace Elsa.Services.Models
 {
@@ -45,8 +45,6 @@ namespace Elsa.Services.Models
         public bool SaveWorkflowContext { get; set; }
         public IDictionary<string, string> PropertyStorageProviders { get; set; } = new Dictionary<string, string>();
         public string? Source { get; set; }
-       
-
         public override string ToString() => Type;
     }
 }

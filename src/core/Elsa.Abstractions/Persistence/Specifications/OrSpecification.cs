@@ -4,7 +4,7 @@ using LinqKit;
 
 namespace Elsa.Persistence.Specifications
 {
-    internal struct OrSpecification<T> : ISpecification<T>
+    public struct OrSpecification<T> : ISpecification<T>
     {
         private readonly ISpecification<T> _left;
         private readonly ISpecification<T> _right;

@@ -4,7 +4,7 @@ using System.Linq.Expressions;
 
 namespace Elsa.Persistence.Specifications
 {
-    internal struct NotSpecification<T> : ISpecification<T>
+    public struct NotSpecification<T> : ISpecification<T>
     {
         private readonly ISpecification<T> _specification;
 

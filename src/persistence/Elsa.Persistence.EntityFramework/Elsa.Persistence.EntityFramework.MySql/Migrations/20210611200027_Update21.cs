@@ -8,7 +8,6 @@ namespace Elsa.Persistence.EntityFramework.MySql.Migrations
         {
             migrationBuilder.AlterColumn<string>(
                 name: "CorrelationId",
-                schema: "Elsa",
                 table: "WorkflowInstances",
                 type: "varchar(255)",
                 nullable: false,
@@ -21,7 +20,6 @@ namespace Elsa.Persistence.EntityFramework.MySql.Migrations
 
             migrationBuilder.AddColumn<string>(
                 name: "LastExecutedActivityId",
-                schema: "Elsa",
                 table: "WorkflowInstances",
                 type: "longtext",
                 nullable: true)
@@ -29,7 +27,6 @@ namespace Elsa.Persistence.EntityFramework.MySql.Migrations
 
             migrationBuilder.AddColumn<string>(
                 name: "OutputStorageProviderName",
-                schema: "Elsa",
                 table: "WorkflowDefinitions",
                 type: "longtext",
                 nullable: true)
@@ -40,17 +37,14 @@ namespace Elsa.Persistence.EntityFramework.MySql.Migrations
         {
             migrationBuilder.DropColumn(
                 name: "LastExecutedActivityId",
-                schema: "Elsa",
                 table: "WorkflowInstances");
 
             migrationBuilder.DropColumn(
                 name: "OutputStorageProviderName",
-                schema: "Elsa",
                 table: "WorkflowDefinitions");
 
             migrationBuilder.AlterColumn<string>(
                 name: "CorrelationId",
-                schema: "Elsa",
                 table: "WorkflowInstances",
                 type: "varchar(255)",
                 nullable: true,

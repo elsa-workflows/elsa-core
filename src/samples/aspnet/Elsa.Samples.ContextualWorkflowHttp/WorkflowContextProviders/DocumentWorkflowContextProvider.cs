@@ -25,7 +25,7 @@ namespace Elsa.Samples.ContextualWorkflowHttp.WorkflowContextProviders
 
         public override ValueTask<string?> SaveAsync(SaveWorkflowContext<Document> context, CancellationToken cancellationToken = default)
         {
-            var document = context.Context;
+            var document = context.Context!;
 
             if (string.IsNullOrWhiteSpace(document.DocumentId))
                 document.DocumentId = _idGenerator.Generate();

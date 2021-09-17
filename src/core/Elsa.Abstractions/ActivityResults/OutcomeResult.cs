@@ -7,14 +7,11 @@ namespace Elsa.ActivityResults
 {
     public class OutcomeResult : ActivityExecutionResult
     {
-        public OutcomeResult(IEnumerable<string>? outcomes = default, object? input = null, string? parentId = default)
+        public OutcomeResult(IEnumerable<string> outcomes, object? input = null, string? parentId = default)
         {
             Input = input;
             ParentId = parentId;
-            var outcomeList = outcomes?.ToList() ?? new List<string>(1);
-
-            if (!outcomeList.Any())
-                outcomeList.Add(OutcomeNames.Done);
+            var outcomeList = outcomes.ToList();
 
             Outcomes = outcomeList;
         }
@@ -37,9 +34,6 @@ namespace Elsa.ActivityResults
                     select activityBlueprint.Id
                 )
                 .Distinct();
-
-            foreach (var nextConnection in nextConnections)
-                workflowExecutionContext.ExecutionLog.Add(nextConnection);
 
             workflowExecutionContext.ScheduleActivities(nextActivities, Input);
         }

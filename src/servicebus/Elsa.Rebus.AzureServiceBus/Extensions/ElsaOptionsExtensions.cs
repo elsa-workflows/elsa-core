@@ -1,6 +1,7 @@
 ﻿using System;
+using Azure.Core;
+using Elsa.Options;
 using Elsa.Services.Messaging;
-using Microsoft.Azure.ServiceBus.Primitives;
 using Rebus.Config;
 
 namespace Elsa.Rebus.AzureServiceBus
@@ -10,19 +11,19 @@ namespace Elsa.Rebus.AzureServiceBus
         public static ElsaOptionsBuilder UseAzureServiceBus(this ElsaOptionsBuilder elsaOptions, string connectionString) =>
             elsaOptions.UseServiceBus(context => ConfigureAzureServiceBusEndpoint(context, connectionString, default, default));
 
-        public static ElsaOptionsBuilder UseAzureServiceBus(this ElsaOptionsBuilder elsaOptions, string connectionString, ITokenProvider tokenProvider) =>
-            elsaOptions.UseServiceBus(context => ConfigureAzureServiceBusEndpoint(context, connectionString, tokenProvider, default));
+        public static ElsaOptionsBuilder UseAzureServiceBus(this ElsaOptionsBuilder elsaOptions, string connectionString, TokenCredential tokenCredential) =>
+            elsaOptions.UseServiceBus(context => ConfigureAzureServiceBusEndpoint(context, connectionString, tokenCredential, default));
 
         public static ElsaOptionsBuilder UseAzureServiceBus(this ElsaOptionsBuilder elsaOptions, string connectionString, Action<AzureServiceBusTransportSettings> configureTransport) =>
             elsaOptions.UseServiceBus(context => ConfigureAzureServiceBusEndpoint(context, connectionString, default, configureTransport));
 
-        public static ElsaOptionsBuilder UseAzureServiceBus(this ElsaOptionsBuilder elsaOptions, string connectionString, ITokenProvider tokenProvider, Action<AzureServiceBusTransportSettings> configureTransport) =>
-            elsaOptions.UseServiceBus(context => ConfigureAzureServiceBusEndpoint(context, connectionString, tokenProvider, configureTransport));
+        public static ElsaOptionsBuilder UseAzureServiceBus(this ElsaOptionsBuilder elsaOptions, string connectionString, TokenCredential tokenCredential, Action<AzureServiceBusTransportSettings> configureTransport) =>
+            elsaOptions.UseServiceBus(context => ConfigureAzureServiceBusEndpoint(context, connectionString, tokenCredential, configureTransport));
 
         private static void ConfigureAzureServiceBusEndpoint(
             ServiceBusEndpointConfigurationContext context,
             string connectionString,
-            ITokenProvider? tokenProvider,
+            TokenCredential? tokenProvider,
             Action<AzureServiceBusTransportSettings>? configureTransport)
         {
             var queueName = context.QueueName;

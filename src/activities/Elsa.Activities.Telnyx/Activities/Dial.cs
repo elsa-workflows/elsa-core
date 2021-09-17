@@ -131,16 +131,20 @@ namespace Elsa.Activities.Telnyx.Activities
         {
             var response = await DialAsync(context);
             DialResponse = response;
+            
+            context.LogOutputProperty(this, "Dial Response", response);
 
             return !SuspendWorkflow
                 ? Done(response)
-                : Combine(Outcome(TelnyxOutcomeNames.Dialing, response), Suspend());
+                : Suspend();
         }
 
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
         {
             var payload = context.GetInput<CallPayload>();
             Output = payload;
+            
+            context.LogOutputProperty(this, "Output", payload);
 
             return payload switch
             {

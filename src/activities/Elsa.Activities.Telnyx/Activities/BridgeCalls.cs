@@ -103,6 +103,8 @@ namespace Elsa.Activities.Telnyx.Activities
         {
             var payload = context.GetInput<CallBridgedPayload>()!;
             var results = new List<IActivityExecutionResult>();
+            
+            context.LogOutputProperty(this, "Received Payload", payload);
 
             if (payload.CallControlId == CallControlIdA)
             {

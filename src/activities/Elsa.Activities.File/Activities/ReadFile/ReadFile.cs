@@ -4,6 +4,7 @@ using Elsa.Design;
 using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
+using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 
 // ReSharper disable once CheckNamespace
@@ -14,6 +15,7 @@ namespace Elsa.Activities.File
         Outcomes = new[] { OutcomeNames.Done })]
     public class ReadFile : Activity
     {
+        [Required]
         [ActivityInput(Hint = "Path to read content from.", UIHint = ActivityInputUIHints.SingleLine, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string Path { get; set; } = default!;
 
@@ -23,7 +25,7 @@ namespace Elsa.Activities.File
         public override async ValueTask<IActivityExecutionResult> ExecuteAsync(ActivityExecutionContext context)
         {
             Bytes = await System.IO.File.ReadAllBytesAsync(Path);
-            return Done();
+            return Done(Bytes);
         }
     }
 }

@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Exceptions;
 using Elsa.Models;
+using Elsa.Options;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
 using Elsa.Persistence.Specifications.WorkflowInstances;
@@ -92,7 +93,7 @@ namespace Elsa.Services.Workflows
         {
             var workflowBlueprint = await _workflowRegistry.GetAsync(workflowDefinitionId, tenantId, VersionOptions.Published, cancellationToken);
 
-            if (workflowBlueprint == null)
+            if (workflowBlueprint == null || workflowBlueprint.IsDisabled)
                 return null;
 
             return await FindStartableWorkflowAsync(workflowBlueprint, activityId, correlationId, contextId, tenantId, cancellationToken);

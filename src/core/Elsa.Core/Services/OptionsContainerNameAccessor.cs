@@ -1,3 +1,5 @@
+using Elsa.Options;
+
 namespace Elsa.Services
 {
     public class OptionsContainerNameAccessor : IContainerNameAccessor

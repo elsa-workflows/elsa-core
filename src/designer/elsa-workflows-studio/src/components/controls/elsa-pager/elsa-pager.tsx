@@ -61,7 +61,7 @@ export class ElsaPager {
     const basePath = this.basePath;
 
     const from = page * pageSize + 1;
-    const to = Math.min(from + pageSize, totalCount);
+    const to = Math.min(from + pageSize - 1, totalCount);
     const pageCount = Math.round(((totalCount - 1) / pageSize) + 0.5);
 
     const maxPageButtons = 10;
@@ -169,10 +169,10 @@ export class ElsaPager {
           <div>
             <p class="elsa-text-sm elsa-leading-5 elsa-text-gray-700 elsa-space-x-0-5">
               <span>{t('From')}</span>
-              <span class="elsa-font-medium">{from}</span> 
-              <span>{t('To')}</span> 
-              <span class="elsa-font-medium">{to}</span> 
-              <span>{t('Of')}</span> 
+              <span class="elsa-font-medium">{from}</span>
+              <span>{t('To')}</span>
+              <span class="elsa-font-medium">{to}</span>
+              <span>{t('Of')}</span>
               <span class="elsa-font-medium">{totalCount}</span>
               <span>{t('Results')}</span>
             </p>

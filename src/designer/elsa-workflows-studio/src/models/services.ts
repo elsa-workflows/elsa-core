@@ -1,6 +1,6 @@
-﻿import {PluginManager, ActivityIconProvider, ConfirmDialogService, propertyDisplayManager, PropertyDisplayManager} from "../services";
+﻿import {PluginManager, ActivityIconProvider, ConfirmDialogService, PropertyDisplayManager} from "../services";
 import {ElsaClient, ToastNotificationService} from "../services";
-import EventBus from "js-event-bus";
+import EventBus from "../services/custom-event-bus";
 import {AxiosInstance} from "axios";
 import {ActivityDefinitionProperty} from "./domain";
 import {ActivityModel} from "./view";
@@ -8,10 +8,11 @@ import {ActivityModel} from "./view";
 export interface ElsaStudio {
   serverUrl: string;
   basePath: string;
+  featuresString: string;
   pluginManager: PluginManager;
   propertyDisplayManager: PropertyDisplayManager;
-  elsaClientFactory: () => ElsaClient;
-  httpClientFactory: () => AxiosInstance;
+  elsaClientFactory: () => Promise<ElsaClient>;
+  httpClientFactory: () => Promise<AxiosInstance>;
   eventBus: EventBus;
   activityIconProvider: ActivityIconProvider;
   confirmDialogService: ConfirmDialogService;

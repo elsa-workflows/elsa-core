@@ -25,6 +25,9 @@ graph TD;
   elsa-workflow-instance-viewer-screen --> elsa-workflow-instance-journal
   elsa-workflow-instance-viewer-screen --> elsa-designer-tree
   elsa-workflow-instance-viewer-screen --> context-consumer
+  elsa-workflow-instance-journal --> elsa-flyout-panel
+  elsa-workflow-instance-journal --> elsa-tab-header
+  elsa-workflow-instance-journal --> elsa-tab-content
   style elsa-studio-workflow-instances-view fill:#f9f,stroke:#333,stroke-width:4px
 ```
 

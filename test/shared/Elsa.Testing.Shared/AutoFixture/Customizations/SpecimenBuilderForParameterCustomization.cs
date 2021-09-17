@@ -10,7 +10,7 @@ namespace Elsa.Testing.Shared.AutoFixture.Customizations
     /// </summary>
     public abstract class SpecimenBuilderForParameterCustomization : ICustomization
     {
-        readonly ParameterInfo? parameter;
+        readonly ParameterInfo? _parameter;
 
         public virtual void Customize(IFixture fixture)
         {
@@ -20,9 +20,9 @@ namespace Elsa.Testing.Shared.AutoFixture.Customizations
         protected virtual ISpecimenBuilder GetSpecimenBuilder()
         {
             var unfilteredSpecimenBuilder = GetUnfilteredSpecimenBuilder();
-            if(parameter is null) return unfilteredSpecimenBuilder;
+            if(_parameter is null) return unfilteredSpecimenBuilder;
 
-            var paramSpec = new ParameterSpecification(parameter.ParameterType, parameter.Name);
+            var paramSpec = new ParameterSpecification(_parameter.ParameterType, _parameter.Name);
             return new FilteringSpecimenBuilder(unfilteredSpecimenBuilder, paramSpec);
         }
 
@@ -30,7 +30,7 @@ namespace Elsa.Testing.Shared.AutoFixture.Customizations
 
         public SpecimenBuilderForParameterCustomization(ParameterInfo? parameter)
         {
-            this.parameter = parameter;
+            _parameter = parameter;
         }
     }
 }

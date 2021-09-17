@@ -14,7 +14,7 @@ const tailwindDev: boolean = process.argv && process.argv.indexOf('--tailwind:de
 const purgecss = require('@fullhuman/postcss-purgecss')({
   content: ['./src/**/*.tsx', './src/**/*.html'],
   defaultExtractor: content => content.match(/[A-Za-z0-9-_:/]+/g) || [],
-  safelist: ['jtk-connector'],
+  safelist: ['hidden', 'jtk-connector', 'rose', 'sky', /gray/, /pink/, /blue/, /green/, /red/, /yellow/, /rose/, 'label-container', 'node', 'start', 'activity', 'elsa-border-blue-600', 'elsa-border-green-600', 'elsa-border-red-600'],
 });
 
 export const config: Config = {

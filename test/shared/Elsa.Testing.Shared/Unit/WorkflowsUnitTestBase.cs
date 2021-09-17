@@ -36,7 +36,6 @@ namespace Elsa.Testing.Shared.Unit
             WorkflowBuilder = ServiceScope.ServiceProvider.GetRequiredService<IWorkflowBuilder>();
             WorkflowRegistry = ServiceScope.ServiceProvider.GetRequiredService<IWorkflowRegistry>();
             BookmarkFinder = ServiceScope.ServiceProvider.GetRequiredService<IBookmarkFinder>();
-            WorkflowExecutionLog = ServiceScope.ServiceProvider.GetRequiredService<IWorkflowExecutionLog>();
             WorkflowExecutionLogStore = ServiceScope.ServiceProvider.GetRequiredService<IWorkflowExecutionLogStore>();
             WorkflowStorageService = ServiceScope.ServiceProvider.GetRequiredService<IWorkflowStorageService>();
         }
@@ -48,7 +47,6 @@ namespace Elsa.Testing.Shared.Unit
         protected IBuildsAndStartsWorkflow WorkflowBuilderAndStarter { get; }
         protected IStartsWorkflow WorkflowStarter { get; }
         protected IResumesWorkflow WorkflowResumer { get; }
-        protected IWorkflowExecutionLog WorkflowExecutionLog { get; }
         protected IWorkflowExecutionLogStore WorkflowExecutionLogStore { get; }
         protected IWorkflowBlueprintMaterializer WorkflowBlueprintMaterializer { get; }
         protected IWorkflowBuilder WorkflowBuilder { get; }

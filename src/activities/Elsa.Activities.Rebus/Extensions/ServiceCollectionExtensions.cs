@@ -4,6 +4,7 @@ using Elsa.Activities.Rebus;
 using Elsa.Activities.Rebus.Bookmarks;
 using Elsa.Activities.Rebus.Consumers;
 using Elsa.Activities.Rebus.StartupTasks;
+using Elsa.Options;
 using Elsa.Runtime;
 using Rebus.Handlers;
 

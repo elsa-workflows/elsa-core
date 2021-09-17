@@ -9,6 +9,7 @@ using Elsa.Activities.Conductor.Providers.Commands;
 using Elsa.Activities.Conductor.Providers.Events;
 using Elsa.Activities.Conductor.Providers.Tasks;
 using Elsa.Activities.Conductor.Services;
+using Elsa.Options;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;

@@ -15,6 +15,7 @@ export const EventTypes = {
   WorkflowPublished: 'workflow-published',
   WorkflowRetracted: 'workflow-retracted',
   WorkflowImported: 'workflow-imported',
+  WorkflowUpdated: 'workflow-updated',
   HttpClientConfigCreated: 'http-client-config-created',
   HttpClientCreated: 'http-client-created',
   WorkflowInstanceBulkActionsLoading: 'workflow-instance-bulk-actions-loading',
@@ -24,9 +25,14 @@ export const EventTypes = {
   HideModalDialog: 'hide-modal-dialog',
   ShowToastNotification: 'show-toast-notification',
   HideToastNotification: 'hide-toast-notification',
+  ConfigureFeature: 'configure-feature',
+  DashboardLoadingMenu: 'dashboard.loading-menu',
+  WorkflowRegistryLoadingColumns: 'workflow-registry.loading-columns',
+  WorkflowRegistryUpdating: 'workflow-registry.updating',
+  WorkflowRegistryUpdated: 'workflow-registry.updated',
   ClipboardPermissionDenied: 'clipboard-permission-denied',
   ClipboardCopied: 'clipboard-copied',
-  PasteActivity: 'paste-activity',
+  PasteActivity: 'paste-activity'
 };
 
 export interface AddActivityEventArgs {
@@ -49,4 +55,16 @@ export interface ActivityDesignDisplayContext {
 export interface ActivityDescriptorDisplayContext {
   activityDescriptor: ActivityDescriptor;
   activityIcon: any;
+}
+
+export interface ConfigureDashboardMenuContext {
+  data: any;
+}
+
+export interface ConfigureWorkflowRegistryColumnsContext {
+  data: any;
+}
+
+export interface ConfigureWorkflowRegistryUpdatingContext {
+  params: any;
 }

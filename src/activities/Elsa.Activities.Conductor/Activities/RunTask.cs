@@ -34,7 +34,7 @@ namespace Elsa.Activities.Conductor
         public object? Payload { get; set; }
         
         [ActivityOutput(Hint = "Any input that was received along with the task completion.")]
-        public object? ResultPayload { get; set; }
+        public object? Output { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
@@ -50,7 +50,8 @@ namespace Elsa.Activities.Conductor
             if (outcomes?.Any() == false)
                 outcomes = new[] { OutcomeNames.Done };
 
-            ResultPayload = eventModel.Payload;
+            Output = eventModel.Payload;
+            context.LogOutputProperty(this, nameof(Output), Output);
             return base.Outcomes(outcomes!);
         }
     }

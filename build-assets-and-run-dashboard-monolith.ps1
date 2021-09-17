@@ -1,3 +1,3 @@
 .\build-assets
-cd ../../../..
+cd ../../../../..
 .\run-dashboard-monolith

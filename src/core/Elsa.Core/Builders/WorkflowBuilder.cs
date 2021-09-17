@@ -28,6 +28,7 @@ namespace Elsa.Builders
         public int Version { get; private set; }
         public bool IsLatest { get; private set; }
         public bool IsPublished { get; private set; }
+        public bool IsDisabled { get; private set; }
         public string? TenantId { get; private set; }
         public bool IsSingleton { get; private set; }
         public string? Tag { get; private set; }

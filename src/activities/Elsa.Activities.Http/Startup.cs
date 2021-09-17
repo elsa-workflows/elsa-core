@@ -1,4 +1,5 @@
 using Elsa.Attributes;
+using Elsa.Options;
 using Elsa.Services.Startup;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;

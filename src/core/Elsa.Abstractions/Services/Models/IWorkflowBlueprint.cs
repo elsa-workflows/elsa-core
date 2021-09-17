@@ -1,4 +1,4 @@
-﻿using Elsa.Models;
+using Elsa.Models;
 
 namespace Elsa.Services.Models
 {
@@ -9,6 +9,7 @@ namespace Elsa.Services.Models
         bool IsSingleton { get; }
         bool IsPublished { get; }
         bool IsLatest { get; }
+        bool IsDisabled { get; set; }
         string? Tag { get; }
         string? Channel { get; }
         

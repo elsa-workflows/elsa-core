@@ -1,4 +1,5 @@
 import {Component, Event, EventEmitter, h, Host, Listen, Method, Prop, State, Watch} from '@stencil/core';
+import {RouterHistory, injectHistory} from '@stencil/router';
 import {
   ActivityDefinition,
   ActivityDescriptor,
@@ -33,6 +34,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
   @Prop({attribute: 'server-url', reflect: true}) serverUrl: string;
   @Prop({attribute: 'monaco-lib-path', reflect: true}) monacoLibPath: string;
   @Prop() culture: string;
+  @Prop() history: RouterHistory;
   @State() workflowDefinition: WorkflowDefinition;
   @State() workflowModel: WorkflowModel;
   @State() publishing: boolean;
@@ -56,7 +58,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
     x: 0,
     y: 0,
     activity: null,
-  };  
+  };
 
   i18next: i18n;
   el: HTMLElement;
@@ -74,7 +76,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   @Method()
   async exportWorkflow() {
-    const client = createElsaClient(this.serverUrl);
+    const client = await createElsaClient(this.serverUrl);
     const workflowDefinition = this.workflowDefinition;
     const versionOptions: VersionOptions = {version: workflowDefinition.version};
     const response = await client.workflowDefinitionsApi.export(workflowDefinition.definitionId, versionOptions);
@@ -83,7 +85,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   @Method()
   async importWorkflow(file: File) {
-    const client = createElsaClient(this.serverUrl);
+    const client = await createElsaClient(this.serverUrl);
 
     this.importing = true;
     this.imported = false;
@@ -97,7 +99,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
       this.importing = false;
       this.imported = true;
       setTimeout(() => this.imported = false, 500);
-      eventBus.emit(EventTypes.WorkflowImported, this, this.workflowDefinition);
+      await eventBus.emit(EventTypes.WorkflowImported, this, this.workflowDefinition);
     } catch (e) {
       console.error(e);
       this.importing = false;
@@ -112,7 +114,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
     const workflowDefinitionId = newValue;
     let workflowDefinition: WorkflowDefinition = ElsaWorkflowDefinitionEditorScreen.createWorkflowDefinition();
     workflowDefinition.definitionId = workflowDefinitionId;
-    const client = createElsaClient(this.serverUrl);
+    const client = await createElsaClient(this.serverUrl);
 
     if (workflowDefinitionId && workflowDefinitionId.length > 0) {
       try {
@@ -169,12 +171,12 @@ export class ElsaWorkflowDefinitionEditorScreen {
   t = (key: string) => this.i18next.t(key);
 
   async loadActivityDescriptors() {
-    const client = createElsaClient(this.serverUrl);
+    const client = await createElsaClient(this.serverUrl);
     state.activityDescriptors = await client.activitiesApi.list();
   }
 
   async loadWorkflowStorageDescriptors() {
-    const client = createElsaClient(this.serverUrl);
+    const client = await createElsaClient(this.serverUrl);
     state.workflowStorageDescriptors = await client.workflowStorageProvidersApi.list();
   }
 
@@ -187,14 +189,14 @@ export class ElsaWorkflowDefinitionEditorScreen {
     this.publishing = true;
     await this.saveWorkflow(true);
     this.publishing = false;
-    eventBus.emit(EventTypes.WorkflowPublished, this, this.workflowDefinition);
+    await eventBus.emit(EventTypes.WorkflowPublished, this, this.workflowDefinition);
   }
 
   async unPublishWorkflow() {
     this.unPublishing = true;
     await this.unpublishWorkflow();
     this.unPublishing = false;
-    eventBus.emit(EventTypes.WorkflowRetracted, this, this.workflowDefinition);
+    await eventBus.emit(EventTypes.WorkflowRetracted, this, this.workflowDefinition);
   }
 
   async saveWorkflow(publish?: boolean) {
@@ -207,8 +209,9 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
     workflowModel = workflowModel || this.workflowModel;
 
-    const client = createElsaClient(this.serverUrl);
+    const client = await createElsaClient(this.serverUrl);
     let workflowDefinition = this.workflowDefinition;
+    const isNew = typeof workflowDefinition.definitionId === 'undefined' && typeof this.workflowDefinitionId === 'undefined';
 
     const request: SaveWorkflowDefinitionRequest = {
       workflowDefinitionId: workflowDefinition.definitionId || this.workflowDefinitionId,
@@ -257,6 +260,9 @@ export class ElsaWorkflowDefinitionEditorScreen {
       this.publishing = false;
       setTimeout(() => this.saved = false, 500);
       this.workflowSaved.emit(workflowDefinition);
+      if (isNew) {
+        this.history.push(`/workflow-definitions/${workflowDefinition.definitionId}`, {});
+      }
     } catch (e) {
       console.error(e);
       this.saving = false;
@@ -267,7 +273,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
   }
 
   async unpublishWorkflow() {
-    const client = createElsaClient(this.serverUrl);
+    const client = await createElsaClient(this.serverUrl);
     const workflowDefinitionId = this.workflowDefinition.definitionId;
     this.unPublishing = true;
 
@@ -328,10 +334,10 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   handleConnectionContextMenuChange(state: ActivityContextMenuState) {
     this.connectionContextMenuState = state;
-  }  
+  }
 
-  onShowWorkflowSettingsClick() {
-    eventBus.emit(EventTypes.ShowWorkflowSettings);
+  async onShowWorkflowSettingsClick() {
+    await eventBus.emit(EventTypes.ShowWorkflowSettings);
   }
 
   async onPublishClicked() {
@@ -354,7 +360,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
     e.preventDefault();
     await this.designer.removeActivity(this.activityContextMenuState.activity);
     this.handleContextMenuChange({x: 0, y: 0, shown: false, activity: null});
-    eventBus.emit(EventTypes.HideModalDialog);
+    await eventBus.emit(EventTypes.HideModalDialog);
   }
 
   async onEditActivityClick(e: Event) {
@@ -366,7 +372,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
   async onPasteActivityClick(e: Event) {
     e.preventDefault();
     let activityModel = this.connectionContextMenuState.activity;
-    eventBus.emit(EventTypes.PasteActivity, this, activityModel);
+    await eventBus.emit(EventTypes.PasteActivity, this, activityModel);
     this.handleConnectionContextMenuChange({x: 0, y: 0, shown: false, activity: null});
   }
 
@@ -454,15 +460,16 @@ export class ElsaWorkflowDefinitionEditorScreen {
       data-transition-leave="elsa-transition elsa-ease-in elsa-duration-75"
       data-transition-leave-start="elsa-transform elsa-opacity-100 elsa-scale-100"
       data-transition-leave-end="elsa-transform elsa-opacity-0 elsa-scale-95"
-      class={`${this.activityContextMenuState.shown ? '' : 'hidden'} context-menu elsa-z-10 elsa-mx-3 elsa-w-48 elsa-mt-1 elsa-rounded-md elsa-shadow-lg elsa-absolute`}
-      style={{left: `${this.activityContextMenuState.x}px`, top: `${this.activityContextMenuState.y - 64}px`}}
+      class={`${this.activityContextMenuState.shown ? '' : 'hidden'} context-menu elsa-z-10 elsa-mx-3 elsa-w-48 elsa-mt-1 elsa-rounded-md elsa-shadow-lg elsa-fixed`}
+      style={{left: `${this.activityContextMenuState.x}px`, top: `${this.activityContextMenuState.y}px`}}
       ref={el =>
         registerClickOutside(this, el, () => {
           this.handleContextMenuChange({x: 0, y: 0, shown: false, activity: null});
         })
       }
     >
-      <div class="elsa-rounded-md elsa-bg-white elsa-shadow-xs" role="menu" aria-orientation="vertical" aria-labelledby="pinned-project-options-menu-0">
+      <div class="elsa-rounded-md elsa-bg-white elsa-shadow-xs" role="menu" aria-orientation="vertical"
+           aria-labelledby="pinned-project-options-menu-0">
         <div class="elsa-py-1">
           <a
             onClick={e => this.onEditActivityClick(e)}
@@ -488,7 +495,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   renderConnectionContextMenu() {
     const t = this.t;
-    
+
     return <div
       data-transition-enter="elsa-transition elsa-ease-out elsa-duration-100"
       data-transition-enter-start="elsa-transform elsa-opacity-0 elsa-scale-95"
@@ -504,7 +511,8 @@ export class ElsaWorkflowDefinitionEditorScreen {
         })
       }
     >
-      <div class="elsa-rounded-md elsa-bg-white elsa-shadow-xs" role="menu" aria-orientation="vertical" aria-labelledby="pinned-project-options-menu-0">
+      <div class="elsa-rounded-md elsa-bg-white elsa-shadow-xs" role="menu" aria-orientation="vertical"
+           aria-labelledby="pinned-project-options-menu-0">
         <div class="elsa-py-1">
           <a
             onClick={e => this.onPasteActivityClick(e)}
@@ -516,7 +524,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
         </div>
       </div>
     </div>
-  }  
+  }
 
   renderActivityPicker() {
     return <elsa-activity-picker-modal/>;
@@ -530,7 +538,8 @@ export class ElsaWorkflowDefinitionEditorScreen {
     return (
       <button onClick={() => this.onShowWorkflowSettingsClick()} type="button"
               class="workflow-settings-button elsa-fixed elsa-top-20 elsa-right-12 elsa-inline-flex elsa-items-center elsa-p-2 elsa-rounded-full elsa-border elsa-border-transparent elsa-bg-white shadow elsa-text-gray-400 hover:elsa-text-blue-500 focus:elsa-text-blue-500 hover:elsa-ring-2 hover:elsa-ring-offset-2 hover:elsa-ring-blue-500 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" fill="none" class="elsa-h-8 elsa-w-8">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" fill="none"
+             class="elsa-h-8 elsa-w-8">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -599,10 +608,19 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   private renderPropertiesPanel() {
     return (
-      <elsa-workflow-properties-panel
-        workflowDefinition={this.workflowDefinition}
+      <elsa-flyout-panel
         expandButtonPosition={2}
-      />);
+      >
+        <elsa-tab-header tab="general" slot="header">General</elsa-tab-header>
+        <elsa-tab-content tab="general" slot="content">
+          <elsa-workflow-properties-panel
+            workflowDefinition={this.workflowDefinition}
+          />
+        </elsa-tab-content>
+      </elsa-flyout-panel>
+    );
   }
 }
+
+injectHistory(ElsaWorkflowDefinitionEditorScreen);
 DashboardTunnel.injectProps(ElsaWorkflowDefinitionEditorScreen, ['serverUrl', 'culture', 'monacoLibPath']);

@@ -1,7 +1,9 @@
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Design;
 using Elsa.Services;
 using Elsa.Services.Models;
+using System.ComponentModel.DataAnnotations;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.File
@@ -11,8 +13,9 @@ namespace Elsa.Activities.File
         Outcomes = new[] { OutcomeNames.True, OutcomeNames.False })]
     public class FileExists : Activity
     {
+        [Required]
         [ActivityInput(Hint = "Path of the file to delete.")]
-        public string Path { get; set; } = default!;
+        public string? Path { get; set; }
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {

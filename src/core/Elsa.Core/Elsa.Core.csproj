@@ -2,44 +2,44 @@
 
     <Import Project="..\..\..\common.props" />
     <Import Project="..\..\..\configureawait.props" />
-    
+
     <PropertyGroup>
-        <TargetFramework>netstandard2.1</TargetFramework>      
-        <RootNamespace>Elsa</RootNamespace>       
+        <TargetFramework>netstandard2.1</TargetFramework>
+        <RootNamespace>Elsa</RootNamespace>
         <Description>
             Elsa is a set of workflow libraries and tools that enable lean and mean workflowing capabilities in any .NET Core application.
             This package contains the core of Elsa.
             Tip: reference the `Elsa` package instead of this one.
-        </Description>     
+        </Description>
         <PackageTags>elsa, workflows, orchard</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="AutoMapper" Version="10.1.1" />
         <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="8.1.1" />
-        <PackageReference Include="DistributedLock.Core" Version="1.0.1" />
+        <PackageReference Include="DistributedLock.Core" Version="1.0.2" />
         <PackageReference Include="DistributedLock.FileSystem" Version="1.0.0" />
-        <PackageReference Include="Humanizer.Core" Version="2.10.1" />
+        <PackageReference Include="Humanizer.Core" Version="2.11.10" />
         <PackageReference Include="MediatR" Version="9.0.0" />
         <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="9.0.0" />
-        <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="5.0.6" />
-        <PackageReference Include="Microsoft.AspNetCore.DataProtection.Abstractions" Version="5.0.6" />
+        <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="5.0.10" />
+        <PackageReference Include="Microsoft.AspNetCore.DataProtection.Abstractions" Version="5.0.10" />
         <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
         <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="5.0.0" />
         <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
         <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="5.0.0" />
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="5.0.0" />
         <PackageReference Include="Microsoft.Extensions.Configuration" Version="5.0.0" />
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.1" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.2" />
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="5.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Localization" Version="5.0.6" />
+        <PackageReference Include="Microsoft.Extensions.Localization" Version="5.0.10" />
         <PackageReference Include="Microsoft.Extensions.Logging" Version="5.0.0" />
         <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="5.0.0" />
         <PackageReference Include="NodaTime.Serialization.JsonNet" Version="3.0.0" />
         <PackageReference Include="Open.Linq.AsyncExtensions" Version="1.2.0" />
         <PackageReference Include="Rebus.Microsoft.Extensions.Logging" Version="2.0.0" />
         <PackageReference Include="Scrutor" Version="3.3.0" />
-        <PackageReference Include="Storage.Net" Version="9.2.7" />
+        <PackageReference Include="Storage.Net" Version="9.3.0" />
         <PackageReference Include="System.Linq.Async" Version="5.0.0" />
         <PackageReference Include="System.Threading.Channels" Version="5.0.0" />
         <PackageReference Include="Rebus.ServiceProvider" Version="6.4.1" />

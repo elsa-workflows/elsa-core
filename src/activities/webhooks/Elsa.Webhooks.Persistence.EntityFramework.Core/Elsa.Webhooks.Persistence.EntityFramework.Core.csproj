@@ -13,8 +13,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="EFCore.BulkExtensions" Version="5.2.2" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.6" />
+        <PackageReference Include="EFCore.BulkExtensions" Version="5.4.0" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.10" />
     </ItemGroup>
 
     <ItemGroup>

@@ -33,7 +33,7 @@ Type: `Promise<void>`
 ### Used by
 
  - [elsa-studio-root](../../dashboard/pages/elsa-studio-root)
- - [elsa-webhook-definition-editor-notifications](../../screens/webhook-definition-editor/elsa-webhook-definition-editor-notifications)
+ - [elsa-webhook-definition-editor-notifications](../../../modules/elsa-webhooks/components/screens/webhook-definition-editor/elsa-webhook-definition-editor-notifications)
 
 ### Graph
 ```mermaid

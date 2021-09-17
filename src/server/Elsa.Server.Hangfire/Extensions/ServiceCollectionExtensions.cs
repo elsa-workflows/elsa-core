@@ -1,4 +1,5 @@
-﻿using Elsa.Server.Hangfire.Dispatch;
+﻿using Elsa.Options;
+using Elsa.Server.Hangfire.Dispatch;
 using Elsa.Services.Dispatch;
 
 namespace Elsa.Server.Hangfire.Extensions

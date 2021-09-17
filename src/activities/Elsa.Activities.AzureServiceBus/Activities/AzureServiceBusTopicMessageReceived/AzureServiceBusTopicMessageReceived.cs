@@ -42,6 +42,9 @@ namespace Elsa.Activities.AzureServiceBus
             var message = (MessageModel) context.Input!;
             Output = message.ReadBody(MessageType, _serializer);
             
+            context.LogOutputProperty(this, nameof(Output), Output);
+            context.JournalData.Add("Headers", message.ExtractHeaders());
+            
             return Done();
         }
     }

@@ -1,3 +1,4 @@
+using Elsa.Options;
 using Medallion.Threading.SqlServer;
 
 namespace Elsa

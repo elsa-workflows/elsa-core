@@ -93,7 +93,7 @@ export class ElsaWorkflowInstanceViewerScreen {
       propertyStorageProviders: {}
     };
 
-    const client = createElsaClient(this.serverUrl);
+    const client = await createElsaClient(this.serverUrl);
 
     if (workflowInstanceId && workflowInstanceId.length > 0) {
       try {
@@ -126,7 +126,7 @@ export class ElsaWorkflowInstanceViewerScreen {
   }
 
   async loadActivityDescriptors() {
-    const client = createElsaClient(this.serverUrl);
+    const client = await createElsaClient(this.serverUrl);
     state.activityDescriptors = await client.activitiesApi.list();
   }
 
@@ -223,7 +223,7 @@ export class ElsaWorkflowInstanceViewerScreen {
       return;
     }
 
-    const elsaClient = createElsaClient(this.serverUrl);
+    const elsaClient = await createElsaClient(this.serverUrl);
     this.activityStats = await elsaClient.activityStatsApi.get(this.workflowInstanceId, e.detail.activity.activityId);
   }
 
@@ -234,6 +234,7 @@ export class ElsaWorkflowInstanceViewerScreen {
         {this.renderCanvas()}
         <elsa-workflow-instance-journal ref={el => this.journal = el}
                                         workflowInstanceId={this.workflowInstanceId}
+                                        workflowInstance={this.workflowInstance}
                                         serverUrl={this.serverUrl}
                                         activityDescriptors={descriptors}
                                         workflowBlueprint={this.workflowBlueprint}
@@ -281,14 +282,14 @@ export class ElsaWorkflowInstanceViewerScreen {
               </svg>`;
     } else if (executed) {
       icon = `<svg class="elsa-h-6 elsa-w-6 elsa-text-green-500"  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10" /> 
-                <line x1="12" y1="16" x2="12" y2="12" /> 
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="16" x2="12" y2="12" />
                 <line x1="12" y1="8" x2="12.01" y2="8" />
               </svg>`;
     } else if (executing) {
       icon = `<svg class="elsa-h-6 elsa-w-6 elsa-text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10" /> 
-                <line x1="12" y1="16" x2="12" y2="12" /> 
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="16" x2="12" y2="12" />
                 <line x1="12" y1="8" x2="12.01" y2="8" />
               </svg>`;
     } else {

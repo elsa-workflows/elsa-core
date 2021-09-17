@@ -119,6 +119,13 @@ YesSql Postgre
     ...
 ```
 
+### Workflow Settings is an optional feature and is controlled by IWorkflowSettingsProvider that currently has the database and configuration providers.
+### The database provider uses one of available database persistence while the configuration one uses Environment Variables using IConfiguration
+### The Environment Variable for the configuration provider can be set in the format as follows:
+
+Name: "<WorkflowBlueprintId>:disabled"
+Value: <boolean>
+
 ### Configure connection strings for each persistence
 
 ```

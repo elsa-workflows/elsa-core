@@ -1,6 +1,7 @@
 using Elsa;
 using Elsa.Activities.Entity;
 using Elsa.Activities.Entity.Bookmarks;
+using Elsa.Options;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection

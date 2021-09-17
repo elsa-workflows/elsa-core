@@ -14,7 +14,7 @@
 
     <ItemGroup>
         <PackageReference Include="DistributedLock.Redis" Version="1.0.1" />
-        <PackageReference Include="RedLock.net" Version="2.2.0" />
+        <PackageReference Include="RedLock.net" Version="2.3.1" />
     </ItemGroup>
 
     <ItemGroup>

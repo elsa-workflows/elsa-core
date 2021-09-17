@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="..\..\..\..\common.props" />
+    <Import Project="..\..\..\..\configureawait.props" />
+
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+        <Description>
+            Elsa Workflow Settings is an optional part of Elsa Workflows.
+            This package provides a MongoDb persistence provider.
+        </Description>
+        <Copyright>2020</Copyright>
+        <PackageTags>elsa, workflow settings, mongodb</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="MongoDb.Bson.NodaTime" Version="2.1.0" />
+        <PackageReference Include="MongoDB.Driver" Version="2.13.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.MongoDb\Elsa.Persistence.MongoDb.csproj" />
+        <ProjectReference Include="..\Elsa.WorkflowSettings\Elsa.WorkflowSettings.csproj" />
+    </ItemGroup>
+
+</Project>

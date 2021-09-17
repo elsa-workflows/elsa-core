@@ -1,5 +1,5 @@
-import {Component, Host, h, Prop, State, Listen, Method} from '@stencil/core';
-import {enter, leave, toggle} from 'el-transition'
+import {Component, Host, h, State, Listen, Method} from '@stencil/core';
+import {enter, leave} from 'el-transition'
 import {eventBus} from "../../../services";
 import {EventTypes} from "../../../models";
 
@@ -47,6 +47,13 @@ export class ElsaModalDialog {
 
     leave(this.overlay);
     leave(this.modal).then(() => this.isVisible = false);
+  }
+
+  @Listen('keydown', {target: 'window'})
+  async handleKeyDown(e: KeyboardEvent) {
+    if (this.isVisible && e.key === 'Escape') {
+      await this.hide(true);
+    }
   }
 
   renderModal() {

@@ -17,6 +17,7 @@ export class ElsaStudioRoot {
   @Prop({attribute: 'monaco-lib-path', reflect: true}) monacoLibPath: string;
   @Prop({attribute: 'culture', reflect: true}) culture: string;
   @Prop({attribute: 'base-path', reflect: true}) basePath: string = '';
+  @Prop({attribute: 'features', reflect: true}) featuresString: string;
   @Event() initializing: EventEmitter<ElsaStudio>;
 
   confirmDialog: HTMLElsaConfirmDialogElement;
@@ -51,13 +52,14 @@ export class ElsaStudioRoot {
     eventBus.detach(EventTypes.HideToastNotification, this.onHideToastNotification);
   }
 
-  componentWillLoad() {
-    const elsaClientFactory: () => ElsaClient = () => createElsaClient(this.serverUrl);
-    const httpClientFactory: () => AxiosInstance = () => createHttpClient(this.serverUrl);
+  async componentWillLoad() {
+    const elsaClientFactory: () => Promise<ElsaClient> = () => createElsaClient(this.serverUrl);
+    const httpClientFactory: () => Promise<AxiosInstance> = () => createHttpClient(this.serverUrl);
 
     const elsaStudio: ElsaStudio = {
       serverUrl: this.serverUrl,
       basePath: this.basePath,
+      featuresString: this.featuresString,
       eventBus,
       pluginManager,
       propertyDisplayManager,

@@ -10,7 +10,7 @@
     <PackageReference Include="Autofixture" Version="4.17.0" />
     <PackageReference Include="Autofixture.AutoMoq" Version="4.17.0" />
     <PackageReference Include="autofixture.xunit2" Version="4.17.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.9.4" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.11.0" />
     <PackageReference Include="Moq" Version="4.16.1" />
     <PackageReference Include="xunit" Version="2.4.1" />
         <PackageReference Include="XunitXml.TestLogger" Version="3.0.66" />
@@ -18,7 +18,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="coverlet.collector" Version="3.0.3">
+    <PackageReference Include="coverlet.collector" Version="3.1.0">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
@@ -26,8 +26,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../../src/core/Elsa.Abstractions/Elsa.Abstractions.csproj" />
-    <ProjectReference Include="../../shared/Elsa.Testing.Shared/Elsa.Testing.Shared.csproj" />
+    <ProjectReference Include="..\..\..\src\core\Elsa.Abstractions\Elsa.Abstractions.csproj" />
+    <ProjectReference Include="..\..\shared\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj" />
     <ProjectReference Include="..\..\..\src\activities\Elsa.Activities.Http\Elsa.Activities.Http.csproj" />
   </ItemGroup>
 

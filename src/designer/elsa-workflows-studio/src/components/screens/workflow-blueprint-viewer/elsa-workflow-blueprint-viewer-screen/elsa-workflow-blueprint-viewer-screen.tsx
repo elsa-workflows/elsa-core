@@ -9,11 +9,10 @@ import {
   WorkflowBlueprint, WorkflowModel,
   WorkflowPersistenceBehavior
 } from "../../../../models";
-import {createElsaClient} from "../../../../services/elsa-client";
+import {createElsaClient} from "../../../../services";
 import state from '../../../../utils/store';
 import {WorkflowDesignerMode} from "../../../designers/tree/elsa-designer-tree/models";
 import Tunnel from "../../../../data/dashboard";
-import {ElsaWebhookDefinitionEditorScreen} from "../../webhook-definition-editor/elsa-webhook-definition-editor-screen/elsa-webhook-definition-editor-screen";
 
 @Component({
   tag: 'elsa-workflow-blueprint-viewer-screen',
@@ -57,7 +56,7 @@ export class ElsaWorkflowBlueprintViewerScreen {
       propertyStorageProviders: {}
     };
 
-    const client = createElsaClient(this.serverUrl);
+    const client = await createElsaClient(this.serverUrl);
 
     if (workflowDefinitionId && workflowDefinitionId.length > 0) {
       try {
@@ -89,7 +88,7 @@ export class ElsaWorkflowBlueprintViewerScreen {
   }
 
   async loadActivityDescriptors() {
-    const client = createElsaClient(this.serverUrl);
+    const client = await createElsaClient(this.serverUrl);
     state.activityDescriptors = await client.activitiesApi.list();
   }
 
@@ -151,10 +150,17 @@ export class ElsaWorkflowBlueprintViewerScreen {
   renderCanvas() {
     return (
       <div class="elsa-flex-1 elsa-flex">
-        <elsa-designer-tree model={this.workflowModel} class="elsa-flex-1" ref={el => this.designer = el} mode={WorkflowDesignerMode.Blueprint}/>
-        <elsa-workflow-blueprint-side-panel workflowId={this.workflowDefinitionId} />
+        <elsa-designer-tree model={this.workflowModel} class="elsa-flex-1" ref={el => this.designer = el}
+                            mode={WorkflowDesignerMode.Blueprint}/>
+        <elsa-flyout-panel>
+          <elsa-tab-header tab="general" slot="header">General</elsa-tab-header>
+          <elsa-tab-content tab="general" slot="content">
+            <elsa-workflow-blueprint-side-panel workflowId={this.workflowDefinitionId}/>
+          </elsa-tab-content>
+        </elsa-flyout-panel>
       </div>
     );
   }
 }
+
 Tunnel.injectProps(ElsaWorkflowBlueprintViewerScreen, ['serverUrl', 'culture']);

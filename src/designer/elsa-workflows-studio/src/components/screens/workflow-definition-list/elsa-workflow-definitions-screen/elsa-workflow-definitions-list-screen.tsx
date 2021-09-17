@@ -52,13 +52,13 @@ export class ElsaWorkflowDefinitionsListScreen {
     if (!result)
       return;
 
-    const elsaClient = this.createClient();
+    const elsaClient = await this.createClient();
     await elsaClient.workflowDefinitionsApi.delete(workflowDefinition.definitionId);
     await this.loadWorkflowDefinitions();
   }
 
   async loadWorkflowDefinitions() {
-    const elsaClient = this.createClient();
+    const elsaClient = await this.createClient();
     const page = 0;
     const pageSize = 50;
     const latestVersionOptions: VersionOptions = {isLatest: true};

@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="..\..\..\..\common.props" />
+    <Import Project="..\..\..\..\configureawait.props" />
+
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+        <Description>
+            Elsa Workflow Settings is an optional part of Elsa Workflows.
+            This package provides a YesSql persistence provider.
+        </Description>
+        <PackageTags>elsa, workflow settings, orchard</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="YesSql.Core" Version="3.0.7" />
+        <PackageReference Include="YesSql.Provider.MySql" Version="3.0.7" />
+        <PackageReference Include="YesSql.Provider.PostgreSql" Version="3.0.7" />
+        <PackageReference Include="YesSql.Provider.Sqlite" Version="3.0.7" />
+        <PackageReference Include="YesSql.Provider.SqlServer" Version="3.0.7" />
+    </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\core\Elsa.Core\Elsa.Core.csproj" />
+    <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.YesSql\Elsa.Persistence.YesSql.csproj" />
+    <ProjectReference Include="..\Elsa.WorkflowSettings\Elsa.WorkflowSettings.csproj" />
+  </ItemGroup>
+
+</Project>
