@@ -142,8 +142,8 @@ namespace Elsa.Services.Workflows
                 WorkflowStatus.Suspended => new INotification[] { new WorkflowSuspended(workflowExecutionContext) },
                 _ => Array.Empty<INotification>()
             };
-            
-            foreach (var statusEvent in statusEvents) 
+
+            foreach (var statusEvent in statusEvents)
                 await _mediator.Publish(statusEvent, cancellationToken);
 
             await _mediator.Publish(new WorkflowExecutionFinished(workflowExecutionContext), cancellationToken);
