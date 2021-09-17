@@ -230,7 +230,11 @@ namespace Elsa.Services.Models
             return await GetActivityPropertyAsync<T>(activityBlueprint, propertyName, cancellationToken);
         }
         
-        public async Task<T?> GetActivityPropertyAsync<T>(IActivityBlueprint activityBlueprint, string propertyName, CancellationToken cancellationToken = default) => (T?)await GetActivityPropertyAsync(activityBlueprint, propertyName, cancellationToken);
+        public async Task<T?> GetActivityPropertyAsync<T>(IActivityBlueprint activityBlueprint, string propertyName, CancellationToken cancellationToken = default)
+        {
+            var value = await GetActivityPropertyAsync(activityBlueprint, propertyName, cancellationToken);
+            return value.ConvertTo<T?>();
+        }
 
         public async Task<object?> GetActivityPropertyAsync(IActivityBlueprint activityBlueprint, string propertyName, CancellationToken cancellationToken = default)
         {
