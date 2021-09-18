@@ -1,5 +1,5 @@
-import {Component, h, Prop, State} from '@stencil/core';
-import {createElsaClient} from "../../../../services/elsa-client";
+import {Component, Event, h, Prop, State} from '@stencil/core';
+import {createElsaClient, SaveWorkflowDefinitionRequest} from "../../../../services/elsa-client";
 import {PagedList, VersionOptions, WorkflowDefinitionSummary} from "../../../../models";
 import {RouterHistory} from "@stencil/router";
 import {i18n} from "i18next";
@@ -25,6 +25,17 @@ export class ElsaWorkflowDefinitionsListScreen {
 
   async componentWillLoad() {
     this.i18next = await loadTranslations(this.culture, resources);
+    await this.loadWorkflowDefinitions();
+  }
+  async onPublishClick (e: Event, workflowDefinition: WorkflowDefinitionSummary) {
+    const elsaClient = await this.createClient();
+    await elsaClient.workflowDefinitionsApi.publish(workflowDefinition.definitionId);
+    await this.loadWorkflowDefinitions();
+  }
+
+  async onUnPublishClick (e: Event, workflowDefinition: WorkflowDefinitionSummary) {
+    const elsaClient = await this.createClient();
+    await elsaClient.workflowDefinitionsApi.retract(workflowDefinition.definitionId);
     await this.loadWorkflowDefinitions();
   }
 
@@ -86,7 +97,8 @@ export class ElsaWorkflowDefinitionsListScreen {
             <tbody class="elsa-bg-white elsa-divide-y elsa-divide-gray-100">
             {workflowDefinitions.map(workflowDefinition => {
               const latestVersionNumber = workflowDefinition.version;
-              const publishedVersion: WorkflowDefinitionSummary = workflowDefinition.isPublished ? workflowDefinition : this.publishedWorkflowDefinitions.find(x => x.definitionId == workflowDefinition.definitionId);
+              const {isPublished} = workflowDefinition;
+              const publishedVersion: WorkflowDefinitionSummary = isPublished ? workflowDefinition : this.publishedWorkflowDefinitions.find(x => x.definitionId == workflowDefinition.definitionId);
               const publishedVersionNumber = !!publishedVersion ? publishedVersion.version : '-';
               let workflowDisplayName = workflowDefinition.displayName;
 
@@ -118,6 +130,18 @@ export class ElsaWorkflowDefinitionsListScreen {
                 </svg>
               );
 
+              const publishIcon = (
+                <svg xmlns="http://www.w3.org/2000/svg" class="elsa-h-5 elsa-w-5 elsa-text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+              );
+
+              const unPublishIcon = (
+                <svg xmlns="http://www.w3.org/2000/svg" class="elsa-h-5 elsa-w-5 elsa-text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                </svg>
+              );
+
               return (
                 <tr>
                   <td class="elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-font-medium elsa-text-gray-900">
@@ -137,6 +161,7 @@ export class ElsaWorkflowDefinitionsListScreen {
                   <td class="elsa-pr-6">
                     <elsa-context-menu history={this.history} menuItems={[
                       {text: i18next.t('Edit'), anchorUrl: editUrl, icon: editIcon},
+                      isPublished ? {text: i18next.t('Unpublish'), clickHandler: e => this.onUnPublishClick(e, workflowDefinition), icon: unPublishIcon} : {text: i18next.t('Publish'), clickHandler: e => this.onPublishClick(e, workflowDefinition), icon: publishIcon},
                       {text: i18next.t('Delete'), clickHandler: e => this.onDeleteClick(e, workflowDefinition), icon: deleteIcon}
                     ]}/>
                   </td>
