@@ -1,7 +1,13 @@
 import {Component, Event, h, Host, Prop, State} from '@stencil/core';
 import {eventBus, propertyDisplayManager} from '../../../../services';
 import state from '../../../../utils/store';
-import {ActivityDescriptor, ActivityModel, ActivityPropertyDescriptor, EventTypes, WorkflowStorageDescriptor} from "../../../../models";
+import {
+  ActivityDescriptor,
+  ActivityModel,
+  ActivityPropertyDescriptor,
+  EventTypes,
+  WorkflowStorageDescriptor
+} from "../../../../models";
 import {checkBox, FormContext, section, selectField, SelectOption, textArea, textInput} from "../../../../utils/forms";
 import {i18n} from "i18next";
 import {loadTranslations} from "../../../i18n/i18n-loader";
@@ -21,6 +27,11 @@ export interface ActivityEditorRenderProps {
   selectedTabName?: string;
 }
 
+export interface ActivityEditorAppearingEventArgs {
+  activityDescriptor: ActivityDescriptor;
+  activityModel: ActivityModel;
+}
+
 @Component({
   tag: 'elsa-activity-editor-modal',
   shadow: false,
@@ -33,7 +44,6 @@ export class ElsaActivityEditorModal {
   @State() renderProps: ActivityEditorRenderProps = {};
   i18next: i18n;
   dialog: HTMLElsaModalDialogElement;
-  form: HTMLFormElement;
   formContext: FormContext;
 
   // Force a new key every time we show the editor to make sure Stencil creates new components.
@@ -41,11 +51,11 @@ export class ElsaActivityEditorModal {
   timestamp: Date = new Date();
 
   connectedCallback() {
-    eventBus.on(EventTypes.ShowActivityEditor, this.onShowActivityEditor);
+    eventBus.on(EventTypes.ActivityEditor.Show, this.onShowActivityEditor);
   }
 
   disconnectedCallback() {
-    eventBus.detach(EventTypes.ShowActivityEditor, this.onShowActivityEditor);
+    eventBus.detach(EventTypes.ActivityEditor.Show, this.onShowActivityEditor);
   }
 
   async componentWillLoad() {
@@ -64,10 +74,26 @@ export class ElsaActivityEditorModal {
   }
 
   componentWillRender() {
-    const activityDescriptor: ActivityDescriptor = this.activityDescriptor || {displayName: '', type: '', outcomes: [], category: '', traits: 0, browsable: false, inputProperties: [], outputProperties: [], description: ''};
+    const activityDescriptor: ActivityDescriptor = this.activityDescriptor || {
+      displayName: '',
+      type: '',
+      outcomes: [],
+      category: '',
+      traits: 0,
+      browsable: false,
+      inputProperties: [],
+      outputProperties: [],
+      description: ''
+    };
     const propertyCategories = activityDescriptor.inputProperties.filter(x => x.category).map(x => x.category).distinct();
     const defaultProperties = activityDescriptor.inputProperties.filter(x => !x.category || x.category.length == 0);
-    const activityModel: ActivityModel = this.activityModel || {type: '', activityId: '', outcomes: [], properties: [], propertyStorageProviders: {}};
+    const activityModel: ActivityModel = this.activityModel || {
+      type: '',
+      activityId: '',
+      outcomes: [],
+      properties: [],
+      propertyStorageProviders: {}
+    };
     const t = this.t;
     let tabs: Array<TabModel> = [];
 
@@ -106,8 +132,6 @@ export class ElsaActivityEditorModal {
       selectedTabName: this.renderProps.selectedTabName
     };
 
-    eventBus.emit(EventTypes.ActivityEditorDisplaying, this, this.renderProps);
-
     let selectedTabName = this.renderProps.selectedTabName
     tabs = this.renderProps.tabs;
 
@@ -119,7 +143,7 @@ export class ElsaActivityEditorModal {
   }
 
   async onCancelClick() {
-    await this.dialog.hide(true);
+    await this.hide(true);
   }
 
   onSubmit = async (e: Event) => {
@@ -127,8 +151,8 @@ export class ElsaActivityEditorModal {
     const form: any = e.target;
     const formData = new FormData(form);
     this.updateActivity(formData);
-    eventBus.emit(EventTypes.UpdateActivity, this, this.activityModel);
-    await this.dialog.hide(true);
+    await eventBus.emit(EventTypes.UpdateActivity, this, this.activityModel);
+    await this.hide(true);
   };
 
   onTabClick = (e: Event, tab: TabModel) => {
@@ -143,14 +167,30 @@ export class ElsaActivityEditorModal {
     this.formContext = new FormContext(this.activityModel, newValue => this.activityModel = newValue);
     this.timestamp = new Date();
     this.renderProps = {};
-    await this.dialog.show(animate);
+    await this.show(animate);
   };
+
+  show = async (animate: boolean) => await this.dialog.show(animate);
+  hide = async (animate: boolean) => await this.dialog.hide(animate);
 
   onKeyDown = async (event: KeyboardEvent) => {
     if (event.ctrlKey && event.key === 'Enter') {
       (this.dialog.querySelector('button[type="submit"]') as HTMLButtonElement).click();
     }
   }
+
+  onDialogShown = async () => {
+    const args: ActivityEditorAppearingEventArgs = {
+      activityModel: this.activityModel,
+      activityDescriptor: this.activityDescriptor
+    };
+
+    await eventBus.emit(EventTypes.ActivityEditor.Appearing, this, args);
+  };
+
+  onDialogHidden = async () => {
+    await eventBus.emit(EventTypes.ActivityEditor.Disappearing);
+  };
 
   render() {
     const renderProps = this.renderProps;
@@ -163,9 +203,10 @@ export class ElsaActivityEditorModal {
 
     return (
       <Host class="elsa-block">
-        <elsa-modal-dialog ref={el => this.dialog = el}>
+        <elsa-modal-dialog ref={el => this.dialog = el} onShown={this.onDialogShown} onHidden={this.onDialogHidden}>
           <div slot="content" class="elsa-py-8 elsa-pb-0">
-            <form onSubmit={e => this.onSubmit(e)} ref={el => this.form = el} key={this.timestamp.getTime().toString()} onKeyDown={this.onKeyDown}>
+            <form onSubmit={e => this.onSubmit(e)} key={this.timestamp.getTime().toString()} onKeyDown={this.onKeyDown}
+                  class='activity-editor-form'>
               <div class="elsa-flex elsa-px-8">
                 <div class="elsa-space-y-8 elsa-divide-y elsa-divide-gray-200 elsa-w-full">
                   <div>
@@ -183,7 +224,8 @@ export class ElsaActivityEditorModal {
                         {tabs.map(tab => {
                           const isSelected = tab.tabName === selectedTabName;
                           const cssClass = isSelected ? selectedClass : inactiveClass;
-                          return <a href="#" onClick={e => this.onTabClick(e, tab)} class={`${cssClass} elsa-whitespace-nowrap elsa-py-4 elsa-px-1 elsa-border-b-2 elsa-font-medium elsa-text-sm`}>{tab.tabName}</a>;
+                          return <a href="#" onClick={e => this.onTabClick(e, tab)}
+                                    class={`${cssClass} elsa-whitespace-nowrap elsa-py-4 elsa-px-1 elsa-border-b-2 elsa-font-medium elsa-text-sm`}>{tab.tabName}</a>;
                         })}
                       </nav>
                     </div>
@@ -229,7 +271,10 @@ export class ElsaActivityEditorModal {
   renderStorageTab(activityModel: ActivityModel, activityDescriptor: ActivityDescriptor) {
     const formContext = this.formContext;
     const t = this.t;
-    let storageDescriptorOptions: Array<SelectOption> = this.workflowStorageDescriptors.map(x => ({value: x.name, text: x.displayName}));
+    let storageDescriptorOptions: Array<SelectOption> = this.workflowStorageDescriptors.map(x => ({
+      value: x.name,
+      text: x.displayName
+    }));
     let outputProperties = activityDescriptor.outputProperties.filter(x => !x.disableWorkflowProviderSelection);
     let inputProperties = activityDescriptor.inputProperties.filter(x => !x.disableWorkflowProviderSelection);
 
@@ -303,7 +348,8 @@ export class ElsaActivityEditorModal {
   renderPropertyEditor(activity: ActivityModel, property: ActivityPropertyDescriptor) {
     const key = `activity-property-input:${activity.activityId}:${property.name}`;
     const display = propertyDisplayManager.display(activity, property);
-    return <elsa-control key={key} class="sm:elsa-col-span-6" content={display}/>;
+    const id = `${property.name}Control`;
+    return <elsa-control key={key} id={id} class="sm:elsa-col-span-6" content={display}/>;
   }
 
   getHiddenClass(tab: string) {

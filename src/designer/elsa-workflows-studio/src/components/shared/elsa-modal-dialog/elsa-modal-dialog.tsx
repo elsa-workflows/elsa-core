@@ -1,4 +1,4 @@
-import {Component, Host, h, State, Listen, Method} from '@stencil/core';
+import {Component, Host, h, State, Listen, Method, Event, EventEmitter} from '@stencil/core';
 import {enter, leave} from 'el-transition'
 import {eventBus} from "../../../services";
 import {EventTypes} from "../../../models";
@@ -8,7 +8,8 @@ import {EventTypes} from "../../../models";
   shadow: false,
 })
 export class ElsaModalDialog {
-
+  @Event() shown: EventEmitter;
+  @Event() hidden: EventEmitter;
   @State() isVisible: boolean;
   overlay: HTMLElement
   modal: HTMLElement
@@ -24,7 +25,7 @@ export class ElsaModalDialog {
 
   @Method()
   async hide(animate: boolean) {
-    eventBus.emit(EventTypes.HideModalDialog);
+    await eventBus.emit(EventTypes.HideModalDialog);
     this.hideInternal(animate);
   }
 
@@ -37,7 +38,7 @@ export class ElsaModalDialog {
     }
 
     enter(this.overlay);
-    enter(this.modal);
+    enter(this.modal).then(this.shown.emit);
   }
 
   hideInternal(animate: boolean) {
@@ -46,7 +47,10 @@ export class ElsaModalDialog {
     }
 
     leave(this.overlay);
-    leave(this.modal).then(() => this.isVisible = false);
+    leave(this.modal).then(() => {
+      this.isVisible = false;
+      this.hidden.emit();
+    });
   }
 
   @Listen('keydown', {target: 'window'})
@@ -60,7 +64,8 @@ export class ElsaModalDialog {
     return (
       <Host class={{'hidden': !this.isVisible, 'elsa-block': true}}>
         <div class="elsa-fixed elsa-z-10 elsa-inset-0 elsa-overflow-y-auto">
-          <div class="elsa-flex elsa-items-end elsa-justify-center elsa-min-h-screen elsa-pt-4 elsa-px-4 elsa-pb-20 elsa-text-center sm:elsa-block sm:elsa-p-0">
+          <div
+            class="elsa-flex elsa-items-end elsa-justify-center elsa-min-h-screen elsa-pt-4 elsa-px-4 elsa-pb-20 elsa-text-center sm:elsa-block sm:elsa-p-0">
             <div ref={el => this.overlay = el}
                  onClick={() => this.hide(true)}
                  data-transition-enter="elsa-ease-out elsa-duration-300" data-transition-enter-start="elsa-opacity-0"

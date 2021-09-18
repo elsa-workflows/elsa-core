@@ -811,6 +811,8 @@ declare namespace LocalJSX {
         "propertyModel"?: ActivityDefinitionProperty;
     }
     interface ElsaModalDialog {
+        "onHidden"?: (event: CustomEvent<any>) => void;
+        "onShown"?: (event: CustomEvent<any>) => void;
     }
     interface ElsaMonaco {
         "editorHeight"?: string;

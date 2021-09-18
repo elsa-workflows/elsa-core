@@ -83,12 +83,17 @@ namespace Elsa.Activities.JavaScript
             return Task.CompletedTask;
         }
 
-        object IActivityPropertyOptionsProvider.GetOptions(PropertyInfo property) =>
-            new
+        object? IActivityPropertyOptionsProvider.GetOptions(PropertyInfo property)
+        {
+            if (property.Name != nameof(Script))
+                return null;
+            
+            return new
             {
                 EditorHeight = "Large",
                 Context = nameof(RunJavaScript),
                 Syntax = JavaScriptExpressionHandler.SyntaxName
             };
+        }
     }
 }

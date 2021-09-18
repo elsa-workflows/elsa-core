@@ -6,8 +6,9 @@ namespace Elsa.Activities.Http.Services
 {
     public interface IHttpResponseContentReader
     {
+        string Name { get; }
         int Priority { get; }
         bool GetSupportsContentType(string contentType);
-        Task<object> ReadAsync(HttpResponseMessage response, CancellationToken cancellationToken);
+        Task<object> ReadAsync(SendHttpRequest activity, HttpResponseMessage response, CancellationToken cancellationToken);
     }
 }

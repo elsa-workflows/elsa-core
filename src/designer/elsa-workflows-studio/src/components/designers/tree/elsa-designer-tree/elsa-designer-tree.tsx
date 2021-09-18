@@ -150,13 +150,13 @@ export class ElsaWorkflowDesigner {
 
   @Method()
   async showActivityEditor(activity: ActivityModel, animate: boolean) {
-    this.showActivityEditorInternal(activity, animate);
+    await this.showActivityEditorInternal(activity, animate);
   }
 
   async copyActivitiesToClipboard() {
     this.checkClipboardPermissions();
     await navigator.clipboard.writeText(JSON.stringify(this.selectedActivities));
-    eventBus.emit(EventTypes.ClipboardCopied, this);
+    await eventBus.emit(EventTypes.ClipboardCopied, this);
   }
 
   async pasteActivitiesFromClipboard() {
@@ -167,7 +167,7 @@ export class ElsaWorkflowDesigner {
     await navigator.clipboard.readText().then(data => {
       copiedActivities = JSON.parse(data);
     });
-    this.addActivitiesFromClipboard(copiedActivities)
+    await this.addActivitiesFromClipboard(copiedActivities)
   }
 
   async addActivitiesFromClipboard(copiedActivities: Array<ActivityModel>) {
@@ -305,12 +305,8 @@ export class ElsaWorkflowDesigner {
     };
   }
 
-  showActivityEditorInternal(activity: ActivityModel, animate: boolean) {
-    eventBus.emit(EventTypes.ShowActivityEditor, this, activity, animate);
-  }
-
-  handleEditActivity(activity: ActivityModel) {
-    this.showActivityEditorInternal(activity, true);
+  async showActivityEditorInternal(activity: ActivityModel, animate: boolean) {
+    await eventBus.emit(EventTypes.ActivityEditor.Show, this, activity, animate);
   }
 
   updateWorkflowModel(model: WorkflowModel, emitEvent: boolean = true) {
@@ -618,7 +614,7 @@ export class ElsaWorkflowDesigner {
     const activityDescriptor = args as ActivityDescriptor;
     const activityModel = this.newActivity(activityDescriptor);
     this.addingActivity = true;
-    this.showActivityEditorInternal(activityModel, false);
+    await this.showActivityEditorInternal(activityModel, false);
   };
 
   onUpdateActivity = args => {
@@ -643,7 +639,7 @@ export class ElsaWorkflowDesigner {
     this.selectedActivities = {};
     activityModel.outcomes[0] = this.parentActivityOutcome;
     this.selectedActivities[activityModel.activityId] = activityModel;
-    this.pasteActivitiesFromClipboard();
+    await this.pasteActivitiesFromClipboard();
   };
 
   onCopyPasteActivityEnabled = () => {
