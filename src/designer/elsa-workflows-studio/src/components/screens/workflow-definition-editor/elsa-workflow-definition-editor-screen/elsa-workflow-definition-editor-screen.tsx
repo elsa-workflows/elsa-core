@@ -95,6 +95,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
       const workflowDefinition = await client.workflowDefinitionsApi.import(this.workflowDefinition.definitionId, file);
       this.workflowDefinition = workflowDefinition;
       this.workflowModel = this.mapWorkflowModel(workflowDefinition);
+      this.updateUrl(workflowDefinition.definitionId)
 
       this.importing = false;
       this.imported = true;
@@ -261,7 +262,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
       setTimeout(() => this.saved = false, 500);
       this.workflowSaved.emit(workflowDefinition);
       if (isNew) {
-        this.history.push(`/workflow-definitions/${workflowDefinition.definitionId}`, {});
+        this.updateUrl(workflowDefinition.definitionId);
       }
     } catch (e) {
       console.error(e);
@@ -289,6 +290,10 @@ export class ElsaWorkflowDefinitionEditorScreen {
       this.networkError = e.message;
       setTimeout(() => this.networkError = null, 2000);
     }
+  }
+
+  updateUrl(id){
+    this.history.push(`/workflow-definitions/${id}`, {});
   }
 
   mapWorkflowModel(workflowDefinition: WorkflowDefinition): WorkflowModel {
