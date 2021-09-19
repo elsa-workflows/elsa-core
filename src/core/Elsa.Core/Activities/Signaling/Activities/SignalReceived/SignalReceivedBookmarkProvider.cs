@@ -20,7 +20,11 @@ namespace Elsa.Activities.Signaling
 
         private async IAsyncEnumerable<BookmarkResult> GetBookmarksInternalAsync(BookmarkProviderContext<SignalReceived> context, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            var signalName = (await context.ReadActivityPropertyAsync(x => x.Signal, cancellationToken))!.ToLowerInvariant();
+            var signalName = (await context.ReadActivityPropertyAsync(x => x.Signal, cancellationToken))?.ToLowerInvariant().Trim();
+            
+            // Can't do anything with an empty signal name.
+            if(string.IsNullOrEmpty(signalName))
+                yield break;
             
             yield return Result(new SignalReceivedBookmark
             {
