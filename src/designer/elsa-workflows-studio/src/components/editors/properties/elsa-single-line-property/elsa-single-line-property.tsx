@@ -17,7 +17,7 @@ export class ElsaSingleLineProperty {
     this.propertyModel.expressions[defaultSyntax] = this.currentValue = input.value;
   }
 
-  componentWillLoad() {    
+  componentWillLoad() {
     const defaultSyntax = this.propertyDescriptor.defaultSyntax || SyntaxNames.Literal;
     this.currentValue = this.propertyModel.expressions[defaultSyntax] || undefined;
   }
@@ -26,7 +26,7 @@ export class ElsaSingleLineProperty {
     this.currentValue = e.detail;
   }
 
-  render() {        
+  render() {
     const propertyDescriptor = this.propertyDescriptor;
     const propertyModel = this.propertyModel;
     const propertyName = propertyDescriptor.name;
@@ -41,7 +41,7 @@ export class ElsaSingleLineProperty {
     }
 
     if (isReadOnly)
-    {      
+    {
       const defaultSyntax = this.propertyDescriptor.defaultSyntax || SyntaxNames.Literal;
       this.propertyModel.expressions[defaultSyntax] = value;
     }

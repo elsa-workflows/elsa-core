@@ -188,7 +188,7 @@ export class ElsaWorkflowDesigner {
       this.addingActivity = true;
       copiedActivities[key].activityId = uuid();
 
-      eventBus.emit(EventTypes.UpdateActivity, this, copiedActivities[key]);
+      await eventBus.emit(EventTypes.UpdateActivity, this, copiedActivities[key]);
 
       this.parentActivityId = copiedActivities[key].activityId;
       this.parentActivityOutcome = copiedActivities[key].outcomes[0];
@@ -247,7 +247,7 @@ export class ElsaWorkflowDesigner {
     }
   }
 
-  componentWillRender() {
+  async componentWillRender() {
     if (!!this.activityDisplayContexts)
       return;
 
@@ -255,7 +255,7 @@ export class ElsaWorkflowDesigner {
     const displayContexts: Map<ActivityDesignDisplayContext> = {};
 
     for (const model of activityModels)
-      displayContexts[model.activityId] = this.getActivityDisplayContext(model);
+      displayContexts[model.activityId] = await this.getActivityDisplayContext(model);
 
     this.activityDisplayContexts = displayContexts;
 
@@ -264,7 +264,7 @@ export class ElsaWorkflowDesigner {
       this.rerenderTree();
   }
 
-  getActivityDisplayContext(activityModel: ActivityModel): ActivityDesignDisplayContext {
+  async getActivityDisplayContext(activityModel: ActivityModel): Promise<ActivityDesignDisplayContext> {
     const activityDescriptors: Array<ActivityDescriptor> = state.activityDescriptors;
     let descriptor = activityDescriptors.find(x => x.type == activityModel.type);
     let descriptorExists = !!descriptor;
@@ -287,7 +287,7 @@ export class ElsaWorkflowDesigner {
       outcomes: [...activityModel.outcomes],
     };
 
-    eventBus.emit(EventTypes.ActivityDesignDisplaying, this, displayContext);
+    await eventBus.emit(EventTypes.ActivityDesignDisplaying, this, displayContext);
     return displayContext;
   }
 
@@ -397,19 +397,11 @@ export class ElsaWorkflowDesigner {
     return activity;
   }
 
-  createAndAddActivity(activityDescriptor: ActivityDescriptor, sourceActivityId?: string, targetActivityId?: string, outcome?: string): ActivityModel {
-    outcome = outcome || 'Done';
-
-    const activity = this.newActivity(activityDescriptor);
-    this.addActivity(activity, sourceActivityId, targetActivityId, outcome);
-    return activity;
-  }
-
-  addActivity(activity: ActivityModel, sourceActivityId?: string, targetActivityId?: string, outcome?: string) {
+  async addActivity(activity: ActivityModel, sourceActivityId?: string, targetActivityId?: string, outcome?: string) {
     outcome = outcome || 'Done';
 
     const workflowModel = {...this.workflowModel, activities: [...this.workflowModel.activities, activity]};
-    const activityDisplayContext = this.getActivityDisplayContext(activity);
+    const activityDisplayContext = await this.getActivityDisplayContext(activity);
 
     if (targetActivityId) {
       const existingConnection = workflowModel.connections.find(x => x.targetId == targetActivityId && x.outcome == outcome);
@@ -493,8 +485,8 @@ export class ElsaWorkflowDesigner {
     this.updateWorkflowModel({...workflowModel, activities: activities});
   }
 
-  showActivityPicker() {
-    eventBus.emit(EventTypes.ShowActivityPicker);
+  async showActivityPicker() {
+    await eventBus.emit(EventTypes.ShowActivityPicker);
   }
 
   removeConnection(sourceId: string, outcome: string) {
@@ -668,7 +660,7 @@ export class ElsaWorkflowDesigner {
         const node = this.graph.node(n) as any;
 
         d3.select(node.elem)
-          .on('click', e => {
+          .on('click', async e => {
             e.preventDefault();
             root.selectAll('.node.add svg').classed('elsa-text-green-400', false).classed('elsa-text-gray-400', true).classed('hover:elsa-text-blue-500', true);
             this.parentActivityId = node.activity.activityId;
@@ -679,7 +671,7 @@ export class ElsaWorkflowDesigner {
               return;
             }
 
-            this.showActivityPicker();
+            await this.showActivityPicker();
           })
           .on("mouseover", e => {
             if (e.shiftKey)
@@ -699,8 +691,8 @@ export class ElsaWorkflowDesigner {
 
       root.selectAll('.node.start').each((n: any) => {
         const node = this.graph.node(n) as any;
-        d3.select(node.elem).on('click', e => {
-          this.showActivityPicker();
+        d3.select(node.elem).on('click', async e => {
+          await this.showActivityPicker();
         });
       });
 
