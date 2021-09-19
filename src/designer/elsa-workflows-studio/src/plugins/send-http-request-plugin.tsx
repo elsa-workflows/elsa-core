@@ -1,7 +1,10 @@
-﻿import {eventBus, ElsaPlugin} from "../../services";
-import {EventTypes} from "../../models";
+﻿import {eventBus, ElsaPlugin} from "../services";
+import {EventTypes} from "../models";
 import {h} from "@stencil/core";
-import {ActivityEditorAppearingEventArgs} from "../../components/screens/workflow-definition-editor/elsa-activity-editor-modal/elsa-activity-editor-modal";
+import {
+  ActivityEditorAppearingEventArgs,
+  ActivityEditorDisappearingEventArgs
+} from "../components/screens/workflow-definition-editor/elsa-activity-editor-modal/elsa-activity-editor-modal";
 
 export class SendHttpRequestPlugin implements ElsaPlugin {
   constructor() {
@@ -19,7 +22,10 @@ export class SendHttpRequestPlugin implements ElsaPlugin {
     this.updateUI();
   };
 
-  onActivityEditorDisappearing = () => {
+  onActivityEditorDisappearing = (args: ActivityEditorDisappearingEventArgs) => {
+    if (args.activityDescriptor.type != 'SendHttpRequest')
+      return;
+
     document.querySelector('#ReadContent').removeEventListener('change', this.updateUI);
     document.querySelector('#ResponseContentParserName').removeEventListener('change', this.updateUI);
   };

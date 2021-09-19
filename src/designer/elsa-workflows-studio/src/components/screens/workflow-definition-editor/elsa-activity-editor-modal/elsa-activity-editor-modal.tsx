@@ -27,9 +27,15 @@ export interface ActivityEditorRenderProps {
   selectedTabName?: string;
 }
 
-export interface ActivityEditorAppearingEventArgs {
+export interface ActivityEditorEventArgs {
   activityDescriptor: ActivityDescriptor;
   activityModel: ActivityModel;
+}
+
+export interface ActivityEditorAppearingEventArgs extends ActivityEditorEventArgs {
+}
+
+export interface ActivityEditorDisappearingEventArgs extends ActivityEditorEventArgs {
 }
 
 @Component({
@@ -189,7 +195,12 @@ export class ElsaActivityEditorModal {
   };
 
   onDialogHidden = async () => {
-    await eventBus.emit(EventTypes.ActivityEditor.Disappearing);
+    const args: ActivityEditorDisappearingEventArgs = {
+      activityModel: this.activityModel,
+      activityDescriptor: this.activityDescriptor
+    };
+
+    await eventBus.emit(EventTypes.ActivityEditor.Disappearing, this, args);
   };
 
   render() {

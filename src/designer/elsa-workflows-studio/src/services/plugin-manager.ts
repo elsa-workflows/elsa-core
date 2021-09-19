@@ -16,7 +16,7 @@ import {SignalReceivedPlugin} from "../plugins/signal-received-plugin";
 import {SendSignalPlugin} from "../plugins/send-signal-plugin";
 import {UserTaskPlugin} from "../plugins/user-task-plugin";
 import {StatePlugin} from "../plugins/state-plugin";
-import {SendHttpRequestPlugin} from "../plugins/send-http-request/send-http-request-plugin";
+import {SendHttpRequestPlugin} from "../plugins/send-http-request-plugin";
 import {RunWorkflowPlugin} from "../plugins/run-workflow-plugin";
 import {ElsaStudio} from "../models";
 
