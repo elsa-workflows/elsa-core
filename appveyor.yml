@@ -18,11 +18,11 @@ init:
     -   ps: |
             if ($env:APPVEYOR_REPO_TAG -eq "true")
             {
-                Set-AppveyorBuildVariable -Name "elsa_build_version" -Value $env:APPVEYOR_REPO_TAG_NAME
+                $env:elsa_build_version=$env:APPVEYOR_REPO_TAG_NAME
             }
             else
             {
-                Set-AppveyorBuildVariable -Name "elsa_build_version" -Value "$($env:elsa_version)-preview.$($env:APPVEYOR_BUILD_NUMBER)"
+                $env:elsa_build_version="$($env:elsa_version)-preview.$($env:APPVEYOR_BUILD_NUMBER)"
             }
 
 version: ${elsa_build_version}
