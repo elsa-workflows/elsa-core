@@ -15,15 +15,7 @@ environment:
 
 init:
     -   cmd: git config --global core.autocrlf true
-    -   ps: |
-            if ($env:APPVEYOR_REPO_TAG -eq "true")
-            {
-                $env:elsa_build_version=$env:APPVEYOR_REPO_TAG_NAME
-            }
-            else
-            {
-                $env:elsa_build_version="$($env:elsa_version)-preview.$($env:APPVEYOR_BUILD_NUMBER)"
-            }
+    -   ps: $env:elsa_build_version=1.1.1
 
 version: ${elsa_build_version}
 
