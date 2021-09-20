@@ -2,7 +2,7 @@ image: Previous Visual Studio 2019
 
 init:
     -   cmd: git config --global core.autocrlf true
-    -   ps: $env:elsa_build_version="1.1.1"
+    -   ps: $elsa_build_version = 1.1.1
 
 environment:
     elsa_version: 2.3.0
