@@ -2,6 +2,7 @@ image: Previous Visual Studio 2019
 
 environment:
     elsa_version: 2.3.0
+    elsa_build_version: 0.0.0
     nodejs_version: "14.6.0"
     # AppVeyor installs Java on its build agents by default, but it
     # picks an old version that's not compatible with SonarQube.
@@ -17,12 +18,14 @@ init:
     -   ps: |
             if ($env:APPVEYOR_REPO_TAG -eq "true")
             {
-                Update-AppveyorBuild -Version $env:APPVEYOR_REPO_TAG_NAME
+                Set-AppveyorBuildVariable -Name "elsa_build_version" -Value $env:APPVEYOR_REPO_TAG_NAME
             }
             else
             {
-                Update-AppveyorBuild -Version "$($env:elsa_version)-preview.$($env:APPVEYOR_BUILD_NUMBER)"
+                Set-AppveyorBuildVariable -Name "elsa_build_version" -Value "$($env:elsa_version)-preview.$($env:APPVEYOR_BUILD_NUMBER)"
             }
+
+version: 1.0.0.{elsa_build_version}
 
 pull_requests:
     do_not_increment_build_number: true
