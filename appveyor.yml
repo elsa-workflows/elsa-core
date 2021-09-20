@@ -1,5 +1,9 @@
 image: Previous Visual Studio 2019
 
+init:
+    -   cmd: git config --global core.autocrlf true
+    -   ps: $env:elsa_build_version=1.1.1
+
 environment:
     elsa_version: 2.3.0
     elsa_build_version: 0.0.0
@@ -12,10 +16,6 @@ environment:
     sonarcloud_project_name: elsa-workflows_elsa-core
     sonarcloud_api_key:
         secure: qaE9kOVkGGFM7ZMf3YeliZxDU9udTCy6W5xXHJ9T+tXv5qXPMYlIdR7hyNgxW04A
-
-init:
-    -   cmd: git config --global core.autocrlf true
-    -   ps: $env:elsa_build_version=1.1.1
 
 version: ${elsa_build_version}
 
