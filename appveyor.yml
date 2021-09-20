@@ -17,11 +17,11 @@ init:
     -   ps: |
             if ($env:APPVEYOR_REPO_TAG -eq "true")
             {
-                Set-AppveyorBuildVariable -Name "version" -Value $env:APPVEYOR_REPO_TAG_NAME
+                Set-AppveyorBuildVariable -Name "APPVEYOR_BUILD_VERSION" -Value $env:APPVEYOR_REPO_TAG_NAME
             }
             else
             {
-                Set-AppveyorBuildVariable -Name "version" -Value "$($env:elsa_version)-preview.$($env:APPVEYOR_BUILD_NUMBER)"
+                Set-AppveyorBuildVariable -Name "APPVEYOR_BUILD_VERSION" -Value "$($env:elsa_version)-preview.$($env:APPVEYOR_BUILD_NUMBER)"
             }
 
 # version: 2.3.0-preview.{build}
@@ -96,7 +96,7 @@ build_script:
 
 after_test:
     -   ps: >-
-            dotnet pack Elsa.sln --include-symbols /p:Version="$env:version"
+            dotnet pack Elsa.sln --include-symbols /p:Version="$env:APPVEYOR_BUILD_VERSION"
 
 artifacts:
     -   path: '**/*.nupkg'
