@@ -18,7 +18,13 @@ namespace Elsa.Activities.Http.Services
             if (baseUrl == null)
                 throw new Exception("There was no base URL configured, which means no absolute URL can be generated from outside the context of an HTTP request. Please make sure that `HttpActivityOptions` is configured correctly. The configuration key used in most Elsa samples is usually: \"Elsa:Server:BaseUrl\"");
 
-            return new Uri(baseUrl, relativePath);
+            // To not lose any base path information, we need to ensure that:
+            // - Base path ends with a slash.
+            // - Relative path does NOT start with a slash.
+            var baseUri = new Uri(baseUrl.ToString().TrimEnd('/') + '/');
+            relativePath = relativePath.TrimStart('/');
+            
+            return new Uri(baseUri, relativePath);
         }
     }
 }
