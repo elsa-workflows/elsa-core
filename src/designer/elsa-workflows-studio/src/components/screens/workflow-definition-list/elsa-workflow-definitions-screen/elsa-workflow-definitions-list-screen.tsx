@@ -109,7 +109,7 @@ export class ElsaWorkflowDefinitionsListScreen {
                 workflowDisplayName = 'Untitled';
 
               const editUrl = `${basePath}/workflow-definitions/${workflowDefinition.definitionId}`;
-              const instancesUrl = `/workflow-instances?workflow=${workflowDefinition.definitionId}`;
+              const instancesUrl = `${basePath}/workflow-instances?workflow=${workflowDefinition.definitionId}`;
 
               const editIcon = (
                 <svg class="elsa-h-5 elsa-w-5 elsa-text-gray-500" width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
