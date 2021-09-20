@@ -473,7 +473,8 @@ export class ElsaWorkflowInstanceListScreen {
                 };
                 const displayName = workflowBlueprint.displayName || workflowBlueprint.name || 'Untitled';
                 const statusColor = this.getStatusColor(workflowInstance.workflowStatus);
-                const viewUrl = `${basePath}/workflow-instances/${workflowInstance.id}`;
+                const instanceViewUrl = `${basePath}/workflow-instances/${workflowInstance.id}`;
+                const blueprintViewUrl = `${basePath}/workflow-registry/${workflowInstance.definitionId}`;
                 const instanceName = !workflowInstance.name ? '' : workflowInstance.name;
                 const isSelected = this.selectedWorkflowInstanceIds.findIndex(x => x === workflowInstance.id) >= 0;
                 const createdAt = moment(workflowInstance.createdAt);
@@ -490,7 +491,7 @@ export class ElsaWorkflowInstanceListScreen {
                   </td>
                   <td
                     class="elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-font-medium elsa-text-gray-900">
-                    <stencil-route-link url={viewUrl}
+                    <stencil-route-link url={instanceViewUrl}
                                         anchorClass="elsa-truncate hover:elsa-text-gray-600">{workflowInstance.id}</stencil-route-link>
                   </td>
                   <td
@@ -499,8 +500,7 @@ export class ElsaWorkflowInstanceListScreen {
                   </td>
                   <td
                     class="elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-font-medium elsa-text-gray-900 elsa-text-left">
-                    <stencil-route-link url={`/workflow-registry/${workflowInstance.definitionId}`}
-                                        anchorClass="elsa-truncate hover:elsa-text-gray-600">
+                    <stencil-route-link url={blueprintViewUrl} anchorClass="elsa-truncate hover:elsa-text-gray-600">
                       {displayName}
                     </stencil-route-link>
                   </td>
@@ -510,7 +510,7 @@ export class ElsaWorkflowInstanceListScreen {
                   </td>
                   <td
                     class="elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-font-medium elsa-text-gray-900 elsa-text-left">
-                    <stencil-route-link url={viewUrl}
+                    <stencil-route-link url={instanceViewUrl}
                                         anchorClass="elsa-truncate hover:elsa-text-gray-600">{instanceName}</stencil-route-link>
                   </td>
                   <td
@@ -538,7 +538,7 @@ export class ElsaWorkflowInstanceListScreen {
                   </td>
                   <td class="elsa-pr-6">
                     <elsa-context-menu history={this.history} menuItems={[
-                      {text: t('Table.ContextMenu.View'), anchorUrl: viewUrl, icon: renderViewIcon()},
+                      {text: t('Table.ContextMenu.View'), anchorUrl: instanceViewUrl, icon: renderViewIcon()},
                       {
                         text: t('Table.ContextMenu.Cancel'),
                         clickHandler: e => this.onCancelClick(e, workflowInstance),
