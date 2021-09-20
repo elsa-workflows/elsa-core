@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Events;
 using Elsa.WorkflowSettings.Models;
-using Elsa.WorkflowSettings.Services.WorkflowSettings;
+using Elsa.WorkflowSettings.Services;
 using MediatR;
 
 namespace Elsa.WorkflowSettings.Handlers
