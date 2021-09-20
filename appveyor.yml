@@ -25,7 +25,7 @@ init:
                 Set-AppveyorBuildVariable -Name "elsa_build_version" -Value "$($env:elsa_version)-preview.$($env:APPVEYOR_BUILD_NUMBER)"
             }
 
-version: ""{elsa_build_version}
+version: '{elsa_build_version}'
 
 pull_requests:
     do_not_increment_build_number: true
@@ -97,7 +97,7 @@ build_script:
 
 after_test:
     -   ps: >-
-            dotnet pack Elsa.sln --include-symbols /p:Version="$env:APPVEYOR_BUILD_VERSION"
+            dotnet pack Elsa.sln --include-symbols /p:Version="$env:elsa_build_version"
 
 artifacts:
     -   path: '**/*.nupkg'
