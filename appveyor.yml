@@ -96,7 +96,7 @@ build_script:
 
 after_test:
     -   ps: >-
-            dotnet pack Elsa.sln --include-symbols /p:Version="$env:APPVEYOR_BUILD_VERSION"
+            dotnet pack Elsa.sln --include-symbols /p:Version="$env:version"
 
 artifacts:
     -   path: '**/*.nupkg'
