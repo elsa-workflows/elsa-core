@@ -1,19 +1,14 @@
-import {Component, Prop, h, Method, State, Watch, Host} from '@stencil/core';
+import {Component, Prop, h, State, Watch, Host} from '@stencil/core';
 import {HubConnection, HubConnectionBuilder} from '@microsoft/signalr';
 import * as collection from 'lodash/collection';
-import {EventTypes, WorkflowDefinition, WorkflowDefinitionSummary, WorkflowTestActivityMessage, WorkflowTestUpdateRequest} from "../../../../models";
+import {EventTypes, WorkflowDefinition, WorkflowTestActivityMessage, WorkflowTestUpdateRequest} from "../../../../models";
 import {i18n} from "i18next";
 import {loadTranslations} from "../../../i18n/i18n-loader";
 import {resources} from "./localizations";
 import {createElsaClient, eventBus, WorkflowTestExecuteRequest} from "../../../../services";
 import Tunnel from "../../../../data/dashboard";
 import {convert} from 'json-to-json-schema';
-
-interface Tab {
-  id: string;
-  text: string;
-  view: () => any;
-}
+import {clip} from "../../../../utils/utils";
 
 @Component({
   tag: 'elsa-workflow-test-panel',
@@ -39,7 +34,6 @@ export class ElsaWorkflowTestPanel {
   @Watch('workflowTestActivityId')
   async workflowTestActivityMessageChangedHandler(newMessage: string, oldMessage: string) {
     const message = this.workflowTestActivityMessages.find(x => x.activityId == newMessage);
-    debugger;
     this.message = !!message ? message : null;
   }  
 
@@ -84,8 +78,9 @@ export class ElsaWorkflowTestPanel {
     await elsaClient.workflowTestApi.execute(request);
   }
 
-  async onUseAsSchemaClick() {    
-    const value = this.message.data["Inbound Request"];
+  async onUseAsSchemaClick() {
+    debugger
+    const value = this.message.data["Body"];
     const request: WorkflowTestUpdateRequest = {
       activityId: this.message.activityId,
       jsonSchema: JSON.stringify(convert(value), null, 4)
@@ -100,11 +95,15 @@ export class ElsaWorkflowTestPanel {
 
     return (
       <Host>
-        <button type="button"
-                onClick={() => this.onExecuteWorkflowClick()}
-                class="elsa-ml-0 elsa-w-full elsa-inline-flex elsa-justify-center elsa-rounded-md elsa-border elsa-border-transparent elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-bg-blue-600 elsa-text-base elsa-font-medium elsa-text-white hover:elsa-bg-blue-700 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 sm:elsa-ml-3 sm:elsa-w-auto sm:elsa-text-sm">
-          {t('ExecuteWorkflow')}
-        </button>
+        <dl class="elsa-border-b elsa-border-gray-200 elsa-divide-y elsa-divide-gray-200">
+          <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
+            <button type="button"
+                    onClick={() => this.onExecuteWorkflowClick()}
+                    class="elsa-ml-0 elsa-w-full elsa-inline-flex elsa-justify-center elsa-rounded-md elsa-border elsa-border-transparent elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-bg-blue-600 elsa-text-base elsa-font-medium elsa-text-white hover:elsa-bg-blue-700 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 sm:elsa-ml-3 sm:elsa-w-auto sm:elsa-text-sm">
+              {t('ExecuteWorkflow')}
+            </button>
+          </div>
+        </dl>
         {this.renderActivityTestMessage()}
       </Host>
     );
@@ -150,30 +149,33 @@ export class ElsaWorkflowTestPanel {
       filteredData[key] = valueText;
     }
 
-    const isInboundRequest = dataKey === "Inbound Request";
+    const hasBody = dataKey === "Body";
 
-    return (
+    return (      
       <dl class="elsa-border-b elsa-border-gray-200 elsa-divide-y elsa-divide-gray-200">
-      <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
-        <dt class="elsa-text-gray-500">{'Correlation Id'}</dt>
-        <dd class="elsa-text-gray-900">{message.correlationId}</dd>
-      </div>
-      <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
-        <dt class="elsa-text-gray-500">{t('Status')}</dt>
-        <dd class="elsa-text-gray-900">{message.status}</dd>
-      </div>
-      {collection.map(filteredData, (v, k) => (
+        <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
+          <dt class="elsa-text-gray-500">
+            <pre onClick={e => clip(e.currentTarget)}>{this.serverUrl + '/workflows' + message.path + '?correlation=' + message.correlationId}</pre>
+          </dt>
+        </div>
+        <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
+          <dt class="elsa-text-gray-500">{t('Status')}</dt>
+          <dd class="elsa-text-gray-900">{message.status}</dd>
+        </div>
+        {collection.map(filteredData, (v, k) => (
         <div>
           <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
             <dt class="elsa-text-gray-500">{k}</dt>
             <dd class="elsa-mt-1 elsa-text-sm elsa-text-gray-900 elsa-mb-2 elsa-overflow-x-auto">{v}</dd>
           </div>
-          {isInboundRequest ? 
-            <button type="button"
-                    onClick={() => this.onUseAsSchemaClick()}
-                    class="elsa-ml-0 elsa-w-full elsa-inline-flex elsa-justify-center elsa-rounded-md elsa-border elsa-border-transparent elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-bg-blue-600 elsa-text-base elsa-font-medium elsa-text-white hover:elsa-bg-blue-700 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 sm:elsa-ml-3 sm:elsa-w-auto sm:elsa-text-sm">
-              {t('UseAsSchema')}
-            </button>
+          {hasBody ? 
+            <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
+              <button type="button"
+                      onClick={() => this.onUseAsSchemaClick()}
+                      class="elsa-ml-0 elsa-w-full elsa-inline-flex elsa-justify-center elsa-rounded-md elsa-border elsa-border-transparent elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-bg-blue-600 elsa-text-base elsa-font-medium elsa-text-white hover:elsa-bg-blue-700 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 sm:elsa-ml-3 sm:elsa-w-auto sm:elsa-text-sm">
+                {t('UseAsSchema')}
+              </button>
+            </div>
             :
             null
           }

@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Events;
@@ -22,6 +24,7 @@ namespace Elsa.Server.Api.Handlers
         public async Task Handle(ActivityExecutionResultExecuted notification, CancellationToken cancellationToken)
         {
             var context = notification.ActivityExecutionContext;
+            string? path = default;
 
             var signalRConnectionId = context.WorkflowExecutionContext.WorkflowBlueprint.SignalRConnectionId;
             if (string.IsNullOrWhiteSpace(signalRConnectionId)) return;
@@ -31,11 +34,21 @@ namespace Elsa.Server.Api.Handlers
                 ["Outcomes"] = JToken.FromObject(context.Outcomes)
             };
 
-            foreach (var entry in context.JournalData)
-                data[entry.Key] = entry.Value != null ? JToken.FromObject(entry.Value) : JValue.CreateNull();
+            var body = context.Input != null? ((dynamic)context.Input).Body : null;
+            
+            if (body != null)
+                data["Body"] = JToken.FromObject(body);
+
+            var activityData = context.WorkflowInstance.ActivityData.FirstOrDefault();
+            var pathProperty = activityData.Value.FirstOrDefault(x => x.Key == "Path");
+            if (pathProperty.Value != null)
+            {
+                path = pathProperty.Value.ToString();
+            }
 
             var message = new WorkflowTestMessage
             {
+                Path = path,
                 CorrelationId = context.CorrelationId,
                 ActivityId = context.ActivityId,
                 Status = context.WorkflowExecutionContext.Status == WorkflowStatus.Running

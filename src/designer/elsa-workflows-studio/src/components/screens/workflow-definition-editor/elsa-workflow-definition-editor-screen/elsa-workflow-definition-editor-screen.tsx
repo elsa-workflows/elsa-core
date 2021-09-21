@@ -46,6 +46,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
   @State() imported: boolean;
   @State() networkError: string;
   @State() selectedActivityId?: string;
+  @State() workflowDesignerMode: WorkflowDesignerMode.Edit;
 
   @State() activityContextMenuState: ActivityContextMenuState = {
     shown: false,
@@ -435,7 +436,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
     return (
       <div class="elsa-flex-1 elsa-flex elsa-relative">
         <elsa-designer-tree model={this.workflowModel}
-                            mode={WorkflowDesignerMode.Edit}
+                            mode={this.workflowDesignerMode}
                             activityContextMenuButton={activityContextMenuButton}
                             onActivityContextMenuButtonClicked={e => this.onActivityContextMenuButtonClicked(e)}
                             onConnectionContextMenuButtonClicked={e => this.onConnectionContextMenuButtonClicked(e)}

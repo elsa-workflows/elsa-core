@@ -3,7 +3,8 @@
 export enum WorkflowDesignerMode {
   Edit,
   Instance,
-  Blueprint
+  Blueprint,
+  Test
 }
 
 export interface ActivityContextMenuState {
