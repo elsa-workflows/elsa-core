@@ -24,7 +24,8 @@ export class SendHttpRequestPlugin implements ElsaPlugin {
     const syntax = SyntaxNames.Json;
     const branches = props.find(x => x.name == 'SupportedStatusCodes') || {expressions: {'Json': '[]'}, syntax: syntax};
     const expression = branches.expressions[syntax] || [];
-    context.outcomes = !!expression['$values'] ? expression['$values'] : Array.isArray(expression) ? expression : parseJson(expression) || [];
+    let outcomes = !!expression['$values'] ? expression['$values'] : Array.isArray(expression) ? expression : parseJson(expression) || [];
+    context.outcomes = [...outcomes, 'Done', 'Unsupported Status Code'];
   }
 
   onActivityEditorAppearing = (args: ActivityEditorAppearingEventArgs) => {
