@@ -10,7 +10,8 @@ import {
   VersionOptions,
   WorkflowDefinition,
   WorkflowModel,
-  WorkflowPersistenceBehavior
+  WorkflowPersistenceBehavior,
+  WorkflowTestActivityMessage
 } from "../../../../models";
 import {eventBus, createElsaClient, SaveWorkflowDefinitionRequest} from "../../../../services";
 import state from '../../../../utils/store';
@@ -25,7 +26,8 @@ import {resources} from "./localizations";
 
 @Component({
   tag: 'elsa-workflow-definition-editor-screen',
-  shadow: false,
+  styleUrl: 'elsa-workflow-definition-editor-screen.css',
+  shadow: false
 })
 export class ElsaWorkflowDefinitionEditorScreen {
 
@@ -46,7 +48,8 @@ export class ElsaWorkflowDefinitionEditorScreen {
   @State() imported: boolean;
   @State() networkError: string;
   @State() selectedActivityId?: string;
-  @State() workflowDesignerMode: WorkflowDesignerMode.Edit;
+  @State() workflowDesignerMode: WorkflowDesignerMode;
+  @State() workflowTestActivityMessages: Array<WorkflowTestActivityMessage> = [];
 
   @State() activityContextMenuState: ActivityContextMenuState = {
     shown: false,
@@ -150,6 +153,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   async componentWillLoad() {
     this.i18next = await loadTranslations(this.culture, resources);
+    this.workflowDesignerMode = WorkflowDesignerMode.Edit;
     await this.serverUrlChangedHandler(this.serverUrl);
     await this.workflowDefinitionIdChangedHandler(this.workflowDefinitionId);
     await this.monacoLibPathChangedHandler(this.monacoLibPath);
@@ -162,12 +166,16 @@ export class ElsaWorkflowDefinitionEditorScreen {
     }    
   }
 
-  connectedCallback() {
-    eventBus.on(EventTypes.UpdateWorkflowSettings, this.onUpdateWorkflowSettings);    
+  connectedCallback() {    
+    eventBus.on(EventTypes.UpdateWorkflowSettings, this.onUpdateWorkflowSettings);
+    eventBus.on(EventTypes.FlyoutPanelTabSelected, this.onFlyoutPanelTabSelected);
+    eventBus.on(EventTypes.TestActivityMessageReceived, this.onTestActivityMessageReceived);
   }
 
   disconnectedCallback() {
     eventBus.detach(EventTypes.UpdateWorkflowSettings, this.onUpdateWorkflowSettings);
+    eventBus.detach(EventTypes.FlyoutPanelTabSelected, this.onFlyoutPanelTabSelected);
+    eventBus.detach(EventTypes.TestActivityMessageReceived, this.onTestActivityMessageReceived);
   }
 
   t = (key: string) => this.i18next.t(key);
@@ -378,9 +386,22 @@ export class ElsaWorkflowDefinitionEditorScreen {
     this.handleConnectionContextMenuChange({x: 0, y: 0, shown: false, activity: null});
   }
 
-  onActivityContextMenuButtonClicked(e: CustomEvent<ActivityContextMenuState>) {
+  async onActivityContextMenuButtonClicked(e: CustomEvent<ActivityContextMenuState>) {
     this.activityContextMenuState = e.detail;
   }
+
+  async onActivityContextMenuButtonTestClicked(e: CustomEvent<ActivityContextMenuState>) {
+    debugger
+    this.activityContextMenuState = e.detail;
+    //this.activityStats = null;
+
+    if (!e.detail.shown) {
+      return;
+    }
+
+    const elsaClient = createElsaClient(this.serverUrl);
+    //this.activityStats = await elsaClient.activityStatsApi.get(this.workflowInstanceId, e.detail.activity.activityId);
+  }  
 
   async onActivitySelected(e: CustomEvent<ActivityModel>) {
     this.selectedActivityId = e.detail.activityId;
@@ -395,10 +416,74 @@ export class ElsaWorkflowDefinitionEditorScreen {
     this.connectionContextMenuState = e.detail;
   }
 
+  onTestActivityMessageReceived = async args => {
+    const message = args as WorkflowTestActivityMessage;
+    if (!!message) {
+      this.workflowTestActivityMessages = this.workflowTestActivityMessages.filter(x => x.activityId !== message.activityId);
+      this.workflowTestActivityMessages = [...this.workflowTestActivityMessages, message];
+    }
+    else
+      this.workflowTestActivityMessages = [];
+
+    this.render();
+  };  
+
   private onUpdateWorkflowSettings = async (workflowDefinition: WorkflowDefinition) => {
     this.updateWorkflowDefinition(workflowDefinition);
     await this.saveWorkflowInternal(this.workflowModel);
   }
+
+  private onFlyoutPanelTabSelected = async args => {
+    const tab = args;
+    if (tab === 'general')
+      this.workflowDesignerMode = WorkflowDesignerMode.Edit;
+    if (tab === 'test')
+      this.workflowDesignerMode = WorkflowDesignerMode.Test;
+    this.render();
+  }
+
+  renderActivityStatsButton = (activity: ActivityModel): string => {
+ 
+    var testActivityMessage = this.workflowTestActivityMessages.find(x => x.activityId == activity.activityId);
+    if (testActivityMessage == undefined)
+      return "";
+
+    let icon: string;
+
+    switch (testActivityMessage.status)
+    {
+      case "Executed":
+        icon = `<svg class="elsa-h-8 elsa-w-8 elsa-text-green-500"  fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>`;
+        break;
+      case "Suspended":
+        icon = `<svg version="1.1" class="svg-loader" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 80 80" xml:space="preserve">
+                  <path id="spinner" fill="#7eb0de" d="M40,72C22.4,72,8,57.6,8,40C8,22.4,
+                  22.4,8,40,8c17.6,0,32,14.4,32,32c0,1.1-0.9,2-2,2
+                  s-2-0.9-2-2c0-15.4-12.6-28-28-28S12,24.6,12,40s12.6,
+                  28,28,28c1.1,0,2,0.9,2,2S41.1,72,40,72z">
+                    <animateTransform attributeType="xml" attributeName="transform" type="rotate" from="0 40 40" to="360 40 40" dur="0.75s" repeatCount="indefinite" />
+                  </path>
+                  </path>
+              </svg>`;
+        break;
+      case "Failed":
+        icon = `<svg class="elsa-h-8 elsa-w-8 elsa-text-red-500"  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="15" y1="9" x2="9" y2="15" />
+                  <line x1="9" y1="9" x2="15" y2="15" />
+                </svg>`;
+        break;
+    }
+
+    return `<div class="context-menu-wrapper elsa-flex-shrink-0">
+            <button aria-haspopup="true"
+                    class="elsa-w-8 elsa-h-8 elsa-inline-flex elsa-items-center elsa-justify-center elsa-text-gray-400 elsa-rounded-full elsa-bg-transparent hover:elsa-text-gray-500 focus:elsa-outline-none focus:elsa-text-gray-500 focus:elsa-bg-gray-100 elsa-transition elsa-ease-in-out elsa-duration-150">
+              ${icon}
+            </button>
+          </div>`;
+  }  
 
   render() {
     const tunnelState: WorkflowEditorState = {
@@ -436,9 +521,15 @@ export class ElsaWorkflowDefinitionEditorScreen {
     return (
       <div class="elsa-flex-1 elsa-flex elsa-relative">
         <elsa-designer-tree model={this.workflowModel}
-                            mode={this.workflowDesignerMode}
-                            activityContextMenuButton={activityContextMenuButton}
-                            onActivityContextMenuButtonClicked={e => this.onActivityContextMenuButtonClicked(e)}
+                            mode={this.workflowDesignerMode == WorkflowDesignerMode.Edit 
+                              ? WorkflowDesignerMode.Edit 
+                              : WorkflowDesignerMode.Test}
+                            activityContextMenuButton={this.workflowDesignerMode == WorkflowDesignerMode.Edit 
+                              ? activityContextMenuButton
+                              : this.renderActivityStatsButton}
+                            onActivityContextMenuButtonClicked={this.workflowDesignerMode == WorkflowDesignerMode.Edit 
+                              ? e => this.onActivityContextMenuButtonClicked(e)
+                              : e => this.onActivityContextMenuButtonTestClicked(e)}
                             onConnectionContextMenuButtonClicked={e => this.onConnectionContextMenuButtonClicked(e)}
                             activityContextMenu={this.activityContextMenuState}
                             enableMultipleConnectionsFromSingleSource={false}

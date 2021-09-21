@@ -312,7 +312,6 @@ export namespace Components {
     }
     interface ElsaWorkflowPropertiesPanel {
         "culture": string;
-        "expandButtonPosition": number;
         "serverUrl": string;
         "workflowDefinition": WorkflowDefinition;
     }
@@ -1036,7 +1035,6 @@ declare namespace LocalJSX {
     }
     interface ElsaWorkflowPropertiesPanel {
         "culture"?: string;
-        "expandButtonPosition"?: number;
         "serverUrl"?: string;
         "workflowDefinition"?: WorkflowDefinition;
     }

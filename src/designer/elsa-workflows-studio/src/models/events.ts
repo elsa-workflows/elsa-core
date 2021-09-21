@@ -34,7 +34,8 @@ export const EventTypes = {
   ClipboardCopied: 'clipboard-copied',
   PasteActivity: 'paste-activity',
   TestActivityMessageReceived: 'test-activity-message-received',
-  ActivityJsonSchemaUpdated: 'activity-json-schema-updated'
+  ActivityJsonSchemaUpdated: 'activity-json-schema-updated',
+  FlyoutPanelTabSelected: 'flyout-panel-tab-selected'
 };
 
 export interface AddActivityEventArgs {

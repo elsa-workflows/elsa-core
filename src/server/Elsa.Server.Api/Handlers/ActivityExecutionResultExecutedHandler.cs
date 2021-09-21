@@ -34,16 +34,19 @@ namespace Elsa.Server.Api.Handlers
                 ["Outcomes"] = JToken.FromObject(context.Outcomes)
             };
 
-            var body = context.Input != null? ((dynamic)context.Input).Body : null;
-            
-            if (body != null)
-                data["Body"] = JToken.FromObject(body);
-
-            var activityData = context.WorkflowInstance.ActivityData.FirstOrDefault();
-            var pathProperty = activityData.Value.FirstOrDefault(x => x.Key == "Path");
-            if (pathProperty.Value != null)
+            if (context.ActivityBlueprint.Type == "HttpEndpoint")
             {
-                path = pathProperty.Value.ToString();
+                var body = context.Input != null ? ((dynamic)context.Input).Body : null;
+
+                if (body != null)
+                    data["Body"] = JToken.FromObject(body);
+
+                var activityData = context.WorkflowInstance.ActivityData.FirstOrDefault(x => x.Key == notification.ActivityExecutionContext.ActivityId);
+                var pathProperty = activityData.Value.FirstOrDefault(x => x.Key == "Path");
+                if (pathProperty.Value != null)
+                {
+                    path = pathProperty.Value.ToString();
+                }
             }
 
             var message = new WorkflowTestMessage

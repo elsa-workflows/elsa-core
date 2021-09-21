@@ -1,5 +1,7 @@
 import {Component, Host, h, Prop, State, Method} from "@stencil/core";
 import {enter, leave} from "el-transition"
+import {eventBus} from "../../../services";
+import {EventTypes} from "../../../models";
 
 @Component({
   tag: 'elsa-flyout-panel',
@@ -17,7 +19,10 @@ export class ElsaFlyoutPanel {
   async componentDidLoad() {
     this.headerTabs = Array.from(this.el.querySelectorAll('elsa-tab-header'));
     this.headerTabs.forEach(element => {
-      element.onclick = () => {this.selectTab(element.tab)};
+      element.onclick = () => {
+        this.selectTab(element.tab);
+        eventBus.emit(EventTypes.FlyoutPanelTabSelected, this, element.tab);
+      };
     })
     this.contentTabs = Array.from(this.el.querySelectorAll('elsa-tab-content'));
     if (this.headerTabs.length > 0) {

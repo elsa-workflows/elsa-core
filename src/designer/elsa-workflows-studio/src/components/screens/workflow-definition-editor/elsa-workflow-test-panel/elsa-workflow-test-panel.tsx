@@ -33,9 +33,10 @@ export class ElsaWorkflowTestPanel {
 
   @Watch('workflowTestActivityId')
   async workflowTestActivityMessageChangedHandler(newMessage: string, oldMessage: string) {
+    debugger
     const message = this.workflowTestActivityMessages.find(x => x.activityId == newMessage);
     this.message = !!message ? message : null;
-  }  
+  }
 
   async componentWillLoad() {
     this.i18next = await loadTranslations(this.culture, resources);
@@ -153,11 +154,15 @@ export class ElsaWorkflowTestPanel {
 
     return (      
       <dl class="elsa-border-b elsa-border-gray-200 elsa-divide-y elsa-divide-gray-200">
-        <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
-          <dt class="elsa-text-gray-500">
-            <pre onClick={e => clip(e.currentTarget)}>{this.serverUrl + '/workflows' + message.path + '?correlation=' + message.correlationId}</pre>
-          </dt>
-        </div>
+        {!!message.path ?
+          <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
+            <dt class="elsa-text-gray-500">
+              <pre onClick={e => clip(e.currentTarget)}>{this.serverUrl + '/workflows' + message.path + '?correlation=' + message.correlationId}</pre>
+            </dt>
+          </div>
+          :
+          ''
+        }
         <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
           <dt class="elsa-text-gray-500">{t('Status')}</dt>
           <dd class="elsa-text-gray-900">{message.status}</dd>
