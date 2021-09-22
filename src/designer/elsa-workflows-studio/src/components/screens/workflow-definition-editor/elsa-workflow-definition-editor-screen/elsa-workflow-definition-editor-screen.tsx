@@ -11,9 +11,10 @@ import {
   WorkflowDefinition,
   WorkflowModel,
   WorkflowPersistenceBehavior,
-  WorkflowTestActivityMessage
+  WorkflowTestActivityMessage,
+  WorkflowTestUpdateRequest
 } from "../../../../models";
-import {eventBus, createElsaClient, SaveWorkflowDefinitionRequest} from "../../../../services";
+import {ActivityStats, createElsaClient, eventBus, SaveWorkflowDefinitionRequest} from "../../../../services";
 import state from '../../../../utils/store';
 import WorkflowEditorTunnel, {WorkflowEditorState} from '../../../../data/workflow-editor';
 import DashboardTunnel from "../../../../data/dashboard";
@@ -23,6 +24,8 @@ import {registerClickOutside} from "stencil-click-outside";
 import {i18n} from "i18next";
 import {loadTranslations} from "../../../i18n/i18n-loader";
 import {resources} from "./localizations";
+import * as collection from 'lodash/collection';
+import {convert} from 'json-to-json-schema';
 
 @Component({
   tag: 'elsa-workflow-definition-editor-screen',
@@ -59,6 +62,13 @@ export class ElsaWorkflowDefinitionEditorScreen {
   };
 
   @State() connectionContextMenuState: ActivityContextMenuState = {
+    shown: false,
+    x: 0,
+    y: 0,
+    activity: null,
+  };
+
+  @State() activityContextMenuTestState: ActivityContextMenuState = {
     shown: false,
     x: 0,
     y: 0,
@@ -346,6 +356,15 @@ export class ElsaWorkflowDefinitionEditorScreen {
     this.connectionContextMenuState = state;
   }
 
+  handleContextMenuTestChange(x: number, y: number, shown: boolean, activity: ActivityModel) {
+    this.activityContextMenuTestState = {
+      shown,
+      x,
+      y,
+      activity,
+    };
+  }
+
   onShowWorkflowSettingsClick() {
     eventBus.emit(EventTypes.ShowWorkflowSettings);
   }
@@ -391,16 +410,12 @@ export class ElsaWorkflowDefinitionEditorScreen {
   }
 
   async onActivityContextMenuButtonTestClicked(e: CustomEvent<ActivityContextMenuState>) {
-    debugger
-    this.activityContextMenuState = e.detail;
-    //this.activityStats = null;
+    this.activityContextMenuTestState = e.detail;
+    this.selectedActivityId = e.detail.activity.activityId;
 
     if (!e.detail.shown) {
       return;
     }
-
-    const elsaClient = createElsaClient(this.serverUrl);
-    //this.activityStats = await elsaClient.activityStatsApi.get(this.workflowInstanceId, e.detail.activity.activityId);
   }  
 
   async onActivitySelected(e: CustomEvent<ActivityModel>) {
@@ -527,11 +542,11 @@ export class ElsaWorkflowDefinitionEditorScreen {
                             activityContextMenuButton={this.workflowDesignerMode == WorkflowDesignerMode.Edit 
                               ? activityContextMenuButton
                               : this.renderActivityStatsButton}
-                            onActivityContextMenuButtonClicked={this.workflowDesignerMode == WorkflowDesignerMode.Edit 
-                              ? e => this.onActivityContextMenuButtonClicked(e)
-                              : e => this.onActivityContextMenuButtonTestClicked(e)}
-                            onConnectionContextMenuButtonClicked={e => this.onConnectionContextMenuButtonClicked(e)}
-                            activityContextMenu={this.activityContextMenuState}
+                            onActivityContextMenuButtonClicked={e => this.onActivityContextMenuButtonClicked(e)}
+                            onActivityContextMenuButtonTestClicked={e => this.onActivityContextMenuButtonTestClicked(e)}
+                            activityContextMenu={this.workflowDesignerMode == WorkflowDesignerMode.Edit
+                              ? this.activityContextMenuState
+                              : this.activityContextMenuTestState}
                             enableMultipleConnectionsFromSingleSource={false}
                             selectedActivityIds={[this.selectedActivityId]}
                             onActivitySelected={e => this.onActivitySelected(e)}
@@ -551,9 +566,150 @@ export class ElsaWorkflowDefinitionEditorScreen {
             {this.renderPublishButton()}
           </div>
         </div>
+        {this.renderTestActivityMenu()}  
       </div>
     );
   }
+
+  async onUseAsSchemaClick(message: WorkflowTestActivityMessage) {
+    const value = message.data["Body"];
+    const request: WorkflowTestUpdateRequest = {
+      activityId: message.activityId,
+      jsonSchema: JSON.stringify(convert(value), null, 4)
+    };
+
+    eventBus.emit(EventTypes.ActivityJsonSchemaUpdated, this, request);
+  }  
+
+  renderTestActivityMenu = () => {
+    const message = this.workflowTestActivityMessages.find(x => x.activityId == this.selectedActivityId);
+
+    const renderActivityTestError = () => {
+
+      if (message == undefined || !message)
+        return    
+        
+      const t = (x, params?) => this.i18next.t(x, params);
+  
+      if (!message.error)
+        return;
+  
+      return (
+        <div class="elsa-ml-4">
+          <p class="elsa-text-base elsa-font-medium elsa-text-gray-900">
+            {t('Error')}
+          </p>
+          <p class="elsa-mt-1 elsa-text-sm elsa-text-gray-500">
+            {message.error}
+          </p>
+        </div>
+      );
+    } 
+
+    const renderMessage = () => {
+
+      if (message == undefined || !message)
+      return    
+      
+      const t = (x, params?) => this.i18next.t(x, params);
+      const filteredData = {};
+      const wellKnownDataKeys = {State: true, Input: null, Outcomes: true, Exception: true};
+      let dataKey = null;
+
+      for (const key in message.data) {
+        if (!message.data.hasOwnProperty(key))
+          continue;
+
+        if (!!wellKnownDataKeys[key])
+          continue;
+
+        const value = message.data[key];
+
+        if (!value && value != 0)
+          continue;
+
+        let valueText = null;
+        dataKey = key;
+
+        if (typeof value == 'string')
+          valueText = value;
+        else if (typeof value == 'object')
+          valueText = JSON.stringify(value, null, 1);
+        else if (typeof value == 'undefined')
+          valueText = null;
+        else
+          valueText = value.toString();
+
+        filteredData[key] = valueText;
+      }
+
+      const hasBody = dataKey === "Body";
+
+      return (
+        <div class="elsa-relative elsa-grid elsa-gap-6 elsa-bg-white px-5 elsa-py-6 sm:elsa-gap-8 sm:elsa-p-8">
+          <div class="elsa-ml-4">
+            <p class="elsa-text-base elsa-font-medium elsa-text-gray-900">
+              {t('Status')}
+            </p>
+            <p class="elsa-mt-1 elsa-text-sm elsa-text-gray-500">
+              {message.status}
+            </p>
+          </div>
+          {collection.map(filteredData, (v, k) => (
+            <div class="elsa-ml-4">
+              <p class="elsa-text-base elsa-font-medium elsa-text-gray-900">
+                {k}
+              </p>
+              <p class="elsa-mt-1 elsa-text-sm elsa-text-gray-500 elsa-overflow-x-auto">
+                {v}
+              </p>
+            </div>
+          ))}
+          {hasBody ? renderUseAsSchemaButton() : undefined}
+          {renderActivityTestError()}
+        </div>
+      );
+    };
+    
+    const renderUseAsSchemaButton = () => {
+
+      const t = (x, params?) => this.i18next.t(x, params);
+
+      return (
+        <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
+          <button type="button"
+                  onClick={() => this.onUseAsSchemaClick(message)}
+                  class="elsa-ml-0 elsa-w-full elsa-inline-flex elsa-justify-center elsa-rounded-md elsa-border elsa-border-transparent elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-bg-blue-600 elsa-text-base elsa-font-medium elsa-text-white hover:elsa-bg-blue-700 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 sm:elsa-ml-3 sm:elsa-w-auto sm:elsa-text-sm">
+            {t('UseAsSchema')}
+          </button>
+        </div>          
+      )
+    };    
+
+    const renderLoader = function () {
+      return <div class="elsa-p-6 elsa-bg-white">Loading...</div>;
+    };
+
+    return <div
+      data-transition-enter="elsa-transition elsa-ease-out elsa-duration-100"
+      data-transition-enter-start="elsa-transform elsa-opacity-0 elsa-scale-95"
+      data-transition-enter-end="elsa-transform elsa-opacity-100 elsa-scale-100"
+      data-transition-leave="elsa-transition elsa-ease-in elsa-duration-75"
+      data-transition-leave-start="elsa-transform elsa-opacity-100 elsa-scale-100"
+      data-transition-leave-end="elsa-transform elsa-opacity-0 elsa-scale-95"
+      class={`${this.activityContextMenuTestState.shown ? '' : 'hidden'} elsa-absolute elsa-z-10 elsa-mt-3 elsa-px-2 elsa-w-screen elsa-max-w-xl sm:elsa-px-0`}
+      style={{left: `${this.activityContextMenuTestState.x + 64}px`, top: `${this.activityContextMenuTestState.y - 256}px`}}
+      ref={el =>
+        registerClickOutside(this, el, () => {
+          this.handleContextMenuTestChange(0, 0, false, null);
+        })
+      }
+    >
+      <div class="elsa-rounded-lg elsa-shadow-lg elsa-ring-1 elsa-ring-black elsa-ring-opacity-5 elsa-overflow-hidden">
+        {!!message ? renderMessage() : renderLoader()}
+      </div>
+    </div>
+  }  
 
   renderActivityContextMenu() {
     const t = this.t;

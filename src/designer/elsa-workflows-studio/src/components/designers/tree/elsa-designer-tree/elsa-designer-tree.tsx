@@ -46,6 +46,7 @@ export class ElsaWorkflowDesigner {
   @Prop() activityBorderColor?: (activity: ActivityModel) => string;
   @Prop() activityContextMenu?: ActivityContextMenuState;
   @Prop() connectionContextMenu?: ActivityContextMenuState;
+  @Prop() activityContextTestMenu?: ActivityContextMenuState;
   @Prop() mode: WorkflowDesignerMode = WorkflowDesignerMode.Edit;
   @Prop() layoutDirection: LayoutDirection = LayoutDirection.Vertical;
   @Prop({attribute: 'enable-multiple-connections'}) enableMultipleConnectionsFromSingleSource: boolean;
@@ -59,6 +60,7 @@ export class ElsaWorkflowDesigner {
   @Event() activityDeselected: EventEmitter<ActivityModel>;
   @Event() activityContextMenuButtonClicked: EventEmitter<ActivityContextMenuState>;
   @Event() connectionContextMenuButtonClicked: EventEmitter<ActivityContextMenuState>;
+  @Event() activityContextMenuButtonTestClicked: EventEmitter<ActivityContextMenuState>;
   @State() workflowModel: WorkflowModel;
 
 
@@ -70,6 +72,13 @@ export class ElsaWorkflowDesigner {
   };
 
   @State() connectionContextMenuState: ActivityContextMenuState = {
+    shown: false,
+    x: 0,
+    y: 0,
+    activity: null,
+  };
+
+  @State() activityContextMenuTestState: ActivityContextMenuState = {
     shown: false,
     x: 0,
     y: 0,
@@ -104,6 +113,12 @@ export class ElsaWorkflowDesigner {
     this.connectionContextMenuButtonClicked.emit(state);
   }
 
+  handleContextMenuTestChange(state: ActivityContextMenuState) {
+    this.ignoreCopyPasteActivities = true;
+    this.activityContextMenuTestState = state;
+    this.activityContextMenuButtonTestClicked.emit(state);
+  }  
+
   @Watch('model')
   handleModelChanged(newValue: WorkflowModel) {
     this.updateWorkflowModel(newValue, false);
@@ -131,6 +146,11 @@ export class ElsaWorkflowDesigner {
   handleConnectionContextMenuChanged(newValue: ActivityContextMenuState) {
     this.connectionContextMenuState = newValue;
   }
+
+  @Watch('activityContextTestMenu')
+  handleActivityContextMenuTestChanged(newValue: ActivityContextMenuState) {
+    this.activityContextMenuTestState = newValue;
+  }  
 
   @Listen('keydown', {target: 'window'})
   async handleKeyDown(event: KeyboardEvent) {
@@ -807,6 +827,14 @@ export class ElsaWorkflowDesigner {
           .on('click', evt => {
             evt.stopPropagation();
             this.handleContextMenuChange({x: evt.clientX, y: evt.clientY, shown: true, activity: node.activity});
+          });
+      }
+      else if (this.mode == WorkflowDesignerMode.Test) {
+        d3.select(node.elem)
+          .select('.context-menu-button-container button')
+          .on('click', evt => {
+            evt.stopPropagation();
+            this.handleContextMenuTestChange({x: evt.clientX, y: evt.clientY, shown: true, activity: node.activity});
           });
       }
     });

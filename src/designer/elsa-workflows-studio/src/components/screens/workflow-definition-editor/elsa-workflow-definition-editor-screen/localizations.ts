@@ -9,7 +9,8 @@
       },
       "ConnectionContextMenu":{
         "Paste": "Paste",
-      }
+      },
+      'UseAsSchema': 'Use as Schema'      
     }
   },
   'nl-NL': {
@@ -22,7 +23,8 @@
       },
       "ConnectionContextMenu":{
         "Paste": "Plakken",
-      }
+      },
+      'UseAsSchema': 'Gebruik als schema'
     }
   }
 };
