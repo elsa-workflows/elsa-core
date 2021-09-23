@@ -17,7 +17,7 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
             modelBuilder
                 .HasDefaultSchema("Elsa")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128)
-                .HasAnnotation("ProductVersion", "5.0.6")
+                .HasAnnotation("ProductVersion", "5.0.10")
                 .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
             modelBuilder.Entity("Elsa.Models.Bookmark", b =>
@@ -116,9 +116,6 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
 
                     b.Property<string>("Name")
                         .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("OutputStorageProviderName")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("PersistenceBehavior")
                         .HasColumnType("int");
