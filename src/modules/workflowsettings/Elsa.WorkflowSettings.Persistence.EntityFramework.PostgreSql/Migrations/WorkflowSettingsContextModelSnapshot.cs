@@ -16,7 +16,7 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.PostgreSql.Migration
             modelBuilder
                 .HasDefaultSchema("Elsa")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63)
-                .HasAnnotation("ProductVersion", "5.0.6")
+                .HasAnnotation("ProductVersion", "5.0.10")
                 .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
             modelBuilder.Entity("Elsa.WorkflowSettings.Models.WorkflowSetting", b =>
@@ -24,13 +24,22 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.PostgreSql.Migration
                     b.Property<string>("Id")
                         .HasColumnType("text");
 
+                    b.Property<string>("DefaultValue")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Key")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Value")
                         .HasColumnType("text");
 
                     b.Property<string>("WorkflowBlueprintId")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");

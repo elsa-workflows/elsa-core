@@ -15,8 +15,10 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.Sqlite.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "TEXT", nullable: false),
-                    WorkflowBlueprintId = table.Column<string>(type: "TEXT", nullable: true),
-                    Key = table.Column<string>(type: "TEXT", nullable: true),
+                    WorkflowBlueprintId = table.Column<string>(type: "TEXT", nullable: false),
+                    Key = table.Column<string>(type: "TEXT", nullable: false),
+                    Description = table.Column<string>(type: "TEXT", nullable: false),
+                    DefaultValue = table.Column<string>(type: "TEXT", nullable: true),
                     Value = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>

@@ -15,20 +15,29 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.MySql.Migrations
             modelBuilder
                 .HasDefaultSchema("Elsa")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64)
-                .HasAnnotation("ProductVersion", "5.0.6");
+                .HasAnnotation("ProductVersion", "5.0.10");
 
             modelBuilder.Entity("Elsa.WorkflowSettings.Models.WorkflowSetting", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("varchar(255)");
 
+                    b.Property<string>("DefaultValue")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
                     b.Property<string>("Key")
+                        .IsRequired()
                         .HasColumnType("varchar(255)");
 
                     b.Property<string>("Value")
                         .HasColumnType("varchar(255)");
 
                     b.Property<string>("WorkflowBlueprintId")
+                        .IsRequired()
                         .HasColumnType("varchar(255)");
 
                     b.HasKey("Id");

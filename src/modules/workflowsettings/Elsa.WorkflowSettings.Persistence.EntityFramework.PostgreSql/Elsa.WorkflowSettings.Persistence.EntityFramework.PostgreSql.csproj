@@ -24,4 +24,8 @@
     <ProjectReference Include="..\Elsa.WorkflowSettings.Persistence.EntityFramework.Core\Elsa.WorkflowSettings.Persistence.EntityFramework.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Migrations\" />
+  </ItemGroup>
+
 </Project>

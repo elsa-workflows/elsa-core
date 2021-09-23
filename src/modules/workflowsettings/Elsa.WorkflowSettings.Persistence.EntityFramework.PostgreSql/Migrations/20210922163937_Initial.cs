@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore.Migrations;
 
-namespace Elsa.WorkflowSettings.Persistence.EntityFramework.SqlServer.Migrations
+namespace Elsa.WorkflowSettings.Persistence.EntityFramework.PostgreSql.Migrations
 {
     public partial class Initial : Migration
     {
@@ -14,10 +14,12 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.SqlServer.Migrations
                 schema: "Elsa",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    WorkflowBlueprintId = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    Key = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    Value = table.Column<string>(type: "nvarchar(450)", nullable: true)
+                    Id = table.Column<string>(type: "text", nullable: false),
+                    WorkflowBlueprintId = table.Column<string>(type: "text", nullable: false),
+                    Key = table.Column<string>(type: "text", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: false),
+                    DefaultValue = table.Column<string>(type: "text", nullable: true),
+                    Value = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {

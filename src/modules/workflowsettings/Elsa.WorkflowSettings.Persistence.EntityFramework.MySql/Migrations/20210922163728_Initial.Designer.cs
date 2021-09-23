@@ -4,12 +4,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
-namespace Elsa.WorkflowSettings.Persistence.EntityFramework.PostgreSql.Migrations
+namespace Elsa.WorkflowSettings.Persistence.EntityFramework.MySql.Migrations
 {
     [DbContext(typeof(WorkflowSettingsContext))]
-    [Migration("20210730112057_Initial")]
+    [Migration("20210922163728_Initial")]
     partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -17,23 +16,31 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.PostgreSql.Migration
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("Relational:MaxIdentifierLength", 63)
-                .HasAnnotation("ProductVersion", "5.0.6")
-                .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
+                .HasAnnotation("Relational:MaxIdentifierLength", 64)
+                .HasAnnotation("ProductVersion", "5.0.10");
 
             modelBuilder.Entity("Elsa.WorkflowSettings.Models.WorkflowSetting", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("text");
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("DefaultValue")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("longtext");
 
                     b.Property<string>("Key")
-                        .HasColumnType("text");
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("Value")
-                        .HasColumnType("text");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("WorkflowBlueprintId")
-                        .HasColumnType("text");
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
 
                     b.HasKey("Id");
 

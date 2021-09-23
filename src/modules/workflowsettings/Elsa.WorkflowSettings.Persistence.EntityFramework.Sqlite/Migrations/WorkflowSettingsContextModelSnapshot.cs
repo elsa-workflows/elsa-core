@@ -14,20 +14,29 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.Sqlite.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "5.0.6");
+                .HasAnnotation("ProductVersion", "5.0.10");
 
             modelBuilder.Entity("Elsa.WorkflowSettings.Models.WorkflowSetting", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("DefaultValue")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Key")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Value")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("WorkflowBlueprintId")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
