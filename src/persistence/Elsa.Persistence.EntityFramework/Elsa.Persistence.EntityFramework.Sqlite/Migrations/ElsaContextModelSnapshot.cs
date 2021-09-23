@@ -15,7 +15,7 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "5.0.6");
+                .HasAnnotation("ProductVersion", "5.0.10");
 
             modelBuilder.Entity("Elsa.Models.Bookmark", b =>
                 {
@@ -112,9 +112,6 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("OutputStorageProviderName")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("PersistenceBehavior")
