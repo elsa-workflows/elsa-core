@@ -332,7 +332,7 @@ export interface WorkflowTestActivityMessage {
   error?: string;
 }
 
-export interface WorkflowTestUpdateRequest { 
+export interface WorkflowTestUpdateHttpEndpoint { 
   activityId?: string,
   jsonSchema?: string
 }

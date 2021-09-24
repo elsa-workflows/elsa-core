@@ -7,14 +7,15 @@ import {
   ConnectionDefinition,
   ConnectionModel,
   EventTypes,
+  SyntaxNames,
   VersionOptions,
   WorkflowDefinition,
   WorkflowModel,
   WorkflowPersistenceBehavior,
   WorkflowTestActivityMessage,
-  WorkflowTestUpdateRequest
+  WorkflowTestUpdateHttpEndpoint
 } from "../../../../models";
-import {ActivityStats, createElsaClient, eventBus, SaveWorkflowDefinitionRequest} from "../../../../services";
+import {createElsaClient, eventBus, SaveWorkflowDefinitionRequest} from "../../../../services";
 import state from '../../../../utils/store';
 import WorkflowEditorTunnel, {WorkflowEditorState} from '../../../../data/workflow-editor';
 import DashboardTunnel from "../../../../data/dashboard";
@@ -441,7 +442,18 @@ export class ElsaWorkflowDefinitionEditorScreen {
       this.workflowTestActivityMessages = [];
 
     this.render();
-  };  
+  };
+
+  async updateHttpEndpointJsonSchema(request: WorkflowTestUpdateHttpEndpoint) {
+    let workflowModel = {...this.workflowModel};
+    const activity = workflowModel.activities.find(x => x.activityId == request.activityId);
+    if (activity)
+    {
+      const activityModel = activity.properties.find(x => x.name == 'Schema');
+      activityModel.expressions[SyntaxNames.Literal] = request.jsonSchema;
+      eventBus.emit(EventTypes.UpdateActivity, this, activityModel);
+    }
+  };    
 
   private onUpdateWorkflowSettings = async (workflowDefinition: WorkflowDefinition) => {
     this.updateWorkflowDefinition(workflowDefinition);
@@ -573,12 +585,12 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   async onUseAsSchemaClick(message: WorkflowTestActivityMessage) {
     const value = message.data["Body"];
-    const request: WorkflowTestUpdateRequest = {
+    const request: WorkflowTestUpdateHttpEndpoint = {
       activityId: message.activityId,
       jsonSchema: JSON.stringify(convert(value), null, 4)
     };
 
-    eventBus.emit(EventTypes.ActivityJsonSchemaUpdated, this, request);
+    await this.updateHttpEndpointJsonSchema(request);
   }  
 
   renderTestActivityMenu = () => {

@@ -116,11 +116,6 @@ export const createElsaClient = function (serverUrl: string): ElsaClient {
     },
     workflowTestApi: {
       execute: async (request) => {
-        httpClient.interceptors.request.use(function (config) {
-          config.headers['Accept'] = 'application/json';
-          config.data = Object.assign({}, config.data, {});
-          return config;
-        })
         await httpClient.post<void>(`v1/workflow-test/execute`, request);
       }
     },    
