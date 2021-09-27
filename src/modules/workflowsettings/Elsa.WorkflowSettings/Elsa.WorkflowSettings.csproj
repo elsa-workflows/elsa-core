@@ -9,7 +9,7 @@
             Elsa Workflow Settings is an optional part of Elsa Workflows.
             This package contains Workflow Settings.
         </Description>
-        <PackageTags>elsa, workflow settings, orchard</PackageTags>
+        <PackageTags>elsa, workflow settings</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>

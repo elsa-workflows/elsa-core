@@ -1,8 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <Import Project="..\..\..\..\common.props" />
+    <Import Project="..\..\..\..\configureawait.props" />
+
     <PropertyGroup>
         <TargetFramework>netstandard2.1</TargetFramework>
-        <Nullable>enable</Nullable>
+        <Description>
+            Elsa Retention is an optional part of Elsa Workflows that adds retention settings to the system.
+        </Description>
+        <PackageTags>elsa, workflow settings</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>
