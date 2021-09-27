@@ -479,12 +479,12 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
     switch (testActivityMessage.status)
     {
-      case "Executed":
+      case "Done":
         icon = `<svg class="elsa-h-8 elsa-w-8 elsa-text-green-500"  fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>`;
         break;
-      case "Suspended":
+      case "Waiting":
         icon = `<svg version="1.1" class="svg-loader" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 80 80" xml:space="preserve">
                   <path id="spinner" fill="#7eb0de" d="M40,72C22.4,72,8,57.6,8,40C8,22.4,
                   22.4,8,40,8c17.6,0,32,14.4,32,32c0,1.1-0.9,2-2,2
@@ -544,9 +544,19 @@ export class ElsaWorkflowDefinitionEditorScreen {
               </svg>
             </button>
           </div>`;
-
+debugger
     return (
-      <div class="elsa-flex-1 elsa-flex elsa-relative">
+      <div class="elsa-flex-1 elsa-flex elsa-relative" >
+        {this.workflowDesignerMode == WorkflowDesignerMode.Test ? 
+          <div>
+            <div id="left" style={{border:`4px solid orange`, position:`fixed`, zIndex:`10`, width:`4px`, top:`0`, bottom:`0`, left:`0`}}></div>
+            <div id="right" style={{border:`4px solid orange`, position:`fixed`, zIndex:`10`, width:`4px`, top:`0`, bottom:`0`, right:`0`}}></div>
+            <div id="top" style={{border:`4px solid orange`, position:`fixed`, zIndex:`10`, height:`4px`, left:`0`, right:`0`, top:`0`}}></div>
+            <div id="bottom" style={{border:`4px solid orange`, position:`fixed`, zIndex:`10`, height:`4px`, left:`0`, right:`0`, bottom:`0`}}></div>
+          </div>
+          :
+          undefined
+        }
         <elsa-designer-tree model={this.workflowModel}
                             mode={this.workflowDesignerMode == WorkflowDesignerMode.Edit 
                               ? WorkflowDesignerMode.Edit 

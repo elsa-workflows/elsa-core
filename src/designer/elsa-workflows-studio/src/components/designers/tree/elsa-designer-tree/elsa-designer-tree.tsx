@@ -18,8 +18,7 @@ import {
   ConnectionModel,
   EventTypes,
   WorkflowModel,
-  WorkflowPersistenceBehavior,
-  WorkflowTestUpdateHttpEndpoint
+  WorkflowPersistenceBehavior
 } from '../../../../models';
 import {eventBus} from '../../../../services';
 import * as d3 from 'd3';

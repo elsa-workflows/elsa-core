@@ -92,17 +92,22 @@ export class ElsaWorkflowTestPanel {
       return (      
         <dl class="elsa-border-b elsa-border-gray-200 elsa-divide-y elsa-divide-gray-200">
           {!!message.path ?
-            <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
-              <dt class="elsa-text-gray-500">
-                <pre onClick={e => clip(e.currentTarget)}>{this.serverUrl + '/workflows' + message.path + '?correlation=' + message.correlationId}</pre>
-              </dt>
+            <div>
+              <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
+                <dt class="elsa-text-gray-500">{t('EntryEndpoint')}</dt>
+              </div>
+              <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
+                <dt class="elsa-text-gray-900">
+                  <pre onClick={e => clip(e.currentTarget)}>{this.serverUrl + '/workflows' + message.path + '?correlation=' + message.correlationId}</pre>
+                </dt>
+              </div>              
             </div>
             :
             ''
           }
           <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
             <dt class="elsa-text-gray-500">{t('Status')}</dt>
-            <dd class="elsa-text-gray-900">{message.status}</dd>
+            <dd class="elsa-text-gray-900">{message.workflowStatus}</dd>
           </div>     
         </dl>
       );

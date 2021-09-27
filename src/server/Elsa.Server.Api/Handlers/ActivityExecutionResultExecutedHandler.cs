@@ -1,7 +1,7 @@
-using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.ActivityResults;
 using Elsa.Events;
 using Elsa.Models;
 using Elsa.Server.Api.Models;
@@ -54,11 +54,25 @@ namespace Elsa.Server.Api.Handlers
                 Path = path,
                 CorrelationId = context.CorrelationId,
                 ActivityId = context.ActivityId,
-                Status = context.WorkflowExecutionContext.Status == WorkflowStatus.Running
+                WorkflowStatus = context.WorkflowExecutionContext.Status == WorkflowStatus.Running
                     ? "Executed"
                     : context.WorkflowExecutionContext.Status.ToString(),
                 Data = JsonConvert.SerializeObject(data, Formatting.Indented)
             };
+
+            switch (notification.Result)
+            {
+                case SuspendResult:
+                    message.Status = "Waiting";
+                    break;
+                case DoneResult:
+                case OutcomeResult:
+                    message.Status = "Done";
+                    break;
+                case FaultResult:
+                    message.Status = "Failed";
+                    break;
+            }
 
             await _workflowTestService.DispatchMessage(signalRConnectionId, message);
         }
@@ -72,10 +86,10 @@ namespace Elsa.Server.Api.Handlers
             var message = new WorkflowTestMessage
             {
                 CorrelationId = context.CorrelationId,
-                ActivityId = context.ActivityId,
-                Status = "Failed",
+                ActivityId = context.ActivityId,                
                 Error = notification.Exception.InnerException?.InnerException?.ToString()
             };
+            message.WorkflowStatus = message.Status = "Failed";
 
             await _workflowTestService.DispatchMessage(signalRConnectionId, message);
         }

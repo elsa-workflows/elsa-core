@@ -328,6 +328,7 @@ export interface WorkflowTestActivityMessage {
   correlationId: string;
   activityId: string;
   status: string;
+  workflowStatus: string;
   data?: any;
   error?: string;
 }
