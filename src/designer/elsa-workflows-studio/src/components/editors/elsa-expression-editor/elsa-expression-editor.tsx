@@ -1,5 +1,5 @@
 import {Component, EventEmitter, h, Host, Method, Prop, State, Watch, Event} from '@stencil/core';
-import {createElsaClient} from "../../../services/elsa-client";
+import {createElsaClient} from "../../../services";
 import Tunnel from '../../../data/workflow-editor';
 import {MonacoValueChangedArgs} from "../../controls/elsa-monaco/elsa-monaco";
 
@@ -37,7 +37,7 @@ export class ElsaExpressionEditor {
   }
 
   async componentDidLoad() {
-    const elsaClient = createElsaClient(this.serverUrl);
+    const elsaClient = await createElsaClient(this.serverUrl);
     const libSource = await elsaClient.scriptingApi.getJavaScriptTypeDefinitions(this.workflowDefinitionId, this.context);
     const libUri = 'defaultLib:lib.es6.d.ts';
     await this.monacoEditor.addJavaScriptLib(libSource, libUri);

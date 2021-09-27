@@ -5,6 +5,14 @@
 <!-- Auto Generated Below -->
 
 
+## Events
+
+| Event    | Description | Type               |
+| -------- | ----------- | ------------------ |
+| `hidden` |             | `CustomEvent<any>` |
+| `shown`  |             | `CustomEvent<any>` |
+
+
 ## Methods
 
 ### `hide(animate: boolean) => Promise<void>`

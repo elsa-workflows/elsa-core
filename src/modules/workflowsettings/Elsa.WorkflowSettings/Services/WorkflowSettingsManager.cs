@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Elsa.WorkflowSettings.Models;
 using Elsa.WorkflowSettings.Providers;
 
-namespace Elsa.WorkflowSettings.Services.WorkflowSettings
+namespace Elsa.WorkflowSettings.Services
 {
     public class WorkflowSettingsManager : IWorkflowSettingsManager
     {

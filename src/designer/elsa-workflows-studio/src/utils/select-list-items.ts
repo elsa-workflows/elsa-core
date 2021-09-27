@@ -1,8 +1,8 @@
 import {ActivityPropertyDescriptor, RuntimeSelectListItemsProviderSettings, SelectListItem} from "../models";
-import {createElsaClient, ElsaClient} from "../services/elsa-client";
+import {createElsaClient, ElsaClient} from "../services";
 
 async function fetchRuntimeItems(serverUrl: string, options: RuntimeSelectListItemsProviderSettings): Promise<Array<SelectListItem>> {
-  const elsaClient = createElsaClient(serverUrl);
+  const elsaClient = await createElsaClient(serverUrl);
   return await elsaClient.designerApi.runtimeSelectItemsApi.get(options.runtimeSelectListItemsProviderType, options.context || {});
 }
 

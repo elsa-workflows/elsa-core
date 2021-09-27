@@ -18,15 +18,13 @@ namespace Elsa.Activities.Webhooks.Extensions
             var services = elsaOptions.Services;
             
             var optionsBuilder = new WebhookOptionsBuilder(services);
-            
-            services.Configure<WebhookOptions>(webhookOptions =>
-            {
-                configureOptions?.Invoke(optionsBuilder);
-                optionsBuilder.ApplyTo(webhookOptions);
-            });
+            configureOptions?.Invoke(optionsBuilder);
+            var options = optionsBuilder.WebhookOptions;
+
+            services.AddSingleton(options);
 
             services
-                .AddScoped(sp => sp.GetRequiredService<IOptions<WebhookOptions>>().Value.WebhookDefinitionStoreFactory(sp))
+                .AddScoped(sp => sp.GetRequiredService<WebhookOptions>().WebhookDefinitionStoreFactory(sp))
                 .AddActivityTypeProvider<WebhookActivityTypeProvider>()
                 .AddBookmarkProvider<WebhookBookmarkProvider>()
                 .AddNotificationHandlersFrom<EvictWorkflowRegistryCacheHandler>();

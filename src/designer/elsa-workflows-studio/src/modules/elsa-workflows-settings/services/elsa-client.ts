@@ -24,37 +24,37 @@ export const createHttpClient = function(baseAddress: string) : AxiosInstance
   const service = new Service(httpClient);
 
   eventBus.emit(EventTypes.HttpClientCreated, this, {service, httpClient});
-  
+
   return _httpClient = httpClient;
 }
 
-export const createElsaWorkflowSettingsClient = function (serverUrl: string): ElsaWorkflowSettingsClient {
+export const createElsaWorkflowSettingsClient = async function (serverUrl: string): Promise<ElsaWorkflowSettingsClient> {
 
   if (!!_elsaWorkflowSettingsClient)
     return _elsaWorkflowSettingsClient;
 
-  const httpClient: AxiosInstance = createHttpClient(serverUrl);
+  const httpClient: AxiosInstance = await createHttpClient(serverUrl);
 
   _elsaWorkflowSettingsClient = {
     workflowSettingsApi: {
       list: async () => {
         const response = await httpClient.get<Array<WorkflowSettings>>(`v1/workflow-settings`);
         return response.data;
-      },      
+      },
       save: async request => {
         const response = await httpClient.post<WorkflowSettings>('v1/workflow-settings', request);
         return response.data;
       },
       delete: async id => {
         await httpClient.delete(`v1/workflow-settings/${id}`);
-      },      
-    }   
+      },
+    }
   }
 
   return _elsaWorkflowSettingsClient;
 }
 
-export interface ElsaWorkflowSettingsClient {  
+export interface ElsaWorkflowSettingsClient {
   workflowSettingsApi: WorkflowSettingsApi;
 }
 

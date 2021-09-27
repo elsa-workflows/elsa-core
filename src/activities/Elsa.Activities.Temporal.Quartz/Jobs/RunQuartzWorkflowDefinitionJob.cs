@@ -7,15 +7,7 @@ namespace Elsa.Activities.Temporal.Quartz.Jobs
     public class RunQuartzWorkflowDefinitionJob : IJob
     {
         private readonly IWorkflowDefinitionDispatcher _workflowDefinitionDispatcher;
-        private readonly IDistributedLockProvider _distributedLockProvider;
-
-        public RunQuartzWorkflowDefinitionJob(
-            IWorkflowDefinitionDispatcher workflowDefinitionDispatcher,
-            IDistributedLockProvider distributedLockProvider)
-        {
-            _workflowDefinitionDispatcher = workflowDefinitionDispatcher;
-            _distributedLockProvider = distributedLockProvider;
-        }
+        public RunQuartzWorkflowDefinitionJob(IWorkflowDefinitionDispatcher workflowDefinitionDispatcher) => _workflowDefinitionDispatcher = workflowDefinitionDispatcher;
 
         public async Task Execute(IJobExecutionContext context)
         {

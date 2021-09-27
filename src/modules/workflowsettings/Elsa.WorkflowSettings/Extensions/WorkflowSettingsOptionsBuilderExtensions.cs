@@ -3,7 +3,7 @@ using Elsa.WorkflowSettings.Handlers;
 using Elsa.WorkflowSettings.Persistence;
 using Elsa.WorkflowSettings.Persistence.Decorators;
 using Elsa.WorkflowSettings.Providers;
-using Elsa.WorkflowSettings.Services.WorkflowSettings;
+using Elsa.WorkflowSettings.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.WorkflowSettings.Extensions

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Models;
@@ -11,6 +12,7 @@ using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Expressions;
+using Elsa.Metadata;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
@@ -26,7 +28,7 @@ namespace Elsa.Activities.Http
         Description = "Send an HTTP request.",
         Outcomes = new[] { OutcomeNames.Done }
     )]
-    public class SendHttpRequest : Activity
+    public class SendHttpRequest : Activity, IActivityPropertyOptionsProvider
     {
         private readonly HttpClient _httpClient;
         private readonly IEnumerable<IHttpResponseContentReader> _parsers;
@@ -90,6 +92,23 @@ namespace Elsa.Activities.Http
         [ActivityInput(Hint = "Read the content of the response.", SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public bool ReadContent { get; set; }
 
+        [ActivityInput(
+            Label = "Response Content Parser",
+            Hint = "The parser to use to parse the response content.",
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid },
+            UIHint = ActivityInputUIHints.Dropdown,
+            OptionsProvider = typeof(SendHttpRequest)
+        )]
+        public string? ResponseContentParserName { get; set; }
+        
+        [ActivityInput(
+            Label = "Response Content .NET Type",
+            Hint = "The assembly-qualified .NET type name to deserialize the received content into.",
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid },
+            OptionsProvider = typeof(SendHttpRequest)
+        )]
+        public Type? ResponseContentTargetType { get; set; }
+
         /// <summary>
         /// A list of HTTP status codes this activity can handle.
         /// </summary>
@@ -123,11 +142,11 @@ namespace Elsa.Activities.Http
 
             if (hasContent && ReadContent)
             {
-                var formatter = SelectContentParser(contentType);
-                ResponseContent = await formatter.ReadAsync(response, cancellationToken);
+                var formatter = SelectContentParser(ResponseContentParserName, contentType);
+                ResponseContent = await formatter.ReadAsync(this, response, cancellationToken);
             }
 
-            var statusCode = (int) response.StatusCode;
+            var statusCode = (int)response.StatusCode;
             var statusOutcome = statusCode.ToString();
             var supportedStatusCodes = SupportedStatusCodes;
             var isSupportedStatusCode = supportedStatusCodes == null || !supportedStatusCodes.Any() || SupportedStatusCodes?.Contains(statusCode) == true;
@@ -140,12 +159,24 @@ namespace Elsa.Activities.Http
             return Outcomes(outcomes);
         }
 
-        private IHttpResponseContentReader SelectContentParser(string? contentType)
+        private IHttpResponseContentReader SelectContentParser(string? parserName, string? contentType)
         {
-            var simpleContentType = contentType?.Split(';').First() ?? "";
-            var formatters = _parsers.OrderByDescending(x => x.Priority).ToList();
-            
-            return formatters.FirstOrDefault(x => x.GetSupportsContentType(simpleContentType)) ?? formatters.Last();
+            if (string.IsNullOrWhiteSpace(parserName))
+            {
+                var simpleContentType = contentType?.Split(';').First() ?? "";
+                var parser = _parsers.OrderByDescending(x => x.Priority).ToList();
+
+                return parser.FirstOrDefault(x => x.GetSupportsContentType(simpleContentType)) ?? parser.Last();
+            }
+            else
+            {
+                var parser = _parsers.FirstOrDefault(x => x.Name == parserName);
+
+                if (parser == null)
+                    throw new InvalidOperationException("The specified parser does not exist");
+
+                return parser;
+            }
         }
 
         private HttpRequestMessage CreateRequest()
@@ -173,6 +204,17 @@ namespace Elsa.Activities.Http
                 request.Headers.Add(header.Key, header.Value.AsEnumerable());
 
             return request;
+        }
+        
+        object? IActivityPropertyOptionsProvider.GetOptions(PropertyInfo property)
+        {
+            if (property.Name != nameof(ResponseContentParserName))
+                return null;
+            
+            var items =  _parsers.Select(x => new SelectListItem(x.Name, x.Name)).ToList();
+            
+            items.Insert(0, new SelectListItem("Auto Select", ""));
+            return items;
         }
 
         private static bool GetMethodSupportsBody(string method)

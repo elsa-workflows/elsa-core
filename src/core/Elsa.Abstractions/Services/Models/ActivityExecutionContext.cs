@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Models;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json.Linq;
 
 namespace Elsa.Services.Models
 {
@@ -85,7 +86,7 @@ namespace Elsa.Services.Models
 
         public T? GetState<TActivity, T>(Expression<Func<TActivity, T>> propertyExpression) where TActivity : IActivity
         {
-            var expression = (MemberExpression) propertyExpression.Body;
+            var expression = (MemberExpression)propertyExpression.Body;
             string propertyName = expression.Member.Name;
             return GetState<T>(propertyName);
         }
@@ -129,7 +130,9 @@ namespace Elsa.Services.Models
         /// <summary>
         /// Journal data will be added to the workflow execution log for the "Executed" event.  
         /// </summary>
-        public IDictionary<string, object?> JournalData { get; private set; } = new Dictionary<string, object?>(); 
+        public IDictionary<string, object?> JournalData { get; private set; } = new Dictionary<string, object?>();
+
+        public WorkflowExecutionLog WorkflowExecutionLog => WorkflowExecutionContext.WorkflowExecutionLog;
 
         public ActivityScope GetScope(string activityId) => WorkflowExecutionContext.GetScope(activityId);
         public ActivityScope GetNamedScope(string activityName) => WorkflowExecutionContext.GetNamedScope(activityName);
@@ -172,23 +175,42 @@ namespace Elsa.Services.Models
         public T? GetInput<T>(Func<T?> defaultValue) => Input != null ? Input.ConvertTo<T>() : defaultValue();
         public T? GetInput<T>(T? defaultValue) => Input != null ? Input.ConvertTo<T>() : defaultValue;
 
-        public Task<object?> GetNamedActivityPropertyAsync(string activityName, string propertyName, CancellationToken cancellationToken = default) => WorkflowExecutionContext.GetNamedActivityPropertyAsync(GetCompositeName(activityName), propertyName, cancellationToken);
-        public async Task<object?> GetNamedActivityPropertyAsync(string activityName, string propertyName, object? defaultValue, CancellationToken cancellationToken = default) => await WorkflowExecutionContext.GetNamedActivityPropertyAsync(GetCompositeName(activityName), propertyName, cancellationToken) ?? defaultValue;
-        public async Task<object?> GetNamedActivityPropertyAsync(string activityName, string propertyName, Func<object?> defaultValue, CancellationToken cancellationToken = default) => await WorkflowExecutionContext.GetNamedActivityPropertyAsync(GetCompositeName(activityName), propertyName, cancellationToken) ?? defaultValue();
-        public async Task<T?> GetNamedActivityPropertyAsync<T>(string activityName, string propertyName, CancellationToken cancellationToken = default) => await WorkflowExecutionContext.GetNamedActivityPropertyAsync<T>(GetCompositeName(activityName), propertyName, cancellationToken);
-        public async Task<T?> GetNamedActivityPropertyAsync<T>(string activityName, string propertyName, Func<T?> defaultValue, CancellationToken cancellationToken = default) => await GetNamedActivityPropertyAsync<T>(GetCompositeName(activityName), propertyName, cancellationToken) ?? defaultValue();
-        public async Task<T?> GetNamedActivityPropertyAsync<T>(string activityName, string propertyName, T? defaultValue) => await GetNamedActivityPropertyAsync(GetCompositeName(activityName), propertyName, () => defaultValue, CancellationToken);
+        public Task<object?> GetNamedActivityPropertyAsync(string activityName, string propertyName, CancellationToken cancellationToken = default) =>
+            WorkflowExecutionContext.GetNamedActivityPropertyAsync(GetCompositeName(activityName), propertyName, cancellationToken);
 
-        public async Task<T?> GetNamedActivityPropertyAsync<TActivity, T>(string activityName, Expression<Func<TActivity, T>> propertyExpression, CancellationToken cancellationToken = default) where TActivity : IActivity => await WorkflowExecutionContext.GetNamedActivityPropertyAsync(GetCompositeName(activityName), propertyExpression, cancellationToken);
-        public async Task<T?> GetNamedActivityPropertyAsync<TActivity, T>(string activityName, Expression<Func<TActivity, T>> propertyExpression, Func<T?> defaultValue, CancellationToken cancellationToken = default) where TActivity : IActivity => await GetNamedActivityPropertyAsync(GetCompositeName(activityName), propertyExpression, cancellationToken) ?? defaultValue();
-        public async Task<T?> GetNamedActivityPropertyAsync<TActivity, T>(string activityName, Expression<Func<TActivity, T>> propertyExpression, T? defaultValue) where TActivity : IActivity => await GetNamedActivityPropertyAsync(GetCompositeName(activityName), propertyExpression, () => defaultValue, CancellationToken);
+        public async Task<object?> GetNamedActivityPropertyAsync(string activityName, string propertyName, object? defaultValue, CancellationToken cancellationToken = default) =>
+            await WorkflowExecutionContext.GetNamedActivityPropertyAsync(GetCompositeName(activityName), propertyName, cancellationToken) ?? defaultValue;
+
+        public async Task<object?> GetNamedActivityPropertyAsync(string activityName, string propertyName, Func<object?> defaultValue, CancellationToken cancellationToken = default) =>
+            await WorkflowExecutionContext.GetNamedActivityPropertyAsync(GetCompositeName(activityName), propertyName, cancellationToken) ?? defaultValue();
+
+        public async Task<T?> GetNamedActivityPropertyAsync<T>(string activityName, string propertyName, CancellationToken cancellationToken = default) =>
+            await WorkflowExecutionContext.GetNamedActivityPropertyAsync<T>(GetCompositeName(activityName), propertyName, cancellationToken);
+
+        public async Task<T?> GetNamedActivityPropertyAsync<T>(string activityName, string propertyName, Func<T?> defaultValue, CancellationToken cancellationToken = default) =>
+            await GetNamedActivityPropertyAsync<T>(GetCompositeName(activityName), propertyName, cancellationToken) ?? defaultValue();
+
+        public async Task<T?> GetNamedActivityPropertyAsync<T>(string activityName, string propertyName, T? defaultValue) =>
+            await GetNamedActivityPropertyAsync(GetCompositeName(activityName), propertyName, () => defaultValue, CancellationToken);
+
+        public async Task<T?> GetNamedActivityPropertyAsync<TActivity, T>(string activityName, Expression<Func<TActivity, T>> propertyExpression, CancellationToken cancellationToken = default) where TActivity : IActivity =>
+            await WorkflowExecutionContext.GetNamedActivityPropertyAsync(GetCompositeName(activityName), propertyExpression, cancellationToken);
+
+        public async Task<T?> GetNamedActivityPropertyAsync<TActivity, T>(string activityName, Expression<Func<TActivity, T>> propertyExpression, Func<T?> defaultValue, CancellationToken cancellationToken = default)
+            where TActivity : IActivity => await GetNamedActivityPropertyAsync(GetCompositeName(activityName), propertyExpression, cancellationToken) ?? defaultValue();
+
+        public async Task<T?> GetNamedActivityPropertyAsync<TActivity, T>(string activityName, Expression<Func<TActivity, T>> propertyExpression, T? defaultValue) where TActivity : IActivity =>
+            await GetNamedActivityPropertyAsync(GetCompositeName(activityName), propertyExpression, () => defaultValue, CancellationToken);
 
         public void SetWorkflowContext(object? value) => WorkflowExecutionContext.SetWorkflowContext(value);
         public object? GetWorkflowContext() => WorkflowExecutionContext.GetWorkflowContext();
         public T GetWorkflowContext<T>() => WorkflowExecutionContext.GetWorkflowContext<T>();
         public IDictionary<string, object?> GetActivityData() => GetActivityData(ActivityId);
         public IDictionary<string, object?> GetActivityData(string activityId) => WorkflowExecutionContext.GetActivityData(activityId);
-        public Task<T?> GetActivityPropertyAsync<TActivity, T>(Expression<Func<TActivity, T>> propertyExpression, CancellationToken cancellationToken = default) where TActivity : IActivity => WorkflowExecutionContext.GetActivityPropertyAsync(ActivityId, propertyExpression, cancellationToken);
+
+        public Task<T?> GetActivityPropertyAsync<TActivity, T>(Expression<Func<TActivity, T>> propertyExpression, CancellationToken cancellationToken = default) where TActivity : IActivity =>
+            WorkflowExecutionContext.GetActivityPropertyAsync(ActivityId, propertyExpression, cancellationToken);
+
         public void Fault(Exception exception) => WorkflowExecutionContext.Fault(exception, ActivityId, Input, Resuming);
 
         public string? GetOutputStorageProviderName(IActivity activity, string propertyName)
@@ -199,7 +221,7 @@ namespace Elsa.Services.Models
 
             if (property == null)
                 return null;
-            
+
             var inputAttr = property.GetCustomAttribute<ActivityOutputAttribute>();
             var defaultProviderName = inputAttr.DefaultWorkflowStorageProvider;
             var propertyStorageProviderDictionary = ActivityBlueprint.PropertyStorageProviders;
@@ -215,9 +237,17 @@ namespace Elsa.Services.Models
             // TODO: We could consider storing the current value using the workflow storage provider mechanism to support storing every value individually.  
             var outputStorageProviderName = GetOutputStorageProviderName(activity, outputPropertyName);
 
-            if(string.IsNullOrEmpty(outputStorageProviderName) || outputStorageProviderName == "WorkflowInstance")
+            if (string.IsNullOrEmpty(outputStorageProviderName) || outputStorageProviderName == "WorkflowInstance")
                 JournalData.Add("Output", value);
         }
+
+        public void AddEntry(string eventName, string? message, object? data)
+        {
+            var jObjectData = data != null ? JObject.FromObject(data) : null;
+            WorkflowExecutionLog.AddEntry(WorkflowInstance.Id, ActivityId, ActivityBlueprint.Type, eventName, message, WorkflowInstance.TenantId, null, jObjectData);
+        }
+
+        public void AddEntry(string eventName, string? message, JObject? data) => WorkflowExecutionLog.AddEntry(WorkflowInstance.Id, ActivityId, ActivityBlueprint.Type, eventName, message, WorkflowInstance.TenantId, null, data);
 
         private ICompositeActivityBlueprint GetContainerActivity()
         {

@@ -35,7 +35,7 @@ export class ElsaWorkflowBlueprintSidePanel {
   }
 
   async loadWorkflowBlueprint(workflowId = this.workflowId) {
-    const elsaClient = this.createClient();
+    const elsaClient = await this.createClient();
 
     this.workflowBlueprint = await elsaClient.workflowRegistryApi.get(workflowId, {isLatest: true});
   }

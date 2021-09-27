@@ -31,7 +31,7 @@ export class ElsaWorkflowRegistryListScreen {
 
   async componentWillLoad() {
     await this.loadWorkflowBlueprints();
-    eventBus.emit(EventTypes.WorkflowRegistryLoadingColumns, this, this.workflowRegistryColumns);
+    await eventBus.emit(EventTypes.WorkflowRegistryLoadingColumns, this, this.workflowRegistryColumns);
   }
 
   connectedCallback() {
@@ -66,7 +66,7 @@ export class ElsaWorkflowRegistryListScreen {
     const workflowRegistryUpdating: ConfigureWorkflowRegistryUpdatingContext = {
       params: [workflowBlueprintId, key, value]
     };
-    eventBus.emit(EventTypes.WorkflowRegistryUpdating, this, workflowRegistryUpdating);
+    await eventBus.emit(EventTypes.WorkflowRegistryUpdating, this, workflowRegistryUpdating);
   }
 
   async onLoadWorkflowBlueprints() {
@@ -74,7 +74,7 @@ export class ElsaWorkflowRegistryListScreen {
   }
 
   async loadWorkflowBlueprints() {
-    const elsaClient = this.createClient();
+    const elsaClient = await this.createClient();
     const page = 0;
     const pageSize = 50;
     const versionOptions: VersionOptions = {allVersions: true};

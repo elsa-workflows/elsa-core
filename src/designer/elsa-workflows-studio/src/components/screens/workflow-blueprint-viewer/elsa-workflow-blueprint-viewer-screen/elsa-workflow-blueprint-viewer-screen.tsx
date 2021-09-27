@@ -56,7 +56,7 @@ export class ElsaWorkflowBlueprintViewerScreen {
       propertyStorageProviders: {}
     };
 
-    const client = createElsaClient(this.serverUrl);
+    const client = await createElsaClient(this.serverUrl);
 
     if (workflowDefinitionId && workflowDefinitionId.length > 0) {
       try {
@@ -88,7 +88,7 @@ export class ElsaWorkflowBlueprintViewerScreen {
   }
 
   async loadActivityDescriptors() {
-    const client = createElsaClient(this.serverUrl);
+    const client = await createElsaClient(this.serverUrl);
     state.activityDescriptors = await client.activitiesApi.list();
   }
 

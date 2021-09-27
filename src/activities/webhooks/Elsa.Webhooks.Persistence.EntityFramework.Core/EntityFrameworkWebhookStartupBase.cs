@@ -1,6 +1,5 @@
 using System;
 using Elsa.Activities.Webhooks;
-using Elsa.Activities.Webhooks.Options;
 using Elsa.Options;
 using Elsa.Services.Startup;
 using Elsa.Webhooks.Persistence.EntityFramework.Core.Extensions;
@@ -31,8 +30,7 @@ namespace Elsa.Webhooks.Persistence.EntityFramework.Core
 
             var optionsBuilder = new WebhookOptionsBuilder(elsa.Services);
             optionsBuilder.UseEntityFrameworkPersistence(ef => Configure(ef, connectionString));
-
-            elsa.Services.Configure<WebhookOptions>(options => optionsBuilder.ApplyTo(options));
+            elsa.Services.AddSingleton(optionsBuilder.WebhookOptions);
         }
 
         protected virtual string GetDefaultConnectionString() => throw new Exception($"No connection string specified for the {ProviderName} provider");

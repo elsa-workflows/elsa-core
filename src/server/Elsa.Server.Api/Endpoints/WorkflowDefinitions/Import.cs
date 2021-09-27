@@ -43,6 +43,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             var postedModel = _contentSerializer.Deserialize<WorkflowDefinition>(json);
 
             workflowDefinition.Activities = postedModel.Activities;
+            workflowDefinition.Channel = postedModel.Channel;
             workflowDefinition.Connections = postedModel.Connections;
             workflowDefinition.Description = postedModel.Description;
             workflowDefinition.Name = postedModel.Name;
@@ -53,7 +54,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             workflowDefinition.DisplayName = postedModel.DisplayName;
             workflowDefinition.IsSingleton = postedModel.IsSingleton;
             workflowDefinition.DeleteCompletedInstances = postedModel.DeleteCompletedInstances;
-
+            workflowDefinition.PersistenceBehavior = postedModel.PersistenceBehavior;
             workflowDefinition.TenantId = await _tenantAccessor.GetTenantIdAsync(cancellationToken);
 
             await _workflowPublisher.SaveDraftAsync(workflowDefinition, cancellationToken);

@@ -20,7 +20,7 @@ using NetBox.Extensions;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.JavaScript
 {
-    [Action(Category = "Scripting", Description = "Run JavaScript code.")]
+    [Action(DisplayName = "Run JavaScript", Category = "Scripting", Description = "Run JavaScript code.")]
     public class RunJavaScript : Activity, INotificationHandler<RenderingTypeScriptDefinitions>, IActivityPropertyOptionsProvider
     {
         private readonly IJavaScriptService _javaScriptService;
@@ -83,12 +83,17 @@ namespace Elsa.Activities.JavaScript
             return Task.CompletedTask;
         }
 
-        object IActivityPropertyOptionsProvider.GetOptions(PropertyInfo property) =>
-            new
+        object? IActivityPropertyOptionsProvider.GetOptions(PropertyInfo property)
+        {
+            if (property.Name != nameof(Script))
+                return null;
+            
+            return new
             {
                 EditorHeight = "Large",
                 Context = nameof(RunJavaScript),
                 Syntax = JavaScriptExpressionHandler.SyntaxName
             };
+        }
     }
 }

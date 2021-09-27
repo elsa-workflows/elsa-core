@@ -17,7 +17,7 @@ namespace Elsa.Persistence.EntityFramework.PostgreSql.Migrations
             modelBuilder
                 .HasDefaultSchema("Elsa")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63)
-                .HasAnnotation("ProductVersion", "5.0.6")
+                .HasAnnotation("ProductVersion", "5.0.10")
                 .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
 
             modelBuilder.Entity("Elsa.Models.Bookmark", b =>
@@ -115,9 +115,6 @@ namespace Elsa.Persistence.EntityFramework.PostgreSql.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("Name")
-                        .HasColumnType("text");
-
-                    b.Property<string>("OutputStorageProviderName")
                         .HasColumnType("text");
 
                     b.Property<int>("PersistenceBehavior")

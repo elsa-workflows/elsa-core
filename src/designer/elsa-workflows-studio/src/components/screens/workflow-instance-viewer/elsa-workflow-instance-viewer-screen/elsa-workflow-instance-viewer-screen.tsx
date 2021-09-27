@@ -93,7 +93,7 @@ export class ElsaWorkflowInstanceViewerScreen {
       propertyStorageProviders: {}
     };
 
-    const client = createElsaClient(this.serverUrl);
+    const client = await createElsaClient(this.serverUrl);
 
     if (workflowInstanceId && workflowInstanceId.length > 0) {
       try {
@@ -126,7 +126,7 @@ export class ElsaWorkflowInstanceViewerScreen {
   }
 
   async loadActivityDescriptors() {
-    const client = createElsaClient(this.serverUrl);
+    const client = await createElsaClient(this.serverUrl);
     state.activityDescriptors = await client.activitiesApi.list();
   }
 
@@ -223,7 +223,7 @@ export class ElsaWorkflowInstanceViewerScreen {
       return;
     }
 
-    const elsaClient = createElsaClient(this.serverUrl);
+    const elsaClient = await createElsaClient(this.serverUrl);
     this.activityStats = await elsaClient.activityStatsApi.get(this.workflowInstanceId, e.detail.activity.activityId);
   }
 

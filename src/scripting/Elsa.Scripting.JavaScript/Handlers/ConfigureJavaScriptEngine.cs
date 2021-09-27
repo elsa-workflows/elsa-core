@@ -118,7 +118,7 @@ namespace Elsa.Scripting.JavaScript.Handlers
                 foreach (var property in outputProperties)
                 {
                     var propertyName = property.Name;
-                    var storageProviderName = storageProviderLookup.GetItem(propertyName);
+                    var storageProviderName = storageProviderLookup.GetItem(propertyName) ?? property.DefaultWorkflowStorageProvider;
 
                     activityModel[propertyName] = (Func<object?>) (() => _workflowStorageService.LoadAsync(storageProviderName, storageContext, propertyName, cancellationToken).Result);
                 }

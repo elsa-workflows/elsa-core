@@ -17,47 +17,47 @@ namespace Elsa.Testing.Shared.AutoFixture.Attributes
 
         class ElsaHostBuilderBuilderCustomization : ICustomization
         {
-            readonly Action<ElsaHostBuilderBuilder> builderCustomizer;
+            readonly Action<ElsaHostBuilderBuilder> _builderCustomizer;
             
             public void Customize(IFixture fixture)
             {
-                fixture.Behaviors.Add(new ElsaHostBuilderBuilderTransformation(builderCustomizer));
+                fixture.Behaviors.Add(new ElsaHostBuilderBuilderTransformation(_builderCustomizer));
             }
 
             public ElsaHostBuilderBuilderCustomization(Action<ElsaHostBuilderBuilder> builderCustomizer)
             {
-                this.builderCustomizer = builderCustomizer ?? throw new ArgumentNullException(nameof(builderCustomizer));
+                _builderCustomizer = builderCustomizer ?? throw new ArgumentNullException(nameof(builderCustomizer));
             }
         }
 
         class ElsaHostBuilderBuilderTransformation : ISpecimenBuilderTransformation
         {
-            readonly Action<ElsaHostBuilderBuilder> builderCustomizer;
+            readonly Action<ElsaHostBuilderBuilder> _builderCustomizer;
             
             public ISpecimenBuilderNode Transform(ISpecimenBuilder builder)
             {
-                return new Postprocessor(builder, new ElsaHostBuilderBuilderCommand(builderCustomizer), IsInstanceOf.Type<ElsaHostBuilderBuilder>());
+                return new Postprocessor(builder, new ElsaHostBuilderBuilderCommand(_builderCustomizer), IsInstanceOf.Type<ElsaHostBuilderBuilder>());
             }
 
             public ElsaHostBuilderBuilderTransformation(Action<ElsaHostBuilderBuilder> builderCustomizer)
             {
-                this.builderCustomizer = builderCustomizer ?? throw new ArgumentNullException(nameof(builderCustomizer));
+                _builderCustomizer = builderCustomizer ?? throw new ArgumentNullException(nameof(builderCustomizer));
             }
         }
 
         class ElsaHostBuilderBuilderCommand : ISpecimenCommand
         {
-            readonly Action<ElsaHostBuilderBuilder> builderCustomizer;
+            readonly Action<ElsaHostBuilderBuilder> _builderCustomizer;
             
             public void Execute(object specimen, ISpecimenContext context)
             {
                 var builder = (ElsaHostBuilderBuilder) specimen;
-                builderCustomizer(builder);
+                _builderCustomizer(builder);
             }
 
             public ElsaHostBuilderBuilderCommand(Action<ElsaHostBuilderBuilder> builderCustomizer)
             {
-                this.builderCustomizer = builderCustomizer ?? throw new ArgumentNullException(nameof(builderCustomizer));
+                _builderCustomizer = builderCustomizer ?? throw new ArgumentNullException(nameof(builderCustomizer));
             }
         }
     }

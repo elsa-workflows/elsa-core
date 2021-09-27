@@ -1,52 +1,63 @@
 image: Previous Visual Studio 2019
 
 environment:
-  nodejs_version: "14.6.0"
-  # AppVeyor installs Java on its build agents by default, but it
-  # picks an old version that's not compatible with SonarQube.
-  # This brings it up to date.
-  JAVA_HOME: "C:\\Program Files\\Java\\jdk13"
-  sonarcloud_org_name: elsa-workflows
-  sonarcloud_project_name: elsa-workflows_elsa-core
-  sonarcloud_api_key:
-    secure: qaE9kOVkGGFM7ZMf3YeliZxDU9udTCy6W5xXHJ9T+tXv5qXPMYlIdR7hyNgxW04A
-
-version: 2.3.0-preview.{build}
+    elsa_version: 2.4.0
+    elsa_build_version: 0.0.0
+    nodejs_version: "14.6.0"
+    # AppVeyor installs Java on its build agents by default, but it
+    # picks an old version that's not compatible with SonarQube.
+    # This brings it up to date.
+    JAVA_HOME: "C:\\Program Files\\Java\\jdk13"
+    sonarcloud_org_name: elsa-workflows
+    sonarcloud_project_name: elsa-workflows_elsa-core
+    sonarcloud_api_key:
+        secure: qaE9kOVkGGFM7ZMf3YeliZxDU9udTCy6W5xXHJ9T+tXv5qXPMYlIdR7hyNgxW04A
 
 init:
-  - cmd: git config --global core.autocrlf true
+    -   cmd: git config --global core.autocrlf true
+    -   ps: |
+            if ($env:APPVEYOR_REPO_TAG -eq "true")
+            {
+                $env:elsa_build_version=$env:APPVEYOR_REPO_TAG_NAME
+            }
+            else
+            {
+                $env:elsa_build_version="$($env:elsa_version)-preview.$($env:APPVEYOR_BUILD_NUMBER)"
+            }
+
+version: 2.4.0.{build}
 
 pull_requests:
-  do_not_increment_build_number: true
+    do_not_increment_build_number: true
 
 dotnet_csproj:
-  patch: true
-  file: '**\*.csproj'
-  version: '{version}'
-  version_prefix: '{version}'
-  package_version: '{version}'
-  assembly_version: '{version}'
-  file_version: '{version}'
-  informational_version: '{version}'
+    patch: true
+    file: '**\*.csproj'
+    version: '{version}'
+    version_prefix: '{version}'
+    package_version: '{version}'
+    assembly_version: '{version}'
+    file_version: '{version}'
+    informational_version: '{version}'
 
 cache:
-  - src\designer\elsa-workflows-studio\node_modules
-  - src\designer\bindings\aspnet\Elsa.Designer.Components.Web\node_modules
-  - '%APPDATA%\npm-cache'
+    - src\designer\elsa-workflows-studio\node_modules
+    - src\designer\bindings\aspnet\Elsa.Designer.Components.Web\node_modules
+    - '%APPDATA%\npm-cache'
 
 install:
-  - ps: >-
-      cd .\src\designer\elsa-workflows-studio
+    -   ps: >-
+            cd .\src\designer\elsa-workflows-studio
 
-      npm install --force
+            npm install --force
 
-      cd ..\bindings\aspnet\Elsa.Designer.Components.Web
+            cd ..\bindings\aspnet\Elsa.Designer.Components.Web
 
-      npm install --force
+            npm install --force
 
-      cd ..\..\..\..\..
+            cd ..\..\..\..\..
 
-      dotnet tool install --global dotnet-sonarscanner
+            dotnet tool install --global dotnet-sonarscanner
 
 #before_build:
 #  - cmd: >-
@@ -67,48 +78,48 @@ install:
 #      }
 
 build_script:
-  - ps: >-
-      cd .\src\designer\elsa-workflows-studio
+    -   ps: >-
+            cd .\src\designer\elsa-workflows-studio
 
-      npm run build
+            npm run build
 
-      cd ..\bindings\aspnet\Elsa.Designer.Components.Web
+            cd ..\bindings\aspnet\Elsa.Designer.Components.Web
 
-      npm run build
+            npm run build
 
-      cd ..\..\..\..\..
+            cd ..\..\..\..\..
 
-      dotnet build
+            dotnet build
 
 #test_script:
 #  - ps: dotnet test --collect:"XPlat Code Coverage" --logger:xunit -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
 #  - ps: dotnet test
 
 after_test:
-  - ps: >-
-      dotnet pack Elsa.sln --include-symbols /p:Version="$env:APPVEYOR_BUILD_VERSION"
+    -   ps: >-
+            dotnet pack Elsa.sln --include-symbols /p:Version="$env:elsa_build_version"
 
 artifacts:
-  - path: '**/*.nupkg'
-    name: Packages
-  - path: '**/TestResults/TestResults.xml'
+    -   path: '**/*.nupkg'
+        name: Packages
+    -   path: '**/TestResults/TestResults.xml'
 
 deploy:
-  # Deploy to NuGet on builds from tags only
-  - provider: NuGet
-    name: NuGet
-    api_key:
-      secure: WC5CCcM5ksWOJbv925FNjv91KsfqHfwEe0A61FMNB27IxvttwJsvBC9XYwK+wQnp
-    skip_symbols: true
-    on:
-      APPVEYOR_REPO_TAG: true
-      
-  # Deploy to MyGet on every build (in the appropriate branch)
-  - provider: NuGet
-    name: MyGet
-    server: https://www.myget.org/F/elsa-2/api/v2/package
-    api_key:
-      secure: JfESkwmLdWU7dzvoqKPUfMemb00wX8AEYxeHCsYWTX1LfTeECdmKdZxz7IVUpebb
-    skip_symbols: true
-    on:
-      branch: master
+    # Deploy to NuGet on builds from tags only
+    -   provider: NuGet
+        name: NuGet
+        api_key:
+            secure: WC5CCcM5ksWOJbv925FNjv91KsfqHfwEe0A61FMNB27IxvttwJsvBC9XYwK+wQnp
+        skip_symbols: true
+        on:
+            APPVEYOR_REPO_TAG: true
+
+    # Deploy to MyGet on every build (in the appropriate branch)
+    -   provider: NuGet
+        name: MyGet
+        server: https://www.myget.org/F/elsa-2/api/v2/package
+        api_key:
+            secure: JfESkwmLdWU7dzvoqKPUfMemb00wX8AEYxeHCsYWTX1LfTeECdmKdZxz7IVUpebb
+        skip_symbols: true
+        on:
+            branch: master

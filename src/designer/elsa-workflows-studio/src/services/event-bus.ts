@@ -1,3 +1,3 @@
-﻿import EventBus from 'js-event-bus';
+﻿import EventBus from './custom-event-bus';
 
 export const eventBus = new EventBus();

@@ -28,7 +28,6 @@ namespace Elsa.Services.Workflows
         private readonly ILogger _logger;
         private readonly IGetsStartActivities _startingActivitiesProvider;
         private readonly IWorkflowStorageService _workflowStorageService;
-        private readonly IWorkflowExecutionLog _workflowExecutionLog;
 
         public WorkflowRunner(
             IWorkflowContextManager workflowContextManager,
@@ -36,14 +35,12 @@ namespace Elsa.Services.Workflows
             IServiceScopeFactory serviceScopeFactory,
             IGetsStartActivities startingActivitiesProvider,
             IWorkflowStorageService workflowStorageService,
-            IWorkflowExecutionLog workflowExecutionLog,
             ILogger<WorkflowRunner> logger)
         {
             _mediator = mediator;
             _serviceScopeFactory = serviceScopeFactory;
             _startingActivitiesProvider = startingActivitiesProvider;
             _workflowStorageService = workflowStorageService;
-            _workflowExecutionLog = workflowExecutionLog;
             _logger = logger;
             _workflowContextManager = workflowContextManager;
         }
@@ -68,6 +65,14 @@ namespace Elsa.Services.Workflows
             }
 
             var workflowExecutionContext = new WorkflowExecutionContext(workflowExecutionScope.ServiceProvider, workflowBlueprint, workflowInstance, input?.Input);
+            var result = await RunWorkflowInternalAsync(workflowExecutionContext, activityId, cancellationToken);
+            await workflowExecutionContext.WorkflowExecutionLog.FlushAsync(cancellationToken);
+            return result;
+        }
+        
+        private async Task<RunWorkflowResult> RunWorkflowInternalAsync(WorkflowExecutionContext workflowExecutionContext, string? activityId = default, CancellationToken cancellationToken = default)
+        {
+            var workflowInstance = workflowExecutionContext.WorkflowInstance;
 
             if (!string.IsNullOrWhiteSpace(workflowInstance.ContextId))
             {
@@ -81,6 +86,7 @@ namespace Elsa.Services.Workflows
             if (activityId == null && currentActivity != null)
                 activityId = currentActivity.ActivityId;
 
+            var workflowBlueprint = workflowExecutionContext.WorkflowBlueprint;
             var activity = activityId != null ? workflowBlueprint.GetActivity(activityId) : default;
 
             // Give application a chance to prevent workflow from executing.
@@ -169,7 +175,7 @@ namespace Elsa.Services.Workflows
             {
                 _logger.LogWarning(e, "Failed to run workflow {WorkflowInstanceId}", workflowExecutionContext.WorkflowInstance.Id);
                 workflowExecutionContext.Fault(e, activity.Id, null, false);
-                await _workflowExecutionLog.AddEntryAsync("Faulted", workflowExecutionContext.WorkflowInstance, activity, null, SimpleException.FromException(e), null, cancellationToken);
+                workflowExecutionContext.AddEntry(activity, "Faulted",  null, SimpleException.FromException(e));
             }
 
             return new RunWorkflowResult(workflowExecutionContext.WorkflowInstance, activity.Id, false);
