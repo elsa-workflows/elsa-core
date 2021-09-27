@@ -31,7 +31,7 @@ namespace Elsa.Retention.Jobs
         public async Task ExecuteAsync(CancellationToken cancellationToken = default)
         {
             var threshold = _clock.GetCurrentInstant().Minus(_options.TimeToLive);
-            var specification = new WorkflowCreatedBeforeSpecification(threshold);
+            var specification = new WorkflowCreatedBeforeSpecification(threshold).And(new WorkflowFinishedStatusSpecification());
             var take = _options.PageSize;
             IList<string> workflowInstanceIds;
 
