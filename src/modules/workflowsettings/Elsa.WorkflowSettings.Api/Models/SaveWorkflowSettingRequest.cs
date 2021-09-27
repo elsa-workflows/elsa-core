@@ -6,7 +6,9 @@ namespace Elsa.WorkflowSettings.Api.Models
     {
         public string? Id { get; init; }
         [Required] public string WorkflowBlueprintId { get; init; } = default!;
-        [Required] public string Key { get; init; } = default!;
-        [Required] public string Value { get; init; } = default!;
+        [Required] public string Key { get; init; } = default!; 
+        [Required] public string Description { get; init; } = default!; 
+        public string? Value { get; init; }
+        public string? DefaultValue { get; init; }
     }
 }
