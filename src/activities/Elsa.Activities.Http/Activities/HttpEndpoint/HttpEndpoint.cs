@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.Providers.DefaultValues;
@@ -83,8 +84,9 @@ namespace Elsa.Activities.Http
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
-            var result = context.WorkflowExecutionContext.IsFirstPass && !context.WorkflowExecutionContext.WorkflowBlueprint.IsTestRun ? ExecuteInternal(context) : Suspend();
-            context.WorkflowExecutionContext.WorkflowBlueprint.IsTestRun = false;
+            var isTest = context.WorkflowExecutionContext.WorkflowInstance.GetMetaData("isTest");
+            var result = context.WorkflowExecutionContext.IsFirstPass && !Convert.ToBoolean(isTest) ? ExecuteInternal(context) : Suspend();
+
             return result;
         }
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context) => ExecuteInternal(context);
@@ -96,12 +98,17 @@ namespace Elsa.Activities.Http
             return Done();
         }
 
-        object IActivityPropertyOptionsProvider.GetOptions(PropertyInfo property) =>
-            new
+        object IActivityPropertyOptionsProvider.GetOptions(PropertyInfo property)
+        {
+            if (property.Name != nameof(Schema))
+                return default!;
+
+            return new
             {
                 EditorHeight = "Large",
                 Context = nameof(HttpEndpoint),
                 Syntax = SyntaxNames.Json
             };
+        }
     }
 }

@@ -135,16 +135,6 @@ namespace Elsa.Services.Workflows
             return draft;
         }
 
-        public async Task<WorkflowDefinition?> GetAsync(string workflowDefinitionId, int version, CancellationToken cancellationToken = default)
-        {
-            var definition = await _workflowDefinitionStore.FindByDefinitionIdAsync(
-                workflowDefinitionId,
-                VersionOptions.SpecificVersion(version),
-                cancellationToken);
-
-            return definition;
-        }
-
         public async Task<WorkflowDefinition> SaveDraftAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken = default)
         {
             var draft = workflowDefinition;

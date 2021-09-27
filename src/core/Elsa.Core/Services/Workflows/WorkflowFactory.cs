@@ -23,6 +23,8 @@ namespace Elsa.Services.Workflows
             string? correlationId = default,
             string? contextId = default,
             string? tenantId = default,
+            bool? isTest = default,
+            string? signalRConnectionId = default,
             CancellationToken cancellationToken = default)
         {
             var workflowInstance = new WorkflowInstance
@@ -39,8 +41,8 @@ namespace Elsa.Services.Workflows
                 ContextType = workflowBlueprint.ContextOptions?.ContextType?.GetContextTypeName()
             };
 
-            workflowInstance.MetaData.Add("isTestRun", workflowBlueprint.IsTestRun);
-            workflowInstance.MetaData.Add("signalRConnectionId", workflowBlueprint.SignalRConnectionId);                
+            workflowInstance.MetaData.Add("isTest", isTest);
+            workflowInstance.MetaData.Add("signalRConnectionId", signalRConnectionId);                
 
             return Task.FromResult(workflowInstance);
         }

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Elsa.Comparers;
 using Elsa.Services.Models;
 using NodaTime;
@@ -39,7 +40,17 @@ namespace Elsa.Models
         {
             get => _blockingActivities;
             set => _blockingActivities = new HashSet<BlockingActivity>(value, BlockingActivityEqualityComparer.Instance);
-        }  
+        }
+
+        public object? GetMetaData(string key) { 
+            return MetaData.FirstOrDefault(x => x.Key == key).Value;
+        }
+
+        public void SetMetaData(string key, object? value)
+        {
+            MetaData.Remove(key);
+            MetaData.Add(key, value);
+        }
 
         public WorkflowFault? Fault { get; set; }
         public SimpleStack<ScheduledActivity> ScheduledActivities { get; set; }
