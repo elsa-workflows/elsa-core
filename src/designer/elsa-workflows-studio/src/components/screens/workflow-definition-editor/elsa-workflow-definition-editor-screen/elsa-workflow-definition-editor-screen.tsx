@@ -544,7 +544,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
               </svg>
             </button>
           </div>`;
-debugger
+
     return (
       <div class="elsa-flex-1 elsa-flex elsa-relative" >
         {this.workflowDesignerMode == WorkflowDesignerMode.Test ? 
@@ -597,7 +597,7 @@ debugger
     const value = message.data["Body"];
     const request: WorkflowTestUpdateHttpEndpoint = {
       activityId: message.activityId,
-      jsonSchema: JSON.stringify(convert(value), null, 4)
+      jsonSchema: JSON.stringify(convert(value), null, 1)
     };
 
     await this.updateHttpEndpointJsonSchema(request);

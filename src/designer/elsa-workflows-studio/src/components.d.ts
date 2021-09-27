@@ -229,10 +229,6 @@ export namespace Components {
         "hide": () => Promise<void>;
         "show": (options: ToastNotificationOptions) => Promise<void>;
     }
-    interface ElsaUrlProperty {
-        "propertyDescriptor": ActivityPropertyDescriptor;
-        "propertyModel": ActivityDefinitionProperty;
-    }
     interface ElsaWebhookDefinitionEditorNotifications {
     }
     interface ElsaWebhookDefinitionEditorScreen {
@@ -579,12 +575,6 @@ declare global {
         prototype: HTMLElsaToastNotificationElement;
         new (): HTMLElsaToastNotificationElement;
     };
-    interface HTMLElsaUrlPropertyElement extends Components.ElsaUrlProperty, HTMLStencilElement {
-    }
-    var HTMLElsaUrlPropertyElement: {
-        prototype: HTMLElsaUrlPropertyElement;
-        new (): HTMLElsaUrlPropertyElement;
-    };
     interface HTMLElsaWebhookDefinitionEditorNotificationsElement extends Components.ElsaWebhookDefinitionEditorNotifications, HTMLStencilElement {
     }
     var HTMLElsaWebhookDefinitionEditorNotificationsElement: {
@@ -728,7 +718,6 @@ declare global {
         "elsa-tab-content": HTMLElsaTabContentElement;
         "elsa-tab-header": HTMLElsaTabHeaderElement;
         "elsa-toast-notification": HTMLElsaToastNotificationElement;
-        "elsa-url-property": HTMLElsaUrlPropertyElement;
         "elsa-webhook-definition-editor-notifications": HTMLElsaWebhookDefinitionEditorNotificationsElement;
         "elsa-webhook-definition-editor-screen": HTMLElsaWebhookDefinitionEditorScreenElement;
         "elsa-webhook-definitions-list-screen": HTMLElsaWebhookDefinitionsListScreenElement;
@@ -963,10 +952,6 @@ declare namespace LocalJSX {
     }
     interface ElsaToastNotification {
     }
-    interface ElsaUrlProperty {
-        "propertyDescriptor"?: ActivityPropertyDescriptor;
-        "propertyModel"?: ActivityDefinitionProperty;
-    }
     interface ElsaWebhookDefinitionEditorNotifications {
     }
     interface ElsaWebhookDefinitionEditorScreen {
@@ -1107,7 +1092,6 @@ declare namespace LocalJSX {
         "elsa-tab-content": ElsaTabContent;
         "elsa-tab-header": ElsaTabHeader;
         "elsa-toast-notification": ElsaToastNotification;
-        "elsa-url-property": ElsaUrlProperty;
         "elsa-webhook-definition-editor-notifications": ElsaWebhookDefinitionEditorNotifications;
         "elsa-webhook-definition-editor-screen": ElsaWebhookDefinitionEditorScreen;
         "elsa-webhook-definitions-list-screen": ElsaWebhookDefinitionsListScreen;
@@ -1171,7 +1155,6 @@ declare module "@stencil/core" {
             "elsa-tab-content": LocalJSX.ElsaTabContent & JSXBase.HTMLAttributes<HTMLElsaTabContentElement>;
             "elsa-tab-header": LocalJSX.ElsaTabHeader & JSXBase.HTMLAttributes<HTMLElsaTabHeaderElement>;
             "elsa-toast-notification": LocalJSX.ElsaToastNotification & JSXBase.HTMLAttributes<HTMLElsaToastNotificationElement>;
-            "elsa-url-property": LocalJSX.ElsaUrlProperty & JSXBase.HTMLAttributes<HTMLElsaUrlPropertyElement>;
             "elsa-webhook-definition-editor-notifications": LocalJSX.ElsaWebhookDefinitionEditorNotifications & JSXBase.HTMLAttributes<HTMLElsaWebhookDefinitionEditorNotificationsElement>;
             "elsa-webhook-definition-editor-screen": LocalJSX.ElsaWebhookDefinitionEditorScreen & JSXBase.HTMLAttributes<HTMLElsaWebhookDefinitionEditorScreenElement>;
             "elsa-webhook-definitions-list-screen": LocalJSX.ElsaWebhookDefinitionsListScreen & JSXBase.HTMLAttributes<HTMLElsaWebhookDefinitionsListScreenElement>;

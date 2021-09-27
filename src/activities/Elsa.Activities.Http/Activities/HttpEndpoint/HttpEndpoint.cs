@@ -62,13 +62,7 @@ namespace Elsa.Activities.Http
             Category = PropertyCategories.Advanced,
             UIHint = ActivityInputUIHints.CodeEditor,
             OptionsProvider = typeof(HttpEndpoint))]
-        public string? Schema { get; set; }
-
-        [ActivityInput(
-            Category = PropertyCategories.Advanced,
-            DefaultValue = "https://extendsclass.com/json-schema-validator.html",
-            UIHint = ActivityInputUIHints.Url)]
-        public string? OnlineConverter { get; set; }
+        public string? Schema { get; set; }        
 
         [ActivityInput(
             Hint = "Check to allow authenticated requests only",
