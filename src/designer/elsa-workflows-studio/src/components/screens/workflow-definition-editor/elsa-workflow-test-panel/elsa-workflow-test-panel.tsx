@@ -80,7 +80,6 @@ export class ElsaWorkflowTestPanel {
 
   async onStopWorkflowClick() {    
     let message = this.workflowTestActivityMessages.last();
-    debugger;
     if (!!message) {
       const client = await createElsaClient(this.serverUrl);
       await client.workflowInstancesApi.delete(message.workflowInstanceId);
