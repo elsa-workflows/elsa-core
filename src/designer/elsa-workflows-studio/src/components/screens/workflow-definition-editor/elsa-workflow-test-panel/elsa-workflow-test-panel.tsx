@@ -93,6 +93,10 @@ export class ElsaWorkflowTestPanel {
   
       return (      
         <dl class="elsa-border-b elsa-border-gray-200 elsa-divide-y elsa-divide-gray-200">
+          <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
+            <dt class="elsa-text-gray-500">{t('Status')}</dt>
+            <dd class="elsa-text-gray-900">{workflowStatus}</dd>
+          </div>            
           {!!message.path ?
             <div>
               <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
@@ -106,11 +110,7 @@ export class ElsaWorkflowTestPanel {
             </div>
             :
             ''
-          }
-          <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
-            <dt class="elsa-text-gray-500">{t('Status')}</dt>
-            <dd class="elsa-text-gray-900">{workflowStatus}</dd>
-          </div>     
+          }   
         </dl>
       );
     }    
