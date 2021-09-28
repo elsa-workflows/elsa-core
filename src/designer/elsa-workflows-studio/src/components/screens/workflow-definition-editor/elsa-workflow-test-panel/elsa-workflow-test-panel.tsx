@@ -78,9 +78,7 @@ export class ElsaWorkflowTestPanel {
     await client.workflowTestApi.execute(request);
   }
 
-  async onStopWorkflowClick() {
-    eventBus.emit(EventTypes.TestActivityMessageReceived, this, null);
-
+  async onStopWorkflowClick() {    
     let message = this.workflowTestActivityMessages.last();
     debugger;
     if (!!message) {
@@ -88,8 +86,10 @@ export class ElsaWorkflowTestPanel {
       await client.workflowInstancesApi.delete(message.workflowInstanceId);
     }
 
+    this.message = null;
     this.workflowStarted = false;
     this.workflowTestActivityMessages = [];
+    eventBus.emit(EventTypes.TestActivityMessageReceived, this, null);
   }
 
   render() {
