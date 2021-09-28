@@ -85,7 +85,10 @@ export class ElsaWorkflowTestPanel {
       const {message} = this;
   
       if (message == undefined || !message)
-        return    
+        return
+
+        debugger
+      let workflowStatus = this.workflowTestActivityMessages.last().workflowStatus;
         
       const t = (x, params?) => this.i18next.t(x, params);
   
@@ -107,7 +110,7 @@ export class ElsaWorkflowTestPanel {
           }
           <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
             <dt class="elsa-text-gray-500">{t('Status')}</dt>
-            <dd class="elsa-text-gray-900">{message.workflowStatus}</dd>
+            <dd class="elsa-text-gray-900">{workflowStatus}</dd>
           </div>     
         </dl>
       );
