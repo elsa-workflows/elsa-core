@@ -53,6 +53,7 @@ export namespace Components {
         "mode": WorkflowDesignerMode;
         "model": WorkflowModel;
         "removeActivity": (activity: ActivityModel) => Promise<void>;
+        "removeSelectedActivities": () => Promise<void>;
         "selectedActivityIds": Array<string>;
         "showActivityEditor": (activity: ActivityModel, animate: boolean) => Promise<void>;
     }

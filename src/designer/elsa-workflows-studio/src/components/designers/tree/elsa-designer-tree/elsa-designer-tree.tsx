@@ -64,6 +64,7 @@ export class ElsaWorkflowDesigner {
     x: 0,
     y: 0,
     activity: null,
+    selectedActivities: {}
   };
 
   @State() connectionContextMenuState: ActivityContextMenuState = {
@@ -146,6 +147,17 @@ export class ElsaWorkflowDesigner {
   @Method()
   async removeActivity(activity: ActivityModel) {
     this.removeActivityInternal(activity);
+  }
+
+  @Method()
+  async removeSelectedActivities() {
+    let model = {...this.workflowModel};
+
+    Object.keys(this.selectedActivities).forEach((key) => {
+      model = this.removeActivityInternal(this.selectedActivities[key], model);
+    });
+
+    this.updateWorkflowModel(model);
   }
 
   @Method()
@@ -348,8 +360,8 @@ export class ElsaWorkflowDesigner {
     return model;
   }
 
-  removeActivityInternal(activity: ActivityModel) {
-    let workflowModel = {...this.workflowModel};
+  removeActivityInternal(activity: ActivityModel, model?: WorkflowModel) {
+    let workflowModel = model || {...this.workflowModel};
     const incomingConnections = getInboundConnections(workflowModel, activity.activityId);
     const outgoingConnections = getOutboundConnections(workflowModel, activity.activityId);
 
@@ -374,7 +386,14 @@ export class ElsaWorkflowDesigner {
           });
       }
     }
-    this.updateWorkflowModel(workflowModel);
+
+    delete this.selectedActivities[activity.activityId];
+
+    if (!model) {
+      this.updateWorkflowModel(workflowModel);
+    }
+
+    return workflowModel;
   }
 
   newActivity(activityDescriptor: ActivityDescriptor): ActivityModel {
@@ -777,7 +796,13 @@ export class ElsaWorkflowDesigner {
           .select('.context-menu-button-container button')
           .on('click', evt => {
             evt.stopPropagation();
-            this.handleContextMenuChange({x: evt.clientX, y: evt.clientY, shown: true, activity: node.activity});
+            this.handleContextMenuChange({
+              x: evt.clientX,
+              y: evt.clientY,
+              shown: true,
+              activity: node.activity,
+              selectedActivities: this.selectedActivities
+            });
           });
       }
     });

@@ -1,4 +1,5 @@
-﻿import {ActivityModel, WorkflowFault} from "../../../../models";
+﻿import {ActivityModel} from "../../../../models";
+import {Map} from "../../../../utils/utils";
 
 export enum WorkflowDesignerMode {
   Edit,
@@ -11,6 +12,7 @@ export interface ActivityContextMenuState {
   x: number;
   y: number;
   activity?: ActivityModel | null;
+  selectedActivities?: Map<ActivityModel> ;
 }
 
 export enum LayoutDirection {

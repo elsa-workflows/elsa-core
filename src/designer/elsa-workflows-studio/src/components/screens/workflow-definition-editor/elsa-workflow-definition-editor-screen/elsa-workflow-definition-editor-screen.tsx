@@ -22,6 +22,7 @@ import {registerClickOutside} from "stencil-click-outside";
 import {i18n} from "i18next";
 import {loadTranslations} from "../../../i18n/i18n-loader";
 import {resources} from "./localizations";
+import {Map} from "../../../../utils/utils";
 
 @Component({
   tag: 'elsa-workflow-definition-editor-screen',
@@ -51,6 +52,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
     x: 0,
     y: 0,
     activity: null,
+    selectedActivities: {}
   };
 
   @State() connectionContextMenuState: ActivityContextMenuState = {
@@ -363,8 +365,15 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   async onDeleteActivityClick(e: Event) {
     e.preventDefault();
-    await this.designer.removeActivity(this.activityContextMenuState.activity);
-    this.handleContextMenuChange({x: 0, y: 0, shown: false, activity: null});
+    const {activity, selectedActivities} = this.activityContextMenuState;
+
+    if (selectedActivities[activity.activityId]) {
+      await this.designer.removeSelectedActivities();
+    } else {
+      await this.designer.removeActivity(activity);
+    }
+
+    this.handleContextMenuChange({x: 0, y: 0, shown: false, activity: null, selectedActivities: {}});
     await eventBus.emit(EventTypes.HideModalDialog);
   }
 
@@ -457,6 +466,8 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   renderActivityContextMenu() {
     const t = this.t;
+    const selectedActivities = Object.keys(this.activityContextMenuState.selectedActivities);
+    const {activity} = this.activityContextMenuState;
 
     return <div
       data-transition-enter="elsa-transition elsa-ease-out elsa-duration-100"
@@ -469,7 +480,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
       style={{left: `${this.activityContextMenuState.x}px`, top: `${this.activityContextMenuState.y}px`}}
       ref={el =>
         registerClickOutside(this, el, () => {
-          this.handleContextMenuChange({x: 0, y: 0, shown: false, activity: null});
+          this.handleContextMenuChange({x: 0, y: 0, shown: false, activity: null, selectedActivities: {}});
         })
       }
     >
@@ -491,7 +502,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
             href="#"
             class="elsa-block elsa-px-4 elsa-py-2 elsa-text-sm elsa-leading-5 elsa-text-gray-700 hover:elsa-bg-gray-100 hover:elsa-text-gray-900 focus:elsa-outline-none focus:elsa-bg-gray-100 focus:elsa-text-gray-900"
             role="menuitem">
-            {t('ActivityContextMenu.Delete')}
+            {(selectedActivities.length > 1 && selectedActivities.indexOf(activity.activityId) !== -1) ? t('ActivityContextMenu.DeleteSelected') : t('ActivityContextMenu.Delete')}
           </a>
         </div>
       </div>
