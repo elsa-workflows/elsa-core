@@ -122,7 +122,7 @@ export const createElsaClient = async function (serverUrl: string): Promise<Elsa
       execute: async (request) => {
         await httpClient.post<void>(`v1/workflow-test/execute`, request);
       }
-    },    
+    },
     workflowRegistryApi: {
       list: async (page?: number, pageSize?: number, versionOptions?: VersionOptions): Promise<PagedList<WorkflowBlueprintSummary>> => {
         const versionOptionsString = getVersionOptionsString(versionOptions);
