@@ -9,14 +9,8 @@ namespace Elsa.WorkflowSettings.Persistence.Specification.WorkflowSettingsDefini
     {
         public string WorkflowBlueprintId { get; set; }
 
-        public string Key { get; set; }
+        public WorkflowSettingsBlueprintIdSpecification(string workflowBlueprintId) => WorkflowBlueprintId = workflowBlueprintId;
 
-        public WorkflowSettingsBlueprintIdSpecification(string workflowBlueprintId, string key)
-        {
-            WorkflowBlueprintId = workflowBlueprintId;
-            Key = key;
-        }
-
-        public override Expression<Func<WorkflowSetting, bool>> ToExpression() => x => x.WorkflowBlueprintId == WorkflowBlueprintId && x.Key == Key;
+        public override Expression<Func<WorkflowSetting, bool>> ToExpression() => x => x.WorkflowBlueprintId == WorkflowBlueprintId;
     }
 }

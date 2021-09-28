@@ -1,6 +1,8 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Persistence.Specifications;
 using Elsa.WorkflowSettings.Models;
 using Elsa.WorkflowSettings.Providers;
 
@@ -27,6 +29,24 @@ namespace Elsa.WorkflowSettings.Services
                 if (providerValue.Value != null)
                 {
                     value = providerValue;
+                }
+            }
+
+            return value;
+        }
+
+        public async Task<IEnumerable<WorkflowSetting>> LoadSettingsAsync(string workflowBlueprintId, CancellationToken cancellationToken = default, IOrderBy<WorkflowSetting>? orderBy = default, IPaging? paging = default)
+        {
+            var providers = _workflowSettingsProviders;
+
+            var value = new List<WorkflowSetting>();
+
+            foreach (var provider in providers)
+            {
+                var providerValue = await provider.GetWorkflowSettingsAsync(workflowBlueprintId, cancellationToken, orderBy, paging);
+                if (providerValue != null)
+                {
+                    value = providerValue.ToList();
                 }
             }
 
