@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Elsa.Retention.Extensions;
+using Elsa.Server.Api.Hubs;
 using Elsa.Server.Hangfire.Extensions;
 using Hangfire;
 using Microsoft.AspNetCore.Builder;

@@ -65,7 +65,7 @@ export class ElsaWorkflowTestPanel {
     this.message = null;
     this.workflowTestActivityMessages = [];
     eventBus.emit(EventTypes.TestActivityMessageReceived, this, null);
-    const elsaClient = this.createClient();
+    const client = await createElsaClient(this.serverUrl);
 
     const request: WorkflowTestExecuteRequest = {
       workflowDefinitionId: this.workflowDefinition.definitionId,
@@ -73,7 +73,7 @@ export class ElsaWorkflowTestPanel {
       signalRConnectionId: this.signalRConnectionId
     };
 
-    await elsaClient.workflowTestApi.execute(request);
+    await client.workflowTestApi.execute(request);
   }
 
   render() {
