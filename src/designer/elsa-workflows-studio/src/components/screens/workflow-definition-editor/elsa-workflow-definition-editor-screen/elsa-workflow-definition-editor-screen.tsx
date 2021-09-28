@@ -552,20 +552,8 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
     return (
       <div class="elsa-flex-1 elsa-flex elsa-relative" >
-        {this.workflowDesignerMode == WorkflowDesignerMode.Test ? 
-          <div>
-            <div id="left" style={{border:`4px solid orange`, position:`fixed`, zIndex:`10`, width:`4px`, top:`0`, bottom:`0`, left:`0`}}></div>
-            <div id="right" style={{border:`4px solid orange`, position:`fixed`, zIndex:`10`, width:`4px`, top:`0`, bottom:`0`, right:`0`}}></div>
-            <div id="top" style={{border:`4px solid orange`, position:`fixed`, zIndex:`10`, height:`4px`, left:`0`, right:`0`, top:`0`}}></div>
-            <div id="bottom" style={{border:`4px solid orange`, position:`fixed`, zIndex:`10`, height:`4px`, left:`0`, right:`0`, bottom:`0`}}></div>
-          </div>
-          :
-          undefined
-        }
         <elsa-designer-tree model={this.workflowModel}
-                            mode={this.workflowDesignerMode == WorkflowDesignerMode.Edit 
-                              ? WorkflowDesignerMode.Edit 
-                              : WorkflowDesignerMode.Test}
+                            mode={this.workflowDesignerMode}
                             activityContextMenuButton={this.workflowDesignerMode == WorkflowDesignerMode.Edit 
                               ? activityContextMenuButton
                               : this.renderActivityStatsButton}
