@@ -51,10 +51,15 @@ export class ElsaWorkflowTestPanel {
     });
 
     this.hubConnection.on('DispatchMessage', (message) => {
+      message = message as WorkflowTestActivityMessage;
       message.data = JSON.parse(message.data);
       this.workflowTestActivityMessages = this.workflowTestActivityMessages.filter(x => x.activityId !== message.activityId);
       this.workflowTestActivityMessages = [...this.workflowTestActivityMessages, message];      
       eventBus.emit(EventTypes.TestActivityMessageReceived, this, message);
+
+      if (message.workflowStatus == 'Executed') {
+        this.workflowStarted = false;
+      }
     });
 
     this.hubConnection.start()
@@ -78,8 +83,8 @@ export class ElsaWorkflowTestPanel {
     await client.workflowTestApi.execute(request);
   }
 
-  async onStopWorkflowClick() {    
-    let message = this.workflowTestActivityMessages.last();
+  async onStopWorkflowClick() {
+    const message = this.workflowTestActivityMessages.last();
     if (!!message) {
       const client = await createElsaClient(this.serverUrl);
       await client.workflowInstancesApi.delete(message.workflowInstanceId);
