@@ -24,7 +24,7 @@ namespace Elsa.Scripting.JavaScript.Providers
             _mediator = mediator;
         }
 
-        public async Task<StringBuilder> GenerateTypeScriptDefinitionsAsync(StringBuilder builder, WorkflowDefinition? workflowDefinition = default, string? context = default, CancellationToken cancellationToken = default)
+        public async Task<StringBuilder> GenerateTypeScriptDefinitionsAsync(StringBuilder builder, ICollection<string> declaredTypes, WorkflowDefinition? workflowDefinition = default, string? context = default, CancellationToken cancellationToken = default)
         {
             var providerContext = new TypeDefinitionContext(workflowDefinition, context);
             var types = await CollectTypesAsync(providerContext, cancellationToken);
@@ -41,7 +41,7 @@ namespace Elsa.Scripting.JavaScript.Providers
 
             string GetTypeScriptTypeInternal(Type type) => GetTypeScriptType(providerContext, type, types);
 
-            var renderingTypeScriptDefinitions = new RenderingTypeScriptDefinitions(workflowDefinition, GetTypeScriptTypeInternal, context, builder);
+            var renderingTypeScriptDefinitions = new RenderingTypeScriptDefinitions(workflowDefinition, GetTypeScriptTypeInternal, context, declaredTypes, builder);
             await _mediator.Publish(renderingTypeScriptDefinitions, cancellationToken);
 
             return builder;

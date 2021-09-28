@@ -60,11 +60,13 @@ export class ElsaScriptProperty {
   validate(value: string) {
     const propertyDescriptor = this.propertyDescriptor;
     const propertyName = propertyDescriptor.name;
-    const fieldName = propertyName;    
+    const fieldName = propertyName;
     
     if (fieldName === "Schema")
     {
       this.isJsonSchemaValid = true;
+      if (value == '') return;
+
       const ajv = new Ajv();
       let json: object;
       try{

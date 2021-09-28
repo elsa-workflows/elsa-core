@@ -81,15 +81,9 @@ namespace Elsa.Scripting.JavaScript.Handlers
                 {
                     var activityType = activityTypeDictionary[activity.Type];
                     var typeScriptType = activityType.TypeName;
-                    var schema = GetActivitySchema(activity);
-                    var targetType = GetActivityTargetType(activity);
-
-                    if (!string.IsNullOrWhiteSpace(schema))
-                        output.AppendLine($"{activity.Name}: {typeScriptType}<{schema}>;");                    
-                    else if (!string.IsNullOrWhiteSpace(targetType))
-                        output.AppendLine($"{activity.Name}: {typeScriptType}<{targetType}>;");
-                    else
-                        output.AppendLine($"{activity.Name}: {typeScriptType};");                    
+                    var query = $"{activity.Name}: {typeScriptType}";
+                    var interfaceActivity = FindInterface(notification, query);
+                    output.AppendLine($"{interfaceActivity};");
                 }
 
                 output.AppendLine("}");
@@ -103,10 +97,9 @@ namespace Elsa.Scripting.JavaScript.Handlers
                 var inputProperties = descriptor.InputProperties;
                 var outputProperties = descriptor.OutputProperties;
 
-                if (typeName == "HttpEndpoint")
-                    writer.AppendLine($"declare interface {typeName}<T> {{");
-                else
-                    writer.AppendLine($"declare interface {typeName} {{");
+                var query = $"declare interface {typeName}";
+                var interfaceDeclaration = FindInterface(notification, query);
+                writer.AppendLine($"{interfaceDeclaration} {{");
 
                 foreach (var property in inputProperties)
                     RenderActivityProperty(writer, typeName, property.Name, property.Type);
@@ -121,40 +114,15 @@ namespace Elsa.Scripting.JavaScript.Handlers
             {
                 var typeScriptType = notification.GetTypeScriptType(propertyType);
 
-                if (typeName == "HttpEndpoint" && propertyName == "Output")
-                    writer.AppendLine($"{propertyName}(): {typeScriptType}<T>;");
-                else
-                    writer.AppendLine($"{propertyName}(): {typeScriptType};");
+                var query = $"{propertyName}(): {typeScriptType}";
+                var interfaceDeclaration = FindInterface(notification, query);
+                writer.AppendLine($"{interfaceDeclaration};");
             }
 
-            string? GetActivitySchema(Models.ActivityDefinition activity)
+            string FindInterface(RenderingTypeScriptDefinitions notification, string query)
             {
-                var schemaProperty = activity.Properties.FirstOrDefault(x => x.Name == "Schema");
-                if (schemaProperty == null || schemaProperty.Expressions.Count == 0)
-                    return null;
-
-                var json = schemaProperty.Expressions.FirstOrDefault().Value;
-                if (json == null)
-                    return null;
-
-                if (string.IsNullOrWhiteSpace(json))
-                    return null;
-
-                return "Json";
-            }
-
-            string? GetActivityTargetType(Models.ActivityDefinition activity)
-            {
-                var targetTypeProperty = activity.Properties.FirstOrDefault(x => x.Name == "TargetType");
-                if (targetTypeProperty == null) return null;
-
-                var targetTypeValue = targetTypeProperty.Expressions.FirstOrDefault().Value;
-                if (targetTypeValue == null) return null;
-
-                var targetType = Type.GetType(targetTypeValue);
-                if (targetType == null) return null;
-
-                return targetType.Name;
+                var result = notification.DeclaredTypes.FirstOrDefault(x => x.Contains(query));
+                return result == null ? query : result;
             }
         }
     }

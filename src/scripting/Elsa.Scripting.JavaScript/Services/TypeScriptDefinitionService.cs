@@ -20,10 +20,11 @@ namespace Elsa.Scripting.JavaScript.Services
         {
             var providers = _typeScriptDefinitionProviders;
             var builder = new StringBuilder();
+            var declaredTypes = new List<string>();
 
             foreach (var provider in providers)
             {
-                builder = await provider.GenerateTypeScriptDefinitionsAsync(builder, workflowDefinition, context, cancellationToken);
+                builder = await provider.GenerateTypeScriptDefinitionsAsync(builder, declaredTypes, workflowDefinition, context, cancellationToken);
             }
 
             return builder.ToString();
