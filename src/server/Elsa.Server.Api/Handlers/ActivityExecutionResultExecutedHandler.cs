@@ -26,7 +26,6 @@ namespace Elsa.Server.Api.Handlers
             var context = notification.ActivityExecutionContext;
             string? path = default;
 
-            //var signalRConnectionId = context.WorkflowExecutionContext.WorkflowBlueprint.SignalRConnectionId;
             var signalRConnectionId = context.WorkflowExecutionContext.WorkflowInstance.GetMetaData("signalRConnectionId")?.ToString();
             if (string.IsNullOrWhiteSpace(signalRConnectionId)) return;
 
@@ -53,6 +52,7 @@ namespace Elsa.Server.Api.Handlers
             var message = new WorkflowTestMessage
             {
                 Path = path,
+                WorkflowInstanceId = context.WorkflowInstance.Id,
                 CorrelationId = context.CorrelationId,
                 ActivityId = context.ActivityId,
                 WorkflowStatus = context.WorkflowExecutionContext.Status == WorkflowStatus.Running
@@ -81,12 +81,12 @@ namespace Elsa.Server.Api.Handlers
         public async Task Handle(ActivityExecutionResultFailed notification, CancellationToken cancellationToken)
         {
             var context = notification.ActivityExecutionContext;
-            //var signalRConnectionId = context.WorkflowExecutionContext.WorkflowBlueprint.SignalRConnectionId;
             var signalRConnectionId = context.WorkflowExecutionContext.WorkflowInstance.GetMetaData("signalRConnectionId")?.ToString();
             if (string.IsNullOrWhiteSpace(signalRConnectionId)) return;
 
             var message = new WorkflowTestMessage
             {
+                WorkflowInstanceId = context.WorkflowInstance.Id,
                 CorrelationId = context.CorrelationId,
                 ActivityId = context.ActivityId,                
                 Error = notification.Exception.InnerException?.InnerException?.ToString()

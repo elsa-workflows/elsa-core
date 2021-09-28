@@ -325,6 +325,7 @@ export class SyntaxNames {
 
 export interface WorkflowTestActivityMessage {
   path?: string;
+  workflowInstanceId: string;
   correlationId: string;
   activityId: string;
   status: string;

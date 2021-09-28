@@ -20,6 +20,7 @@ export class ElsaWorkflowTestPanel {
   @Prop() serverUrl: string;
   @State() hubConnection: HubConnection;
   @State() workflowTestActivityMessages: Array<WorkflowTestActivityMessage> = [];
+  @State() workflowStarted: boolean = false;
 
   i18next: i18n;
   signalRConnectionId: string;  
@@ -63,9 +64,9 @@ export class ElsaWorkflowTestPanel {
 
   async onExecuteWorkflowClick() {
     this.message = null;
+    this.workflowStarted = true;
     this.workflowTestActivityMessages = [];
     eventBus.emit(EventTypes.TestActivityMessageReceived, this, null);
-    const client = await createElsaClient(this.serverUrl);
 
     const request: WorkflowTestExecuteRequest = {
       workflowDefinitionId: this.workflowDefinition.definitionId,
@@ -73,7 +74,22 @@ export class ElsaWorkflowTestPanel {
       signalRConnectionId: this.signalRConnectionId
     };
 
+    const client = await createElsaClient(this.serverUrl);
     await client.workflowTestApi.execute(request);
+  }
+
+  async onStopWorkflowClick() {
+    eventBus.emit(EventTypes.TestActivityMessageReceived, this, null);
+
+    let message = this.workflowTestActivityMessages.last();
+    debugger;
+    if (!!message) {
+      const client = await createElsaClient(this.serverUrl);
+      await client.workflowInstancesApi.delete(message.workflowInstanceId);
+    }
+
+    this.workflowStarted = false;
+    this.workflowTestActivityMessages = [];
   }
 
   render() {
@@ -119,11 +135,19 @@ export class ElsaWorkflowTestPanel {
       <Host>
         <dl class="elsa-border-b elsa-border-gray-200 elsa-divide-y elsa-divide-gray-200">
           <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
-            <button type="button"
-                    onClick={() => this.onExecuteWorkflowClick()}
-                    class="elsa-ml-0 elsa-w-full elsa-inline-flex elsa-justify-center elsa-rounded-md elsa-border elsa-border-transparent elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-bg-blue-600 elsa-text-base elsa-font-medium elsa-text-white hover:elsa-bg-blue-700 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 sm:elsa-ml-3 sm:elsa-w-auto sm:elsa-text-sm">
-              {t('ExecuteWorkflow')}
-            </button>
+            {!this.workflowStarted ?
+              <button type="button"
+                      onClick={() => this.onExecuteWorkflowClick()}
+                      class="elsa-ml-0 elsa-w-full elsa-inline-flex elsa-justify-center elsa-rounded-md elsa-border elsa-border-transparent elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-bg-blue-600 elsa-text-base elsa-font-medium elsa-text-white hover:elsa-bg-blue-700 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 sm:elsa-ml-3 sm:elsa-w-auto sm:elsa-text-sm">
+                {t('ExecuteWorkflow')}
+              </button> 
+              :
+              <button type="button"
+                      onClick={() => this.onStopWorkflowClick()}
+                      class="elsa-ml-0 elsa-w-full elsa-inline-flex elsa-justify-center elsa-rounded-md elsa-border elsa-border-transparent elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-bg-red-600 elsa-text-base elsa-font-medium elsa-text-white hover:elsa-bg-red-700 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-red-500 sm:elsa-ml-3 sm:elsa-w-auto sm:elsa-text-sm">
+                {t('StopWorkflow')}
+              </button>             
+            }
           </div>
         </dl>
         {renderActivityTestMessage()}
