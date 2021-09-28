@@ -76,7 +76,7 @@ export class ElsaWorkflowPropertiesPanel {
   }
 
   async loadPublishedVersion() {
-    const elsaClient = this.createClient();
+    const elsaClient = await this.createClient();
     const {workflowDefinition} = this;
 
     const publishedWorkflowDefinitions = await elsaClient.workflowDefinitionsApi.getMany([workflowDefinition.definitionId], {isPublished: true});

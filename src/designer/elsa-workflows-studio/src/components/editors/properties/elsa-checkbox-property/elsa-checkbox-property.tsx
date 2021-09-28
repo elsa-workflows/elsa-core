@@ -12,7 +12,7 @@ export class ElsaCheckBoxProperty {
   @State() isChecked: boolean
 
   async componentWillLoad() {
-    this.isChecked = (this.propertyModel.expressions[SyntaxNames.Literal] || '').toLowerCase() == 'true';
+    this.isChecked = (this.propertyModel.expressions[SyntaxNames.Literal] || this.propertyDescriptor.defaultValue?.toString() || '').toLowerCase() == 'true';
   }
 
   onCheckChanged(e: Event) {

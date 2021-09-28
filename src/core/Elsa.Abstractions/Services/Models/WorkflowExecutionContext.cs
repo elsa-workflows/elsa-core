@@ -11,6 +11,7 @@ using Elsa.Services.WorkflowStorage;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using NodaTime;
 using Rebus.Extensions;
 
@@ -32,6 +33,9 @@ namespace Elsa.Services.Models
             IsFirstPass = true;
             Serializer = serviceProvider.GetRequiredService<JsonSerializer>();
             Mediator = serviceProvider.GetRequiredService<IMediator>();
+            
+            // This is a service that needs to be bound to the same lifetime scope as the workflow execution context.
+            WorkflowExecutionLog = ActivatorUtilities.CreateInstance<WorkflowExecutionLog>(serviceProvider);
         }
 
         public IWorkflowBlueprint WorkflowBlueprint { get; }
@@ -73,7 +77,6 @@ namespace Elsa.Services.Models
         }
 
         public bool DeleteCompletedInstances => WorkflowBlueprint.DeleteCompletedInstances;
-        public IList<IConnection> ExecutionLog { get; } = new List<IConnection>();
         public WorkflowStatus Status => WorkflowInstance.WorkflowStatus;
         public bool HasBlockingActivities => WorkflowInstance.BlockingActivities.Any();
         public object? WorkflowContext { get; set; }
@@ -153,6 +156,8 @@ namespace Elsa.Services.Models
         public void PurgeVariables() => WorkflowInstance.Variables.RemoveAll();
 
         public ActivityScope? CurrentScope => WorkflowInstance.Scopes.Any() ? WorkflowInstance.Scopes.Peek() : default;
+        public WorkflowExecutionLog WorkflowExecutionLog { get; }
+
         public ActivityScope GetScope(string activityId) => WorkflowInstance.Scopes.First(x => x.ActivityId == activityId);
 
         public ActivityScope GetNamedScope(string activityName)
@@ -225,7 +230,11 @@ namespace Elsa.Services.Models
             return await GetActivityPropertyAsync<T>(activityBlueprint, propertyName, cancellationToken);
         }
         
-        public async Task<T?> GetActivityPropertyAsync<T>(IActivityBlueprint activityBlueprint, string propertyName, CancellationToken cancellationToken = default) => (T?)await GetActivityPropertyAsync(activityBlueprint, propertyName, cancellationToken);
+        public async Task<T?> GetActivityPropertyAsync<T>(IActivityBlueprint activityBlueprint, string propertyName, CancellationToken cancellationToken = default)
+        {
+            var value = await GetActivityPropertyAsync(activityBlueprint, propertyName, cancellationToken);
+            return value.ConvertTo<T?>();
+        }
 
         public async Task<object?> GetActivityPropertyAsync(IActivityBlueprint activityBlueprint, string propertyName, CancellationToken cancellationToken = default)
         {
@@ -251,6 +260,14 @@ namespace Elsa.Services.Models
             activityData[activityId] = state;
 
             return state;
+        }
+        
+        public void AddEntry(IActivityBlueprint activityBlueprint, string eventName, string? message, object? data) => AddEntry(activityBlueprint.Id, activityBlueprint.Type, eventName, message, data);
+
+        public void AddEntry(string activityId, string activityType, string eventName, string? message, object? data)
+        {
+            var jObjectData = data != null ? JObject.FromObject(data) : null;
+            WorkflowExecutionLog.AddEntry(WorkflowInstance.Id, activityId, activityType, eventName, message, WorkflowInstance.TenantId, null, jObjectData);
         }
 
         private async Task EvictScopeAsync(ActivityScope scope)

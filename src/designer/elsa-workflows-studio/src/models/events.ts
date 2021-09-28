@@ -2,11 +2,14 @@
 import {ActivityDescriptor} from "./domain";
 
 export const EventTypes = {
+  ActivityEditor: {
+    Show: 'show-activity-editor',
+    Appearing: 'activity-editor-appearing',
+    Disappearing: 'activity-editor-disappearing'
+  },
   ShowActivityPicker: 'show-activity-picker',
   ShowWorkflowSettings: 'show-workflow-settings',
   ActivityPicked: 'activity-picked',
-  ShowActivityEditor: 'show-activity-editor',
-  ActivityEditorDisplaying: 'activity-editor-displaying',
   UpdateActivity: 'update-activity',
   UpdateWorkflowSettings: 'update-workflow-settings',
   WorkflowModelChanged: 'workflow-model-changed',

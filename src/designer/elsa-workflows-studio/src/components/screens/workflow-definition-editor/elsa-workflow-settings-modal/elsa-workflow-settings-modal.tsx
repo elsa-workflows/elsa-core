@@ -44,7 +44,7 @@ export class ElsaWorkflowDefinitionSettingsModal {
   async componentWillLoad() {
     this.handleWorkflowDefinitionChanged(this.workflowDefinition);
 
-    const client = createElsaClient(this.serverUrl);
+    const client = await createElsaClient(this.serverUrl);
     this.workflowChannels = await client.workflowChannelsApi.list();
   }
 

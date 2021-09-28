@@ -15,13 +15,17 @@ namespace Elsa
         {
             if (value == null)
                 return default!;
+            
+            var sourceType = value.GetType();
+
+            if (sourceType == targetType)
+                return value;
 
             var underlyingTargetType = Nullable.GetUnderlyingType(targetType) ?? targetType;
             
             if (targetType == typeof(object))
                 return value;
-            
-            var sourceType = value.GetType();
+
             var underlyingSourceType = Nullable.GetUnderlyingType(sourceType) ?? sourceType;
 
             if (underlyingSourceType == underlyingTargetType)
@@ -63,7 +67,6 @@ namespace Elsa
             {
                 throw new TypeConversionException($"Failed to convert an object of type {sourceType} to {underlyingTargetType}", value, underlyingTargetType, e);
             }
-            
         }
     }
 }

@@ -4,6 +4,6 @@ namespace Elsa.Metadata
 {
     public interface IActivityPropertyOptionsProvider
     {
-        object GetOptions(PropertyInfo property);
+        object? GetOptions(PropertyInfo property);
     }
 }

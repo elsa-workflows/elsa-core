@@ -52,9 +52,9 @@ export class ElsaStudioRoot {
     eventBus.detach(EventTypes.HideToastNotification, this.onHideToastNotification);
   }
 
-  componentWillLoad() {
-    const elsaClientFactory: () => ElsaClient = () => createElsaClient(this.serverUrl);
-    const httpClientFactory: () => AxiosInstance = () => createHttpClient(this.serverUrl);
+  async componentWillLoad() {
+    const elsaClientFactory: () => Promise<ElsaClient> = () => createElsaClient(this.serverUrl);
+    const httpClientFactory: () => Promise<AxiosInstance> = () => createHttpClient(this.serverUrl);
 
     const elsaStudio: ElsaStudio = {
       serverUrl: this.serverUrl,
@@ -65,7 +65,7 @@ export class ElsaStudioRoot {
       propertyDisplayManager,
       activityIconProvider,
       confirmDialogService,
-      toastNotificationService,  
+      toastNotificationService,
       elsaClientFactory,
       httpClientFactory,
       getOrCreateProperty: getOrCreateProperty,

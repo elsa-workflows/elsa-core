@@ -12,6 +12,7 @@ using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Localization;
+using Newtonsoft.Json;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Http
@@ -142,7 +143,7 @@ namespace Elsa.Activities.Http
                 return;
             }
 
-            var json = _contentSerializer.Serialize(content);
+            var json = JsonConvert.SerializeObject(content, DefaultContentSerializer.CreateDefaultJsonSerializationSettings());
             await response.WriteAsync(json, cancellationToken);
         }
     }

@@ -1,5 +1,5 @@
-import {Component, h, Prop, State} from '@stencil/core';
-import {createElsaClient} from "../../../../services/elsa-client";
+import {Component, Event, h, Prop, State} from '@stencil/core';
+import {createElsaClient, SaveWorkflowDefinitionRequest} from "../../../../services/elsa-client";
 import {PagedList, VersionOptions, WorkflowDefinitionSummary} from "../../../../models";
 import {RouterHistory} from "@stencil/router";
 import {i18n} from "i18next";
@@ -27,6 +27,17 @@ export class ElsaWorkflowDefinitionsListScreen {
     this.i18next = await loadTranslations(this.culture, resources);
     await this.loadWorkflowDefinitions();
   }
+  async onPublishClick (e: Event, workflowDefinition: WorkflowDefinitionSummary) {
+    const elsaClient = await this.createClient();
+    await elsaClient.workflowDefinitionsApi.publish(workflowDefinition.definitionId);
+    await this.loadWorkflowDefinitions();
+  }
+
+  async onUnPublishClick (e: Event, workflowDefinition: WorkflowDefinitionSummary) {
+    const elsaClient = await this.createClient();
+    await elsaClient.workflowDefinitionsApi.retract(workflowDefinition.definitionId);
+    await this.loadWorkflowDefinitions();
+  }
 
   async onDeleteClick(e: Event, workflowDefinition: WorkflowDefinitionSummary) {
     const t = x => this.i18next.t(x);
@@ -35,13 +46,13 @@ export class ElsaWorkflowDefinitionsListScreen {
     if (!result)
       return;
 
-    const elsaClient = this.createClient();
+    const elsaClient = await this.createClient();
     await elsaClient.workflowDefinitionsApi.delete(workflowDefinition.definitionId);
     await this.loadWorkflowDefinitions();
   }
 
   async loadWorkflowDefinitions() {
-    const elsaClient = this.createClient();
+    const elsaClient = await this.createClient();
     const page = 0;
     const pageSize = 50;
     const latestVersionOptions: VersionOptions = {isLatest: true};
@@ -86,7 +97,8 @@ export class ElsaWorkflowDefinitionsListScreen {
             <tbody class="elsa-bg-white elsa-divide-y elsa-divide-gray-100">
             {workflowDefinitions.map(workflowDefinition => {
               const latestVersionNumber = workflowDefinition.version;
-              const publishedVersion: WorkflowDefinitionSummary = workflowDefinition.isPublished ? workflowDefinition : this.publishedWorkflowDefinitions.find(x => x.definitionId == workflowDefinition.definitionId);
+              const {isPublished} = workflowDefinition;
+              const publishedVersion: WorkflowDefinitionSummary = isPublished ? workflowDefinition : this.publishedWorkflowDefinitions.find(x => x.definitionId == workflowDefinition.definitionId);
               const publishedVersionNumber = !!publishedVersion ? publishedVersion.version : '-';
               let workflowDisplayName = workflowDefinition.displayName;
 
@@ -97,7 +109,7 @@ export class ElsaWorkflowDefinitionsListScreen {
                 workflowDisplayName = 'Untitled';
 
               const editUrl = `${basePath}/workflow-definitions/${workflowDefinition.definitionId}`;
-              const instancesUrl = `/workflow-instances?workflow=${workflowDefinition.definitionId}`;
+              const instancesUrl = `${basePath}/workflow-instances?workflow=${workflowDefinition.definitionId}`;
 
               const editIcon = (
                 <svg class="elsa-h-5 elsa-w-5 elsa-text-gray-500" width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -115,6 +127,18 @@ export class ElsaWorkflowDefinitionsListScreen {
                   <line x1="14" y1="11" x2="14" y2="17"/>
                   <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"/>
                   <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"/>
+                </svg>
+              );
+
+              const publishIcon = (
+                <svg xmlns="http://www.w3.org/2000/svg" class="elsa-h-5 elsa-w-5 elsa-text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+              );
+
+              const unPublishIcon = (
+                <svg xmlns="http://www.w3.org/2000/svg" class="elsa-h-5 elsa-w-5 elsa-text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
                 </svg>
               );
 
@@ -137,6 +161,7 @@ export class ElsaWorkflowDefinitionsListScreen {
                   <td class="elsa-pr-6">
                     <elsa-context-menu history={this.history} menuItems={[
                       {text: i18next.t('Edit'), anchorUrl: editUrl, icon: editIcon},
+                      isPublished ? {text: i18next.t('Unpublish'), clickHandler: e => this.onUnPublishClick(e, workflowDefinition), icon: unPublishIcon} : {text: i18next.t('Publish'), clickHandler: e => this.onPublishClick(e, workflowDefinition), icon: publishIcon},
                       {text: i18next.t('Delete'), clickHandler: e => this.onDeleteClick(e, workflowDefinition), icon: deleteIcon}
                     ]}/>
                   </td>

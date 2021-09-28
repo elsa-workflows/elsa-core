@@ -12,23 +12,20 @@ namespace Elsa.Handlers
 {
     public class WriteWorkflowExecutionLog : INotificationHandler<ActivityExecuting>, INotificationHandler<ActivityExecutionResultExecuted>, INotificationHandler<ActivityFaulted>
     {
-        private readonly IWorkflowExecutionLog _workflowExecutionLog;
         private readonly IMapper _mapper;
 
-        public WriteWorkflowExecutionLog(IWorkflowExecutionLog workflowExecutionLog, IMapper mapper)
+        public WriteWorkflowExecutionLog(IMapper mapper)
         {
-            _workflowExecutionLog = workflowExecutionLog;
             _mapper = mapper;
         }
 
-        public async Task Handle(ActivityExecuting notification, CancellationToken cancellationToken)
+        public Task Handle(ActivityExecuting notification, CancellationToken cancellationToken)
         {
-            var activityExecutionContext = notification.ActivityExecutionContext;
-            
-            await WriteEntryAsync(notification.Resuming ? "Resuming" : "Executing", default, activityExecutionContext, null, cancellationToken);
+            WriteEntry(notification.Resuming ? "Resuming" : "Executing", default, notification.ActivityExecutionContext, null);
+            return Task.CompletedTask;
         }
 
-        public async Task Handle(ActivityExecutionResultExecuted notification, CancellationToken cancellationToken)
+        public Task Handle(ActivityExecutionResultExecuted notification, CancellationToken cancellationToken)
         {
             var activityExecutionContext = notification.ActivityExecutionContext;
 
@@ -37,14 +34,15 @@ namespace Elsa.Handlers
                 ["Outcomes"] = JToken.FromObject(activityExecutionContext.Outcomes)
             };
 
-            foreach (var entry in activityExecutionContext.JournalData) 
+            foreach (var entry in activityExecutionContext.JournalData)
                 data[entry.Key] = entry.Value != null ? JToken.FromObject(entry.Value) : JValue.CreateNull();
 
             var resuming = activityExecutionContext.Resuming;
-            await WriteEntryAsync(resuming ? "Resumed" : "Executed", default, activityExecutionContext, data, cancellationToken);
+            WriteEntry(resuming ? "Resumed" : "Executed", default, activityExecutionContext, data);
+            return Task.CompletedTask;
         }
 
-        public async Task Handle(ActivityFaulted notification, CancellationToken cancellationToken)
+        public Task Handle(ActivityFaulted notification, CancellationToken cancellationToken)
         {
             var exception = notification.Exception;
             var exceptionModel = _mapper.Map<SimpleException>(exception);
@@ -54,14 +52,10 @@ namespace Elsa.Handlers
                 Exception = exceptionModel
             };
 
-            await WriteEntryAsync("Faulted", exception.Message, notification.ActivityExecutionContext, data, cancellationToken);
+            WriteEntry("Faulted", exception.Message, notification.ActivityExecutionContext, data);
+            return Task.CompletedTask;
         }
 
-        private async Task WriteEntryAsync(string eventName, string? message, ActivityExecutionContext activityExecutionContext, object? data, CancellationToken cancellationToken)
-        {
-            var workflowInstance = activityExecutionContext.WorkflowInstance;
-            var activityBlueprint = activityExecutionContext.ActivityBlueprint;
-            await _workflowExecutionLog.AddEntryAsync(eventName, workflowInstance, activityBlueprint, message, data, default, cancellationToken);
-        }
+        private void WriteEntry(string eventName, string? message, ActivityExecutionContext activityExecutionContext, object? data) => activityExecutionContext.AddEntry(eventName, message, data);
     }
 }

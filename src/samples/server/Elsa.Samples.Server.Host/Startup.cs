@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Elsa.Server.Api.Hubs;
+using Elsa.Retention.Extensions;
 using Elsa.Server.Hangfire.Extensions;
 using Hangfire;
 using Microsoft.AspNetCore.Builder;
@@ -79,7 +79,8 @@ namespace Elsa.Samples.Server.Host
                     .AddWorkflowsFrom<Startup>()
                     .AddFeatures(startups, Configuration)
                     .ConfigureWorkflowChannels(options => elsaSection.GetSection("WorkflowChannels").Bind(options))
-                );
+                )
+                .AddRetentionServices(options => elsaSection.GetSection("Retention").Bind(options));
             
             // Elsa API endpoints.
             services

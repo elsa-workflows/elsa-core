@@ -61,13 +61,13 @@ export class ElsaWebhookDefinitionsListScreen {
               </th>
               <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
                 Enabled
-              </th>              
+              </th>
               <th class="elsa-pr-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-right elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider"/>
             </tr>
             </thead>
             <tbody class="elsa-bg-white elsa-divide-y elsa-divide-gray-100">
             {collection.map(list, item => {
-              
+
               const webhookDefinition: WebhookDefinitionSummary = item;
               let webhookDisplayName = webhookDefinition.name;
 
@@ -96,7 +96,7 @@ export class ElsaWebhookDefinitionsListScreen {
                   <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"/>
                 </svg>
               );
-              
+
               return (
                 <tr>
                   <td class="elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-font-medium elsa-text-gray-900">
@@ -115,13 +115,13 @@ export class ElsaWebhookDefinitionsListScreen {
                     <div class="elsa-flex elsa-items-center elsa-space-x-3 lg:elsa-pl-2">
                       {webhookDefinition.payloadTypeName}
                     </div>
-                  </td>              
+                  </td>
 
                   <td class="elsa-px-6 elsa-py-3 elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-font-medium">
                     <div class="elsa-flex elsa-items-center elsa-space-x-3 lg:elsa-pl-2">
                       {true == webhookDefinition.isEnabled ? 'Yes' : 'No'}
                     </div>
-                  </td>   
+                  </td>
 
                   <td class="elsa-pr-6">
                     <elsa-context-menu history={this.history} menuItems={[

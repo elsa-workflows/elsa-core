@@ -35,9 +35,6 @@ namespace Elsa.ActivityResults
                 )
                 .Distinct();
 
-            foreach (var nextConnection in nextConnections)
-                workflowExecutionContext.ExecutionLog.Add(nextConnection);
-
             workflowExecutionContext.ScheduleActivities(nextActivities, Input);
         }
 
