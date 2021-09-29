@@ -12,7 +12,7 @@ export class DefaultDriversPlugin implements ElsaPlugin {
     this.addDriver('checkbox', () => new CheckboxDriver());
     this.addDriver('dropdown', () => new DropdownDriver());
     this.addDriver('multi-text', () => new MultiTextDriver());
-    this.addDriver('code-editor', () => new CodeEditorDriver());    
+    this.addDriver('code-editor', () => new CodeEditorDriver());
     this.addDriver('switch-case-builder', () => new SwitchCaseBuilderDriver());
   }
 

@@ -84,7 +84,7 @@ namespace Elsa.Activities.Http
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
-            var isTest = context.WorkflowExecutionContext.WorkflowInstance.GetMetaData("isTest");
+            var isTest = context.WorkflowExecutionContext.WorkflowInstance.GetMetadata("isTest");
             var result = context.WorkflowExecutionContext.IsFirstPass && !Convert.ToBoolean(isTest) ? ExecuteInternal(context) : Suspend();
 
             return result;

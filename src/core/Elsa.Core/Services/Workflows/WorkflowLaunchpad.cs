@@ -96,7 +96,7 @@ namespace Elsa.Services.Workflows
             if (workflowBlueprint == null || workflowBlueprint.IsDisabled)
                 return null;
 
-            return await FindStartableWorkflowAsync(workflowBlueprint, activityId, correlationId, contextId, tenantId, default, default, cancellationToken);
+            return await FindStartableWorkflowAsync(workflowBlueprint, activityId, correlationId, contextId, tenantId, cancellationToken);
         }
 
         public async Task<StartableWorkflow?> FindStartableWorkflowAsync(
@@ -106,8 +106,6 @@ namespace Elsa.Services.Workflows
             string? correlationId = default,
             string? contextId = default,
             string? tenantId = default,
-            bool? isTest = default,
-            string? signalRConnectionId = default,
             CancellationToken cancellationToken = default)
         {
             var workflowBlueprint = await _workflowRegistry.GetAsync(workflowDefinitionId, tenantId, VersionOptions.SpecificVersion(version), cancellationToken);
@@ -115,7 +113,7 @@ namespace Elsa.Services.Workflows
             if (workflowBlueprint == null)
                 return null;
 
-            return await FindStartableWorkflowAsync(workflowBlueprint, activityId, correlationId, contextId, tenantId, isTest, signalRConnectionId, cancellationToken);
+            return await FindStartableWorkflowAsync(workflowBlueprint, activityId, correlationId, contextId, tenantId, cancellationToken);
         }
 
         public async Task<StartableWorkflow?> FindStartableWorkflowAsync(
@@ -124,8 +122,6 @@ namespace Elsa.Services.Workflows
             string? correlationId = default,
             string? contextId = default,
             string? tenantId = default,
-            bool? isTest = default,
-            string? signalRConnectionId = default,
             CancellationToken cancellationToken = default)
         {
             correlationId ??= Guid.NewGuid().ToString("N");
@@ -133,7 +129,7 @@ namespace Elsa.Services.Workflows
             // Acquire a lock on correlation ID to prevent duplicate workflow instances from being created.
             await using var correlationLockHandle = await AcquireLockAsync(correlationId, cancellationToken);
 
-            var startableWorkflowDefinition = await CollectStartableWorkflowInternalAsync(workflowBlueprint, activityId, correlationId, contextId, tenantId, isTest, signalRConnectionId, cancellationToken);
+            var startableWorkflowDefinition = await CollectStartableWorkflowInternalAsync(workflowBlueprint, activityId, correlationId, contextId, tenantId, cancellationToken);
             return startableWorkflowDefinition != null ? await InstantiateStartableWorkflow(startableWorkflowDefinition, cancellationToken) : default;
         }
 
@@ -168,7 +164,7 @@ namespace Elsa.Services.Workflows
             var workflowDefinitionId = workflowBlueprint.Id;
             var tenantId = workflowBlueprint.TenantId;
 
-            var startableWorkflow = await FindStartableWorkflowAsync(workflowBlueprint, activityId, correlationId, contextId, tenantId, default, default, cancellationToken);
+            var startableWorkflow = await FindStartableWorkflowAsync(workflowBlueprint, activityId, correlationId, contextId, tenantId, cancellationToken);
 
             if (startableWorkflow == null)
                 throw new WorkflowException($"Could not start workflow with ID {workflowDefinitionId}");
@@ -246,7 +242,7 @@ namespace Elsa.Services.Workflows
             foreach (var trigger in triggers)
             {
                 var workflowBlueprint = trigger.WorkflowBlueprint;
-                var startableWorkflow = await CollectStartableWorkflowInternalAsync(workflowBlueprint, trigger.ActivityId, query.CorrelationId!, query.ContextId, query.TenantId, default, default, cancellationToken);
+                var startableWorkflow = await CollectStartableWorkflowInternalAsync(workflowBlueprint, trigger.ActivityId, query.CorrelationId!, query.ContextId, query.TenantId, cancellationToken);
 
                 if (startableWorkflow != null)
                     startableWorkflows.Add(startableWorkflow);
@@ -261,8 +257,6 @@ namespace Elsa.Services.Workflows
             string correlationId,
             string? contextId = default,
             string? tenantId = default,
-            bool? isTest = default,
-            string? signalRConnectionId = default,
             CancellationToken cancellationToken = default)
         {
             var workflowDefinitionId = workflowBlueprint.Id;
@@ -292,22 +286,19 @@ namespace Elsa.Services.Workflows
                 return null;
             }
 
-            return new StartableWorkflowDefinition(workflowBlueprint, startActivityId, correlationId, contextId, isTest, signalRConnectionId);
+            return new StartableWorkflowDefinition(workflowBlueprint, startActivityId, correlationId, contextId);
         }
 
         private async Task<IEnumerable<StartableWorkflow>> InstantiateStartableWorkflows(IEnumerable<StartableWorkflowDefinition> startableWorkflowDefinitions, CancellationToken cancellationToken)
         {
             var startableWorkflows = new List<StartableWorkflow>();
 
-            foreach (var (workflowBlueprint, activityId, correlationId, contextId, isTest, signalRConnectionId) in startableWorkflowDefinitions)
+            foreach (var (workflowBlueprint, activityId, correlationId, contextId) in startableWorkflowDefinitions)
             {
                 var workflowInstance = await _workflowFactory.InstantiateAsync(
                     workflowBlueprint,
                     correlationId,
                     contextId,
-                    default,
-                    isTest,
-                    signalRConnectionId,
                     cancellationToken: cancellationToken);
                 
                 await _workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
@@ -323,9 +314,6 @@ namespace Elsa.Services.Workflows
                 startableWorkflowDefinition.WorkflowBlueprint,
                 startableWorkflowDefinition.CorrelationId,
                 startableWorkflowDefinition.ContextId,
-                default,
-                startableWorkflowDefinition.isTest,
-                startableWorkflowDefinition.signalRConnectionId,
                 cancellationToken: cancellationToken);
                 
             await _workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);

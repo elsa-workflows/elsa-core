@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Elsa.Retention.Extensions;
+using Elsa.Server.Api.Extensions;
 using Elsa.Server.Api.Hubs;
 using Elsa.Server.Hangfire.Extensions;
 using Hangfire;
@@ -93,8 +94,7 @@ namespace Elsa.Samples.Server.Host
 
             // Allow arbitrary client browser apps to access the API for demo purposes only.
             // In a production environment, make sure to allow only origins you trust.
-            //services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("Content-Disposition")));
-            services.AddCors(cors => cors.AddPolicy("ClientPermission", policy => policy.AllowAnyHeader().AllowAnyMethod().WithOrigins("http://localhost:3333").AllowCredentials().WithExposedHeaders("Content-Disposition")));
+            services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("Content-Disposition")));
         }
 
         public void Configure(IApplicationBuilder app)
@@ -107,16 +107,17 @@ namespace Elsa.Samples.Server.Host
             }
 
             app
-                //.UseCors()
-                .UseCors("ClientPermission")
+                .UseCors(cors => cors
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .SetIsOriginAllowed(_ => true)
+                    .AllowCredentials())
                 .UseElsaFeatures()
                 .UseRouting()
                 .UseEndpoints(endpoints => { 
                     endpoints.MapControllers();
-                    endpoints.MapHub<WorkflowTestHub>("/hubs/workflowTest");
-                });
-
-            
+                })
+                .MapWorkflowTestHub();
         }
     }
 }

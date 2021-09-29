@@ -32,12 +32,12 @@ namespace Elsa.Services
         /// <summary>
         /// Creates a new test workflow instance with execution pending for the specified workflow blueprint using the specified starting activity ID.
         /// </summary>
-        Task<StartableWorkflow?> FindStartableWorkflowAsync(string workflowDefinitionId, int version, string? activityId = default, string? correlationId = default, string? contextId = default, string? tenantId = default, bool? isTest = default, string? signalRConnectionId = default, CancellationToken cancellationToken = default);
+        Task<StartableWorkflow?> FindStartableWorkflowAsync(string workflowDefinitionId, int version, string? activityId = default, string? correlationId = default, string? contextId = default, string? tenantId = default, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Creates a new workflow instance with execution pending for the specified workflow blueprint using the specified starting activity ID.
         /// </summary>
-        Task<StartableWorkflow?> FindStartableWorkflowAsync(IWorkflowBlueprint workflowBlueprint, string? activityId = default, string? correlationId = default, string? contextId = default, string? tenantId = default, bool? isTest = default, string? signalRConnectionId = default, CancellationToken cancellationToken = default);
+        Task<StartableWorkflow?> FindStartableWorkflowAsync(IWorkflowBlueprint workflowBlueprint, string? activityId = default, string? correlationId = default, string? contextId = default, string? tenantId = default, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Collects and executes the specified startable workflow.

@@ -12,8 +12,6 @@ namespace Elsa.Services
             string? correlationId = default,
             string? contextId = default,
             string? tenantId = default,
-            bool? isTest = default,
-            string? signalRConnectionId = default,
             CancellationToken cancellationToken = default);
     }
 }

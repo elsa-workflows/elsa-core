@@ -62,7 +62,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
                 entity.Output,
                 entity.Variables,
                 entity.ActivityData,
-                entity.MetaData,
+                entity.Metadata,
                 entity.BlockingActivities,
                 entity.ScheduledActivities,
                 entity.Scopes,
@@ -83,7 +83,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
                 entity.Output,
                 entity.Variables,
                 entity.ActivityData,
-                entity.MetaData,
+                entity.Metadata,
                 entity.BlockingActivities,
                 entity.ScheduledActivities,
                 entity.Scopes,
@@ -100,7 +100,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
             entity.Output = data.Output;
             entity.Variables = data.Variables;
             entity.ActivityData = data.ActivityData;
-            entity.MetaData = data.MetaData;
+            entity.Metadata = data.Metadata;
             entity.BlockingActivities = data.BlockingActivities;
             entity.ScheduledActivities = data.ScheduledActivities;
             entity.Scopes = data.Scopes;
