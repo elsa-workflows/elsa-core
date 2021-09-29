@@ -63,7 +63,7 @@ namespace Elsa.Activities.Http
             Category = PropertyCategories.Advanced,
             UIHint = ActivityInputUIHints.CodeEditor,
             OptionsProvider = typeof(HttpEndpoint))]
-        public string? Schema { get; set; }        
+        public string? Schema { get; set; }
 
         [ActivityInput(
             Hint = "Check to allow authenticated requests only",
@@ -76,19 +76,14 @@ namespace Elsa.Activities.Http
             Hint = "Provide a policy to evaluate. If the policy fails, the request is forbidden.",
             SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid },
             Category = "Security"
-        )] 
+        )]
         public string? Policy { get; set; }
 
         [ActivityOutput(Hint = "The received HTTP request.")]
         public HttpRequestModel? Output { get; set; }
 
-        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
-        {
-            var isTest = context.WorkflowExecutionContext.WorkflowInstance.GetMetadata("isTest");
-            var result = context.WorkflowExecutionContext.IsFirstPass && !Convert.ToBoolean(isTest) ? ExecuteInternal(context) : Suspend();
+        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => context.WorkflowExecutionContext.IsFirstPass ? ExecuteInternal(context) : Suspend();
 
-            return result;
-        }
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context) => ExecuteInternal(context);
 
         private IActivityExecutionResult ExecuteInternal(ActivityExecutionContext context)
