@@ -58,24 +58,37 @@ namespace Elsa.Server.Api.Handlers
                 WorkflowStatus = context.WorkflowExecutionContext.Status == WorkflowStatus.Running
                     ? "Executed"
                     : context.WorkflowExecutionContext.Status.ToString(),
-                Data = JsonConvert.SerializeObject(data, Formatting.Indented)
+                Data = JsonConvert.SerializeObject(data, Formatting.Indented),
+                Status = GetExecutionResult(notification.Result)
             };
 
-            switch (notification.Result)
+            await _workflowTestService.DispatchMessage(signalRConnectionId, message);
+        }
+
+        private string GetExecutionResult(IActivityExecutionResult activityExecutionResult)
+        {
+            string status = string.Empty;
+
+            switch (activityExecutionResult)
             {
                 case SuspendResult:
-                    message.Status = "Waiting";
+                    status = "Waiting";
                     break;
                 case DoneResult:
                 case OutcomeResult:
-                    message.Status = "Done";
+                    var outcomeResult = (OutcomeResult)activityExecutionResult;
+                    status = outcomeResult.Outcomes.FirstOrDefault();
                     break;
                 case FaultResult:
-                    message.Status = "Failed";
+                    status = "Failed";
+                    break;
+                case CombinedResult:
+                    var combinedResult = (CombinedResult)activityExecutionResult;
+                    status = GetExecutionResult(combinedResult.Results.FirstOrDefault());
                     break;
             }
 
-            await _workflowTestService.DispatchMessage(signalRConnectionId, message);
+            return status;
         }
 
         public async Task Handle(ActivityExecutionResultFailed notification, CancellationToken cancellationToken)
