@@ -19,14 +19,19 @@ export class ElsaModalDialog {
   }
 
   @Method()
-  async show(animate: boolean) {
+  async show(animate: boolean = true) {
     this.showInternal(animate);
   }
 
   @Method()
-  async hide(animate: boolean) {
+  async hide(animate: boolean = true) {
     await eventBus.emit(EventTypes.HideModalDialog);
     this.hideInternal(animate);
+  }
+
+  handleDefaultClose = async () => {
+    console.log('handleDefaultClose');
+    await this.hide();
   }
 
   showInternal(animate: boolean) {
@@ -92,6 +97,7 @@ export class ElsaModalDialog {
               <slot name="buttons">
                 <div class="elsa-bg-gray-50 elsa-px-4 elsa-py-3 sm:elsa-px-6 sm:elsa-flex sm:elsa-flex-row-reverse">
                   <button type="button"
+                          onClick={this.handleDefaultClose}
                           class="elsa-mt-3 elsa-w-full elsa-inline-flex elsa-justify-center elsa-rounded-md elsa-border elsa-border-gray-300 elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-bg-white elsa-text-base elsa-font-medium elsa-text-gray-700 hover:elsa-bg-gray-50 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 sm:elsa-mt-0 sm:elsa-ml-3 sm:elsa-w-auto sm:elsa-text-sm">
                     Close
                   </button>
