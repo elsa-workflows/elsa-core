@@ -334,11 +334,6 @@ export interface WorkflowTestActivityMessage {
   error?: string;
 }
 
-export interface WorkflowTestUpdateHttpEndpoint { 
-  activityId?: string,
-  jsonSchema?: string
-}
-
 export const getVersionOptionsString = (versionOptions?: VersionOptions) => {
 
   if (!versionOptions)

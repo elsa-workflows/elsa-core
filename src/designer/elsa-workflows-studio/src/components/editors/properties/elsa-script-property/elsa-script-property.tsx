@@ -1,9 +1,8 @@
 import {Component, h, Prop, State} from '@stencil/core';
-import {ActivityDefinitionProperty, ActivityPropertyDescriptor} from "../../../../models";
-import {createElsaClient} from "../../../../services";
+import {ActivityDefinitionProperty, ActivityPropertyDescriptor, ActivityValidatingContext, EventTypes} from "../../../../models";
+import {createElsaClient, eventBus} from "../../../../services";
 import Tunnel from '../../../../data/workflow-editor';
 import {MonacoValueChangedArgs} from "../../../controls/elsa-monaco/elsa-monaco";
-import Ajv from "ajv"
 
 @Component({
   tag: 'elsa-script-property',
@@ -19,9 +18,10 @@ export class ElsaScriptProperty {
   @Prop() syntax?: string;
   @Prop({mutable: true}) serverUrl: string;
   @Prop({mutable: true}) workflowDefinitionId: string;
-  @State() currentValue?: string
-  @State() isJsonSchemaValid?: boolean;
+  @State() currentValue?: string;
+
   monacoEditor: HTMLElsaMonacoElement;
+  private activityValidatingContext: ActivityValidatingContext = null;
 
   async componentWillLoad() {
     this.currentValue = this.propertyModel.expressions['Literal'];
@@ -49,47 +49,24 @@ export class ElsaScriptProperty {
 
   onConvertToJsonSchemaClick(e: Event) {
     e.preventDefault();
-    window.open('https://extendsclass.com/json-schema-validator.html');
+    window.open('https://www.convertsimple.com/convert-json-to-json-schema/');
   }
 
   onMonacoValueChanged(e: MonacoValueChangedArgs) {    
     this.currentValue = e.value;
-    this.validate(e.value);
+    this.validate(this.currentValue);
   }
 
   validate(value: string) {
-    const propertyDescriptor = this.propertyDescriptor;
-    const propertyName = propertyDescriptor.name;
-    const fieldName = propertyName;
-    
-    if (fieldName === "Schema")
-    {
-      this.isJsonSchemaValid = true;
-      if (value == '') return;
-
-      const ajv = new Ajv();
-      let json: object;
-      try{
-        json = JSON.parse(value)
-      }
-      catch (e){
-        this.isJsonSchemaValid = false;
-      }
-
-      if (json != undefined)
-      {
-        try {
-          const validate = ajv.compile(json);
-          const errors = validate.errors;
-          if (errors != null)
-            this.isJsonSchemaValid = false;
-        }
-        catch (e){
-          const err = e;
-          this.isJsonSchemaValid = false;
-        }        
-      }
-    }
+    this.activityValidatingContext = {
+      activityType: this.context,
+      prop: this.propertyDescriptor.name,
+      value: value,
+      data: null,
+      isValidated: false,
+      isPositiveResult: false
+    };
+    eventBus.emit(EventTypes.ActivityPluginValidating, this, this.activityValidatingContext);
   }
 
   render() {
@@ -103,6 +80,22 @@ export class ElsaScriptProperty {
     const fieldHint = propertyDescriptor.hint;
     const value = this.currentValue;
     const isSchema = fieldName === "Schema";
+
+    const renderValidationResult = () => {
+      if (this.activityValidatingContext == null || !this.activityValidatingContext.isValidated) 
+        return;
+
+      const isPositiveResult = this.activityValidatingContext.isPositiveResult;
+      const color = isPositiveResult ? 'green' : 'red';
+
+      return (
+        <div class="elsa-mt-3">
+          <p class={`elsa-mt-1 elsa-text-sm elsa-text-${color}-500`}>
+            {this.activityValidatingContext.data}
+          </p>
+        </div>
+      )
+    }
 
     return <div>
 
@@ -133,18 +126,10 @@ export class ElsaScriptProperty {
                      ref={el => this.monacoEditor = el}/>
       </div>
       {fieldHint ? <p class="elsa-mt-2 elsa-text-sm elsa-text-gray-500">{fieldHint}</p> : undefined}
-      {this.isJsonSchemaValid == undefined ? undefined : this.isJsonSchemaValid ?
-          <p class="elsa-mt-1 elsa-text-sm elsa-text-green-500">
-                Json is valid
-          </p>
-          :
-          <p class="elsa-mt-1 elsa-text-sm elsa-text-red-500">
-                Json is invalid
-          </p>
-      }
       <input type="hidden" name={fieldName} value={value}/>
+      {renderValidationResult()}
       {isSchema ?
-        <div class="elsa-mt-1">
+        <div class="elsa-mt-3">
           <a href="#"
               onClick={e => this.onConvertToJsonSchemaClick(e)}
               class="elsa-relative elsa-inline-flex elsa-items-center elsa-px-4 elsa-py-2 elsa-border elsa-border-gray-300 elsa-text-sm elsa-leading-5 elsa-font-medium elsa-rounded-md elsa-text-gray-700 elsa-bg-white hover:elsa-text-gray-500 focus:elsa-outline-none focus:elsa-shadow-outline-blue focus:elsa-border-blue-300 active:elsa-bg-gray-100 active:elsa-text-gray-700 elsa-transition elsa-ease-in-out elsa-duration-150">

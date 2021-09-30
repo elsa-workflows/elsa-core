@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -52,6 +52,12 @@ namespace Elsa.Decorators
         public async Task<IWorkflowBlueprint?> FindAsync(Func<IWorkflowBlueprint, bool> predicate, CancellationToken cancellationToken)
         {
             var workflows = await ListInternalAsync(cancellationToken);
+            return workflows.FirstOrDefault(predicate);
+        }
+
+        public async Task<IWorkflowBlueprint?> FindActiveAsync(Func<IWorkflowBlueprint, bool> predicate, CancellationToken cancellationToken)
+        {
+            var workflows = await ListActiveAsync(cancellationToken);
             return workflows.FirstOrDefault(predicate);
         }
 

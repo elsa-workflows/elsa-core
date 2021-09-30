@@ -15,6 +15,8 @@ export const EventTypes = {
   WorkflowModelChanged: 'workflow-model-changed',
   ActivityDesignDisplaying: 'activity-design-displaying',
   ActivityDescriptorDisplaying: 'activity-descriptor-displaying',
+  ActivityPluginUpdated: 'activity-plugin-updated',
+  ActivityPluginValidating: 'activity-plugin-validating',
   WorkflowPublished: 'workflow-published',
   WorkflowRetracted: 'workflow-retracted',
   WorkflowImported: 'workflow-imported',
@@ -55,6 +57,20 @@ export interface ActivityDesignDisplayContext {
   displayName?: string;
   bodyDisplay: string;
   outcomes: Array<string>;
+}
+
+export interface ActivityUpdatedContext { 
+  activityModel: ActivityModel,
+  data?: string
+}
+
+export interface ActivityValidatingContext { 
+  activityType: string
+  prop: string,
+  value?: string,
+  isValidated: boolean,
+  data: any,
+  isPositiveResult: boolean
 }
 
 export interface ActivityDescriptorDisplayContext {

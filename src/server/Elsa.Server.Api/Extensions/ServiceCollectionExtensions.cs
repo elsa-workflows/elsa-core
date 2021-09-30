@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using Elsa;
 using Elsa.Models;
 using Elsa.Server.Api;
@@ -7,6 +6,7 @@ using Elsa.Server.Api.Handlers;
 using Elsa.Server.Api.Mapping;
 using Elsa.Server.Api.Services;
 using Elsa.Server.Api.Swagger.Examples;
+using Elsa.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
@@ -48,14 +48,15 @@ namespace Microsoft.Extensions.DependencyInjection
                     options.AssumeDefaultVersionWhenUnspecified = true;
                 });
 
-            services.AddSingleton<ConnectionConverter>();
-            services.AddSingleton<ActivityBlueprintConverter>();
-            services.AddScoped<IWorkflowBlueprintMapper, WorkflowBlueprintMapper>();
-            services.AddScoped<IWorkflowTestService, WorkflowTestService>();
-            services.AddSingleton<IEndpointContentSerializerSettingsProvider, EndpointContentSerializerSettingsProvider>();
-            services.AddAutoMapperProfile<AutoMapperProfile>();
-            services.AddNotificationHandlersFrom<ActivityExecutionResultExecutedHandler>();
-            services.AddSignalR();
+            services
+                .AddSingleton<ConnectionConverter>()
+                .AddSingleton<ActivityBlueprintConverter>()
+                .AddScoped<IWorkflowBlueprintMapper, WorkflowBlueprintMapper>()
+                .AddScoped<IWorkflowTestService, WorkflowTestService>()
+                .AddSingleton<IEndpointContentSerializerSettingsProvider, EndpointContentSerializerSettingsProvider>()
+                .AddAutoMapperProfile<AutoMapperProfile>()
+                .AddNotificationHandlersFrom<ActivityExecutionResultExecutedHandler>()
+                .AddSignalR();
             return services;
         }
 

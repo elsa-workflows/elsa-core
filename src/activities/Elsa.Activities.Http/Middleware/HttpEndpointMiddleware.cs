@@ -75,10 +75,12 @@ namespace Elsa.Activities.Http.Middleware
                 return;
             }
 
-            var isTest = pendingWorkflowInstance.GetMetadata("isTest");
-            var workflowBlueprint = (isTest != null && Convert.ToBoolean(isTest)) ?
-                await workflowRegistry.FindAsync(x => x.Id == pendingWorkflowInstance.DefinitionId, cancellationToken) :
-                await workflowRegistry.FindAsync(x => x.IsPublished && x.Id == pendingWorkflowInstance.DefinitionId && !x.IsDisabled, cancellationToken);
+            //var isTest = pendingWorkflowInstance.GetMetadata("isTest");
+            //var workflowBlueprint = (isTest != null && Convert.ToBoolean(isTest)) ?
+            //    await workflowRegistry.FindAsync(x => x.Id == pendingWorkflowInstance.DefinitionId, cancellationToken) :
+            //    await workflowRegistry.FindAsync(x => x.IsPublished && x.Id == pendingWorkflowInstance.DefinitionId && !x.IsDisabled, cancellationToken);
+
+            var workflowBlueprint = await workflowRegistry.FindActiveAsync(x => x.Id == pendingWorkflowInstance.DefinitionId && !x.IsDisabled, cancellationToken);
 
             if (workflowBlueprint is null)
             {

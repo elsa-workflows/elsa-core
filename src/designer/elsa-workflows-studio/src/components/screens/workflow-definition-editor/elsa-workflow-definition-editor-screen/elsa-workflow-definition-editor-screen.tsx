@@ -4,16 +4,15 @@ import {
   ActivityDefinition,
   ActivityDescriptor,
   ActivityModel,
+  ActivityUpdatedContext,
   ConnectionDefinition,
   ConnectionModel,
   EventTypes,
-  SyntaxNames,
   VersionOptions,
   WorkflowDefinition,
   WorkflowModel,
   WorkflowPersistenceBehavior,
-  WorkflowTestActivityMessage,
-  WorkflowTestUpdateHttpEndpoint
+  WorkflowTestActivityMessage
 } from "../../../../models";
 import {createElsaClient, eventBus, SaveWorkflowDefinitionRequest} from "../../../../services";
 import state from '../../../../utils/store';
@@ -447,18 +446,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
       this.workflowTestActivityMessages = [];
 
     this.render();
-  };
-
-  async updateHttpEndpointJsonSchema(request: WorkflowTestUpdateHttpEndpoint) {
-    let workflowModel = {...this.workflowModel};
-    const activity = workflowModel.activities.find(x => x.activityId == request.activityId);
-    if (activity)
-    {
-      const activityModel = activity.properties.find(x => x.name == 'Schema');
-      activityModel.expressions[SyntaxNames.Literal] = request.jsonSchema;
-      eventBus.emit(EventTypes.UpdateActivity, this, activityModel);
-    }
-  };    
+  };   
 
   private onUpdateWorkflowSettings = async (workflowDefinition: WorkflowDefinition) => {
     this.updateWorkflowDefinition(workflowDefinition);
@@ -588,12 +576,14 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   async onUseAsSchemaClick(message: WorkflowTestActivityMessage) {
     const value = message.data["Body"];
-    const request: WorkflowTestUpdateHttpEndpoint = {
-      activityId: message.activityId,
-      jsonSchema: JSON.stringify(convert(value), null, 1)
-    };
+    let workflowModel = {...this.workflowModel};
+    const activityModel = workflowModel.activities.find(x => x.activityId == message.activityId);
 
-    await this.updateHttpEndpointJsonSchema(request);
+    const context: ActivityUpdatedContext = {
+      activityModel: activityModel,
+      data: JSON.stringify(convert(value), null, 1)
+    };
+    eventBus.emit(EventTypes.ActivityPluginUpdated, this, context);
   }  
 
   renderTestActivityMenu = () => {
