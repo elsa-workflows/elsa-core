@@ -10,6 +10,8 @@ namespace Elsa.WorkflowSettings.Providers
 {
     public class DatabaseWorkflowSettingsProvider : WorkflowSettingsProvider
     {
+        public override int Priority => 1;
+
         private readonly IWorkflowSettingsStore _workflowSettingsStore;
 
         public DatabaseWorkflowSettingsProvider(IWorkflowSettingsStore workflowSettingsStore)

@@ -34,7 +34,7 @@ namespace Elsa.WorkflowSettings.Handlers
 
             foreach (var setting in settings)
             {
-                result.Add(setting.Key, setting.Value ?? setting.DefaultValue);
+                result.Add(setting.Key, setting.GetValue());
             }
 
             return result;

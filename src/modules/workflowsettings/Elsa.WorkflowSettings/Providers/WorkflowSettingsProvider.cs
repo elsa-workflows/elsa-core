@@ -8,6 +8,8 @@ namespace Elsa.WorkflowSettings.Providers
 {
     public abstract class WorkflowSettingsProvider : IWorkflowSettingsProvider
     {
+        public virtual int Priority => 0;
+
         public virtual async ValueTask<WorkflowSetting> GetWorkflowSettingAsync(string workflowBlueprintId, string key, CancellationToken cancellationToken)
         {
             return await OnGetWorkflowSettingAsync(workflowBlueprintId, key, cancellationToken);

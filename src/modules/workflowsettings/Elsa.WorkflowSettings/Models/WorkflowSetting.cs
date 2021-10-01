@@ -9,5 +9,7 @@ namespace Elsa.WorkflowSettings.Models
         public string Description { get; set; } = default!;
         public string? DefaultValue { get; set; }
         public string? Value { get; set; }
+
+        public string? GetValue() => Value ?? DefaultValue;
     }
 }

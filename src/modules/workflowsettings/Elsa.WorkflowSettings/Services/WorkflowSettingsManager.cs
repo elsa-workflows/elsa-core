@@ -23,7 +23,7 @@ namespace Elsa.WorkflowSettings.Services
 
             var value = new WorkflowSetting();
 
-            foreach (var provider in providers)
+            foreach (var provider in providers.OrderByDescending(x => x.Priority))
             {
                 var providerValue = await provider.GetWorkflowSettingAsync(workflowBlueprintId, key, cancellationToken);
                 if (providerValue.Value != null)
@@ -39,18 +39,18 @@ namespace Elsa.WorkflowSettings.Services
         {
             var providers = _workflowSettingsProviders;
 
-            var value = new List<WorkflowSetting>();
+            var settingsDictionary = new Dictionary<string, WorkflowSetting>();
 
-            foreach (var provider in providers)
+            foreach (var provider in providers.OrderByDescending(x => x.Priority))
             {
-                var providerValue = await provider.GetWorkflowSettingsAsync(workflowBlueprintId, cancellationToken, orderBy, paging);
-                if (providerValue != null)
-                {
-                    value = providerValue.ToList();
-                }
+                var settings = await provider.GetWorkflowSettingsAsync(workflowBlueprintId, cancellationToken, orderBy, paging);
+
+                foreach (var setting in settings)
+                    settingsDictionary[setting.Key] = setting;
+            
             }
 
-            return value;
+            return settingsDictionary.Values;
         }
     }
 }
