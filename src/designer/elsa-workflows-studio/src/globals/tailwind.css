@@ -3152,6 +3152,10 @@ select {
   border-color: rgba(136, 19, 55, var(--tw-divide-opacity));
 }
 
+.elsa-overflow-auto {
+  overflow: auto;
+}
+
 .elsa-overflow-hidden {
   overflow: hidden;
 }
@@ -3170,10 +3174,6 @@ select {
 
 .elsa-overflow-x-scroll {
   overflow-x: scroll;
-}
-
-.elsa-overflow-y-scroll {
-  overflow-y: scroll;
 }
 
 .elsa-truncate {
@@ -9769,6 +9769,10 @@ select {
   padding-bottom: 5rem;
 }
 
+.elsa-pl-0 {
+  padding-left: 0px;
+}
+
 .elsa-pl-1 {
   padding-left: 0.25rem;
 }
@@ -9789,6 +9793,10 @@ select {
   padding-left: 2.5rem;
 }
 
+.elsa-pl-0\.5 {
+  padding-left: 0.125rem;
+}
+
 .elsa-text-left {
   text-align: left;
 }
@@ -9803,6 +9811,10 @@ select {
 
 .elsa-align-middle {
   vertical-align: middle;
+}
+
+.elsa-align-text-top {
+  vertical-align: text-top;
 }
 
 .elsa-text-xs {

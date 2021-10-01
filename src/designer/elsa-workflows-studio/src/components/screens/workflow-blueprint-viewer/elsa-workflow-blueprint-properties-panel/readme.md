@@ -7,19 +7,18 @@
 
 ## Properties
 
-| Property               | Attribute                | Description | Type                | Default     |
-| ---------------------- | ------------------------ | ----------- | ------------------- | ----------- |
-| `culture`              | `culture`                |             | `string`            | `undefined` |
-| `expandButtonPosition` | `expand-button-position` |             | `number`            | `1`         |
-| `serverUrl`            | `server-url`             |             | `string`            | `undefined` |
-| `workflowBlueprint`    | --                       |             | `WorkflowBlueprint` | `undefined` |
+| Property     | Attribute     | Description | Type     | Default     |
+| ------------ | ------------- | ----------- | -------- | ----------- |
+| `culture`    | `culture`     |             | `string` | `undefined` |
+| `serverUrl`  | `server-url`  |             | `string` | `undefined` |
+| `workflowId` | `workflow-id` |             | `string` | `undefined` |
 
 
 ## Dependencies
 
 ### Used by
 
- - [elsa-workflow-blueprint-side-panel](../elsa-workflow-blueprint-side-panel)
+ - [elsa-workflow-blueprint-viewer-screen](../elsa-workflow-blueprint-viewer-screen)
 
 ### Depends on
 
@@ -29,7 +28,7 @@
 ```mermaid
 graph TD;
   elsa-workflow-blueprint-properties-panel --> context-consumer
-  elsa-workflow-blueprint-side-panel --> elsa-workflow-blueprint-properties-panel
+  elsa-workflow-blueprint-viewer-screen --> elsa-workflow-blueprint-properties-panel
   style elsa-workflow-blueprint-properties-panel fill:#f9f,stroke:#333,stroke-width:4px
 ```
 
