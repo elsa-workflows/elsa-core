@@ -1,5 +1,11 @@
 ﻿import {eventBus, ElsaPlugin} from "../services";
-import {ActivityDesignDisplayContext, ActivityUpdatedContext, ActivityValidatingContext, EventTypes, SyntaxNames} from "../models";
+import {
+  ActivityDesignDisplayContext, 
+  ActivityUpdatedContext, 
+  ActivityValidatingContext, 
+  EventTypes, 
+  ConfigureScriptPropertyCustomButtonContext, 
+  SyntaxNames} from "../models";
 import {htmlEncode} from "../utils/utils";
 import Ajv from "ajv"
 
@@ -8,6 +14,8 @@ export class HttpEndpointPlugin implements ElsaPlugin {
     eventBus.on(EventTypes.ActivityDesignDisplaying, this.onActivityDisplaying);
     eventBus.on(EventTypes.ActivityPluginUpdated, this.onActivityUpdated);
     eventBus.on(EventTypes.ActivityPluginValidating, this.onActivityValidating);
+    eventBus.on(EventTypes.ScriptPropertyLoadingCustomButton, this.onLoadingCustomButton);
+    eventBus.on(EventTypes.ScriptPropertyCustomButtonClick, this.onCustomButtonClick);
   }
 
   onActivityDisplaying(context: ActivityDesignDisplayContext) {
@@ -21,6 +29,21 @@ export class HttpEndpointPlugin implements ElsaPlugin {
     const syntax = path.syntax || SyntaxNames.Literal;
     const bodyDisplay = htmlEncode(path.expressions[syntax]);
     context.bodyDisplay = `<p>${bodyDisplay}</p>`;
+  }
+
+  onLoadingCustomButton(context: ConfigureScriptPropertyCustomButtonContext) {
+    if (context.activityType !== 'HttpEndpoint' || context.prop !== 'Schema')
+      return;
+
+    const label: string = 'Convert to Json Schema';  
+    context.data = {label};
+  }
+
+  onCustomButtonClick(context: ConfigureScriptPropertyCustomButtonContext) {
+    if (context.activityType !== 'HttpEndpoint' || context.prop !== 'Schema')
+      return;
+          
+    window.open('https://www.convertsimple.com/convert-json-to-json-schema/');
   }
 
   onActivityUpdated(context: ActivityUpdatedContext) {

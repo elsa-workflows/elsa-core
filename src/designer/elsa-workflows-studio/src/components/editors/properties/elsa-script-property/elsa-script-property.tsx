@@ -1,5 +1,10 @@
 import {Component, h, Prop, State} from '@stencil/core';
-import {ActivityDefinitionProperty, ActivityPropertyDescriptor, ActivityValidatingContext, EventTypes} from "../../../../models";
+import {
+  ActivityDefinitionProperty, 
+  ActivityPropertyDescriptor, 
+  ActivityValidatingContext, 
+  ConfigureScriptPropertyCustomButtonContext, 
+  EventTypes} from "../../../../models";
 import {createElsaClient, eventBus} from "../../../../services";
 import Tunnel from '../../../../data/workflow-editor';
 import {MonacoValueChangedArgs} from "../../../controls/elsa-monaco/elsa-monaco";
@@ -18,13 +23,15 @@ export class ElsaScriptProperty {
   @Prop() syntax?: string;
   @Prop({mutable: true}) serverUrl: string;
   @Prop({mutable: true}) workflowDefinitionId: string;
-  @State() currentValue?: string;
+  @State() currentValue?: string;  
 
   monacoEditor: HTMLElsaMonacoElement;
   private activityValidatingContext: ActivityValidatingContext = null;
+  private scriptPropertyCustomButtonContext: ConfigureScriptPropertyCustomButtonContext = null;
 
   async componentWillLoad() {
     this.currentValue = this.propertyModel.expressions['Literal'];
+    this.configureScriptPropertyCustomButton();    
     this.validate(this.currentValue);
   }
 
@@ -33,6 +40,15 @@ export class ElsaScriptProperty {
     const libSource = await elsaClient.scriptingApi.getJavaScriptTypeDefinitions(this.workflowDefinitionId, this.context);
     const libUri = 'defaultLib:lib.es6.d.ts';
     await this.monacoEditor.addJavaScriptLib(libSource, libUri);
+  }
+
+  async configureScriptPropertyCustomButton() {
+    this.scriptPropertyCustomButtonContext = {
+      activityType: this.context,
+      prop: this.propertyDescriptor.name,
+      data: null
+    };
+    await eventBus.emit(EventTypes.ScriptPropertyLoadingCustomButton, this, this.scriptPropertyCustomButtonContext);
   }
 
   mapSyntaxToLanguage(syntax: string): any {
@@ -47,9 +63,14 @@ export class ElsaScriptProperty {
     }
   }
 
-  onConvertToJsonSchemaClick(e: Event) {
+  onCustomButtonClick(e: Event) {
     e.preventDefault();
-    window.open('https://www.convertsimple.com/convert-json-to-json-schema/');
+    this.scriptPropertyCustomButtonContext = {
+      activityType: this.context,
+      prop: this.propertyDescriptor.name,
+      data: null
+    };    
+    eventBus.emit(EventTypes.ScriptPropertyCustomButtonClick, this, this.scriptPropertyCustomButtonContext);
   }
 
   onMonacoValueChanged(e: MonacoValueChangedArgs) {    
@@ -79,7 +100,6 @@ export class ElsaScriptProperty {
     const fieldLabel = propertyDescriptor.label || propertyName;
     const fieldHint = propertyDescriptor.hint;
     const value = this.currentValue;
-    const isSchema = fieldName === "Schema";
 
     const renderValidationResult = () => {
       if (this.activityValidatingContext == null || !this.activityValidatingContext.isValidated) 
@@ -96,6 +116,23 @@ export class ElsaScriptProperty {
         </div>
       )
     }
+
+    const renderCustomButton = () => {
+      if (this.scriptPropertyCustomButtonContext.data == null)
+      return;
+
+      const label = this.scriptPropertyCustomButtonContext.data.label;
+
+      return (
+        <div class="elsa-mt-3">
+          <a href="#"  
+              onClick={e => this.onCustomButtonClick(e)}
+              class="elsa-relative elsa-inline-flex elsa-items-center elsa-px-4 elsa-py-2 elsa-border elsa-border-gray-300 elsa-text-sm elsa-leading-5 elsa-font-medium elsa-rounded-md elsa-text-gray-700 elsa-bg-white hover:elsa-text-gray-500 focus:elsa-outline-none focus:elsa-shadow-outline-blue focus:elsa-border-blue-300 active:elsa-bg-gray-100 active:elsa-text-gray-700 elsa-transition elsa-ease-in-out elsa-duration-150">
+              {label}
+          </a>
+        </div>
+      )
+    }    
 
     return <div>
 
@@ -128,16 +165,7 @@ export class ElsaScriptProperty {
       {fieldHint ? <p class="elsa-mt-2 elsa-text-sm elsa-text-gray-500">{fieldHint}</p> : undefined}
       <input type="hidden" name={fieldName} value={value}/>
       {renderValidationResult()}
-      {isSchema ?
-        <div class="elsa-mt-3">
-          <a href="#"
-              onClick={e => this.onConvertToJsonSchemaClick(e)}
-              class="elsa-relative elsa-inline-flex elsa-items-center elsa-px-4 elsa-py-2 elsa-border elsa-border-gray-300 elsa-text-sm elsa-leading-5 elsa-font-medium elsa-rounded-md elsa-text-gray-700 elsa-bg-white hover:elsa-text-gray-500 focus:elsa-outline-none focus:elsa-shadow-outline-blue focus:elsa-border-blue-300 active:elsa-bg-gray-100 active:elsa-text-gray-700 elsa-transition elsa-ease-in-out elsa-duration-150">
-              Convert to Json Schema
-          </a>
-        </div>
-        : undefined
-      }
+      {renderCustomButton()}
     </div>
   }
 }

@@ -39,7 +39,9 @@ export const EventTypes = {
   ClipboardCopied: 'clipboard-copied',
   PasteActivity: 'paste-activity',
   TestActivityMessageReceived: 'test-activity-message-received',
-  FlyoutPanelTabSelected: 'flyout-panel-tab-selected'
+  FlyoutPanelTabSelected: 'flyout-panel-tab-selected',
+  ScriptPropertyLoadingCustomButton: 'script-property-loading-custom-button',
+  ScriptPropertyCustomButtonClick: 'script-property-custom-button-click'
 };
 
 export interface AddActivityEventArgs {
@@ -88,4 +90,10 @@ export interface ConfigureWorkflowRegistryColumnsContext {
 
 export interface ConfigureWorkflowRegistryUpdatingContext {
   params: any;
+}
+
+export interface ConfigureScriptPropertyCustomButtonContext {
+  activityType: string
+  prop: string,
+  data?: any;
 }
