@@ -14,7 +14,7 @@ export class ElsaTabHeader {
 
     return (
       <Host>
-        <div class={`${className} elsa-whitespace-nowrap elsa-py-4 elsa-px-1 elsa-border-b-2 elsa-font-medium elsa-text-sm`}>
+        <div class={`${className} elsa-cursor-pointer elsa-whitespace-nowrap elsa-py-4 elsa-px-1 elsa-border-b-2 elsa-font-medium elsa-text-sm`}>
           <slot />
         </div>
       </Host>

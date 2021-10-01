@@ -103,8 +103,8 @@ export namespace Components {
         "propertyModel": ActivityDefinitionProperty;
     }
     interface ElsaModalDialog {
-        "hide": (animate: boolean) => Promise<void>;
-        "show": (animate: boolean) => Promise<void>;
+        "hide": (animate?: boolean) => Promise<void>;
+        "show": (animate?: boolean) => Promise<void>;
     }
     interface ElsaMonaco {
         "addJavaScriptLib": (libSource: string, libUri: string) => Promise<void>;

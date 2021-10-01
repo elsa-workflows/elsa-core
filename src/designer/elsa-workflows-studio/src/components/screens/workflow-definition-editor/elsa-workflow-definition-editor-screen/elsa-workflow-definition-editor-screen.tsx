@@ -63,6 +63,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
   i18next: i18n;
   el: HTMLElement;
   designer: HTMLElsaDesignerTreeElement;
+  helpDialog: HTMLElsaModalDialogElement;
 
   @Method()
   async getServerUrl(): Promise<string> {
@@ -292,7 +293,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
     }
   }
 
-  updateUrl(id){
+  updateUrl(id) {
     this.history.push(`/workflow-definitions/${id}`, {});
   }
 
@@ -440,6 +441,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
                             ref={el => this.designer = el}/>
         {this.renderPropertiesPanel()}
         {this.renderWorkflowSettingsButton()}
+        {this.renderWorkflowHelpButton()}
         {this.renderActivityContextMenu()}
         {this.renderConnectionContextMenu()}
         <elsa-workflow-settings-modal workflowDefinition={this.workflowDefinition}/>
@@ -451,6 +453,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
             {this.renderPublishButton()}
           </div>
         </div>
+
       </div>
     );
   }
@@ -553,8 +556,48 @@ export class ElsaWorkflowDefinitionEditorScreen {
     );
   }
 
-  renderWorkflowSettingsModal() {
-    return;
+  renderWorkflowHelpButton() {
+    return (
+      <span>
+        <button type="button"
+                onClick={this.showHelpModal}
+                class="workflow-settings-button elsa-fixed elsa-top-20 elsa-right-28 elsa-inline-flex elsa-items-center elsa-p-2 elsa-rounded-full elsa-border elsa-border-transparent elsa-bg-white shadow elsa-text-gray-400 hover:elsa-text-blue-500 focus:elsa-text-blue-500 hover:elsa-ring-2 hover:elsa-ring-offset-2 hover:elsa-ring-blue-500 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500">
+          <svg xmlns="http://www.w3.org/2000/svg" class="elsa-h-8 elsa-w-8" fill="none" viewBox="0 0 24 24"
+               stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </button>
+        <elsa-modal-dialog ref={el => this.helpDialog = el}>
+          <div slot="content" class="elsa-p-8">
+            <h3 class="elsa-text-lg elsa-font-medium">Actions</h3>
+            <dl
+              class="elsa-mt-2 elsa-border-t elsa-border-b elsa-border-gray-200 elsa-divide-y elsa-divide-gray-200">
+              <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
+                <dt class="elsa-text-gray-500">Delete connections</dt>
+                <dd class="elsa-text-gray-900">RIGHT-click the connection to delete.</dd>
+              </div>
+              <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
+                <dt class="elsa-text-gray-500">Connect outcomes to existing activity</dt>
+                <dd class="elsa-text-gray-900">Press and hold SHIFT while LEFT-clicking the outcome to connect. Release SHIFT and LEFT-click the target activity.</dd>
+              </div>
+              <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
+                <dt class="elsa-text-gray-500">Pan</dt>
+                <dd class="elsa-text-gray-900">Click anywhere on the designer and drag mouse.</dd>
+              </div>
+              <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
+                <dt class="elsa-text-gray-500">Zoom</dt>
+                <dd class="elsa-text-gray-900">Use scroll-wheel on mouse.</dd>
+              </div>
+            </dl>
+          </div>
+        </elsa-modal-dialog>
+      </span>
+    );
+  }
+
+  showHelpModal = async () => {
+    await this.helpDialog.show();
   }
 
   renderSavingIndicator() {
@@ -613,9 +656,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   private renderPropertiesPanel() {
     return (
-      <elsa-flyout-panel
-        expandButtonPosition={2}
-      >
+      <elsa-flyout-panel expandButtonPosition={3}>
         <elsa-tab-header tab="general" slot="header">General</elsa-tab-header>
         <elsa-tab-content tab="general" slot="content">
           <elsa-workflow-properties-panel

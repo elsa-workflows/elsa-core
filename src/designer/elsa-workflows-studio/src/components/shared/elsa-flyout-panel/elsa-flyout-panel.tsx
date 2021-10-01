@@ -30,20 +30,22 @@ export class ElsaFlyoutPanel {
 
   render() {
     const {expanded, expandButtonPosition} = this;
-    const expandPositionClass = expandButtonPosition == 1 ? "elsa-right-12" : "elsa-right-28";
+    const expandPositionClass = `elsa-right-${16 * (expandButtonPosition - 1) + 12}`;
+
+    console.log('eee', this.expanded);
 
     return (
       <Host>
         <button type="button"
                 onClick={this.toggle}
-                class={`${expanded ? "hidden" : expandPositionClass} workflow-settings-button elsa-fixed elsa-top-20 elsa-inline-flex elsa-items-center elsa-p-2 elsa-rounded-full elsa-border elsa-border-transparent elsa-bg-white shadow elsa-text-gray-400 hover:elsa-text-blue-500 focus:elsa-text-blue-500 hover:elsa-ring-2 hover:elsa-ring-offset-2 hover:elsa-ring-blue-500 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 elsa-z-10`}>
+                class={`${expanded ? "elsa-hidden" : expandPositionClass} workflow-settings-button elsa-fixed elsa-top-20 elsa-inline-flex elsa-items-center elsa-p-2 elsa-rounded-full elsa-border elsa-border-transparent elsa-bg-white shadow elsa-text-gray-400 hover:elsa-text-blue-500 focus:elsa-text-blue-500 hover:elsa-ring-2 hover:elsa-ring-offset-2 hover:elsa-ring-blue-500 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 elsa-z-10`}>
           <svg xmlns="http://www.w3.org/2000/svg" class="elsa-h-8 elsa-w-8" fill="none" viewBox="0 0 24 24"
                stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
           </svg>
         </button>
         <section
-          class={`${this.expanded ? '' : 'hidden'} elsa-fixed elsa-top-4 elsa-right-0 elsa-bottom-0 elsa-overflow-hidden`}
+          class={`${this.expanded ? '' : 'elsa-hidden'} elsa-fixed elsa-top-4 elsa-right-0 elsa-bottom-0 elsa-overflow-hidden`}
           aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
           <div class="elsa-absolute elsa-inset-0 elsa-overflow-hidden">
             <div class="elsa-absolute elsa-inset-0" aria-hidden="true"/>
