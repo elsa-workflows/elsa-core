@@ -108,7 +108,6 @@ export class ElsaWorkflowTestPanel {
         return
 
       const workflowStatus = this.workflowTestActivityMessages.last().workflowStatus;
-      debugger
 
       const t = (x, params?) => this.i18next.t(x, params);
   
