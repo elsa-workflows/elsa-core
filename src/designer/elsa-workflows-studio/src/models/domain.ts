@@ -324,7 +324,6 @@ export class SyntaxNames {
 }
 
 export interface WorkflowTestActivityMessage {
-  path?: string;
   workflowInstanceId: string;
   correlationId: string;
   activityId: string;
@@ -332,6 +331,7 @@ export interface WorkflowTestActivityMessage {
   workflowStatus: string;
   data?: any;
   error?: string;
+  activityData?: any;
 }
 
 export const getVersionOptionsString = (versionOptions?: VersionOptions) => {

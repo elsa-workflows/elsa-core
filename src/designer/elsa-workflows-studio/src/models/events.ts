@@ -70,7 +70,7 @@ export interface ActivityValidatingContext {
   value?: string,
   isValidated: boolean,
   data: any,
-  isPositiveResult: boolean
+  isValid: boolean
 }
 
 export interface ActivityDescriptorDisplayContext {

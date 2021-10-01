@@ -24,7 +24,7 @@ namespace Elsa.Server.Api.Handlers
         public async Task Handle(ActivityExecutionResultExecuted notification, CancellationToken cancellationToken)
         {
             var context = notification.ActivityExecutionContext;
-            string? path = default;
+            //string? path = default;
 
             var signalRConnectionId = context.WorkflowExecutionContext.WorkflowInstance.GetMetadata("signalRConnectionId")?.ToString();
             if (string.IsNullOrWhiteSpace(signalRConnectionId)) return;
@@ -34,24 +34,26 @@ namespace Elsa.Server.Api.Handlers
                 ["Outcomes"] = JToken.FromObject(context.Outcomes)
             };
 
-            if (context.ActivityBlueprint.Type == "HttpEndpoint")
-            {
+            //if (context.ActivityBlueprint.Type == "HttpEndpoint")
+            //{
                 var body = context.Input != null ? ((dynamic)context.Input).Body : null;
 
                 if (body != null)
                     data["Body"] = JToken.FromObject(body);
 
-                var activityData = context.WorkflowInstance.ActivityData.FirstOrDefault(x => x.Key == notification.ActivityExecutionContext.ActivityId);
-                var pathProperty = activityData.Value.FirstOrDefault(x => x.Key == "Path");
-                if (pathProperty.Value != null)
-                {
-                    path = pathProperty.Value.ToString();
-                }
-            }
+            //    var activityData = context.WorkflowInstance.ActivityData.FirstOrDefault(x => x.Key == notification.ActivityExecutionContext.ActivityId);
+            //    var pathProperty = activityData.Value.FirstOrDefault(x => x.Key == "Path");
+            //    if (pathProperty.Value != null)
+            //    {
+            //        path = pathProperty.Value.ToString();
+            //    }
+            //}
+
+            var activityData = context.WorkflowInstance.ActivityData.FirstOrDefault(x => x.Key == notification.ActivityExecutionContext.ActivityId).Value;
 
             var message = new WorkflowTestMessage
             {
-                Path = path,
+                //Path = path,
                 WorkflowInstanceId = context.WorkflowInstance.Id,
                 CorrelationId = context.CorrelationId,
                 ActivityId = context.ActivityId,
@@ -59,7 +61,8 @@ namespace Elsa.Server.Api.Handlers
                     ? "Executed"
                     : context.WorkflowExecutionContext.Status.ToString(),
                 Data = JsonConvert.SerializeObject(data, Formatting.Indented),
-                Status = GetExecutionResult(notification.Result)
+                Status = GetExecutionResult(notification.Result),
+                ActivityData = activityData
             };
 
             await _workflowTestService.DispatchMessage(signalRConnectionId, message);

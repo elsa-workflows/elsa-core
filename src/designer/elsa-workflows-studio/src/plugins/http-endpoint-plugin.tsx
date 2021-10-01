@@ -68,7 +68,7 @@ export class HttpEndpointPlugin implements ElsaPlugin {
     }
 
     context.isValidated = true;
-    context.isPositiveResult = isValid;
+    context.isValid = isValid;
     context.data = isValid ? 'Json is valid' : 'Json is invalid';
   }
 }

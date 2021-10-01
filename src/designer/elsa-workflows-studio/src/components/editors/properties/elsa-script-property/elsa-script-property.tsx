@@ -64,7 +64,7 @@ export class ElsaScriptProperty {
       value: value,
       data: null,
       isValidated: false,
-      isPositiveResult: false
+      isValid: false
     };
     eventBus.emit(EventTypes.ActivityPluginValidating, this, this.activityValidatingContext);
   }
@@ -85,7 +85,7 @@ export class ElsaScriptProperty {
       if (this.activityValidatingContext == null || !this.activityValidatingContext.isValidated) 
         return;
 
-      const isPositiveResult = this.activityValidatingContext.isPositiveResult;
+      const isPositiveResult = this.activityValidatingContext.isValid;
       const color = isPositiveResult ? 'green' : 'red';
 
       return (

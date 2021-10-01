@@ -103,12 +103,13 @@ export class ElsaWorkflowTestPanel {
     const renderActivityTestMessage = () => {
 
       const {message} = this;
-  
+
       if (message == undefined || !message)
         return
 
-      let workflowStatus = this.workflowTestActivityMessages.last().workflowStatus;
-        
+      const workflowStatus = this.workflowTestActivityMessages.last().workflowStatus;
+      debugger
+
       const t = (x, params?) => this.i18next.t(x, params);
   
       return (      
@@ -117,19 +118,19 @@ export class ElsaWorkflowTestPanel {
             <dt class="elsa-text-gray-500">{t('Status')}</dt>
             <dd class="elsa-text-gray-900">{workflowStatus}</dd>
           </div>            
-          {!!message.path ?
+          {!!message.activityData["Path"] ?
             <div>
               <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
                 <dt class="elsa-text-gray-500">{t('EntryEndpoint')}</dt>
               </div>
               <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
                 <dt class="elsa-text-gray-900">
-                  <pre onClick={e => clip(e.currentTarget)}>{this.serverUrl + '/workflows' + message.path + '?correlation=' + message.correlationId}</pre>
+                  <pre onClick={e => clip(e.currentTarget)}>{this.serverUrl + '/workflows' + message.activityData["Path"].value + '?correlation=' + message.correlationId}</pre>
                 </dt>
-              </div>              
+              </div>
             </div>
             :
-            ''
+            undefined
           }   
         </dl>
       );
