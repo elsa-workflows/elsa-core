@@ -9,7 +9,7 @@ namespace Elsa
 {
     public static class ObjectConverter
     {
-        public static T? ConvertTo<T>(this object? value) => (T?) value?.ConvertTo(typeof(T));
+        public static T? ConvertTo<T>(this object? value) => value != null ? (T?)value.ConvertTo(typeof(T)) : default;
 
         public static object? ConvertTo(this object? value, Type targetType)
         {
