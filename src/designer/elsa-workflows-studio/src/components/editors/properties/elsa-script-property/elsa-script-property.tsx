@@ -3,7 +3,8 @@ import {
   ActivityDefinitionProperty, 
   ActivityPropertyDescriptor, 
   ActivityValidatingContext, 
-  ConfigureScriptPropertyCustomButtonContext, 
+  ConfigureComponentCustomButtonContext, 
+  ComponentCustomButtonClickContext, 
   EventTypes} from "../../../../models";
 import {createElsaClient, eventBus} from "../../../../services";
 import Tunnel from '../../../../data/workflow-editor';
@@ -26,12 +27,12 @@ export class ElsaScriptProperty {
   @State() currentValue?: string;  
 
   monacoEditor: HTMLElsaMonacoElement;
-  private activityValidatingContext: ActivityValidatingContext = null;
-  private scriptPropertyCustomButtonContext: ConfigureScriptPropertyCustomButtonContext = null;
+  activityValidatingContext: ActivityValidatingContext = null;
+  configureComponentCustomButtonContext: ConfigureComponentCustomButtonContext = null;
 
   async componentWillLoad() {
     this.currentValue = this.propertyModel.expressions['Literal'];
-    this.configureScriptPropertyCustomButton();    
+    this.configureComponentCustomButton();
     this.validate(this.currentValue);
   }
 
@@ -42,13 +43,14 @@ export class ElsaScriptProperty {
     await this.monacoEditor.addJavaScriptLib(libSource, libUri);
   }
 
-  async configureScriptPropertyCustomButton() {
-    this.scriptPropertyCustomButtonContext = {
+  async configureComponentCustomButton() {
+    this.configureComponentCustomButtonContext = {
+      component: 'elsa-script-property',
       activityType: this.context,
       prop: this.propertyDescriptor.name,
       data: null
     };
-    await eventBus.emit(EventTypes.ScriptPropertyLoadingCustomButton, this, this.scriptPropertyCustomButtonContext);
+    await eventBus.emit(EventTypes.ComponentLoadingCustomButton, this, this.configureComponentCustomButtonContext);
   }
 
   mapSyntaxToLanguage(syntax: string): any {
@@ -63,14 +65,15 @@ export class ElsaScriptProperty {
     }
   }
 
-  onCustomButtonClick(e: Event) {
+  onComponentCustomButtonClick(e: Event) {
     e.preventDefault();
-    this.scriptPropertyCustomButtonContext = {
+    const componentCustomButtonClickContext: ComponentCustomButtonClickContext = {
+      component: 'elsa-script-property',
       activityType: this.context,
       prop: this.propertyDescriptor.name,
-      data: null
+      params: null
     };    
-    eventBus.emit(EventTypes.ScriptPropertyCustomButtonClick, this, this.scriptPropertyCustomButtonContext);
+    eventBus.emit(EventTypes.ComponentCustomButtonClick, this, componentCustomButtonClickContext);
   }
 
   onMonacoValueChanged(e: MonacoValueChangedArgs) {    
@@ -117,16 +120,16 @@ export class ElsaScriptProperty {
       )
     }
 
-    const renderCustomButton = () => {
-      if (this.scriptPropertyCustomButtonContext.data == null)
+    const renderComponentCustomButton = () => {
+      if (this.configureComponentCustomButtonContext.data == null)
       return;
 
-      const label = this.scriptPropertyCustomButtonContext.data.label;
+      const label = this.configureComponentCustomButtonContext.data.label;
 
       return (
         <div class="elsa-mt-3">
           <a href="#"  
-              onClick={e => this.onCustomButtonClick(e)}
+              onClick={e => this.onComponentCustomButtonClick(e)}
               class="elsa-relative elsa-inline-flex elsa-items-center elsa-px-4 elsa-py-2 elsa-border elsa-border-gray-300 elsa-text-sm elsa-leading-5 elsa-font-medium elsa-rounded-md elsa-text-gray-700 elsa-bg-white hover:elsa-text-gray-500 focus:elsa-outline-none focus:elsa-shadow-outline-blue focus:elsa-border-blue-300 active:elsa-bg-gray-100 active:elsa-text-gray-700 elsa-transition elsa-ease-in-out elsa-duration-150">
               {label}
           </a>
@@ -165,7 +168,7 @@ export class ElsaScriptProperty {
       {fieldHint ? <p class="elsa-mt-2 elsa-text-sm elsa-text-gray-500">{fieldHint}</p> : undefined}
       <input type="hidden" name={fieldName} value={value}/>
       {renderValidationResult()}
-      {renderCustomButton()}
+      {renderComponentCustomButton()}
     </div>
   }
 }

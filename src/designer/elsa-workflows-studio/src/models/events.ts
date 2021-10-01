@@ -40,8 +40,8 @@ export const EventTypes = {
   PasteActivity: 'paste-activity',
   TestActivityMessageReceived: 'test-activity-message-received',
   FlyoutPanelTabSelected: 'flyout-panel-tab-selected',
-  ScriptPropertyLoadingCustomButton: 'script-property-loading-custom-button',
-  ScriptPropertyCustomButtonClick: 'script-property-custom-button-click'
+  ComponentLoadingCustomButton: 'component-loading-custom-button',
+  ComponentCustomButtonClick: 'component-custom-button-click'
 };
 
 export interface AddActivityEventArgs {
@@ -92,8 +92,16 @@ export interface ConfigureWorkflowRegistryUpdatingContext {
   params: any;
 }
 
-export interface ConfigureScriptPropertyCustomButtonContext {
-  activityType: string
-  prop: string,
+export interface ConfigureComponentCustomButtonContext {
+  component: string;
+  activityType: string;
+  prop: string;
   data?: any;
+}
+
+export interface ComponentCustomButtonClickContext {
+  component: string;
+  activityType: string;
+  prop: string;
+  params: any;
 }

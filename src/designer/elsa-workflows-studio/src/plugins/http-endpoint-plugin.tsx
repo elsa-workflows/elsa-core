@@ -4,18 +4,20 @@ import {
   ActivityUpdatedContext, 
   ActivityValidatingContext, 
   EventTypes, 
-  ConfigureScriptPropertyCustomButtonContext, 
+  ConfigureComponentCustomButtonContext, 
+  ComponentCustomButtonClickContext, 
   SyntaxNames} from "../models";
 import {htmlEncode} from "../utils/utils";
 import Ajv from "ajv"
+import {convert} from 'json-to-json-schema';
 
 export class HttpEndpointPlugin implements ElsaPlugin {
   constructor() {
     eventBus.on(EventTypes.ActivityDesignDisplaying, this.onActivityDisplaying);
     eventBus.on(EventTypes.ActivityPluginUpdated, this.onActivityUpdated);
     eventBus.on(EventTypes.ActivityPluginValidating, this.onActivityValidating);
-    eventBus.on(EventTypes.ScriptPropertyLoadingCustomButton, this.onLoadingCustomButton);
-    eventBus.on(EventTypes.ScriptPropertyCustomButtonClick, this.onCustomButtonClick);
+    eventBus.on(EventTypes.ComponentLoadingCustomButton, this.onComponentLoadingCustomButton);
+    eventBus.on(EventTypes.ComponentCustomButtonClick, this.onComponentCustomButtonClick);
   }
 
   onActivityDisplaying(context: ActivityDesignDisplayContext) {
@@ -31,19 +33,40 @@ export class HttpEndpointPlugin implements ElsaPlugin {
     context.bodyDisplay = `<p>${bodyDisplay}</p>`;
   }
 
-  onLoadingCustomButton(context: ConfigureScriptPropertyCustomButtonContext) {
-    if (context.activityType !== 'HttpEndpoint' || context.prop !== 'Schema')
+  onComponentLoadingCustomButton(context: ConfigureComponentCustomButtonContext) {
+    if (context.activityType !== 'HttpEndpoint')
       return;
 
-    const label: string = 'Convert to Json Schema';  
-    context.data = {label};
+    if (context.component === 'elsa-script-property') {
+      if (context.prop !== 'Schema')
+        return;
+      const label: string = 'Convert to Json Schema';
+      context.data = {label};
+    }
+
+    if (context.component === 'elsa-workflow-definition-editor-screen') {
+      const label: string = 'Use as Schema';  
+      context.data = {label};
+    }    
   }
 
-  onCustomButtonClick(context: ConfigureScriptPropertyCustomButtonContext) {
-    if (context.activityType !== 'HttpEndpoint' || context.prop !== 'Schema')
+  onComponentCustomButtonClick(context: ComponentCustomButtonClickContext) {
+    if (context.activityType !== 'HttpEndpoint')
       return;
-          
-    window.open('https://www.convertsimple.com/convert-json-to-json-schema/');
+
+    if (context.component === 'elsa-script-property') {
+      if (context.prop !== 'Schema')
+        return;      
+      window.open('https://www.convertsimple.com/convert-json-to-json-schema/');
+    }
+
+    if (context.component === 'elsa-workflow-definition-editor-screen') {
+      const activityUpdatedContext: ActivityUpdatedContext = {
+        activityModel: context.params[0],
+        data: JSON.stringify(convert(context.params[1]), null, 1)
+      };
+      eventBus.emit(EventTypes.ActivityPluginUpdated, this, activityUpdatedContext);
+    }    
   }
 
   onActivityUpdated(context: ActivityUpdatedContext) {

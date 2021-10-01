@@ -3,8 +3,9 @@ import {RouterHistory, injectHistory} from '@stencil/router';
 import {
   ActivityDefinition,
   ActivityDescriptor,
-  ActivityModel,
-  ActivityUpdatedContext,
+  ActivityModel, 
+  ConfigureComponentCustomButtonContext, 
+  ComponentCustomButtonClickContext, 
   ConnectionDefinition,
   ConnectionModel,
   EventTypes,
@@ -25,7 +26,6 @@ import {i18n} from "i18next";
 import {loadTranslations} from "../../../i18n/i18n-loader";
 import {resources} from "./localizations";
 import * as collection from 'lodash/collection';
-import {convert} from 'json-to-json-schema';
 
 @Component({
   tag: 'elsa-workflow-definition-editor-screen',
@@ -78,6 +78,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
   i18next: i18n;
   el: HTMLElement;
   designer: HTMLElsaDesignerTreeElement;
+  configureComponentCustomButtonContext: ConfigureComponentCustomButtonContext = null;
 
   @Method()
   async getServerUrl(): Promise<string> {
@@ -187,6 +188,16 @@ export class ElsaWorkflowDefinitionEditorScreen {
     eventBus.detach(EventTypes.UpdateWorkflowSettings, this.onUpdateWorkflowSettings);
     eventBus.detach(EventTypes.FlyoutPanelTabSelected, this.onFlyoutPanelTabSelected);
     eventBus.detach(EventTypes.TestActivityMessageReceived, this.onTestActivityMessageReceived);
+  }
+
+  async configureComponentCustomButton(message: WorkflowTestActivityMessage) {
+    this.configureComponentCustomButtonContext = {
+      component: 'elsa-workflow-definition-editor-screen',
+      activityType: message.activityType,
+      prop: null,
+      data: null
+    };
+    await eventBus.emit(EventTypes.ComponentLoadingCustomButton, this, this.configureComponentCustomButtonContext);
   }
 
   t = (key: string) => this.i18next.t(key);
@@ -574,16 +585,18 @@ export class ElsaWorkflowDefinitionEditorScreen {
     );
   }
 
-  async onUseAsSchemaClick(message: WorkflowTestActivityMessage) {
-    const value = message.data["Body"];
+  async onComponentCustomButtonClick(message: WorkflowTestActivityMessage) {
     let workflowModel = {...this.workflowModel};
     const activityModel = workflowModel.activities.find(x => x.activityId == message.activityId);
+    const value = message.data["Body"];
 
-    const context: ActivityUpdatedContext = {
-      activityModel: activityModel,
-      data: JSON.stringify(convert(value), null, 1)
-    };
-    eventBus.emit(EventTypes.ActivityPluginUpdated, this, context);
+    const componentCustomButtonClickContext: ComponentCustomButtonClickContext = {
+      component: 'elsa-workflow-definition-editor-screen',
+      activityType: message.activityType,
+      prop: null,
+      params: [activityModel, value]
+    };    
+    eventBus.emit(EventTypes.ComponentCustomButtonClick, this, componentCustomButtonClickContext);
   }  
 
   renderTestActivityMenu = () => {
@@ -614,7 +627,9 @@ export class ElsaWorkflowDefinitionEditorScreen {
     const renderMessage = () => {
 
       if (message == undefined || !message)
-      return    
+        return;
+        
+      this.configureComponentCustomButton(message);
       
       const t = (x, params?) => this.i18next.t(x, params);
       const filteredData = {};
@@ -670,25 +685,28 @@ export class ElsaWorkflowDefinitionEditorScreen {
               </p>
             </div>
           ))}
-          {hasBody ? renderUseAsSchemaButton() : undefined}
+          {hasBody ? renderComponentCustomButton() : undefined}
           {renderActivityTestError()}
         </div>
       );
     };
     
-    const renderUseAsSchemaButton = () => {
+    const renderComponentCustomButton = () => {
 
-      const t = (x, params?) => this.i18next.t(x, params);
+      if (this.configureComponentCustomButtonContext.data == null)
+      return;
+
+      const label = this.configureComponentCustomButtonContext.data.label;
 
       return (
         <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
           <button type="button"
-                  onClick={() => this.onUseAsSchemaClick(message)}
+                  onClick={() => this.onComponentCustomButtonClick(message)}
                   class="elsa-ml-0 elsa-w-full elsa-inline-flex elsa-justify-center elsa-rounded-md elsa-border elsa-border-transparent elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-bg-blue-600 elsa-text-base elsa-font-medium elsa-text-white hover:elsa-bg-blue-700 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 sm:elsa-ml-3 sm:elsa-w-auto sm:elsa-text-sm">
-            {t('UseAsSchema')}
+            {label}
           </button>
         </div>          
-      )
+      )    
     };    
 
     const renderLoader = function () {
@@ -708,8 +726,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
         registerClickOutside(this, el, () => {
           this.handleContextMenuTestChange(0, 0, false, null);
         })
-      }
-    >
+      }>
       <div class="elsa-rounded-lg elsa-shadow-lg elsa-ring-1 elsa-ring-black elsa-ring-opacity-5 elsa-overflow-hidden">
         {!!message ? renderMessage() : renderLoader()}
       </div>

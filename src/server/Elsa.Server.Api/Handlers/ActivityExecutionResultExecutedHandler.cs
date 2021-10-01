@@ -24,7 +24,6 @@ namespace Elsa.Server.Api.Handlers
         public async Task Handle(ActivityExecutionResultExecuted notification, CancellationToken cancellationToken)
         {
             var context = notification.ActivityExecutionContext;
-            //string? path = default;
 
             var signalRConnectionId = context.WorkflowExecutionContext.WorkflowInstance.GetMetadata("signalRConnectionId")?.ToString();
             if (string.IsNullOrWhiteSpace(signalRConnectionId)) return;
@@ -34,26 +33,15 @@ namespace Elsa.Server.Api.Handlers
                 ["Outcomes"] = JToken.FromObject(context.Outcomes)
             };
 
-            //if (context.ActivityBlueprint.Type == "HttpEndpoint")
-            //{
-                var body = context.Input != null ? ((dynamic)context.Input).Body : null;
-
-                if (body != null)
-                    data["Body"] = JToken.FromObject(body);
-
-            //    var activityData = context.WorkflowInstance.ActivityData.FirstOrDefault(x => x.Key == notification.ActivityExecutionContext.ActivityId);
-            //    var pathProperty = activityData.Value.FirstOrDefault(x => x.Key == "Path");
-            //    if (pathProperty.Value != null)
-            //    {
-            //        path = pathProperty.Value.ToString();
-            //    }
-            //}
+            var body = context.Input != null ? ((dynamic)context.Input).Body : null;
+            if (body != null)
+                data["Body"] = JToken.FromObject(body);
 
             var activityData = context.WorkflowInstance.ActivityData.FirstOrDefault(x => x.Key == notification.ActivityExecutionContext.ActivityId).Value;
 
             var message = new WorkflowTestMessage
             {
-                //Path = path,
+                ActivityType = context.ActivityBlueprint.Type,
                 WorkflowInstanceId = context.WorkflowInstance.Id,
                 CorrelationId = context.CorrelationId,
                 ActivityId = context.ActivityId,
