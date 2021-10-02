@@ -36,10 +36,5 @@ namespace Elsa.Services
         /// Returns a single workflow blueprint that fits the specified predicate. 
         /// </summary>
         Task<IWorkflowBlueprint?> FindAsync(Func<IWorkflowBlueprint, bool> predicate, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Returns a single workflow blueprint that fits the specified predicate. 
-        /// </summary>
-        Task<IWorkflowBlueprint?> FindActiveAsync(Func<IWorkflowBlueprint, bool> predicate, CancellationToken cancellationToken = default);
     }
 }

@@ -55,12 +55,6 @@ namespace Elsa.Decorators
             return workflows.FirstOrDefault(predicate);
         }
 
-        public async Task<IWorkflowBlueprint?> FindActiveAsync(Func<IWorkflowBlueprint, bool> predicate, CancellationToken cancellationToken)
-        {
-            var workflows = await ListActiveAsync(cancellationToken);
-            return workflows.FirstOrDefault(predicate);
-        }
-
         private async Task<ICollection<IWorkflowBlueprint>> ListInternalAsync(CancellationToken cancellationToken)
         {
             return await _memoryCache.GetOrCreateAsync(CacheKey, async entry =>
