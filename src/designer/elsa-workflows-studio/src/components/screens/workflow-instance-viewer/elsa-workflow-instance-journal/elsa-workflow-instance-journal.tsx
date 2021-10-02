@@ -7,7 +7,7 @@ import {
   PagedList,
   WorkflowBlueprint,
   WorkflowExecutionLogRecord, WorkflowInstance,
-  WorkflowModel,
+  WorkflowModel, WorkflowStatus,
 } from "../../../../models";
 import {activityIconProvider} from "../../../../services/activity-icon-provider";
 import {createElsaClient} from "../../../../services/elsa-client";
@@ -86,6 +86,24 @@ export class ElsaWorkflowInstanceJournal {
     return map[eventName] || 'gray';
   }
 
+  getStatusColor(status: WorkflowStatus) {
+    switch (status) {
+      default:
+      case WorkflowStatus.Idle:
+        return 'gray';
+      case WorkflowStatus.Running:
+        return 'rose';
+      case WorkflowStatus.Suspended:
+        return 'blue';
+      case WorkflowStatus.Finished:
+        return 'green';
+      case WorkflowStatus.Faulted:
+        return 'red';
+      case WorkflowStatus.Cancelled:
+        return 'yellow';
+    }
+  }
+
   onRecordClick(record: WorkflowExecutionLogRecord) {
     this.selectActivityRecordInternal(record);
     this.recordSelected.emit(record);
@@ -95,6 +113,7 @@ export class ElsaWorkflowInstanceJournal {
     return (
       <Host>
         {this.renderPanel()}
+        <elsa-workflow-definition-editor-notifications/>
       </Host>
     );
   }
@@ -233,12 +252,18 @@ export class ElsaWorkflowInstanceJournal {
                 <dl class="sm:elsa-divide-y sm:elsa-divide-gray-200">
                   <div class="elsa-grid elsa-grid-cols-2 elsa-gap-x-4 elsa-gap-y-8 sm:elsa-grid-cols-2">
                     <div class="sm:elsa-col-span-2">
-                      <dt class="elsa-text-sm elsa-font-medium elsa-text-gray-500">Activity ID</dt>
+                      <dt class="elsa-text-sm elsa-font-medium elsa-text-gray-500">
+                        <span>Activity ID</span>
+                        <elsa-copy-button value={record.activityId}/>
+                      </dt>
                       <dd class="elsa-mt-1 elsa-text-sm elsa-text-gray-900 elsa-mb-2">{record.activityId}</dd>
                     </div>
                     {outcomes.length > 0 ? (
                       <div class="sm:elsa-col-span-2">
-                        <dt class="elsa-text-sm elsa-font-medium elsa-text-gray-500">Outcomes</dt>
+                        <dt class="elsa-text-sm elsa-font-medium elsa-text-gray-500">
+                          <span>Outcomes</span>
+                          <elsa-copy-button value={outcomes.join(', ')}/>
+                        </dt>
                         <dd class="elsa-mt-1 elsa-text-sm elsa-text-gray-900 elsa-mb-2">
                           <div
                             class="elsa-flex elsa-flex-col elsa-space-y-4 sm:elsa-space-y-0 sm:elsa-flex-row sm:elsa-space-x-4">
@@ -252,7 +277,8 @@ export class ElsaWorkflowInstanceJournal {
                     {!!record.message && !exception ? (
                       <div class="sm:elsa-col-span-2">
                         <dt class="elsa-text-sm elsa-font-medium elsa-text-gray-500">
-                          Message
+                          <span>Message</span>
+                          <elsa-copy-button value={record.message}/>
                         </dt>
                         <dd class="elsa-mt-1 elsa-text-sm elsa-text-gray-900">
                           {record.message}
@@ -262,7 +288,8 @@ export class ElsaWorkflowInstanceJournal {
                     {!!exception ? (
                       [<div class="sm:elsa-col-span-2">
                         <dt class="elsa-text-sm elsa-font-medium elsa-text-gray-500">
-                          Exception
+                          <span>Exception</span>
+                          <elsa-copy-button value={exception.Type + '\n' + exception.Message}/>
                         </dt>
                         <dd class="elsa-mt-1 elsa-text-sm elsa-text-gray-900">
                           {renderExceptionMessage(exception)}
@@ -270,7 +297,8 @@ export class ElsaWorkflowInstanceJournal {
                       </div>,
                         <div class="sm:elsa-col-span-2">
                           <dt class="elsa-text-sm elsa-font-medium elsa-text-gray-500">
-                            Exception Details
+                            <span>Exception Details</span>
+                            <elsa-copy-button value={JSON.stringify(exception, null, 1)}/>
                           </dt>
                           <dd class="elsa-mt-1 elsa-text-sm elsa-text-gray-900 elsa-overflow-x-auto">
                             <pre onClick={e => clip(e.currentTarget)}>{JSON.stringify(exception, null, 1)}</pre>
@@ -279,7 +307,10 @@ export class ElsaWorkflowInstanceJournal {
                     ) : undefined}
                     {collection.map(filteredRecordData, (v, k) => (
                       <div class="sm:elsa-col-span-2">
-                        <dt class="elsa-text-sm elsa-font-medium elsa-text-gray-500 elsa-capitalize">{k}</dt>
+                        <dt class="elsa-text-sm elsa-font-medium elsa-text-gray-500 elsa-capitalize">
+                          <span>{k}</span>
+                          <elsa-copy-button value={v}/>
+                        </dt>
                         <dd class="elsa-mt-1 elsa-text-sm elsa-text-gray-900 elsa-mb-2 elsa-overflow-x-auto">
                           <pre onClick={e => clip(e.currentTarget)}>{v}</pre>
                         </dd>
@@ -324,6 +355,7 @@ export class ElsaWorkflowInstanceJournal {
     const {workflowInstance, workflowBlueprint} = this;
     const {finishedAt, lastExecutedAt, faultedAt} = workflowInstance;
     const format = 'DD-MM-YYYY HH:mm:ss';
+    const eventColor = this.getStatusColor(workflowInstance.workflowStatus);
 
     return (
       <dl class="elsa-border-b elsa-border-gray-200 elsa-divide-y elsa-divide-gray-200">
@@ -349,7 +381,15 @@ export class ElsaWorkflowInstanceJournal {
         </div>
         <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
           <dt class="elsa-text-gray-500">Workflow Status</dt>
-          <dd class="elsa-text-gray-900 elsa-break-all">{workflowInstance.workflowStatus || '-'}</dd>
+          <dd class="elsa-text-gray-900 elsa-break-all">
+            <span class="elsa-relative elsa-inline-flex elsa-items-center elsa-rounded-full">
+              <span class="elsa-flex-shrink-0 elsa-flex elsa-items-center elsa-justify-center">
+                <span class={`elsa-w-2-5 elsa-h-2-5 elsa-rounded-full elsa-bg-${eventColor}-500`}
+                      aria-hidden="true"/>
+              </span>
+              <span class="elsa-ml-3.5">{workflowInstance.workflowStatus || '-'}</span>
+            </span>
+          </dd>
         </div>
         <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
           <dt class="elsa-text-gray-500">Created</dt>

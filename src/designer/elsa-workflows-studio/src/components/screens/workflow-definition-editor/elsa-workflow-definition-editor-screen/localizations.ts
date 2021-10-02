@@ -5,7 +5,8 @@
       'Published': 'Published',
       "ActivityContextMenu":{
         "Edit": "Edit",
-        "Delete": "Delete"
+        "Delete": "Delete",
+        "DeleteSelected": "Delete Selected"
       },
       "ConnectionContextMenu":{
         "Paste": "Paste",
@@ -18,7 +19,8 @@
       'Published': 'Gepubliceerd',
       "ActivityContextMenu":{
         "Edit": "Bewerken",
-        "Delete": "Verwijderen"
+        "Delete": "Verwijderen",
+        "DeleteSelected": "Verwijder Geselecteerde"
       },
       "ConnectionContextMenu":{
         "Paste": "Plakken",
