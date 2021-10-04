@@ -109,12 +109,6 @@ export class ElsaWorkflowInstanceJournal {
     this.recordSelected.emit(record);
   }
 
-  onTabClick(e: Event, tab: Tab) {
-    e.preventDefault();
-
-    this.selectedTabId = tab.id;
-  }
-
   render() {
     return (
       <Host>

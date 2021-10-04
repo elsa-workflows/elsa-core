@@ -1,8 +1,8 @@
-﻿using System;
-using System.Linq;
+using System;
 using Elsa;
 using Elsa.Models;
 using Elsa.Server.Api;
+using Elsa.Server.Api.Handlers;
 using Elsa.Server.Api.Mapping;
 using Elsa.Server.Api.Services;
 using Elsa.Server.Api.Swagger.Examples;
@@ -47,11 +47,15 @@ namespace Microsoft.Extensions.DependencyInjection
                     options.AssumeDefaultVersionWhenUnspecified = true;
                 });
 
-            services.AddSingleton<ConnectionConverter>();
-            services.AddSingleton<ActivityBlueprintConverter>();
-            services.AddScoped<IWorkflowBlueprintMapper, WorkflowBlueprintMapper>();
-            services.AddSingleton<IEndpointContentSerializerSettingsProvider, EndpointContentSerializerSettingsProvider>();
-            services.AddAutoMapperProfile<AutoMapperProfile>();
+            services
+                .AddSingleton<ConnectionConverter>()
+                .AddSingleton<ActivityBlueprintConverter>()
+                .AddScoped<IWorkflowBlueprintMapper, WorkflowBlueprintMapper>()
+                .AddScoped<IWorkflowTestService, WorkflowTestService>()
+                .AddSingleton<IEndpointContentSerializerSettingsProvider, EndpointContentSerializerSettingsProvider>()
+                .AddAutoMapperProfile<AutoMapperProfile>()
+                .AddNotificationHandlersFrom<ActivityExecutionResultExecutedHandler>()
+                .AddSignalR();
             return services;
         }
 

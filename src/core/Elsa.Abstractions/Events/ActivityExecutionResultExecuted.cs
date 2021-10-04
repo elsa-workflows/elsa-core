@@ -1,4 +1,4 @@
-﻿using Elsa.ActivityResults;
+using Elsa.ActivityResults;
 using Elsa.Services.Models;
 using MediatR;
 

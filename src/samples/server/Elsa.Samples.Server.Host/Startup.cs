@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using Elsa.Retention.Extensions;
+using Elsa.Server.Api.Extensions;
+using Elsa.Server.Api.Hubs;
 using Elsa.Server.Hangfire.Extensions;
 using Hangfire;
 using Microsoft.AspNetCore.Builder;
@@ -87,6 +89,9 @@ namespace Elsa.Samples.Server.Host
                 .AddElsaApiEndpoints()
                 .AddElsaSwagger();
 
+            services.AddJavaScriptTypeDefinitionProvider<CustomerTypeDefinitionProvider>();
+            services.AddJavaScriptTypeDefinitionProvider<ClientTypeDefinitionProvider>();
+
             // Allow arbitrary client browser apps to access the API for demo purposes only.
             // In a production environment, make sure to allow only origins you trust.
             services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("Content-Disposition")));
@@ -102,10 +107,17 @@ namespace Elsa.Samples.Server.Host
             }
 
             app
-                .UseCors()
+                .UseCors(cors => cors
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .SetIsOriginAllowed(_ => true)
+                    .AllowCredentials())
                 .UseElsaFeatures()
                 .UseRouting()
-                .UseEndpoints(endpoints => { endpoints.MapControllers(); });
+                .UseEndpoints(endpoints => { 
+                    endpoints.MapControllers();
+                })
+                .MapWorkflowTestHub();
         }
     }
 }
