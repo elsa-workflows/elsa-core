@@ -32,8 +32,6 @@ export class ElsaFlyoutPanel {
     const {expanded, expandButtonPosition} = this;
     const expandPositionClass = `elsa-right-${16 * (expandButtonPosition - 1) + 12}`;
 
-    console.log('eee', this.expanded);
-
     return (
       <Host>
         <button type="button"

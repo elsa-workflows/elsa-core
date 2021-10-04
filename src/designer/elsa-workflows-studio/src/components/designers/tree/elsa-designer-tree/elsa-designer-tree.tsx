@@ -117,7 +117,7 @@ export class ElsaWorkflowDesigner {
       map[activity.activityId] = activity;
 
     this.selectedActivities = map;
-    this.rerenderTree();
+    this.safeRender();
   }
 
   @Watch('activityContextMenu')
@@ -244,18 +244,26 @@ export class ElsaWorkflowDesigner {
   componentDidLoad() {
     this.svgD3Selected = d3.select(this.svg);
     this.innerD3Selected = d3.select(this.inner);
+    this.safeRender();
+  }
+
+  safeRender() {
+    // Rebuild D3 model if component completed its initial load.
+    if (!this.svgD3Selected)
+      return;
+
     const rect = this.el.getBoundingClientRect();
     if (rect.height === 0 || rect.width === 0) {
       const observer = new ResizeObserver(entries => {
         for (let entry of entries) {
-          this.rerenderTree();
+          this.renderTree();
           observer.unobserve(this.el);
         }
       });
 
       observer.observe(this.el);
     } else {
-      this.rerenderTree();
+      this.renderTree();
     }
   }
 
@@ -270,10 +278,7 @@ export class ElsaWorkflowDesigner {
       displayContexts[model.activityId] = await this.getActivityDisplayContext(model);
 
     this.activityDisplayContexts = displayContexts;
-
-    // Rebuild D3 model if component completed its initial load.
-    if (!!this.svgD3Selected)
-      this.rerenderTree();
+    this.safeRender();
   }
 
   async getActivityDisplayContext(activityModel: ActivityModel): Promise<ActivityDesignDisplayContext> {
@@ -772,7 +777,7 @@ export class ElsaWorkflowDesigner {
 
           // Delay the rerender of the tree to permit the double click action to be captured
           setTimeout(() => {
-            this.rerenderTree();
+            this.safeRender();
           }, 90);
         }
       }).on('dblclick', async e => {
@@ -786,7 +791,7 @@ export class ElsaWorkflowDesigner {
             this.selectedActivities = {};
             this.selectedActivities[activityId] = activity;
             this.activitySelected.emit(activity);
-            this.rerenderTree();
+            this.safeRender();
           }
         }
       });
@@ -808,7 +813,7 @@ export class ElsaWorkflowDesigner {
     });
   }
 
-  rerenderTree() {
+  renderTree() {
     this.applyZoom();
     this.setEntities();
     this.renderNodes();
