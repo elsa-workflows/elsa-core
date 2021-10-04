@@ -89,9 +89,6 @@ namespace Elsa.Samples.Server.Host
                 .AddElsaApiEndpoints()
                 .AddElsaSwagger();
 
-            services.AddJavaScriptTypeDefinitionProvider<CustomerTypeDefinitionProvider>();
-            services.AddJavaScriptTypeDefinitionProvider<ClientTypeDefinitionProvider>();
-
             // Allow arbitrary client browser apps to access the API for demo purposes only.
             // In a production environment, make sure to allow only origins you trust.
             services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("Content-Disposition")));
