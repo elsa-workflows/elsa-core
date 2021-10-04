@@ -746,7 +746,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   renderActivityContextMenu() {
     const t = this.t;
-    const selectedActivities = Object.keys(this.activityContextMenuState.selectedActivities);
+    const selectedActivities = Object.keys(this.activityContextMenuState.selectedActivities ?? {});
     const {activity} = this.activityContextMenuState;
 
     return <div
