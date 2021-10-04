@@ -110,7 +110,7 @@ namespace Elsa.Services.Workflows
         {
             var workflowBlueprint = await _workflowRegistry.GetAsync(workflowDefinitionId, tenantId, VersionOptions.SpecificVersion(version), cancellationToken);
 
-            if (workflowBlueprint == null)
+            if (workflowBlueprint == null || workflowBlueprint.IsDisabled)
                 return null;
 
             return await FindStartableWorkflowAsync(workflowBlueprint, activityId, correlationId, contextId, tenantId, cancellationToken);
@@ -124,13 +124,19 @@ namespace Elsa.Services.Workflows
             string? tenantId = default,
             CancellationToken cancellationToken = default)
         {
-            correlationId ??= Guid.NewGuid().ToString("N");
-
+            async Task<StartableWorkflow?> CollectWorkflows()
+            {
+                var startableWorkflowDefinition = await CollectStartableWorkflowInternalAsync(workflowBlueprint, activityId, correlationId, contextId, tenantId, cancellationToken);
+                return startableWorkflowDefinition != null ? await InstantiateStartableWorkflow(startableWorkflowDefinition, cancellationToken) : default;
+            }
+            
+            if (string.IsNullOrEmpty(correlationId)) 
+                return await CollectWorkflows();
+            
             // Acquire a lock on correlation ID to prevent duplicate workflow instances from being created.
             await using var correlationLockHandle = await AcquireLockAsync(correlationId, cancellationToken);
+            return await CollectWorkflows();
 
-            var startableWorkflowDefinition = await CollectStartableWorkflowInternalAsync(workflowBlueprint, activityId, correlationId, contextId, tenantId, cancellationToken);
-            return startableWorkflowDefinition != null ? await InstantiateStartableWorkflow(startableWorkflowDefinition, cancellationToken) : default;
         }
 
         public async Task FindAndExecuteStartableWorkflowAsync(
@@ -254,7 +260,7 @@ namespace Elsa.Services.Workflows
         private async Task<StartableWorkflowDefinition?> CollectStartableWorkflowInternalAsync(
             IWorkflowBlueprint workflowBlueprint,
             string? activityId,
-            string correlationId,
+            string? correlationId,
             string? contextId = default,
             string? tenantId = default,
             CancellationToken cancellationToken = default)
