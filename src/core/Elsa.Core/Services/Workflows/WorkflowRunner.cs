@@ -148,8 +148,8 @@ namespace Elsa.Services.Workflows
                 WorkflowStatus.Suspended => new INotification[] { new WorkflowSuspended(workflowExecutionContext) },
                 _ => Array.Empty<INotification>()
             };
-            
-            foreach (var statusEvent in statusEvents) 
+
+            foreach (var statusEvent in statusEvents)
                 await _mediator.Publish(statusEvent, cancellationToken);
 
             await _mediator.Publish(new WorkflowExecutionFinished(workflowExecutionContext), cancellationToken);
@@ -260,39 +260,48 @@ namespace Elsa.Services.Workflows
                 var output = outputReference != null ? await _workflowStorageService.LoadAsync(outputReference.ProviderName, new WorkflowStorageContext(workflowInstance, outputReference.ActivityId), "Output", cancellationToken) : null;
                 var input = !burstStarted ? workflowExecutionContext.Input : scheduledActivity.Input ?? output;
                 var activityExecutionContext = new ActivityExecutionContext(scope, workflowExecutionContext, activityBlueprint, input, resuming, cancellationToken);
-                var runtimeActivityInstance = await activityExecutionContext.ActivateActivityAsync(cancellationToken);
-                var activityType = runtimeActivityInstance.ActivityType;
-                using var executionScope = AmbientActivityExecutionContext.EnterScope(activityExecutionContext);
-                await _mediator.Publish(new ActivityActivating(activityExecutionContext), cancellationToken);
-                var activity = await activityType.ActivateAsync(activityExecutionContext);
 
-                if (!burstStarted)
+                try
                 {
-                    await _mediator.Publish(new WorkflowExecutionBurstStarting(workflowExecutionContext, activityExecutionContext), cancellationToken);
-                    burstStarted = true;
+                    var runtimeActivityInstance = await activityExecutionContext.ActivateActivityAsync(cancellationToken);
+                    var activityType = runtimeActivityInstance.ActivityType;
+                    using var executionScope = AmbientActivityExecutionContext.EnterScope(activityExecutionContext);
+                    await _mediator.Publish(new ActivityActivating(activityExecutionContext), cancellationToken);
+                    var activity = await activityType.ActivateAsync(activityExecutionContext);
+
+                    if (!burstStarted)
+                    {
+                        await _mediator.Publish(new WorkflowExecutionBurstStarting(workflowExecutionContext, activityExecutionContext), cancellationToken);
+                        burstStarted = true;
+                    }
+
+                    if (resuming)
+                        await _mediator.Publish(new ActivityResuming(activityExecutionContext, activity), cancellationToken);
+
+                    await _mediator.Publish(new ActivityExecuting(activityExecutionContext, activity), cancellationToken);
+                    var result = await TryExecuteActivityAsync(activityOperation, activityExecutionContext, activity, cancellationToken);
+
+                    if (result == null)
+                        return;
+
+                    await _mediator.Publish(new ActivityExecuted(activityExecutionContext, activity), cancellationToken);
+                    await _mediator.Publish(new ActivityExecutionResultExecuting(result, activityExecutionContext), cancellationToken);
+                    await result.ExecuteAsync(activityExecutionContext, cancellationToken);
+                    workflowExecutionContext.CompletePass();
+                    workflowInstance.LastExecutedActivityId = currentActivityId;
+                    await _mediator.Publish(new ActivityExecutionResultExecuted(result, activityExecutionContext), cancellationToken);
+                    await _mediator.Publish(new WorkflowExecutionPassCompleted(workflowExecutionContext, activityExecutionContext), cancellationToken);
+
+                    if (!workflowExecutionContext.HasScheduledActivities)
+                        await _mediator.Publish(new WorkflowExecutionBurstCompleted(workflowExecutionContext, activityExecutionContext), cancellationToken);
+
+                    activityOperation = Execute;
                 }
-
-                if (resuming)
-                    await _mediator.Publish(new ActivityResuming(activityExecutionContext, activity), cancellationToken);
-
-                await _mediator.Publish(new ActivityExecuting(activityExecutionContext, activity), cancellationToken);
-                var result = await TryExecuteActivityAsync(activityOperation, activityExecutionContext, activity, cancellationToken);
-
-                if (result == null)
-                    return;
-
-                await _mediator.Publish(new ActivityExecuted(activityExecutionContext, activity), cancellationToken);
-                await _mediator.Publish(new ActivityExecutionResultExecuting(result, activityExecutionContext), cancellationToken);
-                await result.ExecuteAsync(activityExecutionContext, cancellationToken);
-                workflowExecutionContext.CompletePass();
-                workflowInstance.LastExecutedActivityId = currentActivityId;
-                await _mediator.Publish(new ActivityExecutionResultExecuted(result, activityExecutionContext), cancellationToken);
-                await _mediator.Publish(new WorkflowExecutionPassCompleted(workflowExecutionContext, activityExecutionContext), cancellationToken);
-
-                if (!workflowExecutionContext.HasScheduledActivities)
-                    await _mediator.Publish(new WorkflowExecutionBurstCompleted(workflowExecutionContext, activityExecutionContext), cancellationToken);
-
-                activityOperation = Execute;
+                catch (Exception e)
+                {
+                    await _mediator.Publish(new ActivityExecutionResultFailed(e, activityExecutionContext), cancellationToken);
+                    throw;
+                }
             }
 
             workflowInstance.CurrentActivity = null;

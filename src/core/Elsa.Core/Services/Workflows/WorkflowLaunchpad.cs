@@ -100,6 +100,23 @@ namespace Elsa.Services.Workflows
         }
 
         public async Task<StartableWorkflow?> FindStartableWorkflowAsync(
+            string workflowDefinitionId,
+            int version,
+            string? activityId,
+            string? correlationId = default,
+            string? contextId = default,
+            string? tenantId = default,
+            CancellationToken cancellationToken = default)
+        {
+            var workflowBlueprint = await _workflowRegistry.GetAsync(workflowDefinitionId, tenantId, VersionOptions.SpecificVersion(version), cancellationToken);
+
+            if (workflowBlueprint == null)
+                return null;
+
+            return await FindStartableWorkflowAsync(workflowBlueprint, activityId, correlationId, contextId, tenantId, cancellationToken);
+        }
+
+        public async Task<StartableWorkflow?> FindStartableWorkflowAsync(
             IWorkflowBlueprint workflowBlueprint,
             string? activityId,
             string? correlationId = default,

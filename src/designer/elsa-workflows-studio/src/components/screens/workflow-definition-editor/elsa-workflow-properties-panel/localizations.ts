@@ -9,7 +9,7 @@
       'PublishedVersion': 'Published Version',
       'Status': 'Status',
       'Published': 'Published',
-      'Draft': 'Draft',
+      'Draft': 'Draft'
     }
   },
   'nl-NL': {
@@ -22,7 +22,7 @@
       'PublishedVersion': 'Gepubliceerde Versie',
       'Status': 'Status',
       'Published': 'Published',
-      'Draft': 'Draft',
+      'Draft': 'Draft'
     }
   }
 };

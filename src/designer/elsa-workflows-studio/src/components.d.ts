@@ -50,6 +50,7 @@ export namespace Components {
         "activityBorderColor"?: (activity: ActivityModel) => string;
         "activityContextMenu"?: ActivityContextMenuState;
         "activityContextMenuButton"?: (activity: ActivityModel) => string;
+        "activityContextTestMenu"?: ActivityContextMenuState;
         "connectionContextMenu"?: ActivityContextMenuState;
         "enableMultipleConnectionsFromSingleSource": boolean;
         "layoutDirection": LayoutDirection;
@@ -307,7 +308,6 @@ export namespace Components {
     }
     interface ElsaWorkflowPropertiesPanel {
         "culture": string;
-        "expandButtonPosition": number;
         "serverUrl": string;
         "workflowDefinition": WorkflowDefinition;
     }
@@ -325,6 +325,12 @@ export namespace Components {
     interface ElsaWorkflowSettingsModal {
         "serverUrl": string;
         "workflowDefinition": WorkflowDefinition;
+    }
+    interface ElsaWorkflowTestPanel {
+        "culture": string;
+        "serverUrl": string;
+        "workflowDefinition": WorkflowDefinition;
+        "workflowTestActivityId": string;
     }
 }
 declare global {
@@ -664,6 +670,12 @@ declare global {
         prototype: HTMLElsaWorkflowSettingsModalElement;
         new (): HTMLElsaWorkflowSettingsModalElement;
     };
+    interface HTMLElsaWorkflowTestPanelElement extends Components.ElsaWorkflowTestPanel, HTMLStencilElement {
+    }
+    var HTMLElsaWorkflowTestPanelElement: {
+        prototype: HTMLElsaWorkflowTestPanelElement;
+        new (): HTMLElsaWorkflowTestPanelElement;
+    };
     interface HTMLElementTagNameMap {
         "elsa-activity-editor-modal": HTMLElsaActivityEditorModalElement;
         "elsa-activity-picker-modal": HTMLElsaActivityPickerModalElement;
@@ -721,6 +733,7 @@ declare global {
         "elsa-workflow-publish-button": HTMLElsaWorkflowPublishButtonElement;
         "elsa-workflow-registry-list-screen": HTMLElsaWorkflowRegistryListScreenElement;
         "elsa-workflow-settings-modal": HTMLElsaWorkflowSettingsModalElement;
+        "elsa-workflow-test-panel": HTMLElsaWorkflowTestPanelElement;
     }
 }
 declare namespace LocalJSX {
@@ -755,12 +768,14 @@ declare namespace LocalJSX {
         "activityBorderColor"?: (activity: ActivityModel) => string;
         "activityContextMenu"?: ActivityContextMenuState;
         "activityContextMenuButton"?: (activity: ActivityModel) => string;
+        "activityContextTestMenu"?: ActivityContextMenuState;
         "connectionContextMenu"?: ActivityContextMenuState;
         "enableMultipleConnectionsFromSingleSource"?: boolean;
         "layoutDirection"?: LayoutDirection;
         "mode"?: WorkflowDesignerMode;
         "model"?: WorkflowModel;
         "onActivityContextMenuButtonClicked"?: (event: CustomEvent<ActivityContextMenuState>) => void;
+        "onActivityContextMenuButtonTestClicked"?: (event: CustomEvent<ActivityContextMenuState>) => void;
         "onActivityDeselected"?: (event: CustomEvent<ActivityModel>) => void;
         "onActivitySelected"?: (event: CustomEvent<ActivityModel>) => void;
         "onConnectionContextMenuButtonClicked"?: (event: CustomEvent<ActivityContextMenuState>) => void;
@@ -1007,7 +1022,6 @@ declare namespace LocalJSX {
     }
     interface ElsaWorkflowPropertiesPanel {
         "culture"?: string;
-        "expandButtonPosition"?: number;
         "serverUrl"?: string;
         "workflowDefinition"?: WorkflowDefinition;
     }
@@ -1029,6 +1043,12 @@ declare namespace LocalJSX {
     interface ElsaWorkflowSettingsModal {
         "serverUrl"?: string;
         "workflowDefinition"?: WorkflowDefinition;
+    }
+    interface ElsaWorkflowTestPanel {
+        "culture"?: string;
+        "serverUrl"?: string;
+        "workflowDefinition"?: WorkflowDefinition;
+        "workflowTestActivityId"?: string;
     }
     interface IntrinsicElements {
         "elsa-activity-editor-modal": ElsaActivityEditorModal;
@@ -1087,6 +1107,7 @@ declare namespace LocalJSX {
         "elsa-workflow-publish-button": ElsaWorkflowPublishButton;
         "elsa-workflow-registry-list-screen": ElsaWorkflowRegistryListScreen;
         "elsa-workflow-settings-modal": ElsaWorkflowSettingsModal;
+        "elsa-workflow-test-panel": ElsaWorkflowTestPanel;
     }
 }
 export { LocalJSX as JSX };
@@ -1149,6 +1170,7 @@ declare module "@stencil/core" {
             "elsa-workflow-publish-button": LocalJSX.ElsaWorkflowPublishButton & JSXBase.HTMLAttributes<HTMLElsaWorkflowPublishButtonElement>;
             "elsa-workflow-registry-list-screen": LocalJSX.ElsaWorkflowRegistryListScreen & JSXBase.HTMLAttributes<HTMLElsaWorkflowRegistryListScreenElement>;
             "elsa-workflow-settings-modal": LocalJSX.ElsaWorkflowSettingsModal & JSXBase.HTMLAttributes<HTMLElsaWorkflowSettingsModalElement>;
+            "elsa-workflow-test-panel": LocalJSX.ElsaWorkflowTestPanel & JSXBase.HTMLAttributes<HTMLElsaWorkflowTestPanelElement>;
         }
     }
 }

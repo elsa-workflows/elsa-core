@@ -1,5 +1,7 @@
 import {Component, Host, h, Prop, State, Method} from "@stencil/core";
 import {enter, leave} from "el-transition"
+import {eventBus} from "../../../services";
+import {EventTypes} from "../../../models";
 
 @Component({
   tag: 'elsa-flyout-panel',
@@ -18,7 +20,8 @@ export class ElsaFlyoutPanel {
     this.headerTabs = Array.from(this.el.querySelectorAll('elsa-tab-header'));
     this.headerTabs.forEach(element => {
       element.onclick = () => {
-        this.selectTab(element.tab)
+        this.selectTab(element.tab);
+        eventBus.emit(EventTypes.FlyoutPanelTabSelected, this, element.tab);
       };
     })
     this.contentTabs = Array.from(this.el.querySelectorAll('elsa-tab-content'));
@@ -50,7 +53,7 @@ export class ElsaFlyoutPanel {
           <div class="elsa-absolute elsa-inset-0 elsa-overflow-hidden">
             <div class="elsa-absolute elsa-inset-0" aria-hidden="true"/>
             <div
-              class="elsa-fixed elsa-inset-y-0 elsa-top-16 elsa-right-0 max-elsa-w-full elsa-flex">
+              class="elsa-fixed elsa-inset-y-0 elsa-top-18 elsa-right-2 elsa-top-2 elsa-bottom-2 max-elsa-w-full elsa-flex">
               <div
                 ref={el => this.el = el}
                 data-transition-enter="elsa-transform elsa-transition elsa-ease-in-out elsa-duration-300 sm:elsa-duration-700"

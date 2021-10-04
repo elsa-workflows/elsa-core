@@ -7,7 +7,6 @@ using Elsa.Scripting.JavaScript.Events;
 using Elsa.Services;
 using Elsa.Services.Models;
 using MediatR;
-using Microsoft.Extensions.Configuration;
 
 namespace Elsa.Scripting.JavaScript.Handlers
 {
@@ -82,7 +81,9 @@ namespace Elsa.Scripting.JavaScript.Handlers
                 {
                     var activityType = activityTypeDictionary[activity.Type];
                     var typeScriptType = activityType.TypeName;
-                    output.AppendLine($"{activity.Name}: {typeScriptType};");
+                    var query = $"{activity.Name}: {typeScriptType}";
+                    var interfaceActivity = FindInterface(notification, query);
+                    output.AppendLine($"{interfaceActivity};");
                 }
 
                 output.AppendLine("}");
@@ -96,21 +97,32 @@ namespace Elsa.Scripting.JavaScript.Handlers
                 var inputProperties = descriptor.InputProperties;
                 var outputProperties = descriptor.OutputProperties;
 
-                writer.AppendLine($"declare interface {typeName} {{");
+                var query = $"declare interface {typeName}";
+                var interfaceDeclaration = FindInterface(notification, query);
+                writer.AppendLine($"{interfaceDeclaration} {{");
 
                 foreach (var property in inputProperties)
-                    RenderActivityProperty(writer, property.Name, property.Type);
+                    RenderActivityProperty(writer, typeName, property.Name, property.Type);
 
                 foreach (var property in outputProperties)
-                    RenderActivityProperty(writer, property.Name, property.Type);
+                    RenderActivityProperty(writer, typeName, property.Name, property.Type);
 
                 writer.AppendLine("}");
             }
 
-            void RenderActivityProperty(StringBuilder writer, string propertyName, Type propertyType)
+            void RenderActivityProperty(StringBuilder writer, string typeName, string propertyName, Type propertyType)
             {
                 var typeScriptType = notification.GetTypeScriptType(propertyType);
-                writer.AppendLine($"{propertyName}(): {typeScriptType};");
+
+                var query = $"{propertyName}(): {typeScriptType}";
+                var interfaceDeclaration = FindInterface(notification, query);
+                writer.AppendLine($"{interfaceDeclaration};");
+            }
+
+            string FindInterface(RenderingTypeScriptDefinitions notification, string query)
+            {
+                var result = notification.DeclaredTypes.FirstOrDefault(x => x.Contains(query));
+                return result == null ? query : result;
             }
         }
     }

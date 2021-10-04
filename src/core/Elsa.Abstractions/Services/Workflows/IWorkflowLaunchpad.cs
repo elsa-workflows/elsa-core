@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
@@ -30,10 +30,15 @@ namespace Elsa.Services
         Task<StartableWorkflow?> FindStartableWorkflowAsync(string workflowDefinitionId, string? activityId = default, string? correlationId = default, string? contextId = default, string? tenantId = default, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Creates a new workflow instance with execution pending for the specified workflow blueprint version using the specified starting activity ID.
+        /// </summary>
+        Task<StartableWorkflow?> FindStartableWorkflowAsync(string workflowDefinitionId, int version, string? activityId = default, string? correlationId = default, string? contextId = default, string? tenantId = default, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Creates a new workflow instance with execution pending for the specified workflow blueprint using the specified starting activity ID.
         /// </summary>
         Task<StartableWorkflow?> FindStartableWorkflowAsync(IWorkflowBlueprint workflowBlueprint, string? activityId = default, string? correlationId = default, string? contextId = default, string? tenantId = default, CancellationToken cancellationToken = default);
-        
+
         /// <summary>
         /// Collects and executes the specified startable workflow.
         /// </summary>
@@ -77,8 +82,8 @@ namespace Elsa.Services
         /// <summary>
         /// Executes the specified startable workflow.
         /// </summary>
-        Task<RunWorkflowResult> ExecuteStartableWorkflowAsync(StartableWorkflow startableWorkflow, WorkflowInput? input = default, CancellationToken cancellationToken = default);
-        
+        Task<RunWorkflowResult> ExecuteStartableWorkflowAsync(StartableWorkflow startableWorkflow, WorkflowInput? input = default, CancellationToken cancellationToken = default);        
+
         /// <summary>
         /// Dispatches the specified startable workflow.
         /// </summary>
