@@ -31,9 +31,6 @@ namespace Elsa
             if (underlyingSourceType == underlyingTargetType)
                 return value;
 
-            if (value == default!)
-                return default!;
-            
             if(typeof(JToken).IsAssignableFrom(underlyingSourceType))
                 return StateDictionaryExtensions.DeserializeState((JToken) value, underlyingTargetType);
 
