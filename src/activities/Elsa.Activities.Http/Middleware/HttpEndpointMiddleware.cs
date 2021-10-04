@@ -16,6 +16,7 @@ using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Open.Linq.AsyncExtensions;
@@ -37,7 +38,6 @@ namespace Elsa.Activities.Http.Middleware
             IWorkflowInstanceStore workflowInstanceStore,
             IWorkflowRegistry workflowRegistry,
             IWorkflowBlueprintReflector workflowBlueprintReflector,
-            IHttpEndpointAuthorizationHandler authorizationHandler,
             IEnumerable<IHttpRequestBodyParser> contentParsers)
         {
             var basePath = options.Value.BasePath;
@@ -92,7 +92,7 @@ namespace Elsa.Activities.Http.Middleware
             var contentParser = orderedContentParsers.FirstOrDefault(x => x.SupportedContentTypes.Contains(simpleContentType, StringComparer.OrdinalIgnoreCase)) ?? orderedContentParsers.LastOrDefault() ?? new DefaultHttpRequestBodyParser();
             var activityWrapper = workflowBlueprintWrapper.GetUnfilteredActivity<HttpEndpoint>(pendingWorkflow.ActivityId!)!;
 
-            if (!await AuthorizeAsync(httpContext, activityWrapper, workflowBlueprint, pendingWorkflow, authorizationHandler, cancellationToken))
+            if (!await AuthorizeAsync(httpContext, options.Value, activityWrapper, workflowBlueprint, pendingWorkflow, cancellationToken))
             {
                 httpContext.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
                 return;
@@ -157,10 +157,10 @@ namespace Elsa.Activities.Http.Middleware
 
         private async Task<bool> AuthorizeAsync(
             HttpContext httpContext,
+            HttpActivityOptions options,
             IActivityBlueprintWrapper<HttpEndpoint> httpEndpoint,
             IWorkflowBlueprint workflowBlueprint,
             CollectedWorkflow pendingWorkflow,
-            IHttpEndpointAuthorizationHandler authorizationHandler,
             CancellationToken cancellationToken)
         {
             var authorize = await httpEndpoint.EvaluatePropertyValueAsync(x => x.Authorize, cancellationToken);
@@ -168,6 +168,8 @@ namespace Elsa.Activities.Http.Middleware
             if (!authorize)
                 return true;
 
+            var authorizationHandler = options.HttpEndpointAuthorizationHandlerFactory(httpContext.RequestServices);
+            
             return await authorizationHandler.AuthorizeAsync(new AuthorizeHttpEndpointContext(httpContext, httpEndpoint, workflowBlueprint, pendingWorkflow.WorkflowInstanceId, cancellationToken));
         }
 

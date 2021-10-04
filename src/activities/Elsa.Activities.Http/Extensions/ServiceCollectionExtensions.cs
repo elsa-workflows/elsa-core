@@ -51,6 +51,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IHttpResponseContentReader, FileHttpResponseContentReader>()
                 .AddSingleton<IActionContextAccessor, ActionContextAccessor>()
                 .AddSingleton<IAbsoluteUrlProvider, DefaultAbsoluteUrlProvider>()
+                .AddSingleton<AllowAnonymousHttpEndpointAuthorizationHandler>()
                 .AddSingleton(sp => sp.GetRequiredService<IOptions<HttpActivityOptions>>().Value.HttpEndpointAuthorizationHandlerFactory(sp))
                 .AddBookmarkProvider<HttpEndpointBookmarkProvider>()
                 .AddHttpContextAccessor()
