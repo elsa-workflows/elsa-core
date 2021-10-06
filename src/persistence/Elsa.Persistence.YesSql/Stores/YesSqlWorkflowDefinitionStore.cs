@@ -54,7 +54,7 @@ namespace Elsa.Persistence.YesSql.Stores
             return orderBy.SortDirection == SortDirection.Ascending ? indexedQuery.OrderBy(expression) : indexedQuery.OrderByDescending(expression);
         }
         
-        /// TODO: This is a workaround. The real fix might be to remove the specification pattern and replace with repository abstractions with finite methods, or automatically dig into And and Or specifications and map each branch into a YesSQL queryable predicate.
+        // TODO: This is a workaround. The real fix might be to remove the specification pattern and replace with repository abstractions with finite methods, or automatically dig into And and Or specifications and map each branch into a YesSQL queryable predicate.
         private IQuery<WorkflowDefinitionDocument> MapAndSpecification(ISession session, AndSpecification<WorkflowDefinition> and)
         {
             var left = and.Left;

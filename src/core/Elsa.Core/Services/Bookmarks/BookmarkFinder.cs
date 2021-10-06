@@ -28,11 +28,11 @@ namespace Elsa.Services.Bookmarks
 
         public async Task<IEnumerable<BookmarkFinderResult>> FindBookmarksAsync(string activityType, IEnumerable<IBookmark> bookmarks, string? correlationId = default, string? tenantId = default, CancellationToken cancellationToken = default)
         {
-            var triggerList = bookmarks as ICollection<IBookmark> ?? bookmarks.ToList();
+            var bookmarkList = bookmarks as ICollection<IBookmark> ?? bookmarks.ToList();
             
-            var specification = !triggerList.Any()
-                ? new BookmarkSpecification(activityType, tenantId)
-                : BuildSpecification(activityType, triggerList, correlationId, tenantId);
+            var specification = !bookmarkList.Any()
+                ? new BookmarkSpecification(activityType, tenantId, correlationId)
+                : BuildSpecification(activityType, bookmarkList, correlationId, tenantId);
 
             var records = await _bookmarkStore.FindManyAsync(specification, cancellationToken: cancellationToken);
             return SelectResults(records);
