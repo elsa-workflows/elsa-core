@@ -1,22 +1,35 @@
-import {Component, Event, Host, Prop, State, Watch, h} from '@stencil/core';
-import {eventBus} from "../../../../services/event-bus";
-import {Map} from "../../../../utils/utils";
+import {Component, Host, Prop, State, Watch, h} from '@stencil/core';
+import {eventBus, propertyDisplayManager} from '../../../../services';
+import {getOrCreateProperty, Map, mapToExpressionObject} from "../../../../utils/utils";
 import {
   EventTypes,
   Variables,
   WorkflowContextFidelity,
   WorkflowContextOptions,
   WorkflowDefinition,
-  WorkflowPersistenceBehavior
+  ActivityModel,
+  ActivityPropertyDescriptor,
 } from "../../../../models";
 import {MonacoValueChangedArgs} from "../../../controls/elsa-monaco/elsa-monaco";
 import {MarkerSeverity} from "monaco-editor";
 import {checkBox, FormContext, selectField, SelectOption, textArea, textInput} from "../../../../utils/forms";
 import {createElsaClient} from "../../../../services/elsa-client";
+import { ActivityEditorRenderProps } from '../elsa-activity-editor-modal/elsa-activity-editor-modal';
+import { WorkflowDefinitionProperty } from '../../../editors/properties/elsa-workflow-definition-property/models';
 
 interface VariableDefinition {
   name?: string;
   value?: string
+}
+
+interface WorkflowTabModel {
+  tabName: string;
+  renderContent: () => any;
+}
+
+interface WorkflowSettingsRenderProps {
+  tabs?: Array<WorkflowTabModel>;
+  selectedTabName?: string;
 }
 
 @Component({
@@ -34,6 +47,8 @@ export class ElsaWorkflowDefinitionSettingsModal {
   monacoEditor: HTMLElsaMonacoElement;
   formContext: FormContext;
   workflowChannels: Array<string>;
+  activityModel: ActivityModel;
+  propertyDescriptor: ActivityPropertyDescriptor;
 
   @Watch('workflowDefinition')
   handleWorkflowDefinitionChanged(newValue: WorkflowDefinition) {
@@ -42,10 +57,35 @@ export class ElsaWorkflowDefinitionSettingsModal {
   }
 
   async componentWillLoad() {
+    const activityModel: ActivityModel = {
+      type: '',
+      activityId: '',
+      outcomes: [],
+      properties: [],
+      propertyStorageProviders: {}
+    };
+    const propertyDescriptor: ActivityPropertyDescriptor = {
+      defaultSyntax: "WorkflowDefinitionProperty",
+      disableWorkflowProviderSelection: false,
+      hint: "The conditions to evaluate.",
+      isReadOnly: false,
+      label: "Property",
+      name: "Property",
+      supportedSyntaxes: [],
+      uiHint: "workflow-definition-property-builder",
+    } 
+
+    this.activityModel = activityModel;
+    this.propertyDescriptor = propertyDescriptor;
+
     this.handleWorkflowDefinitionChanged(this.workflowDefinition);
 
     const client = await createElsaClient(this.serverUrl);
     this.workflowChannels = await client.workflowChannelsApi.list();
+  }
+
+  componentWillRender() {
+    console.log('componentWillRender');
   }
 
   componentDidLoad() {
@@ -64,6 +104,7 @@ export class ElsaWorkflowDefinitionSettingsModal {
   async onSubmit(e: Event) {
     e.preventDefault();
     await this.dialog.hide(true);
+    this.workflowDefinitionInternal.properties = mapToExpressionObject<WorkflowDefinitionProperty>(this.activityModel, this.propertyDescriptor.name, this.propertyDescriptor.defaultSyntax);
     setTimeout(() => eventBus.emit(EventTypes.UpdateWorkflowSettings, this, this.workflowDefinitionInternal), 250)
   }
 
@@ -87,7 +128,7 @@ export class ElsaWorkflowDefinitionSettingsModal {
 
   render() {
 
-    const tabs = ['Settings', 'Variables', 'Workflow Context', 'Advanced'];
+    const tabs = ['Settings', 'Variables', 'Workflow Context', 'Advanced', 'Properties'];
     const selectedTab = this.selectedTab;
     const inactiveClass = 'elsa-border-transparent elsa-text-gray-500 hover:elsa-text-gray-700 hover:elsa-border-gray-300';
     const selectedClass = 'elsa-border-blue-500 elsa-text-blue-600';
@@ -135,6 +176,15 @@ export class ElsaWorkflowDefinitionSettingsModal {
     );
   }
 
+  renderTabs(tabs: Array<WorkflowTabModel>) {
+    return tabs.map(x =>
+      (
+        <div >
+          {x.renderContent()}
+        </div>
+      ));
+  }
+
   renderSelectedTab() {
     const selectedTab = this.selectedTab;
 
@@ -145,6 +195,8 @@ export class ElsaWorkflowDefinitionSettingsModal {
         return this.renderVariablesTab();
       case 'Advanced':
         return this.renderAdvancedTab();
+      case 'Properties':
+        return this.renderPropertiesTab(this.activityModel);
       case 'Settings':
       default:
         return this.renderSettingsTab();
@@ -164,6 +216,38 @@ export class ElsaWorkflowDefinitionSettingsModal {
         </div>
       </div>
     );
+  }
+
+  renderPropertiesTab(activityModel: ActivityModel) {
+    const propertyDescriptor: ActivityPropertyDescriptor = {
+      defaultSyntax: "WorkflowDefinitionProperty",
+      disableWorkflowProviderSelection: false,
+      hint: "The conditions to evaluate.",
+      isReadOnly: false,
+      label: "Property",
+      name: "Property",
+      supportedSyntaxes: [],
+      uiHint: "workflow-definition-property-builder",
+    }
+
+    const key = `activity-settings:${activityModel.activityId}`;
+
+    return (
+      <div class="elsa-flex elsa-px-8 elsa-mt-1">
+        <div class="elsa-space-y-8 elsa-w-full">
+          <div key={key} class={`elsa-grid elsa-grid-cols-1 elsa-gap-y-6 elsa-gap-x-4 sm:elsa-grid-cols-6`}>
+            {this.renderPropertyEditor(activityModel, propertyDescriptor)}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  renderPropertyEditor(activity: ActivityModel, property: ActivityPropertyDescriptor) {
+    const key = `activity-property-input:${activity.activityId}:${property.name}`;
+    const display = propertyDisplayManager.display(activity, property);
+    const id = `${property.name}Control`;
+    return <elsa-control key={key} id={id} class="sm:elsa-col-span-6" content={display}/>;
   }
 
   renderAdvancedTab() {
