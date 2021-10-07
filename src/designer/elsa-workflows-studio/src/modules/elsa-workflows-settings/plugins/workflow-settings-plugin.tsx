@@ -8,6 +8,8 @@ import {
   ElsaStudio
 } from "../../../models";
 
+import { ActivityModel, ActivityPropertyDescriptor } from "../../..";
+
 export class WorkflowSettingsPlugin implements ElsaPlugin {
   serverUrl: string;
 
@@ -16,6 +18,40 @@ export class WorkflowSettingsPlugin implements ElsaPlugin {
 
     eventBus.on(EventTypes.WorkflowRegistryLoadingColumns, this.onLoadingColumns);
     eventBus.on(EventTypes.WorkflowRegistryUpdating, this.onUpdating);
+    eventBus.on(EventTypes.WorkflowSettingsModalLoaded, this.onModalLoaded)
+  }
+
+  onModalLoaded(renderProps: any) {
+    const tabs = renderProps.tabs;
+
+    const activityModel: ActivityModel = {
+      type: '',
+      activityId: '',
+      outcomes: [],
+      properties: [],
+      propertyStorageProviders: {}
+    };
+    const propertyDescriptor: ActivityPropertyDescriptor = {
+      defaultSyntax: "WorkflowDefinitionProperty",
+      disableWorkflowProviderSelection: false,
+      hint: "The conditions to evaluate.",
+      isReadOnly: false,
+      label: "Property",
+      name: "Property",
+      supportedSyntaxes: [],
+      uiHint: "workflow-definition-property-builder",
+    } 
+
+    Object.assign(renderProps, { activityModel, propertyDescriptor})
+
+    const renderPropertiesTab = () => {
+      return ( <elsa-workflow-settings-properties-tab activityModel={activityModel} propertyDescriptor={propertyDescriptor} /> )
+    }
+
+    tabs.push({
+      tabName: 'Properties',
+      renderContent: renderPropertiesTab
+    })
   }
 
   onLoadingColumns(context: ConfigureWorkflowRegistryColumnsContext) {

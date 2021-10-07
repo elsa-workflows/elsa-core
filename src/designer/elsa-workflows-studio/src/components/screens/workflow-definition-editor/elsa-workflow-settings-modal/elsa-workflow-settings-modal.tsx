@@ -17,19 +17,17 @@ import {createElsaClient} from "../../../../services/elsa-client";
 import { ActivityEditorRenderProps } from '../elsa-activity-editor-modal/elsa-activity-editor-modal';
 import { WorkflowDefinitionProperty } from '../../../editors/properties/elsa-workflow-definition-property/models';
 
-interface VariableDefinition {
-  name?: string;
-  value?: string
-}
-
 interface WorkflowTabModel {
   tabName: string;
   renderContent: () => any;
 }
 
 interface WorkflowSettingsRenderProps {
+  workflowDefinition?: WorkflowDefinition;
   tabs?: Array<WorkflowTabModel>;
   selectedTabName?: string;
+  activityModel?: ActivityModel;
+  propertyDescriptor?: ActivityPropertyDescriptor;
 }
 
 @Component({
@@ -40,9 +38,7 @@ export class ElsaWorkflowDefinitionSettingsModal {
 
   @Prop({attribute: 'server-url', reflect: true}) serverUrl: string;
   @Prop() workflowDefinition: WorkflowDefinition;
-  @State() workflowDefinitionInternal: WorkflowDefinition;
-  @State() selectedTab: string = 'Settings';
-  @State() newVariable: VariableDefinition = {};
+  @State() renderProps: WorkflowSettingsRenderProps = {}
   dialog: HTMLElsaModalDialogElement;
   monacoEditor: HTMLElsaMonacoElement;
   formContext: FormContext;
@@ -52,50 +48,61 @@ export class ElsaWorkflowDefinitionSettingsModal {
 
   @Watch('workflowDefinition')
   handleWorkflowDefinitionChanged(newValue: WorkflowDefinition) {
-    this.workflowDefinitionInternal = {...newValue};
-    this.formContext = new FormContext(this.workflowDefinitionInternal, newValue => this.workflowDefinitionInternal = newValue);
+    this.renderProps.workflowDefinition = {...newValue};
+    this.formContext = new FormContext(this.renderProps.workflowDefinition, newValue => this.renderProps.workflowDefinition = newValue);
   }
 
   async componentWillLoad() {
-    const activityModel: ActivityModel = {
-      type: '',
-      activityId: '',
-      outcomes: [],
-      properties: [],
-      propertyStorageProviders: {}
-    };
-    const propertyDescriptor: ActivityPropertyDescriptor = {
-      defaultSyntax: "WorkflowDefinitionProperty",
-      disableWorkflowProviderSelection: false,
-      hint: "The conditions to evaluate.",
-      isReadOnly: false,
-      label: "Property",
-      name: "Property",
-      supportedSyntaxes: [],
-      uiHint: "workflow-definition-property-builder",
-    } 
-
-    this.activityModel = activityModel;
-    this.propertyDescriptor = propertyDescriptor;
-
     this.handleWorkflowDefinitionChanged(this.workflowDefinition);
 
     const client = await createElsaClient(this.serverUrl);
     this.workflowChannels = await client.workflowChannelsApi.list();
   }
 
-  componentWillRender() {
-    console.log('componentWillRender');
+  async componentWillRender() {
+    let tabs: Array<WorkflowTabModel> = [
+    {
+      tabName: 'Settings', 
+      renderContent: () => this.renderSettingsTab(this.renderProps.workflowDefinition)
+    }, 
+    {
+      tabName: 'Variables',
+      renderContent: () => this.renderVariablesTab(this.renderProps.workflowDefinition)
+    }, 
+    {
+      tabName: 'Workflow Context',
+      renderContent: () => this.renderWorkflowContextTab(this.renderProps.workflowDefinition)
+    }, {
+      tabName: 'Advanced',
+      renderContent: () => this.renderAdvancedTab(this.renderProps.workflowDefinition)
+    }];
+
+    this.renderProps  = {
+      workflowDefinition: this.workflowDefinition,
+      tabs,
+      selectedTabName: this.renderProps.selectedTabName
+    };
+
+    await eventBus.emit(EventTypes.WorkflowSettingsModalLoaded, this, this.renderProps)
+
+    let selectedTabName = this.renderProps.selectedTabName
+    tabs = this.renderProps.tabs;
+
+    if (!selectedTabName)
+      this.renderProps.selectedTabName = tabs[0].tabName;
+
+    if (tabs.findIndex(x => x.tabName === selectedTabName) < 0)
+      this.renderProps.selectedTabName = selectedTabName = tabs[0].tabName;
   }
 
   componentDidLoad() {
     eventBus.on(EventTypes.ShowWorkflowSettings, async () => await this.dialog.show(true));
   }
 
-  onTabClick(e: Event, tab: string) {
+  onTabClick = (e: Event, tab: WorkflowTabModel) => {
     e.preventDefault();
-    this.selectedTab = tab;
-  }
+    this.renderProps = {...this.renderProps, selectedTabName: tab.tabName};
+  };
 
   async onCancelClick() {
     await this.dialog.hide(true);
@@ -104,8 +111,9 @@ export class ElsaWorkflowDefinitionSettingsModal {
   async onSubmit(e: Event) {
     e.preventDefault();
     await this.dialog.hide(true);
-    this.workflowDefinitionInternal.properties = mapToExpressionObject<WorkflowDefinitionProperty>(this.activityModel, this.propertyDescriptor.name, this.propertyDescriptor.defaultSyntax);
-    setTimeout(() => eventBus.emit(EventTypes.UpdateWorkflowSettings, this, this.workflowDefinitionInternal), 250)
+    this.renderProps.workflowDefinition.properties = mapToExpressionObject<WorkflowDefinitionProperty>(this.renderProps.activityModel, this.renderProps.propertyDescriptor.name, this.renderProps.propertyDescriptor.defaultSyntax);
+    console.log(this.renderProps.workflowDefinition)
+    setTimeout(() => eventBus.emit(EventTypes.UpdateWorkflowSettings, this, this.renderProps.workflowDefinition), 250)
   }
 
   onMonacoValueChanged(e: MonacoValueChangedArgs) {
@@ -116,20 +124,20 @@ export class ElsaWorkflowDefinitionSettingsModal {
       return;
 
     const newValue = e.value;
-    let data = this.workflowDefinitionInternal.variables ? this.workflowDefinitionInternal.variables.data || {} : {};
+    let data = this.renderProps.workflowDefinition.variables ? this.renderProps.workflowDefinition.variables.data || {} : {};
 
     try {
       data = newValue.indexOf('{') >= 0 ? JSON.parse(newValue) : {};
     } catch (e) {
     } finally {
-      this.workflowDefinitionInternal = {...this.workflowDefinitionInternal, variables: {data: data}};
+      this.renderProps.workflowDefinition = {...this.renderProps.workflowDefinition, variables: {data: data}};
     }
   }
 
   render() {
-
-    const tabs = ['Settings', 'Variables', 'Workflow Context', 'Advanced', 'Properties'];
-    const selectedTab = this.selectedTab;
+    const renderProps = this.renderProps;
+    const tabs = renderProps.tabs;
+    const selectedTabName = renderProps.selectedTabName;
     const inactiveClass = 'elsa-border-transparent elsa-text-gray-500 hover:elsa-text-gray-700 hover:elsa-border-gray-300';
     const selectedClass = 'elsa-border-blue-500 elsa-text-blue-600';
 
@@ -140,19 +148,22 @@ export class ElsaWorkflowDefinitionSettingsModal {
 
             <form onSubmit={e => this.onSubmit(e)}>
               <div class="elsa-px-8 mb-8">
+
                 <div class="elsa-border-b elsa-border-gray-200">
                   <nav class="-elsa-mb-px elsa-flex elsa-space-x-8" aria-label="Tabs">
-                    {tabs.map(tab => {
-                      const isSelected = tab === selectedTab;
-                      const cssClass = isSelected ? selectedClass : inactiveClass;
-                      return <a href="#" onClick={e => this.onTabClick(e, tab)}
-                                class={`${cssClass} elsa-whitespace-nowrap elsa-py-4 elsa-px-1 elsa-border-b-2 elsa-font-medium elsa-text-sm`}>{tab}</a>;
-                    })}
+                  {tabs.map(tab => {
+                          const isSelected = tab.tabName === selectedTabName;
+                          const cssClass = isSelected ? selectedClass : inactiveClass;
+                          return <a href="#" onClick={e => this.onTabClick(e, tab)}
+                                    class={`${cssClass} elsa-whitespace-nowrap elsa-py-4 elsa-px-1 elsa-border-b-2 elsa-font-medium elsa-text-sm`}>{tab.tabName}</a>;
+                        })}
                   </nav>
                 </div>
-              </div>
 
-              {this.renderSelectedTab()}
+                <div>
+                  {this.renderTabs(tabs)}
+                </div>
+              </div>
 
               <div class="elsa-pt-5">
                 <div class="elsa-bg-gray-50 elsa-px-4 elsa-py-3 sm:elsa-px-6 sm:elsa-flex sm:elsa-flex-row-reverse">
@@ -179,36 +190,17 @@ export class ElsaWorkflowDefinitionSettingsModal {
   renderTabs(tabs: Array<WorkflowTabModel>) {
     return tabs.map(x =>
       (
-        <div >
-          {x.renderContent()}
+        <div class={`flex ${this.getHiddenClass(x.tabName)}`}>
+          <elsa-control content={x.renderContent()}/>
         </div>
       ));
   }
 
-  renderSelectedTab() {
-    const selectedTab = this.selectedTab;
-
-    switch (selectedTab) {
-      case 'Workflow Context':
-        return this.renderWorkflowContextTab();
-      case 'Variables':
-        return this.renderVariablesTab();
-      case 'Advanced':
-        return this.renderAdvancedTab();
-      case 'Properties':
-        return this.renderPropertiesTab(this.activityModel);
-      case 'Settings':
-      default:
-        return this.renderSettingsTab();
-    }
-  }
-
-  renderSettingsTab() {
-    const workflowDefinition = this.workflowDefinitionInternal;
+  renderSettingsTab(workflowDefinition: WorkflowDefinition) {
     const formContext = this.formContext;
 
     return (
-      <div class="elsa-flex elsa-px-8">
+      <div class="elsa-flex">
         <div class="elsa-space-y-8 elsa-w-full">
           {textInput(formContext, 'name', 'Name', workflowDefinition.name, 'The technical name of the workflow.', 'workflowName')}
           {textInput(formContext, 'displayName', 'Display Name', workflowDefinition.displayName, 'A user-friendly display name of the workflow.', 'workflowDisplayName')}
@@ -218,40 +210,7 @@ export class ElsaWorkflowDefinitionSettingsModal {
     );
   }
 
-  renderPropertiesTab(activityModel: ActivityModel) {
-    const propertyDescriptor: ActivityPropertyDescriptor = {
-      defaultSyntax: "WorkflowDefinitionProperty",
-      disableWorkflowProviderSelection: false,
-      hint: "The conditions to evaluate.",
-      isReadOnly: false,
-      label: "Property",
-      name: "Property",
-      supportedSyntaxes: [],
-      uiHint: "workflow-definition-property-builder",
-    }
-
-    const key = `activity-settings:${activityModel.activityId}`;
-
-    return (
-      <div class="elsa-flex elsa-px-8 elsa-mt-1">
-        <div class="elsa-space-y-8 elsa-w-full">
-          <div key={key} class={`elsa-grid elsa-grid-cols-1 elsa-gap-y-6 elsa-gap-x-4 sm:elsa-grid-cols-6`}>
-            {this.renderPropertyEditor(activityModel, propertyDescriptor)}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  renderPropertyEditor(activity: ActivityModel, property: ActivityPropertyDescriptor) {
-    const key = `activity-property-input:${activity.activityId}:${property.name}`;
-    const display = propertyDisplayManager.display(activity, property);
-    const id = `${property.name}Control`;
-    return <elsa-control key={key} id={id} class="sm:elsa-col-span-6" content={display}/>;
-  }
-
-  renderAdvancedTab() {
-    const workflowDefinition = this.workflowDefinitionInternal;
+  renderAdvancedTab(workflowDefinition: WorkflowDefinition) {
     const formContext = this.formContext;
     const workflowChannelOptions: Array<SelectOption> = [{
       text: '',
@@ -270,7 +229,7 @@ export class ElsaWorkflowDefinitionSettingsModal {
     }];
 
     return (
-      <div class="elsa-flex elsa-px-8">
+      <div class="elsa-flex">
         <div class="elsa-space-y-8 elsa-w-full">
           {textInput(formContext, 'tag', 'Tag', workflowDefinition.tag, 'Tags can be used to query workflow definitions with.', 'tag')}
           {selectField(formContext, 'persistenceBehavior', 'Persistence Behavior', workflowDefinition.persistenceBehavior, persistenceBehaviorOptions, 'The persistence behavior controls how often a workflow instance is persisted during workflow execution.', 'workflowContextFidelity')}
@@ -281,15 +240,14 @@ export class ElsaWorkflowDefinitionSettingsModal {
     );
   }
 
-  renderVariablesTab() {
-    const workflowDefinition = this.workflowDefinitionInternal;
+  renderVariablesTab(workflowDefinition: WorkflowDefinition) {
     const variables: Variables = workflowDefinition.variables || {data: {}};
     const data: Map<any> = variables.data || {};
     const value = JSON.stringify(data, undefined, 3);
     const language = 'json';
 
     return (
-      <div class="elsa-flex elsa-px-8">
+      <div class="elsa-flex">
         <div class="elsa-space-y-8 elsa-w-full elsa-h-30">
           <elsa-monaco value={value} language={language} editor-height="30em"
                        onValueChanged={e => this.onMonacoValueChanged(e.detail)} ref={el => this.monacoEditor = el}/>
@@ -298,8 +256,7 @@ export class ElsaWorkflowDefinitionSettingsModal {
     );
   }
 
-  renderWorkflowContextTab() {
-    const workflowDefinition = this.workflowDefinitionInternal;
+  renderWorkflowContextTab(workflowDefinition: WorkflowDefinition) {
     const formContext = this.formContext;
 
     const contextOptions: WorkflowContextOptions = workflowDefinition.contextOptions || {
@@ -316,12 +273,16 @@ export class ElsaWorkflowDefinitionSettingsModal {
     }]
 
     return (
-      <div class="elsa-flex elsa-px-8">
+      <div class="elsa-flex">
         <div class="elsa-space-y-8 elsa-w-full">
           {textInput(formContext, 'contextOptions.contextType', 'Type', contextOptions.contextType, 'The fully qualified workflow context type name.', 'workflowContextType')}
           {selectField(formContext, 'contextOptions.contextFidelity', 'Fidelity', contextOptions.contextFidelity, fidelityOptions, 'The workflow context refresh fidelity controls the behavior of when to load and persist the workflow context.', 'workflowContextFidelity')}
         </div>
       </div>
     );
+  }
+
+  getHiddenClass(tab: string) {
+    return this.renderProps.selectedTabName === tab ? '' : 'hidden';
   }
 }

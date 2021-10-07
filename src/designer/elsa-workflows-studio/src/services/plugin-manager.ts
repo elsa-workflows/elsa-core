@@ -19,7 +19,6 @@ import {StatePlugin} from "../plugins/state-plugin";
 import {SendHttpRequestPlugin} from "../plugins/send-http-request-plugin";
 import {RunWorkflowPlugin} from "../plugins/run-workflow-plugin";
 import {ElsaStudio} from "../models";
-import { WorkflowDefinitionPropertyPlugin } from "../plugins/workflow-definition-property-plugin";
 
 export class PluginManager {
   plugins: Array<ElsaPlugin> = [];
@@ -35,7 +34,6 @@ export class PluginManager {
       WhilePlugin,
       ForkPlugin,
       SwitchPlugin,
-      WorkflowDefinitionPropertyPlugin,
       HttpEndpointPlugin,
       SendHttpRequestPlugin,
       TimerPlugin,

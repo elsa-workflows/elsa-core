@@ -331,6 +331,10 @@ export namespace Components {
         "serverUrl": string;
         "workflowDefinition": WorkflowDefinition;
     }
+    interface ElsaWorkflowSettingsPropertiesTab {
+        "activityModel": ActivityModel;
+        "propertyDescriptor": ActivityPropertyDescriptor;
+    }
 }
 declare global {
     interface HTMLElsaActivityEditorModalElement extends Components.ElsaActivityEditorModal, HTMLStencilElement {
@@ -675,6 +679,12 @@ declare global {
         prototype: HTMLElsaWorkflowSettingsModalElement;
         new (): HTMLElsaWorkflowSettingsModalElement;
     };
+    interface HTMLElsaWorkflowSettingsPropertiesTabElement extends Components.ElsaWorkflowSettingsPropertiesTab, HTMLStencilElement {
+    }
+    var HTMLElsaWorkflowSettingsPropertiesTabElement: {
+        prototype: HTMLElsaWorkflowSettingsPropertiesTabElement;
+        new (): HTMLElsaWorkflowSettingsPropertiesTabElement;
+    };
     interface HTMLElementTagNameMap {
         "elsa-activity-editor-modal": HTMLElsaActivityEditorModalElement;
         "elsa-activity-picker-modal": HTMLElsaActivityPickerModalElement;
@@ -733,6 +743,7 @@ declare global {
         "elsa-workflow-publish-button": HTMLElsaWorkflowPublishButtonElement;
         "elsa-workflow-registry-list-screen": HTMLElsaWorkflowRegistryListScreenElement;
         "elsa-workflow-settings-modal": HTMLElsaWorkflowSettingsModalElement;
+        "elsa-workflow-settings-properties-tab": HTMLElsaWorkflowSettingsPropertiesTabElement;
     }
 }
 declare namespace LocalJSX {
@@ -1048,6 +1059,10 @@ declare namespace LocalJSX {
         "serverUrl"?: string;
         "workflowDefinition"?: WorkflowDefinition;
     }
+    interface ElsaWorkflowSettingsPropertiesTab {
+        "activityModel"?: ActivityModel;
+        "propertyDescriptor"?: ActivityPropertyDescriptor;
+    }
     interface IntrinsicElements {
         "elsa-activity-editor-modal": ElsaActivityEditorModal;
         "elsa-activity-picker-modal": ElsaActivityPickerModal;
@@ -1106,6 +1121,7 @@ declare namespace LocalJSX {
         "elsa-workflow-publish-button": ElsaWorkflowPublishButton;
         "elsa-workflow-registry-list-screen": ElsaWorkflowRegistryListScreen;
         "elsa-workflow-settings-modal": ElsaWorkflowSettingsModal;
+        "elsa-workflow-settings-properties-tab": ElsaWorkflowSettingsPropertiesTab;
     }
 }
 export { LocalJSX as JSX };
@@ -1169,6 +1185,7 @@ declare module "@stencil/core" {
             "elsa-workflow-publish-button": LocalJSX.ElsaWorkflowPublishButton & JSXBase.HTMLAttributes<HTMLElsaWorkflowPublishButtonElement>;
             "elsa-workflow-registry-list-screen": LocalJSX.ElsaWorkflowRegistryListScreen & JSXBase.HTMLAttributes<HTMLElsaWorkflowRegistryListScreenElement>;
             "elsa-workflow-settings-modal": LocalJSX.ElsaWorkflowSettingsModal & JSXBase.HTMLAttributes<HTMLElsaWorkflowSettingsModalElement>;
+            "elsa-workflow-settings-properties-tab": LocalJSX.ElsaWorkflowSettingsPropertiesTab & JSXBase.HTMLAttributes<HTMLElsaWorkflowSettingsPropertiesTabElement>;
         }
     }
 }
