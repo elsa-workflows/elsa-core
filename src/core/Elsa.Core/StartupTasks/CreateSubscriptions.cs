@@ -47,20 +47,28 @@ namespace Elsa.StartupTasks
                 throw new Exception("Could not acquire a lock within the maximum amount of time configured");
 
             var competingMessageTypeGroups = _competingMessageTypes.GroupBy(x => x.QueueName);
-            
+
             foreach (var messageTypeGroup in competingMessageTypeGroups)
             {
                 var queueName = messageTypeGroup.Key;
-                var bus = _serviceBusFactory.RegisterMessageTypes(messageTypeGroup.Select(x => x.MessageType), queueName);
+                var messageTypes = messageTypeGroup.Select(x => x.MessageType).ToList();
+                var bus = _serviceBusFactory.RegisterMessageTypes(messageTypes, queueName);
+
+                foreach (var messageType in messageTypes)
+                    await bus.Subscribe(messageType);
             }
 
             var containerName = _containerNameAccessor.GetContainerName();
             var pubSubMessageTypeGroups = _pubSubMessageTypes.GroupBy(x => x.QueueName);
-            
+
             foreach (var messageTypeGroup in pubSubMessageTypeGroups)
             {
                 var queueName = $"{containerName}:{messageTypeGroup.Key}";
-                _serviceBusFactory.RegisterMessageTypes(messageTypeGroup.Select(x => x.MessageType), queueName);
+                var messageTypes = messageTypeGroup.Select(x => x.MessageType).ToList();
+                var bus = _serviceBusFactory.RegisterMessageTypes(messageTypes, queueName);
+
+                foreach (var messageType in messageTypes)
+                    await bus.Subscribe(messageType);
             }
         }
     }

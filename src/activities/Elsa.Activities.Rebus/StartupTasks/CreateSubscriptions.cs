@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Options;
 using Elsa.Services;
 
 namespace Elsa.Activities.Rebus.StartupTasks
