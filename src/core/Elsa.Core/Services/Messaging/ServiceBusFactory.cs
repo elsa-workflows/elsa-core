@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Options;
@@ -19,9 +20,9 @@ namespace Elsa.Services.Messaging
         private readonly ElsaOptions _elsaOptions;
         private readonly ILoggerFactory _loggerFactory;
         private readonly IServiceProvider _serviceProvider;
-        private readonly ConcurrentDictionary<string, IBus> _serviceBuses = new();
+        private readonly IDictionary<string, IBus> _serviceBuses = new Dictionary<string, IBus>();
+        private readonly IDictionary<Type, string> _messageTypeQueueDictionary = new Dictionary<Type, string>();
         private readonly DependencyInjectionHandlerActivator _handlerActivator;
-        private readonly SemaphoreSlim _semaphore = new(1);
 
         public ServiceBusFactory(ElsaOptions elsaOptions, ILoggerFactory loggerFactory, IServiceProvider serviceProvider)
         {
@@ -33,53 +34,42 @@ namespace Elsa.Services.Messaging
 
         public void Dispose()
         {
-            foreach (var key in _serviceBuses.Keys)
-            {
-                if (_serviceBuses.Remove(key, out var bus))
-                {
-                    bus.Dispose();
-                }
-            }
-            _serviceBuses.Clear();
+            foreach (var bus in _serviceBuses.Values)
+                bus.Dispose();
         }
 
-        public async Task<IBus> GetServiceBusAsync(Type messageType, string? queueName = default, CancellationToken cancellationToken = default)
+        public IBus RegisterMessageTypes(IEnumerable<Type> messageTypes, string queueName)
         {
-            queueName = string.IsNullOrWhiteSpace(queueName) 
-                ? ElsaOptions.FormatChannelQueueName(messageType, _elsaOptions.WorkflowChannelOptions.Default) 
-                : ElsaOptions.FormatQueueName(queueName);
-            
+            queueName = ServiceBusOptions.FormatQueueName(queueName);
             var prefixedQueueName = PrefixQueueName(queueName);
-            await _semaphore.WaitAsync(cancellationToken);
-            
-            try
-            {
-                if (_serviceBuses.TryGetValue(prefixedQueueName, out var bus))
-                    return bus;
+            var messageTypeList = messageTypes.ToList();
+            var configurer = Configure.With(_handlerActivator);
+            var map = messageTypeList.ToDictionary(x => x, _ => prefixedQueueName);
+            var configureContext = new ServiceBusEndpointConfigurationContext(configurer, prefixedQueueName, map, _serviceProvider);
 
-                var configurer = Configure.With(_handlerActivator);
-                var map = new Dictionary<Type, string> { [messageType] = prefixedQueueName };
-                var configureContext = new ServiceBusEndpointConfigurationContext(configurer, prefixedQueueName, map, _serviceProvider);
+            // Default options.
+            configurer
+                .Serialization(serializer => serializer.UseNewtonsoftJson(DefaultContentSerializer.CreateDefaultJsonSerializationSettings()))
+                .Logging(l => l.MicrosoftExtensionsLogging(_loggerFactory))
+                .Routing(r => r.TypeBased().Map(map))
+                .Options(options => options.Apply(_elsaOptions.ServiceBusOptions));
 
-                // Default options.
-                configurer
-                    .Serialization(serializer => serializer.UseNewtonsoftJson(DefaultContentSerializer.CreateDefaultJsonSerializationSettings()))
-                    .Logging(l => l.MicrosoftExtensionsLogging(_loggerFactory))
-                    .Routing(r => r.TypeBased().Map(map))
-                    .Options(options => options.Apply(_elsaOptions.ServiceBusOptions));
-                
-                // Configure transport.
-                _elsaOptions.ConfigureServiceBusEndpoint(configureContext);
-            
-                var newBus = configurer.Start();
-                _serviceBuses.TryAdd(prefixedQueueName, newBus);
+            // Configure transport.
+            _elsaOptions.ConfigureServiceBusEndpoint(configureContext);
 
-                return newBus;
-            }
-            finally
-            {
-                _semaphore.Release();
-            }
+            var newBus = configurer.Start();
+            _serviceBuses.Add(prefixedQueueName, newBus);
+
+            foreach (var messageType in messageTypeList)
+                _messageTypeQueueDictionary[messageType] = prefixedQueueName;
+
+            return newBus;
+        }
+
+        public IBus GetServiceBus(Type messageType, string? queueName = default)
+        {
+            queueName ??= _messageTypeQueueDictionary[messageType];
+            return _serviceBuses[queueName];
         }
 
         private string PrefixQueueName(string name) => $"{_elsaOptions.ServiceBusOptions.QueuePrefix}{name}";

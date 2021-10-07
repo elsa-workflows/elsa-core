@@ -143,7 +143,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
         console.warn(`The specified workflow definition does not exist. Creating a new one.`)
       }
     }
-    
+
     this.updateWorkflowDefinition(workflowDefinition);
   }
 

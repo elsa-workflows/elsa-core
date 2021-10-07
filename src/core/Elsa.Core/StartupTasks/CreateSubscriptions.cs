@@ -32,8 +32,8 @@ namespace Elsa.StartupTasks
             // For each workflow channel, register a competing message type for workflow definition and workflow instance consumers.
             foreach (var workflowChannel in workflowChannels)
             {
-                _competingMessageTypes.Add(new MessageTypeConfig(typeof(ExecuteWorkflowDefinitionRequest), ElsaOptions.FormatChannelQueueName("ExecuteWorkflow", workflowChannel)));
-                _competingMessageTypes.Add(new MessageTypeConfig(typeof(ExecuteWorkflowInstanceRequest), ElsaOptions.FormatChannelQueueName("ExecuteWorkflow", workflowChannel)));
+                _competingMessageTypes.Add(new MessageTypeConfig(typeof(ExecuteWorkflowDefinitionRequest), ServiceBusOptions.FormatChannelQueueName("ExecuteWorkflow", workflowChannel)));
+                _competingMessageTypes.Add(new MessageTypeConfig(typeof(ExecuteWorkflowInstanceRequest), ServiceBusOptions.FormatChannelQueueName("ExecuteWorkflow", workflowChannel)));
             }
         }
 
@@ -45,19 +45,22 @@ namespace Elsa.StartupTasks
 
             if (handle == null)
                 throw new Exception("Could not acquire a lock within the maximum amount of time configured");
+
+            var competingMessageTypeGroups = _competingMessageTypes.GroupBy(x => x.QueueName);
             
-            foreach (var messageType in _competingMessageTypes)
+            foreach (var messageTypeGroup in competingMessageTypeGroups)
             {
-                var bus = await _serviceBusFactory.GetServiceBusAsync(messageType.MessageType, messageType.QueueName, cancellationToken);
-                await bus.Subscribe(messageType.MessageType);
+                var queueName = messageTypeGroup.Key;
+                var bus = _serviceBusFactory.RegisterMessageTypes(messageTypeGroup.Select(x => x.MessageType), queueName);
             }
 
             var containerName = _containerNameAccessor.GetContainerName();
-            foreach (var messageType in _pubSubMessageTypes)
+            var pubSubMessageTypeGroups = _pubSubMessageTypes.GroupBy(x => x.QueueName);
+            
+            foreach (var messageTypeGroup in pubSubMessageTypeGroups)
             {
-                var queueName = $"{containerName}:{messageType.QueueName ?? messageType.MessageType.Name}";
-                var bus = await _serviceBusFactory.GetServiceBusAsync(messageType.MessageType, queueName, cancellationToken);
-                await bus.Subscribe(messageType.MessageType);
+                var queueName = $"{containerName}:{messageTypeGroup.Key}";
+                _serviceBusFactory.RegisterMessageTypes(messageTypeGroup.Select(x => x.MessageType), queueName);
             }
         }
     }

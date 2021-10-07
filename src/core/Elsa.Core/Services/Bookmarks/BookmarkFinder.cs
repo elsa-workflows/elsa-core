@@ -41,7 +41,7 @@ namespace Elsa.Services.Bookmarks
         private ISpecification<Bookmark> BuildSpecification(string activityType, IEnumerable<IBookmark> bookmarks, string? correlationId, string? tenantId)
         {
             var specification = bookmarks
-                .Select(trigger => _hasher.Hash(trigger))
+                .Select(bookmark => _hasher.Hash(bookmark))
                 .Aggregate(Specification<Bookmark>.None, (current, hash) => current.Or(new BookmarkHashSpecification(hash, activityType, tenantId)));
 
             if (correlationId != null)
