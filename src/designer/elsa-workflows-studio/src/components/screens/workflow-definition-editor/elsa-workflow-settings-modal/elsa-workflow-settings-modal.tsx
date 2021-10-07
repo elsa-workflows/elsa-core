@@ -1,6 +1,6 @@
 import {Component, Host, Prop, State, Watch, h} from '@stencil/core';
-import {eventBus, propertyDisplayManager} from '../../../../services';
-import {getOrCreateProperty, Map, mapToExpressionObject} from "../../../../utils/utils";
+import {eventBus} from '../../../../services';
+import {Map, mapToExpressionObject} from "../../../../utils/utils";
 import {
   EventTypes,
   Variables,
@@ -14,7 +14,6 @@ import {MonacoValueChangedArgs} from "../../../controls/elsa-monaco/elsa-monaco"
 import {MarkerSeverity} from "monaco-editor";
 import {checkBox, FormContext, selectField, SelectOption, textArea, textInput} from "../../../../utils/forms";
 import {createElsaClient} from "../../../../services/elsa-client";
-import { ActivityEditorRenderProps } from '../elsa-activity-editor-modal/elsa-activity-editor-modal';
 import { WorkflowDefinitionProperty } from '../../../editors/properties/elsa-workflow-definition-property/models';
 
 interface WorkflowTabModel {
@@ -72,7 +71,8 @@ export class ElsaWorkflowDefinitionSettingsModal {
     {
       tabName: 'Workflow Context',
       renderContent: () => this.renderWorkflowContextTab(this.renderProps.workflowDefinition)
-    }, {
+    },
+    {
       tabName: 'Advanced',
       renderContent: () => this.renderAdvancedTab(this.renderProps.workflowDefinition)
     }];
@@ -112,7 +112,6 @@ export class ElsaWorkflowDefinitionSettingsModal {
     e.preventDefault();
     await this.dialog.hide(true);
     this.renderProps.workflowDefinition.properties = mapToExpressionObject<WorkflowDefinitionProperty>(this.renderProps.activityModel, this.renderProps.propertyDescriptor.name, this.renderProps.propertyDescriptor.defaultSyntax);
-    console.log(this.renderProps.workflowDefinition)
     setTimeout(() => eventBus.emit(EventTypes.UpdateWorkflowSettings, this, this.renderProps.workflowDefinition), 250)
   }
 
