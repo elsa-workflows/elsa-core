@@ -1,8 +1,8 @@
-import {Component, h, Prop, State, Watch, Method} from '@stencil/core';
+import {Component, h, Method, Prop, State, Watch} from '@stencil/core';
 import {injectHistory, LocationSegments, RouterHistory} from "@stencil/router";
 import * as collection from 'lodash/collection';
 import * as array from 'lodash/array';
-import {confirmDialogService, eventBus, createElsaClient} from "../../../../services";
+import {confirmDialogService, createElsaClient, eventBus} from "../../../../services";
 import {
   EventTypes,
   OrderBy,
@@ -15,7 +15,7 @@ import {
 import {DropdownButtonItem, DropdownButtonOrigin} from "../../../controls/elsa-dropdown-button/models";
 import {Map, parseQuery} from '../../../../utils/utils';
 import moment from "moment";
-import {ElsaPager, PagerData} from "../../../controls/elsa-pager/elsa-pager";
+import {PagerData} from "../../../controls/elsa-pager/elsa-pager";
 import {i18n} from "i18next";
 import {resources} from "./localizations";
 import {loadTranslations} from "../../../i18n/i18n-loader";
@@ -51,6 +51,7 @@ export class ElsaWorkflowInstanceListScreen {
   @State() currentSearchTerm?: string;
 
   i18next: i18n;
+  selectAllCheckboxEl: any;
 
   async componentWillLoad() {
     this.i18next = await loadTranslations(this.culture, resources);
@@ -148,6 +149,7 @@ export class ElsaWorkflowInstanceListScreen {
       this.currentPage = maxPage;
       this.workflowInstances = await elsaClient.workflowInstancesApi.list(this.currentPage, this.currentPageSize, this.selectedWorkflowId, this.selectedWorkflowStatus, this.selectedOrderByState, this.currentSearchTerm);
     }
+    this.setSelectAllIndeterminateState();
   }
 
   createClient() {
@@ -226,10 +228,43 @@ export class ElsaWorkflowInstanceListScreen {
     const isChecked = checkBox.checked;
 
     this.selectAllChecked = isChecked;
-    this.selectedWorkflowInstanceIds = [];
 
-    if (isChecked)
-      this.selectedWorkflowInstanceIds = this.workflowInstances.items.map(x => x.id);
+    if (isChecked) {
+      let itemsToAdd = [];
+      this.workflowInstances.items.forEach(item => {
+        if (!this.selectedWorkflowInstanceIds.includes(item.id)) {
+          itemsToAdd.push(item.id);
+        }
+      });
+
+      if (itemsToAdd.length > 0) {
+        this.selectedWorkflowInstanceIds = this.selectedWorkflowInstanceIds.concat(itemsToAdd);
+      }
+    } else {
+      const currentItems = this.workflowInstances.items.map(x => x.id);
+      this.selectedWorkflowInstanceIds = this.selectedWorkflowInstanceIds.filter(item => {
+        return !currentItems.includes(item);
+      });
+    }
+  }
+
+  getSelectAllState = () => {
+    const {items} = this.workflowInstances;
+
+    for (let i = 0; i < items.length; i++) {
+      if (!this.selectedWorkflowInstanceIds.includes(items[i].id)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  setSelectAllIndeterminateState = () => {
+    if (this.selectAllCheckboxEl) {
+      const selectedItems = this.workflowInstances.items.filter(item => this.selectedWorkflowInstanceIds.includes(item.id));
+      this.selectAllCheckboxEl.indeterminate = selectedItems.length != 0 && selectedItems.length != this.workflowInstances.items.length;
+    }
   }
 
   onWorkflowInstanceCheckChange(e: Event, workflowInstance: WorkflowInstanceSummary) {
@@ -241,7 +276,7 @@ export class ElsaWorkflowInstanceListScreen {
     else
       this.selectedWorkflowInstanceIds = this.selectedWorkflowInstanceIds.filter(x => x != workflowInstance.id);
 
-    this.updateSelectAllChecked();
+    this.setSelectAllIndeterminateState();
   }
 
   async onCancelClick(e: Event, workflowInstance: WorkflowInstanceSummary) {
@@ -417,8 +452,9 @@ export class ElsaWorkflowInstanceListScreen {
               <tr class="elsa-border-t elsa-border-gray-200">
                 <th
                   class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
-                  <input type="checkbox" value="true" checked={this.selectAllChecked}
+                  <input type="checkbox" value="true" checked={this.getSelectAllState()}
                          onChange={e => this.onSelectAllCheckChange(e)}
+                         ref={el => this.selectAllCheckboxEl = el}
                          class="focus:elsa-ring-blue-500 elsa-h-4 elsa-w-4 elsa-text-blue-600 elsa-border-gray-300 elsa-rounded"/>
                 </th>
                 <th
