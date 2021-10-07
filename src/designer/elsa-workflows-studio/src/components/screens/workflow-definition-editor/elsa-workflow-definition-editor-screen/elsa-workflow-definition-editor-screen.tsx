@@ -3,9 +3,9 @@ import {RouterHistory, injectHistory} from '@stencil/router';
 import {
   ActivityDefinition,
   ActivityDescriptor,
-  ActivityModel, 
-  ConfigureComponentCustomButtonContext, 
-  ComponentCustomButtonClickContext, 
+  ActivityModel,
+  ConfigureComponentCustomButtonContext,
+  ComponentCustomButtonClickContext,
   ConnectionDefinition,
   ConnectionModel,
   EventTypes,
@@ -143,7 +143,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
         console.warn(`The specified workflow definition does not exist. Creating a new one.`)
       }
     }
-
+    
     this.updateWorkflowDefinition(workflowDefinition);
   }
 
@@ -178,10 +178,10 @@ export class ElsaWorkflowDefinitionEditorScreen {
     if (!this.designer) {
       this.designer = this.el.querySelector("elsa-designer-tree") as HTMLElsaDesignerTreeElement;
       this.designer.model = this.workflowModel;
-    }    
+    }
   }
 
-  connectedCallback() {    
+  connectedCallback() {
     eventBus.on(EventTypes.UpdateWorkflowSettings, this.onUpdateWorkflowSettings);
     eventBus.on(EventTypes.FlyoutPanelTabSelected, this.onFlyoutPanelTabSelected);
     eventBus.on(EventTypes.TestActivityMessageReceived, this.onTestActivityMessageReceived);
@@ -248,6 +248,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
     let workflowDefinition = this.workflowDefinition;
     const isNew = typeof workflowDefinition.definitionId === 'undefined' && typeof this.workflowDefinitionId === 'undefined';
 
+    debugger;
     const request: SaveWorkflowDefinitionRequest = {
       workflowDefinitionId: workflowDefinition.definitionId || this.workflowDefinitionId,
       contextOptions: workflowDefinition.contextOptions,
@@ -442,7 +443,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
     if (!e.detail.shown) {
       return;
     }
-  }  
+  }
 
   async onActivitySelected(e: CustomEvent<ActivityModel>) {
     this.selectedActivityId = e.detail.activityId;
@@ -452,7 +453,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
     if (this.selectedActivityId == e.detail.activityId)
       this.selectedActivityId = null;
   }
-  
+
   onConnectionContextMenuButtonClicked(e: CustomEvent<ActivityContextMenuState>) {
     this.connectionContextMenuState = e.detail;
   }
@@ -467,7 +468,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
       this.workflowTestActivityMessages = [];
 
     this.render();
-  };   
+  };
 
   private onUpdateWorkflowSettings = async (workflowDefinition: WorkflowDefinition) => {
     this.updateWorkflowDefinition(workflowDefinition);
@@ -484,7 +485,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
   }
 
   renderActivityStatsButton = (activity: ActivityModel): string => {
- 
+
     var testActivityMessage = this.workflowTestActivityMessages.find(x => x.activityId == activity.activityId);
     if (testActivityMessage == undefined)
       return "";
@@ -524,7 +525,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
               ${icon}
             </button>
           </div>`;
-  }  
+  }
 
   render() {
     const tunnelState: WorkflowEditorState = {
@@ -563,7 +564,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
       <div class="elsa-flex-1 elsa-flex elsa-relative" >
         <elsa-designer-tree model={this.workflowModel}
                             mode={this.workflowDesignerMode}
-                            activityContextMenuButton={this.workflowDesignerMode == WorkflowDesignerMode.Edit 
+                            activityContextMenuButton={this.workflowDesignerMode == WorkflowDesignerMode.Edit
                               ? activityContextMenuButton
                               : this.renderActivityStatsButton}
                             onActivityContextMenuButtonClicked={e => this.onActivityContextMenuButtonClicked(e)}
@@ -591,7 +592,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
             {this.renderPublishButton()}
           </div>
         </div>
-        {this.renderTestActivityMenu()}  
+        {this.renderTestActivityMenu()}
       </div>
     );
   }
@@ -606,9 +607,9 @@ export class ElsaWorkflowDefinitionEditorScreen {
       activityType: message.activityType,
       prop: null,
       params: [activityModel, value]
-    };    
+    };
     eventBus.emit(EventTypes.ComponentCustomButtonClick, this, componentCustomButtonClickContext);
-  }  
+  }
 
   renderTestActivityMenu = () => {
     const message = this.workflowTestActivityMessages.find(x => x.activityId == this.selectedActivityId);
@@ -616,13 +617,13 @@ export class ElsaWorkflowDefinitionEditorScreen {
     const renderActivityTestError = () => {
 
       if (message == undefined || !message)
-        return    
-        
+        return
+
       const t = (x, params?) => this.i18next.t(x, params);
-  
+
       if (!message.error)
         return;
-  
+
       return (
         <div class="elsa-ml-4">
           <p class="elsa-text-base elsa-font-medium elsa-text-gray-900">
@@ -633,15 +634,15 @@ export class ElsaWorkflowDefinitionEditorScreen {
           </p>
         </div>
       );
-    } 
+    }
 
     const renderMessage = () => {
 
       if (message == undefined || !message)
         return;
-        
+
       this.configureComponentCustomButton(message);
-      
+
       const t = (x, params?) => this.i18next.t(x, params);
       const filteredData = {};
       const wellKnownDataKeys = {State: true, Input: null, Outcomes: true, Exception: true};
@@ -701,7 +702,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
         </div>
       );
     };
-    
+
     const renderComponentCustomButton = () => {
 
       if (this.configureComponentCustomButtonContext.data == null)
@@ -716,9 +717,9 @@ export class ElsaWorkflowDefinitionEditorScreen {
                   class="elsa-ml-0 elsa-w-full elsa-inline-flex elsa-justify-center elsa-rounded-md elsa-border elsa-border-transparent elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-bg-blue-600 elsa-text-base elsa-font-medium elsa-text-white hover:elsa-bg-blue-700 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 sm:elsa-ml-3 sm:elsa-w-auto sm:elsa-text-sm">
             {label}
           </button>
-        </div>          
-      )    
-    };    
+        </div>
+      )
+    };
 
     const renderLoader = function () {
       return <div class="elsa-p-6 elsa-bg-white">Loading...</div>;
@@ -742,7 +743,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
         {!!message ? renderMessage() : renderLoader()}
       </div>
     </div>
-  }  
+  }
 
   renderActivityContextMenu() {
     const t = this.t;
@@ -957,7 +958,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
             workflowDefinition={this.workflowDefinition}
             workflowTestActivityId={this.selectedActivityId}
           />
-        </elsa-tab-content>        
+        </elsa-tab-content>
       </elsa-flyout-panel>
     );
   }
