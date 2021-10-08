@@ -1,9 +1,6 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Elsa.Options;
 using Elsa.Serialization;
 using Microsoft.Extensions.Logging;
@@ -51,7 +48,7 @@ namespace Elsa.Services.Messaging
             configurer
                 .Serialization(serializer => serializer.UseNewtonsoftJson(DefaultContentSerializer.CreateDefaultJsonSerializationSettings()))
                 .Logging(l => l.MicrosoftExtensionsLogging(_loggerFactory))
-                //.Routing(r => r.TypeBased().Map(map))
+                .Routing(r => r.TypeBased().Map(map))
                 .Options(options => options.Apply(_elsaOptions.ServiceBusOptions));
 
             // Configure transport.
