@@ -7,6 +7,7 @@ using Elsa.Server.Api.Swagger.Examples;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.Filters;
 
@@ -20,6 +21,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
     {
         private readonly IWorkflowPublisher _workflowPublisher;
         private readonly ITenantAccessor _tenantAccessor;
+
         public Save(IWorkflowPublisher workflowPublisher, ITenantAccessor tenantAccessor)
         {
             _workflowPublisher = workflowPublisher;
@@ -40,6 +42,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
         {
             var workflowDefinitionId = request.WorkflowDefinitionId;
             var workflowDefinition = !string.IsNullOrWhiteSpace(workflowDefinitionId) ? await _workflowPublisher.GetDraftAsync(workflowDefinitionId, cancellationToken) : default;
+            var isNew = workflowDefinition == null;
 
             if (workflowDefinition == null)
             {
@@ -69,7 +72,9 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             else
                 workflowDefinition = await _workflowPublisher.SaveDraftAsync(workflowDefinition, cancellationToken);
 
-            return CreatedAtAction("Handle", "GetByVersionId", new { versionId = workflowDefinition.Id, apiVersion = apiVersion.ToString() }, workflowDefinition);
+            return isNew
+                ? CreatedAtAction("Handle", "GetByVersionId", new { versionId = workflowDefinition.Id, apiVersion = apiVersion.ToString() }, workflowDefinition)
+                : Ok(workflowDefinition);
         }
 
         private IEnumerable<ConnectionDefinition> FilterInvalidConnections(SaveWorkflowDefinitionRequest request)
