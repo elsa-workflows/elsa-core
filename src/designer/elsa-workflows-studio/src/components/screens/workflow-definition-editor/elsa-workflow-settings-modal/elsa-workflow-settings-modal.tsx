@@ -111,7 +111,6 @@ export class ElsaWorkflowDefinitionSettingsModal {
   async onSubmit(e: Event) {
     e.preventDefault();
     await this.dialog.hide(true);
-    console.log(this.renderProps.workflowDefinition);
     setTimeout(() => eventBus.emit(EventTypes.UpdateWorkflowSettings, this, this.renderProps.workflowDefinition), 250)
   }
 
