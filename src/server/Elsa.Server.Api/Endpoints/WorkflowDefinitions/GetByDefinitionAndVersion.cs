@@ -41,13 +41,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
         public async Task<IActionResult> Handle(string workflowDefinitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
         {
             var workflowDefinition = await _workflowDefinitionStore.FindAsync(new WorkflowDefinitionIdSpecification(workflowDefinitionId, versionOptions), cancellationToken);
-            
-            // Here we don't want to use the `PreserveReferencesHandling` setting because the model will be used by the designer "as-is" and will not resolve $id references.
-            // Fixes #1605.
-            var settings = DefaultContentSerializer.CreateDefaultJsonSerializationSettings();
-            settings.PreserveReferencesHandling = PreserveReferencesHandling.None;
-
-            return workflowDefinition == null ? NotFound() : Json(workflowDefinition, settings);
+            return workflowDefinition == null ? NotFound() : Json(workflowDefinition, SerializationHelper.GetSettingsForWorkflowDefinition());
         }
     }
 }

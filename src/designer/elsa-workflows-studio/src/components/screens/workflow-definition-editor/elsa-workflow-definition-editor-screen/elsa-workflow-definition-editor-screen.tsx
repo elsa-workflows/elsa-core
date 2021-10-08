@@ -248,7 +248,6 @@ export class ElsaWorkflowDefinitionEditorScreen {
     let workflowDefinition = this.workflowDefinition;
     const isNew = typeof workflowDefinition.definitionId === 'undefined' && typeof this.workflowDefinitionId === 'undefined';
 
-    debugger;
     const request: SaveWorkflowDefinitionRequest = {
       workflowDefinitionId: workflowDefinition.definitionId || this.workflowDefinitionId,
       contextOptions: workflowDefinition.contextOptions,
