@@ -63,10 +63,19 @@ namespace Elsa.Services.Messaging
             return newBus;
         }
 
-        public IBus GetServiceBus(Type messageType, string? queueName = default)
+        public IBus GetServiceBus(Type messageType, string? queueName = default) => GetOrCreateServiceBus(messageType, queueName);
+
+        private IBus GetOrCreateServiceBus(Type messageType, string? queueName)
         {
             queueName ??= _messageTypeQueueDictionary[messageType];
-            return _serviceBuses[queueName];
+
+            if (!_serviceBuses.TryGetValue(queueName, out var bus))
+            {
+                bus = ConfigureServiceBus(new[] { messageType }, queueName);
+                _serviceBuses[queueName] = bus;
+            }
+
+            return bus;
         }
 
         private string PrefixQueueName(string name) => $"{_elsaOptions.ServiceBusOptions.QueuePrefix}{name}";
