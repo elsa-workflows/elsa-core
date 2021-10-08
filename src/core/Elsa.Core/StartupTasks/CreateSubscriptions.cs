@@ -52,7 +52,7 @@ namespace Elsa.StartupTasks
             {
                 var queueName = messageTypeGroup.Key;
                 var messageTypes = messageTypeGroup.Select(x => x.MessageType).ToList();
-                var bus = _serviceBusFactory.RegisterMessageTypes(messageTypes, queueName);
+                var bus = _serviceBusFactory.ConfigureServiceBus(messageTypes, queueName);
 
                 foreach (var messageType in messageTypes)
                     await bus.Subscribe(messageType);
@@ -65,7 +65,7 @@ namespace Elsa.StartupTasks
             {
                 var queueName = $"{containerName}:{messageTypeGroup.Key}";
                 var messageTypes = messageTypeGroup.Select(x => x.MessageType).ToList();
-                var bus = _serviceBusFactory.RegisterMessageTypes(messageTypes, queueName);
+                var bus = _serviceBusFactory.ConfigureServiceBus(messageTypes, queueName);
 
                 foreach (var messageType in messageTypes)
                     await bus.Subscribe(messageType);

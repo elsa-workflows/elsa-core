@@ -8,7 +8,7 @@ namespace Elsa.Services
 {
     public interface IServiceBusFactory
     {
-        IBus RegisterMessageTypes(IEnumerable<Type> messageTypes, string queueName);
+        IBus ConfigureServiceBus(IEnumerable<Type> messageTypes, string queueName);
         IBus GetServiceBus(Type messageType, string? queueName = default);
     }
 }

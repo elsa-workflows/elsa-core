@@ -24,7 +24,7 @@ namespace Elsa.Activities.Rebus.StartupTasks
             foreach (var messageType in _messageTypes)
             {
                 var queueName = messageType.Name;
-                var bus = _serviceBusFactory.RegisterMessageTypes(new[] { messageType }, queueName);
+                var bus = _serviceBusFactory.ConfigureServiceBus(new[] { messageType }, queueName);
                 await bus.Subscribe(messageType);
             }
         }

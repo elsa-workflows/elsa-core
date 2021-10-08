@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Elsa.Rebus.AzureServiceBus;
 using Elsa.Retention.Extensions;
 using Elsa.Server.Api.Extensions;
 using Elsa.Server.Api.Hubs;

@@ -38,7 +38,7 @@ namespace Elsa.Services.Messaging
                 bus.Dispose();
         }
 
-        public IBus RegisterMessageTypes(IEnumerable<Type> messageTypes, string queueName)
+        public IBus ConfigureServiceBus(IEnumerable<Type> messageTypes, string queueName)
         {
             queueName = ServiceBusOptions.FormatQueueName(queueName);
             var prefixedQueueName = PrefixQueueName(queueName);
@@ -51,7 +51,7 @@ namespace Elsa.Services.Messaging
             configurer
                 .Serialization(serializer => serializer.UseNewtonsoftJson(DefaultContentSerializer.CreateDefaultJsonSerializationSettings()))
                 .Logging(l => l.MicrosoftExtensionsLogging(_loggerFactory))
-                .Routing(r => r.TypeBased().Map(map))
+                //.Routing(r => r.TypeBased().Map(map))
                 .Options(options => options.Apply(_elsaOptions.ServiceBusOptions));
 
             // Configure transport.
