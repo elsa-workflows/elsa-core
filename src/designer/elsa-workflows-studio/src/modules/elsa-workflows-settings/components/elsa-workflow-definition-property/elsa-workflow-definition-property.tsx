@@ -4,41 +4,40 @@ import {mapSyntaxToLanguage, parseJson} from "../../../../utils/utils";
 import {WorkflowDefinitionProperty} from "./models";
 
 @Component({
-    tag: 'elsa-workflow-definition-property',
+    tag: 'elsa-workflow-definition-properties-tab',
     shadow: false,
 })
-export class ElsaWorkflowDefinitionProperty {
+export class ElsaWorkflowDefinitionPropertiesTab {
 
-    @Prop() propertyDescriptor: ActivityPropertyDescriptor;
-    @Prop() propertyModel: ActivityDefinitionProperty;
-    @State() properties: Array<WorkflowDefinitionProperty> = [];
+    @Prop() properties: Array<WorkflowDefinitionProperty> = [];
+    @State() propertiesInternal: Array<WorkflowDefinitionProperty>;
+
+    @Event() propertiesChanged: EventEmitter<Array<WorkflowDefinitionProperty>>;
 
     multiExpressionEditor: HTMLElsaMultiExpressionEditorElement;
 
     async componentWillLoad() {
-        const propertyModel = this.propertyModel;
-        const propertiesJson = propertyModel.expressions['WorkflowDefinitionProperty']
-        this.properties = parseJson(propertiesJson) || [];
+        this.propertiesInternal = this.properties;
     }
 
     updatePropertyModel() {
-        this.propertyModel.expressions['WorkflowDefinitionProperty'] = JSON.stringify(this.properties);
-        this.multiExpressionEditor.expressions[SyntaxNames.Json] = JSON.stringify(this.properties, null, 2);
+        this.multiExpressionEditor.expressions[SyntaxNames.Json] = JSON.stringify(this.propertiesInternal, null, 2);
+        this.propertiesChanged.emit(this.propertiesInternal);
     }
 
     onDefaultSyntaxValueChanged(e: CustomEvent) {
-        this.properties = e.detail;
+        this.propertiesInternal = e.detail;
     }
 
     onAddPropertyClick() {
-        const propertyName = `Property ${this.properties.length + 1}`;
+        const propertyName = `Property ${this.propertiesInternal.length + 1}`;
         const newProperty: WorkflowDefinitionProperty = {key: propertyName, description: ''};
-        this.properties = [...this.properties, newProperty];
+        this.propertiesInternal = [...this.propertiesInternal, newProperty];
         this.updatePropertyModel();
     }
 
     onDeletePropertyClick(property: WorkflowDefinitionProperty) {
-        this.properties = this.properties.filter(x => x != property);
+        this.propertiesInternal = this.propertiesInternal.filter(x => x != property);
         this.updatePropertyModel();
     }
 
@@ -72,12 +71,12 @@ export class ElsaWorkflowDefinitionProperty {
         if (!Array.isArray(parsed))
             return;
 
-        this.propertyModel.expressions['WorkflowDefinitionProperty'] = json;
-        this.properties = parsed;
+        this.propertiesInternal = parsed;
+        this.propertiesChanged.emit(this.propertiesInternal);
     }
 
     render() {
-        const properties = this.properties;
+        const properties = this.propertiesInternal;
         const json = JSON.stringify(properties, null, 2);
 
         const renderPropertyEditor = (property: WorkflowDefinitionProperty, index: number) => {
@@ -114,7 +113,7 @@ export class ElsaWorkflowDefinitionProperty {
             <div>
                 <elsa-multi-expression-editor
                     ref={el => this.multiExpressionEditor = el}
-                    label={this.propertyDescriptor.label}
+                    label="Properties"
                     defaultSyntax={SyntaxNames.Json}
                     supportedSyntaxes={[SyntaxNames.Json]}
                     expressions={{'Json': json}}

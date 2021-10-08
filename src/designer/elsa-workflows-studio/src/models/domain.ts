@@ -1,4 +1,4 @@
-﻿import { WorkflowDefinitionProperty } from '../components/editors/properties/elsa-workflow-definition-property/models';
+﻿import { WorkflowDefinitionProperty } from '../modules/elsa-workflows-settings/components/elsa-workflow-definition-property/models';
 import {Map} from '../utils/utils';
 
 export interface WorkflowDefinition {

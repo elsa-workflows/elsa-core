@@ -9,6 +9,7 @@ import {
 } from "../../../models";
 
 import { ActivityModel, ActivityPropertyDescriptor } from "../../..";
+import { WorkflowSettingsRenderProps } from '../../../components/screens/workflow-definition-editor/elsa-workflow-settings-modal/elsa-workflow-settings-modal';
 
 export class WorkflowSettingsPlugin implements ElsaPlugin {
   serverUrl: string;
@@ -21,31 +22,12 @@ export class WorkflowSettingsPlugin implements ElsaPlugin {
     eventBus.on(EventTypes.WorkflowSettingsModalLoaded, this.onModalLoaded)
   }
 
-  onModalLoaded(renderProps: any) {
+  onModalLoaded(renderProps: WorkflowSettingsRenderProps) {
     const tabs = renderProps.tabs;
-
-    const activityModel: ActivityModel = {
-      type: '',
-      activityId: '',
-      outcomes: [],
-      properties: [],
-      propertyStorageProviders: {}
-    };
-    const propertyDescriptor: ActivityPropertyDescriptor = {
-      defaultSyntax: "WorkflowDefinitionProperty",
-      disableWorkflowProviderSelection: false,
-      hint: "The conditions to evaluate.",
-      isReadOnly: false,
-      label: "Property",
-      name: "Property",
-      supportedSyntaxes: [],
-      uiHint: "workflow-definition-property-builder",
-    } 
-
-    Object.assign(renderProps, { activityModel, propertyDescriptor})
+    const properties = renderProps.workflowDefinition.properties;
 
     const renderPropertiesTab = () => {
-      return ( <elsa-workflow-settings-properties-tab activityModel={activityModel} propertyDescriptor={propertyDescriptor} /> )
+      return ( <elsa-workflow-definition-properties-tab properties={properties}  onPropertiesChanged={(e) => renderProps.workflowDefinition.properties = e.detail}/> )
     }
 
     tabs.push({

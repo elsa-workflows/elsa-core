@@ -1,6 +1,6 @@
 import {Component, Host, Prop, State, Watch, h} from '@stencil/core';
 import {eventBus} from '../../../../services';
-import {Map, mapToExpressionObject} from "../../../../utils/utils";
+import {Map} from "../../../../utils/utils";
 import {
   EventTypes,
   Variables,
@@ -14,14 +14,13 @@ import {MonacoValueChangedArgs} from "../../../controls/elsa-monaco/elsa-monaco"
 import {MarkerSeverity} from "monaco-editor";
 import {checkBox, FormContext, selectField, SelectOption, textArea, textInput} from "../../../../utils/forms";
 import {createElsaClient} from "../../../../services/elsa-client";
-import { WorkflowDefinitionProperty } from '../../../editors/properties/elsa-workflow-definition-property/models';
 
 interface WorkflowTabModel {
   tabName: string;
   renderContent: () => any;
 }
 
-interface WorkflowSettingsRenderProps {
+export interface WorkflowSettingsRenderProps {
   workflowDefinition?: WorkflowDefinition;
   tabs?: Array<WorkflowTabModel>;
   selectedTabName?: string;
@@ -77,13 +76,14 @@ export class ElsaWorkflowDefinitionSettingsModal {
       renderContent: () => this.renderAdvancedTab(this.renderProps.workflowDefinition)
     }];
 
-    this.renderProps  = {
+    const renderProps = {
       workflowDefinition: this.workflowDefinition,
       tabs,
       selectedTabName: this.renderProps.selectedTabName
     };
 
-    await eventBus.emit(EventTypes.WorkflowSettingsModalLoaded, this, this.renderProps)
+    await eventBus.emit(EventTypes.WorkflowSettingsModalLoaded, this, renderProps)
+    this.renderProps = renderProps;
 
     let selectedTabName = this.renderProps.selectedTabName
     tabs = this.renderProps.tabs;
@@ -111,7 +111,7 @@ export class ElsaWorkflowDefinitionSettingsModal {
   async onSubmit(e: Event) {
     e.preventDefault();
     await this.dialog.hide(true);
-    this.renderProps.workflowDefinition.properties = mapToExpressionObject<WorkflowDefinitionProperty>(this.renderProps.activityModel, this.renderProps.propertyDescriptor.name, this.renderProps.propertyDescriptor.defaultSyntax);
+    console.log(this.renderProps.workflowDefinition);
     setTimeout(() => eventBus.emit(EventTypes.UpdateWorkflowSettings, this, this.renderProps.workflowDefinition), 250)
   }
 

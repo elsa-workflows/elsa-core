@@ -221,13 +221,3 @@ export function clip(el) {
   sel.removeAllRanges();
   sel.addRange(range);
 }
-
-export function mapToExpressionObject<T>(activityModel: ActivityModel, name: string, defaultSyntax: string): T[] {
-  const property: ActivityDefinitionProperty = getOrCreateProperty(activityModel, name);
-  const valueJson: string = property.expressions[defaultSyntax];
-  
-  if(!valueJson)
-    return;
-
-  return JSON.parse(valueJson)
-}

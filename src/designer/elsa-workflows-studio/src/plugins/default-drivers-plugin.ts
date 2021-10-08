@@ -1,7 +1,6 @@
 ﻿import {propertyDisplayManager, ElsaPlugin, PropertyDisplayDriver} from "../services";
 import {JsonDriver, RadioListDriver, CheckboxDriver, CheckListDriver, CodeEditorDriver, DropdownDriver, MultilineDriver, MultiTextDriver, SingleLineDriver, SwitchCaseBuilderDriver} from "../drivers";
 import {ElsaStudio} from "../models";
-import { WorkflowDefinitionPropertyBuilderDriver } from "../drivers/workflow-definition-property-builder-driver";
 
 export class DefaultDriversPlugin implements ElsaPlugin {
   constructor() {
@@ -15,7 +14,6 @@ export class DefaultDriversPlugin implements ElsaPlugin {
     this.addDriver('multi-text', () => new MultiTextDriver());
     this.addDriver('code-editor', () => new CodeEditorDriver());
     this.addDriver('switch-case-builder', () => new SwitchCaseBuilderDriver());
-    this.addDriver('workflow-definition-property-builder', () => new WorkflowDefinitionPropertyBuilderDriver());
   }
 
   addDriver<T extends PropertyDisplayDriver>(controlType: string, c: (elsaStudio: ElsaStudio) => T) {
