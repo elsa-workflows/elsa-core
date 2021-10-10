@@ -323,6 +323,18 @@ export class SyntaxNames {
   static Output = 'Output';
 }
 
+export interface WorkflowTestActivityMessage {
+  activityType: string;
+  workflowInstanceId: string;
+  correlationId: string;
+  activityId: string;
+  status: string;
+  workflowStatus: string;
+  data?: any;
+  error?: string;
+  activityData?: any;
+}
+
 export const getVersionOptionsString = (versionOptions?: VersionOptions) => {
 
   if (!versionOptions)

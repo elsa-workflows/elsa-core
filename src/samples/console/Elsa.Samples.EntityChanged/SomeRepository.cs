@@ -9,10 +9,10 @@ namespace Elsa.Samples.EntityChanged
 {
     public class SomeRepository
     {
-        private readonly IWorkflowDispatcher _workflowRunner;
+        private readonly IWorkflowLaunchpad _workflowLaunchpad;
         private readonly ICollection<Entity> _collection = new List<Entity>();
 
-        public SomeRepository(IWorkflowDispatcher workflowRunner) => _workflowRunner = workflowRunner;
+        public SomeRepository(IWorkflowLaunchpad workflowLaunchpad) => _workflowLaunchpad = workflowLaunchpad;
         public Task AddAsync(Entity entity)
         {
             _collection.Add(entity);
@@ -28,7 +28,7 @@ namespace Elsa.Samples.EntityChanged
         public Task<Entity?> GetAsync(string id) => Task.FromResult(_collection.FirstOrDefault(x => x.Id == id));
 
         private async Task TriggerWorkflowsAsync(Entity entity, EntityChangedAction changedAction) =>
-            await _workflowRunner.TriggerEntityChangedWorkflowsAsync(
+            await _workflowLaunchpad.TriggerEntityChangedWorkflowsAsync(
                 entity.Id,
                 entity.GetType().GetEntityName(),
                 changedAction,

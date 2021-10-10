@@ -9,7 +9,7 @@ namespace Elsa
 {
     public static class ObjectConverter
     {
-        public static T? ConvertTo<T>(this object? value) => (T?) value.ConvertTo(typeof(T));
+        public static T? ConvertTo<T>(this object? value) => value != null ? (T?)value.ConvertTo(typeof(T)) : default;
 
         public static object? ConvertTo(this object? value, Type targetType)
         {
@@ -31,9 +31,6 @@ namespace Elsa
             if (underlyingSourceType == underlyingTargetType)
                 return value;
 
-            if (value == default!)
-                return default!;
-            
             if(typeof(JToken).IsAssignableFrom(underlyingSourceType))
                 return StateDictionaryExtensions.DeserializeState((JToken) value, underlyingTargetType);
 

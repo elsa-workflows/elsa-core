@@ -12,7 +12,7 @@ namespace Elsa.Services.Models
         bool IsDisabled { get; set; }
         string? Tag { get; }
         string? Channel { get; }
-        
+
         /// <summary>
         /// An initial set of variables available to workflow instances.
         /// </summary>

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Elsa.Comparers;
 using Elsa.Services.Models;
 using NodaTime;
@@ -34,10 +35,24 @@ namespace Elsa.Models
         public WorkflowOutputReference? Output { get; set; }
         public IDictionary<string, IDictionary<string, object?>> ActivityData { get; set; } = new Dictionary<string, IDictionary<string, object?>>();
 
+        // To prevent NRE when old workflow instances are deserialized. 
+        private IDictionary<string, object?>? _metadata;
+        public IDictionary<string, object?> Metadata
+        {
+            get { return _metadata ??= new Dictionary<string, object?>(); }
+            set => _metadata = value ?? new Dictionary<string, object?>();
+        }
+
         public HashSet<BlockingActivity> BlockingActivities
         {
             get => _blockingActivities;
             set => _blockingActivities = new HashSet<BlockingActivity>(value, BlockingActivityEqualityComparer.Instance);
+        }
+
+        public object? GetMetadata(string key) => Metadata.TryGetValue(key, out var value) ? value : default;
+        public void SetMetadata(string key, object? value)
+        {
+            Metadata[key] = value;
         }
 
         public WorkflowFault? Fault { get; set; }

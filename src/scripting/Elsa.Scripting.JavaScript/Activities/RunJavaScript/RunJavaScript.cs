@@ -20,7 +20,7 @@ using NetBox.Extensions;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.JavaScript
 {
-    [Action(Category = "Scripting", Description = "Run JavaScript code.")]
+    [Action(DisplayName = "Run JavaScript", Category = "Scripting", Description = "Run JavaScript code.")]
     public class RunJavaScript : Activity, INotificationHandler<RenderingTypeScriptDefinitions>, IActivityPropertyOptionsProvider
     {
         private readonly IJavaScriptService _javaScriptService;

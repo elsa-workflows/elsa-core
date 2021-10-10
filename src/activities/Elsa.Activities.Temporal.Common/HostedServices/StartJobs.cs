@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Temporal.Common.Bookmarks;
 using Elsa.Activities.Temporal.Common.Services;
@@ -7,6 +8,8 @@ using Elsa.Services;
 using Elsa.Services.Bookmarks;
 using Microsoft.Extensions.Logging;
 using Open.Linq.AsyncExtensions;
+using Polly;
+using Polly.Retry;
 
 namespace Elsa.Activities.Temporal.Common.HostedServices
 {
@@ -22,6 +25,7 @@ namespace Elsa.Activities.Temporal.Common.HostedServices
         private readonly IWorkflowInstanceScheduler _workflowScheduler;
         private readonly IDistributedLockProvider _distributedLockProvider;
         private readonly ILogger<StartJobs> _logger;
+        private readonly AsyncRetryPolicy _retryPolicy;
 
         public StartJobs(IBookmarkFinder bookmarkFinder, IWorkflowInstanceScheduler workflowScheduler, IDistributedLockProvider distributedLockProvider, ILogger<StartJobs> logger)
         {
@@ -29,6 +33,12 @@ namespace Elsa.Activities.Temporal.Common.HostedServices
             _workflowScheduler = workflowScheduler;
             _distributedLockProvider = distributedLockProvider;
             _logger = logger;
+
+            _retryPolicy = Policy
+                .Handle<Exception>()
+                .WaitAndRetryForeverAsync(retryAttempt =>
+                    TimeSpan.FromSeconds(5)
+                );
         }
 
         public async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -38,9 +48,14 @@ namespace Elsa.Activities.Temporal.Common.HostedServices
             if (handle == null)
                 return;
 
-            await ScheduleTimerEventWorkflowsAsync(stoppingToken);
-            await ScheduleCronEventWorkflowsAsync(stoppingToken);
-            await ScheduleStartAtWorkflowsAsync(stoppingToken);
+            await _retryPolicy.ExecuteAsync(async () => await ExecuteInternalAsync(stoppingToken));
+        }
+
+        private async Task ExecuteInternalAsync(CancellationToken cancellationToken)
+        {
+            await ScheduleTimerEventWorkflowsAsync(cancellationToken);
+            await ScheduleCronEventWorkflowsAsync(cancellationToken);
+            await ScheduleStartAtWorkflowsAsync(cancellationToken);
         }
 
         private async Task ScheduleStartAtWorkflowsAsync(CancellationToken cancellationToken)
@@ -53,7 +68,7 @@ namespace Elsa.Activities.Temporal.Common.HostedServices
 
             foreach (var result in bookmarkResults)
             {
-                var bookmark = (StartAtBookmark) result.Bookmark;
+                var bookmark = (StartAtBookmark)result.Bookmark;
                 await _workflowScheduler.ScheduleAsync(result.WorkflowInstanceId!, result.ActivityId, bookmark.ExecuteAt, null, cancellationToken);
 
                 index++;
@@ -71,7 +86,7 @@ namespace Elsa.Activities.Temporal.Common.HostedServices
 
             foreach (var result in bookmarkResults)
             {
-                var bookmark = (TimerBookmark) result.Bookmark;
+                var bookmark = (TimerBookmark)result.Bookmark;
                 await _workflowScheduler.ScheduleAsync(result.WorkflowInstanceId!, result.ActivityId, bookmark.ExecuteAt, null, cancellationToken);
 
                 index++;
@@ -89,7 +104,7 @@ namespace Elsa.Activities.Temporal.Common.HostedServices
 
             foreach (var result in bookmarkResults)
             {
-                var trigger = (CronBookmark) result.Bookmark;
+                var trigger = (CronBookmark)result.Bookmark;
                 await _workflowScheduler.ScheduleAsync(result.WorkflowInstanceId!, result.ActivityId, trigger.ExecuteAt!.Value, null, cancellationToken);
 
                 index++;

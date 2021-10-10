@@ -14,6 +14,7 @@ using Elsa.Server.Api.Swagger.Examples;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.Filters;
 
@@ -63,7 +64,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             var summaries = _mapper.Map<IList<WorkflowDefinitionSummaryModel>>(items);
             var pagedList = new PagedList<WorkflowDefinitionSummaryModel>(summaries, page, pageSize, totalCount);
 
-            return Json(pagedList, _serializer.GetSettings());
+            return Json(pagedList, SerializationHelper.GetSettingsForWorkflowDefinition());
         }
 
         private Specification<WorkflowDefinition> GetSpecification(string? ids, VersionOptions version)
