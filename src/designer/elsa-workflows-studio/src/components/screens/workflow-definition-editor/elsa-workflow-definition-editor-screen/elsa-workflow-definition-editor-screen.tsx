@@ -21,7 +21,6 @@ import WorkflowEditorTunnel, {WorkflowEditorState} from '../../../../data/workfl
 import DashboardTunnel from "../../../../data/dashboard";
 import {downloadFromBlob} from "../../../../utils/download";
 import {ActivityContextMenuState, WorkflowDesignerMode} from "../../../designers/tree/elsa-designer-tree/models";
-import {registerClickOutside} from "stencil-click-outside";
 import {i18n} from "i18next";
 import {loadTranslations} from "../../../i18n/i18n-loader";
 import {resources} from "./localizations";
@@ -82,6 +81,9 @@ export class ElsaWorkflowDefinitionEditorScreen {
   designer: HTMLElsaDesignerTreeElement;
   configureComponentCustomButtonContext: ConfigureComponentCustomButtonContext = null;
   helpDialog: HTMLElsaModalDialogElement;
+  activityContextMenu: HTMLDivElement;
+  componentCustomButton: HTMLDivElement;
+  connectionContextMenu: HTMLDivElement;
 
   @Method()
   async getServerUrl(): Promise<string> {
@@ -164,6 +166,20 @@ export class ElsaWorkflowDefinitionEditorScreen {
   async workflowChangedHandler(event: CustomEvent<WorkflowModel>) {
     const workflowModel = event.detail;
     await this.saveWorkflowInternal(workflowModel);
+  }
+
+  @Listen('click', {target: 'window'})
+  onWindowClicked(event: Event){
+    const target = event.target as HTMLElement;
+
+    if (!this.componentCustomButton.contains(target))
+      this.handleContextMenuTestChange(0, 0, false, null)
+
+    if (!this.activityContextMenu.contains(target))
+      this.handleContextMenuChange({x: 0, y: 0, shown: false, activity: null, selectedActivities: {}})
+
+    if (!this.connectionContextMenu.contains(target))
+      this.handleConnectionContextMenuChange({x: 0, y: 0, shown: false, activity: null})    
   }
 
   async componentWillLoad() {
@@ -733,11 +749,8 @@ export class ElsaWorkflowDefinitionEditorScreen {
       data-transition-leave-end="elsa-transform elsa-opacity-0 elsa-scale-95"
       class={`${this.activityContextMenuTestState.shown ? '' : 'hidden'} elsa-absolute elsa-z-10 elsa-mt-3 elsa-px-2 elsa-w-screen elsa-max-w-xl sm:elsa-px-0`}
       style={{left: `${this.activityContextMenuTestState.x + 64}px`, top: `${this.activityContextMenuTestState.y - 256}px`}}
-      ref={el =>
-        registerClickOutside(this, el, () => {
-          this.handleContextMenuTestChange(0, 0, false, null);
-        })
-      }>
+      ref={el => this.componentCustomButton = el}
+    >
       <div class="elsa-rounded-lg elsa-shadow-lg elsa-ring-1 elsa-ring-black elsa-ring-opacity-5 elsa-overflow-hidden">
         {!!message ? renderMessage() : renderLoader()}
       </div>
@@ -758,11 +771,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
       data-transition-leave-end="elsa-transform elsa-opacity-0 elsa-scale-95"
       class={`${this.activityContextMenuState.shown ? '' : 'hidden'} context-menu elsa-z-10 elsa-mx-3 elsa-w-48 elsa-mt-1 elsa-rounded-md elsa-shadow-lg elsa-fixed`}
       style={{left: `${this.activityContextMenuState.x}px`, top: `${this.activityContextMenuState.y}px`}}
-      ref={el =>
-        registerClickOutside(this, el, () => {
-          this.handleContextMenuChange({x: 0, y: 0, shown: false, activity: null, selectedActivities: {}});
-        })
-      }
+      ref={el => this.activityContextMenu = el }
     >
       <div class="elsa-rounded-md elsa-bg-white elsa-shadow-xs" role="menu" aria-orientation="vertical"
            aria-labelledby="pinned-project-options-menu-0">
@@ -801,11 +810,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
       data-transition-leave-end="elsa-transform elsa-opacity-0 elsa-scale-95"
       class={`${this.connectionContextMenuState.shown ? '' : 'hidden'} context-menu elsa-z-10 elsa-mx-3 elsa-w-48 elsa-mt-1 elsa-rounded-md elsa-shadow-lg elsa-absolute`}
       style={{left: `${this.connectionContextMenuState.x}px`, top: `${this.connectionContextMenuState.y - 64}px`}}
-      ref={el =>
-        registerClickOutside(this, el, () => {
-          this.handleConnectionContextMenuChange({x: 0, y: 0, shown: false, activity: null});
-        })
-      }
+      ref={el => this.connectionContextMenu = el}
     >
       <div class="elsa-rounded-md elsa-bg-white elsa-shadow-xs" role="menu" aria-orientation="vertical"
            aria-labelledby="pinned-project-options-menu-0">

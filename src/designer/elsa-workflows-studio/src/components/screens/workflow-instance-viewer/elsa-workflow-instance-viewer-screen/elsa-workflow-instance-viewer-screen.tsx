@@ -1,4 +1,4 @@
-import {Component, h, Host, Method, Prop, State, Watch} from '@stencil/core';
+import {Component, h, Host, Listen, Method, Prop, State, Watch} from '@stencil/core';
 import {eventBus} from '../../../../services/event-bus';
 import * as collection from 'lodash/collection';
 import {
@@ -22,7 +22,6 @@ import {
 import {ActivityStats, createElsaClient} from "../../../../services/elsa-client";
 import state from '../../../../utils/store';
 import {ActivityContextMenuState, WorkflowDesignerMode} from "../../../designers/tree/elsa-designer-tree/models";
-import {registerClickOutside} from "stencil-click-outside";
 import moment from "moment";
 import {clip, durationToString} from "../../../../utils/utils";
 import Tunnel from "../../../../data/dashboard";
@@ -52,6 +51,7 @@ export class ElsaWorkflowInstanceViewerScreen {
   el: HTMLElement;
   designer: HTMLElsaDesignerTreeElement;
   journal: HTMLElsaWorkflowInstanceJournalElement;
+  contextMenu: HTMLElement;
 
   @Method()
   async getServerUrl(): Promise<string> {
@@ -111,6 +111,14 @@ export class ElsaWorkflowInstanceViewerScreen {
   async serverUrlChangedHandler(newValue: string) {
     if (newValue && newValue.length > 0)
       await this.loadActivityDescriptors();
+  }
+
+  @Listen('click', {target: 'window'})
+  onWindowClicked(event: Event){
+    const target = event.target as HTMLElement;
+
+    if (!this.contextMenu.contains(target))
+      this.handleContextMenuChange(0, 0, false, null);
   }
 
   async componentWillLoad() {
@@ -185,6 +193,7 @@ export class ElsaWorkflowInstanceViewerScreen {
   }
 
   handleContextMenuChange(x: number, y: number, shown: boolean, activity: ActivityModel) {
+    console.log('elsa-instance-view close');
     this.activityContextMenuState = {
       shown,
       x,
@@ -519,11 +528,7 @@ export class ElsaWorkflowInstanceViewerScreen {
       data-transition-leave-end="elsa-transform elsa-opacity-0 elsa-scale-95"
       class={`${this.activityContextMenuState.shown ? '' : 'hidden'} elsa-absolute elsa-z-10 elsa-mt-3 elsa-px-2 elsa-w-screen elsa-max-w-xl sm:elsa-px-0`}
       style={{left: `${this.activityContextMenuState.x + 64}px`, top: `${this.activityContextMenuState.y - 256}px`}}
-      ref={el =>
-        registerClickOutside(this, el, () => {
-          this.handleContextMenuChange(0, 0, false, null);
-        })
-      }
+      ref={el => this.contextMenu = el}
     >
       <div class="elsa-rounded-lg elsa-shadow-lg elsa-ring-1 elsa-ring-black elsa-ring-opacity-5 elsa-overflow-hidden">
         {!!activityStats ? renderStats() : renderLoader()}
