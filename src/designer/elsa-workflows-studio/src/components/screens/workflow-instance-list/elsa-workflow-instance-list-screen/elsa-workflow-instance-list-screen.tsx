@@ -176,7 +176,7 @@ export class ElsaWorkflowInstanceListScreen {
     if (!!this.currentPage)
       filters['page'] = this.currentPage.toString();
 
-    var newPageSize = !!pageSize ? pageSize : this.currentPageSize;
+    let newPageSize = !!pageSize ? pageSize : this.currentPageSize;
     newPageSize = Math.max(Math.min(newPageSize, 100), ElsaWorkflowInstanceListScreen.MIN_PAGE_SIZE);
     filters['pageSize'] = newPageSize.toString();
 
@@ -184,7 +184,7 @@ export class ElsaWorkflowInstanceListScreen {
       filters['page'] = Math.floor(this.currentPage * this.currentPageSize / newPageSize).toString();
 
     const queryString = collection.map(filters, (v, k) => `${k}=${v}`).join('&');
-    return `/workflow-instances?${queryString}`;
+    return `${this.basePath}/workflow-instances?${queryString}`;
   }
 
   getStatusColor(status: WorkflowStatus) {
