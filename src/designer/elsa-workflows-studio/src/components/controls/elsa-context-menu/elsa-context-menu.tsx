@@ -1,7 +1,6 @@
-import {Component, h, Prop} from '@stencil/core';
+import {Component, h, Listen, Prop} from '@stencil/core';
 import {RouterHistory} from "@stencil/router";
 import {leave, toggle} from 'el-transition'
-import {registerClickOutside} from "stencil-click-outside";
 import {MenuItem} from "./models";
 
 @Component({
@@ -14,12 +13,21 @@ export class ElsaContextMenu {
 
   navigate: (path: string) => void;
   contextMenu: HTMLElement;
+  element: HTMLElement;
 
   componentWillLoad() {
     if (!!this.history)
       this.navigate = this.history.push;
     else
       this.navigate = path => document.location.href = path;
+  }
+
+  @Listen('click', {target: 'window'})
+  onWindowClicked(event: Event){
+    const target = event.target as HTMLElement;
+
+    if (!this.element.contains(target))
+      this.closeContextMenu();
   }
 
   closeContextMenu() {
@@ -44,7 +52,7 @@ export class ElsaContextMenu {
 
   render() {
     return (
-      <div class="elsa-relative elsa-flex elsa-justify-end elsa-items-center" ref={el => registerClickOutside(this, el, this.closeContextMenu)}>
+      <div class="elsa-relative elsa-flex elsa-justify-end elsa-items-center" ref={el => this.element = el}>
         <button onClick={() => this.toggleMenu()} aria-has-popup="true" type="button"
                 class="elsa-w-8 elsa-h-8 elsa-inline-flex elsa-items-center elsa-justify-center elsa-text-gray-400 elsa-rounded-full elsa-bg-transparent hover:elsa-text-gray-500 focus:elsa-outline-none focus:elsa-text-gray-500 focus:elsa-bg-gray-100 elsa-transition elsa-ease-in-out elsa-duration-150">
           <svg class="elsa-w-5 elsa-h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">

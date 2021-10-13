@@ -15,45 +15,37 @@ namespace Elsa.Persistence.EntityFramework.MySql.Migrations
 
             migrationBuilder.RenameTable(
                 name: "WorkflowInstances",
-                newName: "WorkflowInstances",
-                newSchema: "Elsa");
+                newName: "WorkflowInstances");
 
             migrationBuilder.RenameTable(
                 name: "WorkflowExecutionLogRecords",
-                newName: "WorkflowExecutionLogRecords",
-                newSchema: "Elsa");
+                newName: "WorkflowExecutionLogRecords");
 
             migrationBuilder.RenameTable(
                 name: "WorkflowDefinitions",
-                newName: "WorkflowDefinitions",
-                newSchema: "Elsa");
+                newName: "WorkflowDefinitions");
 
             migrationBuilder.RenameTable(
                 name: "Bookmarks",
-                newName: "Bookmarks",
-                newSchema: "Elsa");
+                newName: "Bookmarks");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.RenameTable(
                 name: "WorkflowInstances",
-                schema: "Elsa",
                 newName: "WorkflowInstances");
 
             migrationBuilder.RenameTable(
                 name: "WorkflowExecutionLogRecords",
-                schema: "Elsa",
                 newName: "WorkflowExecutionLogRecords");
 
             migrationBuilder.RenameTable(
                 name: "WorkflowDefinitions",
-                schema: "Elsa",
                 newName: "WorkflowDefinitions");
 
             migrationBuilder.RenameTable(
                 name: "Bookmarks",
-                schema: "Elsa",
                 newName: "Bookmarks");
 
             migrationBuilder.AddColumn<string>(
