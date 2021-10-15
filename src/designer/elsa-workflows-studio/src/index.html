@@ -127,7 +127,7 @@
       const propertyEditor = document.createElement('elsa-property-editor');
       const propertyDescriptor = activityDescriptor.inputProperties.find(x => x.name === 'Text');
       const propertyModel = getOrCreateProperty(activityModel, propertyDescriptor.name);
-      const defaultSyntax = propertyDescriptor.defaultSyntax || 'Literal';
+      const defaultSyntax = propertyDescriptor?.defaultSyntax || 'Literal';
       const currentValue = propertyModel.expressions[defaultSyntax] || '';
       const editorHtml = `<textarea class="focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300" rows="5">${currentValue}</textarea>`;
       const editorElement = htmlToElement(editorHtml);
