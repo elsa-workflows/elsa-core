@@ -737,6 +737,8 @@ export class ElsaWorkflowDesigner {
       root.selectAll('.node.start').each((n: any) => {
         const node = this.graph.node(n) as any;
         d3.select(node.elem).on('click', async e => {
+          if (this.mode == WorkflowDesignerMode.Test) return;
+
           await this.showActivityPicker();
         });
       });
