@@ -24,17 +24,7 @@ export class ElsaCopyButton {
   onCopyClick = async (e) => {
     e.stopPropagation();
 
-    this.checkClipboardPermissions();
-
     await navigator.clipboard.writeText(this.value);
     await eventBus.emit(EventTypes.ClipboardCopied, this, undefined, 'Data copied to clipboard.');
   }
-
-  checkClipboardPermissions = () => {
-    navigator.permissions.query({name: 'clipboard-read'}).then((result) => {
-      if (result.state == 'denied')
-        eventBus.emit(EventTypes.ClipboardPermissionDenied, this);
-    });
-  }
-
 }
