@@ -593,9 +593,9 @@ export class ElsaWorkflowDefinitionEditorScreen {
                             onActivityDeselected={e => this.onActivityDeselected(e)}
                             class="elsa-flex-1"
                             ref={el => this.designer = el}/>
-        {this.renderPanel()}
         {this.renderWorkflowSettingsButton()}
         {this.renderWorkflowHelpButton()}
+        {this.renderPanel()}
         {this.renderActivityContextMenu()}
         {this.renderConnectionContextMenu()}
         <elsa-workflow-settings-modal workflowDefinition={this.workflowDefinition}/>
