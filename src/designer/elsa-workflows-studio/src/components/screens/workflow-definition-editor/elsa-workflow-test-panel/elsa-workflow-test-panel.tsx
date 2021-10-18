@@ -60,6 +60,10 @@ export class ElsaWorkflowTestPanel {
       if (message.workflowStatus == 'Executed') {
         this.workflowStarted = false;
       }
+
+      if (!this.message && message.activityId == this.workflowTestActivityId){
+        this.message = message;
+      }
     });
 
     this.hubConnection.start()
