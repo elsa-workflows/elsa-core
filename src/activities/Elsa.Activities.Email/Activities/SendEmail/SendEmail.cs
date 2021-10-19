@@ -82,6 +82,7 @@ namespace Elsa.Activities.Email
             var from = string.IsNullOrWhiteSpace(From) ? _options.DefaultSender : From;
             
             message.Sender = MailboxAddress.Parse(from);
+            message.From.Add(MailboxAddress.Parse(from));
             message.Subject = Subject;
 
             var bodyBuilder = new BodyBuilder { HtmlBody = Body };
