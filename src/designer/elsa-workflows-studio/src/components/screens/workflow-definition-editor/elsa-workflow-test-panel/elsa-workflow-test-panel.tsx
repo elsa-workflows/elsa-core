@@ -115,16 +115,13 @@ export class ElsaWorkflowTestPanel {
 
       const t = (x, params?) => this.i18next.t(x, params);
 
-      const endpointUrl = this.serverUrl + '/workflows' + message.activityData["Path"].value + '?correlation=' + message.correlationId;
-  
-      return (      
-        <dl class="elsa-border-b elsa-border-gray-200 elsa-divide-y elsa-divide-gray-200">
-          <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
-            <dt class="elsa-text-gray-500">{t('Status')}</dt>
-            <dd class="elsa-text-gray-900">{workflowStatus}</dd>
-          </div>            
-          {!!message.activityData && !!message.activityData["Path"] ?
-            <div>
+      const renderEndpointUrl = () => {
+        if (!message.activityData || !message.activityData["Path"]) return undefined;
+
+        const endpointUrl = this.serverUrl + '/workflows' + message.activityData["Path"].value + '?correlation=' + message.correlationId;
+
+        return (
+          <div>
               <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
                 <dt class="elsa-text-gray-500">
                   <span class="elsa-mr-1">{t('EntryEndpoint')}</span>
@@ -137,9 +134,16 @@ export class ElsaWorkflowTestPanel {
                 </dt>
               </div>
             </div>
-            :
-            undefined
-          }   
+        );
+      };      
+  
+      return (      
+        <dl class="elsa-border-b elsa-border-gray-200 elsa-divide-y elsa-divide-gray-200">
+          <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
+            <dt class="elsa-text-gray-500">{t('Status')}</dt>
+            <dd class="elsa-text-gray-900">{workflowStatus}</dd>
+          </div>            
+          {renderEndpointUrl()}   
         </dl>
       );
     }    
