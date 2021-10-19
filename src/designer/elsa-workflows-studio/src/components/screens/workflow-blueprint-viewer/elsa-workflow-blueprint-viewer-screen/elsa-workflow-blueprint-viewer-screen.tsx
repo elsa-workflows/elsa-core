@@ -110,7 +110,7 @@ export class ElsaWorkflowBlueprintViewerScreen {
     const activityDescriptor = activityDescriptors.find(x => x.type == source.type);
     const properties: Array<ActivityDefinitionProperty> = collection.map(source.inputProperties.data, (value, key) => {
       const propertyDescriptor = activityDescriptor.inputProperties.find(x => x.name == key);
-      const defaultSyntax = propertyDescriptor.defaultSyntax || SyntaxNames.Literal;
+      const defaultSyntax = propertyDescriptor?.defaultSyntax || SyntaxNames.Literal;
       const expressions = {};
       expressions[defaultSyntax] = value;
       return ({name: key, expressions: expressions, syntax: defaultSyntax});
