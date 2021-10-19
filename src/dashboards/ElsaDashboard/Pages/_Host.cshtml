@@ -23,17 +23,17 @@
 </elsa-studio-root>
 
 <script type="module">
-        // Import publicly exposed services.
-        import { WebhooksPlugin } from "@basePath/_content/Elsa.Designer.Components.Web/elsa-workflows-studio/index.esm.js";
+    // Import publicly exposed services.
+    import { WebhooksPlugin } from "@basePath/_content/Elsa.Designer.Components.Web/elsa-workflows-studio/index.esm.js";
 
-        // Get a handle to the elsa-studio-root element.
-        const elsaStudioRoot = document.querySelector('elsa-studio-root');
+    // Get a handle to the elsa-studio-root element.
+    const elsaStudioRoot = document.querySelector('elsa-studio-root');
 
-        // Configure Elsa during the 'initializing' event.
-        elsaStudioRoot.addEventListener('initializing', e => {
-            const elsa = e.detail;
-            elsa.pluginManager.registerPlugin(WebhooksPlugin);
-        });
-    </script>
+    // Configure Elsa during the 'initializing' event.
+    elsaStudioRoot.addEventListener('initializing', e => {
+        const elsa = e.detail;
+        elsa.pluginManager.registerPlugin(WebhooksPlugin);
+    });
+</script>
 </body>
 </html>
