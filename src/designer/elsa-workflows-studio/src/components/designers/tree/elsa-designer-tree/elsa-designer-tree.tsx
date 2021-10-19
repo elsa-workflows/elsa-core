@@ -705,8 +705,8 @@ export class ElsaWorkflowDesigner {
               d3.select(node.elem).select('svg').classed('elsa-text-green-400', true).classed('elsa-text-gray-400', false).classed('hover:elsa-text-blue-500', false);
               return;
             }
-
-            await this.showActivityPicker();
+            
+            if (this.mode !== WorkflowDesignerMode.Test) await this.showActivityPicker();
           })
           .on("mouseover", e => {
             if (e.shiftKey)
