@@ -328,6 +328,7 @@ namespace Elsa.Services.Workflows
                 _logger.LogWarning(e, "Failed to run activity {ActivityId} of workflow {WorkflowInstanceId}", activity.Id, activityExecutionContext.WorkflowInstance.Id);
                 activityExecutionContext.Fault(e);
                 await _mediator.Publish(new ActivityFaulted(e, activityExecutionContext, activity), cancellationToken);
+                await _mediator.Publish(new ActivityExecutionResultFailed(e, activityExecutionContext), cancellationToken);
             }
 
             return null;

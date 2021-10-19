@@ -88,12 +88,16 @@ namespace Elsa.Server.Api.Handlers
             var signalRConnectionId = context.WorkflowExecutionContext.WorkflowInstance.GetMetadata("signalRConnectionId")?.ToString();
             if (string.IsNullOrWhiteSpace(signalRConnectionId)) return;
 
+            var innerMostException = notification.Exception;
+
+            while (innerMostException.InnerException != null) innerMostException = innerMostException.InnerException;
+
             var message = new WorkflowTestMessage
             {
                 WorkflowInstanceId = context.WorkflowInstance.Id,
                 CorrelationId = context.CorrelationId,
                 ActivityId = context.ActivityId,                
-                Error = notification.Exception.InnerException?.InnerException?.ToString()
+                Error = innerMostException.ToString()
             };
             message.WorkflowStatus = message.Status = "Failed";
 
