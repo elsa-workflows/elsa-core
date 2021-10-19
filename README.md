@@ -273,3 +273,7 @@ This project is supported by the [.NET Foundation](https://dotnetfoundation.org)
 
 <a href="https://www.nexxbiz.io/"><img src="./doc/sponsors/nexxbiz.svg" width="300" height="300" alt="nexxbiz" /></a>
 
+# .Net Core
+As the newest members of the .NET family, there’s much confusion about .NET Core and .NET Standard and how they differ from the .NET Framework. In this article, I’ll explain exactly what each of these are and look at when you should choose each one.
+
+Before going into detail, it’s helpful to look at the larger picture of .NET to see where .NET Core and .NET Standard fit in. When.NET Framework first shipped 15 years ago, it had a single .NET stack that you could use for building Windows desktop and Web applications. Since then, other .NET implementations have emerged, such as Xamarin, which you can use for building mobile apps for iOS and Android, as well as macOS desktop applications
