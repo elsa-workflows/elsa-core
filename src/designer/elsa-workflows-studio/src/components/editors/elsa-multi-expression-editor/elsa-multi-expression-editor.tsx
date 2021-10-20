@@ -53,7 +53,8 @@ export class ElsaMultiExpressionEditor {
   }
 
   closeContextMenu() {
-    leave(this.contextMenu);
+    if (!!this.contextMenu)
+      leave(this.contextMenu);
   }
 
   selectDefaultEditor(e: Event) {
