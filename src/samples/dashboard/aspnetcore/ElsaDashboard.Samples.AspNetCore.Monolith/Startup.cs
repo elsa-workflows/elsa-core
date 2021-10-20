@@ -75,7 +75,6 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
 
                 endpoints.MapFallbackToPage("/_Host");
             });
-
         }
     }
 }
