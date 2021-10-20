@@ -34,7 +34,7 @@ export class HttpEndpointPlugin implements ElsaPlugin {
   }
 
   onComponentLoadingCustomButton(context: ConfigureComponentCustomButtonContext) {
-    if (context.activityType !== 'HttpEndpoint' && context.activityType !== 'SendHttpRequest')
+    if (context.activityType !== 'HttpEndpoint')
       return;
 
     if (context.component === 'elsa-script-property') {
