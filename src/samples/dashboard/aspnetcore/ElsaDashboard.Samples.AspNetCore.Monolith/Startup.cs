@@ -26,8 +26,6 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
             // Elsa Server.
             var elsaSection = Configuration.GetSection("Elsa");
             
-            var serviceBusConnectionString = Configuration.GetConnectionString("ASB");
-
             services
                 .AddElsa(options => options
                     .UseEntityFrameworkPersistence(ef => ef.UseSqlite())

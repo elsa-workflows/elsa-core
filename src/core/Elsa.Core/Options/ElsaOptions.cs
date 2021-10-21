@@ -19,21 +19,10 @@ using Rebus.Transport.InMem;
 
 namespace Elsa.Options
 {
-    public record MessageTypeConfig(Type MessageType, string? QueueName = default);
+    public record MessageTypeConfig(Type MessageType, string QueueName);
 
     public class ElsaOptions
     {
-        public static string FormatChannelQueueName<TMessage>(string channel) => FormatChannelQueueName(typeof(TMessage), channel);
-        public static string FormatChannelQueueName(Type messageType, string channel) => FormatChannelQueueName(messageType.Name, channel);
-
-        public static string FormatChannelQueueName(string queueName, string channel)
-        {
-            var queue = !string.IsNullOrWhiteSpace(channel) ? $"{queueName}{channel}" : queueName;
-            return FormatQueueName(queue);
-        }
-        
-        public static string FormatQueueName(string queue) => queue.Humanize().Dehumanize().Underscore().Dasherize();
-
         internal ElsaOptions()
         {
             WorkflowDefinitionStoreFactory = sp => ActivatorUtilities.CreateInstance<InMemoryWorkflowDefinitionStore>(sp);

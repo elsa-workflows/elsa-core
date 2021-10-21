@@ -35,7 +35,7 @@ namespace Elsa.Services.Workflows
             workflowInstance.CancelledAt = _clock.GetCurrentInstant();
 
             await _workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
-            await _mediator.Publish(new WorkflowInstanceDeleted(workflowInstance), cancellationToken);
+            await _mediator.Publish(new WorkflowInstanceCancelled(workflowInstance), cancellationToken);
             
             return new CancelWorkflowInstanceResult(CancelWorkflowInstanceResultStatus.Ok, workflowInstance);
         }

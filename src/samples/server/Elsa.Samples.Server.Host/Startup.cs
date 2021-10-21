@@ -1,4 +1,9 @@
 using System.Collections.Generic;
+using Elsa.Caching.Rebus.Extensions;
+using Elsa.Rebus.AzureServiceBus;
+using Elsa.Retention.Extensions;
+using Elsa.Server.Api.Extensions;
+using Elsa.Server.Api.Hubs;
 using Elsa.Server.Hangfire.Extensions;
 using Hangfire;
 using Microsoft.AspNetCore.Builder;
@@ -78,7 +83,8 @@ namespace Elsa.Samples.Server.Host
                     .AddWorkflowsFrom<Startup>()
                     .AddFeatures(startups, Configuration)
                     .ConfigureWorkflowChannels(options => elsaSection.GetSection("WorkflowChannels").Bind(options))
-                );
+                )
+                .AddRetentionServices(options => elsaSection.GetSection("Retention").Bind(options));
             
             // Elsa API endpoints.
             services
@@ -100,10 +106,17 @@ namespace Elsa.Samples.Server.Host
             }
 
             app
-                .UseCors()
+                .UseCors(cors => cors
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .SetIsOriginAllowed(_ => true)
+                    .AllowCredentials())
                 .UseElsaFeatures()
                 .UseRouting()
-                .UseEndpoints(endpoints => { endpoints.MapControllers(); });
+                .UseEndpoints(endpoints => { 
+                    endpoints.MapControllers();
+                })
+                .MapWorkflowTestHub();
         }
     }
 }

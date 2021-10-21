@@ -7,6 +7,7 @@ using Elsa.Serialization;
 using Elsa.Server.Api.Swagger.Examples;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.Filters;
 
@@ -40,7 +41,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
         public async Task<IActionResult> Handle(string versionId, CancellationToken cancellationToken = default)
         {
             var workflowDefinition = await _workflowDefinitionStore.FindAsync(new WorkflowDefinitionVersionIdSpecification(versionId), cancellationToken);
-            return workflowDefinition == null ? NotFound() : Json(workflowDefinition, _serializer.GetSettings());
+            return workflowDefinition == null ? NotFound() : Json(workflowDefinition, SerializationHelper.GetSettingsForWorkflowDefinition());
         }
     }
 }

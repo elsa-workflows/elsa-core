@@ -20,7 +20,7 @@ export class ElsaWorkflowEditorNotifications {
 
   disconnectedCallback() {
     eventBus.detach(EventTypes.WorkflowPublished, this.onWorkflowPublished);
-    eventBus.detach(EventTypes.WorkflowRetracted, this.onWorkflowRetracted);    
+    eventBus.detach(EventTypes.WorkflowRetracted, this.onWorkflowRetracted);
     eventBus.detach(EventTypes.WorkflowImported, this.onWorkflowImported);
     eventBus.detach(EventTypes.ClipboardPermissionDenied, this.onClipboardPermissionsDenied);
     eventBus.detach(EventTypes.ClipboardCopied, this.onClipboardCopied);
@@ -30,5 +30,7 @@ export class ElsaWorkflowEditorNotifications {
   onWorkflowRetracted = (workflowDefinition: WorkflowDefinition) => toastNotificationService.show('Workflow Retracted', `Workflow successfully retracted at version ${workflowDefinition.version}.`, 1500);
   onWorkflowImported = () => toastNotificationService.show('Workflow Imported', `Workflow successfully imported.`, 1500);
   onClipboardPermissionsDenied = () => toastNotificationService.show('Clipboard Error', `Clipboard pemission denied.`, 1500);
-  onClipboardCopied = () => toastNotificationService.show('Copy to Clipboard', `Activities successfully copied to Clipboard.`, 1500);
+  onClipboardCopied = (title: string, body: string) => {
+    toastNotificationService.show(title || 'Copy to Clipboard', body || 'Activities successfully copied to Clipboard.', 1500);
+  }
 }

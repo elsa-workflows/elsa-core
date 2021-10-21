@@ -1,11 +1,14 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.Providers.DefaultValues;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Expressions;
+using Elsa.Metadata;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
@@ -19,7 +22,7 @@ namespace Elsa.Activities.Http
         Description = "Handle an incoming HTTP request.",
         Outcomes = new[] { OutcomeNames.Done }
     )]
-    public class HttpEndpoint : Activity
+    public class HttpEndpoint : Activity, IActivityPropertyOptionsProvider
     {
         /// <summary>
         /// The path that triggers this activity. 
@@ -57,6 +60,12 @@ namespace Elsa.Activities.Http
         public Type? TargetType { get; set; }
 
         [ActivityInput(
+            Category = PropertyCategories.Advanced,
+            UIHint = ActivityInputUIHints.CodeEditor,
+            OptionsProvider = typeof(HttpEndpoint))]
+        public string? Schema { get; set; }
+
+        [ActivityInput(
             Hint = "Check to allow authenticated requests only",
             SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid },
             Category = "Security"
@@ -67,13 +76,14 @@ namespace Elsa.Activities.Http
             Hint = "Provide a policy to evaluate. If the policy fails, the request is forbidden.",
             SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid },
             Category = "Security"
-        )] 
+        )]
         public string? Policy { get; set; }
 
         [ActivityOutput(Hint = "The received HTTP request.")]
         public HttpRequestModel? Output { get; set; }
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => context.WorkflowExecutionContext.IsFirstPass ? ExecuteInternal(context) : Suspend();
+
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context) => ExecuteInternal(context);
 
         private IActivityExecutionResult ExecuteInternal(ActivityExecutionContext context)
@@ -81,6 +91,19 @@ namespace Elsa.Activities.Http
             Output = context.GetInput<HttpRequestModel>()!;
             context.JournalData.Add("Inbound Request", Output);
             return Done();
+        }
+
+        object IActivityPropertyOptionsProvider.GetOptions(PropertyInfo property)
+        {
+            if (property.Name != nameof(Schema))
+                return default!;
+
+            return new
+            {
+                EditorHeight = "Large",
+                Context = nameof(HttpEndpoint),
+                Syntax = SyntaxNames.Json
+            };
         }
     }
 }

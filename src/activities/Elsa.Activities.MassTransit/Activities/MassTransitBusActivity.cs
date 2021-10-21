@@ -1,6 +1,7 @@
 using System;
 using Elsa.Services;
 using MassTransit;
+using MassTransit.Context;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.MassTransit
@@ -24,7 +25,7 @@ namespace Elsa.Activities.MassTransit
         /// the conversation and correlation id.
         /// </remarks>
         protected IPublishEndpoint PublishEndpoint =>
-            _consumeContext ?? (IPublishEndpoint)_bus;
+            _consumeContext != MissingConsumeContext.Instance ? _consumeContext : _bus;
 
         /// <summary>
         /// Gets the send endpoint provider to use.
@@ -34,7 +35,6 @@ namespace Elsa.Activities.MassTransit
         /// the conversation and correlation id.
         /// </remarks>
         protected ISendEndpointProvider SendEndpointProvider =>
-            _consumeContext ?? (ISendEndpointProvider)_bus;
-
+            _consumeContext != MissingConsumeContext.Instance ? _consumeContext : _bus;
     }
 }

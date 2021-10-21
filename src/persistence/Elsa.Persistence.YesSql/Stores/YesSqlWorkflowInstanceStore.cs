@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
@@ -33,6 +34,7 @@ namespace Elsa.Persistence.YesSql.Stores
                 EntityIdSpecification<WorkflowInstance> spec => Query<WorkflowInstanceIndex>(session, x => x.InstanceId == spec.Id),
                 WorkflowInstanceIdSpecification spec => Query<WorkflowInstanceIndex>(session, x => x.InstanceId == spec.Id),
                 WorkflowInstanceIdsSpecification spec => Query<WorkflowInstanceIndex>(session, x => x.InstanceId.IsIn(spec.WorkflowInstanceIds)),
+                AndSpecification<WorkflowInstance> spec => MapAndSpecification(session, spec),
                 _ => AutoMapSpecification<WorkflowInstanceIndex>(session, specification)
             };
 
@@ -47,6 +49,22 @@ namespace Elsa.Persistence.YesSql.Stores
                     return orderBy.SortDirection == SortDirection.Ascending ? indexedQuery.OrderBy(expression) : indexedQuery.OrderByDescending(expression);
                 }
             }
+        }
+        
+        // TODO: This is a workaround. The real fix might be to remove the specification pattern and replace with repository abstractions with finite methods, or automatically dig into And and Or specifications and map each branch into a YesSQL queryable predicate.
+        private IQuery<WorkflowInstanceDocument> MapAndSpecification(ISession session, AndSpecification<WorkflowInstance> and)
+        {
+            var left = and.Left;
+            var right = and.Right;
+            
+            if(left is WorkflowCreatedBeforeSpecification workflowCreatedBeforeSpecification && right is WorkflowFinishedStatusSpecification workflowFinishedStatusSpecification)
+            {
+                var createdAtFilter = workflowCreatedBeforeSpecification.Instant.ToDateTimeUtc();
+                var rightExpression = AutoMapSpecification<WorkflowInstanceIndex>(workflowFinishedStatusSpecification);
+                return Query<WorkflowInstanceIndex>(session, x => x.CreatedAt <=  createdAtFilter).Where(rightExpression);
+            }
+
+            return AutoMapSpecification<WorkflowInstanceIndex>(session, and);
         }
     }
 }

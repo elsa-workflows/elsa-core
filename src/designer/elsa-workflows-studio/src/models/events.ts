@@ -15,6 +15,8 @@ export const EventTypes = {
   WorkflowModelChanged: 'workflow-model-changed',
   ActivityDesignDisplaying: 'activity-design-displaying',
   ActivityDescriptorDisplaying: 'activity-descriptor-displaying',
+  ActivityPluginUpdated: 'activity-plugin-updated',
+  ActivityPluginValidating: 'activity-plugin-validating',
   WorkflowPublished: 'workflow-published',
   WorkflowRetracted: 'workflow-retracted',
   WorkflowImported: 'workflow-imported',
@@ -36,7 +38,11 @@ export const EventTypes = {
   ClipboardPermissionDenied: 'clipboard-permission-denied',
   ClipboardCopied: 'clipboard-copied',
   PasteActivity: 'paste-activity',
-  WorkflowSettingsModalLoaded: 'workflow-settings-modal-loaded'
+  WorkflowSettingsModalLoaded: 'workflow-settings-modal-loaded',
+  TestActivityMessageReceived: 'test-activity-message-received',
+  FlyoutPanelTabSelected: 'flyout-panel-tab-selected',
+  ComponentLoadingCustomButton: 'component-loading-custom-button',
+  ComponentCustomButtonClick: 'component-custom-button-click'
 };
 
 export interface AddActivityEventArgs {
@@ -56,6 +62,20 @@ export interface ActivityDesignDisplayContext {
   outcomes: Array<string>;
 }
 
+export interface ActivityUpdatedContext { 
+  activityModel: ActivityModel,
+  data?: string
+}
+
+export interface ActivityValidatingContext { 
+  activityType: string
+  prop: string,
+  value?: string,
+  isValidated: boolean,
+  data: any,
+  isValid: boolean
+}
+
 export interface ActivityDescriptorDisplayContext {
   activityDescriptor: ActivityDescriptor;
   activityIcon: any;
@@ -70,5 +90,19 @@ export interface ConfigureWorkflowRegistryColumnsContext {
 }
 
 export interface ConfigureWorkflowRegistryUpdatingContext {
+  params: any;
+}
+
+export interface ConfigureComponentCustomButtonContext {
+  component: string;
+  activityType: string;
+  prop: string;
+  data?: any;
+}
+
+export interface ComponentCustomButtonClickContext {
+  component: string;
+  activityType: string;
+  prop: string;
   params: any;
 }

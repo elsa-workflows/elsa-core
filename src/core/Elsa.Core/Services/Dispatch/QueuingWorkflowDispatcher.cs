@@ -50,11 +50,11 @@ namespace Elsa.Services.Dispatch
             }
 
             var channel = _workflowChannelOptions.GetChannelOrDefault(workflowBlueprint.Channel);
-            var queue = ElsaOptions.FormatChannelQueueName<ExecuteWorkflowInstanceRequest>(channel);
+            var queue = ServiceBusOptions.FormatChannelQueueName<ExecuteWorkflowInstanceRequest>(channel);
             await _commandSender.SendAsync(request, queue, cancellationToken: cancellationToken);
         }
 
-        public async Task DispatchAsync(TriggerWorkflowsRequest request, CancellationToken cancellationToken = default) => await _commandSender.SendAsync(request, cancellationToken);
+        public async Task DispatchAsync(TriggerWorkflowsRequest request, CancellationToken cancellationToken = default) => await _commandSender.SendAsync(request, cancellationToken: cancellationToken);
 
         public async Task DispatchAsync(ExecuteWorkflowDefinitionRequest request, CancellationToken cancellationToken = default)
         {
@@ -67,7 +67,7 @@ namespace Elsa.Services.Dispatch
             }
 
             var channel = _workflowChannelOptions.GetChannelOrDefault(workflowBlueprint.Channel);
-            var queue = ElsaOptions.FormatChannelQueueName<ExecuteWorkflowDefinitionRequest>(channel);
+            var queue = ServiceBusOptions.FormatChannelQueueName<ExecuteWorkflowDefinitionRequest>(channel);
             await _commandSender.SendAsync(request, queue, default, cancellationToken);
         }
     }

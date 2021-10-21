@@ -42,7 +42,7 @@ export class ElsaToastNotification {
   renderToast() {
     return (
       <Host class={{'hidden': !this.isVisible, 'elsa-block': true}}>
-        <div class="elsa-fixed elsa-inset-0 elsa-flex elsa-items-end elsa-justify-center elsa-px-4 elsa-py-6 elsa-pointer-events-none sm:elsa-p-6 sm:elsa-items-start sm:elsa-justify-end">
+        <div class="elsa-fixed elsa-inset-0 elsa-z-20 elsa-flex elsa-items-end elsa-justify-center elsa-px-4 elsa-py-6 elsa-pointer-events-none sm:elsa-p-6 sm:elsa-items-start sm:elsa-justify-end">
           <div ref={el => this.toast = el}
                data-transition-enter="elsa-transform elsa-ease-out elsa-duration-300 elsa-transition"
                data-transition-enter-start="elsa-translate-y-2 elsa-opacity-0 sm:elsa-translate-y-0 sm:elsa-translate-x-2"

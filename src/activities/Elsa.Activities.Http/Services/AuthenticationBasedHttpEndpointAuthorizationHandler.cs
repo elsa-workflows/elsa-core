@@ -13,8 +13,12 @@ namespace Elsa.Activities.Http.Services
         {
             var httpContext = context.HttpContext;
             var user = httpContext.User;
+            var identity = user.Identity;
 
-            if (!user.Identity.IsAuthenticated)
+            if (identity == null)
+                return false;
+            
+            if (identity.IsAuthenticated == false)
                 return false;
 
             var cancellationToken = context.CancellationToken;
@@ -22,7 +26,7 @@ namespace Elsa.Activities.Http.Services
             var policyName = await httpEndpoint.EvaluatePropertyValueAsync(x => x.Policy, cancellationToken);
 
             if (string.IsNullOrWhiteSpace(policyName))
-                return user.Identity.IsAuthenticated;
+                return identity.IsAuthenticated;
 
             var resource = new HttpWorkflowResource(context.WorkflowBlueprint, httpEndpoint.ActivityBlueprint, context.WorkflowInstanceId);
             var authorizationResult = await _authorizationService.AuthorizeAsync(user, resource, policyName);
