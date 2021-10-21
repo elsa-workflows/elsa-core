@@ -4,9 +4,9 @@ using MediatR;
 
 namespace Elsa.Events
 {
-    public class ActivityExecutionResultFailed : INotification
+    public class ActivityExecutionFailed : INotification
     {
-        public ActivityExecutionResultFailed(Exception exception, ActivityExecutionContext activityExecutionContext)
+        public ActivityExecutionFailed(Exception exception, ActivityExecutionContext activityExecutionContext)
         {
             Exception = exception;
             ActivityExecutionContext = activityExecutionContext;
