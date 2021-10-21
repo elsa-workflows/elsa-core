@@ -187,14 +187,11 @@ export class ElsaWorkflowDesigner {
   }
 
   async copyActivitiesToClipboard() {
-    this.checkClipboardPermissions();
     await navigator.clipboard.writeText(JSON.stringify(this.selectedActivities));
     await eventBus.emit(EventTypes.ClipboardCopied, this);
   }
 
   async pasteActivitiesFromClipboard() {
-    this.checkClipboardPermissions();
-
     let copiedActivities: Array<ActivityModel> = [];
 
     await navigator.clipboard.readText().then(data => {
@@ -231,13 +228,6 @@ export class ElsaWorkflowDesigner {
     // Set to null to avoid conflict with on Activity node click event
     this.parentActivityId = null;
     this.parentActivityOutcome = null;
-  }
-
-  checkClipboardPermissions() {
-    navigator.permissions.query({name: "clipboard-read"}).then((result) => {
-      if (result.state == 'denied')
-        eventBus.emit(EventTypes.ClipboardPermissionDenied, this);
-    });
   }
 
   connectedCallback() {
@@ -715,8 +705,8 @@ export class ElsaWorkflowDesigner {
               d3.select(node.elem).select('svg').classed('elsa-text-green-400', true).classed('elsa-text-gray-400', false).classed('hover:elsa-text-blue-500', false);
               return;
             }
-
-            await this.showActivityPicker();
+            
+            if (this.mode !== WorkflowDesignerMode.Test) await this.showActivityPicker();
           })
           .on("mouseover", e => {
             if (e.shiftKey)
@@ -737,6 +727,8 @@ export class ElsaWorkflowDesigner {
       root.selectAll('.node.start').each((n: any) => {
         const node = this.graph.node(n) as any;
         d3.select(node.elem).on('click', async e => {
+          if (this.mode == WorkflowDesignerMode.Test) return;
+
           await this.showActivityPicker();
         });
       });

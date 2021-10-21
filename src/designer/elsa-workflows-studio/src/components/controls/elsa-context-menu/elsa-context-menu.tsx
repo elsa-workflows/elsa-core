@@ -31,7 +31,8 @@ export class ElsaContextMenu {
   }
 
   closeContextMenu() {
-    leave(this.contextMenu);
+    if (!!this.contextMenu)
+      leave(this.contextMenu);
   }
 
   toggleMenu() {

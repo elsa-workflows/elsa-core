@@ -60,6 +60,10 @@ export class ElsaWorkflowTestPanel {
       if (message.workflowStatus == 'Executed') {
         this.workflowStarted = false;
       }
+
+      if (!this.message && message.activityId == this.workflowTestActivityId){
+        this.message = message;
+      }
     });
 
     this.hubConnection.start()
@@ -110,6 +114,28 @@ export class ElsaWorkflowTestPanel {
       const workflowStatus = this.workflowTestActivityMessages.last().workflowStatus;
 
       const t = (x, params?) => this.i18next.t(x, params);
+
+      const renderEndpointUrl = () => {
+        if (!message.activityData || !message.activityData["Path"]) return undefined;
+
+        const endpointUrl = this.serverUrl + '/workflows' + message.activityData["Path"].value + '?correlation=' + message.correlationId;
+
+        return (
+          <div>
+              <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
+                <dt class="elsa-text-gray-500">
+                  <span class="elsa-mr-1">{t('EntryEndpoint')}</span>
+                  <elsa-copy-button value={endpointUrl} />
+                </dt>
+              </div>
+              <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
+                <dt class="elsa-text-gray-900">
+                  <span class="elsa-break-all font-mono" onClick={e => clip(e.currentTarget)}>{endpointUrl}</span>
+                </dt>
+              </div>
+            </div>
+        );
+      };      
   
       return (      
         <dl class="elsa-border-b elsa-border-gray-200 elsa-divide-y elsa-divide-gray-200">
@@ -117,20 +143,7 @@ export class ElsaWorkflowTestPanel {
             <dt class="elsa-text-gray-500">{t('Status')}</dt>
             <dd class="elsa-text-gray-900">{workflowStatus}</dd>
           </div>            
-          {!!message.activityData["Path"] ?
-            <div>
-              <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
-                <dt class="elsa-text-gray-500">{t('EntryEndpoint')}</dt>
-              </div>
-              <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
-                <dt class="elsa-text-gray-900">
-                  <pre onClick={e => clip(e.currentTarget)}>{this.serverUrl + '/workflows' + message.activityData["Path"].value + '?correlation=' + message.correlationId}</pre>
-                </dt>
-              </div>
-            </div>
-            :
-            undefined
-          }   
+          {renderEndpointUrl()}   
         </dl>
       );
     }    

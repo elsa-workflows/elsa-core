@@ -40,7 +40,7 @@ export class ElsaMultiExpressionEditor {
   onWindowClicked(event: Event){
     const target = event.target as HTMLElement;
 
-    if (!this.contextMenuWidget.contains(target))
+    if (!this.contextMenuWidget || !this.contextMenuWidget.contains(target))
       this.closeContextMenu();
   }
 
@@ -53,7 +53,8 @@ export class ElsaMultiExpressionEditor {
   }
 
   closeContextMenu() {
-    leave(this.contextMenu);
+    if (!!this.contextMenu)
+      leave(this.contextMenu);
   }
 
   selectDefaultEditor(e: Event) {
