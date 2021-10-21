@@ -16,6 +16,7 @@ import { Map } from "./utils/utils";
 import { PagerData } from "./components/controls/elsa-pager/elsa-pager";
 import { ToastNotificationOptions } from "./components/shared/elsa-toast-notification/elsa-toast-notification";
 import { WebhookDefinition } from "./modules/elsa-webhooks/models";
+import { WorkflowDefinitionProperty } from "./modules/elsa-workflows-settings/components/elsa-workflow-definition-property/models";
 export namespace Components {
     interface ElsaActivityEditorModal {
         "culture": string;
@@ -255,6 +256,10 @@ export namespace Components {
         "serverUrl": string;
         "workflowId": string;
     }
+    interface ElsaWorkflowBlueprintSidePanel {
+        "serverUrl": string;
+        "workflowId": string;
+    }
     interface ElsaWorkflowBlueprintViewerScreen {
         "culture": string;
         "getServerUrl": () => Promise<string>;
@@ -273,6 +278,9 @@ export namespace Components {
         "monacoLibPath": string;
         "serverUrl": string;
         "workflowDefinitionId": string;
+    }
+    interface ElsaWorkflowDefinitionPropertiesTab {
+        "properties": Array<WorkflowDefinitionProperty>;
     }
     interface ElsaWorkflowDefinitionsListScreen {
         "basePath": string;
@@ -325,6 +333,12 @@ export namespace Components {
     interface ElsaWorkflowSettingsModal {
         "serverUrl": string;
         "workflowDefinition": WorkflowDefinition;
+    }
+    interface ElsaWorkflowTestPanel {
+        "culture": string;
+        "serverUrl": string;
+        "workflowDefinition": WorkflowDefinition;
+        "workflowTestActivityId": string;
     }
 }
 declare global {
@@ -598,6 +612,12 @@ declare global {
         prototype: HTMLElsaWorkflowBlueprintPropertiesPanelElement;
         new (): HTMLElsaWorkflowBlueprintPropertiesPanelElement;
     };
+    interface HTMLElsaWorkflowBlueprintSidePanelElement extends Components.ElsaWorkflowBlueprintSidePanel, HTMLStencilElement {
+    }
+    var HTMLElsaWorkflowBlueprintSidePanelElement: {
+        prototype: HTMLElsaWorkflowBlueprintSidePanelElement;
+        new (): HTMLElsaWorkflowBlueprintSidePanelElement;
+    };
     interface HTMLElsaWorkflowBlueprintViewerScreenElement extends Components.ElsaWorkflowBlueprintViewerScreen, HTMLStencilElement {
     }
     var HTMLElsaWorkflowBlueprintViewerScreenElement: {
@@ -615,6 +635,12 @@ declare global {
     var HTMLElsaWorkflowDefinitionEditorScreenElement: {
         prototype: HTMLElsaWorkflowDefinitionEditorScreenElement;
         new (): HTMLElsaWorkflowDefinitionEditorScreenElement;
+    };
+    interface HTMLElsaWorkflowDefinitionPropertiesTabElement extends Components.ElsaWorkflowDefinitionPropertiesTab, HTMLStencilElement {
+    }
+    var HTMLElsaWorkflowDefinitionPropertiesTabElement: {
+        prototype: HTMLElsaWorkflowDefinitionPropertiesTabElement;
+        new (): HTMLElsaWorkflowDefinitionPropertiesTabElement;
     };
     interface HTMLElsaWorkflowDefinitionsListScreenElement extends Components.ElsaWorkflowDefinitionsListScreen, HTMLStencilElement {
     }
@@ -664,6 +690,12 @@ declare global {
         prototype: HTMLElsaWorkflowSettingsModalElement;
         new (): HTMLElsaWorkflowSettingsModalElement;
     };
+    interface HTMLElsaWorkflowTestPanelElement extends Components.ElsaWorkflowTestPanel, HTMLStencilElement {
+    }
+    var HTMLElsaWorkflowTestPanelElement: {
+        prototype: HTMLElsaWorkflowTestPanelElement;
+        new (): HTMLElsaWorkflowTestPanelElement;
+    };
     interface HTMLElementTagNameMap {
         "elsa-activity-editor-modal": HTMLElsaActivityEditorModalElement;
         "elsa-activity-picker-modal": HTMLElsaActivityPickerModalElement;
@@ -710,9 +742,11 @@ declare global {
         "elsa-webhook-definition-editor-screen": HTMLElsaWebhookDefinitionEditorScreenElement;
         "elsa-webhook-definitions-list-screen": HTMLElsaWebhookDefinitionsListScreenElement;
         "elsa-workflow-blueprint-properties-panel": HTMLElsaWorkflowBlueprintPropertiesPanelElement;
+        "elsa-workflow-blueprint-side-panel": HTMLElsaWorkflowBlueprintSidePanelElement;
         "elsa-workflow-blueprint-viewer-screen": HTMLElsaWorkflowBlueprintViewerScreenElement;
         "elsa-workflow-definition-editor-notifications": HTMLElsaWorkflowDefinitionEditorNotificationsElement;
         "elsa-workflow-definition-editor-screen": HTMLElsaWorkflowDefinitionEditorScreenElement;
+        "elsa-workflow-definition-properties-tab": HTMLElsaWorkflowDefinitionPropertiesTabElement;
         "elsa-workflow-definitions-list-screen": HTMLElsaWorkflowDefinitionsListScreenElement;
         "elsa-workflow-instance-journal": HTMLElsaWorkflowInstanceJournalElement;
         "elsa-workflow-instance-list-screen": HTMLElsaWorkflowInstanceListScreenElement;
@@ -721,6 +755,7 @@ declare global {
         "elsa-workflow-publish-button": HTMLElsaWorkflowPublishButtonElement;
         "elsa-workflow-registry-list-screen": HTMLElsaWorkflowRegistryListScreenElement;
         "elsa-workflow-settings-modal": HTMLElsaWorkflowSettingsModalElement;
+        "elsa-workflow-test-panel": HTMLElsaWorkflowTestPanelElement;
     }
 }
 declare namespace LocalJSX {
@@ -963,6 +998,10 @@ declare namespace LocalJSX {
         "serverUrl"?: string;
         "workflowId"?: string;
     }
+    interface ElsaWorkflowBlueprintSidePanel {
+        "serverUrl"?: string;
+        "workflowId"?: string;
+    }
     interface ElsaWorkflowBlueprintViewerScreen {
         "culture"?: string;
         "serverUrl"?: string;
@@ -977,6 +1016,10 @@ declare namespace LocalJSX {
         "onWorkflowSaved"?: (event: CustomEvent<WorkflowDefinition>) => void;
         "serverUrl"?: string;
         "workflowDefinitionId"?: string;
+    }
+    interface ElsaWorkflowDefinitionPropertiesTab {
+        "onPropertiesChanged"?: (event: CustomEvent<Array<WorkflowDefinitionProperty>>) => void;
+        "properties"?: Array<WorkflowDefinitionProperty>;
     }
     interface ElsaWorkflowDefinitionsListScreen {
         "basePath"?: string;
@@ -1031,6 +1074,12 @@ declare namespace LocalJSX {
         "serverUrl"?: string;
         "workflowDefinition"?: WorkflowDefinition;
     }
+    interface ElsaWorkflowTestPanel {
+        "culture"?: string;
+        "serverUrl"?: string;
+        "workflowDefinition"?: WorkflowDefinition;
+        "workflowTestActivityId"?: string;
+    }
     interface IntrinsicElements {
         "elsa-activity-editor-modal": ElsaActivityEditorModal;
         "elsa-activity-picker-modal": ElsaActivityPickerModal;
@@ -1077,9 +1126,11 @@ declare namespace LocalJSX {
         "elsa-webhook-definition-editor-screen": ElsaWebhookDefinitionEditorScreen;
         "elsa-webhook-definitions-list-screen": ElsaWebhookDefinitionsListScreen;
         "elsa-workflow-blueprint-properties-panel": ElsaWorkflowBlueprintPropertiesPanel;
+        "elsa-workflow-blueprint-side-panel": ElsaWorkflowBlueprintSidePanel;
         "elsa-workflow-blueprint-viewer-screen": ElsaWorkflowBlueprintViewerScreen;
         "elsa-workflow-definition-editor-notifications": ElsaWorkflowDefinitionEditorNotifications;
         "elsa-workflow-definition-editor-screen": ElsaWorkflowDefinitionEditorScreen;
+        "elsa-workflow-definition-properties-tab": ElsaWorkflowDefinitionPropertiesTab;
         "elsa-workflow-definitions-list-screen": ElsaWorkflowDefinitionsListScreen;
         "elsa-workflow-instance-journal": ElsaWorkflowInstanceJournal;
         "elsa-workflow-instance-list-screen": ElsaWorkflowInstanceListScreen;
@@ -1088,6 +1139,7 @@ declare namespace LocalJSX {
         "elsa-workflow-publish-button": ElsaWorkflowPublishButton;
         "elsa-workflow-registry-list-screen": ElsaWorkflowRegistryListScreen;
         "elsa-workflow-settings-modal": ElsaWorkflowSettingsModal;
+        "elsa-workflow-test-panel": ElsaWorkflowTestPanel;
     }
 }
 export { LocalJSX as JSX };
@@ -1139,9 +1191,11 @@ declare module "@stencil/core" {
             "elsa-webhook-definition-editor-screen": LocalJSX.ElsaWebhookDefinitionEditorScreen & JSXBase.HTMLAttributes<HTMLElsaWebhookDefinitionEditorScreenElement>;
             "elsa-webhook-definitions-list-screen": LocalJSX.ElsaWebhookDefinitionsListScreen & JSXBase.HTMLAttributes<HTMLElsaWebhookDefinitionsListScreenElement>;
             "elsa-workflow-blueprint-properties-panel": LocalJSX.ElsaWorkflowBlueprintPropertiesPanel & JSXBase.HTMLAttributes<HTMLElsaWorkflowBlueprintPropertiesPanelElement>;
+            "elsa-workflow-blueprint-side-panel": LocalJSX.ElsaWorkflowBlueprintSidePanel & JSXBase.HTMLAttributes<HTMLElsaWorkflowBlueprintSidePanelElement>;
             "elsa-workflow-blueprint-viewer-screen": LocalJSX.ElsaWorkflowBlueprintViewerScreen & JSXBase.HTMLAttributes<HTMLElsaWorkflowBlueprintViewerScreenElement>;
             "elsa-workflow-definition-editor-notifications": LocalJSX.ElsaWorkflowDefinitionEditorNotifications & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionEditorNotificationsElement>;
             "elsa-workflow-definition-editor-screen": LocalJSX.ElsaWorkflowDefinitionEditorScreen & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionEditorScreenElement>;
+            "elsa-workflow-definition-properties-tab": LocalJSX.ElsaWorkflowDefinitionPropertiesTab & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionPropertiesTabElement>;
             "elsa-workflow-definitions-list-screen": LocalJSX.ElsaWorkflowDefinitionsListScreen & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionsListScreenElement>;
             "elsa-workflow-instance-journal": LocalJSX.ElsaWorkflowInstanceJournal & JSXBase.HTMLAttributes<HTMLElsaWorkflowInstanceJournalElement>;
             "elsa-workflow-instance-list-screen": LocalJSX.ElsaWorkflowInstanceListScreen & JSXBase.HTMLAttributes<HTMLElsaWorkflowInstanceListScreenElement>;
@@ -1150,6 +1204,7 @@ declare module "@stencil/core" {
             "elsa-workflow-publish-button": LocalJSX.ElsaWorkflowPublishButton & JSXBase.HTMLAttributes<HTMLElsaWorkflowPublishButtonElement>;
             "elsa-workflow-registry-list-screen": LocalJSX.ElsaWorkflowRegistryListScreen & JSXBase.HTMLAttributes<HTMLElsaWorkflowRegistryListScreenElement>;
             "elsa-workflow-settings-modal": LocalJSX.ElsaWorkflowSettingsModal & JSXBase.HTMLAttributes<HTMLElsaWorkflowSettingsModalElement>;
+            "elsa-workflow-test-panel": LocalJSX.ElsaWorkflowTestPanel & JSXBase.HTMLAttributes<HTMLElsaWorkflowTestPanelElement>;
         }
     }
 }
