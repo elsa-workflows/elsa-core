@@ -118,6 +118,11 @@ export const createElsaClient = async function (serverUrl: string): Promise<Elsa
         return response.data;
       }
     },
+    workflowTestApi: {
+      execute: async (request) => {
+        await httpClient.post<void>(`v1/workflow-test/execute`, request);
+      }
+    },
     workflowRegistryApi: {
       list: async (page?: number, pageSize?: number, versionOptions?: VersionOptions): Promise<PagedList<WorkflowBlueprintSummary>> => {
         const versionOptionsString = getVersionOptionsString(versionOptions);
@@ -247,6 +252,7 @@ export interface ElsaClient {
   activityStatsApi: ActivityStatsApi;
   workflowStorageProvidersApi: WorkflowStorageProvidersApi;
   workflowChannelsApi: WorkflowChannelsApi;
+  workflowTestApi: WorkflowTestApi;
 }
 
 export interface ActivitiesApi {
@@ -272,6 +278,11 @@ export interface WorkflowDefinitionsApi {
   export(workflowDefinitionId: string, versionOptions: VersionOptions): Promise<ExportWorkflowResponse>;
 
   import(workflowDefinitionId: string, file: File): Promise<WorkflowDefinition>;
+}
+
+export interface WorkflowTestApi {
+
+  execute(request: WorkflowTestExecuteRequest): Promise<void>;
 }
 
 export interface WorkflowRegistryApi {
@@ -355,6 +366,12 @@ export interface SaveWorkflowDefinitionRequest {
   publish?: boolean;
   activities: Array<ActivityDefinition>;
   connections: Array<ConnectionDefinition>;
+}
+
+export interface WorkflowTestExecuteRequest {
+  workflowDefinitionId?: string, 
+  version?: number, 
+  signalRConnectionId?: string
 }
 
 export interface ExportWorkflowResponse {

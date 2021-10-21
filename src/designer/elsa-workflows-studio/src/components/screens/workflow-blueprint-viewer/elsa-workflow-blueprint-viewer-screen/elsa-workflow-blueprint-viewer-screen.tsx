@@ -110,7 +110,7 @@ export class ElsaWorkflowBlueprintViewerScreen {
     const activityDescriptor = activityDescriptors.find(x => x.type == source.type);
     const properties: Array<ActivityDefinitionProperty> = collection.map(source.inputProperties.data, (value, key) => {
       const propertyDescriptor = activityDescriptor.inputProperties.find(x => x.name == key);
-      const defaultSyntax = propertyDescriptor.defaultSyntax || SyntaxNames.Literal;
+      const defaultSyntax = propertyDescriptor?.defaultSyntax || SyntaxNames.Literal;
       const expressions = {};
       expressions[defaultSyntax] = value;
       return ({name: key, expressions: expressions, syntax: defaultSyntax});
@@ -150,12 +150,16 @@ export class ElsaWorkflowBlueprintViewerScreen {
   renderCanvas() {
     return (
       <div class="elsa-flex-1 elsa-flex">
-        <elsa-designer-tree model={this.workflowModel} class="elsa-flex-1" ref={el => this.designer = el}
-                            mode={WorkflowDesignerMode.Blueprint}/>
+        <elsa-designer-tree
+          model={this.workflowModel}
+          class="elsa-flex-1"
+          ref={el => this.designer = el}
+          mode={WorkflowDesignerMode.Blueprint}
+        />
         <elsa-flyout-panel>
           <elsa-tab-header tab="general" slot="header">General</elsa-tab-header>
           <elsa-tab-content tab="general" slot="content">
-            <elsa-workflow-blueprint-side-panel workflowId={this.workflowDefinitionId}/>
+            <elsa-workflow-blueprint-properties-panel workflowId={this.workflowDefinitionId}/>
           </elsa-tab-content>
         </elsa-flyout-panel>
       </div>

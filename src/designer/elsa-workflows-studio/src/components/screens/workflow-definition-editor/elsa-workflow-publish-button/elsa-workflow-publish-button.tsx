@@ -1,6 +1,5 @@
-import {Component, Host, h, Prop, State, Event, EventEmitter, Watch} from '@stencil/core';
+import {Component, Event, EventEmitter, Host, h, Listen, Prop} from '@stencil/core';
 import {leave, toggle} from 'el-transition'
-import {registerClickOutside} from "stencil-click-outside";
 import {WorkflowDefinition} from "../../../../models";
 import Tunnel from '../../../../data/workflow-editor';
 import {i18n} from "i18next";
@@ -24,9 +23,18 @@ export class ElsaWorkflowPublishButton {
   i18next: i18n;
   menu: HTMLElement;
   fileInput: HTMLInputElement;
+  element: HTMLElement;
 
   async componentWillLoad(){
     this.i18next = await loadTranslations(this.culture, resources);
+  }
+
+  @Listen('click', {target: 'window'})
+  onWindowClicked(event: Event){
+    const target = event.target as HTMLElement;
+
+    if (!this.element.contains(target))
+      this.closeMenu();
   }
 
   t = (key: string) => this.i18next.t(key);
@@ -79,7 +87,7 @@ export class ElsaWorkflowPublishButton {
     const t = this.t;
 
     return (
-      <Host class="elsa-block" ref={el => registerClickOutside(this, el, this.closeMenu)}>
+      <Host class="elsa-block" ref={el => this.element = el}>
         <span class="elsa-relative elsa-z-0 elsa-inline-flex elsa-shadow-sm elsa-rounded-md">
           {this.publishing ? this.renderPublishingButton() : this.renderPublishButton()}
           <span class="-elsa-ml-px elsa-relative elsa-block">

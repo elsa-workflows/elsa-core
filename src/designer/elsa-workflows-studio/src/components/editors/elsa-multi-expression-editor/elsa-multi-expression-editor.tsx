@@ -1,6 +1,5 @@
-import {Component, Event, EventEmitter, h, Prop, State} from '@stencil/core';
+import {Component, Event, EventEmitter, Listen, h, Prop, State} from '@stencil/core';
 import {SyntaxNames} from "../../../models";
-import {registerClickOutside} from "stencil-click-outside";
 import {enter, leave, toggle} from 'el-transition'
 import {Map, mapSyntaxToLanguage} from "../../../utils/utils";
 
@@ -30,10 +29,19 @@ export class ElsaMultiExpressionEditor {
   contextMenu: HTMLElement;
   expressionEditor: HTMLElsaExpressionEditorElement;
   defaultSyntaxValue: string;
+  contextMenuWidget: HTMLElement;
 
   async componentWillLoad() {
     this.selectedSyntax = this.syntax;
     this.currentValue = this.expressions[this.selectedSyntax ? this.selectedSyntax : this.defaultSyntax];
+  }
+
+  @Listen('click', {target: 'window'})
+  onWindowClicked(event: Event){
+    const target = event.target as HTMLElement;
+
+    if (!this.contextMenuWidget || !this.contextMenuWidget.contains(target))
+      this.closeContextMenu();
   }
 
   toggleContextMenu() {
@@ -45,7 +53,8 @@ export class ElsaMultiExpressionEditor {
   }
 
   closeContextMenu() {
-    leave(this.contextMenu);
+    if (!!this.contextMenu)
+      leave(this.contextMenu);
   }
 
   selectDefaultEditor(e: Event) {
@@ -109,7 +118,7 @@ export class ElsaMultiExpressionEditor {
     const selectedSyntax = this.selectedSyntax;
     const advancedButtonClass = selectedSyntax ? 'elsa-text-blue-500' : 'elsa-text-gray-300'
 
-    return <div class="elsa-relative" ref={el => registerClickOutside(this, el, this.closeContextMenu)}>
+    return <div class="elsa-relative" ref={el => this.contextMenuWidget  = el}>
       <button type="button" class={`elsa-border-0 focus:elsa-outline-none elsa-text-sm ${advancedButtonClass}`} onClick={e => this.onSettingsClick(e)}>
         {!this.isReadOnly ? this.renderContextMenuButton() : ""}
       </button>

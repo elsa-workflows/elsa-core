@@ -39,7 +39,7 @@ Type: `Promise<string>`
 - [elsa-flyout-panel](../../../shared/elsa-flyout-panel)
 - [elsa-tab-header](../../../shared/elsa-tab-header)
 - [elsa-tab-content](../../../shared/elsa-tab-content)
-- [elsa-workflow-blueprint-side-panel](../elsa-workflow-blueprint-side-panel)
+- [elsa-workflow-blueprint-properties-panel](../elsa-workflow-blueprint-properties-panel)
 - context-consumer
 
 ### Graph
@@ -49,10 +49,8 @@ graph TD;
   elsa-workflow-blueprint-viewer-screen --> elsa-flyout-panel
   elsa-workflow-blueprint-viewer-screen --> elsa-tab-header
   elsa-workflow-blueprint-viewer-screen --> elsa-tab-content
-  elsa-workflow-blueprint-viewer-screen --> elsa-workflow-blueprint-side-panel
+  elsa-workflow-blueprint-viewer-screen --> elsa-workflow-blueprint-properties-panel
   elsa-workflow-blueprint-viewer-screen --> context-consumer
-  elsa-workflow-blueprint-side-panel --> elsa-workflow-blueprint-properties-panel
-  elsa-workflow-blueprint-side-panel --> context-consumer
   elsa-workflow-blueprint-properties-panel --> context-consumer
   elsa-studio-workflow-blueprint-view --> elsa-workflow-blueprint-viewer-screen
   style elsa-workflow-blueprint-viewer-screen fill:#f9f,stroke:#333,stroke-width:4px

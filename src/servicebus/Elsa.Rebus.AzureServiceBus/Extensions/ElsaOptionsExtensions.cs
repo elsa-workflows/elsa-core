@@ -31,6 +31,9 @@ namespace Elsa.Rebus.AzureServiceBus
             context.Configurer
                 .Transport(t =>
                 {
+                    if (queueName.Length > 50)
+                        queueName = queueName.Substring(queueName.Length - 50);
+                    
                     var transport = t.UseAzureServiceBus(connectionString, queueName, tokenProvider);
                     configureTransport?.Invoke(transport);
                 });

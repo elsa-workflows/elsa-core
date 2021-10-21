@@ -16,7 +16,6 @@ export class ElsaWorkflowPropertiesPanel {
   @Prop() workflowDefinition: WorkflowDefinition;
   @Prop() culture: string;
   @Prop() serverUrl: string;
-  @Prop() expandButtonPosition = 1;
   @State() publishedVersion: number;
   @State() expanded: boolean;
   private i18next: i18n;
@@ -35,7 +34,7 @@ export class ElsaWorkflowPropertiesPanel {
 
   render() {
     const t = (x, params?) => this.i18next.t(x, params);
-    const {workflowDefinition, expanded, expandButtonPosition} = this;
+    const {workflowDefinition} = this;
     const name = workflowDefinition.name || this.i18next.t("Untitled");
     const {isPublished} = workflowDefinition;
 

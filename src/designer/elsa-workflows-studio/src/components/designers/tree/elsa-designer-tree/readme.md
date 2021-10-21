@@ -7,33 +7,45 @@
 
 ## Properties
 
-| Property                                    | Attribute                     | Description | Type                                                                                           | Default                                                                                                             |
-| ------------------------------------------- | ----------------------------- | ----------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `activityBorderColor`                       | --                            |             | `(activity: ActivityModel) => string`                                                          | `undefined`                                                                                                         |
-| `activityContextMenu`                       | --                            |             | `ActivityContextMenuState`                                                                     | `undefined`                                                                                                         |
-| `activityContextMenuButton`                 | --                            |             | `(activity: ActivityModel) => string`                                                          | `undefined`                                                                                                         |
-| `connectionContextMenu`                     | --                            |             | `ActivityContextMenuState`                                                                     | `undefined`                                                                                                         |
-| `enableMultipleConnectionsFromSingleSource` | `enable-multiple-connections` |             | `boolean`                                                                                      | `undefined`                                                                                                         |
-| `layoutDirection`                           | `layout-direction`            |             | `LayoutDirection.Horizontal \| LayoutDirection.Vertical`                                       | `LayoutDirection.Vertical`                                                                                          |
-| `mode`                                      | `mode`                        |             | `WorkflowDesignerMode.Blueprint \| WorkflowDesignerMode.Edit \| WorkflowDesignerMode.Instance` | `WorkflowDesignerMode.Edit`                                                                                         |
-| `model`                                     | --                            |             | `WorkflowModel`                                                                                | `{     activities: [],     connections: [],     persistenceBehavior: WorkflowPersistenceBehavior.WorkflowBurst   }` |
-| `selectedActivityIds`                       | --                            |             | `string[]`                                                                                     | `[]`                                                                                                                |
+| Property                                    | Attribute                     | Description | Type                                                                                                                        | Default                                                                                                             |
+| ------------------------------------------- | ----------------------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `activityBorderColor`                       | --                            |             | `(activity: ActivityModel) => string`                                                                                       | `undefined`                                                                                                         |
+| `activityContextMenu`                       | --                            |             | `ActivityContextMenuState`                                                                                                  | `undefined`                                                                                                         |
+| `activityContextMenuButton`                 | --                            |             | `(activity: ActivityModel) => string`                                                                                       | `undefined`                                                                                                         |
+| `activityContextTestMenu`                   | --                            |             | `ActivityContextMenuState`                                                                                                  | `undefined`                                                                                                         |
+| `connectionContextMenu`                     | --                            |             | `ActivityContextMenuState`                                                                                                  | `undefined`                                                                                                         |
+| `enableMultipleConnectionsFromSingleSource` | `enable-multiple-connections` |             | `boolean`                                                                                                                   | `undefined`                                                                                                         |
+| `layoutDirection`                           | `layout-direction`            |             | `LayoutDirection.Horizontal \| LayoutDirection.Vertical`                                                                    | `LayoutDirection.Vertical`                                                                                          |
+| `mode`                                      | `mode`                        |             | `WorkflowDesignerMode.Blueprint \| WorkflowDesignerMode.Edit \| WorkflowDesignerMode.Instance \| WorkflowDesignerMode.Test` | `WorkflowDesignerMode.Edit`                                                                                         |
+| `model`                                     | --                            |             | `WorkflowModel`                                                                                                             | `{     activities: [],     connections: [],     persistenceBehavior: WorkflowPersistenceBehavior.WorkflowBurst   }` |
+| `selectedActivityIds`                       | --                            |             | `string[]`                                                                                                                  | `[]`                                                                                                                |
 
 
 ## Events
 
-| Event                                | Description | Type                                    |
-| ------------------------------------ | ----------- | --------------------------------------- |
-| `activityContextMenuButtonClicked`   |             | `CustomEvent<ActivityContextMenuState>` |
-| `activityDeselected`                 |             | `CustomEvent<ActivityModel>`            |
-| `activitySelected`                   |             | `CustomEvent<ActivityModel>`            |
-| `connectionContextMenuButtonClicked` |             | `CustomEvent<ActivityContextMenuState>` |
-| `workflow-changed`                   |             | `CustomEvent<WorkflowModel>`            |
+| Event                                  | Description | Type                                    |
+| -------------------------------------- | ----------- | --------------------------------------- |
+| `activityContextMenuButtonClicked`     |             | `CustomEvent<ActivityContextMenuState>` |
+| `activityContextMenuButtonTestClicked` |             | `CustomEvent<ActivityContextMenuState>` |
+| `activityDeselected`                   |             | `CustomEvent<ActivityModel>`            |
+| `activitySelected`                     |             | `CustomEvent<ActivityModel>`            |
+| `connectionContextMenuButtonClicked`   |             | `CustomEvent<ActivityContextMenuState>` |
+| `workflow-changed`                     |             | `CustomEvent<WorkflowModel>`            |
 
 
 ## Methods
 
 ### `removeActivity(activity: ActivityModel) => Promise<void>`
+
+
+
+#### Returns
+
+Type: `Promise<void>`
+
+
+
+### `removeSelectedActivities() => Promise<void>`
 
 
 

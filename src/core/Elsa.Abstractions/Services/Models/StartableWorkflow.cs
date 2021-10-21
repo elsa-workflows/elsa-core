@@ -1,4 +1,4 @@
-﻿using Elsa.Models;
+using Elsa.Models;
 
 namespace Elsa.Services.Models
 {

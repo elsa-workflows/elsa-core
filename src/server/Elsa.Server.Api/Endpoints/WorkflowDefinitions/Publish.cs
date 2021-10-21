@@ -6,6 +6,7 @@ using Elsa.Server.Api.Swagger.Examples;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.Filters;
 
@@ -40,14 +41,14 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
         {
             // Create a draft.
             var draft = await _workflowPublisher.GetDraftAsync(workflowDefinitionId, cancellationToken);
-            
+
             if (draft == null)
                 return NotFound();
-            
+
             // Publish the draft.
-            var published = await _workflowPublisher.PublishAsync(draft, cancellationToken);
-            
-            return AcceptedAtAction("Handle", "GetByVersionId", new { versionId = published.Id, apiVersion = apiVersion.ToString() }, published);
+            var publishedWorkflowDefinition = await _workflowPublisher.PublishAsync(draft, cancellationToken);
+
+            return AcceptedAtAction("Handle", "GetByVersionId", new { versionId = publishedWorkflowDefinition.Id, apiVersion = apiVersion.ToString() }, publishedWorkflowDefinition);
         }
     }
 }

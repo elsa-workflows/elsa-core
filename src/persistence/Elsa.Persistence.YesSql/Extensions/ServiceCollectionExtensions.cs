@@ -42,6 +42,7 @@ namespace Elsa.Persistence.YesSql
             return elsa
                 .UseWorkflowDefinitionStore(sp => sp.GetRequiredService<YesSqlWorkflowDefinitionStore>())
                 .UseWorkflowInstanceStore(sp => sp.GetRequiredService<YesSqlWorkflowInstanceStore>())
+                .UseWorkflowTriggerStore(sp => sp.GetRequiredService<YesSqlBookmarkStore>())
                 .UseWorkflowExecutionLogStore(sp => sp.GetRequiredService<YesSqlWorkflowExecutionLogStore>());
         }
 

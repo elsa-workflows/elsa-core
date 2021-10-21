@@ -15,18 +15,18 @@ namespace Elsa.Services.Messaging
             _serviceBusFactory = serviceBusFactory;
         }
 
-        public async Task SendAsync(object message, string? queue = default, IDictionary<string, string>? headers = default, CancellationToken cancellationToken = default)
+        public async Task SendAsync(object message, string? queueName = default, IDictionary<string, string>? headers = default, CancellationToken cancellationToken = default)
         {
-            var bus = await GetBusAsync(message, queue, cancellationToken);
+            var bus = GetBus(message, queueName);
             await bus.Send(message, headers);
         }
         
-        public async Task DeferAsync(object message, Duration delay, string? queue = default, IDictionary<string, string>? headers = default, CancellationToken cancellationToken = default)
+        public async Task DeferAsync(object message, Duration delay, string? queueName = default, IDictionary<string, string>? headers = default, CancellationToken cancellationToken = default)
         {
-            var bus = await GetBusAsync(message, queue, cancellationToken);
+            var bus = GetBus(message, queueName);
             await bus.Defer(delay.ToTimeSpan(), message, headers);
         }
         
-        private async Task<IBus> GetBusAsync(object message, string? queue, CancellationToken cancellationToken) => await _serviceBusFactory.GetServiceBusAsync(message.GetType(), queue, cancellationToken);
+        private IBus GetBus(object message, string? queueName) => _serviceBusFactory.GetServiceBus(message.GetType(), queueName);
     }
 }

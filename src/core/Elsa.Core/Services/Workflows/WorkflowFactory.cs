@@ -36,7 +36,7 @@ namespace Elsa.Services.Workflows
                 ContextId = contextId,
                 CreatedAt = _clock.GetCurrentInstant(),
                 Variables = new Variables(workflowBlueprint.Variables),
-                ContextType = workflowBlueprint.ContextOptions?.ContextType ?.GetContextTypeName()
+                ContextType = workflowBlueprint.ContextOptions?.ContextType?.GetContextTypeName()
             };
 
             return Task.FromResult(workflowInstance);
