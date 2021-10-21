@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Persistence.Specifications;
 using Elsa.WorkflowSettings.Extensions;
 using Elsa.WorkflowSettings.Models;
 using Elsa.WorkflowSettings.Persistence;
@@ -8,6 +10,8 @@ namespace Elsa.WorkflowSettings.Providers
 {
     public class DatabaseWorkflowSettingsProvider : WorkflowSettingsProvider
     {
+        public override int Priority => 1;
+
         private readonly IWorkflowSettingsStore _workflowSettingsStore;
 
         public DatabaseWorkflowSettingsProvider(IWorkflowSettingsStore workflowSettingsStore)
@@ -25,6 +29,18 @@ namespace Elsa.WorkflowSettings.Providers
             }
 
             return await new ValueTask<WorkflowSetting>(new WorkflowSetting());
+        }
+
+        public override async ValueTask<IEnumerable<WorkflowSetting>> GetWorkflowSettingsAsync(string workflowBlueprintId, CancellationToken cancellationToken = default, IOrderBy<WorkflowSetting>? orderBy = default, IPaging? paging = default)
+        {
+            var workflowSettings = await _workflowSettingsStore.FindByWorkflowBlueprintIdAsync(workflowBlueprintId, cancellationToken, orderBy, paging);
+
+            if (workflowSettings != null)
+            {
+                return await new ValueTask<IEnumerable<WorkflowSetting>>(workflowSettings);
+            }
+
+            return await new ValueTask<IEnumerable<WorkflowSetting>>(new List<WorkflowSetting>());
         }
     }
 }

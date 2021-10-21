@@ -17,6 +17,9 @@ namespace Elsa.WorkflowSettings.Extensions
                 .Decorate<IWorkflowSettingsStore, InitializingWorkflowSettingsStore>()
                 .Decorate<IWorkflowSettingsStore, EventPublishingWorkflowSettingsStore>()
                 .AddNotificationHandlersFrom<LoadWorkflowSettingDisabledHandler>()
+                .AddNotificationHandlersFrom<EvaluatingJavaScriptExpressionHandler>()
+                .AddNotificationHandlersFrom<RenderingTypeScriptDefinitionsHandler>()
+                .AddNotificationHandlersFrom<EvaluatingLiquidExpressionHandler>()
                 .AddTransient<IWorkflowSettingsProvider, ConfigurationWorkflowSettingsProvider>()
                 .AddTransient<IWorkflowSettingsProvider, DatabaseWorkflowSettingsProvider>();
 
