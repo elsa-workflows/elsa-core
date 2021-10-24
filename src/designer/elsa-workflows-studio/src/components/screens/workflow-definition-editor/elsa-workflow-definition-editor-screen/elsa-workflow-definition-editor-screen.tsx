@@ -452,6 +452,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
   }
 
   async onActivityContextMenuButtonTestClicked(e: CustomEvent<ActivityContextMenuState>) {
+    
     this.activityContextMenuTestState = e.detail;
     this.selectedActivityId = e.detail.activity.activityId;
 
@@ -615,13 +616,13 @@ export class ElsaWorkflowDefinitionEditorScreen {
   async onComponentCustomButtonClick(message: WorkflowTestActivityMessage) {
     let workflowModel = {...this.workflowModel};
     const activityModel = workflowModel.activities.find(x => x.activityId == message.activityId);
-    const value = message.data["Body"];
+    const input = message.data['Input'];
 
     const componentCustomButtonClickContext: ComponentCustomButtonClickContext = {
       component: 'elsa-workflow-definition-editor-screen',
       activityType: message.activityType,
       prop: null,
-      params: [activityModel, value]
+      params: [activityModel, input]
     };
     eventBus.emit(EventTypes.ComponentCustomButtonClick, this, componentCustomButtonClickContext);
   }
@@ -690,7 +691,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
         filteredData[key] = valueText;
       }
 
-      const hasBody = dataKey === "Body";
+      const hasBody = !!message.data?.Input?.Body;
 
       return (
         <div class="elsa-relative elsa-grid elsa-gap-6 elsa-bg-white px-5 elsa-py-6 sm:elsa-gap-8 sm:elsa-p-8">

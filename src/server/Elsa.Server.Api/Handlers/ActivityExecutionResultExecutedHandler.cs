@@ -34,11 +34,10 @@ namespace Elsa.Server.Api.Handlers
             {
                 ["Outcomes"] = JToken.FromObject(context.Outcomes)
             };
-
-            var body = context.Input != null ? ((dynamic)context.Input).Body : null;
             
-            if (body != null)
-                data["Body"] = JToken.FromObject(body);
+            if (context.Input != null)
+                data["Input"] = JToken.FromObject(context.Input);
+
 
             var activityData = context.WorkflowInstance.ActivityData.FirstOrDefault(x => x.Key == notification.ActivityExecutionContext.ActivityId).Value;
 
