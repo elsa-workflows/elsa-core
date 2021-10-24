@@ -11,6 +11,8 @@ export class ElsaWorkflowPerformanceInformation {
   @Prop() activityStats: ActivityStats
 
   render() {
+      if (!this.activityStats) return undefined;
+
       return [
         <a href="#" class="-elsa-m-3 elsa-p-3 elsa-flex elsa-items-start elsa-rounded-lg hover:elsa-bg-gray-50 elsa-transition elsa-ease-in-out elsa-duration-150">
           <svg class="elsa-flex-shrink-0 elsa-h-6 elsa-w-6 elsa-text-blue-600" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
