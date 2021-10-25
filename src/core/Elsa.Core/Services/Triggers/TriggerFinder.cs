@@ -28,9 +28,20 @@ namespace Elsa.Services.Triggers
                 return scopedTriggers.Select(x => new TriggerFinderResult(x.WorkflowBlueprint, x.ActivityId, x.ActivityType, x.Bookmark)).ToList();
             }
 
-            var hashes = filterList.Select(x => _bookmarkHasher.Hash(x)).ToList();
-            var matchingTriggers = scopedTriggers.Where(x => hashes.Contains(x.BookmarkHash));
-            return matchingTriggers.Select(x => new TriggerFinderResult(x.WorkflowBlueprint, x.ActivityId, x.ActivityType, x.Bookmark)).ToList();
+            var hashes = filterList.ToDictionary(x => _bookmarkHasher.Hash(x), x => x);
+            List<WorkflowTrigger> matches = new();
+
+            foreach (var scoped in scopedTriggers)
+            {
+                if (!hashes.TryGetValue(scoped.BookmarkHash, out var bookmark))
+                    continue;
+
+                var result = scoped.Bookmark.Compare(bookmark);
+                if (result == null || result.Value)
+                    matches.Add(scoped);
+            }
+
+            return matches.Select(x => new TriggerFinderResult(x.WorkflowBlueprint, x.ActivityId, x.ActivityType, x.Bookmark)).ToList();
         }
     }
 }
