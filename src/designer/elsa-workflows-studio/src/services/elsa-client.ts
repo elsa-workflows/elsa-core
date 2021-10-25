@@ -137,11 +137,14 @@ export const createElsaClient = async function (serverUrl: string): Promise<Elsa
       }
     },
     workflowInstancesApi: {
-      list: async (page?: number, pageSize?: number, workflowDefinitionId?: string, workflowStatus?: WorkflowStatus, orderBy?: OrderBy, searchTerm?: string): Promise<PagedList<WorkflowInstanceSummary>> => {
+      list: async (page?: number, pageSize?: number, workflowDefinitionId?: string, workflowStatus?: WorkflowStatus, orderBy?: OrderBy, searchTerm?: string, correlationId?: string): Promise<PagedList<WorkflowInstanceSummary>> => {
         const queryString = {};
 
         if (!!workflowDefinitionId)
           queryString['workflow'] = workflowDefinitionId;
+
+        if (!!correlationId)
+          queryString['correlationId'] = correlationId;
 
         if (workflowStatus != null)
           queryString['status'] = workflowStatus;
@@ -292,7 +295,7 @@ export interface WorkflowRegistryApi {
 }
 
 export interface WorkflowInstancesApi {
-  list(page?: number, pageSize?: number, workflowDefinitionId?: string, workflowStatus?: WorkflowStatus, orderBy?: OrderBy, searchTerm?: string): Promise<PagedList<WorkflowInstanceSummary>>;
+  list(page?: number, pageSize?: number, workflowDefinitionId?: string, workflowStatus?: WorkflowStatus, orderBy?: OrderBy, searchTerm?: string, correlationId?: string): Promise<PagedList<WorkflowInstanceSummary>>;
 
   get(id: string): Promise<WorkflowInstance>;
 

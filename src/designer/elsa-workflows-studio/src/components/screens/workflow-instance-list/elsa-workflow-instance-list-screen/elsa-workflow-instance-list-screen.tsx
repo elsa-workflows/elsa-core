@@ -35,6 +35,7 @@ export class ElsaWorkflowInstanceListScreen {
   @Prop() serverUrl: string;
   @Prop() basePath: string;
   @Prop() workflowId?: string;
+  @Prop() correlationId?: string;
   @Prop() workflowStatus?: WorkflowStatus;
   @Prop() orderBy?: OrderBy = OrderBy.Started;
   @Prop() culture: string;
@@ -42,10 +43,12 @@ export class ElsaWorkflowInstanceListScreen {
   @State() workflowBlueprints: Array<WorkflowBlueprintSummary> = [];
   @State() workflowInstances: PagedList<WorkflowInstanceSummary> = {items: [], page: 1, pageSize: 50, totalCount: 0};
   @State() selectedWorkflowId?: string;
+  @State() selectedCorrelationId?: string;
   @State() selectedWorkflowStatus?: WorkflowStatus;
   @State() selectedOrderByState?: OrderBy = OrderBy.Started;
   @State() selectedWorkflowInstanceIds: Array<string> = [];
   @State() selectAllChecked: boolean;
+  
   @State() currentPage: number = 0;
   @State() currentPageSize: number = ElsaWorkflowInstanceListScreen.DEFAULT_PAGE_SIZE;
   @State() currentSearchTerm?: string;
@@ -96,6 +99,12 @@ export class ElsaWorkflowInstanceListScreen {
     await this.loadWorkflowInstances();
   }
 
+  @Watch("correlationId")
+  async handleCorrelationIdChanged(value: string) {
+    this.selectedCorrelationId = value;
+    await this.loadWorkflowInstances();
+  }
+
   @Watch("workflowStatus")
   async handleWorkflowStatusChanged(value: WorkflowStatus) {
     this.selectedWorkflowStatus = value;
@@ -122,6 +131,7 @@ export class ElsaWorkflowInstanceListScreen {
     const query = parseQuery(queryString);
 
     this.selectedWorkflowId = query.workflow;
+    this.correlationId = query.correlationId;  
     this.selectedWorkflowStatus = query.status;
     this.selectedOrderByState = query.orderBy ?? OrderBy.Started;
     this.currentPage = !!query.page ? parseInt(query.page) : 0;
@@ -143,11 +153,11 @@ export class ElsaWorkflowInstanceListScreen {
     this.currentPage = Math.max(this.currentPage, ElsaWorkflowInstanceListScreen.START_PAGE);
     this.currentPageSize = isNaN(this.currentPageSize) ? ElsaWorkflowInstanceListScreen.DEFAULT_PAGE_SIZE : this.currentPageSize;
     const elsaClient = await this.createClient();
-    this.workflowInstances = await elsaClient.workflowInstancesApi.list(this.currentPage, this.currentPageSize, this.selectedWorkflowId, this.selectedWorkflowStatus, this.selectedOrderByState, this.currentSearchTerm);
+    this.workflowInstances = await elsaClient.workflowInstancesApi.list(this.currentPage, this.currentPageSize, this.selectedWorkflowId, this.selectedWorkflowStatus, this.selectedOrderByState, this.currentSearchTerm, this.correlationId);
     const maxPage = Math.floor(this.workflowInstances.totalCount / this.currentPageSize);
     if (this.currentPage > maxPage) {
       this.currentPage = maxPage;
-      this.workflowInstances = await elsaClient.workflowInstancesApi.list(this.currentPage, this.currentPageSize, this.selectedWorkflowId, this.selectedWorkflowStatus, this.selectedOrderByState, this.currentSearchTerm);
+      this.workflowInstances = await elsaClient.workflowInstancesApi.list(this.currentPage, this.currentPageSize, this.selectedWorkflowId, this.selectedWorkflowStatus, this.selectedOrderByState, this.currentSearchTerm, this.correlationId);
     }
     this.setSelectAllIndeterminateState();
   }
@@ -161,8 +171,11 @@ export class ElsaWorkflowInstanceListScreen {
     return collection.map(groups, x => array.first(collection.sortBy(x, 'version', 'desc')));
   }
 
-  buildFilterUrl(workflowId?: string, workflowStatus?: WorkflowStatus, orderBy?: OrderBy, pageSize?: number) {
+  buildFilterUrl(workflowId?: string, workflowStatus?: WorkflowStatus, orderBy?: OrderBy, pageSize?: number, correlationId?: string) {
     const filters: Map<string> = {};
+
+    if (!!correlationId)
+      filters['correlationId'] = correlationId;
 
     if (!!workflowId)
       filters['workflow'] = workflowId;
@@ -510,6 +523,8 @@ export class ElsaWorkflowInstanceListScreen {
                 const displayName = workflowBlueprint.displayName || workflowBlueprint.name || 'Untitled';
                 const statusColor = this.getStatusColor(workflowInstance.workflowStatus);
                 const instanceViewUrl = `${basePath}/workflow-instances/${workflowInstance.id}`;
+                const correlationId = !!workflowInstance.correlationId ? workflowInstance.correlationId : ''
+                const correlationListViewUrl = `${basePath}/workflow-instances?correlationId=${correlationId}`;
                 const blueprintViewUrl = `${basePath}/workflow-registry/${workflowInstance.definitionId}`;
                 const instanceName = !workflowInstance.name ? '' : workflowInstance.name;
                 const isSelected = this.selectedWorkflowInstanceIds.findIndex(x => x === workflowInstance.id) >= 0;
@@ -531,8 +546,9 @@ export class ElsaWorkflowInstanceListScreen {
                                         anchorClass="elsa-truncate hover:elsa-text-gray-600">{workflowInstance.id}</stencil-route-link>
                   </td>
                   <td
-                    class="hidden md:elsa-table-cell elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-font-medium elsa-text-gray-900">
-                    {!!workflowInstance.correlationId ? workflowInstance.correlationId : ''}
+                    class="elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-font-medium elsa-text-gray-900">
+                    <stencil-route-link url={correlationListViewUrl}
+                                        anchorClass="elsa-truncate hover:elsa-text-gray-600">{correlationId}</stencil-route-link>
                   </td>
                   <td
                     class="elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-font-medium elsa-text-gray-900 elsa-text-left">
@@ -616,6 +632,7 @@ export class ElsaWorkflowInstanceListScreen {
   renderWorkflowFilter() {
     const t = this.t;
     const latestWorkflowBlueprints = this.getLatestWorkflowBlueprintVersions();
+    const selectedCorrelationId = this.selectedCorrelationId;
     const selectedWorkflowId = this.selectedWorkflowId;
     const selectedWorkflow = latestWorkflowBlueprints.find(x => x.id == selectedWorkflowId);
     const selectedWorkflowText = !selectedWorkflowId ? t('Filters.Workflow.Label') : !!selectedWorkflow && (selectedWorkflow.name || selectedWorkflow.displayName) ? (selectedWorkflow.displayName || selectedWorkflow.name) : t('Untitled');
@@ -628,7 +645,7 @@ export class ElsaWorkflowInstanceListScreen {
       const item: DropdownButtonItem = {text: displayName, value: x.id, isSelected: x.id == selectedWorkflowId};
 
       if (!!history)
-        item.url = this.buildFilterUrl(x.id, selectedWorkflowStatus, selectedOrderBy, null);
+        item.url = this.buildFilterUrl(x.id, selectedWorkflowStatus, selectedOrderBy, null, selectedCorrelationId);
 
       return item;
     });
@@ -636,7 +653,7 @@ export class ElsaWorkflowInstanceListScreen {
     const allItem: DropdownButtonItem = {text: t('Filters.Workflow.All'), value: null, isSelected: !selectedWorkflowId};
 
     if (!!history)
-      allItem.url = this.buildFilterUrl(null, selectedWorkflowStatus, selectedOrderBy, null);
+      allItem.url = this.buildFilterUrl(null, selectedWorkflowStatus, selectedOrderBy, null, selectedCorrelationId);
 
     items = [allItem, ...items];
 
@@ -658,6 +675,7 @@ export class ElsaWorkflowInstanceListScreen {
 
   renderStatusFilter() {
     const t = this.t;
+    const selectedCorrelationId = this.correlationId;
     const selectedWorkflowStatus = this.selectedWorkflowStatus;
     const selectedWorkflowStatusText = !!selectedWorkflowStatus ? selectedWorkflowStatus : t('Filters.Status.Label');
     const statuses: Array<WorkflowStatus> = [null, WorkflowStatus.Running, WorkflowStatus.Suspended, WorkflowStatus.Finished, WorkflowStatus.Faulted, WorkflowStatus.Cancelled, WorkflowStatus.Idle];
@@ -668,7 +686,7 @@ export class ElsaWorkflowInstanceListScreen {
       const item: DropdownButtonItem = {text: text, isSelected: x == selectedWorkflowStatus, value: x};
 
       if (!!history)
-        item.url = this.buildFilterUrl(this.selectedWorkflowId, x, this.selectedOrderByState, null);
+        item.url = this.buildFilterUrl(this.selectedWorkflowId, x, this.selectedOrderByState, null, selectedCorrelationId);
 
       return item;
     });
@@ -688,6 +706,7 @@ export class ElsaWorkflowInstanceListScreen {
 
   renderPageSizeFilter() {
     const t = this.t;
+    const selectedCorrelationId = this.correlationId;
     const currentPageSize = this.currentPageSize;
     const currentPageSizeText = t('Filters.PageSize.SelectedLabel', {Size: currentPageSize});
     const pageSizes: Array<number> = [5, 10, 15, 20, 30, 50, 100];
@@ -698,7 +717,7 @@ export class ElsaWorkflowInstanceListScreen {
       const item: DropdownButtonItem = {text: text, isSelected: x == currentPageSize, value: x};
 
       if (!!history)
-        item.url = this.buildFilterUrl(this.selectedWorkflowId, this.selectedWorkflowStatus, this.selectedOrderByState, x);
+        item.url = this.buildFilterUrl(this.selectedWorkflowId, this.selectedWorkflowStatus, this.selectedOrderByState, x, selectedCorrelationId);
 
       return item;
     });
@@ -717,6 +736,7 @@ export class ElsaWorkflowInstanceListScreen {
 
   renderOrderByFilter() {
     const t = this.t;
+    const selectedCorrelationId = this.correlationId;
     const selectedOrderBy = this.selectedOrderByState;
     const selectedOrderByText = !!selectedOrderBy ? t('Filters.Sort.SelectedLabel', {Key: selectedOrderBy}) : t('Filters.Sort.Label');
     const orderByValues: Array<OrderBy> = [OrderBy.Finished, OrderBy.LastExecuted, OrderBy.Started];
@@ -726,7 +746,7 @@ export class ElsaWorkflowInstanceListScreen {
       const item: DropdownButtonItem = {text: x, value: x, isSelected: x == selectedOrderBy};
 
       if (!!history)
-        item.url = this.buildFilterUrl(this.selectedWorkflowId, this.selectedWorkflowStatus, x, null);
+        item.url = this.buildFilterUrl(this.selectedWorkflowId, this.selectedWorkflowStatus, x, null, selectedCorrelationId);
 
       return item;
     });
