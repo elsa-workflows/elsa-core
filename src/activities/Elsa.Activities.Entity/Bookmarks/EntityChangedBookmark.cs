@@ -14,15 +14,14 @@ namespace Elsa.Activities.Entity.Bookmarks
             Action = action;
         }
 
-        [ExcludeFromHash]
-        public string? EntityName { get; }
+        [ExcludeFromHash] public string? EntityName { get; }
         public EntityChangedAction? Action { get; }
 
         public bool? Compare(IBookmark bookmark)
         {
-            return bookmark is EntityChangedBookmark other 
-                && string.Equals(EntityName, other.EntityName, System.StringComparison.OrdinalIgnoreCase) 
-                && Action == other.Action;
+            return bookmark is EntityChangedBookmark other
+                   && string.Equals(EntityName, other.EntityName, System.StringComparison.OrdinalIgnoreCase)
+                   && Action == other.Action;
         }
     }
 
