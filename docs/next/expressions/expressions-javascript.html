@@ -182,6 +182,12 @@ When you name this activity <code>&quot;MyHttpEndpoint&quot;</code>, you can acc
 <p>Provides access to a .NET configuration value.</p>
 <pre><code class="hljs css language-typescript">getConfig(name: <span class="hljs-built_in">string</span>): <span class="hljs-built_in">string</span>
 </code></pre>
+<blockquote>
+<p>This is a security-sensitive function and is therefore not available by default. You need to enable this function through a setting.
+To enable this function, add the following code to your Startup class:</p>
+<pre><code class="hljs css language-csharp">services.WithJavaScriptOptions(options =&gt; options.EnableConfigurationAccess = <span class="hljs-literal">true</span>);
+</code></pre>
+</blockquote>
 <p>As an example, let's say you have the following JSON in <code>appsettings.json</code>:</p>
 <pre><code class="hljs css language-json">{
   <span class="hljs-attr">"Elsa"</span>: {
