@@ -291,6 +291,7 @@ export namespace Components {
     }
     interface ElsaWorkflowInstanceListScreen {
         "basePath": string;
+        "correlationId"?: string;
         "culture": string;
         "getSelectedWorkflowInstanceIds": () => Promise<string[]>;
         "history"?: RouterHistory;
@@ -1008,6 +1009,7 @@ declare namespace LocalJSX {
     }
     interface ElsaWorkflowInstanceListScreen {
         "basePath"?: string;
+        "correlationId"?: string;
         "culture"?: string;
         "history"?: RouterHistory;
         "orderBy"?: OrderBy;

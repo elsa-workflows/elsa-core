@@ -27,11 +27,13 @@ graph TD;
   elsa-workflow-definition-editor-screen --> elsa-workflow-definition-editor-notifications
   elsa-workflow-definition-editor-screen --> elsa-activity-picker-modal
   elsa-workflow-definition-editor-screen --> elsa-activity-editor-modal
+  elsa-workflow-definition-editor-screen --> elsa-modal-dialog
   elsa-workflow-definition-editor-screen --> elsa-workflow-publish-button
   elsa-workflow-definition-editor-screen --> elsa-flyout-panel
   elsa-workflow-definition-editor-screen --> elsa-tab-header
   elsa-workflow-definition-editor-screen --> elsa-tab-content
   elsa-workflow-definition-editor-screen --> elsa-workflow-properties-panel
+  elsa-workflow-definition-editor-screen --> elsa-workflow-test-panel
   elsa-workflow-definition-editor-screen --> context-consumer
   elsa-workflow-settings-modal --> elsa-modal-dialog
   elsa-workflow-settings-modal --> elsa-monaco
@@ -40,6 +42,7 @@ graph TD;
   elsa-activity-editor-modal --> elsa-control
   elsa-workflow-publish-button --> context-consumer
   elsa-workflow-properties-panel --> context-consumer
+  elsa-workflow-test-panel --> context-consumer
   style elsa-studio-workflow-definitions-edit fill:#f9f,stroke:#333,stroke-width:4px
 ```
 

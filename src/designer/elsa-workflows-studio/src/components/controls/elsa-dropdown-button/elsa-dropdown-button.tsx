@@ -1,6 +1,5 @@
-import {Component, Event, EventEmitter, h, Prop} from '@stencil/core';
+import {Component, Event, EventEmitter, Listen, h, Prop} from '@stencil/core';
 import {leave, toggle} from 'el-transition'
-import {registerClickOutside} from "stencil-click-outside";
 import {DropdownButtonItem, DropdownButtonOrigin} from "./models";
 
 @Component({
@@ -17,6 +16,15 @@ export class ElsaContextMenu {
     @Event() itemSelected: EventEmitter<DropdownButtonItem>
 
     contextMenu: HTMLElement;
+    element: HTMLElement;
+
+    @Listen('click', {target: 'window'})
+    onWindowClicked(event: Event){
+        const target = event.target as HTMLElement;
+
+        if (!this.element.contains(target))
+            this.closeContextMenu();
+    }
 
     closeContextMenu() {
         if (!!this.contextMenu)
@@ -46,7 +54,7 @@ export class ElsaContextMenu {
 
     render() {
         return (
-            <div class="elsa-relative" ref={el => registerClickOutside(this, el, this.closeContextMenu)}>
+            <div class="elsa-relative" ref={el => this.element = el}>
                 <button onClick={e => this.toggleMenu()} type="button"
                         class="elsa-w-full elsa-bg-white elsa-border elsa-border-gray-300 elsa-rounded-md elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-inline-flex elsa-justify-center elsa-text-sm elsa-font-medium elsa-text-gray-700 hover:elsa-bg-gray-50 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500"
                         aria-haspopup="true" aria-expanded="false">

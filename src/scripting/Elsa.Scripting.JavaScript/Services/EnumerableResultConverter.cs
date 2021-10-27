@@ -9,7 +9,7 @@ namespace Elsa.Scripting.JavaScript.Services
     public class EnumerableResultConverter : IConvertsJintEvaluationResult, IConvertsEnumerableToObject
     {
         private readonly IConvertsJintEvaluationResult? _wrapped;
-        
+
         public EnumerableResultConverter(IConvertsJintEvaluationResult? wrapped) => _wrapped = wrapped;
 
         public object? ConvertToDesiredType(object? evaluationResult, Type desiredType)
@@ -25,6 +25,7 @@ namespace Elsa.Scripting.JavaScript.Services
             if (enumerable is string) return enumerable;
             if (enumerable is JObject) return enumerable;
             if (enumerable is byte[]) return enumerable;
+            if (enumerable != null && desiredType != null && desiredType.IsAssignableFrom(enumerable.GetType())) return enumerable;
 
             var destinationType = GetDestinationType(desiredType);
             var json = JsonConvert.SerializeObject(enumerable);

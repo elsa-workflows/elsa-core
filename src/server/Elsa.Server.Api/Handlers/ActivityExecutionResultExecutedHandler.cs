@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -6,13 +7,14 @@ using Elsa.Events;
 using Elsa.Models;
 using Elsa.Server.Api.Models;
 using Elsa.Server.Api.Services;
+using Elsa.Services.Models;
 using MediatR;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Elsa.Server.Api.Handlers
 {
-    public class ActivityExecutionResultExecutedHandler : INotificationHandler<ActivityExecutionResultExecuted>, INotificationHandler<ActivityExecutionResultFailed>
+    public class ActivityExecutionResultExecutedHandler : INotificationHandler<ActivityExecutionResultExecuted>, INotificationHandler<ActivityExecutionFailed>, INotificationHandler<ActivityFaulted>
     {
         private readonly IWorkflowTestService _workflowTestService;
 
@@ -32,10 +34,10 @@ namespace Elsa.Server.Api.Handlers
             {
                 ["Outcomes"] = JToken.FromObject(context.Outcomes)
             };
+            
+            if (context.Input != null)
+                data["Input"] = JToken.FromObject(context.Input);
 
-            var body = context.Input != null ? ((dynamic)context.Input).Body : null;
-            if (body != null)
-                data["Body"] = JToken.FromObject(body);
 
             var activityData = context.WorkflowInstance.ActivityData.FirstOrDefault(x => x.Key == notification.ActivityExecutionContext.ActivityId).Value;
 
@@ -55,6 +57,30 @@ namespace Elsa.Server.Api.Handlers
 
             await _workflowTestService.DispatchMessage(signalRConnectionId, message);
         }
+        
+        public Task Handle(ActivityExecutionFailed notification, CancellationToken cancellationToken) => HandleFaultedExecutionAsync(notification.ActivityExecutionContext, notification.Exception);
+        public Task Handle(ActivityFaulted notification, CancellationToken cancellationToken)  => HandleFaultedExecutionAsync(notification.ActivityExecutionContext, notification.Exception);
+
+        private async Task HandleFaultedExecutionAsync(ActivityExecutionContext context, Exception exception)
+        {
+            var signalRConnectionId = context.WorkflowExecutionContext.WorkflowInstance.GetMetadata("signalRConnectionId")?.ToString();
+            if (string.IsNullOrWhiteSpace(signalRConnectionId)) return;
+
+            var innerException = exception;
+
+            while (innerException?.InnerException != null) innerException = innerException.InnerException;
+
+            var message = new WorkflowTestMessage
+            {
+                WorkflowInstanceId = context.WorkflowInstance.Id,
+                CorrelationId = context.CorrelationId,
+                ActivityId = context.ActivityId,                
+                Error = innerException?.ToString()
+            };
+            
+            message.WorkflowStatus = message.Status = "Failed";
+            await _workflowTestService.DispatchMessage(signalRConnectionId, message);
+        }
 
         private string GetExecutionResult(IActivityExecutionResult activityExecutionResult)
         {
@@ -68,36 +94,17 @@ namespace Elsa.Server.Api.Handlers
                 case DoneResult:
                 case OutcomeResult:
                     var outcomeResult = (OutcomeResult)activityExecutionResult;
-                    status = outcomeResult.Outcomes.FirstOrDefault();
+                    status = outcomeResult.Outcomes.First();
                     break;
                 case FaultResult:
                     status = "Failed";
                     break;
-                case CombinedResult:
-                    var combinedResult = (CombinedResult)activityExecutionResult;
-                    status = GetExecutionResult(combinedResult.Results.FirstOrDefault());
+                case CombinedResult combinedResult:
+                    status = GetExecutionResult(combinedResult.Results.First());
                     break;
             }
 
             return status;
-        }
-
-        public async Task Handle(ActivityExecutionResultFailed notification, CancellationToken cancellationToken)
-        {
-            var context = notification.ActivityExecutionContext;
-            var signalRConnectionId = context.WorkflowExecutionContext.WorkflowInstance.GetMetadata("signalRConnectionId")?.ToString();
-            if (string.IsNullOrWhiteSpace(signalRConnectionId)) return;
-
-            var message = new WorkflowTestMessage
-            {
-                WorkflowInstanceId = context.WorkflowInstance.Id,
-                CorrelationId = context.CorrelationId,
-                ActivityId = context.ActivityId,                
-                Error = notification.Exception.InnerException?.InnerException?.ToString()
-            };
-            message.WorkflowStatus = message.Status = "Failed";
-
-            await _workflowTestService.DispatchMessage(signalRConnectionId, message);
         }
     }
 }

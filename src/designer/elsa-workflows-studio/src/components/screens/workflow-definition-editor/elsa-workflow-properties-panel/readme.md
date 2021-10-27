@@ -7,12 +7,11 @@
 
 ## Properties
 
-| Property               | Attribute                | Description | Type                 | Default     |
-| ---------------------- | ------------------------ | ----------- | -------------------- | ----------- |
-| `culture`              | `culture`                |             | `string`             | `undefined` |
-| `expandButtonPosition` | `expand-button-position` |             | `number`             | `1`         |
-| `serverUrl`            | `server-url`             |             | `string`             | `undefined` |
-| `workflowDefinition`   | --                       |             | `WorkflowDefinition` | `undefined` |
+| Property             | Attribute    | Description | Type                 | Default     |
+| -------------------- | ------------ | ----------- | -------------------- | ----------- |
+| `culture`            | `culture`    |             | `string`             | `undefined` |
+| `serverUrl`          | `server-url` |             | `string`             | `undefined` |
+| `workflowDefinition` | --           |             | `WorkflowDefinition` | `undefined` |
 
 
 ## Dependencies
