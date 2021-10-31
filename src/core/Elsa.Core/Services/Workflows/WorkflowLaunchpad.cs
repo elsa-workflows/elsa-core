@@ -116,6 +116,47 @@ namespace Elsa.Services.Workflows
             return await FindStartableWorkflowAsync(workflowBlueprint, activityId, correlationId, contextId, tenantId, cancellationToken);
         }
 
+        public async Task<RunWorkflowResult?> FindAndExecuteRestartableWorkflowAsync(
+            string workflowDefinitionId,
+            string activityId,
+            int version,
+            string signalRConnectionId,
+            string lastWorkflowInstanceId,
+            string? tenantId = default,
+            CancellationToken cancellationToken = default)
+        {
+            var workflowBlueprint = await _workflowRegistry.GetAsync(workflowDefinitionId, tenantId, VersionOptions.SpecificVersion(version), cancellationToken);
+
+            if (workflowBlueprint == null)
+                return null;
+            
+            var lastWorkflowInstance = await _workflowInstanceStore.FindAsync(new EntityIdSpecification<WorkflowInstance>(lastWorkflowInstanceId), cancellationToken);
+
+            if (lastWorkflowInstance == null)
+                return null;
+
+            var startActivity = workflowBlueprint.Activities.First(x => x.Id == activityId);
+
+            var startableWorkflowDefinition = new StartableWorkflowDefinition(workflowBlueprint, startActivity.Id);
+            
+            var workflow = await InstantiateStartableWorkflow(startableWorkflowDefinition, cancellationToken);
+
+            var previousActivityData = GetActivityDataFromLastWorkflowInstance(workflow.WorkflowInstance, lastWorkflowInstance, workflowBlueprint, activityId);
+            
+            //overwrite activity data for activities prior to starting one with data from previous workflow instance
+            foreach (var (key, value) in previousActivityData)
+            {
+                workflow.WorkflowInstance.ActivityData[key] = value;
+            }
+
+            workflow.WorkflowInstance.SetMetadata("isTest", true);
+            workflow.WorkflowInstance.SetMetadata("signalRConnectionId", signalRConnectionId);
+
+            var previousActivityOutput = previousActivityData.Count == 0 ? null : previousActivityData.First().Value?.GetItem("Output");
+            
+            return await ExecuteStartableWorkflowAsync(workflow, new WorkflowInput(previousActivityOutput), cancellationToken);
+        }
+
         public async Task<StartableWorkflow?> FindStartableWorkflowAsync(
             IWorkflowBlueprint workflowBlueprint,
             string? activityId,
@@ -401,6 +442,23 @@ namespace Elsa.Services.Workflows
         {
             var specification = new TenantSpecification<WorkflowInstance>(tenantId).WithWorkflowDefinition(workflowDefinitionId).And(new WorkflowIsAlreadyExecutingSpecification());
             return await _workflowInstanceStore.FindAsync(specification) != null;
+        }
+        
+        private IDictionary<string, IDictionary<string, object?>> GetActivityDataFromLastWorkflowInstance(WorkflowInstance currentWorkflowInstance, WorkflowInstance lastWorkflowInstance, IWorkflowBlueprint workflowBlueprint, string startingActivityId)
+        {
+            IDictionary<string, IDictionary<string, object?>> CollectSourceActivityData(string targetActivityId, IDictionary<string, IDictionary<string, object?>> activityDataAccumulator)
+            {
+                var sourceActivityId = workflowBlueprint.Connections.FirstOrDefault(x => x.Target.Activity.Id == targetActivityId)?.Source.Activity.Id;
+            
+                if (sourceActivityId == null)
+                    return activityDataAccumulator;
+            
+                activityDataAccumulator.Add(sourceActivityId, lastWorkflowInstance.ActivityData.GetItem(sourceActivityId));
+            
+                return CollectSourceActivityData(sourceActivityId, activityDataAccumulator);
+            }
+            
+            return CollectSourceActivityData(startingActivityId, new Dictionary<string, IDictionary<string, object?>>());
         }
     }
 }

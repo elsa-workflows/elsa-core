@@ -16,7 +16,6 @@ import {
   WorkflowTestActivityMessage,
   WorkflowInstance,
 } from "../../../../models";
-import {ActivityStats, createElsaClient, eventBus, SaveWorkflowDefinitionRequest} from "../../../../services";
 import state from '../../../../utils/store';
 import WorkflowEditorTunnel, {WorkflowEditorState} from '../../../../data/workflow-editor';
 import DashboardTunnel from "../../../../data/dashboard";
@@ -510,6 +509,8 @@ export class ElsaWorkflowDefinitionEditorScreen {
     this.render();
   };
 
+  async onRestartActivityButtonClick(){
+    await eventBus.emit(EventTypes.WorkflowRestarted, this, this.selectedActivityId);
   private onUpdateWorkflowSettings = async (workflowDefinition: WorkflowDefinition) => {
     this.updateWorkflowDefinition(workflowDefinition);
     await this.saveWorkflowInternal(this.workflowModel);

@@ -98,5 +98,10 @@ namespace Elsa.Services
         /// Collects and dispatches workflows that are ready for execution. This takes into account both resumable (suspended) workflows as well as startable workflows.
         /// </summary>
         Task<IEnumerable<CollectedWorkflow>> CollectAndDispatchWorkflowsAsync(WorkflowsQuery query, WorkflowInput? input = default, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Creates and executes workflow for the specified workflow blueprint, using the specified starting activity ID, with activity data for all activities prior to starting one copied from previous workflow instance.
+        /// </summary>
+        Task<RunWorkflowResult?> FindAndExecuteRestartableWorkflowAsync(string workflowDefinitionId, string activityId, int version, string signalRConnectionId, string lastWorkflowInstanceId, string? tenantId = default, CancellationToken cancellationToken = default);
     }
 }
