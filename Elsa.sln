@@ -368,6 +368,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "retention", "retention", "{
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Retention", "src\modules\retention\Elsa.Retention\Elsa.Retention.csproj", "{FAEEA170-560C-4AF3-B4A8-92DEBD59D418}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.UniqueCorrelatedWorkflows", "src\samples\aspnet\Elsa.Samples.UniqueCorrelatedWorkflows\Elsa.Samples.UniqueCorrelatedWorkflows.csproj", "{4CD8293D-4544-4A23-BDEF-15B66D5E924F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -870,6 +872,10 @@ Global
 		{FAEEA170-560C-4AF3-B4A8-92DEBD59D418}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FAEEA170-560C-4AF3-B4A8-92DEBD59D418}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FAEEA170-560C-4AF3-B4A8-92DEBD59D418}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4CD8293D-4544-4A23-BDEF-15B66D5E924F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4CD8293D-4544-4A23-BDEF-15B66D5E924F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4CD8293D-4544-4A23-BDEF-15B66D5E924F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4CD8293D-4544-4A23-BDEF-15B66D5E924F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1034,6 +1040,7 @@ Global
 		{AB67BA19-5BC2-4C6D-A994-61D51A6A6FD5} = {FC9F520F-BA51-4AD2-BFEE-EF787798E734}
 		{235ABC3F-A075-4682-B6D7-837098BA6B00} = {69BB424A-AAA3-415C-9651-9F4349CA3AC5}
 		{FAEEA170-560C-4AF3-B4A8-92DEBD59D418} = {235ABC3F-A075-4682-B6D7-837098BA6B00}
+		{4CD8293D-4544-4A23-BDEF-15B66D5E924F} = {22E75696-6FE9-436A-9097-EE21C603F818}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}

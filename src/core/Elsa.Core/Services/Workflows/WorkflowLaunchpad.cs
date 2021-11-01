@@ -129,14 +129,13 @@ namespace Elsa.Services.Workflows
                 var startableWorkflowDefinition = await CollectStartableWorkflowInternalAsync(workflowBlueprint, activityId, correlationId, contextId, tenantId, cancellationToken);
                 return startableWorkflowDefinition != null ? await InstantiateStartableWorkflow(startableWorkflowDefinition, cancellationToken) : default;
             }
-            
-            if (string.IsNullOrEmpty(correlationId)) 
+
+            if (string.IsNullOrEmpty(correlationId))
                 return await CollectWorkflows();
-            
+
             // Acquire a lock on correlation ID to prevent duplicate workflow instances from being created.
             await using var correlationLockHandle = await AcquireLockAsync(correlationId, cancellationToken);
             return await CollectWorkflows();
-
         }
 
         public async Task FindAndExecuteStartableWorkflowAsync(
@@ -282,6 +281,20 @@ namespace Elsa.Services.Workflows
                     return null;
                 }
             }
+            
+            // If a correlation ID was specified, make sure we don't already have a non-completed workflow instance.
+            if (correlationId != null)
+            {
+                var correlatedWorkflowInstances = !string.IsNullOrWhiteSpace(correlationId)
+                    ? await _workflowInstanceStore.FindManyAsync(new WorkflowInstanceCorrelationIdSpecification(workflowDefinitionId, correlationId).And(new WorkflowUnfinishedStatusSpecification()), cancellationToken: cancellationToken).ToArray()
+                    : Array.Empty<WorkflowInstance>();
+
+                _logger.LogDebug("Found {CorrelatedWorkflowCount} workflows with correlation ID {CorrelationId}", correlatedWorkflowInstances.Length, correlationId);
+
+                // Return null if there is already a non-finished correlated workflow instance.
+                if (correlatedWorkflowInstances.Any())
+                    return null;
+            }
 
             var startActivities = _getsStartActivities.GetStartActivities(workflowBlueprint).Select(x => x.Id).ToHashSet();
             var startActivityId = activityId == null ? startActivities.FirstOrDefault() : startActivities.Contains(activityId) ? activityId : default;
@@ -299,21 +312,15 @@ namespace Elsa.Services.Workflows
         {
             var startableWorkflows = new List<StartableWorkflow>();
 
-            foreach (var (workflowBlueprint, activityId, correlationId, contextId) in startableWorkflowDefinitions)
+            foreach (var definition in startableWorkflowDefinitions)
             {
-                var workflowInstance = await _workflowFactory.InstantiateAsync(
-                    workflowBlueprint,
-                    correlationId,
-                    contextId,
-                    cancellationToken: cancellationToken);
-                
-                await _workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
-                startableWorkflows.Add(new StartableWorkflow(workflowBlueprint, workflowInstance, activityId));
+                var startableWorkflow = await InstantiateStartableWorkflow(definition, cancellationToken);
+                startableWorkflows.Add(startableWorkflow);
             }
 
             return startableWorkflows;
         }
-        
+
         private async Task<StartableWorkflow> InstantiateStartableWorkflow(StartableWorkflowDefinition startableWorkflowDefinition, CancellationToken cancellationToken)
         {
             var workflowInstance = await _workflowFactory.InstantiateAsync(
@@ -321,7 +328,7 @@ namespace Elsa.Services.Workflows
                 startableWorkflowDefinition.CorrelationId,
                 startableWorkflowDefinition.ContextId,
                 cancellationToken: cancellationToken);
-                
+
             await _workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
             return new StartableWorkflow(startableWorkflowDefinition.WorkflowBlueprint, workflowInstance, startableWorkflowDefinition.ActivityId);
         }
@@ -341,7 +348,7 @@ namespace Elsa.Services.Workflows
             var correlationId = query.CorrelationId!;
             var existingHandle = AmbientLockContext.CurrentCorrelationLock;
             var handle = existingHandle == null ? await AcquireLockAsync(correlationId, cancellationToken) : default;
-            
+
             try
             {
                 var correlatedWorkflowInstances = !string.IsNullOrWhiteSpace(correlationId)
@@ -351,14 +358,14 @@ namespace Elsa.Services.Workflows
                 _logger.LogDebug("Found {CorrelatedWorkflowCount} workflows with correlation ID {CorrelationId}", correlatedWorkflowInstances.Length, correlationId);
 
                 var collectedWorkflows = new List<CollectedWorkflow>();
-                
+
                 if (correlatedWorkflowInstances.Any())
                 {
                     var bookmarkResults = query.Bookmark != null
                         ? await _bookmarkFinder.FindBookmarksAsync(query.ActivityType, query.Bookmark, correlationId, query.TenantId, cancellationToken).ToList()
                         : new List<BookmarkFinderResult>();
                     _logger.LogDebug("Found {BookmarkCount} bookmarks for activity type {ActivityType}", bookmarkResults.Count, query.ActivityType);
-                    
+
                     collectedWorkflows.AddRange(bookmarkResults.Select(x => new CollectedWorkflow(x.WorkflowInstanceId, x.ActivityId)));
                 }
 

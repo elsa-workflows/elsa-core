@@ -5,7 +5,7 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
-import { ActivityDefinitionProperty, ActivityDescriptor, ActivityModel, ActivityPropertyDescriptor, ElsaStudio, OrderBy, SelectListItem, VersionOptions, WorkflowBlueprint, WorkflowDefinition, WorkflowExecutionLogRecord, WorkflowInstance, WorkflowModel, WorkflowStatus } from "./models";
+import { ActivityDefinitionProperty, ActivityDescriptor, ActivityModel, ActivityPropertyDescriptor, ElsaStudio, OrderBy, SelectListItem, VersionOptions, WorkflowBlueprint, WorkflowDefinition, WorkflowExecutionLogRecord, WorkflowFault, WorkflowInstance, WorkflowModel, WorkflowStatus } from "./models";
 import { LocationSegments, MatchResults, RouterHistory } from "@stencil/router";
 import { MenuItem } from "./components/controls/elsa-context-menu/models";
 import { VNode } from "@stencil/core";
@@ -16,6 +16,7 @@ import { Map } from "./utils/utils";
 import { PagerData } from "./components/controls/elsa-pager/elsa-pager";
 import { ToastNotificationOptions } from "./components/shared/elsa-toast-notification/elsa-toast-notification";
 import { WebhookDefinition } from "./modules/elsa-webhooks/models";
+import { ActivityStats } from ".";
 export namespace Components {
     interface ElsaActivityEditorModal {
         "culture": string;
@@ -280,6 +281,10 @@ export namespace Components {
         "history"?: RouterHistory;
         "serverUrl": string;
     }
+    interface ElsaWorkflowFaultInformation {
+        "faultedAt": Date;
+        "workflowFault": WorkflowFault;
+    }
     interface ElsaWorkflowInstanceJournal {
         "activityDescriptors": Array<ActivityDescriptor>;
         "selectActivityRecord": (activityId?: string) => Promise<void>;
@@ -306,6 +311,9 @@ export namespace Components {
         "getServerUrl": () => Promise<string>;
         "serverUrl": string;
         "workflowInstanceId": string;
+    }
+    interface ElsaWorkflowPerformanceInformation {
+        "activityStats": ActivityStats;
     }
     interface ElsaWorkflowPropertiesPanel {
         "culture": string;
@@ -629,6 +637,12 @@ declare global {
         prototype: HTMLElsaWorkflowDefinitionsListScreenElement;
         new (): HTMLElsaWorkflowDefinitionsListScreenElement;
     };
+    interface HTMLElsaWorkflowFaultInformationElement extends Components.ElsaWorkflowFaultInformation, HTMLStencilElement {
+    }
+    var HTMLElsaWorkflowFaultInformationElement: {
+        prototype: HTMLElsaWorkflowFaultInformationElement;
+        new (): HTMLElsaWorkflowFaultInformationElement;
+    };
     interface HTMLElsaWorkflowInstanceJournalElement extends Components.ElsaWorkflowInstanceJournal, HTMLStencilElement {
     }
     var HTMLElsaWorkflowInstanceJournalElement: {
@@ -646,6 +660,12 @@ declare global {
     var HTMLElsaWorkflowInstanceViewerScreenElement: {
         prototype: HTMLElsaWorkflowInstanceViewerScreenElement;
         new (): HTMLElsaWorkflowInstanceViewerScreenElement;
+    };
+    interface HTMLElsaWorkflowPerformanceInformationElement extends Components.ElsaWorkflowPerformanceInformation, HTMLStencilElement {
+    }
+    var HTMLElsaWorkflowPerformanceInformationElement: {
+        prototype: HTMLElsaWorkflowPerformanceInformationElement;
+        new (): HTMLElsaWorkflowPerformanceInformationElement;
     };
     interface HTMLElsaWorkflowPropertiesPanelElement extends Components.ElsaWorkflowPropertiesPanel, HTMLStencilElement {
     }
@@ -727,9 +747,11 @@ declare global {
         "elsa-workflow-definition-editor-notifications": HTMLElsaWorkflowDefinitionEditorNotificationsElement;
         "elsa-workflow-definition-editor-screen": HTMLElsaWorkflowDefinitionEditorScreenElement;
         "elsa-workflow-definitions-list-screen": HTMLElsaWorkflowDefinitionsListScreenElement;
+        "elsa-workflow-fault-information": HTMLElsaWorkflowFaultInformationElement;
         "elsa-workflow-instance-journal": HTMLElsaWorkflowInstanceJournalElement;
         "elsa-workflow-instance-list-screen": HTMLElsaWorkflowInstanceListScreenElement;
         "elsa-workflow-instance-viewer-screen": HTMLElsaWorkflowInstanceViewerScreenElement;
+        "elsa-workflow-performance-information": HTMLElsaWorkflowPerformanceInformationElement;
         "elsa-workflow-properties-panel": HTMLElsaWorkflowPropertiesPanelElement;
         "elsa-workflow-publish-button": HTMLElsaWorkflowPublishButtonElement;
         "elsa-workflow-registry-list-screen": HTMLElsaWorkflowRegistryListScreenElement;
@@ -998,6 +1020,10 @@ declare namespace LocalJSX {
         "history"?: RouterHistory;
         "serverUrl"?: string;
     }
+    interface ElsaWorkflowFaultInformation {
+        "faultedAt"?: Date;
+        "workflowFault"?: WorkflowFault;
+    }
     interface ElsaWorkflowInstanceJournal {
         "activityDescriptors"?: Array<ActivityDescriptor>;
         "onRecordSelected"?: (event: CustomEvent<WorkflowExecutionLogRecord>) => void;
@@ -1021,6 +1047,9 @@ declare namespace LocalJSX {
         "culture"?: string;
         "serverUrl"?: string;
         "workflowInstanceId"?: string;
+    }
+    interface ElsaWorkflowPerformanceInformation {
+        "activityStats"?: ActivityStats;
     }
     interface ElsaWorkflowPropertiesPanel {
         "culture"?: string;
@@ -1102,9 +1131,11 @@ declare namespace LocalJSX {
         "elsa-workflow-definition-editor-notifications": ElsaWorkflowDefinitionEditorNotifications;
         "elsa-workflow-definition-editor-screen": ElsaWorkflowDefinitionEditorScreen;
         "elsa-workflow-definitions-list-screen": ElsaWorkflowDefinitionsListScreen;
+        "elsa-workflow-fault-information": ElsaWorkflowFaultInformation;
         "elsa-workflow-instance-journal": ElsaWorkflowInstanceJournal;
         "elsa-workflow-instance-list-screen": ElsaWorkflowInstanceListScreen;
         "elsa-workflow-instance-viewer-screen": ElsaWorkflowInstanceViewerScreen;
+        "elsa-workflow-performance-information": ElsaWorkflowPerformanceInformation;
         "elsa-workflow-properties-panel": ElsaWorkflowPropertiesPanel;
         "elsa-workflow-publish-button": ElsaWorkflowPublishButton;
         "elsa-workflow-registry-list-screen": ElsaWorkflowRegistryListScreen;
@@ -1165,9 +1196,11 @@ declare module "@stencil/core" {
             "elsa-workflow-definition-editor-notifications": LocalJSX.ElsaWorkflowDefinitionEditorNotifications & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionEditorNotificationsElement>;
             "elsa-workflow-definition-editor-screen": LocalJSX.ElsaWorkflowDefinitionEditorScreen & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionEditorScreenElement>;
             "elsa-workflow-definitions-list-screen": LocalJSX.ElsaWorkflowDefinitionsListScreen & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionsListScreenElement>;
+            "elsa-workflow-fault-information": LocalJSX.ElsaWorkflowFaultInformation & JSXBase.HTMLAttributes<HTMLElsaWorkflowFaultInformationElement>;
             "elsa-workflow-instance-journal": LocalJSX.ElsaWorkflowInstanceJournal & JSXBase.HTMLAttributes<HTMLElsaWorkflowInstanceJournalElement>;
             "elsa-workflow-instance-list-screen": LocalJSX.ElsaWorkflowInstanceListScreen & JSXBase.HTMLAttributes<HTMLElsaWorkflowInstanceListScreenElement>;
             "elsa-workflow-instance-viewer-screen": LocalJSX.ElsaWorkflowInstanceViewerScreen & JSXBase.HTMLAttributes<HTMLElsaWorkflowInstanceViewerScreenElement>;
+            "elsa-workflow-performance-information": LocalJSX.ElsaWorkflowPerformanceInformation & JSXBase.HTMLAttributes<HTMLElsaWorkflowPerformanceInformationElement>;
             "elsa-workflow-properties-panel": LocalJSX.ElsaWorkflowPropertiesPanel & JSXBase.HTMLAttributes<HTMLElsaWorkflowPropertiesPanelElement>;
             "elsa-workflow-publish-button": LocalJSX.ElsaWorkflowPublishButton & JSXBase.HTMLAttributes<HTMLElsaWorkflowPublishButtonElement>;
             "elsa-workflow-registry-list-screen": LocalJSX.ElsaWorkflowRegistryListScreen & JSXBase.HTMLAttributes<HTMLElsaWorkflowRegistryListScreenElement>;

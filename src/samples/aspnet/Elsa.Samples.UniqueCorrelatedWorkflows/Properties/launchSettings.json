@@ -1,6 +1,6 @@
 ﻿{
     "profiles": {
-        "Elsa.Samples.SignalApi": {
+        "Elsa.Samples.UniqueCorrelatedWorkflows": {
             "commandName": "Project",
             "launchBrowser": false,
             "environmentVariables": {
