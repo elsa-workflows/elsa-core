@@ -21,6 +21,7 @@ export const EventTypes = {
   WorkflowRetracted: 'workflow-retracted',
   WorkflowImported: 'workflow-imported',
   WorkflowUpdated: 'workflow-updated',
+  WorkflowExecuted: 'workflow-executed',
   WorkflowRestarted: 'workflow-restarted',
   HttpClientConfigCreated: 'http-client-config-created',
   HttpClientCreated: 'http-client-created',

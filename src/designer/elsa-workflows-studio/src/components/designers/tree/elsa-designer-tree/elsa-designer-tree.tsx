@@ -236,6 +236,7 @@ export class ElsaWorkflowDesigner {
     eventBus.on(EventTypes.PasteActivity, this.onPasteActivity);
     eventBus.on(EventTypes.HideModalDialog, this.onCopyPasteActivityEnabled);
     eventBus.on(EventTypes.ShowWorkflowSettings, this.onCopyPasteActivityDisabled);
+    eventBus.on(EventTypes.WorkflowExecuted, this.onWorkflowExecuted);
   }
 
   disconnectedCallback() {
@@ -244,6 +245,7 @@ export class ElsaWorkflowDesigner {
     eventBus.detach(EventTypes.PasteActivity, this.onPasteActivity);
     eventBus.detach(EventTypes.HideModalDialog, this.onCopyPasteActivityEnabled);
     eventBus.detach(EventTypes.ShowWorkflowSettings, this.onCopyPasteActivityDisabled);
+    eventBus.detach(EventTypes.WorkflowExecuted, this.onWorkflowExecuted);
     d3.selectAll('.node').on('click', null);
     d3.selectAll('.edgePath').on('contextmenu', null);
   }
@@ -675,6 +677,17 @@ export class ElsaWorkflowDesigner {
 
   onCopyPasteActivityDisabled = () => {
     this.ignoreCopyPasteActivities = true
+  }
+
+  onWorkflowExecuted = () => {
+    const firstNode = d3.select(this.el).select('.node.activity');
+
+    const node = this.graph.node(firstNode.data()) as any;
+    const activity = node.activity;
+    const activityId = activity.activityId;
+
+    this.selectedActivities[activityId] = activity;
+    this.activitySelected.emit(activity);
   }
 
   renderNodes() {

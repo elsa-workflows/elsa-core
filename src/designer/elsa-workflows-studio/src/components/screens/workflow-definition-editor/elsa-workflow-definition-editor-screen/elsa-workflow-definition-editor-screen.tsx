@@ -699,7 +699,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
     const sourceActivityId = this.workflowDefinition.connections.find(x => x.targetActivityId === this.selectedActivityId)?.sourceActivityId;
 
-    return sourceActivityId && this.workflowTestActivityMessages.some(x => x.activityId === sourceActivityId && x.status !== 'Failed');
+    return sourceActivityId && this.workflowTestActivityMessages.some(x => x.activityId === sourceActivityId && x.status !== WorkflowTestActivityMessageStatus.Failed);
   }
 
   renderTestActivityMenu = () => {

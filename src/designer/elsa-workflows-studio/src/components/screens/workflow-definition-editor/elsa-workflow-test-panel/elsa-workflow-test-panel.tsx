@@ -81,6 +81,8 @@ export class ElsaWorkflowTestPanel {
   }
 
   async onExecuteWorkflowClick() {
+    await eventBus.emit(EventTypes.WorkflowExecuted, this);
+
     this.message = null;
     this.workflowStarted = true;
     this.workflowTestActivityMessages = [];
