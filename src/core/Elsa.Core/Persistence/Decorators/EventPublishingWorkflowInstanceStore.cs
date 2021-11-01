@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,7 +27,20 @@ namespace Elsa.Persistence.Decorators
             await _store.SaveAsync(entity, cancellationToken);
             await _mediator.Publish(new WorkflowInstanceSaved(entity), cancellationToken);
         }
-        
+
+        public async Task SaveManyAsync(IEnumerable<WorkflowInstance> entities, CancellationToken cancellationToken = default)
+        {
+            var list = entities.ToList();
+
+            foreach (var entity in list)
+                await _mediator.Publish(entity, cancellationToken);
+
+            await _store.SaveManyAsync(list, cancellationToken);
+
+            foreach (var entity in list)
+                await _mediator.Publish(new WorkflowInstanceSaved(entity), cancellationToken);
+        }
+
         public async Task UpdateAsync(WorkflowInstance entity, CancellationToken cancellationToken = default)
         {
             await _store.UpdateAsync(entity, cancellationToken);

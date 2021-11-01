@@ -65,6 +65,49 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
             }
         }
 
+        public async Task SaveManyAsync(IEnumerable<T> entities, CancellationToken cancellationToken)
+        {
+            await _semaphore.WaitAsync(cancellationToken);
+
+            try
+            {
+                await DoWork(async dbContext =>
+                {
+                    var dbSet = dbContext.Set<T>();
+
+                    foreach (var entity in entities)
+                    { 
+                        var existingEntity = await dbSet.FindAsync(new object[] { entity.Id }, cancellationToken);
+
+                        if (existingEntity == null)
+                        {
+                            await dbSet.AddAsync(entity, cancellationToken);
+                            existingEntity = entity;
+                        }
+                        else
+                        {
+                            // Can't use the approach on the next line because we explicitly ignore certain properties (in order for them to be stored in the Data shadow property).
+                            // dbContext.Entry(existingEntity).CurrentValues.SetValues(entity);
+
+                            // Therefore using AutoMapper to copy properties instead.
+                            existingEntity = _mapper.Map(entity, existingEntity);
+                        }
+                    
+                        OnSaving(dbContext, existingEntity);
+                    }
+                }, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                var a = ex.Message;
+                throw;
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+        }
+
 
         public async Task AddAsync(T entity, CancellationToken cancellationToken)
         {

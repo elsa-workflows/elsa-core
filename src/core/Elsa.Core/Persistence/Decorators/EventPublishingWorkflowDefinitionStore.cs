@@ -64,6 +64,19 @@ namespace Elsa.Persistence.Decorators
             await _mediator.Publish(new WorkflowDefinitionSaved(entity), cancellationToken);
         }
 
+        public async Task SaveManyAsync(IEnumerable<WorkflowDefinition> entities, CancellationToken cancellationToken = default)
+        {
+            var list = entities.ToList();
+
+            foreach (var entity in list)
+                await _mediator.Publish(new WorkflowDefinitionSaving(entity), cancellationToken);
+
+            await _store.SaveManyAsync(list, cancellationToken);
+
+            foreach (var entity in list)
+                await _mediator.Publish(new WorkflowDefinitionSaved(entity), cancellationToken);
+        }
+
         public async Task AddAsync(WorkflowDefinition entity, CancellationToken cancellationToken = default)
         {
             await _mediator.Publish(new WorkflowDefinitionSaving(entity), cancellationToken);

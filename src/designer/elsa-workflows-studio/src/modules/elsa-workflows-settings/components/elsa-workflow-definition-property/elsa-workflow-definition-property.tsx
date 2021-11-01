@@ -1,7 +1,9 @@
 import {Component, Event, EventEmitter, h, Prop, State} from '@stencil/core';
 import {ActivityDefinitionProperty, ActivityPropertyDescriptor, SyntaxNames} from "../../../../models";
 import {mapSyntaxToLanguage, parseJson} from "../../../../utils/utils";
-import {WorkflowDefinitionProperty} from "./models";
+import { Validators } from '../../../../validation/validator.factory';
+import { WorkflowDefinitionProperty } from '../../models';
+
 
 @Component({
     tag: 'elsa-workflow-definition-properties-tab',
@@ -10,10 +12,13 @@ import {WorkflowDefinitionProperty} from "./models";
 export class ElsaWorkflowDefinitionPropertiesTab {
 
     @Prop() properties: Array<WorkflowDefinitionProperty> = [];
+    @Prop() workflowDefinitionId: string;
     @State() propertiesInternal: Array<WorkflowDefinitionProperty>;
 
     @Event() propertiesChanged: EventEmitter<Array<WorkflowDefinitionProperty>>;
+    @Event() propertiesToRemoveChanged: EventEmitter<Array<WorkflowDefinitionProperty>>;
 
+    propertiesToRemove: Array<WorkflowDefinitionProperty> = [];
     multiExpressionEditor: HTMLElsaMultiExpressionEditorElement;
 
     async componentWillLoad() {
@@ -25,39 +30,49 @@ export class ElsaWorkflowDefinitionPropertiesTab {
         this.propertiesChanged.emit(this.propertiesInternal);
     }
 
+    updatePropertiesToRemove(property: WorkflowDefinitionProperty) {
+        this.propertiesToRemove.push(property);
+        this.propertiesToRemoveChanged.emit(this.propertiesToRemove);
+    }
+
     onDefaultSyntaxValueChanged(e: CustomEvent) {
         this.propertiesInternal = e.detail;
     }
 
     onAddPropertyClick() {
-        const propertyName = `Property ${this.propertiesInternal.length + 1}`;
-        const newProperty: WorkflowDefinitionProperty = {key: propertyName, description: ''};
+        const propertyName = `Property${this.propertiesInternal.length + 1}`;
+        const newProperty: WorkflowDefinitionProperty = {key: propertyName, description: '', workflowBlueprintId: this.workflowDefinitionId};
         this.propertiesInternal = [...this.propertiesInternal, newProperty];
         this.updatePropertyModel();
     }
 
     onDeletePropertyClick(property: WorkflowDefinitionProperty) {
         this.propertiesInternal = this.propertiesInternal.filter(x => x != property);
+
+        if(property.id) {
+            this.updatePropertiesToRemove(property);
+        }
+
         this.updatePropertyModel();
     }
 
-    onPropertyNameChanged(e: Event, switchCase: WorkflowDefinitionProperty) {
-        switchCase.key = (e.currentTarget as HTMLInputElement).value.trim();
+    onPropertyNameChanged(e: Event, properties: WorkflowDefinitionProperty) {
+        properties.key = (e.currentTarget as HTMLInputElement).value.trim();
         this.updatePropertyModel();
     }
 
-    onPropertyValueChanged(e: Event, switchCase: WorkflowDefinitionProperty) {
-        switchCase.value = (e.currentTarget as HTMLInputElement).value.trim();
+    onPropertyValueChanged(e: Event, properties: WorkflowDefinitionProperty) {
+        properties.value = (e.currentTarget as HTMLInputElement).value.trim();
         this.updatePropertyModel();
     }
     
-    onPropertyDefaultValueChanged(e: Event, switchCase: WorkflowDefinitionProperty) {
-        switchCase.defaultValue = (e.currentTarget as HTMLInputElement).value.trim();
+    onPropertyDefaultValueChanged(e: Event, properties: WorkflowDefinitionProperty) {
+        properties.defaultValue = (e.currentTarget as HTMLInputElement).value.trim();
         this.updatePropertyModel();
     }
 
-    onPropertyDescriptionChanged(e: Event, switchCase: WorkflowDefinitionProperty) {
-        switchCase.description = (e.currentTarget as HTMLInputElement).value.trim();
+    onPropertyDescriptionChanged(e: Event, properties: WorkflowDefinitionProperty) {
+        properties.description = (e.currentTarget as HTMLInputElement).value.trim();
         this.updatePropertyModel();
     }
 
@@ -84,7 +99,7 @@ export class ElsaWorkflowDefinitionPropertiesTab {
             return (
                 <tr key={`case-${index}`}>
                     <td class="elsa-py-2 elsa-pr-5">
-                        <input type="text" value={property.key} onChange={e => this.onPropertyNameChanged(e, property)} class="focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300"/>
+                        <elsa-input validator={[Validators.KeyNameValidatior]} value={property.key} onChanged={e => this.onPropertyNameChanged(e, property)} />
                     </td>
                     <td class="elsa-py-2 elsa-pr-5">
                         <input type="text" value={property.value} onChange={e => this.onPropertyValueChanged(e, property)} class="focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300"/>

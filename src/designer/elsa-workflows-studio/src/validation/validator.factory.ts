@@ -1,8 +1,9 @@
 import { Validator, ValidatorEntry } from "./models";
-import { defaultValidator, lengthValidator } from "./validators";
+import { defaultValidator, keyNameValidatior, lengthValidator } from "./validators";
 
 export enum Validators {
-    Length = 'length'
+    Length = 'length',
+    KeyNameValidatior = 'keyNameValidatior'
 }
 
 export function combineValidators<A>(v1: Validator<A>, v2: Validator<A>): Validator<A> {
@@ -40,6 +41,8 @@ export function validatorFactory(name: string, options: any): Validator<any> {
     switch (name) {
         case (Validators.Length):
             return lengthValidator(options.min, options.max);
+        case (Validators.KeyNameValidatior):
+            return keyNameValidatior
         default:
             return defaultValidator;
     }

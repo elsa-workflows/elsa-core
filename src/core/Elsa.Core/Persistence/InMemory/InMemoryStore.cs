@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -32,7 +32,21 @@ namespace Elsa.Persistence.InMemory
             dictionary[entity.Id] = entity;
             SetDictionary(dictionary);
         }
-        
+
+        public async Task SaveManyAsync(IEnumerable<T> entities, CancellationToken cancellationToken = default)
+        {
+            var dictionary = await GetDictionaryAsync();
+
+            foreach (var entity in entities)
+            {
+                if (entity.Id == null!)
+                    entity.Id = IdGenerator.Generate();
+                dictionary[entity.Id] = entity;
+            }
+
+            SetDictionary(dictionary);
+        }
+
         public async Task UpdateAsync(T entity, CancellationToken cancellationToken = default)
         {
             var dictionary = await GetDictionaryAsync();

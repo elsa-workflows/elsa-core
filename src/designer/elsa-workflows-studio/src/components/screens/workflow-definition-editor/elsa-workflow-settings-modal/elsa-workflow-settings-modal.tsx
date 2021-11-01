@@ -14,6 +14,8 @@ import {MonacoValueChangedArgs} from "../../../controls/elsa-monaco/elsa-monaco"
 import {MarkerSeverity} from "monaco-editor";
 import {checkBox, FormContext, selectField, SelectOption, textArea, textInput} from "../../../../utils/forms";
 import {createElsaClient} from "../../../../services/elsa-client";
+import { createElsaWorkflowSettingsClient } from '../../../../modules/elsa-workflows-settings/services/elsa-client';
+import { WorkflowDefinitionProperty, WorkflowSettings } from '../../../../modules/elsa-workflows-settings/models';
 
 interface WorkflowTabModel {
   tabName: string;
@@ -24,8 +26,8 @@ export interface WorkflowSettingsRenderProps {
   workflowDefinition?: WorkflowDefinition;
   tabs?: Array<WorkflowTabModel>;
   selectedTabName?: string;
-  activityModel?: ActivityModel;
-  propertyDescriptor?: ActivityPropertyDescriptor;
+  properties?: Array<WorkflowDefinitionProperty>;
+  propertiesToRemove?: Array<WorkflowDefinitionProperty>;
 }
 
 @Component({
@@ -44,6 +46,8 @@ export class ElsaWorkflowDefinitionSettingsModal {
   activityModel: ActivityModel;
   propertyDescriptor: ActivityPropertyDescriptor;
 
+  propertiesInternal: Array<WorkflowDefinitionProperty>;
+
   @Watch('workflowDefinition')
   handleWorkflowDefinitionChanged(newValue: WorkflowDefinition) {
     this.renderProps.workflowDefinition = {...newValue};
@@ -52,9 +56,12 @@ export class ElsaWorkflowDefinitionSettingsModal {
 
   async componentWillLoad() {
     this.handleWorkflowDefinitionChanged(this.workflowDefinition);
-
+    
     const client = await createElsaClient(this.serverUrl);
     this.workflowChannels = await client.workflowChannelsApi.list();
+
+    await this.loadProperties();
+    eventBus.on(EventTypes.WorkflowSettingsDeleted, this.loadProperties);
   }
 
   async componentWillRender() {
@@ -76,8 +83,9 @@ export class ElsaWorkflowDefinitionSettingsModal {
       renderContent: () => this.renderAdvancedTab(this.renderProps.workflowDefinition)
     }];
 
-    const renderProps = {
+    const renderProps: WorkflowSettingsRenderProps = {
       workflowDefinition: this.workflowDefinition,
+      properties: this.propertiesInternal,
       tabs,
       selectedTabName: this.renderProps.selectedTabName
     };
@@ -111,7 +119,12 @@ export class ElsaWorkflowDefinitionSettingsModal {
   async onSubmit(e: Event) {
     e.preventDefault();
     await this.dialog.hide(true);
-    setTimeout(() => eventBus.emit(EventTypes.UpdateWorkflowSettings, this, this.renderProps.workflowDefinition), 250)
+
+    setTimeout(() => {
+      eventBus.emit(EventTypes.UpdateWorkflowSettings, this, this.renderProps.workflowDefinition);
+      eventBus.emit(EventTypes.WorkflowSettingsUpdaing, this, this.renderProps.workflowDefinition.settings); 
+      eventBus.emit(EventTypes.WorkflowSettingsBulkDelete, this, this.renderProps.propertiesToRemove.map(x => x.id));
+    }, 250)
   }
 
   onMonacoValueChanged(e: MonacoValueChangedArgs) {
@@ -131,6 +144,13 @@ export class ElsaWorkflowDefinitionSettingsModal {
       this.renderProps.workflowDefinition = {...this.renderProps.workflowDefinition, variables: {data: data}};
     }
   }
+
+  async loadProperties() {
+    const workflowSettingsClient = await createElsaWorkflowSettingsClient('https://localhost:11000');
+    const properties: WorkflowDefinitionProperty[] = await workflowSettingsClient.workflowSettingsApi.list();
+
+    this.propertiesInternal = properties;
+}
 
   render() {
     const renderProps = this.renderProps;

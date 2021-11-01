@@ -9,6 +9,7 @@ namespace Elsa.Persistence
     public interface IStore<T> where T : IEntity
     {
         Task SaveAsync(T entity, CancellationToken cancellationToken = default);
+        Task SaveManyAsync(IEnumerable<T> entity, CancellationToken cancellationToken = default);
         Task AddAsync(T entity, CancellationToken cancellationToken = default);
         Task AddManyAsync(IEnumerable<T> entities, CancellationToken cancellationToken = default);
 		Task UpdateAsync(T entity, CancellationToken cancellationToken = default);

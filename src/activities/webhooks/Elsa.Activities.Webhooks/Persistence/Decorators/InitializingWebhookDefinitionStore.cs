@@ -26,6 +26,16 @@ namespace Elsa.Activities.Webhooks.Persistence.Decorators
             await _store.SaveAsync(entity, cancellationToken);
         }
 
+        public async Task SaveManyAsync(IEnumerable<WebhookDefinition> entities, CancellationToken cancellationToken)
+        {
+            var list = entities.ToList();
+
+            foreach (var entity in list)
+                Initialize(entity);
+
+            await _store.SaveManyAsync(list, cancellationToken);
+        }
+
         public async Task UpdateAsync(WebhookDefinition entity, CancellationToken cancellationToken)
         {
             entity = Initialize(entity);

@@ -42,7 +42,10 @@ export const EventTypes = {
   TestActivityMessageReceived: 'test-activity-message-received',
   FlyoutPanelTabSelected: 'flyout-panel-tab-selected',
   ComponentLoadingCustomButton: 'component-loading-custom-button',
-  ComponentCustomButtonClick: 'component-custom-button-click'
+  ComponentCustomButtonClick: 'component-custom-button-click',
+  WorkflowSettingsUpdaing: 'workflow-settings-updating',
+  WorkflowSettingsBulkDelete: 'workflow-settings-delete',
+  WorkflowSettingsDeleted: 'workflow-settings-deleted'
 };
 
 export interface AddActivityEventArgs {

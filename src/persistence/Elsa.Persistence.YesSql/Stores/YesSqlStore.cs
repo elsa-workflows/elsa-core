@@ -54,7 +54,30 @@ namespace Elsa.Persistence.YesSql.Stores
                 _semaphore.Release();
             }
         }
-        
+
+        public virtual async Task SaveManyAsync(IEnumerable<T> entities, CancellationToken cancellationToken = default)
+        {
+            await _semaphore.WaitAsync(cancellationToken);
+
+            try
+            {
+                await using var session = SessionProvider.CreateSession();
+
+                foreach (var entity in entities)
+                {
+                    var existingDocument = await FindDocumentAsync(session, entity, cancellationToken);
+                    var document = Mapper.Map(entity, existingDocument);
+                    session.Save(document, CollectionName);
+                }
+
+                await session.SaveChangesAsync();
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+        }
+
         public virtual async Task UpdateAsync(T entity, CancellationToken cancellationToken = default) => await SaveAsync(entity, cancellationToken);
 
         public async Task AddAsync(T entity, CancellationToken cancellationToken = default)

@@ -45,14 +45,24 @@ export const createElsaWorkflowSettingsClient = async function (serverUrl: strin
         const response = await httpClient.post<WorkflowSettings>('v1/workflow-settings', request);
         return response.data;
       },
+      saveAll: async request => {
+        const responce = await httpClient.post<WorkflowSettings>('v1/workflow-settings/many', request); 
+        return responce.data;
+      },
       delete: async id => {
         await httpClient.delete(`v1/workflow-settings/${id}`);
+      },
+      bulkDelete: async ids => {
+        await httpClient.delete(`v1/workflow-settings/bulk`, {
+          data: ids
+        });
       },
     }
   }
 
   return _elsaWorkflowSettingsClient;
 }
+
 
 export interface ElsaWorkflowSettingsClient {
   workflowSettingsApi: WorkflowSettingsApi;
@@ -64,7 +74,11 @@ export interface WorkflowSettingsApi {
 
   save(request: SaveWorkflowSettingsRequest): Promise<WorkflowSettings>;
 
+  saveAll(request: Array<WorkflowSettings>): Promise<WorkflowSettings>;
+
   delete(workflowSettingsId: string): Promise<void>;
+
+  bulkDelete(ids: Array<string>): Promise<void>;
 }
 
 export interface SaveWorkflowSettingsRequest {
