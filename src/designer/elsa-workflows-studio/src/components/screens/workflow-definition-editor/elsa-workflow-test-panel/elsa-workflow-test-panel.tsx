@@ -58,7 +58,7 @@ export class ElsaWorkflowTestPanel {
       this.workflowTestActivityMessages = [...this.workflowTestActivityMessages, message];      
       eventBus.emit(EventTypes.TestActivityMessageReceived, this, message);
 
-      if (message.workflowStatus == 'Executed') {
+      if (message.workflowStatus === 'Executed' || message.workflowStatus === 'Failed') {
         this.workflowStarted = false;
       }
 

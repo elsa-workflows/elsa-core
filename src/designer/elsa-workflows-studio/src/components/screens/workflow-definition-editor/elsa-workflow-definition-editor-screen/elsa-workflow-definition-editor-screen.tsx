@@ -14,7 +14,7 @@ import {
   WorkflowModel,
   WorkflowPersistenceBehavior,
   WorkflowTestActivityMessage,
-  WorkflowInstance,
+  WorkflowInstance, WorkflowTestActivityMessageStatus,
 } from "../../../../models";
 import {
   ActivityStats,
@@ -479,14 +479,14 @@ export class ElsaWorkflowDefinitionEditorScreen {
   }
 
   async onActivityContextMenuButtonTestClicked(e: CustomEvent<ActivityContextMenuState>) {
-    
+
     this.activityContextMenuTestState = e.detail;
     this.selectedActivityId = e.detail.activity.activityId;
 
     if (!e.detail.shown) {
       return;
     }
-    
+
     await this.tryUpdateActivityInformation(this.selectedActivityId);
   }
 
@@ -542,7 +542,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
     const message = this.workflowTestActivityMessages.find(x => x.activityId === activity.activityId);
 
     if (message){
-      message.status = 'Modified';
+      message.status = WorkflowTestActivityMessageStatus.Modified;
       this.clearSubsequentWorkflowTestMessages(activity.activityId);
     }
   }
@@ -552,7 +552,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
     if (!targetActivityId) return;
 
-    this.workflowTestActivityMessages = this.workflowTestActivityMessages.filter(x => x.activityId !== targetActivityId || x.status === 'Failed');
+    this.workflowTestActivityMessages = this.workflowTestActivityMessages.filter(x => x.activityId !== targetActivityId || x.status === WorkflowTestActivityMessageStatus.Failed);
 
     this.clearSubsequentWorkflowTestMessages(targetActivityId);
   }
@@ -567,12 +567,12 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
     switch (testActivityMessage.status)
     {
-      case "Done":
+      case WorkflowTestActivityMessageStatus.Done:
         icon = `<svg class="elsa-h-8 elsa-w-8 elsa-text-green-500"  fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>`;
         break;
-      case "Waiting":
+      case WorkflowTestActivityMessageStatus.Waiting:
         icon = `<svg version="1.1" class="svg-loader" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 80 80" xml:space="preserve">
                   <path id="spinner" fill="#7eb0de" d="M40,72C22.4,72,8,57.6,8,40C8,22.4,
                   22.4,8,40,8c17.6,0,32,14.4,32,32c0,1.1-0.9,2-2,2
@@ -583,14 +583,14 @@ export class ElsaWorkflowDefinitionEditorScreen {
                   </path>
               </svg>`;
         break;
-      case "Failed":
+      case WorkflowTestActivityMessageStatus.Failed:
         icon = `<svg class="elsa-h-8 elsa-w-8 elsa-text-red-500"  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <circle cx="12" cy="12" r="10" />
                   <line x1="15" y1="9" x2="9" y2="15" />
                   <line x1="9" y1="9" x2="15" y2="15" />
                 </svg>`;
         break;
-      case "Modified":
+      case WorkflowTestActivityMessageStatus.Modified:
         icon = `<svg class="h-6 w-6 elsa-text-yellow-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="10"></circle>
                     <line x1="12" y1="16" x2="12" y2="12"></line>

@@ -352,3 +352,10 @@ export const getVersionOptionsString = (versionOptions?: VersionOptions) => {
             ? 'LatestOrPublished'
             : versionOptions.version.toString();
 };
+
+export enum WorkflowTestActivityMessageStatus {
+  Done = 'Done',
+  Waiting = 'Waiting',
+  Failed = 'Failed',
+  Modified = 'Modified'
+}
