@@ -265,6 +265,7 @@ export interface ActivityDescriptor {
   browsable: boolean;
   inputProperties: Array<ActivityPropertyDescriptor>;
   outputProperties: Array<ActivityPropertyDescriptor>;
+  customAttributes: any;
 }
 
 export interface ActivityPropertyDescriptor {

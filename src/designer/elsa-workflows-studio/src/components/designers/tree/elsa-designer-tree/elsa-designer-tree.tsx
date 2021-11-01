@@ -116,7 +116,7 @@ export class ElsaWorkflowDesigner {
     this.ignoreCopyPasteActivities = true;
     this.activityContextMenuTestState = state;
     this.activityContextMenuButtonTestClicked.emit(state);
-  }  
+  }
 
   @Watch('model')
   handleModelChanged(newValue: WorkflowModel) {
@@ -149,7 +149,7 @@ export class ElsaWorkflowDesigner {
   @Watch('activityContextTestMenu')
   handleActivityContextMenuTestChanged(newValue: ActivityContextMenuState) {
     this.activityContextMenuTestState = newValue;
-  }  
+  }
 
   @Listen('keydown', {target: 'window'})
   async handleKeyDown(event: KeyboardEvent) {
@@ -329,7 +329,8 @@ export class ElsaWorkflowDesigner {
       traits: ActivityTraits.Action,
       description: `(Not Found) ${activityModel.description}`,
       category: 'Not Found',
-      browsable: false
+      browsable: false,
+      customAttributes: {}
     };
   }
 
@@ -705,7 +706,7 @@ export class ElsaWorkflowDesigner {
               d3.select(node.elem).select('svg').classed('elsa-text-green-400', true).classed('elsa-text-gray-400', false).classed('hover:elsa-text-blue-500', false);
               return;
             }
-            
+
             if (this.mode !== WorkflowDesignerMode.Test) await this.showActivityPicker();
           })
           .on("mouseover", e => {
@@ -893,7 +894,7 @@ export class ElsaWorkflowDesigner {
       </div>`;
   }
 
-  renderActivityBody(displayContext: ActivityDesignDisplayContext) {    
+  renderActivityBody(displayContext: ActivityDesignDisplayContext) {
     return (
       `<div class="elsa-border-t elsa-border-t-solid">
           <div class="elsa-p-6 elsa-text-gray-400 elsa-text-sm">
@@ -914,7 +915,7 @@ export class ElsaWorkflowDesigner {
   render() {
     return (
       <Host class="workflow-canvas elsa-flex-1 elsa-flex" ref={el => (this.el = el)}>
-        {this.mode == WorkflowDesignerMode.Test ? 
+        {this.mode == WorkflowDesignerMode.Test ?
           <div>
             <div id="left" style={{border:`4px solid orange`, position:`fixed`, zIndex:`10`, height: `calc(100vh - 64px)`, width:`4px`, top:`64`, bottom:`0`, left:`0`}}></div>
             <div id="right" style={{border:`4px solid orange`, position:`fixed`, zIndex:`10`, height: `calc(100vh - 64px)`, width:`4px`, top:`64`, bottom:`0`, right:`0`}}></div>
@@ -923,7 +924,7 @@ export class ElsaWorkflowDesigner {
           </div>
           :
           undefined
-        }        
+        }
         <svg ref={(el: SVGSVGElement) => (this.svg = el)} id="svg" style={{
           height: 'calc(100vh - 64px)',
           width: '100%',
