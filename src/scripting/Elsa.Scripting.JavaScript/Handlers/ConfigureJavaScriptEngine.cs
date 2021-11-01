@@ -18,6 +18,7 @@ using Jint;
 using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 using NodaTime;
 
 namespace Elsa.Scripting.JavaScript.Handlers
@@ -45,22 +46,24 @@ namespace Elsa.Scripting.JavaScript.Handlers
             var engine = notification.Engine;
 
             // Global functions.
-            engine.SetValue("guid", (Func<string>) (() => Guid.NewGuid().ToString()));
-            engine.SetValue("parseGuid", (Func<string, Guid>) (Guid.Parse));
-            engine.SetValue("setVariable", (Action<string, object>) ((name, value) => activityExecutionContext.SetVariable(name, value)));
-            engine.SetValue("getVariable", (Func<string, object?>) (name => activityExecutionContext.GetVariable(name)));
-            engine.SetValue("isNullOrWhiteSpace", (Func<string, bool>) (string.IsNullOrWhiteSpace));
-            engine.SetValue("isNullOrEmpty", (Func<string, bool>) (string.IsNullOrEmpty));
-            engine.SetValue("getWorkflowDefinitionIdByName", (Func<string, string?>) (name => GetWorkflowDefinitionIdByName(activityExecutionContext, name)));
-            engine.SetValue("getWorkflowDefinitionIdByTag", (Func<string, string?>) (tag => GetWorkflowDefinitionIdByTag(activityExecutionContext, tag)));
-            engine.SetValue("getActivity", (Func<string, object?>) (idOrName => GetActivityModel(activityExecutionContext, idOrName)));
-            engine.SetValue("findExecutedActivityIdByType", (Func<string, string?>) (activityTypeName => FindExecutedActivityByTypeAsync(activityExecutionContext, activityTypeName, cancellationToken).Result));
-            
+            engine.SetValue("guid", (Func<string>)(() => Guid.NewGuid().ToString()));
+            engine.SetValue("parseGuid", (Func<string, Guid>)(Guid.Parse));
+            engine.SetValue("setVariable", (Action<string, object>)((name, value) => activityExecutionContext.SetVariable(name, value)));
+            engine.SetValue("getVariable", (Func<string, object?>)(name => activityExecutionContext.GetVariable(name)));
+            engine.SetValue("isNullOrWhiteSpace", (Func<string, bool>)(string.IsNullOrWhiteSpace));
+            engine.SetValue("isNullOrEmpty", (Func<string, bool>)(string.IsNullOrEmpty));
+            engine.SetValue("getWorkflowDefinitionIdByName", (Func<string, string?>)(name => GetWorkflowDefinitionIdByName(activityExecutionContext, name)));
+            engine.SetValue("getWorkflowDefinitionIdByTag", (Func<string, string?>)(tag => GetWorkflowDefinitionIdByTag(activityExecutionContext, tag)));
+            engine.SetValue("getActivity", (Func<string, object?>)(idOrName => GetActivityModel(activityExecutionContext, idOrName)));
+            engine.SetValue("findExecutedActivityIdByType", (Func<string, string?>)(activityTypeName => FindExecutedActivityByTypeAsync(activityExecutionContext, activityTypeName, cancellationToken).Result));
+            engine.SetValue("jsonEncode", (Func<object, string>)(JsonConvert.SerializeObject));
+            engine.SetValue("jsonDecode", (Func<string, object?>)JsonConvert.DeserializeObject);
+
             if (_scriptOptions.EnableConfigurationAccess)
                 engine.SetValue("getConfig", (Func<string, object?>)(name => _configuration.GetSection(name).Value));
 
             // Using .Result because Jint doesn't support Task-based functions.  
-            engine.SetValue("getActivityProperty", (Func<string, string, object?>) ((activityId, propertyName) => GetActivityPropertyAsync(activityId, propertyName, activityExecutionContext).Result));
+            engine.SetValue("getActivityProperty", (Func<string, string, object?>)((activityId, propertyName) => GetActivityPropertyAsync(activityId, propertyName, activityExecutionContext).Result));
 
             // Global variables.
             engine.SetValue("activityExecutionContext", activityExecutionContext);
@@ -120,12 +123,12 @@ namespace Elsa.Scripting.JavaScript.Handlers
                     var propertyName = property.Name;
                     var storageProviderName = storageProviderLookup.GetItem(propertyName) ?? property.DefaultWorkflowStorageProvider;
 
-                    activityModel[propertyName] = (Func<object?>) (() => _workflowStorageService.LoadAsync(storageProviderName, storageContext, propertyName, cancellationToken).Result);
+                    activityModel[propertyName] = (Func<object?>)(() => _workflowStorageService.LoadAsync(storageProviderName, storageContext, propertyName, cancellationToken).Result);
                 }
 
                 activities[activity.Name!] = activityModel;
             }
-            
+
             engine.SetValue("activities", activities);
         }
 
@@ -133,7 +136,7 @@ namespace Elsa.Scripting.JavaScript.Handlers
         {
             var workflowExecutionContext = activityExecutionContext.WorkflowExecutionContext;
             var workflowBlueprint = workflowExecutionContext.WorkflowBlueprint;
-            
+
             foreach (var activity in workflowBlueprint.Activities.Where(x => !string.IsNullOrWhiteSpace(x.Name)))
             {
                 var state = new Dictionary<string, object?>(activityExecutionContext.GetActivityData(activity.Id));
@@ -142,7 +145,9 @@ namespace Elsa.Scripting.JavaScript.Handlers
         }
 
         private string? GetWorkflowDefinitionIdByTag(ActivityExecutionContext activityExecutionContext, string tag) => GetWorkflowDefinitionId(activityExecutionContext, x => string.Equals(x.Tag, tag, StringComparison.OrdinalIgnoreCase));
-        private string? GetWorkflowDefinitionIdByName(ActivityExecutionContext activityExecutionContext, string name) => GetWorkflowDefinitionId(activityExecutionContext, x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase));
+
+        private string? GetWorkflowDefinitionIdByName(ActivityExecutionContext activityExecutionContext, string name) =>
+            GetWorkflowDefinitionId(activityExecutionContext, x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase));
 
         private string? GetWorkflowDefinitionId(ActivityExecutionContext activityExecutionContext, Func<IWorkflowBlueprint, bool> filter)
         {
@@ -157,7 +162,7 @@ namespace Elsa.Scripting.JavaScript.Handlers
             var activity = workflowExecutionContext.GetActivityBlueprintByName(idOrName) ?? workflowExecutionContext.GetActivityBlueprintById(idOrName);
             return activity == null ? null : workflowExecutionContext.WorkflowInstance.ActivityData[activity.Id];
         }
-        
+
         private async Task<object?> GetActivityPropertyAsync(string activityIdOrName, string propertyName, ActivityExecutionContext context)
         {
             var workflowExecutionContext = context.WorkflowExecutionContext;
@@ -167,7 +172,7 @@ namespace Elsa.Scripting.JavaScript.Handlers
             var storageContext = new WorkflowStorageContext(context.WorkflowInstance, activityBlueprint.Id);
             return await storageService.LoadAsync(providerName, storageContext, propertyName, context.CancellationToken);
         }
-        
+
         private static async Task<string?> FindExecutedActivityByTypeAsync(ActivityExecutionContext activityExecutionContext, string activityTypeName, CancellationToken cancellationToken)
         {
             var log = activityExecutionContext.GetService<IWorkflowExecutionLogStore>();
