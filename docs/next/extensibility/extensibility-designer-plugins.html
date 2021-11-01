@@ -227,7 +227,7 @@ To use a different UI hint, specify the <code>UIHint</code> property explicitly.
     <span class="hljs-keyword">const</span> {getOrCreateProperty, htmlToElement} = elsaStudio;
     
     <span class="hljs-comment">// Implement the display method, which receives the activity model and the property for which the editor must be rendered.</span>
-    <span class="hljs-keyword">this</span>.display = <span class="hljs-function">(<span class="hljs-params">activity, property</span>) =&gt;</span> {
+    <span class="hljs-keyword">this</span>.display = <span class="hljs-function">(<span class="hljs-params">activity, propertyDescriptor</span>) =&gt;</span> {
         <span class="hljs-comment">// Get the property model.</span>
         <span class="hljs-keyword">const</span> propertyModel = getOrCreateProperty(activity, propertyDescriptor.name);
 
