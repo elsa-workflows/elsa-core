@@ -116,7 +116,7 @@ namespace Elsa.Services.Workflows
             return await FindStartableWorkflowAsync(workflowBlueprint, activityId, correlationId, contextId, tenantId, cancellationToken);
         }
 
-        public async Task<RunWorkflowResult?> FindAndExecuteRestartableWorkflowAsync(
+        public async Task<RunWorkflowResult?> FindAndRestartTestWorkflowAsync(
             string workflowDefinitionId,
             string activityId,
             int version,
