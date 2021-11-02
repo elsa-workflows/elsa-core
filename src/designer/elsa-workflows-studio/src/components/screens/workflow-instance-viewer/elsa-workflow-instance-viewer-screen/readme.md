@@ -35,6 +35,8 @@ Type: `Promise<string>`
 
 ### Depends on
 
+- [elsa-workflow-fault-information](../../../shared/elsa-workflow-debug-information)
+- [elsa-workflow-performance-information](../../../shared/elsa-workflow-debug-information)
 - [elsa-workflow-instance-journal](../elsa-workflow-instance-journal)
 - [elsa-designer-tree](../../../designers/tree/elsa-designer-tree)
 - context-consumer
@@ -42,6 +44,8 @@ Type: `Promise<string>`
 ### Graph
 ```mermaid
 graph TD;
+  elsa-workflow-instance-viewer-screen --> elsa-workflow-fault-information
+  elsa-workflow-instance-viewer-screen --> elsa-workflow-performance-information
   elsa-workflow-instance-viewer-screen --> elsa-workflow-instance-journal
   elsa-workflow-instance-viewer-screen --> elsa-designer-tree
   elsa-workflow-instance-viewer-screen --> context-consumer

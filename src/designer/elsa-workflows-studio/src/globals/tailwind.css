@@ -2103,10 +2103,6 @@ select {
   top: 0px;
 }
 
-.elsa-top-2 {
-  top: 0.5rem;
-}
-
 .elsa-top-4 {
   top: 1rem;
 }
@@ -2181,6 +2177,10 @@ select {
 
 .elsa-z-10 {
   z-index: 10;
+}
+
+.elsa-z-20 {
+  z-index: 20;
 }
 
 .focus\:elsa-z-10:focus {
@@ -10160,11 +10160,6 @@ select {
 .elsa-text-blue-900 {
   --tw-text-opacity: 1;
   color: rgba(30, 58, 138, var(--tw-text-opacity));
-}
-
-.elsa-text-indigo-500 {
-  --tw-text-opacity: 1;
-  color: rgba(99, 102, 241, var(--tw-text-opacity));
 }
 
 .elsa-text-pink-50 {
