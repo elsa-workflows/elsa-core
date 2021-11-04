@@ -7,6 +7,7 @@ import {
   ConfigureWorkflowRegistryUpdatingContext,
   ElsaStudio
 } from "../../../models";
+import {cloneDeep} from 'lodash';
 
 import { WorkflowSettingsRenderProps } from '../../../components/screens/workflow-definition-editor/elsa-workflow-settings-modal/elsa-workflow-settings-modal';
 import { WorkflowSettings } from '../models';
@@ -28,7 +29,13 @@ export class WorkflowSettingsPlugin implements ElsaPlugin {
     const tabs = renderProps.tabs;
 
     const renderPropertiesTab = () => {
-      return ( <elsa-workflow-definition-properties-tab onPropertiesToRemoveChanged={(e) => renderProps.propertiesToRemove = e.detail} workflowDefinitionId={renderProps.workflowDefinition.definitionId} properties={renderProps.properties} onPropertiesChanged={(e) => renderProps.workflowDefinition.settings = e.detail}/> )
+      return ( <elsa-workflow-definition-properties-tab properties={renderProps.properties}
+                  workflowDefinitionId={renderProps.workflowDefinition.definitionId}  
+                  onPropertiesToRemoveChanged={(e) => renderProps.propertiesToRemove = e.detail} 
+                  onPropertiesChanged={(e) => renderProps.workflowDefinition.settings = e.detail}
+                  onFormValidationChanged={e => { 
+                    eventBus.emit(EventTypes.WorkflowPropertiesValidationChanged, this, e.detail);
+                  }}/> )
     }
 
     tabs.push({

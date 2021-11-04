@@ -15,7 +15,8 @@ import {MarkerSeverity} from "monaco-editor";
 import {checkBox, FormContext, selectField, SelectOption, textArea, textInput} from "../../../../utils/forms";
 import {createElsaClient} from "../../../../services/elsa-client";
 import { createElsaWorkflowSettingsClient } from '../../../../modules/elsa-workflows-settings/services/elsa-client';
-import { WorkflowDefinitionProperty, WorkflowSettings } from '../../../../modules/elsa-workflows-settings/models';
+import { WorkflowDefinitionProperty } from '../../../../modules/elsa-workflows-settings/models';
+import { ValidationStatus, WorkflowDefinitionPropertyValidationErrors } from '../../../../validation/workflow-definition-property-validation/workflow-definition-property.messages';
 
 interface WorkflowTabModel {
   tabName: string;
@@ -28,6 +29,7 @@ export interface WorkflowSettingsRenderProps {
   selectedTabName?: string;
   properties?: Array<WorkflowDefinitionProperty>;
   propertiesToRemove?: Array<WorkflowDefinitionProperty>;
+  validationErrors?: WorkflowDefinitionPropertyValidationErrors;
 }
 
 @Component({
@@ -39,6 +41,8 @@ export class ElsaWorkflowDefinitionSettingsModal {
   @Prop({attribute: 'server-url', reflect: true}) serverUrl: string;
   @Prop() workflowDefinition: WorkflowDefinition;
   @State() renderProps: WorkflowSettingsRenderProps = {}
+  @State() validation: Array<ValidationStatus> = [];
+
   dialog: HTMLElsaModalDialogElement;
   monacoEditor: HTMLElsaMonacoElement;
   formContext: FormContext;
@@ -62,6 +66,7 @@ export class ElsaWorkflowDefinitionSettingsModal {
 
     await this.loadProperties();
     eventBus.on(EventTypes.WorkflowSettingsDeleted, this.loadProperties);
+    eventBus.on(EventTypes.WorkflowPropertiesValidationChanged, this.renderValidationErrors);
   }
 
   async componentWillRender() {
@@ -114,6 +119,7 @@ export class ElsaWorkflowDefinitionSettingsModal {
 
   async onCancelClick() {
     await this.dialog.hide(true);
+
   }
 
   async onSubmit(e: Event) {
@@ -156,6 +162,7 @@ export class ElsaWorkflowDefinitionSettingsModal {
     const renderProps = this.renderProps;
     const tabs = renderProps.tabs;
     const selectedTabName = renderProps.selectedTabName;
+    const validation = this.validation;
     const inactiveClass = 'elsa-border-transparent elsa-text-gray-500 hover:elsa-text-gray-700 hover:elsa-border-gray-300';
     const selectedClass = 'elsa-border-blue-500 elsa-text-blue-600';
 
@@ -181,8 +188,13 @@ export class ElsaWorkflowDefinitionSettingsModal {
                 <div>
                   {this.renderTabs(tabs)}
                 </div>
+                <div class="elsa-pt-5">
+                {validation.map(validation => {
+                    return <div class="elsa-text-red-800 elsa-text-xs">{validation.message}</div>
+                  })
+                }
+                </div>
               </div>
-
               <div class="elsa-pt-5">
                 <div class="elsa-bg-gray-50 elsa-px-4 elsa-py-3 sm:elsa-px-6 sm:elsa-flex sm:elsa-flex-row-reverse">
                   <button type="submit"
@@ -298,6 +310,12 @@ export class ElsaWorkflowDefinitionSettingsModal {
         </div>
       </div>
     );
+  }
+
+  renderValidationErrors(validationErrors: WorkflowDefinitionPropertyValidationErrors) {
+    this.validation = [];
+    this.validation[0] = validationErrors.PropertyKeyNameError ? validationErrors.PropertyKeyNameError : null
+    this.validation[1] = validationErrors.PropertyUniqueError ? validationErrors.PropertyUniqueError : null
   }
 
   getHiddenClass(tab: string) {

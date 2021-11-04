@@ -6,6 +6,7 @@ using Elsa.Serialization;
 using Elsa.WorkflowSettings.Models;
 using AutoMapper;
 using Elsa.WorkflowSettings.Persistence.EntityFramework.Core.Services;
+using Elsa.Persistence.EntityFramework.Core;
 
 namespace Elsa.WorkflowSettings.Persistence.EntityFramework.Core.Stores
 {
@@ -19,5 +20,21 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.Core.Stores
         }
 
         protected override Expression<Func<WorkflowSetting, bool>> MapSpecification(ISpecification<WorkflowSetting> specification) => AutoMapSpecification(specification);
+
+        //protected override void OnSaving(ElsaContext dbContext, WorkflowSetting entity)
+        //{
+        //    var data = new
+        //    {
+        //        entity.DefaultValue,
+        //        entity.Connections,
+        //        entity.Variables,
+        //        entity.ContextOptions,
+        //        entity.CustomAttributes,
+        //        entity.Channel
+        //    };
+
+        //    var json = _contentSerializer.Serialize(data);
+        //    dbContext.Entry(entity).Property("Data").CurrentValue = json;
+        //}
     }
 }

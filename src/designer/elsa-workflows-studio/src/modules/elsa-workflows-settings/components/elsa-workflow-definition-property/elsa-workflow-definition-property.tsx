@@ -1,7 +1,9 @@
 import {Component, Event, EventEmitter, h, Prop, State} from '@stencil/core';
-import {ActivityDefinitionProperty, ActivityPropertyDescriptor, SyntaxNames} from "../../../../models";
-import {mapSyntaxToLanguage, parseJson} from "../../../../utils/utils";
+import { isThisTypeNode } from 'typescript';
+import { SyntaxNames} from "../../../../models";
+import { parseJson } from "../../../../utils/utils";
 import { Validators } from '../../../../validation/validator.factory';
+import { ValidationStatus, WorkflowDefinitionPropertyValidationErrors, WorkflowDefinitionPropertyValidationMessages } from '../../../../validation/workflow-definition-property-validation/workflow-definition-property.messages';
 import { WorkflowDefinitionProperty } from '../../models';
 
 
@@ -14,10 +16,16 @@ export class ElsaWorkflowDefinitionPropertiesTab {
     @Prop() properties: Array<WorkflowDefinitionProperty> = [];
     @Prop() workflowDefinitionId: string;
     @State() propertiesInternal: Array<WorkflowDefinitionProperty>;
+   
 
     @Event() propertiesChanged: EventEmitter<Array<WorkflowDefinitionProperty>>;
     @Event() propertiesToRemoveChanged: EventEmitter<Array<WorkflowDefinitionProperty>>;
+    @Event() formValidationChanged: EventEmitter<WorkflowDefinitionPropertyValidationErrors>;
 
+    validationErrors: WorkflowDefinitionPropertyValidationErrors = {
+        PropertyKeyNameError: {},
+        PropertyUniqueError: {}
+    };
     propertiesToRemove: Array<WorkflowDefinitionProperty> = [];
     multiExpressionEditor: HTMLElsaMultiExpressionEditorElement;
 
@@ -57,7 +65,20 @@ export class ElsaWorkflowDefinitionPropertiesTab {
     }
 
     onPropertyNameChanged(e: Event, properties: WorkflowDefinitionProperty) {
+        const newKey = (e.currentTarget as HTMLInputElement).value.trim();
+        
+        
+        // if(this.propertiesInternal.map(x => x.key).indexOf(newKey)) {
+        //     this.validationErrors.PropertyUniqueError = {
+        //         valid: false,
+        //         message: WorkflowDefinitionPropertyValidationMessages.PropertyUniqueError
+        //     }
+
+        //     this.formValidationChanged.emit(this.validationErrors);
+        // }
+
         properties.key = (e.currentTarget as HTMLInputElement).value.trim();
+        this.validateDuplications(this.propertiesInternal.map(x => x.key))
         this.updatePropertyModel();
     }
 
@@ -76,6 +97,12 @@ export class ElsaWorkflowDefinitionPropertiesTab {
         this.updatePropertyModel();
     }
 
+    onKeyInputValidationChanged(e: CustomEvent<ValidationStatus>, index: number) { 
+        console.log(e, index)
+        this.validationErrors.PropertyKeyNameError = e.detail;
+        this.formValidationChanged.emit(this.validationErrors);
+    }
+
     onMultiExpressionEditorValueChanged(e: CustomEvent<string>) {
         const json = e.detail;
         const parsed = parseJson(json);
@@ -90,6 +117,17 @@ export class ElsaWorkflowDefinitionPropertiesTab {
         this.propertiesChanged.emit(this.propertiesInternal);
     }
 
+    validateDuplications(keys: Array<string>) {
+        const duplications = keys.filter((item, index) => keys.indexOf(item) != index);
+        console.log(duplications)
+        this.validationErrors.PropertyUniqueError = {
+            valid: !duplications.length,
+            message: duplications.length ? `${WorkflowDefinitionPropertyValidationMessages.PropertyUniqueError} ${duplications}` : ""
+        }
+
+        this.formValidationChanged.emit(this.validationErrors);
+    }
+
     render() {
         const properties = this.propertiesInternal;
         const json = JSON.stringify(properties, null, 2);
@@ -99,7 +137,7 @@ export class ElsaWorkflowDefinitionPropertiesTab {
             return (
                 <tr key={`case-${index}`}>
                     <td class="elsa-py-2 elsa-pr-5">
-                        <elsa-input validator={[Validators.KeyNameValidatior]} value={property.key} onChanged={e => this.onPropertyNameChanged(e, property)} />
+                        <elsa-input validator={[Validators.KeyNameValidatior]} value={property.key} onValidationChanged={e => this.onKeyInputValidationChanged(e, index)} onChanged={e => this.onPropertyNameChanged(e, property)} />
                     </td>
                     <td class="elsa-py-2 elsa-pr-5">
                         <input type="text" value={property.value} onChange={e => this.onPropertyValueChanged(e, property)} class="focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300"/>

@@ -45,7 +45,8 @@ export const EventTypes = {
   ComponentCustomButtonClick: 'component-custom-button-click',
   WorkflowSettingsUpdaing: 'workflow-settings-updating',
   WorkflowSettingsBulkDelete: 'workflow-settings-delete',
-  WorkflowSettingsDeleted: 'workflow-settings-deleted'
+  WorkflowSettingsDeleted: 'workflow-settings-deleted',
+  WorkflowPropertiesValidationChanged: 'workflow-properties-validation-changed'
 };
 
 export interface AddActivityEventArgs {

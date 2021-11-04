@@ -12,6 +12,7 @@ import { VNode } from "@stencil/core";
 import { ActivityContextMenuState, LayoutDirection, WorkflowDesignerMode } from "./components/designers/tree/elsa-designer-tree/models";
 import { DropdownButtonItem, DropdownButtonOrigin } from "./components/controls/elsa-dropdown-button/models";
 import { ValidatorEntry } from "./validation/models";
+import { ValidationStatus, WorkflowDefinitionPropertyValidationErrors } from "./validation/workflow-definition-property-validation/workflow-definition-property.messages";
 import { MonacoValueChangedArgs } from "./components/controls/elsa-monaco/elsa-monaco";
 import { Map } from "./utils/utils";
 import { PagerData } from "./components/controls/elsa-pager/elsa-pager";
@@ -834,6 +835,7 @@ declare namespace LocalJSX {
     }
     interface ElsaInput {
         "onChanged"?: (event: CustomEvent<string>) => void;
+        "onValidationChanged"?: (event: CustomEvent<ValidationStatus>) => void;
         "validator"?: Array<string | ValidatorEntry>;
         "value"?: string;
     }
@@ -1021,6 +1023,7 @@ declare namespace LocalJSX {
         "workflowDefinitionId"?: string;
     }
     interface ElsaWorkflowDefinitionPropertiesTab {
+        "onFormValidationChanged"?: (event: CustomEvent<WorkflowDefinitionPropertyValidationErrors>) => void;
         "onPropertiesChanged"?: (event: CustomEvent<Array<WorkflowDefinitionProperty>>) => void;
         "onPropertiesToRemoveChanged"?: (event: CustomEvent<Array<WorkflowDefinitionProperty>>) => void;
         "properties"?: Array<WorkflowDefinitionProperty>;

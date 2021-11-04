@@ -7,6 +7,7 @@ using Elsa.WorkflowSettings.Api.Swagger.Examples;
 using Elsa.WorkflowSettings.Extensions;
 using Elsa.WorkflowSettings.Models;
 using Elsa.WorkflowSettings.Persistence;
+using Elsa.WorkflowSettings.Specifications;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -54,6 +55,11 @@ namespace Elsa.WorkflowSettings.Api.Endpoints
 
                 if (workflowSettings == null)
                 {
+                    var existingSetting = await _workflowSettingsStore.FindAsync(new WorkflowSettingsBlueprintIdKeySpecification(key, workflowBlueprintId));
+
+                    if (existingSetting != null)
+                        return BadRequest($"Setting with key {key} already exist. Please choose another one");
+
                     workflowSettings = new WorkflowSetting
                     {
                         Id = !string.IsNullOrWhiteSpace(workflowSettingsId) ? workflowSettingsId : _idGenerator.Generate(),
@@ -71,7 +77,7 @@ namespace Elsa.WorkflowSettings.Api.Endpoints
 
             await _workflowSettingsStore.SaveManyAsync(workflowSettingsList, cancellationToken); 
 
-            return CreatedAtAction("Handle", "Get", workflowSettingsList);
+            return CreatedAtAction("Handle", "Get", workflowSettingsList );
         }
     }
 }
