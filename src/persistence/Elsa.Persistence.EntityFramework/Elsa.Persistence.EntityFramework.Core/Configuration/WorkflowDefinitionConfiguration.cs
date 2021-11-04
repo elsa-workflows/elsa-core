@@ -23,5 +23,6 @@ namespace Elsa.Persistence.EntityFramework.Core.Configuration
             builder.HasIndex(x => x.IsPublished).HasDatabaseName($"IX_{nameof(WorkflowDefinition)}_{nameof(WorkflowDefinition.IsPublished)}");
             builder.HasIndex(x => x.Tag).HasDatabaseName($"IX_{nameof(WorkflowDefinition)}_{nameof(WorkflowDefinition.Tag)}");
         }
+
     }
 }
