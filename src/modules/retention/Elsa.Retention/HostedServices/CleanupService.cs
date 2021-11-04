@@ -38,7 +38,10 @@ namespace Elsa.Retention.HostedServices
             {
                 await Task.Delay(_interval, stoppingToken);
                 await using var handle = await _distributedLockProvider.AcquireLockAsync(nameof(CleanupService), cancellationToken: stoppingToken);
-                
+
+                if (handle == null)
+                    continue;
+
                 try
                 {
                     await job.ExecuteAsync(stoppingToken);
