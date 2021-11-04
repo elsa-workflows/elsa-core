@@ -8,7 +8,12 @@ export interface ValidationStatus {
     message?: string;
 }
 
+export interface ValidationStatusIdentifyed {
+    id: number | string;
+    validation: ValidationStatus
+}
+
 export class WorkflowDefinitionPropertyValidationErrors {
-    PropertyKeyNameError?: ValidationStatus;
+    PropertyKeyNameError?: Array<ValidationStatusIdentifyed>;
     PropertyUniqueError?: ValidationStatus;
 }

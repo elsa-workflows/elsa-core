@@ -23,7 +23,7 @@ export class ElsaWorkflowDefinitionPropertiesTab {
     @Event() formValidationChanged: EventEmitter<WorkflowDefinitionPropertyValidationErrors>;
 
     validationErrors: WorkflowDefinitionPropertyValidationErrors = {
-        PropertyKeyNameError: {},
+        PropertyKeyNameError: [],
         PropertyUniqueError: {}
     };
     propertiesToRemove: Array<WorkflowDefinitionProperty> = [];
@@ -49,7 +49,7 @@ export class ElsaWorkflowDefinitionPropertiesTab {
 
     onAddPropertyClick() {
         const propertyName = `Property${this.propertiesInternal.length + 1}`;
-        const newProperty: WorkflowDefinitionProperty = {key: propertyName, description: '', workflowBlueprintId: this.workflowDefinitionId};
+        const newProperty: WorkflowDefinitionProperty = {key: propertyName, description: 'Description', workflowBlueprintId: this.workflowDefinitionId};
         this.propertiesInternal = [...this.propertiesInternal, newProperty];
         this.updatePropertyModel();
     }
@@ -65,18 +65,6 @@ export class ElsaWorkflowDefinitionPropertiesTab {
     }
 
     onPropertyNameChanged(e: Event, properties: WorkflowDefinitionProperty) {
-        const newKey = (e.currentTarget as HTMLInputElement).value.trim();
-        
-        
-        // if(this.propertiesInternal.map(x => x.key).indexOf(newKey)) {
-        //     this.validationErrors.PropertyUniqueError = {
-        //         valid: false,
-        //         message: WorkflowDefinitionPropertyValidationMessages.PropertyUniqueError
-        //     }
-
-        //     this.formValidationChanged.emit(this.validationErrors);
-        // }
-
         properties.key = (e.currentTarget as HTMLInputElement).value.trim();
         this.validateDuplications(this.propertiesInternal.map(x => x.key))
         this.updatePropertyModel();
@@ -97,9 +85,12 @@ export class ElsaWorkflowDefinitionPropertiesTab {
         this.updatePropertyModel();
     }
 
-    onKeyInputValidationChanged(e: CustomEvent<ValidationStatus>, index: number) { 
-        console.log(e, index)
-        this.validationErrors.PropertyKeyNameError = e.detail;
+    onKeyInputValidationChanged(e: CustomEvent<ValidationStatus>, id: number) { 
+        console.log(e, id)
+        let validatorIndex = this.validationErrors.PropertyKeyNameError.findIndex(x => x.id === id);
+        const newValidation = { id, validation: e.detail};
+        
+        validatorIndex >= 0 ? this.validationErrors.PropertyKeyNameError[validatorIndex] = newValidation : this.validationErrors.PropertyKeyNameError.push(newValidation)
         this.formValidationChanged.emit(this.validationErrors);
     }
 
@@ -176,10 +167,10 @@ export class ElsaWorkflowDefinitionPropertiesTab {
                     <table class="elsa-min-w-full elsa-divide-y elsa-divide-gray-200">
                         <thead class="elsa-bg-gray-50">
                         <tr>
-                            <th class="elsa-px-6 elsa-py-3 elsa-text-left elsa-text-xs elsa-font-medium elsa-text-gray-500 elsa-text-right elsa-tracking-wider elsa-w-3/12">Key</th>
+                            <th class="elsa-px-6 elsa-py-3 elsa-text-left elsa-text-xs elsa-font-medium elsa-text-gray-500 elsa-text-right elsa-tracking-wider elsa-w-3/12">Key*</th>
                             <th class="elsa-px-6 elsa-py-3 elsa-text-left elsa-text-xs elsa-font-medium elsa-text-gray-500 elsa-text-right elsa-tracking-wider elsa-w-2/12">Value</th>
                             <th class="elsa-px-6 elsa-py-3 elsa-text-left elsa-text-xs elsa-font-medium elsa-text-gray-500 elsa-text-right elsa-tracking-wider elsa-w-2/12">Default Value</th>
-                            <th class="elsa-px-6 elsa-py-3 elsa-text-left elsa-text-xs elsa-font-medium elsa-text-gray-500 elsa-text-right elsa-tracking-wider">Description</th>
+                            <th class="elsa-px-6 elsa-py-3 elsa-text-left elsa-text-xs elsa-font-medium elsa-text-gray-500 elsa-text-right elsa-tracking-wider">Description*</th>
                             <th class="elsa-px-6 elsa-py-3 elsa-text-left elsa-text-xs elsa-font-medium elsa-text-gray-500 elsa-text-right elsa-tracking-wider elsa-w-1/12">&nbsp;</th>
                         </tr>
                         </thead>

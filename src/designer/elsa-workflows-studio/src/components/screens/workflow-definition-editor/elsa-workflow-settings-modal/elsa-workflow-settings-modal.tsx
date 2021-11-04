@@ -17,6 +17,7 @@ import {createElsaClient} from "../../../../services/elsa-client";
 import { createElsaWorkflowSettingsClient } from '../../../../modules/elsa-workflows-settings/services/elsa-client';
 import { WorkflowDefinitionProperty } from '../../../../modules/elsa-workflows-settings/models';
 import { ValidationStatus, WorkflowDefinitionPropertyValidationErrors } from '../../../../validation/workflow-definition-property-validation/workflow-definition-property.messages';
+import { consoleTestResultsHandler } from 'tslint/lib/test';
 
 interface WorkflowTabModel {
   tabName: string;
@@ -129,7 +130,8 @@ export class ElsaWorkflowDefinitionSettingsModal {
     setTimeout(() => {
       eventBus.emit(EventTypes.UpdateWorkflowSettings, this, this.renderProps.workflowDefinition);
       eventBus.emit(EventTypes.WorkflowSettingsUpdaing, this, this.renderProps.workflowDefinition.settings); 
-      eventBus.emit(EventTypes.WorkflowSettingsBulkDelete, this, this.renderProps.propertiesToRemove.map(x => x.id));
+      if(this.renderProps.propertiesToRemove && this.renderProps.propertiesToRemove.length)
+        eventBus.emit(EventTypes.WorkflowSettingsBulkDelete, this, this.renderProps.propertiesToRemove.map(x => x.id));
     }, 250)
   }
 
@@ -198,6 +200,7 @@ export class ElsaWorkflowDefinitionSettingsModal {
               <div class="elsa-pt-5">
                 <div class="elsa-bg-gray-50 elsa-px-4 elsa-py-3 sm:elsa-px-6 sm:elsa-flex sm:elsa-flex-row-reverse">
                   <button type="submit"
+                          disabled={validation.find(x => !x.valid) ? true : false}
                           class="elsa-ml-0 elsa-w-full elsa-inline-flex elsa-justify-center elsa-rounded-md elsa-border elsa-border-transparent elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-bg-blue-600 elsa-text-base elsa-font-medium elsa-text-white hover:elsa-bg-blue-700 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 sm:elsa-ml-3 sm:elsa-w-auto sm:elsa-text-sm">
                     Save
                   </button>
@@ -314,7 +317,13 @@ export class ElsaWorkflowDefinitionSettingsModal {
 
   renderValidationErrors(validationErrors: WorkflowDefinitionPropertyValidationErrors) {
     this.validation = [];
-    this.validation[0] = validationErrors.PropertyKeyNameError ? validationErrors.PropertyKeyNameError : null
+    console.log(validationErrors.PropertyKeyNameError)
+    if(validationErrors.PropertyKeyNameError && validationErrors.PropertyKeyNameError.length) {
+      let propertyKeyNameError = validationErrors.PropertyKeyNameError.find(x => !x.validation.valid);
+      this.validation[0] = propertyKeyNameError ? propertyKeyNameError.validation : validationErrors.PropertyKeyNameError[0].validation
+    }
+    console.log(this.validation[0])
+
     this.validation[1] = validationErrors.PropertyUniqueError ? validationErrors.PropertyUniqueError : null
   }
 
