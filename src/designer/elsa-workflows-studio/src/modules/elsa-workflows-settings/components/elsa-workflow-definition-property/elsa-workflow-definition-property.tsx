@@ -1,6 +1,7 @@
-import {Component, Event, EventEmitter, h, Prop, State} from '@stencil/core';
+import {Component, Event, EventEmitter, h, Listen, Prop, State} from '@stencil/core';
 import { isThisTypeNode } from 'typescript';
-import { SyntaxNames} from "../../../../models";
+import { eventBus } from '../../../..';
+import { SyntaxNames, EventTypes} from "../../../../models";
 import { parseJson } from "../../../../utils/utils";
 import { Validators } from '../../../../validation/validator.factory';
 import { ValidationStatus, WorkflowDefinitionPropertyValidationErrors, WorkflowDefinitionPropertyValidationMessages } from '../../../../validation/workflow-definition-property-validation/workflow-definition-property.messages';
@@ -17,7 +18,6 @@ export class ElsaWorkflowDefinitionPropertiesTab {
     @Prop() workflowDefinitionId: string;
     @State() propertiesInternal: Array<WorkflowDefinitionProperty>;
    
-
     @Event() propertiesChanged: EventEmitter<Array<WorkflowDefinitionProperty>>;
     @Event() propertiesToRemoveChanged: EventEmitter<Array<WorkflowDefinitionProperty>>;
     @Event() formValidationChanged: EventEmitter<WorkflowDefinitionPropertyValidationErrors>;
@@ -31,6 +31,7 @@ export class ElsaWorkflowDefinitionPropertiesTab {
 
     async componentWillLoad() {
         this.propertiesInternal = this.properties;
+        eventBus.on(EventTypes.WorkflowSettingsClosing, this.onModalClosing); 
     }
 
     updatePropertyModel() {
@@ -48,7 +49,7 @@ export class ElsaWorkflowDefinitionPropertiesTab {
     }
 
     onAddPropertyClick() {
-        const propertyName = `Property${this.propertiesInternal.length + 1}`;
+        const propertyName = this.getNewProperyName();
         const newProperty: WorkflowDefinitionProperty = {key: propertyName, description: 'Description', workflowBlueprintId: this.workflowDefinitionId};
         this.propertiesInternal = [...this.propertiesInternal, newProperty];
         this.updatePropertyModel();
@@ -86,7 +87,6 @@ export class ElsaWorkflowDefinitionPropertiesTab {
     }
 
     onKeyInputValidationChanged(e: CustomEvent<ValidationStatus>, id: number) { 
-        console.log(e, id)
         let validatorIndex = this.validationErrors.PropertyKeyNameError.findIndex(x => x.id === id);
         const newValidation = { id, validation: e.detail};
         
@@ -110,7 +110,7 @@ export class ElsaWorkflowDefinitionPropertiesTab {
 
     validateDuplications(keys: Array<string>) {
         const duplications = keys.filter((item, index) => keys.indexOf(item) != index);
-        console.log(duplications)
+
         this.validationErrors.PropertyUniqueError = {
             valid: !duplications.length,
             message: duplications.length ? `${WorkflowDefinitionPropertyValidationMessages.PropertyUniqueError} ${duplications}` : ""
@@ -118,6 +118,34 @@ export class ElsaWorkflowDefinitionPropertiesTab {
 
         this.formValidationChanged.emit(this.validationErrors);
     }
+
+    getNewProperyName() {
+        let propertyName = `Property${this.propertiesInternal.length + 1}`;
+
+        for(let i = this.propertiesInternal.length; ; i++) {
+            if(this.propertiesInternal.find(x => x.key === propertyName)) {
+                propertyName = `Property${i}`;
+            } else {
+                break;
+            }
+        }
+
+        return propertyName;
+    }
+
+    
+  @Listen('click', {target: 'window'})
+  onWindowClicked(event?: Event) {
+    if( event && event.target['s-hn'] === 'ELSA-MODAL-DIALOG') {
+        this.propertiesInternal = this.properties
+    }
+  }
+
+  onModalClosing(properties: WorkflowDefinitionProperty[]) {
+    this.propertiesInternal = []
+    this.propertiesInternal.push(...properties)
+  }
+
 
     render() {
         const properties = this.propertiesInternal;

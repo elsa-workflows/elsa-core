@@ -1,4 +1,4 @@
-import {Component, Host, Prop, State, Watch, h} from '@stencil/core';
+import {Component, Host, Prop, State, Watch, h, Listen} from '@stencil/core';
 import {eventBus} from '../../../../services';
 import {Map} from "../../../../utils/utils";
 import {
@@ -17,7 +17,8 @@ import {createElsaClient} from "../../../../services/elsa-client";
 import { createElsaWorkflowSettingsClient } from '../../../../modules/elsa-workflows-settings/services/elsa-client';
 import { WorkflowDefinitionProperty } from '../../../../modules/elsa-workflows-settings/models';
 import { ValidationStatus, WorkflowDefinitionPropertyValidationErrors } from '../../../../validation/workflow-definition-property-validation/workflow-definition-property.messages';
-import { consoleTestResultsHandler } from 'tslint/lib/test';
+
+import { forOwn } from "lodash"
 
 interface WorkflowTabModel {
   tabName: string;
@@ -119,8 +120,9 @@ export class ElsaWorkflowDefinitionSettingsModal {
   };
 
   async onCancelClick() {
+    eventBus.emit(EventTypes.WorkflowSettingsClosing, this, this.renderProps.properties); 
+    this.validation = [];
     await this.dialog.hide(true);
-
   }
 
   async onSubmit(e: Event) {
@@ -323,14 +325,15 @@ export class ElsaWorkflowDefinitionSettingsModal {
 
   renderValidationErrors(validationErrors: WorkflowDefinitionPropertyValidationErrors) {
     this.validation = [];
-    console.log(validationErrors.PropertyKeyNameError)
-    if(validationErrors.PropertyKeyNameError && validationErrors.PropertyKeyNameError.length) {
-      let propertyKeyNameError = validationErrors.PropertyKeyNameError.find(x => !x.validation.valid);
-      this.validation[0] = propertyKeyNameError ? propertyKeyNameError.validation : validationErrors.PropertyKeyNameError[0].validation
-    }
-    console.log(this.validation[0])
-
-    this.validation[1] = validationErrors.PropertyUniqueError ? validationErrors.PropertyUniqueError : null
+  
+    forOwn(validationErrors, (value, key) => { 
+      if(key === 'PropertyKeyNameError' && value && value.length) {
+        let propertyKeyNameError = value.find(x => !x.validation.valid);
+        this.validation[this.validation.length] = propertyKeyNameError ? propertyKeyNameError.validation : value[0].validation
+      } else {
+        this.validation[this.validation.length] = value ? value : null
+      }
+    });
   }
 
   getHiddenClass(tab: string) {

@@ -46,7 +46,8 @@ export const EventTypes = {
   WorkflowSettingsUpdaing: 'workflow-settings-updating',
   WorkflowSettingsBulkDelete: 'workflow-settings-delete',
   WorkflowSettingsDeleted: 'workflow-settings-deleted',
-  WorkflowPropertiesValidationChanged: 'workflow-properties-validation-changed'
+  WorkflowPropertiesValidationChanged: 'workflow-properties-validation-changed',
+  WorkflowSettingsClosing: 'workflow-settings-closing'
 };
 
 export interface AddActivityEventArgs {
