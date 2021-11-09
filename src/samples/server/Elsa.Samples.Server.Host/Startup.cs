@@ -88,6 +88,7 @@ namespace Elsa.Samples.Server.Host
             
             // Elsa API endpoints.
             services
+                .AddNotificationHandlersFrom<Startup>()
                 .AddElsaApiEndpoints()
                 .AddElsaSwagger();
 

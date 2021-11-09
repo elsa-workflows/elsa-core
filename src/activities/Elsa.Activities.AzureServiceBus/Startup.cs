@@ -11,7 +11,7 @@ namespace Elsa.Activities.AzureServiceBus
     {
         public override void ConfigureElsa(ElsaOptionsBuilder elsa, IConfiguration configuration)
         {
-            var section = configuration.GetSection("Elsa:Azure:ServiceBus");
+            var section = configuration.GetSection("Elsa:Features:Azure:ServiceBus");
 
             elsa.AddAzureServiceBusActivities(options =>
             {
