@@ -133,6 +133,12 @@ export class ElsaWorkflowInstanceJournal {
         <elsa-tab-content tab="activityState" slot="content">
           {this.renderActivityStateTab()}
         </elsa-tab-content>
+        <elsa-tab-header tab="variables" slot="header">
+          Variables
+        </elsa-tab-header>
+        <elsa-tab-content tab="variables" slot="content">
+          {this.renderVariablesTab()}
+        </elsa-tab-content>
       </elsa-flyout-panel>
     );
   }
@@ -410,5 +416,18 @@ export class ElsaWorkflowInstanceJournal {
         </div>
       </dl>
     )
+  };
+
+  renderVariablesTab = () => {
+    const { workflowInstance, workflowBlueprint } = this;
+    const { variables } = workflowInstance;
+    
+    return (
+      <dl class="elsa-border-b elsa-border-gray-200 elsa-divide-y elsa-divide-gray-200">
+        <div class="elsa-py-3 elsa-text-sm elsa-font-medium">
+          {variables?.data ? <pre>{JSON.stringify(variables?.data, null, 2)}</pre> : '-'}
+          </div>
+      </dl>
+    );
   };
 }
