@@ -1,18 +1,14 @@
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Events;
 using Elsa.Models;
-using Elsa.Server.Api.Models;
-using Elsa.Server.Api.Services;
 using Elsa.Services.Models;
+using Elsa.WorkflowTesting.Models;
+using Elsa.WorkflowTesting.Services;
 using MediatR;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace Elsa.Server.Api.Handlers
+namespace Elsa.WorkflowTesting.Handlers
 {
     public class ActivityExecutionResultExecutedHandler : INotificationHandler<ActivityExecutionResultExecuted>, INotificationHandler<ActivityExecutionFailed>, INotificationHandler<ActivityFaulted>
     {

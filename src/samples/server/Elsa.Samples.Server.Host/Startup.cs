@@ -1,12 +1,5 @@
-using System.Collections.Generic;
-using Elsa.Caching.Rebus.Extensions;
-using Elsa.Rebus.AzureServiceBus;
 using Elsa.Retention.Extensions;
-using Elsa.Server.Api.Extensions;
-using Elsa.Server.Api.Hubs;
-using Elsa.Server.Hangfire.Extensions;
 using Elsa.WorkflowTesting.Extensions;
-using Hangfire;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -46,6 +39,7 @@ namespace Elsa.Samples.Server.Host
                 typeof(Elsa.Activities.Email.Startup),
                 typeof(Elsa.Activities.Telnyx.Startup),
                 typeof(Elsa.Activities.File.Startup),
+                typeof(Elsa.Activities.RabbitMq.Startup),
                 typeof(Persistence.EntityFramework.Sqlite.Startup),
                 typeof(Persistence.EntityFramework.SqlServer.Startup),
                 typeof(Persistence.EntityFramework.MySql.Startup),

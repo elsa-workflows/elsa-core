@@ -1,10 +1,7 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using Elsa.Events;
 using MediatR;
 
-namespace Elsa.Server.Api.Handlers
+namespace Elsa.WorkflowTesting.Handlers
 {
     public class ConfigureWorkflowContextForTestHandler : INotificationHandler<WorkflowExecuting>
     {

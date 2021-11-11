@@ -2406,6 +2406,10 @@ select {
   width: 3rem;
 }
 
+.elsa-w-24 {
+  width: 6rem;
+}
+
 .elsa-w-48 {
   width: 12rem;
 }
@@ -2428,6 +2432,10 @@ select {
 
 .elsa-w-3\/12 {
   width: 25%;
+}
+
+.elsa-w-5\/12 {
+  width: 41.666667%;
 }
 
 .elsa-w-8\/12 {
@@ -2649,6 +2657,10 @@ select {
 
 .elsa-grid-cols-4 {
   grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.elsa-flex-row {
+  flex-direction: row;
 }
 
 .elsa-flex-row-reverse {

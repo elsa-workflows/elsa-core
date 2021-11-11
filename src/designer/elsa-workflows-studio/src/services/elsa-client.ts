@@ -124,6 +124,9 @@ export const createElsaClient = async function (serverUrl: string): Promise<Elsa
       },
       restartFromActivity: async (request) => {
         await httpClient.post<void>(`v1/workflow-test/restartFromActivity`, request);
+      },
+      stop: async (request) => {
+        await httpClient.post<void>(`v1/workflow-test/stop`, request);
       }
     },
     workflowRegistryApi: {
@@ -290,6 +293,7 @@ export interface WorkflowTestApi {
 
   execute(request: WorkflowTestExecuteRequest): Promise<void>;
   restartFromActivity(request: WorkflowTestRestartFromActivityRequest): Promise<void>;
+  stop(request: WorkflowTestStopRequest): Promise<void>;
 }
 
 export interface WorkflowRegistryApi {
@@ -376,8 +380,8 @@ export interface SaveWorkflowDefinitionRequest {
 }
 
 export interface WorkflowTestExecuteRequest {
-  workflowDefinitionId?: string, 
-  version?: number, 
+  workflowDefinitionId?: string,
+  version?: number,
   signalRConnectionId?: string
 }
 
@@ -387,6 +391,10 @@ export interface WorkflowTestRestartFromActivityRequest {
   activityId: string,
   lastWorkflowInstanceId: string,
   signalRConnectionId: string
+}
+
+export interface WorkflowTestStopRequest {
+  workflowInstanceId: string
 }
 
 export interface ExportWorkflowResponse {
