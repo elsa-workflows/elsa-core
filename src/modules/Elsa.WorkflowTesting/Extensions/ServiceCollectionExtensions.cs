@@ -1,4 +1,5 @@
-﻿using Elsa.WorkflowTesting.Services;
+using Elsa.WorkflowTesting.Handlers;
+using Elsa.WorkflowTesting.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.WorkflowTesting.Extensions
@@ -7,7 +8,14 @@ namespace Elsa.WorkflowTesting.Extensions
     {
         public static IServiceCollection AddWorkflowTestingServices(this IServiceCollection services)
         {
-            services.AddScoped<IWorkflowTestLaunchpad, WorkflowTestLaunchpad>();
+            services
+                .AddSingleton<IRabbitMqTestQueueManager, RabbitMqTestQueueManager>()
+                .AddScoped<IWorkflowTestLaunchpad, WorkflowTestLaunchpad>()
+                .AddScoped<IWorkflowTestService, WorkflowTestService>()
+                .AddNotificationHandlersFrom<ActivityExecutionResultExecutedHandler>()
+                .AddNotificationHandlersFrom<ConfigureWorkflowContextForTestHandler>()
+                .AddNotificationHandlersFrom<ConfigureRabbitMqActivitiesForTestHandler>()
+                .AddSignalR();
 
             return services;
         }

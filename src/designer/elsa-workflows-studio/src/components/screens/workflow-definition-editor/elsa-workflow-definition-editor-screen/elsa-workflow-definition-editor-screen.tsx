@@ -505,6 +505,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   onTestActivityMessageReceived = async args => {
     const message = args as WorkflowTestActivityMessage;
+
     if (!!message) {
       this.workflowInstanceId = message.workflowInstanceId;
       this.workflowTestActivityMessages = this.workflowTestActivityMessages.filter(x => x.activityId !== message.activityId);

@@ -60,7 +60,9 @@ export class ActivityIconProvider {
     'WriteHttpResponse': () => <WriteHttpResponseIcon/>,
     'Redirect': () => <RedirectIcon/>,
     'SendEmail': () => <SendEmailIcon/>,
-    'Webhook': () => <WebhookIcon/>
+    'Webhook': () => <WebhookIcon/>,
+    'RabbitMqMessageReceived': () => <SignalReceivedIcon/>,
+    'SendRabbitMqMessage': () => <SendSignalIcon/>
   };
 
   register(activityType: string, icon: string) {

@@ -1,7 +1,6 @@
-using System.Threading.Tasks;
-using Elsa.Server.Api.Models;
+using Elsa.WorkflowTesting.Models;
 
-namespace Elsa.Server.Api.Services
+namespace Elsa.WorkflowTesting.Services
 {
     public interface IWorkflowTestService
     {
