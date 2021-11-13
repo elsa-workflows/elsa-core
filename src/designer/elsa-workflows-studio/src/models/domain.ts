@@ -1,4 +1,4 @@
-﻿import {Map} from '../utils/utils';
+import {Map} from '../utils/utils';
 
 export interface WorkflowDefinition {
   id?: string;
@@ -280,7 +280,8 @@ export interface ActivityPropertyDescriptor {
   supportedSyntaxes: Array<string>;
   isReadOnly?: boolean;
   defaultWorkflowStorageProvider?: string;
-  disableWorkflowProviderSelection: boolean
+  disableWorkflowProviderSelection: boolean;
+  considerValuesAsOutcomes: boolean;
 }
 
 export interface WorkflowStorageDescriptor {

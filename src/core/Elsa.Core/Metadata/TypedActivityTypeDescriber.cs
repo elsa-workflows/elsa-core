@@ -100,7 +100,8 @@ namespace Elsa.Metadata
                     activityPropertyAttribute.IsBrowsable,
                     activityPropertyAttribute.IsDesignerCritical,
                     activityPropertyAttribute.DefaultWorkflowStorageProvider,
-                    activityPropertyAttribute.DisableWorkflowProviderSelection
+                    activityPropertyAttribute.DisableWorkflowProviderSelection,
+                    activityPropertyAttribute.ConsiderValuesAsOutcomes
                 );
             }
         }
