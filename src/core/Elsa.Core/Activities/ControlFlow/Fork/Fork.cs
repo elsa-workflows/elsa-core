@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
@@ -10,7 +10,10 @@ using Elsa.Services.Models;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.ControlFlow
 {
-    [Activity(Category = "Control Flow", Description = "Fork workflow execution into multiple branches.")]
+    [Activity(
+        Category = "Control Flow",
+        Description = "Fork workflow execution into multiple branches.",
+        Outcomes = new string[0])]
     public class Fork : Activity
     {
         [ActivityInput(
@@ -18,7 +21,8 @@ namespace Elsa.Activities.ControlFlow
             UIHint = ActivityInputUIHints.MultiText,
             DefaultSyntax = SyntaxNames.Json,
             SupportedSyntaxes = new[] { SyntaxNames.Json },
-            IsDesignerCritical = true
+            IsDesignerCritical = true,
+            ConsiderValuesAsOutcomes = true
         )]
         public ISet<string> Branches { get; set; } = new HashSet<string>();
 

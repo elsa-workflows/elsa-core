@@ -17,10 +17,5 @@ export class StatePlugin implements ElsaPlugin {
     const props = activityModel.properties || [];
     const stateNameProp = props.find(x => x.name == 'StateName') || { name: 'Text', expressions: {'Literal': ''}, syntax: SyntaxNames.Literal };
     context.displayName = htmlEncode(stateNameProp.expressions[stateNameProp.syntax || 'Literal'] || 'State');
-
-    const transitionsSyntax = SyntaxNames.Json;
-    const transitions = props.find(x => x.name == 'Transitions') || {expressions: {'Json': '[]'}, syntax: transitionsSyntax};
-    const transitionsExpression = transitions.expressions[transitionsSyntax] || [];
-    context.outcomes = !!transitionsExpression['$values'] ? transitionsExpression['$values'] : Array.isArray(transitionsExpression) ? transitionsExpression : parseJson(transitionsExpression) || [];
   }
 }
