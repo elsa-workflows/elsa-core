@@ -23,7 +23,7 @@ export const createHttpClient = function(baseAddress: string) : AxiosInstance
   const service = new Service(httpClient);
 
   eventBus.emit(EventTypes.HttpClientCreated, this, {service, httpClient});
-  
+
   return _httpClient = httpClient;
 }
 
@@ -55,7 +55,7 @@ export const createElsaWebhooksClient = function (serverUrl: string): ElsaWebhoo
       delete: async webhookId => {
         await httpClient.delete(`v1/webhook-definitions/${webhookId}`);
       },
-    } 
+    }
   }
 
   return _elsaWebhooksClient;
