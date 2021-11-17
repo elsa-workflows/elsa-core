@@ -69,5 +69,10 @@ namespace Elsa.Attributes
         /// A value indicating whether this property MUST be evaluated at runtime to support the workflow designer.
         /// </summary>
         public bool IsDesignerCritical { get; set; }
+
+        /// <summary>
+        /// A value indicating whether this property values should be used as outcomes in the workflow designer.
+        /// </summary>
+        public bool ConsiderValuesAsOutcomes { get; set; }
     }
 }
