@@ -22,6 +22,8 @@
 ```mermaid
 graph TD;
   elsa-studio-workflow-instances-view --> elsa-workflow-instance-viewer-screen
+  elsa-workflow-instance-viewer-screen --> elsa-workflow-fault-information
+  elsa-workflow-instance-viewer-screen --> elsa-workflow-performance-information
   elsa-workflow-instance-viewer-screen --> elsa-workflow-instance-journal
   elsa-workflow-instance-viewer-screen --> elsa-designer-tree
   elsa-workflow-instance-viewer-screen --> context-consumer

@@ -265,6 +265,7 @@ export interface ActivityDescriptor {
   browsable: boolean;
   inputProperties: Array<ActivityPropertyDescriptor>;
   outputProperties: Array<ActivityPropertyDescriptor>;
+  customAttributes: any;
 }
 
 export interface ActivityPropertyDescriptor {
@@ -279,7 +280,8 @@ export interface ActivityPropertyDescriptor {
   supportedSyntaxes: Array<string>;
   isReadOnly?: boolean;
   defaultWorkflowStorageProvider?: string;
-  disableWorkflowProviderSelection: boolean
+  disableWorkflowProviderSelection: boolean;
+  considerValuesAsOutcomes: boolean;
 }
 
 export interface WorkflowStorageDescriptor {

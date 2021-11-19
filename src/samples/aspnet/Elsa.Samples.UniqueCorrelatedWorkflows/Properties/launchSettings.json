@@ -1,0 +1,12 @@
+﻿{
+    "profiles": {
+        "Elsa.Samples.UniqueCorrelatedWorkflows": {
+            "commandName": "Project",
+            "launchBrowser": false,
+            "environmentVariables": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            },
+            "applicationUrl": "https://localhost:11000"
+        }
+    }
+}

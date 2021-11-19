@@ -15,7 +15,7 @@ namespace Elsa.Activities.StateMachine
     [Action(
         Category = "State Machine",
         Description = "Puts the workflow into the specified state.",
-        Outcomes = new[] { OutcomeNames.Done }
+        Outcomes = new string[0]
     )]
     public class State : Activity
     {
@@ -27,7 +27,8 @@ namespace Elsa.Activities.StateMachine
             UIHint = ActivityInputUIHints.MultiText,
             DefaultSyntax = SyntaxNames.Json,
             SupportedSyntaxes = new[] { SyntaxNames.Json },
-            IsDesignerCritical = true
+            IsDesignerCritical = true,
+            ConsiderValuesAsOutcomes = true
         )]
         public ISet<string> Transitions { get; set; } = new HashSet<string>();
 

@@ -74,6 +74,8 @@ Type: `Promise<void>`
 
 ### Depends on
 
+- [elsa-workflow-fault-information](../../../shared/elsa-workflow-debug-information)
+- [elsa-workflow-performance-information](../../../shared/elsa-workflow-debug-information)
 - [elsa-designer-tree](../../../designers/tree/elsa-designer-tree)
 - [elsa-workflow-settings-modal](../elsa-workflow-settings-modal)
 - [elsa-workflow-definition-editor-notifications](../elsa-workflow-definition-editor-notifications)
@@ -91,6 +93,8 @@ Type: `Promise<void>`
 ### Graph
 ```mermaid
 graph TD;
+  elsa-workflow-definition-editor-screen --> elsa-workflow-fault-information
+  elsa-workflow-definition-editor-screen --> elsa-workflow-performance-information
   elsa-workflow-definition-editor-screen --> elsa-designer-tree
   elsa-workflow-definition-editor-screen --> elsa-workflow-settings-modal
   elsa-workflow-definition-editor-screen --> elsa-workflow-definition-editor-notifications
@@ -111,6 +115,7 @@ graph TD;
   elsa-activity-editor-modal --> elsa-control
   elsa-workflow-publish-button --> context-consumer
   elsa-workflow-properties-panel --> context-consumer
+  elsa-workflow-test-panel --> elsa-copy-button
   elsa-workflow-test-panel --> context-consumer
   elsa-studio-workflow-definitions-edit --> elsa-workflow-definition-editor-screen
   style elsa-workflow-definition-editor-screen fill:#f9f,stroke:#333,stroke-width:4px

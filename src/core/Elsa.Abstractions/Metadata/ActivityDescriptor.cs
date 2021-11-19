@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Elsa.Metadata
 {
@@ -31,5 +32,6 @@ namespace Elsa.Metadata
         
         public ActivityInputDescriptor[] InputProperties { get; set; }
         public ActivityOutputDescriptor[] OutputProperties { get; set; }
+        public IDictionary<string, object?> CustomAttributes { get; set; } = new Dictionary<string, object?>();
     }
 }
