@@ -15,7 +15,7 @@ export class ElsaConfirmDialog {
   private i18next: i18n;
 
   dialog: HTMLElsaModalDialogElement;
-  fulFill: (value: (PromiseLike<boolean> | boolean)) => void;
+  fulfill: (value: (PromiseLike<boolean> | boolean)) => void;
   reject: () => void;
 
   @Method()
@@ -26,7 +26,7 @@ export class ElsaConfirmDialog {
     await this.dialog.show(true);
 
     return new Promise<boolean>((fulfill, reject) => {
-      this.fulFill = fulfill;
+      this.fulfill = fulfill;
       this.reject = reject;
     });
   }
@@ -41,20 +41,20 @@ export class ElsaConfirmDialog {
   }
 
   async onDismissClick() {
-    this.fulFill(false);
+    this.fulfill(false);
     await this.hide();
   }
 
   async onAcceptClick() {
-    this.fulFill(true);
-    this.fulFill = null;
+    this.fulfill(true);
+    this.fulfill = null;
     this.reject = null;
     await this.hide();
   }
 
   render() {
     const t = x => this.i18next.t(x);
-    
+
     return (
       <Host>
         <elsa-modal-dialog ref={el => this.dialog = el}>
