@@ -10,7 +10,8 @@
       },
       "ConnectionContextMenu":{
         "Paste": "Paste",
-      }
+      },
+      'Restart': 'Restart'
     }
   },
   'nl-NL': {
@@ -24,7 +25,8 @@
       },
       "ConnectionContextMenu":{
         "Paste": "Plakken",
-      }
+      },
+      'Restart': 'Herstarten'
     }
   }
 };

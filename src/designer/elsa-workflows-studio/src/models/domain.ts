@@ -1,4 +1,4 @@
-import {Map} from '../utils/utils';
+﻿import {Map} from '../utils/utils';
 
 export interface WorkflowDefinition {
   id?: string;
@@ -354,3 +354,10 @@ export const getVersionOptionsString = (versionOptions?: VersionOptions) => {
             ? 'LatestOrPublished'
             : versionOptions.version.toString();
 };
+
+export enum WorkflowTestActivityMessageStatus {
+  Done = 'Done',
+  Waiting = 'Waiting',
+  Failed = 'Failed',
+  Modified = 'Modified'
+}
