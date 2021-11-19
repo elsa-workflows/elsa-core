@@ -16,9 +16,8 @@ namespace Elsa.Samples.ProgrammaticCompositeActivitiesConsole
                 .AddLogging(logging => logging.AddConsole().SetMinimumLevel(LogLevel.Warning))
                 .AddElsa(options => options
                     .AddConsoleActivities()
-                    .AddActivity<NavigateActivity>()
-                    .AddActivity<CountdownActivity>()
-                    .AddWorkflow<CompositionWorkflow>())
+                    .AddActivitiesFrom<Program>()
+                    .AddWorkflowsFrom<Program>())
                 .BuildServiceProvider();
 
             // Run startup actions (not needed when registering Elsa with a Host).
