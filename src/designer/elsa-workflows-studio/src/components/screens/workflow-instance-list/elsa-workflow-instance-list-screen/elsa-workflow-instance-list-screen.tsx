@@ -64,10 +64,10 @@ export class ElsaWorkflowInstanceListScreen {
       this.applyQueryString(this.history.location.search);
     }
 
-    await this.handleWorkflowIdChanged(this.workflowId);
-    await this.handleCorrelationIdChanged(this.correlationId);
-    await this.handleWorkflowStatusChanged(this.workflowStatus);
-    await this.handleOrderByChanged(this.orderBy);
+    this.selectedWorkflowId = this.workflowId;
+    this.selectedCorrelationId = this.correlationId;
+    this.selectedWorkflowStatus = this.workflowStatus;
+    this.selectedOrderByState = this.orderBy;
 
     await this.loadWorkflowBlueprints();
     await this.loadWorkflowInstances();
