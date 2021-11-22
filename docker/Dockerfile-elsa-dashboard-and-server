@@ -2,7 +2,6 @@ FROM node:15-alpine as client-build
 
 WORKDIR /app
 COPY /src .
-COPY ./Nuget.Config ./
 
 WORKDIR /app/designer/elsa-workflows-studio
 RUN npm install --force
@@ -16,6 +15,7 @@ FROM mcr.microsoft.com/dotnet/sdk:5.0-buster-slim-amd64 AS build
 WORKDIR /source
 
 # restore packages
+COPY ./Nuget.Config ./
 COPY ./src/samples/dashboard/aspnetcore/ElsaDashboard.Samples.AspNetCore.Monolith/ElsaDashboard.Samples.AspNetCore.Monolith.csproj ./src/samples/dashboard/aspnetcore/ElsaDashboard.Samples.AspNetCore.Monolith/ElsaDashboard.Samples.AspNetCore.Monolith.csproj
 RUN dotnet restore "./src/samples/dashboard/aspnetcore/ElsaDashboard.Samples.AspNetCore.Monolith/ElsaDashboard.Samples.AspNetCore.Monolith.csproj"  --configfile ./Nuget.Config
 
