@@ -5,6 +5,7 @@ using Elsa.Retention.Extensions;
 using Elsa.Server.Api.Extensions;
 using Elsa.Server.Api.Hubs;
 using Elsa.Server.Hangfire.Extensions;
+using Elsa.WorkflowTesting.Extensions;
 using Hangfire;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -95,6 +96,9 @@ namespace Elsa.Samples.Server.Host
             // Allow arbitrary client browser apps to access the API for demo purposes only.
             // In a production environment, make sure to allow only origins you trust.
             services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("Content-Disposition")));
+            
+            //Workflow Testing
+            services.AddWorkflowTestingServices();
         }
 
         public void Configure(IApplicationBuilder app)

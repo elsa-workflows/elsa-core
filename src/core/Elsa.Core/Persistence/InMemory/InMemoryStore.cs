@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -95,7 +96,7 @@ namespace Elsa.Persistence.InMemory
             return dictionary.Values.AsQueryable().FirstOrDefault(specification.ToExpression());
         }
         
-        private async Task<IDictionary<string, T>> GetDictionaryAsync() => await MemoryCache.GetOrCreateAsync(CacheKey, _ => Task.FromResult(new Dictionary<string, T>()));
+        private async Task<IDictionary<string, T>> GetDictionaryAsync() => await MemoryCache.GetOrCreateAsync(CacheKey, _ => Task.FromResult(new ConcurrentDictionary<string, T>()));
         private void SetDictionary(IDictionary<string, T> dictionary) => MemoryCache.Set(CacheKey, dictionary);
     }
 }
