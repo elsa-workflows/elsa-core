@@ -39,6 +39,7 @@ namespace Elsa.Scripting.JavaScript.Services
         {
             var engine = await GetConfiguredEngine(configureEngine, context, cancellationToken);
             var result = ExecuteExpressionAndGetResult(engine, expression);
+
             return _resultConverter.ConvertToDesiredType(result, returnType);
         }
 
