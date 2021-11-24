@@ -2651,6 +2651,10 @@ select {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+.elsa-flex-row {
+  flex-direction: row;
+}
+
 .elsa-flex-row-reverse {
   flex-direction: row-reverse;
 }

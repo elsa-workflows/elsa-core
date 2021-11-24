@@ -113,6 +113,7 @@ export namespace Components {
         "addJavaScriptLib": (libSource: string, libUri: string) => Promise<void>;
         "editorHeight": string;
         "language": string;
+        "monacoLibPath": string;
         "padding": string;
         "setValue": (value: string) => Promise<void>;
         "singleLineMode": boolean;
@@ -857,6 +858,7 @@ declare namespace LocalJSX {
     interface ElsaMonaco {
         "editorHeight"?: string;
         "language"?: string;
+        "monacoLibPath"?: string;
         "onValueChanged"?: (event: CustomEvent<MonacoValueChangedArgs>) => void;
         "padding"?: string;
         "singleLineMode"?: boolean;
@@ -934,6 +936,7 @@ declare namespace LocalJSX {
         "culture"?: string;
         "featuresString"?: string;
         "monacoLibPath"?: string;
+        "onInitialized"?: (event: CustomEvent<ElsaStudio>) => void;
         "onInitializing"?: (event: CustomEvent<ElsaStudio>) => void;
         "serverUrl"?: string;
     }
