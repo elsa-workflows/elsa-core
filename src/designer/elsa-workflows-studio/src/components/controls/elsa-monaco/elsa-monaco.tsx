@@ -19,6 +19,7 @@ export class ElsaMonaco {
 
   monaco = (window as any).monaco;
 
+  @Prop({attribute: 'monaco-lib-path'}) monacoLibPath: string;
   @Prop({attribute: 'editor-height', reflect: true}) editorHeight: string = '5em';
   @Prop() value: string;
   @Prop() language: string;
@@ -64,7 +65,8 @@ export class ElsaMonaco {
   }
 
   componentWillLoad() {
-    initializeMonacoWorker(state.monacoLibPath);
+    const monacoLibPath = this.monacoLibPath ?? state.monacoLibPath;
+    initializeMonacoWorker(monacoLibPath);
     this.registerLiquid();
   }
 
@@ -204,7 +206,9 @@ export class ElsaMonaco {
   render() {
     const padding = this.padding || 'elsa-pt-1.5 elsa-pl-1';
     return (
-      <Host class="elsa-monaco-editor-host elsa-border focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300 elsa-p-4" style={{'min-height': this.editorHeight}}>
+      <Host
+        class="elsa-monaco-editor-host elsa-border focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300 elsa-p-4"
+        style={{'min-height': this.editorHeight}}>
         <div ref={el => this.container = el} class={`elsa-monaco-editor-container ${padding}`}/>
       </Host>
     )
