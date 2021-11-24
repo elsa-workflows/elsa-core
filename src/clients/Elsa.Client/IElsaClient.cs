@@ -10,5 +10,6 @@ namespace Elsa.Client
         IWorkflowRegistryApi WorkflowRegistry { get; }
         IWorkflowInstancesApi WorkflowInstances { get; }
         IWebhookDefinitionsApi WebhookDefinitions { get; }
+        IScriptingApi Scripting { get; }
     }
 }
