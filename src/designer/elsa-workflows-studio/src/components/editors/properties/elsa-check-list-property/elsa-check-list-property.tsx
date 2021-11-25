@@ -30,8 +30,6 @@ export class ElsaCheckListProperty {
     const value = checkbox.value;
     const isFlags = this.selectList.isFlagsEnum;
 
-    debugger;
-
     if (isFlags) {
       let newValue = parseInt(this.currentValue as string);
 
@@ -54,7 +52,6 @@ export class ElsaCheckListProperty {
     }
 
     this.propertyModel.expressions[SyntaxNames.Json] = this.currentValue.toString();
-    debugger;
   }
 
   onDefaultSyntaxValueChanged(e: CustomEvent) {
