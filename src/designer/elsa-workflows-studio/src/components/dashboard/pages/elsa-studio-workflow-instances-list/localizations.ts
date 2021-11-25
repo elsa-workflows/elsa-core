@@ -4,7 +4,7 @@ export const resources = {
       'Title': 'Workflow Instances'
     }
   },
-  'zh-cn': {
+  'zh-CN': {
     default: {
       'Title': '工作流实例'
     }

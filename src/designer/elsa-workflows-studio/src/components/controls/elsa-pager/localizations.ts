@@ -10,7 +10,7 @@ export const resources = {
       'Display': '{{template}}'
     }
   },
-  'zh-cn': {
+  'zh-CN': {
     'default': {
       'Previous': '上一封',
       'Next': '下一封',
