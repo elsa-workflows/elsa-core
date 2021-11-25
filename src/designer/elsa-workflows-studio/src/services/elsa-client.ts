@@ -9,7 +9,7 @@ import {
   EventTypes,
   getVersionOptionsString, ListModel,
   OrderBy,
-  PagedList,
+  PagedList, SelectList,
   SelectListItem,
   Variables,
   VersionOptions,
@@ -215,8 +215,8 @@ export const createElsaClient = async function (serverUrl: string): Promise<Elsa
     },
     designerApi: {
       runtimeSelectItemsApi: {
-        get: async (providerTypeName: string, context?: any): Promise<Array<SelectListItem>> => {
-          const response = await httpClient.post('v1/designer/runtime-select-list-items', {
+        get: async (providerTypeName: string, context?: any): Promise<SelectList> => {
+          const response = await httpClient.post('v1/designer/runtime-select-list-selectList', {
             providerTypeName: providerTypeName,
             context: context
           });
@@ -343,7 +343,7 @@ export interface DesignerApi {
 }
 
 export interface RuntimeSelectItemsApi {
-  get(providerTypeName: string, context?: any): Promise<Array<SelectListItem>>
+  get(providerTypeName: string, context?: any): Promise<SelectList>
 }
 
 export interface ActivityStatsApi {
@@ -376,8 +376,8 @@ export interface SaveWorkflowDefinitionRequest {
 }
 
 export interface WorkflowTestExecuteRequest {
-  workflowDefinitionId?: string, 
-  version?: number, 
+  workflowDefinitionId?: string,
+  version?: number,
   signalRConnectionId?: string
 }
 

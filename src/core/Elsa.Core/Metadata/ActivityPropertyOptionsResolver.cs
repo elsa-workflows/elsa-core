@@ -36,20 +36,41 @@ namespace Elsa.Metadata
             return provider.GetOptions(activityPropertyInfo);
         }
 
-        private bool TryGetEnumOptions(PropertyInfo activityPropertyInfo, out IList<SelectListItem>? items)
+        private bool TryGetEnumOptions(PropertyInfo activityPropertyInfo, out SelectList? selectList)
         {
             var isNullable = activityPropertyInfo.PropertyType.IsNullableType();
             var propertyType = isNullable ? activityPropertyInfo.PropertyType.GetTypeOfNullable() : activityPropertyInfo.PropertyType;
 
-            items = null;
+            selectList = null;
 
             if (!propertyType.IsEnum)
                 return false;
-            
-            items = propertyType.GetEnumNames().Select(x => new SelectListItem(x.Humanize(LetterCasing.Title), x)).ToList();
 
-            if (isNullable)
-                items.Insert(0, new SelectListItem("-", ""));
+            var isFlagsEnum = propertyType.GetCustomAttribute<FlagsAttribute>() != null;
+
+            if (isFlagsEnum)
+            {
+                var items = propertyType.GetEnumNames().Select(x => new SelectListItem(x.Humanize(LetterCasing.Title), ((int)Enum.Parse(propertyType, x)).ToString())).ToList();
+
+                selectList = new SelectList
+                {
+                    Items = items,
+                    IsFlagsEnum = isFlagsEnum
+                };
+            }
+            else
+            {
+                var items = propertyType.GetEnumNames().Select(x => new SelectListItem(x.Humanize(LetterCasing.Title), x)).ToList();
+
+                if (isNullable)
+                    items.Insert(0, new SelectListItem("-", ""));
+
+                selectList = new SelectList
+                {
+                    Items = items,
+                    IsFlagsEnum = isFlagsEnum
+                };
+            }
 
             return true;
         }
