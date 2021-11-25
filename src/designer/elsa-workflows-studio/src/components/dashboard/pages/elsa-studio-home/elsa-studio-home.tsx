@@ -4,6 +4,7 @@ import {GetIntlMessage, IntlMessage} from "../../../i18n/intl-message";
 import {loadTranslations} from "../../../i18n/i18n-loader";
 import {resources} from "./localizations";
 import {i18n} from "i18next";
+import Tunnel from "../../../../data/dashboard";
 
 @Component({
   tag: 'elsa-studio-home',
@@ -52,3 +53,4 @@ export class ElsaStudioHome {
     );
   }
 }
+Tunnel.injectProps(ElsaStudioHome, ['culture']);
