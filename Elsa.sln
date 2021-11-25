@@ -242,6 +242,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{D7F754
 		docker\Dockerfile-elsa-dashboard = docker\Dockerfile-elsa-dashboard
 		docker\Dockerfile-elsa-dashboard-and-server = docker\Dockerfile-elsa-dashboard-and-server
 		docker\README.md = docker\README.md
+		docker\Dockerfile-elsa-server = docker\Dockerfile-elsa-server
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Persistence.EntityFramework.MySql", "src\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.MySql\Elsa.Persistence.EntityFramework.MySql.csproj", "{D55BC08B-CA82-478A-99F7-EDE90AC33160}"
@@ -373,6 +374,7 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.WorkflowTesting", "src\modules\Elsa.WorkflowTesting\Elsa.WorkflowTesting.csproj", "{0327324E-0B80-4A6A-A7D6-DD521657666F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.WorkflowTesting.Api", "src\modules\Elsa.WorkflowTesting.Api\Elsa.WorkflowTesting.Api.csproj", "{4A4DC44E-D50F-49B8-A9DE-DED26FC05166}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.UniqueCorrelatedWorkflows", "src\samples\aspnet\Elsa.Samples.UniqueCorrelatedWorkflows\Elsa.Samples.UniqueCorrelatedWorkflows.csproj", "{4CD8293D-4544-4A23-BDEF-15B66D5E924F}"
 EndProject
 Global

@@ -2,10 +2,17 @@
 import {ActivityDescriptor} from "./domain";
 
 export const EventTypes = {
+  Root: {
+    Initializing: 'root.initializing',
+    Initialized: 'root.initialized'
+  },
   ActivityEditor: {
     Show: 'show-activity-editor',
     Appearing: 'activity-editor-appearing',
     Disappearing: 'activity-editor-disappearing'
+  },
+  Dashboard: {
+    Appearing: 'dashboard.appearing'
   },
   ShowActivityPicker: 'show-activity-picker',
   ShowWorkflowSettings: 'show-workflow-settings',
@@ -33,13 +40,12 @@ export const EventTypes = {
   ShowToastNotification: 'show-toast-notification',
   HideToastNotification: 'hide-toast-notification',
   ConfigureFeature: 'configure-feature',
-  DashboardLoadingMenu: 'dashboard.loading-menu',
   WorkflowRegistryLoadingColumns: 'workflow-registry.loading-columns',
   WorkflowRegistryUpdating: 'workflow-registry.updating',
   WorkflowRegistryUpdated: 'workflow-registry.updated',
   ClipboardPermissionDenied: 'clipboard-permission-denied',
   ClipboardCopied: 'clipboard-copied',
-  PasteActivity: 'paste-activity',
+  //PasteActivity: 'paste-activity',
   TestActivityMessageReceived: 'test-activity-message-received',
   FlyoutPanelTabSelected: 'flyout-panel-tab-selected',
   ComponentLoadingCustomButton: 'component-loading-custom-button',
@@ -63,12 +69,12 @@ export interface ActivityDesignDisplayContext {
   outcomes: Array<string>;
 }
 
-export interface ActivityUpdatedContext { 
+export interface ActivityUpdatedContext {
   activityModel: ActivityModel,
   data?: string
 }
 
-export interface ActivityValidatingContext { 
+export interface ActivityValidatingContext {
   activityType: string
   prop: string,
   value?: string,

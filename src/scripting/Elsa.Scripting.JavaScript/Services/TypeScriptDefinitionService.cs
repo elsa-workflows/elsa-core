@@ -3,6 +3,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
+using Elsa.Scripting.JavaScript.Models;
 using Elsa.Scripting.JavaScript.Providers;
 
 namespace Elsa.Scripting.JavaScript.Services
@@ -16,7 +17,7 @@ namespace Elsa.Scripting.JavaScript.Services
             _typeScriptDefinitionProviders = typeScriptDefinitionProviders;
         }
 
-        public async Task<string> GenerateTypeScriptDefinitionsAsync(WorkflowDefinition? workflowDefinition = default, string? context = default, CancellationToken cancellationToken = default)
+        public async Task<string> GenerateTypeScriptDefinitionsAsync(WorkflowDefinition? workflowDefinition = default, IntellisenseContext? context = default, CancellationToken cancellationToken = default)
         {
             var providers = _typeScriptDefinitionProviders;
             var builder = new StringBuilder();

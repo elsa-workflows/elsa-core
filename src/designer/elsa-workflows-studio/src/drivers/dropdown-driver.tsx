@@ -7,7 +7,7 @@ export class DropdownDriver implements PropertyDisplayDriver {
 
   display(activity: ActivityModel, property: ActivityPropertyDescriptor) {
     const prop = getOrCreateProperty(activity, property.name);
-    return <elsa-dropdown-property propertyDescriptor={property} propertyModel={prop}/>
+    return <elsa-dropdown-property activityModel={activity} propertyDescriptor={property} propertyModel={prop}/>
   }
 
   update(activity: ActivityModel, property: ActivityPropertyDescriptor, form: FormData) {

@@ -71,12 +71,12 @@ export class ElsaWorkflowDefinitionEditorScreen {
     selectedActivities: {}
   };
 
-  @State() connectionContextMenuState: ActivityContextMenuState = {
-    shown: false,
-    x: 0,
-    y: 0,
-    activity: null,
-  };
+  // @State() connectionContextMenuState: ActivityContextMenuState = {
+  //   shown: false,
+  //   x: 0,
+  //   y: 0,
+  //   activity: null,
+  // };
 
   @State() activityContextMenuTestState: ActivityContextMenuState = {
     shown: false,
@@ -92,7 +92,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
   helpDialog: HTMLElsaModalDialogElement;
   activityContextMenu: HTMLDivElement;
   componentCustomButton: HTMLDivElement;
-  connectionContextMenu: HTMLDivElement;
+  //connectionContextMenu: HTMLDivElement;
 
   @Method()
   async getServerUrl(): Promise<string> {
@@ -187,8 +187,8 @@ export class ElsaWorkflowDefinitionEditorScreen {
     if (!this.activityContextMenu.contains(target))
       this.handleContextMenuChange({x: 0, y: 0, shown: false, activity: null, selectedActivities: {}});
 
-    if (!this.connectionContextMenu.contains(target))
-      this.handleConnectionContextMenuChange({x: 0, y: 0, shown: false, activity: null});
+    // if (!this.connectionContextMenu.contains(target))
+    //   this.handleConnectionContextMenuChange({x: 0, y: 0, shown: false, activity: null});
   }
 
   async componentWillLoad() {
@@ -414,9 +414,9 @@ export class ElsaWorkflowDefinitionEditorScreen {
     this.activityContextMenuState = state;
   }
 
-  handleConnectionContextMenuChange(state: ActivityContextMenuState) {
-    this.connectionContextMenuState = state;
-  }
+  // handleConnectionContextMenuChange(state: ActivityContextMenuState) {
+  //   this.connectionContextMenuState = state;
+  // }
 
   handleContextMenuTestChange(x: number, y: number, shown: boolean, activity: ActivityModel) {
     this.activityContextMenuTestState = {
@@ -467,12 +467,12 @@ export class ElsaWorkflowDefinitionEditorScreen {
     this.handleContextMenuChange({x: 0, y: 0, shown: false, activity: null});
   }
 
-  async onPasteActivityClick(e: Event) {
-    e.preventDefault();
-    let activityModel = this.connectionContextMenuState.activity;
-    await eventBus.emit(EventTypes.PasteActivity, this, activityModel);
-    this.handleConnectionContextMenuChange({x: 0, y: 0, shown: false, activity: null});
-  }
+  // async onPasteActivityClick(e: Event) {
+  //   e.preventDefault();
+  //   let activityModel = this.connectionContextMenuState.activity;
+  //   await eventBus.emit(EventTypes.PasteActivity, this, activityModel);
+  //   this.handleConnectionContextMenuChange({x: 0, y: 0, shown: false, activity: null});
+  // }
 
   async onActivityContextMenuButtonClicked(e: CustomEvent<ActivityContextMenuState>) {
     this.activityContextMenuState = e.detail;
@@ -499,9 +499,9 @@ export class ElsaWorkflowDefinitionEditorScreen {
       this.selectedActivityId = null;
   }
 
-  onConnectionContextMenuButtonClicked(e: CustomEvent<ActivityContextMenuState>) {
-    this.connectionContextMenuState = e.detail;
-  }
+  // onConnectionContextMenuButtonClicked(e: CustomEvent<ActivityContextMenuState>) {
+  //   this.connectionContextMenuState = e.detail;
+  // }
 
   onTestActivityMessageReceived = async args => {
     const message = args as WorkflowTestActivityMessage;
@@ -662,7 +662,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
         {this.renderWorkflowHelpButton()}
         {this.renderPanel()}
         {this.renderActivityContextMenu()}
-        {this.renderConnectionContextMenu()}
+        {/*{this.renderConnectionContextMenu()}*/}
         <elsa-workflow-settings-modal workflowDefinition={this.workflowDefinition}/>
         <elsa-workflow-definition-editor-notifications/>
         <div class="elsa-fixed elsa-bottom-10 elsa-right-12">
@@ -894,34 +894,34 @@ export class ElsaWorkflowDefinitionEditorScreen {
     </div>
   }
 
-  renderConnectionContextMenu() {
-    const t = this.t;
-
-    return <div
-      data-transition-enter="elsa-transition elsa-ease-out elsa-duration-100"
-      data-transition-enter-start="elsa-transform elsa-opacity-0 elsa-scale-95"
-      data-transition-enter-end="elsa-transform elsa-opacity-100 elsa-scale-100"
-      data-transition-leave="elsa-transition elsa-ease-in elsa-duration-75"
-      data-transition-leave-start="elsa-transform elsa-opacity-100 elsa-scale-100"
-      data-transition-leave-end="elsa-transform elsa-opacity-0 elsa-scale-95"
-      class={`${this.connectionContextMenuState.shown ? '' : 'hidden'} context-menu elsa-z-10 elsa-mx-3 elsa-w-48 elsa-mt-1 elsa-rounded-md elsa-shadow-lg elsa-absolute`}
-      style={{left: `${this.connectionContextMenuState.x}px`, top: `${this.connectionContextMenuState.y - 64}px`}}
-      ref={el => this.connectionContextMenu = el}
-    >
-      <div class="elsa-rounded-md elsa-bg-white elsa-shadow-xs" role="menu" aria-orientation="vertical"
-           aria-labelledby="pinned-project-options-menu-0">
-        <div class="elsa-py-1">
-          <a
-            onClick={e => this.onPasteActivityClick(e)}
-            href="#"
-            class="elsa-block elsa-px-4 elsa-py-2 elsa-text-sm elsa-leading-5 elsa-text-gray-700 hover:elsa-bg-gray-100 hover:elsa-text-gray-900 focus:elsa-outline-none focus:elsa-bg-gray-100 focus:elsa-text-gray-900"
-            role="menuitem">
-            {t('ConnectionContextMenu.Paste')}
-          </a>
-        </div>
-      </div>
-    </div>
-  }
+  // renderConnectionContextMenu() {
+  //   const t = this.t;
+  //
+  //   return <div
+  //     data-transition-enter="elsa-transition elsa-ease-out elsa-duration-100"
+  //     data-transition-enter-start="elsa-transform elsa-opacity-0 elsa-scale-95"
+  //     data-transition-enter-end="elsa-transform elsa-opacity-100 elsa-scale-100"
+  //     data-transition-leave="elsa-transition elsa-ease-in elsa-duration-75"
+  //     data-transition-leave-start="elsa-transform elsa-opacity-100 elsa-scale-100"
+  //     data-transition-leave-end="elsa-transform elsa-opacity-0 elsa-scale-95"
+  //     class={`${this.connectionContextMenuState.shown ? '' : 'hidden'} context-menu elsa-z-10 elsa-mx-3 elsa-w-48 elsa-mt-1 elsa-rounded-md elsa-shadow-lg elsa-absolute`}
+  //     style={{left: `${this.connectionContextMenuState.x}px`, top: `${this.connectionContextMenuState.y - 64}px`}}
+  //     ref={el => this.connectionContextMenu = el}
+  //   >
+  //     <div class="elsa-rounded-md elsa-bg-white elsa-shadow-xs" role="menu" aria-orientation="vertical"
+  //          aria-labelledby="pinned-project-options-menu-0">
+  //       <div class="elsa-py-1">
+  //         <a
+  //           onClick={e => this.onPasteActivityClick(e)}
+  //           href="#"
+  //           class="elsa-block elsa-px-4 elsa-py-2 elsa-text-sm elsa-leading-5 elsa-text-gray-700 hover:elsa-bg-gray-100 hover:elsa-text-gray-900 focus:elsa-outline-none focus:elsa-bg-gray-100 focus:elsa-text-gray-900"
+  //           role="menuitem">
+  //           {t('ConnectionContextMenu.Paste')}
+  //         </a>
+  //       </div>
+  //     </div>
+  //   </div>
+  // }
 
   renderActivityPicker() {
     return <elsa-activity-picker-modal/>;

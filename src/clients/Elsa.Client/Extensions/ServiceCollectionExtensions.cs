@@ -29,7 +29,8 @@ namespace Elsa.Client.Extensions
                 .AddApiClient<IWorkflowDefinitionsApi>(refitSettings, httpClientFactory)
                 .AddApiClient<IWorkflowRegistryApi>(refitSettings, httpClientFactory)
                 .AddApiClient<IWorkflowInstancesApi>(refitSettings, httpClientFactory)
-                .AddApiClient<IWebhookDefinitionsApi>(refitSettings, httpClientFactory);
+                .AddApiClient<IWebhookDefinitionsApi>(refitSettings, httpClientFactory)
+                .AddApiClient<IScriptingApi>(refitSettings, httpClientFactory);
 
             return services
                 .AddTransient<IElsaClient, ElsaClient>();

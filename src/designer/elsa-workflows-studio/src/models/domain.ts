@@ -306,13 +306,18 @@ export enum ActivityTraits {
   Job = 4
 }
 
+export interface SelectList {
+  items: Array<SelectListItem> | Array<string>;
+  isFlagsEnum: boolean;
+}
+
 export interface SelectListItem {
   text: string;
   value: string;
 }
 
-export interface RuntimeSelectListItemsProviderSettings {
-  runtimeSelectListItemsProviderType: string;
+export interface RuntimeSelectListProviderSettings {
+  runtimeSelectListProviderType: string;
   context?: any;
 }
 
@@ -360,4 +365,9 @@ export enum WorkflowTestActivityMessageStatus {
   Waiting = 'Waiting',
   Failed = 'Failed',
   Modified = 'Modified'
+}
+
+export interface IntellisenseContext {
+  activityTypeName: string;
+  propertyName: string;
 }

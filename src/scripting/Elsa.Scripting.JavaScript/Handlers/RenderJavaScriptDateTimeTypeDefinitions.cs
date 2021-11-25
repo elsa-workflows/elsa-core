@@ -37,6 +37,10 @@ namespace Elsa.Scripting.JavaScript.Handlers
             output.AppendLine("declare function instantFromLocalDate(localDate: LocalDate): LocalDate;");
             output.AppendLine("declare function durationBetween(a: Instant, b: Instant): Duration;");
             output.AppendLine("declare function periodFromNow(pastInstant: Instant): Period;");
+            output.AppendLine("declare function jsonEncode(value: any): string;");
+            output.AppendLine("declare function jsonDecode(value: string): any;");
+            output.AppendLine("declare function base64Encode(value: string): string;");
+            output.AppendLine("declare function base64Decode(value: string): string;");
             
             return Task.CompletedTask;
         }

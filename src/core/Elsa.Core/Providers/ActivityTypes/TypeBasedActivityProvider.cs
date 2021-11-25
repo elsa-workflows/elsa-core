@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -54,6 +56,7 @@ namespace Elsa.Providers.ActivityTypes
                 Type = activityType,
                 Description = info.Description,
                 DisplayName = info.DisplayName,
+                IsBrowsable =  activityType.GetCustomAttribute<BrowsableAttribute>()?.Browsable ?? true,
                 ActivateAsync = async context => await ActivateActivity(context, activityType),
                 DescribeAsync = async () => (await _describesActivityType.DescribeAsync(activityType, cancellationToken))!, 
                 CanExecuteAsync = async (context, instance) => await instance.CanExecuteAsync(context),
