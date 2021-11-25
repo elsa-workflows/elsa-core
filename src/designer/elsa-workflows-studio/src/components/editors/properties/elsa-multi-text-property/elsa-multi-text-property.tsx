@@ -4,7 +4,7 @@ import {
   ActivityPropertyDescriptor,
   SyntaxNames,
   SelectListItem,
-  SelectList
+  SelectList, ActivityModel
 } from "../../../../models";
 import {parseJson} from "../../../../utils/utils";
 import Tunnel from "../../../../data/workflow-editor";
@@ -16,6 +16,7 @@ import {getSelectListItems} from "../../../../utils/select-list-items";
 })
 export class ElsaMultiTextProperty {
 
+  @Prop() activityModel: ActivityModel;
   @Prop() propertyDescriptor: ActivityPropertyDescriptor;
   @Prop() propertyModel: ActivityDefinitionProperty;
   @Prop({mutable: true}) serverUrl: string;
@@ -73,10 +74,12 @@ export class ElsaMultiTextProperty {
                        onValueChanged={e => this.onValueChanged(e.detail)}/>;
 
     return (
-      <elsa-property-editor propertyDescriptor={propertyDescriptor}
-                            propertyModel={propertyModel}
-                            onDefaultSyntaxValueChanged={e => this.onDefaultSyntaxValueChanged(e)}
-                            single-line={true}>
+      <elsa-property-editor
+        activityModel={this.activityModel}
+        propertyDescriptor={propertyDescriptor}
+        propertyModel={propertyModel}
+        onDefaultSyntaxValueChanged={e => this.onDefaultSyntaxValueChanged(e)}
+        single-line={true}>
         {elsaInputTags}
       </elsa-property-editor>
     )

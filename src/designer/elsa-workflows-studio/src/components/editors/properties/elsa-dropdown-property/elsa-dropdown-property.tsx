@@ -1,6 +1,6 @@
 import {Component, h, Prop, State} from '@stencil/core';
 import {
-  ActivityDefinitionProperty,
+  ActivityDefinitionProperty, ActivityModel,
   ActivityPropertyDescriptor,
   RuntimeSelectListProviderSettings,
   SelectList,
@@ -16,6 +16,7 @@ import {getSelectListItems} from "../../../../utils/select-list-items";
 })
 export class ElsaDropdownProperty {
 
+  @Prop() activityModel: ActivityModel;
   @Prop() propertyDescriptor: ActivityPropertyDescriptor;
   @Prop() propertyModel: ActivityDefinitionProperty;
   @Prop({mutable: true}) serverUrl: string;
@@ -55,10 +56,12 @@ export class ElsaDropdownProperty {
     }
 
     return (
-      <elsa-property-editor propertyDescriptor={propertyDescriptor}
-                            propertyModel={propertyModel}
-                            onDefaultSyntaxValueChanged={e => this.onDefaultSyntaxValueChanged(e)}
-                            single-line={true}>
+      <elsa-property-editor
+        activityModel={this.activityModel}
+        propertyDescriptor={propertyDescriptor}
+        propertyModel={propertyModel}
+        onDefaultSyntaxValueChanged={e => this.onDefaultSyntaxValueChanged(e)}
+        single-line={true}>
         <select id={fieldId} name={fieldName} onChange={e => this.onChange(e)}
                 class="elsa-mt-1 elsa-block focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-w-full elsa-shadow-sm sm:elsa-max-w-xs sm:elsa-text-sm elsa-border-gray-300 elsa-rounded-md">
           {items.map(item => {

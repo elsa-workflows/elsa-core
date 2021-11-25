@@ -366,3 +366,8 @@ export enum WorkflowTestActivityMessageStatus {
   Failed = 'Failed',
   Modified = 'Modified'
 }
+
+export interface IntellisenseContext {
+  activityTypeName: string;
+  propertyName: string;
+}

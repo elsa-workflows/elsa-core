@@ -1,5 +1,11 @@
 import {Component, h, Prop, State} from '@stencil/core';
-import {ActivityDefinitionProperty, ActivityPropertyDescriptor, SelectList, SyntaxNames} from "../../../../models";
+import {
+  ActivityDefinitionProperty,
+  ActivityModel,
+  ActivityPropertyDescriptor,
+  SelectList,
+  SyntaxNames
+} from "../../../../models";
 import {parseJson} from "../../../../utils/utils";
 import {getSelectListItems} from "../../../../utils/select-list-items";
 import Tunnel from "../../../../data/workflow-editor";
@@ -10,6 +16,7 @@ import Tunnel from "../../../../data/workflow-editor";
 })
 export class ElsaRadioListProperty {
 
+  @Prop() activityModel: ActivityModel;
   @Prop() propertyDescriptor: ActivityPropertyDescriptor;
   @Prop() propertyModel: ActivityDefinitionProperty;
   @Prop({mutable: true}) serverUrl: string;
@@ -51,10 +58,12 @@ export class ElsaRadioListProperty {
     const currentValue = this.currentValue;
 
     return (
-      <elsa-property-editor propertyDescriptor={propertyDescriptor}
-                            propertyModel={propertyModel}
-                            onDefaultSyntaxValueChanged={e => this.onDefaultSyntaxValueChanged(e)}
-                            single-line={true}>
+      <elsa-property-editor
+        activityModel={this.activityModel}
+        propertyDescriptor={propertyDescriptor}
+        propertyModel={propertyModel}
+        onDefaultSyntaxValueChanged={e => this.onDefaultSyntaxValueChanged(e)}
+        single-line={true}>
         <div class="elsa-max-w-lg elsa-space-y-3 elsa-my-4">
           {items.map((item, index) => {
             const inputId = `${fieldId}_${index}`;

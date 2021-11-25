@@ -17,7 +17,6 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             return services
                 .AddScoped<ITypeScriptDefinitionService, TypeScriptDefinitionService>()
-                .AddTypeScriptDefinitionProvider<JsonTypeScriptDefinitionProvider>()
                 .AddTypeScriptDefinitionProvider<DotNetTypeScriptDefinitionProvider>()
                 .AddScoped<IJavaScriptService, JintJavaScriptEvaluator>()
                 .AddTransient(s => new JintEvaluationResultConverterFactory(s).GetConverter())

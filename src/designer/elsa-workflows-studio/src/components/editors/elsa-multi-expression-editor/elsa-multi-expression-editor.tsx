@@ -1,5 +1,5 @@
 import {Component, Event, EventEmitter, Listen, h, Prop, State} from '@stencil/core';
-import {SyntaxNames} from "../../../models";
+import {SyntaxNames, IntellisenseContext} from "../../../models";
 import {enter, leave, toggle} from 'el-transition'
 import {Map, mapSyntaxToLanguage} from "../../../utils/utils";
 
@@ -8,7 +8,7 @@ import {Map, mapSyntaxToLanguage} from "../../../utils/utils";
   shadow: false,
 })
 export class ElsaMultiExpressionEditor {
-  
+
   @Prop() label: string;
   @Prop() fieldName?: string;
   @Prop() syntax?: string;
@@ -18,11 +18,11 @@ export class ElsaMultiExpressionEditor {
   @Prop() isReadOnly?: boolean;
   @Prop({attribute: 'editor-height', reflect: true}) editorHeight: string = '10em';
   @Prop({attribute: 'single-line', reflect: true}) singleLineMode: boolean = false;
-  @Prop({attribute: 'context', reflect: true}) context?: string;
+  @Prop() context?: IntellisenseContext;
 
   @Event() syntaxChanged: EventEmitter<string>;
   @Event() expressionChanged: EventEmitter<string>;
-  
+
   @State() selectedSyntax?: string;
   @State() currentValue?: string;
 
@@ -65,13 +65,13 @@ export class ElsaMultiExpressionEditor {
 
   async selectSyntax(e: Event, syntax: string) {
     e.preventDefault();
-    
+
     this.selectedSyntax = syntax;
     this.syntaxChanged.emit(syntax);
-    
+
     this.currentValue = this.expressions[syntax ? syntax : this.defaultSyntax || SyntaxNames.Literal];
     await this.expressionEditor.setExpression(this.currentValue);
-    
+
     this.closeContextMenu();
   }
 
@@ -102,7 +102,7 @@ export class ElsaMultiExpressionEditor {
   renderLabel() {
     if (!this.label)
       return undefined;
-    
+
     const fieldId = this.fieldName;
     const fieldLabel = this.label || fieldId;
 

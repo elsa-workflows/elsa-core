@@ -7,7 +7,7 @@ import {
   ActivityDescriptor,
   ConnectionDefinition,
   EventTypes,
-  getVersionOptionsString, ListModel,
+  getVersionOptionsString, IntellisenseContext, ListModel,
   OrderBy,
   PagedList, SelectList,
   SelectListItem,
@@ -207,9 +207,8 @@ export const createElsaClient = async function (serverUrl: string): Promise<Elsa
       }
     },
     scriptingApi: {
-      getJavaScriptTypeDefinitions: async (workflowDefinitionId: string, context?: string): Promise<string> => {
-        context = context || '';
-        const response = await httpClient.get<string>(`v1/scripting/javascript/type-definitions/${workflowDefinitionId}?t=${new Date().getTime()}&context=${context}`);
+      getJavaScriptTypeDefinitions: async (workflowDefinitionId: string, context?: IntellisenseContext): Promise<string> => {
+        const response = await httpClient.post<string>(`v1/scripting/javascript/type-definitions/${workflowDefinitionId}?t=${new Date().getTime()}`, context);
         return response.data;
       }
     },
@@ -335,7 +334,7 @@ export interface BulkDeleteWorkflowsResponse {
 }
 
 export interface ScriptingApi {
-  getJavaScriptTypeDefinitions(workflowDefinitionId: string, context?: string): Promise<string>
+  getJavaScriptTypeDefinitions(workflowDefinitionId: string, context?: IntellisenseContext): Promise<string>
 }
 
 export interface DesignerApi {

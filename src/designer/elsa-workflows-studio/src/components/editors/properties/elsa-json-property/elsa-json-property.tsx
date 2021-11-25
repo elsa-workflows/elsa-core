@@ -1,5 +1,5 @@
 import {Component, h, Prop, State} from '@stencil/core';
-import {ActivityDefinitionProperty, ActivityPropertyDescriptor, SyntaxNames} from "../../../../models";
+import {ActivityDefinitionProperty, ActivityModel, ActivityPropertyDescriptor, SyntaxNames} from "../../../../models";
 import {MonacoValueChangedArgs} from "../../../controls/elsa-monaco/elsa-monaco";
 
 @Component({
@@ -8,6 +8,7 @@ import {MonacoValueChangedArgs} from "../../../controls/elsa-monaco/elsa-monaco"
 })
 export class ElsaJsonProperty {
 
+  @Prop() activityModel: ActivityModel;
   @Prop() propertyDescriptor: ActivityPropertyDescriptor;
   @Prop() propertyModel: ActivityDefinitionProperty;
   @State() currentValue: string;
@@ -51,11 +52,13 @@ export class ElsaJsonProperty {
     }
 
     return (
-      <elsa-property-editor propertyDescriptor={propertyDescriptor}
-                            propertyModel={propertyModel}
-                            onDefaultSyntaxValueChanged={e => this.onDefaultSyntaxValueChanged(e)}
-                            editor-height={editorHeight}
-                            context={context}>
+      <elsa-property-editor
+        activityModel={this.activityModel}
+        propertyDescriptor={propertyDescriptor}
+        propertyModel={propertyModel}
+        onDefaultSyntaxValueChanged={e => this.onDefaultSyntaxValueChanged(e)}
+        editor-height={editorHeight}
+        context={context}>
         <elsa-monaco value={value}
                      language="json"
                      editor-height={editorHeight}

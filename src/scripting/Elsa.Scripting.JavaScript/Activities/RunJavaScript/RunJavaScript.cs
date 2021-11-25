@@ -79,7 +79,7 @@ namespace Elsa.Activities.JavaScript
         {
             var context = notification.Context;
 
-            if (context != nameof(RunJavaScript))
+            if (context?.ActivityTypeName != nameof(RunJavaScript))
                 return Task.CompletedTask;
 
             notification.Output.AppendLine("declare function setOutcome(name: string);");

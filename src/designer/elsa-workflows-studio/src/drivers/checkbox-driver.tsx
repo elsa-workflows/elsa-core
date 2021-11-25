@@ -7,7 +7,7 @@ export class CheckboxDriver implements PropertyDisplayDriver {
 
   display(activity: ActivityModel, property: ActivityPropertyDescriptor) {
     const prop = getOrCreateProperty(activity, property.name);
-    return <elsa-checkbox-property propertyDescriptor={property} propertyModel={prop} />;
+    return <elsa-checkbox-property activityModel={activity} propertyDescriptor={property} propertyModel={prop} />;
   }
 
   update(activity: ActivityModel, property: ActivityPropertyDescriptor, form: FormData) {

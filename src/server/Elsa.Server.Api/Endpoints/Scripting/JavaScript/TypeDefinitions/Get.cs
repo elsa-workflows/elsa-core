@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Persistence;
+using Elsa.Scripting.JavaScript.Models;
 using Elsa.Scripting.JavaScript.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -25,7 +26,7 @@ namespace Elsa.Server.Api.Endpoints.Scripting.JavaScript.TypeDefinitions
             _typeScriptDefinitionService = typeScriptDefinitionService;
         }
 
-        [HttpGet]
+        [HttpPost]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(FileContentResult))]
         [SwaggerOperation(
             Summary = "Returns a TypeScript type definition file generated based on the specified workflow definition.",
@@ -33,7 +34,7 @@ namespace Elsa.Server.Api.Endpoints.Scripting.JavaScript.TypeDefinitions
             OperationId = "JavaScriptLanguageServices.GetTypeDefinitions",
             Tags = new[] { "JavaScriptLanguageServices" })
         ]
-        public async Task<IActionResult> Handle(string workflowDefinitionId, string? context = default, VersionOptions? version = default, CancellationToken cancellationToken = default)
+        public async Task<IActionResult> Handle(string workflowDefinitionId, IntellisenseContext? context = default, VersionOptions? version = default, CancellationToken cancellationToken = default)
         {
             version ??= VersionOptions.Latest;
             var workflowDefinition = await _workflowDefinitionStore.FindByDefinitionIdAsync(workflowDefinitionId, version.Value, cancellationToken);

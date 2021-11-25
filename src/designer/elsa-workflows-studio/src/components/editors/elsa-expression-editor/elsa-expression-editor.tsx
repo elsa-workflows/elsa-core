@@ -2,6 +2,7 @@ import {Component, EventEmitter, h, Host, Method, Prop, State, Watch, Event} fro
 import {createElsaClient} from "../../../services";
 import Tunnel from '../../../data/workflow-editor';
 import {MonacoValueChangedArgs} from "../../controls/elsa-monaco/elsa-monaco";
+import {IntellisenseContext} from "../../../models";
 
 @Component({
   tag: 'elsa-expression-editor',
@@ -15,7 +16,7 @@ export class ElsaExpressionEditor {
   @Prop({attribute: 'editor-height', reflect: true}) editorHeight: string = '6em';
   @Prop({attribute: 'single-line', reflect: true}) singleLineMode: boolean = false;
   @Prop() padding: string;
-  @Prop({attribute: 'context', reflect: true}) context?: string;
+  @Prop() context?: IntellisenseContext;
   @Prop({mutable: true}) serverUrl: string;
   @Prop({mutable: true}) workflowDefinitionId: string;
   @State() currentExpression?: string

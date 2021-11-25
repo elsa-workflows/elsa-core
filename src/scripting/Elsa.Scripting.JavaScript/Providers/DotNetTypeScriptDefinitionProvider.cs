@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using AutoMapper.Internal;
 using Elsa.Models;
 using Elsa.Scripting.JavaScript.Events;
+using Elsa.Scripting.JavaScript.Models;
 using Elsa.Scripting.JavaScript.Services;
 using MediatR;
 
@@ -24,7 +25,12 @@ namespace Elsa.Scripting.JavaScript.Providers
             _mediator = mediator;
         }
 
-        public async Task<StringBuilder> GenerateTypeScriptDefinitionsAsync(StringBuilder builder, ICollection<string> declaredTypes, WorkflowDefinition? workflowDefinition = default, string? context = default, CancellationToken cancellationToken = default)
+        public async Task<StringBuilder> GenerateTypeScriptDefinitionsAsync(
+            StringBuilder builder,
+            ICollection<string> declaredTypes,
+            WorkflowDefinition? workflowDefinition = default,
+            IntellisenseContext? context = default,
+            CancellationToken cancellationToken = default)
         {
             var providerContext = new TypeDefinitionContext(workflowDefinition, context);
             var types = await CollectTypesAsync(providerContext, cancellationToken);
