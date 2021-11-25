@@ -122,7 +122,7 @@ namespace Elsa.Scripting.JavaScript.Handlers
             string FindInterface(RenderingTypeScriptDefinitions notification, string query)
             {
                 var result = notification.DeclaredTypes.FirstOrDefault(x => x.Contains(query));
-                return result == null ? query : result;
+                return result ?? query;
             }
         }
     }

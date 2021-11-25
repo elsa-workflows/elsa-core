@@ -38,6 +38,7 @@ namespace Elsa.Scripting.JavaScript.Typings
         public override IEnumerable<Type> CollectTypes(TypeDefinitionContext context) => new[]
         {
             typeof(Instant),
+            typeof(DateTime),
             typeof(Duration),
             typeof(Period),
             typeof(LocalDate),
