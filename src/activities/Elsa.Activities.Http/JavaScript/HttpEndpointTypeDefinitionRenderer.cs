@@ -15,22 +15,6 @@ namespace Elsa.Activities.Http.JavaScript
 {
     public class HttpEndpointTypeDefinitionRenderer : DefaultActivityTypeDefinitionRenderer
     {
-        public class CustomTypeNameGenerator : DefaultTypeNameGenerator
-        {
-            public string Prefix { get; }
-
-            public CustomTypeNameGenerator(string prefix)
-            {
-                Prefix = prefix;
-            }
-            
-            protected override string Generate(JsonSchema schema, string typeNameHint)
-            {
-                var result = base.Generate(schema, typeNameHint);
-                return result;
-            }
-        }
-        
         public override async ValueTask RenderTypeDeclarationAsync(
             RenderingTypeScriptDefinitions notification,
             ActivityType activityType,
@@ -47,19 +31,18 @@ namespace Elsa.Activities.Http.JavaScript
                 var generator = new TypeScriptGenerator(jsonSchema, new TypeScriptGeneratorSettings
                 {
                     TypeStyle = TypeScriptTypeStyle.Interface,
-                    TypeScriptVersion = 4,
-                    TypeNameGenerator = new CustomTypeNameGenerator(activityDefinition.Name!)
+                    TypeScriptVersion = 4
                 });
 
                 var typeScriptType = $"{activityDefinition.Name}Output";
-                
+
                 var jsonSchemaTypes = generator.GenerateFile(typeScriptType)
                     .Replace("\r\n", "\n")
                     .Replace("export interface", "declare class");
-                
+
                 writer.AppendLine(jsonSchemaTypes);
             }
-            
+
             await base.RenderTypeDeclarationAsync(notification, activityType, activityDescriptor, activityDefinition, writer, cancellationToken);
         }
 

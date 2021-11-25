@@ -86,8 +86,6 @@ namespace Elsa.Scripting.JavaScript.Handlers
 
                 foreach (var activity in namedActivities)
                 {
-                    //var activityType = activityTypeDictionary[activity.Type];
-                    //var typeScriptType = activityType.TypeName;
                     var typeScriptType = activity.Name;
                     var interfaceActivity = $"{activity.Name}: {typeScriptType}";
                     output.AppendLine($"{interfaceActivity};");

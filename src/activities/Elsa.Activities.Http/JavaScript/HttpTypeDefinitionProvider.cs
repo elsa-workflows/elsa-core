@@ -14,19 +14,20 @@ namespace Elsa.Activities.Http.JavaScript
 
             if (workflowDefinition != null)
             {
+                // For each HTTP Endpoint activity, determine its TargetType. If configured, register it.
                 var httpEndpointActivities = workflowDefinition.Activities.Where(x => x.Type == nameof(HttpEndpoint)).ToList();
 
-                foreach (var type in
-                         from activityDefinition in httpEndpointActivities
-                         select activityDefinition.Properties.First(x => x.Name == nameof(HttpEndpoint.TargetType)).Expressions.Values.First()
-                         into targetTypeName
-                         where !string.IsNullOrWhiteSpace(targetTypeName)
-                         select Type.GetType(targetTypeName)
-                         into type
-                         where type != null
-                         select type)
+                foreach (var activityDefinition in httpEndpointActivities)
                 {
-                    yield return type;
+                    var targetTypeName = activityDefinition.Properties.First(x => x.Name == nameof(HttpEndpoint.TargetType)).Expressions.Values.First();
+
+                    if (string.IsNullOrWhiteSpace(targetTypeName))
+                        continue;
+
+                    var type = Type.GetType(targetTypeName);
+                    
+                    if (type != null)
+                        yield return type;
                 }
             }
 
