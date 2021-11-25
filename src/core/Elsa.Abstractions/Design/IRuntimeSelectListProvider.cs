@@ -1,9 +1,10 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Elsa.Design;
-
-public interface IRuntimeSelectListProvider
+namespace Elsa.Design
 {
-    ValueTask<SelectList> GetSelectListAsync(object? context = default, CancellationToken cancellationToken = default);
+    public interface IRuntimeSelectListProvider
+    {
+        ValueTask<SelectList> GetSelectListAsync(object? context = default, CancellationToken cancellationToken = default);
+    }
 }
