@@ -20,5 +20,5 @@ export async function getSelectListItems(serverUrl: string, propertyDescriptor: 
   else
     selectList = options as SelectList;
 
-  return selectList;
+  return selectList || {items: [], isFlagsEnum: false};
 }
