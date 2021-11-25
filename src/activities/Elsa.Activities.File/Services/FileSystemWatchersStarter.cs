@@ -1,3 +1,10 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
 using AutoMapper;
 using Elsa.Activities.File.Bookmarks;
 using Elsa.Activities.File.Models;
@@ -6,13 +13,6 @@ using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Elsa.Activities.File.Services
 {
@@ -46,12 +46,12 @@ namespace Elsa.Activities.File.Services
             {
                 if (_watchers.Any())
                 {
-                    foreach (var watcher in _watchers) 
+                    foreach (var watcher in _watchers)
                         watcher.Dispose();
-                    
+
                     _watchers.Clear();
                 }
-                
+
                 var activities = GetActivityInstancesAsync(cancellationToken);
                 await foreach (var a in activities.WithCancellation(cancellationToken))
                 {
@@ -127,9 +127,9 @@ namespace Elsa.Activities.File.Services
         {
             _logger.LogDebug("Checking ${Path} exists", path);
 
-            if (Directory.Exists(path)) 
+            if (Directory.Exists(path))
                 return;
-            
+
             _logger.LogInformation("Creating directory {Path}", path);
             Directory.CreateDirectory(path);
         }
@@ -160,7 +160,7 @@ namespace Elsa.Activities.File.Services
             StartWorkflow((FileSystemWatcher)sender, e);
         }
 
-        private void StartWorkflow(FileSystemWatcher watcher, FileSystemEventArgs e)
+        private async void StartWorkflow(FileSystemWatcher watcher, FileSystemEventArgs e)
         {
             var changeTypes = e.ChangeType;
             var notifyFilter = watcher.NotifyFilter;
@@ -170,7 +170,7 @@ namespace Elsa.Activities.File.Services
             var model = _mapper.Map<FileSystemEvent>(e);
             var bookmark = new FileSystemEventBookmark(path, pattern, changeTypes, notifyFilter);
             var launchContext = new WorkflowsQuery(nameof(WatchDirectory), bookmark);
-            _workflowLaunchpad.UseService(s => s.CollectAndDispatchWorkflowsAsync(launchContext, new WorkflowInput(model)));
+            await _workflowLaunchpad.UseServiceAsync(async s => await s.CollectAndDispatchWorkflowsAsync(launchContext, new WorkflowInput(model)));
         }
         #endregion
     }
