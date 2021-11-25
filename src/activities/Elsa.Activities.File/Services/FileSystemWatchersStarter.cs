@@ -170,7 +170,7 @@ namespace Elsa.Activities.File.Services
             var model = _mapper.Map<FileSystemEvent>(e);
             var bookmark = new FileSystemEventBookmark(path, pattern, changeTypes, notifyFilter);
             var launchContext = new WorkflowsQuery(nameof(WatchDirectory), bookmark);
-            await _workflowLaunchpad.UseServiceAsync(async s => await s.CollectAndDispatchWorkflowsAsync(launchContext, new WorkflowInput(model)));
+            await _workflowLaunchpad.UseServiceAsync(s => s.CollectAndDispatchWorkflowsAsync(launchContext, new WorkflowInput(model)));
         }
         #endregion
     }
