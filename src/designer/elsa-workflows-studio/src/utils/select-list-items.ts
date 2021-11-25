@@ -12,11 +12,16 @@ async function fetchRuntimeItems(serverUrl: string, options: RuntimeSelectListPr
 }
 
 export async function getSelectListItems(serverUrl: string, propertyDescriptor: ActivityPropertyDescriptor): Promise<SelectList> {
-  const options = propertyDescriptor.options;
+  const options: any = propertyDescriptor.options;
   let selectList: SelectList;
 
   if (!!options && options.runtimeSelectListProviderType)
     selectList = await fetchRuntimeItems(serverUrl, options);
+  else if (Array.isArray(options))
+    selectList = {
+      items: options,
+      isFlagsEnum: false
+    };
   else
     selectList = options as SelectList;
 

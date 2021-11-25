@@ -28,6 +28,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddJavaScriptTypeDefinitionProvider<WorkflowContextTypeDefinitionProvider>()
                 .AddJavaScriptTypeDefinitionProvider<WorkflowVariablesTypeDefinitionProvider>()
                 .AddJavaScriptTypeDefinitionProvider<BlacklistedTypeDefinitionProvider>()
+                .AddSingleton<IActivityTypeDefinitionRenderer, DefaultActivityTypeDefinitionRenderer>()
                 .AddNotificationHandlers(typeof(JavaScriptServiceCollectionExtensions));
         }
 

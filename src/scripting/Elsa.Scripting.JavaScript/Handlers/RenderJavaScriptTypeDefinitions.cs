@@ -1,9 +1,11 @@
-using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Models;
 using Elsa.Scripting.JavaScript.Events;
+using Elsa.Scripting.JavaScript.Providers;
 using Elsa.Services;
 using Elsa.Services.Models;
 using MediatR;
@@ -13,10 +15,12 @@ namespace Elsa.Scripting.JavaScript.Handlers
     public class RenderJavaScriptTypeDefinitions : INotificationHandler<RenderingTypeScriptDefinitions>
     {
         private readonly IActivityTypeService _activityTypeService;
+        private readonly IEnumerable<IActivityTypeDefinitionRenderer> _activityTypeDefinitionRenderers;
 
-        public RenderJavaScriptTypeDefinitions(IActivityTypeService activityTypeService)
+        public RenderJavaScriptTypeDefinitions(IActivityTypeService activityTypeService, IEnumerable<IActivityTypeDefinitionRenderer> activityTypeDefinitionRenderers)
         {
             _activityTypeService = activityTypeService;
+            _activityTypeDefinitionRenderers = activityTypeDefinitionRenderers.OrderByDescending(x => x.Priority).ToList();
         }
 
         public async Task Handle(RenderingTypeScriptDefinitions notification, CancellationToken cancellationToken)
@@ -72,17 +76,20 @@ namespace Elsa.Scripting.JavaScript.Handlers
                 var activityTypes = await Task.WhenAll(activityTypeNames.Select(async activityTypeName => (activityTypeName, await _activityTypeService.GetActivityTypeAsync(activityTypeName, cancellationToken))));
                 var activityTypeDictionary = activityTypes.ToDictionary(x => x.activityTypeName, x => x.Item2);
 
-                foreach (var activityType in activityTypeDictionary.Values)
-                    await RenderActivityTypeDeclarationAsync(activityType, output);
+                foreach (var namedActivity in namedActivities)
+                {
+                    var activityType = activityTypeDictionary[namedActivity.Type];
+                    await RenderActivityTypeDeclarationAsync(namedActivity, activityType, output);
+                }
 
                 output.AppendLine("declare interface Activities {");
 
                 foreach (var activity in namedActivities)
                 {
-                    var activityType = activityTypeDictionary[activity.Type];
-                    var typeScriptType = activityType.TypeName;
-                    var query = $"{activity.Name}: {typeScriptType}";
-                    var interfaceActivity = FindInterface(notification, query);
+                    //var activityType = activityTypeDictionary[activity.Type];
+                    //var typeScriptType = activityType.TypeName;
+                    var typeScriptType = activity.Name;
+                    var interfaceActivity = $"{activity.Name}: {typeScriptType}";
                     output.AppendLine($"{interfaceActivity};");
                 }
 
@@ -90,39 +97,11 @@ namespace Elsa.Scripting.JavaScript.Handlers
                 output.AppendLine("declare const activities: Activities");
             }
 
-            async Task RenderActivityTypeDeclarationAsync(ActivityType type, StringBuilder writer)
+            async Task RenderActivityTypeDeclarationAsync(ActivityDefinition activityDefinition, ActivityType type, StringBuilder writer)
             {
-                var typeName = type.TypeName;
                 var descriptor = await type.DescribeAsync();
-                var inputProperties = descriptor.InputProperties;
-                var outputProperties = descriptor.OutputProperties;
-
-                var query = $"declare interface {typeName}";
-                var interfaceDeclaration = FindInterface(notification, query);
-                writer.AppendLine($"{interfaceDeclaration} {{");
-
-                foreach (var property in inputProperties)
-                    RenderActivityProperty(writer, typeName, property.Name, property.Type);
-
-                foreach (var property in outputProperties)
-                    RenderActivityProperty(writer, typeName, property.Name, property.Type);
-
-                writer.AppendLine("}");
-            }
-
-            void RenderActivityProperty(StringBuilder writer, string typeName, string propertyName, Type propertyType)
-            {
-                var typeScriptType = notification.GetTypeScriptType(propertyType);
-
-                var query = $"{propertyName}(): {typeScriptType}";
-                var interfaceDeclaration = FindInterface(notification, query);
-                writer.AppendLine($"{interfaceDeclaration};");
-            }
-
-            string FindInterface(RenderingTypeScriptDefinitions notification, string query)
-            {
-                var result = notification.DeclaredTypes.FirstOrDefault(x => x.Contains(query));
-                return result ?? query;
+                var renderer = _activityTypeDefinitionRenderers.First(x => x.GetCanRenderType(type));
+                await renderer.RenderTypeDeclarationAsync(notification, type, descriptor, activityDefinition, writer, cancellationToken);
             }
         }
     }
