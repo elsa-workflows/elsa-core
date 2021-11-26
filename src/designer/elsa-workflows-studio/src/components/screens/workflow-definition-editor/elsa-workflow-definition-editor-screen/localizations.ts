@@ -14,7 +14,7 @@ export const resources = {
       'Restart': 'Restart'
     }
   },
-  'zh-cn': {
+  'zh-CN': {
     'default': {
       'Publishing': '发布中...',
       'Published': '已发布',

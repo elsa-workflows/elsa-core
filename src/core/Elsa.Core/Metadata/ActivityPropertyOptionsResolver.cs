@@ -27,12 +27,25 @@ namespace Elsa.Metadata
                 return null;
 
             if (activityPropertyAttribute.OptionsProvider == null)
-                return activityPropertyAttribute.Options ?? (TryGetEnumOptions(activityPropertyInfo, out var items) ? items : null);
+            {
+                var options = activityPropertyAttribute.Options;
+                
+                if (options is IEnumerable<string> enumerable)
+                    return new SelectList
+                    {
+                        Items = enumerable.Select(x => new SelectListItem(x)).ToList()
+                    };
+
+                if (TryGetEnumOptions(activityPropertyInfo, out var items))
+                    return items;
+
+                return activityPropertyAttribute.Options;
+            }
 
             var providerType = activityPropertyAttribute.OptionsProvider;
 
             using var scope = _serviceProvider.CreateScope();
-            var provider = (IActivityPropertyOptionsProvider) ActivatorUtilities.GetServiceOrCreateInstance(scope.ServiceProvider, providerType);
+            var provider = (IActivityPropertyOptionsProvider)ActivatorUtilities.GetServiceOrCreateInstance(scope.ServiceProvider, providerType);
             return provider.GetOptions(activityPropertyInfo);
         }
 

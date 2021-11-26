@@ -12,7 +12,7 @@ export const resources = {
       'Properties': '{{name}} Properties'
     }
   },
-  'zh-cn': {
+  'zh-CN': {
     default: {
       'Name': '名称',
       'Untitled': '无题',

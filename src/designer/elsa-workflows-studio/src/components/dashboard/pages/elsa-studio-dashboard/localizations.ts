@@ -7,7 +7,7 @@ export const resources = {
       'WebhookDefinitions': 'Webhook Definitions',
     }
   },
-  'zh-cn': {
+  'zh-CN': {
     default: {
       'WorkflowDefinitions': '工作流定义',
       'WorkflowInstances': '工作流实例',

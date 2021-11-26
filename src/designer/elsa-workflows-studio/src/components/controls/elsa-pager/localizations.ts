@@ -10,14 +10,14 @@ export const resources = {
       'Display': '{{template}}'
     }
   },
-  'zh-cn': {
+  'zh-CN': {
     'default': {
-      'Previous': '上一封',
-      'Next': '下一封',
-      'From': '发件人',
-      'To': '收件人',
-      'Of': '来自',
-      'Results': '结果',
+      'Previous': '上一页',
+      'Next': '下一页',
+      'From': '从',
+      'To': '到',
+      'Of': ' 共',
+      'Results': '条数据',
       'Display': '{{template}}'
     }
   },

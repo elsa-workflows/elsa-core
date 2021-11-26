@@ -128,20 +128,16 @@ namespace Elsa.Scripting.JavaScript.Providers
             var properties = type.GetProperties();
             var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static).Where(x => !x.IsSpecialName).ToList();
 
-            if (type.Name == "HttpRequestModel")
-                output.AppendLine($"declare {symbol} {typeName}<T> {{");
-            else
-                output.AppendLine($"declare {symbol} {typeName} {{");
+
+            output.AppendLine($"declare {symbol} {typeName} {{");
 
             foreach (var property in properties)
             {
                 var typeScriptType = GetTypeScriptType(context, property.PropertyType, collectedTypes);
                 var propertyName = property.PropertyType.IsNullableType() ? $"{property.Name}?" : property.Name;
 
-                if (type.Name == "HttpRequestModel" && propertyName == "Body")
-                    output.AppendLine($"{propertyName}: T;");
-                else
-                    output.AppendLine($"{propertyName}: {typeScriptType};");
+
+                output.AppendLine($"{propertyName}: {typeScriptType};");
             }
 
             foreach (var method in methods)
@@ -161,14 +157,11 @@ namespace Elsa.Scripting.JavaScript.Providers
                 output.Append(string.Join(", ", arguments));
                 output.Append(")");
 
-                //var returnType = method.ReturnType;
-                var returnType = method.ReflectedType;
+                var returnType = method.ReturnType;
+                
                 if (returnType != typeof(void))
                 {
-                    if (type.Name == "HttpRequestModel")
-                        output.Append(":T");
-                    else
-                        output.AppendFormat(":{0}", GetTypeScriptType(context, returnType, collectedTypes));
+                    output.AppendFormat(":{0}", GetTypeScriptType(context, returnType, collectedTypes));
                 }
 
                 output.AppendLine(";");

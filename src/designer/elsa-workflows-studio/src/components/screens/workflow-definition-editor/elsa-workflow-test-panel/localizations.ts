@@ -7,7 +7,7 @@ export const resources = {
       'Status': 'Status'
     }
   },
-  'zh-cn': {
+  'zh-CN': {
     default: {
       'ExecuteWorkflow': '执行工作流程',
       'StopWorkflow': '停止工作流程',

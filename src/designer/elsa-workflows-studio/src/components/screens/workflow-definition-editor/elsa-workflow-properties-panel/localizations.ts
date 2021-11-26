@@ -12,7 +12,7 @@ export const resources = {
       'Draft': 'Draft'
     }
   },
-  'zh-cn': {
+  'zh-CN': {
     default: {
       'Name': '名称',
       'DisplayName': '展示名称',
