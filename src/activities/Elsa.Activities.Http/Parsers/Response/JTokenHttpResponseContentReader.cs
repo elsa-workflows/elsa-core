@@ -16,7 +16,19 @@ namespace Elsa.Activities.Http.Parsers.Response
         public async Task<object> ReadAsync(SendHttpRequest activity, HttpResponseMessage response, CancellationToken cancellationToken)
         {
             var json = (await response.Content.ReadAsStringAsync()).Trim();
-            return JToken.Parse(json);
+            return GetJTokenValue(json);
+        }
+
+        private JToken GetJTokenValue(string value)
+        {
+            try
+            {
+                return JToken.Parse(value);
+            }
+            catch
+            {
+                return JToken.FromObject(value);
+            }
         }
     }
 }

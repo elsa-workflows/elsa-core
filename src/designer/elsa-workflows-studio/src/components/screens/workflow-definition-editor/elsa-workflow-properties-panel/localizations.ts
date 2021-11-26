@@ -1,4 +1,4 @@
-﻿export const resources = {
+export const resources = {
   'en': {
     default: {
       'Name': 'Name',
@@ -10,6 +10,19 @@
       'Status': 'Status',
       'Published': 'Published',
       'Draft': 'Draft'
+    }
+  },
+  'zh-CN': {
+    default: {
+      'Name': '名称',
+      'DisplayName': '展示名称',
+      'Untitled': '无题',
+      'Id': 'Id',
+      'Version': '最新版本',
+      'PublishedVersion': '发布版本',
+      'Status': '状态',
+      'Published': '已发布',
+      'Draft': '草稿'
     }
   },
   'nl-NL': {

@@ -1,5 +1,5 @@
 import {Component, h, Prop, State} from '@stencil/core';
-import {ActivityDefinitionProperty, ActivityPropertyDescriptor, SyntaxNames} from "../../../../models";
+import {ActivityDefinitionProperty, ActivityModel, ActivityPropertyDescriptor, SyntaxNames} from "../../../../models";
 
 @Component({
   tag: 'elsa-multi-line-property',
@@ -7,6 +7,7 @@ import {ActivityDefinitionProperty, ActivityPropertyDescriptor, SyntaxNames} fro
 })
 export class ElsaMultiLineProperty {
 
+  @Prop() activityModel: ActivityModel;
   @Prop() propertyDescriptor: ActivityPropertyDescriptor;
   @Prop() propertyModel: ActivityDefinitionProperty;
   @State() currentValue: string;
@@ -54,13 +55,16 @@ export class ElsaMultiLineProperty {
     }
 
     return (
-      <elsa-property-editor propertyDescriptor={propertyDescriptor}
-                            propertyModel={propertyModel}
-                            onDefaultSyntaxValueChanged={e => this.onDefaultSyntaxValueChanged(e)}
-                            editor-height={editorHeight.propertyEditor}
-                            context={context}>
+      <elsa-property-editor
+        activityModel={this.activityModel}
+        propertyDescriptor={propertyDescriptor}
+        propertyModel={propertyModel}
+        onDefaultSyntaxValueChanged={e => this.onDefaultSyntaxValueChanged(e)}
+        editor-height={editorHeight.propertyEditor}
+        context={context}>
         <textarea id={fieldId} name={fieldName} value={value} onChange={e => this.onChange(e)}
-                  class="focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300" rows={editorHeight.textArea}/>
+                  class="focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300"
+                  rows={editorHeight.textArea}/>
       </elsa-property-editor>
     );
   }

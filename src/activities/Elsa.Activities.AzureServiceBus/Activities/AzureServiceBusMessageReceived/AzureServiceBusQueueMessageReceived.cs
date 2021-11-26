@@ -29,8 +29,6 @@ namespace Elsa.Activities.AzureServiceBus
         [ActivityOutput]
         public object? Output { get; set; }
         
-        
-
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => context.WorkflowExecutionContext.IsFirstPass ? ExecuteInternal(context) : Suspend();
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context) => ExecuteInternal(context);
 

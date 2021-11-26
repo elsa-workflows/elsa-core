@@ -89,7 +89,8 @@ export class ElsaActivityEditorModal {
       browsable: false,
       inputProperties: [],
       outputProperties: [],
-      description: ''
+      description: '',
+      customAttributes: {}
     };
     const propertyCategories = activityDescriptor.inputProperties.filter(x => x.category).map(x => x.category).distinct();
     const defaultProperties = activityDescriptor.inputProperties.filter(x => !x.category || x.category.length == 0);

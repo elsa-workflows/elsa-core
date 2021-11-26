@@ -57,7 +57,8 @@ namespace Elsa.Activities.Workflows
             Hint = "Enter one or more potential child workflow outcomes you might want to handle.",
             UIHint = ActivityInputUIHints.MultiText,
             DefaultSyntax = SyntaxNames.Json,
-            SupportedSyntaxes = new[] { SyntaxNames.Json }
+            SupportedSyntaxes = new[] { SyntaxNames.Json },
+            ConsiderValuesAsOutcomes = true
         )]
         public ISet<string> PossibleOutcomes { get; set; } = new HashSet<string>();
 

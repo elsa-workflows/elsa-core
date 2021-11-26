@@ -7,6 +7,6 @@ export class SingleLineDriver implements PropertyDisplayDriver {
 
   display(activity: ActivityModel, property: ActivityPropertyDescriptor) {
     const prop = getOrCreateProperty(activity, property.name);
-    return <elsa-single-line-property propertyDescriptor={property} propertyModel={prop}/>;
+    return <elsa-single-line-property activityModel={activity} propertyDescriptor={property} propertyModel={prop}/>;
   }
 }

@@ -7,13 +7,14 @@
 
 ## Properties
 
-| Property         | Attribute       | Description | Type      | Default     |
-| ---------------- | --------------- | ----------- | --------- | ----------- |
-| `editorHeight`   | `editor-height` |             | `string`  | `'5em'`     |
-| `language`       | `language`      |             | `string`  | `undefined` |
-| `padding`        | `padding`       |             | `string`  | `undefined` |
-| `singleLineMode` | `single-line`   |             | `boolean` | `false`     |
-| `value`          | `value`         |             | `string`  | `undefined` |
+| Property         | Attribute         | Description | Type      | Default     |
+| ---------------- | ----------------- | ----------- | --------- | ----------- |
+| `editorHeight`   | `editor-height`   |             | `string`  | `'5em'`     |
+| `language`       | `language`        |             | `string`  | `undefined` |
+| `monacoLibPath`  | `monaco-lib-path` |             | `string`  | `undefined` |
+| `padding`        | `padding`         |             | `string`  | `undefined` |
+| `singleLineMode` | `single-line`     |             | `boolean` | `false`     |
+| `value`          | `value`           |             | `string`  | `undefined` |
 
 
 ## Events

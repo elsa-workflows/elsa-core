@@ -18,12 +18,27 @@ export class ElsaStudioDashboard {
   @Prop({attribute: 'base-path', reflect: true}) basePath: string = '';
   private i18next: i18n;
   private dashboardMenu: ConfigureDashboardMenuContext  = {
-    data: null
+    data: {
+      menuItems: [
+        ['workflow-definitions', 'Workflow Definitions'],
+        ['workflow-instances', 'Workflow Instances'],
+        ['workflow-registry', 'Workflow Registry'],
+      ],
+      routes: [
+        ['', 'elsa-studio-home', true],
+        ['workflow-registry', 'elsa-studio-workflow-registry', true],
+        ['workflow-registry/:id', 'elsa-studio-workflow-blueprint-view'],
+        ['workflow-definitions', 'elsa-studio-workflow-definitions-list', true],
+        ['workflow-definitions/:id', 'elsa-studio-workflow-definitions-edit'],
+        ['workflow-instances', 'elsa-studio-workflow-instances-list', true],
+        ['workflow-instances/:id', 'elsa-studio-workflow-instances-view'],
+      ]
+    }
   };
 
   async componentWillLoad() {
     this.i18next = await loadTranslations(this.culture, resources);
-    eventBus.emit(EventTypes.DashboardLoadingMenu, this, this.dashboardMenu);
+    await eventBus.emit(EventTypes.Dashboard.Appearing, this, this.dashboardMenu);
   }
 
   render() {
@@ -52,26 +67,12 @@ export class ElsaStudioDashboard {
             <div class="elsa-flex elsa-items-center elsa-justify-between elsa-h-16">
               <div class="elsa-flex elsa-items-center">
                 <div class="elsa-flex-shrink-0">
-                  <stencil-route-link url={`${basePath}/`}><img class="elsa-h-8 elsa-w-8" src={logoPath}
-                                                                alt="Workflow"/></stencil-route-link>
+                  <stencil-route-link url={`${basePath}/`}>
+                    <img class="elsa-h-8 elsa-w-8" src={logoPath}
+                          alt="Workflow"/></stencil-route-link>
                 </div>
                 <div class="hidden md:elsa-block">
                   <div class="elsa-ml-10 elsa-flex elsa-items-baseline elsa-space-x-4">
-                    <stencil-route-link url={`${basePath}/workflow-definitions`}
-                                        anchorClass="elsa-text-gray-300 hover:elsa-bg-gray-700 hover:elsa-text-white elsa-px-3 elsa-py-2 elsa-rounded-md elsa-text-sm elsa-font-medium"
-                                        activeClass="elsa-text-white elsa-bg-gray-900">
-                      <IntlMessage label="WorkflowDefinitions"/>
-                    </stencil-route-link>
-                    <stencil-route-link url={`${basePath}/workflow-instances`}
-                                        anchorClass="elsa-text-gray-300 hover:elsa-bg-gray-700 hover:elsa-text-white elsa-px-3 elsa-py-2 elsa-rounded-md elsa-text-sm elsa-font-medium"
-                                        activeClass="elsa-text-white elsa-bg-gray-900">
-                      <IntlMessage label="WorkflowInstances"/>
-                    </stencil-route-link>
-                    <stencil-route-link url={`${basePath}/workflow-registry`}
-                                        anchorClass="elsa-text-gray-300 hover:elsa-bg-gray-700 hover:elsa-text-white elsa-px-3 elsa-py-2 elsa-rounded-md elsa-text-sm elsa-font-medium"
-                                        activeClass="elsa-text-white elsa-bg-gray-900">
-                      <IntlMessage label="WorkflowRegistry"/>
-                    </stencil-route-link>
                     {menuItems.map(item => renderFeatureMenuItem(item, basePath))}
                   </div>
                 </div>
@@ -83,18 +84,6 @@ export class ElsaStudioDashboard {
         <main>
           <stencil-router>
             <stencil-route-switch scrollTopOffset={0}>
-              <stencil-route url={`${basePath}/`} component="elsa-studio-home" exact={true}/>
-              <stencil-route url={`${basePath}/workflow-registry`} component="elsa-studio-workflow-registry"
-                             exact={true}/>
-              <stencil-route url={`${basePath}/workflow-registry/:id`} component="elsa-studio-workflow-blueprint-view"/>
-              <stencil-route url={`${basePath}/workflow-definitions`} component="elsa-studio-workflow-definitions-list"
-                             exact={true}/>
-              <stencil-route url={`${basePath}/workflow-definitions/:id`}
-                             component="elsa-studio-workflow-definitions-edit"/>
-              <stencil-route url={`${basePath}/workflow-instances`} component="elsa-studio-workflow-instances-list"
-                             exact={true}/>
-              <stencil-route url={`${basePath}/workflow-instances/:id`}
-                             component="elsa-studio-workflow-instances-view"/>
               {routes.map(item => renderFeatureRoute(item, basePath))}
             </stencil-route-switch>
           </stencil-router>

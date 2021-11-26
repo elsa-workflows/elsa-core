@@ -1,6 +1,7 @@
-﻿using System.Linq;
+using System.Linq;
 using Elsa.Models;
 using Elsa.Persistence.EntityFramework.Core.Configuration;
+using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
 
@@ -43,6 +44,52 @@ namespace Elsa.Persistence.EntityFramework.Core
                             .HasConversion(ValueConverters.SqliteInstantConverter);
                     }
                 }
+            }
+
+            if (Database.IsOracle())
+            {
+                //in order to use data more than 2000 char we have to use NCLOB ,in oracle we have to explicitly say the column is NCLOB otherwise it would be considered Nvarchar(2000)
+                modelBuilder.Entity<WorkflowInstance>().Property(x => x.LastExecutedActivityId)
+                    .HasColumnType("NCLOB");
+
+                modelBuilder.Entity<WorkflowInstance>().Property("Data")
+                    .HasColumnType("NCLOB");
+
+
+
+                modelBuilder.Entity<WorkflowExecutionLogRecord>().Property(x => x.Source)
+                    .HasColumnType("NCLOB");
+
+                modelBuilder.Entity<WorkflowExecutionLogRecord>().Property(x => x.Message)
+                    .HasColumnType("NCLOB");
+
+                modelBuilder.Entity<WorkflowExecutionLogRecord>().Property(x => x.EventName)
+                    .HasColumnType("NCLOB");
+
+                modelBuilder.Entity<WorkflowExecutionLogRecord>().Property(x => x.Data)
+                    .HasColumnType("NCLOB");
+
+
+
+
+                modelBuilder.Entity<WorkflowDefinition>().Property(x => x.DisplayName)
+                    .HasColumnType("NCLOB");
+
+                modelBuilder.Entity<WorkflowDefinition>().Property(x => x.Description)
+                .HasColumnType("NCLOB");
+
+                modelBuilder.Entity<WorkflowDefinition>().Property("Data")
+                    .HasColumnType("NCLOB");
+
+
+
+
+                modelBuilder.Entity<Bookmark>().Property(x => x.Model)
+                    .HasColumnType("NCLOB");
+
+                modelBuilder.Entity<Bookmark>().Property(x => x.ModelType)
+                    .HasColumnType("NCLOB");
+
             }
         }
     }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Elsa.ActivityResults;
@@ -17,7 +17,7 @@ namespace Elsa.Activities.UserTask.Activities
     [Trigger(
         Category = "User Tasks",
         Description = "Triggers when a user action is received.",
-        Outcomes = new[] { OutcomeNames.Done, "x => x.state.actions" }
+        Outcomes = new string[0]
     )]
     public class UserTask : Activity
     {
@@ -27,7 +27,8 @@ namespace Elsa.Activities.UserTask.Activities
             UIHint = ActivityInputUIHints.MultiText,
             Hint = "Provide a list of available actions",
             DefaultSyntax = SyntaxNames.Json,
-            SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid }
+            SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid },
+            ConsiderValuesAsOutcomes = true
         )]
         public ICollection<string> Actions { get; set; } = new List<string>();
         

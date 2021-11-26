@@ -1,5 +1,11 @@
 import {Component, h, Prop, State} from '@stencil/core';
-import {ActivityDefinitionProperty, ActivityPropertyDescriptor, SyntaxNames, SelectListItem} from "../../../../models";
+import {
+  ActivityDefinitionProperty,
+  ActivityPropertyDescriptor,
+  SyntaxNames,
+  SelectListItem,
+  SelectList, ActivityModel
+} from "../../../../models";
 import {parseJson} from "../../../../utils/utils";
 import Tunnel from "../../../../data/workflow-editor";
 import {getSelectListItems} from "../../../../utils/select-list-items";
@@ -10,12 +16,13 @@ import {getSelectListItems} from "../../../../utils/select-list-items";
 })
 export class ElsaMultiTextProperty {
 
+  @Prop() activityModel: ActivityModel;
   @Prop() propertyDescriptor: ActivityPropertyDescriptor;
   @Prop() propertyModel: ActivityDefinitionProperty;
   @Prop({mutable: true}) serverUrl: string;
   @State() currentValue?: string;
 
-  items: any[];
+  selectList: SelectList = {items: [], isFlagsEnum: false};
 
   async componentWillLoad() {
     this.currentValue = this.propertyModel.expressions[SyntaxNames.Json] || '[]';
@@ -42,11 +49,11 @@ export class ElsaMultiTextProperty {
     if (options === null)
       return options;
 
-    return options.map(option => typeof option === 'string' ? { text: option, value: option } : option);
+    return options.map(option => typeof option === 'string' ? {text: option, value: option} : option);
   }
 
-  async componentWillRender(){
-    this.items = await getSelectListItems(this.serverUrl, this.propertyDescriptor);
+  async componentWillRender() {
+    this.selectList = await getSelectListItems(this.serverUrl, this.propertyDescriptor);
   }
 
   render() {
@@ -56,19 +63,23 @@ export class ElsaMultiTextProperty {
     const fieldId = propertyName;
     const fieldName = propertyName;
     const values = parseJson(this.currentValue);
-    const items = this.items;
+    const items = this.selectList.items as Array<SelectListItem>;
     const useDropdown = !!propertyDescriptor.options && propertyDescriptor.options.length > 0;
     const propertyOptions = this.createKeyValueOptions(items);
 
     const elsaInputTags = useDropdown ?
-      <elsa-input-tags-dropdown dropdownValues={propertyOptions} values={values} fieldId={fieldId} fieldName={fieldName} onValueChanged={e => this.onValueChanged(e.detail)} /> :
-      <elsa-input-tags values={values} fieldId={fieldId} fieldName={fieldName} onValueChanged={e => this.onValueChanged(e.detail)} />;
+      <elsa-input-tags-dropdown dropdownValues={propertyOptions} values={values} fieldId={fieldId} fieldName={fieldName}
+                                onValueChanged={e => this.onValueChanged(e.detail)}/> :
+      <elsa-input-tags values={values} fieldId={fieldId} fieldName={fieldName}
+                       onValueChanged={e => this.onValueChanged(e.detail)}/>;
 
     return (
-      <elsa-property-editor propertyDescriptor={propertyDescriptor}
-                            propertyModel={propertyModel}
-                            onDefaultSyntaxValueChanged={e => this.onDefaultSyntaxValueChanged(e)}
-                            single-line={true}>
+      <elsa-property-editor
+        activityModel={this.activityModel}
+        propertyDescriptor={propertyDescriptor}
+        propertyModel={propertyModel}
+        onDefaultSyntaxValueChanged={e => this.onDefaultSyntaxValueChanged(e)}
+        single-line={true}>
         {elsaInputTags}
       </elsa-property-editor>
     )

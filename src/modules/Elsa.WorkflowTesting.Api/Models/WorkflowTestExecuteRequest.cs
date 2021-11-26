@@ -1,6 +1,6 @@
-namespace Elsa.Server.Api.Endpoints.WorkflowTest
+﻿namespace Elsa.WorkflowTesting.Api.Models
 {
-    public sealed record WorkflowTestExecuteRequest
+    public class WorkflowTestExecuteRequest
     {
         public string? WorkflowDefinitionId { get; init; }
         public int Version { get; init; }
