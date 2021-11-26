@@ -5,7 +5,7 @@ export const resources = {
       'No': 'No'
     }
   },
-  'zh-cn': {
+  'zh-CN': {
     'default': {
       'Yes': '是',
       'No': '否'
