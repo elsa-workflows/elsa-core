@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Elsa.Activities.Http.Models;
@@ -19,13 +19,13 @@ namespace Elsa.Activities.Http.JavaScript
 
                 foreach (var activityDefinition in httpEndpointActivities)
                 {
-                    var targetTypeName = activityDefinition.Properties.First(x => x.Name == nameof(HttpEndpoint.TargetType)).Expressions.Values.First();
+                    var targetTypeName = activityDefinition.Properties.First(x => x.Name == nameof(HttpEndpoint.TargetType)).Expressions.Values.FirstOrDefault();
 
                     if (string.IsNullOrWhiteSpace(targetTypeName))
                         continue;
 
                     var type = Type.GetType(targetTypeName);
-                    
+
                     if (type != null)
                         yield return type;
                 }
