@@ -5,7 +5,7 @@ export const resources = {
       'CreateButton': 'Create Workflow'
     }
   },
-  'zh-cn': {
+  'zh-CN': {
     default: {
       'Title': '工作流程注册表',
       'CreateButton': '创建工作流程'
