@@ -48,7 +48,7 @@ export class ElsaDropdownProperty {
     const fieldId = propertyName;
     const fieldName = propertyName;
     let currentValue = this.currentValue;
-    const {items} = this.selectList;
+    const { items } = this.selectList.items;
 
     if (currentValue == undefined) {
       const defaultValue = this.propertyDescriptor.defaultValue;
