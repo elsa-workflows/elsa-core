@@ -7,11 +7,11 @@ namespace Elsa.Design
     /// <summary>
     /// Represents settings to be used by the designer to invoke an Elsa's API endpoint to retrieve list options at runtime.
     /// </summary>
-    public class RuntimeSelectListItemsProviderSettings
+    public class RuntimeSelectListProviderSettings
     {
-        public RuntimeSelectListItemsProviderSettings(Type providerType, object? context = default)
+        public RuntimeSelectListProviderSettings(Type providerType, object? context = default)
         {
-            RuntimeSelectListItemsProviderType = providerType;
+            RuntimeSelectListProviderType = providerType;
             Context = context;
         }
 
@@ -19,7 +19,7 @@ namespace Elsa.Design
         /// The type of the list items provider. 
         /// </summary>
         [JsonConverter(typeof(FullTypeJsonConverter))]
-        public Type RuntimeSelectListItemsProviderType { get; }
+        public Type RuntimeSelectListProviderType { get; }
 
         /// <summary>
         /// Optionally provide an object containing useful information for the list select items provider to determine what items to provide.
