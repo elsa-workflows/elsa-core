@@ -8,6 +8,7 @@ export const EventTypes = {
   },
   ActivityEditor: {
     Show: 'show-activity-editor',
+    Rendering: 'activity-editor.rendering',
     Appearing: 'activity-editor-appearing',
     Disappearing: 'activity-editor-disappearing'
   },

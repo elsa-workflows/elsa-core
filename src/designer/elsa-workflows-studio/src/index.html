@@ -100,7 +100,7 @@
     const {eventBus, getOrCreateProperty, htmlToElement} = elsaStudio;
 
     // When the activity editor is about to be rendered.
-    eventBus.on('activity-editor-displaying', e => {
+    eventBus.on('activity-editor.rendering', e => {
       const {activityDescriptor, activityModel} = e;
 
       // We only handle WriteLine activities.
@@ -137,6 +137,7 @@
       propertyEditor.append(editorElement);
       propertyEditor.propertyDescriptor = propertyDescriptor;
       propertyEditor.propertyModel = propertyModel;
+      propertyEditor.activityModel = activityModel;
 
       editorElement.addEventListener('change', (e) => {
         const input = e.currentTarget;
