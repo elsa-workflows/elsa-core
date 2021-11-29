@@ -930,10 +930,10 @@ export class ElsaWorkflowDesigner {
       <Host class="workflow-canvas elsa-flex-1 elsa-flex" ref={el => (this.el = el)}>
         {this.mode == WorkflowDesignerMode.Test ?
           <div>
-            <div id="left" style={{border:`4px solid orange`, position:`fixed`, zIndex:`10`, height: `calc(100vh - 64px)`, width:`4px`, top:`64`, bottom:`0`, left:`0`}}></div>
-            <div id="right" style={{border:`4px solid orange`, position:`fixed`, zIndex:`10`, height: `calc(100vh - 64px)`, width:`4px`, top:`64`, bottom:`0`, right:`0`}}></div>
-            <div id="top" style={{border:`4px solid orange`, position:`fixed`, zIndex:`10`, height:`4px`, left:`0`, right:`0`, top:`30`}}></div>
-            <div id="bottom" style={{border:`4px solid orange`, position:`fixed`, zIndex:`10`, height:`4px`, left:`0`, right:`0`, bottom:`0`}}></div>
+            <div id="left" style={{border:`4px solid orange`, position:`fixed`, zIndex:`10`, height: `calc(100vh - 64px)`, width:`4px`, top:`64`, bottom:`0`, left:`0`}}/>
+            <div id="right" style={{border:`4px solid orange`, position:`fixed`, zIndex:`10`, height: `calc(100vh - 64px)`, width:`4px`, top:`64`, bottom:`0`, right:`0`}}/>
+            <div id="top" style={{border:`4px solid orange`, position:`fixed`, zIndex:`10`, height:`4px`, left:`0`, right:`0`, top:`30`}}/>
+            <div id="bottom" style={{border:`4px solid orange`, position:`fixed`, zIndex:`10`, height:`4px`, left:`0`, right:`0`, bottom:`0`}}/>
           </div>
           :
           undefined
