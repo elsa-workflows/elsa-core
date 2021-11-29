@@ -9,7 +9,7 @@
 
 | Property            | Attribute        | Description | Type                         | Default               |
 | ------------------- | ---------------- | ----------- | ---------------------------- | --------------------- |
-| `context`           | `context`        |             | `string`                     | `undefined`           |
+| `context`           | --               |             | `IntellisenseContext`        | `undefined`           |
 | `defaultSyntax`     | `default-syntax` |             | `string`                     | `SyntaxNames.Literal` |
 | `editorHeight`      | `editor-height`  |             | `string`                     | `'10em'`              |
 | `expressions`       | --               |             | `{ [key: string]: string; }` | `{}`                  |

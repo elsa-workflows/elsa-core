@@ -9,6 +9,7 @@
 
 | Property             | Attribute       | Description | Type                         | Default     |
 | -------------------- | --------------- | ----------- | ---------------------------- | ----------- |
+| `activityModel`      | --              |             | `ActivityModel`              | `undefined` |
 | `context`            | `context`       |             | `string`                     | `undefined` |
 | `editorHeight`       | `editor-height` |             | `string`                     | `'10em'`    |
 | `propertyDescriptor` | --              |             | `ActivityPropertyDescriptor` | `undefined` |
