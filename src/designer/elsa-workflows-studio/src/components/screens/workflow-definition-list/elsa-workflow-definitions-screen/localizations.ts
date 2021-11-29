@@ -13,7 +13,7 @@ export const resources = {
       }
     }
   },
-  'zh-cn': {
+  'zh-CN': {
     'default': {
       'Name': '名称',
       'Instances': '实例',

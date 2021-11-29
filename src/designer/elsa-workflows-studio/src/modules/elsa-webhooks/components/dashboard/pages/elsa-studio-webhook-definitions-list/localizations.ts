@@ -5,7 +5,7 @@ export const resources = {
       'CreateButton': 'Create Webhook'
     }
   },
-  'zh-cn': {
+  'zh-CN': {
     default: {
       'Title': 'Webhook的定义',
       'CreateButton': '创建 Webhook'

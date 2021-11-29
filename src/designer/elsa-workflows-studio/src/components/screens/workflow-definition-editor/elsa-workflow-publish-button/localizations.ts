@@ -8,7 +8,7 @@ export const resources = {
       'Export': 'Export',
     }
   },
-  'zh-cn': {
+  'zh-CN': {
     'default': {
       'Publish': '发布',
       'Publishing': '发布中',

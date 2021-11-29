@@ -32,7 +32,7 @@ export const resources = {
       }
     }
   },
-  'zh-cn': {
+  'zh-CN': {
     'default': {
       "Buttons": {
         'Save': '保存',

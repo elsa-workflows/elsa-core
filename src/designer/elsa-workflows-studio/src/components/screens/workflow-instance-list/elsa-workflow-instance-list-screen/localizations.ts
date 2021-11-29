@@ -75,7 +75,7 @@ export const resources = {
       }
     }
   },
-  'zh-cn': {
+  'zh-CN': {
     'default': {
       'Title': '工作流实例',
       'Search': '搜索',
