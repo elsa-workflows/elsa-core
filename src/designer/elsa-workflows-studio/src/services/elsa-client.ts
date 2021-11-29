@@ -215,7 +215,7 @@ export const createElsaClient = async function (serverUrl: string): Promise<Elsa
     designerApi: {
       runtimeSelectItemsApi: {
         get: async (providerTypeName: string, context?: any): Promise<SelectList> => {
-          const response = await httpClient.post('v1/designer/runtime-select-list-selectList', {
+          const response = await httpClient.post('v1/designer/runtime-select-list', {
             providerTypeName: providerTypeName,
             context: context
           });
