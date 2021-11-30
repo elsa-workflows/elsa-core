@@ -1,6 +1,5 @@
 using Elsa.Retention.Extensions;
 using Elsa.WorkflowTesting.Extensions;
-using Hangfire;
 using Hangfire.SQLite;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;

@@ -8,7 +8,7 @@ import {
 } from "../../../../models";
 import {mapSyntaxToLanguage, parseJson} from "../../../../utils/utils";
 import {SwitchCase} from "./models";
-import {IconName, iconProvider} from "../../../../services/icon-provider";
+import {IconColor, IconName, iconProvider} from "../../../../services/icon-provider";
 
 @Component({
   tag: 'elsa-switch-cases-property',
