@@ -38,7 +38,8 @@ namespace Elsa.Server.Api.Endpoints.WorkflowTest
         public async Task<IActionResult> Handle([FromBody] WorkflowTestExecuteRequest request, CancellationToken cancellationToken = default)
         {
             var tenantId = await _tenantAccessor.GetTenantIdAsync(cancellationToken);
-            var startableWorkflow = await _workflowLaunchpad.FindStartableWorkflowAsync(request.WorkflowDefinitionId!, request.Version, default, default, default, tenantId, cancellationToken);
+            var testCorrelation = "test-" + request.WorkflowDefinitionId;
+            var startableWorkflow = await _workflowLaunchpad.FindStartableWorkflowAsync(request.WorkflowDefinitionId!, request.Version, default, testCorrelation, default, tenantId, cancellationToken);
 
             if (startableWorkflow == null)
                 return NotFound();
