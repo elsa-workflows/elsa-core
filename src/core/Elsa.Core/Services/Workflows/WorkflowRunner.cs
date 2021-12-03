@@ -204,10 +204,8 @@ namespace Elsa.Services.Workflows
 
         private async ValueTask<bool> CanExecuteAsync(WorkflowExecutionContext workflowExecutionContext, IActivityBlueprint activityBlueprint, bool resuming, CancellationToken cancellationToken)
         {
-            using var scope = _serviceScopeFactory.CreateScope();
-
             var activityExecutionContext = new ActivityExecutionContext(
-                scope.ServiceProvider,
+                workflowExecutionContext.ServiceProvider,
                 workflowExecutionContext,
                 activityBlueprint,
                 workflowExecutionContext.Input,

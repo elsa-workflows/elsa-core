@@ -1,4 +1,4 @@
-﻿export const resources = {
+export const resources = {
   'en': {
     'default': {
       'Name': 'Name',
@@ -10,6 +10,20 @@
       'DeleteConfirmationModel': {
         'Title': 'Delete Workflow Definition',
         'Message': 'Are you sure you wish to permanently delete this workflow, including all of its workflow instances?'
+      }
+    }
+  },
+  'zh-CN': {
+    'default': {
+      'Name': '名称',
+      'Instances': '实例',
+      'LatestVersion': '最新版本',
+      'PublishedVersion': '发布版本',
+      'Edit': '编辑',
+      'Delete': '删除',
+      'DeleteConfirmationModel': {
+        'Title': '删除工作流程定义',
+        'Message': '你确定要永久删除这个工作流程，包括它的所有工作流程实例？'
       }
     }
   },

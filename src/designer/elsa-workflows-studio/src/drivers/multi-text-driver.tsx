@@ -7,7 +7,7 @@ export class MultiTextDriver implements PropertyDisplayDriver {
 
   display(activity: ActivityModel, property: ActivityPropertyDescriptor) {
     const prop = getOrCreateProperty(activity, property.name);
-    return <elsa-multi-text-property propertyDescriptor={property} propertyModel={prop}/>;
+    return <elsa-multi-text-property activityModel={activity} propertyDescriptor={property} propertyModel={prop}/>;
   }
 
   update(activity: ActivityModel, property: ActivityPropertyDescriptor, form: FormData) {

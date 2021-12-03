@@ -20,6 +20,7 @@
 
 | Event          | Description | Type                      |
 | -------------- | ----------- | ------------------------- |
+| `initialized`  |             | `CustomEvent<ElsaStudio>` |
 | `initializing` |             | `CustomEvent<ElsaStudio>` |
 
 

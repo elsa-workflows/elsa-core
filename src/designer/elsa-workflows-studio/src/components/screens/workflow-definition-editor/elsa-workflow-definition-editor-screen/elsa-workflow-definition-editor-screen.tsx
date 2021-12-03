@@ -14,9 +14,15 @@ import {
   WorkflowModel,
   WorkflowPersistenceBehavior,
   WorkflowTestActivityMessage,
-  WorkflowInstance,
+  WorkflowInstance, WorkflowTestActivityMessageStatus,
 } from "../../../../models";
-import {ActivityStats, createElsaClient, eventBus, SaveWorkflowDefinitionRequest} from "../../../../services";
+import {
+  ActivityStats,
+  createElsaClient,
+  eventBus,
+  SaveWorkflowDefinitionRequest, toastNotificationService,
+  WorkflowTestRestartFromActivityRequest
+} from "../../../../services";
 import state from '../../../../utils/store';
 import WorkflowEditorTunnel, {WorkflowEditorState} from '../../../../data/workflow-editor';
 import DashboardTunnel from "../../../../data/dashboard";
@@ -65,12 +71,12 @@ export class ElsaWorkflowDefinitionEditorScreen {
     selectedActivities: {}
   };
 
-  @State() connectionContextMenuState: ActivityContextMenuState = {
-    shown: false,
-    x: 0,
-    y: 0,
-    activity: null,
-  };
+  // @State() connectionContextMenuState: ActivityContextMenuState = {
+  //   shown: false,
+  //   x: 0,
+  //   y: 0,
+  //   activity: null,
+  // };
 
   @State() activityContextMenuTestState: ActivityContextMenuState = {
     shown: false,
@@ -86,7 +92,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
   helpDialog: HTMLElsaModalDialogElement;
   activityContextMenu: HTMLDivElement;
   componentCustomButton: HTMLDivElement;
-  connectionContextMenu: HTMLDivElement;
+  //connectionContextMenu: HTMLDivElement;
 
   @Method()
   async getServerUrl(): Promise<string> {
@@ -176,13 +182,13 @@ export class ElsaWorkflowDefinitionEditorScreen {
     const target = event.target as HTMLElement;
 
     if (!this.componentCustomButton.contains(target))
-      this.handleContextMenuTestChange(0, 0, false, null)
+      this.handleContextMenuTestChange(0, 0, false, null);
 
     if (!this.activityContextMenu.contains(target))
-      this.handleContextMenuChange({x: 0, y: 0, shown: false, activity: null, selectedActivities: {}})
+      this.handleContextMenuChange({x: 0, y: 0, shown: false, activity: null, selectedActivities: {}});
 
-    if (!this.connectionContextMenu.contains(target))
-      this.handleConnectionContextMenuChange({x: 0, y: 0, shown: false, activity: null})    
+    // if (!this.connectionContextMenu.contains(target))
+    //   this.handleConnectionContextMenuChange({x: 0, y: 0, shown: false, activity: null});
   }
 
   async componentWillLoad() {
@@ -204,12 +210,14 @@ export class ElsaWorkflowDefinitionEditorScreen {
     eventBus.on(EventTypes.UpdateWorkflowSettings, this.onUpdateWorkflowSettings);
     eventBus.on(EventTypes.FlyoutPanelTabSelected, this.onFlyoutPanelTabSelected);
     eventBus.on(EventTypes.TestActivityMessageReceived, this.onTestActivityMessageReceived);
+    eventBus.on(EventTypes.UpdateActivity, this.onUpdateActivity);
   }
 
   disconnectedCallback() {
     eventBus.detach(EventTypes.UpdateWorkflowSettings, this.onUpdateWorkflowSettings);
     eventBus.detach(EventTypes.FlyoutPanelTabSelected, this.onFlyoutPanelTabSelected);
     eventBus.detach(EventTypes.TestActivityMessageReceived, this.onTestActivityMessageReceived);
+    eventBus.detach(EventTypes.UpdateActivity, this.onUpdateActivity);
   }
 
   async configureComponentCustomButton(message: WorkflowTestActivityMessage) {
@@ -406,9 +414,9 @@ export class ElsaWorkflowDefinitionEditorScreen {
     this.activityContextMenuState = state;
   }
 
-  handleConnectionContextMenuChange(state: ActivityContextMenuState) {
-    this.connectionContextMenuState = state;
-  }
+  // handleConnectionContextMenuChange(state: ActivityContextMenuState) {
+  //   this.connectionContextMenuState = state;
+  // }
 
   handleContextMenuTestChange(x: number, y: number, shown: boolean, activity: ActivityModel) {
     this.activityContextMenuTestState = {
@@ -459,26 +467,26 @@ export class ElsaWorkflowDefinitionEditorScreen {
     this.handleContextMenuChange({x: 0, y: 0, shown: false, activity: null});
   }
 
-  async onPasteActivityClick(e: Event) {
-    e.preventDefault();
-    let activityModel = this.connectionContextMenuState.activity;
-    await eventBus.emit(EventTypes.PasteActivity, this, activityModel);
-    this.handleConnectionContextMenuChange({x: 0, y: 0, shown: false, activity: null});
-  }
+  // async onPasteActivityClick(e: Event) {
+  //   e.preventDefault();
+  //   let activityModel = this.connectionContextMenuState.activity;
+  //   await eventBus.emit(EventTypes.PasteActivity, this, activityModel);
+  //   this.handleConnectionContextMenuChange({x: 0, y: 0, shown: false, activity: null});
+  // }
 
   async onActivityContextMenuButtonClicked(e: CustomEvent<ActivityContextMenuState>) {
     this.activityContextMenuState = e.detail;
   }
 
   async onActivityContextMenuButtonTestClicked(e: CustomEvent<ActivityContextMenuState>) {
-    
+
     this.activityContextMenuTestState = e.detail;
     this.selectedActivityId = e.detail.activity.activityId;
 
     if (!e.detail.shown) {
       return;
     }
-    
+
     await this.tryUpdateActivityInformation(this.selectedActivityId);
   }
 
@@ -491,9 +499,9 @@ export class ElsaWorkflowDefinitionEditorScreen {
       this.selectedActivityId = null;
   }
 
-  onConnectionContextMenuButtonClicked(e: CustomEvent<ActivityContextMenuState>) {
-    this.connectionContextMenuState = e.detail;
-  }
+  // onConnectionContextMenuButtonClicked(e: CustomEvent<ActivityContextMenuState>) {
+  //   this.connectionContextMenuState = e.detail;
+  // }
 
   onTestActivityMessageReceived = async args => {
     const message = args as WorkflowTestActivityMessage;
@@ -510,6 +518,12 @@ export class ElsaWorkflowDefinitionEditorScreen {
     this.render();
   };
 
+  async onRestartActivityButtonClick(){
+    await eventBus.emit(EventTypes.WorkflowRestarted, this, this.selectedActivityId);
+
+    this.handleContextMenuTestChange(0, 0, false, null);
+  }
+
   private onUpdateWorkflowSettings = async (workflowDefinition: WorkflowDefinition) => {
     this.updateWorkflowDefinition(workflowDefinition);
     await this.saveWorkflowInternal(this.workflowModel);
@@ -524,9 +538,28 @@ export class ElsaWorkflowDefinitionEditorScreen {
     this.render();
   }
 
+  onUpdateActivity = (activity: ActivityModel) => {
+    const message = this.workflowTestActivityMessages.find(x => x.activityId === activity.activityId);
+
+    if (message){
+      message.status = WorkflowTestActivityMessageStatus.Modified;
+      this.clearSubsequentWorkflowTestMessages(activity.activityId);
+    }
+  }
+
+  private clearSubsequentWorkflowTestMessages(activityId: string){
+    const targetActivityId = this.workflowDefinition.connections.find(x => x.sourceActivityId === activityId)?.targetActivityId;
+
+    if (!targetActivityId) return;
+
+    this.workflowTestActivityMessages = this.workflowTestActivityMessages.filter(x => x.activityId !== targetActivityId || x.status === WorkflowTestActivityMessageStatus.Failed);
+
+    this.clearSubsequentWorkflowTestMessages(targetActivityId);
+  }
+
   renderActivityStatsButton = (activity: ActivityModel): string => {
 
-    var testActivityMessage = this.workflowTestActivityMessages.find(x => x.activityId == activity.activityId);
+    const testActivityMessage = this.workflowTestActivityMessages.find(x => x.activityId == activity.activityId);
     if (testActivityMessage == undefined)
       return "";
 
@@ -534,12 +567,12 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
     switch (testActivityMessage.status)
     {
-      case "Done":
+      case WorkflowTestActivityMessageStatus.Done:
         icon = `<svg class="elsa-h-8 elsa-w-8 elsa-text-green-500"  fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>`;
         break;
-      case "Waiting":
+      case WorkflowTestActivityMessageStatus.Waiting:
         icon = `<svg version="1.1" class="svg-loader" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 80 80" xml:space="preserve">
                   <path id="spinner" fill="#7eb0de" d="M40,72C22.4,72,8,57.6,8,40C8,22.4,
                   22.4,8,40,8c17.6,0,32,14.4,32,32c0,1.1-0.9,2-2,2
@@ -550,11 +583,18 @@ export class ElsaWorkflowDefinitionEditorScreen {
                   </path>
               </svg>`;
         break;
-      case "Failed":
+      case WorkflowTestActivityMessageStatus.Failed:
         icon = `<svg class="elsa-h-8 elsa-w-8 elsa-text-red-500"  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <circle cx="12" cy="12" r="10" />
                   <line x1="15" y1="9" x2="9" y2="15" />
                   <line x1="9" y1="9" x2="15" y2="15" />
+                </svg>`;
+        break;
+      case WorkflowTestActivityMessageStatus.Modified:
+        icon = `<svg class="h-6 w-6 elsa-text-yellow-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
                 </svg>`;
         break;
     }
@@ -622,7 +662,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
         {this.renderWorkflowHelpButton()}
         {this.renderPanel()}
         {this.renderActivityContextMenu()}
-        {this.renderConnectionContextMenu()}
+        {/*{this.renderConnectionContextMenu()}*/}
         <elsa-workflow-settings-modal workflowDefinition={this.workflowDefinition}/>
         <elsa-workflow-definition-editor-notifications/>
         <div class="elsa-fixed elsa-bottom-10 elsa-right-12">
@@ -648,7 +688,18 @@ export class ElsaWorkflowDefinitionEditorScreen {
       prop: null,
       params: [activityModel, input]
     };
-    eventBus.emit(EventTypes.ComponentCustomButtonClick, this, componentCustomButtonClickContext);
+    await eventBus.emit(EventTypes.ComponentCustomButtonClick, this, componentCustomButtonClickContext);
+  }
+
+  private canBeRestartedFromCurrentActivity(){
+    if (!this.selectedActivityId) return false;
+    if (this.workflowDesignerMode !== WorkflowDesignerMode.Test) return false;
+
+    if (this.workflowTestActivityMessages.some(x => x.activityId === this.selectedActivityId)) return true;
+
+    const sourceActivityId = this.workflowDefinition.connections.find(x => x.targetActivityId === this.selectedActivityId)?.sourceActivityId;
+
+    return sourceActivityId && this.workflowTestActivityMessages.some(x => x.activityId === sourceActivityId && x.status !== WorkflowTestActivityMessageStatus.Failed);
   }
 
   renderTestActivityMenu = () => {
@@ -658,8 +709,6 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
       if (message == undefined || !message)
         return
-
-      const t = (x, params?) => this.i18next.t(x, params);
 
       if (!message.error)
         return;
@@ -681,14 +730,25 @@ export class ElsaWorkflowDefinitionEditorScreen {
       );
     };
 
-    const renderMessage = () => {
+    const renderRestartButton = () => {
+      if (!this.canBeRestartedFromCurrentActivity()) return undefined;
 
+      return (
+        <button type="button"
+          onClick={() => this.onRestartActivityButtonClick()}
+                class="elsa-ml-0 elsa-w-full elsa-inline-flex elsa-justify-center elsa-rounded-md elsa-border elsa-border-transparent elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-bg-blue-600 elsa-text-base elsa-font-medium elsa-text-white hover:elsa-bg-red-700 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-red-500 sm:elsa-ml-3 sm:elsa-w-auto sm:elsa-text-sm">
+          {this.t('Restart')}
+        </button>
+      );
+    }
+
+    const renderMessage = () => {
+      const t = this.t;
       if (message == undefined || !message)
         return;
 
       this.configureComponentCustomButton(message);
 
-      const t = (x, params?) => this.i18next.t(x, params);
       const filteredData = {};
       const wellKnownDataKeys = {State: true, Input: null, Outcomes: true, Exception: true};
       let dataKey = null;
@@ -724,13 +784,18 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
       return (
         <div class="elsa-relative elsa-grid elsa-gap-6 elsa-bg-white px-5 elsa-py-6 sm:elsa-gap-8 sm:elsa-p-8">
-          <div class="elsa-ml-4">
-            <p class="elsa-text-base elsa-font-medium elsa-text-gray-900">
-              {t('Status')}
-            </p>
-            <p class="elsa-mt-1 elsa-text-sm elsa-text-gray-500">
-              {message.status}
-            </p>
+          <div class="elsa-flex elsa-flex-row elsa-justify-between">
+            <div class="elsa-ml-4">
+              <p class="elsa-text-base elsa-font-medium elsa-text-gray-900">
+                {t('Status')}
+              </p>
+              <p class="elsa-mt-1 elsa-text-sm elsa-text-gray-500">
+                {message.status}
+              </p>
+            </div>
+            <div>
+              {renderRestartButton()}
+            </div>
           </div>
           {collection.map(filteredData, (v, k) => (
             <div class="elsa-ml-4">
@@ -829,34 +894,34 @@ export class ElsaWorkflowDefinitionEditorScreen {
     </div>
   }
 
-  renderConnectionContextMenu() {
-    const t = this.t;
-
-    return <div
-      data-transition-enter="elsa-transition elsa-ease-out elsa-duration-100"
-      data-transition-enter-start="elsa-transform elsa-opacity-0 elsa-scale-95"
-      data-transition-enter-end="elsa-transform elsa-opacity-100 elsa-scale-100"
-      data-transition-leave="elsa-transition elsa-ease-in elsa-duration-75"
-      data-transition-leave-start="elsa-transform elsa-opacity-100 elsa-scale-100"
-      data-transition-leave-end="elsa-transform elsa-opacity-0 elsa-scale-95"
-      class={`${this.connectionContextMenuState.shown ? '' : 'hidden'} context-menu elsa-z-10 elsa-mx-3 elsa-w-48 elsa-mt-1 elsa-rounded-md elsa-shadow-lg elsa-absolute`}
-      style={{left: `${this.connectionContextMenuState.x}px`, top: `${this.connectionContextMenuState.y - 64}px`}}
-      ref={el => this.connectionContextMenu = el}
-    >
-      <div class="elsa-rounded-md elsa-bg-white elsa-shadow-xs" role="menu" aria-orientation="vertical"
-           aria-labelledby="pinned-project-options-menu-0">
-        <div class="elsa-py-1">
-          <a
-            onClick={e => this.onPasteActivityClick(e)}
-            href="#"
-            class="elsa-block elsa-px-4 elsa-py-2 elsa-text-sm elsa-leading-5 elsa-text-gray-700 hover:elsa-bg-gray-100 hover:elsa-text-gray-900 focus:elsa-outline-none focus:elsa-bg-gray-100 focus:elsa-text-gray-900"
-            role="menuitem">
-            {t('ConnectionContextMenu.Paste')}
-          </a>
-        </div>
-      </div>
-    </div>
-  }
+  // renderConnectionContextMenu() {
+  //   const t = this.t;
+  //
+  //   return <div
+  //     data-transition-enter="elsa-transition elsa-ease-out elsa-duration-100"
+  //     data-transition-enter-start="elsa-transform elsa-opacity-0 elsa-scale-95"
+  //     data-transition-enter-end="elsa-transform elsa-opacity-100 elsa-scale-100"
+  //     data-transition-leave="elsa-transition elsa-ease-in elsa-duration-75"
+  //     data-transition-leave-start="elsa-transform elsa-opacity-100 elsa-scale-100"
+  //     data-transition-leave-end="elsa-transform elsa-opacity-0 elsa-scale-95"
+  //     class={`${this.connectionContextMenuState.shown ? '' : 'hidden'} context-menu elsa-z-10 elsa-mx-3 elsa-w-48 elsa-mt-1 elsa-rounded-md elsa-shadow-lg elsa-absolute`}
+  //     style={{left: `${this.connectionContextMenuState.x}px`, top: `${this.connectionContextMenuState.y - 64}px`}}
+  //     ref={el => this.connectionContextMenu = el}
+  //   >
+  //     <div class="elsa-rounded-md elsa-bg-white elsa-shadow-xs" role="menu" aria-orientation="vertical"
+  //          aria-labelledby="pinned-project-options-menu-0">
+  //       <div class="elsa-py-1">
+  //         <a
+  //           onClick={e => this.onPasteActivityClick(e)}
+  //           href="#"
+  //           class="elsa-block elsa-px-4 elsa-py-2 elsa-text-sm elsa-leading-5 elsa-text-gray-700 hover:elsa-bg-gray-100 hover:elsa-text-gray-900 focus:elsa-outline-none focus:elsa-bg-gray-100 focus:elsa-text-gray-900"
+  //           role="menuitem">
+  //           {t('ConnectionContextMenu.Paste')}
+  //         </a>
+  //       </div>
+  //     </div>
+  //   </div>
+  // }
 
   renderActivityPicker() {
     return <elsa-activity-picker-modal/>;

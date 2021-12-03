@@ -1,6 +1,6 @@
 {
   "name": "@elsa-workflows/elsa-workflows-studio",
-  "version": "2.2.13",
+  "version": "2.2.18",
   "description": "Elsa Workflow Studio is a collection of web components to manage Elsa workflows stored on an Elsa Workflows server.",
   "repository": {
     "type": "git",
@@ -59,7 +59,7 @@
     "json-to-json-schema": "^0.0.4",
     "lodash": "^4.17.21",
     "moment": "^2.29.1",
-    "monaco-editor": "^0.25.2",
+    "monaco-editor": "^0.30.1",
     "postcss": "^8.3.5",
     "postcss-import": "^14.0.2",
     "postcss-preset-env": "^6.7.0",

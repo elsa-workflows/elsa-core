@@ -5,7 +5,7 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
-import { ActivityDefinitionProperty, ActivityDescriptor, ActivityModel, ActivityPropertyDescriptor, ElsaStudio, OrderBy, SelectListItem, VersionOptions, WorkflowBlueprint, WorkflowDefinition, WorkflowExecutionLogRecord, WorkflowFault, WorkflowInstance, WorkflowModel, WorkflowStatus } from "./models";
+import { ActivityDefinitionProperty, ActivityDescriptor, ActivityModel, ActivityPropertyDescriptor, ElsaStudio, IntellisenseContext, OrderBy, SelectListItem, VersionOptions, WorkflowBlueprint, WorkflowDefinition, WorkflowExecutionLogRecord, WorkflowFault, WorkflowInstance, WorkflowModel, WorkflowStatus } from "./models";
 import { LocationSegments, MatchResults, RouterHistory } from "@stencil/router";
 import { MenuItem } from "./components/controls/elsa-context-menu/models";
 import { VNode } from "@stencil/core";
@@ -24,11 +24,13 @@ export namespace Components {
     interface ElsaActivityPickerModal {
     }
     interface ElsaCheckListProperty {
+        "activityModel": ActivityModel;
         "propertyDescriptor": ActivityPropertyDescriptor;
         "propertyModel": ActivityDefinitionProperty;
         "serverUrl": string;
     }
     interface ElsaCheckboxProperty {
+        "activityModel": ActivityModel;
         "propertyDescriptor": ActivityPropertyDescriptor;
         "propertyModel": ActivityDefinitionProperty;
     }
@@ -69,12 +71,13 @@ export namespace Components {
         "text": string;
     }
     interface ElsaDropdownProperty {
+        "activityModel": ActivityModel;
         "propertyDescriptor": ActivityPropertyDescriptor;
         "propertyModel": ActivityDefinitionProperty;
         "serverUrl": string;
     }
     interface ElsaExpressionEditor {
-        "context"?: string;
+        "context"?: IntellisenseContext;
         "editorHeight": string;
         "expression": string;
         "language": string;
@@ -102,6 +105,7 @@ export namespace Components {
         "values"?: Array<string | SelectListItem>;
     }
     interface ElsaJsonProperty {
+        "activityModel": ActivityModel;
         "propertyDescriptor": ActivityPropertyDescriptor;
         "propertyModel": ActivityDefinitionProperty;
     }
@@ -113,13 +117,14 @@ export namespace Components {
         "addJavaScriptLib": (libSource: string, libUri: string) => Promise<void>;
         "editorHeight": string;
         "language": string;
+        "monacoLibPath": string;
         "padding": string;
         "setValue": (value: string) => Promise<void>;
         "singleLineMode": boolean;
         "value": string;
     }
     interface ElsaMultiExpressionEditor {
-        "context"?: string;
+        "context"?: IntellisenseContext;
         "defaultSyntax": string;
         "editorHeight": string;
         "expressions": Map<string>;
@@ -131,10 +136,12 @@ export namespace Components {
         "syntax"?: string;
     }
     interface ElsaMultiLineProperty {
+        "activityModel": ActivityModel;
         "propertyDescriptor": ActivityPropertyDescriptor;
         "propertyModel": ActivityDefinitionProperty;
     }
     interface ElsaMultiTextProperty {
+        "activityModel": ActivityModel;
         "propertyDescriptor": ActivityPropertyDescriptor;
         "propertyModel": ActivityDefinitionProperty;
         "serverUrl": string;
@@ -148,6 +155,7 @@ export namespace Components {
         "totalCount": number;
     }
     interface ElsaPropertyEditor {
+        "activityModel": ActivityModel;
         "context"?: string;
         "editorHeight": string;
         "propertyDescriptor": ActivityPropertyDescriptor;
@@ -156,12 +164,13 @@ export namespace Components {
         "singleLineMode": boolean;
     }
     interface ElsaRadioListProperty {
+        "activityModel": ActivityModel;
         "propertyDescriptor": ActivityPropertyDescriptor;
         "propertyModel": ActivityDefinitionProperty;
         "serverUrl": string;
     }
     interface ElsaScriptProperty {
-        "context"?: string;
+        "activityModel": ActivityModel;
         "editorHeight": string;
         "propertyDescriptor": ActivityPropertyDescriptor;
         "propertyModel": ActivityDefinitionProperty;
@@ -171,6 +180,7 @@ export namespace Components {
         "workflowDefinitionId": string;
     }
     interface ElsaSingleLineProperty {
+        "activityModel": ActivityModel;
         "propertyDescriptor": ActivityPropertyDescriptor;
         "propertyModel": ActivityDefinitionProperty;
     }
@@ -219,6 +229,7 @@ export namespace Components {
         "culture": string;
     }
     interface ElsaSwitchCasesProperty {
+        "activityModel": ActivityModel;
         "propertyDescriptor": ActivityPropertyDescriptor;
         "propertyModel": ActivityDefinitionProperty;
     }
@@ -766,11 +777,13 @@ declare namespace LocalJSX {
     interface ElsaActivityPickerModal {
     }
     interface ElsaCheckListProperty {
+        "activityModel"?: ActivityModel;
         "propertyDescriptor"?: ActivityPropertyDescriptor;
         "propertyModel"?: ActivityDefinitionProperty;
         "serverUrl"?: string;
     }
     interface ElsaCheckboxProperty {
+        "activityModel"?: ActivityModel;
         "propertyDescriptor"?: ActivityPropertyDescriptor;
         "propertyModel"?: ActivityDefinitionProperty;
     }
@@ -813,12 +826,13 @@ declare namespace LocalJSX {
         "text"?: string;
     }
     interface ElsaDropdownProperty {
+        "activityModel"?: ActivityModel;
         "propertyDescriptor"?: ActivityPropertyDescriptor;
         "propertyModel"?: ActivityDefinitionProperty;
         "serverUrl"?: string;
     }
     interface ElsaExpressionEditor {
-        "context"?: string;
+        "context"?: IntellisenseContext;
         "editorHeight"?: string;
         "expression"?: string;
         "language"?: string;
@@ -847,6 +861,7 @@ declare namespace LocalJSX {
         "values"?: Array<string | SelectListItem>;
     }
     interface ElsaJsonProperty {
+        "activityModel"?: ActivityModel;
         "propertyDescriptor"?: ActivityPropertyDescriptor;
         "propertyModel"?: ActivityDefinitionProperty;
     }
@@ -857,13 +872,14 @@ declare namespace LocalJSX {
     interface ElsaMonaco {
         "editorHeight"?: string;
         "language"?: string;
+        "monacoLibPath"?: string;
         "onValueChanged"?: (event: CustomEvent<MonacoValueChangedArgs>) => void;
         "padding"?: string;
         "singleLineMode"?: boolean;
         "value"?: string;
     }
     interface ElsaMultiExpressionEditor {
-        "context"?: string;
+        "context"?: IntellisenseContext;
         "defaultSyntax"?: string;
         "editorHeight"?: string;
         "expressions"?: Map<string>;
@@ -877,10 +893,12 @@ declare namespace LocalJSX {
         "syntax"?: string;
     }
     interface ElsaMultiLineProperty {
+        "activityModel"?: ActivityModel;
         "propertyDescriptor"?: ActivityPropertyDescriptor;
         "propertyModel"?: ActivityDefinitionProperty;
     }
     interface ElsaMultiTextProperty {
+        "activityModel"?: ActivityModel;
         "propertyDescriptor"?: ActivityPropertyDescriptor;
         "propertyModel"?: ActivityDefinitionProperty;
         "serverUrl"?: string;
@@ -895,6 +913,7 @@ declare namespace LocalJSX {
         "totalCount"?: number;
     }
     interface ElsaPropertyEditor {
+        "activityModel"?: ActivityModel;
         "context"?: string;
         "editorHeight"?: string;
         "onDefaultSyntaxValueChanged"?: (event: CustomEvent<string>) => void;
@@ -904,12 +923,13 @@ declare namespace LocalJSX {
         "singleLineMode"?: boolean;
     }
     interface ElsaRadioListProperty {
+        "activityModel"?: ActivityModel;
         "propertyDescriptor"?: ActivityPropertyDescriptor;
         "propertyModel"?: ActivityDefinitionProperty;
         "serverUrl"?: string;
     }
     interface ElsaScriptProperty {
-        "context"?: string;
+        "activityModel"?: ActivityModel;
         "editorHeight"?: string;
         "propertyDescriptor"?: ActivityPropertyDescriptor;
         "propertyModel"?: ActivityDefinitionProperty;
@@ -919,6 +939,7 @@ declare namespace LocalJSX {
         "workflowDefinitionId"?: string;
     }
     interface ElsaSingleLineProperty {
+        "activityModel"?: ActivityModel;
         "propertyDescriptor"?: ActivityPropertyDescriptor;
         "propertyModel"?: ActivityDefinitionProperty;
     }
@@ -934,6 +955,7 @@ declare namespace LocalJSX {
         "culture"?: string;
         "featuresString"?: string;
         "monacoLibPath"?: string;
+        "onInitialized"?: (event: CustomEvent<ElsaStudio>) => void;
         "onInitializing"?: (event: CustomEvent<ElsaStudio>) => void;
         "serverUrl"?: string;
     }
@@ -966,6 +988,7 @@ declare namespace LocalJSX {
         "culture"?: string;
     }
     interface ElsaSwitchCasesProperty {
+        "activityModel"?: ActivityModel;
         "propertyDescriptor"?: ActivityPropertyDescriptor;
         "propertyModel"?: ActivityDefinitionProperty;
     }

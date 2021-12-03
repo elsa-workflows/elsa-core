@@ -47,7 +47,7 @@ namespace Elsa.Metadata
                 Traits = traits,
                 InputProperties = inputProperties.ToArray(),
                 OutputProperties = outputProperties.ToArray(),
-                Outcomes = outcomes,
+                Outcomes = outcomes
             };
         }
 

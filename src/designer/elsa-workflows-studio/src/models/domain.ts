@@ -1,4 +1,4 @@
-import {Map} from '../utils/utils';
+﻿import {Map} from '../utils/utils';
 
 export interface WorkflowDefinition {
   id?: string;
@@ -306,13 +306,18 @@ export enum ActivityTraits {
   Job = 4
 }
 
+export interface SelectList {
+  items: Array<SelectListItem> | Array<string>;
+  isFlagsEnum: boolean;
+}
+
 export interface SelectListItem {
   text: string;
   value: string;
 }
 
-export interface RuntimeSelectListItemsProviderSettings {
-  runtimeSelectListItemsProviderType: string;
+export interface RuntimeSelectListProviderSettings {
+  runtimeSelectListProviderType: string;
   context?: any;
 }
 
@@ -354,3 +359,15 @@ export const getVersionOptionsString = (versionOptions?: VersionOptions) => {
             ? 'LatestOrPublished'
             : versionOptions.version.toString();
 };
+
+export enum WorkflowTestActivityMessageStatus {
+  Done = 'Done',
+  Waiting = 'Waiting',
+  Failed = 'Failed',
+  Modified = 'Modified'
+}
+
+export interface IntellisenseContext {
+  activityTypeName: string;
+  propertyName: string;
+}

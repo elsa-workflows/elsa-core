@@ -46,11 +46,11 @@ namespace Elsa.Activities.AzureServiceBus.Services
         {
             await _semaphore.WaitAsync(cancellationToken);
 
-            if (_receivers.TryGetValue(queueName, out var messageReceiver))
-                return messageReceiver;
-
             try
             {
+                if (_receivers.TryGetValue(queueName, out var messageReceiver))
+                    return messageReceiver;
+
                 await EnsureQueueExistsAsync(queueName, cancellationToken);
                 var newMessageReceiver = new MessageReceiver(_connection, queueName);
                 _receivers.Add(queueName, newMessageReceiver);
@@ -112,13 +112,14 @@ namespace Elsa.Activities.AzureServiceBus.Services
         {
             await _semaphore.WaitAsync(cancellationToken);
 
-            var key = $"{topicName}:{subscriptionName}";
-
-            if (_receivers.TryGetValue(key, out var messageReceiver))
-                return messageReceiver;
 
             try
             {
+                var key = $"{topicName}:{subscriptionName}";
+
+                if (_receivers.TryGetValue(key, out var messageReceiver))
+                    return messageReceiver;
+
                 await EnsureTopicAndSubscriptionExistsAsync(topicName, subscriptionName, cancellationToken);
 
                 var newTopicMessageReceiver = new SubscriptionClient(

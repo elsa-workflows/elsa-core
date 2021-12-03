@@ -28,7 +28,7 @@ import Tunnel from "../../../../data/dashboard";
 })
 export class ElsaWorkflowInstanceViewerScreen {
 
-  @Prop() workflowInstanceId: string;
+  @Prop({attribute:'workflow-instance-id'}) workflowInstanceId: string;
   @Prop({attribute: 'server-url'}) serverUrl: string;
   @Prop() culture: string;
   @State() workflowInstance: WorkflowInstance;

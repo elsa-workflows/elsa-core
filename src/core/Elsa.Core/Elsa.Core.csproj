@@ -42,7 +42,7 @@
         <PackageReference Include="Storage.Net" Version="9.3.0" />
         <PackageReference Include="System.Linq.Async" Version="5.0.0" />
         <PackageReference Include="System.Threading.Channels" Version="5.0.0" />
-        <PackageReference Include="Rebus.ServiceProvider" Version="6.4.1" />
+        <PackageReference Include="Rebus.ServiceProvider" Version="7.0.0" />
     </ItemGroup>
 
     <ItemGroup>

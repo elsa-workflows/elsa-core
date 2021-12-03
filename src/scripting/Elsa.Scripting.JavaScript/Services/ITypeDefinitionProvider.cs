@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
+using Elsa.Scripting.JavaScript.Models;
 
 namespace Elsa.Scripting.JavaScript.Services
 {
@@ -14,7 +15,7 @@ namespace Elsa.Scripting.JavaScript.Services
         ValueTask<IEnumerable<Type>> CollectTypesAsync(TypeDefinitionContext context, CancellationToken cancellationToken = default);
     }
 
-    public record TypeDefinitionContext(WorkflowDefinition? WorkflowDefinition, string? Context)
+    public record TypeDefinitionContext(WorkflowDefinition? WorkflowDefinition, IntellisenseContext? Context)
     {
         public Func<ITypeDefinitionProvider, Type, string> GetTypeScriptType { get; internal set; } = default!;
     }

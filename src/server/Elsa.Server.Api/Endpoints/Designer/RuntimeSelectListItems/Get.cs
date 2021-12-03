@@ -14,7 +14,7 @@ namespace Elsa.Server.Api.Endpoints.Designer.RuntimeSelectListItems
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{apiVersion:apiVersion}/designer/runtime-select-list-items")]
+    [Route("v{apiVersion:apiVersion}/designer/runtime-select-list")]
     [Produces("application/json")]
     public class Get : Controller
     {
@@ -35,23 +35,36 @@ namespace Elsa.Server.Api.Endpoints.Designer.RuntimeSelectListItems
             OperationId = "Designer.RuntimeSelectListItems.Get",
             Tags = new[] { "Designer.RuntimeSelectListItems" })
         ]
-        public async Task<IActionResult> Handle([FromBody]RuntimeSelectListItemsContextHolder model, CancellationToken cancellationToken = default)
+        public async Task<IActionResult> Handle([FromBody] RuntimeSelectListContextHolder model, CancellationToken cancellationToken = default)
         {
             var type = Type.GetType(model.ProviderTypeName)!;
-            var provider = (IRuntimeSelectListItemsProvider) ActivatorUtilities.GetServiceOrCreateInstance(_serviceProvider, type);
-            var context = model?.Context;
-            var items = (await provider.GetItemsAsync(context, cancellationToken)).ToList();
+            var provider = ActivatorUtilities.GetServiceOrCreateInstance(_serviceProvider, type);
+            var context = model.Context;
             var serializerSettings = _contentSerializer.GetSettings();
+            var selectList = await GetSelectList(provider, context, cancellationToken);
 
-            return Json(items, serializerSettings);
+            return Json(selectList, serializerSettings);
+        }
+
+        private async Task<SelectList> GetSelectList(object provider, object? context, CancellationToken cancellationToken)
+        {
+            if (provider is IRuntimeSelectListProvider newProvider)
+                return await newProvider.GetSelectListAsync(context, cancellationToken);
+
+            var items = await ((IRuntimeSelectListItemsProvider)provider).GetItemsAsync(context, cancellationToken);
+
+            return new SelectList
+            {
+                Items = items.ToList()
+            };
         }
     }
 
     [JsonObject(ItemTypeNameHandling = TypeNameHandling.All)]
-    public record RuntimeSelectListItemsContextHolder
+    public class RuntimeSelectListContextHolder
     {
         public string ProviderTypeName { get; set; } = default!;
-        
+
         public object? Context { get; set; }
     };
 }

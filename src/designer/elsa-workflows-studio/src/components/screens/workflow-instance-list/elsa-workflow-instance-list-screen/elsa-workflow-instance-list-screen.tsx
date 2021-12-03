@@ -34,10 +34,10 @@ export class ElsaWorkflowInstanceListScreen {
   @Prop() history?: RouterHistory;
   @Prop() serverUrl: string;
   @Prop() basePath: string;
-  @Prop() workflowId?: string;
-  @Prop() correlationId?: string;
-  @Prop() workflowStatus?: WorkflowStatus;
-  @Prop() orderBy?: OrderBy = OrderBy.Started;
+  @Prop({attribute: 'workflow-id'}) workflowId?: string;
+  @Prop({attribute: 'correlation-id'}) correlationId?: string;
+  @Prop({attribute: 'workflow-status'}) workflowStatus?: WorkflowStatus;
+  @Prop({attribute: 'order-by'}) orderBy?: OrderBy = OrderBy.Started;
   @Prop() culture: string;
   @State() bulkActions: Array<DropdownButtonItem>;
   @State() workflowBlueprints: Array<WorkflowBlueprintSummary> = [];
@@ -48,7 +48,7 @@ export class ElsaWorkflowInstanceListScreen {
   @State() selectedOrderByState?: OrderBy = OrderBy.Started;
   @State() selectedWorkflowInstanceIds: Array<string> = [];
   @State() selectAllChecked: boolean;
-  
+
   @State() currentPage: number = 0;
   @State() currentPageSize: number = ElsaWorkflowInstanceListScreen.DEFAULT_PAGE_SIZE;
   @State() currentSearchTerm?: string;
@@ -63,6 +63,11 @@ export class ElsaWorkflowInstanceListScreen {
       this.history.listen(e => this.routeChanged(e));
       this.applyQueryString(this.history.location.search);
     }
+
+    this.selectedWorkflowId = this.workflowId;
+    this.selectedCorrelationId = this.correlationId;
+    this.selectedWorkflowStatus = this.workflowStatus;
+    this.selectedOrderByState = this.orderBy;
 
     await this.loadWorkflowBlueprints();
     await this.loadWorkflowInstances();
@@ -131,7 +136,7 @@ export class ElsaWorkflowInstanceListScreen {
     const query = parseQuery(queryString);
 
     this.selectedWorkflowId = query.workflow;
-    this.correlationId = query.correlationId;  
+    this.correlationId = query.correlationId;
     this.selectedWorkflowStatus = query.status;
     this.selectedOrderByState = query.orderBy ?? OrderBy.Started;
     this.currentPage = !!query.page ? parseInt(query.page) : 0;

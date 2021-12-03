@@ -158,12 +158,18 @@ export class ElsaWorkflowInstanceJournal {
       const deltaTime = isLastItem ? null : moment.duration(nextTimestamp.diff(currentTimestamp));
       const activityType = record.activityType;
       const activityIcon = activityIconProvider.getIcon(activityType);
-      const activityDescriptor = activityDescriptors.find(x => x.type === activityType);
+
+      const activityDescriptor = activityDescriptors.find(x => x.type === activityType) || {
+        displayName: null,
+        type: null
+      };
+
       const activityBlueprint = activityBlueprints.find(x => x.id === record.activityId) || {
         name: null,
         displayName: null
       };
-      const activityName = activityBlueprint.displayName || activityBlueprint.name || activityDescriptor.displayName || activityDescriptor.type;
+
+      const activityName = activityBlueprint.displayName || activityBlueprint.name || activityDescriptor.displayName || activityDescriptor.type || '(Not Found): ' + activityType;
       const eventName = record.eventName;
       const eventColor = this.getEventColor(eventName);
       const recordClass = record.id === selectedRecordId ? 'elsa-border-blue-600' : 'hover:elsa-bg-gray-100 elsa-border-transparent';
@@ -421,7 +427,7 @@ export class ElsaWorkflowInstanceJournal {
   renderVariablesTab = () => {
     const { workflowInstance, workflowBlueprint } = this;
     const { variables } = workflowInstance;
-    
+
     return (
       <dl class="elsa-border-b elsa-border-gray-200 elsa-divide-y elsa-divide-gray-200">
         <div class="elsa-py-3 elsa-text-sm elsa-font-medium">

@@ -1,7 +1,17 @@
 import {Component, Event, EventEmitter, h, Listen, Method, Prop} from '@stencil/core';
 import Tunnel, {DashboardState} from "../../../../data/dashboard";
 import {ElsaStudio, WorkflowModel} from "../../../../models";
-import {eventBus, pluginManager, activityIconProvider, confirmDialogService, toastNotificationService, createElsaClient, createHttpClient, ElsaClient, propertyDisplayManager} from "../../../../services";
+import {
+  eventBus,
+  pluginManager,
+  activityIconProvider,
+  confirmDialogService,
+  toastNotificationService,
+  createElsaClient,
+  createHttpClient,
+  ElsaClient,
+  propertyDisplayManager
+} from "../../../../services";
 import {AxiosInstance} from "axios";
 import {EventTypes} from "../../../../models";
 import {ToastNotificationOptions} from "../../../shared/elsa-toast-notification/elsa-toast-notification";
@@ -19,9 +29,11 @@ export class ElsaStudioRoot {
   @Prop({attribute: 'base-path', reflect: true}) basePath: string = '';
   @Prop({attribute: 'features', reflect: true}) featuresString: string;
   @Event() initializing: EventEmitter<ElsaStudio>;
+  @Event() initialized: EventEmitter<ElsaStudio>;
 
-  confirmDialog: HTMLElsaConfirmDialogElement;
-  toastNotificationElement: HTMLElsaToastNotificationElement;
+  private confirmDialog: HTMLElsaConfirmDialogElement;
+  private toastNotificationElement: HTMLElsaToastNotificationElement;
+  private elsaStudio: ElsaStudio;
 
   @Method()
   async addPlugins(pluginTypes: Array<any>) {
@@ -56,7 +68,7 @@ export class ElsaStudioRoot {
     const elsaClientFactory: () => Promise<ElsaClient> = () => createElsaClient(this.serverUrl);
     const httpClientFactory: () => Promise<AxiosInstance> = () => createHttpClient(this.serverUrl);
 
-    const elsaStudio: ElsaStudio = {
+    const elsaStudio: ElsaStudio = this.elsaStudio = {
       serverUrl: this.serverUrl,
       basePath: this.basePath,
       featuresString: this.featuresString,
@@ -73,8 +85,14 @@ export class ElsaStudioRoot {
     };
 
     this.initializing.emit(elsaStudio);
+    await eventBus.emit(EventTypes.Root.Initializing);
     pluginManager.initialize(elsaStudio);
     propertyDisplayManager.initialize(elsaStudio);
+  }
+
+  async componentDidLoad() {
+    this.initialized.emit(this.elsaStudio);
+    await eventBus.emit(EventTypes.Root.Initialized);
   }
 
   onShowConfirmDialog = (e) => e.promise = this.confirmDialog.show(e.caption, e.message)

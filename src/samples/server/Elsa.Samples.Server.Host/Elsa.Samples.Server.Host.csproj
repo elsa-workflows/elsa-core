@@ -36,6 +36,8 @@
         <ProjectReference Include="..\..\..\locking\Elsa.DistributedLocking.AzureBlob\Elsa.DistributedLocking.AzureBlob.csproj" />
         <ProjectReference Include="..\..\..\locking\Elsa.DistributedLocking.Redis\Elsa.DistributedLocking.Redis.csproj" />
         <ProjectReference Include="..\..\..\locking\Elsa.DistributedLocking.SqlServer\Elsa.DistributedLocking.SqlServer.csproj" />
+        <ProjectReference Include="..\..\..\modules\Elsa.WorkflowTesting.Api\Elsa.WorkflowTesting.Api.csproj" />
+        <ProjectReference Include="..\..\..\modules\Elsa.WorkflowTesting\Elsa.WorkflowTesting.csproj" />
         <ProjectReference Include="..\..\..\modules\retention\Elsa.Retention\Elsa.Retention.csproj" />
         <ProjectReference Include="..\..\..\modules\workflowsettings\Elsa.WorkflowSettings.Api\Elsa.WorkflowSettings.Api.csproj" />
         <ProjectReference Include="..\..\..\modules\workflowsettings\Elsa.WorkflowSettings.Persistence.EntityFramework.MySql\Elsa.WorkflowSettings.Persistence.EntityFramework.MySql.csproj" />
@@ -63,6 +65,7 @@
         <PackageReference Include="Hangfire.InMemory" Version="0.3.4" />
         <PackageReference Include="Hangfire.SqlServer" Version="1.7.25" />
         <PackageReference Include="Quartz.Serialization.Json" Version="3.3.3" />
+        <PackageReference Include="Hangfire.SQLite" Version="1.4.2" />
     </ItemGroup>
 
 </Project>

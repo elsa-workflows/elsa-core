@@ -15,13 +15,13 @@ FROM mcr.microsoft.com/dotnet/sdk:5.0-buster-slim-amd64 AS build
 WORKDIR /source
 
 # restore packages
+COPY ./Nuget.Config ./
 COPY ./src/dashboards/ElsaDashboard/ElsaDashboard.Web.csproj ./src/dashboards/ElsaDashboard/ElsaDashboard.Web.csproj
-RUN dotnet restore "./src/dashboards/ElsaDashboard/ElsaDashboard.Web.csproj"
+RUN dotnet restore "./src/dashboards/ElsaDashboard/ElsaDashboard.Web.csproj"  --configfile ./Nuget.Config
 
 # copy required source code
 COPY src/. ./src
 COPY *.props ./
-COPY ./Nuget.Config ./
 COPY --from=client-build /app/designer/bindings/aspnet/Elsa.Designer.Components.Web ./src/designer/bindings/aspnet/Elsa.Designer.Components.Web
 
 # build and publish (UseAppHost=false created platform independent binaries)

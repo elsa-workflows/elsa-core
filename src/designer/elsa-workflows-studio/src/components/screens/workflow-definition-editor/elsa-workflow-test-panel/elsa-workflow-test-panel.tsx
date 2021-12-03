@@ -4,7 +4,12 @@ import {EventTypes, WorkflowDefinition, WorkflowTestActivityMessage} from "../..
 import {i18n} from "i18next";
 import {loadTranslations} from "../../../i18n/i18n-loader";
 import {resources} from "./localizations";
-import {createElsaClient, eventBus, WorkflowTestExecuteRequest} from "../../../../services";
+import {
+  createElsaClient,
+  eventBus,
+  WorkflowTestExecuteRequest,
+  WorkflowTestRestartFromActivityRequest
+} from "../../../../services";
 import Tunnel from "../../../../data/dashboard";
 import {clip} from "../../../../utils/utils";
 
@@ -25,10 +30,6 @@ export class ElsaWorkflowTestPanel {
   i18next: i18n;
   signalRConnectionId: string;  
   message: WorkflowTestActivityMessage;
-
-  @Watch('workflowDefinition')
-  async workflowDefinitionChangedHandler(newWorkflow: WorkflowDefinition, oldWorkflow: WorkflowDefinition) {
-  }
 
   @Watch('workflowTestActivityId')
   async workflowTestActivityMessageChangedHandler(newMessage: string, oldMessage: string) {
@@ -57,7 +58,7 @@ export class ElsaWorkflowTestPanel {
       this.workflowTestActivityMessages = [...this.workflowTestActivityMessages, message];      
       eventBus.emit(EventTypes.TestActivityMessageReceived, this, message);
 
-      if (message.workflowStatus == 'Executed') {
+      if (message.workflowStatus === 'Executed' || message.workflowStatus === 'Failed') {
         this.workflowStarted = false;
       }
 
@@ -71,11 +72,21 @@ export class ElsaWorkflowTestPanel {
       .catch((err) => console.log('error while establishing SignalR connection: ' + err));
   }
 
+  connectedCallback(){
+    eventBus.on(EventTypes.WorkflowRestarted, this.onRestartWorkflow);
+  }
+
+  disconnectedCallback(){
+    eventBus.detach(EventTypes.WorkflowRestarted, this.onRestartWorkflow);
+  }
+
   async onExecuteWorkflowClick() {
+    await eventBus.emit(EventTypes.WorkflowExecuted, this);
+
     this.message = null;
     this.workflowStarted = true;
     this.workflowTestActivityMessages = [];
-    eventBus.emit(EventTypes.TestActivityMessageReceived, this, null);
+    await eventBus.emit(EventTypes.TestActivityMessageReceived, this, null);
 
     const request: WorkflowTestExecuteRequest = {
       workflowDefinitionId: this.workflowDefinition.definitionId,
@@ -85,6 +96,23 @@ export class ElsaWorkflowTestPanel {
 
     const client = await createElsaClient(this.serverUrl);
     await client.workflowTestApi.execute(request);
+  }
+
+  onRestartWorkflow = async (selectedActivityId: string) => {
+    const message = this.message?.activityId === selectedActivityId ? this.message : this.workflowTestActivityMessages.find(x => x.activityId === selectedActivityId);
+
+    const request: WorkflowTestRestartFromActivityRequest = {
+      workflowDefinitionId: this.workflowDefinition.definitionId,
+      version: this.workflowDefinition.version,
+      signalRConnectionId: this.signalRConnectionId,
+      activityId: message.activityId,
+      lastWorkflowInstanceId: message.workflowInstanceId
+    };
+
+    this.workflowStarted = true;
+
+    const client = await createElsaClient(this.serverUrl);
+    await client.workflowTestApi.restartFromActivity(request);
   }
 
   async onStopWorkflowClick() {
@@ -97,7 +125,7 @@ export class ElsaWorkflowTestPanel {
     this.message = null;
     this.workflowStarted = false;
     this.workflowTestActivityMessages = [];
-    eventBus.emit(EventTypes.TestActivityMessageReceived, this, null);
+    await eventBus.emit(EventTypes.TestActivityMessageReceived, this, null);
   }
 
   render() {
@@ -112,8 +140,6 @@ export class ElsaWorkflowTestPanel {
         return
 
       const workflowStatus = this.workflowTestActivityMessages.last().workflowStatus;
-
-      const t = (x, params?) => this.i18next.t(x, params);
 
       const renderEndpointUrl = () => {
         if (!message.activityData || !message.activityData["Path"]) return undefined;

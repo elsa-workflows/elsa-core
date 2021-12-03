@@ -1,14 +1,13 @@
-using Elsa.Server.Api.ActionFilters;
+﻿using Elsa.Server.Api.ActionFilters;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Models;
-using Elsa.Server.Api.Endpoints.Workflows;
+using Elsa.WorkflowTesting.Api.Models;
 
-namespace Elsa.Server.Api.Endpoints.WorkflowTest
+namespace Elsa.WorkflowTesting.Api.Endpoints
 {
     [ApiController]
     [ApiVersion("1")]
@@ -31,7 +30,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowTest
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [SwaggerOperation(
             Summary = "Executes the specified workflow definition version in test mode.",
-            Description = "Executes the specified workflow definition vesrion in test mode.",
+            Description = "Executes the specified workflow definition version in test mode.",
             OperationId = "WorkflowTest.Execute",
             Tags = new[] { "WorkflowTest" })
         ]

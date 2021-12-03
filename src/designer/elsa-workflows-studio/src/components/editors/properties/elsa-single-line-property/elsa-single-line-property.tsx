@@ -1,5 +1,5 @@
 import {Component, h, Prop, State} from '@stencil/core';
-import {ActivityDefinitionProperty, ActivityPropertyDescriptor, SyntaxNames} from "../../../../models";
+import {ActivityDefinitionProperty, ActivityModel, ActivityPropertyDescriptor, SyntaxNames} from "../../../../models";
 
 @Component({
   tag: 'elsa-single-line-property',
@@ -7,6 +7,7 @@ import {ActivityDefinitionProperty, ActivityPropertyDescriptor, SyntaxNames} fro
 })
 export class ElsaSingleLineProperty {
 
+  @Prop() activityModel: ActivityModel;
   @Prop() propertyDescriptor: ActivityPropertyDescriptor;
   @Prop() propertyModel: ActivityDefinitionProperty;
   @State() currentValue: string;
@@ -40,19 +41,22 @@ export class ElsaSingleLineProperty {
       value = defaultValue ? defaultValue.toString() : undefined;
     }
 
-    if (isReadOnly)
-    {
+    if (isReadOnly) {
       const defaultSyntax = this.propertyDescriptor.defaultSyntax || SyntaxNames.Literal;
       this.propertyModel.expressions[defaultSyntax] = value;
     }
 
     return (
-      <elsa-property-editor propertyDescriptor={propertyDescriptor}
-                            propertyModel={propertyModel}
-                            onDefaultSyntaxValueChanged={e => this.onDefaultSyntaxValueChanged(e)}
-                            editor-height="5em"
-                            single-line={true}>
-        <input type="text" id={fieldId} name={fieldName} value={value} onChange={e => this.onChange(e)} class="disabled:elsa-opacity-50 disabled:elsa-cursor-not-allowed focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300" disabled={isReadOnly} />
+      <elsa-property-editor
+        activityModel={this.activityModel}
+        propertyDescriptor={propertyDescriptor}
+        propertyModel={propertyModel}
+        onDefaultSyntaxValueChanged={e => this.onDefaultSyntaxValueChanged(e)}
+        editor-height="5em"
+        single-line={true}>
+        <input type="text" id={fieldId} name={fieldName} value={value} onChange={e => this.onChange(e)}
+               class="disabled:elsa-opacity-50 disabled:elsa-cursor-not-allowed focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300"
+               disabled={isReadOnly}/>
       </elsa-property-editor>
     );
   }

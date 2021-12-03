@@ -3,11 +3,17 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Metadata;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Services.Models
 {
     public class ActivityType
     {
+        public ActivityType()
+        {
+            ActivateAsync = context => new ValueTask<IActivity>((IActivity)context.ServiceProvider.GetRequiredService(Type));
+        }
+
         /// <summary>
         /// The type name of this activity.
         /// </summary>
@@ -33,7 +39,7 @@ namespace Elsa.Services.Models
         /// </summary>
         public IDictionary<string, object> Annotations { get; set; } = new Dictionary<string, object>();
 
-        public Func<ActivityExecutionContext, ValueTask<IActivity>> ActivateAsync { get; set; } = _ => new ValueTask<IActivity>();
+        public Func<ActivityExecutionContext, ValueTask<IActivity>> ActivateAsync { get; set; }
 
         /// <summary>
         /// Returns a value of whether the specified activity can execute.
