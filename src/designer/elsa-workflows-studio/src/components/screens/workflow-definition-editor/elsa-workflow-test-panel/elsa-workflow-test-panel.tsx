@@ -66,7 +66,7 @@ export class ElsaWorkflowTestPanel {
         this.workflowStarted = true;
       }
 
-      if (!this.message && message.activityId == this.workflowTestActivityId){
+      if (!this.message){
         this.message = message;
       }
     });
