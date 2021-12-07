@@ -1,4 +1,7 @@
 using Elsa.Activities.RabbitMq.Configuration;
+using Elsa.Services.Models;
+using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -9,5 +12,6 @@ namespace Elsa.Activities.RabbitMq.Services
         Task CreateWorkersAsync(CancellationToken cancellationToken = default);
         Task<ReceiverWorker> CreateReceiverWorkerAsync(RabbitMqBusConfiguration config, CancellationToken cancellationToken = default);
         Task<SenderWorker> CreateSenderWorkerAsync(RabbitMqBusConfiguration config, CancellationToken cancellationToken = default);
+        IAsyncEnumerable<RabbitMqBusConfiguration> GetConfigurationsAsync<T>(Func<IWorkflowBlueprint, bool>? predicate, CancellationToken cancellationToken) where T : IRabbitMqActivity;
     }
 }

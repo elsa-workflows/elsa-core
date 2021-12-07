@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29509.3
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31912.275
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Core", "src\core\Elsa.Core\Elsa.Core.csproj", "{300EE2D5-54C5-46F2-AD03-BB43589EA074}"
 EndProject
@@ -241,8 +241,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{D7F754
 		docker\Dockerfile = docker\Dockerfile
 		docker\Dockerfile-elsa-dashboard = docker\Dockerfile-elsa-dashboard
 		docker\Dockerfile-elsa-dashboard-and-server = docker\Dockerfile-elsa-dashboard-and-server
-		docker\README.md = docker\README.md
 		docker\Dockerfile-elsa-server = docker\Dockerfile-elsa-server
+		docker\README.md = docker\README.md
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Persistence.EntityFramework.MySql", "src\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.MySql\Elsa.Persistence.EntityFramework.MySql.csproj", "{D55BC08B-CA82-478A-99F7-EDE90AC33160}"
@@ -359,25 +359,27 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElsaDashboard.Samples.Blazo
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.HttpEndpointSecurity", "src\samples\aspnet\Elsa.Samples.HttpEndpointSecurity\Elsa.Samples.HttpEndpointSecurity.csproj", "{82B115DA-E3D0-49D7-AD08-DE9387656756}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.WatchDirectoryWorker", "src\samples\worker\Elsa.Samples.WatchDirectoryWorker\Elsa.Samples.WatchDirectoryWorker.csproj", "{8EC3CF51-EBC1-4B45-881E-4B1B8190D579}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.WatchDirectoryWorker", "src\samples\worker\Elsa.Samples.WatchDirectoryWorker\Elsa.Samples.WatchDirectoryWorker.csproj", "{8EC3CF51-EBC1-4B45-881E-4B1B8190D579}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.InfiniteLoopDetection", "src\samples\aspnet\Elsa.Samples.InfiniteLoopDetection\Elsa.Samples.InfiniteLoopDetection.csproj", "{A2572DBF-AF11-4A02-AF99-B343871F2D85}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.InfiniteLoopDetection", "src\samples\aspnet\Elsa.Samples.InfiniteLoopDetection\Elsa.Samples.InfiniteLoopDetection.csproj", "{A2572DBF-AF11-4A02-AF99-B343871F2D85}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.Forks", "src\samples\console\Elsa.Samples.Forks\Elsa.Samples.Forks.csproj", "{AB67BA19-5BC2-4C6D-A994-61D51A6A6FD5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.Forks", "src\samples\console\Elsa.Samples.Forks\Elsa.Samples.Forks.csproj", "{AB67BA19-5BC2-4C6D-A994-61D51A6A6FD5}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "retention", "retention", "{235ABC3F-A075-4682-B6D7-837098BA6B00}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Retention", "src\modules\retention\Elsa.Retention\Elsa.Retention.csproj", "{FAEEA170-560C-4AF3-B4A8-92DEBD59D418}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Retention", "src\modules\retention\Elsa.Retention\Elsa.Retention.csproj", "{FAEEA170-560C-4AF3-B4A8-92DEBD59D418}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflowtesting", "workflowtesting", "{1B0F0880-8390-4A1C-9AE8-D13427626794}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.WorkflowTesting", "src\modules\Elsa.WorkflowTesting\Elsa.WorkflowTesting.csproj", "{0327324E-0B80-4A6A-A7D6-DD521657666F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.WorkflowTesting", "src\modules\Elsa.WorkflowTesting\Elsa.WorkflowTesting.csproj", "{0327324E-0B80-4A6A-A7D6-DD521657666F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.WorkflowTesting.Api", "src\modules\Elsa.WorkflowTesting.Api\Elsa.WorkflowTesting.Api.csproj", "{4A4DC44E-D50F-49B8-A9DE-DED26FC05166}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.WorkflowTesting.Api", "src\modules\Elsa.WorkflowTesting.Api\Elsa.WorkflowTesting.Api.csproj", "{4A4DC44E-D50F-49B8-A9DE-DED26FC05166}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.UniqueCorrelatedWorkflows", "src\samples\aspnet\Elsa.Samples.UniqueCorrelatedWorkflows\Elsa.Samples.UniqueCorrelatedWorkflows.csproj", "{4CD8293D-4544-4A23-BDEF-15B66D5E924F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.UniqueCorrelatedWorkflows", "src\samples\aspnet\Elsa.Samples.UniqueCorrelatedWorkflows\Elsa.Samples.UniqueCorrelatedWorkflows.csproj", "{4CD8293D-4544-4A23-BDEF-15B66D5E924F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.RabbitMq", "src\activities\Elsa.Activities.RabbitMq\Elsa.Activities.RabbitMq.csproj", "{0D430863-8275-4880-BB09-C307B5EC3837}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.RabbitMq", "src\activities\Elsa.Activities.RabbitMq\Elsa.Activities.RabbitMq.csproj", "{0D430863-8275-4880-BB09-C307B5EC3837}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.RabbitMqWorker", "src\samples\worker\Elsa.Samples.RabbitMqWorker\Elsa.Samples.RabbitMqWorker.csproj", "{67C58C2B-B873-47C8-B5B9-93B0587EE634}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -897,6 +899,10 @@ Global
 		{0D430863-8275-4880-BB09-C307B5EC3837}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0D430863-8275-4880-BB09-C307B5EC3837}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0D430863-8275-4880-BB09-C307B5EC3837}.Release|Any CPU.Build.0 = Release|Any CPU
+		{67C58C2B-B873-47C8-B5B9-93B0587EE634}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{67C58C2B-B873-47C8-B5B9-93B0587EE634}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{67C58C2B-B873-47C8-B5B9-93B0587EE634}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{67C58C2B-B873-47C8-B5B9-93B0587EE634}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1066,6 +1072,7 @@ Global
 		{4A4DC44E-D50F-49B8-A9DE-DED26FC05166} = {1B0F0880-8390-4A1C-9AE8-D13427626794}
 		{4CD8293D-4544-4A23-BDEF-15B66D5E924F} = {22E75696-6FE9-436A-9097-EE21C603F818}
 		{0D430863-8275-4880-BB09-C307B5EC3837} = {B43B546E-23F3-46E8-ACB7-D04F05CDA180}
+		{67C58C2B-B873-47C8-B5B9-93B0587EE634} = {E42743A0-FBDD-4150-9D53-6000496D9B87}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}

@@ -65,6 +65,7 @@ export namespace Components {
         "showActivityEditor": (activity: ActivityModel, animate: boolean) => Promise<void>;
     }
     interface ElsaDictionaryProperty {
+        "activityModel": ActivityModel;
         "propertyDescriptor": ActivityPropertyDescriptor;
         "propertyModel": ActivityDefinitionProperty;
         "serverUrl": string;
@@ -831,6 +832,7 @@ declare namespace LocalJSX {
         "selectedActivityIds"?: Array<string>;
     }
     interface ElsaDictionaryProperty {
+        "activityModel"?: ActivityModel;
         "propertyDescriptor"?: ActivityPropertyDescriptor;
         "propertyModel"?: ActivityDefinitionProperty;
         "serverUrl"?: string;

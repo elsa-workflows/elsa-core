@@ -14,11 +14,11 @@ namespace Elsa.Activities.RabbitMq
         public static ISetupActivity<SendRabbitMqMessage> WithConnectionString(this ISetupActivity<SendRabbitMqMessage> sendMessage, Func<ActivityExecutionContext, string> value) => sendMessage.Set(x => x.ConnectionString, value!);
         public static ISetupActivity<SendRabbitMqMessage> WithConnectionString(this ISetupActivity<SendRabbitMqMessage> sendMessage, string value) => sendMessage.Set(x => x.ConnectionString, value!);
 
-        public static ISetupActivity<SendRabbitMqMessage> WithTopic(this ISetupActivity<SendRabbitMqMessage> sendMessage, Func<ActivityExecutionContext, ValueTask<string>> value) => sendMessage.Set(x => x.Topic, value!);
-        public static ISetupActivity<SendRabbitMqMessage> WithTopic(this ISetupActivity<SendRabbitMqMessage> sendMessage, Func<ValueTask<string>> value) => sendMessage.Set(x => x.Topic, value!);
-        public static ISetupActivity<SendRabbitMqMessage> WithTopic(this ISetupActivity<SendRabbitMqMessage> sendMessage, Func<string> value) => sendMessage.Set(x => x.Topic, value!);
-        public static ISetupActivity<SendRabbitMqMessage> WithTopic(this ISetupActivity<SendRabbitMqMessage> sendMessage, Func<ActivityExecutionContext, string> value) => sendMessage.Set(x => x.Topic, value!);
-        public static ISetupActivity<SendRabbitMqMessage> WithTopic(this ISetupActivity<SendRabbitMqMessage> sendMessage, string value) => sendMessage.Set(x => x.Topic, value!);
+        public static ISetupActivity<SendRabbitMqMessage> WithTopic(this ISetupActivity<SendRabbitMqMessage> sendMessage, Func<ActivityExecutionContext, ValueTask<string>> value) => sendMessage.Set(x => x.RoutingKey, value!);
+        public static ISetupActivity<SendRabbitMqMessage> WithTopic(this ISetupActivity<SendRabbitMqMessage> sendMessage, Func<ValueTask<string>> value) => sendMessage.Set(x => x.RoutingKey, value!);
+        public static ISetupActivity<SendRabbitMqMessage> WithTopic(this ISetupActivity<SendRabbitMqMessage> sendMessage, Func<string> value) => sendMessage.Set(x => x.RoutingKey, value!);
+        public static ISetupActivity<SendRabbitMqMessage> WithTopic(this ISetupActivity<SendRabbitMqMessage> sendMessage, Func<ActivityExecutionContext, string> value) => sendMessage.Set(x => x.RoutingKey, value!);
+        public static ISetupActivity<SendRabbitMqMessage> WithTopic(this ISetupActivity<SendRabbitMqMessage> sendMessage, string value) => sendMessage.Set(x => x.RoutingKey, value!);
 
         public static ISetupActivity<SendRabbitMqMessage> WithHeaders(this ISetupActivity<SendRabbitMqMessage> sendMessage, Func<ActivityExecutionContext, ValueTask<Dictionary<string, string>>> value) => sendMessage.Set(x => x.Headers, value!);
         public static ISetupActivity<SendRabbitMqMessage> WithHeaders(this ISetupActivity<SendRabbitMqMessage> sendMessage, Func<ValueTask<Dictionary<string, string>>> value) => sendMessage.Set(x => x.Headers, value!);

@@ -13,7 +13,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\activities\Elsa.Activities.RabbitMq\Elsa.Activities.RabbitMq.csproj" />
       <ProjectReference Include="..\..\core\Elsa.Abstractions\Elsa.Abstractions.csproj" />
       <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
     </ItemGroup>

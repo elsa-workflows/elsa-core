@@ -17,7 +17,7 @@ namespace Elsa.Activities.RabbitMq
         Description = "Send Message to RabbitMQ",
         Outcomes = new[] { OutcomeNames.Done }
     )]
-    public class SendRabbitMqMessage : Activity
+    public class SendRabbitMqMessage : Activity, IRabbitMqActivity
     {
         private readonly IMessageSenderClientFactory _messageSenderClientFactory;
 
@@ -30,7 +30,7 @@ namespace Elsa.Activities.RabbitMq
             Hint = "Topic",
             Order = 1,
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
-        public string Topic { get; set; } = default!;
+        public string RoutingKey { get; set; } = default!;
 
         [ActivityInput(
             Hint = "List of headers that should be present in the message",
@@ -56,7 +56,7 @@ namespace Elsa.Activities.RabbitMq
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            var config = new RabbitMqBusConfiguration(ConnectionString, Topic, Headers);
+            var config = new RabbitMqBusConfiguration(ConnectionString, RoutingKey, Headers);
 
             var client = await _messageSenderClientFactory.GetSenderAsync(config);
 

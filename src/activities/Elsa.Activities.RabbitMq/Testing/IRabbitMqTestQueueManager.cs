@@ -1,4 +1,7 @@
-namespace Elsa.WorkflowTesting.Services
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Elsa.Activities.RabbitMq.Testing
 {
     public interface IRabbitMqTestQueueManager
     {

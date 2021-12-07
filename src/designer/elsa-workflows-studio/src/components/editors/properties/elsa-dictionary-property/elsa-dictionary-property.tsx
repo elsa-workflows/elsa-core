@@ -1,5 +1,5 @@
 ﻿import {Component, h, Host, Prop, State} from '@stencil/core';
-import {ActivityDefinitionProperty, ActivityPropertyDescriptor, SyntaxNames} from "../../../../models";
+import {ActivityDefinitionProperty, ActivityModel, ActivityPropertyDescriptor, SyntaxNames} from "../../../../models";
 import Tunnel from "../../../../data/workflow-editor";
 import {IconColor, IconName, iconProvider} from "../../../../services/icon-provider"
 
@@ -11,6 +11,7 @@ export class ElsaDictionaryProperty {
 
   @Prop() propertyDescriptor: ActivityPropertyDescriptor;
   @Prop() propertyModel: ActivityDefinitionProperty;
+  @Prop() activityModel: ActivityModel;
   @Prop({mutable: true}) serverUrl: string;
   @State() currentValue: [string, string][];
 
@@ -87,6 +88,7 @@ export class ElsaDictionaryProperty {
     return (
       <elsa-property-editor propertyDescriptor={propertyDescriptor}
                             propertyModel={propertyModel}
+                            activityModel={this.activityModel}
                             onDefaultSyntaxValueChanged={e => this.onDefaultSyntaxValueChanged(e)}
                             single-line={true}>
         {items.map((item, index) => {

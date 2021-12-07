@@ -1,5 +1,6 @@
 using Elsa.Activities.RabbitMq.Configuration;
 using Elsa.Services;
+using Elsa.Services.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -48,8 +49,8 @@ namespace Elsa.Activities.RabbitMq.Services
             {
                 await DisposeExistingWorkersAsync();
 
-                var receiverConfigs = (await GetSenderConfigurationsAsync(cancellationToken).ToListAsync(cancellationToken)).Distinct();
-                var senderConfigs = (await GetSenderConfigurationsAsync(cancellationToken).ToListAsync(cancellationToken)).Distinct();
+                var receiverConfigs = (await GetConfigurationsAsync<SendRabbitMqMessage>(null, cancellationToken).ToListAsync(cancellationToken)).Distinct();
+                var senderConfigs = (await GetConfigurationsAsync<RabbitMqMessageReceived>(null, cancellationToken).ToListAsync(cancellationToken)).Distinct();
 
                 foreach (var config in receiverConfigs)
                 {
@@ -96,7 +97,7 @@ namespace Elsa.Activities.RabbitMq.Services
         private async Task DisposeReceiverAsync(IClient messageReceiver) => await _messageReceiverClientFactory.DisposeReceiverAsync(messageReceiver);
         private async Task DisposeSenderAsync(IClient messageSender) => await _messageSenderClientFactory.DisposeSenderAsync(messageSender);
 
-        private async IAsyncEnumerable<RabbitMqBusConfiguration> GetReceiverConfigurationsAsync([EnumeratorCancellation] CancellationToken cancellationToken)
+        public async IAsyncEnumerable<RabbitMqBusConfiguration> GetConfigurationsAsync<T>(Func<IWorkflowBlueprint, bool>? predicate, [EnumeratorCancellation] CancellationToken cancellationToken) where T : IRabbitMqActivity
         {
             using var scope = _scopeFactory.CreateScope();
             var workflowRegistry = scope.ServiceProvider.GetRequiredService<IWorkflowRegistry>();
@@ -106,14 +107,16 @@ namespace Elsa.Activities.RabbitMq.Services
             var query =
                 from workflow in workflows
                 from activity in workflow.Activities
-                where activity.Type == nameof(RabbitMqMessageReceived)
+                where activity.Type == typeof(T).Name
                 select workflow;
 
-            foreach (var workflow in query)
+            var filteredQuery = predicate == null ? query : query.Where(predicate);
+
+            foreach (var workflow in filteredQuery)
             {
                 var workflowBlueprintWrapper = await workflowBlueprintReflector.ReflectAsync(scope.ServiceProvider, workflow, cancellationToken);
 
-                foreach (var activity in workflowBlueprintWrapper.Filter<RabbitMqMessageReceived>())
+                foreach (var activity in workflowBlueprintWrapper.Filter<T>())
                 {
                     var connectionString = await activity.EvaluatePropertyValueAsync(x => x.ConnectionString, cancellationToken);
                     var routingKey = await activity.EvaluatePropertyValueAsync(x => x.RoutingKey, cancellationToken);
@@ -125,37 +128,6 @@ namespace Elsa.Activities.RabbitMq.Services
                 }
             }
         }
-
-        private async IAsyncEnumerable<RabbitMqBusConfiguration> GetSenderConfigurationsAsync([EnumeratorCancellation] CancellationToken cancellationToken)
-        {
-            using var scope = _scopeFactory.CreateScope();
-            var workflowRegistry = scope.ServiceProvider.GetRequiredService<IWorkflowRegistry>();
-            var workflowBlueprintReflector = scope.ServiceProvider.GetRequiredService<IWorkflowBlueprintReflector>();
-            var workflows = await workflowRegistry.ListActiveAsync(cancellationToken);
-
-            var query =
-                from workflow in workflows
-                from activity in workflow.Activities
-                where activity.Type == nameof(SendRabbitMqMessage)
-                select workflow;
-
-            foreach (var workflow in query)
-            {
-                var workflowBlueprintWrapper = await workflowBlueprintReflector.ReflectAsync(scope.ServiceProvider, workflow, cancellationToken);
-
-                foreach (var activity in workflowBlueprintWrapper.Filter<SendRabbitMqMessage>())
-                {
-                    var connectionString = await activity.EvaluatePropertyValueAsync(x => x.ConnectionString, cancellationToken);
-                    var routingKey = await activity.EvaluatePropertyValueAsync(x => x.Topic, cancellationToken);
-                    var headers = await activity.EvaluatePropertyValueAsync(x => x.Headers, cancellationToken);
-
-                    var config = new RabbitMqBusConfiguration(connectionString, routingKey, headers);
-
-                    yield return config!;
-                }
-            }
-        }
-
         private async Task DisposeExistingWorkersAsync()
         {
             foreach (var worker in _workers.ToList())

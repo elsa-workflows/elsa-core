@@ -1,5 +1,6 @@
 using Elsa.Activities.RabbitMq.Configuration;
 using Elsa.Activities.RabbitMq.Decorators;
+using Microsoft.Extensions.Logging;
 using Rebus.Activation;
 using Rebus.Bus;
 using Rebus.Config;
@@ -16,8 +17,8 @@ namespace Elsa.Activities.RabbitMq.Services
 {
     public class Client : IClient
     {
-        private BuiltinHandlerActivator _activator { get; set; }
-        private IBus _bus { get; set; }
+        private BuiltinHandlerActivator _activator;
+        private IBus _bus;
 
         public MessageHandlingToggle Toggle { get; set; }
 
@@ -48,7 +49,7 @@ namespace Elsa.Activities.RabbitMq.Services
                 }))
                 .Transport(t =>
                 {
-                    t.UseRabbitMq(Configuration.ConnectionString, $"Elsa_{Guid.NewGuid()}").InputQueueOptions(o => o.SetAutoDelete(autoDelete: true));
+                    t.UseRabbitMq(Configuration.ConnectionString, $"Elsa{Guid.NewGuid().ToString("n").ToUpper()}").InputQueueOptions(o => o.SetAutoDelete(autoDelete: true));
                     t.Decorate(d =>
                     {
                         var transport = d.Get<ITransport>();

@@ -18,7 +18,7 @@ namespace Elsa.Activities.RabbitMq
         Description = "Triggers when RabbitMQ message matching specified routing key is received",
         Outcomes = new[] { OutcomeNames.Done }
     )]
-    public class RabbitMqMessageReceived : Activity
+    public class RabbitMqMessageReceived : Activity, IRabbitMqActivity
     {
         private readonly IMessageReceiverClientFactory _messageReceiverClientFactory;
 
@@ -52,9 +52,9 @@ namespace Elsa.Activities.RabbitMq
         [ActivityOutput(Hint = "Received message")]
         public object? Output { get; set; }
         
-        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context) => context.WorkflowExecutionContext.IsFirstPass ? await ExecuteInternalAsync(context) : await SuspendInternalAsync();
+        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context) => context.WorkflowExecutionContext.IsFirstPass ? ExecuteInternalAsync(context) : await SuspendInternalAsync();
         
-        protected override async ValueTask<IActivityExecutionResult> OnResumeAsync(ActivityExecutionContext context) => await ExecuteInternalAsync(context);
+        protected override IActivityExecutionResult OnResume(ActivityExecutionContext context) => ExecuteInternalAsync(context);
         
         private async ValueTask<IActivityExecutionResult> SuspendInternalAsync()
         {
@@ -63,7 +63,7 @@ namespace Elsa.Activities.RabbitMq
             return Suspend();
         }
 
-        private async ValueTask<IActivityExecutionResult> ExecuteInternalAsync(ActivityExecutionContext context)
+        private IActivityExecutionResult ExecuteInternalAsync(ActivityExecutionContext context)
         {
             var message = (TransportMessage)context.Input;
 

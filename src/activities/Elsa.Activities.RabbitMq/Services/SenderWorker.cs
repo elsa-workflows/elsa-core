@@ -9,9 +9,9 @@ namespace Elsa.Activities.RabbitMq.Services
         public SenderWorker(
             IClient receiverClient,
             Func<IClient, Task> disposeReceiverAction,
-            ILogger<WorkerBase> logger): base (receiverClient, disposeReceiverAction, logger)
+            ILogger<SenderWorker> logger): base (receiverClient, disposeReceiverAction, logger)
         {
-            _client.StartAsOneWayClient();
+            Client.StartAsOneWayClient();
         }
     }
 }

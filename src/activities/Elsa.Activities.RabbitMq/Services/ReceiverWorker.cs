@@ -19,18 +19,20 @@ namespace Elsa.Activities.RabbitMq.Services
             Scoped<IWorkflowLaunchpad> workflowLaunchpad,
             IClient receiverClient,
             Func<IClient, Task> disposeReceiverAction,
-            ILogger<WorkerBase> logger): base (receiverClient, disposeReceiverAction, logger)
+            ILogger<ReceiverWorker> logger): base (receiverClient, disposeReceiverAction, logger)
         {
             _workflowLaunchpad = workflowLaunchpad;
 
             var onMessageReceived = async (TransportMessage message, CancellationToken cancellationToken) => await TriggerWorkflowsAsync(message, cancellationToken);
 
-            _client.StartWithHandler(onMessageReceived);
+            Client.StartWithHandler(onMessageReceived);
         }
 
         private async Task TriggerWorkflowsAsync(TransportMessage message, CancellationToken cancellationToken)
         {
-            var config = _client.Configuration;
+            Logger.LogDebug("Message received for routing key {RoutingKey}", Client.Configuration.RoutingKey);
+
+            var config = Client.Configuration;
 
             var bookmark = new MessageReceivedBookmark(config.RoutingKey, config.ConnectionString, config.Headers);
             var launchContext = new WorkflowsQuery(ActivityType, bookmark);

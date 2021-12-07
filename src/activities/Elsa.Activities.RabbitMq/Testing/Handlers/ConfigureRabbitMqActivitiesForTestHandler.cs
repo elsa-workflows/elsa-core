@@ -1,9 +1,11 @@
 using Elsa.Events;
 using Elsa.Testing.Events;
-using Elsa.WorkflowTesting.Services;
 using MediatR;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
-namespace Elsa.WorkflowTesting.Handlers
+namespace Elsa.Activities.RabbitMq.Testing
 {
     public class ConfigureRabbitMqActivitiesForTestHandler : INotificationHandler<WorkflowExecuting>, INotificationHandler<WorkflowFaulted>, INotificationHandler<WorkflowCompleted>, INotificationHandler<WorkflowTestExecutionStopped>
     {
@@ -19,7 +21,6 @@ namespace Elsa.WorkflowTesting.Handlers
 
             var isTest = Convert.ToBoolean(notification.WorkflowExecutionContext.WorkflowInstance.GetMetadata("isTest"));
 
-            //also checking input in case workflow is resumed
             if (!isTest) return;
 
             var workflowId = notification.WorkflowExecutionContext.WorkflowBlueprint.Id;
