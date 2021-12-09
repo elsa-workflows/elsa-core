@@ -12,7 +12,7 @@ namespace Elsa.Scripting.JavaScript.Providers
     public class DefaultActivityTypeDefinitionRenderer : IActivityTypeDefinitionRenderer
     {
         public int Priority => -1;
-        public bool GetCanRenderType(ActivityType activityType) => true;
+        public virtual bool GetCanRenderType(ActivityType activityType) => true;
 
         public virtual async ValueTask RenderTypeDeclarationAsync(
             RenderingTypeScriptDefinitions notification,
