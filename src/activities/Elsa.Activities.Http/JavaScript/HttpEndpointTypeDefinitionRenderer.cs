@@ -23,27 +23,27 @@ namespace Elsa.Activities.Http.JavaScript
             StringBuilder writer,
             CancellationToken cancellationToken = default)
         {
-            if (activityType.Type != typeof(HttpEndpoint))
-                return;
-
-            var targetTypeSchema = activityDefinition.Properties.First(x => x.Name == nameof(HttpEndpoint.Schema)).Expressions.Values.First();
-
-            if (!string.IsNullOrWhiteSpace(targetTypeSchema))
+            if (activityType.Type == typeof(HttpEndpoint))
             {
-                var jsonSchema = await JsonSchema.FromJsonAsync(targetTypeSchema, cancellationToken);
-                var generator = new TypeScriptGenerator(jsonSchema, new TypeScriptGeneratorSettings
+                var targetTypeSchema = activityDefinition.Properties.First(x => x.Name == nameof(HttpEndpoint.Schema)).Expressions.Values.First();
+
+                if (!string.IsNullOrWhiteSpace(targetTypeSchema))
                 {
-                    TypeStyle = TypeScriptTypeStyle.Interface,
-                    TypeScriptVersion = 4
-                });
+                    var jsonSchema = await JsonSchema.FromJsonAsync(targetTypeSchema, cancellationToken);
+                    var generator = new TypeScriptGenerator(jsonSchema, new TypeScriptGeneratorSettings
+                    {
+                        TypeStyle = TypeScriptTypeStyle.Interface,
+                        TypeScriptVersion = 4
+                    });
 
-                var typeScriptType = $"{activityDefinition.Name}Output";
+                    var typeScriptType = $"{activityDefinition.Name}Output";
 
-                var jsonSchemaTypes = generator.GenerateFile(typeScriptType)
-                    .Replace("\r\n", "\n")
-                    .Replace("export interface", "declare class");
+                    var jsonSchemaTypes = generator.GenerateFile(typeScriptType)
+                        .Replace("\r\n", "\n")
+                        .Replace("export interface", "declare class");
 
-                writer.AppendLine(jsonSchemaTypes);
+                    writer.AppendLine(jsonSchemaTypes);
+                }
             }
 
             await base.RenderTypeDeclarationAsync(notification, activityType, activityDescriptor, activityDefinition, writer, cancellationToken);
