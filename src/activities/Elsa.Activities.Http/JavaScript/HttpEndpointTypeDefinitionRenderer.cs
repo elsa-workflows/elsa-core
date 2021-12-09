@@ -25,7 +25,7 @@ namespace Elsa.Activities.Http.JavaScript
             StringBuilder writer,
             CancellationToken cancellationToken = default)
         {
-            var targetTypeSchema = activityDefinition.Properties.First(x => x.Name == nameof(HttpEndpoint.Schema)).Expressions.Values.First();
+            var targetTypeSchema = activityDefinition.Properties.FirstOrDefault(x => x.Name == nameof(HttpEndpoint.Schema))?.Expressions.Values.FirstOrDefault();
 
             if (!string.IsNullOrWhiteSpace(targetTypeSchema))
             {
