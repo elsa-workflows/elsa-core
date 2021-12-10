@@ -123,7 +123,7 @@ deploy:
         api_key:
             secure: JfESkwmLdWU7dzvoqKPUfMemb00wX8AEYxeHCsYWTX1LfTeECdmKdZxz7IVUpebb
         skip_symbols: false
-        symbol_server: https://www.nuget.org/api/v2/symbolpackage # remove to push symbols to SymbolSource.org
+        symbol_server: https://www.myget.org/F/elsa-2/api/v2/symbolpackage # remove to push symbols to SymbolSource.org
         artifact: /.*(\.|\.s)nupkg/
         on:
             branch: master
