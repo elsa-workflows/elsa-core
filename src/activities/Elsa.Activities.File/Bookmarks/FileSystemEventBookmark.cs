@@ -48,9 +48,11 @@ namespace Elsa.Activities.File.Bookmarks
             var changeTypes = await context.ReadActivityPropertyAsync(a => a.ChangeTypes, cancellationToken);
             var notifyFilters = await context.ReadActivityPropertyAsync(a => a.NotifyFilters, cancellationToken);
             var path = await context.ReadActivityPropertyAsync(a => a.Path, cancellationToken);
-            var pattern = await context.ReadActivityPropertyAsync(a => a.Pattern, cancellationToken);
+            var pattern = NormalizeWildcard(await context.ReadActivityPropertyAsync(a => a.Pattern, cancellationToken));
             var result = Result(new FileSystemEventBookmark(path, pattern, changeTypes, notifyFilters));
             return new[] { result };
         }
+
+        private static string? NormalizeWildcard(string? pattern) => pattern == "*.*" ? "*" : pattern;
     }
 }
