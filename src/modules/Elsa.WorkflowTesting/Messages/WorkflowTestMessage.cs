@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Elsa.WorkflowTesting.Messages
 {
     public class WorkflowTestMessage
