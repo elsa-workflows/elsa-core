@@ -59,15 +59,15 @@ export class ElsaWorkflowInstanceListScreen {
   async componentWillLoad() {
     this.i18next = await loadTranslations(this.culture, resources);
 
-    if (!!this.history) {
-      this.history.listen(e => this.routeChanged(e));
-      this.applyQueryString(this.history.location.search);
-    }
-
     this.selectedWorkflowId = this.workflowId;
     this.selectedCorrelationId = this.correlationId;
     this.selectedWorkflowStatus = this.workflowStatus;
     this.selectedOrderByState = this.orderBy;
+
+    if (!!this.history) {
+      this.history.listen(e => this.routeChanged(e));
+      this.applyQueryString(this.history.location.search);
+    }
 
     await this.loadWorkflowBlueprints();
     await this.loadWorkflowInstances();
@@ -158,6 +158,7 @@ export class ElsaWorkflowInstanceListScreen {
     this.currentPage = Math.max(this.currentPage, ElsaWorkflowInstanceListScreen.START_PAGE);
     this.currentPageSize = isNaN(this.currentPageSize) ? ElsaWorkflowInstanceListScreen.DEFAULT_PAGE_SIZE : this.currentPageSize;
     const elsaClient = await this.createClient();
+    console.debug(`workflow: ${this.selectedWorkflowId}`);
     this.workflowInstances = await elsaClient.workflowInstancesApi.list(this.currentPage, this.currentPageSize, this.selectedWorkflowId, this.selectedWorkflowStatus, this.selectedOrderByState, this.currentSearchTerm, this.correlationId);
     const maxPage = Math.floor(this.workflowInstances.totalCount / this.currentPageSize);
     if (this.currentPage > maxPage) {
