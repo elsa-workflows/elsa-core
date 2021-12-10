@@ -5,7 +5,6 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <LangVersion>default</LangVersion>
-        <RootNamespace>Elsa.Testing</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
