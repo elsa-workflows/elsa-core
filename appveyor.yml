@@ -111,7 +111,7 @@ deploy:
         api_key:
             secure: KKRDla0gYKmprH/5dN/dJag/n6uAdHU6Uq8CME4ONzz2AOsMPtzS+EI/MVuSNilD
         skip_symbols: false
-        symbol_server: https://api.nuget.org/v3/index.json # remove to push symbols to SymbolSource.org
+        symbol_server: https://www.nuget.org/api/v2/package # remove to push symbols to SymbolSource.org
         artifact: /.*(\.|\.s)nupkg/
         on:
             APPVEYOR_REPO_TAG: true
@@ -123,7 +123,7 @@ deploy:
         api_key:
             secure: JfESkwmLdWU7dzvoqKPUfMemb00wX8AEYxeHCsYWTX1LfTeECdmKdZxz7IVUpebb
         skip_symbols: false
-        symbol_server: https://api.nuget.org/v3/index.json # remove to push symbols to SymbolSource.org
+        symbol_server: https://www.nuget.org/api/v2/package # remove to push symbols to SymbolSource.org
         artifact: /.*(\.|\.s)nupkg/
         on:
             branch: master
