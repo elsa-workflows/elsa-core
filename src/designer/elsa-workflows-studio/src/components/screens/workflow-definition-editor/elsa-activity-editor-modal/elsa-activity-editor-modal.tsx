@@ -79,7 +79,7 @@ export class ElsaActivityEditorModal {
       propertyDisplayManager.update(activity, property, formData);
   }
 
-  componentWillRender() {
+  async componentWillRender() {
     const activityDescriptor: ActivityDescriptor = this.activityDescriptor || {
       displayName: '',
       type: '',
@@ -92,8 +92,10 @@ export class ElsaActivityEditorModal {
       description: '',
       customAttributes: {}
     };
+
     const propertyCategories = activityDescriptor.inputProperties.filter(x => x.category).map(x => x.category).distinct();
     const defaultProperties = activityDescriptor.inputProperties.filter(x => !x.category || x.category.length == 0);
+
     const activityModel: ActivityModel = this.activityModel || {
       type: '',
       activityId: '',
@@ -101,6 +103,7 @@ export class ElsaActivityEditorModal {
       properties: [],
       propertyStorageProviders: {}
     };
+
     const t = this.t;
     let tabs: Array<TabModel> = [];
 
@@ -138,6 +141,8 @@ export class ElsaActivityEditorModal {
       tabs,
       selectedTabName: this.renderProps.selectedTabName
     };
+
+    await eventBus.emit(EventTypes.ActivityEditor.Rendering, this, this.renderProps);
 
     let selectedTabName = this.renderProps.selectedTabName
     tabs = this.renderProps.tabs;
@@ -198,7 +203,7 @@ export class ElsaActivityEditorModal {
   onDialogHidden = async () => {
     const args: ActivityEditorDisappearingEventArgs = {
       activityModel: this.activityModel,
-      activityDescriptor: this.activityDescriptor
+      activityDescriptor: this.activityDescriptor,
     };
 
     await eventBus.emit(EventTypes.ActivityEditor.Disappearing, this, args);

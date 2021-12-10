@@ -14,7 +14,7 @@ namespace Elsa.Server.Api.Endpoints.Designer.RuntimeSelectListItems
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{apiVersion:apiVersion}/designer/runtime-select-list-items")]
+    [Route("v{apiVersion:apiVersion}/designer/runtime-select-list")]
     [Produces("application/json")]
     public class Get : Controller
     {
