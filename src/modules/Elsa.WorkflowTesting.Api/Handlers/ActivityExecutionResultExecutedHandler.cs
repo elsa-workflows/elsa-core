@@ -1,3 +1,7 @@
+using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Elsa.ActivityResults;
 using Elsa.Events;
 using Elsa.Models;
@@ -30,7 +34,7 @@ namespace Elsa.WorkflowTesting.Api.Handlers
             {
                 ["Outcomes"] = JToken.FromObject(context.Outcomes)
             };
-            
+
             if (context.Input != null)
                 data["Input"] = JToken.FromObject(context.Input);
 
@@ -53,9 +57,9 @@ namespace Elsa.WorkflowTesting.Api.Handlers
 
             await _workflowTestService.DispatchMessage(signalRConnectionId, message);
         }
-        
+
         public Task Handle(ActivityExecutionFailed notification, CancellationToken cancellationToken) => HandleFaultedExecutionAsync(notification.ActivityExecutionContext, notification.Exception);
-        public Task Handle(ActivityFaulted notification, CancellationToken cancellationToken)  => HandleFaultedExecutionAsync(notification.ActivityExecutionContext, notification.Exception);
+        public Task Handle(ActivityFaulted notification, CancellationToken cancellationToken) => HandleFaultedExecutionAsync(notification.ActivityExecutionContext, notification.Exception);
 
         private async Task HandleFaultedExecutionAsync(ActivityExecutionContext context, Exception exception)
         {
@@ -70,10 +74,10 @@ namespace Elsa.WorkflowTesting.Api.Handlers
             {
                 WorkflowInstanceId = context.WorkflowInstance.Id,
                 CorrelationId = context.CorrelationId,
-                ActivityId = context.ActivityId,                
+                ActivityId = context.ActivityId,
                 Error = innerException?.ToString()
             };
-            
+
             message.WorkflowStatus = message.Status = "Failed";
             await _workflowTestService.DispatchMessage(signalRConnectionId, message);
         }
