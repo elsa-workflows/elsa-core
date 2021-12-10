@@ -110,7 +110,7 @@ deploy:
         name: NuGet
         api_key:
             secure: WC5CCcM5ksWOJbv925FNjv91KsfqHfwEe0A61FMNB27IxvttwJsvBC9XYwK+wQnp
-        skip_symbols: true
+        skip_symbols: false
         on:
             APPVEYOR_REPO_TAG: true
 
@@ -120,6 +120,6 @@ deploy:
         server: https://www.myget.org/F/elsa-2/api/v2/package
         api_key:
             secure: JfESkwmLdWU7dzvoqKPUfMemb00wX8AEYxeHCsYWTX1LfTeECdmKdZxz7IVUpebb
-        skip_symbols: true
+        skip_symbols: false
         on:
             branch: master
