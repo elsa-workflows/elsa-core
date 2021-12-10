@@ -112,7 +112,7 @@ deploy:
             secure: KKRDla0gYKmprH/5dN/dJag/n6uAdHU6Uq8CME4ONzz2AOsMPtzS+EI/MVuSNilD
         skip_symbols: false
         symbol_server: # remove to push symbols to SymbolSource.org
-            artifact: /.*(\.|\.s)nupkg/
+        artifact: /.*(\.|\.s)nupkg/
         on:
             APPVEYOR_REPO_TAG: true
 
@@ -124,6 +124,6 @@ deploy:
             secure: JfESkwmLdWU7dzvoqKPUfMemb00wX8AEYxeHCsYWTX1LfTeECdmKdZxz7IVUpebb
         skip_symbols: false
         symbol_server: # remove to push symbols to SymbolSource.org
-            artifact: /.*(\.|\.s)nupkg/
+        artifact: /.*(\.|\.s)nupkg/
         on:
             branch: master
