@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Elsa.WorkflowTesting.Messages;
 
 namespace Elsa.WorkflowTesting.Services
