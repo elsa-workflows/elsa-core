@@ -55,6 +55,7 @@ namespace Elsa.Scripting.JavaScript.Handlers
             engine.SetValue("getWorkflowDefinitionIdByName", (Func<string, string?>)(name => GetWorkflowDefinitionIdByName(activityExecutionContext, name)));
             engine.SetValue("getWorkflowDefinitionIdByTag", (Func<string, string?>)(tag => GetWorkflowDefinitionIdByTag(activityExecutionContext, tag)));
             engine.SetValue("getActivity", (Func<string, object?>)(idOrName => GetActivityModel(activityExecutionContext, idOrName)));
+            engine.SetValue("getActivityId", (Func<string, string?>)(activityName => GetActivityId(activityExecutionContext, activityName)));
             engine.SetValue("findExecutedActivityIdByType", (Func<string, string?>)(activityTypeName => FindExecutedActivityByTypeAsync(activityExecutionContext, activityTypeName, cancellationToken).Result));
             engine.SetValue("jsonEncode", (Func<object, string>)(JsonConvert.SerializeObject));
             engine.SetValue("jsonDecode", (Func<string, object?>)JsonConvert.DeserializeObject);
@@ -163,6 +164,13 @@ namespace Elsa.Scripting.JavaScript.Handlers
             var workflowExecutionContext = context.WorkflowExecutionContext;
             var activity = workflowExecutionContext.GetActivityBlueprintByName(idOrName) ?? workflowExecutionContext.GetActivityBlueprintById(idOrName);
             return activity == null ? null : workflowExecutionContext.WorkflowInstance.ActivityData[activity.Id];
+        }
+
+        private string? GetActivityId(ActivityExecutionContext context, string activityName)
+        {
+            var workflowExecutionContext = context.WorkflowExecutionContext;
+            var activity = workflowExecutionContext.GetActivityBlueprintByName(activityName);
+            return activity?.Id;
         }
 
         private async Task<object?> GetActivityPropertyAsync(string activityIdOrName, string propertyName, ActivityExecutionContext context)

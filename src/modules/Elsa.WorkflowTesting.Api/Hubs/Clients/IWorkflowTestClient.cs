@@ -1,6 +1,4 @@
-using System.Threading.Tasks;
-
-namespace Elsa.Server.Api.Hubs.Clients
+namespace Elsa.WorkflowTesting.Api.Hubs.Clients
 {
     public interface IWorkflowTestClient
     {

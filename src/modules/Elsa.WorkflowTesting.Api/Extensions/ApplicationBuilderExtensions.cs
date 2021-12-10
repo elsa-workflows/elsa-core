@@ -1,7 +1,7 @@
-using Elsa.Server.Api.Hubs;
+using Elsa.WorkflowTesting.Api.Hubs;
 using Microsoft.AspNetCore.Builder;
 
-namespace Elsa.Server.Api.Extensions
+namespace Elsa.WorkflowTesting.Api.Extensions
 {
     public static class ApplicationBuilderExtensions
     {

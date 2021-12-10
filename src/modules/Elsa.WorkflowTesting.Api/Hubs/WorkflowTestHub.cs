@@ -1,8 +1,7 @@
-using System.Threading.Tasks;
-using Elsa.Server.Api.Hubs.Clients;
+using Elsa.WorkflowTesting.Api.Hubs.Clients;
 using Microsoft.AspNetCore.SignalR;
 
-namespace Elsa.Server.Api.Hubs
+namespace Elsa.WorkflowTesting.Api.Hubs
 {
     public class WorkflowTestHub : Hub<IWorkflowTestClient>
     {
