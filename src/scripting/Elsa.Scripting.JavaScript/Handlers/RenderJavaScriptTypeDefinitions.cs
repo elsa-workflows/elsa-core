@@ -37,6 +37,7 @@ namespace Elsa.Scripting.JavaScript.Handlers
             output.AppendLine("declare function getWorkflowDefinitionIdByName(name: string): string;");
             output.AppendLine("declare function getWorkflowDefinitionIdByTag(tag: string): string;");
             output.AppendLine("declare function getActivity(idOrName: string): any;");
+            output.AppendLine("declare function getActivityId(name: string): string;");
             output.AppendLine("declare function getActivityProperty(activityIdOrName: string, propertyName: string): any;");
 
             output.AppendLine("declare const activityExecutionContext: ActivityExecutionContext;");
