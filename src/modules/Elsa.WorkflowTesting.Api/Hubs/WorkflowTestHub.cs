@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Elsa.WorkflowTesting.Api.Hubs.Clients;
 using Microsoft.AspNetCore.SignalR;
 
