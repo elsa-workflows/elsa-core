@@ -9,10 +9,10 @@ namespace Elsa.Activities.RabbitMq.Services
     public interface IClient
     {
         RabbitMqBusConfiguration Configuration { get; }
-        void StartWithHandler(Func<TransportMessage, CancellationToken, Task> handler);
-        void StartAsOneWayClient();
+        void SubscribeWithHandler(Func<TransportMessage, CancellationToken, Task> handler);
         Task PublishMessage(string message);
-        void SetIsReceivingMessages(bool isReceivingMessages);
+        void StartClient();
+        void StopClient();
         void Dispose();
     }
 }

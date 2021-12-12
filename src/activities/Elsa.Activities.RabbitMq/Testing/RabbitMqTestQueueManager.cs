@@ -11,7 +11,7 @@ namespace Elsa.Activities.RabbitMq.Testing
     public class RabbitMqTestQueueManager : IRabbitMqTestQueueManager
     {
         private readonly SemaphoreSlim _semaphore = new(1);
-        private readonly IDictionary<string, ICollection<WorkerBase>> _workers;
+        private readonly IDictionary<string, ICollection<Worker>> _workers;
         private readonly IRabbitMqQueueStarter _rabbitMqQueueStarter;
         private readonly ILogger _logger;
 
@@ -21,7 +21,7 @@ namespace Elsa.Activities.RabbitMq.Testing
         {
             _rabbitMqQueueStarter = rabbitMqQueueStarter;
             _logger = logger;
-            _workers = new Dictionary<string, ICollection<WorkerBase>>();
+            _workers = new Dictionary<string, ICollection<Worker>>();
         }
 
         public async Task CreateTestWorkersAsync(string workflowId, string workflowInstanceId, CancellationToken cancellationToken = default)
@@ -30,35 +30,26 @@ namespace Elsa.Activities.RabbitMq.Testing
 
             try
             {
-                if (!_workers.ContainsKey(workflowInstanceId))
+
+                if (_workers.ContainsKey(workflowInstanceId))
                 {
-                    _workers[workflowInstanceId] = new List<WorkerBase>();
-                }                    
+                    if (_workers[workflowInstanceId].Count > 0)
+                        return;
+                }
+                else
+                    _workers[workflowInstanceId] = new List<Worker>();
 
-                var receiverConfigs = (await _rabbitMqQueueStarter.GetConfigurationsAsync<RabbitMqMessageReceived>(x => x.Id == workflowId, cancellationToken).ToListAsync(cancellationToken)).Distinct();
-                var senderConfigs = (await _rabbitMqQueueStarter.GetConfigurationsAsync<SendRabbitMqMessage>(x => x.Id == workflowId, cancellationToken).ToListAsync(cancellationToken)).Distinct();
+                var workerConfigs = (await _rabbitMqQueueStarter.GetConfigurationsAsync<RabbitMqMessageReceived>(x => x.Id == workflowId, cancellationToken).ToListAsync(cancellationToken)).Distinct();
 
-                foreach (var config in receiverConfigs)
+                foreach (var config in workerConfigs)
                 {
                     try
                     {
-                        _workers[workflowInstanceId].Add(await _rabbitMqQueueStarter.CreateReceiverWorkerAsync(config, cancellationToken));
+                        _workers[workflowInstanceId].Add(await _rabbitMqQueueStarter.CreateWorkerAsync(config, cancellationToken));
                     }
                     catch (Exception e)
                     {
                         _logger.LogWarning(e, "Failed to create a test receiver for routing key {RoutingKey}", config.RoutingKey);
-                    }
-                }
-
-                foreach (var config in senderConfigs)
-                {
-                    try
-                    {
-                        _workers[workflowInstanceId].Add(await _rabbitMqQueueStarter.CreateSenderWorkerAsync(config, cancellationToken));
-                    }
-                    catch (Exception e)
-                    {
-                        _logger.LogWarning(e, "Failed to create a test sender for topic {RoutingKey}", config.RoutingKey);
                     }
                 }
             }

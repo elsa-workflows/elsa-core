@@ -15,30 +15,25 @@ namespace Elsa.Activities.RabbitMq.Services
 {
     public class RabbitMqQueueStarter : IRabbitMqQueueStarter
     {
-        private readonly IConfiguration _configuration;
         private readonly SemaphoreSlim _semaphore = new(1);
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IServiceProvider _serviceProvider;
-        private readonly ICollection<WorkerBase> _workers;
+        private readonly ICollection<Worker> _workers;
         private readonly IMessageReceiverClientFactory _messageReceiverClientFactory;
-        private readonly IMessageSenderClientFactory _messageSenderClientFactory;
         private readonly ILogger _logger;
 
         public RabbitMqQueueStarter(
             IConfiguration configuration, 
             IMessageReceiverClientFactory messageReceiverClientFactory,
-            IMessageSenderClientFactory messageSenderClientFactory,
             IServiceScopeFactory scopeFactory, 
             IServiceProvider serviceProvider, 
             ILogger<RabbitMqQueueStarter> logger)
         {
-            _configuration = configuration;
             _messageReceiverClientFactory = messageReceiverClientFactory;
-            _messageSenderClientFactory = messageSenderClientFactory;
             _scopeFactory = scopeFactory;
             _serviceProvider = serviceProvider;
             _logger = logger;
-            _workers = new List<WorkerBase>();
+            _workers = new List<Worker>();
         }
 
         public async Task CreateWorkersAsync(CancellationToken cancellationToken = default)
@@ -49,30 +44,17 @@ namespace Elsa.Activities.RabbitMq.Services
             {
                 await DisposeExistingWorkersAsync();
 
-                var receiverConfigs = (await GetConfigurationsAsync<SendRabbitMqMessage>(null, cancellationToken).ToListAsync(cancellationToken)).Distinct();
-                var senderConfigs = (await GetConfigurationsAsync<RabbitMqMessageReceived>(null, cancellationToken).ToListAsync(cancellationToken)).Distinct();
+                var receiverConfigs = (await GetConfigurationsAsync<RabbitMqMessageReceived>(null, cancellationToken).ToListAsync(cancellationToken)).GroupBy(c => c.GetHashCode()).Select(x => x.First());
 
                 foreach (var config in receiverConfigs)
                 {
                     try
                     {
-                        _workers.Add(await CreateReceiverWorkerAsync(config, cancellationToken));
+                        _workers.Add(await CreateWorkerAsync(config, cancellationToken));
                     }
                     catch (Exception e)
                     {
                         _logger.LogWarning(e, "Failed to create a receiver for routing key {RoutingKey}", config.RoutingKey);
-                    }
-                }
-
-                foreach (var config in senderConfigs)
-                {
-                    try
-                    {
-                        _workers.Add(await CreateSenderWorkerAsync(config, cancellationToken));
-                    }
-                    catch (Exception e)
-                    {
-                        _logger.LogWarning(e, "Failed to create a sender for topic {RoutingKey}", config.RoutingKey);
                     }
                 }
             }
@@ -82,20 +64,13 @@ namespace Elsa.Activities.RabbitMq.Services
             }
         }
 
-        public async Task<ReceiverWorker> CreateReceiverWorkerAsync(RabbitMqBusConfiguration config, CancellationToken cancellationToken = default)
+        public async Task<Worker> CreateWorkerAsync(RabbitMqBusConfiguration config, CancellationToken cancellationToken = default)
         {
             var receiver = await _messageReceiverClientFactory.GetReceiverAsync(config, cancellationToken);
-            return ActivatorUtilities.CreateInstance<ReceiverWorker>(_serviceProvider, (Func<IClient, Task>)DisposeReceiverAsync, receiver);
+            return ActivatorUtilities.CreateInstance<Worker>(_serviceProvider, (Func<IClient, Task>)DisposeWorkerAsync, receiver);
         }
 
-        public async Task<SenderWorker> CreateSenderWorkerAsync(RabbitMqBusConfiguration config, CancellationToken cancellationToken = default)
-        {
-            var sender = await _messageSenderClientFactory.GetSenderAsync(config, cancellationToken);
-            return ActivatorUtilities.CreateInstance<SenderWorker>(_serviceProvider, (Func<IClient, Task>)DisposeSenderAsync, sender);
-        }
-
-        private async Task DisposeReceiverAsync(IClient messageReceiver) => await _messageReceiverClientFactory.DisposeReceiverAsync(messageReceiver);
-        private async Task DisposeSenderAsync(IClient messageSender) => await _messageSenderClientFactory.DisposeSenderAsync(messageSender);
+        private async Task DisposeWorkerAsync(IClient messageReceiver) => await _messageReceiverClientFactory.DisposeReceiverAsync(messageReceiver);
 
         public async IAsyncEnumerable<RabbitMqBusConfiguration> GetConfigurationsAsync<T>(Func<IWorkflowBlueprint, bool>? predicate, [EnumeratorCancellation] CancellationToken cancellationToken) where T : IRabbitMqActivity
         {

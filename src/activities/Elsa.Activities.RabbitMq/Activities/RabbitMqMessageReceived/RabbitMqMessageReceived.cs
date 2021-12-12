@@ -58,14 +58,14 @@ namespace Elsa.Activities.RabbitMq
         
         private async ValueTask<IActivityExecutionResult> SuspendInternalAsync()
         {
-            await SetClientIsReceivingMessages(true);
+            await StartClient();
 
             return Suspend();
         }
 
         private IActivityExecutionResult ExecuteInternalAsync(ActivityExecutionContext context)
         {
-            var message = (TransportMessage)context.Input;
+            var message = (TransportMessage)context.Input!;
 
             var messageBody = System.Text.Encoding.UTF8.GetString(message.Body);
 
@@ -75,16 +75,13 @@ namespace Elsa.Activities.RabbitMq
             context.JournalData.Add("Headers", message.Headers);
 
             return Done();
-
-
         }
-
-        private async Task SetClientIsReceivingMessages(bool isReceivingMessages)
+        private async Task StartClient()
         {
             var config = new RabbitMqBusConfiguration(ConnectionString, RoutingKey, Headers);
 
             var client = await _messageReceiverClientFactory.GetReceiverAsync(config);
-            client.SetIsReceivingMessages(isReceivingMessages);
+            client.StartClient();
         }
     }
 }

@@ -1,12 +1,9 @@
 using Elsa.Activities.RabbitMq.Configuration;
-using Elsa.Activities.RabbitMq.Decorators;
-using Microsoft.Extensions.Logging;
 using Rebus.Activation;
 using Rebus.Bus;
 using Rebus.Config;
 using Rebus.Messages;
 using Rebus.Routing.TransportMessages;
-using Rebus.Transport;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,28 +17,24 @@ namespace Elsa.Activities.RabbitMq.Services
         private BuiltinHandlerActivator _activator;
         private IBus _bus;
 
-        public MessageHandlingToggle Toggle { get; set; }
-
         public RabbitMqBusConfiguration Configuration { get; }
 
         public Client(RabbitMqBusConfiguration configuration)
         {
             Configuration = configuration;
-            Toggle = new MessageHandlingToggle();
+            _activator = new BuiltinHandlerActivator();
         }
 
-        public void StartWithHandler(Func<TransportMessage, CancellationToken, Task> handler)
+        public void SubscribeWithHandler(Func<TransportMessage, CancellationToken, Task> handler)
         {
-            _activator = new BuiltinHandlerActivator();
+            if (_bus != null) return;
 
             _bus = Configure
                 .With(_activator)
+                .Options(o => o.SetNumberOfWorkers(0))
                 .Routing(r => r.AddTransportMessageForwarder(async transportMessage =>
                 {
                     if (!AllHeadersMatch(transportMessage.Headers)) return ForwardAction.None;
-
-                    //avoid more than one message being handled by an activity during a single suspension cycle
-                    Toggle.IsReceivingMessages = false;
 
                     await handler(transportMessage, CancellationToken.None);
 
@@ -50,29 +43,16 @@ namespace Elsa.Activities.RabbitMq.Services
                 .Transport(t =>
                 {
                     t.UseRabbitMq(Configuration.ConnectionString, $"Elsa{Guid.NewGuid().ToString("n").ToUpper()}").InputQueueOptions(o => o.SetAutoDelete(autoDelete: true));
-                    t.Decorate(d =>
-                    {
-                        var transport = d.Get<ITransport>();
-                        return new MessageHandlingTransportDecorator(transport, Toggle);
-                    });
                 })
                 .Start();
 
             _bus.Advanced.Topics.Subscribe(Configuration.RoutingKey);
         }
 
-        public void StartAsOneWayClient()
-        {
-            _activator = new BuiltinHandlerActivator();
-
-            _bus = Configure
-                .With(_activator)
-                .Transport(t => t.UseRabbitMqAsOneWayClient(Configuration.ConnectionString).InputQueueOptions(o => o.SetAutoDelete(autoDelete: true)))
-                .Start();
-        }
-
         public async Task PublishMessage(string message)
         {
+            if (_bus == null) ConfigureAsOneWayClient();
+
             await _bus.Advanced.Topics.Publish(Configuration.RoutingKey, message, Configuration.Headers);
         }
 
@@ -81,9 +61,24 @@ namespace Elsa.Activities.RabbitMq.Services
             _activator.Dispose();
         }
 
-        public void SetIsReceivingMessages(bool isReceivingMessages)
+        public void StartClient()
         {
-            Toggle.IsReceivingMessages = isReceivingMessages;
+            if (_bus.Advanced.Workers.Count == 0)
+                _bus.Advanced.Workers.SetNumberOfWorkers(1);
+        }
+
+        public void StopClient()
+        {
+            if (_bus.Advanced.Workers.Count == 1)
+                _bus.Advanced.Workers.SetNumberOfWorkers(0);
+        }
+
+        private void ConfigureAsOneWayClient()
+        {
+            _bus = Configure
+                .With(_activator)
+                .Transport(t => t.UseRabbitMqAsOneWayClient(Configuration.ConnectionString).InputQueueOptions(o => o.SetAutoDelete(autoDelete: true)))
+                .Start();
         }
 
         private bool AllHeadersMatch(Dictionary<string, string> messageHeaders) => Configuration.Headers.All(x => messageHeaders.ContainsKey(x.Key) && messageHeaders[x.Key] == x.Value);

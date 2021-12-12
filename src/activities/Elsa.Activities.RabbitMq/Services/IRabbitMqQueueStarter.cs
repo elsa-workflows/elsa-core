@@ -10,8 +10,7 @@ namespace Elsa.Activities.RabbitMq.Services
     public interface IRabbitMqQueueStarter
     {
         Task CreateWorkersAsync(CancellationToken cancellationToken = default);
-        Task<ReceiverWorker> CreateReceiverWorkerAsync(RabbitMqBusConfiguration config, CancellationToken cancellationToken = default);
-        Task<SenderWorker> CreateSenderWorkerAsync(RabbitMqBusConfiguration config, CancellationToken cancellationToken = default);
+        Task<Worker> CreateWorkerAsync(RabbitMqBusConfiguration config, CancellationToken cancellationToken = default);
         IAsyncEnumerable<RabbitMqBusConfiguration> GetConfigurationsAsync<T>(Func<IWorkflowBlueprint, bool>? predicate, CancellationToken cancellationToken) where T : IRabbitMqActivity;
     }
 }
