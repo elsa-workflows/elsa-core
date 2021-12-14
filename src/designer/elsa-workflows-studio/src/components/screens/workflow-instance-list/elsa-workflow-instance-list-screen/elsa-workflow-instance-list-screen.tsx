@@ -55,6 +55,17 @@ export class ElsaWorkflowInstanceListScreen {
 
   i18next: i18n;
   selectAllCheckboxEl: any;
+  unlistenRouteChanged: () => void;
+
+  connectedCallback() {
+    if (!!this.history)
+      this.unlistenRouteChanged = this.history.listen(e => this.routeChanged(e));
+  }
+
+  disconnectedCallback() {
+    if (!!this.unlistenRouteChanged)
+      this.unlistenRouteChanged();
+  }
 
   async componentWillLoad() {
     this.i18next = await loadTranslations(this.culture, resources);
@@ -64,10 +75,8 @@ export class ElsaWorkflowInstanceListScreen {
     this.selectedWorkflowStatus = this.workflowStatus;
     this.selectedOrderByState = this.orderBy;
 
-    if (!!this.history) {
-      this.history.listen(e => this.routeChanged(e));
+    if (!!this.history)
       this.applyQueryString(this.history.location.search);
-    }
 
     await this.loadWorkflowBlueprints();
     await this.loadWorkflowInstances();
