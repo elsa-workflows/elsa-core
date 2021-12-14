@@ -48,7 +48,7 @@ namespace Elsa.Scripting.JavaScript.Providers
             CancellationToken cancellationToken = default)
         {
             var typeScriptType = notification.GetTypeScriptType(propertyType);
-            writer.AppendLine($"{propertyName}(): {typeScriptType}");
+            writer.AppendLine($"{propertyName}(): {typeScriptType};");
             return new ValueTask();
         }
     }

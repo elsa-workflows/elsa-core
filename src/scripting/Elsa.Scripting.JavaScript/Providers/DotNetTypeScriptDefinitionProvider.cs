@@ -159,10 +159,8 @@ namespace Elsa.Scripting.JavaScript.Providers
 
                 var returnType = method.ReturnType;
                 
-                if (returnType != typeof(void))
-                {
+                if (returnType != typeof(void)) 
                     output.AppendFormat(":{0}", GetTypeScriptType(context, returnType, collectedTypes));
-                }
 
                 output.AppendLine(";");
             }
