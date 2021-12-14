@@ -1,6 +1,8 @@
-import {Component, Host, h, Prop, State, Listen, Method, Watch, Event, EventEmitter} from '@stencil/core';
+import {Component, Event, EventEmitter, h, Host, Method, Prop, Watch} from '@stencil/core';
 import {initializeMonacoWorker} from "./elsa-monaco-utils";
 import state from '../../../utils/store';
+import {languages} from "monaco-editor";
+import ScriptTarget = languages.typescript.ScriptTarget;
 
 // Until I figure out why the ESM loader doesn't work properly, we need to include these scripts manually from index.html
 // import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
@@ -52,9 +54,19 @@ export class ElsaMonaco {
   async addJavaScriptLib(libSource: string, libUri: string) {
     const monaco = this.monaco;
     monaco.languages.typescript.javascriptDefaults.setExtraLibs([{
+      content: "<reference lib=\"es5\" />",
+      filePath: "lib.d.ts"
+    }, {
       content: libSource,
       filePath: libUri
     }]);
+
+    monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
+      target: ScriptTarget.ES2020,
+      allowJs: true,
+      checkJs: true,
+
+    })
 
     const oldModel = monaco.editor.getModel(libUri);
 
