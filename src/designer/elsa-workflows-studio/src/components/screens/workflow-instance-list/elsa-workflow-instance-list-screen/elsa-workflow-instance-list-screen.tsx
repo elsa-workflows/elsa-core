@@ -167,13 +167,14 @@ export class ElsaWorkflowInstanceListScreen {
     this.currentPage = Math.max(this.currentPage, ElsaWorkflowInstanceListScreen.START_PAGE);
     this.currentPageSize = isNaN(this.currentPageSize) ? ElsaWorkflowInstanceListScreen.DEFAULT_PAGE_SIZE : this.currentPageSize;
     const elsaClient = await this.createClient();
-    console.debug(`workflow: ${this.selectedWorkflowId}`);
     this.workflowInstances = await elsaClient.workflowInstancesApi.list(this.currentPage, this.currentPageSize, this.selectedWorkflowId, this.selectedWorkflowStatus, this.selectedOrderByState, this.currentSearchTerm, this.correlationId);
     const maxPage = Math.floor(this.workflowInstances.totalCount / this.currentPageSize);
+
     if (this.currentPage > maxPage) {
       this.currentPage = maxPage;
       this.workflowInstances = await elsaClient.workflowInstancesApi.list(this.currentPage, this.currentPageSize, this.selectedWorkflowId, this.selectedWorkflowStatus, this.selectedOrderByState, this.currentSearchTerm, this.correlationId);
     }
+
     this.setSelectAllIndeterminateState();
   }
 
@@ -244,7 +245,7 @@ export class ElsaWorkflowInstanceListScreen {
 
   async routeChanged(e: LocationSegments) {
 
-    if (e.pathname.toLowerCase().indexOf('workflow-instances') < 0)
+    if (!e.pathname.toLowerCase().endsWith('workflow-instances'))
       return;
 
     this.applyQueryString(e.search);
