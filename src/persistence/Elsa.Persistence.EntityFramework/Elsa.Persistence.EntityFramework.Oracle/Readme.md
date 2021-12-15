@@ -25,5 +25,5 @@ docker logs oracle-express
 Connection string:
 
 ```
-Data Source=localhost;User Id=SYS;Password=oracle1234;DBA Privilege=SYSDBA;
+Data Source=localhost;User Id=SYS;Password=sys;DBA Privilege=SYSDBA;
 ```

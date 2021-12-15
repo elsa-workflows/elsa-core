@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Elsa.Persistence.EntityFramework.Oracle.Migrations
@@ -23,7 +23,7 @@ namespace Elsa.Persistence.EntityFramework.Oracle.Migrations
                     ActivityType = table.Column<string>(type: "NVARCHAR2(450)", nullable: false),
                     ActivityId = table.Column<string>(type: "NVARCHAR2(450)", nullable: false),
                     WorkflowInstanceId = table.Column<string>(type: "NVARCHAR2(450)", nullable: false),
-                    CorrelationId = table.Column<string>(type: "NVARCHAR2(450)", nullable: true)
+                    CorrelationId = table.Column<string>(type: "NVARCHAR2(450)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -83,6 +83,7 @@ namespace Elsa.Persistence.EntityFramework.Oracle.Migrations
                 {
                     Id = table.Column<string>(type: "NVARCHAR2(450)", nullable: false),
                     DefinitionId = table.Column<string>(type: "NVARCHAR2(450)", nullable: false),
+                    DefinitionVersionId = table.Column<string>(type: "NVARCHAR2(2000)", nullable: false),
                     TenantId = table.Column<string>(type: "NVARCHAR2(450)", nullable: true),
                     Version = table.Column<int>(type: "NUMBER(10)", nullable: false),
                     WorkflowStatus = table.Column<int>(type: "NUMBER(10)", nullable: false),

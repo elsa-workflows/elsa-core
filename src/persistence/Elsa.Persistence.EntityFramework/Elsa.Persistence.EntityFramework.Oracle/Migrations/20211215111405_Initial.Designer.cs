@@ -10,8 +10,8 @@ using Oracle.EntityFrameworkCore.Metadata;
 namespace Elsa.Persistence.EntityFramework.Oracle.Migrations
 {
     [DbContext(typeof(ElsaContext))]
-    [Migration("20210923112423_Update23")]
-    partial class Update23
+    [Migration("20211215111405_Initial")]
+    partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -36,6 +36,7 @@ namespace Elsa.Persistence.EntityFramework.Oracle.Migrations
                         .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("CorrelationId")
+                        .IsRequired()
                         .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("Hash")
@@ -44,11 +45,11 @@ namespace Elsa.Persistence.EntityFramework.Oracle.Migrations
 
                     b.Property<string>("Model")
                         .IsRequired()
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NCLOB");
 
                     b.Property<string>("ModelType")
                         .IsRequired()
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NCLOB");
 
                     b.Property<string>("TenantId")
                         .HasColumnType("NVARCHAR2(450)");
@@ -92,7 +93,7 @@ namespace Elsa.Persistence.EntityFramework.Oracle.Migrations
                         .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("Data")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NCLOB");
 
                     b.Property<string>("DefinitionId")
                         .IsRequired()
@@ -102,10 +103,10 @@ namespace Elsa.Persistence.EntityFramework.Oracle.Migrations
                         .HasColumnType("NUMBER(1)");
 
                     b.Property<string>("Description")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NCLOB");
 
                     b.Property<string>("DisplayName")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NCLOB");
 
                     b.Property<bool>("IsLatest")
                         .HasColumnType("NUMBER(1)");
@@ -172,16 +173,16 @@ namespace Elsa.Persistence.EntityFramework.Oracle.Migrations
                         .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("Data")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NCLOB");
 
                     b.Property<string>("EventName")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NCLOB");
 
                     b.Property<string>("Message")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NCLOB");
 
                     b.Property<string>("Source")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NCLOB");
 
                     b.Property<string>("TenantId")
                         .HasColumnType("NVARCHAR2(450)");
@@ -235,11 +236,15 @@ namespace Elsa.Persistence.EntityFramework.Oracle.Migrations
                         .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
 
                     b.Property<string>("Data")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NCLOB");
 
                     b.Property<string>("DefinitionId")
                         .IsRequired()
                         .HasColumnType("NVARCHAR2(450)");
+
+                    b.Property<string>("DefinitionVersionId")
+                        .IsRequired()
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<DateTimeOffset?>("FaultedAt")
                         .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
@@ -248,7 +253,7 @@ namespace Elsa.Persistence.EntityFramework.Oracle.Migrations
                         .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
 
                     b.Property<string>("LastExecutedActivityId")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NCLOB");
 
                     b.Property<DateTimeOffset?>("LastExecutedAt")
                         .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
