@@ -4,6 +4,7 @@ namespace Elsa.Services.Models
 {
     public interface IWorkflowBlueprint : ICompositeActivityBlueprint
     {
+        string VersionId { get; }
         int Version { get; }
         string? TenantId { get; }
         bool IsSingleton { get; }
