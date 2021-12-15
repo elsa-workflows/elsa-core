@@ -46,6 +46,7 @@ namespace Elsa.Services.Workflows
             var workflowBlueprint = new WorkflowBlueprint(
                 workflowDefinition.DefinitionId,
                 workflowDefinition.Version,
+                workflowDefinition.VersionId,
                 workflowDefinition.TenantId,
                 workflowDefinition.IsSingleton,
                 workflowDefinition.Name,

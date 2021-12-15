@@ -61,13 +61,6 @@ export class ElsaMonaco {
       filePath: libUri
     }]);
 
-    monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
-      target: ScriptTarget.ES2020,
-      allowJs: true,
-      checkJs: true,
-
-    })
-
     const oldModel = monaco.editor.getModel(libUri);
 
     if (oldModel)
