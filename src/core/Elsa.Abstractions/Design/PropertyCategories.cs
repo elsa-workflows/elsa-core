@@ -4,5 +4,6 @@
     {
         public const string Advanced = "Advanced";
         public const string Hosting = "Hosting";
+        public const string Configuration = "Configuration";
     }
 }

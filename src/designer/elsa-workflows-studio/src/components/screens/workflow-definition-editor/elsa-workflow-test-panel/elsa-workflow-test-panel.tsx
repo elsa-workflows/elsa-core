@@ -62,6 +62,10 @@ export class ElsaWorkflowTestPanel {
         this.workflowStarted = false;
       }
 
+      if (message.workflowStatus === 'Suspended'){
+        this.workflowStarted = true;
+      }
+
       if (!this.message){
         this.message = message;
       }
@@ -120,6 +124,7 @@ export class ElsaWorkflowTestPanel {
     if (!!message) {
       const client = await createElsaClient(this.serverUrl);
       await client.workflowInstancesApi.delete(message.workflowInstanceId);
+      await client.workflowTestApi.stop({ workflowInstanceId: message.workflowInstanceId });
     }
 
     this.message = null;
