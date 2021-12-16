@@ -31,6 +31,7 @@ namespace Elsa.Services.Workflows
                 DefinitionId = workflowBlueprint.Id,
                 TenantId = tenantId ?? workflowBlueprint.TenantId,
                 Version = workflowBlueprint.Version,
+                DefinitionVersionId = workflowBlueprint.VersionId,
                 WorkflowStatus = WorkflowStatus.Idle,
                 CorrelationId = correlationId ?? Guid.NewGuid().ToString("N"),
                 ContextId = contextId,

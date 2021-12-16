@@ -1,4 +1,4 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Server.Api.ActionFilters;
 using Elsa.Services;
@@ -39,7 +39,7 @@ namespace Elsa.WorkflowTesting.Api.Endpoints
         {
             var tenantId = await _tenantAccessor.GetTenantIdAsync(cancellationToken);
             var result = await _workflowTestLaunchpad.FindAndRestartTestWorkflowAsync(request.WorkflowDefinitionId, request.ActivityId, request.Version, request.SignalRConnectionId, request.LastWorkflowInstanceId, tenantId, cancellationToken);
-            
+
             if (result == null)
                 return NotFound();
 

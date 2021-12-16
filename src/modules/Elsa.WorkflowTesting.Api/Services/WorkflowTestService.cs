@@ -1,8 +1,10 @@
-using Elsa.WorkflowTesting.Hubs;
-using Elsa.WorkflowTesting.Models;
+using System.Threading.Tasks;
+using Elsa.WorkflowTesting.Api.Hubs;
+using Elsa.WorkflowTesting.Messages;
+using Elsa.WorkflowTesting.Services;
 using Microsoft.AspNetCore.SignalR;
 
-namespace Elsa.WorkflowTesting.Services
+namespace Elsa.WorkflowTesting.Api.Services
 {
     public class WorkflowTestService : Hub, IWorkflowTestService
     {

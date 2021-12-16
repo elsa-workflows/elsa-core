@@ -1,5 +1,5 @@
 using Elsa.Retention.Extensions;
-using Elsa.WorkflowTesting.Extensions;
+using Elsa.WorkflowTesting.Api.Extensions;
 using Hangfire;
 using Hangfire.SQLite;
 using Microsoft.AspNetCore.Builder;
@@ -96,7 +96,7 @@ namespace Elsa.Samples.Server.Host
             services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("Content-Disposition")));
 
             //Workflow Testing
-            services.AddWorkflowTestingServices();
+            //services.AddWorkflowTestingServices();
         }
 
         public void Configure(IApplicationBuilder app)
@@ -117,7 +117,8 @@ namespace Elsa.Samples.Server.Host
                 .UseElsaFeatures()
                 .UseRouting()
                 .UseEndpoints(endpoints => { endpoints.MapControllers(); })
-                .MapWorkflowTestHub();
+                //.MapWorkflowTestHub()
+                ;
         }
         
         private void AddHangfire(IServiceCollection services, string dbConnectionString)

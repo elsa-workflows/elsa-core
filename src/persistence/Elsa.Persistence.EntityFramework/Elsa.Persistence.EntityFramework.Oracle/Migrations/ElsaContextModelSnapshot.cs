@@ -240,6 +240,10 @@ namespace Elsa.Persistence.EntityFramework.Oracle.Migrations
                         .IsRequired()
                         .HasColumnType("NVARCHAR2(450)");
 
+                    b.Property<string>("DefinitionVersionId")
+                        .IsRequired()
+                        .HasColumnType("NVARCHAR2(2000)");
+
                     b.Property<DateTimeOffset?>("FaultedAt")
                         .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
 

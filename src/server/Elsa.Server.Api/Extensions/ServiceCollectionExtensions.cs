@@ -51,8 +51,9 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<ActivityBlueprintConverter>()
                 .AddScoped<IWorkflowBlueprintMapper, WorkflowBlueprintMapper>()
                 .AddSingleton<IEndpointContentSerializerSettingsProvider, EndpointContentSerializerSettingsProvider>()
-                .AddAutoMapperProfile<AutoMapperProfile>();
-
+                .AddAutoMapperProfile<AutoMapperProfile>()
+                .AddSignalR();
+                
             return services;
         }
 

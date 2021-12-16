@@ -55,19 +55,28 @@ export class ElsaWorkflowInstanceListScreen {
 
   i18next: i18n;
   selectAllCheckboxEl: any;
+  unlistenRouteChanged: () => void;
+
+  connectedCallback() {
+    if (!!this.history)
+      this.unlistenRouteChanged = this.history.listen(e => this.routeChanged(e));
+  }
+
+  disconnectedCallback() {
+    if (!!this.unlistenRouteChanged)
+      this.unlistenRouteChanged();
+  }
 
   async componentWillLoad() {
     this.i18next = await loadTranslations(this.culture, resources);
-
-    if (!!this.history) {
-      this.history.listen(e => this.routeChanged(e));
-      this.applyQueryString(this.history.location.search);
-    }
 
     this.selectedWorkflowId = this.workflowId;
     this.selectedCorrelationId = this.correlationId;
     this.selectedWorkflowStatus = this.workflowStatus;
     this.selectedOrderByState = this.orderBy;
+
+    if (!!this.history)
+      this.applyQueryString(this.history.location.search);
 
     await this.loadWorkflowBlueprints();
     await this.loadWorkflowInstances();
@@ -160,10 +169,12 @@ export class ElsaWorkflowInstanceListScreen {
     const elsaClient = await this.createClient();
     this.workflowInstances = await elsaClient.workflowInstancesApi.list(this.currentPage, this.currentPageSize, this.selectedWorkflowId, this.selectedWorkflowStatus, this.selectedOrderByState, this.currentSearchTerm, this.correlationId);
     const maxPage = Math.floor(this.workflowInstances.totalCount / this.currentPageSize);
+
     if (this.currentPage > maxPage) {
       this.currentPage = maxPage;
       this.workflowInstances = await elsaClient.workflowInstancesApi.list(this.currentPage, this.currentPageSize, this.selectedWorkflowId, this.selectedWorkflowStatus, this.selectedOrderByState, this.currentSearchTerm, this.correlationId);
     }
+
     this.setSelectAllIndeterminateState();
   }
 
@@ -234,7 +245,7 @@ export class ElsaWorkflowInstanceListScreen {
 
   async routeChanged(e: LocationSegments) {
 
-    if (e.pathname.toLowerCase().indexOf('workflow-instances') < 0)
+    if (!e.pathname.toLowerCase().endsWith('workflow-instances'))
       return;
 
     this.applyQueryString(e.search);

@@ -1,21 +1,19 @@
-using Elsa.WorkflowTesting.Handlers;
+using Elsa.Server.Api.Services;
+using Elsa.WorkflowTesting.Api.Handlers;
+using Elsa.WorkflowTesting.Api.Services;
 using Elsa.WorkflowTesting.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.WorkflowTesting.Extensions
+namespace Elsa.WorkflowTesting.Api.Extensions
 {
     public static class ServiceCollectionExtensions
     {
         public static IServiceCollection AddWorkflowTestingServices(this IServiceCollection services)
         {
-            services
+            return services
                 .AddScoped<IWorkflowTestLaunchpad, WorkflowTestLaunchpad>()
                 .AddScoped<IWorkflowTestService, WorkflowTestService>()
-                .AddNotificationHandlersFrom<ActivityExecutionResultExecutedHandler>()
-                .AddNotificationHandlersFrom<ConfigureWorkflowContextForTestHandler>()
-                .AddSignalR();
-
-            return services;
+                .AddNotificationHandlersFrom<ActivityExecutionResultExecutedHandler>();
         }
     }
 }

@@ -51,12 +51,12 @@ export class ElsaWorkflowTestPanel {
       this.signalRConnectionId = message;
     });
 
-    this.hubConnection.on('DispatchMessage', (message) => {
+    this.hubConnection.on('DispatchMessage', async (message) => {
       message = message as WorkflowTestActivityMessage;
       message.data = JSON.parse(message.data);
       this.workflowTestActivityMessages = this.workflowTestActivityMessages.filter(x => x.activityId !== message.activityId);
       this.workflowTestActivityMessages = [...this.workflowTestActivityMessages, message];
-      eventBus.emit(EventTypes.TestActivityMessageReceived, this, message);
+      await eventBus.emit(EventTypes.TestActivityMessageReceived, this, message);
 
       if (message.workflowStatus === 'Executed' || message.workflowStatus === 'Failed') {
         this.workflowStarted = false;
@@ -73,7 +73,7 @@ export class ElsaWorkflowTestPanel {
 
     this.hubConnection.start()
       .then(() => this.hubConnection.invoke("Connecting"))
-      .catch((err) => console.log('error while establishing SignalR connection: ' + err));
+      .catch((err) => console.log('Failed to establish a SignalR connection.'));
   }
 
   connectedCallback(){

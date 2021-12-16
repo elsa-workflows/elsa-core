@@ -16,6 +16,7 @@ namespace Elsa.Services.Models
         public WorkflowBlueprint(
             string id,
             int version,
+            string versionId,
             string? tenantId,
             bool isSingleton,
             string? name,
@@ -33,21 +34,22 @@ namespace Elsa.Services.Models
             IEnumerable<IActivityBlueprint> activities,
             IEnumerable<IConnection> connections,
             IActivityPropertyProviders activityPropertyValueProviders) : base(
-            id, 
-            default, 
-            name, 
-            displayName, 
-            description, 
-            id, 
-            true, 
-            false, 
-            false, 
+            id,
+            default,
+            name,
+            displayName,
+            description,
+            id,
+            true,
+            false,
+            false,
             new Dictionary<string, string>(),
             default)
         {
             Id = id;
             Parent = this;
             Version = version;
+            VersionId = versionId;
             TenantId = tenantId;
             IsSingleton = isSingleton;
             IsLatest = isLatest;
@@ -66,6 +68,7 @@ namespace Elsa.Services.Models
         }
 
         public int Version { get; set; }
+        public string VersionId { get; set; }
         public string? TenantId { get; set; }
         public bool IsSingleton { get; set; }
         public bool IsPublished { get; set; }
@@ -77,7 +80,7 @@ namespace Elsa.Services.Models
         /// The channel, or queue, to place workflow instances of this workflow blueprint in. Channels can be used by the workflow dispatcher to prioritize workflows. 
         /// </summary>
         public string? Channel { get; }
-        
+
         public Variables Variables { get; set; }
         public WorkflowContextOptions? ContextOptions { get; set; }
         public WorkflowPersistenceBehavior PersistenceBehavior { get; set; }
