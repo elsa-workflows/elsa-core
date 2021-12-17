@@ -43,6 +43,7 @@ namespace Elsa.Samples.Server.Host
                 typeof(Elsa.Activities.Email.Startup),
                 typeof(Elsa.Activities.Telnyx.Startup),
                 typeof(Elsa.Activities.File.Startup),
+                typeof(Elsa.Activities.RabbitMq.Startup),
                 typeof(Persistence.EntityFramework.Sqlite.Startup),
                 typeof(Persistence.EntityFramework.SqlServer.Startup),
                 typeof(Persistence.EntityFramework.MySql.Startup),

@@ -1,4 +1,3 @@
-using System;
 using Elsa;
 using Elsa.Models;
 using Elsa.Server.Api;
@@ -10,6 +9,7 @@ using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.Filters;
 using Swashbuckle.AspNetCore.SwaggerGen;
+using System;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -53,6 +53,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IEndpointContentSerializerSettingsProvider, EndpointContentSerializerSettingsProvider>()
                 .AddAutoMapperProfile<AutoMapperProfile>()
                 .AddSignalR();
+                
             return services;
         }
 

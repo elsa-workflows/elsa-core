@@ -8,6 +8,7 @@ import {
 } from "../../../../models";
 import {mapSyntaxToLanguage, parseJson} from "../../../../utils/utils";
 import {SwitchCase} from "./models";
+import {IconColor, IconName, iconProvider} from "../../../../services/icon-provider";
 
 @Component({
   tag: 'elsa-switch-cases-property',
@@ -130,13 +131,7 @@ export class ElsaSwitchCasesProperty {
           <td class="elsa-pt-1 elsa-pr-2 elsa-text-right">
             <button type="button" onClick={() => this.onDeleteCaseClick(switchCase)}
                     class="elsa-h-5 elsa-w-5 elsa-mx-auto elsa-outline-none focus:elsa-outline-none">
-              <svg class="elsa-h-5 elsa-w-5 elsa-text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="3 6 5 6 21 6"/>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                <line x1="10" y1="11" x2="10" y2="17"/>
-                <line x1="14" y1="11" x2="14" y2="17"/>
-              </svg>
+              { iconProvider.getIcon(IconName.TrashBinOutline) }
             </button>
           </td>
         </tr>
@@ -182,12 +177,7 @@ export class ElsaSwitchCasesProperty {
           </table>
           <button type="button" onClick={() => this.onAddCaseClick()}
                   class="elsa-inline-flex elsa-items-center elsa-px-4 elsa-py-2 elsa-border elsa-border-transparent elsa-shadow-sm elsa-text-sm elsa-font-medium elsa-rounded-md elsa-text-white elsa-bg-blue-600 hover:elsa-bg-blue-700 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 elsa-mt-2">
-            <svg class="-elsa-ml-1 elsa-mr-2 elsa-h-5 elsa-w-5" width="24" height="24" viewBox="0 0 24 24"
-                 stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-              <path stroke="none" d="M0 0h24v24H0z"/>
-              <line x1="12" y1="5" x2="12" y2="19"/>
-              <line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
+            { iconProvider.getIcon(IconName.Plus) }
             Add Case
           </button>
         </elsa-multi-expression-editor>

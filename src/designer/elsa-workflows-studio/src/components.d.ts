@@ -64,6 +64,12 @@ export namespace Components {
         "selectedActivityIds": Array<string>;
         "showActivityEditor": (activity: ActivityModel, animate: boolean) => Promise<void>;
     }
+    interface ElsaDictionaryProperty {
+        "activityModel": ActivityModel;
+        "propertyDescriptor": ActivityPropertyDescriptor;
+        "propertyModel": ActivityDefinitionProperty;
+        "serverUrl": string;
+    }
     interface ElsaDropdownButton {
         "icon"?: any;
         "items": Array<DropdownButtonItem>;
@@ -408,6 +414,12 @@ declare global {
         prototype: HTMLElsaDesignerTreeElement;
         new (): HTMLElsaDesignerTreeElement;
     };
+    interface HTMLElsaDictionaryPropertyElement extends Components.ElsaDictionaryProperty, HTMLStencilElement {
+    }
+    var HTMLElsaDictionaryPropertyElement: {
+        prototype: HTMLElsaDictionaryPropertyElement;
+        new (): HTMLElsaDictionaryPropertyElement;
+    };
     interface HTMLElsaDropdownButtonElement extends Components.ElsaDropdownButton, HTMLStencilElement {
     }
     var HTMLElsaDropdownButtonElement: {
@@ -718,6 +730,7 @@ declare global {
         "elsa-control": HTMLElsaControlElement;
         "elsa-copy-button": HTMLElsaCopyButtonElement;
         "elsa-designer-tree": HTMLElsaDesignerTreeElement;
+        "elsa-dictionary-property": HTMLElsaDictionaryPropertyElement;
         "elsa-dropdown-button": HTMLElsaDropdownButtonElement;
         "elsa-dropdown-property": HTMLElsaDropdownPropertyElement;
         "elsa-expression-editor": HTMLElsaExpressionEditorElement;
@@ -817,6 +830,12 @@ declare namespace LocalJSX {
         "onConnectionContextMenuButtonClicked"?: (event: CustomEvent<ActivityContextMenuState>) => void;
         "onWorkflow-changed"?: (event: CustomEvent<WorkflowModel>) => void;
         "selectedActivityIds"?: Array<string>;
+    }
+    interface ElsaDictionaryProperty {
+        "activityModel"?: ActivityModel;
+        "propertyDescriptor"?: ActivityPropertyDescriptor;
+        "propertyModel"?: ActivityDefinitionProperty;
+        "serverUrl"?: string;
     }
     interface ElsaDropdownButton {
         "icon"?: any;
@@ -1114,6 +1133,7 @@ declare namespace LocalJSX {
         "elsa-control": ElsaControl;
         "elsa-copy-button": ElsaCopyButton;
         "elsa-designer-tree": ElsaDesignerTree;
+        "elsa-dictionary-property": ElsaDictionaryProperty;
         "elsa-dropdown-button": ElsaDropdownButton;
         "elsa-dropdown-property": ElsaDropdownProperty;
         "elsa-expression-editor": ElsaExpressionEditor;
@@ -1179,6 +1199,7 @@ declare module "@stencil/core" {
             "elsa-control": LocalJSX.ElsaControl & JSXBase.HTMLAttributes<HTMLElsaControlElement>;
             "elsa-copy-button": LocalJSX.ElsaCopyButton & JSXBase.HTMLAttributes<HTMLElsaCopyButtonElement>;
             "elsa-designer-tree": LocalJSX.ElsaDesignerTree & JSXBase.HTMLAttributes<HTMLElsaDesignerTreeElement>;
+            "elsa-dictionary-property": LocalJSX.ElsaDictionaryProperty & JSXBase.HTMLAttributes<HTMLElsaDictionaryPropertyElement>;
             "elsa-dropdown-button": LocalJSX.ElsaDropdownButton & JSXBase.HTMLAttributes<HTMLElsaDropdownButtonElement>;
             "elsa-dropdown-property": LocalJSX.ElsaDropdownProperty & JSXBase.HTMLAttributes<HTMLElsaDropdownPropertyElement>;
             "elsa-expression-editor": LocalJSX.ElsaExpressionEditor & JSXBase.HTMLAttributes<HTMLElsaExpressionEditorElement>;
