@@ -11,7 +11,7 @@ namespace Elsa.Persistence.EntityFramework.Core
     {
         public const string ElsaSchema = "Elsa";
         public const string MigrationsHistoryTable = "__EFMigrationsHistory";
-        
+
         public ElsaContext(DbContextOptions options) : base(options)
         {
         }
@@ -24,7 +24,7 @@ namespace Elsa.Persistence.EntityFramework.Core
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            if (!string.IsNullOrWhiteSpace(Schema)) 
+            if (!string.IsNullOrWhiteSpace(Schema))
                 modelBuilder.HasDefaultSchema(Schema);
 
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(ElsaContext).Assembly);
@@ -48,48 +48,18 @@ namespace Elsa.Persistence.EntityFramework.Core
 
             if (Database.IsOracle())
             {
-                //in order to use data more than 2000 char we have to use NCLOB ,in oracle we have to explicitly say the column is NCLOB otherwise it would be considered Nvarchar(2000)
-                modelBuilder.Entity<WorkflowInstance>().Property(x => x.LastExecutedActivityId)
-                    .HasColumnType("NCLOB");
-
-                modelBuilder.Entity<WorkflowInstance>().Property("Data")
-                    .HasColumnType("NCLOB");
-
-
-
-                modelBuilder.Entity<WorkflowExecutionLogRecord>().Property(x => x.Source)
-                    .HasColumnType("NCLOB");
-
-                modelBuilder.Entity<WorkflowExecutionLogRecord>().Property(x => x.Message)
-                    .HasColumnType("NCLOB");
-
-                modelBuilder.Entity<WorkflowExecutionLogRecord>().Property(x => x.EventName)
-                    .HasColumnType("NCLOB");
-
-                modelBuilder.Entity<WorkflowExecutionLogRecord>().Property(x => x.Data)
-                    .HasColumnType("NCLOB");
-
-
-
-
-                modelBuilder.Entity<WorkflowDefinition>().Property(x => x.DisplayName)
-                    .HasColumnType("NCLOB");
-
-                modelBuilder.Entity<WorkflowDefinition>().Property(x => x.Description)
-                .HasColumnType("NCLOB");
-
-                modelBuilder.Entity<WorkflowDefinition>().Property("Data")
-                    .HasColumnType("NCLOB");
-
-
-
-
-                modelBuilder.Entity<Bookmark>().Property(x => x.Model)
-                    .HasColumnType("NCLOB");
-
-                modelBuilder.Entity<Bookmark>().Property(x => x.ModelType)
-                    .HasColumnType("NCLOB");
-
+                // In order to use data more than 2000 char we have to use NCLOB. In oracle we have to explicitly say the column is NCLOB otherwise it would be considered nvarchar(2000).
+                modelBuilder.Entity<WorkflowInstance>().Property(x => x.LastExecutedActivityId).HasColumnType("NCLOB");
+                modelBuilder.Entity<WorkflowInstance>().Property("Data").HasColumnType("NCLOB");
+                modelBuilder.Entity<WorkflowExecutionLogRecord>().Property(x => x.Source).HasColumnType("NCLOB");
+                modelBuilder.Entity<WorkflowExecutionLogRecord>().Property(x => x.Message).HasColumnType("NCLOB");
+                modelBuilder.Entity<WorkflowExecutionLogRecord>().Property(x => x.EventName).HasColumnType("NCLOB");
+                modelBuilder.Entity<WorkflowExecutionLogRecord>().Property(x => x.Data).HasColumnType("NCLOB");
+                modelBuilder.Entity<WorkflowDefinition>().Property(x => x.DisplayName).HasColumnType("NCLOB");
+                modelBuilder.Entity<WorkflowDefinition>().Property(x => x.Description).HasColumnType("NCLOB");
+                modelBuilder.Entity<WorkflowDefinition>().Property("Data").HasColumnType("NCLOB");
+                modelBuilder.Entity<Bookmark>().Property(x => x.Model).HasColumnType("NCLOB");
+                modelBuilder.Entity<Bookmark>().Property(x => x.ModelType).HasColumnType("NCLOB");
             }
         }
     }

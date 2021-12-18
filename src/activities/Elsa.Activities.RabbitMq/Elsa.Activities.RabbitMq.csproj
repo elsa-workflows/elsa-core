@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+        <RootNamespace>Elsa.Activities.RabbitMq</RootNamespace>
+        <LangVersion>latest</LangVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
+      <ProjectReference Include="..\..\modules\Elsa.WorkflowTesting\Elsa.WorkflowTesting.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Rebus.RabbitMq" Version="7.3.0" />
+    </ItemGroup>
+
+</Project>

@@ -1,5 +1,5 @@
-using System.Threading.Tasks;
 using Elsa.WorkflowTesting.Messages;
+using System.Threading.Tasks;
 
 namespace Elsa.WorkflowTesting.Services
 {
