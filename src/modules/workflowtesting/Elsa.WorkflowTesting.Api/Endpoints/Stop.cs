@@ -1,6 +1,6 @@
 using Elsa.Server.Api.ActionFilters;
 using Elsa.Testing.Api.Models;
-using Elsa.Testing.Events;
+using Elsa.WorkflowTesting.Events;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;

@@ -371,9 +371,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Retention", "src\modul
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflowtesting", "workflowtesting", "{1B0F0880-8390-4A1C-9AE8-D13427626794}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.WorkflowTesting", "src\modules\Elsa.WorkflowTesting\Elsa.WorkflowTesting.csproj", "{0327324E-0B80-4A6A-A7D6-DD521657666F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.WorkflowTesting", "src\modules\workflowtesting\Elsa.WorkflowTesting\Elsa.WorkflowTesting.csproj", "{0327324E-0B80-4A6A-A7D6-DD521657666F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.WorkflowTesting.Api", "src\modules\Elsa.WorkflowTesting.Api\Elsa.WorkflowTesting.Api.csproj", "{4A4DC44E-D50F-49B8-A9DE-DED26FC05166}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.WorkflowTesting.Api", "src\modules\workflowtesting\Elsa.WorkflowTesting.Api\Elsa.WorkflowTesting.Api.csproj", "{4A4DC44E-D50F-49B8-A9DE-DED26FC05166}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.UniqueCorrelatedWorkflows", "src\samples\aspnet\Elsa.Samples.UniqueCorrelatedWorkflows\Elsa.Samples.UniqueCorrelatedWorkflows.csproj", "{4CD8293D-4544-4A23-BDEF-15B66D5E924F}"
 EndProject
