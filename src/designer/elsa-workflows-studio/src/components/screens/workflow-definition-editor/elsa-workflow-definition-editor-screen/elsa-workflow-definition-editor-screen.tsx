@@ -45,6 +45,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
   @Prop({attribute: 'server-url', reflect: true}) serverUrl: string;
   @Prop({attribute: 'monaco-lib-path', reflect: true}) monacoLibPath: string;
   @Prop() culture: string;
+  @Prop() basePath: string;
   @Prop() history: RouterHistory;
   @State() workflowDefinition: WorkflowDefinition;
   @State() workflowModel: WorkflowModel;
@@ -370,7 +371,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
   }
 
   updateUrl(id) {
-    this.history.push(`/workflow-definitions/${id}`, {});
+    this.history.push(`${this.basePath}/workflow-definitions/${id}`, {});
   }
 
   mapWorkflowModel(workflowDefinition: WorkflowDefinition): WorkflowModel {
@@ -1066,4 +1067,4 @@ export class ElsaWorkflowDefinitionEditorScreen {
 }
 
 injectHistory(ElsaWorkflowDefinitionEditorScreen);
-DashboardTunnel.injectProps(ElsaWorkflowDefinitionEditorScreen, ['serverUrl', 'culture', 'monacoLibPath']);
+DashboardTunnel.injectProps(ElsaWorkflowDefinitionEditorScreen, ['serverUrl', 'culture', 'monacoLibPath', 'basePath']);
