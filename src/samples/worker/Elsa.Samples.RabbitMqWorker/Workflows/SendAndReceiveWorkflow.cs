@@ -1,3 +1,4 @@
+using System;
 using Elsa.Activities.Console;
 using Elsa.Activities.RabbitMq;
 using Elsa.Builders;
@@ -23,7 +24,7 @@ namespace Elsa.Samples.RabbitMqWorker.Workflows
             })
             .SendTopicMessage(_connectionString, "Greetings", default!, "Greetings from RabbitMQ")
             .MessageReceived(_connectionString, "Greetings", default!)         
-            .WriteLine(ctx => "End: " + (string)ctx.Input);
+            .WriteLine(ctx => "End: " + (string?)ctx.Input);
 
     }
 }
