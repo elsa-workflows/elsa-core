@@ -290,6 +290,7 @@ export namespace Components {
         "history": RouterHistory;
         "importWorkflow": (file: File) => Promise<void>;
         "monacoLibPath": string;
+        "serverFeatures": Array<string>;
         "serverUrl": string;
         "workflowDefinitionId": string;
     }
@@ -1055,6 +1056,7 @@ declare namespace LocalJSX {
         "history"?: RouterHistory;
         "monacoLibPath"?: string;
         "onWorkflowSaved"?: (event: CustomEvent<WorkflowDefinition>) => void;
+        "serverFeatures"?: Array<string>;
         "serverUrl"?: string;
         "workflowDefinitionId"?: string;
     }

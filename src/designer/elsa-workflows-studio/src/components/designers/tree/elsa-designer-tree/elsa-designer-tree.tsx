@@ -61,7 +61,6 @@ export class ElsaWorkflowDesigner {
   @Event() activityContextMenuButtonTestClicked: EventEmitter<ActivityContextMenuState>;
   @State() workflowModel: WorkflowModel;
 
-
   @State() activityContextMenuState: ActivityContextMenuState = {
     shown: false,
     x: 0,
