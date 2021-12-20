@@ -2,9 +2,10 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Elsa.Server.Api.Services;
-
-public interface IServerFeatureProvider
+namespace Elsa.Server.Api.Services
 {
-    ValueTask<IEnumerable<string>> GetFeaturesAsync(CancellationToken cancellationToken);
+    public interface IServerFeatureProvider
+    {
+        ValueTask<IEnumerable<string>> GetFeaturesAsync(CancellationToken cancellationToken);
+    }
 }
