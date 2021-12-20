@@ -237,7 +237,7 @@ namespace Elsa.Services.Models
             // TODO: We could consider storing the current value using the workflow storage provider mechanism to support storing every value individually.  
             var outputStorageProviderName = GetOutputStorageProviderName(activity, outputPropertyName);
 
-            if (string.IsNullOrEmpty(outputStorageProviderName) || outputStorageProviderName == "WorkflowInstance")
+            if (string.IsNullOrEmpty(outputStorageProviderName) || outputStorageProviderName == "WorkflowInstance" || outputStorageProviderName == "Default")
                 JournalData.Add("Output", value);
         }
 

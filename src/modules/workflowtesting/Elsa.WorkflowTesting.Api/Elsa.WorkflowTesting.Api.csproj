@@ -7,7 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\server\Elsa.Server.Api\Elsa.Server.Api.csproj" />
+      <ProjectReference Include="..\..\..\server\Elsa.Server.Api\Elsa.Server.Api.csproj" />
       <ProjectReference Include="..\Elsa.WorkflowTesting\Elsa.WorkflowTesting.csproj" />
     </ItemGroup>
 

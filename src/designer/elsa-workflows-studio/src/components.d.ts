@@ -282,6 +282,7 @@ export namespace Components {
     interface ElsaWorkflowDefinitionEditorNotifications {
     }
     interface ElsaWorkflowDefinitionEditorScreen {
+        "basePath": string;
         "culture": string;
         "exportWorkflow": () => Promise<void>;
         "getServerUrl": () => Promise<string>;
@@ -1049,6 +1050,7 @@ declare namespace LocalJSX {
     interface ElsaWorkflowDefinitionEditorNotifications {
     }
     interface ElsaWorkflowDefinitionEditorScreen {
+        "basePath"?: string;
         "culture"?: string;
         "history"?: RouterHistory;
         "monacoLibPath"?: string;

@@ -21,8 +21,8 @@ namespace Elsa.Samples.RabbitMqWorker.Workflows
              
                 return $"Start! - correlationId: {correlationId}";
             })
-            .SendTopicMessage(_connectionString, "Greetings", null, "Greetings from RabbitMQ")
-            .MessageReceived(_connectionString, "Greetings", null)         
+            .SendTopicMessage(_connectionString, "Greetings", default!, "Greetings from RabbitMQ")
+            .MessageReceived(_connectionString, "Greetings", default!)         
             .WriteLine(ctx => "End: " + (string)ctx.Input);
 
     }
