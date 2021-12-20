@@ -17,7 +17,6 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             return services
                 .AddScoped<ITypeScriptDefinitionService, TypeScriptDefinitionService>()
-                .AddTypeScriptDefinitionProvider<JsonTypeScriptDefinitionProvider>()
                 .AddTypeScriptDefinitionProvider<DotNetTypeScriptDefinitionProvider>()
                 .AddScoped<IJavaScriptService, JintJavaScriptEvaluator>()
                 .AddTransient(s => new JintEvaluationResultConverterFactory(s).GetConverter())
@@ -29,6 +28,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddJavaScriptTypeDefinitionProvider<WorkflowContextTypeDefinitionProvider>()
                 .AddJavaScriptTypeDefinitionProvider<WorkflowVariablesTypeDefinitionProvider>()
                 .AddJavaScriptTypeDefinitionProvider<BlacklistedTypeDefinitionProvider>()
+                .AddSingleton<IActivityTypeDefinitionRenderer, DefaultActivityTypeDefinitionRenderer>()
                 .AddNotificationHandlers(typeof(JavaScriptServiceCollectionExtensions));
         }
 

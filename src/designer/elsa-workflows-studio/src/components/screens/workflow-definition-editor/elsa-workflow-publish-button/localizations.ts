@@ -1,4 +1,4 @@
-﻿export const resources = {
+export const resources = {
   'en': {
     'default': {
       'Publish': 'Publish',
@@ -6,6 +6,15 @@
       'Unpublish': 'Unpublish',
       'Import': 'Import',
       'Export': 'Export',
+    }
+  },
+  'zh-CN': {
+    'default': {
+      'Publish': '发布',
+      'Publishing': '发布中',
+      'Unpublish': '取消发布',
+      'Import': '导入',
+      'Export': '导出',
     }
   },
   'nl-NL': {

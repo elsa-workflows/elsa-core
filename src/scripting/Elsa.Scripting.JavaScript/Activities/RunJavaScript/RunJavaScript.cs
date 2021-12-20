@@ -20,7 +20,11 @@ using NetBox.Extensions;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.JavaScript
 {
-    [Action(DisplayName = "Run JavaScript", Category = "Scripting", Description = "Run JavaScript code.")]
+    [Action(
+        DisplayName = "Run JavaScript",
+        Category = "Scripting",
+        Description = "Run JavaScript code.",
+        Outcomes = new[] { OutcomeNames.Done })]
     public class RunJavaScript : Activity, INotificationHandler<RenderingTypeScriptDefinitions>, IActivityPropertyOptionsProvider
     {
         private readonly IJavaScriptService _javaScriptService;
@@ -37,10 +41,11 @@ namespace Elsa.Activities.JavaScript
             Hint = "The possible outcomes that can be set by the script.",
             UIHint = ActivityInputUIHints.MultiText,
             DefaultSyntax = SyntaxNames.Json,
-            SupportedSyntaxes = new[] {SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid}
+            SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid },
+            ConsiderValuesAsOutcomes = true
         )]
-        public ICollection<string> PossibleOutcomes { get; set; } = new List<string> {OutcomeNames.Done};
-        
+        public ICollection<string> PossibleOutcomes { get; set; } = new List<string> { OutcomeNames.Done };
+
         [ActivityOutput] public object? Output { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
@@ -57,8 +62,8 @@ namespace Elsa.Activities.JavaScript
                 void SetOutcome(string value) => outcomes.Add(value);
                 void SetOutcomes(IEnumerable<string> values) => outcomes.AddRange(values);
 
-                engine.SetValue("setOutcome", (Action<string>) SetOutcome);
-                engine.SetValue("setOutcomes", (Action<IEnumerable<string>>) SetOutcomes);
+                engine.SetValue("setOutcome", (Action<string>)SetOutcome);
+                engine.SetValue("setOutcomes", (Action<IEnumerable<string>>)SetOutcomes);
             }
 
             var output = await _javaScriptService.EvaluateAsync(script, typeof(object), context, ConfigureEngine, context.CancellationToken);
@@ -74,7 +79,7 @@ namespace Elsa.Activities.JavaScript
         {
             var context = notification.Context;
 
-            if (context != nameof(RunJavaScript))
+            if (context?.ActivityTypeName != nameof(RunJavaScript))
                 return Task.CompletedTask;
 
             notification.Output.AppendLine("declare function setOutcome(name: string);");
@@ -87,7 +92,7 @@ namespace Elsa.Activities.JavaScript
         {
             if (property.Name != nameof(Script))
                 return null;
-            
+
             return new
             {
                 EditorHeight = "Large",

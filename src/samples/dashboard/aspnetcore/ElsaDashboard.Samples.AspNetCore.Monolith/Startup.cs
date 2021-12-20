@@ -1,4 +1,5 @@
 using Elsa;
+using Elsa.Activities.UserTask.Extensions;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Sqlite;
 using Microsoft.AspNetCore.Builder;
@@ -34,6 +35,7 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
                     .AddEmailActivities(elsaSection.GetSection("Smtp").Bind)
                     .AddQuartzTemporalActivities()
                     .AddJavaScriptActivities()
+                    .AddUserTaskActivities()
                     .AddActivitiesFrom<Startup>()
                     .AddFeatures(new[] { typeof(Startup) }, Configuration)
                     .WithContainerName(elsaSection.GetSection("Server:ContainerName").Get<string>())

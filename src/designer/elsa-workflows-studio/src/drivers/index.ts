@@ -9,3 +9,4 @@ export * from './null-property-driver';
 export * from './radio-list-driver';
 export * from './single-line-driver';
 export * from './switch-case-builder-driver';
+export * from './dictionary-driver';

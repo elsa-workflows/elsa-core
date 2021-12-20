@@ -47,7 +47,7 @@ namespace Elsa.Metadata
                 Traits = traits,
                 InputProperties = inputProperties.ToArray(),
                 OutputProperties = outputProperties.ToArray(),
-                Outcomes = outcomes,
+                Outcomes = outcomes
             };
         }
 
@@ -100,7 +100,8 @@ namespace Elsa.Metadata
                     activityPropertyAttribute.IsBrowsable,
                     activityPropertyAttribute.IsDesignerCritical,
                     activityPropertyAttribute.DefaultWorkflowStorageProvider,
-                    activityPropertyAttribute.DisableWorkflowProviderSelection
+                    activityPropertyAttribute.DisableWorkflowProviderSelection,
+                    activityPropertyAttribute.ConsiderValuesAsOutcomes
                 );
             }
         }

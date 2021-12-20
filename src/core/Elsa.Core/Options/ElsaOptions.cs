@@ -10,7 +10,6 @@ using Elsa.Services;
 using Elsa.Services.Dispatch;
 using Elsa.Services.Messaging;
 using Elsa.Services.Startup;
-using Humanizer;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using NodaTime;
@@ -19,7 +18,7 @@ using Rebus.Transport.InMem;
 
 namespace Elsa.Options
 {
-    public record MessageTypeConfig(Type MessageType, string QueueName);
+    public record MessageTypeConfig(Type MessageType, string? QueueName);
 
     public class ElsaOptions
     {
@@ -51,8 +50,8 @@ namespace Elsa.Options
         public IEnumerable<Type> ActivityTypes => ActivityFactory.Types;
 
         public IList<Type> WorkflowTypes { get; } = new List<Type>();
-        public IList<MessageTypeConfig> CompetingMessageTypes { get; } = new List<MessageTypeConfig>();
-        public IList<MessageTypeConfig> PubSubMessageTypes { get; } = new List<MessageTypeConfig>();
+        public HashSet<MessageTypeConfig> CompetingMessageTypes { get; } = new();
+        public HashSet<MessageTypeConfig> PubSubMessageTypes { get; } = new();
         public ServiceBusOptions ServiceBusOptions { get; } = new();
         public DistributedLockingOptions DistributedLockingOptions { get; set; }
 

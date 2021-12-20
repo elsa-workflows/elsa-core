@@ -12,6 +12,19 @@
 | `culture` | `culture` |             | `string` | `undefined` |
 
 
+## Dependencies
+
+### Depends on
+
+- context-consumer
+
+### Graph
+```mermaid
+graph TD;
+  elsa-studio-home --> context-consumer
+  style elsa-studio-home fill:#f9f,stroke:#333,stroke-width:4px
+```
+
 ----------------------------------------------
 
 *Built with [StencilJS](https://stenciljs.com/)*

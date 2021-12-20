@@ -116,7 +116,7 @@ export class ElsaWorkflowDesigner {
     this.ignoreCopyPasteActivities = true;
     this.activityContextMenuTestState = state;
     this.activityContextMenuButtonTestClicked.emit(state);
-  }  
+  }
 
   @Watch('model')
   handleModelChanged(newValue: WorkflowModel) {
@@ -149,21 +149,21 @@ export class ElsaWorkflowDesigner {
   @Watch('activityContextTestMenu')
   handleActivityContextMenuTestChanged(newValue: ActivityContextMenuState) {
     this.activityContextMenuTestState = newValue;
-  }  
-
-  @Listen('keydown', {target: 'window'})
-  async handleKeyDown(event: KeyboardEvent) {
-    if (this.ignoreCopyPasteActivities)
-      return;
-
-    if ((event.ctrlKey || event.metaKey) && event.key === 'c') {
-      await this.copyActivitiesToClipboard();
-    }
-    if ((event.ctrlKey || event.metaKey) && event.key === 'v') {
-
-      await this.pasteActivitiesFromClipboard();
-    }
   }
+
+  // @Listen('keydown', {target: 'window'})
+  // async handleKeyDown(event: KeyboardEvent) {
+  //   if (this.ignoreCopyPasteActivities)
+  //     return;
+  //
+  //   if ((event.ctrlKey || event.metaKey) && event.key === 'c') {
+  //     await this.copyActivitiesToClipboard();
+  //   }
+  //   if ((event.ctrlKey || event.metaKey) && event.key === 'v') {
+  //
+  //     await this.pasteActivitiesFromClipboard();
+  //   }
+  // }
 
   @Method()
   async removeActivity(activity: ActivityModel) {
@@ -186,19 +186,19 @@ export class ElsaWorkflowDesigner {
     await this.showActivityEditorInternal(activity, animate);
   }
 
-  async copyActivitiesToClipboard() {
-    await navigator.clipboard.writeText(JSON.stringify(this.selectedActivities));
-    await eventBus.emit(EventTypes.ClipboardCopied, this);
-  }
+  // async copyActivitiesToClipboard() {
+  //   await navigator.clipboard.writeText(JSON.stringify(this.selectedActivities));
+  //   await eventBus.emit(EventTypes.ClipboardCopied, this);
+  // }
 
-  async pasteActivitiesFromClipboard() {
-    let copiedActivities: Array<ActivityModel> = [];
-
-    await navigator.clipboard.readText().then(data => {
-      copiedActivities = JSON.parse(data);
-    });
-    await this.addActivitiesFromClipboard(copiedActivities)
-  }
+  // async pasteActivitiesFromClipboard() {
+  //   let copiedActivities: Array<ActivityModel> = [];
+  //
+  //   await navigator.clipboard.readText().then(data => {
+  //     copiedActivities = JSON.parse(data);
+  //   });
+  //   await this.addActivitiesFromClipboard(copiedActivities)
+  // }
 
   async addActivitiesFromClipboard(copiedActivities: Array<ActivityModel>) {
     let sourceActivityId: string;
@@ -233,17 +233,19 @@ export class ElsaWorkflowDesigner {
   connectedCallback() {
     eventBus.on(EventTypes.ActivityPicked, this.onActivityPicked);
     eventBus.on(EventTypes.UpdateActivity, this.onUpdateActivity);
-    eventBus.on(EventTypes.PasteActivity, this.onPasteActivity);
-    eventBus.on(EventTypes.HideModalDialog, this.onCopyPasteActivityEnabled);
-    eventBus.on(EventTypes.ShowWorkflowSettings, this.onCopyPasteActivityDisabled);
+    //eventBus.on(EventTypes.PasteActivity, this.onPasteActivity);
+    // eventBus.on(EventTypes.HideModalDialog, this.onCopyPasteActivityEnabled);
+    // eventBus.on(EventTypes.ShowWorkflowSettings, this.onCopyPasteActivityDisabled);
+    eventBus.on(EventTypes.WorkflowExecuted, this.onWorkflowExecuted);
   }
 
   disconnectedCallback() {
     eventBus.detach(EventTypes.ActivityPicked, this.onActivityPicked);
     eventBus.detach(EventTypes.UpdateActivity, this.onUpdateActivity);
-    eventBus.detach(EventTypes.PasteActivity, this.onPasteActivity);
-    eventBus.detach(EventTypes.HideModalDialog, this.onCopyPasteActivityEnabled);
-    eventBus.detach(EventTypes.ShowWorkflowSettings, this.onCopyPasteActivityDisabled);
+    //eventBus.detach(EventTypes.PasteActivity, this.onPasteActivity);
+    // eventBus.detach(EventTypes.HideModalDialog, this.onCopyPasteActivityEnabled);
+    // eventBus.detach(EventTypes.ShowWorkflowSettings, this.onCopyPasteActivityDisabled);
+    eventBus.detach(EventTypes.WorkflowExecuted, this.onWorkflowExecuted);
     d3.selectAll('.node').on('click', null);
     d3.selectAll('.edgePath').on('contextmenu', null);
   }
@@ -329,7 +331,8 @@ export class ElsaWorkflowDesigner {
       traits: ActivityTraits.Action,
       description: `(Not Found) ${activityModel.description}`,
       category: 'Not Found',
-      browsable: false
+      browsable: false,
+      customAttributes: {}
     };
   }
 
@@ -660,21 +663,32 @@ export class ElsaWorkflowDesigner {
     }
   };
 
-  onPasteActivity = async args => {
-    const activityModel = args as ActivityModel;
+  // onPasteActivity = async args => {
+  //   const activityModel = args as ActivityModel;
+  //
+  //   this.selectedActivities = {};
+  //   activityModel.outcomes[0] = this.parentActivityOutcome;
+  //   this.selectedActivities[activityModel.activityId] = activityModel;
+  //   await this.pasteActivitiesFromClipboard();
+  // };
+  //
+  // onCopyPasteActivityEnabled = () => {
+  //   this.ignoreCopyPasteActivities = false
+  // }
+  //
+  // onCopyPasteActivityDisabled = () => {
+  //   this.ignoreCopyPasteActivities = true
+  // }
 
-    this.selectedActivities = {};
-    activityModel.outcomes[0] = this.parentActivityOutcome;
-    this.selectedActivities[activityModel.activityId] = activityModel;
-    await this.pasteActivitiesFromClipboard();
-  };
+  onWorkflowExecuted = () => {
+    const firstNode = d3.select(this.el).select('.node.activity');
 
-  onCopyPasteActivityEnabled = () => {
-    this.ignoreCopyPasteActivities = false
-  }
+    const node = this.graph.node(firstNode.data()) as any;
+    const activity = node.activity;
+    const activityId = activity.activityId;
 
-  onCopyPasteActivityDisabled = () => {
-    this.ignoreCopyPasteActivities = true
+    this.selectedActivities[activityId] = activity;
+    this.activitySelected.emit(activity);
   }
 
   renderNodes() {
@@ -705,7 +719,7 @@ export class ElsaWorkflowDesigner {
               d3.select(node.elem).select('svg').classed('elsa-text-green-400', true).classed('elsa-text-gray-400', false).classed('hover:elsa-text-blue-500', false);
               return;
             }
-            
+
             if (this.mode !== WorkflowDesignerMode.Test) await this.showActivityPicker();
           })
           .on("mouseover", e => {
@@ -893,11 +907,11 @@ export class ElsaWorkflowDesigner {
       </div>`;
   }
 
-  renderActivityBody(displayContext: ActivityDesignDisplayContext) {    
+  renderActivityBody(displayContext: ActivityDesignDisplayContext) {
     return (
       `<div class="elsa-border-t elsa-border-t-solid">
           <div class="elsa-p-6 elsa-text-gray-400 elsa-text-sm">
-            <div class="elsa-mb-2">${displayContext != undefined ? displayContext.bodyDisplay : ''}</div>
+            <div class="elsa-mb-2">${!!displayContext?.bodyDisplay ? displayContext.bodyDisplay : ''}</div>
             <div>
               <span class="elsa-inline-flex elsa-items-center elsa-px-2.5 elsa-py-0.5 elsa-rounded-full elsa-text-xs elsa-font-medium elsa-bg-gray-100 elsa-text-gray-500">
                 <svg class="-elsa-ml-0.5 elsa-mr-1.5 elsa-h-2 elsa-w-2 elsa-text-gray-400" fill="currentColor" viewBox="0 0 8 8">
@@ -914,16 +928,16 @@ export class ElsaWorkflowDesigner {
   render() {
     return (
       <Host class="workflow-canvas elsa-flex-1 elsa-flex" ref={el => (this.el = el)}>
-        {this.mode == WorkflowDesignerMode.Test ? 
+        {this.mode == WorkflowDesignerMode.Test ?
           <div>
-            <div id="left" style={{border:`4px solid orange`, position:`fixed`, zIndex:`10`, height: `calc(100vh - 64px)`, width:`4px`, top:`64`, bottom:`0`, left:`0`}}></div>
-            <div id="right" style={{border:`4px solid orange`, position:`fixed`, zIndex:`10`, height: `calc(100vh - 64px)`, width:`4px`, top:`64`, bottom:`0`, right:`0`}}></div>
-            <div id="top" style={{border:`4px solid orange`, position:`fixed`, zIndex:`10`, height:`4px`, left:`0`, right:`0`, top:`30`}}></div>
-            <div id="bottom" style={{border:`4px solid orange`, position:`fixed`, zIndex:`10`, height:`4px`, left:`0`, right:`0`, bottom:`0`}}></div>
+            <div id="left" style={{border:`4px solid orange`, position:`fixed`, zIndex:`10`, height: `calc(100vh - 64px)`, width:`4px`, top:`64`, bottom:`0`, left:`0`}}/>
+            <div id="right" style={{border:`4px solid orange`, position:`fixed`, zIndex:`10`, height: `calc(100vh - 64px)`, width:`4px`, top:`64`, bottom:`0`, right:`0`}}/>
+            <div id="top" style={{border:`4px solid orange`, position:`fixed`, zIndex:`10`, height:`4px`, left:`0`, right:`0`, top:`30`}}/>
+            <div id="bottom" style={{border:`4px solid orange`, position:`fixed`, zIndex:`10`, height:`4px`, left:`0`, right:`0`, bottom:`0`}}/>
           </div>
           :
           undefined
-        }        
+        }
         <svg ref={(el: SVGSVGElement) => (this.svg = el)} id="svg" style={{
           height: 'calc(100vh - 64px)',
           width: '100%',

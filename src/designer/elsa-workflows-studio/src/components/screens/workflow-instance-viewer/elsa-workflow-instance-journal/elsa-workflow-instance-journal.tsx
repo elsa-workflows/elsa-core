@@ -133,6 +133,12 @@ export class ElsaWorkflowInstanceJournal {
         <elsa-tab-content tab="activityState" slot="content">
           {this.renderActivityStateTab()}
         </elsa-tab-content>
+        <elsa-tab-header tab="variables" slot="header">
+          Variables
+        </elsa-tab-header>
+        <elsa-tab-content tab="variables" slot="content">
+          {this.renderVariablesTab()}
+        </elsa-tab-content>
       </elsa-flyout-panel>
     );
   }
@@ -152,12 +158,18 @@ export class ElsaWorkflowInstanceJournal {
       const deltaTime = isLastItem ? null : moment.duration(nextTimestamp.diff(currentTimestamp));
       const activityType = record.activityType;
       const activityIcon = activityIconProvider.getIcon(activityType);
-      const activityDescriptor = activityDescriptors.find(x => x.type === activityType);
+
+      const activityDescriptor = activityDescriptors.find(x => x.type === activityType) || {
+        displayName: null,
+        type: null
+      };
+
       const activityBlueprint = activityBlueprints.find(x => x.id === record.activityId) || {
         name: null,
         displayName: null
       };
-      const activityName = activityBlueprint.displayName || activityBlueprint.name || activityDescriptor.displayName || activityDescriptor.type;
+
+      const activityName = activityBlueprint.displayName || activityBlueprint.name || activityDescriptor.displayName || activityDescriptor.type || '(Not Found): ' + activityType;
       const eventName = record.eventName;
       const eventColor = this.getEventColor(eventName);
       const recordClass = record.id === selectedRecordId ? 'elsa-border-blue-600' : 'hover:elsa-bg-gray-100 elsa-border-transparent';
@@ -410,5 +422,18 @@ export class ElsaWorkflowInstanceJournal {
         </div>
       </dl>
     )
+  };
+
+  renderVariablesTab = () => {
+    const { workflowInstance, workflowBlueprint } = this;
+    const { variables } = workflowInstance;
+
+    return (
+      <dl class="elsa-border-b elsa-border-gray-200 elsa-divide-y elsa-divide-gray-200">
+        <div class="elsa-py-3 elsa-text-sm elsa-font-medium">
+          {variables?.data ? <pre>{JSON.stringify(variables?.data, null, 2)}</pre> : '-'}
+          </div>
+      </dl>
+    );
   };
 }

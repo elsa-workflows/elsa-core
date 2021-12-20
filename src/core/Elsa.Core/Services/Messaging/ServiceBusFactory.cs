@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Elsa.Options;
 using Elsa.Serialization;
 using Microsoft.Extensions.Logging;
@@ -20,6 +21,7 @@ namespace Elsa.Services.Messaging
         private readonly IDictionary<string, IBus> _serviceBuses = new Dictionary<string, IBus>();
         private readonly IDictionary<Type, string> _messageTypeQueueDictionary = new Dictionary<Type, string>();
         private readonly DependencyInjectionHandlerActivator _handlerActivator;
+        private readonly SemaphoreSlim _semaphore = new(1);
 
         public ServiceBusFactory(ElsaOptions elsaOptions, ILoggerFactory loggerFactory, IServiceProvider serviceProvider)
         {
@@ -67,15 +69,24 @@ namespace Elsa.Services.Messaging
 
         private IBus GetOrCreateServiceBus(Type messageType, string? queueName)
         {
-            queueName ??= _messageTypeQueueDictionary[messageType];
-
-            if (!_serviceBuses.TryGetValue(queueName, out var bus))
+            _semaphore.Wait();
+            
+            try
             {
-                bus = ConfigureServiceBus(new[] { messageType }, queueName);
-                _serviceBuses[queueName] = bus;
-            }
+                queueName ??= _messageTypeQueueDictionary[messageType];
 
-            return bus;
+                if (!_serviceBuses.TryGetValue(queueName, out var bus))
+                {
+                    bus = ConfigureServiceBus(new[] { messageType }, queueName);
+                    _serviceBuses[queueName] = bus;
+                }
+
+                return bus;
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
         }
 
         private string PrefixQueueName(string name) => $"{_elsaOptions.ServiceBusOptions.QueuePrefix}{name}";

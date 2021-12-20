@@ -65,7 +65,8 @@ namespace Elsa.Metadata
             bool isBrowsable = true,
             bool isDesignerCritical = false,
             string? defaultWorkflowStorageProvider = default,
-            bool disableWorkflowProviderSelection = false)
+            bool disableWorkflowProviderSelection = false,
+            bool considerValuesAsOutcomes = false)
         {
             Name = name;
             Type = type;
@@ -83,6 +84,7 @@ namespace Elsa.Metadata
             IsDesignerCritical = isDesignerCritical;
             DefaultWorkflowStorageProvider = defaultWorkflowStorageProvider;
             DisableWorkflowProviderSelection = disableWorkflowProviderSelection;
+            ConsiderValuesAsOutcomes = considerValuesAsOutcomes;
         }
 
         public string Name { get; set; } = default!;
@@ -101,5 +103,7 @@ namespace Elsa.Metadata
         public bool IsDesignerCritical { get; set; }
         public string? DefaultWorkflowStorageProvider { get; set; }
         public bool DisableWorkflowProviderSelection { get; set; }
+
+        public bool ConsiderValuesAsOutcomes { get; set; }
     }
 }

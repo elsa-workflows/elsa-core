@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.Serialization;
 
 namespace Elsa.Client.Models
@@ -10,7 +11,7 @@ namespace Elsa.Client.Models
         [DataMember(Order = 3)] public string? Description { get; set; }
         [DataMember(Order = 4)] public string Category { get; set; } = default!;
         [DataMember(Order = 5)] public ActivityTraits Traits { get; set; }
-        [DataMember(Order = 6)] public string[] Outcomes { get; set; } = new string[0];
-        [DataMember(Order = 7)] public ActivityPropertyDescriptor[] Properties { get; set; } = new ActivityPropertyDescriptor[0];
+        [DataMember(Order = 6)] public string[] Outcomes { get; set; } = Array.Empty<string>();
+        [DataMember(Order = 7)] public ActivityPropertyDescriptor[] Properties { get; set; } = Array.Empty<ActivityPropertyDescriptor>();
     }
 }

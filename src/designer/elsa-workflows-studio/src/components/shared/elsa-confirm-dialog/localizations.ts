@@ -1,8 +1,14 @@
-﻿export const resources = {
+export const resources = {
   'en': {
     'default': {
       'Yes': 'Yes',
       'No': 'No'
+    }
+  },
+  'zh-CN': {
+    'default': {
+      'Yes': '是',
+      'No': '否'
     }
   },
   'nl-NL': {

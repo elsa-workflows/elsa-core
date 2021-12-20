@@ -24,7 +24,7 @@ namespace Elsa.Builders
             PropertyValueProviders = new Dictionary<string, IActivityPropertyValueProvider>();
             PersistenceBehavior = WorkflowPersistenceBehavior.WorkflowBurst;
         }
-        
+
         public int Version { get; private set; }
         public bool IsLatest { get; private set; }
         public bool IsPublished { get; private set; }
@@ -45,25 +45,25 @@ namespace Elsa.Builders
             ActivityId = value!;
             return this;
         }
-        
+
         public IWorkflowBuilder ForTenantId(string? value)
         {
             TenantId = value;
             return this;
         }
-        
+
         public new IWorkflowBuilder WithDisplayName(string value)
         {
             DisplayName = value;
             return this;
         }
-        
+
         public new IWorkflowBuilder WithDescription(string? value)
         {
             Description = value;
             return this;
         }
-        
+
         public IWorkflowBuilder WithChannel(string? value)
         {
             Channel = value;
@@ -93,7 +93,7 @@ namespace Elsa.Builders
             IsPublished = isPublished;
             return this;
         }
-        
+
         public IWorkflowBuilder WithTag(string value)
         {
             Tag = value;
@@ -148,7 +148,7 @@ namespace Elsa.Builders
 
             Name ??= workflowTypeName;
             DisplayName ??= workflowTypeName;
-            
+
             WithId(workflowTypeName);
             workflow.Build(this);
             return BuildBlueprint(activityIdPrefix);
@@ -165,10 +165,11 @@ namespace Elsa.Builders
         public IWorkflowBlueprint BuildBlueprint(string activityIdPrefix)
         {
             var compositeRoot = Build(activityIdPrefix);
-            
+
             return new WorkflowBlueprint(
                 ActivityId,
                 Version,
+                $"{ActivityId}v{Version}",
                 TenantId,
                 IsSingleton,
                 Name,

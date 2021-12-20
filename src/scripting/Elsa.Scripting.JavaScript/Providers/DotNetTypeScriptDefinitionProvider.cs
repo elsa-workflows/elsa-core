@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using AutoMapper.Internal;
 using Elsa.Models;
 using Elsa.Scripting.JavaScript.Events;
+using Elsa.Scripting.JavaScript.Models;
 using Elsa.Scripting.JavaScript.Services;
 using MediatR;
 
@@ -24,7 +25,12 @@ namespace Elsa.Scripting.JavaScript.Providers
             _mediator = mediator;
         }
 
-        public async Task<StringBuilder> GenerateTypeScriptDefinitionsAsync(StringBuilder builder, ICollection<string> declaredTypes, WorkflowDefinition? workflowDefinition = default, string? context = default, CancellationToken cancellationToken = default)
+        public async Task<StringBuilder> GenerateTypeScriptDefinitionsAsync(
+            StringBuilder builder,
+            ICollection<string> declaredTypes,
+            WorkflowDefinition? workflowDefinition = default,
+            IntellisenseContext? context = default,
+            CancellationToken cancellationToken = default)
         {
             var providerContext = new TypeDefinitionContext(workflowDefinition, context);
             var types = await CollectTypesAsync(providerContext, cancellationToken);
@@ -122,20 +128,16 @@ namespace Elsa.Scripting.JavaScript.Providers
             var properties = type.GetProperties();
             var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static).Where(x => !x.IsSpecialName).ToList();
 
-            if (type.Name == "HttpRequestModel")
-                output.AppendLine($"declare {symbol} {typeName}<T> {{");
-            else
-                output.AppendLine($"declare {symbol} {typeName} {{");
+
+            output.AppendLine($"declare {symbol} {typeName} {{");
 
             foreach (var property in properties)
             {
                 var typeScriptType = GetTypeScriptType(context, property.PropertyType, collectedTypes);
                 var propertyName = property.PropertyType.IsNullableType() ? $"{property.Name}?" : property.Name;
 
-                if (type.Name == "HttpRequestModel" && propertyName == "Body")
-                    output.AppendLine($"{propertyName}: T;");
-                else
-                    output.AppendLine($"{propertyName}: {typeScriptType};");
+
+                output.AppendLine($"{propertyName}: {typeScriptType};");
             }
 
             foreach (var method in methods)
@@ -155,15 +157,10 @@ namespace Elsa.Scripting.JavaScript.Providers
                 output.Append(string.Join(", ", arguments));
                 output.Append(")");
 
-                //var returnType = method.ReturnType;
-                var returnType = method.ReflectedType;
-                if (returnType != typeof(void))
-                {
-                    if (type.Name == "HttpRequestModel")
-                        output.Append(":T");
-                    else
-                        output.AppendFormat(":{0}", GetTypeScriptType(context, returnType, collectedTypes));
-                }
+                var returnType = method.ReturnType;
+                
+                if (returnType != typeof(void)) 
+                    output.AppendFormat(":{0}", GetTypeScriptType(context, returnType, collectedTypes));
 
                 output.AppendLine(";");
             }

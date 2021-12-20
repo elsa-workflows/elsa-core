@@ -1,5 +1,5 @@
 import {Component, h, Prop, State} from '@stencil/core';
-import {ActivityDefinitionProperty, ActivityPropertyDescriptor, SyntaxNames} from "../../../../models";
+import {ActivityDefinitionProperty, ActivityModel, ActivityPropertyDescriptor, SyntaxNames} from "../../../../models";
 
 @Component({
   tag: 'elsa-checkbox-property',
@@ -7,6 +7,7 @@ import {ActivityDefinitionProperty, ActivityPropertyDescriptor, SyntaxNames} fro
 })
 export class ElsaCheckBoxProperty {
 
+  @Prop() activityModel: ActivityModel;
   @Prop() propertyDescriptor: ActivityPropertyDescriptor;
   @Prop() propertyModel: ActivityDefinitionProperty;
   @State() isChecked: boolean
@@ -36,15 +37,19 @@ export class ElsaCheckBoxProperty {
     let isChecked = this.isChecked;
 
     return (
-      <elsa-property-editor propertyDescriptor={propertyDescriptor}
-                            propertyModel={propertyModel}
-                            onDefaultSyntaxValueChanged={e => this.onDefaultSyntaxValueChanged(e)}
-                            single-line={true}
-                            showLabel={false}>
+      <elsa-property-editor
+        activityModel={this.activityModel}
+        propertyDescriptor={propertyDescriptor}
+        propertyModel={propertyModel}
+        onDefaultSyntaxValueChanged={e => this.onDefaultSyntaxValueChanged(e)}
+        single-line={true}
+        showLabel={false}>
         <div class="elsa-max-w-lg">
           <div class="elsa-relative elsa-flex elsa-items-start">
             <div class="elsa-flex elsa-items-center elsa-h-5">
-              <input id={fieldId} name={fieldName} type="checkbox" checked={isChecked} value={'true'} onChange={e => this.onCheckChanged(e)} class="focus:elsa-ring-blue-500 elsa-h-4 elsa-w-4 elsa-text-blue-600 elsa-border-gray-300 elsa-rounded"/>
+              <input id={fieldId} name={fieldName} type="checkbox" checked={isChecked} value={'true'}
+                     onChange={e => this.onCheckChanged(e)}
+                     class="focus:elsa-ring-blue-500 elsa-h-4 elsa-w-4 elsa-text-blue-600 elsa-border-gray-300 elsa-rounded"/>
             </div>
             <div class="elsa-ml-3 elsa-text-sm">
               <label htmlFor={fieldId} class="elsa-font-medium elsa-text-gray-700">{fieldLabel}</label>

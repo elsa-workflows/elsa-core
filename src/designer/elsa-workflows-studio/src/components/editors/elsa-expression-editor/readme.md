@@ -7,16 +7,16 @@
 
 ## Properties
 
-| Property               | Attribute                | Description | Type      | Default     |
-| ---------------------- | ------------------------ | ----------- | --------- | ----------- |
-| `context`              | `context`                |             | `string`  | `undefined` |
-| `editorHeight`         | `editor-height`          |             | `string`  | `'6em'`     |
-| `expression`           | `expression`             |             | `string`  | `undefined` |
-| `language`             | `language`               |             | `string`  | `undefined` |
-| `padding`              | `padding`                |             | `string`  | `undefined` |
-| `serverUrl`            | `server-url`             |             | `string`  | `undefined` |
-| `singleLineMode`       | `single-line`            |             | `boolean` | `false`     |
-| `workflowDefinitionId` | `workflow-definition-id` |             | `string`  | `undefined` |
+| Property               | Attribute                | Description | Type                  | Default     |
+| ---------------------- | ------------------------ | ----------- | --------------------- | ----------- |
+| `context`              | --                       |             | `IntellisenseContext` | `undefined` |
+| `editorHeight`         | `editor-height`          |             | `string`              | `'6em'`     |
+| `expression`           | `expression`             |             | `string`              | `undefined` |
+| `language`             | `language`               |             | `string`              | `undefined` |
+| `padding`              | `padding`                |             | `string`              | `undefined` |
+| `serverUrl`            | `server-url`             |             | `string`              | `undefined` |
+| `singleLineMode`       | `single-line`            |             | `boolean`             | `false`     |
+| `workflowDefinitionId` | `workflow-definition-id` |             | `string`              | `undefined` |
 
 
 ## Events

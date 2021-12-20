@@ -4,13 +4,13 @@ FROM mcr.microsoft.com/dotnet/sdk:5.0-buster-slim-amd64 AS build
 WORKDIR /source
 
 # restore packages
+COPY ./Nuget.Config ./
 COPY ./src/samples/dashboard/aspnetcore/ElsaDashboard.Samples.AspNetCore.Monolith/ElsaDashboard.Samples.AspNetCore.Monolith.csproj ./src/samples/dashboard/aspnetcore/ElsaDashboard.Samples.AspNetCore.Monolith/ElsaDashboard.Samples.AspNetCore.Monolith.csproj
-RUN dotnet restore "./src/samples/dashboard/aspnetcore/ElsaDashboard.Samples.AspNetCore.Monolith/ElsaDashboard.Samples.AspNetCore.Monolith.csproj"
+RUN dotnet restore "./src/samples/dashboard/aspnetcore/ElsaDashboard.Samples.AspNetCore.Monolith/ElsaDashboard.Samples.AspNetCore.Monolith.csproj"  --configfile ./Nuget.Config
 
 # copy required source code
 COPY src/. ./src
 COPY *.props ./
-COPY ./Nuget.Config ./
 
 # build and publish (UseAppHost=false created platform independent binaries)
 WORKDIR /source/src/samples/dashboard/aspnetcore/ElsaDashboard.Samples.AspNetCore.Monolith

@@ -10,6 +10,7 @@ using Elsa.Activities.Http.Parsers.Request;
 using Elsa.Activities.Http.Parsers.Response;
 using Elsa.Activities.Http.Services;
 using Elsa.Options;
+using Elsa.Scripting.JavaScript.Providers;
 using Elsa.Scripting.Liquid.Extensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
@@ -58,6 +59,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddNotificationHandlers(typeof(ConfigureJavaScriptEngine))
                 .AddLiquidFilter<SignalUrlFilter>("signal_url")
                 .AddJavaScriptTypeDefinitionProvider<HttpTypeDefinitionProvider>()
+                .AddSingleton<IActivityTypeDefinitionRenderer, HttpEndpointTypeDefinitionRenderer>()
                 .AddDataProtection();
 
             return services;

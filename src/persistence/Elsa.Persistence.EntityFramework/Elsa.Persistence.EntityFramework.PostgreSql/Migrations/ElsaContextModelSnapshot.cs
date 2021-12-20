@@ -34,6 +34,7 @@ namespace Elsa.Persistence.EntityFramework.PostgreSql.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("CorrelationId")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Hash")
@@ -236,6 +237,10 @@ namespace Elsa.Persistence.EntityFramework.PostgreSql.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("DefinitionId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("DefinitionVersionId")
                         .IsRequired()
                         .HasColumnType("text");
 

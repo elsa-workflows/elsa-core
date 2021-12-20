@@ -14,7 +14,7 @@ namespace Elsa.Activities.File
     public class FileExists : Activity
     {
         [Required]
-        [ActivityInput(Hint = "Path of the file to delete.")]
+        [ActivityInput(Hint = "Path of the file to check.")]
         public string? Path { get; set; }
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
