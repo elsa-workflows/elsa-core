@@ -54,7 +54,7 @@ namespace Elsa.WorkflowTesting.Services
 
             var workflow = await InstantiateStartableWorkflow(startableWorkflowDefinition, cancellationToken);
 
-            var previousActivityData = GetActivityDataFromLastWorkflowInstance(workflow.WorkflowInstance, lastWorkflowInstance, workflowBlueprint, activityId);
+            var previousActivityData = GetActivityDataFromLastWorkflowInstance(lastWorkflowInstance, workflowBlueprint, activityId);
 
             MergeActivityDataIntoInstance(workflow.WorkflowInstance, previousActivityData);
 
@@ -80,7 +80,7 @@ namespace Elsa.WorkflowTesting.Services
             }
         }
 
-        private IDictionary<string, IDictionary<string, object?>> GetActivityDataFromLastWorkflowInstance(WorkflowInstance currentWorkflowInstance, WorkflowInstance lastWorkflowInstance, IWorkflowBlueprint workflowBlueprint, string startingActivityId)
+        private IDictionary<string, IDictionary<string, object?>> GetActivityDataFromLastWorkflowInstance(WorkflowInstance lastWorkflowInstance, IWorkflowBlueprint workflowBlueprint, string startingActivityId)
         {
             IDictionary<string, IDictionary<string, object?>> CollectSourceActivityData(string targetActivityId, IDictionary<string, IDictionary<string, object?>> activityDataAccumulator)
             {

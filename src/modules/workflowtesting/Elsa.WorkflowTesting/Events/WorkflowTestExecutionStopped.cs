@@ -1,6 +1,6 @@
 using MediatR;
 
-namespace Elsa.Testing.Events
+namespace Elsa.WorkflowTesting.Events
 {
     public class WorkflowTestExecutionStopped : INotification
     {
