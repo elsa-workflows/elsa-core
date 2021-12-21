@@ -1,33 +1,38 @@
 import {Component, Event, EventEmitter, h, Host, Listen, Method, Prop, State, Watch} from '@stencil/core';
-import {RouterHistory, injectHistory} from '@stencil/router';
+import {injectHistory, RouterHistory} from '@stencil/router';
 import {
   ActivityDefinition,
   ActivityDescriptor,
   ActivityModel,
-  ConfigureComponentCustomButtonContext,
   ComponentCustomButtonClickContext,
+  ConfigureComponentCustomButtonContext,
   ConnectionDefinition,
   ConnectionModel,
   EventTypes,
   VersionOptions,
   WorkflowDefinition,
+  WorkflowInstance,
   WorkflowModel,
   WorkflowPersistenceBehavior,
   WorkflowTestActivityMessage,
-  WorkflowInstance, WorkflowTestActivityMessageStatus,
+  WorkflowTestActivityMessageStatus,
 } from "../../../../models";
 import {
   ActivityStats,
   createElsaClient,
   eventBus,
-  SaveWorkflowDefinitionRequest, toastNotificationService,
-  WorkflowTestRestartFromActivityRequest
+  featuresDataManager,
+  SaveWorkflowDefinitionRequest
 } from "../../../../services";
 import state from '../../../../utils/store';
 import WorkflowEditorTunnel, {WorkflowEditorState} from '../../../../data/workflow-editor';
 import DashboardTunnel from "../../../../data/dashboard";
 import {downloadFromBlob} from "../../../../utils/download";
-import {ActivityContextMenuState, WorkflowDesignerMode} from "../../../designers/tree/elsa-designer-tree/models";
+import {
+  ActivityContextMenuState,
+  LayoutDirection,
+  WorkflowDesignerMode
+} from "../../../designers/tree/elsa-designer-tree/models";
 import {i18n} from "i18next";
 import {loadTranslations} from "../../../i18n/i18n-loader";
 import {resources} from "./localizations";
@@ -44,6 +49,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
   @Prop({attribute: 'workflow-definition-id', reflect: true}) workflowDefinitionId: string;
   @Prop({attribute: 'server-url', reflect: true}) serverUrl: string;
   @Prop({attribute: 'monaco-lib-path', reflect: true}) monacoLibPath: string;
+  @Prop() features: string;
   @Prop() culture: string;
   @Prop() history: RouterHistory;
   @State() workflowDefinition: WorkflowDefinition;
@@ -62,6 +68,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
   @State() workflowInstance?: WorkflowInstance;
   @State() workflowInstanceId?: string;
   @State() activityStats?: ActivityStats;
+  @State() layoutDirection: LayoutDirection = LayoutDirection.TopBottom;//???
 
   @State() activityContextMenuState: ActivityContextMenuState = {
     shown: false,
@@ -92,6 +99,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
   helpDialog: HTMLElsaModalDialogElement;
   activityContextMenu: HTMLDivElement;
   componentCustomButton: HTMLDivElement;
+
   //connectionContextMenu: HTMLDivElement;
 
   @Method()
@@ -178,7 +186,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
   }
 
   @Listen('click', {target: 'window'})
-  onWindowClicked(event: Event){
+  onWindowClicked(event: Event) {
     const target = event.target as HTMLElement;
 
     if (!this.componentCustomButton.contains(target))
@@ -194,6 +202,11 @@ export class ElsaWorkflowDefinitionEditorScreen {
   async componentWillLoad() {
     this.i18next = await loadTranslations(this.culture, resources);
     this.workflowDesignerMode = WorkflowDesignerMode.Edit;
+
+    const layoutFeature = featuresDataManager.getFeatureConfig(featuresDataManager.supportedFeatures.workflowLayout);
+    if (layoutFeature && layoutFeature.enabled) {
+      this.layoutDirection = layoutFeature.value as LayoutDirection;
+    }
     await this.serverUrlChangedHandler(this.serverUrl);
     await this.workflowDefinitionIdChangedHandler(this.workflowDefinitionId);
     await this.monacoLibPathChangedHandler(this.monacoLibPath);
@@ -242,7 +255,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
     state.workflowStorageDescriptors = await client.workflowStorageProvidersApi.list();
   }
 
-  async tryUpdateActivityInformation(activityId: string){
+  async tryUpdateActivityInformation(activityId: string) {
     if (!this.workflowInstanceId) {
       this.activityStats = null;
       this.workflowInstance = null;
@@ -509,8 +522,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
       this.workflowInstanceId = message.workflowInstanceId;
       this.workflowTestActivityMessages = this.workflowTestActivityMessages.filter(x => x.activityId !== message.activityId);
       this.workflowTestActivityMessages = [...this.workflowTestActivityMessages, message];
-    }
-    else{
+    } else {
       this.workflowTestActivityMessages = [];
       this.workflowInstanceId = null;
     }
@@ -518,7 +530,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
     this.render();
   };
 
-  async onRestartActivityButtonClick(){
+  async onRestartActivityButtonClick() {
     await eventBus.emit(EventTypes.WorkflowRestarted, this, this.selectedActivityId);
 
     this.handleContextMenuTestChange(0, 0, false, null);
@@ -541,13 +553,13 @@ export class ElsaWorkflowDefinitionEditorScreen {
   onUpdateActivity = (activity: ActivityModel) => {
     const message = this.workflowTestActivityMessages.find(x => x.activityId === activity.activityId);
 
-    if (message){
+    if (message) {
       message.status = WorkflowTestActivityMessageStatus.Modified;
       this.clearSubsequentWorkflowTestMessages(activity.activityId);
     }
   }
 
-  private clearSubsequentWorkflowTestMessages(activityId: string){
+  private clearSubsequentWorkflowTestMessages(activityId: string) {
     const targetActivityId = this.workflowDefinition.connections.find(x => x.sourceActivityId === activityId)?.targetActivityId;
 
     if (!targetActivityId) return;
@@ -565,8 +577,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
     let icon: string;
 
-    switch (testActivityMessage.status)
-    {
+    switch (testActivityMessage.status) {
       case WorkflowTestActivityMessageStatus.Done:
         icon = `<svg class="elsa-h-8 elsa-w-8 elsa-text-green-500"  fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -641,9 +652,10 @@ export class ElsaWorkflowDefinitionEditorScreen {
           </div>`;
 
     return (
-      <div class="elsa-flex-1 elsa-flex elsa-relative" >
+      <div class="elsa-flex-1 elsa-flex elsa-relative">
         <elsa-designer-tree model={this.workflowModel}
                             mode={this.workflowDesignerMode}
+                            layoutDirection={this.layoutDirection}
                             activityContextMenuButton={this.workflowDesignerMode == WorkflowDesignerMode.Edit
                               ? activityContextMenuButton
                               : this.renderActivityStatsButton}
@@ -691,7 +703,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
     await eventBus.emit(EventTypes.ComponentCustomButtonClick, this, componentCustomButtonClickContext);
   }
 
-  private canBeRestartedFromCurrentActivity(){
+  private canBeRestartedFromCurrentActivity() {
     if (!this.selectedActivityId) return false;
     if (this.workflowDesignerMode !== WorkflowDesignerMode.Test) return false;
 
@@ -715,17 +727,18 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
       return (
         <div class="elsa-ml-4">
-          <elsa-workflow-fault-information workflowFault={this.workflowInstance?.fault} faultedAt={this.workflowInstance?.faultedAt} />
+          <elsa-workflow-fault-information workflowFault={this.workflowInstance?.fault}
+                                           faultedAt={this.workflowInstance?.faultedAt}/>
         </div>
       );
     }
 
-    const renderPerformanceStats = () =>{
+    const renderPerformanceStats = () => {
       if (!!message.error) return;
 
       return (
         <div class="elsa-ml-4">
-          <elsa-workflow-performance-information activityStats={this.activityStats} />
+          <elsa-workflow-performance-information activityStats={this.activityStats}/>
         </div>
       );
     };
@@ -735,7 +748,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
       return (
         <button type="button"
-          onClick={() => this.onRestartActivityButtonClick()}
+                onClick={() => this.onRestartActivityButtonClick()}
                 class="elsa-ml-0 elsa-w-full elsa-inline-flex elsa-justify-center elsa-rounded-md elsa-border elsa-border-transparent elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-bg-blue-600 elsa-text-base elsa-font-medium elsa-text-white hover:elsa-bg-red-700 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-red-500 sm:elsa-ml-3 sm:elsa-w-auto sm:elsa-text-sm">
           {this.t('Restart')}
         </button>
@@ -817,7 +830,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
     const renderComponentCustomButton = () => {
 
       if (this.configureComponentCustomButtonContext.data == null)
-      return;
+        return;
 
       const label = this.configureComponentCustomButtonContext.data.label;
 
@@ -844,7 +857,10 @@ export class ElsaWorkflowDefinitionEditorScreen {
       data-transition-leave-start="elsa-transform elsa-opacity-100 elsa-scale-100"
       data-transition-leave-end="elsa-transform elsa-opacity-0 elsa-scale-95"
       class={`${this.activityContextMenuTestState.shown ? '' : 'hidden'} elsa-absolute elsa-z-10 elsa-mt-3 elsa-px-2 elsa-w-screen elsa-max-w-xl sm:elsa-px-0`}
-      style={{left: `${this.activityContextMenuTestState.x + 64}px`, top: `${this.activityContextMenuTestState.y - 256}px`}}
+      style={{
+        left: `${this.activityContextMenuTestState.x + 64}px`,
+        top: `${this.activityContextMenuTestState.y - 256}px`
+      }}
       ref={el => this.componentCustomButton = el}
     >
       <div class="elsa-rounded-lg elsa-shadow-lg elsa-ring-1 elsa-ring-black elsa-ring-opacity-5 elsa-overflow-hidden">
@@ -867,7 +883,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
       data-transition-leave-end="elsa-transform elsa-opacity-0 elsa-scale-95"
       class={`${this.activityContextMenuState.shown ? '' : 'hidden'} context-menu elsa-z-10 elsa-mx-3 elsa-w-48 elsa-mt-1 elsa-rounded-md elsa-shadow-lg elsa-fixed`}
       style={{left: `${this.activityContextMenuState.x}px`, top: `${this.activityContextMenuState.y}px`}}
-      ref={el => this.activityContextMenu = el }
+      ref={el => this.activityContextMenu = el}
     >
       <div class="elsa-rounded-md elsa-bg-white elsa-shadow-xs" role="menu" aria-orientation="vertical"
            aria-labelledby="pinned-project-options-menu-0">
@@ -1044,6 +1060,8 @@ export class ElsaWorkflowDefinitionEditorScreen {
   }
 
   private renderPanel() {
+    const isFeaturePanelVisible = featuresDataManager.getUIFeatureList().length != 0;
+
     return (
       <elsa-flyout-panel expandButtonPosition={3}>
         <elsa-tab-header tab="general" slot="header">General</elsa-tab-header>
@@ -1059,8 +1077,39 @@ export class ElsaWorkflowDefinitionEditorScreen {
             workflowTestActivityId={this.selectedActivityId}
           />
         </elsa-tab-content>
+        {isFeaturePanelVisible && <elsa-tab-header tab="designer" slot="header">Designer</elsa-tab-header>}
+        {isFeaturePanelVisible && (
+          <elsa-tab-content tab="designer" slot="content">
+            <elsa-designer-panel
+              onFeatureChanged={this.handleFeatureChange}
+              onFeatureStatusChanged={this.handleFeatureStatusChange}
+            />
+          </elsa-tab-content>
+        )}
       </elsa-flyout-panel>
     );
+  }
+
+  handleFeatureChange = (e: CustomEvent<string>) => {
+    const feature = e.detail;
+
+    if (feature === featuresDataManager.supportedFeatures.workflowLayout) {
+      const layoutFeature = featuresDataManager.getFeatureConfig(feature);
+      this.layoutDirection = layoutFeature.value as LayoutDirection;
+    }
+  }
+
+  handleFeatureStatusChange = (e: CustomEvent<string>) => {
+    const feature = e.detail;
+
+    if (feature === featuresDataManager.supportedFeatures.workflowLayout) {
+      const layoutFeature = featuresDataManager.getFeatureConfig(feature);
+      if (layoutFeature.enabled) {
+        this.layoutDirection = layoutFeature.value as LayoutDirection;
+      } else {
+        this.layoutDirection = LayoutDirection.TopBottom;
+      }
+    }
   }
 }
 
