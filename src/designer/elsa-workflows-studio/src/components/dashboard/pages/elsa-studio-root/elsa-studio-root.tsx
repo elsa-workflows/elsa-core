@@ -1,4 +1,4 @@
-import {Component, Event, EventEmitter, h, Listen, Method, Prop} from '@stencil/core';
+import {Component, Event, EventEmitter, h, Listen, Method, Prop, State} from '@stencil/core';
 import Tunnel, {DashboardState} from "../../../../data/dashboard";
 import {ElsaStudio, WorkflowModel} from "../../../../models";
 import {
@@ -10,7 +10,8 @@ import {
   createElsaClient,
   createHttpClient,
   ElsaClient,
-  propertyDisplayManager
+  propertyDisplayManager,
+  featuresDataManager
 } from "../../../../services";
 import {AxiosInstance} from "axios";
 import {EventTypes} from "../../../../models";
@@ -27,7 +28,9 @@ export class ElsaStudioRoot {
   @Prop({attribute: 'monaco-lib-path', reflect: true}) monacoLibPath: string;
   @Prop({attribute: 'culture', reflect: true}) culture: string;
   @Prop({attribute: 'base-path', reflect: true}) basePath: string = '';
-  @Prop({attribute: 'features', reflect: true}) featuresString: string;
+  @Prop() features: any;
+  @Prop() config: string;
+  @State() featuresConfig: any;
   @Event() initializing: EventEmitter<ElsaStudio>;
   @Event() initialized: EventEmitter<ElsaStudio>;
 
@@ -67,13 +70,26 @@ export class ElsaStudioRoot {
   async componentWillLoad() {
     const elsaClientFactory: () => Promise<ElsaClient> = () => createElsaClient(this.serverUrl);
     const httpClientFactory: () => Promise<AxiosInstance> = () => createHttpClient(this.serverUrl);
+    await fetch(`${document.location.origin}/${this.config}`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("HTTP error " + response.status);
+        }
+
+        return response.json()
+      })
+      .then(data => {
+        this.featuresConfig = data;
+      }).catch((error) => {
+        console.error(error)
+      });
 
     const elsaClient = await elsaClientFactory();
 
     const elsaStudio: ElsaStudio = this.elsaStudio = {
       serverUrl: this.serverUrl,
       basePath: this.basePath,
-      featuresString: this.featuresString,
+      features: this.featuresConfig,
       serverFeatures: [],
       eventBus,
       pluginManager,
@@ -91,6 +107,7 @@ export class ElsaStudioRoot {
     await eventBus.emit(EventTypes.Root.Initializing);
     pluginManager.initialize(elsaStudio);
     propertyDisplayManager.initialize(elsaStudio);
+    featuresDataManager.initialize(elsaStudio);
 
     elsaStudio.serverFeatures = await elsaClient.featuresApi.list();
   }

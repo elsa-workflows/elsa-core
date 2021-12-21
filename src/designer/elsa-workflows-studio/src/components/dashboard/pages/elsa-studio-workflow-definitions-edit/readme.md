@@ -36,6 +36,7 @@ graph TD;
   elsa-workflow-definition-editor-screen --> elsa-tab-content
   elsa-workflow-definition-editor-screen --> elsa-workflow-properties-panel
   elsa-workflow-definition-editor-screen --> elsa-workflow-test-panel
+  elsa-workflow-definition-editor-screen --> elsa-designer-panel
   elsa-workflow-definition-editor-screen --> context-consumer
   elsa-workflow-settings-modal --> elsa-modal-dialog
   elsa-workflow-settings-modal --> elsa-monaco
