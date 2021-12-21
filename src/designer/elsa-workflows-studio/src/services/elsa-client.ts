@@ -244,6 +244,12 @@ export const createElsaClient = async function (serverUrl: string): Promise<Elsa
         return response.data;
       }
     },
+    featuresApi: {
+      list: async () => {
+        const response = await httpClient.get<FeaturesModel>('v1/features');
+        return response.data.features;
+      }
+    },
   }
 
   return _elsaClient;
@@ -261,10 +267,15 @@ export interface ElsaClient {
   workflowStorageProvidersApi: WorkflowStorageProvidersApi;
   workflowChannelsApi: WorkflowChannelsApi;
   workflowTestApi: WorkflowTestApi;
+  featuresApi: FeaturesApi;
 }
 
 export interface ActivitiesApi {
   list(): Promise<Array<ActivityDescriptor>>;
+}
+
+export interface FeaturesApi {
+  list(): Promise<Array<string>>;
 }
 
 export interface WorkflowDefinitionsApi {
@@ -291,7 +302,9 @@ export interface WorkflowDefinitionsApi {
 export interface WorkflowTestApi {
 
   execute(request: WorkflowTestExecuteRequest): Promise<void>;
+
   restartFromActivity(request: WorkflowTestRestartFromActivityRequest): Promise<void>;
+
   stop(request: WorkflowTestStopRequest): Promise<void>;
 }
 
@@ -417,4 +430,8 @@ interface ActivityEventCount {
 
 interface ActivityFault {
   message: string;
+}
+
+interface FeaturesModel {
+  features: Array<string>;
 }
