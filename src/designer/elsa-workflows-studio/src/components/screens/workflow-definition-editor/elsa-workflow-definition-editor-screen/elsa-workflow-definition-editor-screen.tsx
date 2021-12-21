@@ -385,7 +385,9 @@ export class ElsaWorkflowDefinitionEditorScreen {
   }
 
   updateUrl(id) {
-    this.history.push(`${this.basePath}/workflow-definitions/${id}`, {});
+    if (this.history) {
+      this.history.push(`${this.basePath}/workflow-definitions/${id}`, {});
+    }
   }
 
   mapWorkflowModel(workflowDefinition: WorkflowDefinition): WorkflowModel {
