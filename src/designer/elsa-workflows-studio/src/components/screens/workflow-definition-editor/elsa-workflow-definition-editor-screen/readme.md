@@ -10,6 +10,7 @@
 | Property               | Attribute                | Description | Type            | Default     |
 | ---------------------- | ------------------------ | ----------- | --------------- | ----------- |
 | `culture`              | `culture`                |             | `string`        | `undefined` |
+| `features`             | `features`               |             | `string`        | `undefined` |
 | `history`              | --                       |             | `RouterHistory` | `undefined` |
 | `monacoLibPath`        | `monaco-lib-path`        |             | `string`        | `undefined` |
 | `serverUrl`            | `server-url`             |             | `string`        | `undefined` |
@@ -88,6 +89,7 @@ Type: `Promise<void>`
 - [elsa-tab-content](../../../shared/elsa-tab-content)
 - [elsa-workflow-properties-panel](../elsa-workflow-properties-panel)
 - [elsa-workflow-test-panel](../elsa-workflow-test-panel)
+- [elsa-designer-panel](../../../shared/elsa-designer-panel)
 - context-consumer
 
 ### Graph
@@ -107,6 +109,7 @@ graph TD;
   elsa-workflow-definition-editor-screen --> elsa-tab-content
   elsa-workflow-definition-editor-screen --> elsa-workflow-properties-panel
   elsa-workflow-definition-editor-screen --> elsa-workflow-test-panel
+  elsa-workflow-definition-editor-screen --> elsa-designer-panel
   elsa-workflow-definition-editor-screen --> context-consumer
   elsa-workflow-settings-modal --> elsa-modal-dialog
   elsa-workflow-settings-modal --> elsa-monaco
