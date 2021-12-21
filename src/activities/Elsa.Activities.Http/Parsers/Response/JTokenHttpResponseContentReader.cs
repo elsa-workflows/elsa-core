@@ -13,7 +13,7 @@ namespace Elsa.Activities.Http.Parsers.Response
         public int Priority => 0;
         public bool GetSupportsContentType(string contentType) => contentType.Contains("/json", StringComparison.OrdinalIgnoreCase);
 
-        public async Task<object> ReadAsync(SendHttpRequest activity, HttpResponseMessage response, CancellationToken cancellationToken)
+        public async Task<object> ReadAsync(HttpResponseMessage response, object context, CancellationToken cancellationToken)
         {
             var json = (await response.Content.ReadAsStringAsync()).Trim();
             return GetJTokenValue(json);

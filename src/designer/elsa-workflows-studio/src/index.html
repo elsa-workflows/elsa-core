@@ -70,12 +70,10 @@
       // Register a sample middleware.
       e.service.register({
         onRequest(request) {
-          console.log('onRequest');
           return request;
         },
 
         onResponse(response) {
-          console.log('onResponse');
           return response;
         }
       });

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -9,6 +10,7 @@ using Elsa.Activities.Temporal.Hangfire.Models;
 using Hangfire;
 using Hangfire.Common;
 using Hangfire.Storage;
+using Hangfire.Storage.Monitoring;
 using NodaTime;
 
 namespace Elsa.Activities.Temporal.Hangfire.Services
@@ -50,18 +52,21 @@ namespace Elsa.Activities.Temporal.Hangfire.Services
         {
             var data = CreateData(workflowDefinitionId, activityId);
             DeleteRecurringJob(data);
+            DeleteScheduledJob(data);
             return Task.CompletedTask;
         }
 
         public Task UnscheduleAsync(string workflowDefinitionId, CancellationToken cancellationToken = default)
         {
             DeleteRecurringJobs(workflowDefinitionId);
+            DeleteScheduledJobs(workflowDefinitionId);
             return Task.CompletedTask;
         }
 
         public Task UnscheduleAllAsync(CancellationToken cancellationToken = default)
         {
             DeleteAllRecurringJobs();
+            DeleteAllScheduledJobs();
             return Task.CompletedTask;
         }
 
@@ -101,12 +106,52 @@ namespace Elsa.Activities.Temporal.Hangfire.Services
                 _recurringJobManager.RemoveIfExists(job.Id);
         }
 
-        private IEnumerable<RecurringJobDto> QueryRecurringJobs() {
-            using (var connection = _jobStorage.GetConnection())
-                return connection.GetRecurringJobs().Where(x => x.Job.Type == typeof(RunHangfireWorkflowDefinitionJob));
+        private IEnumerable<RecurringJobDto> QueryRecurringJobs()
+        {
+            using var connection = _jobStorage.GetConnection();
+            return connection.GetRecurringJobs().Where(x => x.Job.Type == typeof(RunHangfireWorkflowDefinitionJob));
         }
 
-        private static RunHangfireWorkflowDefinitionJobModel GetJobModel(Job job) => (RunHangfireWorkflowDefinitionJobModel) job.Args[0];
+        private void DeleteScheduledJob(RunHangfireWorkflowDefinitionJobModel data)
+        {
+            var jobId = _jobStorage
+                .EnumerateScheduledJobs<RunHangfireWorkflowDefinitionJob, RunHangfireWorkflowDefinitionJobModel>(x => x.WorkflowDefinitionId == data.WorkflowDefinitionId && x.ActivityId == data.ActivityId)
+                .Select(x => x.Key)
+                .FirstOrDefault();
+
+            if (jobId == null)
+                return;
+
+            DeleteScheduledJob(jobId);
+        }
+
+        private void DeleteScheduledJob(string jobId) => _backgroundJobClient.Delete(jobId);
+
+        private void DeleteScheduledJobs(string workflowDefinitionId)
+        {
+            var jobIds = _jobStorage.EnumerateScheduledJobs<RunHangfireWorkflowDefinitionJob, RunHangfireWorkflowDefinitionJobModel>(x => x.WorkflowDefinitionId == workflowDefinitionId)
+                .Select(x => x.Key)
+                .ToList();
+
+            DeleteScheduledJobs(jobIds);
+        }
+
+        private void DeleteScheduledJobs(IEnumerable<string> jobIds)
+        {
+            foreach (var jobId in jobIds)
+                DeleteScheduledJob(jobId);
+        }
+
+        private void DeleteAllScheduledJobs()
+        {
+            var jobIds = _jobStorage.EnumerateScheduledJobs<RunHangfireWorkflowDefinitionJob, RunHangfireWorkflowDefinitionJobModel>(_ => true)
+                .Select(x => x.Key)
+                .ToList();
+
+            DeleteScheduledJobs(jobIds);
+        }
+
+        private static RunHangfireWorkflowDefinitionJobModel GetJobModel(Job job) => (RunHangfireWorkflowDefinitionJobModel)job.Args[0];
 
         private static RunHangfireWorkflowDefinitionJobModel CreateData(string workflowDefinitionId, string activityId, string? cronExpression = default) => new(workflowDefinitionId, activityId, cronExpression);
     }

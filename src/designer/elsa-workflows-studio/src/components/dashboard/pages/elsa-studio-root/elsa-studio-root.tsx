@@ -84,10 +84,13 @@ export class ElsaStudioRoot {
         console.error(error)
       });
 
+    const elsaClient = await elsaClientFactory();
+
     const elsaStudio: ElsaStudio = this.elsaStudio = {
       serverUrl: this.serverUrl,
       basePath: this.basePath,
       features: this.featuresConfig,
+      serverFeatures: [],
       eventBus,
       pluginManager,
       propertyDisplayManager,
@@ -105,6 +108,8 @@ export class ElsaStudioRoot {
     pluginManager.initialize(elsaStudio);
     propertyDisplayManager.initialize(elsaStudio);
     featuresDataManager.initialize(elsaStudio);
+
+    elsaStudio.serverFeatures = await elsaClient.featuresApi.list();
   }
 
   async componentDidLoad() {
@@ -124,6 +129,7 @@ export class ElsaStudioRoot {
     const tunnelState: DashboardState = {
       serverUrl: this.serverUrl,
       basePath: this.basePath,
+      serverFeatures: this.elsaStudio.serverFeatures,
       culture,
       monacoLibPath: this.monacoLibPath
     };

@@ -144,7 +144,7 @@ namespace Elsa.Activities.Http
             if (hasContent && ReadContent)
             {
                 var formatter = SelectContentParser(ResponseContentParserName, contentType);
-                ResponseContent = await formatter.ReadAsync(this, response, cancellationToken);
+                ResponseContent = await formatter.ReadAsync(response, this, cancellationToken);
             }
 
             var statusCode = (int)response.StatusCode;

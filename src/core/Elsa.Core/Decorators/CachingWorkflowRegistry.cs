@@ -26,9 +26,9 @@ namespace Elsa.Decorators
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
 
         public CachingWorkflowRegistry(
-            IWorkflowRegistry workflowRegistry, 
-            IMemoryCache memoryCache, 
-            ICacheSignal cacheSignal, 
+            IWorkflowRegistry workflowRegistry,
+            IMemoryCache memoryCache,
+            ICacheSignal cacheSignal,
             IWorkflowInstanceStore workflowInstanceStore)
         {
             _workflowRegistry = workflowRegistry;
@@ -63,25 +63,28 @@ namespace Elsa.Decorators
                 return await _workflowRegistry.ListAsync(cancellationToken).ToList();
             });
         }
-        
+
         private async IAsyncEnumerable<IWorkflowBlueprint> ListActiveInternalAsync([EnumeratorCancellation] CancellationToken cancellationToken)
         {
             var workflows = await ListInternalAsync(cancellationToken);
-            
-            foreach (var workflow in workflows)
-            {
-                // If a workflow is not published, only consider it for processing if it has at least one non-ended workflow instance.
-                if (!workflow.IsPublished && !await WorkflowHasUnfinishedWorkflowsAsync(workflow, cancellationToken))
-                    continue;
+            var publishedWorkflows = workflows.Where(x => x.IsPublished);
 
-                yield return workflow;
-            }
-        }
-        
-        private async Task<bool> WorkflowHasUnfinishedWorkflowsAsync(IWorkflowBlueprint workflowBlueprint, CancellationToken cancellationToken)
-        {
-            var count = await _workflowInstanceStore.CountAsync(new UnfinishedWorkflowSpecification().WithWorkflowDefinition(workflowBlueprint.Id), cancellationToken);
-            return count > 0;
+            foreach (var publishedWorkflow in publishedWorkflows)
+                yield return publishedWorkflow;
+
+            // We also need to consider unpublished workflows for inclusion in case they still have associated active workflow instances.
+            var unpublishedWorkflows = workflows.Where(x => !x.IsPublished).ToDictionary(x => x.VersionId);
+            var unpublishedWorkflowIds = unpublishedWorkflows.Keys;
+
+            if (!unpublishedWorkflowIds.Any())
+                yield break;
+
+            var activeWorkflowInstances = await _workflowInstanceStore.FindManyAsync(new UnfinishedWorkflowSpecification().WithWorkflowDefinitionVersionIds(unpublishedWorkflowIds), cancellationToken: cancellationToken).ToList();
+            var activeUnpublishedWorkflowVersionIds = activeWorkflowInstances.Select(x => x.DefinitionVersionId).Distinct().ToList();
+            var activeUnpublishedWorkflowVersions = unpublishedWorkflows.Where(x => activeUnpublishedWorkflowVersionIds.Contains(x.Key)).Select(x => x.Value);
+
+            foreach (var unpublishedWorkflow in activeUnpublishedWorkflowVersions)
+                yield return unpublishedWorkflow;
         }
 
         Task INotificationHandler<WorkflowDefinitionSaved>.Handle(WorkflowDefinitionSaved notification, CancellationToken cancellationToken)

@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Elsa.Builders;
+using Elsa.Options;
 using Elsa.Persistence;
 using Elsa.Services;
 using Elsa.Services.Bookmarks;
@@ -16,15 +17,22 @@ namespace Elsa.Testing.Shared.Unit
     {
         private readonly TemporaryFolder _tempFolder;
 
-        protected WorkflowsUnitTestBase(ITestOutputHelper testOutputHelper, Action<IServiceCollection>? configureServices = default)
+        protected WorkflowsUnitTestBase(
+            ITestOutputHelper testOutputHelper, 
+            Action<IServiceCollection>? configureServices = default,
+            Action<ElsaOptionsBuilder>? extraOptions = null)
         {
             _tempFolder = new TemporaryFolder();
             TestOutputHelper = testOutputHelper;
 
             var services = new ServiceCollection()
-                .AddElsa(options => options
-                    .AddConsoleActivities(Console.In, new XunitConsoleForwarder(testOutputHelper)));
-
+                .AddElsa(options =>
+                    {
+                        options.AddConsoleActivities(Console.In, new XunitConsoleForwarder(testOutputHelper));
+                        extraOptions?.Invoke(options);
+                    }
+                );
+            
             configureServices?.Invoke(services);
             ServiceProvider = services.BuildServiceProvider();
             ServiceScope = ServiceProvider.CreateScope();

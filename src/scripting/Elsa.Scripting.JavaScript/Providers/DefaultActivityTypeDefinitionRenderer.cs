@@ -12,7 +12,7 @@ namespace Elsa.Scripting.JavaScript.Providers
     public class DefaultActivityTypeDefinitionRenderer : IActivityTypeDefinitionRenderer
     {
         public int Priority => -1;
-        public bool GetCanRenderType(ActivityType activityType) => true;
+        public virtual bool GetCanRenderType(ActivityType activityType) => true;
 
         public virtual async ValueTask RenderTypeDeclarationAsync(
             RenderingTypeScriptDefinitions notification,
@@ -48,7 +48,7 @@ namespace Elsa.Scripting.JavaScript.Providers
             CancellationToken cancellationToken = default)
         {
             var typeScriptType = notification.GetTypeScriptType(propertyType);
-            writer.AppendLine($"{propertyName}(): {typeScriptType}");
+            writer.AppendLine($"{propertyName}(): {typeScriptType};");
             return new ValueTask();
         }
     }

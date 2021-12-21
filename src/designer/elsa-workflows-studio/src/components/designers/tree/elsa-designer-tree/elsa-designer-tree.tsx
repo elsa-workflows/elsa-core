@@ -61,7 +61,6 @@ export class ElsaWorkflowDesigner {
   @Event() activityContextMenuButtonTestClicked: EventEmitter<ActivityContextMenuState>;
   @State() workflowModel: WorkflowModel;
 
-
   @State() activityContextMenuState: ActivityContextMenuState = {
     shown: false,
     x: 0,
@@ -909,7 +908,7 @@ export class ElsaWorkflowDesigner {
     return (
       `<div class="elsa-border-t elsa-border-t-solid">
           <div class="elsa-p-6 elsa-text-gray-400 elsa-text-sm">
-            <div class="elsa-mb-2">${displayContext != undefined ? displayContext.bodyDisplay : ''}</div>
+            <div class="elsa-mb-2">${!!displayContext?.bodyDisplay ? displayContext.bodyDisplay : ''}</div>
             <div>
               <span class="elsa-inline-flex elsa-items-center elsa-px-2.5 elsa-py-0.5 elsa-rounded-full elsa-text-xs elsa-font-medium elsa-bg-gray-100 elsa-text-gray-500">
                 <svg class="-elsa-ml-0.5 elsa-mr-1.5 elsa-h-2 elsa-w-2 elsa-text-gray-400" fill="currentColor" viewBox="0 0 8 8">

@@ -46,16 +46,25 @@ namespace Elsa.Services.Workflows
 
         private async IAsyncEnumerable<IWorkflowBlueprint> ListActiveInternalAsync([EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            var workflows = await ListAsync(cancellationToken);
+            var workflows = await ListInternalAsync(cancellationToken).ToListAsync(cancellationToken);
+            var publishedWorkflows = workflows.Where(x => x.IsPublished);
 
-            foreach (var workflow in workflows)
-            {
-                // If a workflow is not published, only consider it for processing if it has at least one non-ended workflow instance.
-                if (!workflow.IsPublished && !await WorkflowHasUnfinishedWorkflowsAsync(workflow, cancellationToken))
-                    continue;
+            foreach (var publishedWorkflow in publishedWorkflows)
+                yield return publishedWorkflow;
 
-                yield return workflow;
-            }
+            // We also need to consider unpublished workflows for inclusion in case they still have associated active workflow instances.
+            var unpublishedWorkflows = workflows.Where(x => !x.IsPublished).ToDictionary(x => x.VersionId);
+            var unpublishedWorkflowIds = unpublishedWorkflows.Keys;
+
+            if (!unpublishedWorkflowIds.Any())
+                yield break;
+
+            var activeWorkflowInstances = await _workflowInstanceStore.FindManyAsync(new UnfinishedWorkflowSpecification().WithWorkflowDefinitionVersionIds(unpublishedWorkflowIds), cancellationToken: cancellationToken).ToList();
+            var activeUnpublishedWorkflowVersionIds = activeWorkflowInstances.Select(x => x.DefinitionVersionId).Distinct().ToList();
+            var activeUnpublishedWorkflowVersions = unpublishedWorkflows.Where(x => activeUnpublishedWorkflowVersionIds.Contains(x.Key)).Select(x => x.Value);
+
+            foreach (var unpublishedWorkflow in activeUnpublishedWorkflowVersions)
+                yield return unpublishedWorkflow;
         }
 
         private async IAsyncEnumerable<IWorkflowBlueprint> ListInternalAsync([EnumeratorCancellation] CancellationToken cancellationToken)

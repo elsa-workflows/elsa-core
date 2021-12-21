@@ -9,6 +9,7 @@ export interface ElsaStudio {
   serverUrl: string;
   basePath: string;
   features: any;
+  serverFeatures: Array<string>;
   pluginManager: PluginManager;
   propertyDisplayManager: PropertyDisplayManager;
   elsaClientFactory: () => Promise<ElsaClient>;

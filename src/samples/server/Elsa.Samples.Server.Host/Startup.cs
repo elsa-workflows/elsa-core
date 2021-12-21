@@ -1,6 +1,5 @@
 using Elsa.Retention.Extensions;
-using Elsa.Server.Api.Extensions;
-using Elsa.WorkflowTesting.Extensions;
+using Elsa.WorkflowTesting.Api.Extensions;
 using Hangfire;
 using Hangfire.SQLite;
 using Microsoft.AspNetCore.Builder;
@@ -44,6 +43,7 @@ namespace Elsa.Samples.Server.Host
                 typeof(Elsa.Activities.Email.Startup),
                 typeof(Elsa.Activities.Telnyx.Startup),
                 typeof(Elsa.Activities.File.Startup),
+                typeof(Elsa.Activities.RabbitMq.Startup),
                 typeof(Persistence.EntityFramework.Sqlite.Startup),
                 typeof(Persistence.EntityFramework.SqlServer.Startup),
                 typeof(Persistence.EntityFramework.MySql.Startup),
@@ -95,7 +95,7 @@ namespace Elsa.Samples.Server.Host
             // In a production environment, make sure to allow only origins you trust.
             services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("Content-Disposition")));
 
-            //Workflow Testing
+            // Workflow Testing
             services.AddWorkflowTestingServices();
         }
 
@@ -117,7 +117,8 @@ namespace Elsa.Samples.Server.Host
                 .UseElsaFeatures()
                 .UseRouting()
                 .UseEndpoints(endpoints => { endpoints.MapControllers(); })
-                .MapWorkflowTestHub();
+                .MapWorkflowTestHub()
+                ;
         }
         
         private void AddHangfire(IServiceCollection services, string dbConnectionString)

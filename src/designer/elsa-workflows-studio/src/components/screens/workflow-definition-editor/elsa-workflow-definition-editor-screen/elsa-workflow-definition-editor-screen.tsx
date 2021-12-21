@@ -51,6 +51,8 @@ export class ElsaWorkflowDefinitionEditorScreen {
   @Prop({attribute: 'monaco-lib-path', reflect: true}) monacoLibPath: string;
   @Prop() features: string;
   @Prop() culture: string;
+  @Prop() basePath: string;
+  @Prop() serverFeatures: Array<string> = [];
   @Prop() history: RouterHistory;
   @State() workflowDefinition: WorkflowDefinition;
   @State() workflowModel: WorkflowModel;
@@ -383,7 +385,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
   }
 
   updateUrl(id) {
-    this.history.push(`/workflow-definitions/${id}`, {});
+    this.history.push(`${this.basePath}/workflow-definitions/${id}`, {});
   }
 
   mapWorkflowModel(workflowDefinition: WorkflowDefinition): WorkflowModel {
@@ -518,6 +520,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
   onTestActivityMessageReceived = async args => {
     const message = args as WorkflowTestActivityMessage;
+
     if (!!message) {
       this.workflowInstanceId = message.workflowInstanceId;
       this.workflowTestActivityMessages = this.workflowTestActivityMessages.filter(x => x.activityId !== message.activityId);
@@ -621,7 +624,8 @@ export class ElsaWorkflowDefinitionEditorScreen {
   render() {
     const tunnelState: WorkflowEditorState = {
       serverUrl: this.serverUrl,
-      workflowDefinitionId: this.workflowDefinition.definitionId
+      workflowDefinitionId: this.workflowDefinition.definitionId,
+      serverFeatures: this.serverFeatures
     };
 
     return (
@@ -984,7 +988,8 @@ export class ElsaWorkflowDefinitionEditorScreen {
               </div>
               <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
                 <dt class="elsa-text-gray-500">Connect outcomes to existing activity</dt>
-                <dd class="elsa-text-gray-900">Press and hold SHIFT while LEFT-clicking the outcome to connect. Release SHIFT and LEFT-click the target activity.</dd>
+                <dd
+                  class="elsa-text-gray-900">Press and hold SHIFT while LEFT-clicking the outcome to connect. Release SHIFT and LEFT-click the target activity.</dd>
               </div>
               <div class="elsa-py-3 elsa-flex elsa-justify-between elsa-text-sm elsa-font-medium">
                 <dt class="elsa-text-gray-500">Pan</dt>
@@ -1060,8 +1065,6 @@ export class ElsaWorkflowDefinitionEditorScreen {
   }
 
   private renderPanel() {
-    const isFeaturePanelVisible = featuresDataManager.getUIFeatureList().length != 0;
-
     return (
       <elsa-flyout-panel expandButtonPosition={3}>
         <elsa-tab-header tab="general" slot="header">General</elsa-tab-header>
@@ -1070,24 +1073,43 @@ export class ElsaWorkflowDefinitionEditorScreen {
             workflowDefinition={this.workflowDefinition}
           />
         </elsa-tab-content>
-        <elsa-tab-header tab="test" slot="header">Test</elsa-tab-header>
-        <elsa-tab-content tab="test" slot="content">
-          <elsa-workflow-test-panel
-            workflowDefinition={this.workflowDefinition}
-            workflowTestActivityId={this.selectedActivityId}
-          />
-        </elsa-tab-content>
-        {isFeaturePanelVisible && <elsa-tab-header tab="designer" slot="header">Designer</elsa-tab-header>}
-        {isFeaturePanelVisible && (
-          <elsa-tab-content tab="designer" slot="content">
-            <elsa-designer-panel
-              onFeatureChanged={this.handleFeatureChange}
-              onFeatureStatusChanged={this.handleFeatureStatusChange}
-            />
-          </elsa-tab-content>
-        )}
+        {this.renderTestPanel()}
+        {this.renderDesignerPanel()}
       </elsa-flyout-panel>
     );
+  }
+
+  private renderTestPanel() {
+    const testingEnabled = this.serverFeatures.find(x => x == 'WorkflowTesting');
+
+    if (!testingEnabled)
+      return;
+
+    return [
+      <elsa-tab-header tab="test" slot="header">Test</elsa-tab-header>,
+      <elsa-tab-content tab="test" slot="content">
+        <elsa-workflow-test-panel
+          workflowDefinition={this.workflowDefinition}
+          workflowTestActivityId={this.selectedActivityId}
+        />
+      </elsa-tab-content>
+    ];
+  }
+
+  private renderDesignerPanel = () => {
+    const isFeaturePanelVisible = featuresDataManager.getUIFeatureList().length != 0;
+
+    if (isFeaturePanelVisible) {
+      return [
+        <elsa-tab-header tab="designer" slot="header">Designer</elsa-tab-header>,
+        <elsa-tab-content tab="designer" slot="content">
+          <elsa-designer-panel
+            onFeatureChanged={this.handleFeatureChange}
+            onFeatureStatusChanged={this.handleFeatureStatusChange}
+          />
+        </elsa-tab-content>
+      ];
+    }
   }
 
   handleFeatureChange = (e: CustomEvent<string>) => {
@@ -1114,4 +1136,4 @@ export class ElsaWorkflowDefinitionEditorScreen {
 }
 
 injectHistory(ElsaWorkflowDefinitionEditorScreen);
-DashboardTunnel.injectProps(ElsaWorkflowDefinitionEditorScreen, ['serverUrl', 'culture', 'monacoLibPath']);
+DashboardTunnel.injectProps(ElsaWorkflowDefinitionEditorScreen, ['serverUrl', 'culture', 'monacoLibPath', 'basePath', 'serverFeatures']);

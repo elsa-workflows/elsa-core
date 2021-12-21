@@ -67,6 +67,12 @@ export namespace Components {
         "selectedActivityIds": Array<string>;
         "showActivityEditor": (activity: ActivityModel, animate: boolean) => Promise<void>;
     }
+    interface ElsaDictionaryProperty {
+        "activityModel": ActivityModel;
+        "propertyDescriptor": ActivityPropertyDescriptor;
+        "propertyModel": ActivityDefinitionProperty;
+        "serverUrl": string;
+    }
     interface ElsaDropdownButton {
         "icon"?: any;
         "items": Array<DropdownButtonItem>;
@@ -280,6 +286,7 @@ export namespace Components {
     interface ElsaWorkflowDefinitionEditorNotifications {
     }
     interface ElsaWorkflowDefinitionEditorScreen {
+        "basePath": string;
         "culture": string;
         "exportWorkflow": () => Promise<void>;
         "features": string;
@@ -288,6 +295,7 @@ export namespace Components {
         "history": RouterHistory;
         "importWorkflow": (file: File) => Promise<void>;
         "monacoLibPath": string;
+        "serverFeatures": Array<string>;
         "serverUrl": string;
         "workflowDefinitionId": string;
     }
@@ -418,6 +426,12 @@ declare global {
     var HTMLElsaDesignerTreeElement: {
         prototype: HTMLElsaDesignerTreeElement;
         new (): HTMLElsaDesignerTreeElement;
+    };
+    interface HTMLElsaDictionaryPropertyElement extends Components.ElsaDictionaryProperty, HTMLStencilElement {
+    }
+    var HTMLElsaDictionaryPropertyElement: {
+        prototype: HTMLElsaDictionaryPropertyElement;
+        new (): HTMLElsaDictionaryPropertyElement;
     };
     interface HTMLElsaDropdownButtonElement extends Components.ElsaDropdownButton, HTMLStencilElement {
     }
@@ -730,6 +744,7 @@ declare global {
         "elsa-copy-button": HTMLElsaCopyButtonElement;
         "elsa-designer-panel": HTMLElsaDesignerPanelElement;
         "elsa-designer-tree": HTMLElsaDesignerTreeElement;
+        "elsa-dictionary-property": HTMLElsaDictionaryPropertyElement;
         "elsa-dropdown-button": HTMLElsaDropdownButtonElement;
         "elsa-dropdown-property": HTMLElsaDropdownPropertyElement;
         "elsa-expression-editor": HTMLElsaExpressionEditorElement;
@@ -834,6 +849,12 @@ declare namespace LocalJSX {
         "onConnectionContextMenuButtonClicked"?: (event: CustomEvent<ActivityContextMenuState>) => void;
         "onWorkflow-changed"?: (event: CustomEvent<WorkflowModel>) => void;
         "selectedActivityIds"?: Array<string>;
+    }
+    interface ElsaDictionaryProperty {
+        "activityModel"?: ActivityModel;
+        "propertyDescriptor"?: ActivityPropertyDescriptor;
+        "propertyModel"?: ActivityDefinitionProperty;
+        "serverUrl"?: string;
     }
     interface ElsaDropdownButton {
         "icon"?: any;
@@ -1048,11 +1069,13 @@ declare namespace LocalJSX {
     interface ElsaWorkflowDefinitionEditorNotifications {
     }
     interface ElsaWorkflowDefinitionEditorScreen {
+        "basePath"?: string;
         "culture"?: string;
         "features"?: string;
         "history"?: RouterHistory;
         "monacoLibPath"?: string;
         "onWorkflowSaved"?: (event: CustomEvent<WorkflowDefinition>) => void;
+        "serverFeatures"?: Array<string>;
         "serverUrl"?: string;
         "workflowDefinitionId"?: string;
     }
@@ -1134,6 +1157,7 @@ declare namespace LocalJSX {
         "elsa-copy-button": ElsaCopyButton;
         "elsa-designer-panel": ElsaDesignerPanel;
         "elsa-designer-tree": ElsaDesignerTree;
+        "elsa-dictionary-property": ElsaDictionaryProperty;
         "elsa-dropdown-button": ElsaDropdownButton;
         "elsa-dropdown-property": ElsaDropdownProperty;
         "elsa-expression-editor": ElsaExpressionEditor;
@@ -1200,6 +1224,7 @@ declare module "@stencil/core" {
             "elsa-copy-button": LocalJSX.ElsaCopyButton & JSXBase.HTMLAttributes<HTMLElsaCopyButtonElement>;
             "elsa-designer-panel": LocalJSX.ElsaDesignerPanel & JSXBase.HTMLAttributes<HTMLElsaDesignerPanelElement>;
             "elsa-designer-tree": LocalJSX.ElsaDesignerTree & JSXBase.HTMLAttributes<HTMLElsaDesignerTreeElement>;
+            "elsa-dictionary-property": LocalJSX.ElsaDictionaryProperty & JSXBase.HTMLAttributes<HTMLElsaDictionaryPropertyElement>;
             "elsa-dropdown-button": LocalJSX.ElsaDropdownButton & JSXBase.HTMLAttributes<HTMLElsaDropdownButtonElement>;
             "elsa-dropdown-property": LocalJSX.ElsaDropdownProperty & JSXBase.HTMLAttributes<HTMLElsaDropdownPropertyElement>;
             "elsa-expression-editor": LocalJSX.ElsaExpressionEditor & JSXBase.HTMLAttributes<HTMLElsaExpressionEditorElement>;
