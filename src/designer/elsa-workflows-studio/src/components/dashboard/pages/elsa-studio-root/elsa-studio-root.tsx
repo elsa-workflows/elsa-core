@@ -70,19 +70,22 @@ export class ElsaStudioRoot {
   async componentWillLoad() {
     const elsaClientFactory: () => Promise<ElsaClient> = () => createElsaClient(this.serverUrl);
     const httpClientFactory: () => Promise<AxiosInstance> = () => createHttpClient(this.serverUrl);
-    await fetch(`${document.location.origin}/${this.config}`)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error("HTTP error " + response.status);
-        }
 
-        return response.json()
-      })
-      .then(data => {
-        this.featuresConfig = data;
-      }).catch((error) => {
-        console.error(error)
-      });
+    if (this.config) {
+      await fetch(`${document.location.origin}/${this.config}`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error("HTTP error " + response.status);
+          }
+
+          return response.json()
+        })
+        .then(data => {
+          this.featuresConfig = data;
+        }).catch((error) => {
+          console.error(error)
+        });
+    }
 
     const elsaClient = await elsaClientFactory();
 
