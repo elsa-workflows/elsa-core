@@ -2,7 +2,7 @@ export const resources = {
   'en': {
     default: {
       'workflowLayoutName': 'Workflow Layout',
-      'workflowLayoutDescription': 'Determines the directions cards are displayed in. Changed for every workflow.',
+      'workflowLayoutDescription': 'Determines the direction in which activities are laid out.',
       'TopBottom': 'Top to Bottom',
       'LeftRight': 'Left to Right',
       'BottomTop': 'Bottom to Top',
