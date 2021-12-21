@@ -2,13 +2,20 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFrameworks>net5.0;net6.0</TargetFrameworks>
         <IsPackable>false</IsPackable>
     </PropertyGroup>
 
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net5.0'">
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net6.0'">
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.0" />
+    </ItemGroup>
+    
     <ItemGroup>
         <PackageReference Include="DistributedLock.Redis" Version="1.0.1" />
-        <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.0" />
         <PackageReference Include="System.Text.Encodings.Web" Version="6.0.0" />
     </ItemGroup>
 
@@ -18,8 +25,6 @@
         <ProjectReference Include="..\..\..\locking\Elsa.DistributedLocking.AzureBlob\Elsa.DistributedLocking.AzureBlob.csproj" />
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.Temporal.Common\Elsa.Activities.Temporal.Common.csproj" />
         <ProjectReference Include="..\..\..\locking\Elsa.DistributedLocking.SqlServer\Elsa.DistributedLocking.SqlServer.csproj" />
-        <ProjectReference Include="..\..\..\core\Elsa\Elsa.csproj" />
-        <ProjectReference Include="..\..\..\activities\Elsa.Activities.Temporal.Common\Elsa.Activities.Temporal.Common.csproj" />
         <ProjectReference Include="..\..\..\providers\Elsa.Providers.Redis\Elsa.Providers.Redis.csproj" />
     </ItemGroup>
 
