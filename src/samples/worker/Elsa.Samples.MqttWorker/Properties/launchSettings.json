@@ -1,0 +1,11 @@
+{
+    "profiles": {
+        "Elsa.Samples.MqttWorker": {
+            "commandName": "Project",
+            "dotnetRunMessages": "true",
+            "environmentVariables": {
+                "DOTNET_ENVIRONMENT": "Development"
+            }
+        }
+    }
+}
