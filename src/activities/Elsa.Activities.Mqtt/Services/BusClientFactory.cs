@@ -1,6 +1,10 @@
 using Elsa.Activities.Mqtt.Options;
 using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Collections.Generic;
 using System.Net.Mqtt;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.Mqtt.Services
 {

@@ -1,6 +1,9 @@
 using Elsa.Events;
 using Elsa.WorkflowTesting.Events;
 using MediatR;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.Mqtt.Testing
 {

@@ -5,6 +5,7 @@ using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Expressions;
 using Elsa.Services.Models;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.Mqtt
 {

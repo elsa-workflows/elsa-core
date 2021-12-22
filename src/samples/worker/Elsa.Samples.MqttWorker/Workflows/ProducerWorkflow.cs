@@ -4,6 +4,7 @@ using Elsa.Activities.Temporal;
 using Elsa.Builders;
 using Microsoft.Extensions.Configuration;
 using NodaTime;
+using System;
 using System.Net.Mqtt;
 
 namespace Elsa.Samples.MqttWorker.Workflows

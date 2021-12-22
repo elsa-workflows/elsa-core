@@ -1,7 +1,9 @@
 using Elsa.Activities.Mqtt.Options;
 using Microsoft.Extensions.Logging;
+using System;
 using System.Net.Mqtt;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.Mqtt.Services
 {

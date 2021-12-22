@@ -1,3 +1,4 @@
+using System;
 using System.Net.Mqtt;
 
 namespace Elsa.Activities.Mqtt.Options

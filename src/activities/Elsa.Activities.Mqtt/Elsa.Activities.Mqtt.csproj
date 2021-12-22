@@ -6,7 +6,6 @@
     
     <PropertyGroup>
         <TargetFramework>net5.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
         <RootNamespace>Elsa.Activities.Mqtt</RootNamespace>
         <Description>Elsa is a set of workflow libraries and tools that enable lean and mean workflowing capabilities in any .NET Core application.
 This package provides activities to send and receive messages using MQTT.</Description>
