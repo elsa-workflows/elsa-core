@@ -19,7 +19,7 @@ namespace Elsa.Samples.RabbitMqWorker.Workflows
         {
             builder
                 .Timer(Duration.FromSeconds(5))
-                .MessageReceived(_connectionString, "Podcasts.Weather", default!)
+                .MessageReceived(_connectionString, "Podcasts.Weather")
                 .WriteLine(context =>
                 {
                     var message = context.GetInput<string>();
