@@ -28,21 +28,27 @@ namespace Elsa.Activities.RabbitMq
         }
 
         [ActivityInput(
-            Hint = "Routing Key",
+            Hint = "Exchange to listen to",
             Order = 1,
+            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        public string ExchangeName { get; set; } = default!;
+
+        [ActivityInput(
+            Hint = "Routing Key",
+            Order = 2,
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string RoutingKey { get; set; } = default!;
 
         [ActivityInput(
             Hint = "List of headers that should be present in the message",
-            Order = 2,
+            Order = 3,
             UIHint = ActivityInputUIHints.Dictionary,
             DefaultSyntax = SyntaxNames.Json,
             SupportedSyntaxes = new[] { SyntaxNames.Json })]
         public Dictionary<string, string> Headers { get; set; } = new Dictionary<string, string>();
 
         [ActivityInput(
-            Hint = "RabbitMQ connection string",
+            Hint = "RabbitMQ connection string [amqp://user:pass@host:10000/vhost] - https://www.rabbitmq.com/uri-spec.html",
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid },
             Order = 2,
             Category = PropertyCategories.Configuration)]
@@ -78,7 +84,7 @@ namespace Elsa.Activities.RabbitMq
         }
         private async Task StartClient()
         {
-            var config = new RabbitMqBusConfiguration(ConnectionString, RoutingKey, Headers);
+            var config = new RabbitMqBusConfiguration(ConnectionString, ExchangeName, RoutingKey, Headers);
 
             var client = await _messageReceiverClientFactory.GetReceiverAsync(config);
             client.StartClient();
