@@ -23,6 +23,7 @@
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
         </PackageReference>
+        <PackageReference Include="Jint" Version="3.0.0-beta-2037" />
     </ItemGroup>
 
     <ItemGroup>

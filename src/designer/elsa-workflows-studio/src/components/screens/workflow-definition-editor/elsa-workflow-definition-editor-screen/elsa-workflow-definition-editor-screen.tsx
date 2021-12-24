@@ -1,33 +1,38 @@
 import {Component, Event, EventEmitter, h, Host, Listen, Method, Prop, State, Watch} from '@stencil/core';
-import {RouterHistory, injectHistory} from '@stencil/router';
+import {injectHistory, RouterHistory} from '@stencil/router';
 import {
   ActivityDefinition,
   ActivityDescriptor,
   ActivityModel,
-  ConfigureComponentCustomButtonContext,
   ComponentCustomButtonClickContext,
+  ConfigureComponentCustomButtonContext,
   ConnectionDefinition,
   ConnectionModel,
   EventTypes,
   VersionOptions,
   WorkflowDefinition,
+  WorkflowInstance,
   WorkflowModel,
   WorkflowPersistenceBehavior,
   WorkflowTestActivityMessage,
-  WorkflowInstance, WorkflowTestActivityMessageStatus,
+  WorkflowTestActivityMessageStatus,
 } from "../../../../models";
 import {
   ActivityStats,
   createElsaClient,
   eventBus,
-  SaveWorkflowDefinitionRequest, toastNotificationService,
-  WorkflowTestRestartFromActivityRequest
+  featuresDataManager,
+  SaveWorkflowDefinitionRequest
 } from "../../../../services";
 import state from '../../../../utils/store';
 import WorkflowEditorTunnel, {WorkflowEditorState} from '../../../../data/workflow-editor';
 import DashboardTunnel from "../../../../data/dashboard";
 import {downloadFromBlob} from "../../../../utils/download";
-import {ActivityContextMenuState, WorkflowDesignerMode} from "../../../designers/tree/elsa-designer-tree/models";
+import {
+  ActivityContextMenuState,
+  LayoutDirection,
+  WorkflowDesignerMode
+} from "../../../designers/tree/elsa-designer-tree/models";
 import {i18n} from "i18next";
 import {loadTranslations} from "../../../i18n/i18n-loader";
 import {resources} from "./localizations";
@@ -44,6 +49,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
   @Prop({attribute: 'workflow-definition-id', reflect: true}) workflowDefinitionId: string;
   @Prop({attribute: 'server-url', reflect: true}) serverUrl: string;
   @Prop({attribute: 'monaco-lib-path', reflect: true}) monacoLibPath: string;
+  @Prop() features: string;
   @Prop() culture: string;
   @Prop() basePath: string;
   @Prop() serverFeatures: Array<string> = [];
@@ -64,6 +70,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
   @State() workflowInstance?: WorkflowInstance;
   @State() workflowInstanceId?: string;
   @State() activityStats?: ActivityStats;
+  @State() layoutDirection: LayoutDirection = LayoutDirection.TopBottom;//???
 
   @State() activityContextMenuState: ActivityContextMenuState = {
     shown: false,
@@ -197,6 +204,11 @@ export class ElsaWorkflowDefinitionEditorScreen {
   async componentWillLoad() {
     this.i18next = await loadTranslations(this.culture, resources);
     this.workflowDesignerMode = WorkflowDesignerMode.Edit;
+
+    const layoutFeature = featuresDataManager.getFeatureConfig(featuresDataManager.supportedFeatures.workflowLayout);
+    if (layoutFeature && layoutFeature.enabled) {
+      this.layoutDirection = layoutFeature.value as LayoutDirection;
+    }
     await this.serverUrlChangedHandler(this.serverUrl);
     await this.workflowDefinitionIdChangedHandler(this.workflowDefinitionId);
     await this.monacoLibPathChangedHandler(this.monacoLibPath);
@@ -373,7 +385,9 @@ export class ElsaWorkflowDefinitionEditorScreen {
   }
 
   updateUrl(id) {
-    this.history.push(`${this.basePath}/workflow-definitions/${id}`, {});
+    if (this.history) {
+      this.history.push(`${this.basePath}/workflow-definitions/${id}`, {});
+    }
   }
 
   mapWorkflowModel(workflowDefinition: WorkflowDefinition): WorkflowModel {
@@ -647,6 +661,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
       <div class="elsa-flex-1 elsa-flex elsa-relative">
         <elsa-designer-tree model={this.workflowModel}
                             mode={this.workflowDesignerMode}
+                            layoutDirection={this.layoutDirection}
                             activityContextMenuButton={this.workflowDesignerMode == WorkflowDesignerMode.Edit
                               ? activityContextMenuButton
                               : this.renderActivityStatsButton}
@@ -1061,6 +1076,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
           />
         </elsa-tab-content>
         {this.renderTestPanel()}
+        {this.renderDesignerPanel()}
       </elsa-flyout-panel>
     );
   }
@@ -1080,6 +1096,44 @@ export class ElsaWorkflowDefinitionEditorScreen {
         />
       </elsa-tab-content>
     ];
+  }
+
+  private renderDesignerPanel = () => {
+    const isFeaturePanelVisible = featuresDataManager.getUIFeatureList().length != 0;
+
+    if (isFeaturePanelVisible) {
+      return [
+        <elsa-tab-header tab="designer" slot="header">Designer</elsa-tab-header>,
+        <elsa-tab-content tab="designer" slot="content">
+          <elsa-designer-panel
+            onFeatureChanged={this.handleFeatureChange}
+            onFeatureStatusChanged={this.handleFeatureStatusChange}
+          />
+        </elsa-tab-content>
+      ];
+    }
+  }
+
+  handleFeatureChange = (e: CustomEvent<string>) => {
+    const feature = e.detail;
+
+    if (feature === featuresDataManager.supportedFeatures.workflowLayout) {
+      const layoutFeature = featuresDataManager.getFeatureConfig(feature);
+      this.layoutDirection = layoutFeature.value as LayoutDirection;
+    }
+  }
+
+  handleFeatureStatusChange = (e: CustomEvent<string>) => {
+    const feature = e.detail;
+
+    if (feature === featuresDataManager.supportedFeatures.workflowLayout) {
+      const layoutFeature = featuresDataManager.getFeatureConfig(feature);
+      if (layoutFeature.enabled) {
+        this.layoutDirection = layoutFeature.value as LayoutDirection;
+      } else {
+        this.layoutDirection = LayoutDirection.TopBottom;
+      }
+    }
   }
 }
 

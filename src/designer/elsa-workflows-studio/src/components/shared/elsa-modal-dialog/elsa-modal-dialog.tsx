@@ -30,7 +30,6 @@ export class ElsaModalDialog {
   }
 
   handleDefaultClose = async () => {
-    console.log('handleDefaultClose');
     await this.hide();
   }
 

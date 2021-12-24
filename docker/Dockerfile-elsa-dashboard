@@ -1,4 +1,4 @@
-FROM node:15-alpine as client-build
+FROM node:17-alpine as client-build
 
 WORKDIR /app
 COPY /src .
