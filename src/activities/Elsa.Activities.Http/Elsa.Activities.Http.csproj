@@ -21,6 +21,17 @@
         <ProjectReference Include="..\..\scripting\Elsa.Scripting.Liquid\Elsa.Scripting.Liquid.csproj" />
     </ItemGroup>
     
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net6.0'">
+        <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="6.0.1" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net5.0'">
+        <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="5.0.10" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1'">
+        <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="3.1.19" />
+    </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="6.0.1" />
         <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.2.2" />
