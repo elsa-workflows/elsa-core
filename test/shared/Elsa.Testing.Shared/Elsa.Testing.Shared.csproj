@@ -11,17 +11,9 @@
         <PackageTags>elsa, workflows</PackageTags>
     </PropertyGroup>
 
-    <ItemGroup Condition=" '$(TargetFramework)' == 'net5.0'">
-        <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0"/>
-        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.10"/>
-    </ItemGroup>
-
-    <ItemGroup Condition=" '$(TargetFramework)' == 'net6.0'">
+    <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.0"/>
         <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.1"/>
-    </ItemGroup>
-
-    <ItemGroup>
         <PackageReference Include="AutoFixture" Version="4.17.0"/>
         <PackageReference Include="Autofixture.AutoMoq" Version="4.17.0"/>
         <PackageReference Include="autofixture.xunit2" Version="4.17.0"/>

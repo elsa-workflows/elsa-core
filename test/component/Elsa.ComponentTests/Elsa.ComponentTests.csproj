@@ -5,17 +5,10 @@
         <IsPackable>false</IsPackable>
         <Nullable>enable</Nullable>
     </PropertyGroup>
-
-    <ItemGroup Condition=" '$(TargetFramework)' == 'net5.0'">
-        <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="5.0.10"/>
-    </ItemGroup>
-
-    <ItemGroup Condition=" '$(TargetFramework)' == 'net6.0'">
-        <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="6.0.1"/>
-    </ItemGroup>
     
     <ItemGroup>
         <PackageReference Include="AutoFixture" Version="4.17.0"/>
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="6.0.1"/>
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.11.0"/>
         <PackageReference Include="System.ComponentModel.TypeConverter" Version="4.3.0"/>
         <PackageReference Include="xunit" Version="2.4.1"/>
