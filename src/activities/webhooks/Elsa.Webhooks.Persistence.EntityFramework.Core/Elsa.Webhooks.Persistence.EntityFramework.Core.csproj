@@ -12,6 +12,11 @@
         <PackageTags>elsa, workflows, webhooks, efcore</PackageTags>
     </PropertyGroup>
 
+    <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1'">
+        <PackageReference Include="EFCore.BulkExtensions" Version="5.4.0" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.10" />
+    </ItemGroup>
+
     <ItemGroup Condition=" '$(TargetFramework)' == 'net5.0'">
         <PackageReference Include="EFCore.BulkExtensions" Version="5.4.0" />
         <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.10" />
