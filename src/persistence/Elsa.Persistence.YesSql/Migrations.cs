@@ -25,6 +25,7 @@ namespace Elsa.Persistence.YesSql
                     .Column<string?>(nameof(WorkflowInstanceIndex.TenantId))
                     .Column<string>(nameof(WorkflowInstanceIndex.InstanceId))
                     .Column<string>(nameof(WorkflowInstanceIndex.DefinitionId))
+                    .Column<string>(nameof(WorkflowInstanceIndex.DefinitionVersionId))
                     .Column<int>(nameof(WorkflowInstanceIndex.Version))
                     .Column<string?>(nameof(WorkflowInstanceIndex.CorrelationId))
                     .Column<string?>(nameof(WorkflowInstanceIndex.ContextId))
@@ -70,7 +71,16 @@ namespace Elsa.Persistence.YesSql
                     .Column<string>(nameof(BookmarkIndex.CorrelationId)),
                 CollectionNames.Bookmarks);
 
-            return 1;
+            return 2;
+        }
+
+        public int UpdateFrom1()
+        {
+            SchemaBuilder.CreateMapIndexTable<WorkflowInstanceIndex>(
+                table => table.Column<string>(nameof(WorkflowInstanceIndex.DefinitionVersionId)),
+                CollectionNames.WorkflowInstances);
+
+            return 2;
         }
     }
 }

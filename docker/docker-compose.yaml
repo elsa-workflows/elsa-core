@@ -12,7 +12,7 @@ services:
         container_name: elsa-dashboard-with-server
         environment:
             - ASPNETCORE_ENVIRONMENT=Development
-            - Elsa:Server:BaseAddress=http://localhost:6868
+            - Elsa:Server:BaseUrl=http://localhost:6868
             - Elsa:Smtp:Host=smtp4dev
         ports:
             - "6868:80"

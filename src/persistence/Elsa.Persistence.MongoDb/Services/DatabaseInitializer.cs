@@ -38,6 +38,7 @@ namespace Elsa.Persistence.MongoDb.Services
             var correlationIdKeysDefinition = builder.Ascending(x => x.CorrelationId);
             var createdAtKeysDefinition = builder.Ascending(x => x.CreatedAt);
             var definitionKeysDefinition = builder.Ascending(x => x.DefinitionId);
+            var definitionVersionIdKeysDefinition = builder.Ascending(x => x.DefinitionVersionId);
             var faultedAtKeysDefinition = builder.Ascending(x => x.FaultedAt);
             var finishedAtKeysDefinition = builder.Ascending(x => x.FinishedAt);
             var lastExecutedAtKeysDefinition = builder.Ascending(x => x.LastExecutedAt);
@@ -57,6 +58,7 @@ namespace Elsa.Persistence.MongoDb.Services
                 correlationIdKeysDefinition,
                 createdAtKeysDefinition,
                 definitionKeysDefinition,
+                definitionVersionIdKeysDefinition,
                 faultedAtKeysDefinition,
                 finishedAtKeysDefinition,
                 lastExecutedAtKeysDefinition,
