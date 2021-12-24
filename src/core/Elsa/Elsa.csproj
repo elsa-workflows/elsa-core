@@ -9,7 +9,7 @@
             This package references some of the most commonly used packages you are likely to use when working with Elsa.
         </Description>      
         <PackageTags>elsa, workflows</PackageTags>      
-        <TargetFrameworks>net5.0;net6.0;netstandard2.1</TargetFrameworks>
+        <TargetFramework>netstandard2.1</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup>
