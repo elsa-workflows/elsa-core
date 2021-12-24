@@ -13,7 +13,8 @@ namespace Elsa.WorkflowTesting.Api.Extensions
             return services
                 .AddScoped<IWorkflowTestLaunchpad, WorkflowTestLaunchpad>()
                 .AddScoped<IWorkflowTestService, WorkflowTestService>()
-                .AddNotificationHandlersFrom<ActivityExecutionResultExecutedHandler>();
+                .AddNotificationHandlersFrom<ActivityExecutionResultExecutedHandler>()
+                .AddTransient<IServerFeatureProvider, WorkflowTestingServerFeatureProvider>();
         }
     }
 }

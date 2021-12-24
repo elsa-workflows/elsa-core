@@ -44,6 +44,7 @@ namespace Elsa.Samples.Server.Host
                 typeof(Elsa.Activities.Telnyx.Startup),
                 typeof(Elsa.Activities.File.Startup),
                 typeof(Elsa.Activities.RabbitMq.Startup),
+                typeof(Elsa.Activities.Mqtt.Startup),
                 typeof(Persistence.EntityFramework.Sqlite.Startup),
                 typeof(Persistence.EntityFramework.SqlServer.Startup),
                 typeof(Persistence.EntityFramework.MySql.Startup),
@@ -95,8 +96,8 @@ namespace Elsa.Samples.Server.Host
             // In a production environment, make sure to allow only origins you trust.
             services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("Content-Disposition")));
 
-            //Workflow Testing
-            //services.AddWorkflowTestingServices();
+            // Workflow Testing
+            services.AddWorkflowTestingServices();
         }
 
         public void Configure(IApplicationBuilder app)
@@ -117,7 +118,7 @@ namespace Elsa.Samples.Server.Host
                 .UseElsaFeatures()
                 .UseRouting()
                 .UseEndpoints(endpoints => { endpoints.MapControllers(); })
-                //.MapWorkflowTestHub()
+                .MapWorkflowTestHub()
                 ;
         }
         

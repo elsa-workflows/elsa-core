@@ -20,7 +20,7 @@ namespace Elsa.Samples.RabbitMqWorker.Workflows
             builder
                 .Timer(Duration.FromSeconds(5))
                 .WriteLine("Sending a weather update with the \"Podcasts.Weather\" topic.")
-                .SendTopicMessage(_connectionString, "Podcasts.Weather", default!, "Cloudy with a chance of meatballs");
+                .SendTopicMessage(_connectionString, "Podcasts.Weather", "Cloudy with a chance of meatballs");
         }
     }
 }

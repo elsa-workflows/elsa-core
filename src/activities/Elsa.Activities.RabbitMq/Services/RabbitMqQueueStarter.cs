@@ -95,9 +95,10 @@ namespace Elsa.Activities.RabbitMq.Services
                 {
                     var connectionString = await activity.EvaluatePropertyValueAsync(x => x.ConnectionString, cancellationToken);
                     var routingKey = await activity.EvaluatePropertyValueAsync(x => x.RoutingKey, cancellationToken);
+                    var exchangeName = await activity.EvaluatePropertyValueAsync(x => x.ExchangeName, cancellationToken);
                     var headers = await activity.EvaluatePropertyValueAsync(x => x.Headers, cancellationToken);
 
-                    var config = new RabbitMqBusConfiguration(connectionString!, routingKey!, headers!);
+                    var config = new RabbitMqBusConfiguration(connectionString!, exchangeName, routingKey!, headers!);
 
                     yield return config!;
                 }

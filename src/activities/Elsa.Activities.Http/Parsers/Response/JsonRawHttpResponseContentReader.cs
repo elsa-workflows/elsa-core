@@ -11,6 +11,6 @@ namespace Elsa.Activities.Http.Parsers.Response
         public string Name => "JSON";
         public int Priority => 100;
         public bool GetSupportsContentType(string contentType) => contentType.Contains("/json", StringComparison.OrdinalIgnoreCase);
-        public async Task<object> ReadAsync(SendHttpRequest activity, HttpResponseMessage response, CancellationToken cancellationToken) => await response.Content.ReadAsStringAsync();
+        public async Task<object> ReadAsync(HttpResponseMessage response, object context, CancellationToken cancellationToken) => await response.Content.ReadAsStringAsync();
     }
 }

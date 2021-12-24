@@ -46,7 +46,7 @@ export class ElsaWorkflowDesigner {
   @Prop() connectionContextMenu?: ActivityContextMenuState;
   @Prop() activityContextTestMenu?: ActivityContextMenuState;
   @Prop() mode: WorkflowDesignerMode = WorkflowDesignerMode.Edit;
-  @Prop() layoutDirection: LayoutDirection = LayoutDirection.Vertical;
+  @Prop() layoutDirection: LayoutDirection = LayoutDirection.TopBottom;
   @Prop({attribute: 'enable-multiple-connections'}) enableMultipleConnectionsFromSingleSource: boolean;
   @Event({
     eventName: 'workflow-changed',
@@ -60,7 +60,6 @@ export class ElsaWorkflowDesigner {
   @Event() connectionContextMenuButtonClicked: EventEmitter<ActivityContextMenuState>;
   @Event() activityContextMenuButtonTestClicked: EventEmitter<ActivityContextMenuState>;
   @State() workflowModel: WorkflowModel;
-
 
   @State() activityContextMenuState: ActivityContextMenuState = {
     shown: false,
@@ -569,9 +568,7 @@ export class ElsaWorkflowDesigner {
 
   setEntities() {
     this.graph = new dagreD3.graphlib.Graph().setGraph({});
-
-    const layoutDirection = this.layoutDirection;
-    this.graph.graph().rankdir = layoutDirection == LayoutDirection.Vertical ? 'TB' : 'LR';
+    this.graph.graph().rankdir = this.getLayoutDirection();
 
     const rootActivities = this.getRootActivities();
 
@@ -947,5 +944,19 @@ export class ElsaWorkflowDesigner {
         </svg>
       </Host>
     );
+  }
+
+  private getLayoutDirection = () => {
+    switch (this.layoutDirection) {
+      case LayoutDirection.BottomTop:
+        return 'BT';
+      case LayoutDirection.LeftRight:
+        return 'LR';
+      case LayoutDirection.RightLeft:
+        return 'RL';
+      case LayoutDirection.TopBottom:
+      default:
+        return 'TB';
+    }
   }
 }

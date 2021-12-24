@@ -11,14 +11,16 @@ namespace Elsa.Activities.RabbitMq.Bookmarks
         {
         }
 
-        public MessageReceivedBookmark(string routingKey, string connectionString, Dictionary<string, string> headers)
+        public MessageReceivedBookmark(string exchangeName, string routingKey, string connectionString, Dictionary<string, string> headers)
         {
+            ExchangeName = exchangeName;
             RoutingKey = routingKey;
             ConnectionString = connectionString;
             Headers = headers ?? new Dictionary<string, string>();
 
         }
 
+        public string ExchangeName { get; set; } = default!;
         public string RoutingKey { get; set; } = default!;
         public string ConnectionString { get; set; } = default!;
         public Dictionary<string, string> Headers { get; set; } = default!;
@@ -31,6 +33,7 @@ namespace Elsa.Activities.RabbitMq.Bookmarks
             {
                 Result(new MessageReceivedBookmark
                 {
+                    ExchangeName = (await context.ReadActivityPropertyAsync(x => x.ExchangeName, cancellationToken))!,
                     RoutingKey = (await context.ReadActivityPropertyAsync(x => x.RoutingKey, cancellationToken))!,
                     ConnectionString = (await context.ReadActivityPropertyAsync(x => x.ConnectionString, cancellationToken))!,
                     Headers = (await context.ReadActivityPropertyAsync(x => x.Headers, cancellationToken))!

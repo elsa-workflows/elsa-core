@@ -51,7 +51,7 @@ namespace Elsa.Activities.RabbitMq.Services
 
             var config = _client.Configuration;
 
-            var bookmark = new MessageReceivedBookmark(config.RoutingKey, config.ConnectionString, config.Headers);
+            var bookmark = new MessageReceivedBookmark(config.ExchangeName, config.RoutingKey, config.ConnectionString, config.Headers);
             var launchContext = new WorkflowsQuery(ActivityType, bookmark);
 
             await _workflowLaunchpad.UseServiceAsync(service => service.CollectAndDispatchWorkflowsAsync(launchContext, new WorkflowInput(message), cancellationToken));
