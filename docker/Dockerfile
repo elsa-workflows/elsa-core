@@ -1,6 +1,6 @@
 # This dockerfile requires that all NPM packages there installed and build. 
 
-FROM mcr.microsoft.com/dotnet/sdk:6.0-bullseye-slim-amd64 AS build
+FROM mcr.microsoft.com/dotnet/sdk:6.0-bullseye-slim AS build
 WORKDIR /source
 
 # restore packages
