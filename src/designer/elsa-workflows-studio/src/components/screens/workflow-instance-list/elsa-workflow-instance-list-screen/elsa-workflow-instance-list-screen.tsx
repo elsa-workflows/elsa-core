@@ -184,7 +184,7 @@ export class ElsaWorkflowInstanceListScreen {
 
   getLatestWorkflowBlueprintVersions(): Array<WorkflowBlueprintSummary> {
     const groups = collection.groupBy(this.workflowBlueprints, 'id');
-    return collection.map(groups, x => array.first(collection.sortBy(x, 'version', 'desc')));
+    return collection.map(groups, x => array.first(collection.orderBy(x, 'version', 'desc')));
   }
 
   buildFilterUrl(workflowId?: string, workflowStatus?: WorkflowStatus, orderBy?: OrderBy, pageSize?: number, correlationId?: string) {
