@@ -1,4 +1,4 @@
-image: Previous Visual Studio 2019
+image: Visual Studio 2022
 
 environment:
     elsa_version: 2.4.0
@@ -25,7 +25,7 @@ init:
                 $env:elsa_build_version="$($env:elsa_version)-preview.$($env:APPVEYOR_BUILD_NUMBER)"
             }
 
-version: 2.4.0.{build}
+version: 2.4.1.{build}
 
 pull_requests:
     do_not_increment_build_number: true

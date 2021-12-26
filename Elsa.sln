@@ -379,7 +379,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.UniqueCorrelat
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.RabbitMq", "src\activities\Elsa.Activities.RabbitMq\Elsa.Activities.RabbitMq.csproj", "{0D430863-8275-4880-BB09-C307B5EC3837}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.RabbitMqWorker", "src\samples\worker\Elsa.Samples.RabbitMqWorker\Elsa.Samples.RabbitMqWorker.csproj", "{67C58C2B-B873-47C8-B5B9-93B0587EE634}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.RabbitMqWorker", "src\samples\worker\Elsa.Samples.RabbitMqWorker\Elsa.Samples.RabbitMqWorker.csproj", "{67C58C2B-B873-47C8-B5B9-93B0587EE634}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.Mqtt", "src\activities\Elsa.Activities.Mqtt\Elsa.Activities.Mqtt.csproj", "{791D50F6-EAF2-4E20-9EDF-3BAF9CB7F796}"
 EndProject
