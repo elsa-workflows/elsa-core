@@ -5,9 +5,6 @@
     
     <PropertyGroup>
         <TargetFrameworks>net5.0;net6.0</TargetFrameworks>
-        <Nullable>enable</Nullable>
-        <LangVersion>default</LangVersion>
-        <TargetFramework>net5.0</TargetFramework>
     </PropertyGroup>
     
     <ItemGroup>
