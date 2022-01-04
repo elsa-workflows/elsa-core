@@ -1,8 +1,0 @@
-:host {
-  display: block;
-}
-
-.elsa-tag-input:focus {
-  outline: none !important;
-  box-shadow: none !important;
-}
