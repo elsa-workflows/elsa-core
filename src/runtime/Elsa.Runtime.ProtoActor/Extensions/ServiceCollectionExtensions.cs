@@ -48,7 +48,7 @@ public static class ServiceCollectionExtensions
         ActorSystemConfig
             .Setup()
             .WithDeadLetterThrottleCount(3)
-            .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(1))
+            .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(10000))
             .WithDeveloperSupervisionLogging(true)
             .WithDeadLetterRequestLogging(true);
         
@@ -69,6 +69,10 @@ public static class ServiceCollectionExtensions
                 ClusterConfig
                     // .Setup("MyCluster", clusterProvider, new IdentityStorageLookup(GetIdentityLookup(clusterName)))
                     .Setup(clusterName, clusterProvider, new PartitionIdentityLookup())
+                    .WithTimeout(TimeSpan.FromHours(1))
+                    .WithActorRequestTimeout(TimeSpan.FromHours(1))
+                    .WithActorActivationTimeout(TimeSpan.FromHours(1))
+                    .WithActorSpawnTimeout(TimeSpan.FromHours(1))
                     .WithClusterKind(GrainKinds.WorkflowDefinition, workflowDefinitionProps)
                     .WithClusterKind(GrainKinds.WorkflowInstance, workflowInstanceProps)
             ;
