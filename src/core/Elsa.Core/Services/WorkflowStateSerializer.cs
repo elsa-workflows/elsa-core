@@ -4,19 +4,11 @@ using Elsa.Contracts;
 using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.State;
-using Microsoft.Extensions.Logging;
 
 namespace Elsa.Services;
 
 public class WorkflowStateSerializer : IWorkflowStateSerializer
 {
-    private readonly ILogger _logger;
-
-    public WorkflowStateSerializer(ILogger<WorkflowStateSerializer> logger)
-    {
-        _logger = logger;
-    }
-
     public WorkflowState ReadState(WorkflowExecutionContext workflowExecutionContext)
     {
         var state = new WorkflowState
@@ -109,6 +101,7 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
             var activityExecutionContextState = new ActivityExecutionContextState
             {
                 Id = activityExecutionContext.Id,
+                ParentContextId = activityExecutionContext.ParentActivityExecutionContext?.Id,
                 ScheduledActivityId = activityExecutionContext.Activity.Id,
                 OwnerActivityId = activityExecutionContext.ParentActivityExecutionContext?.Activity.Id,
                 Properties = activityExecutionContext.Properties,
@@ -117,14 +110,7 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
             return activityExecutionContextState;
         }
 
-        // Create a tupled list of contexts and states.
-        var tuples = workflowExecutionContext.ActivityExecutionContexts.Reverse().Select(x => (x, CreateActivityExecutionContextState(x))).ToList();
-
-        // Construct hierarchy.
-        foreach (var tuple in tuples)
-            tuple.Item2.ParentActivityExecutionContext = tuples.FirstOrDefault(x => tuple.x.ParentActivityExecutionContext == x.x).Item2;
-
-        state.ActivityExecutionContexts = tuples.Select(x => x.Item2).ToList();
+        state.ActivityExecutionContexts = workflowExecutionContext.ActivityExecutionContexts.Reverse().Select(CreateActivityExecutionContextState).ToList();
     }
 
     private void SetActivityExecutionContexts(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
@@ -142,19 +128,19 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
             };
             return activityExecutionContext;
         }
-
-        // Create a tupled list of states and contexts.
-        var tuples = state.ActivityExecutionContexts.Select(x => (x, CreateActivityExecutionContext(x))).ToList();
+        
+        var activityExecutionContexts = state.ActivityExecutionContexts.Select(CreateActivityExecutionContext).ToList();
+        var lookup = activityExecutionContexts.ToDictionary(x => x.Id);
 
         // Reconstruct hierarchy.
-        foreach (var tuple in tuples)
+        foreach (var contextState in state.ActivityExecutionContexts.Where(x => !string.IsNullOrWhiteSpace(x.ParentContextId)))
         {
-            var activityExecutionContext = tuple.Item2;
-            activityExecutionContext.ParentActivityExecutionContext = tuples.FirstOrDefault(x => tuple.x.ParentActivityExecutionContext == x.x).Item2;
-            activityExecutionContext.ExpressionExecutionContext.ParentContext = activityExecutionContext.ParentActivityExecutionContext?.ExpressionExecutionContext;
+            var contextId = contextState.Id;
+            var context = lookup[contextId];
+            context.ParentActivityExecutionContext = lookup[contextState.ParentContextId!];
         }
-
-        workflowExecutionContext.ActivityExecutionContexts = new List<ActivityExecutionContext>(tuples.Select(x => x.Item2));
+        
+        workflowExecutionContext.ActivityExecutionContexts = activityExecutionContexts;
     }
 
     private IDictionary<string, object?> GetOutputFrom(ActivityNode activityNode) =>

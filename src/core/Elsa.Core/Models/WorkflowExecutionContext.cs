@@ -5,7 +5,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Models;
 
-//public record ActivityCompletionCallbackEntry(ActivityExecutionContext Owner, IActivity Child, ActivityCompletionCallback CompletionCallback);
 public record ActivityCompletionCallbackEntry(ActivityExecutionContext Owner, IActivity Child, ActivityCompletionCallback CompletionCallback);
 
 public class WorkflowExecutionContext
@@ -83,9 +82,11 @@ public class WorkflowExecutionContext
         if (entry == null)
             return default;
 
-        _completionCallbackEntries.Remove(entry);
+        RemoveCompletionCallback(entry);
         return entry.CompletionCallback;
     }
+    
+    public void RemoveCompletionCallback(ActivityCompletionCallbackEntry entry) => _completionCallbackEntries.Remove(entry);
 
     public ActivityNode FindNodeById(string nodeId) => NodeIdLookup[nodeId];
     public ActivityNode FindNodeByActivity(IActivity activity) => NodeActivityLookup[activity];

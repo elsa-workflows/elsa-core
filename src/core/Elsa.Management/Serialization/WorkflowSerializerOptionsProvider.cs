@@ -13,6 +13,7 @@ public class WorkflowSerializerOptionsProvider
     public JsonSerializerOptions CreateSerializerOptions() => new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        ReferenceHandler = ReferenceHandler.Preserve,
         Converters =
         {
             Create<JsonStringEnumConverter>(),

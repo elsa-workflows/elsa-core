@@ -3,6 +3,7 @@ using Elsa.Management.Serialization;
 using Elsa.Management.Serialization.Extensions;
 using Elsa.Persistence.Entities;
 using Elsa.Persistence.EntityFrameworkCore.Contracts;
+using Elsa.State;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Handlers.Serialization;
 
@@ -14,13 +15,15 @@ public class WorkflowInstanceSerializer : IEntitySerializer<WorkflowInstance>
     {
         _workflowSerializerOptionsProvider = workflowSerializerOptionsProvider;
     }
-    
+
     public void Serialize(ElsaDbContext dbContext, WorkflowInstance entity)
     {
-        var data = new
-        {
-            entity.WorkflowState
-        };
+        // var data = new
+        // {
+        //     entity.WorkflowState
+        // };
+
+        var data = new WorkflowInstanceState(entity.WorkflowState);
 
         var options = _workflowSerializerOptionsProvider.CreateSerializerOptions();
         var json = JsonSerializer.Serialize(data, options);
@@ -30,19 +33,36 @@ public class WorkflowInstanceSerializer : IEntitySerializer<WorkflowInstance>
 
     public void Deserialize(ElsaDbContext dbContext, WorkflowInstance entity)
     {
-        var data = new
-        {
-            entity.WorkflowState
-        };
+        // var data = new
+        // {
+        //     entity.WorkflowState
+        // };
 
-        var json = (string?) dbContext.Entry(entity).Property("Data").CurrentValue;
+        var data = new WorkflowInstanceState(entity.WorkflowState);
+
+        var json = (string?)dbContext.Entry(entity).Property("Data").CurrentValue;
 
         if (!string.IsNullOrWhiteSpace(json))
         {
             var options = _workflowSerializerOptionsProvider.CreateSerializerOptions();
-            data = JsonSerializerExtensions.DeserializeAnonymousType(json, data, options)!;
+            data = JsonSerializer.Deserialize<WorkflowInstanceState>(json, options)!;
         }
 
         entity.WorkflowState = data.WorkflowState;
+    }
+
+    // Can't use records when using System.Text.Json serialization and reference handling. Hence, using a class with default constructor.
+    private class WorkflowInstanceState
+    {
+        public WorkflowInstanceState()
+        {
+        }
+
+        public WorkflowInstanceState(WorkflowState workflowState)
+        {
+            WorkflowState = workflowState;
+        }
+        
+        public WorkflowState WorkflowState { get; init; } = default!;
     }
 }

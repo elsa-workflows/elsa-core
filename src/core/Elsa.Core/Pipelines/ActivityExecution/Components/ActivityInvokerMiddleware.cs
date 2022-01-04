@@ -74,7 +74,7 @@ public class ActivityInvokerMiddleware : IActivityExecutionMiddleware
         }
     }
 
-    private static async Task CompleteParentsAsync(ActivityExecutionContext context)
+    private async Task CompleteParentsAsync(ActivityExecutionContext context)
     {
         var workflowExecutionContext = context.WorkflowExecutionContext;
         var currentContext = context;
