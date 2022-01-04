@@ -41,6 +41,9 @@ public class WriteLines : Activity, IActivityPropertyOptionsProvider
     
     [Input(OptionsProvider = typeof(WriteLines), UIHint = InputUIHints.MultiLine)]
     public Input<string> Body { get; set; } = default!;
+    
+    [Input(UIHint = InputUIHints.MultiText)]
+    public Input<ICollection<string>> Tags { get; set; } = default!;
 
     protected override void Execute(ActivityExecutionContext context)
     {

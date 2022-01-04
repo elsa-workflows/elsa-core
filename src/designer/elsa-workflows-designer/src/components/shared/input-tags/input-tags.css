@@ -1,0 +1,6 @@
+.tag-input {
+  outline: none !important;
+  box-shadow: none !important;
+  max-width: max-content !important;
+  display: inline-block !important;
+}

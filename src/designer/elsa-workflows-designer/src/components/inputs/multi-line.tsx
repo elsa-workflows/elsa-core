@@ -23,7 +23,6 @@ export class MultiLineInput {
   }
 
   private getEditorHeight = (options: any) => {
-    debugger;
     const editorHeightName = options.editorHeight || 'Default';
 
     switch (editorHeightName) {

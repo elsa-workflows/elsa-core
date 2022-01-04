@@ -5,7 +5,7 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
-import { ActionDefinition, ActionInvokedArgs, Activity, ActivityDescriptor, ActivitySelectedArgs, ContainerSelectedArgs, GraphUpdatedArgs, TabChangedArgs, TabDefinition, Trigger, TriggerDescriptor, Workflow, WorkflowInstance, WorkflowInstanceSummary, WorkflowSummary } from "./models";
+import { ActionDefinition, ActionInvokedArgs, Activity, ActivityDescriptor, ActivitySelectedArgs, ContainerSelectedArgs, GraphUpdatedArgs, SelectListItem, TabChangedArgs, TabDefinition, Trigger, TriggerDescriptor, Workflow, WorkflowInstance, WorkflowInstanceSummary, WorkflowSummary } from "./models";
 import { ActivityUpdatedArgs, DeleteActivityRequestedArgs } from "./components/designer/activity-properties-editor/activity-properties-editor";
 import { AddActivityArgs } from "./components/designer/canvas/canvas";
 import { NodeInputContext } from "./services/node-input-driver";
@@ -65,6 +65,18 @@ export namespace Components {
         "selectedTabIndex"?: number;
         "tabs": Array<TabDefinition>;
     }
+    interface ElsaInputTags {
+        "fieldId"?: string;
+        "placeHolder"?: string;
+        "values"?: Array<string>;
+    }
+    interface ElsaInputTagsDropdown {
+        "dropdownValues"?: Array<SelectListItem>;
+        "fieldId"?: string;
+        "fieldName"?: string;
+        "placeHolder"?: string;
+        "values"?: Array<string | SelectListItem>;
+    }
     interface ElsaModalDialog {
         "actions": Array<ActionDefinition>;
         "hide": (animate?: boolean) => Promise<void>;
@@ -72,6 +84,9 @@ export namespace Components {
         "size": string;
     }
     interface ElsaMultiLineInput {
+        "inputContext": NodeInputContext;
+    }
+    interface ElsaMultiTextInput {
         "inputContext": NodeInputContext;
     }
     interface ElsaPager {
@@ -203,6 +218,18 @@ declare global {
         prototype: HTMLElsaFormPanelElement;
         new (): HTMLElsaFormPanelElement;
     };
+    interface HTMLElsaInputTagsElement extends Components.ElsaInputTags, HTMLStencilElement {
+    }
+    var HTMLElsaInputTagsElement: {
+        prototype: HTMLElsaInputTagsElement;
+        new (): HTMLElsaInputTagsElement;
+    };
+    interface HTMLElsaInputTagsDropdownElement extends Components.ElsaInputTagsDropdown, HTMLStencilElement {
+    }
+    var HTMLElsaInputTagsDropdownElement: {
+        prototype: HTMLElsaInputTagsDropdownElement;
+        new (): HTMLElsaInputTagsDropdownElement;
+    };
     interface HTMLElsaModalDialogElement extends Components.ElsaModalDialog, HTMLStencilElement {
     }
     var HTMLElsaModalDialogElement: {
@@ -214,6 +241,12 @@ declare global {
     var HTMLElsaMultiLineInputElement: {
         prototype: HTMLElsaMultiLineInputElement;
         new (): HTMLElsaMultiLineInputElement;
+    };
+    interface HTMLElsaMultiTextInputElement extends Components.ElsaMultiTextInput, HTMLStencilElement {
+    }
+    var HTMLElsaMultiTextInputElement: {
+        prototype: HTMLElsaMultiTextInputElement;
+        new (): HTMLElsaMultiTextInputElement;
     };
     interface HTMLElsaPagerElement extends Components.ElsaPager, HTMLStencilElement {
     }
@@ -332,8 +365,11 @@ declare global {
         "elsa-dropdown-input": HTMLElsaDropdownInputElement;
         "elsa-flowchart": HTMLElsaFlowchartElement;
         "elsa-form-panel": HTMLElsaFormPanelElement;
+        "elsa-input-tags": HTMLElsaInputTagsElement;
+        "elsa-input-tags-dropdown": HTMLElsaInputTagsDropdownElement;
         "elsa-modal-dialog": HTMLElsaModalDialogElement;
         "elsa-multi-line-input": HTMLElsaMultiLineInputElement;
+        "elsa-multi-text-input": HTMLElsaMultiTextInputElement;
         "elsa-pager": HTMLElsaPagerElement;
         "elsa-panel": HTMLElsaPanelElement;
         "elsa-radio-list-input": HTMLElsaRadioListInputElement;
@@ -397,6 +433,20 @@ declare namespace LocalJSX {
         "selectedTabIndex"?: number;
         "tabs"?: Array<TabDefinition>;
     }
+    interface ElsaInputTags {
+        "fieldId"?: string;
+        "onValueChanged"?: (event: CustomEvent<Array<string>>) => void;
+        "placeHolder"?: string;
+        "values"?: Array<string>;
+    }
+    interface ElsaInputTagsDropdown {
+        "dropdownValues"?: Array<SelectListItem>;
+        "fieldId"?: string;
+        "fieldName"?: string;
+        "onValueChanged"?: (event: CustomEvent<Array<string | SelectListItem>>) => void;
+        "placeHolder"?: string;
+        "values"?: Array<string | SelectListItem>;
+    }
     interface ElsaModalDialog {
         "actions"?: Array<ActionDefinition>;
         "onActionInvoked"?: (event: CustomEvent<ActionInvokedArgs>) => void;
@@ -405,6 +455,9 @@ declare namespace LocalJSX {
         "size"?: string;
     }
     interface ElsaMultiLineInput {
+        "inputContext"?: NodeInputContext;
+    }
+    interface ElsaMultiTextInput {
         "inputContext"?: NodeInputContext;
     }
     interface ElsaPager {
@@ -498,8 +551,11 @@ declare namespace LocalJSX {
         "elsa-dropdown-input": ElsaDropdownInput;
         "elsa-flowchart": ElsaFlowchart;
         "elsa-form-panel": ElsaFormPanel;
+        "elsa-input-tags": ElsaInputTags;
+        "elsa-input-tags-dropdown": ElsaInputTagsDropdown;
         "elsa-modal-dialog": ElsaModalDialog;
         "elsa-multi-line-input": ElsaMultiLineInput;
+        "elsa-multi-text-input": ElsaMultiTextInput;
         "elsa-pager": ElsaPager;
         "elsa-panel": ElsaPanel;
         "elsa-radio-list-input": ElsaRadioListInput;
@@ -532,8 +588,11 @@ declare module "@stencil/core" {
             "elsa-dropdown-input": LocalJSX.ElsaDropdownInput & JSXBase.HTMLAttributes<HTMLElsaDropdownInputElement>;
             "elsa-flowchart": LocalJSX.ElsaFlowchart & JSXBase.HTMLAttributes<HTMLElsaFlowchartElement>;
             "elsa-form-panel": LocalJSX.ElsaFormPanel & JSXBase.HTMLAttributes<HTMLElsaFormPanelElement>;
+            "elsa-input-tags": LocalJSX.ElsaInputTags & JSXBase.HTMLAttributes<HTMLElsaInputTagsElement>;
+            "elsa-input-tags-dropdown": LocalJSX.ElsaInputTagsDropdown & JSXBase.HTMLAttributes<HTMLElsaInputTagsDropdownElement>;
             "elsa-modal-dialog": LocalJSX.ElsaModalDialog & JSXBase.HTMLAttributes<HTMLElsaModalDialogElement>;
             "elsa-multi-line-input": LocalJSX.ElsaMultiLineInput & JSXBase.HTMLAttributes<HTMLElsaMultiLineInputElement>;
+            "elsa-multi-text-input": LocalJSX.ElsaMultiTextInput & JSXBase.HTMLAttributes<HTMLElsaMultiTextInputElement>;
             "elsa-pager": LocalJSX.ElsaPager & JSXBase.HTMLAttributes<HTMLElsaPagerElement>;
             "elsa-panel": LocalJSX.ElsaPanel & JSXBase.HTMLAttributes<HTMLElsaPanelElement>;
             "elsa-radio-list-input": LocalJSX.ElsaRadioListInput & JSXBase.HTMLAttributes<HTMLElsaRadioListInputElement>;
