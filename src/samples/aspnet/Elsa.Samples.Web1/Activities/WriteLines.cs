@@ -1,15 +1,18 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Reflection;
 using Elsa.Attributes;
+using Elsa.Management.ActivityInputOptions;
 using Elsa.Management.Models;
+using Elsa.Management.Services;
 using Elsa.Models;
 
 namespace Elsa.Samples.Web1.Activities;
 
 [Activity("Samples.WriteLines")]
 [Category("Samples")]
-public class WriteLines : Activity
+public class WriteLines : Activity, IActivityPropertyOptionsProvider
 {
     public WriteLines()
     {
@@ -35,6 +38,9 @@ public class WriteLines : Activity
 
     [Input(Options = new[] { "Normal", "Bold", "Italic" }, UIHint = InputUIHints.RadioList)]
     public Input<string> Format { get; set; } = default!;
+    
+    [Input(OptionsProvider = typeof(WriteLines), UIHint = InputUIHints.MultiLine)]
+    public Input<string> Body { get; set; } = default!;
 
     protected override void Execute(ActivityExecutionContext context)
     {
@@ -42,5 +48,13 @@ public class WriteLines : Activity
 
         foreach (var line in lines)
             Console.WriteLine(line);
+    }
+
+    public object? GetOptions(PropertyInfo property)
+    {
+        if (property.Name == nameof(Body))
+            return new MultiLineOptions(EditorHeight.Large);
+
+        return null;
     }
 }

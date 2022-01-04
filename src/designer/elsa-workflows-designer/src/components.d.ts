@@ -71,6 +71,9 @@ export namespace Components {
         "show": (animate?: boolean) => Promise<void>;
         "size": string;
     }
+    interface ElsaMultiLineInput {
+        "inputContext": NodeInputContext;
+    }
     interface ElsaPager {
         "page": number;
         "pageSize": number;
@@ -206,6 +209,12 @@ declare global {
         prototype: HTMLElsaModalDialogElement;
         new (): HTMLElsaModalDialogElement;
     };
+    interface HTMLElsaMultiLineInputElement extends Components.ElsaMultiLineInput, HTMLStencilElement {
+    }
+    var HTMLElsaMultiLineInputElement: {
+        prototype: HTMLElsaMultiLineInputElement;
+        new (): HTMLElsaMultiLineInputElement;
+    };
     interface HTMLElsaPagerElement extends Components.ElsaPager, HTMLStencilElement {
     }
     var HTMLElsaPagerElement: {
@@ -324,6 +333,7 @@ declare global {
         "elsa-flowchart": HTMLElsaFlowchartElement;
         "elsa-form-panel": HTMLElsaFormPanelElement;
         "elsa-modal-dialog": HTMLElsaModalDialogElement;
+        "elsa-multi-line-input": HTMLElsaMultiLineInputElement;
         "elsa-pager": HTMLElsaPagerElement;
         "elsa-panel": HTMLElsaPanelElement;
         "elsa-radio-list-input": HTMLElsaRadioListInputElement;
@@ -393,6 +403,9 @@ declare namespace LocalJSX {
         "onHidden"?: (event: CustomEvent<any>) => void;
         "onShown"?: (event: CustomEvent<any>) => void;
         "size"?: string;
+    }
+    interface ElsaMultiLineInput {
+        "inputContext"?: NodeInputContext;
     }
     interface ElsaPager {
         "onPaginated"?: (event: CustomEvent<PagerData>) => void;
@@ -486,6 +499,7 @@ declare namespace LocalJSX {
         "elsa-flowchart": ElsaFlowchart;
         "elsa-form-panel": ElsaFormPanel;
         "elsa-modal-dialog": ElsaModalDialog;
+        "elsa-multi-line-input": ElsaMultiLineInput;
         "elsa-pager": ElsaPager;
         "elsa-panel": ElsaPanel;
         "elsa-radio-list-input": ElsaRadioListInput;
@@ -519,6 +533,7 @@ declare module "@stencil/core" {
             "elsa-flowchart": LocalJSX.ElsaFlowchart & JSXBase.HTMLAttributes<HTMLElsaFlowchartElement>;
             "elsa-form-panel": LocalJSX.ElsaFormPanel & JSXBase.HTMLAttributes<HTMLElsaFormPanelElement>;
             "elsa-modal-dialog": LocalJSX.ElsaModalDialog & JSXBase.HTMLAttributes<HTMLElsaModalDialogElement>;
+            "elsa-multi-line-input": LocalJSX.ElsaMultiLineInput & JSXBase.HTMLAttributes<HTMLElsaMultiLineInputElement>;
             "elsa-pager": LocalJSX.ElsaPager & JSXBase.HTMLAttributes<HTMLElsaPagerElement>;
             "elsa-panel": LocalJSX.ElsaPanel & JSXBase.HTMLAttributes<HTMLElsaPanelElement>;
             "elsa-radio-list-input": LocalJSX.ElsaRadioListInput & JSXBase.HTMLAttributes<HTMLElsaRadioListInputElement>;

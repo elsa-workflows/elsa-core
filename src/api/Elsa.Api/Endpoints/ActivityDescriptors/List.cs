@@ -20,7 +20,11 @@ public static partial class ActivityDescriptors
 
         return Results.Json(model, new JsonSerializerOptions
         {
-            Converters = { new TypeJsonConverter(wellKnownTypeRegistry) },
+            Converters =
+            {
+                new JsonStringEnumConverter(),
+                new TypeJsonConverter(wellKnownTypeRegistry)
+            },
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault
         });

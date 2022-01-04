@@ -11,6 +11,7 @@ export class InputControlRegistry {
 
   constructor() {
     this.add('single-line', c => <elsa-single-line-input inputContext={c}/>);
+    this.add('multi-line', c => <elsa-multi-line-input inputContext={c}/>);
     this.add('dropdown', c => <elsa-dropdown-input inputContext={c}/>);
     this.add('check-list', c => <elsa-check-list-input inputContext={c}/>);
     this.add('radio-list', c => <elsa-radio-list-input inputContext={c}/>);

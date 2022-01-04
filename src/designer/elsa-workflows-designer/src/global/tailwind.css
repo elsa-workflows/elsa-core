@@ -59,6 +59,10 @@ select {
   @apply mt-1 block focus:ring-blue-500 focus:border-blue-500 w-full shadow-sm sm:text-sm border-gray-300 rounded-md;
 }
 
+textarea {
+  @apply focus:ring-blue-500 focus:border-blue-500 block w-full min-w-0 rounded-md sm:text-sm border-gray-300;
+}
+
 /* Tables */
 elsa-modal-dialog table {
   @apply min-w-full;
