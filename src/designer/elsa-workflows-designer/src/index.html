@@ -6,12 +6,13 @@
   <title>Elsa Workflows Designer</title>
   <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
   <link rel="stylesheet" href="/build/elsa-workflows-designer.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.31.1/min/vs/loader.min.js"></script>
   <script type="module" src="/build/elsa-workflows-designer.esm.js"></script>
   <script nomodule src="/build/elsa-workflows-designer.js"></script>
 </head>
 <body>
 <!--Use the Server Shell component to handle automatic interaction with the Elsa Server API-->
-<elsa-studio server="https://localhost:5001">
+<elsa-studio server="https://localhost:5001" monaco-lib-path="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.31.1/min">
     <elsa-workflow-toolbar></elsa-workflow-toolbar>
     <div class="absolute inset-0" style="top: 63px;">
       <elsa-workflow-editor></elsa-workflow-editor>

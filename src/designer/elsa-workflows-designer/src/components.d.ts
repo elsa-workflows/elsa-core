@@ -12,6 +12,7 @@ import { NodeInputContext } from "./services/node-input-driver";
 import { MenuItem } from "./components/shared/context-menu/models";
 import { DropdownButtonItem, DropdownButtonOrigin } from "./components/shared/dropdown-button/models";
 import { AddActivityArgs as AddActivityArgs1 } from "./components/designer/canvas/canvas";
+import { MonacoLib, MonacoValueChangedArgs } from "./components/shared/monaco-editor/monaco-editor";
 import { PagerData } from "./components/shared/pager/pager";
 import { PanelPosition, PanelStateChangedArgs } from "./components/designer/panel/models";
 import { Graph } from "@antv/x6";
@@ -36,6 +37,9 @@ export namespace Components {
         "updateLayout": () => Promise<void>;
     }
     interface ElsaCheckListInput {
+        "inputContext": NodeInputContext;
+    }
+    interface ElsaCodeEditorInput {
         "inputContext": NodeInputContext;
     }
     interface ElsaContextMenu {
@@ -83,6 +87,16 @@ export namespace Components {
         "show": (animate?: boolean) => Promise<void>;
         "size": string;
     }
+    interface ElsaMonacoEditor {
+        "editorHeight": string;
+        "language": string;
+        "monacoLibPath"?: string;
+        "padding": string;
+        "setJavaScriptLibs": (libs: Array<MonacoLib>) => Promise<void>;
+        "setValue": (value: string) => Promise<void>;
+        "singleLineMode": boolean;
+        "value": string;
+    }
     interface ElsaMultiLineInput {
         "inputContext": NodeInputContext;
     }
@@ -113,6 +127,7 @@ export namespace Components {
         "tabs": Array<TabDefinition>;
     }
     interface ElsaStudio {
+        "monacoLibPath": string;
         "serverUrl": string;
     }
     interface ElsaToolbox {
@@ -149,6 +164,7 @@ export namespace Components {
         "getWorkflow": () => Promise<Workflow>;
         "importWorkflow": (workflow: Workflow, workflowInstance?: WorkflowInstance) => Promise<void>;
         "importWorkflowMetadata": (workflow: Workflow) => Promise<void>;
+        "monacoLibPath": string;
         "registerActivityDrivers": (register: (registry: ActivityDriverRegistry) => void) => Promise<void>;
         "triggerDescriptors": Array<TriggerDescriptor>;
     }
@@ -187,6 +203,12 @@ declare global {
     var HTMLElsaCheckListInputElement: {
         prototype: HTMLElsaCheckListInputElement;
         new (): HTMLElsaCheckListInputElement;
+    };
+    interface HTMLElsaCodeEditorInputElement extends Components.ElsaCodeEditorInput, HTMLStencilElement {
+    }
+    var HTMLElsaCodeEditorInputElement: {
+        prototype: HTMLElsaCodeEditorInputElement;
+        new (): HTMLElsaCodeEditorInputElement;
     };
     interface HTMLElsaContextMenuElement extends Components.ElsaContextMenu, HTMLStencilElement {
     }
@@ -235,6 +257,12 @@ declare global {
     var HTMLElsaModalDialogElement: {
         prototype: HTMLElsaModalDialogElement;
         new (): HTMLElsaModalDialogElement;
+    };
+    interface HTMLElsaMonacoEditorElement extends Components.ElsaMonacoEditor, HTMLStencilElement {
+    }
+    var HTMLElsaMonacoEditorElement: {
+        prototype: HTMLElsaMonacoEditorElement;
+        new (): HTMLElsaMonacoEditorElement;
     };
     interface HTMLElsaMultiLineInputElement extends Components.ElsaMultiLineInput, HTMLStencilElement {
     }
@@ -360,6 +388,7 @@ declare global {
         "elsa-activity-properties-editor": HTMLElsaActivityPropertiesEditorElement;
         "elsa-canvas": HTMLElsaCanvasElement;
         "elsa-check-list-input": HTMLElsaCheckListInputElement;
+        "elsa-code-editor-input": HTMLElsaCodeEditorInputElement;
         "elsa-context-menu": HTMLElsaContextMenuElement;
         "elsa-dropdown-button": HTMLElsaDropdownButtonElement;
         "elsa-dropdown-input": HTMLElsaDropdownInputElement;
@@ -368,6 +397,7 @@ declare global {
         "elsa-input-tags": HTMLElsaInputTagsElement;
         "elsa-input-tags-dropdown": HTMLElsaInputTagsDropdownElement;
         "elsa-modal-dialog": HTMLElsaModalDialogElement;
+        "elsa-monaco-editor": HTMLElsaMonacoEditorElement;
         "elsa-multi-line-input": HTMLElsaMultiLineInputElement;
         "elsa-multi-text-input": HTMLElsaMultiTextInputElement;
         "elsa-pager": HTMLElsaPagerElement;
@@ -401,6 +431,9 @@ declare namespace LocalJSX {
         "interactiveMode"?: boolean;
     }
     interface ElsaCheckListInput {
+        "inputContext"?: NodeInputContext;
+    }
+    interface ElsaCodeEditorInput {
         "inputContext"?: NodeInputContext;
     }
     interface ElsaContextMenu {
@@ -454,6 +487,15 @@ declare namespace LocalJSX {
         "onShown"?: (event: CustomEvent<any>) => void;
         "size"?: string;
     }
+    interface ElsaMonacoEditor {
+        "editorHeight"?: string;
+        "language"?: string;
+        "monacoLibPath"?: string;
+        "onValueChanged"?: (event: CustomEvent<MonacoValueChangedArgs>) => void;
+        "padding"?: string;
+        "singleLineMode"?: boolean;
+        "value"?: string;
+    }
     interface ElsaMultiLineInput {
         "inputContext"?: NodeInputContext;
     }
@@ -486,6 +528,7 @@ declare namespace LocalJSX {
         "tabs"?: Array<TabDefinition>;
     }
     interface ElsaStudio {
+        "monacoLibPath"?: string;
         "serverUrl"?: string;
     }
     interface ElsaToolbox {
@@ -520,6 +563,7 @@ declare namespace LocalJSX {
     }
     interface ElsaWorkflowEditor {
         "activityDescriptors"?: Array<ActivityDescriptor>;
+        "monacoLibPath"?: string;
         "onWorkflowUpdated"?: (event: CustomEvent<WorkflowUpdatedArgs>) => void;
         "triggerDescriptors"?: Array<TriggerDescriptor>;
     }
@@ -546,6 +590,7 @@ declare namespace LocalJSX {
         "elsa-activity-properties-editor": ElsaActivityPropertiesEditor;
         "elsa-canvas": ElsaCanvas;
         "elsa-check-list-input": ElsaCheckListInput;
+        "elsa-code-editor-input": ElsaCodeEditorInput;
         "elsa-context-menu": ElsaContextMenu;
         "elsa-dropdown-button": ElsaDropdownButton;
         "elsa-dropdown-input": ElsaDropdownInput;
@@ -554,6 +599,7 @@ declare namespace LocalJSX {
         "elsa-input-tags": ElsaInputTags;
         "elsa-input-tags-dropdown": ElsaInputTagsDropdown;
         "elsa-modal-dialog": ElsaModalDialog;
+        "elsa-monaco-editor": ElsaMonacoEditor;
         "elsa-multi-line-input": ElsaMultiLineInput;
         "elsa-multi-text-input": ElsaMultiTextInput;
         "elsa-pager": ElsaPager;
@@ -583,6 +629,7 @@ declare module "@stencil/core" {
             "elsa-activity-properties-editor": LocalJSX.ElsaActivityPropertiesEditor & JSXBase.HTMLAttributes<HTMLElsaActivityPropertiesEditorElement>;
             "elsa-canvas": LocalJSX.ElsaCanvas & JSXBase.HTMLAttributes<HTMLElsaCanvasElement>;
             "elsa-check-list-input": LocalJSX.ElsaCheckListInput & JSXBase.HTMLAttributes<HTMLElsaCheckListInputElement>;
+            "elsa-code-editor-input": LocalJSX.ElsaCodeEditorInput & JSXBase.HTMLAttributes<HTMLElsaCodeEditorInputElement>;
             "elsa-context-menu": LocalJSX.ElsaContextMenu & JSXBase.HTMLAttributes<HTMLElsaContextMenuElement>;
             "elsa-dropdown-button": LocalJSX.ElsaDropdownButton & JSXBase.HTMLAttributes<HTMLElsaDropdownButtonElement>;
             "elsa-dropdown-input": LocalJSX.ElsaDropdownInput & JSXBase.HTMLAttributes<HTMLElsaDropdownInputElement>;
@@ -591,6 +638,7 @@ declare module "@stencil/core" {
             "elsa-input-tags": LocalJSX.ElsaInputTags & JSXBase.HTMLAttributes<HTMLElsaInputTagsElement>;
             "elsa-input-tags-dropdown": LocalJSX.ElsaInputTagsDropdown & JSXBase.HTMLAttributes<HTMLElsaInputTagsDropdownElement>;
             "elsa-modal-dialog": LocalJSX.ElsaModalDialog & JSXBase.HTMLAttributes<HTMLElsaModalDialogElement>;
+            "elsa-monaco-editor": LocalJSX.ElsaMonacoEditor & JSXBase.HTMLAttributes<HTMLElsaMonacoEditorElement>;
             "elsa-multi-line-input": LocalJSX.ElsaMultiLineInput & JSXBase.HTMLAttributes<HTMLElsaMultiLineInputElement>;
             "elsa-multi-text-input": LocalJSX.ElsaMultiTextInput & JSXBase.HTMLAttributes<HTMLElsaMultiTextInputElement>;
             "elsa-pager": LocalJSX.ElsaPager & JSXBase.HTMLAttributes<HTMLElsaPagerElement>;

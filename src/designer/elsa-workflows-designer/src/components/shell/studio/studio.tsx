@@ -5,6 +5,7 @@ import {ElsaApiClientProvider, ElsaClient, SaveWorkflowRequest, ServerSettings} 
 import {ActivityDescriptor, TriggerDescriptor, VersionOptions, Workflow, WorkflowInstanceSummary, WorkflowSummary} from '../../../models';
 import {WorkflowUpdatedArgs} from '../../designer/workflow-editor/workflow-editor';
 import {PublishClickedArgs} from "../../toolbar/workflow-publish-button/workflow-publish-button";
+import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
 
 @Component({
   tag: 'elsa-studio'
@@ -17,12 +18,21 @@ export class Studio {
 
   @Element() private el: HTMLElsaStudioElement;
   @Prop({attribute: 'server'}) public serverUrl: string;
-
+  @Prop({attribute: 'monaco-lib-path'}) public monacoLibPath: string;
 
   @Watch('serverUrl')
   private handleServerUrl(value: string) {
     const settings = Container.get(ServerSettings);
     settings.baseAddress = value;
+  }
+
+  @Watch('monacoLibPath')
+  private handleMonacoLibPath(value: string) {
+    const settings = Container.get(MonacoEditorSettings);
+    settings.monacoLibPath = value;
+
+    if (!!this.workflowEditorElement)
+      this.workflowEditorElement.monacoLibPath = this.monacoLibPath;
   }
 
   @Listen('workflowUpdated')
@@ -84,6 +94,7 @@ export class Studio {
     if (!!this.workflowEditorElement) {
       this.workflowEditorElement.activityDescriptors = this.activityDescriptors;
       this.workflowEditorElement.triggerDescriptors = this.triggerDescriptors;
+      this.workflowEditorElement.monacoLibPath = this.monacoLibPath;
     }
   }
 

@@ -20,6 +20,7 @@ import {ActivityDriverRegistry} from '../../../services';
 import {TriggerSelectedArgs, TriggersUpdatedArgs} from '../trigger-container/trigger-container';
 import {DeleteTriggerRequestedArgs, TriggerUpdatedArgs} from "../trigger-properties-editor/trigger-properties-editor";
 import {WorkflowPropsUpdatedArgs} from "../workflow-properties-editor/workflow-properties-editor";
+import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
 
 export interface WorkflowUpdatedArgs {
   workflow: Workflow;
@@ -55,6 +56,7 @@ export class WorkflowEditor {
     this.saveChangesDebounced = debounce(this.saveChanges, 1000);
   }
 
+  @Prop({attribute: 'monaco-lib-path'}) public monacoLibPath: string;
   @Prop() public activityDescriptors: Array<ActivityDescriptor> = [];
   @Prop() public triggerDescriptors: Array<TriggerDescriptor> = [];
   @Event() public workflowUpdated: EventEmitter<WorkflowUpdatedArgs>
@@ -64,6 +66,12 @@ export class WorkflowEditor {
 
   private get interactiveMode(): boolean {
     return !this.workflowInstance;
+  }
+
+  @Watch('monacoLibPath')
+  private handleMonacoLibPath(value: string) {
+    const settings = Container.get(MonacoEditorSettings);
+    settings.monacoLibPath = value;
   }
 
   @Listen('resize', {target: 'window'})

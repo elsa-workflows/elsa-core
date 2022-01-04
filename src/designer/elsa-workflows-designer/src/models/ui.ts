@@ -92,3 +92,8 @@ export interface RuntimeSelectListProviderSettings {
   runtimeSelectListProviderType: string;
   context?: any;
 }
+
+export enum EditorHeight {
+  Default = 'Default',
+  Large = 'Large'
+}

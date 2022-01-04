@@ -38,10 +38,13 @@ public class WriteLines : Activity, IActivityPropertyOptionsProvider
 
     [Input(Options = new[] { "Normal", "Bold", "Italic" }, UIHint = InputUIHints.RadioList)]
     public Input<string> Format { get; set; } = default!;
-    
+
     [Input(OptionsProvider = typeof(WriteLines), UIHint = InputUIHints.MultiLine)]
     public Input<string> Body { get; set; } = default!;
-    
+
+    [Input(UIHint = InputUIHints.CodeEditor, OptionsProvider = typeof(WriteLines))]
+    public Input<string> Script { get; set; } = default!;
+
     [Input(UIHint = InputUIHints.MultiText)]
     public Input<ICollection<string>> Tags { get; set; } = default!;
 
@@ -55,9 +58,11 @@ public class WriteLines : Activity, IActivityPropertyOptionsProvider
 
     public object? GetOptions(PropertyInfo property)
     {
-        if (property.Name == nameof(Body))
-            return new MultiLineOptions(EditorHeight.Large);
-
-        return null;
+        return property.Name switch
+        {
+            nameof(Body) => new { EditorHeight = EditorHeight.Large },
+            nameof(Script) => new { EditorHeight = EditorHeight.Large, Language = "JavaScript" },
+            _ => null
+        };
     }
 }
