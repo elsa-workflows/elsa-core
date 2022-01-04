@@ -1,0 +1,3 @@
+print("Hi! What's your name?");
+variable name = read(name);
+print(js => `Nice to meet you, ${name}!`);

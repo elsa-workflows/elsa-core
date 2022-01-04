@@ -1,0 +1,19 @@
+.panel-state-closed {
+
+  .panel {
+
+    &panel-position-top {
+      width: 0;
+    }
+
+    &panel-position-left {
+      height: 0;
+    }
+  }
+
+  .panel-content-container {
+    left: 0;
+    top: 0;
+    display: none;
+  }
+}

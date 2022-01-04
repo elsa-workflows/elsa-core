@@ -1,0 +1,10 @@
+Sequence {
+    Activities: [ 
+        WriteLine { Text:"writeLine1" },
+        Sequence {
+            Activities: [
+                WriteLine { Text:"writeLine2" }
+            ]
+        }  
+   ]
+};

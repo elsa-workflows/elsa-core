@@ -1,0 +1,4 @@
+{
+    WriteLine "Hello World"
+    WriteLine "Goodbye cruel World"
+}

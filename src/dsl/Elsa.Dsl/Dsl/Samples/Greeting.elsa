@@ -1,0 +1,7 @@
+{
+    let name: string;
+
+    print("Hi! What's your name?");
+    read(name);
+    print("Nice to meet you, {name.Get(context)}!");
+}

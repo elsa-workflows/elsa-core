@@ -1,0 +1,54 @@
+syntax = "proto3";
+package Elsa.Runtime.ProtoActor.Messages;
+option csharp_namespace = "Elsa.Runtime.ProtoActor.Messages";
+
+// Empty response type.
+message Unit {}
+
+message ExecuteWorkflowDefinition {
+  string id = 1;
+  int32 version = 2;
+}
+
+message DispatchWorkflowDefinition {
+  string id = 1;
+  int32 version = 2;
+}
+
+message ExecuteWorkflowInstance {
+  string id = 1;
+  optional Bookmark bookmark = 2;
+}
+
+message DispatchWorkflowInstance {
+  string id = 1;
+  optional Bookmark bookmark = 2;
+}
+
+message ExecuteWorkflowResponse {
+  Json workflowState = 1;
+  repeated Bookmark bookmarks = 2;
+}
+
+message DispatchWorkflowResponse {
+}
+
+message HandleStimulusRequest {
+    string activityTypeName = 1;
+    optional string hash = 2;
+    map<string, Json> data = 3;
+}
+
+message Bookmark {
+  string id = 1;
+  string name = 2;
+  optional string hash = 3;
+  string activityId = 4;
+  string activityInstanceId = 5;
+  map<string, Json> data = 6;
+  optional string callbackMethodName = 7;
+}
+
+message Json {
+  string text = 1;
+}

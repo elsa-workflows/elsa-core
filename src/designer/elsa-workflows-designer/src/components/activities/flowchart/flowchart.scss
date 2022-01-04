@@ -1,0 +1,25 @@
+.x6-graph-scroller {
+  &.x6-graph-scroller-pannable[data-panning='false'] {
+    cursor: default;
+  }
+}
+
+.x6-widget-selection-box {
+  box-sizing: content-box !important;
+  margin-top: -4px;
+  margin-left: -4px;
+  padding-right: 4px;
+  padding-bottom: 4px;
+  border: 2px dashed #34D399;
+  box-shadow: none;
+}
+
+.x6-widget-selection-inner {
+  box-sizing: content-box !important;
+  margin-top: -8px;
+  margin-left: -8px;
+  padding-right: 12px;
+  padding-bottom: 12px;
+  border: 2px solid #34D399;
+  box-shadow: none;
+}

@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net6.0</TargetFramework>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="6.0.0" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="6.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="6.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\activities\Elsa.Activities.Http\Elsa.Activities.Http.csproj" />
+      <ProjectReference Include="..\..\..\activities\Elsa.Activities.Timers\Elsa.Activities.Timers.csproj" />
+      <ProjectReference Include="..\..\..\core\Elsa\Elsa.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="Sample1.elsa" />
+      <EmbeddedResource Include="Sample1.elsa" />
+    </ItemGroup>
+
+</Project>

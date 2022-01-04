@@ -1,0 +1,40 @@
+// Triggers when HTTP request comes in.
+trigger HttpTrigger
+{
+    Path: "/hello-world",
+    SupportedMethods: ["GET", "POST"]
+};
+
+// Triggers every 1 minute.
+trigger TimerTrigger
+{
+    Interval: "0:00:01:00"
+};
+
+{
+    // If
+    print("What's your age?");
+    variable age = ReadLine;
+    
+    if age > 16 then
+    {
+        print("Enjoy your driver's license!");
+        delay(5000);
+        print("But be careful!");
+    }
+    else
+        print("Enjoy your bicycle!");
+                            
+    print("Goodbye.");
+    
+    // For
+    variable start: int = 1;
+    variable end: int = 3;
+
+    print(context => $"Counting numbers from {start.Get(context)} to {end.Get(context)}");
+    
+    for(i = start; i < end; i++)
+    {
+        print(context => "Current value: ${i}");
+    }
+}
