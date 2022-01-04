@@ -25,7 +25,7 @@ public class FlowchartJsonConverter : JsonConverter<Flowchart>
         var activitiesElement = doc.RootElement.GetProperty("activities");
         var id = doc.RootElement.GetProperty("id").GetString()!;
         var startId = doc.RootElement.TryGetProperty("start", out var startElement) ? startElement.GetString() : default;
-        var rootActivities = activitiesElement.Deserialize<IActivity[]>(options) ?? Array.Empty<IActivity>();
+        var rootActivities = activitiesElement.Deserialize<ICollection<IActivity>>(options) ?? new List<IActivity>();
         var metadata = metadataElement.Deserialize<IDictionary<string, object>>(options) ?? new Dictionary<string, object>();
         var start = rootActivities.FirstOrDefault(x => x.Id == startId) ?? rootActivities.FirstOrDefault();
         var connectionSerializerOptions = new JsonSerializerOptions(options);
@@ -33,7 +33,7 @@ public class FlowchartJsonConverter : JsonConverter<Flowchart>
         var activityDictionary = activities.ToDictionary(x => x.Id);
         connectionSerializerOptions.Converters.Add(new ConnectionJsonConverter(activityDictionary));
 
-        var connections = connectionsElement.Deserialize<Connection[]>(connectionSerializerOptions) ?? Array.Empty<Connection>();
+        var connections = connectionsElement.Deserialize<ICollection<Connection>>(connectionSerializerOptions) ?? new List<Connection>();
 
         return new Flowchart
         {
