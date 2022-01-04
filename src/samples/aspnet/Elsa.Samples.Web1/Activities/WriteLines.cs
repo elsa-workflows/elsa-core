@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using Elsa.Attributes;
+using Elsa.Management.Models;
 using Elsa.Models;
 
 namespace Elsa.Samples.Web1.Activities;
@@ -32,11 +33,14 @@ public class WriteLines : Activity
     public WriteLines(Input<ICollection<string>> lines) => Lines = lines;
     public Input<ICollection<string>> Lines { get; set; } = default!;
 
+    [Input(Options = new[] { "Normal", "Bold", "Italic" }, UIHint = InputUIHints.RadioList)]
+    public Input<string> Format { get; set; } = default!;
+
     protected override void Execute(ActivityExecutionContext context)
     {
         var lines = context.Get(Lines)!;
 
-        foreach (var line in lines) 
+        foreach (var line in lines)
             Console.WriteLine(line);
     }
 }

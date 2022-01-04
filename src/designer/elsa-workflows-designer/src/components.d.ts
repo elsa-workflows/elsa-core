@@ -79,6 +79,9 @@ export namespace Components {
     interface ElsaPanel {
         "position": PanelPosition;
     }
+    interface ElsaRadioListInput {
+        "inputContext": NodeInputContext;
+    }
     interface ElsaSingleLineInput {
         "inputContext": NodeInputContext;
     }
@@ -215,6 +218,12 @@ declare global {
         prototype: HTMLElsaPanelElement;
         new (): HTMLElsaPanelElement;
     };
+    interface HTMLElsaRadioListInputElement extends Components.ElsaRadioListInput, HTMLStencilElement {
+    }
+    var HTMLElsaRadioListInputElement: {
+        prototype: HTMLElsaRadioListInputElement;
+        new (): HTMLElsaRadioListInputElement;
+    };
     interface HTMLElsaSingleLineInputElement extends Components.ElsaSingleLineInput, HTMLStencilElement {
     }
     var HTMLElsaSingleLineInputElement: {
@@ -317,6 +326,7 @@ declare global {
         "elsa-modal-dialog": HTMLElsaModalDialogElement;
         "elsa-pager": HTMLElsaPagerElement;
         "elsa-panel": HTMLElsaPanelElement;
+        "elsa-radio-list-input": HTMLElsaRadioListInputElement;
         "elsa-single-line-input": HTMLElsaSingleLineInputElement;
         "elsa-slide-over-panel": HTMLElsaSlideOverPanelElement;
         "elsa-studio": HTMLElsaStudioElement;
@@ -393,6 +403,9 @@ declare namespace LocalJSX {
     interface ElsaPanel {
         "onExpandedStateChanged"?: (event: CustomEvent<PanelStateChangedArgs>) => void;
         "position"?: PanelPosition;
+    }
+    interface ElsaRadioListInput {
+        "inputContext"?: NodeInputContext;
     }
     interface ElsaSingleLineInput {
         "inputContext"?: NodeInputContext;
@@ -475,6 +488,7 @@ declare namespace LocalJSX {
         "elsa-modal-dialog": ElsaModalDialog;
         "elsa-pager": ElsaPager;
         "elsa-panel": ElsaPanel;
+        "elsa-radio-list-input": ElsaRadioListInput;
         "elsa-single-line-input": ElsaSingleLineInput;
         "elsa-slide-over-panel": ElsaSlideOverPanel;
         "elsa-studio": ElsaStudio;
@@ -507,6 +521,7 @@ declare module "@stencil/core" {
             "elsa-modal-dialog": LocalJSX.ElsaModalDialog & JSXBase.HTMLAttributes<HTMLElsaModalDialogElement>;
             "elsa-pager": LocalJSX.ElsaPager & JSXBase.HTMLAttributes<HTMLElsaPagerElement>;
             "elsa-panel": LocalJSX.ElsaPanel & JSXBase.HTMLAttributes<HTMLElsaPanelElement>;
+            "elsa-radio-list-input": LocalJSX.ElsaRadioListInput & JSXBase.HTMLAttributes<HTMLElsaRadioListInputElement>;
             "elsa-single-line-input": LocalJSX.ElsaSingleLineInput & JSXBase.HTMLAttributes<HTMLElsaSingleLineInputElement>;
             "elsa-slide-over-panel": LocalJSX.ElsaSlideOverPanel & JSXBase.HTMLAttributes<HTMLElsaSlideOverPanelElement>;
             "elsa-studio": LocalJSX.ElsaStudio & JSXBase.HTMLAttributes<HTMLElsaStudioElement>;
