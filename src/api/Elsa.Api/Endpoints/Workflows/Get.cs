@@ -18,7 +18,7 @@ public static partial class Workflows
         [FromRoute] string definitionId,
         [FromQuery] string? versionOptions = default)
     {
-        var serializerOptions = serializerOptionsProvider.CreateSerializerOptions();
+        var serializerOptions = serializerOptionsProvider.CreateApiOptions();
         var parsedVersionOptions = versionOptions != null ? VersionOptions.FromString(versionOptions) : VersionOptions.Latest;
         var workflow = await requestSender.RequestAsync(new FindWorkflow(definitionId, parsedVersionOptions), cancellationToken);
         return workflow == null ? Results.NotFound() : Results.Json(workflow, serializerOptions, statusCode: StatusCodes.Status200OK);

@@ -10,10 +10,13 @@ public class WorkflowSerializerOptionsProvider
     private readonly IServiceProvider _serviceProvider;
     public WorkflowSerializerOptionsProvider(IServiceProvider serviceProvider) => _serviceProvider = serviceProvider;
 
-    public JsonSerializerOptions CreateSerializerOptions() => new()
+    public JsonSerializerOptions CreateApiOptions() => CreateDefaultOptions();
+    public JsonSerializerOptions CreatePersistenceOptions() => CreateDefaultOptions(ReferenceHandler.Preserve);
+    
+    public JsonSerializerOptions CreateDefaultOptions(ReferenceHandler? referenceHandler = default) => new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        ReferenceHandler = ReferenceHandler.Preserve,
+        ReferenceHandler = referenceHandler,
         Converters =
         {
             Create<JsonStringEnumConverter>(),

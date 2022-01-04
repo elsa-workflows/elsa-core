@@ -27,7 +27,7 @@ public static partial class Workflows
         WorkflowDefinitionMapper mapper,
         CancellationToken cancellationToken)
     {
-        var serializerOptions = serializerOptionsProvider.CreateSerializerOptions();
+        var serializerOptions = serializerOptionsProvider.CreateApiOptions();
         var model = (await httpContext.Request.ReadFromJsonAsync<SaveWorkflowRequest>(serializerOptions, cancellationToken))!;
         var definitionId = model.DefinitionId;
 

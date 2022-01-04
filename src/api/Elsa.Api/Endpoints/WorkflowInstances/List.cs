@@ -25,7 +25,7 @@ public static partial class WorkflowInstances
         [FromQuery] OrderBy? orderBy,
         [FromQuery] OrderDirection? orderDirection)
     {
-        var serializerOptions = serializerOptionsProvider.CreateSerializerOptions();
+        var serializerOptions = serializerOptionsProvider.CreateApiOptions();
         var skip = page * pageSize;
         var take = pageSize;
         var request = new ListWorkflowInstanceSummaries(searchTerm, definitionId, version, correlationId, workflowStatus, orderBy ?? OrderBy.Created, orderDirection ?? OrderDirection.Ascending, skip ?? 0, take ?? 50);

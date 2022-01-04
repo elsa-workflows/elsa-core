@@ -18,14 +18,8 @@ public class WorkflowInstanceSerializer : IEntitySerializer<WorkflowInstance>
 
     public void Serialize(ElsaDbContext dbContext, WorkflowInstance entity)
     {
-        // var data = new
-        // {
-        //     entity.WorkflowState
-        // };
-
         var data = new WorkflowInstanceState(entity.WorkflowState);
-
-        var options = _workflowSerializerOptionsProvider.CreateSerializerOptions();
+        var options = _workflowSerializerOptionsProvider.CreatePersistenceOptions();
         var json = JsonSerializer.Serialize(data, options);
 
         dbContext.Entry(entity).Property("Data").CurrentValue = json;
@@ -33,18 +27,12 @@ public class WorkflowInstanceSerializer : IEntitySerializer<WorkflowInstance>
 
     public void Deserialize(ElsaDbContext dbContext, WorkflowInstance entity)
     {
-        // var data = new
-        // {
-        //     entity.WorkflowState
-        // };
-
         var data = new WorkflowInstanceState(entity.WorkflowState);
-
         var json = (string?)dbContext.Entry(entity).Property("Data").CurrentValue;
 
         if (!string.IsNullOrWhiteSpace(json))
         {
-            var options = _workflowSerializerOptionsProvider.CreateSerializerOptions();
+            var options = _workflowSerializerOptionsProvider.CreatePersistenceOptions();
             data = JsonSerializer.Deserialize<WorkflowInstanceState>(json, options)!;
         }
 

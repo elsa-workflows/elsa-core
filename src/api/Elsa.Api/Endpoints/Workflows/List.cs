@@ -19,7 +19,7 @@ public static partial class Workflows
         [FromQuery] int? page,
         [FromQuery] int? pageSize)
     {
-        var serializerOptions = serializerOptionsProvider.CreateSerializerOptions();
+        var serializerOptions = serializerOptionsProvider.CreateApiOptions();
         var skip = page * pageSize;
         var take = pageSize;
         var parsedVersionOptions = versionOptions != null ? VersionOptions.FromString(versionOptions) : default;

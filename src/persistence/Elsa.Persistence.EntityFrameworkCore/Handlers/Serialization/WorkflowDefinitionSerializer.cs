@@ -24,7 +24,7 @@ public class WorkflowDefinitionSerializer : IEntitySerializer<WorkflowDefinition
             entity.Triggers
         };
 
-        var options = _workflowSerializerOptionsProvider.CreateSerializerOptions();
+        var options = _workflowSerializerOptionsProvider.CreatePersistenceOptions();
         var json = JsonSerializer.Serialize(data, options);
 
         dbContext.Entry(entity).Property("Data").CurrentValue = json;
@@ -37,7 +37,7 @@ public class WorkflowDefinitionSerializer : IEntitySerializer<WorkflowDefinition
 
         if (!string.IsNullOrWhiteSpace(json))
         {
-            var options = _workflowSerializerOptionsProvider.CreateSerializerOptions();
+            var options = _workflowSerializerOptionsProvider.CreatePersistenceOptions();
             data = JsonSerializer.Deserialize<WorkflowDefinitionState>(json, options)!;
         }
 

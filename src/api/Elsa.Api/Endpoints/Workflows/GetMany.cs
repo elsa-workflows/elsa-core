@@ -19,7 +19,7 @@ public static partial class Workflows
         [FromQuery] string? definitionIds = default,
         [FromQuery] string? versionOptions = default)
     {
-        var serializerOptions = serializerOptionsProvider.CreateSerializerOptions();
+        var serializerOptions = serializerOptionsProvider.CreateApiOptions();
         var splitIds = definitionIds?.Split(',', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
         var parsedVersionOptions = versionOptions != null ? VersionOptions.FromString(versionOptions) : VersionOptions.Latest;
         var workflowSummaries = await requestSender.RequestAsync(new FindManyWorkflowDefinitions(splitIds, parsedVersionOptions), cancellationToken);
