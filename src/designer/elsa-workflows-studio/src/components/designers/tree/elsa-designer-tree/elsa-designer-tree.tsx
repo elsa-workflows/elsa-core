@@ -97,6 +97,7 @@ export class ElsaWorkflowDesigner {
   parentActivityOutcome?: string;
   addingActivity: boolean = false;
   activityDisplayContexts: Map<ActivityDesignDisplayContext> = null;
+  oldActivityDisplayContexts: Map<ActivityDesignDisplayContext> = null;
   selectedActivities: Map<ActivityModel> = {};
   ignoreCopyPasteActivities: boolean = false;
 
@@ -297,7 +298,7 @@ export class ElsaWorkflowDesigner {
     const activityDescriptors: Array<ActivityDescriptor> = state.activityDescriptors;
     let descriptor = activityDescriptors.find(x => x.type == activityModel.type);
     let descriptorExists = !!descriptor;
-    const oldContextData = (this.activityDisplayContexts && this.activityDisplayContexts[activityModel.activityId]) || {expanded: false};
+    const oldContextData = (this.oldActivityDisplayContexts && this.oldActivityDisplayContexts[activityModel.activityId]) || {expanded: false};
 
     if (!descriptorExists)
       descriptor = this.createNotFoundActivityDescriptor(activityModel);
@@ -307,8 +308,6 @@ export class ElsaWorkflowDesigner {
     const bodyDisplay = bodyText ? `<p>${bodyText}</p>` : undefined;
     const color = (descriptor.traits &= ActivityTraits.Trigger) == ActivityTraits.Trigger ? 'rose' : 'sky';
     const displayName = descriptorExists ? activityModel.displayName : `(Not Found) ${activityModel.displayName}`;
-
-    console.log('oldContextData', oldContextData);
 
     const displayContext: ActivityDesignDisplayContext = {
       activityModel: activityModel,
@@ -345,6 +344,7 @@ export class ElsaWorkflowDesigner {
 
   updateWorkflowModel(model: WorkflowModel, emitEvent: boolean = true) {
     this.workflowModel = this.cleanWorkflowModel(model);
+    this.oldActivityDisplayContexts = this.activityDisplayContexts;
     this.activityDisplayContexts = null;
 
     if (emitEvent)
