@@ -3,8 +3,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Retention.Jobs;
 using Elsa.Retention.Options;
+using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Retention.HostedServices
@@ -12,40 +14,43 @@ namespace Elsa.Retention.HostedServices
     /// <summary>
     /// Periodically wipes workflow instances and their execution logs.
     /// </summary>
-    public class CleanupService : IHostedService, IAsyncDisposable
+    public class CleanupService : BackgroundService
     {
         private readonly IServiceScopeFactory _serviceScopeFactory;
-        private readonly CleanupOptions _options;
-        private readonly Timer _timer;
+        private readonly IDistributedLockProvider _distributedLockProvider;
+        private readonly ILogger<CleanupService> _logger;
+        private readonly TimeSpan _interval;
 
-        public CleanupService(IOptions<CleanupOptions> options, IServiceScopeFactory serviceScopeFactory)
+        public CleanupService(IOptions<CleanupOptions> options, IServiceScopeFactory serviceScopeFactory, IDistributedLockProvider distributedLockProvider, ILogger<CleanupService> logger)
         {
             _serviceScopeFactory = serviceScopeFactory;
-            _options = options.Value;
-            _timer = new Timer(ExecuteAsync, null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
+            _distributedLockProvider = distributedLockProvider;
+            _logger = logger;
+            _interval = options.Value.SweepInterval.ToTimeSpan();
         }
 
-        public Task StartAsync(CancellationToken cancellationToken)
-        {
-            _timer.Change(_options.SweepInterval.ToTimeSpan(), Timeout.InfiniteTimeSpan);
-            return Task.CompletedTask;
-        }
-
-        public Task StopAsync(CancellationToken cancellationToken)
-        {
-            _timer.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
-            return Task.CompletedTask;
-        }
-
-        public async ValueTask DisposeAsync() => await _timer.DisposeAsync();
-
-        private async void ExecuteAsync(object state)
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             using var scope = _serviceScopeFactory.CreateScope();
             var job = scope.ServiceProvider.GetRequiredService<CleanupJob>();
-            await job.ExecuteAsync();
 
-            _timer.Change(_options.SweepInterval.ToTimeSpan(), Timeout.InfiniteTimeSpan);
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                await Task.Delay(_interval, stoppingToken);
+                await using var handle = await _distributedLockProvider.AcquireLockAsync(nameof(CleanupService), cancellationToken: stoppingToken);
+
+                if (handle == null)
+                    continue;
+
+                try
+                {
+                    await job.ExecuteAsync(stoppingToken);
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "Failed to perform cleanup this time around. Next cleanup attempt will happen in {Interval}", _interval);
+                }
+            }
         }
     }
 }

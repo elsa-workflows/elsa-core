@@ -12,6 +12,7 @@ namespace Elsa.Persistence.YesSql.Indexes
         public string? TenantId { get; set; }
         public string InstanceId { get; set; } = default!;
         public string DefinitionId { get; set; } = default!;
+        public string DefinitionVersionId { get; set; } = default!;
         public int Version { get; set; }
         public string? CorrelationId { get; set; }
         public string? ContextType { get; set; }
@@ -48,6 +49,7 @@ namespace Elsa.Persistence.YesSql.Indexes
                         TenantId = workflowInstance.TenantId,
                         InstanceId = workflowInstance.InstanceId,
                         DefinitionId = workflowInstance.DefinitionId,
+                        DefinitionVersionId = workflowInstance.DefinitionVersionId,
                         Version = workflowInstance.Version,
                         WorkflowStatus = workflowInstance.WorkflowStatus,
                         CorrelationId = workflowInstance.CorrelationId,

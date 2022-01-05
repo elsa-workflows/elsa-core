@@ -7,9 +7,9 @@ import {
   ActivityDescriptor,
   ConnectionDefinition,
   EventTypes,
-  getVersionOptionsString, ListModel,
+  getVersionOptionsString, IntellisenseContext, ListModel,
   OrderBy,
-  PagedList,
+  PagedList, SelectList,
   SelectListItem,
   Variables,
   VersionOptions,
@@ -121,6 +121,12 @@ export const createElsaClient = async function (serverUrl: string): Promise<Elsa
     workflowTestApi: {
       execute: async (request) => {
         await httpClient.post<void>(`v1/workflow-test/execute`, request);
+      },
+      restartFromActivity: async (request) => {
+        await httpClient.post<void>(`v1/workflow-test/restartFromActivity`, request);
+      },
+      stop: async (request) => {
+        await httpClient.post<void>(`v1/workflow-test/stop`, request);
       }
     },
     workflowRegistryApi: {
@@ -137,11 +143,14 @@ export const createElsaClient = async function (serverUrl: string): Promise<Elsa
       }
     },
     workflowInstancesApi: {
-      list: async (page?: number, pageSize?: number, workflowDefinitionId?: string, workflowStatus?: WorkflowStatus, orderBy?: OrderBy, searchTerm?: string): Promise<PagedList<WorkflowInstanceSummary>> => {
+      list: async (page?: number, pageSize?: number, workflowDefinitionId?: string, workflowStatus?: WorkflowStatus, orderBy?: OrderBy, searchTerm?: string, correlationId?: string): Promise<PagedList<WorkflowInstanceSummary>> => {
         const queryString = {};
 
         if (!!workflowDefinitionId)
           queryString['workflow'] = workflowDefinitionId;
+
+        if (!!correlationId)
+          queryString['correlationId'] = correlationId;
 
         if (workflowStatus != null)
           queryString['status'] = workflowStatus;
@@ -201,16 +210,15 @@ export const createElsaClient = async function (serverUrl: string): Promise<Elsa
       }
     },
     scriptingApi: {
-      getJavaScriptTypeDefinitions: async (workflowDefinitionId: string, context?: string): Promise<string> => {
-        context = context || '';
-        const response = await httpClient.get<string>(`v1/scripting/javascript/type-definitions/${workflowDefinitionId}?t=${new Date().getTime()}&context=${context}`);
+      getJavaScriptTypeDefinitions: async (workflowDefinitionId: string, context?: IntellisenseContext): Promise<string> => {
+        const response = await httpClient.post<string>(`v1/scripting/javascript/type-definitions/${workflowDefinitionId}?t=${new Date().getTime()}`, context);
         return response.data;
       }
     },
     designerApi: {
       runtimeSelectItemsApi: {
-        get: async (providerTypeName: string, context?: any): Promise<Array<SelectListItem>> => {
-          const response = await httpClient.post('v1/designer/runtime-select-list-items', {
+        get: async (providerTypeName: string, context?: any): Promise<SelectList> => {
+          const response = await httpClient.post('v1/designer/runtime-select-list', {
             providerTypeName: providerTypeName,
             context: context
           });
@@ -236,6 +244,12 @@ export const createElsaClient = async function (serverUrl: string): Promise<Elsa
         return response.data;
       }
     },
+    featuresApi: {
+      list: async () => {
+        const response = await httpClient.get<FeaturesModel>('v1/features');
+        return response.data.features;
+      }
+    },
   }
 
   return _elsaClient;
@@ -253,10 +267,15 @@ export interface ElsaClient {
   workflowStorageProvidersApi: WorkflowStorageProvidersApi;
   workflowChannelsApi: WorkflowChannelsApi;
   workflowTestApi: WorkflowTestApi;
+  featuresApi: FeaturesApi;
 }
 
 export interface ActivitiesApi {
   list(): Promise<Array<ActivityDescriptor>>;
+}
+
+export interface FeaturesApi {
+  list(): Promise<Array<string>>;
 }
 
 export interface WorkflowDefinitionsApi {
@@ -283,6 +302,10 @@ export interface WorkflowDefinitionsApi {
 export interface WorkflowTestApi {
 
   execute(request: WorkflowTestExecuteRequest): Promise<void>;
+
+  restartFromActivity(request: WorkflowTestRestartFromActivityRequest): Promise<void>;
+
+  stop(request: WorkflowTestStopRequest): Promise<void>;
 }
 
 export interface WorkflowRegistryApi {
@@ -292,7 +315,7 @@ export interface WorkflowRegistryApi {
 }
 
 export interface WorkflowInstancesApi {
-  list(page?: number, pageSize?: number, workflowDefinitionId?: string, workflowStatus?: WorkflowStatus, orderBy?: OrderBy, searchTerm?: string): Promise<PagedList<WorkflowInstanceSummary>>;
+  list(page?: number, pageSize?: number, workflowDefinitionId?: string, workflowStatus?: WorkflowStatus, orderBy?: OrderBy, searchTerm?: string, correlationId?: string): Promise<PagedList<WorkflowInstanceSummary>>;
 
   get(id: string): Promise<WorkflowInstance>;
 
@@ -328,7 +351,7 @@ export interface BulkDeleteWorkflowsResponse {
 }
 
 export interface ScriptingApi {
-  getJavaScriptTypeDefinitions(workflowDefinitionId: string, context?: string): Promise<string>
+  getJavaScriptTypeDefinitions(workflowDefinitionId: string, context?: IntellisenseContext): Promise<string>
 }
 
 export interface DesignerApi {
@@ -336,7 +359,7 @@ export interface DesignerApi {
 }
 
 export interface RuntimeSelectItemsApi {
-  get(providerTypeName: string, context?: any): Promise<Array<SelectListItem>>
+  get(providerTypeName: string, context?: any): Promise<SelectList>
 }
 
 export interface ActivityStatsApi {
@@ -369,9 +392,21 @@ export interface SaveWorkflowDefinitionRequest {
 }
 
 export interface WorkflowTestExecuteRequest {
-  workflowDefinitionId?: string, 
-  version?: number, 
+  workflowDefinitionId?: string,
+  version?: number,
   signalRConnectionId?: string
+}
+
+export interface WorkflowTestRestartFromActivityRequest {
+  workflowDefinitionId: string,
+  version: number,
+  activityId: string,
+  lastWorkflowInstanceId: string,
+  signalRConnectionId: string
+}
+
+export interface WorkflowTestStopRequest {
+  workflowInstanceId: string
 }
 
 export interface ExportWorkflowResponse {
@@ -395,4 +430,8 @@ interface ActivityEventCount {
 
 interface ActivityFault {
   message: string;
+}
+
+interface FeaturesModel {
+  features: Array<string>;
 }

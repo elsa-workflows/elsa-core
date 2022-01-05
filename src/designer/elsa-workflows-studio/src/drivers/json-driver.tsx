@@ -7,7 +7,7 @@ export class JsonDriver implements PropertyDisplayDriver {
 
   display(activity: ActivityModel, property: ActivityPropertyDescriptor) {
     const prop = getOrCreateProperty(activity, property.name);
-    return <elsa-json-property propertyDescriptor={property} propertyModel={prop}/>;
+    return <elsa-json-property activityModel={activity} propertyDescriptor={property} propertyModel={prop}/>;
   }
 
   update(activity: ActivityModel, property: ActivityPropertyDescriptor, form: FormData) {

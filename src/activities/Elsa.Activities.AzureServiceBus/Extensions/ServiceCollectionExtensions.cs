@@ -43,6 +43,7 @@ namespace Elsa.Activities.AzureServiceBus.Extensions
 
             options.AddPubSubConsumer<RestartServiceBusQueuesConsumer, WorkflowDefinitionPublished>("WorkflowDefinitionEvents");
             options.AddPubSubConsumer<RestartServiceBusQueuesConsumer, WorkflowDefinitionRetracted>("WorkflowDefinitionEvents");
+            options.AddPubSubConsumer<RestartServiceBusQueuesConsumer, WorkflowDefinitionDeleted>("WorkflowDefinitionEvents");
             options.AddPubSubConsumer<RestartServiceBusTopicsConsumer, WorkflowDefinitionPublished>("WorkflowDefinitionEvents");
             options.AddPubSubConsumer<RestartServiceBusTopicsConsumer, WorkflowDefinitionRetracted>("WorkflowDefinitionEvents");
 

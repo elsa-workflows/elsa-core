@@ -32,6 +32,7 @@ namespace Elsa.Persistence.EntityFramework.MySql.Migrations
                         .HasColumnType("varchar(255)");
 
                     b.Property<string>("CorrelationId")
+                        .IsRequired()
                         .HasColumnType("varchar(255)");
 
                     b.Property<string>("Hash")
@@ -236,6 +237,10 @@ namespace Elsa.Persistence.EntityFramework.MySql.Migrations
                     b.Property<string>("DefinitionId")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
+
+                    b.Property<string>("DefinitionVersionId")
+                        .IsRequired()
+                        .HasColumnType("longtext");
 
                     b.Property<DateTimeOffset?>("FaultedAt")
                         .HasColumnType("datetime(6)");

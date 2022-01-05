@@ -12,8 +12,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Extensions
         {
             if (elsaContext.Database.IsPostgres() || elsaContext.Database.IsMySql() || elsaContext.Database.IsOracle())
             {
-                // Need this workaround until https://github.com/borisdj/EFCore.BulkExtensions/issues/67
-                // and https://github.com/borisdj/EFCore.BulkExtensions/issues/553 is solved.
+                // Need this workaround https://github.com/borisdj/EFCore.BulkExtensions/issues/553 is solved.
                 // Oracle also https://github.com/borisdj/EFCore.BulkExtensions/issues/375
                 var records = await queryable.ToListAsync(cancellationToken);
 

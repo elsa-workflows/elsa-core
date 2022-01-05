@@ -35,8 +35,9 @@ namespace Elsa.Handlers
         private async ValueTask<string?> SaveWorkflowContextAsync(WorkflowExecutionContext workflowExecutionContext, WorkflowContextFidelity fidelity, bool always, CancellationToken cancellationToken)
         {
             var workflowContext = workflowExecutionContext.WorkflowContext;
+            var contextOptions = workflowExecutionContext.WorkflowBlueprint.ContextOptions;
 
-            if (!always && (workflowContext == null || workflowExecutionContext.WorkflowBlueprint.ContextOptions?.ContextFidelity != fidelity))
+            if (!always && (workflowContext == null || workflowExecutionContext.WorkflowBlueprint.ContextOptions?.ContextFidelity != fidelity) || contextOptions == null)
                 return workflowExecutionContext.WorkflowInstance.ContextId;
 
             var context = new SaveWorkflowContext(workflowExecutionContext);

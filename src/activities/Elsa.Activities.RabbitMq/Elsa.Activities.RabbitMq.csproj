@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="..\..\..\common.props" />
+    <Import Project="..\..\..\configureawait.props" />
+    
+    <PropertyGroup>
+        <TargetFrameworks>net5.0;net6.0</TargetFrameworks>
+        <Description>
+            Elsa is a set of workflow libraries and tools that enable lean and mean workflowing capabilities in any .NET Core application.
+            This package provides activities to send and receive messages using Rabbit MQ.</Description>        
+        <PackageTags>elsa, workflows</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
+      <ProjectReference Include="..\..\modules\workflowtesting\Elsa.WorkflowTesting\Elsa.WorkflowTesting.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Rebus.RabbitMq" Version="7.3.0" />
+    </ItemGroup>
+
+</Project>

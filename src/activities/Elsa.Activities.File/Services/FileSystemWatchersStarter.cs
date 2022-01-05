@@ -1,3 +1,10 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
 using AutoMapper;
 using Elsa.Activities.File.Bookmarks;
 using Elsa.Activities.File.Models;
@@ -6,15 +13,6 @@ using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Elsa.Activities.File.Services
 {
@@ -24,7 +22,6 @@ namespace Elsa.Activities.File.Services
         private readonly IMapper _mapper;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly SemaphoreSlim _semaphore = new(1);
-        private readonly IServiceProvider _serviceProvider;
         private readonly ICollection<FileSystemWatcher> _watchers;
         private readonly Scoped<IWorkflowLaunchpad> _workflowLaunchpad;
 
@@ -37,19 +34,26 @@ namespace Elsa.Activities.File.Services
             _logger = logger;
             _mapper = mapper;
             _scopeFactory = scopeFactory;
-            _serviceProvider = serviceProvider;
             _watchers = new List<FileSystemWatcher>();
             _workflowLaunchpad = workflowLaunchpad;
         }
 
         public async Task CreateAndAddWatchersAsync(CancellationToken cancellationToken = default)
         {
-            await _semaphore.WaitAsync();
+            await _semaphore.WaitAsync(cancellationToken);
 
             try
             {
-                var activities = GetActivityInstancesAsync<WatchDirectory>(cancellationToken);
-                await foreach (var a in activities)
+                if (_watchers.Any())
+                {
+                    foreach (var watcher in _watchers)
+                        watcher.Dispose();
+
+                    _watchers.Clear();
+                }
+
+                var activities = GetActivityInstancesAsync(cancellationToken);
+                await foreach (var a in activities.WithCancellation(cancellationToken))
                 {
                     var changeTypes = await a.EvaluatePropertyValueAsync(x => x.ChangeTypes, cancellationToken);
                     var notifyFilters = await a.EvaluatePropertyValueAsync(x => x.NotifyFilters, cancellationToken);
@@ -94,7 +98,7 @@ namespace Elsa.Activities.File.Services
             _watchers.Add(watcher);
         }
 
-        private async IAsyncEnumerable<IActivityBlueprintWrapper<WatchDirectory>> GetActivityInstancesAsync<TActivity>([EnumeratorCancellation] CancellationToken cancellationToken) where TActivity : IActivity
+        private async IAsyncEnumerable<IActivityBlueprintWrapper<WatchDirectory>> GetActivityInstancesAsync([EnumeratorCancellation] CancellationToken cancellationToken)
         {
             using (var scope = _scopeFactory.CreateScope())
             {
@@ -119,15 +123,15 @@ namespace Elsa.Activities.File.Services
             }
         }
 
-        private void EnsurePathExists(string? path)
+        private void EnsurePathExists(string path)
         {
-            _logger.LogDebug($"Checking ${path} exists");
+            _logger.LogDebug("Checking ${Path} exists", path);
 
-            if (!Directory.Exists(path))
-            {
-                _logger.LogInformation($"Creating directory {path}");
-                Directory.CreateDirectory(path);
-            }
+            if (Directory.Exists(path))
+                return;
+
+            _logger.LogInformation("Creating directory {Path}", path);
+            Directory.CreateDirectory(path);
         }
 
         #region Watcher delegates
@@ -156,7 +160,7 @@ namespace Elsa.Activities.File.Services
             StartWorkflow((FileSystemWatcher)sender, e);
         }
 
-        private void StartWorkflow(FileSystemWatcher watcher, FileSystemEventArgs e)
+        private async void StartWorkflow(FileSystemWatcher watcher, FileSystemEventArgs e)
         {
             var changeTypes = e.ChangeType;
             var notifyFilter = watcher.NotifyFilter;
@@ -166,7 +170,7 @@ namespace Elsa.Activities.File.Services
             var model = _mapper.Map<FileSystemEvent>(e);
             var bookmark = new FileSystemEventBookmark(path, pattern, changeTypes, notifyFilter);
             var launchContext = new WorkflowsQuery(nameof(WatchDirectory), bookmark);
-            _workflowLaunchpad.UseService(s => s.CollectAndDispatchWorkflowsAsync(launchContext, new WorkflowInput(model)));
+            await _workflowLaunchpad.UseServiceAsync(s => s.CollectAndDispatchWorkflowsAsync(launchContext, new WorkflowInput(model)));
         }
         #endregion
     }

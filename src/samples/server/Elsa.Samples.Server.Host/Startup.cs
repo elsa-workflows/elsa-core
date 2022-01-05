@@ -1,16 +1,14 @@
-using System.Collections.Generic;
-using Elsa.Caching.Rebus.Extensions;
-using Elsa.Rebus.AzureServiceBus;
 using Elsa.Retention.Extensions;
-using Elsa.Server.Api.Extensions;
-using Elsa.Server.Api.Hubs;
-using Elsa.Server.Hangfire.Extensions;
+using Elsa.WorkflowTesting.Api.Extensions;
 using Hangfire;
+using Hangfire.SQLite;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using NodaTime;
+using NodaTime.Serialization.JsonNet;
 
 namespace Elsa.Samples.Server.Host
 {
@@ -35,7 +33,7 @@ namespace Elsa.Samples.Server.Host
             // Note that simply loading all referenced assemblies will not include assemblies where no types have been referenced in this project (due to assembly trimming?).
             var startups = new[]
             {
-                typeof(Elsa.Activities.Console.Startup), 
+                typeof(Elsa.Activities.Console.Startup),
                 typeof(Elsa.Activities.Http.Startup),
                 typeof(Elsa.Activities.AzureServiceBus.Startup),
                 typeof(Elsa.Activities.Conductor.Startup),
@@ -45,6 +43,8 @@ namespace Elsa.Samples.Server.Host
                 typeof(Elsa.Activities.Email.Startup),
                 typeof(Elsa.Activities.Telnyx.Startup),
                 typeof(Elsa.Activities.File.Startup),
+                typeof(Elsa.Activities.RabbitMq.Startup),
+                typeof(Elsa.Activities.Mqtt.Startup),
                 typeof(Persistence.EntityFramework.Sqlite.Startup),
                 typeof(Persistence.EntityFramework.SqlServer.Startup),
                 typeof(Persistence.EntityFramework.MySql.Startup),
@@ -85,15 +85,19 @@ namespace Elsa.Samples.Server.Host
                     .ConfigureWorkflowChannels(options => elsaSection.GetSection("WorkflowChannels").Bind(options))
                 )
                 .AddRetentionServices(options => elsaSection.GetSection("Retention").Bind(options));
-            
+
             // Elsa API endpoints.
             services
+                .AddNotificationHandlersFrom<Startup>()
                 .AddElsaApiEndpoints()
                 .AddElsaSwagger();
 
             // Allow arbitrary client browser apps to access the API for demo purposes only.
             // In a production environment, make sure to allow only origins you trust.
             services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("Content-Disposition")));
+
+            // Workflow Testing
+            services.AddWorkflowTestingServices();
         }
 
         public void Configure(IApplicationBuilder app)
@@ -113,10 +117,26 @@ namespace Elsa.Samples.Server.Host
                     .AllowCredentials())
                 .UseElsaFeatures()
                 .UseRouting()
-                .UseEndpoints(endpoints => { 
-                    endpoints.MapControllers();
-                })
-                .MapWorkflowTestHub();
+                .UseEndpoints(endpoints => { endpoints.MapControllers(); })
+                .MapWorkflowTestHub()
+                ;
+        }
+        
+        private void AddHangfire(IServiceCollection services, string dbConnectionString)
+        {
+            services
+                .AddHangfire(config => config
+                    // Use same SQLite database as Elsa for storing jobs. 
+                    .UseSQLiteStorage(dbConnectionString)
+                    .UseSimpleAssemblyNameTypeSerializer()
+
+                    // Elsa uses NodaTime primitives, so Hangfire needs to be able to serialize them.
+                    .UseRecommendedSerializerSettings(settings => settings.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb)))
+                .AddHangfireServer((sp, options) =>
+                {
+                    // Bind settings from configuration.
+                    Configuration.GetSection("Hangfire").Bind(options);
+                });
         }
     }
 }

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Attributes;
 using Elsa.Services;
 
 namespace Elsa.Activities.Entity.Bookmarks
@@ -13,8 +14,15 @@ namespace Elsa.Activities.Entity.Bookmarks
             Action = action;
         }
 
-        public string? EntityName { get; }
+        [ExcludeFromHash] public string? EntityName { get; }
         public EntityChangedAction? Action { get; }
+
+        public bool? Compare(IBookmark bookmark)
+        {
+            return bookmark is EntityChangedBookmark other
+                   && string.Equals(EntityName, other.EntityName, System.StringComparison.OrdinalIgnoreCase)
+                   && Action == other.Action;
+        }
     }
 
     public class EntityChangedWorkflowTriggerProvider : BookmarkProvider<EntityChangedBookmark, EntityChanged>

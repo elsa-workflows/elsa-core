@@ -14,17 +14,19 @@
 </head>
 <body>
 
-<elsa-studio-root server-url="https://localhost:11000" monaco-lib-path="build/assets/js/monaco-editor/min" culture="en-US">
+<elsa-studio-root server-url="https://localhost:11000" monaco-lib-path="build/assets/js/monaco-editor/min" culture="en-US" config="build/assets/designer.config.json">
   <!-- The root dashboard component -->
   <elsa-studio-dashboard></elsa-studio-dashboard>
 
   <!-- Instead of using the full dashboard component, you can display lower-level components instead-->
-  <!--<elsa-workflow-instance-list-screen></elsa-workflow-instance-list-screen>-->
+  <!-- <elsa-workflow-instance-list-screen workflow-id="7448d8d2ded64c868b474b8afce9e852"></elsa-workflow-instance-list-screen>-->
   <!--<elsa-workflow-definition-editor-screen workflow-definition-id="{workflowDefinitionId}"></elsa-workflow-definition-editor-screen>-->
+  <!--<elsa-workflow-instance-viewer-screen id="workflowInstanceViewer" workflow-instance-id="8014e2358d8b4907946eb5f0e075c63c"></elsa-workflow-instance-viewer-screen>-->
 </elsa-studio-root>
 
 <!-- Keep this to avoid Stencil from stripping classes added by dagre-d3 and dynamically computed classes <!-->
-<div class="node add label-container hidden elsa-border-blue-600 elsa-border-green-600 elsa-border-red-200 elsa-border-blue-200 elsa-border-green-200 elsa-border-red-200 elsa-bg-gray-600 elsa-bg-rose-600 elsa-bg-blue-600 elsa-bg-green-600 elsa-bg-red-600 elsa-bg-yellow-600"></div>
+<div
+  class="node add label-container hidden elsa-border-blue-600 elsa-border-green-600 elsa-border-red-200 elsa-border-blue-200 elsa-border-green-200 elsa-border-red-200 elsa-bg-gray-600 elsa-bg-rose-600 elsa-bg-blue-600 elsa-bg-green-600 elsa-bg-red-600 elsa-bg-yellow-600 elsa-right-44 elsa-right-60"></div>
 
 <script type="module">
   // Integration demos.
@@ -68,12 +70,10 @@
       // Register a sample middleware.
       e.service.register({
         onRequest(request) {
-          console.log('onRequest');
           return request;
         },
 
         onResponse(response) {
-          console.log('onResponse');
           return response;
         }
       });
@@ -98,7 +98,7 @@
     const {eventBus, getOrCreateProperty, htmlToElement} = elsaStudio;
 
     // When the activity editor is about to be rendered.
-    eventBus.on('activity-editor-displaying', e => {
+    eventBus.on('activity-editor.rendering', e => {
       const {activityDescriptor, activityModel} = e;
 
       // We only handle WriteLine activities.
@@ -127,7 +127,7 @@
       const propertyEditor = document.createElement('elsa-property-editor');
       const propertyDescriptor = activityDescriptor.inputProperties.find(x => x.name === 'Text');
       const propertyModel = getOrCreateProperty(activityModel, propertyDescriptor.name);
-      const defaultSyntax = propertyDescriptor.defaultSyntax || 'Literal';
+      const defaultSyntax = propertyDescriptor?.defaultSyntax || 'Literal';
       const currentValue = propertyModel.expressions[defaultSyntax] || '';
       const editorHtml = `<textarea class="focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300" rows="5">${currentValue}</textarea>`;
       const editorElement = htmlToElement(editorHtml);
@@ -135,6 +135,7 @@
       propertyEditor.append(editorElement);
       propertyEditor.propertyDescriptor = propertyDescriptor;
       propertyEditor.propertyModel = propertyModel;
+      propertyEditor.activityModel = activityModel;
 
       editorElement.addEventListener('change', (e) => {
         const input = e.currentTarget;

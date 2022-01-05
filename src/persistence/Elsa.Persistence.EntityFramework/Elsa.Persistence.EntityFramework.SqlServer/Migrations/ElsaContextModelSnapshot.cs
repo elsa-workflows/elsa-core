@@ -34,6 +34,7 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("CorrelationId")
+                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Hash")
@@ -238,6 +239,10 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
                     b.Property<string>("DefinitionId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("DefinitionVersionId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTimeOffset?>("FaultedAt")
                         .HasColumnType("datetimeoffset");

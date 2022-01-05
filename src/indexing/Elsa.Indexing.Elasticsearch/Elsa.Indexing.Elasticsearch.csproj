@@ -18,7 +18,7 @@
 
     <ItemGroup>
       <PackageReference Include="NEST" Version="7.14.1" />
-      <PackageReference Include="System.Text.Encodings.Web" Version="5.0.1" />
+      <PackageReference Include="System.Text.Encodings.Web" Version="6.0.0" />
     </ItemGroup>
 
 </Project>

@@ -1,6 +1,8 @@
-import {Component, Host, h, Prop, State, Listen, Method, Watch, Event, EventEmitter} from '@stencil/core';
+import {Component, Event, EventEmitter, h, Host, Method, Prop, Watch} from '@stencil/core';
 import {initializeMonacoWorker} from "./elsa-monaco-utils";
 import state from '../../../utils/store';
+import {languages} from "monaco-editor";
+import ScriptTarget = languages.typescript.ScriptTarget;
 
 // Until I figure out why the ESM loader doesn't work properly, we need to include these scripts manually from index.html
 // import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
@@ -19,6 +21,7 @@ export class ElsaMonaco {
 
   monaco = (window as any).monaco;
 
+  @Prop({attribute: 'monaco-lib-path'}) monacoLibPath: string;
   @Prop({attribute: 'editor-height', reflect: true}) editorHeight: string = '5em';
   @Prop() value: string;
   @Prop() language: string;
@@ -51,6 +54,9 @@ export class ElsaMonaco {
   async addJavaScriptLib(libSource: string, libUri: string) {
     const monaco = this.monaco;
     monaco.languages.typescript.javascriptDefaults.setExtraLibs([{
+      content: "<reference lib=\"es5\" />",
+      filePath: "lib.d.ts"
+    }, {
       content: libSource,
       filePath: libUri
     }]);
@@ -64,7 +70,8 @@ export class ElsaMonaco {
   }
 
   componentWillLoad() {
-    initializeMonacoWorker(state.monacoLibPath);
+    const monacoLibPath = this.monacoLibPath ?? state.monacoLibPath;
+    initializeMonacoWorker(monacoLibPath);
     this.registerLiquid();
   }
 
@@ -85,8 +92,7 @@ export class ElsaMonaco {
       monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
         target: monaco.languages.typescript.ScriptTarget.ES2020,
         lib: [],
-        allowNonTsExtensions: true,
-        allowJs: true
+        allowNonTsExtensions: true
       });
 
       monaco.languages.typescript.javascriptDefaults.setEagerModelSync(true);
@@ -205,7 +211,9 @@ export class ElsaMonaco {
   render() {
     const padding = this.padding || 'elsa-pt-1.5 elsa-pl-1';
     return (
-      <Host class="elsa-monaco-editor-host elsa-border focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300 elsa-p-4" style={{'min-height': this.editorHeight}}>
+      <Host
+        class="elsa-monaco-editor-host elsa-border focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300 elsa-p-4"
+        style={{'min-height': this.editorHeight}}>
         <div ref={el => this.container = el} class={`elsa-monaco-editor-container ${padding}`}/>
       </Host>
     )

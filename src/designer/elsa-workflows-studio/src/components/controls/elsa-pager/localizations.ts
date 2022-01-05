@@ -1,4 +1,4 @@
-﻿export const resources = {
+export const resources = {
   'en': {
     'default': {
       'Previous': 'Previous',
@@ -7,6 +7,17 @@
       'To': 'to',
       'Of': 'of',
       'Results': 'results',
+      'Display': '{{template}}'
+    }
+  },
+  'zh-CN': {
+    'default': {
+      'Previous': '上一页',
+      'Next': '下一页',
+      'From': '从',
+      'To': '到',
+      'Of': ' 共',
+      'Results': '条数据',
       'Display': '{{template}}'
     }
   },

@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Services.Bookmarks;
 
 namespace Elsa.Services.Triggers
 {
@@ -24,13 +23,23 @@ namespace Elsa.Services.Triggers
             var filterList = filters as ICollection<IBookmark> ?? filters.ToList();
 
             if (!filterList.Any())
-            {
                 return scopedTriggers.Select(x => new TriggerFinderResult(x.WorkflowBlueprint, x.ActivityId, x.ActivityType, x.Bookmark)).ToList();
+
+            var hashes = filterList.ToDictionary(x => _bookmarkHasher.Hash(x), x => x);
+            var matches = new List<WorkflowTrigger>();
+
+            foreach (var scoped in scopedTriggers)
+            {
+                if (!hashes.TryGetValue(scoped.BookmarkHash, out var bookmark))
+                    continue;
+
+                var result = scoped.Bookmark.Compare(bookmark);
+                
+                if (result == null || result.Value)
+                    matches.Add(scoped);
             }
 
-            var hashes = filterList.Select(x => _bookmarkHasher.Hash(x)).ToList();
-            var matchingTriggers = scopedTriggers.Where(x => hashes.Contains(x.BookmarkHash));
-            return matchingTriggers.Select(x => new TriggerFinderResult(x.WorkflowBlueprint, x.ActivityId, x.ActivityType, x.Bookmark)).ToList();
+            return matches.Select(x => new TriggerFinderResult(x.WorkflowBlueprint, x.ActivityId, x.ActivityType, x.Bookmark)).ToList();
         }
     }
 }

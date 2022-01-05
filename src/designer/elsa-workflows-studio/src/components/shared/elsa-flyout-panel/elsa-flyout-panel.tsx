@@ -51,7 +51,7 @@ export class ElsaFlyoutPanel {
           <div class="elsa-absolute elsa-inset-0 elsa-overflow-hidden">
             <div class="elsa-absolute elsa-inset-0" aria-hidden="true"/>
             <div
-              class="elsa-fixed elsa-inset-y-0 elsa-top-18 elsa-right-2 elsa-top-2 elsa-bottom-2 max-elsa-w-full elsa-flex">
+              class="elsa-fixed elsa-top-20 elsa-inset-y-0 elsa-right-2 elsa-bottom-2 max-elsa-w-full elsa-flex">
               <div
                 ref={el => this.el = el}
                 data-transition-enter="elsa-transform elsa-transition elsa-ease-in-out elsa-duration-300 sm:elsa-duration-700"
@@ -63,7 +63,7 @@ export class ElsaFlyoutPanel {
                 class="elsa-w-screen elsa-max-w-lg elsa-h-full ">
                 <button type="button"
                         onClick={this.toggle}
-                        class="workflow-settings-button elsa-absolute elsa-top-4 elsa-left-2 elsa-inline-flex elsa-items-center elsa-p-2 elsa-rounded-full elsa-border elsa-border-transparent elsa-bg-white shadow elsa-text-gray-400 hover:elsa-text-blue-500 focus:elsa-text-blue-500 hover:elsa-ring-2 hover:elsa-ring-offset-2 hover:elsa-ring-blue-500 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 elsa-z-10">
+                        class="workflow-settings-button elsa-absolute elsa-left-2 elsa-inline-flex elsa-items-center elsa-p-2 elsa-rounded-full elsa-border elsa-border-transparent elsa-bg-white shadow elsa-text-gray-400 hover:elsa-text-blue-500 focus:elsa-text-blue-500 hover:elsa-ring-2 hover:elsa-ring-offset-2 hover:elsa-ring-blue-500 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 elsa-z-10">
                   <svg xmlns="http://www.w3.org/2000/svg" class="elsa-h-8 elsa-w-8" fill="none" viewBox="0 0 24 24"
                        stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

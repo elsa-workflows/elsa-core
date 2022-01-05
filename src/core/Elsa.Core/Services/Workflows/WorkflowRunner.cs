@@ -69,8 +69,8 @@ namespace Elsa.Services.Workflows
             await workflowExecutionContext.WorkflowExecutionLog.FlushAsync(cancellationToken);
             return result;
         }
-        
-        private async Task<RunWorkflowResult> RunWorkflowInternalAsync(WorkflowExecutionContext workflowExecutionContext, string? activityId = default, CancellationToken cancellationToken = default)
+
+        protected virtual async Task<RunWorkflowResult> RunWorkflowInternalAsync(WorkflowExecutionContext workflowExecutionContext, string? activityId = default, CancellationToken cancellationToken = default)
         {
             var workflowInstance = workflowExecutionContext.WorkflowInstance;
 
@@ -175,7 +175,7 @@ namespace Elsa.Services.Workflows
             {
                 _logger.LogWarning(e, "Failed to run workflow {WorkflowInstanceId}", workflowExecutionContext.WorkflowInstance.Id);
                 workflowExecutionContext.Fault(e, activity.Id, null, false);
-                workflowExecutionContext.AddEntry(activity, "Faulted",  null, SimpleException.FromException(e));
+                workflowExecutionContext.AddEntry(activity, "Faulted", null, SimpleException.FromException(e));
             }
 
             return new RunWorkflowResult(workflowExecutionContext.WorkflowInstance, activity.Id, false);
@@ -204,10 +204,8 @@ namespace Elsa.Services.Workflows
 
         private async ValueTask<bool> CanExecuteAsync(WorkflowExecutionContext workflowExecutionContext, IActivityBlueprint activityBlueprint, bool resuming, CancellationToken cancellationToken)
         {
-            using var scope = _serviceScopeFactory.CreateScope();
-
             var activityExecutionContext = new ActivityExecutionContext(
-                scope.ServiceProvider,
+                workflowExecutionContext.ServiceProvider,
                 workflowExecutionContext,
                 activityBlueprint,
                 workflowExecutionContext.Input,
@@ -299,7 +297,7 @@ namespace Elsa.Services.Workflows
                 }
                 catch (Exception e)
                 {
-                    await _mediator.Publish(new ActivityExecutionResultFailed(e, activityExecutionContext), cancellationToken);
+                    await _mediator.Publish(new ActivityExecutionFailed(e, activityExecutionContext), cancellationToken);
                     throw;
                 }
             }

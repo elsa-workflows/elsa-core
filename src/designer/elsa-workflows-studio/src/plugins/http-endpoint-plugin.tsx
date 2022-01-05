@@ -63,7 +63,7 @@ export class HttpEndpointPlugin implements ElsaPlugin {
     if (context.component === 'elsa-workflow-definition-editor-screen') {
       const activityUpdatedContext: ActivityUpdatedContext = {
         activityModel: context.params[0],
-        data: JSON.stringify(convert(context.params[1]), null, 1)
+        data: JSON.stringify(convert(context.params[1]?.Body), null, 1)
       };
       eventBus.emit(EventTypes.ActivityPluginUpdated, this, activityUpdatedContext);
     }    

@@ -31,6 +31,7 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("CorrelationId")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Hash")
@@ -233,6 +234,10 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("DefinitionId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DefinitionVersionId")
                         .IsRequired()
                         .HasColumnType("TEXT");
 

@@ -7,19 +7,21 @@
 
 ## Properties
 
-| Property         | Attribute         | Description | Type     | Default     |
-| ---------------- | ----------------- | ----------- | -------- | ----------- |
-| `basePath`       | `base-path`       |             | `string` | `''`        |
-| `culture`        | `culture`         |             | `string` | `undefined` |
-| `featuresString` | `features`        |             | `string` | `undefined` |
-| `monacoLibPath`  | `monaco-lib-path` |             | `string` | `undefined` |
-| `serverUrl`      | `server-url`      |             | `string` | `undefined` |
+| Property        | Attribute         | Description | Type     | Default     |
+| --------------- | ----------------- | ----------- | -------- | ----------- |
+| `basePath`      | `base-path`       |             | `string` | `''`        |
+| `config`        | `config`          |             | `string` | `undefined` |
+| `culture`       | `culture`         |             | `string` | `undefined` |
+| `features`      | `features`        |             | `any`    | `undefined` |
+| `monacoLibPath` | `monaco-lib-path` |             | `string` | `undefined` |
+| `serverUrl`     | `server-url`      |             | `string` | `undefined` |
 
 
 ## Events
 
 | Event          | Description | Type                      |
 | -------------- | ----------- | ------------------------- |
+| `initialized`  |             | `CustomEvent<ElsaStudio>` |
 | `initializing` |             | `CustomEvent<ElsaStudio>` |
 
 

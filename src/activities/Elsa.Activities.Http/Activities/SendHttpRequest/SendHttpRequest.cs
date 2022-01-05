@@ -26,7 +26,7 @@ namespace Elsa.Activities.Http
         Category = "HTTP",
         DisplayName = "Send HTTP Request",
         Description = "Send an HTTP request.",
-        Outcomes = new[] { OutcomeNames.Done }
+        Outcomes = new[] { OutcomeNames.Done, "Unsupported Status Code" }
     )]
     public class SendHttpRequest : Activity, IActivityPropertyOptionsProvider
     {
@@ -117,7 +117,8 @@ namespace Elsa.Activities.Http
             UIHint = ActivityInputUIHints.MultiText,
             DefaultSyntax = SyntaxNames.Json,
             DefaultValue = new[] { 200 },
-            SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid }
+            SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid },
+            ConsiderValuesAsOutcomes = true
         )]
         public ICollection<int>? SupportedStatusCodes { get; set; } = new HashSet<int>(new[] { 200 });
 
@@ -143,7 +144,7 @@ namespace Elsa.Activities.Http
             if (hasContent && ReadContent)
             {
                 var formatter = SelectContentParser(ResponseContentParserName, contentType);
-                ResponseContent = await formatter.ReadAsync(this, response, cancellationToken);
+                ResponseContent = await formatter.ReadAsync(response, this, cancellationToken);
             }
 
             var statusCode = (int)response.StatusCode;

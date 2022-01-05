@@ -20,7 +20,7 @@
     
     <ItemGroup>
       <PackageReference Include="HtmlAgilityPack" Version="1.11.36" />
-      <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="3.11.0" />
+      <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="4.0.1" />
       <PackageReference Include="Selenium.Support" Version="3.141.0" />
     </ItemGroup>
 

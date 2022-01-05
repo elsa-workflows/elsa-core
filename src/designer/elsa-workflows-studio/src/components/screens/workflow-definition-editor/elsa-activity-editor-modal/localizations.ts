@@ -1,4 +1,4 @@
-﻿export const resources = {
+export const resources = {
   'en': {
     'default': {
       "Buttons": {
@@ -28,6 +28,39 @@
         },
         'Storage': {
           'Name': 'Storage'
+        }
+      }
+    }
+  },
+  'zh-CN': {
+    'default': {
+      "Buttons": {
+        'Save': '保存',
+        'Cancel': '取消'
+      },
+      'Tabs': {
+        'Properties': {
+          'Name': '属性'
+        },
+        'Common': {
+          'Name': '通用',
+          'Fields': {
+            'Name': {
+              'Label': '名称',
+              'Hint': '该活动的技术名称。'
+            },
+            'DisplayName': {
+              'Label': '展示名称',
+              'Hint': '该活动的呈现名称。'
+            },
+            'Description': {
+              'Label': '描述',
+              'Hint': '对这项活动的自定义描述。'
+            }
+          }
+        },
+        'Storage': {
+          'Name': '储存'
         }
       }
     }
