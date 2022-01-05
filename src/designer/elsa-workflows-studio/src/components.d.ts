@@ -201,8 +201,9 @@ export namespace Components {
         "addPlugin": (pluginType: any) => Promise<void>;
         "addPlugins": (pluginTypes: Array<any>) => Promise<void>;
         "basePath": string;
+        "config": string;
         "culture": string;
-        "featuresString": string;
+        "features": any;
         "monacoLibPath": string;
         "serverUrl": string;
     }
@@ -285,6 +286,7 @@ export namespace Components {
         "basePath": string;
         "culture": string;
         "exportWorkflow": () => Promise<void>;
+        "features": string;
         "getServerUrl": () => Promise<string>;
         "getWorkflowDefinitionId": () => Promise<string>;
         "history": RouterHistory;
@@ -973,8 +975,9 @@ declare namespace LocalJSX {
     }
     interface ElsaStudioRoot {
         "basePath"?: string;
+        "config"?: string;
         "culture"?: string;
-        "featuresString"?: string;
+        "features"?: any;
         "monacoLibPath"?: string;
         "onInitialized"?: (event: CustomEvent<ElsaStudio>) => void;
         "onInitializing"?: (event: CustomEvent<ElsaStudio>) => void;
@@ -1053,6 +1056,7 @@ declare namespace LocalJSX {
     interface ElsaWorkflowDefinitionEditorScreen {
         "basePath"?: string;
         "culture"?: string;
+        "features"?: string;
         "history"?: RouterHistory;
         "monacoLibPath"?: string;
         "onWorkflowSaved"?: (event: CustomEvent<WorkflowDefinition>) => void;

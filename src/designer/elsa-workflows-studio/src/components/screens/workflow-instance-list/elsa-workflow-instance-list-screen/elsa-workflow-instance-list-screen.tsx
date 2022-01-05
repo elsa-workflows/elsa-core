@@ -184,7 +184,7 @@ export class ElsaWorkflowInstanceListScreen {
 
   getLatestWorkflowBlueprintVersions(): Array<WorkflowBlueprintSummary> {
     const groups = collection.groupBy(this.workflowBlueprints, 'id');
-    return collection.map(groups, x => array.first(collection.sortBy(x, 'version', 'desc')));
+    return collection.map(groups, x => array.first(collection.orderBy(x, 'version', 'desc')));
   }
 
   buildFilterUrl(workflowId?: string, workflowStatus?: WorkflowStatus, orderBy?: OrderBy, pageSize?: number, correlationId?: string) {
@@ -739,9 +739,16 @@ export class ElsaWorkflowInstanceListScreen {
     });
 
     const renderIcon = function () {
-      return <svg class="elsa-mr-3 elsa-h-5 elsa-w-5 elsa-text-gray-400" fill="none" viewBox="0 0 24 24"
-                  stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 8h9m-9 4h9m5"/>
+      return <svg class="elsa-h-5 elsa-w-5 elsa-text-gray-400 elsa-mr-2" width="24" height="24" viewBox="0 0 24 24"
+                  stroke-width="2"
+                  stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path stroke="none" d="M0 0h24v24H0z"/>
+        <line x1="9" y1="6" x2="20" y2="6"/>
+        <line x1="9" y1="12" x2="20" y2="12"/>
+        <line x1="9" y1="18" x2="20" y2="18"/>
+        <line x1="5" y1="6" x2="5" y2="6.01"/>
+        <line x1="5" y1="12" x2="5" y2="12.01"/>
+        <line x1="5" y1="18" x2="5" y2="18.01"/>
       </svg>
     };
 

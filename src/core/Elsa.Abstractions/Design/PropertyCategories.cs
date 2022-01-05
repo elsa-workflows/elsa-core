@@ -1,4 +1,4 @@
-﻿namespace Elsa.Design
+namespace Elsa.Design
 {
     public static class PropertyCategories
     {
