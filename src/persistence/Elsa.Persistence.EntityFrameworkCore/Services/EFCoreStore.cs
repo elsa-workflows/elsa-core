@@ -80,7 +80,6 @@ public class EFCoreStore<TEntity> : IStore<TEntity> where TEntity : Entity
 
     public IEnumerable<TEntity> Load(ElsaDbContext dbContext, IEnumerable<TEntity> entities) => OnLoading(dbContext, entities.ToList());
     
-
     private void OnSaving(ElsaDbContext dbContext, TEntity entity)
     {
         var handler = _serviceProvider.GetService<IEntitySerializer<TEntity>>();
