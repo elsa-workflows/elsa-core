@@ -155,13 +155,13 @@ Version 2.0
 
 Version 3.0 (engine redesign)
 
-- [ ] Programming model similar to WF
-- [ ] Sequential Workflows
-- [ ] Flowchart Workflows
+- [x] Programming model similar to WF
+- [x] Sequential Workflows
+- [x] Flowchart Workflows
 - [ ] State Machine Workflows
 - [ ] Sagas
-- [ ] BPMS Workflows
-- [ ] Actor Model for Distributed Workflows
+- [ ] BPMN Workflows
+- [x] Actor Model for Distributed Workflows
 
 ## Workflow Designer
 
