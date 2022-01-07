@@ -149,11 +149,10 @@ Version 2.0
 - [x] State Machines
 - [ ] Test Workflows from Designer
 - [ ] Debug Workflows from Designer
-- [ ] Sagas
 - [ ] Localization Support
 - [ ] Lucene Indexing
 
-Version 3.0 (engine redesign)
+Version 3.0 (engine + designer redesign)
 
 - [x] Programming model similar to WF
 - [x] Sequential Workflows
