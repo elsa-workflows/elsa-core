@@ -73,11 +73,11 @@ namespace Elsa.Persistence.YesSql
 
             return 2;
         }
-
+        
         public int UpdateFrom1()
         {
-            SchemaBuilder.CreateMapIndexTable<WorkflowInstanceIndex>(
-                table => table.Column<string>(nameof(WorkflowInstanceIndex.DefinitionVersionId)),
+            SchemaBuilder.AlterIndexTable<WorkflowInstanceIndex>(
+                table => table.AddColumn<string>(nameof(WorkflowInstanceIndex.DefinitionVersionId)),
                 CollectionNames.WorkflowInstances);
 
             return 2;
