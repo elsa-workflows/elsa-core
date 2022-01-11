@@ -113,7 +113,7 @@ export class InputControlSwitch {
 
   private renderContextMenuButton = () => {
     const selectedSyntax = this.syntax;
-    const showMonaco = !!selectedSyntax && selectedSyntax != 'Literal';
+    const showMonaco = !!selectedSyntax && selectedSyntax != 'Literal' && !!this.supportedSyntaxes.find(x => x === selectedSyntax);
     return showMonaco ? <span>{this.syntax}</span> : <SyntaxSelectorIcon/>;
   };
 
@@ -121,7 +121,7 @@ export class InputControlSwitch {
     const selectedSyntax = this.syntax;
     const monacoLanguage = this.mapSyntaxToLanguage(selectedSyntax);
     const value = this.expression;
-    const showMonaco = !!selectedSyntax && selectedSyntax != 'Literal';
+    const showMonaco = !!selectedSyntax && selectedSyntax != 'Literal' && !!this.supportedSyntaxes.find(x => x === selectedSyntax);
     const expressionEditorClass = showMonaco ? 'block' : 'hidden';
     const defaultEditorClass = showMonaco ? 'hidden' : 'block';
 

@@ -60,7 +60,7 @@ public class JavaScriptExpressionSyntaxProvider : IExpressionSyntaxProvider
 
     private IExpression CreateJavaScriptExpression(ExpressionConstructorContext context)
     {
-        var script = context.Element.GetProperty("value").ToString();
+        var script = context.Element.TryGetProperty("value", out var p) ? p.ToString() : "";
         return new JavaScriptExpression(script);
     }
     

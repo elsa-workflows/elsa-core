@@ -2,6 +2,7 @@ import {Component, Prop, h} from '@stencil/core';
 import {LiteralExpression, SyntaxNames} from "../../models";
 import {NodeInputContext} from "../../services/node-input-driver";
 import {getInputPropertyValue} from "../../utils";
+import {ExpressionChangedArs} from "../designer/input-control-switch/input-control-switch";
 
 @Component({
   tag: 'elsa-multi-line-input',
@@ -12,14 +13,21 @@ export class MultiLineInput {
 
   public render() {
     const inputContext = this.inputContext;
-    const inputProperty = inputContext.inputDescriptor;
-    const fieldName = inputProperty.name;
-    const fieldId = inputProperty.name;
+    const inputDescriptor = inputContext.inputDescriptor;
+    const fieldName = inputDescriptor.name;
+    const fieldId = inputDescriptor.name;
+    const displayName = inputDescriptor.displayName;
+    const hint = inputDescriptor.description;
     const input = getInputPropertyValue(inputContext);
-    const options = inputProperty.options || {};
+    const options = inputDescriptor.options || {};
     const editorHeight = this.getEditorHeight(options);
     const value = (input?.expression as LiteralExpression)?.value;
-    return <textarea name={fieldName} id={fieldId} value={value} rows={editorHeight.textArea} onChange={this.onPropertyEditorChanged}/>
+    const syntax = input?.expression?.type ?? inputDescriptor.defaultSyntax;
+    return (
+      <elsa-input-control-switch label={displayName} hint={hint} syntax={syntax} expression={value} onExpressionChanged={this.onExpressionChanged}>
+        <textarea name={fieldName} id={fieldId} value={value} rows={editorHeight.textArea} onChange={this.onPropertyEditorChanged}/>
+      </elsa-input-control-switch>
+    )
   }
 
   private getEditorHeight = (options: any) => {
@@ -37,4 +45,8 @@ export class MultiLineInput {
     const inputElement = e.target as HTMLTextAreaElement;
     this.inputContext.inputChanged(inputElement.value, SyntaxNames.Literal);
   };
+
+  private onExpressionChanged = (e: CustomEvent<ExpressionChangedArs>) => {
+    this.inputContext.inputChanged(e.detail.expression, e.detail.syntax);
+  }
 }
