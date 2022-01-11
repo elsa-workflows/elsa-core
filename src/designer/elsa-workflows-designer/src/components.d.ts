@@ -5,13 +5,14 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
-import { ActionDefinition, ActionInvokedArgs, Activity, ActivityDescriptor, ActivitySelectedArgs, ContainerSelectedArgs, GraphUpdatedArgs, SelectListItem, TabChangedArgs, TabDefinition, Trigger, TriggerDescriptor, Workflow, WorkflowInstance, WorkflowInstanceSummary, WorkflowSummary } from "./models";
+import { ActionDefinition, ActionInvokedArgs, Activity, ActivityDescriptor, ActivitySelectedArgs, ContainerSelectedArgs, GraphUpdatedArgs, IntellisenseContext, SelectListItem, TabChangedArgs, TabDefinition, Trigger, TriggerDescriptor, Workflow, WorkflowInstance, WorkflowInstanceSummary, WorkflowSummary } from "./models";
 import { ActivityUpdatedArgs, DeleteActivityRequestedArgs } from "./components/designer/activity-properties-editor/activity-properties-editor";
 import { AddActivityArgs } from "./components/designer/canvas/canvas";
 import { NodeInputContext } from "./services/node-input-driver";
 import { MenuItem } from "./components/shared/context-menu/models";
 import { DropdownButtonItem, DropdownButtonOrigin } from "./components/shared/dropdown-button/models";
 import { AddActivityArgs as AddActivityArgs1 } from "./components/designer/canvas/canvas";
+import { ExpressionChangedArs } from "./components/designer/input-control-switch/input-control-switch";
 import { MonacoLib, MonacoValueChangedArgs } from "./components/shared/monaco-editor/monaco-editor";
 import { PagerData } from "./components/shared/pager/pager";
 import { PanelPosition, PanelStateChangedArgs } from "./components/designer/panel/models";
@@ -69,6 +70,19 @@ export namespace Components {
         "selectedTabIndex"?: number;
         "tabs": Array<TabDefinition>;
     }
+    interface ElsaInputControlSwitch {
+        "codeEditorHeight": string;
+        "codeEditorSingleLineMode": boolean;
+        "context"?: IntellisenseContext;
+        "defaultSyntax": string;
+        "expression"?: string;
+        "fieldName"?: string;
+        "hint": string;
+        "isReadOnly"?: boolean;
+        "label": string;
+        "supportedSyntaxes": Array<string>;
+        "syntax"?: string;
+    }
     interface ElsaInputTags {
         "fieldId"?: string;
         "placeHolder"?: string;
@@ -93,7 +107,6 @@ export namespace Components {
         "monacoLibPath"?: string;
         "padding": string;
         "setJavaScriptLibs": (libs: Array<MonacoLib>) => Promise<void>;
-        "setValue": (value: string) => Promise<void>;
         "singleLineMode": boolean;
         "value": string;
     }
@@ -239,6 +252,12 @@ declare global {
     var HTMLElsaFormPanelElement: {
         prototype: HTMLElsaFormPanelElement;
         new (): HTMLElsaFormPanelElement;
+    };
+    interface HTMLElsaInputControlSwitchElement extends Components.ElsaInputControlSwitch, HTMLStencilElement {
+    }
+    var HTMLElsaInputControlSwitchElement: {
+        prototype: HTMLElsaInputControlSwitchElement;
+        new (): HTMLElsaInputControlSwitchElement;
     };
     interface HTMLElsaInputTagsElement extends Components.ElsaInputTags, HTMLStencilElement {
     }
@@ -394,6 +413,7 @@ declare global {
         "elsa-dropdown-input": HTMLElsaDropdownInputElement;
         "elsa-flowchart": HTMLElsaFlowchartElement;
         "elsa-form-panel": HTMLElsaFormPanelElement;
+        "elsa-input-control-switch": HTMLElsaInputControlSwitchElement;
         "elsa-input-tags": HTMLElsaInputTagsElement;
         "elsa-input-tags-dropdown": HTMLElsaInputTagsDropdownElement;
         "elsa-modal-dialog": HTMLElsaModalDialogElement;
@@ -465,6 +485,21 @@ declare namespace LocalJSX {
         "onSubmitted"?: (event: CustomEvent<FormData>) => void;
         "selectedTabIndex"?: number;
         "tabs"?: Array<TabDefinition>;
+    }
+    interface ElsaInputControlSwitch {
+        "codeEditorHeight"?: string;
+        "codeEditorSingleLineMode"?: boolean;
+        "context"?: IntellisenseContext;
+        "defaultSyntax"?: string;
+        "expression"?: string;
+        "fieldName"?: string;
+        "hint"?: string;
+        "isReadOnly"?: boolean;
+        "label"?: string;
+        "onExpressionChanged"?: (event: CustomEvent<ExpressionChangedArs>) => void;
+        "onSyntaxChanged"?: (event: CustomEvent<string>) => void;
+        "supportedSyntaxes"?: Array<string>;
+        "syntax"?: string;
     }
     interface ElsaInputTags {
         "fieldId"?: string;
@@ -596,6 +631,7 @@ declare namespace LocalJSX {
         "elsa-dropdown-input": ElsaDropdownInput;
         "elsa-flowchart": ElsaFlowchart;
         "elsa-form-panel": ElsaFormPanel;
+        "elsa-input-control-switch": ElsaInputControlSwitch;
         "elsa-input-tags": ElsaInputTags;
         "elsa-input-tags-dropdown": ElsaInputTagsDropdown;
         "elsa-modal-dialog": ElsaModalDialog;
@@ -635,6 +671,7 @@ declare module "@stencil/core" {
             "elsa-dropdown-input": LocalJSX.ElsaDropdownInput & JSXBase.HTMLAttributes<HTMLElsaDropdownInputElement>;
             "elsa-flowchart": LocalJSX.ElsaFlowchart & JSXBase.HTMLAttributes<HTMLElsaFlowchartElement>;
             "elsa-form-panel": LocalJSX.ElsaFormPanel & JSXBase.HTMLAttributes<HTMLElsaFormPanelElement>;
+            "elsa-input-control-switch": LocalJSX.ElsaInputControlSwitch & JSXBase.HTMLAttributes<HTMLElsaInputControlSwitchElement>;
             "elsa-input-tags": LocalJSX.ElsaInputTags & JSXBase.HTMLAttributes<HTMLElsaInputTagsElement>;
             "elsa-input-tags-dropdown": LocalJSX.ElsaInputTagsDropdown & JSXBase.HTMLAttributes<HTMLElsaInputTagsDropdownElement>;
             "elsa-modal-dialog": LocalJSX.ElsaModalDialog & JSXBase.HTMLAttributes<HTMLElsaModalDialogElement>;

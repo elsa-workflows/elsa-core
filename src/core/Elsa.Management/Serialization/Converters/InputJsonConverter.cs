@@ -33,7 +33,7 @@ public class InputJsonConverter<T> : JsonConverter<Input<T>>
         if (!expressionElement.TryGetProperty("type", out var expressionTypeNameElement))
             throw new JsonException("Failed to extract expression type property");
 
-        var expressionTypeName = expressionTypeNameElement.GetString()!;
+        var expressionTypeName = expressionTypeNameElement.GetString() ?? "Literal";
         var expressionSyntaxDescriptor = _expressionSyntaxRegistry.Find(expressionTypeName);
 
         if (expressionSyntaxDescriptor == null)

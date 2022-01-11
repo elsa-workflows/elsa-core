@@ -20,17 +20,7 @@ export class DefaultInputDriver implements NodeInputDriver {
     const inputDescriptor = context.inputDescriptor;
     const uiHint = inputDescriptor.uiHint;
     const inputControl = this.inputControlRegistry.get(uiHint);
-    const node = context.node;
-    const propertyName = inputDescriptor.name;
-    const displayName = inputDescriptor.displayName || propertyName;
-    const description = inputDescriptor.description;
-    const fieldId = inputDescriptor.name;
-    const key = `${node.id}_${propertyName}`;
-
-    return (
-      <FormEntry label={displayName} fieldId={fieldId} hint={description} key={key}>
-        {inputControl(context)}
-      </FormEntry>);
+    return inputControl(context);
   }
 
   supportsInput(context: NodeInputContext): boolean {

@@ -8,7 +8,7 @@ export interface LiteralExpression {
 
 export interface JavaScriptExpression {
   type: ExpressionType;
-  scriptExpression: string;
+  value: string;
 }
 
 export interface JsonExpression {

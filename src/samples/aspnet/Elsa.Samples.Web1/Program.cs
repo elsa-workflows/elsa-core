@@ -15,6 +15,7 @@ using Elsa.Pipelines.WorkflowExecution.Components;
 using Elsa.Runtime.ProtoActor.Extensions;
 using Elsa.Samples.Web1.Activities;
 using Elsa.Samples.Web1.Workflows;
+using Elsa.Scripting.JavaScript;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -27,7 +28,6 @@ var services = builder.Services;
 services
     .AddElsa()
     .AddMediator()
-    //.AddInMemoryPersistence()
     .AddEntityFrameworkCorePersistence((_, ef) => ef.UseSqlite())
     .IndexWorkflowTriggers()
     .AddElsaManagement()
@@ -56,6 +56,9 @@ services
 // Register available triggers.
 services
     .AddTrigger<HttpTrigger>();
+
+// Register scripting languages.
+services.AddJavaScriptExpressions();
 
 // Configure middleware pipeline.
 var app = builder.Build();

@@ -121,3 +121,8 @@ export interface VersionOptions {
   allVersions?: boolean;
   version?: number;
 }
+
+export interface IntellisenseContext {
+  activityTypeName: string;
+  propertyName: string;
+}

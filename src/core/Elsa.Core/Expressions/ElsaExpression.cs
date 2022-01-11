@@ -5,12 +5,12 @@ namespace Elsa.Expressions;
 
 public class ElsaExpression : IExpression
 {
-    public ElsaExpression(string scriptExpression)
+    public ElsaExpression(string value)
     {
-        ScriptExpression = scriptExpression;
+        Value = value;
     }
         
-    public string ScriptExpression { get; }
+    public string Value { get; }
 }
     
 public class ElsaExpressionHandler : IExpressionHandler
@@ -20,6 +20,6 @@ public class ElsaExpressionHandler : IExpressionHandler
         var elsaExpression = (ElsaExpression)expression;
             
         // TODO: evaluate expression.
-        return new ValueTask<object?>(elsaExpression.ScriptExpression);
+        return new ValueTask<object?>(elsaExpression.Value);
     }
 }

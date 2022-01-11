@@ -127,7 +127,7 @@ export class ActivityPropertiesEditor {
       type: inputDescriptor.type,
       expression: {
         type: syntax,
-        value: propertyValue
+        value: propertyValue // TODO: The "value" field is currently hardcoded, but we should be able to be more flexible and potentially have different fields for a given syntax.
       }
     };
 
@@ -146,7 +146,10 @@ export class ActivityPropertiesEditor {
       </FormEntry>
 
       {properties.filter(x => !!x.inputControl).map(propertyContext => {
-        return propertyContext.inputControl;
+        const key = `${node.id}-${propertyContext.inputContext.inputDescriptor.name}`;
+        return <div key={key}>
+          {propertyContext.inputControl}
+        </div>;
       })}
     </div>
   };
