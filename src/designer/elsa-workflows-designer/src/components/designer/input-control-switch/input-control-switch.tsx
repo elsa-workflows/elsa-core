@@ -111,14 +111,19 @@ export class InputControlSwitch {
     </div>;
   }
 
-  private renderContextMenuButton = () => this.syntax ? <span>{this.syntax}</span> : <SyntaxSelectorIcon/>;
+  private renderContextMenuButton = () => {
+    const selectedSyntax = this.syntax;
+    const showMonaco = !!selectedSyntax && selectedSyntax != 'Literal';
+    return showMonaco ? <span>{this.syntax}</span> : <SyntaxSelectorIcon/>;
+  };
 
   private renderEditor = () => {
     const selectedSyntax = this.syntax;
     const monacoLanguage = this.mapSyntaxToLanguage(selectedSyntax);
     const value = this.expression;
-    const expressionEditorClass = selectedSyntax ? 'block' : 'hidden';
-    const defaultEditorClass = selectedSyntax ? 'hidden' : 'block';
+    const showMonaco = !!selectedSyntax && selectedSyntax != 'Literal';
+    const expressionEditorClass = showMonaco ? 'block' : 'hidden';
+    const defaultEditorClass = showMonaco ? 'hidden' : 'block';
 
     return (
       <div>
@@ -147,7 +152,6 @@ export class InputControlSwitch {
         return 'javascript';
       case 'Liquid':
         return 'handlebars';
-      case 'Literal':
       default:
         return 'plaintext';
     }
