@@ -26,8 +26,10 @@ public static class ServiceCollectionExtensions
             .AddSingleton<IStore<WorkflowInstance>, EFCoreStore<WorkflowInstance>>()
             .AddSingleton<IStore<WorkflowBookmark>, EFCoreStore<WorkflowBookmark>>()
             .AddSingleton<IStore<WorkflowTrigger>, EFCoreStore<WorkflowTrigger>>()
+            .AddSingleton<IStore<WorkflowExecutionLogRecord>, EFCoreStore<WorkflowExecutionLogRecord>>()
             .AddSingleton<IEntitySerializer<WorkflowDefinition>, WorkflowDefinitionSerializer>()
             .AddSingleton<IEntitySerializer<WorkflowInstance>, WorkflowInstanceSerializer>()
+            .AddSingleton<IEntitySerializer<WorkflowExecutionLogRecord>, WorkflowExecutionLogRecordSerializer>()
             ;
 
         if (autoRunMigrations)

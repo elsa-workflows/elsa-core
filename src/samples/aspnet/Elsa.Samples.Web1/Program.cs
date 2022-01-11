@@ -74,6 +74,7 @@ wellKnownTypeRegistry.RegisterType<string>("string");
 // Configure workflow engine execution pipeline.
 serviceProvider.ConfigureDefaultWorkflowExecutionPipeline(pipeline => pipeline
     .PersistWorkflows()
+    .PersistWorkflowExecutionLog()
     .UseActivityScheduler()
 );
 

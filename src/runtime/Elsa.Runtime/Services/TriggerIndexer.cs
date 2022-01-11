@@ -40,12 +40,12 @@ public class TriggerIndexer : ITriggerIndexer
 
         _logger.LogInformation("Indexing workflow triggers");
         stopwatch.Start();
-        
+
         var workflows = _workflowRegistry.StreamAllAsync(cancellationToken);
 
         await foreach (var workflow in workflows.WithCancellation(cancellationToken))
             await IndexTriggersAsync(workflow, cancellationToken);
-        
+
         stopwatch.Stop();
         _logger.LogInformation("Finished indexing workflow triggers in {ElapsedTime}", stopwatch.Elapsed);
     }
@@ -85,12 +85,20 @@ public class TriggerIndexer : ITriggerIndexer
         foreach (var input in assignedInputs)
         {
             var locationReference = input.LocationReference;
-            var value = await _expressionEvaluator.EvaluateAsync(input, expressionExecutionContext);
-            locationReference.Set(expressionExecutionContext, value);
+
+            try
+            {
+                var value = await _expressionEvaluator.EvaluateAsync(input, expressionExecutionContext);
+                locationReference.Set(expressionExecutionContext, value);
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning(e, "Failed to evaluate '{@Expression}'", input.Expression);
+            }
         }
 
         var triggerIndexingContext = new TriggerIndexingContext(context, expressionExecutionContext, trigger);
-        var hashInputs = await trigger.GetHashInputsAsync(triggerIndexingContext, cancellationToken);
+        var hashInputs = await TryGetHashInputsAsync(trigger, triggerIndexingContext, cancellationToken);
         var triggerType = trigger.GetType();
         var triggerTypeName = TypeNameHelper.GenerateTypeName(triggerType);
 
@@ -103,5 +111,19 @@ public class TriggerIndexer : ITriggerIndexer
         });
 
         return triggers;
+    }
+
+    private async Task<IEnumerable<object>> TryGetHashInputsAsync(ITrigger trigger, TriggerIndexingContext context, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await trigger.GetHashInputsAsync(context, cancellationToken);
+        }
+        catch (Exception e)
+        {
+            _logger.LogWarning( e, "Failed to get hash inputs");
+        }
+
+        return Array.Empty<object>() ;
     }
 }

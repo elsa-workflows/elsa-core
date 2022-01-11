@@ -18,6 +18,7 @@ public class ElsaDbContext : DbContext
     public DbSet<WorkflowInstance> WorkflowInstances { get; set; } = default!;
     public DbSet<WorkflowTrigger> WorkflowTriggers { get; set; } = default!;
     public DbSet<WorkflowBookmark> WorkflowBookmarks { get; set; } = default!;
+    public DbSet<WorkflowExecutionLogRecord> WorkflowExecutionLogRecords { get; set; } = default!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

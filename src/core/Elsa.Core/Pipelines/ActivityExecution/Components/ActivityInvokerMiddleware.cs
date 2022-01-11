@@ -14,11 +14,13 @@ public static class InvokeDriversMiddlewareExtensions
 public class ActivityInvokerMiddleware : IActivityExecutionMiddleware
 {
     private readonly ActivityMiddlewareDelegate _next;
+    private readonly ISystemClock _clock;
     private readonly ILogger _logger;
 
-    public ActivityInvokerMiddleware(ActivityMiddlewareDelegate next, ILogger<ActivityInvokerMiddleware> logger)
+    public ActivityInvokerMiddleware(ActivityMiddlewareDelegate next, ISystemClock clock, ILogger<ActivityInvokerMiddleware> logger)
     {
         _next = next;
+        _clock = clock;
         _logger = logger;
     }
 
@@ -33,10 +35,14 @@ public class ActivityInvokerMiddleware : IActivityExecutionMiddleware
         // Execute activity.
         var methodInfo = typeof(IActivity).GetMethod(nameof(IActivity.ExecuteAsync))!;
         var executeDelegate = workflowExecution.ExecuteDelegate ?? (ExecuteActivityDelegate)Delegate.CreateDelegate(typeof(ExecuteActivityDelegate), activity, methodInfo);
+
+        // Record executing event.
+        LogExecutionRecord(context, WorkflowExecutionLogEventNames.Executing);
+
         await executeDelegate(context);
 
-        // Record execution event.
-        workflowExecution.ExecutionLog.Add(new WorkflowExecutionLogEntry(context.Id));
+        // Record executed event.
+        LogExecutionRecord(context, WorkflowExecutionLogEventNames.Executed);
 
         // Reset execute delegate.
         workflowExecution.ExecuteDelegate = null;
@@ -56,6 +62,14 @@ public class ActivityInvokerMiddleware : IActivityExecutionMiddleware
 
         // Complete parent chain.
         await CompleteParentsAsync(context);
+    }
+
+    private void LogExecutionRecord(ActivityExecutionContext context, string eventName, string? message = default, string? source = default, object? payload = default)
+    {
+        var activity = context.Activity;
+        var workflowExecutionContext = context.WorkflowExecutionContext;
+        var logEntry = new WorkflowExecutionLogEntry(activity.Id, activity.NodeType, _clock.UtcNow, eventName, message, source, payload);
+        workflowExecutionContext.ExecutionLog.Add(logEntry);
     }
 
     private async Task EvaluateInputPropertiesAsync(ActivityExecutionContext context)

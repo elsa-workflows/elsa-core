@@ -49,6 +49,25 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "WorkflowExecutionLogRecords",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "TEXT", nullable: false),
+                    WorkflowInstanceId = table.Column<string>(type: "TEXT", nullable: false),
+                    ActivityId = table.Column<string>(type: "TEXT", nullable: false),
+                    ActivityType = table.Column<string>(type: "TEXT", nullable: false),
+                    Timestamp = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    EventName = table.Column<string>(type: "TEXT", nullable: true),
+                    Message = table.Column<string>(type: "TEXT", nullable: true),
+                    Source = table.Column<string>(type: "TEXT", nullable: true),
+                    PayloadData = table.Column<string>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_WorkflowExecutionLogRecords", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "WorkflowInstances",
                 columns: table => new
                 {
@@ -142,6 +161,31 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
                 column: "Version");
 
             migrationBuilder.CreateIndex(
+                name: "IX_WorkflowExecutionLogRecord_ActivityId",
+                table: "WorkflowExecutionLogRecords",
+                column: "ActivityId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowExecutionLogRecord_ActivityType",
+                table: "WorkflowExecutionLogRecords",
+                column: "ActivityType");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowExecutionLogRecord_EventName",
+                table: "WorkflowExecutionLogRecords",
+                column: "EventName");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowExecutionLogRecord_Timestamp",
+                table: "WorkflowExecutionLogRecords",
+                column: "Timestamp");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowExecutionLogRecord_WorkflowInstanceId",
+                table: "WorkflowExecutionLogRecords",
+                column: "WorkflowInstanceId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_WorkflowInstance_CorrelationId",
                 table: "WorkflowInstances",
                 column: "CorrelationId");
@@ -214,6 +258,9 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
 
             migrationBuilder.DropTable(
                 name: "WorkflowDefinitions");
+
+            migrationBuilder.DropTable(
+                name: "WorkflowExecutionLogRecords");
 
             migrationBuilder.DropTable(
                 name: "WorkflowInstances");

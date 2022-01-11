@@ -129,6 +129,58 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
                     b.ToTable("WorkflowDefinitions");
                 });
 
+            modelBuilder.Entity("Elsa.Persistence.Entities.WorkflowExecutionLogRecord", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ActivityId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ActivityType")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("EventName")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Message")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PayloadData")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Source")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("WorkflowInstanceId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActivityId")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityId");
+
+                    b.HasIndex("ActivityType")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityType");
+
+                    b.HasIndex("EventName")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_EventName");
+
+                    b.HasIndex("Timestamp")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_Timestamp");
+
+                    b.HasIndex("WorkflowInstanceId")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_WorkflowInstanceId");
+
+                    b.ToTable("WorkflowExecutionLogRecords");
+                });
+
             modelBuilder.Entity("Elsa.Persistence.Entities.WorkflowInstance", b =>
                 {
                     b.Property<string>("Id")
