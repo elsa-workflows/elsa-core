@@ -21,10 +21,10 @@ export class SingleLineInput {
     const input = getInputPropertyValue(inputContext);
     const value = (input?.expression as LiteralExpression)?.value; // TODO: The "value" field is currently hardcoded, but we should be able to be more flexible and potentially have different fields for a given syntax.
     const syntax = input?.expression?.type ?? inputDescriptor.defaultSyntax;
-    const supportedSyntaxes = ['JavaScript', 'Liquid'];
+    const supportedSyntaxes = inputDescriptor.supportedSyntaxes;
 
     return (
-      <elsa-input-control-switch label={displayName} hint={hint} supportedSyntaxes={supportedSyntaxes} syntax={syntax} expression={value} onExpressionChanged={this.onExpressionChanged}>
+      <elsa-input-control-switch label={displayName} hint={hint} syntax={syntax} expression={value} onExpressionChanged={this.onExpressionChanged}>
         <input type="text" name={fieldName} id={fieldId} value={value} onChange={this.onPropertyEditorChanged}/>
       </elsa-input-control-switch>
     );

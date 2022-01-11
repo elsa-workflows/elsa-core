@@ -17,7 +17,7 @@ public class InputDescriptor : PropertyDescriptor
         float order = 0,
         object? defaultValue = default,
         string? defaultSyntax = "Literal",
-        IEnumerable<string>? supportedSyntaxes = default,
+        //IEnumerable<string>? supportedSyntaxes = default,
         bool isReadOnly = false,
         bool isBrowsable = true)
     {
@@ -31,7 +31,7 @@ public class InputDescriptor : PropertyDescriptor
         Order = order;
         DefaultValue = defaultValue;
         DefaultSyntax = defaultSyntax;
-        SupportedSyntaxes = supportedSyntaxes?.ToList() ?? new List<string>();
+        //SupportedSyntaxes = supportedSyntaxes?.ToList() ?? new List<string>();
         IsReadOnly = isReadOnly;
         IsBrowsable = isBrowsable;
     }
@@ -41,6 +41,6 @@ public class InputDescriptor : PropertyDescriptor
     public string? Category { get; set; }
     public object? DefaultValue { get; set; }
     public string? DefaultSyntax { get; set; }
-    public ICollection<string> SupportedSyntaxes { get; set; } = new List<string>();
+    //public ICollection<string> SupportedSyntaxes { get; set; } = new List<string>();
     public bool? IsReadOnly { get; set; }
 }
