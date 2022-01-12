@@ -1,7 +1,7 @@
 import {Component, h, Prop, State} from '@stencil/core';
 import {LiteralExpression, SelectList, SyntaxNames} from "../../models";
 import {NodeInputContext} from "../../services/node-input-driver";
-import {getSelectListItems, getInputPropertyValue, setInputPropertyValue} from "../../utils";
+import {getSelectListItems, getInputPropertyValue} from "../../utils";
 import {ExpressionChangedArs} from "../designer/input-control-switch/input-control-switch";
 
 @Component({
@@ -68,7 +68,6 @@ export class RadioList {
     const checkbox = (e.target as HTMLInputElement);
     const value = checkbox.value;
 
-    setInputPropertyValue(this.inputContext, value);
     this.inputContext.inputChanged(value, SyntaxNames.Literal);
   }
 

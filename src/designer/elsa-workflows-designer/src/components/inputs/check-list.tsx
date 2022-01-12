@@ -2,7 +2,7 @@ import {Component, h, Prop, State} from '@stencil/core';
 import {uniq} from 'lodash'
 import {JsonExpression, LiteralExpression, SelectList, SyntaxNames} from "../../models";
 import {NodeInputContext} from "../../services/node-input-driver";
-import {getSelectListItems, getInputPropertyValue, parseJson, setInputPropertyValue} from "../../utils";
+import {getSelectListItems, getInputPropertyValue, parseJson} from "../../utils";
 import {ExpressionChangedArs} from "../designer/input-control-switch/input-control-switch";
 
 @Component({
@@ -103,7 +103,6 @@ export class CheckList {
       json = JSON.stringify(newValue);
     }
 
-    setInputPropertyValue(this.inputContext, json);
     this.inputContext.inputChanged(json, SyntaxNames.Json);
   }
 

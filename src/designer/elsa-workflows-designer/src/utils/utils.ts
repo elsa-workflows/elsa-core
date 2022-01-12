@@ -47,8 +47,3 @@ export const getInputPropertyValue = (inputContext: NodeInputContext): ActivityI
   const propName = getInputPropertyName(inputContext);
   return inputContext.node[propName] as ActivityInput;
 };
-
-export const setInputPropertyValue = (inputContext: NodeInputContext, value: any) => {
-  const propName = getInputPropertyName(inputContext);
-  return inputContext.node[propName] = value;
-};
