@@ -2,9 +2,9 @@
 using Elsa.Attributes;
 using Elsa.Models;
 
-namespace Elsa.Activities.Timers;
+namespace Elsa.Activities.Scheduling;
 
-public class TimerTrigger : Trigger
+public class Timer : Trigger
 {
     [Input] public Input<TimeSpan> Interval { get; set; } = default!;
 }

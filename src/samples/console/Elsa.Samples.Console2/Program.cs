@@ -3,7 +3,7 @@ using System.IO;
 using System.Reflection;
 using Elsa.Activities.Console;
 using Elsa.Activities.Http;
-using Elsa.Activities.Timers;
+using Elsa.Activities.Scheduling;
 using Elsa.Activities.Workflows;
 using Elsa.Contracts;
 using Elsa.Dsl.Abstractions;
@@ -29,7 +29,7 @@ typeSystem.Register<Sequence>();
 typeSystem.Register<ReadLine>();
 typeSystem.Register<WriteLine>();
 typeSystem.Register<HttpTrigger>();
-typeSystem.Register<TimerTrigger>();
+typeSystem.Register<Timer>();
 
 functionActivityRegistry.RegisterFunction("print", nameof(WriteLine), new[] { nameof(WriteLine.Text) });
 functionActivityRegistry.RegisterFunction("read", nameof(ReadLine), new[] { nameof(ReadLine.Output) });

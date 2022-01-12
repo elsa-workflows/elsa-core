@@ -54,7 +54,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Dsl", "src\dsl\Elsa.Ds
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.Console2", "src\samples\console\Elsa.Samples.Console2\Elsa.Samples.Console2.csproj", "{48960E35-903C-4EF0-A8F4-3871B000B12D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.Timers", "src\activities\Elsa.Activities.Timers\Elsa.Activities.Timers.csproj", "{9FE7C169-F639-4F6D-86EB-D97FE3E9D206}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.Scheduling", "src\activities\Elsa.Activities.Scheduling\Elsa.Activities.Scheduling.csproj", "{9FE7C169-F639-4F6D-86EB-D97FE3E9D206}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripting", "scripting", "{2633B8B9-4AEC-4A54-8832-1C940B54E041}"
 EndProject
