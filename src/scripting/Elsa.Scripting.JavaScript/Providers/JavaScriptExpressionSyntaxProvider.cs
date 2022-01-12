@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Contracts;
-using Elsa.Expressions;
 using Elsa.Management.Contracts;
 using Elsa.Management.Models;
 using Elsa.Models;
+using Elsa.Scripting.JavaScript.Expressions;
 
-namespace Elsa.Scripting.JavaScript;
+namespace Elsa.Scripting.JavaScript.Providers;
 
 public class JavaScriptExpressionSyntaxProvider : IExpressionSyntaxProvider
 {

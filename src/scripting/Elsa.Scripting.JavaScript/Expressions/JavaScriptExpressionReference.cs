@@ -1,6 +1,6 @@
 using Elsa.Models;
 
-namespace Elsa.Scripting.JavaScript;
+namespace Elsa.Scripting.JavaScript.Expressions;
 
 public class JavaScriptExpressionReference : RegisterLocationReference
 {

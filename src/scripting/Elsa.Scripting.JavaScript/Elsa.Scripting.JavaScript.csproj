@@ -14,4 +14,8 @@
       <ProjectReference Include="..\..\core\Elsa.Management\Elsa.Management.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Services" />
+    </ItemGroup>
+
 </Project>

@@ -13,6 +13,7 @@ using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence.InMemory.Extensions;
 using Elsa.Scripting.JavaScript;
+using Elsa.Scripting.JavaScript.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 

@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Elsa.Contracts;
 using Elsa.Models;
 
-namespace Elsa.Scripting.JavaScript;
+namespace Elsa.Scripting.JavaScript.Expressions;
 
 public class JavaScriptExpression : IExpression
 {

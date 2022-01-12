@@ -2,6 +2,7 @@
 using Elsa.Contracts;
 using Elsa.Models;
 using Elsa.Scripting.JavaScript;
+using Elsa.Scripting.JavaScript.Expressions;
 
 namespace Elsa.Dsl.Interpreters;
 
