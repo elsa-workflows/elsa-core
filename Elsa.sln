@@ -78,6 +78,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.EntityFram
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Serialization", "src\core\Elsa.Serialization\Elsa.Serialization.csproj", "{55F9B33D-5FAF-4355-97EF-445C93208E85}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Scripting.Liquid", "src\scripting\Elsa.Scripting.Liquid\Elsa.Scripting.Liquid.csproj", "{A7473430-F228-4534-AEA5-AA8D80E09364}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -164,6 +166,10 @@ Global
 		{55F9B33D-5FAF-4355-97EF-445C93208E85}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{55F9B33D-5FAF-4355-97EF-445C93208E85}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{55F9B33D-5FAF-4355-97EF-445C93208E85}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A7473430-F228-4534-AEA5-AA8D80E09364}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A7473430-F228-4534-AEA5-AA8D80E09364}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A7473430-F228-4534-AEA5-AA8D80E09364}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A7473430-F228-4534-AEA5-AA8D80E09364}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{155227F0-A33B-40AA-A4B4-06F813EB921B} = {61017E64-6D00-49CB-9E81-5002DC8F7D5F}
@@ -198,5 +204,6 @@ Global
 		{D8130816-C1D9-40A3-9079-F2887FE35EA9} = {9F8AE7FB-E5F9-4DCB-9CF8-0362B3D18DAA}
 		{820016B7-01CD-4032-8239-6A4E53F1A352} = {9F8AE7FB-E5F9-4DCB-9CF8-0362B3D18DAA}
 		{55F9B33D-5FAF-4355-97EF-445C93208E85} = {C6658DE0-2B2F-47F0-BB61-2CA66D435C09}
+		{A7473430-F228-4534-AEA5-AA8D80E09364} = {2633B8B9-4AEC-4A54-8832-1C940B54E041}
 	EndGlobalSection
 EndGlobal

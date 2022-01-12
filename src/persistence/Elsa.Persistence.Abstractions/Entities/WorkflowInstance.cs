@@ -1,4 +1,3 @@
-using System;
 using Elsa.State;
 
 namespace Elsa.Persistence.Entities;

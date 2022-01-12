@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using Elsa.Contracts;
 
 namespace Elsa.Persistence.Entities;

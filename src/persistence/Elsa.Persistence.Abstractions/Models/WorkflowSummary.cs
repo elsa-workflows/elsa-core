@@ -1,4 +1,3 @@
-using System;
 using Elsa.Persistence.Entities;
 
 namespace Elsa.Persistence.Models;

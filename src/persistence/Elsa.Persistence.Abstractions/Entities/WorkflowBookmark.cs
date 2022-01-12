@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace Elsa.Persistence.Entities;
 
 public class WorkflowBookmark : Entity

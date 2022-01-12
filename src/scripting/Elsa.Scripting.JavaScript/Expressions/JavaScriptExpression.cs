@@ -1,5 +1,3 @@
-using System;
-using System.Threading.Tasks;
 using Elsa.Contracts;
 
 namespace Elsa.Scripting.JavaScript.Expressions;

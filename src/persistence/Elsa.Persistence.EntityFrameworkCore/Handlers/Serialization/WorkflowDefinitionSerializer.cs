@@ -1,7 +1,6 @@
 using System.Text.Json;
 using Elsa.Contracts;
 using Elsa.Management.Serialization;
-using Elsa.Management.Serialization.Extensions;
 using Elsa.Persistence.Entities;
 using Elsa.Persistence.EntityFrameworkCore.Contracts;
 
