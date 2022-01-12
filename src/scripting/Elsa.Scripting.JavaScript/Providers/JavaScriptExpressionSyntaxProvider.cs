@@ -1,17 +1,13 @@
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using Elsa.Contracts;
 using Elsa.Management.Contracts;
 using Elsa.Management.Models;
-using Elsa.Models;
 using Elsa.Scripting.JavaScript.Expressions;
 
 namespace Elsa.Scripting.JavaScript.Providers;
 
 public class JavaScriptExpressionSyntaxProvider : IExpressionSyntaxProvider
 {
+    public const string SyntaxName = "JavaScript";
     private readonly IIdentityGenerator _identityGenerator;
 
     public JavaScriptExpressionSyntaxProvider(IIdentityGenerator identityGenerator)
@@ -26,43 +22,32 @@ public class JavaScriptExpressionSyntaxProvider : IExpressionSyntaxProvider
         return ValueTask.FromResult<IEnumerable<ExpressionSyntaxDescriptor>>(new[] { javaScript });
     }
 
-    private ExpressionSyntaxDescriptor CreateJavaScriptDescriptor() => CreateDescriptor<JavaScriptExpression>(
-        "JavaScript",
-        CreateJavaScriptExpression,
-        context => new JavaScriptExpressionReference(context.GetExpression<JavaScriptExpression>()),
-        expression => expression.Value);
-    
-    private ExpressionSyntaxDescriptor CreateDescriptor<TExpression>(
-        string syntax,
-        Func<ExpressionConstructorContext, IExpression> constructor,
-        Func<LocationReferenceConstructorContext, RegisterLocationReference> createLocationReference,
-        Func<TExpression, object?> expressionValue) =>
-        new()
+    private ExpressionSyntaxDescriptor CreateJavaScriptDescriptor() => new()
+    {
+        Syntax = SyntaxName,
+        Type = typeof(JavaScriptExpression),
+        CreateExpression = CreateJavaScriptExpression,
+        CreateLocationReference = context =>
         {
-            Syntax = syntax,
-            Type = typeof(TExpression),
-            CreateExpression = constructor,
-            CreateLocationReference = context =>
-            {
-                var reference = createLocationReference(context);
+            var reference = new JavaScriptExpressionReference(context.GetExpression<JavaScriptExpression>());
 
-                if (string.IsNullOrWhiteSpace(reference.Id))
-                    reference.Id = GenerateId();
+            if (string.IsNullOrWhiteSpace(reference.Id))
+                reference.Id = GenerateId();
 
-                return reference;
-            },
-            CreateSerializableObject = context => new
-            {
-                Type = syntax,
-                Value = expressionValue(context.GetExpression<TExpression>())
-            }
-        };
+            return reference;
+        },
+        CreateSerializableObject = context => new
+        {
+            Type = SyntaxName,
+            context.GetExpression<JavaScriptExpression>().Value
+        }
+    };
 
     private IExpression CreateJavaScriptExpression(ExpressionConstructorContext context)
     {
         var script = context.Element.TryGetProperty("value", out var p) ? p.ToString() : "";
         return new JavaScriptExpression(script);
     }
-    
+
     private string GenerateId() => _identityGenerator.GenerateId();
 }
