@@ -97,6 +97,7 @@ export class ElsaWorkflowDesigner {
   parentActivityOutcome?: string;
   addingActivity: boolean = false;
   activityDisplayContexts: Map<ActivityDesignDisplayContext> = null;
+  oldActivityDisplayContexts: Map<ActivityDesignDisplayContext> = null;
   selectedActivities: Map<ActivityModel> = {};
   ignoreCopyPasteActivities: boolean = false;
 
@@ -297,6 +298,7 @@ export class ElsaWorkflowDesigner {
     const activityDescriptors: Array<ActivityDescriptor> = state.activityDescriptors;
     let descriptor = activityDescriptors.find(x => x.type == activityModel.type);
     let descriptorExists = !!descriptor;
+    const oldContextData = (this.oldActivityDisplayContexts && this.oldActivityDisplayContexts[activityModel.activityId]) || {expanded: false};
 
     if (!descriptorExists)
       descriptor = this.createNotFoundActivityDescriptor(activityModel);
@@ -314,6 +316,7 @@ export class ElsaWorkflowDesigner {
       bodyDisplay: bodyDisplay,
       displayName: displayName,
       outcomes: [...activityModel.outcomes],
+      expanded: oldContextData.expanded
     };
 
     await eventBus.emit(EventTypes.ActivityDesignDisplaying, this, displayContext);
@@ -341,6 +344,7 @@ export class ElsaWorkflowDesigner {
 
   updateWorkflowModel(model: WorkflowModel, emitEvent: boolean = true) {
     this.workflowModel = this.cleanWorkflowModel(model);
+    this.oldActivityDisplayContexts = this.activityDisplayContexts;
     this.activityDisplayContexts = null;
 
     if (emitEvent)
@@ -567,7 +571,7 @@ export class ElsaWorkflowDesigner {
   }
 
   setEntities() {
-    this.graph = new dagreD3.graphlib.Graph().setGraph({});
+    this.graph = new dagreD3.graphlib.Graph().setGraph({ranksep: 30});
     this.graph.graph().rankdir = this.getLayoutDirection();
 
     const rootActivities = this.getRootActivities();
@@ -771,6 +775,15 @@ export class ElsaWorkflowDesigner {
       const activity = node.activity;
       const activityId = activity.activityId;
 
+      d3.select(node.elem)
+        .select('.expand').on('click', e => {
+          const activityContext = this.activityDisplayContexts[activityId];
+
+          if (activityContext) {
+            activityContext.expanded = !activityContext.expanded;
+          }
+      });
+
       d3.select(node.elem).on('click', e => {
         // If a parent activity was selected to connect to:
         if (this.mode == WorkflowDesignerMode.Edit && this.parentActivityId && this.parentActivityOutcome) {
@@ -883,31 +896,44 @@ export class ElsaWorkflowDesigner {
     const cssClass = !!this.selectedActivities[activity.activityId] ? `elsa-border-${selectedColor}-600` : `elsa-border-${activityBorderColor}-200 hover:elsa-border-${selectedColor}-600`;
     const displayName = displayContext != undefined ? displayContext.displayName : activity.displayName;
     const typeName = activity.type;
+    const expanded = displayContext && displayContext.expanded;
 
     return `<div id=${`activity-${activity.activityId}`}
     class="activity elsa-border-2 elsa-border-solid elsa-rounded elsa-bg-white elsa-text-left elsa-text-black elsa-text-lg elsa-select-none elsa-max-w-md elsa-shadow-sm elsa-relative ${cssClass}">
-      <div class="elsa-p-5">
-        <div class="elsa-flex elsa-justify-between elsa-space-x-8">
+      <div class="elsa-p-3">
+        <div class="elsa-flex elsa-justify-between elsa-space-x-4">
           <div class="elsa-flex-shrink-0">
           ${displayContext?.activityIcon || ''}
           </div>
           <div class="elsa-flex-1 elsa-font-medium elsa-leading-8 elsa-overflow-hidden">
-            <p class="elsa-overflow-ellipsis">${displayName}</p>
+            <p class="elsa-overflow-ellipsis elsa-text-base">${displayName}</p>
             ${typeName !== displayName ? `<p class="elsa-text-gray-400 elsa-text-sm">${typeName}</p>` : ''}
           </div>
-          <div class="context-menu-button-container">
-            ${activityContextMenuButton}
+          <div class="elsa--mt-2">
+            <div class="context-menu-button-container">
+              ${activityContextMenuButton}
+            </div>
+            <button type="button" class="expand elsa-ml-1 elsa-text-gray-400 elsa-rounded-full elsa-bg-transparent hover:elsa-text-gray-500 focus:elsa-outline-none focus:elsa-text-gray-500 focus:elsa-bg-gray-100 elsa-transition elsa-ease-in-out elsa-duration-150">
+              ${!expanded ? `<svg xmlns="http://www.w3.org/2000/svg" class="elsa-w-6 elsa-h-6 elsa-text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>` : ''}
+              ${expanded ? `<svg xmlns="http://www.w3.org/2000/svg" class="elsa-h-6 elsa-w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+              </svg>` : ''}
+            </button>
           </div>
         </div>
+        ${this.renderActivityBody(displayContext)}
+        </div>
       </div>
-      ${this.renderActivityBody(displayContext)}
       </div>`;
   }
 
   renderActivityBody(displayContext: ActivityDesignDisplayContext) {
-    return (
-      `<div class="elsa-border-t elsa-border-t-solid">
-          <div class="elsa-p-6 elsa-text-gray-400 elsa-text-sm">
+    if (displayContext && displayContext.expanded) {
+      return (
+        `<div class="elsa-border-t elsa-border-t-solid">
+          <div class="elsa-p-4 elsa-text-gray-400 elsa-text-sm">
             <div class="elsa-mb-2">${!!displayContext?.bodyDisplay ? displayContext.bodyDisplay : ''}</div>
             <div>
               <span class="elsa-inline-flex elsa-items-center elsa-px-2.5 elsa-py-0.5 elsa-rounded-full elsa-text-xs elsa-font-medium elsa-bg-gray-100 elsa-text-gray-500">
@@ -919,7 +945,10 @@ export class ElsaWorkflowDesigner {
             </div>
           </div>
       </div>`
-    );
+      );
+    }
+
+    return '';
   }
 
   render() {
