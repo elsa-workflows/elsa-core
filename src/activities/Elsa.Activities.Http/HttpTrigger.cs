@@ -2,13 +2,12 @@
 using System.Linq;
 using System.Net.Http;
 using Elsa.Attributes;
-using Elsa.Contracts;
 using Elsa.Management.Models;
 using Elsa.Models;
 
 namespace Elsa.Activities.Http;
 
-public class HttpTrigger : Trigger
+public class HttpTrigger : TriggerActivity
 {
     [Input] public Input<string> Path { get; set; } = default!;
 
@@ -20,32 +19,14 @@ public class HttpTrigger : Trigger
 
     [Output] public Output<HttpRequestModel>? Result { get; set; }
 
-    protected override IEnumerable<object> GetHashInputs(TriggerIndexingContext context)
+    protected override IEnumerable<object> GetHashInputs(TriggerIndexingContext context) => GetHashInputs(context.ExpressionExecutionContext);
+    protected override void Execute(ActivityExecutionContext context) => context.SetBookmarks(GetHashInputs(context.ExpressionExecutionContext));
+
+    private IEnumerable<object> GetHashInputs(ExpressionExecutionContext context)
     {
-        var path = context.ExpressionExecutionContext.Get(Path);
-        var methods = context.ExpressionExecutionContext.Get(SupportedMethods);
+        // Generate a bookmark hash for path and selected methods.
+        var path = context.Get(Path);
+        var methods = context.Get(SupportedMethods);
         return methods!.Select(x => (path!.ToLowerInvariant(), x.ToLowerInvariant())).Cast<object>().ToArray();
-    }
-
-    protected override void Execute(ActivityExecutionContext context)
-    {
-        var bookmarks = CreateBookmarks(context).ToList();
-        context.SetBookmarks(bookmarks);
-    }
-
-    private IEnumerable<Bookmark> CreateBookmarks(ActivityExecutionContext context)
-    {
-        var path = context.Get(Path)!;
-        var methods = context.Get(SupportedMethods)!;
-        var hasher = context.GetRequiredService<IHasher>();
-        var identityGenerator = context.GetRequiredService<IIdentityGenerator>();
-
-        foreach (var method in methods)
-        {
-            var hashInput = (path.ToLowerInvariant(), method.ToLowerInvariant());
-            var hash = hasher.Hash(hashInput);
-            var bookmarkId = identityGenerator.GenerateId();
-            yield return new Bookmark(bookmarkId, NodeType, hash, Id, context.Id);
-        }
     }
 }

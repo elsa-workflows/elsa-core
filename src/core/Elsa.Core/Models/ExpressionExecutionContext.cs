@@ -1,9 +1,14 @@
+using Microsoft.Extensions.DependencyInjection;
+
 namespace Elsa.Models;
 
 public class ExpressionExecutionContext
 {
-    public ExpressionExecutionContext(Register register, ExpressionExecutionContext? parentContext)
+    private readonly IServiceProvider _serviceProvider;
+
+    public ExpressionExecutionContext(IServiceProvider serviceProvider, Register register, ExpressionExecutionContext? parentContext)
     {
+        _serviceProvider = serviceProvider;
         Register = register;
         ParentContext = parentContext;
     }
@@ -31,5 +36,6 @@ public class ExpressionExecutionContext
         Set(output.LocationReference, convertedValue);
     }
 
+    public T GetRequiredService<T>() where T : notnull => _serviceProvider.GetRequiredService<T>();
     private RegisterLocation? GetLocationInternal(RegisterLocationReference locationReference) => Register.TryGetLocation(locationReference.Id, out var location) ? location : ParentContext?.GetLocationInternal(locationReference);
 }

@@ -47,18 +47,35 @@ public class ActivityExecutionContext
             ScheduleActivity(activity, completionCallback);
     }
 
+    public void SetBookmarks(IEnumerable<object> hashInputs, IDictionary<string, object?>? data = default, ExecuteActivityDelegate? callback = default)
+    {
+        foreach (var hashInput in hashInputs)
+            SetBookmark(hashInput, data, callback);
+    }
+
     public void SetBookmarks(IEnumerable<Bookmark> bookmarks) => _bookmarks.AddRange(bookmarks);
     public void SetBookmark(Bookmark bookmark) => _bookmarks.Add(bookmark);
 
-    public void SetBookmark(string? hash, IDictionary<string, object?>? data = default, ExecuteActivityDelegate? callback = default) =>
+    public void SetBookmark(object? hashInput, IDictionary<string, object?>? data = default, ExecuteActivityDelegate? callback = default)
+    {
+        var hasher = GetRequiredService<IHasher>();
+        var hash = hashInput != null ? hasher.Hash(hashInput) : default;
+        SetBookmark(hash, data, callback);
+    }
+
+    public void SetBookmark(string? hash, IDictionary<string, object?>? data = default, ExecuteActivityDelegate? callback = default)
+    {
+        var identityGenerator = GetRequiredService<IIdentityGenerator>();
+
         SetBookmark(new Bookmark(
-            Guid.NewGuid().ToString(),
+            identityGenerator.GenerateId(),
             Activity.NodeType,
             hash,
             Activity.Id,
             Id,
             data ?? new Dictionary<string, object?>(),
             callback?.Method.Name));
+    }
 
     public T? GetProperty<T>(string key) => Properties.TryGetValue(key, out var value) ? (T?)value : default;
     public void SetProperty<T>(string key, T value) => Properties[key] = value;

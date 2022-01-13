@@ -45,9 +45,9 @@ public class TriggerDescriber : ITriggerDescriber
             InputProperties = DescribeInputProperties(inputProperties).ToList(),
             Constructor = context =>
             {
-                var activity = _activityFactory.Create(triggerType, context);
-                activity.TriggerType = fullTypeName;
-                return activity;
+                var trigger = _activityFactory.Create(triggerType, context);
+                trigger.NodeType = fullTypeName;
+                return trigger;
             }
         };
 

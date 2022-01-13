@@ -2,12 +2,14 @@ using Elsa.Activities.Console;
 using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Http;
 using Elsa.Activities.Http.Extensions;
+using Elsa.Activities.Scheduling;
 using Elsa.Activities.Workflows;
 using Elsa.Api.Extensions;
 using Elsa.Extensions;
 using Elsa.Management.Contracts;
 using Elsa.Management.Extensions;
 using Elsa.Mediator.Extensions;
+using Elsa.Modules.Quartz.Extensions;
 using Elsa.Persistence.EntityFrameworkCore.Extensions;
 using Elsa.Persistence.EntityFrameworkCore.Sqlite;
 using Elsa.Persistence.Middleware.WorkflowExecution;
@@ -52,16 +54,21 @@ services
     .AddActivity<ReadLine>()
     .AddActivity<If>()
     .AddActivity<HttpTrigger>()
-    .AddActivity<Flowchart>();
+    .AddActivity<Flowchart>()
+    ;
 
 // Register available triggers.
 services
-    .AddTrigger<HttpTrigger>();
+    .AddTrigger<HttpTrigger>()
+    .AddTrigger<Timer>();
 
 // Register scripting languages.
 services
     .AddJavaScriptExpressions()
     .AddLiquidExpressions();
+
+// Register modules.
+services.AddQuartzModule(); // Provides a scheduler implementation for Timer activities.
 
 // Configure middleware pipeline.
 var app = builder.Build();

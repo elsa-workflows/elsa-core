@@ -1,16 +1,22 @@
 using Elsa.Contracts;
-using Elsa.Helpers;
 
 namespace Elsa.Models;
 
-public class Trigger : ITrigger
+public class TriggerActivity : Activity, ITrigger
 {
-    protected Trigger() => NodeType = TypeNameHelper.GenerateTypeName(GetType());
-    protected Trigger(string triggerType) => NodeType = triggerType;
+    protected TriggerActivity()
+    {
+    }
 
-    public string Id { get; set; } = default!;
-    public string NodeType { get; set; }
-    public IDictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
+    protected TriggerActivity(string triggerType) : base(triggerType)
+    {
+    }
+
+    public string TriggerType
+    {
+        get => NodeType;
+        set => NodeType = value;
+    }
 
     public virtual ValueTask<IEnumerable<object>> GetHashInputsAsync(TriggerIndexingContext context, CancellationToken cancellationToken = default)
     {

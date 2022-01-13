@@ -17,6 +17,7 @@ public class TriggerIndexer : ITriggerIndexer
     private readonly IWorkflowRegistry _workflowRegistry;
     private readonly IExpressionEvaluator _expressionEvaluator;
     private readonly ICommandSender _mediator;
+    private readonly IServiceProvider _serviceProvider;
     private readonly IHasher _hasher;
     private readonly ILogger _logger;
 
@@ -24,12 +25,14 @@ public class TriggerIndexer : ITriggerIndexer
         IWorkflowRegistry workflowRegistry,
         IExpressionEvaluator expressionEvaluator,
         ICommandSender mediator,
+        IServiceProvider serviceProvider,
         IHasher hasher,
         ILogger<TriggerIndexer> logger)
     {
         _workflowRegistry = workflowRegistry;
         _expressionEvaluator = expressionEvaluator;
         _mediator = mediator;
+        _serviceProvider = serviceProvider;
         _hasher = hasher;
         _logger = logger;
     }
@@ -79,7 +82,7 @@ public class TriggerIndexer : ITriggerIndexer
         var inputs = trigger.GetInputs();
         var assignedInputs = inputs.Where(x => x.LocationReference != null!).ToList();
         var register = context.GetOrCreateRegister(trigger);
-        var expressionExecutionContext = new ExpressionExecutionContext(register, default);
+        var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, register, default);
 
         // Evaluate trigger inputs.
         foreach (var input in assignedInputs)
@@ -121,9 +124,9 @@ public class TriggerIndexer : ITriggerIndexer
         }
         catch (Exception e)
         {
-            _logger.LogWarning( e, "Failed to get hash inputs");
+            _logger.LogWarning(e, "Failed to get hash inputs");
         }
 
-        return Array.Empty<object>() ;
+        return Array.Empty<object>();
     }
 }

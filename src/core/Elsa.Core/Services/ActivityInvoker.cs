@@ -6,10 +6,12 @@ namespace Elsa.Services;
 public class ActivityInvoker : IActivityInvoker
 {
     private readonly IActivityExecutionPipeline _pipeline;
+    private readonly IServiceProvider _serviceProvider;
 
-    public ActivityInvoker(IActivityExecutionPipeline pipeline)
+    public ActivityInvoker(IActivityExecutionPipeline pipeline, IServiceProvider serviceProvider)
     {
         _pipeline = pipeline;
+        _serviceProvider = serviceProvider;
     }
 
     public async Task InvokeAsync(
@@ -25,7 +27,7 @@ public class ActivityInvoker : IActivityInvoker
 
         // Setup an activity execution context.
         var register = new Register();
-        var expressionExecutionContext = new ExpressionExecutionContext(register, parentActivityExecutionContext?.ExpressionExecutionContext);
+        var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, register, parentActivityExecutionContext?.ExpressionExecutionContext);
         var activityExecutionContext = new ActivityExecutionContext(workflowExecutionContext, parentActivityExecutionContext, expressionExecutionContext, activity, cancellationToken);
 
         // Declare locations.

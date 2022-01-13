@@ -9,6 +9,13 @@ namespace Elsa.Services;
 
 public class WorkflowStateSerializer : IWorkflowStateSerializer
 {
+    private readonly IServiceProvider _serviceProvider;
+
+    public WorkflowStateSerializer(IServiceProvider serviceProvider)
+    {
+        _serviceProvider = serviceProvider;
+    }
+    
     public WorkflowState ReadState(WorkflowExecutionContext workflowExecutionContext)
     {
         var state = new WorkflowState
@@ -119,7 +126,7 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
         {
             var activity = workflowExecutionContext.FindActivityById(activityExecutionContextState.ScheduledActivityId);
             var register = new Register(activityExecutionContextState.Register.Locations);
-            var expressionExecutionContext = new ExpressionExecutionContext(register, default);
+            var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, register, default);
             var properties = activityExecutionContextState.Properties;
             var activityExecutionContext = new ActivityExecutionContext(workflowExecutionContext, default, expressionExecutionContext, activity, workflowExecutionContext.CancellationToken)
             {
