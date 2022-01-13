@@ -105,10 +105,15 @@ namespace Elsa.Core.IntegrationTests.Workflows
                 .Setup(x => x.GetTopicReceiverAsync(It.IsAny<string>(), It.IsAny<string>(), default))
                 .Returns(Task.FromResult(ReceiverClient.Object));
 
-            ServiceBusBluePrint = WorkflowBuilder.Build<ServiceBusWokflow>();
+            ServiceBusBluePrint = WorkflowBuilder.Build<ServiceBusWorkflow>();
+            
             WorkflowRegistryMoq
                 .Setup(x => x.ListActiveAsync(It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult((new List<IWorkflowBlueprint>() { ServiceBusBluePrint }).AsEnumerable()));
+                .Returns(Task.FromResult(new List<IWorkflowBlueprint>() { ServiceBusBluePrint }.AsEnumerable()));
+            
+            WorkflowRegistryMoq
+                .Setup(x => x.GetAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<VersionOptions>(), It.IsAny<CancellationToken>(), false))
+                .Returns(Task.FromResult(ServiceBusBluePrint)!);
 
         }
 
@@ -119,11 +124,15 @@ namespace Elsa.Core.IntegrationTests.Workflows
             
             var workflowInstance = runWorkflowResult.WorkflowInstance!;
 
+            // TODO: Figure out a way to wait until Rebus processed the dispatched `ExecuteWorkflowInstanceRequest` message (which happens asynchronously in-memory).
+            // Until then, yielding control here and waiting for a few seconds works too. 
+            await Task.Delay(TimeSpan.FromSeconds(2));
+
             Assert.Equal(WorkflowStatus.Finished, workflowInstance.WorkflowStatus);
         }
     }
 
-    public class ServiceBusWokflow : IWorkflow
+    public class ServiceBusWorkflow : IWorkflow
     {
         public void Build(IWorkflowBuilder builder)
         {

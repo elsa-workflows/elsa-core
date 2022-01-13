@@ -10,8 +10,8 @@ using Microsoft.Azure.ServiceBus.Core;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Elsa.Activities.AzureServiceBus.ActivityExecutionResults;
 using NodaTime;
-using System.Threading;
 
 namespace Elsa.Activities.AzureServiceBus
 {
@@ -113,32 +113,6 @@ namespace Elsa.Activities.AzureServiceBus
                     message.UserProperties.Add(props.Key, props.Value);
 
             return message;
-        }
-    }
-    public class ServiceBusActionResult : ActivityExecutionResult
-    {
-        public ServiceBusActionResult(ISenderClient sender, Message message)
-        {
-            Sender = sender;
-            Message = message;
-        }
-
-        public ISenderClient Sender { get; }
-        public Message Message { get; }
-
-        protected override void Execute(ActivityExecutionContext activityExecutionContext)
-        {
-            var workflowInstanceId = activityExecutionContext.WorkflowExecutionContext.WorkflowInstance.Id;
-            var activityId = activityExecutionContext.ActivityBlueprint.Id;
-            var tenantId = activityExecutionContext.WorkflowExecutionContext.WorkflowBlueprint.TenantId;
-
-
-            async ValueTask ScheduleMessageAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
-            {
-                await Sender.SendAsync(Message);
-            }
-
-            activityExecutionContext.WorkflowExecutionContext.RegisterTask(ScheduleMessageAsync);
         }
     }
 }
