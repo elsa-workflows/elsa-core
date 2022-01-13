@@ -149,19 +149,18 @@ Version 2.0
 - [x] State Machines
 - [ ] Test Workflows from Designer
 - [ ] Debug Workflows from Designer
-- [ ] Sagas
 - [ ] Localization Support
 - [ ] Lucene Indexing
 
-Version 3.0 (engine redesign)
+Version 3.0 (engine + designer redesign)
 
-- [ ] Programming model similar to WF
-- [ ] Sequential Workflows
-- [ ] Flowchart Workflows
+- [x] Programming model similar to WF
+- [x] Sequential Workflows
+- [x] Flowchart Workflows
 - [ ] State Machine Workflows
 - [ ] Sagas
-- [ ] BPMS Workflows
-- [ ] Actor Model for Distributed Workflows
+- [ ] BPMN Workflows
+- [x] Actor Model for Distributed Workflows
 
 ## Workflow Designer
 

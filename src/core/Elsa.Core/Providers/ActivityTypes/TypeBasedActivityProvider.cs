@@ -56,7 +56,7 @@ namespace Elsa.Providers.ActivityTypes
                 Type = activityType,
                 Description = info.Description,
                 DisplayName = info.DisplayName,
-                IsBrowsable =  activityType.GetCustomAttribute<BrowsableAttribute>()?.Browsable ?? true,
+                IsBrowsable =  activityType.GetCustomAttribute<BrowsableAttribute>(false)?.Browsable ?? true,
                 ActivateAsync = async context => await ActivateActivity(context, activityType),
                 DescribeAsync = async () => (await _describesActivityType.DescribeAsync(activityType, cancellationToken))!, 
                 CanExecuteAsync = async (context, instance) => await instance.CanExecuteAsync(context),
