@@ -909,17 +909,10 @@ export class ElsaWorkflowDesigner {
             <p class="elsa-overflow-ellipsis elsa-text-base">${displayName}</p>
             ${typeName !== displayName ? `<p class="elsa-text-gray-400 elsa-text-sm">${typeName}</p>` : ''}
           </div>
-          <div>
+          <div class="elsa--mt-2">
             <div class="context-menu-button-container">
               ${activityContextMenuButton}
             </div>
-          </div>
-        </div>
-        <div class="elsa-flex elsa-justify-between">
-          <p class="elsa-overflow-ellipsis elsa-text-xs elsa-leading-6 elsa-text-gray-400">
-            ${displayContext != undefined ? displayContext.activityModel.activityId : ''}
-          </p>
-          <span class="elsa-w-8 elsa-h-6 elsa-ml-2">
             <button type="button" class="expand elsa-ml-1 elsa-text-gray-400 elsa-rounded-full elsa-bg-transparent hover:elsa-text-gray-500 focus:elsa-outline-none focus:elsa-text-gray-500 focus:elsa-bg-gray-100 elsa-transition elsa-ease-in-out elsa-duration-150">
               ${!expanded ? `<svg xmlns="http://www.w3.org/2000/svg" class="elsa-w-6 elsa-h-6 elsa-text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -928,7 +921,7 @@ export class ElsaWorkflowDesigner {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
               </svg>` : ''}
             </button>
-          </span>
+          </div>
         </div>
         ${this.renderActivityBody(displayContext)}
         </div>
@@ -962,7 +955,7 @@ export class ElsaWorkflowDesigner {
     return (
       <Host class="workflow-canvas elsa-flex-1 elsa-flex" ref={el => (this.el = el)}>
         {this.mode == WorkflowDesignerMode.Test ?
-          <div>activityId: string
+          <div>
             <div id="left" style={{border:`4px solid orange`, position:`fixed`, zIndex:`10`, height: `calc(100vh - 64px)`, width:`4px`, top:`64`, bottom:`0`, left:`0`}}/>
             <div id="right" style={{border:`4px solid orange`, position:`fixed`, zIndex:`10`, height: `calc(100vh - 64px)`, width:`4px`, top:`64`, bottom:`0`, right:`0`}}/>
             <div id="top" style={{border:`4px solid orange`, position:`fixed`, zIndex:`10`, height:`4px`, left:`0`, right:`0`, top:`30`}}/>
