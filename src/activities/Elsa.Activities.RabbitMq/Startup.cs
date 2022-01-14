@@ -10,7 +10,9 @@ namespace Elsa.Activities.RabbitMq
     {
         public override void ConfigureElsa(ElsaOptionsBuilder elsa, IConfiguration configuration)
         {
-            elsa.AddRabbitMqActivities();
+            var multitenancyEnabled = configuration.GetValue<bool>("Elsa:MultiTenancy");
+
+            elsa.AddRabbitMqActivities(options => options.MultitenancyEnabled = multitenancyEnabled);
         }
     }
 }

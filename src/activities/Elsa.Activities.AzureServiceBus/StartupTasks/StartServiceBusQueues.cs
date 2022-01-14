@@ -1,4 +1,4 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.AzureServiceBus.Services;
 using Elsa.Services;

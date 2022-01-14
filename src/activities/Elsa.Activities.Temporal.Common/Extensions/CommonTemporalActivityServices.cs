@@ -5,7 +5,6 @@ using Elsa.Activities.Temporal.Common.HostedServices;
 using Elsa.Activities.Temporal.Common.Options;
 using Elsa.HostedServices;
 using Elsa.Options;
-using Elsa.Runtime;
 using Microsoft.Extensions.DependencyInjection;
 
 // ReSharper disable once CheckNamespace
@@ -31,9 +30,13 @@ namespace Elsa.Activities.Temporal
             var timersOptions = new TimersOptions(options.Services);
             configure?.Invoke(timersOptions);
 
+            if (options.ElsaOptions.MultitenancyEnabled)
+                options.Services.AddHostedService<ScopedBackgroundService<StartJobs>>();
+            else
+                options.Services.AddHostedService<ScopedBackgroundService<MultitenantStartJobs>>();
+
             options.Services
                 .AddNotificationHandlers(typeof(RemoveScheduledTriggers))
-                .AddHostedService<ScopedBackgroundService<StartJobs>>()
                 .AddBookmarkProvider<TimerBookmarkProvider>()
                 .AddBookmarkProvider<CronBookmarkProvider>()
                 .AddBookmarkProvider<StartAtBookmarkProvider>();

@@ -1,4 +1,5 @@
 using System;
+using Elsa.Abstractions.MultiTenancy;
 using Elsa.Activities.Webhooks;
 using Elsa.Activities.Webhooks.Persistence.Decorators;
 using Elsa.Attributes;
@@ -20,6 +21,14 @@ namespace Elsa.Webhooks.Persistence.YesSql
         protected override string ProviderName => "Sqlite";
         protected override string GetDefaultConnectionString() => "Data Source=elsa.yessql.db;Cache=Shared";
         protected override void Configure(global::YesSql.IConfiguration options, string connectionString) => options.UseSqLite(connectionString);
+        protected override void ConfigureForMultitenancy(global::YesSql.IConfiguration options, IServiceProvider serviceProvider)
+        {
+            var tenantProvider = serviceProvider.GetRequiredService<ITenantProvider>();
+
+            var connectionString = tenantProvider.GetCurrentTenant().ConnectionString;
+
+            options.UseSqLite(connectionString);
+        }
     }
 
     [Feature("Webhooks:YesSql:SqlServer")]
@@ -27,6 +36,14 @@ namespace Elsa.Webhooks.Persistence.YesSql
     {
         protected override string ProviderName => "SqlServer";
         protected override void Configure(global::YesSql.IConfiguration options, string connectionString) => options.UseSqlServer(connectionString);
+        protected override void ConfigureForMultitenancy(global::YesSql.IConfiguration options, IServiceProvider serviceProvider)
+        {
+            var tenantProvider = serviceProvider.GetRequiredService<ITenantProvider>();
+
+            var connectionString = tenantProvider.GetCurrentTenant().ConnectionString;
+
+            options.UseSqlServer(connectionString);
+        }
     }
 
     [Feature("Webhooks:YesSql:MySql")]
@@ -34,6 +51,14 @@ namespace Elsa.Webhooks.Persistence.YesSql
     {
         protected override string ProviderName => "MySql";
         protected override void Configure(global::YesSql.IConfiguration options, string connectionString) => options.UseMySql(connectionString);
+        protected override void ConfigureForMultitenancy(global::YesSql.IConfiguration options, IServiceProvider serviceProvider)
+        {
+            var tenantProvider = serviceProvider.GetRequiredService<ITenantProvider>();
+
+            var connectionString = tenantProvider.GetCurrentTenant().ConnectionString;
+
+            options.UseMySql(connectionString);
+        }
     }
 
     [Feature("Webhooks:YesSql:PostgreSql")]
@@ -41,6 +66,14 @@ namespace Elsa.Webhooks.Persistence.YesSql
     {
         protected override string ProviderName => "PostgreSql";
         protected override void Configure(global::YesSql.IConfiguration options, string connectionString) => options.UsePostgreSql(connectionString);
+        protected override void ConfigureForMultitenancy(global::YesSql.IConfiguration options, IServiceProvider serviceProvider)
+        {
+            var tenantProvider = serviceProvider.GetRequiredService<ITenantProvider>();
+
+            var connectionString = tenantProvider.GetCurrentTenant().ConnectionString;
+
+            options.UsePostgreSql(connectionString);
+        }
     }
 
     public abstract class YesSqlStartupBase : StartupBase
@@ -50,23 +83,32 @@ namespace Elsa.Webhooks.Persistence.YesSql
         public override void ConfigureElsa(ElsaOptionsBuilder elsa, IConfiguration configuration)
         {
             var services = elsa.Services;
-            var section = configuration.GetSection($"Elsa:Features:Webhooks");
-            var connectionStringName = section.GetValue<string>("ConnectionStringIdentifier");
-            var connectionString = section.GetValue<string>("ConnectionString");
-
-            if (string.IsNullOrWhiteSpace(connectionString))
-            {
-                if (string.IsNullOrWhiteSpace(connectionStringName))
-                    connectionStringName = ProviderName;
-
-                connectionString = configuration.GetConnectionString(connectionStringName);
-            }
-
-            if (string.IsNullOrWhiteSpace(connectionString))
-                connectionString = GetDefaultConnectionString();
-            
             var webhookOptionsBuilder = new WebhookOptionsBuilder(services);
-            webhookOptionsBuilder.UseWebhookYesSqlPersistence(options => Configure(options, connectionString));
+
+            var multiTenancyEnabled = configuration.GetValue<bool>("Elsa:MultiTenancy");
+
+            if (multiTenancyEnabled)
+                webhookOptionsBuilder.UseWebhookYesSqlPersistenceWithMultitenancy((serviceProvider, options) => ConfigureForMultitenancy(options, serviceProvider));
+            else
+            {
+                var section = configuration.GetSection($"Elsa:Features:Webhooks");
+                var connectionStringName = section.GetValue<string>("ConnectionStringIdentifier");
+                var connectionString = section.GetValue<string>("ConnectionString");
+
+                if (string.IsNullOrWhiteSpace(connectionString))
+                {
+                    if (string.IsNullOrWhiteSpace(connectionStringName))
+                        connectionStringName = ProviderName;
+
+                    connectionString = configuration.GetConnectionString(connectionStringName);
+                }
+
+                if (string.IsNullOrWhiteSpace(connectionString))
+                    connectionString = GetDefaultConnectionString();
+
+                
+                webhookOptionsBuilder.UseWebhookYesSqlPersistence(options => Configure(options, connectionString));
+            }
 
             services.AddScoped(sp => webhookOptionsBuilder.WebhookOptions.WebhookDefinitionStoreFactory(sp));
             services.Decorate<IWebhookDefinitionStore, InitializingWebhookDefinitionStore>();
@@ -75,5 +117,6 @@ namespace Elsa.Webhooks.Persistence.YesSql
 
         protected virtual string GetDefaultConnectionString() => throw new Exception($"No connection string specified for the {ProviderName} provider");
         protected abstract void Configure(global::YesSql.IConfiguration options, string connectionString);
+        protected abstract void ConfigureForMultitenancy(global::YesSql.IConfiguration options, IServiceProvider serviceProvider);
     }
 }

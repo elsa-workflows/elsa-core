@@ -32,8 +32,8 @@ namespace Elsa.Activities.AzureServiceBus.Extensions
                 .AddSingleton<IQueueMessageReceiverClientFactory>(sp => sp.GetRequiredService<BusClientFactory>())
                 .AddSingleton<ITopicMessageSenderFactory>(sp => sp.GetRequiredService<BusClientFactory>())
                 .AddSingleton<ITopicMessageReceiverFactory>(sp => sp.GetRequiredService<BusClientFactory>())
-                .AddSingleton<IServiceBusQueuesStarter, ServiceBusQueuesStarter>()
-                .AddSingleton<IServiceBusTopicsStarter, ServiceBusTopicsStarter>()
+                .AddSingleton(CreateServiceBusQueuesStarter)
+                .AddSingleton(CreateServiceBusTopicsStarter)
                 .AddSingleton<Scoped<IWorkflowLaunchpad>>()
                 .AddStartupTask<StartServiceBusQueues>()
                 .AddStartupTask<StartServiceBusTopics>()
@@ -69,6 +69,28 @@ namespace Elsa.Activities.AzureServiceBus.Extensions
             var options = serviceProvider.GetRequiredService<IOptions<AzureServiceBusOptions>>().Value;
             var connectionString = options.ConnectionString;
             return new ManagementClient(connectionString);
+        }
+
+        private static IServiceBusQueuesStarter CreateServiceBusQueuesStarter(IServiceProvider serviceProvider)
+        {
+            var options = serviceProvider.GetRequiredService<IOptions<AzureServiceBusOptions>>().Value;
+            var multitenancyEnabled = options.MultitenancyEnabled;
+
+            if (multitenancyEnabled)
+                return ActivatorUtilities.GetServiceOrCreateInstance<MultitenantServiceBusQueuesStarter>(serviceProvider);
+            else
+                return ActivatorUtilities.GetServiceOrCreateInstance<ServiceBusQueuesStarter>(serviceProvider);
+        }
+
+        private static IServiceBusTopicsStarter CreateServiceBusTopicsStarter(IServiceProvider serviceProvider)
+        {
+            var options = serviceProvider.GetRequiredService<IOptions<AzureServiceBusOptions>>().Value;
+            var multitenancyEnabled = options.MultitenancyEnabled;
+
+            if (multitenancyEnabled)
+                return ActivatorUtilities.GetServiceOrCreateInstance<MultitenantServiceBusTopicsStarter>(serviceProvider);
+            else
+                return ActivatorUtilities.GetServiceOrCreateInstance<ServiceBusTopicsStarter>(serviceProvider);
         }
     }
 }

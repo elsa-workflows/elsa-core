@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Elsa.Services;
 using Elsa.WorkflowSettings.Persistence.EntityFramework.Core.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.WorkflowSettings.Persistence.EntityFramework.Core.StartupTasks
 {
@@ -11,18 +12,27 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.Core.StartupTasks
     /// </summary>
     public class RunMigrations : IStartupTask
     {
-        private readonly IWorkflowSettingsContextFactory _dbContextFactory;
+        protected readonly IServiceScopeFactory _scopeFactory;
 
-        public RunMigrations(IWorkflowSettingsContextFactory dbContextFactoryFactory)
+        public RunMigrations(IServiceScopeFactory scopeFactory)
         {
-            _dbContextFactory = dbContextFactoryFactory;
+            _scopeFactory = scopeFactory;
         }
 
         public int Order => 0;
 
-        public async Task ExecuteAsync(CancellationToken cancellationToken = default)
+        public virtual async Task ExecuteAsync(CancellationToken cancellationToken = default)
         {
-            await using var dbContext = _dbContextFactory.CreateDbContext();
+           await ExecuteInternalAsync(cancellationToken);
+        }
+
+        protected async Task ExecuteInternalAsync(CancellationToken cancellationToken = default, IServiceScope? serviceScope = default)
+        {
+            using var scope = serviceScope ?? _scopeFactory.CreateScope();
+
+            var dbContextFactory = scope.ServiceProvider.GetRequiredService<IWorkflowSettingsContextFactory>();
+
+            await using var dbContext = dbContextFactory.CreateDbContext();
             await dbContext.Database.MigrateAsync(cancellationToken);
             await dbContext.DisposeAsync();
         }

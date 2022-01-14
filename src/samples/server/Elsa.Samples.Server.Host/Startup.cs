@@ -83,8 +83,9 @@ namespace Elsa.Samples.Server.Host
                     .AddWorkflowsFrom<Startup>()
                     .AddFeatures(startups, Configuration)
                     .ConfigureWorkflowChannels(options => elsaSection.GetSection("WorkflowChannels").Bind(options))
+                    .AddMultitenancy(Configuration)
                 )
-                .AddRetentionServices(options => elsaSection.GetSection("Retention").Bind(options));
+                .AddRetentionServices(options => elsaSection.GetSection("Retention").Bind(options), Configuration);
 
             // Elsa API endpoints.
             services
@@ -118,7 +119,7 @@ namespace Elsa.Samples.Server.Host
                 .UseElsaFeatures()
                 .UseRouting()
                 .UseEndpoints(endpoints => { endpoints.MapControllers(); })
-                .MapWorkflowTestHub()
+                .MapWorkflowTestHub(Configuration)
                 ;
         }
         

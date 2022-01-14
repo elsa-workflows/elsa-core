@@ -1,7 +1,6 @@
 using Elsa.Activities.Http.Middleware;
-using Elsa.Activities.Http.Options;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.AspNetCore.Builder
@@ -10,7 +9,13 @@ namespace Microsoft.AspNetCore.Builder
     {
         public static IApplicationBuilder UseHttpActivities(this IApplicationBuilder app)
         {
-            return app.UseMiddleware<HttpEndpointMiddleware>();
+            var configuration = app.ApplicationServices.GetRequiredService<IConfiguration>();
+            var multiTenancyEnabled = configuration.GetValue<bool>("Elsa:MultiTenancy");
+
+            if (multiTenancyEnabled)
+                return app.UseMiddleware<MultitenantHttpEndpointMiddleware>();
+            else
+                return app.UseMiddleware<HttpEndpointMiddleware>();
         }
     }
 }

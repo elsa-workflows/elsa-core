@@ -1,8 +1,8 @@
-using Elsa.Activities.RabbitMq.Configuration;
-using Rebus.Messages;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.RabbitMq.Configuration;
+using Rebus.Messages;
 
 namespace Elsa.Activities.RabbitMq.Services
 {

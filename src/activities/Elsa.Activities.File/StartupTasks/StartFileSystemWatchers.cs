@@ -1,18 +1,15 @@
-using Elsa.Activities.File.Services;
-using Elsa.Services;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.File.Services;
+using Elsa.Services;
 
 namespace Elsa.Activities.File.StartupTasks
 {
     public class StartFileSystemWatchers : IStartupTask
     {
-        private readonly FileSystemWatchersStarter _starter;
+        private readonly IFileSystemWatchersStarter _starter;
 
-        public StartFileSystemWatchers(FileSystemWatchersStarter starter) => _starter = starter;
+        public StartFileSystemWatchers(IFileSystemWatchersStarter starter) => _starter = starter;
 
         public int Order => 2000;
 

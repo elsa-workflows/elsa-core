@@ -1,4 +1,4 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
@@ -10,6 +10,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
     [ApiController]
     [ApiVersion("1")]
     [Route("v{apiVersion:apiVersion}/workflow-definitions/{id}")]
+    [Route("{tenant}/v{apiVersion:apiVersion}/workflow-definitions/{id}")]
     [Produces("application/json")]
     public class Delete : ControllerBase
     {

@@ -19,11 +19,13 @@ namespace Elsa.Decorators
 {
     public class CachingWorkflowRegistry : IWorkflowRegistry, INotificationHandler<WorkflowDefinitionSaved>, INotificationHandler<WorkflowDefinitionDeleted>
     {
-        public const string CacheKey = "WorkflowRegistry";
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IMemoryCache _memoryCache;
         private readonly ICacheSignal _cacheSignal;
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
+        protected virtual string GenerateCacheKey() => CacheKey;
+
+        public const string CacheKey = "WorkflowRegistry";
 
         public CachingWorkflowRegistry(
             IWorkflowRegistry workflowRegistry,
@@ -35,7 +37,7 @@ namespace Elsa.Decorators
             _memoryCache = memoryCache;
             _cacheSignal = cacheSignal;
             _workflowInstanceStore = workflowInstanceStore;
-        }
+    }
 
         public async Task<IEnumerable<IWorkflowBlueprint>> ListAsync(CancellationToken cancellationToken) => await ListInternalAsync(cancellationToken);
         public async Task<IEnumerable<IWorkflowBlueprint>> ListActiveAsync(CancellationToken cancellationToken = default) => await ListActiveInternalAsync(cancellationToken).ToListAsync(cancellationToken);
@@ -57,9 +59,11 @@ namespace Elsa.Decorators
 
         private async Task<ICollection<IWorkflowBlueprint>> ListInternalAsync(CancellationToken cancellationToken)
         {
-            return await _memoryCache.GetOrCreateAsync(CacheKey, async entry =>
+            var cacheKey = GenerateCacheKey();
+
+            return await _memoryCache.GetOrCreateAsync(cacheKey, async entry =>
             {
-                entry.Monitor(_cacheSignal.GetToken(CacheKey));
+                entry.Monitor(_cacheSignal.GetToken(cacheKey));
                 return await _workflowRegistry.ListAsync(cancellationToken).ToList();
             });
         }
@@ -89,13 +93,13 @@ namespace Elsa.Decorators
 
         Task INotificationHandler<WorkflowDefinitionSaved>.Handle(WorkflowDefinitionSaved notification, CancellationToken cancellationToken)
         {
-            _cacheSignal.TriggerTokenAsync(CacheKey);
+            _cacheSignal.TriggerTokenAsync(GenerateCacheKey());
             return Task.CompletedTask;
         }
 
         Task INotificationHandler<WorkflowDefinitionDeleted>.Handle(WorkflowDefinitionDeleted notification, CancellationToken cancellationToken)
         {
-            _cacheSignal.TriggerTokenAsync(CacheKey);
+            _cacheSignal.TriggerTokenAsync(GenerateCacheKey());
             return Task.CompletedTask;
         }
     }

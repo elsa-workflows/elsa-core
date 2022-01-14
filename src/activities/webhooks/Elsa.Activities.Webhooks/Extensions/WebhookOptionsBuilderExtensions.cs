@@ -5,9 +5,9 @@ using Elsa.Activities.Webhooks.Handlers;
 using Elsa.Activities.Webhooks.Options;
 using Elsa.Activities.Webhooks.Persistence.Decorators;
 using Elsa.Options;
+using Elsa.Providers.Activities;
 using Elsa.Webhooks.Persistence;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 
 namespace Elsa.Activities.Webhooks.Extensions
 {
@@ -25,9 +25,13 @@ namespace Elsa.Activities.Webhooks.Extensions
 
             services
                 .AddScoped(sp => sp.GetRequiredService<WebhookOptions>().WebhookDefinitionStoreFactory(sp))
-                .AddActivityTypeProvider<WebhookActivityTypeProvider>()
                 .AddBookmarkProvider<WebhookBookmarkProvider>()
                 .AddNotificationHandlersFrom<EvictWorkflowRegistryCacheHandler>();
+
+            if (elsaOptions.ElsaOptions.MultitenancyEnabled)
+                services.AddScoped<IActivityTypeProvider, MultitenantWebhookActivityTypeProvider>();
+            else
+                services.AddActivityTypeProvider<WebhookActivityTypeProvider>();
 
             services.Decorate<IWebhookDefinitionStore, InitializingWebhookDefinitionStore>();
             services.Decorate<IWebhookDefinitionStore, EventPublishingWebhookDefinitionStore>();

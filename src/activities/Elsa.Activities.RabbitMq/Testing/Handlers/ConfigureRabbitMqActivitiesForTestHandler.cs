@@ -2,6 +2,7 @@ using Elsa.Events;
 using Elsa.WorkflowTesting.Events;
 using MediatR;
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -23,6 +24,10 @@ namespace Elsa.Activities.RabbitMq.Testing
 
             if (!isTest) return;
 
+            var workflowBlueprint = notification.WorkflowExecutionContext.WorkflowBlueprint;
+
+            if (!workflowBlueprint.Activities.Any(x => x.Type == nameof(RabbitMqMessageReceived))) return;
+
             var workflowId = notification.WorkflowExecutionContext.WorkflowBlueprint.Id;
             var workflowInstanceId = notification.WorkflowExecutionContext.WorkflowInstance.Id;
 
@@ -32,32 +37,34 @@ namespace Elsa.Activities.RabbitMq.Testing
 
         public Task Handle(WorkflowFaulted notification, CancellationToken cancellationToken)
         {
-            return HandleTesttWorkflowExecutionFinished(notification, cancellationToken);
+            return HandleTestWorkflowExecutionFinished(notification, cancellationToken);
         }
 
         public Task Handle(WorkflowCompleted notification, CancellationToken cancellationToken)
         {
-            return HandleTesttWorkflowExecutionFinished(notification, cancellationToken);
+            return HandleTestWorkflowExecutionFinished(notification, cancellationToken);
         }
 
         public Task Handle(WorkflowTestExecutionStopped notification, CancellationToken cancellationToken)
         {
-            _rabbitMqTestQueueManager.DisposeTestWorkersAsync(notification.WorkflowInstanceId);
+            _rabbitMqTestQueueManager.TryDisposeTestWorkersAsync(notification.WorkflowInstanceId);
 
             return Task.CompletedTask;
         }
 
-        private Task HandleTesttWorkflowExecutionFinished(WorkflowNotification notification, CancellationToken cancellationToken)
+        private async Task HandleTestWorkflowExecutionFinished(WorkflowNotification notification, CancellationToken cancellationToken)
         {
             var isTest = Convert.ToBoolean(notification.WorkflowExecutionContext.WorkflowInstance.GetMetadata("isTest"));
 
-            if (!isTest) return Task.CompletedTask;
+            if (!isTest) return;
+
+            var workflowBlueprint = notification.WorkflowExecutionContext.WorkflowBlueprint;
+
+            if (!workflowBlueprint.Activities.Any(x => x.Type == nameof(RabbitMqMessageReceived))) return;
 
             var workflowInstanceId = notification.WorkflowExecutionContext.WorkflowInstance.Id;
 
-            _rabbitMqTestQueueManager.DisposeTestWorkersAsync(workflowInstanceId);
-
-            return Task.CompletedTask;
+            await _rabbitMqTestQueueManager.TryDisposeTestWorkersAsync(workflowInstanceId);
         }
     }
 }

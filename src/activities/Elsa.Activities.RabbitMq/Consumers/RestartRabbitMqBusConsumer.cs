@@ -1,7 +1,7 @@
+using System.Threading.Tasks;
 using Elsa.Activities.RabbitMq.Services;
 using Elsa.Events;
 using Rebus.Handlers;
-using System.Threading.Tasks;
 
 namespace Elsa.Activities.RabbitMq.Consumers
 {

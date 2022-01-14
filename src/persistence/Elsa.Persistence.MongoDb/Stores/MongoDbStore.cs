@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -12,14 +13,15 @@ namespace Elsa.Persistence.MongoDb.Stores
 {
     public class MongoDbStore<T> : IStore<T> where T : class, IEntity
     {
-        public MongoDbStore(IMongoCollection<T> collection, IIdGenerator idGenerator)
+        private readonly Func<IMongoCollection<T>> _collectionFactory;
+        public MongoDbStore(Func<IMongoCollection<T>> collectionFactory, IIdGenerator idGenerator)
         {
-            Collection = collection;
+            _collectionFactory = collectionFactory;
             IdGenerator = idGenerator;
         }
 
         protected IIdGenerator IdGenerator { get; }
-        protected IMongoCollection<T> Collection { get; }
+        protected IMongoCollection<T> Collection { get { return _collectionFactory(); } }
 
         public async Task SaveAsync(T entity, CancellationToken cancellationToken = default)
         {

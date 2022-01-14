@@ -1,7 +1,7 @@
-using Elsa.Builders;
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using Elsa.Builders;
 
 namespace Elsa.Activities.RabbitMq
 {

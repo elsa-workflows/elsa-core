@@ -35,6 +35,23 @@ namespace Elsa.Webhooks.Persistence.YesSql.Extensions
             return webhookOptions;
         }
 
+        public static WebhookOptionsBuilder UseWebhookYesSqlPersistenceWithMultitenancy(this WebhookOptionsBuilder webhookOptions, Action<IConfiguration> configure) => webhookOptions.UseWebhookYesSqlPersistenceWithMultitenancy((_, config) => configure(config));
+
+        public static WebhookOptionsBuilder UseWebhookYesSqlPersistenceWithMultitenancy(this WebhookOptionsBuilder webhookOptions, Action<IServiceProvider, IConfiguration> configure)
+        {
+            webhookOptions.Services
+                .AddScoped<YesSqlWebhookDefinitionStore>()
+                .AddScoped(sp => CreateStore(sp, configure))
+                .AddStartupTask<MultitenantDatabaseInitializer>()
+                .AddDataMigration<Migrations>()
+                .AddAutoMapperProfile<AutoMapperProfile>()
+                .AddIndexProvider<WebhookDefinitionIndexProvider>();
+
+            webhookOptions.UseWebhookDefinitionStore(sp => sp.GetRequiredService<YesSqlWebhookDefinitionStore>());
+
+            return webhookOptions;
+        }
+
         public static IServiceCollection AddIndexProvider<T>(this IServiceCollection services) where T : class, IIndexProvider => services.AddSingleton<IIndexProvider, T>();
         public static IServiceCollection AddScopedIndexProvider<T>(this IServiceCollection services) where T : class, IIndexProvider => services.AddScoped<IScopedIndexProvider>();
 

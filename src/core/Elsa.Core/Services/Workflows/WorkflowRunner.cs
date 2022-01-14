@@ -22,12 +22,12 @@ namespace Elsa.Services.Workflows
         private static readonly ActivityOperation Execute = (context, activity) => activity.ExecuteAsync(context);
         private static readonly ActivityOperation Resume = (context, activity) => activity.ResumeAsync(context);
 
+        protected readonly IServiceScopeFactory _serviceScopeFactory;
+        protected readonly ILogger _logger;
+        protected readonly IWorkflowStorageService _workflowStorageService;
+        protected readonly IMediator _mediator;
         private readonly IWorkflowContextManager _workflowContextManager;
-        private readonly IMediator _mediator;
-        private readonly IServiceScopeFactory _serviceScopeFactory;
-        private readonly ILogger _logger;
         private readonly IGetsStartActivities _startingActivitiesProvider;
-        private readonly IWorkflowStorageService _workflowStorageService;
 
         public WorkflowRunner(
             IWorkflowContextManager workflowContextManager,

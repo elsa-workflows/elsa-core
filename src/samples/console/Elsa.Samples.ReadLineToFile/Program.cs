@@ -16,7 +16,7 @@ namespace Elsa.Samples.ReadLineToFile
             var services = new ServiceCollection()
                 .AddElsa(configure => configure
                     .AddConsoleActivities()
-                    .AddFileActivities())
+                    .AddFileActivities(options => options.MultitenancyEnabled = false))
                 .AddAutoMapperProfiles<Program>()
                 .BuildServiceProvider();
 

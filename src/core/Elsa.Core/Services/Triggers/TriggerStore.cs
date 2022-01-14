@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,7 +8,7 @@ namespace Elsa.Services.Triggers
 {
     public class TriggerStore : ITriggerStore
     {
-        private const string Key = "WorkflowTriggerStore"; 
+        protected virtual string Key => "WorkflowTriggerStore"; 
         private readonly IMemoryCache _memoryCache;
 
         public TriggerStore(IMemoryCache memoryCache)

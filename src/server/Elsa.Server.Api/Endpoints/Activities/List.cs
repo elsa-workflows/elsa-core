@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,6 +14,7 @@ namespace Elsa.Server.Api.Endpoints.Activities
 {
     [ApiController]
     [ApiVersion("1")]
+    [Route("{tenant}/v{version:apiVersion}/activities")]
     [Route("v{version:apiVersion}/activities")]
     [Produces("application/json")]
     public class List : Controller

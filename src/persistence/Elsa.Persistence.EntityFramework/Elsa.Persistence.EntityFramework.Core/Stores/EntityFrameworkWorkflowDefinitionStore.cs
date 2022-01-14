@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq.Expressions;
 using AutoMapper;
 using Elsa.Models;
@@ -13,7 +13,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
     {
         private readonly IContentSerializer _contentSerializer;
 
-        public EntityFrameworkWorkflowDefinitionStore(IElsaContextFactory dbContextFactory, IMapper mapper, IContentSerializer contentSerializer) : base(dbContextFactory, mapper)
+        public EntityFrameworkWorkflowDefinitionStore(Func<IElsaContextFactory> getDbContextFactory, IMapper mapper, IContentSerializer contentSerializer) : base(getDbContextFactory, mapper)
         {
             _contentSerializer = contentSerializer;
         }

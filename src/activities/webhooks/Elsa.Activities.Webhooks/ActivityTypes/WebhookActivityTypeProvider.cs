@@ -24,8 +24,8 @@ namespace Elsa.Activities.Webhooks.ActivityTypes
         private const string WebhooksActivityTypeSuffix = "Webhook";
         private const string WebhooksActivityCategory = "Webhooks";
 
+        protected readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly IActivityActivator _activityActivator;
-        private readonly IServiceScopeFactory _serviceScopeFactory;
 
         public WebhookActivityTypeProvider(IActivityActivator activityActivator, IServiceScopeFactory serviceScopeFactory)
         {
@@ -33,7 +33,7 @@ namespace Elsa.Activities.Webhooks.ActivityTypes
             _serviceScopeFactory = serviceScopeFactory;
         }
 
-        public async ValueTask<IEnumerable<ActivityType>> GetActivityTypesAsync(CancellationToken cancellationToken = default)
+        public virtual async ValueTask<IEnumerable<ActivityType>> GetActivityTypesAsync(CancellationToken cancellationToken = default)
         {
             using var scope = _serviceScopeFactory.CreateScope();
             var webhookDefinitionStore = scope.ServiceProvider.GetRequiredService<IWebhookDefinitionStore>();
@@ -50,7 +50,7 @@ namespace Elsa.Activities.Webhooks.ActivityTypes
             return activityTypes;
         }
 
-        private ActivityType CreateWebhookActivityType(WebhookDefinition webhook)
+        protected ActivityType CreateWebhookActivityType(WebhookDefinition webhook)
         {
             var activityTypeName = webhook.Name.EndsWith(WebhooksActivityTypeSuffix) ? webhook.Name : $"{webhook.Name}{WebhooksActivityTypeSuffix}";
             var activityDisplayName = activityTypeName.Humanize();

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using Elsa.Server.Api.Services;
 using Elsa.Services.WorkflowStorage;
@@ -11,6 +11,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowStorageProviders
     [ApiController]
     [ApiVersion("1")]
     [Route("v{version:apiVersion}/workflow-storage-providers")]
+    [Route("{tenant}/v{version:apiVersion}/workflow-storage-providers")]
     [Produces("application/json")]
     public class List : Controller
     {

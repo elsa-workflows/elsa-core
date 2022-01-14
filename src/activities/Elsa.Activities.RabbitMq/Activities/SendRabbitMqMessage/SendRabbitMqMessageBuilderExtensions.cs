@@ -1,9 +1,9 @@
-using Elsa.Builders;
-using Elsa.Services.Models;
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Elsa.Builders;
+using Elsa.Services.Models;
 
 namespace Elsa.Activities.RabbitMq
 {

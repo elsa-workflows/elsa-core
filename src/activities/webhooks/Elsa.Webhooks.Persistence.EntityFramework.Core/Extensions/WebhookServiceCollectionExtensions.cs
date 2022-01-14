@@ -2,6 +2,7 @@ using System;
 using Elsa.Activities.Webhooks;
 using Elsa.Persistence.EntityFramework.Core;
 using Elsa.Runtime;
+using Elsa.Services;
 using Elsa.Webhooks.Persistence.EntityFramework.Core.Services;
 using Elsa.Webhooks.Persistence.EntityFramework.Core.StartupTasks;
 using Elsa.Webhooks.Persistence.EntityFramework.Core.Stores;
@@ -109,8 +110,9 @@ namespace Elsa.Webhooks.Persistence.EntityFramework.Core.Extensions
         public static WebhookOptionsBuilder UseNonPooledEntityFrameworkPersistence(this WebhookOptionsBuilder webhookOptions,
             Action<DbContextOptionsBuilder> configure,
             ServiceLifetime serviceLifetime = ServiceLifetime.Singleton,
-            bool autoRunMigrations = false) =>
-            webhookOptions.UseNonPooledEntityFrameworkPersistence<WebhookContext>(configure, serviceLifetime, autoRunMigrations);
+            bool autoRunMigrations = false,
+            bool multitenancyEnabled = false) =>
+            webhookOptions.UseNonPooledEntityFrameworkPersistence<WebhookContext>(configure, serviceLifetime, autoRunMigrations, multitenancyEnabled);
 
         /// <summary>
         /// Configures Elsa to use Entity Framework Core for persistence, without using pooled DB Context instances.
@@ -136,8 +138,9 @@ namespace Elsa.Webhooks.Persistence.EntityFramework.Core.Extensions
         public static WebhookOptionsBuilder UseNonPooledEntityFrameworkPersistence<TWebhookContext>(this WebhookOptionsBuilder webhookOptions,
             Action<DbContextOptionsBuilder> configure,
             ServiceLifetime serviceLifetime = ServiceLifetime.Singleton,
-            bool autoRunMigrations = false) where TWebhookContext : WebhookContext =>
-            webhookOptions.UseNonPooledEntityFrameworkPersistence<TWebhookContext>((_, builder) => configure(builder), serviceLifetime, autoRunMigrations);
+            bool autoRunMigrations = false,
+            bool multitenancyEnabled = false) where TWebhookContext : WebhookContext =>
+            webhookOptions.UseNonPooledEntityFrameworkPersistence<TWebhookContext>((_, builder) => configure(builder), serviceLifetime, autoRunMigrations, multitenancyEnabled);
 
         /// <summary>
         /// Configures Elsa to use Entity Framework Core for persistence, without using pooled DB Context instances.
@@ -162,8 +165,9 @@ namespace Elsa.Webhooks.Persistence.EntityFramework.Core.Extensions
         public static WebhookOptionsBuilder UseNonPooledEntityFrameworkPersistence(this WebhookOptionsBuilder webhookOptions,
             Action<IServiceProvider, DbContextOptionsBuilder> configure,
             ServiceLifetime serviceLifetime = ServiceLifetime.Singleton,
-            bool autoRunMigrations = false) =>
-            webhookOptions.UseNonPooledEntityFrameworkPersistence<WebhookContext>(configure, serviceLifetime, autoRunMigrations);
+            bool autoRunMigrations = false,
+            bool multitenancyEnabled = false) =>
+            webhookOptions.UseNonPooledEntityFrameworkPersistence<WebhookContext>(configure, serviceLifetime, autoRunMigrations, multitenancyEnabled);
 
         /// <summary>
         /// Configures Elsa to use Entity Framework Core for persistence, without using pooled DB Context instances.
@@ -189,14 +193,16 @@ namespace Elsa.Webhooks.Persistence.EntityFramework.Core.Extensions
         public static WebhookOptionsBuilder UseNonPooledEntityFrameworkPersistence<TWebhookContext>(this WebhookOptionsBuilder webhookOptions,
             Action<IServiceProvider, DbContextOptionsBuilder> configure,
             ServiceLifetime serviceLifetime = ServiceLifetime.Singleton,
-            bool autoRunMigrations = false) where TWebhookContext : WebhookContext =>
-            UseEntityFrameworkPersistence<TWebhookContext>(webhookOptions, configure, autoRunMigrations, false, serviceLifetime);
+            bool autoRunMigrations = false,
+            bool multitenancyEnabled = false) where TWebhookContext : WebhookContext =>
+            UseEntityFrameworkPersistence<TWebhookContext>(webhookOptions, configure, autoRunMigrations, false, serviceLifetime, multitenancyEnabled);
 
         static WebhookOptionsBuilder UseEntityFrameworkPersistence<TWebhookContext>(WebhookOptionsBuilder webhookOptions,
             Action<IServiceProvider, DbContextOptionsBuilder> configure,
             bool autoRunMigrations,
             bool useContextPooling,
-            ServiceLifetime serviceLifetime) where TWebhookContext : WebhookContext
+            ServiceLifetime serviceLifetime,
+            bool multitenancyEnabled = false) where TWebhookContext : WebhookContext
         {
             /* Auto-running migrations is intentionally unavailable when not using context pooling.
              * When we aren't using pooling then it probably means that each DB Context is different
@@ -210,16 +216,29 @@ namespace Elsa.Webhooks.Persistence.EntityFramework.Core.Extensions
              */
 
             if (useContextPooling)
-                webhookOptions.Services.AddPooledDbContextFactory<TWebhookContext>(configure);
+            {
+                webhookOptions.Services
+                    .AddPooledDbContextFactory<TWebhookContext>(configure)
+                    .AddSingleton<IWebhookContextFactory, WebhookContextFactory<TWebhookContext>>();
+            }
             else
-                webhookOptions.Services.AddDbContextFactory<TWebhookContext>(configure, serviceLifetime);
+            {
+                webhookOptions.Services
+                    .AddDbContextFactory<TWebhookContext>(configure, serviceLifetime)
+                    .AddScoped<IWebhookContextFactory, WebhookContextFactory<TWebhookContext>>();
+            }
 
             webhookOptions.Services
-                .AddSingleton<IWebhookContextFactory, WebhookContextFactory<TWebhookContext>>()
+                .AddScoped<Func<IWebhookContextFactory>>(sp => () => sp.GetRequiredService<IWebhookContextFactory>())
                 .AddScoped<EntityFrameworkWebhookDefinitionStore>();
 
             if (autoRunMigrations)
-                webhookOptions.Services.AddStartupTask<RunMigrations>();
+            {
+                if (multitenancyEnabled)
+                    webhookOptions.Services.AddStartupTask<MultitenantRunMigrations>();
+                else
+                    webhookOptions.Services.AddStartupTask<RunMigrations>();
+            }
 
             webhookOptions.UseWebhookDefinitionStore(sp => sp.GetRequiredService<EntityFrameworkWebhookDefinitionStore>());
 

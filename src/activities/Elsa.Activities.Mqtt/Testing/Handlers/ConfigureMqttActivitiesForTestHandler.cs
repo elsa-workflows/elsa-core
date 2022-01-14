@@ -1,9 +1,10 @@
+using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Elsa.Events;
 using Elsa.WorkflowTesting.Events;
 using MediatR;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Elsa.Activities.Mqtt.Testing
 {
@@ -23,11 +24,13 @@ namespace Elsa.Activities.Mqtt.Testing
 
             if (!isTest) return;
 
-            var workflowId = notification.WorkflowExecutionContext.WorkflowBlueprint.Id;
+            var workflowBlueprint = notification.WorkflowExecutionContext.WorkflowBlueprint;
+
+            if (!workflowBlueprint.Activities.Any(x => x.Type == nameof(MqttMessageReceived))) return;
+
             var workflowInstanceId = notification.WorkflowExecutionContext.WorkflowInstance.Id;
 
-
-            await _mqttTestClientManager.CreateTestWorkersAsync(workflowId, workflowInstanceId, cancellationToken);
+            await _mqttTestClientManager.CreateTestWorkersAsync(workflowBlueprint.Id, workflowInstanceId, cancellationToken);
         }
 
         public async Task Handle(WorkflowFaulted notification, CancellationToken cancellationToken)
@@ -42,7 +45,7 @@ namespace Elsa.Activities.Mqtt.Testing
 
         public async Task Handle(WorkflowTestExecutionStopped notification, CancellationToken cancellationToken)
         {
-            await _mqttTestClientManager.DisposeTestWorkersAsync(notification.WorkflowInstanceId);
+            await _mqttTestClientManager.TryDisposeTestWorkersAsync(notification.WorkflowInstanceId);
         }
 
         private async Task HandleTestWorkflowExecutionFinished(WorkflowNotification notification, CancellationToken cancellationToken)
@@ -51,9 +54,13 @@ namespace Elsa.Activities.Mqtt.Testing
 
             if (!isTest) return;
 
+            var workflowBlueprint = notification.WorkflowExecutionContext.WorkflowBlueprint;
+
+            if (!workflowBlueprint.Activities.Any(x => x.Type == nameof(MqttMessageReceived))) return;
+
             var workflowInstanceId = notification.WorkflowExecutionContext.WorkflowInstance.Id;
 
-            await _mqttTestClientManager.DisposeTestWorkersAsync(workflowInstanceId);
+            await _mqttTestClientManager.TryDisposeTestWorkersAsync(workflowInstanceId);
         }
     }
 }

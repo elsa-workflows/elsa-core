@@ -11,7 +11,9 @@ namespace Elsa.Activities.File
     {
         public override void ConfigureElsa(ElsaOptionsBuilder elsa, IConfiguration configuration)
         {
-            elsa.AddFileActivities();
+            var multitenancyEnabled = configuration.GetValue<bool>("Elsa:MultiTenancy");
+
+            elsa.AddFileActivities(options => options.MultitenancyEnabled = multitenancyEnabled);
         }
     }
 }

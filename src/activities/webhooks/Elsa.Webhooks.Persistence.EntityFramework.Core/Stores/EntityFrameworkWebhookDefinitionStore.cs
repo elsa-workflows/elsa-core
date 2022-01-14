@@ -13,7 +13,7 @@ namespace Elsa.Webhooks.Persistence.EntityFramework.Core.Stores
     {
         private readonly IContentSerializer _contentSerializer;
 
-        public EntityFrameworkWebhookDefinitionStore(IWebhookContextFactory dbContextFactory, IMapper mapper, IContentSerializer contentSerializer) : base(dbContextFactory, mapper)
+        public EntityFrameworkWebhookDefinitionStore(Func<IWebhookContextFactory> getDbContextFactory, IMapper mapper, IContentSerializer contentSerializer) : base(getDbContextFactory, mapper)
         {
             _contentSerializer = contentSerializer;
         }

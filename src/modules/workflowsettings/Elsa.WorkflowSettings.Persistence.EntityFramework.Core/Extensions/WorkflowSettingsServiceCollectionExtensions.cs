@@ -1,5 +1,6 @@
 using System;
 using Elsa.Runtime;
+using Elsa.Services;
 using Elsa.WorkflowSettings.Persistence.EntityFramework.Core.Services;
 using Elsa.WorkflowSettings.Persistence.EntityFramework.Core.StartupTasks;
 using Elsa.WorkflowSettings.Persistence.EntityFramework.Core.Stores;
@@ -107,8 +108,9 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.Core.Extensions
         public static WorkflowSettingsOptionsBuilder UseNonPooledEntityFrameworkPersistence(this WorkflowSettingsOptionsBuilder workflowSettingsOptions,
             Action<DbContextOptionsBuilder> configure,
             ServiceLifetime serviceLifetime = ServiceLifetime.Singleton,
-            bool autoRunMigrations = false) =>
-            workflowSettingsOptions.UseNonPooledEntityFrameworkPersistence<WorkflowSettingsContext>(configure, serviceLifetime, autoRunMigrations);
+            bool autoRunMigrations = false,
+            bool multitenancyEnabled = false) =>
+            workflowSettingsOptions.UseNonPooledEntityFrameworkPersistence<WorkflowSettingsContext>(configure, serviceLifetime, autoRunMigrations, multitenancyEnabled);
 
         /// <summary>
         /// Configures Elsa to use Entity Framework Core for persistence, without using pooled DB Context instances.
@@ -134,8 +136,9 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.Core.Extensions
         public static WorkflowSettingsOptionsBuilder UseNonPooledEntityFrameworkPersistence<TWorkflowSettingsContext>(this WorkflowSettingsOptionsBuilder workflowSettingsOptions,
             Action<DbContextOptionsBuilder> configure,
             ServiceLifetime serviceLifetime = ServiceLifetime.Singleton,
-            bool autoRunMigrations = false) where TWorkflowSettingsContext : WorkflowSettingsContext =>
-            workflowSettingsOptions.UseNonPooledEntityFrameworkPersistence<TWorkflowSettingsContext>((_, builder) => configure(builder), serviceLifetime, autoRunMigrations);
+            bool autoRunMigrations = false,
+            bool multitenancyEnabled = false) where TWorkflowSettingsContext : WorkflowSettingsContext =>
+            workflowSettingsOptions.UseNonPooledEntityFrameworkPersistence<TWorkflowSettingsContext>((_, builder) => configure(builder), serviceLifetime, autoRunMigrations, multitenancyEnabled);
 
         /// <summary>
         /// Configures Elsa to use Entity Framework Core for persistence, without using pooled DB Context instances.
@@ -160,8 +163,9 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.Core.Extensions
         public static WorkflowSettingsOptionsBuilder UseNonPooledEntityFrameworkPersistence(this WorkflowSettingsOptionsBuilder workflowSettingsOptions,
             Action<IServiceProvider, DbContextOptionsBuilder> configure,
             ServiceLifetime serviceLifetime = ServiceLifetime.Singleton,
-            bool autoRunMigrations = false) =>
-            workflowSettingsOptions.UseNonPooledEntityFrameworkPersistence<WorkflowSettingsContext>(configure, serviceLifetime, autoRunMigrations);
+            bool autoRunMigrations = false,
+            bool multitenancyEnabled = false) =>
+            workflowSettingsOptions.UseNonPooledEntityFrameworkPersistence<WorkflowSettingsContext>(configure, serviceLifetime, autoRunMigrations, multitenancyEnabled);
 
         /// <summary>
         /// Configures Elsa to use Entity Framework Core for persistence, without using pooled DB Context instances.
@@ -187,14 +191,16 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.Core.Extensions
         public static WorkflowSettingsOptionsBuilder UseNonPooledEntityFrameworkPersistence<TWorkflowSettingsContext>(this WorkflowSettingsOptionsBuilder workflowSettingsOptions,
             Action<IServiceProvider, DbContextOptionsBuilder> configure,
             ServiceLifetime serviceLifetime = ServiceLifetime.Singleton,
-            bool autoRunMigrations = false) where TWorkflowSettingsContext : WorkflowSettingsContext =>
-            UseEntityFrameworkPersistence<TWorkflowSettingsContext>(workflowSettingsOptions, configure, autoRunMigrations, false, serviceLifetime);
+            bool autoRunMigrations = false,
+            bool multitenancyEnabled = false) where TWorkflowSettingsContext : WorkflowSettingsContext =>
+            UseEntityFrameworkPersistence<TWorkflowSettingsContext>(workflowSettingsOptions, configure, autoRunMigrations, false, serviceLifetime, multitenancyEnabled);
 
         static WorkflowSettingsOptionsBuilder UseEntityFrameworkPersistence<TWorkflowSettingsContext>(WorkflowSettingsOptionsBuilder workflowSettingsOptions,
             Action<IServiceProvider, DbContextOptionsBuilder> configure,
             bool autoRunMigrations,
             bool useContextPooling,
-            ServiceLifetime serviceLifetime) where TWorkflowSettingsContext : WorkflowSettingsContext
+            ServiceLifetime serviceLifetime,
+            bool multitenancyEnabled = false) where TWorkflowSettingsContext : WorkflowSettingsContext
         {
             /* Auto-running migrations is intentionally unavailable when not using context pooling.
              * When we aren't using pooling then it probably means that each DB Context is different
@@ -208,16 +214,29 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.Core.Extensions
              */
 
             if (useContextPooling)
-                workflowSettingsOptions.Services.AddPooledDbContextFactory<TWorkflowSettingsContext>(configure);
+            {
+                workflowSettingsOptions.Services
+                    .AddPooledDbContextFactory<TWorkflowSettingsContext>(configure)
+                    .AddSingleton<IWorkflowSettingsContextFactory, WorkflowSettingsContextFactory<TWorkflowSettingsContext>>();
+            }
             else
-                workflowSettingsOptions.Services.AddDbContextFactory<TWorkflowSettingsContext>(configure, serviceLifetime);
+            {
+                workflowSettingsOptions.Services
+                    .AddDbContextFactory<TWorkflowSettingsContext>(configure, serviceLifetime)
+                    .AddScoped<IWorkflowSettingsContextFactory, WorkflowSettingsContextFactory<TWorkflowSettingsContext>>();
+            }
 
             workflowSettingsOptions.Services
-                .AddSingleton<IWorkflowSettingsContextFactory, WorkflowSettingsContextFactory<TWorkflowSettingsContext>>()
+                .AddScoped<Func<IWorkflowSettingsContextFactory>>(sp => () => sp.GetRequiredService<IWorkflowSettingsContextFactory>())
                 .AddScoped<EntityFrameworkWorkflowSettingsStore>();
 
             if (autoRunMigrations)
-                workflowSettingsOptions.Services.AddStartupTask<RunMigrations>();
+            {
+                if (multitenancyEnabled) 
+                    workflowSettingsOptions.Services.AddStartupTask<MultitenantRunMigrations>();
+                else
+                    workflowSettingsOptions.Services.AddStartupTask<RunMigrations>();
+            }
 
             workflowSettingsOptions.UseWorkflowSettingsStore(sp => sp.GetRequiredService<EntityFrameworkWorkflowSettingsStore>());
 

@@ -2,27 +2,37 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Persistence.YesSql.Data;
 using Elsa.Services;
+using Microsoft.Extensions.DependencyInjection;
 using YesSql;
 
 namespace Elsa.Persistence.YesSql.Services
 {
     public class DatabaseInitializer : IStartupTask
     {
-        private readonly IStore _store;
+        protected readonly IServiceScopeFactory _scopeFactory;
 
-        public DatabaseInitializer(IStore store)
+        public DatabaseInitializer(IServiceScopeFactory scopeFactory)
         {
-            _store = store;
+            _scopeFactory = scopeFactory;
         }
 
         public int Order => 0;
 
-        public async Task ExecuteAsync(CancellationToken cancellationToken = default)
+        public virtual async Task ExecuteAsync(CancellationToken cancellationToken = default)
         {
-            await _store.InitializeCollectionAsync(CollectionNames.WorkflowDefinitions);
-            await _store.InitializeCollectionAsync(CollectionNames.WorkflowInstances);
-            await _store.InitializeCollectionAsync(CollectionNames.WorkflowExecutionLog);
-            await _store.InitializeCollectionAsync(CollectionNames.Bookmarks);
+            await ExecuteInternalAsync();
+        }
+
+        protected async Task ExecuteInternalAsync(IServiceScope? serviceScope = default)
+        {
+            using var scope = serviceScope ?? _scopeFactory.CreateScope();
+
+            var store = scope.ServiceProvider.GetRequiredService<IStore>();
+
+            await store.InitializeCollectionAsync(CollectionNames.WorkflowDefinitions);
+            await store.InitializeCollectionAsync(CollectionNames.WorkflowInstances);
+            await store.InitializeCollectionAsync(CollectionNames.WorkflowExecutionLog);
+            await store.InitializeCollectionAsync(CollectionNames.Bookmarks);
         }
     }
 }

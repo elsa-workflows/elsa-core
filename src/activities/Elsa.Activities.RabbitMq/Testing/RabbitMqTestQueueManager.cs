@@ -1,4 +1,5 @@
 using Elsa.Activities.RabbitMq.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -14,19 +15,24 @@ namespace Elsa.Activities.RabbitMq.Testing
         private readonly IDictionary<string, ICollection<Worker>> _workers;
         private readonly IRabbitMqQueueStarter _rabbitMqQueueStarter;
         private readonly ILogger _logger;
+        private readonly IServiceScopeFactory _scopeFactory;
 
         public RabbitMqTestQueueManager(
             IRabbitMqQueueStarter rabbitMqQueueStarter,
-            ILogger<RabbitMqTestQueueManager> logger)
+            ILogger<RabbitMqTestQueueManager> logger,
+            IServiceScopeFactory scopeFactory)
         {
             _rabbitMqQueueStarter = rabbitMqQueueStarter;
             _logger = logger;
             _workers = new Dictionary<string, ICollection<Worker>>();
+            _scopeFactory = scopeFactory;
         }
 
         public async Task CreateTestWorkersAsync(string workflowId, string workflowInstanceId, CancellationToken cancellationToken = default)
         {
             await _semaphore.WaitAsync(cancellationToken);
+
+            using var scope = _scopeFactory.CreateScope();
 
             try
             {
@@ -39,13 +45,13 @@ namespace Elsa.Activities.RabbitMq.Testing
                 else
                     _workers[workflowInstanceId] = new List<Worker>();
 
-                var workerConfigs = (await _rabbitMqQueueStarter.GetConfigurationsAsync<RabbitMqMessageReceived>(x => x.Id == workflowId, cancellationToken).ToListAsync(cancellationToken)).Distinct();
+                var workerConfigs = (await _rabbitMqQueueStarter.GetConfigurationsAsync<RabbitMqMessageReceived>(x => x.Id == workflowId, scope.ServiceProvider, cancellationToken).ToListAsync(cancellationToken)).Distinct();
 
                 foreach (var config in workerConfigs)
                 {
                     try
                     {
-                        _workers[workflowInstanceId].Add(await _rabbitMqQueueStarter.CreateWorkerAsync(config, cancellationToken));
+                        _workers[workflowInstanceId].Add(await _rabbitMqQueueStarter.CreateWorkerAsync(scope.ServiceProvider, config, cancellationToken));
                     }
                     catch (Exception e)
                     {
@@ -59,8 +65,10 @@ namespace Elsa.Activities.RabbitMq.Testing
             }
         }
 
-        public async Task DisposeTestWorkersAsync(string workflowInstance)
+        public async Task TryDisposeTestWorkersAsync(string workflowInstance)
         {
+            if (!_workers.ContainsKey(workflowInstance)) return;
+
             foreach (var worker in _workers[workflowInstance])
             {
                 await worker.DisposeAsync();

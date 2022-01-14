@@ -1,8 +1,8 @@
+using System.Net.Mqtt;
 using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Expressions;
 using Elsa.Services;
-using System.Net.Mqtt;
 
 namespace Elsa.Activities.Mqtt
 {

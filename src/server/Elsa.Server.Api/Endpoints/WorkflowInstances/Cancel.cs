@@ -1,7 +1,5 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Models;
-using Elsa.Persistence;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -12,6 +10,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
     [ApiController]
     [ApiVersion("1")]
     [Route("v{apiVersion:apiVersion}/workflow-instances/{id}/cancel")]
+    [Route("{tenant}/v{apiVersion:apiVersion}/workflow-instances/{id}/cancel")]
     [Produces("application/json")]
     public class Cancel : Controller
     {

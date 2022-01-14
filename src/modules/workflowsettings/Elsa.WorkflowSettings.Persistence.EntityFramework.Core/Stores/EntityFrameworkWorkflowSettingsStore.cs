@@ -13,7 +13,7 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.Core.Stores
     {
         private readonly IContentSerializer _contentSerializer;
 
-        public EntityFrameworkWorkflowSettingsStore(IWorkflowSettingsContextFactory dbContextFactory, IMapper mapper, IContentSerializer contentSerializer) : base(dbContextFactory, mapper)
+        public EntityFrameworkWorkflowSettingsStore(Func<IWorkflowSettingsContextFactory> getDbContextFactory, IMapper mapper, IContentSerializer contentSerializer) : base(getDbContextFactory, mapper)
         {
             _contentSerializer = contentSerializer;
         }

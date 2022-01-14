@@ -2,24 +2,34 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Services;
 using Elsa.Webhooks.Persistence.YesSql.Data;
+using Microsoft.Extensions.DependencyInjection;
 using YesSql;
 
 namespace Elsa.Webhooks.Persistence.YesSql.Services
 {
     public class DatabaseInitializer : IStartupTask
     {
-        private readonly IStore _store;
+        protected readonly IServiceScopeFactory _scopeFactory;
 
-        public DatabaseInitializer(IStore store)
+        public DatabaseInitializer(IServiceScopeFactory scopeFactory)
         {
-            _store = store;
+            _scopeFactory = scopeFactory;
         }
 
         public int Order => 0;
 
-        public async Task ExecuteAsync(CancellationToken cancellationToken = default)
+        public virtual async Task ExecuteAsync(CancellationToken cancellationToken = default)
         {
-            await _store.InitializeCollectionAsync(CollectionNames.WebhookDefinitions);
+            await ExecuteInternalAsync();
+        }
+
+        protected async Task ExecuteInternalAsync(IServiceScope? serviceScope = default)
+        {
+            using var scope = serviceScope ?? _scopeFactory.CreateScope();
+
+            var store = scope.ServiceProvider.GetRequiredService<IStore>();
+
+            await store.InitializeCollectionAsync(CollectionNames.WebhookDefinitions);
         }
     }
 }

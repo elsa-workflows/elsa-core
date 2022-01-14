@@ -45,6 +45,15 @@ namespace Elsa
             return builder;
         }
 
+        public static ElsaOptionsBuilder AddMultitenancy(this ElsaOptionsBuilder builder, IConfiguration configuration)
+        {
+            var multitenancyEnabled = configuration.GetValue<bool>("Elsa:MultiTenancy");
+
+            builder.ElsaOptions.MultitenancyEnabled = multitenancyEnabled;
+
+            return builder;
+        }
+
         /// <summary>
         /// Parse all features from the configuration and populate enabled feature collection.
         /// </summary>

@@ -1,4 +1,4 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Persistence;
@@ -12,6 +12,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
     [ApiController]
     [ApiVersion("1")]
     [Route("v{apiVersion:apiVersion}/workflow-instances/{id}/retry")]
+    [Route("{tenant}/v{apiVersion:apiVersion}/workflow-instances/{id}/retry")]
     [Produces("application/json")]
     public class Retry : Controller
     {

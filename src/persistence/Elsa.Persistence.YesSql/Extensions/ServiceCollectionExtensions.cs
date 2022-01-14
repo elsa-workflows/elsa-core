@@ -46,6 +46,35 @@ namespace Elsa.Persistence.YesSql
                 .UseWorkflowExecutionLogStore(sp => sp.GetRequiredService<YesSqlWorkflowExecutionLogStore>());
         }
 
+        public static ElsaOptionsBuilder UseYesSqlPersistenceWithMultitenancy(this ElsaOptionsBuilder elsa, Action<IConfiguration> configure) => elsa.UseYesSqlPersistenceWithMultitenancy((_, config) => configure(config));
+
+        public static ElsaOptionsBuilder UseYesSqlPersistenceWithMultitenancy(this ElsaOptionsBuilder elsa, Action<IServiceProvider, IConfiguration> configure)
+        {
+            elsa.Services
+                .AddScoped<YesSqlWorkflowDefinitionStore>()
+                .AddScoped<YesSqlWorkflowInstanceStore>()
+                .AddScoped<YesSqlWorkflowExecutionLogStore>()
+                .AddScoped<YesSqlBookmarkStore>()
+                .AddScoped(sp => CreateStore(sp, configure))
+                .AddScoped<ISessionProvider, SessionProvider>()
+                .AddScoped(CreateSession)
+                .AddScoped<IDataMigrationManager, DataMigrationManager>()
+                .AddStartupTask<MultitenantDatabaseInitializer>()
+                .AddStartupTask<MultitenantRunMigrations>()
+                .AddDataMigration<Migrations>()
+                .AddAutoMapperProfile<AutoMapperProfile>()
+                .AddIndexProvider<WorkflowDefinitionIndexProvider>()
+                .AddIndexProvider<WorkflowInstanceIndexProvider>()
+                .AddIndexProvider<WorkflowExecutionLogRecordIndexProvider>()
+                .AddIndexProvider<BookmarkIndexProvider>();
+
+            return elsa
+                .UseWorkflowDefinitionStore(sp => sp.GetRequiredService<YesSqlWorkflowDefinitionStore>())
+                .UseWorkflowInstanceStore(sp => sp.GetRequiredService<YesSqlWorkflowInstanceStore>())
+                .UseWorkflowTriggerStore(sp => sp.GetRequiredService<YesSqlBookmarkStore>())
+                .UseWorkflowExecutionLogStore(sp => sp.GetRequiredService<YesSqlWorkflowExecutionLogStore>());
+        }
+
         public static IServiceCollection AddIndexProvider<T>(this IServiceCollection services) where T : class, IIndexProvider => services.AddSingleton<IIndexProvider, T>();
         public static IServiceCollection AddScopedIndexProvider<T>(this IServiceCollection services) where T : class, IIndexProvider => services.AddScoped<IScopedIndexProvider>();
         public static IServiceCollection AddDataMigration<T>(this IServiceCollection services) where T : class, IDataMigration => services.AddScoped<IDataMigration, T>();
@@ -64,6 +93,11 @@ namespace Elsa.Persistence.YesSql
             // TODO: The following line is a temporary workaround until the bug in YesSql is fixed: https://github.com/sebastienros/yessql/pull/280
             var store = StoreFactory.CreateAndInitializeAsync(configuration).GetAwaiter().GetResult();
             //var store = StoreFactory.Create(configuration);
+
+            store.InitializeCollectionAsync(CollectionNames.WorkflowDefinitions).GetAwaiter().GetResult();
+            store.InitializeCollectionAsync(CollectionNames.WorkflowInstances).GetAwaiter().GetResult();
+            store.InitializeCollectionAsync(CollectionNames.WorkflowExecutionLog).GetAwaiter().GetResult();
+            store.InitializeCollectionAsync(CollectionNames.Bookmarks).GetAwaiter().GetResult();
 
             var indexes = serviceProvider.GetServices<IIndexProvider>();
             store.RegisterIndexes(indexes);

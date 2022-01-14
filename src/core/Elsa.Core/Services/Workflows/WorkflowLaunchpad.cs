@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Abstractions.MultiTenancy;
 using Elsa.Exceptions;
 using Elsa.Models;
 using Elsa.Options;
@@ -30,6 +31,8 @@ namespace Elsa.Services.Workflows
         private readonly IGetsStartActivities _getsStartActivities;
         private readonly ElsaOptions _elsaOptions;
         private readonly ILogger _logger;
+        private readonly ITenantProvider _tenantProvider;
+
 
         public WorkflowLaunchpad(
             IWorkflowInstanceStore workflowInstanceStore,
@@ -43,7 +46,8 @@ namespace Elsa.Services.Workflows
             IWorkflowRegistry workflowRegistry,
             IGetsStartActivities getsStartActivities,
             ElsaOptions elsaOptions,
-            ILogger<WorkflowLaunchpad> logger)
+            ILogger<WorkflowLaunchpad> logger,
+            ITenantProvider tenantProvider)
         {
             _workflowInstanceStore = workflowInstanceStore;
             _bookmarkFinder = bookmarkFinder;
@@ -57,6 +61,7 @@ namespace Elsa.Services.Workflows
             _workflowRunner = workflowRunner;
             _workflowInstanceExecutor = workflowInstanceExecutor;
             _workflowFactory = workflowFactory;
+            _tenantProvider = tenantProvider;
         }
 
         public async Task<IEnumerable<CollectedWorkflow>> FindWorkflowsAsync(WorkflowsQuery query, CancellationToken cancellationToken = default)
@@ -194,7 +199,7 @@ namespace Elsa.Services.Workflows
         }
 
         public async Task DispatchPendingWorkflowAsync(CollectedWorkflow collectedWorkflow, WorkflowInput? input, CancellationToken cancellationToken = default) =>
-            await _workflowInstanceDispatcher.DispatchAsync(new ExecuteWorkflowInstanceRequest(collectedWorkflow.WorkflowInstanceId, collectedWorkflow.ActivityId, input), cancellationToken);
+            await _workflowInstanceDispatcher.DispatchAsync(new ExecuteWorkflowInstanceRequest(collectedWorkflow.WorkflowInstanceId, collectedWorkflow.ActivityId, input, _tenantProvider.TryGetCurrentTenant()), cancellationToken);
 
         public Task DispatchPendingWorkflowAsync(string workflowInstanceId, string? activityId, WorkflowInput? input, CancellationToken cancellationToken = default) =>
             DispatchPendingWorkflowAsync(new CollectedWorkflow(workflowInstanceId, activityId), input, cancellationToken);

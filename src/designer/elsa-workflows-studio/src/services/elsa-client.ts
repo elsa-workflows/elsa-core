@@ -28,13 +28,16 @@ import {
 
 let _httpClient: AxiosInstance = null;
 let _elsaClient: ElsaClient = null;
+let _serverUrl: string = null;
+let _baseAddress: string = null;
 
 export const createHttpClient = async function (baseAddress: string): Promise<AxiosInstance> {
-  if (!!_httpClient)
+  if (!!_httpClient && (!baseAddress || _baseAddress === baseAddress))
     return _httpClient;
 
+  _baseAddress = baseAddress;
   const config: AxiosRequestConfig = {
-    baseURL: baseAddress
+    baseURL: baseAddress// + getTenant()
   };
 
   await eventBus.emit(EventTypes.HttpClientConfigCreated, this, {config});
@@ -48,10 +51,10 @@ export const createHttpClient = async function (baseAddress: string): Promise<Ax
 }
 
 export const createElsaClient = async function (serverUrl: string): Promise<ElsaClient> {
-
-  if (!!_elsaClient)
+  if (!!_elsaClient && (!serverUrl || _serverUrl === serverUrl))
     return _elsaClient;
 
+  _serverUrl = serverUrl;
   const httpClient: AxiosInstance = await createHttpClient(serverUrl);
 
   _elsaClient = {
@@ -250,6 +253,12 @@ export const createElsaClient = async function (serverUrl: string): Promise<Elsa
         return response.data.features;
       }
     },
+    tenantsApi: {
+      listPrefixes: async () => {
+        const response = await httpClient.get<Array<string>>('v1/tenants/listPrefixes');
+        return response.data;
+      }
+    }
   }
 
   return _elsaClient;
@@ -268,6 +277,7 @@ export interface ElsaClient {
   workflowChannelsApi: WorkflowChannelsApi;
   workflowTestApi: WorkflowTestApi;
   featuresApi: FeaturesApi;
+  tenantsApi: TenantsApi;
 }
 
 export interface ActivitiesApi {
@@ -372,6 +382,10 @@ export interface WorkflowStorageProvidersApi {
 
 export interface WorkflowChannelsApi {
   list(): Promise<Array<string>>;
+}
+
+export interface TenantsApi {
+  listPrefixes(): Promise<Array<string>>;
 }
 
 export interface SaveWorkflowDefinitionRequest {

@@ -18,13 +18,13 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
         private readonly IMapper _mapper;
         private readonly SemaphoreSlim _semaphore = new(1);
 
-        protected EntityFrameworkStore(IContextFactory<TContext> dbContextFactory, IMapper mapper)
+        protected EntityFrameworkStore(Func<IContextFactory<TContext>> getDbContextFactory, IMapper mapper)
         {
             _mapper = mapper;
-            DbContextFactory = dbContextFactory;
+            GetDbContextFactory = getDbContextFactory;
         }
 
-        protected IContextFactory<TContext> DbContextFactory { get; }
+        protected Func<IContextFactory<TContext>> GetDbContextFactory { get; }
 
         public async Task SaveAsync(T entity, CancellationToken cancellationToken)
         {
@@ -160,14 +160,14 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
 
         protected async ValueTask DoWork(Func<TContext, ValueTask> work, CancellationToken cancellationToken)
         {
-            await using var dbContext = DbContextFactory.CreateDbContext();
+            await using var dbContext = GetDbContextFactory().CreateDbContext();
             await work(dbContext);
             await dbContext.SaveChangesAsync(cancellationToken);
         }
 
         protected async ValueTask<TResult> DoWork<TResult>(Func<TContext, ValueTask<TResult>> work, CancellationToken cancellationToken)
         {
-            await using var dbContext = DbContextFactory.CreateDbContext();
+            await using var dbContext = GetDbContextFactory().CreateDbContext();
             var result = await work(dbContext);
             await dbContext.SaveChangesAsync(cancellationToken);
             return result;
@@ -175,7 +175,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
 
         protected async ValueTask DoWork(Action<TContext> work, CancellationToken cancellationToken)
         {
-            await using var dbContext = DbContextFactory.CreateDbContext();
+            await using var dbContext = GetDbContextFactory().CreateDbContext();
             work(dbContext);
             await dbContext.SaveChangesAsync(cancellationToken);
         }

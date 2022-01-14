@@ -17,41 +17,42 @@ namespace Elsa.Activities.AzureServiceBus.Services
     // TODO: Look for a way to merge ServiceBusQueuesStarter with ServiceBusTopicsStarter - there's a lot of overlap.
     public class ServiceBusTopicsStarter : IServiceBusTopicsStarter
     {
+        protected readonly ILogger<ServiceBusTopicsStarter> _logger;
+        protected readonly ICollection<TopicWorker> _workers;
+        protected readonly IServiceScopeFactory _scopeFactory;
         private readonly ITopicMessageReceiverFactory _receiverFactory;
-        private readonly IServiceScopeFactory _scopeFactory;
-        private readonly IServiceProvider _serviceProvider;
-        private readonly ILogger<ServiceBusTopicsStarter> _logger;
-        private readonly ICollection<TopicWorker> _workers;
 
         public ServiceBusTopicsStarter(
             ITopicMessageReceiverFactory receiverFactory,
             IServiceScopeFactory scopeFactory,
-            IServiceProvider serviceProvider,
             ILogger<ServiceBusTopicsStarter> logger)
         {
             _receiverFactory = receiverFactory;
             _scopeFactory = scopeFactory;
-            _serviceProvider = serviceProvider;
             _logger = logger;
             _workers = new List<TopicWorker>();
         }
 
-        public async Task CreateWorkersAsync(CancellationToken stoppingToken)
+        public virtual async Task CreateWorkersAsync(CancellationToken stoppingToken)
         {
             var cancellationToken = stoppingToken;
-            await DisposeExistingWorkersAsync();
-            var entities = (await GetTopicSubscriptionNamesAsync(cancellationToken).ToListAsync(cancellationToken)).Distinct();
 
-            foreach (var entity in entities) 
-                await CreateAndAddWorkerAsync(entity.topicName, entity.subscriptionName, cancellationToken);
+            await DisposeExistingWorkersAsync();
+
+            using var scope = _scopeFactory.CreateScope();
+
+            var entities = (await GetTopicSubscriptionNamesAsync(cancellationToken, scope.ServiceProvider).ToListAsync(cancellationToken)).Distinct();
+
+            foreach (var entity in entities)
+                await CreateAndAddWorkerAsync(scope.ServiceProvider, entity.topicName, entity.subscriptionName, cancellationToken);
         }
 
-        private async Task CreateAndAddWorkerAsync(string topicName, string subscriptionName, CancellationToken cancellationToken)
+        protected async Task CreateAndAddWorkerAsync(IServiceProvider serviceProvider, string topicName, string subscriptionName, CancellationToken cancellationToken)
         {
             try
             {
                 var receiver = await _receiverFactory.GetTopicReceiverAsync(topicName, subscriptionName, cancellationToken);
-                var worker = ActivatorUtilities.CreateInstance<TopicWorker>(_serviceProvider, receiver, (Func<IReceiverClient, Task>) DisposeReceiverAsync);
+                var worker = ActivatorUtilities.CreateInstance<TopicWorker>(serviceProvider, receiver, (Func<IReceiverClient, Task>)DisposeReceiverAsync);
                 _workers.Add(worker);
             }
             catch (Exception e)
@@ -60,7 +61,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             }
         }
 
-        private async Task DisposeExistingWorkersAsync()
+        protected async Task DisposeExistingWorkersAsync()
         {
             foreach (var worker in _workers.ToList())
             {
@@ -69,14 +70,11 @@ namespace Elsa.Activities.AzureServiceBus.Services
             }
         }
 
-        private async Task DisposeReceiverAsync(IReceiverClient messageReceiver) => await _receiverFactory.DisposeReceiverAsync(messageReceiver);
-
-        private async IAsyncEnumerable<(string topicName, string subscriptionName)> GetTopicSubscriptionNamesAsync([EnumeratorCancellation] CancellationToken cancellationToken)
+        protected async IAsyncEnumerable<(string topicName, string subscriptionName)> GetTopicSubscriptionNamesAsync([EnumeratorCancellation] CancellationToken cancellationToken, IServiceProvider serviceProvider)
         {
-            using var scope = _scopeFactory.CreateScope();
-            var workflowRegistry = scope.ServiceProvider.GetRequiredService<IWorkflowRegistry>();
-            var workflowBlueprintReflector = scope.ServiceProvider.GetRequiredService<IWorkflowBlueprintReflector>();
-            var workflowInstanceStore = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
+            var workflowRegistry = serviceProvider.GetRequiredService<IWorkflowRegistry>();
+            var workflowBlueprintReflector = serviceProvider.GetRequiredService<IWorkflowBlueprintReflector>();
+            var workflowInstanceStore = serviceProvider.GetRequiredService<IWorkflowInstanceStore>();
             var workflows = await workflowRegistry.ListActiveAsync(cancellationToken);
 
             var query =
@@ -90,8 +88,8 @@ namespace Elsa.Activities.AzureServiceBus.Services
                 // If a workflow is not published, only consider it for processing if it has at least one non-ended workflow instance.
                 if (!workflow.IsPublished && !await WorkflowHasNonFinishedWorkflowsAsync(workflow, workflowInstanceStore, cancellationToken))
                     continue;
-                
-                var workflowBlueprintWrapper = await workflowBlueprintReflector.ReflectAsync(scope.ServiceProvider, workflow, cancellationToken);
+
+                var workflowBlueprintWrapper = await workflowBlueprintReflector.ReflectAsync(serviceProvider, workflow, cancellationToken);
 
                 foreach (var activity in workflowBlueprintWrapper.Filter<AzureServiceBusTopicMessageReceived>())
                 {
@@ -101,7 +99,9 @@ namespace Elsa.Activities.AzureServiceBus.Services
                 }
             }
         }
-        
+
+        private async Task DisposeReceiverAsync(IReceiverClient messageReceiver) => await _receiverFactory.DisposeReceiverAsync(messageReceiver);
+
         private static async Task<bool> WorkflowHasNonFinishedWorkflowsAsync(IWorkflowBlueprint workflowBlueprint, IWorkflowInstanceStore workflowInstanceStore, CancellationToken cancellationToken)
         {
             var count = await workflowInstanceStore.CountAsync(new UnfinishedWorkflowSpecification().WithWorkflowDefinition(workflowBlueprint.Id), cancellationToken);

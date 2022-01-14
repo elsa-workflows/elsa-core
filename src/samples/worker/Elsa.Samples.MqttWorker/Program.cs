@@ -20,7 +20,7 @@ namespace Elsa.Samples.MqttWorker
                         .AddElsa(options => options
                             .AddConsoleActivities()
                             .AddQuartzTemporalActivities()
-                            .AddMqttActivities()
+                            .AddMqttActivities(options => options.MultitenancyEnabled = false)
                             .AddWorkflow<ConsumerWorkflow>()
                             .AddWorkflow<ProducerWorkflow>()
                             );

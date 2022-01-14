@@ -1,7 +1,7 @@
-using Elsa.Activities.Mqtt.Options;
 using System;
 using System.Net.Mqtt;
 using System.Threading.Tasks;
+using Elsa.Activities.Mqtt.Options;
 
 namespace Elsa.Activities.Mqtt.Services
 {

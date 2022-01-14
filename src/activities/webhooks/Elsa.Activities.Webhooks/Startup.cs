@@ -11,6 +11,10 @@ namespace Elsa.Activities.Webhooks
     {
         public override void ConfigureElsa(ElsaOptionsBuilder elsa, IConfiguration configuration)
         {
+            var multiTenancyEnabled = configuration.GetValue<bool>("Elsa:MultiTenancy");
+
+            elsa.ElsaOptions.MultitenancyEnabled = multiTenancyEnabled;
+
             elsa.AddWebhooks();
         }
     }

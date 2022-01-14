@@ -1,4 +1,4 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications.WorkflowInstances;
@@ -11,6 +11,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
     [ApiController]
     [ApiVersion("1")]
     [Route("v{apiVersion:apiVersion}/workflow-instances/bulk")]
+    [Route("{tenant}/v{apiVersion:apiVersion}/workflow-instances/bulk")]
     [Produces("application/json")]
     public class BulkDelete : Controller
     {

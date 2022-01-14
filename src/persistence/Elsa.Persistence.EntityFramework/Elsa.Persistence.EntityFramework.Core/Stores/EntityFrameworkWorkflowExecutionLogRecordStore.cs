@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq.Expressions;
 using AutoMapper;
 using Elsa.Models;
@@ -9,7 +9,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
 {
     public class EntityFrameworkWorkflowExecutionLogRecordStore : ElsaContextEntityFrameworkStore<WorkflowExecutionLogRecord>, IWorkflowExecutionLogStore
     {
-        public EntityFrameworkWorkflowExecutionLogRecordStore(IElsaContextFactory dbContextFactory, IMapper mapper) : base(dbContextFactory, mapper)
+        public EntityFrameworkWorkflowExecutionLogRecordStore(Func<IElsaContextFactory> getDbContextFactory, IMapper mapper) : base(getDbContextFactory, mapper)
         {
         }
 

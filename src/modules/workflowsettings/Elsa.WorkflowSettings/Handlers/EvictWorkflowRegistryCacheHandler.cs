@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Abstractions.MultiTenancy;
 using Elsa.Caching;
 using Elsa.Decorators;
 using Elsa.Services;
@@ -16,11 +17,13 @@ namespace Elsa.WorkflowSettings.Handlers
     {
         private readonly ITriggerIndexer _triggerIndexer;
         private readonly ICacheSignal _cacheSignal;
+        private readonly ITenantProvider _tenantProvider;
 
-        public EvictWorkflowRegistryCacheHandler(ITriggerIndexer triggerIndexer, ICacheSignal cacheSignal)
+        public EvictWorkflowRegistryCacheHandler(ITriggerIndexer triggerIndexer, ICacheSignal cacheSignal, ITenantProvider tenantProvider)
         {
             _triggerIndexer = triggerIndexer;
             _cacheSignal = cacheSignal;
+            _tenantProvider = tenantProvider;
         }
 
         public async Task Handle(WorkflowSettingsSaved notification, CancellationToken cancellationToken)
@@ -45,8 +48,14 @@ namespace Elsa.WorkflowSettings.Handlers
 
         private async Task HandleWorkflowCacheAndTriggerIndexer(CancellationToken cancellationToken)
         {
-            await _cacheSignal.TriggerTokenAsync(CachingWorkflowRegistry.CacheKey);
+            await _cacheSignal.TriggerTokenAsync(GenerateCacheKey(CachingWorkflowRegistry.CacheKey));
             await _triggerIndexer.IndexTriggersAsync(cancellationToken);
+        }
+
+        private string GenerateCacheKey(string keyBase)
+        {
+            var tenantPrefix = _tenantProvider.TryGetCurrentTenant()?.Prefix;
+            return string.IsNullOrEmpty(tenantPrefix) ? keyBase : $"{keyBase}_{tenantPrefix}";
         }
     }
 }

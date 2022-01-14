@@ -1,17 +1,18 @@
+using System.Threading;
+using System.Threading.Tasks;
+using Elsa.Models;
 using Elsa.Server.Api.ActionFilters;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
-using System.Threading;
-using System.Threading.Tasks;
-using Elsa.Models;
 
 namespace Elsa.Server.Api.Endpoints.Workflows
 {
     [ApiController]
     [ApiVersion("1")]
     [Route("v{apiVersion:apiVersion}/workflows/{workflowDefinitionId}/dispatch")]
+    [Route("{tenant}/v{apiVersion:apiVersion}/workflows/{workflowDefinitionId}/dispatch")]
     [Produces("application/json")]
     public class Dispatch : Controller
     {

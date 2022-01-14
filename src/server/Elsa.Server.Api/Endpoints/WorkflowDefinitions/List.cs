@@ -8,13 +8,11 @@ using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
 using Elsa.Persistence.Specifications.WorkflowDefinitions;
 using Elsa.Serialization;
-using Elsa.Server.Api.Attributes;
 using Elsa.Server.Api.Models;
 using Elsa.Server.Api.Swagger.Examples;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.Filters;
 
@@ -23,6 +21,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
     [ApiController]
     [ApiVersion("1")]
     [Route("v{apiVersion:apiVersion}/workflow-definitions")]
+    [Route("{tenant}/v{apiVersion:apiVersion}/workflow-definitions")]
     [Produces("application/json")]
     public class List : Controller
     {

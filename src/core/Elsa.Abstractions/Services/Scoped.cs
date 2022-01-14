@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
+using Elsa.Abstractions.MultiTenancy;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Services
@@ -16,6 +17,14 @@ namespace Elsa.Services
         {
             using var scope = _scopeFactory.CreateScope();
             var service = scope.ServiceProvider.GetRequiredService<T>();
+            return await scopedAction(service);
+        }
+
+        public async Task<TResult> UseServiceWithTenantAsync<TResult>(Func<T, Task<TResult>> scopedAction, Tenant? tenant)
+        {
+            using var scope = _scopeFactory.CreateScopeForTenant(tenant);
+            var service = scope.ServiceProvider.GetRequiredService<T>();
+
             return await scopedAction(service);
         }
 

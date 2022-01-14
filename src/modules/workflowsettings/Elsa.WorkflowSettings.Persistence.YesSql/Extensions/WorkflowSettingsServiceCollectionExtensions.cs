@@ -34,6 +34,21 @@ namespace Elsa.WorkflowSettings.Persistence.YesSql.Extensions
             return workflowSettingsOptions;
         }
 
+        public static WorkflowSettingsOptionsBuilder UseWorkflowSettingsYesSqlPersistenceWithMultitenancy(this WorkflowSettingsOptionsBuilder workflowSettingsOptions, Action<IServiceProvider, IConfiguration> configure)
+        {
+            workflowSettingsOptions.Services
+                .AddScoped<YesSqlWorkflowSettingsStore>()
+                .AddScoped(sp => CreateStore(sp, configure))
+                .AddStartupTask<MultitenantDatabaseInitializer>()
+                .AddDataMigration<Migrations>()
+                .AddAutoMapperProfile<AutoMapperProfile>()
+                .AddIndexProvider<WorkflowSettingsIndexProvider>();
+
+            workflowSettingsOptions.UseWorkflowSettingsStore(sp => sp.GetRequiredService<YesSqlWorkflowSettingsStore>());
+
+            return workflowSettingsOptions;
+        }
+
         public static IServiceCollection AddIndexProvider<T>(this IServiceCollection services) where T : class, IIndexProvider => services.AddSingleton<IIndexProvider, T>();
         public static IServiceCollection AddScopedIndexProvider<T>(this IServiceCollection services) where T : class, IIndexProvider => services.AddScoped<IScopedIndexProvider>();
 

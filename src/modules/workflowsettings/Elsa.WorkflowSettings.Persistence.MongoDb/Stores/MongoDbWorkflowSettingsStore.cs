@@ -1,3 +1,4 @@
+using System;
 using Elsa.Persistence.MongoDb.Stores;
 using Elsa.Services;
 using Elsa.WorkflowSettings.Models;
@@ -7,7 +8,7 @@ namespace Elsa.WorkflowSettings.Persistence.MongoDb.Stores
 {
     public class MongoDbWorkflowSettingsStore : MongoDbStore<WorkflowSetting>, IWorkflowSettingsStore
     {
-        public MongoDbWorkflowSettingsStore(IMongoCollection<WorkflowSetting> collection, IIdGenerator idGenerator) : base(collection, idGenerator)
+        public MongoDbWorkflowSettingsStore(Func<IMongoCollection<WorkflowSetting>> collectionFactory, IIdGenerator idGenerator) : base(collectionFactory, idGenerator)
         {
         }
     }

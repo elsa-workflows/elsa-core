@@ -62,6 +62,7 @@ namespace Elsa.Options
 
         public Type DefaultWorkflowStorageProviderType { get; set; }
         public WorkflowChannelOptions WorkflowChannelOptions { get; set; } = new();
+        public bool MultitenancyEnabled { get; set; } = false;
         
         internal Func<IServiceProvider, IWorkflowDefinitionStore> WorkflowDefinitionStoreFactory { get; set; }
         internal Func<IServiceProvider, IWorkflowInstanceStore> WorkflowInstanceStoreFactory { get; set; }

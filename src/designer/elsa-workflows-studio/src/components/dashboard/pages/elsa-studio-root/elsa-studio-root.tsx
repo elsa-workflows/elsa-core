@@ -37,6 +37,7 @@ export class ElsaStudioRoot {
   private confirmDialog: HTMLElsaConfirmDialogElement;
   private toastNotificationElement: HTMLElsaToastNotificationElement;
   private elsaStudio: ElsaStudio;
+  private currentTenantUrlPrefix: string = '';
 
   @Method()
   async addPlugins(pluginTypes: Array<any>) {
@@ -67,9 +68,12 @@ export class ElsaStudioRoot {
     eventBus.detach(EventTypes.HideToastNotification, this.onHideToastNotification);
   }
 
+  getServerUrl = () => this.serverUrl + this.currentTenantUrlPrefix;
+  getBasePath = () => this.basePath + this.currentTenantUrlPrefix;
+
   async componentWillLoad() {
-    const elsaClientFactory: () => Promise<ElsaClient> = () => createElsaClient(this.serverUrl);
-    const httpClientFactory: () => Promise<AxiosInstance> = () => createHttpClient(this.serverUrl);
+    const elsaClientFactory: () => Promise<ElsaClient> = () => createElsaClient(this.getServerUrl());
+    const httpClientFactory: () => Promise<AxiosInstance> = () => createHttpClient(this.getServerUrl());
 
     if (this.config) {
       await fetch(`${document.location.origin}/${this.config}`)
@@ -87,9 +91,13 @@ export class ElsaStudioRoot {
         });
     }
 
+    const elsaClient = await elsaClientFactory();
+    const tenantPrefixes = await elsaClient.tenantsApi.listPrefixes();
+    this.currentTenantUrlPrefix = this.getCurrentTenantUrlPrefix(tenantPrefixes, this.basePath);
+
     const elsaStudio: ElsaStudio = this.elsaStudio = {
-      serverUrl: this.serverUrl,
-      basePath: this.basePath,
+      serverUrl: this.getServerUrl(),
+      basePath: this.getBasePath(),
       features: this.featuresConfig,
       serverFeatures: [],
       eventBus,
@@ -110,7 +118,6 @@ export class ElsaStudioRoot {
     propertyDisplayManager.initialize(elsaStudio);
     featuresDataManager.initialize(elsaStudio);
 
-    const elsaClient = await elsaClientFactory();
     elsaStudio.serverFeatures = await elsaClient.featuresApi.list();
   }
 
@@ -119,18 +126,24 @@ export class ElsaStudioRoot {
     await eventBus.emit(EventTypes.Root.Initialized);
   }
 
+  getCurrentTenantUrlPrefix = (prefixes, basePath) => {
+    const tenantSegment = window.location.pathname.replace(basePath, '').split('/')[1];
+    if (prefixes.some(x => x === tenantSegment)) return `/${tenantSegment}`;
+
+    return '';
+  }
+
   onShowConfirmDialog = (e) => e.promise = this.confirmDialog.show(e.caption, e.message)
   onHideConfirmDialog = async () => await this.confirmDialog.hide()
   onShowToastNotification = async (e: ToastNotificationOptions) => await this.toastNotificationElement.show(e)
   onHideToastNotification = async () => await this.toastNotificationElement.hide()
 
   render() {
-
     const culture = this.culture;
 
     const tunnelState: DashboardState = {
-      serverUrl: this.serverUrl,
-      basePath: this.basePath,
+      serverUrl: this.getServerUrl(),
+      basePath: this.getBasePath(),
       serverFeatures: this.elsaStudio.serverFeatures,
       culture,
       monacoLibPath: this.monacoLibPath

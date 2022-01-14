@@ -1,42 +1,37 @@
-using Elsa.Activities.RabbitMq.Configuration;
-using Elsa.Services;
-using Elsa.Services.Models;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.RabbitMq.Configuration;
+using Elsa.Services;
+using Elsa.Services.Models;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Activities.RabbitMq.Services
 {
     public class RabbitMqQueueStarter : IRabbitMqQueueStarter
     {
-        private readonly SemaphoreSlim _semaphore = new(1);
-        private readonly IServiceScopeFactory _scopeFactory;
-        private readonly IServiceProvider _serviceProvider;
-        private readonly ICollection<Worker> _workers;
+        protected readonly ICollection<Worker> _workers;
+        protected readonly IServiceScopeFactory _scopeFactory;
+        protected readonly ILogger<RabbitMqQueueStarter> _logger;
+        protected readonly SemaphoreSlim _semaphore = new(1);
         private readonly IMessageReceiverClientFactory _messageReceiverClientFactory;
-        private readonly ILogger _logger;
 
         public RabbitMqQueueStarter(
-            IConfiguration configuration, 
             IMessageReceiverClientFactory messageReceiverClientFactory,
             IServiceScopeFactory scopeFactory, 
-            IServiceProvider serviceProvider, 
             ILogger<RabbitMqQueueStarter> logger)
         {
             _messageReceiverClientFactory = messageReceiverClientFactory;
             _scopeFactory = scopeFactory;
-            _serviceProvider = serviceProvider;
             _logger = logger;
             _workers = new List<Worker>();
         }
 
-        public async Task CreateWorkersAsync(CancellationToken cancellationToken = default)
+        public virtual async Task CreateWorkersAsync(CancellationToken cancellationToken = default)
         {
             await _semaphore.WaitAsync(cancellationToken);
 
@@ -44,13 +39,15 @@ namespace Elsa.Activities.RabbitMq.Services
             {
                 await DisposeExistingWorkersAsync();
 
-                var receiverConfigs = (await GetConfigurationsAsync<RabbitMqMessageReceived>(null, cancellationToken).ToListAsync(cancellationToken)).GroupBy(c => c.GetHashCode()).Select(x => x.First());
+                using var scope = _scopeFactory.CreateScope();
+
+                var receiverConfigs = (await GetConfigurationsAsync<RabbitMqMessageReceived>(null, scope.ServiceProvider, cancellationToken).ToListAsync(cancellationToken)).GroupBy(c => c.GetHashCode()).Select(x => x.First());
 
                 foreach (var config in receiverConfigs)
                 {
                     try
                     {
-                        _workers.Add(await CreateWorkerAsync(config, cancellationToken));
+                        _workers.Add(await CreateWorkerAsync(scope.ServiceProvider, config, cancellationToken));
                     }
                     catch (Exception e)
                     {
@@ -64,19 +61,10 @@ namespace Elsa.Activities.RabbitMq.Services
             }
         }
 
-        public async Task<Worker> CreateWorkerAsync(RabbitMqBusConfiguration config, CancellationToken cancellationToken = default)
+        public async IAsyncEnumerable<RabbitMqBusConfiguration> GetConfigurationsAsync<T>(Func<IWorkflowBlueprint, bool>? predicate, IServiceProvider serviceProvider, [EnumeratorCancellation] CancellationToken cancellationToken) where T : IRabbitMqActivity
         {
-            var receiver = await _messageReceiverClientFactory.GetReceiverAsync(config, cancellationToken);
-            return ActivatorUtilities.CreateInstance<Worker>(_serviceProvider, (Func<IClient, Task>)DisposeWorkerAsync, receiver);
-        }
-
-        private async Task DisposeWorkerAsync(IClient messageReceiver) => await _messageReceiverClientFactory.DisposeReceiverAsync(messageReceiver);
-
-        public async IAsyncEnumerable<RabbitMqBusConfiguration> GetConfigurationsAsync<T>(Func<IWorkflowBlueprint, bool>? predicate, [EnumeratorCancellation] CancellationToken cancellationToken) where T : IRabbitMqActivity
-        {
-            using var scope = _scopeFactory.CreateScope();
-            var workflowRegistry = scope.ServiceProvider.GetRequiredService<IWorkflowRegistry>();
-            var workflowBlueprintReflector = scope.ServiceProvider.GetRequiredService<IWorkflowBlueprintReflector>();
+            var workflowRegistry = serviceProvider.GetRequiredService<IWorkflowRegistry>();
+            var workflowBlueprintReflector = serviceProvider.GetRequiredService<IWorkflowBlueprintReflector>();
             var workflows = await workflowRegistry.ListActiveAsync(cancellationToken);
 
             var query =
@@ -89,7 +77,7 @@ namespace Elsa.Activities.RabbitMq.Services
 
             foreach (var workflow in filteredQuery)
             {
-                var workflowBlueprintWrapper = await workflowBlueprintReflector.ReflectAsync(scope.ServiceProvider, workflow, cancellationToken);
+                var workflowBlueprintWrapper = await workflowBlueprintReflector.ReflectAsync(serviceProvider, workflow, cancellationToken);
 
                 foreach (var activity in workflowBlueprintWrapper.Filter<T>())
                 {
@@ -98,13 +86,22 @@ namespace Elsa.Activities.RabbitMq.Services
                     var exchangeName = await activity.EvaluatePropertyValueAsync(x => x.ExchangeName, cancellationToken);
                     var headers = await activity.EvaluatePropertyValueAsync(x => x.Headers, cancellationToken);
 
-                    var config = new RabbitMqBusConfiguration(connectionString!, exchangeName, routingKey!, headers!);
+                    var config = new RabbitMqBusConfiguration(connectionString!, exchangeName!, routingKey!, headers!);
 
                     yield return config!;
                 }
             }
         }
-        private async Task DisposeExistingWorkersAsync()
+
+        public async Task<Worker> CreateWorkerAsync(IServiceProvider serviceProvider, RabbitMqBusConfiguration config, CancellationToken cancellationToken = default)
+        {
+            var receiver = await _messageReceiverClientFactory.GetReceiverAsync(config, cancellationToken);
+            return ActivatorUtilities.CreateInstance<Worker>(serviceProvider, (Func<IClient, Task>)DisposeWorkerAsync, receiver);
+        }
+
+        protected async Task DisposeWorkerAsync(IClient messageReceiver) => await _messageReceiverClientFactory.DisposeReceiverAsync(messageReceiver);
+
+        protected async Task DisposeExistingWorkersAsync()
         {
             foreach (var worker in _workers.ToList())
             {

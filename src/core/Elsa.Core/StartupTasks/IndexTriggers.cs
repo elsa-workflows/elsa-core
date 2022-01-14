@@ -1,5 +1,6 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
+using Elsa.MultiTenancy;
 using Elsa.Services;
 
 namespace Elsa.StartupTasks

@@ -1,7 +1,7 @@
-using Elsa.Activities.RabbitMq.Configuration;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.RabbitMq.Configuration;
 
 namespace Elsa.Activities.RabbitMq.Services
 {

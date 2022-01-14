@@ -1,14 +1,14 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Elsa.Activities.RabbitMq.Configuration;
 using Rebus.Activation;
 using Rebus.Bus;
 using Rebus.Config;
 using Rebus.Messages;
 using Rebus.Routing.TransportMessages;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Elsa.Activities.RabbitMq.Services
 {

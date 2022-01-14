@@ -1,6 +1,9 @@
+using System;
+using Elsa.Abstractions.MultiTenancy;
 using Elsa.Attributes;
 using Elsa.WorkflowSettings.Persistence.EntityFramework.Core;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.WorkflowSettings.Persistence.EntityFramework.PostgreSql
 {
@@ -9,5 +12,13 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.PostgreSql
     {
         protected override string ProviderName => "PostgreSql";
         protected override void Configure(DbContextOptionsBuilder options, string connectionString) => options.UseWorkflowSettingsPostgreSql(connectionString);
+        protected override void ConfigureForMultitenancy(DbContextOptionsBuilder options, IServiceProvider serviceProvider)
+        {
+            var tenantProvider = serviceProvider.GetRequiredService<ITenantProvider>();
+
+            var connectionString = tenantProvider.GetCurrentTenant().ConnectionString;
+
+            options.UseWorkflowSettingsPostgreSql(connectionString);
+        }
     }
 }

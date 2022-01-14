@@ -1,12 +1,12 @@
+using System;
+using System.Net.Mqtt;
+using System.Threading;
+using System.Threading.Tasks;
 using Elsa.Activities.Mqtt.Bookmarks;
 using Elsa.Activities.Mqtt.Options;
 using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
-using System;
-using System.Net.Mqtt;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Elsa.Activities.Mqtt.Services
 {

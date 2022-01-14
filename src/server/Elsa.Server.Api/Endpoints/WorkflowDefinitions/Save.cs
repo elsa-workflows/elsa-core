@@ -7,7 +7,6 @@ using Elsa.Server.Api.Swagger.Examples;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.Filters;
 
@@ -16,6 +15,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
     [ApiController]
     [ApiVersion("1")]
     [Route("v{apiVersion:apiVersion}/workflow-definitions")]
+    [Route("{tenant}/v{apiVersion:apiVersion}/workflow-definitions")]
     [Produces("application/json")]
     public partial class Save : ControllerBase
     {

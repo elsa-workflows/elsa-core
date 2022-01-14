@@ -1,12 +1,13 @@
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Elsa.Abstractions.MultiTenancy;
 using Elsa.Activities.RabbitMq.Bookmarks;
 using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.Logging;
 using Rebus.Messages;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Elsa.Activities.RabbitMq.Services
 {
@@ -18,17 +19,20 @@ namespace Elsa.Activities.RabbitMq.Services
         private readonly Scoped<IWorkflowLaunchpad> _workflowLaunchpad;
         private string ActivityType => nameof(RabbitMqMessageReceived);
         private TimeSpan _delay = TimeSpan.FromMilliseconds(200);
+        private readonly Tenant? _tenant;
 
         public Worker(
             Scoped<IWorkflowLaunchpad> workflowLaunchpad,
             IClient client,
             Func<IClient, Task> disposeReceiverAction,
+            ITenantProvider tenantProvider,
             ILogger<Worker> logger)
         {
             _client = client;
             _disposeReceiverAction = disposeReceiverAction;
             _logger = logger;
             _workflowLaunchpad = workflowLaunchpad;
+            _tenant = tenantProvider.TryGetCurrentTenant();
 
             _client.SubscribeWithHandler(OnMessageReceived);
         }
@@ -54,7 +58,7 @@ namespace Elsa.Activities.RabbitMq.Services
             var bookmark = new MessageReceivedBookmark(config.ExchangeName, config.RoutingKey, config.ConnectionString, config.Headers);
             var launchContext = new WorkflowsQuery(ActivityType, bookmark);
 
-            await _workflowLaunchpad.UseServiceAsync(service => service.CollectAndDispatchWorkflowsAsync(launchContext, new WorkflowInput(message), cancellationToken));
+            await _workflowLaunchpad.UseServiceWithTenantAsync(service => service.CollectAndDispatchWorkflowsAsync(launchContext, new WorkflowInput(message), cancellationToken), _tenant);
         }
     }
 }

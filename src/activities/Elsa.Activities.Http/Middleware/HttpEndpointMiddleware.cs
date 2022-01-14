@@ -14,9 +14,7 @@ using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Open.Linq.AsyncExtensions;
@@ -169,7 +167,7 @@ namespace Elsa.Activities.Http.Middleware
                 return true;
 
             var authorizationHandler = options.HttpEndpointAuthorizationHandlerFactory(httpContext.RequestServices);
-            
+
             return await authorizationHandler.AuthorizeAsync(new AuthorizeHttpEndpointContext(httpContext, httpEndpoint, workflowBlueprint, pendingWorkflow.WorkflowInstanceId, cancellationToken));
         }
 

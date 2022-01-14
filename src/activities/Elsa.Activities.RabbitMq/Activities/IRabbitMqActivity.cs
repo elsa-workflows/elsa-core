@@ -1,5 +1,5 @@
-using Elsa.Services;
 using System.Collections.Generic;
+using Elsa.Services;
 
 namespace Elsa.Activities.RabbitMq
 {

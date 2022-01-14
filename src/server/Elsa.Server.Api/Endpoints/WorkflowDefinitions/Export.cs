@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
@@ -14,6 +14,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
     [ApiController]
     [ApiVersion("1")]
     [Route("v{apiVersion:apiVersion}/workflow-definitions/{workflowDefinitionId}/{versionOptions}/export")]
+    [Route("{tenant}/v{apiVersion:apiVersion}/workflow-definitions/{workflowDefinitionId}/{versionOptions}/export")]
     [Produces("application/json")]
     public class Export : ControllerBase
     {
