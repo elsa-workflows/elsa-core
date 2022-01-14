@@ -41,7 +41,6 @@ namespace Elsa.Core.IntegrationTests.Workflows
         private static IWorkflowBlueprint ServiceBusBluePrint ;
         public static AutoResetEvent WaitHandleTest = new AutoResetEvent(false);
 
-
         public ServiceBusWorkflowTest(ITestOutputHelper testOutputHelper)
             : base(testOutputHelper,
                   services => {
@@ -59,15 +58,11 @@ namespace Elsa.Core.IntegrationTests.Workflows
                       services
                       .AddSingleton<ServiceBusWorkflow>(new ServiceBusWorkflow(WaitHandleTest));
                   },
-                  options=> {
-                      
+                  options=> {                      
                       options
                         .AddActivity<SendAzureServiceBusTopicMessage>()
                         .AddActivity<AzureServiceBusTopicMessageReceived>()
                         ;
-
-                      
-
                   })
         {
 
@@ -130,17 +125,7 @@ namespace Elsa.Core.IntegrationTests.Workflows
         public async Task SendRequestAfterSuspend()
         {
             var runWorkflowResult = await WorkflowStarter.StartWorkflowAsync(ServiceBusBluePrint);
-            
             var workflowInstance = runWorkflowResult.WorkflowInstance!;
-
-            // TODO: Figure out a way to wait until Rebus processed the dispatched `ExecuteWorkflowInstanceRequest` message (which happens asynchronously in-memory).
-            // Until then, yielding control here and waiting for a few seconds works too. 
-            //await Task.Delay(TimeSpan.FromSeconds(2));
-            //Assert.Equal(WorkflowStatus.Finished, workflowInstance.WorkflowStatus);
-
-            //Or change the result of the UnitTest, We only want to be sure that
-            // the Receive Activity execute (more or less instantly.)
-            // if not, the workflow should be suspended (and wait) because Bookmark is not successfully indexed.
             var result = WaitHandleTest.WaitOne(TimeSpan.FromSeconds(2));
             Assert.True(result);         
         }
