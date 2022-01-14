@@ -10,10 +10,10 @@ namespace Elsa.Scripting.JavaScript.Services
 {
     public class JintJavaScriptEvaluator : IJavaScriptEvaluator
     {
-        private readonly IPublisher _mediator;
+        private readonly IEventPublisher _mediator;
         private readonly JintOptions _jintOptions;
 
-        public JintJavaScriptEvaluator(IPublisher mediator, IOptions<JintOptions> scriptOptions)
+        public JintJavaScriptEvaluator(IEventPublisher mediator, IOptions<JintOptions> scriptOptions)
         {
             _mediator = mediator;
             _jintOptions = scriptOptions.Value;

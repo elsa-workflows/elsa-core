@@ -12,13 +12,13 @@ namespace Elsa.Scripting.Liquid.Services
     {
         private readonly LiquidParser _parser;
         private readonly IMemoryCache _memoryCache;
-        private readonly IPublisher _publisher;
+        private readonly IEventPublisher _eventPublisher;
 
-        public LiquidTemplateManager(LiquidParser parser, IMemoryCache memoryCache, IPublisher publisher)
+        public LiquidTemplateManager(LiquidParser parser, IMemoryCache memoryCache, IEventPublisher eventPublisher)
         {
             _parser = parser;
             _memoryCache = memoryCache;
-            _publisher = publisher;
+            _eventPublisher = eventPublisher;
         }
 
         public async Task<string?> RenderAsync(string template, ExpressionExecutionContext expressionExecutionContext, CancellationToken cancellationToken = default)
@@ -56,7 +56,7 @@ namespace Elsa.Scripting.Liquid.Services
         private async Task<TemplateContext> CreateTemplateContextAsync(ExpressionExecutionContext expressionExecutionContext, CancellationToken cancellationToken)
         {
             var context = new TemplateContext(expressionExecutionContext, new TemplateOptions());
-            await _publisher.PublishAsync(new RenderingLiquidTemplate(context, expressionExecutionContext), cancellationToken);
+            await _eventPublisher.PublishAsync(new RenderingLiquidTemplate(context, expressionExecutionContext), cancellationToken);
             context.SetValue("ExpressionExecutionContext", expressionExecutionContext);
             return context;
         }

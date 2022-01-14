@@ -12,11 +12,11 @@ public class Trigger : ITrigger
     public string NodeType { get; set; }
     public IDictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
 
-    public virtual ValueTask<IEnumerable<object>> GetHashInputsAsync(TriggerIndexingContext context, CancellationToken cancellationToken = default)
+    public virtual ValueTask<IEnumerable<object>> GetPayloadsAsync(TriggerIndexingContext context, CancellationToken cancellationToken = default)
     {
-        var hashes = GetHashInputs(context);
+        var hashes = GetPayloads(context);
         return ValueTask.FromResult(hashes);
     }
 
-    protected virtual IEnumerable<object> GetHashInputs(TriggerIndexingContext context) => Enumerable.Empty<object>();
+    protected virtual IEnumerable<object> GetPayloads(TriggerIndexingContext context) => Enumerable.Empty<object>();
 }

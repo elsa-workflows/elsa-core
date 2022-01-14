@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using Elsa.Contracts;
 using Elsa.Extensions;
 using Elsa.Helpers;
@@ -8,6 +9,7 @@ using Elsa.Models;
 using Elsa.Persistence.Commands;
 using Elsa.Persistence.Entities;
 using Elsa.Runtime.Contracts;
+using Elsa.Runtime.Notifications;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Runtime.Services;
@@ -16,7 +18,9 @@ public class TriggerIndexer : ITriggerIndexer
 {
     private readonly IWorkflowRegistry _workflowRegistry;
     private readonly IExpressionEvaluator _expressionEvaluator;
-    private readonly ICommandSender _mediator;
+    private readonly IIdentityGenerator _identityGenerator;
+    private readonly ICommandSender _commandSender;
+    private readonly IEventPublisher _eventPublisher;
     private readonly IServiceProvider _serviceProvider;
     private readonly IHasher _hasher;
     private readonly ILogger _logger;
@@ -24,14 +28,18 @@ public class TriggerIndexer : ITriggerIndexer
     public TriggerIndexer(
         IWorkflowRegistry workflowRegistry,
         IExpressionEvaluator expressionEvaluator,
-        ICommandSender mediator,
+        IIdentityGenerator identityGenerator,
+        ICommandSender commandSender,
+        IEventPublisher eventPublisher,
         IServiceProvider serviceProvider,
         IHasher hasher,
         ILogger<TriggerIndexer> logger)
     {
         _workflowRegistry = workflowRegistry;
         _expressionEvaluator = expressionEvaluator;
-        _mediator = mediator;
+        _identityGenerator = identityGenerator;
+        _commandSender = commandSender;
+        _eventPublisher = eventPublisher;
         _serviceProvider = serviceProvider;
         _hasher = hasher;
         _logger = logger;
@@ -51,6 +59,7 @@ public class TriggerIndexer : ITriggerIndexer
 
         stopwatch.Stop();
         _logger.LogInformation("Finished indexing workflow triggers in {ElapsedTime}", stopwatch.Elapsed);
+        await _eventPublisher.PublishAsync(new TriggerIndexingFinished(), cancellationToken);
     }
 
     public async Task IndexTriggersAsync(Workflow workflow, CancellationToken cancellationToken = default)
@@ -60,7 +69,7 @@ public class TriggerIndexer : ITriggerIndexer
 
         // Replace triggers for the specified workflow.
         var definitionId = workflow.Identity.DefinitionId;
-        await _mediator.ExecuteAsync(new ReplaceWorkflowTriggers(definitionId, triggers), cancellationToken);
+        await _commandSender.ExecuteAsync(new ReplaceWorkflowTriggers(definitionId, triggers), cancellationToken);
     }
 
     private async IAsyncEnumerable<WorkflowTrigger> GetTriggersAsync(Workflow workflow, [EnumeratorCancellation] CancellationToken cancellationToken = default)
@@ -101,26 +110,27 @@ public class TriggerIndexer : ITriggerIndexer
         }
 
         var triggerIndexingContext = new TriggerIndexingContext(context, expressionExecutionContext, trigger);
-        var hashInputs = await TryGetHashInputsAsync(trigger, triggerIndexingContext, cancellationToken);
+        var payloads = await TryGetPayloadsAsync(trigger, triggerIndexingContext, cancellationToken);
         var triggerType = trigger.GetType();
         var triggerTypeName = TypeNameHelper.GenerateTypeName(triggerType);
 
-        var triggers = hashInputs.Select(x => new WorkflowTrigger
+        var triggers = payloads.Select(x => new WorkflowTrigger
         {
-            Id = Guid.NewGuid().ToString(),
+            Id = _identityGenerator.GenerateId(),
             WorkflowDefinitionId = workflow.Identity.DefinitionId,
             Name = triggerTypeName,
-            Hash = _hasher.Hash(x)
+            Hash = _hasher.Hash(x),
+            Payload = JsonSerializer.Serialize(x)
         });
 
         return triggers;
     }
 
-    private async Task<IEnumerable<object>> TryGetHashInputsAsync(ITrigger trigger, TriggerIndexingContext context, CancellationToken cancellationToken)
+    private async Task<IEnumerable<object>> TryGetPayloadsAsync(ITrigger trigger, TriggerIndexingContext context, CancellationToken cancellationToken)
     {
         try
         {
-            return await trigger.GetHashInputsAsync(context, cancellationToken);
+            return await trigger.GetPayloadsAsync(context, cancellationToken);
         }
         catch (Exception e)
         {

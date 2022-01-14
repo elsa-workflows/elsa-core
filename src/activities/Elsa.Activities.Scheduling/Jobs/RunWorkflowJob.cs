@@ -1,7 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Scheduling.Contracts;
-using Elsa.Models;
 
 namespace Elsa.Activities.Scheduling.Jobs;
 
@@ -10,15 +9,14 @@ public class RunWorkflowJob : IJob
     public RunWorkflowJob()
     {
     }
-    
-    public RunWorkflowJob(WorkflowIdentity workflowIdentity)
+
+    public RunWorkflowJob(string workflowId)
     {
-        WorkflowIdentity = workflowIdentity;
+        WorkflowId = workflowId;
     }
 
-    public string JobId => $"workflow:{WorkflowIdentity.DefinitionId}";
-    public WorkflowIdentity WorkflowIdentity { get; init; } = default!;
-    
+    public string JobId => $"workflow:{WorkflowId}";
+    public string WorkflowId { get; init; } = default!;
 
     public Task ExecuteAsync(CancellationToken cancellationToken)
     {

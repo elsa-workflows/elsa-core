@@ -97,7 +97,8 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
                     Id = table.Column<string>(type: "TEXT", nullable: false),
                     WorkflowDefinitionId = table.Column<string>(type: "TEXT", nullable: false),
                     Name = table.Column<string>(type: "TEXT", nullable: false),
-                    Hash = table.Column<string>(type: "TEXT", nullable: true)
+                    Hash = table.Column<string>(type: "TEXT", nullable: true),
+                    Payload = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {

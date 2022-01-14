@@ -18,7 +18,7 @@ public class TriggerActivity : Activity, ITrigger
         set => NodeType = value;
     }
 
-    public virtual ValueTask<IEnumerable<object>> GetHashInputsAsync(TriggerIndexingContext context, CancellationToken cancellationToken = default)
+    public virtual ValueTask<IEnumerable<object>> GetPayloadsAsync(TriggerIndexingContext context, CancellationToken cancellationToken = default)
     {
         var hashes = GetHashInputs(context);
         return ValueTask.FromResult(hashes);

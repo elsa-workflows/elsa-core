@@ -10,11 +10,13 @@ public class Timer : Trigger
 {
     [Input] public Input<TimeSpan> Interval { get; set; } = default!;
 
-    protected override IEnumerable<object> GetHashInputs(TriggerIndexingContext context)
+    protected override IEnumerable<object> GetPayloads(TriggerIndexingContext context)
     {
         var interval = context.ExpressionExecutionContext.Get(Interval);
         var clock = context.ExpressionExecutionContext.GetRequiredService<ISystemClock>();
         var executeAt = clock.UtcNow.Add(interval);
-        return new object[] { executeAt, interval };
+        yield return new TimerPayload(executeAt, interval);
     }
 }
+
+public record TimerPayload(DateTime StartAt, TimeSpan Interval);

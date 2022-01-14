@@ -16,7 +16,16 @@ public class FindWorkflowTriggersHandler : IRequestHandler<FindWorkflowTriggers,
 
     public Task<IEnumerable<WorkflowTrigger>> HandleAsync(FindWorkflowTriggers request, CancellationToken cancellationToken)
     {
-        var triggers = _store.FindMany(x => x.Name == request.Name && x.Hash == request.Hash).ToList().AsEnumerable();
+        var triggers = _store.Query(query =>
+        {
+            query = query.Where(x => x.Name == request.Name);
+
+            if (request.Hash != null)
+                query = query.Where(x => x.Hash == request.Hash);
+
+            return query;
+        });
+
         return Task.FromResult(triggers);
     }
 }

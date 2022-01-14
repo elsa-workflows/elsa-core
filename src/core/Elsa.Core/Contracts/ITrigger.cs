@@ -4,5 +4,5 @@ namespace Elsa.Contracts;
 
 public interface ITrigger : INode
 {
-    ValueTask<IEnumerable<object>> GetHashInputsAsync(TriggerIndexingContext context, CancellationToken cancellationToken = default);
+    ValueTask<IEnumerable<object>> GetPayloadsAsync(TriggerIndexingContext context, CancellationToken cancellationToken = default);
 }

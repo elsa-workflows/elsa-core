@@ -19,7 +19,7 @@ public static class ServiceCollectionExtensions
             .AddSingleton<IMediator, DefaultMediator>()
             .AddSingleton<IRequestSender>(sp => sp.GetRequiredService<IMediator>())
             .AddSingleton<ICommandSender>(sp => sp.GetRequiredService<IMediator>())
-            .AddSingleton<IPublisher>(sp => sp.GetRequiredService<IMediator>())
+            .AddSingleton<IEventPublisher>(sp => sp.GetRequiredService<IMediator>())
             .AddSingleton<IRequestPipeline, RequestPipeline>()
             .AddSingleton<ICommandPipeline, CommandPipeline>()
             .AddSingleton<INotificationPipeline, NotificationPipeline>();

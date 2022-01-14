@@ -3,6 +3,7 @@ using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Http;
 using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.Scheduling;
+using Elsa.Activities.Scheduling.Extensions;
 using Elsa.Activities.Workflows;
 using Elsa.Api.Extensions;
 using Elsa.Extensions;
@@ -10,6 +11,7 @@ using Elsa.Management.Contracts;
 using Elsa.Management.Extensions;
 using Elsa.Mediator.Extensions;
 using Elsa.Modules.Quartz.Extensions;
+using Elsa.Modules.Quartz.Services;
 using Elsa.Persistence.EntityFrameworkCore.Extensions;
 using Elsa.Persistence.EntityFrameworkCore.Sqlite;
 using Elsa.Persistence.Middleware.WorkflowExecution;
@@ -34,6 +36,7 @@ services
     .AddEntityFrameworkCorePersistence((_, ef) => ef.UseSqlite())
     .IndexWorkflowTriggers()
     .AddElsaManagement()
+    .AddSchedulingServices(new QuartzSchedulingServiceProvider())
     .AddHttpActivityServices()
     .AddProtoActorWorkflowHost()
     .ConfigureWorkflowRuntime(options =>

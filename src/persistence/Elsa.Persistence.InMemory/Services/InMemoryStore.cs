@@ -47,4 +47,10 @@ public class InMemoryStore<TEntity> where TEntity : Entity
 
         return count;
     }
+
+    public IEnumerable<TEntity> Query(Func<IQueryable<TEntity>, IQueryable<TEntity>> query)
+    {
+        var queryable = Entities.Values.AsQueryable();
+        return query(queryable);
+    }
 }

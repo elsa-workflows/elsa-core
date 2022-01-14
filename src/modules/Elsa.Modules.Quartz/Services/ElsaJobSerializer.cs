@@ -10,7 +10,7 @@ public class ElsaJobSerializer : IElsaJobSerializer
     public string Serialize(IJob job)
     {
         var serializerOptions = CreateSerializerOptions();
-        return JsonSerializer.Serialize(job, serializerOptions);
+        return JsonSerializer.Serialize(job, job.GetType(), serializerOptions);
     }
 
     public T Deserialize<T>(string json) where T : IElsaJob

@@ -10,6 +10,16 @@ public class FindWorkflowTriggersHandler : IRequestHandler<FindWorkflowTriggers,
     private readonly IStore<WorkflowTrigger> _store;
     public FindWorkflowTriggersHandler(IStore<WorkflowTrigger> store) => _store = store;
 
-    public async Task<IEnumerable<WorkflowTrigger>> HandleAsync(FindWorkflowTriggers request, CancellationToken cancellationToken) =>
-        await _store.FindManyAsync(x => x.Name == request.Name && x.Hash == request.Hash, cancellationToken);
+    public async Task<IEnumerable<WorkflowTrigger>> HandleAsync(FindWorkflowTriggers request, CancellationToken cancellationToken)
+    {
+        return await _store.QueryAsync(query =>
+        {
+            query = query.Where(x => x.Name == request.Name);
+
+            if (request.Hash != null)
+                query = query.Where(x => x.Hash == request.Hash);
+
+            return query;
+        }, cancellationToken);
+    }
 }
