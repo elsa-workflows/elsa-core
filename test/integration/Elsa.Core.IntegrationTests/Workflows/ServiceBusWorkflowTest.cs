@@ -58,9 +58,6 @@ namespace Elsa.Core.IntegrationTests.Workflows
 
                       services
                       .AddSingleton<ServiceBusWorkflow>(new ServiceBusWorkflow(WaitHandleTest));
-                      //.AddSingleton<IWaitHandleTest>(WaitHandleTest)
-                      //.Replace<IHandleMessages<ExecuteWorkflowInstanceRequest>, ExecuteWorkflowInstanceRequestConsumerTest>(ServiceLifetime.Transient);
-
                   },
                   options=> {
                       
