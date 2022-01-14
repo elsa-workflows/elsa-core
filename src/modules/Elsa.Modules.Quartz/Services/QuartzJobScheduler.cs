@@ -35,6 +35,7 @@ public class QuartzJobScheduler : IElsaJobScheduler
         
         try
         {
+            await scheduler.UnscheduleJob(trigger.Key, cancellationToken);
             await scheduler.ScheduleJob(trigger, cancellationToken);
         }
         catch (SchedulerException e)

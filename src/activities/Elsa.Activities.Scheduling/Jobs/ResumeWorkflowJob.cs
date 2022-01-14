@@ -1,27 +1,25 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.Scheduling.Abstractions;
 using Elsa.Activities.Scheduling.Contracts;
+using Elsa.Runtime.Contracts;
+using Elsa.Runtime.Models;
 
 namespace Elsa.Activities.Scheduling.Jobs;
 
-public class ResumeWorkflowJob : IJob
+public record ResumeWorkflowJob(string WorkflowInstanceId, string ActivityId) : IJob
 {
-    public ResumeWorkflowJob()
-    {
-    }
-
-    public ResumeWorkflowJob(string workflowInstanceId, string activityId)
-    {
-        WorkflowInstanceId = workflowInstanceId;
-        ActivityId = activityId;
-    }
-
     public string JobId => $"workflow-instance:{WorkflowInstanceId}-{ActivityId}";
-    public string WorkflowInstanceId { get; init; } = default!;
-    public string ActivityId { get; init; } = default!;
+}
 
-    public Task ExecuteAsync(CancellationToken cancellationToken)
+public class ResumeWorkflowJobHandler : JobHandler<ResumeWorkflowJob>
+{
+    private readonly IWorkflowInvoker _workflowInvoker;
+    public ResumeWorkflowJobHandler(IWorkflowInvoker workflowInvoker) => _workflowInvoker = workflowInvoker;
+
+    protected override async Task HandleAsync(ResumeWorkflowJob job, CancellationToken cancellationToken)
     {
-        throw new System.NotImplementedException();
+        var request = new ExecuteWorkflowInstanceRequest(job.WorkflowInstanceId);
+        await _workflowInvoker.ExecuteAsync(request, cancellationToken);
     }
 }
