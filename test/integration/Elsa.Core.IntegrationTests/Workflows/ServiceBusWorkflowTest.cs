@@ -23,6 +23,8 @@ using Elsa.Services.Models;
 using System.Reflection;
 using Elsa.Services.Workflows;
 using Elsa.Activities.AzureServiceBus.Bookmarks;
+using Rebus.Handlers;
+using Elsa.Options;
 
 namespace Elsa.Core.IntegrationTests.Workflows
 {
@@ -37,6 +39,8 @@ namespace Elsa.Core.IntegrationTests.Workflows
         public static Mock<IWorkflowLaunchpad> WorkflowLaunchpad = new();
         
         private static IWorkflowBlueprint ServiceBusBluePrint ;
+        public static AutoResetEvent WaitHandleTest = new AutoResetEvent(false);
+
 
         public ServiceBusWorkflowTest(ITestOutputHelper testOutputHelper)
             : base(testOutputHelper,
@@ -49,15 +53,23 @@ namespace Elsa.Core.IntegrationTests.Workflows
                       .AddSingleton<IServiceBusTopicsStarter, ServiceBusTopicsStarter>()
                       .AddSingleton<IWorkflowRegistry>(WorkflowRegistryMoq.Object)
                       .AddBookmarkProvider<TopicMessageReceivedBookmarkProvider>()
-                      .AddStartupTask<StartServiceBusTopics>();                     
-                      
+                      .AddStartupTask<StartServiceBusTopics>();
+
+
+                      services
+                      .AddSingleton<ServiceBusWorkflow>(new ServiceBusWorkflow(WaitHandleTest));
+                      //.AddSingleton<IWaitHandleTest>(WaitHandleTest)
+                      //.Replace<IHandleMessages<ExecuteWorkflowInstanceRequest>, ExecuteWorkflowInstanceRequestConsumerTest>(ServiceLifetime.Transient);
+
                   },
                   options=> {
+                      
                       options
                         .AddActivity<SendAzureServiceBusTopicMessage>()
                         .AddActivity<AzureServiceBusTopicMessageReceived>()
-                        
                         ;
+
+                      
 
                   })
         {
@@ -126,14 +138,24 @@ namespace Elsa.Core.IntegrationTests.Workflows
 
             // TODO: Figure out a way to wait until Rebus processed the dispatched `ExecuteWorkflowInstanceRequest` message (which happens asynchronously in-memory).
             // Until then, yielding control here and waiting for a few seconds works too. 
-            await Task.Delay(TimeSpan.FromSeconds(2));
+            //await Task.Delay(TimeSpan.FromSeconds(2));
+            //Assert.Equal(WorkflowStatus.Finished, workflowInstance.WorkflowStatus);
 
-            Assert.Equal(WorkflowStatus.Finished, workflowInstance.WorkflowStatus);
+            //Or change the result of the UnitTest, We only want to be sure that
+            // the Receive Activity execute (more or less instantly.)
+            // if not, the workflow should be suspended (and wait) because Bookmark is not successfully indexed.
+            var result = WaitHandleTest.WaitOne(TimeSpan.FromSeconds(2));
+            Assert.True(result);         
         }
     }
-
     public class ServiceBusWorkflow : IWorkflow
     {
+        private AutoResetEvent autoEvent_ = new AutoResetEvent(false);
+        public ServiceBusWorkflow(AutoResetEvent autoEvent)
+        {
+            this.autoEvent_ = autoEvent;
+        }
+
         public void Build(IWorkflowBuilder builder)
         {
             builder
@@ -144,9 +166,18 @@ namespace Elsa.Core.IntegrationTests.Workflows
 
                 return $"Start! - correlationId: {correlationId}";
             })
-            .SendTopicMessage("testtopic2", "\"Hello World\"")
+            .SendTopicMessage(setup =>
+            {
+                setup.Set(x => x.TopicName, "testtopic2");
+                setup.Set(x => x.Message, "\"Hello World\"");
+                setup.Set(x => x.SendMessageOnSupend, true);
+            })
             .TopicMessageReceived<string>("testtopic2", "testsub")
-            .WriteLine(ctx => "End: " + (string)ctx.Input);
+            .WriteLine(ctx =>
+                {
+                    autoEvent_.Set();
+                    return "End: " + (string)ctx.Input;
+                });
         }
     }
 }

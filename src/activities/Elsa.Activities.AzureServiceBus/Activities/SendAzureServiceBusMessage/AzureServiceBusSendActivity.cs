@@ -69,6 +69,9 @@ namespace Elsa.Activities.AzureServiceBus
         [ActivityInput(Category = PropertyCategories.Advanced, DefaultSyntax = SyntaxNames.Json, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid, SyntaxNames.Json }, UIHint = ActivityInputUIHints.MultiLine)]
         public IDictionary<string, object>? UserProperties { get; set; } = new Dictionary<string, object>();
 
+        [ActivityInput(Category = PropertyCategories.Advanced,Hint = "If set, the message will be send to the Service Bus only after Workflow Suspend, usefull for Request/Response pattern", DefaultValue = false)]
+        public bool SendMessageOnSupend { get; set; }
+
         protected abstract Task<ISenderClient> GetSenderAsync();
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
@@ -79,10 +82,14 @@ namespace Elsa.Activities.AzureServiceBus
                 message.CorrelationId = context.WorkflowExecutionContext.CorrelationId;
 
             var sender = await GetSenderAsync();
-            //await sender.SendAsync(message);
+            if(SendMessageOnSupend)
+                return Combine(Done(), new ServiceBusActionResult(sender, message));
+            else
+            {
+                await sender.SendAsync(message);
+                return Done();
+            }
 
-            return Combine(Done(), new ServiceBusActionResult(sender, message));
-            
         }
 
         protected Message CreateMessage(Object input)

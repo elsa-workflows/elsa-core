@@ -5,26 +5,28 @@ using Elsa.Services.Models;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
 
-namespace Elsa.Activities.AzureServiceBus.ActivityExecutionResults;
-
-public class ServiceBusActionResult : ActivityExecutionResult
+namespace Elsa.Activities.AzureServiceBus.ActivityExecutionResults
 {
-    public ServiceBusActionResult(ISenderClient sender, Message message)
-    {
-        Sender = sender;
-        Message = message;
-    }
 
-    public ISenderClient Sender { get; }
-    public Message Message { get; }
-
-    protected override void Execute(ActivityExecutionContext activityExecutionContext)
+    public class ServiceBusActionResult : ActivityExecutionResult
     {
-        async ValueTask ScheduleMessageAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
+        public ServiceBusActionResult(ISenderClient sender, Message message)
         {
-            await Sender.SendAsync(Message);
+            Sender = sender;
+            Message = message;
         }
 
-        activityExecutionContext.WorkflowExecutionContext.RegisterTask(ScheduleMessageAsync);
+        public ISenderClient Sender { get; }
+        public Message Message { get; }
+
+        protected override void Execute(ActivityExecutionContext activityExecutionContext)
+        {
+            async ValueTask ScheduleMessageAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
+            {
+                await Sender.SendAsync(Message);
+            }
+
+            activityExecutionContext.WorkflowExecutionContext.RegisterTask(ScheduleMessageAsync);
+        }
     }
 }
