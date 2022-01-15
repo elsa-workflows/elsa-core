@@ -18,11 +18,7 @@ namespace Elsa.Activities.AzureServiceBus
     public abstract class AzureServiceBusSendActivity : Activity
     {
         private readonly IContentSerializer _serializer;
-
-        protected AzureServiceBusSendActivity(IContentSerializer serializer)
-        {
-            _serializer = serializer;
-        }
+        protected AzureServiceBusSendActivity(IContentSerializer serializer) => _serializer = serializer;
 
         [ActivityInput(SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid, SyntaxNames.Json })]
         public object Message { get; set; } = default!;
@@ -69,8 +65,8 @@ namespace Elsa.Activities.AzureServiceBus
         [ActivityInput(Category = PropertyCategories.Advanced, DefaultSyntax = SyntaxNames.Json, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid, SyntaxNames.Json }, UIHint = ActivityInputUIHints.MultiLine)]
         public IDictionary<string, object>? UserProperties { get; set; } = new Dictionary<string, object>();
 
-        [ActivityInput(Category = PropertyCategories.Advanced,Hint = "If set, the message will be send to the Service Bus only after Workflow Suspend, usefull for Request/Response pattern", DefaultValue = false)]
-        public bool SendMessageOnSupend { get; set; }
+        [ActivityInput(Category = PropertyCategories.Advanced,Hint = "If set, the message will be sent to the Service Bus only after the workflow is suspended, which is useful for the Request/Response pattern.", DefaultValue = false)]
+        public bool SendMessageOnSuspend { get; set; }
 
         protected abstract Task<ISenderClient> GetSenderAsync();
 
@@ -82,7 +78,7 @@ namespace Elsa.Activities.AzureServiceBus
                 message.CorrelationId = context.WorkflowExecutionContext.CorrelationId;
 
             var sender = await GetSenderAsync();
-            if(SendMessageOnSupend)
+            if(SendMessageOnSuspend)
                 return Combine(Done(), new ServiceBusActionResult(sender, message));
             else
             {
