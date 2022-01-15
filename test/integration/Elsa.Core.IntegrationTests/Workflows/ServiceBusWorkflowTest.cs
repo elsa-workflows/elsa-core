@@ -124,13 +124,7 @@ namespace Elsa.Core.IntegrationTests.Workflows
         public void Build(IWorkflowBuilder builder)
         {
             builder
-                .WriteLine(ctx =>
-                {
-                    var correlationId = System.Guid.NewGuid().ToString("n");
-                    ctx.WorkflowInstance.CorrelationId = correlationId;
-
-                    return $"Start! - correlationId: {correlationId}";
-                })
+                .WriteLine(ctx => $"Start! - correlationId: {ctx.WorkflowInstance.CorrelationId}")
                 .SendTopicMessage(setup =>
                 {
                     setup.Set(x => x.TopicName, "testtopic2");

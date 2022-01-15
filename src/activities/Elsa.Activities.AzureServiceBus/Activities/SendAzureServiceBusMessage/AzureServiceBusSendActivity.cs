@@ -78,14 +78,12 @@ namespace Elsa.Activities.AzureServiceBus
                 message.CorrelationId = context.WorkflowExecutionContext.CorrelationId;
 
             var sender = await GetSenderAsync();
+            
             if(SendMessageOnSuspend)
                 return Combine(Done(), new ServiceBusActionResult(sender, message));
-            else
-            {
-                await sender.SendAsync(message);
-                return Done();
-            }
-
+            
+            await sender.SendAsync(message);
+            return Done();
         }
 
         protected Message CreateMessage(Object input)
