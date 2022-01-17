@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
 {
     [DbContext(typeof(ElsaDbContext))]
-    [Migration("20220114122659_Initial")]
+    [Migration("20220117205849_Initial")]
     partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -42,11 +42,11 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
                     b.Property<string>("Hash")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("JsonData")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Name")
                         .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Payload")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("WorkflowDefinitionId")

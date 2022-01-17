@@ -1,7 +1,6 @@
 using Elsa.Mediator.Contracts;
+using Elsa.Persistence.Entities;
 
 namespace Elsa.Runtime.Notifications;
 
-public class TriggerIndexingFinished : INotification
-{
-}
+public record TriggerIndexingFinished(ICollection<WorkflowTrigger> Triggers) : INotification;

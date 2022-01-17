@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -5,6 +6,7 @@ using Elsa.Activities.Scheduling.Contracts;
 using Elsa.Activities.Scheduling.Jobs;
 using Elsa.Activities.Scheduling.Schedules;
 using Elsa.Mediator.Contracts;
+using Elsa.Persistence.Extensions;
 using Elsa.Persistence.Requests;
 using Elsa.Runtime.Notifications;
 
@@ -23,7 +25,11 @@ public class ScheduleWorkflowsHandler : INotificationHandler<TriggerIndexingFini
 
     public async Task HandleAsync(TriggerIndexingFinished notification, CancellationToken cancellationToken)
     {
-        var timerTriggers = await _requestSender.RequestAsync(FindWorkflowTriggers.ForTrigger<Timer>(), cancellationToken);
+        // Unschedule everything.
+        await _jobScheduler.ClearAsync(cancellationToken);
+        
+        // Select all Timer triggers.
+        var timerTriggers = notification.Triggers.Filter<Timer>().ToList();
 
         foreach (var trigger in timerTriggers)
         {

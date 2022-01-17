@@ -40,11 +40,11 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
                     b.Property<string>("Hash")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("JsonData")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Name")
                         .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Payload")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("WorkflowDefinitionId")

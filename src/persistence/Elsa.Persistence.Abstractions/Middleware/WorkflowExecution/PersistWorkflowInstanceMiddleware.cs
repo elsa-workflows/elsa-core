@@ -22,6 +22,7 @@ public class PersistWorkflowInstanceMiddleware : IWorkflowExecutionMiddleware
     private readonly IRequestSender _requestSender;
     private readonly ICommandSender _commandSender;
     private readonly IWorkflowStateSerializer _workflowStateSerializer;
+    private readonly IPayloadSerializer _payloadSerializer;
     private readonly IIdentityGenerator _identityGenerator;
     private readonly ISystemClock _clock;
 
@@ -30,6 +31,7 @@ public class PersistWorkflowInstanceMiddleware : IWorkflowExecutionMiddleware
         IRequestSender requestSender,
         ICommandSender commandSender,
         IWorkflowStateSerializer workflowStateSerializer,
+        IPayloadSerializer payloadSerializer,
         IIdentityGenerator identityGenerator,
         ISystemClock clock)
     {
@@ -37,6 +39,7 @@ public class PersistWorkflowInstanceMiddleware : IWorkflowExecutionMiddleware
         _requestSender = requestSender;
         _commandSender = commandSender;
         _workflowStateSerializer = workflowStateSerializer;
+        _payloadSerializer = payloadSerializer;
         _identityGenerator = identityGenerator;
         _clock = clock;
     }
@@ -47,7 +50,7 @@ public class PersistWorkflowInstanceMiddleware : IWorkflowExecutionMiddleware
         var workflow = context.Workflow;
         var (definitionId, version, definitionVersionId) = workflow.Identity;
         var existingWorkflowInstance = await _requestSender.RequestAsync(new FindWorkflowInstance(context.Id), cancellationToken);
-        
+
         // Setup a new workflow instance if no existing instance was found.
         var workflowInstance = existingWorkflowInstance ?? new WorkflowInstance
         {
@@ -63,7 +66,7 @@ public class PersistWorkflowInstanceMiddleware : IWorkflowExecutionMiddleware
 
         // Get a copy of current bookmarks.
         var existingBookmarks = await _requestSender.RequestAsync(new FindWorkflowBookmarks(workflowInstance.Id), cancellationToken);
-        var bookmarksSnapshot = existingBookmarks.Select(x => new Bookmark(x.Id, x.Name, x.Hash, x.ActivityId, x.ActivityInstanceId, x.Data, x.CallbackMethodName)).ToList();
+        var bookmarksSnapshot = existingBookmarks.Select(x => new Bookmark(x.Id, x.Name, x.Hash, x.Payload, x.ActivityId, x.ActivityInstanceId, x.CallbackMethodName)).ToList();
 
         // Exclude the current bookmark that initiated the creation of the workflow context, if any.
         var invokedBookmark = context.Bookmark;
@@ -103,7 +106,7 @@ public class PersistWorkflowInstanceMiddleware : IWorkflowExecutionMiddleware
             WorkflowInstanceId = workflowInstance.Id,
             CorrelationId = workflowInstance.CorrelationId,
             Hash = x.Hash,
-            Data = x.Data,
+            Payload = x.Payload,
             Name = x.Name,
             ActivityId = x.ActivityId,
             ActivityInstanceId = x.ActivityInstanceId,

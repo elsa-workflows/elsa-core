@@ -3,6 +3,7 @@ using Elsa.Modules.Quartz.Contracts;
 using Elsa.Modules.Quartz.Jobs;
 using Microsoft.Extensions.Logging;
 using Quartz;
+using Quartz.Impl.Matchers;
 using IElsaJobScheduler = Elsa.Activities.Scheduling.Contracts.IJobScheduler;
 using IElsaJob = Elsa.Activities.Scheduling.Contracts.IJob;
 using IElsaSchedule = Elsa.Activities.Scheduling.Contracts.ISchedule;
@@ -12,6 +13,7 @@ namespace Elsa.Modules.Quartz.Services;
 public class QuartzJobScheduler : IElsaJobScheduler
 {
     public const string JobDataKey = "ElsaJob";
+    public const string GroupKey = "ElsaJobs";
     private readonly IElsaJobSerializer _elsaJobSerializer;
     private readonly ISchedulerFactory _schedulerFactory;
     private readonly ILogger _logger;
@@ -28,7 +30,14 @@ public class QuartzJobScheduler : IElsaJobScheduler
         var quartzTrigger = CreateTrigger(job, schedule);
         await ScheduleJob(quartzTrigger, cancellationToken);
     }
-    
+
+    public async Task ClearAsync(CancellationToken cancellationToken = default)
+    {
+        var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
+        var jobKeys = await scheduler.GetJobKeys(GroupMatcher<JobKey>.GroupEquals(GroupKey), cancellationToken);
+        await scheduler.DeleteJobs(jobKeys, cancellationToken);
+    }
+
     private async Task ScheduleJob(ITrigger trigger, CancellationToken cancellationToken)
     {
         var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
@@ -47,8 +56,9 @@ public class QuartzJobScheduler : IElsaJobScheduler
     private ITrigger CreateTrigger(IElsaJob job, IElsaSchedule schedule)
     {
         var jobName = job.GetType().Name;
+        var triggerKey = new TriggerKey(job.JobId, GroupKey);
         var json = _elsaJobSerializer.Serialize(job);
-        var builder = TriggerBuilder.Create().ForJob(jobName).WithIdentity(job.JobId).UsingJobData(JobDataKey, json);
+        var builder = TriggerBuilder.Create().ForJob(jobName).WithIdentity(triggerKey).UsingJobData(JobDataKey, json);
 
         switch (schedule)
         {

@@ -7,24 +7,25 @@ namespace Elsa.Services;
 
 public class Hasher : IHasher
 {
+    private readonly IPayloadSerializer _payloadSerializer;
+
+    public Hasher(IPayloadSerializer payloadSerializer)
+    {
+        _payloadSerializer = payloadSerializer;
+    }
+    
     public string Hash(object value)
     {
-        var options = new JsonSerializerOptions
-        {
-            // Enables serialization of ValueTuples, which use fields instead of properties. 
-            IncludeFields = true
-        };
-            
-        var json = JsonSerializer.Serialize(value, options);
+        var json = _payloadSerializer.Serialize(value);
         return Hash(json);
     }
-        
-    private static string Hash(string input)
+    
+    public string Hash(string value)
     {
         using var sha = HashAlgorithm.Create(HashAlgorithmName.SHA256.ToString())!;
-        return Hash(sha, input);
+        return Hash(sha, value);
     }
-
+    
     private static string Hash(HashAlgorithm hashAlgorithm, string input)
     {
         var data = hashAlgorithm.ComputeHash(Encoding.UTF8.GetBytes(input));

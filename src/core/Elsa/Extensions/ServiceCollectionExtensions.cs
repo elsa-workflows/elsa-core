@@ -43,6 +43,7 @@ public static class ServiceCollectionExtensions
             .AddSingleton<IHasher, Hasher>()
             .AddSingleton<IIdentityGenerator, IdentityGenerator>()
             .AddSingleton<ISystemClock, SystemClock>()
+            .AddSingleton<IPayloadSerializer, PayloadSerializer>()
 
             // DSL.
             .AddDsl()

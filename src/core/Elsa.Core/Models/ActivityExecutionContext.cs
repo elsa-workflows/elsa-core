@@ -47,33 +47,31 @@ public class ActivityExecutionContext
             ScheduleActivity(activity, completionCallback);
     }
 
-    public void SetBookmarks(IEnumerable<object> hashInputs, IDictionary<string, object?>? data = default, ExecuteActivityDelegate? callback = default)
+    public void SetBookmarks(IEnumerable<object> payloads, ExecuteActivityDelegate? callback = default)
     {
-        foreach (var hashInput in hashInputs)
-            SetBookmark(hashInput, data, callback);
+        foreach (var hashInput in payloads)
+            SetBookmark(payloads, callback);
     }
 
     public void SetBookmarks(IEnumerable<Bookmark> bookmarks) => _bookmarks.AddRange(bookmarks);
     public void SetBookmark(Bookmark bookmark) => _bookmarks.Add(bookmark);
 
-    public void SetBookmark(object? hashInput, IDictionary<string, object?>? data = default, ExecuteActivityDelegate? callback = default)
+    public void SetBookmark(object? payload, ExecuteActivityDelegate? callback = default)
     {
         var hasher = GetRequiredService<IHasher>();
-        var hash = hashInput != null ? hasher.Hash(hashInput) : default;
-        SetBookmark(hash, data, callback);
-    }
-
-    public void SetBookmark(string? hash, IDictionary<string, object?>? data = default, ExecuteActivityDelegate? callback = default)
-    {
+        
         var identityGenerator = GetRequiredService<IIdentityGenerator>();
+        var payloadSerializer = GetRequiredService<IPayloadSerializer>();
+        var payloadJson = payload != null ? payloadSerializer.Serialize(payload) : default;
+        var hash = payloadJson != null ? hasher.Hash(payloadJson) : default;
 
         SetBookmark(new Bookmark(
             identityGenerator.GenerateId(),
             Activity.NodeType,
             hash,
+            payloadJson,
             Activity.Id,
             Id,
-            data ?? new Dictionary<string, object?>(),
             callback?.Method.Name));
     }
 
@@ -112,7 +110,7 @@ public class ActivityExecutionContext
         var locationReference = input.LocationReference;
         var value = await evaluator.EvaluateAsync(input, ExpressionExecutionContext);
         locationReference.Set(this, value);
-        return (T?)value;
+        return value;
     }
 
     private RegisterLocation? GetLocation(RegisterLocationReference locationReference) =>

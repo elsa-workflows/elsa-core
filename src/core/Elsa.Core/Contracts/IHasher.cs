@@ -6,4 +6,5 @@ namespace Elsa.Contracts;
 public interface IHasher
 {
     public string Hash(object value);
+    public string Hash(string value);
 }

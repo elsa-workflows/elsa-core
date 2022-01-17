@@ -58,24 +58,37 @@ public class TriggerIndexer : ITriggerIndexer
         _logger.LogInformation("Indexing workflow triggers");
         stopwatch.Start();
 
+        // Only stream workflows from providers that are not "dynamic" (such as DatabaseWorkflowProvider).
         var workflows = _workflowRegistry.StreamAllAsync(WorkflowRegistry.SkipDynamicProviders, cancellationToken);
+        var collectedTriggers = new List<WorkflowTrigger>();
 
         await foreach (var workflow in workflows.WithCancellation(cancellationToken))
-            await IndexTriggersAsync(workflow, cancellationToken);
+        {
+            var triggers = await GetTriggersAsync(workflow, cancellationToken).ToListAsync(cancellationToken);
+            collectedTriggers.AddRange(triggers);
+        }
+
+        // Replace triggers for the specified workflow.
+        await _commandSender.ExecuteAsync(new ReplaceWorkflowTriggers(collectedTriggers), cancellationToken);
 
         stopwatch.Stop();
         _logger.LogInformation("Finished indexing workflow triggers in {ElapsedTime}", stopwatch.Elapsed);
-        await _eventPublisher.PublishAsync(new TriggerIndexingFinished(), cancellationToken);
+
+        // Publish event.
+        await _eventPublisher.PublishAsync(new TriggerIndexingFinished(collectedTriggers), cancellationToken);
     }
 
-    public async Task IndexTriggersAsync(Workflow workflow, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<WorkflowTrigger>> IndexTriggersAsync(Workflow workflow, CancellationToken cancellationToken = default)
     {
         // Collect new triggers.
         var triggers = await GetTriggersAsync(workflow, cancellationToken).ToListAsync(cancellationToken);
 
         // Replace triggers for the specified workflow.
-        var definitionId = workflow.Identity.DefinitionId;
-        await _commandSender.ExecuteAsync(new ReplaceWorkflowTriggers(definitionId, triggers), cancellationToken);
+        await _commandSender.ExecuteAsync(new ReplaceWorkflowTriggers(triggers), cancellationToken);
+
+        // Publish event.
+        await _eventPublisher.PublishAsync(new TriggerIndexingFinished(triggers), cancellationToken);
+        return triggers;
     }
 
     private async IAsyncEnumerable<WorkflowTrigger> GetTriggersAsync(Workflow workflow, [EnumeratorCancellation] CancellationToken cancellationToken = default)
@@ -132,11 +145,11 @@ public class TriggerIndexer : ITriggerIndexer
         return triggers;
     }
 
-    private async Task<IEnumerable<object>> TryGetPayloadsAsync(ITrigger trigger, TriggerIndexingContext context, CancellationToken cancellationToken)
+    private async Task<ICollection<object>> TryGetPayloadsAsync(ITrigger trigger, TriggerIndexingContext context, CancellationToken cancellationToken)
     {
         try
         {
-            return await trigger.GetPayloadsAsync(context, cancellationToken);
+            return (await trigger.GetPayloadsAsync(context, cancellationToken)).ToList();
         }
         catch (Exception e)
         {

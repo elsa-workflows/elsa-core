@@ -6,6 +6,9 @@ using Elsa.Models;
 
 namespace Elsa.Activities.Scheduling;
 
+/// <summary>
+/// Represents a timer to periodically trigger the workflow it is associated with.
+/// </summary>
 public class Timer : Trigger
 {
     [Input] public Input<TimeSpan> Interval { get; set; } = default!;

@@ -65,20 +65,15 @@ public class WorkflowOperatorActor : IActor
 
     private ExecuteWorkflowResponse MapResult(ExecuteWorkflowResult result)
     {
-        var bookmarks = result.Bookmarks.Select(x =>
+        var bookmarks = result.Bookmarks.Select(x => new Bookmark
         {
-            var data = x.Data?.ToDictionary(y => y.Key, y => new Json
-            {
-                Text = JsonSerializer.Serialize(y.Value)
-            }) ?? new Dictionary<string, Json>();
-
-            var bookmark = new Bookmark
-            {
-                Id = x.Id
-            };
-
-            bookmark.Data.Add(data);
-            return bookmark;
+            Id = x.Id,
+            Hash = x.Hash,
+            Payload = x.Payload,
+            Name = x.Name,
+            ActivityId = x.ActivityId,
+            ActivityInstanceId = x.ActivityInstanceId,
+            CallbackMethodName = x.CallbackMethodName
         });
 
         var response = new ExecuteWorkflowResponse
@@ -104,9 +99,9 @@ public class WorkflowOperatorActor : IActor
                 bookmarkMessage.Id,
                 bookmarkMessage.Name,
                 bookmarkMessage.Hash,
+                bookmarkMessage.Payload,
                 bookmarkMessage.ActivityId,
                 bookmarkMessage.ActivityInstanceId,
-                null,
                 bookmarkMessage.CallbackMethodName);
 
         return await _workflowEngine.ExecuteAsync(workflow, workflowState, bookmark, cancellationToken);

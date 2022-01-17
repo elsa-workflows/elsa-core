@@ -15,5 +15,9 @@
     <ItemGroup>
       <PackageReference Include="LinqKit" Version="1.1.27" />
     </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Services" />
+    </ItemGroup>
     
 </Project>

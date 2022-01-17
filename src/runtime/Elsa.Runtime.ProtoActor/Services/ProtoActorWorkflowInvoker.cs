@@ -13,7 +13,7 @@ namespace Elsa.Runtime.ProtoActor.Services;
 
 using Bookmark = Elsa.Models.Bookmark;
 using BookmarkMessage = Messages.Bookmark;
-    
+
 public class ProtoActorWorkflowInvoker : IWorkflowInvoker
 {
     private readonly Cluster _cluster;
@@ -56,7 +56,7 @@ public class ProtoActorWorkflowInvoker : IWorkflowInvoker
 
         return new ExecuteWorkflowResult(workflowState, bookmarks);
     }
-        
+
     public async Task<DispatchWorkflowResult> DispatchAsync(DispatchWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
         var (instanceId, bookmark) = request;
@@ -92,7 +92,7 @@ public class ProtoActorWorkflowInvoker : IWorkflowInvoker
 
         return new ExecuteWorkflowResult(workflowState, bookmarks);
     }
-        
+
     private BookmarkMessage? MapBookmark(Bookmark? bookmark)
     {
         if (bookmark == null)
@@ -103,10 +103,10 @@ public class ProtoActorWorkflowInvoker : IWorkflowInvoker
             Id = bookmark.Id,
             Name = bookmark.Name,
             Hash = bookmark.Hash,
+            Payload = bookmark.Payload,
             ActivityId = bookmark.ActivityId,
             ActivityInstanceId = bookmark.ActivityInstanceId,
             CallbackMethodName = bookmark.CallbackMethodName,
-            Data = { }
         };
     }
 
@@ -116,9 +116,9 @@ public class ProtoActorWorkflowInvoker : IWorkflowInvoker
             bookmarkMessage.Id,
             bookmarkMessage.Name,
             bookmarkMessage.Hash,
+            bookmarkMessage.Payload,
             bookmarkMessage.ActivityId,
             bookmarkMessage.ActivityInstanceId,
-            bookmarkMessage.Data.ToDictionary(x => x.Key, x => JsonSerializer.Deserialize<object>(x.Value.Text)),
             bookmarkMessage.CallbackMethodName
         );
     }

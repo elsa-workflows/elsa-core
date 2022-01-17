@@ -4,8 +4,8 @@ public record Bookmark(
     string Id,
     string Name,
     string? Hash,
+    string? Payload,
     string ActivityId,
     string ActivityInstanceId,
-    IDictionary<string, object?>? Data = default,
     string? CallbackMethodName = default
 );

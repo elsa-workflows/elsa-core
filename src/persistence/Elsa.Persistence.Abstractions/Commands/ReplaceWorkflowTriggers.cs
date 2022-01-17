@@ -3,4 +3,4 @@ using Elsa.Persistence.Entities;
 
 namespace Elsa.Persistence.Commands;
 
-public record ReplaceWorkflowTriggers(string WorkflowId, IEnumerable<WorkflowTrigger> WorkflowTriggers) : ICommand;
+public record ReplaceWorkflowTriggers(ICollection<WorkflowTrigger> WorkflowTriggers) : ICommand;
