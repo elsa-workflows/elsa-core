@@ -3,6 +3,7 @@ using Elsa.Mediator.Contracts;
 using Elsa.Models;
 using Elsa.Persistence.Models;
 using Elsa.Persistence.Requests;
+using Elsa.Runtime.Attributes;
 using Elsa.Runtime.Contracts;
 
 namespace Elsa.Runtime.WorkflowProviders;
@@ -10,6 +11,7 @@ namespace Elsa.Runtime.WorkflowProviders;
 /// <summary>
 /// Provides workflows to the system that are stored in the database.
 /// </summary>
+[SkipTriggerIndexing]
 public class DatabaseWorkflowProvider : IWorkflowProvider
 {
     private readonly IRequestSender _requestSender;

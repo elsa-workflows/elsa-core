@@ -1,12 +1,15 @@
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using Elsa.Models;
 using Elsa.Persistence.Models;
+using Elsa.Runtime.Attributes;
 using Elsa.Runtime.Contracts;
 
 namespace Elsa.Runtime.Services;
 
 public class WorkflowRegistry : IWorkflowRegistry
 {
+    public static Func<IWorkflowProvider, bool> SkipDynamicProviders => x => !x.GetType().GetCustomAttributes<SkipTriggerIndexingAttribute>().Any();
     private readonly IEnumerable<IWorkflowProvider> _workflowProviders;
 
     public WorkflowRegistry(IEnumerable<IWorkflowProvider> workflowProviders) => _workflowProviders = workflowProviders;
@@ -23,10 +26,18 @@ public class WorkflowRegistry : IWorkflowRegistry
 
         return default!;
     }
+    
+    public IAsyncEnumerable<Workflow> StreamAllAsync(CancellationToken cancellationToken = default) => StreamAllAsync(_workflowProviders, cancellationToken);
 
-    public async IAsyncEnumerable<Workflow> StreamAllAsync([EnumeratorCancellation] CancellationToken cancellationToken = default)
+    public IAsyncEnumerable<Workflow> StreamAllAsync(Func<IWorkflowProvider, bool> includeProvider, CancellationToken cancellationToken = default)
     {
-        foreach (var workflowProvider in _workflowProviders)
+        var providers = _workflowProviders.Where(includeProvider);
+        return StreamAllAsync(providers, cancellationToken);
+    }
+
+    public async IAsyncEnumerable<Workflow> StreamAllAsync(IEnumerable<IWorkflowProvider> providers, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        foreach (var workflowProvider in providers)
         {
             var workflows = workflowProvider.StreamAllAsync(cancellationToken);
 
