@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Events;
+using Elsa.Models;
+using Elsa.Persistence;
 using Elsa.Services.Models;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -51,8 +53,18 @@ namespace Elsa.Services.Triggers
 
             _stopwatch.Stop();
             _logger.LogInformation("Indexed {TriggerCount} triggers in {ElapsedTime}", triggers.Count, _stopwatch.Elapsed);
-              
-            await _triggerStore.StoreAsync(triggers, cancellationToken);
+
+            foreach (var trigger in triggers)
+            {
+                //TODO : fix this
+                await _triggerStore.SaveAsync(new Trigger()
+                {
+                    ActivityId = trigger.ActivityId,
+                    ActivityType = trigger.ActivityType,
+                    Hash = trigger.BookmarkHash,
+                    TenantId = trigger.WorkflowBlueprint.TenantId,
+                }, cancellationToken);
+            }
         }
     }
 }

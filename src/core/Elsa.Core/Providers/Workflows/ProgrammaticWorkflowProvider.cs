@@ -13,7 +13,7 @@ namespace Elsa.Providers.Workflows
     /// <summary>
     /// Provides programmatic workflows (.NET types).
     /// </summary>
-    public class ProgrammaticWorkflowProvider : WorkflowProvider
+    public class ProgrammaticWorkflowProvider : WorkflowProvider, IProgrammaticWorkflowProvider
     {
         private readonly IEnumerable<IWorkflow> _workflows;
         private readonly Func<IWorkflowBuilder> _workflowBuilder;
