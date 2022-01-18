@@ -1,3 +1,5 @@
+using Elsa.Models;
+
 namespace Elsa.Persistence.Entities;
 
 public class WorkflowBookmark : Entity
@@ -11,4 +13,6 @@ public class WorkflowBookmark : Entity
     public string ActivityId { get; init; } = default!;
     public string ActivityInstanceId { get; init; } = default!;
     public string? CallbackMethodName { get; set; }
+
+    public Bookmark ToBookmark() => new(Id, Name, Hash, Payload, ActivityId, ActivityInstanceId, CallbackMethodName);
 }

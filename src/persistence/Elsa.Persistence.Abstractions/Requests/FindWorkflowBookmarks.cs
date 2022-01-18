@@ -1,3 +1,5 @@
+using Elsa.Contracts;
+using Elsa.Helpers;
 using Elsa.Mediator.Contracts;
 using Elsa.Persistence.Entities;
 
@@ -19,4 +21,6 @@ public record FindWorkflowBookmarks : IRequest<IEnumerable<WorkflowBookmark>>
     public string? WorkflowInstanceId { get; }
     public string? Name { get; }
     public string? Hash { get; }
+    
+    public static FindWorkflowBookmarks ForActivity<T>(string? hash = default) where T : IActivity => new(TypeNameHelper.GenerateTypeName<T>(), hash);
 }

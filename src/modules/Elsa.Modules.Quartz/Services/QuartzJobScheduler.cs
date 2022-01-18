@@ -1,5 +1,4 @@
 ﻿using Elsa.Modules.Quartz.Contracts;
-using Elsa.Modules.Quartz.Jobs;
 using Elsa.Scheduling.Contracts;
 using Elsa.Scheduling.Schedules;
 using Microsoft.Extensions.Logging;

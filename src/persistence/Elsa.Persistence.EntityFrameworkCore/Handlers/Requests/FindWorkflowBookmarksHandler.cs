@@ -19,5 +19,17 @@ public class FindWorkflowBookmarksHandler : IRequestHandler<FindWorkflowBookmark
             : Enumerable.Empty<WorkflowBookmark>();
 
     private async Task<IEnumerable<WorkflowBookmark>> FindByWorkflowInstanceIdAsync(string instanceId, CancellationToken cancellationToken) => await _store.FindManyAsync(x => x.WorkflowInstanceId == instanceId, cancellationToken);
-    private async Task<IEnumerable<WorkflowBookmark>> FindByNameAsync(string name, string? hash, CancellationToken cancellationToken) => await _store.FindManyAsync(x => x.Name == name && x.Hash == hash, cancellationToken);
+
+    private async Task<IEnumerable<WorkflowBookmark>> FindByNameAsync(string name, string? hash, CancellationToken cancellationToken)
+    {
+        return await _store.QueryAsync(query =>
+        {
+            query = query.Where(x => x.Name == name);
+
+            if (!string.IsNullOrWhiteSpace(hash))
+                query = query.Where(x => x.Hash == hash);
+
+            return query;
+        }, cancellationToken);
+    }
 }

@@ -50,6 +50,7 @@ public static class ServiceCollectionExtensions
     private static IServiceCollectionQuartzConfigurator AddElsaJobs(this IServiceCollectionQuartzConfigurator quartz)
     {
         quartz.AddJob<RunWorkflowJob>();
+        quartz.AddJob<ResumeWorkflowJob>();
 
         return quartz;
     }
@@ -61,12 +62,11 @@ public static class ServiceCollectionExtensions
     }
 
     private static IServiceCollectionQuartzConfigurator AddJob<TJob>(this IServiceCollectionQuartzConfigurator quartz) where TJob : IElsaJob =>
-        quartz.AddJob<QuartzJob<RunWorkflowJob>>(job => job.StoreDurably().WithIdentity(nameof(RunWorkflowJob)));
+        quartz.AddJob<QuartzJob<TJob>>(job => job.StoreDurably().WithIdentity(typeof(TJob).Name));
 
     private static void ConfigureQuartz(IServiceCollectionQuartzConfigurator quartz, Action<IServiceCollectionQuartzConfigurator>? configureQuartz)
     {
         quartz.UseMicrosoftDependencyInjectionJobFactory();
-        quartz.AddJob<QuartzJob<RunWorkflowJob>>(job => job.StoreDurably().WithIdentity(nameof(RunWorkflowJob)));
         quartz.UseSimpleTypeLoader();
         quartz.UseInMemoryStore();
         configureQuartz?.Invoke(quartz);

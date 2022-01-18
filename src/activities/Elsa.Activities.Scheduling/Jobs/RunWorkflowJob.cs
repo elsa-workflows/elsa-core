@@ -1,6 +1,5 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.Scheduling.Contracts;
 using Elsa.Runtime.Contracts;
 using Elsa.Runtime.Models;
 using Elsa.Scheduling.Abstractions;
@@ -10,7 +9,7 @@ namespace Elsa.Activities.Scheduling.Jobs;
 
 public record RunWorkflowJob(string WorkflowId) : IJob
 {
-    public string JobId => $"workflow:{WorkflowId}";
+    public string JobId => WorkflowId;
 }
 
 public class RunWorkflowJobHandler : JobHandler<RunWorkflowJob>
@@ -24,7 +23,7 @@ public class RunWorkflowJobHandler : JobHandler<RunWorkflowJob>
 
     protected override async Task HandleAsync(RunWorkflowJob job, CancellationToken cancellationToken)
     {
-        var request = new ExecuteWorkflowDefinitionRequest(job.WorkflowId, 1);
-        await _workflowInvoker.ExecuteAsync(request, cancellationToken);
+        var request = new DispatchWorkflowDefinitionRequest(job.WorkflowId, 1);
+        await _workflowInvoker.DispatchAsync(request, cancellationToken);
     }
 }

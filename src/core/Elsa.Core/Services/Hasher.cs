@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.Json;
 using Elsa.Contracts;
 
 namespace Elsa.Services;

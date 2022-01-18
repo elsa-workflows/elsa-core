@@ -65,7 +65,7 @@ public class PersistWorkflowInstanceMiddleware : WorkflowExecutionMiddleware
 
         // Get a copy of current bookmarks.
         var existingBookmarks = await _requestSender.RequestAsync(new FindWorkflowBookmarks(workflowInstance.Id), cancellationToken);
-        var bookmarksSnapshot = existingBookmarks.Select(x => new Bookmark(x.Id, x.Name, x.Hash, x.Payload, x.ActivityId, x.ActivityInstanceId, x.CallbackMethodName)).ToList();
+        var bookmarksSnapshot = existingBookmarks.Select(x => x.ToBookmark()).ToList();
 
         // Exclude the current bookmark that initiated the creation of the workflow context, if any.
         var invokedBookmark = context.Bookmark;

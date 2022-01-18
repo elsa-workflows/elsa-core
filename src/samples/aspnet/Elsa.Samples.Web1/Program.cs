@@ -10,7 +10,6 @@ using Elsa.Extensions;
 using Elsa.Management.Contracts;
 using Elsa.Management.Extensions;
 using Elsa.Mediator.Extensions;
-using Elsa.Modules.Quartz.Extensions;
 using Elsa.Modules.Quartz.Services;
 using Elsa.Persistence.EntityFrameworkCore.Extensions;
 using Elsa.Persistence.EntityFrameworkCore.Sqlite;
@@ -36,12 +35,13 @@ services
     .AddElsa()
     .AddMediator()
     .AddEntityFrameworkCorePersistence((_, ef) => ef.UseSqlite())
+    .AddProtoActorWorkflowHost()
     .IndexWorkflowTriggers()
     .AddElsaManagement()
     .AddScheduling(new QuartzSchedulingServiceProvider())
     .AddHttpActivityServices()
     .AddSchedulingActivities()
-    .AddProtoActorWorkflowHost()
+    
     .ConfigureWorkflowRuntime(options =>
     {
         options.Workflows.Add("HelloWorldWorkflow", new HelloWorldWorkflow());
@@ -73,9 +73,6 @@ services
 services
     .AddJavaScriptExpressions()
     .AddLiquidExpressions();
-
-// Register modules.
-services.AddQuartzModule(); // Provides a scheduler implementation for Timer activities.
 
 // Configure middleware pipeline.
 var app = builder.Build();

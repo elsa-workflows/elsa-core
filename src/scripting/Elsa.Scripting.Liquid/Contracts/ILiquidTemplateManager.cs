@@ -1,5 +1,4 @@
 ﻿using Elsa.Models;
-using Fluid;
 
 namespace Elsa.Scripting.Liquid.Contracts
 {

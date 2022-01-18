@@ -23,22 +23,6 @@ public class ProtoActorWorkflowInvoker : IWorkflowInvoker
         _cluster = cluster;
     }
 
-    public async Task<DispatchWorkflowResult> DispatchAsync(DispatchWorkflowDefinitionRequest request, CancellationToken cancellationToken = default)
-    {
-        var (definitionId, version) = request;
-        var name = GetActorName(definitionId, version);
-
-        var message = new DispatchWorkflowDefinition
-        {
-            Id = definitionId,
-            Version = version
-        };
-
-        await _cluster.RequestAsync<Unit>(name, GrainKinds.WorkflowDefinition, message, cancellationToken);
-
-        return new DispatchWorkflowResult();
-    }
-
     public async Task<ExecuteWorkflowResult> ExecuteAsync(ExecuteWorkflowDefinitionRequest request, CancellationToken cancellationToken = default)
     {
         var (definitionId, version) = request;
@@ -55,23 +39,6 @@ public class ProtoActorWorkflowInvoker : IWorkflowInvoker
         var bookmarks = response.Bookmarks.Select(MapBookmark).ToList();
 
         return new ExecuteWorkflowResult(workflowState, bookmarks);
-    }
-
-    public async Task<DispatchWorkflowResult> DispatchAsync(DispatchWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
-    {
-        var (instanceId, bookmark) = request;
-        var name = GetActorName(instanceId);
-        var bookmarkMessage = MapBookmark(bookmark);
-
-        var message = new DispatchWorkflowInstance
-        {
-            Id = instanceId,
-            Bookmark = bookmarkMessage
-        };
-
-        await _cluster.RequestAsync<Unit>(name, GrainKinds.WorkflowInstance, message, cancellationToken);
-
-        return new DispatchWorkflowResult();
     }
 
     public async Task<ExecuteWorkflowResult> ExecuteAsync(ExecuteWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
@@ -91,6 +58,39 @@ public class ProtoActorWorkflowInvoker : IWorkflowInvoker
         var bookmarks = response.Bookmarks.Select(MapBookmark).ToList();
 
         return new ExecuteWorkflowResult(workflowState, bookmarks);
+    }
+    
+    public async Task<DispatchWorkflowResult> DispatchAsync(DispatchWorkflowDefinitionRequest request, CancellationToken cancellationToken = default)
+    {
+        var (definitionId, version) = request;
+        var name = GetActorName(definitionId, version);
+
+        var message = new DispatchWorkflowDefinition
+        {
+            Id = definitionId,
+            Version = version
+        };
+
+        await _cluster.RequestAsync<Unit>(name, GrainKinds.WorkflowDefinition, message, cancellationToken);
+
+        return new DispatchWorkflowResult();
+    }
+    
+    public async Task<DispatchWorkflowResult> DispatchAsync(DispatchWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
+    {
+        var (instanceId, bookmark) = request;
+        var name = GetActorName(instanceId);
+        var bookmarkMessage = MapBookmark(bookmark);
+
+        var message = new DispatchWorkflowInstance
+        {
+            Id = instanceId,
+            Bookmark = bookmarkMessage
+        };
+
+        await _cluster.RequestAsync<Unit>(name, GrainKinds.WorkflowInstance, message, cancellationToken);
+
+        return new DispatchWorkflowResult();
     }
 
     private BookmarkMessage? MapBookmark(Bookmark? bookmark)

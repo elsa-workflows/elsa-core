@@ -1,6 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.Scheduling.Contracts;
+using Elsa.Models;
 using Elsa.Runtime.Contracts;
 using Elsa.Runtime.Models;
 using Elsa.Scheduling.Abstractions;
@@ -8,9 +8,9 @@ using Elsa.Scheduling.Contracts;
 
 namespace Elsa.Activities.Scheduling.Jobs;
 
-public record ResumeWorkflowJob(string WorkflowInstanceId, string ActivityId) : IJob
+public record ResumeWorkflowJob(string WorkflowInstanceId, Bookmark Bookmark) : IJob
 {
-    public string JobId => $"workflow-instance:{WorkflowInstanceId}-{ActivityId}";
+    public string JobId => $"Bookmark:{Bookmark.Id}";
 }
 
 public class ResumeWorkflowJobHandler : JobHandler<ResumeWorkflowJob>
@@ -20,7 +20,7 @@ public class ResumeWorkflowJobHandler : JobHandler<ResumeWorkflowJob>
 
     protected override async Task HandleAsync(ResumeWorkflowJob job, CancellationToken cancellationToken)
     {
-        var request = new ExecuteWorkflowInstanceRequest(job.WorkflowInstanceId);
-        await _workflowInvoker.ExecuteAsync(request, cancellationToken);
+        var request = new DispatchWorkflowInstanceRequest(job.WorkflowInstanceId, job.Bookmark);
+        await _workflowInvoker.DispatchAsync(request, cancellationToken);
     }
 }

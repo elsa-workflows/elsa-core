@@ -9,17 +9,17 @@ namespace Elsa.Runtime.Middleware;
 
 public static class PersistWorkflowExecutionLogMiddlewareExtensions
 {
-    public static IWorkflowExecutionBuilder UseWorkflowExecutionEvents(this IWorkflowExecutionBuilder builder) => builder.UseMiddleware<WorkflowExecutionEventsMiddleware>();
+    public static IWorkflowExecutionBuilder UseWorkflowExecutionEvents(this IWorkflowExecutionBuilder builder) => builder.UseMiddleware<PublishWorkflowExecutionEventsMiddleware>();
 }
 
 /// <summary>
 /// Processes collected bookmarks.
 /// </summary>
-public class WorkflowExecutionEventsMiddleware : WorkflowExecutionMiddleware
+public class PublishWorkflowExecutionEventsMiddleware : WorkflowExecutionMiddleware
 {
     private readonly IEventPublisher _eventPublisher;
 
-    public WorkflowExecutionEventsMiddleware(WorkflowMiddlewareDelegate next, IEventPublisher eventPublisher) : base(next)
+    public PublishWorkflowExecutionEventsMiddleware(WorkflowMiddlewareDelegate next, IEventPublisher eventPublisher) : base(next)
     {
         _eventPublisher = eventPublisher;
     }

@@ -2,7 +2,6 @@ using Elsa.Contracts;
 using Elsa.Helpers;
 using Elsa.Models;
 using Elsa.Scripting.Liquid.Contracts;
-using Elsa.Scripting.Liquid.Services;
 
 namespace Elsa.Scripting.Liquid.Expressions;
 
