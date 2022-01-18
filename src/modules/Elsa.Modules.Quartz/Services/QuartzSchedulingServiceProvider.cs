@@ -1,5 +1,5 @@
-using Elsa.Activities.Scheduling.Contracts;
 using Elsa.Modules.Quartz.Extensions;
+using Elsa.Scheduling.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Modules.Quartz.Services;

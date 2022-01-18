@@ -1,7 +1,7 @@
 using System;
-using Elsa.Activities.Scheduling.Contracts;
+using Elsa.Scheduling.Contracts;
 
-namespace Elsa.Activities.Scheduling.Schedules;
+namespace Elsa.Scheduling.Schedules;
 
 public class SpecificInstantSchedule : ISchedule
 {

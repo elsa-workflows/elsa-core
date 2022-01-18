@@ -1,16 +1,17 @@
-﻿using Elsa.Activities.Scheduling.Schedules;
-using Elsa.Modules.Quartz.Contracts;
+﻿using Elsa.Modules.Quartz.Contracts;
 using Elsa.Modules.Quartz.Jobs;
+using Elsa.Scheduling.Contracts;
+using Elsa.Scheduling.Schedules;
 using Microsoft.Extensions.Logging;
 using Quartz;
 using Quartz.Impl.Matchers;
-using IElsaJobScheduler = Elsa.Activities.Scheduling.Contracts.IJobScheduler;
-using IElsaJob = Elsa.Activities.Scheduling.Contracts.IJob;
-using IElsaSchedule = Elsa.Activities.Scheduling.Contracts.ISchedule;
+using IElsaJobScheduler = Elsa.Scheduling.Contracts.IJobScheduler;
+using IElsaJob = Elsa.Scheduling.Contracts.IJob;
+using IElsaSchedule = Elsa.Scheduling.Contracts.ISchedule;
 
 namespace Elsa.Modules.Quartz.Services;
 
-public class QuartzJobScheduler : IElsaJobScheduler
+public class QuartzJobScheduler : IJobScheduler
 {
     public const string JobDataKey = "ElsaJob";
     public const string RootGroupKey = "ElsaJobs";

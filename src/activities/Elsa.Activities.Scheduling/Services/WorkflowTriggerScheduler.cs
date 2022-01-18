@@ -5,9 +5,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Scheduling.Contracts;
 using Elsa.Activities.Scheduling.Jobs;
-using Elsa.Activities.Scheduling.Schedules;
 using Elsa.Persistence.Entities;
 using Elsa.Persistence.Extensions;
+using Elsa.Scheduling.Contracts;
+using Elsa.Scheduling.Schedules;
 
 namespace Elsa.Activities.Scheduling.Services;
 

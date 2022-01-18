@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.Scheduling.Contracts;
+using Elsa.Scheduling.Contracts;
 
-namespace Elsa.Activities.Scheduling.Services;
+namespace Elsa.Scheduling.Services;
 
 public class JobManager : IJobManager
 {

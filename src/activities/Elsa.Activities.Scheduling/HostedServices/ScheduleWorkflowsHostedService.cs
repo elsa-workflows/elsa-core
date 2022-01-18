@@ -1,10 +1,11 @@
 using System.Collections.Immutable;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.Scheduling.Contracts;
 using Elsa.Mediator.Contracts;
 using Elsa.Persistence.Requests;
+using Elsa.Scheduling.Contracts;
 using Microsoft.Extensions.Hosting;
+using IWorkflowTriggerScheduler = Elsa.Activities.Scheduling.Contracts.IWorkflowTriggerScheduler;
 
 namespace Elsa.Activities.Scheduling.HostedServices;
 

@@ -19,6 +19,7 @@ using Elsa.Pipelines.WorkflowExecution.Components;
 using Elsa.Runtime.ProtoActor.Extensions;
 using Elsa.Samples.Web1.Activities;
 using Elsa.Samples.Web1.Workflows;
+using Elsa.Scheduling.Extensions;
 using Elsa.Scripting.JavaScript.Extensions;
 using Elsa.Scripting.Liquid.Extensions;
 using Microsoft.AspNetCore.Builder;
@@ -36,8 +37,9 @@ services
     .AddEntityFrameworkCorePersistence((_, ef) => ef.UseSqlite())
     .IndexWorkflowTriggers()
     .AddElsaManagement()
-    .AddSchedulingServices(new QuartzSchedulingServiceProvider())
+    .AddScheduling(new QuartzSchedulingServiceProvider())
     .AddHttpActivityServices()
+    .AddSchedulingActivities()
     .AddProtoActorWorkflowHost()
     .ConfigureWorkflowRuntime(options =>
     {

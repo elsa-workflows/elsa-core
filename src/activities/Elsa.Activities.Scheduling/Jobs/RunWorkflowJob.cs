@@ -1,9 +1,10 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.Scheduling.Abstractions;
 using Elsa.Activities.Scheduling.Contracts;
 using Elsa.Runtime.Contracts;
 using Elsa.Runtime.Models;
+using Elsa.Scheduling.Abstractions;
+using Elsa.Scheduling.Contracts;
 
 namespace Elsa.Activities.Scheduling.Jobs;
 

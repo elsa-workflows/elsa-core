@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Elsa.Activities.Scheduling.Contracts;
+namespace Elsa.Scheduling.Contracts;
 
 public interface IJobManager
 {

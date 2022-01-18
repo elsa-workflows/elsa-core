@@ -1,8 +1,9 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.Scheduling.Contracts;
 using Elsa.Mediator.Contracts;
 using Elsa.Runtime.Notifications;
+using Elsa.Scheduling.Contracts;
+using IWorkflowTriggerScheduler = Elsa.Activities.Scheduling.Contracts.IWorkflowTriggerScheduler;
 
 namespace Elsa.Activities.Scheduling.Handlers;
 

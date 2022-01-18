@@ -1,8 +1,8 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.Scheduling.Contracts;
+using Elsa.Scheduling.Contracts;
 
-namespace Elsa.Activities.Scheduling.Abstractions;
+namespace Elsa.Scheduling.Abstractions;
 
 public abstract class JobHandler<T> : IJobHandler where T : IJob
 {

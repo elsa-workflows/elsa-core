@@ -7,7 +7,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\core\Elsa.Scheduling\Elsa.Scheduling.csproj" />
+        <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
+        <ProjectReference Include="..\..\core\Elsa.Mediator\Elsa.Mediator.csproj" />
+        <ProjectReference Include="..\..\runtime\Elsa.Runtime\Elsa.Runtime.csproj" />
     </ItemGroup>
 
 </Project>
