@@ -4,18 +4,18 @@ using Elsa.Models;
 
 namespace Elsa.Activities.ControlFlow;
 
-public class ForEach<T> : Activity
+public class ForEach : Activity
 {
-    [Input] public Input<ICollection<T>> Items { get; set; } = new(Array.Empty<T>());
-    [Outbound] public IActivity Body { get; set; } = default!;
-    public Variable<T> CurrentValue { get; set; } = new();
+    [Input] public Input<ICollection<object>> Items { get; set; } = new(Array.Empty<object>());
+    [Outbound] public IActivity? Body { get; set; }
+    public Variable CurrentValue { get; set; } = new();
     private const string CurrentIndexProperty = "CurrentIndex";
 
     protected override void Execute(ActivityExecutionContext context)
     {
         // Declare looping variable.
         context.ExpressionExecutionContext.Register.Declare(CurrentValue);
-            
+
         // Execute first iteration.
         HandleIteration(context);
     }
@@ -30,8 +30,10 @@ public class ForEach<T> : Activity
 
         var currentItem = items[currentIndex];
         CurrentValue.Set(context, currentItem);
-        context.ScheduleActivity(Body, OnChildCompleted);
-            
+
+        if (Body != null)
+            context.ScheduleActivity(Body, OnChildCompleted);
+
         // Increment index.
         context.UpdateProperty<int>(CurrentIndexProperty, x => x + 1);
     }
@@ -40,5 +42,21 @@ public class ForEach<T> : Activity
     {
         HandleIteration(context);
         return ValueTask.CompletedTask;
+    }
+}
+
+public class ForEach<T> : ForEach
+{
+    [Input]
+    public new Input<ICollection<T>> Items
+    {
+        get => new(base.Items.Expression, base.Items.LocationReference);
+        set => base.Items = new Input<ICollection<object>>(value.Expression, value.LocationReference);
+    }
+
+    public new Variable<T> CurrentValue
+    {
+        get => (Variable<T>)base.CurrentValue;
+        set => base.CurrentValue = value;
     }
 }

@@ -1,5 +1,5 @@
 import {Component, Element, Event, EventEmitter, h, Method, Prop, Watch} from '@stencil/core';
-import {Edge, Graph, Model, Node, NodeView} from '@antv/x6';
+import {Edge, Graph, Model, Node, NodeView, Segment} from '@antv/x6';
 import {v4 as uuid} from 'uuid';
 import {camelCase, first} from 'lodash';
 import './shapes';
@@ -9,11 +9,12 @@ import {AddActivityArgs} from '../../designer/canvas/canvas';
 import {Activity, ActivityDescriptor, ActivitySelectedArgs, ContainerSelectedArgs, GraphUpdatedArgs} from '../../../models';
 import {createGraph} from './graph-factory';
 import {createNode} from './node-factory';
-import {Connection, Flowchart} from './models';
+import {Connection, EdgeModel, Flowchart} from './models';
 import WorkflowEditorTunnel from '../../designer/state';
 import {ActivityNode, flattenList, walkActivities} from "./activity-walker";
 import PositionEventArgs = NodeView.PositionEventArgs;
 import FromJSONData = Model.FromJSONData;
+import Options = Segment.Options;
 
 @Component({
   tag: 'elsa-flowchart',
@@ -118,6 +119,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
     graph.on('blank:click', this.onGraphClick);
     graph.on('node:click', this.onNodeClick);
     graph.on('edge:connected', this.onEdgeConnected);
+    graph.on('edge:removed', this.onEdgeRemoved);
     graph.on('node:moved', this.onNodeMoved);
 
     graph.on('node:change:*', this.onGraphChanged);
@@ -134,13 +136,14 @@ export class FlowchartComponent implements ContainerActivityComponent {
     const graph = this.graph;
     const graphModel = graph.toJSON();
     const activities = graphModel.cells.filter(x => x.shape == 'activity').map(x => x.data as Activity);
-    const connections = graphModel.cells.filter(x => x.shape == 'elsa-edge' && !!x.data).map(x => x.data as Connection);
+    const edgeModels = graphModel.cells.filter(x => x.shape == 'elsa-edge' && !!x.data).map(x => x.data as EdgeModel);
     const remainingConnections: Array<Connection> = []; // The connections remaining after transposition.
     let remainingActivities: Array<Activity> = [...activities]; // The activities remaining after transposition.
     const activityDescriptors = this.activityDescriptors;
 
     // Transpose connections to activity outbound port properties.
-    for (const connection of connections) {
+    for (const edgeModel of edgeModels) {
+      const connection = edgeModel.connection;
       const source = activities.find(x => x.id == connection.source);
       const target = activities.find(x => x.id == connection.target);
       const sourceDescriptor = activityDescriptors.find(x => x.nodeType == source.nodeType);
@@ -190,13 +193,14 @@ export class FlowchartComponent implements ContainerActivityComponent {
       nodes.push(node);
 
       // Create X6 edges for each child activity.
-      const childEdges = this.createEdges(activityNode);
-      edges = [...childEdges];
+      const childEdges = this.createEdges(flowchartNodes, activityNode);
+
+      edges = [...edges, ...childEdges];
     }
 
     // Create X6 edges for each connection in the flowchart.
     for (const connection of flowchart.connections) {
-      const edge: Edge.Metadata = this.createEdge(connection);
+      const edge: Edge.Metadata = this.createEdge(flowchartNodes, connection);
       edges.push(edge);
     }
 
@@ -208,11 +212,11 @@ export class FlowchartComponent implements ContainerActivityComponent {
     this.graph.unfreeze();
   };
 
-  private createEdges = (activityNode: ActivityNode): Array<Edge.Metadata> => {
+  private createEdges = (allNodes: Array<ActivityNode>, activityNode: ActivityNode): Array<Edge.Metadata> => {
     let edges: Array<Edge.Metadata> = [];
 
     for (const childNode of activityNode.children) {
-      const edge = this.createEdge({
+      const edge = this.createEdge(allNodes, {
         source: activityNode.activity.id,
         sourcePort: activityNode.port,
         target: childNode.activity.id,
@@ -225,11 +229,17 @@ export class FlowchartComponent implements ContainerActivityComponent {
     return edges;
   }
 
-  private createEdge = (connection: Connection): Edge.Metadata => {
+  private createEdge = (allNodes: Array<ActivityNode>, connection: Connection): Edge.Metadata => {
+    const model: EdgeModel = {
+      connection: connection,
+      sourceActivity: allNodes.find(x => x.activity.id == connection.source)?.activity,
+      targetActivity: allNodes.find(x => x.activity.id == connection.target)?.activity,
+    }
+
     return {
       shape: 'elsa-edge',
       zIndex: -1,
-      data: connection,
+      data: model,
       source: connection.source,
       target: connection.target,
       sourcePort: connection.sourcePort,
@@ -322,15 +332,43 @@ export class FlowchartComponent implements ContainerActivityComponent {
     const targetPort = targetNode.getPort(edge.getTargetPortId()).id;
 
     edge.data = {
-      source: sourceActivity.id,
-      sourcePort: sourcePort,
-      target: targetActivity.id,
-      targetPort: targetPort
-    } as Connection;
+      connection: {
+        source: sourceActivity.id,
+        sourcePort: sourcePort,
+        target: targetActivity.id,
+        targetPort: targetPort
+      },
+      sourceActivity: sourceActivity,
+      targetActivity: targetActivity
+    } as EdgeModel;
+  }
+
+  private onEdgeRemoved = (e: { isNew: boolean, edge: Edge, options: Options }) => {
+    const edge = e.edge;
+    const model = edge.data as EdgeModel;
+    const connection = model.connection;
+    const outPortPropName = camelCase(connection.targetPort);
+
+    // Find source activity.
+    const sourceNode = this.graph.model.getNodes().find(x => {
+      if (x.shape !== 'activity')
+        return false;
+
+      const activity = x.data as Activity;
+      return activity.id == connection.source;
+    });
+
+    if(!sourceNode)
+      return;
+
+    const sourceActivity = sourceNode.data as Activity;
+
+    // Delete any transposed activity.
+    delete sourceActivity[outPortPropName];
+    sourceNode.data = sourceActivity;
   }
 
   private onGraphChanged = async () => {
-    debugger;
     if (this.silent)
       return;
     this.graphUpdated.emit({exportGraph: this.exportRootInternal});

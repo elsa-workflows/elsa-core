@@ -62,6 +62,8 @@ services
     .AddActivity<HttpTrigger>()
     .AddActivity<Flowchart>()
     .AddActivity<Delay>()
+    .AddActivity<ForEach>()
+    .AddActivity<Switch>()
     ;
 
 // Register available triggers.

@@ -12,8 +12,7 @@ export function createNode(activityDescriptor: ActivityDescriptor, activity: Act
   if (inPorts.length == 1)
     inPorts[0].displayName = null;
 
-  if (outPorts.length == 0)
-    outPorts = [{name: 'Done', displayName: 'Done'}];
+  outPorts = [...outPorts, {name: 'Done', displayName: 'Done'}];
 
   if (outPorts.length == 1)
     outPorts[0].displayName = null;
