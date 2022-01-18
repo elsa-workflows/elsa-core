@@ -40,10 +40,10 @@ public static class ServiceCollectionExtensions
                 // Workflow engine.
                 .AddSingleton<IWorkflowServer, WorkflowServer>()
 
-                // Domain event handlers
+                // Domain event handlers.
                 .AddNotificationHandlersFrom(typeof(ServiceCollectionExtensions))
             
-                // Hosted Sercices
+                // Hosted Services.
                 .AddHostedService<RegisterDescriptorsHostedService>()
                 .AddHostedService<RegisterExpressionSyntaxDescriptorsHostedService>();
             ;

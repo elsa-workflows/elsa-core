@@ -8,9 +8,14 @@ using IWorkflowTriggerScheduler = Elsa.Activities.Scheduling.Contracts.IWorkflow
 namespace Elsa.Activities.Scheduling.Handlers;
 
 // Updates scheduled jobs based on the updated workflow triggers.
-public class ScheduleWorkflowsHandler : INotificationHandler<TriggerIndexingFinished>
+public class ScheduleWorkflowsHandler : INotificationHandler<TriggerIndexingFinished>, INotificationHandler<WorkflowExecuted>
 {
     private readonly IWorkflowTriggerScheduler _workflowTriggerScheduler;
     public ScheduleWorkflowsHandler(IWorkflowTriggerScheduler workflowTriggerScheduler) => _workflowTriggerScheduler = workflowTriggerScheduler;
     public async Task HandleAsync(TriggerIndexingFinished notification, CancellationToken cancellationToken) => await _workflowTriggerScheduler.ScheduleTriggersAsync(notification.Triggers, cancellationToken);
+    
+    public Task HandleAsync(WorkflowExecuted notification, CancellationToken cancellationToken)
+    {
+        return Task.CompletedTask;
+    }
 }

@@ -1,7 +1,13 @@
 import {CellView, Graph, Node, Shape} from '@antv/x6';
+import {v4 as uuid} from 'uuid';
 import './ports';
 
-export function createGraph(container: HTMLElement, interacting: CellView.Interacting): Graph {
+export function createGraph(
+  container: HTMLElement,
+  interacting: CellView.Interacting,
+  disableEvents: () => void,
+  enableEvents: (emitWorkflowChanged: boolean) => Promise<void>): Graph {
+  
   const graph = new Graph({
     container: container,
     interacting: interacting,
@@ -15,7 +21,11 @@ export function createGraph(container: HTMLElement, interacting: CellView.Intera
     },
     height: 5000,
     width: 5000,
-    async: true,
+
+    // Keep disabled for now until we find that performance degrades significantly when adding too many nodes.
+    // When we do enable async rendering, we need to take care of the selection rectangle after pasting nodes, which would be calculated too early (before rendering completed).
+    async: false,
+
     autoResize: true,
     keyboard: {
       enabled: true,
@@ -156,11 +166,20 @@ export function createGraph(container: HTMLElement, interacting: CellView.Intera
     return false
   });
 
-  graph.bindKey(['meta+v', 'ctrl+v'], () => {
+  graph.bindKey(['meta+v', 'ctrl+v'], async () => {
     if (!graph.isClipboardEmpty()) {
-      const cells = graph.paste({offset: 32})
-      graph.cleanSelection()
-      graph.select(cells)
+      debugger;
+      disableEvents();
+      const cells = graph.paste({offset: 32});
+      debugger;
+      for (const cell of cells) {
+        cell.data.id = uuid();
+      }
+      debugger;
+      await enableEvents(true);
+      graph.cleanSelection();
+      graph.select(cells);
+
     }
     return false
   });

@@ -7,13 +7,14 @@ public static class UseActivitySchedulerMiddlewareExtensions
 {
     public static IWorkflowExecutionBuilder UseActivityScheduler(this IWorkflowExecutionBuilder builder) => builder.UseMiddleware<ActivitySchedulerMiddleware>();
 }
-    
-public class ActivitySchedulerMiddleware : IWorkflowExecutionMiddleware
-{
-    private readonly WorkflowMiddlewareDelegate _next;
-    public ActivitySchedulerMiddleware(WorkflowMiddlewareDelegate next) => _next = next;
 
-    public async ValueTask InvokeAsync(WorkflowExecutionContext context)
+public class ActivitySchedulerMiddleware : WorkflowExecutionMiddleware
+{
+    public ActivitySchedulerMiddleware(WorkflowMiddlewareDelegate next) : base(next)
+    {
+    }
+
+    public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
     {
         var scheduler = context.Scheduler;
 
@@ -28,6 +29,6 @@ public class ActivitySchedulerMiddleware : IWorkflowExecutionMiddleware
         }
 
         // Invoke next middleware.
-        await _next(context);
+        await Next(context);
     }
 }

@@ -31,7 +31,7 @@ class Program
 
             // Configure workflow engine execution pipeline.
             .ConfigureDefaultWorkflowExecutionPipeline(pipeline => pipeline
-                .PersistWorkflows()
+                .UsePersistence()
                 .UseActivityScheduler()
             );
 

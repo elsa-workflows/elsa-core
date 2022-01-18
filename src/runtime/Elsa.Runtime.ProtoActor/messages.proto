@@ -1,4 +1,5 @@
 syntax = "proto3";
+import "google/protobuf/wrappers.proto";
 package Elsa.Runtime.ProtoActor.Messages;
 option csharp_namespace = "Elsa.Runtime.ProtoActor.Messages";
 
@@ -34,9 +35,9 @@ message DispatchWorkflowResponse {
 }
 
 message HandleStimulusRequest {
-    string activityTypeName = 1;
-    optional string hash = 2;
-    map<string, Json> data = 3;
+  string activityTypeName = 1;
+  optional string hash = 2;
+  map<string, Json> data = 3;
 }
 
 message Bookmark {
@@ -46,7 +47,7 @@ message Bookmark {
   optional string payload = 4;
   string activityId = 5;
   string activityInstanceId = 6;
-  optional string callbackMethodName = 7;
+  optional google.protobuf.StringValue callbackMethodName = 7;
 }
 
 message Json {

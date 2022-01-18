@@ -4,34 +4,33 @@ using Elsa.Models;
 using Elsa.Persistence.Commands;
 using Elsa.Persistence.Entities;
 using Elsa.Pipelines.WorkflowExecution;
+using Elsa.Pipelines.WorkflowExecution.Components;
 
 namespace Elsa.Persistence.Middleware.WorkflowExecution;
 
 public static class PersistWorkflowExecutionLogMiddlewareExtensions
 {
-    public static IWorkflowExecutionBuilder PersistWorkflowExecutionLog(this IWorkflowExecutionBuilder builder) => builder.UseMiddleware<PersistWorkflowExecutionLogMiddleware>();
+    public static IWorkflowExecutionBuilder UseWorkflowExecutionLogPersistence(this IWorkflowExecutionBuilder builder) => builder.UseMiddleware<PersistWorkflowExecutionLogMiddleware>();
 }
 
 /// <summary>
 /// Takes care of persisting a workflow instance after workflow execution.
 /// </summary>
-public class PersistWorkflowExecutionLogMiddleware : IWorkflowExecutionMiddleware
+public class PersistWorkflowExecutionLogMiddleware : WorkflowExecutionMiddleware
 {
-    private readonly WorkflowMiddlewareDelegate _next;
     private readonly ICommandSender _commandSender;
     private readonly IIdentityGenerator _identityGenerator;
 
-    public PersistWorkflowExecutionLogMiddleware(WorkflowMiddlewareDelegate next, ICommandSender commandSender, IIdentityGenerator identityGenerator)
+    public PersistWorkflowExecutionLogMiddleware(WorkflowMiddlewareDelegate next, ICommandSender commandSender, IIdentityGenerator identityGenerator) : base(next)
     {
-        _next = next;
         _commandSender = commandSender;
         _identityGenerator = identityGenerator;
     }
 
-    public async ValueTask InvokeAsync(WorkflowExecutionContext context)
+    public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
     {
         // Invoke next middleware.
-        await _next(context);
+        await Next(context);
 
         // Persist workflow execution log entries.
         var entries = context.ExecutionLog.Select(x => new WorkflowExecutionLogRecord

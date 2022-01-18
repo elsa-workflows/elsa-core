@@ -21,6 +21,7 @@ import FromJSONData = Model.FromJSONData;
 })
 export class FlowchartComponent implements ContainerActivityComponent {
   private rootId: string = uuid();
+  private silent: boolean = false; // Whether to emit events or not.
 
   @Prop({mutable: true}) public activityDescriptors: Array<ActivityDescriptor> = [];
   @Prop({mutable: true}) public root?: Activity;
@@ -87,20 +88,32 @@ export class FlowchartComponent implements ContainerActivityComponent {
     );
   }
 
+  public disableEvents = () => this.silent = true;
+
+  public enableEvents = async (emitWorkflowChanged: boolean): Promise<void> => {
+    this.silent = false;
+
+    if (emitWorkflowChanged === true) {
+      await this.onGraphChanged();
+    }
+  };
+
   private createAndInitializeGraph = async () => {
     const graph = this.graph = createGraph(this.container, {
-      nodeMovable: () => this.interactiveMode,
-      edgeMovable: () => this.interactiveMode,
-      arrowheadMovable: () => this.interactiveMode,
-      edgeLabelMovable: () => this.interactiveMode,
-      magnetConnectable: () => this.interactiveMode,
-      useEdgeTools: () => this.interactiveMode,
-      toolsAddable: () => this.interactiveMode,
-      stopDelegateOnDragging: () => this.interactiveMode,
-      vertexAddable: () => this.interactiveMode,
-      vertexDeletable: () => this.interactiveMode,
-      vertexMovable: () => this.interactiveMode,
-    });
+        nodeMovable: () => this.interactiveMode,
+        edgeMovable: () => this.interactiveMode,
+        arrowheadMovable: () => this.interactiveMode,
+        edgeLabelMovable: () => this.interactiveMode,
+        magnetConnectable: () => this.interactiveMode,
+        useEdgeTools: () => this.interactiveMode,
+        toolsAddable: () => this.interactiveMode,
+        stopDelegateOnDragging: () => this.interactiveMode,
+        vertexAddable: () => this.interactiveMode,
+        vertexDeletable: () => this.interactiveMode,
+        vertexMovable: () => this.interactiveMode,
+      },
+      this.disableEvents,
+      this.enableEvents);
 
     graph.on('blank:click', this.onGraphClick);
     graph.on('node:click', this.onNodeClick);
@@ -316,7 +329,10 @@ export class FlowchartComponent implements ContainerActivityComponent {
     } as Connection;
   }
 
-  private onGraphChanged = async (e: any) => {
+  private onGraphChanged = async () => {
+    debugger;
+    if (this.silent)
+      return;
     this.graphUpdated.emit({exportGraph: this.exportRootInternal});
   }
 }

@@ -60,22 +60,22 @@ public class TriggerIndexer : ITriggerIndexer
 
         // Only stream workflows from providers that are not "dynamic" (such as DatabaseWorkflowProvider).
         var workflows = _workflowRegistry.StreamAllAsync(WorkflowRegistry.SkipDynamicProviders, cancellationToken);
-        var collectedTriggers = new List<WorkflowTrigger>();
+        //var collectedTriggers = new List<WorkflowTrigger>();
 
         await foreach (var workflow in workflows.WithCancellation(cancellationToken))
         {
-            var triggers = await GetTriggersAsync(workflow, cancellationToken).ToListAsync(cancellationToken);
-            collectedTriggers.AddRange(triggers);
+            //var triggers = await GetTriggersAsync(workflow, cancellationToken).ToListAsync(cancellationToken);
+            await IndexTriggersAsync(workflow, cancellationToken);
         }
 
-        // Replace triggers for the specified workflow.
-        await _commandSender.ExecuteAsync(new ReplaceWorkflowTriggers(collectedTriggers), cancellationToken);
+        // // Replace triggers for the specified workflow.
+        // await _commandSender.ExecuteAsync(new ReplaceWorkflowTriggers(collectedTriggers), cancellationToken);
 
         stopwatch.Stop();
         _logger.LogInformation("Finished indexing workflow triggers in {ElapsedTime}", stopwatch.Elapsed);
 
-        // Publish event.
-        await _eventPublisher.PublishAsync(new TriggerIndexingFinished(collectedTriggers), cancellationToken);
+        // // Publish event.
+        // await _eventPublisher.PublishAsync(new TriggerIndexingFinished(collectedTriggers), cancellationToken);
     }
 
     public async Task<IEnumerable<WorkflowTrigger>> IndexTriggersAsync(Workflow workflow, CancellationToken cancellationToken = default)
@@ -84,7 +84,7 @@ public class TriggerIndexer : ITriggerIndexer
         var triggers = await GetTriggersAsync(workflow, cancellationToken).ToListAsync(cancellationToken);
 
         // Replace triggers for the specified workflow.
-        await _commandSender.ExecuteAsync(new ReplaceWorkflowTriggers(triggers), cancellationToken);
+        await _commandSender.ExecuteAsync(new ReplaceWorkflowTriggers(workflow, triggers), cancellationToken);
 
         // Publish event.
         await _eventPublisher.PublishAsync(new TriggerIndexingFinished(triggers), cancellationToken);

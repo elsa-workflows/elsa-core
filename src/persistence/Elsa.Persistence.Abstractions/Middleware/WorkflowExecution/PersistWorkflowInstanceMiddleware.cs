@@ -5,20 +5,20 @@ using Elsa.Persistence.Commands;
 using Elsa.Persistence.Entities;
 using Elsa.Persistence.Requests;
 using Elsa.Pipelines.WorkflowExecution;
+using Elsa.Pipelines.WorkflowExecution.Components;
 
 namespace Elsa.Persistence.Middleware.WorkflowExecution;
 
 public static class PersistWorkflowInstanceMiddlewareExtensions
 {
-    public static IWorkflowExecutionBuilder PersistWorkflows(this IWorkflowExecutionBuilder builder) => builder.UseMiddleware<PersistWorkflowInstanceMiddleware>();
+    public static IWorkflowExecutionBuilder UsePersistence(this IWorkflowExecutionBuilder builder) => builder.UseMiddleware<PersistWorkflowInstanceMiddleware>();
 }
 
 /// <summary>
 /// Takes care of persisting a workflow instance after workflow execution.
 /// </summary>
-public class PersistWorkflowInstanceMiddleware : IWorkflowExecutionMiddleware
+public class PersistWorkflowInstanceMiddleware : WorkflowExecutionMiddleware
 {
-    private readonly WorkflowMiddlewareDelegate _next;
     private readonly IRequestSender _requestSender;
     private readonly ICommandSender _commandSender;
     private readonly IWorkflowStateSerializer _workflowStateSerializer;
@@ -33,9 +33,8 @@ public class PersistWorkflowInstanceMiddleware : IWorkflowExecutionMiddleware
         IWorkflowStateSerializer workflowStateSerializer,
         IPayloadSerializer payloadSerializer,
         IIdentityGenerator identityGenerator,
-        ISystemClock clock)
+        ISystemClock clock) : base(next)
     {
-        _next = next;
         _requestSender = requestSender;
         _commandSender = commandSender;
         _workflowStateSerializer = workflowStateSerializer;
@@ -44,7 +43,7 @@ public class PersistWorkflowInstanceMiddleware : IWorkflowExecutionMiddleware
         _clock = clock;
     }
 
-    public async ValueTask InvokeAsync(WorkflowExecutionContext context)
+    public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
     {
         var cancellationToken = context.CancellationToken;
         var workflow = context.Workflow;
@@ -85,7 +84,7 @@ public class PersistWorkflowInstanceMiddleware : IWorkflowExecutionMiddleware
         await _commandSender.ExecuteAsync(new SaveWorkflowInstance(workflowInstance), cancellationToken);
 
         // Invoke next middleware.
-        await _next(context);
+        await Next(context);
 
         // Update workflow instance.
         var workflowState = _workflowStateSerializer.ReadState(context);

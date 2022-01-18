@@ -1,6 +1,7 @@
 using Elsa.Mediator.Contracts;
+using Elsa.Models;
 using Elsa.Persistence.Entities;
 
 namespace Elsa.Persistence.Commands;
 
-public record ReplaceWorkflowTriggers(ICollection<WorkflowTrigger> WorkflowTriggers) : ICommand;
+public record ReplaceWorkflowTriggers(Workflow Workflow, ICollection<WorkflowTrigger> WorkflowTriggers) : ICommand;

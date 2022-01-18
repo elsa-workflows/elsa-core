@@ -16,6 +16,7 @@ using Elsa.Persistence.EntityFrameworkCore.Extensions;
 using Elsa.Persistence.EntityFrameworkCore.Sqlite;
 using Elsa.Persistence.Middleware.WorkflowExecution;
 using Elsa.Pipelines.WorkflowExecution.Components;
+using Elsa.Runtime.Middleware;
 using Elsa.Runtime.ProtoActor.Extensions;
 using Elsa.Samples.Web1.Activities;
 using Elsa.Samples.Web1.Workflows;
@@ -60,6 +61,7 @@ services
     .AddActivity<If>()
     .AddActivity<HttpTrigger>()
     .AddActivity<Flowchart>()
+    .AddActivity<Delay>()
     ;
 
 // Register available triggers.
@@ -88,8 +90,9 @@ wellKnownTypeRegistry.RegisterType<string>("string");
 
 // Configure workflow engine execution pipeline.
 serviceProvider.ConfigureDefaultWorkflowExecutionPipeline(pipeline => pipeline
-    .PersistWorkflows()
-    .PersistWorkflowExecutionLog()
+    .UsePersistence()
+    .UseWorkflowExecutionLogPersistence()
+    .UseWorkflowExecutionEvents()
     .UseActivityScheduler()
 );
 
