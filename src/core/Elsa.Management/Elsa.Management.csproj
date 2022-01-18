@@ -7,14 +7,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Humanizer.Core" Version="2.11.10" />
-        <PackageReference Include="System.Linq.Async" Version="5.0.0" />
-        <PackageReference Include="System.Text.Json" Version="6.0.0" />
+        <PackageReference Include="Humanizer.Core" Version="2.13.14" />
+        <PackageReference Include="System.Linq.Async" Version="5.1.0" />
+        <PackageReference Include="System.Text.Json" Version="6.0.1" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\..\persistence\Elsa.Persistence.Abstractions\Elsa.Persistence.Abstractions.csproj" />
-      <ProjectReference Include="..\Elsa.Serialization\Elsa.Serialization.csproj" />
     </ItemGroup>
 
 </Project>
