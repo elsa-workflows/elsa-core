@@ -192,6 +192,12 @@ namespace Elsa.Options
             ElsaOptions.WorkflowTriggerStoreFactory = factory;
             return this;
         }
+        
+        public ElsaOptionsBuilder UseWorkflowBookmarkTriggerStore(Func<IServiceProvider, ITriggerStore> factory)
+        {
+            ElsaOptions.WorkflowBookmarkTriggerStoreFactory = factory;
+            return this;
+        }
 
         public ElsaOptionsBuilder UseAutoMapper(Action addAutoMapper)
         {

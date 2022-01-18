@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Elsa.Events;
 using Elsa.Models;
 using Elsa.Persistence;
+using Elsa.Providers.Workflows;
 using Elsa.Services.Models;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -14,7 +15,7 @@ namespace Elsa.Services.Triggers
 {
     public class TriggerIndexer : ITriggerIndexer
     {
-        private readonly IWorkflowRegistry _workflowRegistry;
+        private readonly IProgrammaticWorkflowProvider _programmaticWorkflowProvider;
         private readonly ITriggerStore _triggerStore;
         private readonly IMediator _mediator;
         private readonly ILogger _logger;
@@ -22,13 +23,13 @@ namespace Elsa.Services.Triggers
         private readonly IGetsTriggersForWorkflowBlueprints _triggersForBookmarksProvider;
 
         public TriggerIndexer(
-            IWorkflowRegistry workflowRegistry,
+            IProgrammaticWorkflowProvider programmaticWorkflowProvider,
             ITriggerStore triggerStore,
             IMediator mediator,
             ILogger<TriggerIndexer> logger,
             IGetsTriggersForWorkflowBlueprints triggersForBookmarksProvider)
         {
-            _workflowRegistry = workflowRegistry;
+            _programmaticWorkflowProvider = programmaticWorkflowProvider;
             _triggerStore = triggerStore;
             _mediator = mediator;
             _logger = logger;
@@ -37,8 +38,8 @@ namespace Elsa.Services.Triggers
 
         public async Task IndexTriggersAsync(CancellationToken cancellationToken = default)
         {
-            var allWorkflowBlueprints = await _workflowRegistry.ListActiveAsync(cancellationToken);
-            var publishedWorkflowBlueprints = allWorkflowBlueprints.Where(x => x.IsPublished && !x.IsDisabled).ToList();
+            var programmaticWorkflowsBlueprints = await _programmaticWorkflowProvider.GetWorkflowsAsync(cancellationToken).ToListAsync(cancellationToken);
+            var publishedWorkflowBlueprints = programmaticWorkflowsBlueprints.Where(x => x.IsPublished && !x.IsDisabled).ToList();
             await IndexTriggersAsync(publishedWorkflowBlueprints, cancellationToken);
             await _mediator.Publish(new TriggerIndexingFinished(), cancellationToken);
         }

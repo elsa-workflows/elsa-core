@@ -37,6 +37,7 @@ namespace Elsa.Persistence.MongoDb
                 .AddSingleton<MongoDbWorkflowInstanceStore>()
                 .AddSingleton<MongoDbWorkflowExecutionLogStore>()
                 .AddSingleton<MongoDbBookmarkStore>()
+                .AddSingleton<MongoDbTriggerStore>()
                 .AddSingleton<TDbContext>()
                 .AddSingleton<ElsaMongoDbContext, TDbContext>()
                 .AddSingleton(sp => sp.GetRequiredService<TDbContext>().WorkflowDefinitions)
@@ -49,8 +50,9 @@ namespace Elsa.Persistence.MongoDb
                 .UseWorkflowDefinitionStore(sp => sp.GetRequiredService<MongoDbWorkflowDefinitionStore>())
                 .UseWorkflowInstanceStore(sp => sp.GetRequiredService<MongoDbWorkflowInstanceStore>())
                 .UseWorkflowExecutionLogStore(sp => sp.GetRequiredService<MongoDbWorkflowExecutionLogStore>())
-                .UseWorkflowTriggerStore(sp => sp.GetRequiredService<MongoDbBookmarkStore>());
-            
+                .UseWorkflowTriggerStore(sp => sp.GetRequiredService<MongoDbBookmarkStore>())
+                .UseWorkflowBookmarkTriggerStore(sp => sp.GetRequiredService<MongoDbTriggerStore>());
+
             DatabaseRegister.RegisterMapsAndSerializers();
         }
     }

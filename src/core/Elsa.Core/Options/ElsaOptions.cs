@@ -67,6 +67,7 @@ namespace Elsa.Options
         internal Func<IServiceProvider, IWorkflowInstanceStore> WorkflowInstanceStoreFactory { get; set; }
         internal Func<IServiceProvider, IWorkflowExecutionLogStore> WorkflowExecutionLogStoreFactory { get; set; }
         internal Func<IServiceProvider, IBookmarkStore> WorkflowTriggerStoreFactory { get; set; }
+        internal Func<IServiceProvider, ITriggerStore> WorkflowBookmarkTriggerStoreFactory { get; set; }
         internal Func<IServiceProvider, JsonSerializer> CreateJsonSerializer { get; set; }
         internal Action<IServiceProvider, JsonSerializer> JsonSerializerConfigurer { get; set; }
         internal Func<IServiceProvider, IWorkflowDefinitionDispatcher> WorkflowDefinitionDispatcherFactory { get; set; }
