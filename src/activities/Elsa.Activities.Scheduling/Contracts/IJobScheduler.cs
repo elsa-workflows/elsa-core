@@ -5,6 +5,6 @@ namespace Elsa.Activities.Scheduling.Contracts;
 
 public interface IJobScheduler
 {
-    Task ScheduleAsync(IJob job, ISchedule schedule, CancellationToken cancellationToken = default);
-    Task ClearAsync(CancellationToken cancellationToken = default);
+    Task ScheduleAsync(IJob job, ISchedule schedule, string[]? groupKeys = default, CancellationToken cancellationToken = default);
+    Task ClearAsync(string[]? groupKeys = default, CancellationToken cancellationToken = default);
 }

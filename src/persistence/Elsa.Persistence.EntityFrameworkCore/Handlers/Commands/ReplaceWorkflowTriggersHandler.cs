@@ -12,8 +12,8 @@ public class ReplaceWorkflowTriggersHandler : ICommandHandler<ReplaceWorkflowTri
 
     public async Task<Unit> HandleAsync(ReplaceWorkflowTriggers command, CancellationToken cancellationToken)
     {
-        var ids = command.WorkflowTriggers.Select(x => x.Id).ToList();
-        await _store.DeleteWhereAsync(x => ids.Contains(x.Id), cancellationToken);
+        var workflowDefinitionIds = command.WorkflowTriggers.Select(x => x.WorkflowDefinitionId).Distinct().ToList();
+        await _store.DeleteWhereAsync(x => workflowDefinitionIds.Contains(x.WorkflowDefinitionId), cancellationToken);
         await _store.SaveManyAsync(command.WorkflowTriggers, cancellationToken);
 
         return Unit.Instance;

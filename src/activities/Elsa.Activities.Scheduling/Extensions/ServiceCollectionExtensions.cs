@@ -1,5 +1,6 @@
 using Elsa.Activities.Scheduling.Contracts;
 using Elsa.Activities.Scheduling.Handlers;
+using Elsa.Activities.Scheduling.HostedServices;
 using Elsa.Activities.Scheduling.Jobs;
 using Elsa.Activities.Scheduling.Services;
 using Elsa.Mediator.Extensions;
@@ -15,7 +16,9 @@ public static class ServiceCollectionExtensions
             .AddSingleton<IJobManager, JobManager>()
             .AddSingleton<IJobHandler, RunWorkflowJobHandler>()
             .AddSingleton<IJobHandler, ResumeWorkflowJobHandler>()
-            .AddNotificationHandlersFrom<ScheduleWorkflowsHandler>();
+            .AddSingleton<IWorkflowTriggerScheduler, WorkflowTriggerScheduler>()
+            .AddNotificationHandlersFrom<ScheduleWorkflowsHandler>()
+            .AddHostedService<ScheduleWorkflowsHostedService>();
         
         serviceProvider.ConfigureServices(services);
         return services;
