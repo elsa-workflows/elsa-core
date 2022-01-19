@@ -45,6 +45,7 @@ namespace Elsa.WorkflowSettings.Handlers
 
         private async Task HandleWorkflowCacheAndTriggerIndexer(CancellationToken cancellationToken)
         {
+            //TODO: is still needed here?
             await _cacheSignal.TriggerTokenAsync(CachingWorkflowRegistry.CacheKey);
             await _triggerIndexer.IndexTriggersAsync(cancellationToken);
         }

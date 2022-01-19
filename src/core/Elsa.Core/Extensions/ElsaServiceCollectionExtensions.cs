@@ -212,7 +212,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
             // Workflow providers.
             services
-                .AddWorkflowProvider<ProgrammaticWorkflowProvider>()
+                .AddTransient<IProgrammaticWorkflowProvider, ProgrammaticWorkflowProvider>()
                 .AddWorkflowProvider<BlobStorageWorkflowProvider>()
                 .AddWorkflowProvider<DatabaseWorkflowProvider>();
 
@@ -242,8 +242,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped<ITriggerIndexer, TriggerIndexer>()
                 .AddScoped<IGetsTriggersForWorkflowBlueprints, TriggersForBlueprintsProvider>()
                 .AddTransient<IGetsTriggersForActivityBlueprintAndWorkflow, TriggersForActivityBlueprintAndWorkflowProvider>()
-                // .AddSingleton<ITriggerStore, TriggerStore>()
-                // .AddScoped<ITriggerFinder, TriggerFinder>()
+                .AddScoped<ITriggerFinder, TriggerFinder>()
                 .AddBookmarkProvider<SignalReceivedBookmarkProvider>()
                 .AddBookmarkProvider<RunWorkflowBookmarkProvider>();
 
