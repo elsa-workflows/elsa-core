@@ -9,7 +9,7 @@ import {AddActivityArgs} from '../../designer/canvas/canvas';
 import {Activity, ActivityDescriptor, ActivitySelectedArgs, ContainerSelectedArgs, GraphUpdatedArgs} from '../../../models';
 import {createGraph} from './graph-factory';
 import {createNode} from './node-factory';
-import {Connection, EdgeModel, Flowchart} from './models';
+import {Connection, Flowchart} from './models';
 import WorkflowEditorTunnel from '../../designer/state';
 import {ActivityNode, flattenList, walkActivities} from "./activity-walker";
 import PositionEventArgs = NodeView.PositionEventArgs;
@@ -119,7 +119,6 @@ export class FlowchartComponent implements ContainerActivityComponent {
     graph.on('blank:click', this.onGraphClick);
     graph.on('node:click', this.onNodeClick);
     graph.on('edge:connected', this.onEdgeConnected);
-    graph.on('edge:removed', this.onEdgeRemoved);
     graph.on('node:moved', this.onNodeMoved);
 
     graph.on('node:change:*', this.onGraphChanged);
@@ -136,14 +135,13 @@ export class FlowchartComponent implements ContainerActivityComponent {
     const graph = this.graph;
     const graphModel = graph.toJSON();
     const activities = graphModel.cells.filter(x => x.shape == 'activity').map(x => x.data as Activity);
-    const edgeModels = graphModel.cells.filter(x => x.shape == 'elsa-edge' && !!x.data).map(x => x.data as EdgeModel);
+    const connections = graphModel.cells.filter(x => x.shape == 'elsa-edge' && !!x.data).map(x => x.data as Connection);
     const remainingConnections: Array<Connection> = []; // The connections remaining after transposition.
     let remainingActivities: Array<Activity> = [...activities]; // The activities remaining after transposition.
     const activityDescriptors = this.activityDescriptors;
 
     // Transpose connections to activity outbound port properties.
-    for (const edgeModel of edgeModels) {
-      const connection = edgeModel.connection;
+    for (const connection of connections) {
       const source = activities.find(x => x.id == connection.source);
       const target = activities.find(x => x.id == connection.target);
       const sourceDescriptor = activityDescriptors.find(x => x.nodeType == source.nodeType);
@@ -177,8 +175,15 @@ export class FlowchartComponent implements ContainerActivityComponent {
     this.rootId = root.id;
     const descriptors = this.activityDescriptors;
     const flowchart = root as Flowchart;
-    const flowchartGraph = walkActivities(root, this.activityDescriptors);
+    const flowchartGraph = walkActivities(flowchart, this.activityDescriptors, true);
     const flowchartNodes = flattenList(flowchartGraph.children);
+
+    // Clear inbound port for start activity.
+    const startActivityNode = flowchartNodes.find(x => x.activity.id === flowchart.start);
+
+    if (startActivityNode.port)
+      delete startActivityNode.port;
+
     const nodes: Array<Node.Metadata> = [];
     let edges: Array<Edge.Metadata> = [];
 
@@ -194,7 +199,6 @@ export class FlowchartComponent implements ContainerActivityComponent {
 
       // Create X6 edges for each child activity.
       const childEdges = this.createEdges(flowchartNodes, activityNode);
-
       edges = [...edges, ...childEdges];
     }
 
@@ -218,9 +222,9 @@ export class FlowchartComponent implements ContainerActivityComponent {
     for (const childNode of activityNode.children) {
       const edge = this.createEdge(allNodes, {
         source: activityNode.activity.id,
-        sourcePort: activityNode.port,
+        sourcePort: childNode.port,
         target: childNode.activity.id,
-        targetPort: childNode.port
+        targetPort: 'In'
       });
 
       edges.push(edge);
@@ -230,16 +234,10 @@ export class FlowchartComponent implements ContainerActivityComponent {
   }
 
   private createEdge = (allNodes: Array<ActivityNode>, connection: Connection): Edge.Metadata => {
-    const model: EdgeModel = {
-      connection: connection,
-      sourceActivity: allNodes.find(x => x.activity.id == connection.source)?.activity,
-      targetActivity: allNodes.find(x => x.activity.id == connection.target)?.activity,
-    }
-
     return {
       shape: 'elsa-edge',
       zIndex: -1,
-      data: model,
+      data: connection,
       source: connection.source,
       target: connection.target,
       sourcePort: connection.sourcePort,
@@ -332,41 +330,13 @@ export class FlowchartComponent implements ContainerActivityComponent {
     const targetPort = targetNode.getPort(edge.getTargetPortId()).id;
 
     edge.data = {
-      connection: {
-        source: sourceActivity.id,
-        sourcePort: sourcePort,
-        target: targetActivity.id,
-        targetPort: targetPort
-      },
-      sourceActivity: sourceActivity,
-      targetActivity: targetActivity
-    } as EdgeModel;
+      source: sourceActivity.id,
+      sourcePort: sourcePort,
+      target: targetActivity.id,
+      targetPort: targetPort
+    } as Connection;
   }
 
-  private onEdgeRemoved = (e: { isNew: boolean, edge: Edge, options: Options }) => {
-    const edge = e.edge;
-    const model = edge.data as EdgeModel;
-    const connection = model.connection;
-    const outPortPropName = camelCase(connection.targetPort);
-
-    // Find source activity.
-    const sourceNode = this.graph.model.getNodes().find(x => {
-      if (x.shape !== 'activity')
-        return false;
-
-      const activity = x.data as Activity;
-      return activity.id == connection.source;
-    });
-
-    if(!sourceNode)
-      return;
-
-    const sourceActivity = sourceNode.data as Activity;
-
-    // Delete any transposed activity.
-    delete sourceActivity[outPortPropName];
-    sourceNode.data = sourceActivity;
-  }
 
   private onGraphChanged = async () => {
     if (this.silent)

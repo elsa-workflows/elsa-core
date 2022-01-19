@@ -1,4 +1,4 @@
-import {Activity, Container} from '../../../models';
+import {Container} from '../../../models';
 
 export interface Flowchart extends Container {
   start: string;
@@ -10,10 +10,4 @@ export interface Connection {
   target: string;
   sourcePort: string;
   targetPort: string;
-}
-
-export interface EdgeModel {
-  connection: Connection;
-  sourceActivity: Activity;
-  targetActivity: Activity;
 }
