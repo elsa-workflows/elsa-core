@@ -37,19 +37,19 @@ namespace Elsa.Activities.Temporal.Common.Handlers
             foreach (var trigger in startAtTriggers)
             {
                 var bookmark = (StartAtBookmark) trigger.Bookmark;
-                await Try(() => _workflowScheduler.ScheduleAsync(trigger.WorkflowBlueprint.Id, trigger.ActivityId, bookmark.ExecuteAt, null, cancellationToken));
+                await Try(() => _workflowScheduler.ScheduleAsync(trigger.WorkflowDefinitionId, trigger.ActivityId, bookmark.ExecuteAt, null, cancellationToken));
             }
 
             foreach (var trigger in timerTriggers)
             {
                 var bookmark = (TimerBookmark) trigger.Bookmark;
-                await Try(() => _workflowScheduler.ScheduleAsync(trigger.WorkflowBlueprint.Id, trigger.ActivityId, bookmark.ExecuteAt, bookmark.Interval, cancellationToken));
+                await Try(() => _workflowScheduler.ScheduleAsync(trigger.WorkflowDefinitionId, trigger.ActivityId, bookmark.ExecuteAt, bookmark.Interval, cancellationToken));
             }
 
             foreach (var trigger in cronTriggers)
             {
                 var bookmark = (CronBookmark) trigger.Bookmark;
-                await Try(() => _workflowScheduler.ScheduleAsync(trigger.WorkflowBlueprint.Id, trigger.ActivityId, bookmark.CronExpression, cancellationToken));
+                await Try(() => _workflowScheduler.ScheduleAsync(trigger.WorkflowDefinitionId, trigger.ActivityId, bookmark.CronExpression, cancellationToken));
             }
         }
 

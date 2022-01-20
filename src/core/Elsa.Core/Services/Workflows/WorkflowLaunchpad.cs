@@ -244,7 +244,12 @@ namespace Elsa.Services.Workflows
 
             foreach (var trigger in triggers)
             {
-                var workflowBlueprint = trigger.WorkflowBlueprint;
+                var workflowBlueprint = await _workflowRegistry.GetWorkflowAsync(trigger.WorkflowDefinitionId, VersionOptions.Published, cancellationToken);
+                if (workflowBlueprint == null)
+                {
+                    _logger.LogDebug("Workflow {WorkflowDefinitionId} does not have a published version so it is not startable", trigger.WorkflowDefinitionId);
+                    continue;
+                }
                 var startableWorkflow = await CollectStartableWorkflowInternalAsync(workflowBlueprint, trigger.ActivityId, query.CorrelationId!, query.ContextId, query.TenantId, cancellationToken);
 
                 if (startableWorkflow != null)
