@@ -4,14 +4,16 @@ using Elsa.Persistence.EntityFramework.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
 {
     [DbContext(typeof(ElsaContext))]
-    partial class ElsaContextModelSnapshot : ModelSnapshot
+    [Migration("20220120204205_Update25")]
+    partial class Update25
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

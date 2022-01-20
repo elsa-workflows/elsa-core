@@ -4,7 +4,7 @@ dotnet ef migrations add Update24 -- "Server=localhost;Port=3306;Database=elsa;U
 
 REM PostgreSql
 cd ../Elsa.Persistence.EntityFramework.PostgreSql
-dotnet ef migrations add Update24
+dotnet ef migrations add Update24 -- "Server=localhost;Port=3306;Database=elsa;User=root;Password=password;" "8.0.22"
 
 REM Sqlite
 cd ../Elsa.Persistence.EntityFramework.Sqlite
