@@ -6,7 +6,6 @@ using Swashbuckle.AspNetCore.Annotations;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
-using Elsa.Services.Models;
 
 namespace Elsa.Server.Api.Endpoints.Workflows
 {

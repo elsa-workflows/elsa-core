@@ -9,7 +9,6 @@ using Elsa.Activities.Telnyx.Webhooks.Events;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
 using Elsa.Models;
 using Elsa.Services;
-using Elsa.Services.Bookmarks;
 using Elsa.Services.Models;
 using MediatR;
 

@@ -1,19 +1,13 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.Http.Services;
-using Elsa.Models;
 using Elsa.Scripting.JavaScript.Events;
 using Elsa.Scripting.JavaScript.Messages;
 using Elsa.Services;
 using MediatR;
 using Microsoft.AspNetCore.Http;
-using NJsonSchema;
-using NJsonSchema.CodeGeneration.TypeScript;
 
 namespace Elsa.Activities.Http.JavaScript
 {

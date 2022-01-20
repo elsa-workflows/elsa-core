@@ -5,7 +5,6 @@ using Elsa.Activities.Temporal.Common.HostedServices;
 using Elsa.Activities.Temporal.Common.Options;
 using Elsa.HostedServices;
 using Elsa.Options;
-using Elsa.Runtime;
 using Microsoft.Extensions.DependencyInjection;
 
 // ReSharper disable once CheckNamespace

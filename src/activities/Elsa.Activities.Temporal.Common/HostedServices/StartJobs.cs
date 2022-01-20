@@ -5,7 +5,6 @@ using Elsa.Activities.Temporal.Common.Bookmarks;
 using Elsa.Activities.Temporal.Common.Services;
 using Elsa.HostedServices;
 using Elsa.Services;
-using Elsa.Services.Bookmarks;
 using Microsoft.Extensions.Logging;
 using Open.Linq.AsyncExtensions;
 using Polly;

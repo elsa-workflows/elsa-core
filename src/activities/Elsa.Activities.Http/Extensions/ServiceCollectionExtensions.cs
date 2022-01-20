@@ -5,7 +5,6 @@ using Elsa.Activities.Http.Bookmarks;
 using Elsa.Activities.Http.JavaScript;
 using Elsa.Activities.Http.Liquid;
 using Elsa.Activities.Http.Options;
-using Elsa.Activities.Http.Parsers;
 using Elsa.Activities.Http.Parsers.Request;
 using Elsa.Activities.Http.Parsers.Response;
 using Elsa.Activities.Http.Services;

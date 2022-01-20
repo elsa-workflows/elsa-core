@@ -1,6 +1,5 @@
 using Elsa.Persistence.EntityFramework.Core;
 using Microsoft.EntityFrameworkCore;
-using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
 
 namespace Elsa.Persistence.EntityFramework.MySql
 {

@@ -5,9 +5,7 @@ using System.Threading.Tasks;
 using Elsa.Builders;
 using Elsa.Models;
 using Elsa.Persistence;
-using Elsa.Services.Bookmarks;
 using Elsa.Services.Models;
-using Elsa.Services.Triggers;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Services.Workflows
