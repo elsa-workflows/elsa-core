@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Elsa.Activities.Temporal.Common.Services;
 using Elsa.Activities.Temporal.Quartz.Jobs;
 using Elsa.Options;
-using Medallion.Threading;
 using Microsoft.Extensions.Logging;
 using NodaTime;
 using Quartz;

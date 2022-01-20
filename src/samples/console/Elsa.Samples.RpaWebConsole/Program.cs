@@ -1,5 +1,4 @@
 using System.Threading.Tasks;
-using Elsa.Samples.RpaWebConsole;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 

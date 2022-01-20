@@ -1,18 +1,9 @@
-import {Component, Event, Host, Prop, State, Watch, h} from '@stencil/core';
-import {eventBus} from "../../../../services/event-bus";
-import {Map} from "../../../../utils/utils";
-import {
-  EventTypes,
-  Variables,
-  WorkflowContextFidelity,
-  WorkflowContextOptions,
-  WorkflowDefinition,
-  WorkflowPersistenceBehavior
-} from "../../../../models";
+import {Component, Event, h, Host, Prop, State, Watch} from '@stencil/core';
+import {createElsaClient, eventBus} from "../../../../services";
+import {EventTypes, Variables, WorkflowContextFidelity, WorkflowContextOptions, WorkflowDefinition} from "../../../../models";
 import {MonacoValueChangedArgs} from "../../../controls/elsa-monaco/elsa-monaco";
 import {MarkerSeverity} from "monaco-editor";
 import {checkBox, FormContext, selectField, SelectOption, textArea, textInput} from "../../../../utils/forms";
-import {createElsaClient} from "../../../../services/elsa-client";
 
 interface VariableDefinition {
   name?: string;
@@ -74,15 +65,7 @@ export class ElsaWorkflowDefinitionSettingsModal {
     if (errorCount > 0)
       return;
 
-    const newValue = e.value;
-    let data = this.workflowDefinitionInternal.variables ? this.workflowDefinitionInternal.variables.data || {} : {};
-
-    try {
-      data = newValue.indexOf('{') >= 0 ? JSON.parse(newValue) : {};
-    } catch (e) {
-    } finally {
-      this.workflowDefinitionInternal = {...this.workflowDefinitionInternal, variables: {data: data}};
-    }
+    this.workflowDefinitionInternal.variables = e.value;
   }
 
   render() {
@@ -199,9 +182,7 @@ export class ElsaWorkflowDefinitionSettingsModal {
 
   renderVariablesTab() {
     const workflowDefinition = this.workflowDefinitionInternal;
-    const variables: Variables = workflowDefinition.variables || {data: {}};
-    const data: Map<any> = variables.data || {};
-    const value = JSON.stringify(data, undefined, 3);
+    const value = workflowDefinition.variables || '{}';
     const language = 'json';
 
     return (

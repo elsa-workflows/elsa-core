@@ -6,7 +6,6 @@ using Elsa.Builders;
 using Elsa.Exceptions;
 using Elsa.Models;
 using Elsa.Persistence;
-using Elsa.Services.Bookmarks;
 using Elsa.Services.Models;
 using Open.Linq.AsyncExtensions;
 

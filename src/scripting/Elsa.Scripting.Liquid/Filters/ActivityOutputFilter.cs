@@ -1,7 +1,6 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Providers.WorkflowStorage;
-using Elsa.Scripting.Liquid.Helpers;
 using Elsa.Scripting.Liquid.Services;
 using Elsa.Services.Models;
 using Elsa.Services.WorkflowStorage;

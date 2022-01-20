@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -10,7 +9,6 @@ using Elsa.Activities.Temporal.Hangfire.Models;
 using Hangfire;
 using Hangfire.Common;
 using Hangfire.Storage;
-using Hangfire.Storage.Monitoring;
 using NodaTime;
 
 namespace Elsa.Activities.Temporal.Hangfire.Services

@@ -1,7 +1,7 @@
 image: Visual Studio 2022
 
 environment:
-    elsa_version: 2.4.1
+    elsa_version: 2.4.2
     elsa_build_version: 0.0.0
     nodejs_version: "14.6.0"
     # AppVeyor installs Java on its build agents by default, but it

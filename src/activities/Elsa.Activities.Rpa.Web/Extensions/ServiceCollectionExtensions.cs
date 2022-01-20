@@ -1,4 +1,3 @@
-using Elsa;
 using Elsa.Activities.Rpa.Web;
 using Elsa.Activities.Rpa.Web.Options;
 using Elsa.Activities.Rpa.Web.Services;

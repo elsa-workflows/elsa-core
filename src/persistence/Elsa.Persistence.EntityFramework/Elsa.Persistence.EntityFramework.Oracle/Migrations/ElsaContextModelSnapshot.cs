@@ -242,7 +242,7 @@ namespace Elsa.Persistence.EntityFramework.Oracle.Migrations
 
                     b.Property<string>("DefinitionVersionId")
                         .IsRequired()
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<DateTimeOffset?>("FaultedAt")
                         .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
@@ -284,6 +284,9 @@ namespace Elsa.Persistence.EntityFramework.Oracle.Migrations
 
                     b.HasIndex("DefinitionId")
                         .HasDatabaseName("IX_WorkflowInstance_DefinitionId");
+
+                    b.HasIndex("DefinitionVersionId")
+                        .HasDatabaseName("IX_WorkflowInstance_DefinitionVersionId");
 
                     b.HasIndex("FaultedAt")
                         .HasDatabaseName("IX_WorkflowInstance_FaultedAt");

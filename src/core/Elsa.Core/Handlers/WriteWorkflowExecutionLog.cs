@@ -3,8 +3,6 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Elsa.Events;
 using Elsa.Models;
-using Elsa.Serialization;
-using Elsa.Services;
 using Elsa.Services.Models;
 using MediatR;
 using Newtonsoft.Json;

@@ -381,7 +381,7 @@ export interface SaveWorkflowDefinitionRequest {
   description?: string;
   tag?: string;
   channel?: string;
-  variables?: Variables;
+  variables?: string;
   contextOptions?: WorkflowContextOptions;
   isSingleton?: boolean;
   persistenceBehavior?: WorkflowPersistenceBehavior;

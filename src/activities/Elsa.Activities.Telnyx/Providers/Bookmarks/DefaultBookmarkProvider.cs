@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using Elsa.Services;
-using Elsa.Services.Bookmarks;
 
 namespace Elsa.Activities.Telnyx.Providers.Bookmarks
 {
