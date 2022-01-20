@@ -242,7 +242,7 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
 
                     b.Property<string>("DefinitionVersionId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTimeOffset?>("FaultedAt")
                         .HasColumnType("datetimeoffset");
@@ -284,6 +284,9 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
 
                     b.HasIndex("DefinitionId")
                         .HasDatabaseName("IX_WorkflowInstance_DefinitionId");
+
+                    b.HasIndex("DefinitionVersionId")
+                        .HasDatabaseName("IX_WorkflowInstance_DefinitionVersionId");
 
                     b.HasIndex("FaultedAt")
                         .HasDatabaseName("IX_WorkflowInstance_FaultedAt");

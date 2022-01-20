@@ -240,7 +240,7 @@ namespace Elsa.Persistence.EntityFramework.MySql.Migrations
 
                     b.Property<string>("DefinitionVersionId")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<DateTimeOffset?>("FaultedAt")
                         .HasColumnType("datetime(6)");
@@ -282,6 +282,9 @@ namespace Elsa.Persistence.EntityFramework.MySql.Migrations
 
                     b.HasIndex("DefinitionId")
                         .HasDatabaseName("IX_WorkflowInstance_DefinitionId");
+
+                    b.HasIndex("DefinitionVersionId")
+                        .HasDatabaseName("IX_WorkflowInstance_DefinitionVersionId");
 
                     b.HasIndex("FaultedAt")
                         .HasDatabaseName("IX_WorkflowInstance_FaultedAt");
