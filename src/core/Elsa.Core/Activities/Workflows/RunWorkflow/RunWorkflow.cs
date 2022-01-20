@@ -12,7 +12,6 @@ using Elsa.Providers.WorkflowStorage;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Elsa.Services.WorkflowStorage;
-using NetBox.Extensions;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Workflows

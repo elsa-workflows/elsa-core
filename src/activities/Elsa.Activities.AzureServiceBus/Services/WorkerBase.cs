@@ -6,7 +6,6 @@ using Elsa.Activities.AzureServiceBus.Models;
 using Elsa.Activities.AzureServiceBus.Options;
 using Elsa.Models;
 using Elsa.Services;
-using Elsa.Services.Bookmarks;
 using Elsa.Services.Models;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;

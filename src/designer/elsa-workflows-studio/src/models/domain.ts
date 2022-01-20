@@ -8,7 +8,7 @@ export interface WorkflowDefinition {
   displayName?: string;
   description?: string;
   version: number;
-  variables?: Variables;
+  variables?: string;
   customAttributes?: Variables;
   contextOptions?: WorkflowContextOptions;
   isSingleton?: boolean;

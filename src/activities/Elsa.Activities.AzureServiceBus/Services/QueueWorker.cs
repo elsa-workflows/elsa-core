@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Elsa.Activities.AzureServiceBus.Bookmarks;
 using Elsa.Activities.AzureServiceBus.Options;
 using Elsa.Services;
-using Elsa.Services.Bookmarks;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Extensions.Logging;

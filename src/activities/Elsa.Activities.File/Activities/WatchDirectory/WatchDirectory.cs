@@ -4,13 +4,8 @@ using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Services;
 using Elsa.Services.Models;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using Elsa.Expressions;
 
 namespace Elsa.Activities.File

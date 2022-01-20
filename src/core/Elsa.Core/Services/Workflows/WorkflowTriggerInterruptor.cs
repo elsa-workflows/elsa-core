@@ -7,7 +7,6 @@ using Elsa.Exceptions;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications.WorkflowInstances;
-using Elsa.Services.Bookmarks;
 using Elsa.Services.Models;
 
 namespace Elsa.Services.Workflows

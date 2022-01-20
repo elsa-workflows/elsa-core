@@ -4,7 +4,6 @@ using Elsa.Builders;
 using Elsa.Options;
 using Elsa.Persistence;
 using Elsa.Services;
-using Elsa.Services.Bookmarks;
 using Elsa.Services.WorkflowStorage;
 using Elsa.Testing.Shared.Helpers;
 using Microsoft.Extensions.DependencyInjection;
