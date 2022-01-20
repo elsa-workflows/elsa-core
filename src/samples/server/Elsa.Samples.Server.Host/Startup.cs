@@ -118,7 +118,7 @@ namespace Elsa.Samples.Server.Host
                 .UseElsaFeatures()
                 .UseRouting()
                 .UseEndpoints(endpoints => { endpoints.MapControllers(); })
-                .MapWorkflowTestHub()
+                .UseWorkflowTestHub()
                 ;
         }
         
