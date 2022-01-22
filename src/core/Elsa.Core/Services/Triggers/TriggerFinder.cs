@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications.Triggers;
+using Elsa.Serialization;
 using Newtonsoft.Json;
 
 namespace Elsa.Services.Triggers
@@ -13,12 +14,12 @@ namespace Elsa.Services.Triggers
     public class TriggerFinder : ITriggerFinder
     {
         private readonly ITriggerStore _triggerStore;
-        private readonly JsonSerializerSettings _serializerSettings;
+        private readonly IContentSerializer _contentSerializer;
 
-        public TriggerFinder(ITriggerStore triggerStore, JsonSerializerSettings serializerSettings)
+        public TriggerFinder(ITriggerStore triggerStore, IContentSerializer contentSerializer)
         {
             _triggerStore = triggerStore;
-            _serializerSettings = serializerSettings;
+            _contentSerializer = contentSerializer;
         }
 
         public async Task<IEnumerable<TriggerFinderResult>> FindTriggersAsync(string activityType, IEnumerable<IBookmark> filters, string? tenantId, CancellationToken cancellationToken = default)
@@ -27,19 +28,19 @@ namespace Elsa.Services.Triggers
             var records = await _triggerStore.FindManyAsync(specification, cancellationToken: cancellationToken);
             var filterList = filters as ICollection<IBookmark> ?? filters.ToList();
             var triggerResults = SelectResults(records);
-            
+
             if (!filterList.Any())
                 return triggerResults;
 
             var filteredTriggers = new List<TriggerFinderResult>();
-            
+
             foreach (var triggerFinderResult in triggerResults)
             {
                 foreach (var filter in filterList)
                 {
-                    var result  = triggerFinderResult.Bookmark.Compare(filter);
+                    var result = triggerFinderResult.Bookmark.Compare(filter);
 
-                    if (result == null || result.Value) 
+                    if (result == null || result.Value)
                         filteredTriggers.Add(triggerFinderResult);
                 }
             }
@@ -58,7 +59,7 @@ namespace Elsa.Services.Triggers
         private IEnumerable<TriggerFinderResult> SelectResults(IEnumerable<Trigger> triggers) =>
             from trigger in triggers
             let triggerType = Type.GetType(trigger.ModelType)
-            let model = (IBookmark) JsonConvert.DeserializeObject(trigger.Model, triggerType, _serializerSettings)!
+            let model = (IBookmark)JsonConvert.DeserializeObject(trigger.Model, triggerType, (JsonSerializerSettings)_contentSerializer.GetSettings())!
             select new TriggerFinderResult(trigger.WorkflowDefinitionId, trigger.ActivityId, model);
     }
 }

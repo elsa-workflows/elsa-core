@@ -6,7 +6,6 @@ using Elsa.Activities.Signaling;
 using Elsa.Activities.Signaling.Services;
 using Elsa.Activities.Workflows;
 using Elsa.Builders;
-using Elsa.Consumers;
 using Elsa.Converters;
 using Elsa.Decorators;
 using Elsa.Design;
@@ -73,6 +72,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped(options.WorkflowInstanceStoreFactory)
                 .AddScoped(options.WorkflowExecutionLogStoreFactory)
                 .AddScoped(options.BookmarkStoreFactory)
+                .AddScoped(options.TriggerStoreFactory)
                 .AddSingleton(options.DistributedLockingOptions.DistributedLockProviderFactory)
                 .AddScoped(options.WorkflowDefinitionDispatcherFactory)
                 .AddScoped(options.WorkflowInstanceDispatcherFactory)
@@ -261,10 +261,7 @@ namespace Microsoft.Extensions.DependencyInjection
             elsaOptions
                 .AddCompetingConsumer<TriggerWorkflowsRequestConsumer, TriggerWorkflowsRequest>("ExecuteWorkflow")
                 .AddCompetingConsumer<ExecuteWorkflowDefinitionRequestConsumer, ExecuteWorkflowDefinitionRequest>("ExecuteWorkflow")
-                .AddCompetingConsumer<ExecuteWorkflowInstanceRequestConsumer, ExecuteWorkflowInstanceRequest>("ExecuteWorkflow")
-                .AddPubSubConsumer<UpdateWorkflowTriggersIndexConsumer, WorkflowDefinitionPublished>("WorkflowDefinitionEvents")
-                .AddPubSubConsumer<UpdateWorkflowTriggersIndexConsumer, WorkflowDefinitionRetracted>("WorkflowDefinitionEvents")
-                .AddPubSubConsumer<UpdateWorkflowTriggersIndexConsumer, WorkflowDefinitionDeleted>("WorkflowDefinitionEvents");
+                .AddCompetingConsumer<ExecuteWorkflowInstanceRequestConsumer, ExecuteWorkflowInstanceRequest>("ExecuteWorkflow");
 
             // AutoMapper.
             services
