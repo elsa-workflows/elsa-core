@@ -1,6 +1,4 @@
 using Elsa.Activities.Mqtt.Options;
-using Elsa.Persistence;
-using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,6 +9,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.Mqtt.Bookmarks;
 
 namespace Elsa.Activities.Mqtt.Services
 {
@@ -62,38 +61,20 @@ namespace Elsa.Activities.Mqtt.Services
         public async IAsyncEnumerable<MqttClientOptions> GetConfigurationsAsync(Func<IWorkflowBlueprint, bool>? predicate, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             using var scope = _scopeFactory.CreateScope();
-            var workflowRegistry = scope.ServiceProvider.GetRequiredService<IWorkflowRegistry>();
-            var workflowBlueprintReflector = scope.ServiceProvider.GetRequiredService<IWorkflowBlueprintReflector>();
-            var workflowInstanceStore = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
-            var workflows = await workflowRegistry.ListActiveAsync(cancellationToken);
-
-            var query =
-                from workflow in workflows
-                from activity in workflow.Activities
-                where activity.Type == nameof(MqttMessageReceived)
-                select workflow;
-
-            var filteredQuery = predicate == null ? query : query.Where(predicate);
-
-            foreach (var workflow in query)
+            var triggerFinder = scope.ServiceProvider.GetRequiredService<ITriggerFinder>();
+            var triggers = await triggerFinder.FindTriggersByTypeAsync<MessageReceivedBookmark>(cancellationToken: cancellationToken);
+            
+            foreach (var trigger in triggers)
             {
-                // If a workflow is not published, only consider it for processing if it has at least one non-ended workflow instance.
-                if (!workflow.IsPublished && !await WorkflowHasNonFinishedWorkflowsAsync(workflow, workflowInstanceStore, cancellationToken))
-                    continue;
-                
-                var workflowBlueprintWrapper = await workflowBlueprintReflector.ReflectAsync(scope.ServiceProvider, workflow, cancellationToken);
+                var bookmark = (MessageReceivedBookmark)trigger.Bookmark;
+                var topic = bookmark.Topic;
+                var host = bookmark.Host;
+                var port = bookmark.Port;
+                var username = bookmark.Username;
+                var password = bookmark.Password;
+                var qos = bookmark.Qos;
 
-                foreach (var activity in workflowBlueprintWrapper.Filter<MqttMessageReceived>())
-                {
-                    var topic = await activity.EvaluatePropertyValueAsync(x => x.Topic, cancellationToken);
-                    var host = await activity.EvaluatePropertyValueAsync(x => x.Host, cancellationToken);
-                    var port = await activity.EvaluatePropertyValueAsync(x => x.Port, cancellationToken);
-                    var username = await activity.EvaluatePropertyValueAsync(x => x.Username, cancellationToken);
-                    var password = await activity.EvaluatePropertyValueAsync(x => x.Password, cancellationToken);
-                    var qos = await activity.EvaluatePropertyValueAsync(x => x.QualityOfService, cancellationToken);
-
-                    yield return new MqttClientOptions(topic!, host!, port!, username!, password!, qos);
-                }
+                yield return new MqttClientOptions(topic!, host!, port!, username!, password!, qos);
             }
         }
 
@@ -107,12 +88,5 @@ namespace Elsa.Activities.Mqtt.Services
         }
 
         private async Task DisposeReceiverAsync(IMqttClientWrapper messageReceiver) => await _receiverFactory.DisposeReceiverAsync(messageReceiver);
-
-        
-        private static async Task<bool> WorkflowHasNonFinishedWorkflowsAsync(IWorkflowBlueprint workflowBlueprint, IWorkflowInstanceStore workflowInstanceStore, CancellationToken cancellationToken)
-        {
-            var count = await workflowInstanceStore.CountAsync(new UnfinishedWorkflowSpecification().WithWorkflowDefinition(workflowBlueprint.Id), cancellationToken);
-            return count > 0;
-        }
     }
 }

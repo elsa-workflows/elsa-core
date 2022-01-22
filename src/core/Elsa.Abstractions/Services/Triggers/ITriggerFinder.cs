@@ -7,5 +7,6 @@ namespace Elsa.Services
     public interface ITriggerFinder
     {
         Task<IEnumerable<TriggerFinderResult>> FindTriggersAsync(string activityType, IEnumerable<IBookmark> filters, string? tenantId, CancellationToken cancellationToken = default);
+        Task<IEnumerable<TriggerFinderResult>> FindTriggersByTypeAsync(string modelType, string? tenantId, CancellationToken cancellationToken = default);
     }
 }

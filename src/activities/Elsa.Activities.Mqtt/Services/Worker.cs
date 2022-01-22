@@ -31,7 +31,7 @@ namespace Elsa.Activities.Mqtt.Services
         private string ActivityType => nameof(MqttMessageReceived);
         public async ValueTask DisposeAsync() => await _disposeReceiverAction(_receiverClient);
 
-        private IBookmark CreateBookmark(MqttClientOptions options) => new MessageReceivedBookmark(options.Topic, options.Host, options.Port, options.Username, options.Password); 
+        private IBookmark CreateBookmark(MqttClientOptions options) => new MessageReceivedBookmark(options.Topic, options.Host, options.Port, options.Username, options.Password, options.QualityOfService); 
 
         private async Task TriggerWorkflowsAsync(MqttApplicationMessage message, CancellationToken cancellationToken)
         {

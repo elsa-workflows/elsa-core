@@ -25,30 +25,36 @@ namespace Elsa.Services.Triggers
         {
             var specification = new TriggerSpecification(activityType, tenantId);
             var records = await _triggerStore.FindManyAsync(specification, cancellationToken: cancellationToken);
-
             var filterList = filters as ICollection<IBookmark> ?? filters.ToList();
-            
             var triggerResults = SelectResults(records);
+            
             if (!filterList.Any())
                 return triggerResults;
 
             var filteredTriggers = new List<TriggerFinderResult>();
+            
             foreach (var triggerFinderResult in triggerResults)
             {
                 foreach (var filter in filterList)
                 {
                     var result  = triggerFinderResult.Bookmark.Compare(filter);
 
-                    if (result == null || result.Value)
-                    {
+                    if (result == null || result.Value) 
                         filteredTriggers.Add(triggerFinderResult);
-                    }
                 }
             }
 
             return filteredTriggers;
         }
-        
+
+        public async Task<IEnumerable<TriggerFinderResult>> FindTriggersByTypeAsync(string modelType, string? tenantId, CancellationToken cancellationToken = default)
+        {
+            var specification = new TriggerModelTypeSpecification(modelType, tenantId);
+            var triggers = await _triggerStore.FindManyAsync(specification, cancellationToken: cancellationToken);
+
+            return SelectResults(triggers);
+        }
+
         private IEnumerable<TriggerFinderResult> SelectResults(IEnumerable<Trigger> triggers) =>
             from trigger in triggers
             let triggerType = Type.GetType(trigger.ModelType)

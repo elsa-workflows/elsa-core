@@ -26,9 +26,10 @@ namespace Elsa.Activities.Mqtt
                 .AddSingleton<IMqttTestClientManager, MqttTestClientManager>()
                 .AddNotificationHandlersFrom<ConfigureMqttActivitiesForTestHandler>();
 
-            options.AddPubSubConsumer<RestartMqttTopicsConsumer, WorkflowDefinitionPublished>("WorkflowDefinitionEvents");
-            options.AddPubSubConsumer<RestartMqttTopicsConsumer, WorkflowDefinitionRetracted>("WorkflowDefinitionEvents");
-            options.AddPubSubConsumer<RestartMqttTopicsConsumer, WorkflowDefinitionDeleted>("WorkflowDefinitionEvents");
+            options.AddPubSubConsumer<RestartMqttTopicsConsumer, TriggerIndexingFinished>("WorkflowManagementEvents");
+            options.AddPubSubConsumer<RestartMqttTopicsConsumer, TriggersDeleted>("WorkflowManagementEvents");
+            options.AddPubSubConsumer<RestartMqttTopicsConsumer, BookmarkIndexingFinished>("WorkflowManagementEvents");
+            options.AddPubSubConsumer<RestartMqttTopicsConsumer, BookmarksDeleted>("WorkflowManagementEvents");
 
             options
                 .AddActivity<MqttMessageReceived>()
