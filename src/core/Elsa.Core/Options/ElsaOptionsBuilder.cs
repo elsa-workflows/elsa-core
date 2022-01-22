@@ -189,13 +189,13 @@ namespace Elsa.Options
 
         public ElsaOptionsBuilder UseWorkflowTriggerStore(Func<IServiceProvider, IBookmarkStore> factory)
         {
-            ElsaOptions.WorkflowTriggerStoreFactory = factory;
+            ElsaOptions.BookmarkStoreFactory = factory;
             return this;
         }
         
         public ElsaOptionsBuilder UseWorkflowBookmarkTriggerStore(Func<IServiceProvider, ITriggerStore> factory)
         {
-            ElsaOptions.WorkflowBookmarkTriggerStoreFactory = factory;
+            ElsaOptions.TriggerStoreFactory = factory;
             return this;
         }
 

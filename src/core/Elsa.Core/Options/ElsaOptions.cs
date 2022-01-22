@@ -27,7 +27,8 @@ namespace Elsa.Options
             WorkflowDefinitionStoreFactory = sp => ActivatorUtilities.CreateInstance<InMemoryWorkflowDefinitionStore>(sp);
             WorkflowInstanceStoreFactory = sp => ActivatorUtilities.CreateInstance<InMemoryWorkflowInstanceStore>(sp);
             WorkflowExecutionLogStoreFactory = sp => ActivatorUtilities.CreateInstance<InMemoryWorkflowExecutionLogStore>(sp);
-            WorkflowTriggerStoreFactory = sp => ActivatorUtilities.CreateInstance<InMemoryBookmarkStore>(sp);
+            BookmarkStoreFactory = sp => ActivatorUtilities.CreateInstance<InMemoryBookmarkStore>(sp);
+            TriggerStoreFactory = sp => ActivatorUtilities.CreateInstance<InMemoryTriggerStore>(sp);
             WorkflowDefinitionDispatcherFactory = sp => ActivatorUtilities.CreateInstance<QueuingWorkflowDispatcher>(sp);
             WorkflowInstanceDispatcherFactory = sp => ActivatorUtilities.CreateInstance<QueuingWorkflowDispatcher>(sp);
             CorrelatingWorkflowDispatcherFactory = sp => ActivatorUtilities.CreateInstance<QueuingWorkflowDispatcher>(sp);
@@ -62,12 +63,12 @@ namespace Elsa.Options
 
         public Type DefaultWorkflowStorageProviderType { get; set; }
         public WorkflowChannelOptions WorkflowChannelOptions { get; set; } = new();
-        
+
         internal Func<IServiceProvider, IWorkflowDefinitionStore> WorkflowDefinitionStoreFactory { get; set; }
         internal Func<IServiceProvider, IWorkflowInstanceStore> WorkflowInstanceStoreFactory { get; set; }
         internal Func<IServiceProvider, IWorkflowExecutionLogStore> WorkflowExecutionLogStoreFactory { get; set; }
-        internal Func<IServiceProvider, IBookmarkStore> WorkflowTriggerStoreFactory { get; set; }
-        internal Func<IServiceProvider, ITriggerStore> WorkflowBookmarkTriggerStoreFactory { get; set; }
+        internal Func<IServiceProvider, IBookmarkStore> BookmarkStoreFactory { get; set; }
+        internal Func<IServiceProvider, ITriggerStore> TriggerStoreFactory { get; set; }
         internal Func<IServiceProvider, JsonSerializer> CreateJsonSerializer { get; set; }
         internal Action<IServiceProvider, JsonSerializer> JsonSerializerConfigurer { get; set; }
         internal Func<IServiceProvider, IWorkflowDefinitionDispatcher> WorkflowDefinitionDispatcherFactory { get; set; }
