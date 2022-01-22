@@ -36,6 +36,18 @@ namespace Elsa.Providers.Workflows
             return new ValueTask<IWorkflowBlueprint?>(workflowBlueprint);
         }
 
+        public override ValueTask<IWorkflowBlueprint?> FindByNameAsync(string name, VersionOptions versionOptions, string? tenantId = default, CancellationToken cancellationToken = default)
+        {
+            var workflowBlueprint = GetWorkflows().FirstOrDefault(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase) && x.WithVersion(versionOptions));
+            return new ValueTask<IWorkflowBlueprint?>(workflowBlueprint);
+        }
+
+        public override ValueTask<IWorkflowBlueprint?> FindByTagAsync(string tag, VersionOptions versionOptions, string? tenantId = default, CancellationToken cancellationToken = default)
+        {
+            var workflowBlueprint = GetWorkflows().FirstOrDefault(x => string.Equals(x.Tag, tag, StringComparison.OrdinalIgnoreCase) && x.WithVersion(versionOptions));
+            return new ValueTask<IWorkflowBlueprint?>(workflowBlueprint);
+        }
+
         private IEnumerable<IWorkflowBlueprint> List(VersionOptions versionOptions, int? skip = default, int? take = default, string? tenantId = default, CancellationToken cancellationToken = default)
         {
             var enumerable = GetWorkflows().WithVersion(versionOptions);

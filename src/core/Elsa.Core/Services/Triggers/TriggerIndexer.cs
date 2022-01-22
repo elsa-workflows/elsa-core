@@ -16,6 +16,7 @@ using Elsa.Services.Models;
 using Elsa.Services.Workflows;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Open.Linq.AsyncExtensions;
 using Rebus.Extensions;
 
 namespace Elsa.Services.Triggers
@@ -24,6 +25,7 @@ namespace Elsa.Services.Triggers
     {
         private static Func<IWorkflowProvider, bool> SkipDynamicProviders => x => !x.GetType().GetCustomAttributes<SkipTriggerIndexingAttribute>().Any();
         private readonly ITriggerStore _triggerStore;
+        private readonly IBookmarkSerializer _bookmarkSerializer;
         private readonly IMediator _mediator;
         private readonly IEnumerable<IWorkflowProvider> _workflowProviders;
         private readonly ILogger _logger;
@@ -32,13 +34,14 @@ namespace Elsa.Services.Triggers
 
         public TriggerIndexer(
             ITriggerStore triggerStore,
+            IBookmarkSerializer bookmarkSerializer,
             IMediator mediator,
-            IWorkflowRegistry workflowRegistry,
             IEnumerable<IWorkflowProvider> workflowProviders,
             ILogger<TriggerIndexer> logger,
             IGetsTriggersForWorkflowBlueprints getsTriggersForWorkflows)
         {
             _triggerStore = triggerStore;
+            _bookmarkSerializer = bookmarkSerializer;
             _mediator = mediator;
             _workflowProviders = workflowProviders;
             _logger = logger;
@@ -49,7 +52,6 @@ namespace Elsa.Services.Triggers
         {
             var workflowBlueprints = await GetStaticWorkflowBlueprintsAsync(cancellationToken).ToListAsync(cancellationToken);
             await IndexTriggersAsync(workflowBlueprints, cancellationToken);
-            await _mediator.Publish(new TriggerIndexingFinished(), cancellationToken);
         }
 
         public async Task IndexTriggersAsync(IEnumerable<IWorkflowBlueprint> workflowBlueprints, CancellationToken cancellationToken = default)
@@ -74,22 +76,39 @@ namespace Elsa.Services.Triggers
 
             foreach (var trigger in triggers)
             {
-                await _triggerStore.SaveAsync(new Trigger()
+                await _triggerStore.SaveAsync(new Trigger
                 {
                     ActivityId = trigger.ActivityId,
                     ActivityType = trigger.ActivityType,
                     Hash = trigger.BookmarkHash,
-                    TenantId = trigger.WorkflowBlueprint.TenantId,
-                    WorkflowDefinitionId = trigger.WorkflowBlueprint.Id,
-                    Model = trigger.GetType().GetSimpleAssemblyQualifiedName()
+                    TenantId = trigger.TenantId,
+                    WorkflowDefinitionId = trigger.WorkflowDefinitionId,
+                    Model = _bookmarkSerializer.Serialize(trigger.Bookmark),
+                    ModelType = trigger.GetType().GetSimpleAssemblyQualifiedName()
                 }, cancellationToken);
             }
+
+            // Publish event.
+            await _mediator.Publish(new TriggerIndexingFinished(workflowBlueprint, triggers), cancellationToken);
         }
-        
+
         public async Task DeleteTriggersAsync(string workflowDefinitionId, CancellationToken cancellationToken = default)
         {
             var specification = new WorkflowDefinitionIdSpecification(workflowDefinitionId);
-            var count = await _triggerStore.DeleteManyAsync(specification, cancellationToken);
+            var triggers = await _triggerStore.FindManyAsync(specification, cancellationToken: cancellationToken).ToList();
+            var count = triggers.Count;
+
+            var workflowTriggers = triggers.Select(x =>
+            {
+                var bookmarkType = Type.GetType(x.ModelType)!;
+                var bookmarkModel = _bookmarkSerializer.Deserialize(x.Model, bookmarkType);
+
+                return new WorkflowTrigger(x.WorkflowDefinitionId, x.ActivityId, x.ActivityType, x.Hash, bookmarkModel, x.TenantId);
+            }).ToList();
+
+            // Publish event.
+            await _mediator.Publish(new TriggersDeleted(workflowTriggers), cancellationToken);
+
             _logger.LogDebug("Deleted {DeletedTriggerCount} triggers for workflow {WorkflowDefinitionId}", count, workflowDefinitionId);
         }
 

@@ -85,6 +85,26 @@ namespace Elsa.Providers.Workflows
             return await ListInternalAsync(cancellationToken).FirstOrDefaultAsync(predicate.Compile(), cancellationToken);
         }
 
+        public override async ValueTask<IWorkflowBlueprint?> FindByNameAsync(string name, VersionOptions versionOptions, string? tenantId = default, CancellationToken cancellationToken = default)
+        {
+            Expression<Func<IWorkflowBlueprint, bool>> predicate = x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase) && x.WithVersion(versionOptions);
+
+            if (!string.IsNullOrWhiteSpace(tenantId))
+                predicate = predicate.And(x => x.TenantId == tenantId);
+
+            return await ListInternalAsync(cancellationToken).FirstOrDefaultAsync(predicate.Compile(), cancellationToken);
+        }
+
+        public override async ValueTask<IWorkflowBlueprint?> FindByTagAsync(string tag, VersionOptions versionOptions, string? tenantId = default, CancellationToken cancellationToken = default)
+        {
+            Expression<Func<IWorkflowBlueprint, bool>> predicate = x => string.Equals(x.Tag, tag, StringComparison.OrdinalIgnoreCase) && x.WithVersion(versionOptions);
+
+            if (!string.IsNullOrWhiteSpace(tenantId))
+                predicate = predicate.And(x => x.TenantId == tenantId);
+
+            return await ListInternalAsync(cancellationToken).FirstOrDefaultAsync(predicate.Compile(), cancellationToken);
+        }
+
         private async IAsyncEnumerable<IWorkflowBlueprint> ListInternalAsync([EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             var blobs = await _storage.ListFilesAsync(new ListOptions(), cancellationToken);

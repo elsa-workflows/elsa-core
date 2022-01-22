@@ -237,6 +237,7 @@ namespace Microsoft.Extensions.DependencyInjection
             // Bookmarks.
             services
                 .AddSingleton<IBookmarkHasher, BookmarkHasher>()
+                .AddSingleton<IBookmarkSerializer, BookmarkSerializer>()
                 .AddScoped<IBookmarkIndexer, BookmarkIndexer>()
                 .AddScoped<IBookmarkFinder, BookmarkFinder>()
                 .AddScoped<ITriggerIndexer, TriggerIndexer>()

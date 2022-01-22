@@ -85,7 +85,13 @@ namespace Elsa.Services.Triggers
         {
             var bookmarkResults = (await provider.GetBookmarksAsync(context, cancellationToken)).ToList();
             return bookmarkResults
-                .Select(x => new WorkflowTrigger(workflowBlueprint, activityBlueprint.Id, x.ActivityTypeName ?? activityBlueprint.Type, _bookmarkHasher.Hash(x.Bookmark), x.Bookmark))
+                .Select(x => new WorkflowTrigger(
+                    workflowBlueprint.Id,
+                    activityBlueprint.Id,
+                    x.ActivityTypeName ?? activityBlueprint.Type,
+                    _bookmarkHasher.Hash(x.Bookmark),
+                    x.Bookmark,
+                    workflowBlueprint.TenantId))
                 .ToList();
         }
     }
