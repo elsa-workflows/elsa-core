@@ -24,12 +24,14 @@ namespace Elsa.Activities.AzureServiceBus.Services
         private readonly ILogger _logger;
 
         protected WorkerBase(
+            string tag,
             IReceiverClient receiverClient,
             Scoped<IWorkflowLaunchpad> workflowLaunchpad,
             IOptions<AzureServiceBusOptions> options,
             Func<IReceiverClient, Task> disposeReceiverAction, 
             ILogger logger)
         {
+            Tag = tag;
             ReceiverClient = receiverClient;
             _workflowLaunchpad = workflowLaunchpad;
             _disposeReceiverAction = disposeReceiverAction;
@@ -42,6 +44,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             });
         }
 
+        public string Tag { get; }
         protected IReceiverClient ReceiverClient { get; }
         protected abstract string ActivityType { get; }
         public async ValueTask DisposeAsync() => await _disposeReceiverAction(ReceiverClient);

@@ -5,12 +5,11 @@ using Rebus.Handlers;
 
 namespace Elsa.Activities.AzureServiceBus.Consumers
 {
-    public class RestartServiceBusQueuesConsumer : IHandleMessages<WorkflowDefinitionPublished>, IHandleMessages<WorkflowDefinitionRetracted>, IHandleMessages<WorkflowDefinitionDeleted>
+    public class RestartServiceBusQueuesConsumer : IHandleMessages<TriggerIndexingFinished>, IHandleMessages<TriggersDeleted>
     {
         private readonly IServiceBusQueuesStarter _serviceBusQueuesStarter;
         public RestartServiceBusQueuesConsumer(IServiceBusQueuesStarter serviceBusQueuesStarter) => _serviceBusQueuesStarter = serviceBusQueuesStarter;
-        public Task Handle(WorkflowDefinitionPublished message) => _serviceBusQueuesStarter.CreateWorkersAsync();
-        public Task Handle(WorkflowDefinitionRetracted message) => _serviceBusQueuesStarter.CreateWorkersAsync();
-        public Task Handle(WorkflowDefinitionDeleted message) => _serviceBusQueuesStarter.CreateWorkersAsync();
+        public async Task Handle(TriggerIndexingFinished message) => await _serviceBusQueuesStarter.CreateWorkersAsync(message.Triggers);
+        public async Task Handle(TriggersDeleted message) => await _serviceBusQueuesStarter.RemoveWorkersAsync(message.Triggers);
     }
 }

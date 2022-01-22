@@ -13,11 +13,12 @@ namespace Elsa.Activities.AzureServiceBus.Services
     public class TopicWorker : WorkerBase
     {
         public TopicWorker(
+            string tag,
             IReceiverClient receiverClient,
             Scoped<IWorkflowLaunchpad> workflowLaunchpad,
             IOptions<AzureServiceBusOptions> options,
             Func<IReceiverClient, Task> disposeReceiverAction,
-            ILogger<TopicWorker> logger) : base(receiverClient, workflowLaunchpad, options, disposeReceiverAction, logger)
+            ILogger<TopicWorker> logger) : base(tag, receiverClient, workflowLaunchpad, options, disposeReceiverAction, logger)
         {
         }
 

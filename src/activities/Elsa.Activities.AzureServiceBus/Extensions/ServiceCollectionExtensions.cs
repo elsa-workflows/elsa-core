@@ -35,17 +35,16 @@ namespace Elsa.Activities.AzureServiceBus.Extensions
                 .AddSingleton<IServiceBusQueuesStarter, ServiceBusQueuesStarter>()
                 .AddSingleton<IServiceBusTopicsStarter, ServiceBusTopicsStarter>()
                 .AddSingleton<Scoped<IWorkflowLaunchpad>>()
-                .AddStartupTask<StartServiceBusQueues>()
-                .AddStartupTask<StartServiceBusTopics>()
+                .AddHostedService<StartServiceBusQueues>()
+                .AddHostedService<StartServiceBusTopics>()
                 .AddBookmarkProvider<QueueMessageReceivedBookmarkProvider>()
                 .AddBookmarkProvider<TopicMessageReceivedBookmarkProvider>()
                 ;
 
-            options.AddPubSubConsumer<RestartServiceBusQueuesConsumer, WorkflowDefinitionPublished>("WorkflowDefinitionEvents");
-            options.AddPubSubConsumer<RestartServiceBusQueuesConsumer, WorkflowDefinitionRetracted>("WorkflowDefinitionEvents");
-            options.AddPubSubConsumer<RestartServiceBusQueuesConsumer, WorkflowDefinitionDeleted>("WorkflowDefinitionEvents");
-            options.AddPubSubConsumer<RestartServiceBusTopicsConsumer, WorkflowDefinitionPublished>("WorkflowDefinitionEvents");
-            options.AddPubSubConsumer<RestartServiceBusTopicsConsumer, WorkflowDefinitionRetracted>("WorkflowDefinitionEvents");
+            options.AddPubSubConsumer<RestartServiceBusQueuesConsumer, TriggerIndexingFinished>("WorkflowDefinitionEvents");
+            options.AddPubSubConsumer<RestartServiceBusQueuesConsumer, TriggersDeleted>("WorkflowDefinitionEvents");
+            options.AddPubSubConsumer<RestartServiceBusTopicsConsumer, TriggerIndexingFinished>("WorkflowDefinitionEvents");
+            options.AddPubSubConsumer<RestartServiceBusTopicsConsumer, TriggersDeleted>("WorkflowDefinitionEvents");
 
             options
                 .AddActivity<AzureServiceBusQueueMessageReceived>()
