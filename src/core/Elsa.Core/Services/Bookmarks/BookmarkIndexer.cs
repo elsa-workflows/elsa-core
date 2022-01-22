@@ -55,63 +55,66 @@ namespace Elsa.Services.Bookmarks
 
         public async Task IndexBookmarksAsync(IEnumerable<WorkflowInstance> workflowInstances, CancellationToken cancellationToken)
         {
-            _stopwatch.Restart();
-            _logger.LogInformation("Indexing bookmarks");
-
             var workflowInstanceList = workflowInstances.ToList();
-            var workflowInstanceIds = workflowInstanceList.Select(x => x.Id).ToList();
-            var oldBookmarks = await FindBookmarksAsync(workflowInstanceIds, cancellationToken).ToList();
-            var workflowBlueprints = await _workflowRegistry.ListActiveAsync(cancellationToken);
-            var workflowBlueprintsDictionary = workflowBlueprints.ToDictionary(x => (x.Id, x.Version));
-            var entities = new List<Bookmark>();
-            
+
             foreach (var workflowInstance in workflowInstanceList.Where(x => x.WorkflowStatus == WorkflowStatus.Suspended))
+                await IndexBookmarksAsync(workflowInstance, cancellationToken);
+        }
+
+        public async Task IndexBookmarksAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken)
+        {
+            if (workflowInstance.WorkflowStatus != WorkflowStatus.Suspended)
             {
-                var workflowBlueprintKey = (workflowInstance.DefinitionId, workflowInstance.Version);
-                var workflowBlueprint = workflowBlueprintsDictionary.ContainsKey(workflowBlueprintKey) ? workflowBlueprintsDictionary[workflowBlueprintKey] : default;
-
-                if (workflowBlueprint == null)
-                {
-                    _logger.LogWarning("Could not find workflow definition for workflow {WorkflowInstanceId}", workflowInstance.Id);
-                    return;
-                }
-
-                var blockingActivities = workflowBlueprint.GetBlockingActivities(workflowInstance!);
-                var bookmarkedWorkflows = await ExtractBookmarksAsync(workflowBlueprint, workflowInstance, blockingActivities, cancellationToken).ToList();
-                var bookmarks = MapBookmarks(bookmarkedWorkflows, workflowInstance);
-                entities.AddRange(bookmarks);
+                _logger.LogWarning("Indexing bookmarks of an unsuspended workflow ca lead to unpredictable results. Not doing it");
+                return;
             }
-            
+
+            _stopwatch.Restart();
+            _logger.LogInformation("Indexing bookmarks for workflow instance {WorkflowInstanceId}", workflowInstance.Id);
+
+            var workflowInstanceId = workflowInstance.Id;
+            var oldBookmarks = await FindBookmarksAsync(workflowInstanceId, cancellationToken).ToList();
+            var entities = new List<Bookmark>();
+
+            var workflowBlueprint = await _workflowRegistry.FindAsync(
+                workflowInstance.DefinitionId,
+                VersionOptions.SpecificVersion(workflowInstance.Version),
+                workflowInstance.TenantId,
+                cancellationToken);
+
+            if (workflowBlueprint == null)
+            {
+                _logger.LogWarning("Could not find workflow definition for workflow {WorkflowInstanceId}", workflowInstance.Id);
+                return;
+            }
+
+            var blockingActivities = workflowBlueprint.GetBlockingActivities(workflowInstance!);
+            var bookmarkedWorkflows = await ExtractBookmarksAsync(workflowBlueprint, workflowInstance, blockingActivities, cancellationToken).ToList();
+            var bookmarks = MapBookmarks(bookmarkedWorkflows, workflowInstance);
+            entities.AddRange(bookmarks);
+
             await _bookmarkStore.AddManyAsync(entities, cancellationToken);
             var oldBookmarkIds = oldBookmarks.Select(x => x.Id).ToList();
             await _bookmarkStore.DeleteManyAsync(new BookmarkIdsSpecification(oldBookmarkIds), cancellationToken);
 
             _stopwatch.Stop();
-            _logger.LogInformation("Indexed {BookmarkCount} bookmarks in {ElapsedTime}", entities.Count, _stopwatch.Elapsed);
-        }
-        
-        public async Task IndexBookmarksAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken) => await IndexBookmarksAsync(new[] { workflowInstance }, cancellationToken);
-
-        public async Task DeleteBookmarksAsync(IEnumerable<string> workflowInstanceIds, CancellationToken cancellationToken = default)
-        {
-            var specification = new WorkflowInstanceIdsSpecification(workflowInstanceIds);
-            await _bookmarkStore.DeleteManyAsync(specification, cancellationToken);
+            _logger.LogInformation("Indexed {BookmarkCount} bookmarks for workflow instance {WorkflowInstanceId} in {ElapsedTime}", entities.Count, workflowInstance.Id, _stopwatch.Elapsed);
         }
 
         public async Task DeleteBookmarksAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
         {
             var specification = new WorkflowInstanceIdSpecification(workflowInstanceId);
             var count = await _bookmarkStore.DeleteManyAsync(specification, cancellationToken);
-            
+
             _logger.LogDebug("Deleted {DeletedBookmarkCount} bookmarks for workflow {WorkflowInstanceId}", count, workflowInstanceId);
         }
-        
-        private async Task<IEnumerable<Bookmark>> FindBookmarksAsync(IEnumerable<string> workflowInstanceIds, CancellationToken cancellationToken = default)
+
+        private async Task<IEnumerable<Bookmark>> FindBookmarksAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
         {
-            var specification = new WorkflowInstanceIdsSpecification(workflowInstanceIds);
+            var specification = new WorkflowInstanceIdSpecification(workflowInstanceId);
             return await _bookmarkStore.FindManyAsync(specification, cancellationToken: cancellationToken);
         }
-        
+
         private IEnumerable<Bookmark> MapBookmarks(IEnumerable<BookmarkedWorkflow> bookmarkedWorkflows, WorkflowInstance workflowInstance) =>
             bookmarkedWorkflows.Select(x => new Bookmark
             {
@@ -164,7 +167,7 @@ namespace Elsa.Services.Bookmarks
 
             return bookmarkedWorkflows;
         }
-        
+
         private async IAsyncEnumerable<IBookmarkProvider> FilterProvidersAsync(BookmarkProviderContext context)
         {
             foreach (var provider in _providers)

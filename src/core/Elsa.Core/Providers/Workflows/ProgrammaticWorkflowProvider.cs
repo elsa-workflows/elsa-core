@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Builders;
+using Elsa.Models;
 using Elsa.Options;
 using Elsa.Services.Models;
 
@@ -12,7 +13,7 @@ namespace Elsa.Providers.Workflows
     /// <summary>
     /// Provides programmatic workflows (.NET types).
     /// </summary>
-    public class ProgrammaticWorkflowProvider : WorkflowProvider, IProgrammaticWorkflowProvider
+    public class ProgrammaticWorkflowProvider : WorkflowProvider
     {
         private readonly IEnumerable<IWorkflow> _workflows;
         private readonly Func<IWorkflowBuilder> _workflowBuilder;
@@ -23,7 +24,35 @@ namespace Elsa.Providers.Workflows
             _workflowBuilder = workflowBuilder;
         }
 
-        protected override ValueTask<IEnumerable<IWorkflowBlueprint>> OnGetWorkflowsAsync(CancellationToken cancellationToken) => new(GetWorkflows());
+        public override IAsyncEnumerable<IWorkflowBlueprint> ListAsync(VersionOptions versionOptions, int? skip = default, int? take = default, string? tenantId = default, CancellationToken cancellationToken = default) =>
+            List(versionOptions, skip, take, tenantId).ToAsyncEnumerable();
+
+        public override ValueTask<int> CountAsync(VersionOptions versionOptions, string? tenantId = default, CancellationToken cancellationToken = default) =>
+            new(List(versionOptions, tenantId: tenantId).Count());
+
+        public override ValueTask<IWorkflowBlueprint?> FindAsync(string definitionId, VersionOptions versionOptions, string? tenantId = default, CancellationToken cancellationToken = default)
+        {
+            var workflowBlueprint = GetWorkflows().FirstOrDefault(x => x.Id == definitionId && x.WithVersion(versionOptions));
+            return new ValueTask<IWorkflowBlueprint?>(workflowBlueprint);
+        }
+
+        private IEnumerable<IWorkflowBlueprint> List(VersionOptions versionOptions, int? skip = default, int? take = default, string? tenantId = default, CancellationToken cancellationToken = default)
+        {
+            var enumerable = GetWorkflows().WithVersion(versionOptions);
+
+            if (!string.IsNullOrWhiteSpace(tenantId))
+                enumerable = enumerable.Where(x => x.TenantId == tenantId);
+
+            if (skip != null)
+                enumerable = enumerable.Skip(skip.Value);
+
+            if (take != null)
+                enumerable = enumerable.Take(take.Value);
+
+            foreach (var workflowBlueprint in enumerable)
+                yield return workflowBlueprint;
+        }
+
         private IEnumerable<IWorkflowBlueprint> GetWorkflows() => from workflow in _workflows let builder = _workflowBuilder() select builder.Build(workflow);
     }
 }

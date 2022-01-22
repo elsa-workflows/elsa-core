@@ -22,7 +22,7 @@ namespace Elsa.Services.Dispatch.Consumers
         {
             var workflowDefinitionId = message.WorkflowDefinitionId;
             var tenantId = message.TenantId;
-            var workflowBlueprint = await _workflowRegistry.GetAsync(workflowDefinitionId, tenantId, VersionOptions.Published);
+            var workflowBlueprint = await _workflowRegistry.FindAsync(workflowDefinitionId, VersionOptions.Published, tenantId);
 
             if (workflowBlueprint == null)
             {

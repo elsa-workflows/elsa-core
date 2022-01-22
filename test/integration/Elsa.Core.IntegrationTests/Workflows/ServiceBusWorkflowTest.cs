@@ -97,14 +97,6 @@ namespace Elsa.Core.IntegrationTests.Workflows
                 .Returns(Task.FromResult(ReceiverClient.Object));
 
             _serviceBusBluePrint = WorkflowBuilder.Build<ServiceBusWorkflow>();
-
-            WorkflowRegistryMoq
-                .Setup(x => x.ListActiveAsync(It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new List<IWorkflowBlueprint>() { _serviceBusBluePrint }.AsEnumerable()));
-
-            WorkflowRegistryMoq
-                .Setup(x => x.GetAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<VersionOptions>(), It.IsAny<CancellationToken>(), false))
-                .Returns(Task.FromResult(_serviceBusBluePrint)!);
         }
 
         [Fact(DisplayName = "Send Message Bus after Suspend to avoid receiving response before indexing bookmark.")]

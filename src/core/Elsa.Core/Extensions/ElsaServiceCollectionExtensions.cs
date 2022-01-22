@@ -212,7 +212,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
             // Workflow providers.
             services
-                .AddTransient<IProgrammaticWorkflowProvider, ProgrammaticWorkflowProvider>()
+                .AddWorkflowProvider<ProgrammaticWorkflowProvider>()
                 .AddWorkflowProvider<BlobStorageWorkflowProvider>()
                 .AddWorkflowProvider<DatabaseWorkflowProvider>();
 

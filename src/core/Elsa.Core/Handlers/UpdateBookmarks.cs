@@ -25,12 +25,15 @@ namespace Elsa.Handlers
         public async Task Handle(ManyWorkflowInstancesDeleted notification, CancellationToken cancellationToken)
         {
             var workflowInstanceIds = notification.WorkflowInstances.Select(x => x.Id).ToList();
-            await _bookmarkIndexer.DeleteBookmarksAsync(workflowInstanceIds, cancellationToken);
+
+            foreach (var workflowInstanceId in workflowInstanceIds)
+                await _bookmarkIndexer.DeleteBookmarksAsync(workflowInstanceId, cancellationToken);
         }
 
         public async Task Handle(ManyWorkflowInstancesAdded notification, CancellationToken cancellationToken)
         {
-            await _bookmarkIndexer.IndexBookmarksAsync(notification.WorkflowInstances, cancellationToken);
+            foreach (var workflowInstance in notification.WorkflowInstances)
+                await _bookmarkIndexer.IndexBookmarksAsync(workflowInstance, cancellationToken);
         }
     }
 }
