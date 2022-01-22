@@ -47,7 +47,7 @@ namespace Elsa.Core.IntegrationTests.Workflows
                         .AddSingleton<IServiceBusTopicsStarter, ServiceBusTopicsStarter>()
                         .AddSingleton(WorkflowRegistryMoq.Object)
                         .AddBookmarkProvider<TopicMessageReceivedBookmarkProvider>()
-                        .AddStartupTask<StartServiceBusTopics>();
+                        .AddHostedService<StartServiceBusTopics>();
 
                     services
                         .AddSingleton(new ServiceBusWorkflow(WaitHandleTest));
@@ -63,7 +63,7 @@ namespace Elsa.Core.IntegrationTests.Workflows
             Func<Message, CancellationToken, Task> handler = default!;
 
             SenderClient
-                .Setup(x => x.SendAsync(It.IsAny<Microsoft.Azure.ServiceBus.Message>()))
+                .Setup(x => x.SendAsync(It.IsAny<Message>()))
                 .Callback<Message>(msg =>
                 {
                     // Hack needed to avoid issue when getting msg from SB.

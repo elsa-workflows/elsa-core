@@ -1,10 +1,13 @@
 ﻿using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.AzureServiceBus.Bookmarks;
 using Elsa.Activities.AzureServiceBus.Services;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Activities.AzureServiceBus.StartupTasks
 {
@@ -21,15 +24,14 @@ namespace Elsa.Activities.AzureServiceBus.StartupTasks
         
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            await using var scope = _scopeFactory.CreateAsyncScope();
+            using var scope = _scopeFactory.CreateScope();
             var bookmarkFinder = scope.ServiceProvider.GetRequiredService<IBookmarkFinder>();
             
-            // Load all bookmarks.
-            var bookmarks = bookmarkFinder.FindBookmarksAsync()
-            
-            // Foreach bookmark, start a worker
+            // Load all QueueMessageReceived bookmarks.
+            var bookmarks = await bookmarkFinder.FindBookmarksByTypeAsync<QueueMessageReceivedBookmark>(cancellationToken: stoppingToken).ToList();
 
-            await _serviceBusQueuesStarter.CreateWorkersAsync();
+            // For each bookmark, start a worker.
+            await _serviceBusQueuesStarter.CreateWorkersAsync(bookmarks, stoppingToken);
         }
     }
 }

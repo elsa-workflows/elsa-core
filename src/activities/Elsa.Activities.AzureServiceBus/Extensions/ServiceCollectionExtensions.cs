@@ -41,10 +41,14 @@ namespace Elsa.Activities.AzureServiceBus.Extensions
                 .AddBookmarkProvider<TopicMessageReceivedBookmarkProvider>()
                 ;
 
-            options.AddPubSubConsumer<RestartServiceBusQueuesConsumer, TriggerIndexingFinished>("WorkflowDefinitionEvents");
-            options.AddPubSubConsumer<RestartServiceBusQueuesConsumer, TriggersDeleted>("WorkflowDefinitionEvents");
-            options.AddPubSubConsumer<RestartServiceBusTopicsConsumer, TriggerIndexingFinished>("WorkflowDefinitionEvents");
-            options.AddPubSubConsumer<RestartServiceBusTopicsConsumer, TriggersDeleted>("WorkflowDefinitionEvents");
+            options.AddPubSubConsumer<RestartServiceBusQueuesConsumer, TriggerIndexingFinished>("WorkflowManagementEvents");
+            options.AddPubSubConsumer<RestartServiceBusQueuesConsumer, TriggersDeleted>("WorkflowManagementEvents");
+            options.AddPubSubConsumer<RestartServiceBusQueuesConsumer, BookmarkIndexingFinished>("WorkflowManagementEvents");
+            options.AddPubSubConsumer<RestartServiceBusQueuesConsumer, BookmarksDeleted>("WorkflowManagementEvents");
+            options.AddPubSubConsumer<RestartServiceBusTopicsConsumer, TriggerIndexingFinished>("WorkflowManagementEvents");
+            options.AddPubSubConsumer<RestartServiceBusTopicsConsumer, TriggersDeleted>("WorkflowManagementEvents");
+            options.AddPubSubConsumer<RestartServiceBusTopicsConsumer, BookmarkIndexingFinished>("WorkflowManagementEvents");
+            options.AddPubSubConsumer<RestartServiceBusTopicsConsumer, BookmarksDeleted>("WorkflowManagementEvents");
 
             options
                 .AddActivity<AzureServiceBusQueueMessageReceived>()

@@ -36,9 +36,10 @@ namespace Elsa.Services.Bookmarks
         }
 
         // TODO: Implement this to return all bookmarks of the specified bookmark model type.
-        public async Task<IEnumerable<BookmarkFinderResult>> FindBookmarksByTypeAsync(string bookmarkType, string? tenantId = default, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<Bookmark>> FindBookmarksByTypeAsync(string bookmarkType, string? tenantId = default, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            var specification = new BookmarkTypeSpecification(bookmarkType, tenantId);
+            return await _bookmarkStore.FindManyAsync(specification, cancellationToken: cancellationToken);
         }
 
         private ISpecification<Bookmark> BuildSpecification(string activityType, IEnumerable<IBookmark> bookmarks, string? correlationId, string? tenantId)

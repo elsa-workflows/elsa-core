@@ -4,11 +4,13 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Events;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications.Bookmarks;
 using Elsa.Serialization;
 using Elsa.Services.Models;
+using MediatR;
 using Microsoft.Extensions.Logging;
 using Open.Linq.AsyncExtensions;
 using Rebus.Extensions;
@@ -24,6 +26,7 @@ namespace Elsa.Services.Bookmarks
         private readonly IActivityTypeService _activityTypeService;
         private readonly IIdGenerator _idGenerator;
         private readonly IContentSerializer _contentSerializer;
+        private readonly IPublisher _publisher;
         private readonly IBookmarkHasher _hasher;
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger _logger;
@@ -37,6 +40,7 @@ namespace Elsa.Services.Bookmarks
             IActivityTypeService activityTypeService,
             IIdGenerator idGenerator,
             IContentSerializer contentSerializer,
+            IPublisher publisher,
             IServiceProvider serviceProvider,
             IBookmarkHasher hasher,
             ILogger<BookmarkIndexer> logger)
@@ -48,6 +52,7 @@ namespace Elsa.Services.Bookmarks
             _activityTypeService = activityTypeService;
             _idGenerator = idGenerator;
             _contentSerializer = contentSerializer;
+            _publisher = publisher;
             _serviceProvider = serviceProvider;
             _hasher = hasher;
             _logger = logger;
@@ -90,13 +95,14 @@ namespace Elsa.Services.Bookmarks
 
             var blockingActivities = workflowBlueprint.GetBlockingActivities(workflowInstance!);
             var bookmarkedWorkflows = await ExtractBookmarksAsync(workflowBlueprint, workflowInstance, blockingActivities, cancellationToken).ToList();
-            var bookmarks = MapBookmarks(bookmarkedWorkflows, workflowInstance);
+            var bookmarks = MapBookmarks(bookmarkedWorkflows, workflowInstance).ToList();
             entities.AddRange(bookmarks);
 
             await _bookmarkStore.AddManyAsync(entities, cancellationToken);
             var oldBookmarkIds = oldBookmarks.Select(x => x.Id).ToList();
             await _bookmarkStore.DeleteManyAsync(new BookmarkIdsSpecification(oldBookmarkIds), cancellationToken);
-
+            await _publisher.Publish(new BookmarkIndexingFinished(workflowInstanceId, bookmarks), cancellationToken);
+            
             _stopwatch.Stop();
             _logger.LogInformation("Indexed {BookmarkCount} bookmarks for workflow instance {WorkflowInstanceId} in {ElapsedTime}", entities.Count, workflowInstance.Id, _stopwatch.Elapsed);
         }
@@ -104,8 +110,10 @@ namespace Elsa.Services.Bookmarks
         public async Task DeleteBookmarksAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
         {
             var specification = new WorkflowInstanceIdSpecification(workflowInstanceId);
-            var count = await _bookmarkStore.DeleteManyAsync(specification, cancellationToken);
+            var bookmarks = await _bookmarkStore.FindManyAsync(specification, cancellationToken: cancellationToken).ToList();
+            var count = bookmarks.Count;
 
+            await _publisher.Publish(new BookmarksDeleted(workflowInstanceId, bookmarks), cancellationToken);
             _logger.LogDebug("Deleted {DeletedBookmarkCount} bookmarks for workflow {WorkflowInstanceId}", count, workflowInstanceId);
         }
 
