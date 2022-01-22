@@ -4,6 +4,9 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.AzureServiceBus.Bookmarks;
+using Elsa.Persistence;
+using Elsa.Persistence.Specifications.Triggers;
 using Elsa.Services;
 using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,6 +18,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
     public class ServiceBusQueuesStarter : IServiceBusQueuesStarter
     {
         private readonly IQueueMessageReceiverClientFactory _messageReceiverClientFactory;
+        private readonly IBookmarkSerializer _bookmarkSerializer;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger _logger;
@@ -23,11 +27,13 @@ namespace Elsa.Activities.AzureServiceBus.Services
 
         public ServiceBusQueuesStarter(
             IQueueMessageReceiverClientFactory messageReceiverClientFactory,
+            IBookmarkSerializer bookmarkSerializer,
             IServiceScopeFactory scopeFactory,
             IServiceProvider serviceProvider,
             ILogger<ServiceBusQueuesStarter> logger)
         {
             _messageReceiverClientFactory = messageReceiverClientFactory;
+            _bookmarkSerializer = bookmarkSerializer;
             _scopeFactory = scopeFactory;
             _serviceProvider = serviceProvider;
             _logger = logger;
@@ -57,7 +63,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             try
             {
                 var receiver = await _messageReceiverClientFactory.GetReceiverAsync(queueName, cancellationToken);
-                var worker = ActivatorUtilities.CreateInstance<QueueWorker>(_serviceProvider, receiver, (Func<IReceiverClient, Task>) DisposeReceiverAsync);
+                var worker = ActivatorUtilities.CreateInstance<QueueWorker>(_serviceProvider, receiver, (Func<IReceiverClient, Task>)DisposeReceiverAsync);
                 _workers.Add(worker);
             }
             catch (Exception e)
@@ -80,38 +86,27 @@ namespace Elsa.Activities.AzureServiceBus.Services
         private async IAsyncEnumerable<string> GetQueueNamesAsync([EnumeratorCancellation] CancellationToken cancellationToken)
         {
             using var scope = _scopeFactory.CreateScope();
-            var workflowRegistry = scope.ServiceProvider.GetRequiredService<IWorkflowRegistry>();
-            var workflowBlueprintReflector = scope.ServiceProvider.GetRequiredService<IWorkflowBlueprintReflector>();
-            var workflows = await workflowRegistry.ListActiveAsync(cancellationToken);
+            var triggerStore = scope.ServiceProvider.GetRequiredService<ITriggerStore>();
+            var triggers = await triggerStore.FindManyAsync(TriggerModelTypeSpecification.For<QueueMessageReceivedBookmark>(), cancellationToken: cancellationToken);
 
-            var query =
-                from workflow in workflows
-                from activity in workflow.Activities
-                where activity.Type == nameof(AzureServiceBusQueueMessageReceived)
-                select workflow;
-
-            foreach (var workflow in query)
+            foreach (var trigger in triggers)
             {
-                var workflowBlueprintWrapper = await workflowBlueprintReflector.ReflectAsync(scope.ServiceProvider, workflow, cancellationToken);
+                var bookmark = _bookmarkSerializer.Deserialize<QueueMessageReceivedBookmark>(trigger.Model);
+                var queueName = bookmark.QueueName;
 
-                foreach (var activity in workflowBlueprintWrapper.Filter<AzureServiceBusQueueMessageReceived>())
+                if (string.IsNullOrWhiteSpace(queueName))
                 {
-                    var queueName = await activity.EvaluatePropertyValueAsync(x => x.QueueName, cancellationToken);
+                    _logger.LogWarning(
+                        "Encountered a queue name that is null or empty in trigger {TriggerId} for activity {ActivityType}:{ActivityId} in workflow {WorkflowDefinitionId}",
+                        trigger.Id,
+                        trigger.ActivityType,
+                        trigger.ActivityId,
+                        trigger.WorkflowDefinitionId);
 
-                    if (string.IsNullOrWhiteSpace(queueName))
-                    {
-                        _logger.LogWarning(
-                            "Encountered a queue name that is null or empty in activity {ActivityType}:{ActivityId} in workflow {WorkflowDefinitionId}:v{WorkflowDefinitionVersion}",
-                            activity.ActivityBlueprint.Type,
-                            activity.ActivityBlueprint.Id,
-                            workflow.Id,
-                            workflow.Version);
-
-                        continue;
-                    }
-
-                    yield return queueName!;
+                    continue;
                 }
+
+                yield return queueName!;
             }
         }
     }

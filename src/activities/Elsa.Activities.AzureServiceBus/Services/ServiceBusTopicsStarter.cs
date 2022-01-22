@@ -4,7 +4,9 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.AzureServiceBus.Bookmarks;
 using Elsa.Persistence;
+using Elsa.Persistence.Specifications.Triggers;
 using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -18,6 +20,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
     public class ServiceBusTopicsStarter : IServiceBusTopicsStarter
     {
         private readonly ITopicMessageReceiverFactory _receiverFactory;
+        private readonly IBookmarkSerializer _bookmarkSerializer;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<ServiceBusTopicsStarter> _logger;
@@ -27,12 +30,14 @@ namespace Elsa.Activities.AzureServiceBus.Services
             ITopicMessageReceiverFactory receiverFactory,
             IServiceScopeFactory scopeFactory,
             IServiceProvider serviceProvider,
-            ILogger<ServiceBusTopicsStarter> logger)
+            ILogger<ServiceBusTopicsStarter> logger,
+            IBookmarkSerializer bookmarkSerializer)
         {
             _receiverFactory = receiverFactory;
             _scopeFactory = scopeFactory;
             _serviceProvider = serviceProvider;
             _logger = logger;
+            _bookmarkSerializer = bookmarkSerializer;
             _workers = new List<TopicWorker>();
         }
 
@@ -42,7 +47,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             await DisposeExistingWorkersAsync();
             var entities = (await GetTopicSubscriptionNamesAsync(cancellationToken).ToListAsync(cancellationToken)).Distinct();
 
-            foreach (var entity in entities) 
+            foreach (var entity in entities)
                 await CreateAndAddWorkerAsync(entity.topicName, entity.subscriptionName, cancellationToken);
         }
 
@@ -51,7 +56,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             try
             {
                 var receiver = await _receiverFactory.GetTopicReceiverAsync(topicName, subscriptionName, cancellationToken);
-                var worker = ActivatorUtilities.CreateInstance<TopicWorker>(_serviceProvider, receiver, (Func<IReceiverClient, Task>) DisposeReceiverAsync);
+                var worker = ActivatorUtilities.CreateInstance<TopicWorker>(_serviceProvider, receiver, (Func<IReceiverClient, Task>)DisposeReceiverAsync);
                 _workers.Add(worker);
             }
             catch (Exception e)
@@ -74,38 +79,16 @@ namespace Elsa.Activities.AzureServiceBus.Services
         private async IAsyncEnumerable<(string topicName, string subscriptionName)> GetTopicSubscriptionNamesAsync([EnumeratorCancellation] CancellationToken cancellationToken)
         {
             using var scope = _scopeFactory.CreateScope();
-            var workflowRegistry = scope.ServiceProvider.GetRequiredService<IWorkflowRegistry>();
-            var workflowBlueprintReflector = scope.ServiceProvider.GetRequiredService<IWorkflowBlueprintReflector>();
-            var workflowInstanceStore = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
-            var workflows = await workflowRegistry.ListActiveAsync(cancellationToken);
+            var triggerStore = scope.ServiceProvider.GetRequiredService<ITriggerStore>();
+            var triggers = await triggerStore.FindManyAsync(TriggerModelTypeSpecification.For<TopicMessageReceivedBookmark>(), cancellationToken: cancellationToken);
 
-            var query =
-                from workflow in workflows
-                from activity in workflow.Activities
-                where activity.Type == nameof(AzureServiceBusTopicMessageReceived)
-                select workflow;
-
-            foreach (var workflow in query)
+            foreach (var trigger in triggers)
             {
-                // If a workflow is not published, only consider it for processing if it has at least one non-ended workflow instance.
-                if (!workflow.IsPublished && !await WorkflowHasNonFinishedWorkflowsAsync(workflow, workflowInstanceStore, cancellationToken))
-                    continue;
-                
-                var workflowBlueprintWrapper = await workflowBlueprintReflector.ReflectAsync(scope.ServiceProvider, workflow, cancellationToken);
-
-                foreach (var activity in workflowBlueprintWrapper.Filter<AzureServiceBusTopicMessageReceived>())
-                {
-                    var topicName = await activity.EvaluatePropertyValueAsync(x => x.TopicName, cancellationToken);
-                    var subscriptionName = await activity.EvaluatePropertyValueAsync(x => x.SubscriptionName, cancellationToken);
-                    yield return (topicName, subscriptionName)!;
-                }
+                var bookmark = _bookmarkSerializer.Deserialize<TopicMessageReceivedBookmark>(trigger.Model);
+                var topicName = bookmark.TopicName;
+                var subscriptionName = bookmark.SubscriptionName;
+                yield return (topicName, subscriptionName)!;
             }
-        }
-        
-        private static async Task<bool> WorkflowHasNonFinishedWorkflowsAsync(IWorkflowBlueprint workflowBlueprint, IWorkflowInstanceStore workflowInstanceStore, CancellationToken cancellationToken)
-        {
-            var count = await workflowInstanceStore.CountAsync(new UnfinishedWorkflowSpecification().WithWorkflowDefinition(workflowBlueprint.Id), cancellationToken);
-            return count > 0;
         }
     }
 }
