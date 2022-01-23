@@ -1,15 +1,20 @@
 ﻿const win = window as any;
 const require = win.require;
 
-let initialized = false;
+export interface Monaco {
+  editor: any;
+  languages: any;
+  KeyCode: any;
+  Uri: any;
+}
 
-export function initializeMonacoWorker(libPath?: string) {
+export function initializeMonacoWorker(libPath?: string) : Promise<Monaco> {
 
-  if (initialized)
-    return;
+  if (win.monaco)
+    return win.monaco;
 
   if (!libPath)
-    return;
+    return win.monaco;
 
   const origin = document.location.origin;
   const baseUrl = libPath.startsWith('http') ? libPath : `${origin}/${libPath}`;
@@ -24,5 +29,9 @@ export function initializeMonacoWorker(libPath?: string) {
 	importScripts('${baseUrl}/vs/base/worker/workerMain.js');
 `], {type: 'text/javascript'}));
 
-  initialized = true;
+  return new Promise(resolve => {
+    require(["vs/editor/editor.main"], () => {
+      resolve(win.monaco);
+    });
+  });
 }

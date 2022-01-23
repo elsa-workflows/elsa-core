@@ -1,5 +1,5 @@
 import {Component, Event, EventEmitter, h, Host, Method, Prop, Watch} from '@stencil/core';
-import {initializeMonacoWorker} from "./elsa-monaco-utils";
+import {initializeMonacoWorker, Monaco} from "./elsa-monaco-utils";
 import state from '../../../utils/store';
 
 export interface MonacoValueChangedArgs {
@@ -13,8 +13,7 @@ export interface MonacoValueChangedArgs {
   shadow: false
 })
 export class ElsaMonaco {
-
-  monaco = (window as any).monaco;
+  private monaco: Monaco;
 
   @Prop({attribute: 'monaco-lib-path'}) monacoLibPath: string;
   @Prop({attribute: 'editor-height', reflect: true}) editorHeight: string = '5em';
@@ -64,9 +63,9 @@ export class ElsaMonaco {
     const newModel = monaco.editor.createModel(libSource, 'typescript', monaco.Uri.parse(libUri));
   }
 
-  componentWillLoad() {
+  async componentWillLoad() {
     const monacoLibPath = this.monacoLibPath ?? state.monacoLibPath;
-    initializeMonacoWorker(monacoLibPath);
+    this.monaco = await initializeMonacoWorker(monacoLibPath);
     this.registerLiquid();
   }
 
