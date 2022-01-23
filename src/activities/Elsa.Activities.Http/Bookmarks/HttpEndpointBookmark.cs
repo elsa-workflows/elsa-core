@@ -7,9 +7,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Activities.Http.Bookmarks
 {
-    public record HttpEndpointBookmark(PathString Path, string? Method) : IBookmark
-    {
-    }
+    public record HttpEndpointBookmark(PathString Path, string? Method) : IBookmark;
 
     public class HttpEndpointBookmarkProvider : BookmarkProvider<HttpEndpointBookmark, HttpEndpoint>
     {
