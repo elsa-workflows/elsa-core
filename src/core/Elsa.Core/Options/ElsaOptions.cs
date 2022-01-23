@@ -34,7 +34,6 @@ namespace Elsa.Options
             CorrelatingWorkflowDispatcherFactory = sp => ActivatorUtilities.CreateInstance<QueuingWorkflowDispatcher>(sp);
             JsonSerializerConfigurer = (sp, serializer) => { };
             DefaultWorkflowStorageProviderType = typeof(WorkflowInstanceWorkflowStorageProvider);
-            DistributedLockingOptions = new DistributedLockingOptions();
             ConfigureServiceBusEndpoint = ConfigureInMemoryServiceBusEndpoint;
 
             CreateJsonSerializer = sp =>
@@ -54,7 +53,8 @@ namespace Elsa.Options
         public HashSet<MessageTypeConfig> CompetingMessageTypes { get; } = new();
         public HashSet<MessageTypeConfig> PubSubMessageTypes { get; } = new();
         public ServiceBusOptions ServiceBusOptions { get; } = new();
-        public DistributedLockingOptions DistributedLockingOptions { get; set; }
+        public DistributedLockingOptions DistributedLockingOptions { get; set; } = new();
+        public WorkflowTriggerIndexingOptions WorkflowTriggerIndexingOptions { get; set; } = new();
 
         /// <summary>
         /// The amount of time to wait before giving up on trying to acquire a lock.
