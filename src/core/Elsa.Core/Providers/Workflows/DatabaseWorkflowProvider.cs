@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -42,7 +43,7 @@ namespace Elsa.Providers.Workflows
 
             if (!string.IsNullOrWhiteSpace(tenantId))
                 specification = specification.WithTenant(tenantId);
-            
+
             var paging = skip != null && take != null ? new Paging(skip.Value, take.Value) : default;
             var orderBy = new OrderBy<WorkflowDefinition>(x => x.Id, SortDirection.Ascending);
             var workflowDefinitions = await _workflowDefinitionStore.FindManyAsync(specification, orderBy, paging, cancellationToken);
@@ -84,6 +85,12 @@ namespace Elsa.Providers.Workflows
             return workflowDefinition == null ? null : await TryMaterializeBlueprintAsync(workflowDefinition, cancellationToken);
         }
 
+        public override async ValueTask<IEnumerable<IWorkflowBlueprint>> FindManyByDefinitionVersionIds(IEnumerable<string> definitionVersionIds, CancellationToken cancellationToken = default)
+        {
+            var definitions = await _workflowDefinitionStore.FindManyAsync(new ManyWorkflowDefinitionVersionIdsSpecification(definitionVersionIds), cancellationToken: cancellationToken);
+            return await TryMaterializeBlueprintsAsync(definitions, cancellationToken).ToListAsync(cancellationToken);
+        }
+
         private async Task<IWorkflowBlueprint?> TryMaterializeBlueprintAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken)
         {
             try
@@ -96,6 +103,17 @@ namespace Elsa.Providers.Workflows
             }
 
             return null;
+        }
+
+        private async IAsyncEnumerable<IWorkflowBlueprint> TryMaterializeBlueprintsAsync(IEnumerable<WorkflowDefinition> workflowDefinitions, [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            foreach (var workflowDefinition in workflowDefinitions)
+            {
+                var workflowBlueprint = await TryMaterializeBlueprintAsync(workflowDefinition, cancellationToken);
+
+                if (workflowBlueprint != null)
+                    yield return workflowBlueprint;
+            }
         }
     }
 }

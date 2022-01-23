@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Caching;
@@ -41,6 +42,12 @@ namespace Elsa.Decorators
         {
             var cacheKey = $"{RootKey}:definition:name:{tag}:{versionOptions}:{tenantId}";
             return await FindInternalAsync(cacheKey, () => _workflowRegistry.FindByTagAsync(tag, versionOptions, tenantId, cancellationToken), cancellationToken);
+        }
+
+        public async Task<IEnumerable<IWorkflowBlueprint>> FindByDefinitionVersionIds(IEnumerable<string> definitionVersionIds, CancellationToken cancellationToken)
+        {
+            // TODO: Maybe cache this as well?
+            return await _workflowRegistry.FindByDefinitionVersionIds(definitionVersionIds, cancellationToken);
         }
 
         public async Task<IWorkflowBlueprint?> FindInternalAsync(string cacheKey, Func<Task<IWorkflowBlueprint?>> findAction, CancellationToken cancellationToken = default)

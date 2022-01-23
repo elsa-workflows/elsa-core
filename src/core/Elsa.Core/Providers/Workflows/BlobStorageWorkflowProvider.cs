@@ -23,7 +23,7 @@ namespace Elsa.Providers.Workflows
     {
         public Func<IBlobStorage> BlobStorageFactory { get; set; } = () => StorageFactory.Blobs.InMemory();
     }
-    
+
     public class BlobStorageWorkflowProvider : WorkflowProvider
     {
         private readonly IBlobStorage _storage;
@@ -103,6 +103,12 @@ namespace Elsa.Providers.Workflows
                 predicate = predicate.And(x => x.TenantId == tenantId);
 
             return await ListInternalAsync(cancellationToken).FirstOrDefaultAsync(predicate.Compile(), cancellationToken);
+        }
+
+        public override async ValueTask<IEnumerable<IWorkflowBlueprint>> FindManyByDefinitionVersionIds(IEnumerable<string> definitionVersionIds, CancellationToken cancellationToken = default)
+        {
+            var idList = definitionVersionIds.ToList();
+            return await ListInternalAsync(cancellationToken).Where(x => idList.Contains(x.VersionId)).ToListAsync(cancellationToken);
         }
 
         private async IAsyncEnumerable<IWorkflowBlueprint> ListInternalAsync([EnumeratorCancellation] CancellationToken cancellationToken = default)

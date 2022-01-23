@@ -3,15 +3,7 @@ import {injectHistory, LocationSegments, RouterHistory} from "@stencil/router";
 import * as collection from 'lodash/collection';
 import * as array from 'lodash/array';
 import {confirmDialogService, createElsaClient, eventBus} from "../../../../services";
-import {
-  EventTypes,
-  OrderBy,
-  PagedList,
-  VersionOptions,
-  WorkflowBlueprintSummary,
-  WorkflowInstanceSummary,
-  WorkflowStatus
-} from "../../../../models";
+import {EventTypes, OrderBy, PagedList, WorkflowBlueprintSummary, WorkflowInstanceSummary, WorkflowStatus} from "../../../../models";
 import {DropdownButtonItem, DropdownButtonOrigin} from "../../../controls/elsa-dropdown-button/models";
 import {Map, parseQuery} from '../../../../utils/utils';
 import moment from "moment";
@@ -78,7 +70,7 @@ export class ElsaWorkflowInstanceListScreen {
     if (!!this.history)
       this.applyQueryString(this.history.location.search);
 
-    await this.loadWorkflowBlueprints();
+    //await this.loadWorkflowBlueprints();
     await this.loadWorkflowInstances();
 
     const t = this.t;
@@ -168,13 +160,10 @@ export class ElsaWorkflowInstanceListScreen {
       this.workflowInstances = await elsaClient.workflowInstancesApi.list(this.currentPage, this.currentPageSize, this.selectedWorkflowId, this.selectedWorkflowStatus, this.selectedOrderByState, this.currentSearchTerm, this.correlationId);
     }
 
-    this.setSelectAllIndeterminateState();
-  }
+    const definitionVersionIds = this.workflowInstances.items.map(x => x.definitionVersionId);
+    this.workflowBlueprints = await elsaClient.workflowRegistryApi.findManyByDefinitionVersionIds(definitionVersionIds);
 
-  async loadWorkflowBlueprints(definitionVersionIds: Array<string>) {
-    const elsaClient = await this.createClient();
-    const workflowBlueprintPagedList = await elsaClient.workflowRegistryApi.findManyByDefinitionVersionIds(definitionVersionIds);
-    this.workflowBlueprints = workflowBlueprintPagedList.items;
+    this.setSelectAllIndeterminateState();
   }
 
   createClient() {
@@ -531,7 +520,7 @@ export class ElsaWorkflowInstanceListScreen {
               </thead>
               <tbody class="elsa-bg-white elsa-divide-y elsa-divide-gray-100">
               {workflowInstances.map(workflowInstance => {
-                const workflowBlueprint = workflowBlueprints.find(x => x.id == workflowInstance.definitionId && x.version == workflowInstance.version) ?? {
+                const workflowBlueprint = workflowBlueprints.find(x => x.versionId == workflowInstance.definitionVersionId) ?? {
                   name: 'Not Found',
                   displayName: '(Workflow definition not found)'
                 };
