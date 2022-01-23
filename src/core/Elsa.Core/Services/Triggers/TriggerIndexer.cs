@@ -111,7 +111,7 @@ namespace Elsa.Services.Triggers
             await _triggerStore.DeleteManyAsync(specification, cancellationToken);
 
             // Publish event.
-            await _mediator.Publish(new TriggersDeleted(triggers), cancellationToken);
+            await _mediator.Publish(new TriggersDeleted(workflowDefinitionId, triggers), cancellationToken);
 
             _logger.LogDebug("Deleted {DeletedTriggerCount} triggers for workflow {WorkflowDefinitionId}", count, workflowDefinitionId);
         }

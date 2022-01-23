@@ -1,8 +1,7 @@
 using System.Collections.Generic;
 using Elsa.Models;
-using Elsa.Services;
 using MediatR;
 
 namespace Elsa.Events;
 
-public record TriggersDeleted(IReadOnlyCollection<Trigger> Triggers) : INotification;
+public record TriggersDeleted(string WorkflowDefinitionId, IReadOnlyCollection<Trigger> Triggers) : INotification;

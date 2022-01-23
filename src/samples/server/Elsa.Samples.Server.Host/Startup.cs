@@ -117,11 +117,13 @@ namespace Elsa.Samples.Server.Host
                     .AllowCredentials())
                 .UseElsaFeatures()
                 .UseRouting()
-                .UseEndpoints(endpoints => { endpoints.MapControllers(); })
-                .UseWorkflowTestHub()
-                ;
+                .UseEndpoints(endpoints =>
+                {
+                    endpoints.MapControllers();
+                    endpoints.MapWorkflowTestHub();
+                });
         }
-        
+
         private void AddHangfire(IServiceCollection services, string dbConnectionString)
         {
             services

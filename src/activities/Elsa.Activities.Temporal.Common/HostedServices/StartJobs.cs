@@ -21,15 +21,15 @@ namespace Elsa.Activities.Temporal.Common.HostedServices
         private const string? TenantId = default;
 
         private readonly IBookmarkFinder _bookmarkFinder;
-        private readonly IWorkflowInstanceScheduler _workflowScheduler;
+        private readonly IWorkflowInstanceScheduler _workflowInstanceScheduler;
         private readonly IDistributedLockProvider _distributedLockProvider;
         private readonly ILogger<StartJobs> _logger;
         private readonly AsyncRetryPolicy _retryPolicy;
 
-        public StartJobs(IBookmarkFinder bookmarkFinder, IWorkflowInstanceScheduler workflowScheduler, IDistributedLockProvider distributedLockProvider, ILogger<StartJobs> logger)
+        public StartJobs(IBookmarkFinder bookmarkFinder, IWorkflowInstanceScheduler workflowInstanceScheduler, IDistributedLockProvider distributedLockProvider, ILogger<StartJobs> logger)
         {
             _bookmarkFinder = bookmarkFinder;
-            _workflowScheduler = workflowScheduler;
+            _workflowInstanceScheduler = workflowInstanceScheduler;
             _distributedLockProvider = distributedLockProvider;
             _logger = logger;
 
@@ -68,7 +68,7 @@ namespace Elsa.Activities.Temporal.Common.HostedServices
             foreach (var result in bookmarkResults)
             {
                 var bookmark = (StartAtBookmark)result.Bookmark;
-                await _workflowScheduler.ScheduleAsync(result.WorkflowInstanceId!, result.ActivityId, bookmark.ExecuteAt, null, cancellationToken);
+                await _workflowInstanceScheduler.ScheduleAsync(result.WorkflowInstanceId!, result.ActivityId, bookmark.ExecuteAt, null, cancellationToken);
 
                 index++;
                 _logger.LogDebug("Scheduled {CurrentBookmarkIndex} of {BookmarkResultCount}", index, bookmarkResults.Count);
@@ -86,7 +86,7 @@ namespace Elsa.Activities.Temporal.Common.HostedServices
             foreach (var result in bookmarkResults)
             {
                 var bookmark = (TimerBookmark)result.Bookmark;
-                await _workflowScheduler.ScheduleAsync(result.WorkflowInstanceId!, result.ActivityId, bookmark.ExecuteAt, null, cancellationToken);
+                await _workflowInstanceScheduler.ScheduleAsync(result.WorkflowInstanceId!, result.ActivityId, bookmark.ExecuteAt, null, cancellationToken);
 
                 index++;
                 _logger.LogDebug("Scheduled {CurrentBookmarkIndex} of {BookmarkResultCount}", index, bookmarkResults.Count);
@@ -104,7 +104,7 @@ namespace Elsa.Activities.Temporal.Common.HostedServices
             foreach (var result in bookmarkResults)
             {
                 var trigger = (CronBookmark)result.Bookmark;
-                await _workflowScheduler.ScheduleAsync(result.WorkflowInstanceId!, result.ActivityId, trigger.ExecuteAt!.Value, null, cancellationToken);
+                await _workflowInstanceScheduler.ScheduleAsync(result.WorkflowInstanceId!, result.ActivityId, trigger.ExecuteAt!.Value, null, cancellationToken);
 
                 index++;
                 _logger.LogDebug("Scheduled {CurrentBookmarkIndex} of {BookmarkResultCount}", index, bookmarkResults.Count);
