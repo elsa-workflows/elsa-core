@@ -8,12 +8,11 @@ export interface Monaco {
   Uri: any;
 }
 
-export function initializeMonacoWorker(libPath?: string) : Promise<Monaco> {
+let isInitialized : boolean;
 
-  if (win.monaco)
-    return win.monaco;
+export function initializeMonacoWorker(libPath?: string): Promise<Monaco> {
 
-  if (!libPath)
+  if (isInitialized)
     return win.monaco;
 
   const origin = document.location.origin;
@@ -31,6 +30,7 @@ export function initializeMonacoWorker(libPath?: string) : Promise<Monaco> {
 
   return new Promise(resolve => {
     require(["vs/editor/editor.main"], () => {
+      isInitialized = true;
       resolve(win.monaco);
     });
   });
