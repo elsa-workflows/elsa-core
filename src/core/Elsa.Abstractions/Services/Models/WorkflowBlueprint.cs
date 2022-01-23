@@ -68,7 +68,7 @@ namespace Elsa.Services.Models
         }
 
         public int Version { get; set; }
-        public string VersionId { get; set; }
+        public string VersionId { get; set; } = default!;
         public string? TenantId { get; set; }
         public bool IsSingleton { get; set; }
         public bool IsPublished { get; set; }

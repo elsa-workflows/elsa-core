@@ -75,27 +75,30 @@ namespace Elsa.Services.Triggers
             await DeleteTriggersAsync(workflowBlueprint.Id, cancellationToken);
 
             // Get new triggers.
-            var triggers = (await _getsTriggersForWorkflows.GetTriggersAsync(workflowBlueprint, cancellationToken)).ToList();
+            var workflowTriggers = (await _getsTriggersForWorkflows.GetTriggersAsync(workflowBlueprint, cancellationToken)).ToList();
+            var triggers = new List<Trigger>();
 
-            foreach (var trigger in triggers)
+            foreach (var workflowTrigger in workflowTriggers)
             {
-                var bookmark = trigger.Bookmark;
-                
-                await _triggerStore.SaveAsync(new Trigger
+                var bookmark = workflowTrigger.Bookmark;
+                var trigger = new Trigger
                 {
                     Id = _idGenerator.Generate(),
-                    ActivityId = trigger.ActivityId,
-                    ActivityType = trigger.ActivityType,
-                    Hash = trigger.BookmarkHash,
-                    TenantId = trigger.TenantId,
-                    WorkflowDefinitionId = trigger.WorkflowDefinitionId,
+                    ActivityId = workflowTrigger.ActivityId,
+                    ActivityType = workflowTrigger.ActivityType,
+                    Hash = workflowTrigger.BookmarkHash,
+                    TenantId = workflowTrigger.TenantId,
+                    WorkflowDefinitionId = workflowTrigger.WorkflowDefinitionId,
                     Model = _bookmarkSerializer.Serialize(bookmark),
                     ModelType = bookmark.GetType().GetSimpleAssemblyQualifiedName()
-                }, cancellationToken);
+                };
+                
+                triggers.Add(trigger);
+                await _triggerStore.SaveAsync(trigger, cancellationToken);
             }
 
             // Publish event.
-            await _mediator.Publish(new TriggerIndexingFinished(workflowBlueprint, triggers), cancellationToken);
+            await _mediator.Publish(new TriggerIndexingFinished(workflowBlueprint.Id, triggers), cancellationToken);
         }
 
         public async Task DeleteTriggersAsync(string workflowDefinitionId, CancellationToken cancellationToken = default)
@@ -104,19 +107,11 @@ namespace Elsa.Services.Triggers
             var triggers = await _triggerStore.FindManyAsync(specification, cancellationToken: cancellationToken).ToList();
             var count = triggers.Count;
 
-            var workflowTriggers = triggers.Select(x =>
-            {
-                var bookmarkType = Type.GetType(x.ModelType)!;
-                var bookmarkModel = _bookmarkSerializer.Deserialize(x.Model, bookmarkType);
-
-                return new WorkflowTrigger(x.WorkflowDefinitionId, x.ActivityId, x.ActivityType, x.Hash, bookmarkModel, x.TenantId);
-            }).ToList();
-
             // Delete triggers.
             await _triggerStore.DeleteManyAsync(specification, cancellationToken);
 
             // Publish event.
-            await _mediator.Publish(new TriggersDeleted(workflowTriggers), cancellationToken);
+            await _mediator.Publish(new TriggersDeleted(triggers), cancellationToken);
 
             _logger.LogDebug("Deleted {DeletedTriggerCount} triggers for workflow {WorkflowDefinitionId}", count, workflowDefinitionId);
         }

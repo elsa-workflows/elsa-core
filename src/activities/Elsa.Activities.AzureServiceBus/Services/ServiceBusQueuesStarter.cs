@@ -37,7 +37,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             _workers = new List<QueueWorker>();
         }
 
-        public async Task CreateWorkersAsync(IReadOnlyCollection<WorkflowTrigger> triggers, CancellationToken cancellationToken = default)
+        public async Task CreateWorkersAsync(IReadOnlyCollection<Trigger> triggers, CancellationToken cancellationToken = default)
         {
             await _semaphore.WaitAsync(cancellationToken);
 
@@ -47,7 +47,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             {
                 foreach (var trigger in filteredTriggers)
                 {
-                    var bookmark = (QueueMessageReceivedBookmark)trigger.Bookmark;
+                    var bookmark = _bookmarkSerializer.Deserialize<QueueMessageReceivedBookmark>(trigger.Model);
                     await CreateAndAddWorkerAsync(trigger.WorkflowDefinitionId, bookmark.QueueName, cancellationToken);
                 }
             }
@@ -77,7 +77,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             }
         }
 
-        public async Task RemoveWorkersAsync(IReadOnlyCollection<WorkflowTrigger> triggers, CancellationToken cancellationToken = default)
+        public async Task RemoveWorkersAsync(IReadOnlyCollection<Trigger> triggers, CancellationToken cancellationToken = default)
         {
             var workflowDefinitionIds = Filter(triggers).Select(x => x.WorkflowDefinitionId).Distinct().ToList();
             await RemoveWorkersAsync(workflowDefinitionIds);
@@ -123,10 +123,15 @@ namespace Elsa.Activities.AzureServiceBus.Services
 
         private async Task DisposeReceiverAsync(IReceiverClient messageReceiver) => await _messageReceiverClientFactory.DisposeReceiverAsync(messageReceiver);
         
-        private IEnumerable<WorkflowTrigger> Filter(IEnumerable<WorkflowTrigger> triggers) => triggers.Where(x => x.Bookmark is TopicMessageReceivedBookmark);
+        private IEnumerable<Trigger> Filter(IEnumerable<Trigger> triggers)
+        {
+            var bookmarkType = typeof(QueueMessageReceivedBookmark).GetSimpleAssemblyQualifiedName();
+            return triggers.Where(x => x.ModelType == bookmarkType);
+        }
+
         private IEnumerable<Bookmark> Filter(IEnumerable<Bookmark> triggers)
         {
-            var modeType = typeof(TopicMessageReceivedBookmark).GetSimpleAssemblyQualifiedName();
+            var modeType = typeof(QueueMessageReceivedBookmark).GetSimpleAssemblyQualifiedName();
             return triggers.Where(x => x.ModelType == modeType);
         }
     }
