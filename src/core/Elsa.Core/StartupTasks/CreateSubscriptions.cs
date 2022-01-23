@@ -50,7 +50,7 @@ namespace Elsa.StartupTasks
 
             foreach (var messageTypeGroup in competingMessageTypeGroups)
             {
-                var queueName = messageTypeGroup.Key;
+                var queueName = messageTypeGroup.Key!;
                 var messageTypes = messageTypeGroup.Select(x => x.MessageType).ToList();
                 var bus = _serviceBusFactory.ConfigureServiceBus(messageTypes, queueName);
 

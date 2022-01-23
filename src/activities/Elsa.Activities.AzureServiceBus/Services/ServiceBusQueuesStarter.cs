@@ -13,6 +13,8 @@ using Rebus.Extensions;
 
 namespace Elsa.Activities.AzureServiceBus.Services
 {
+    public record QueueWorkerKey(string Tag, string QueueName);
+
     // TODO: Look for a way to merge ServiceBusQueuesStarter with ServiceBusTopicsStarter - there's a lot of overlap.
     public class ServiceBusQueuesStarter : IServiceBusQueuesStarter
     {
@@ -20,7 +22,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
         private readonly IBookmarkSerializer _bookmarkSerializer;
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger _logger;
-        private readonly ICollection<QueueWorker> _workers;
+        private readonly IDictionary<QueueWorkerKey, QueueWorker> _workers;
         private readonly SemaphoreSlim _semaphore = new(1);
 
         public ServiceBusQueuesStarter(
@@ -33,7 +35,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             _bookmarkSerializer = bookmarkSerializer;
             _serviceProvider = serviceProvider;
             _logger = logger;
-            _workers = new List<QueueWorker>();
+            _workers = new Dictionary<QueueWorkerKey, QueueWorker>();
         }
 
         public async Task CreateWorkersAsync(IEnumerable<Trigger> triggers, CancellationToken cancellationToken = default)
@@ -81,7 +83,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             var workflowDefinitionIds = Filter(triggers).Select(x => x.WorkflowDefinitionId).Distinct().ToList();
             await RemoveWorkersAsync(workflowDefinitionIds);
         }
-        
+
         public async Task RemoveWorkersAsync(IEnumerable<Bookmark> bookmarks, CancellationToken cancellationToken = default)
         {
             var workflowInstanceIds = Filter(bookmarks).Select(x => x.WorkflowInstanceId).Distinct().ToList();
@@ -93,16 +95,16 @@ namespace Elsa.Activities.AzureServiceBus.Services
             var workers =
                 from worker in _workers
                 from tag in tags
-                where worker.Tag == tag
+                where worker.Key.Tag == tag
                 select worker;
 
             foreach (var worker in workers.ToList())
                 await RemoveWorkerAsync(worker);
         }
 
-        private async Task RemoveWorkerAsync(QueueWorker worker)
+        private async Task RemoveWorkerAsync(KeyValuePair<QueueWorkerKey, QueueWorker> worker)
         {
-            await worker.DisposeAsync();
+            await worker.Value.DisposeAsync();
             _workers.Remove(worker);
         }
 
@@ -110,9 +112,15 @@ namespace Elsa.Activities.AzureServiceBus.Services
         {
             try
             {
-                var receiver = await _messageReceiverClientFactory.GetReceiverAsync(queueName, cancellationToken);
-                var worker = ActivatorUtilities.CreateInstance<QueueWorker>(_serviceProvider, tag, receiver, (Func<IReceiverClient, Task>)DisposeReceiverAsync);
-                _workers.Add(worker);
+                var key = new QueueWorkerKey(tag, queueName);
+                var worker = _workers.ContainsKey(key) ? _workers[key] : default;
+
+                if (worker == null)
+                {
+                    var receiver = await _messageReceiverClientFactory.GetReceiverAsync(queueName, cancellationToken);
+                    worker = ActivatorUtilities.CreateInstance<QueueWorker>(_serviceProvider, tag, receiver, (Func<IReceiverClient, Task>)DisposeReceiverAsync);
+                    _workers.Add(key, worker);
+                }
             }
             catch (Exception e)
             {
@@ -121,7 +129,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
         }
 
         private async Task DisposeReceiverAsync(IReceiverClient messageReceiver) => await _messageReceiverClientFactory.DisposeReceiverAsync(messageReceiver);
-        
+
         private IEnumerable<Trigger> Filter(IEnumerable<Trigger> triggers)
         {
             var bookmarkType = typeof(QueueMessageReceivedBookmark).GetSimpleAssemblyQualifiedName();
