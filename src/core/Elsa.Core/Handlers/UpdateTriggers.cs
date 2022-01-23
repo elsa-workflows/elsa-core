@@ -10,7 +10,8 @@ using Microsoft.Extensions.Logging;
 
 namespace Elsa.Handlers;
 
-public class UpdateTriggers : INotificationHandler<WorkflowDefinitionPublished>,
+public class UpdateTriggers : 
+    INotificationHandler<WorkflowDefinitionPublished>,
     INotificationHandler<WorkflowDefinitionDeleted>,
     INotificationHandler<WorkflowDefinitionRetracted>,
     INotificationHandler<ManyWorkflowDefinitionsDeleted>

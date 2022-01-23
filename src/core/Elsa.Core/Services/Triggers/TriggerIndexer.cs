@@ -27,6 +27,7 @@ namespace Elsa.Services.Triggers
         private readonly ITriggerStore _triggerStore;
         private readonly IBookmarkSerializer _bookmarkSerializer;
         private readonly IMediator _mediator;
+        private readonly IIdGenerator _idGenerator;
         private readonly IEnumerable<IWorkflowProvider> _workflowProviders;
         private readonly ILogger _logger;
         private readonly Stopwatch _stopwatch = new();
@@ -36,6 +37,7 @@ namespace Elsa.Services.Triggers
             ITriggerStore triggerStore,
             IBookmarkSerializer bookmarkSerializer,
             IMediator mediator,
+            IIdGenerator idGenerator,
             IEnumerable<IWorkflowProvider> workflowProviders,
             ILogger<TriggerIndexer> logger,
             IGetsTriggersForWorkflowBlueprints getsTriggersForWorkflows)
@@ -43,6 +45,7 @@ namespace Elsa.Services.Triggers
             _triggerStore = triggerStore;
             _bookmarkSerializer = bookmarkSerializer;
             _mediator = mediator;
+            _idGenerator = idGenerator;
             _workflowProviders = workflowProviders;
             _logger = logger;
             _getsTriggersForWorkflows = getsTriggersForWorkflows;
@@ -76,15 +79,18 @@ namespace Elsa.Services.Triggers
 
             foreach (var trigger in triggers)
             {
+                var bookmark = trigger.Bookmark;
+                
                 await _triggerStore.SaveAsync(new Trigger
                 {
+                    Id = _idGenerator.Generate(),
                     ActivityId = trigger.ActivityId,
                     ActivityType = trigger.ActivityType,
                     Hash = trigger.BookmarkHash,
                     TenantId = trigger.TenantId,
                     WorkflowDefinitionId = trigger.WorkflowDefinitionId,
-                    Model = _bookmarkSerializer.Serialize(trigger.Bookmark),
-                    ModelType = trigger.GetType().GetSimpleAssemblyQualifiedName()
+                    Model = _bookmarkSerializer.Serialize(bookmark),
+                    ModelType = bookmark.GetType().GetSimpleAssemblyQualifiedName()
                 }, cancellationToken);
             }
 
@@ -105,6 +111,9 @@ namespace Elsa.Services.Triggers
 
                 return new WorkflowTrigger(x.WorkflowDefinitionId, x.ActivityId, x.ActivityType, x.Hash, bookmarkModel, x.TenantId);
             }).ToList();
+
+            // Delete triggers.
+            await _triggerStore.DeleteManyAsync(specification, cancellationToken);
 
             // Publish event.
             await _mediator.Publish(new TriggersDeleted(workflowTriggers), cancellationToken);
