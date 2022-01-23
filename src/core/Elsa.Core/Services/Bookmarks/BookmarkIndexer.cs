@@ -68,12 +68,6 @@ namespace Elsa.Services.Bookmarks
 
         public async Task IndexBookmarksAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken)
         {
-            if (workflowInstance.WorkflowStatus != WorkflowStatus.Suspended)
-            {
-                _logger.LogWarning("Indexing bookmarks of an unsuspended workflow ca lead to unpredictable results. Not doing it");
-                return;
-            }
-
             _stopwatch.Restart();
             _logger.LogInformation("Indexing bookmarks for workflow instance {WorkflowInstanceId}", workflowInstance.Id);
 

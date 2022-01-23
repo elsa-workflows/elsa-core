@@ -32,13 +32,13 @@ public class UpdateTriggers :
     public async Task Handle(WorkflowDefinitionDeleted notification, CancellationToken cancellationToken)
     {
         var workflowDefinition = notification.WorkflowDefinition;
-        await _triggerIndexer.DeleteTriggersAsync(workflowDefinition.Id, cancellationToken);
+        await _triggerIndexer.DeleteTriggersAsync(workflowDefinition.DefinitionId, cancellationToken);
     }
 
     public async Task Handle(WorkflowDefinitionRetracted notification, CancellationToken cancellationToken)
     {
         var workflowDefinition = notification.WorkflowDefinition;
-        await _triggerIndexer.DeleteTriggersAsync(workflowDefinition.Id, cancellationToken);
+        await _triggerIndexer.DeleteTriggersAsync(workflowDefinition.DefinitionId, cancellationToken);
     }
 
     public async Task Handle(ManyWorkflowDefinitionsDeleted notification, CancellationToken cancellationToken)
