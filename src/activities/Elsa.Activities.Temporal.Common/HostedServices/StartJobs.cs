@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Elsa.Activities.Temporal.Common.Bookmarks;
 using Elsa.Activities.Temporal.Common.Services;
 using Elsa.HostedServices;
+using Elsa.Models;
 using Elsa.Services;
 using Microsoft.Extensions.Logging;
 using Open.Linq.AsyncExtensions;
@@ -13,7 +14,7 @@ using Polly.Retry;
 namespace Elsa.Activities.Temporal.Common.HostedServices
 {
     /// <summary>
-    /// Starts jobs based on workflow instances blocked on a Timer, Cron or StartAt activity.
+    /// Starts jobs based on triggers & bookmarks for Timer, Cron or StartAt activity.
     /// </summary>
     public class StartJobs : IScopedBackgroundService
     {
@@ -21,22 +22,34 @@ namespace Elsa.Activities.Temporal.Common.HostedServices
         private const string? TenantId = default;
 
         private readonly IBookmarkFinder _bookmarkFinder;
+        private readonly ITriggerFinder _triggerFinder;
+        private readonly IBookmarkSerializer _bookmarkSerializer;
         private readonly IWorkflowInstanceScheduler _workflowInstanceScheduler;
+        private readonly IWorkflowDefinitionScheduler _workflowDefinitionScheduler;
         private readonly IDistributedLockProvider _distributedLockProvider;
         private readonly ILogger<StartJobs> _logger;
         private readonly AsyncRetryPolicy _retryPolicy;
 
-        public StartJobs(IBookmarkFinder bookmarkFinder, IWorkflowInstanceScheduler workflowInstanceScheduler, IDistributedLockProvider distributedLockProvider, ILogger<StartJobs> logger)
+        public StartJobs(
+            IBookmarkFinder bookmarkFinder,
+            ITriggerFinder triggerFinder,
+            IBookmarkSerializer bookmarkSerializer,
+            IWorkflowInstanceScheduler workflowInstanceScheduler,
+            IWorkflowDefinitionScheduler workflowDefinitionScheduler,
+            IDistributedLockProvider distributedLockProvider,
+            ILogger<StartJobs> logger)
         {
             _bookmarkFinder = bookmarkFinder;
+            _triggerFinder = triggerFinder;
+            _bookmarkSerializer = bookmarkSerializer;
             _workflowInstanceScheduler = workflowInstanceScheduler;
+            _workflowDefinitionScheduler = workflowDefinitionScheduler;
             _distributedLockProvider = distributedLockProvider;
             _logger = logger;
 
             _retryPolicy = Policy
                 .Handle<Exception>()
-                .WaitAndRetryForeverAsync(retryAttempt =>
-                    TimeSpan.FromSeconds(5)
+                .WaitAndRetryForeverAsync(_ => TimeSpan.FromSeconds(5)
                 );
         }
 
@@ -52,62 +65,69 @@ namespace Elsa.Activities.Temporal.Common.HostedServices
 
         private async Task ExecuteInternalAsync(CancellationToken cancellationToken)
         {
-            await ScheduleTimerEventWorkflowsAsync(cancellationToken);
-            await ScheduleCronEventWorkflowsAsync(cancellationToken);
-            await ScheduleStartAtWorkflowsAsync(cancellationToken);
+            await ScheduleTimerEventsAsync(cancellationToken);
+            await ScheduleCronEventsAsync(cancellationToken);
+            await ScheduleStartAtEventsAsync(cancellationToken);
         }
 
-        private async Task ScheduleStartAtWorkflowsAsync(CancellationToken cancellationToken)
+        private async Task ScheduleStartAtEventsAsync(CancellationToken cancellationToken)
         {
-            // Schedule workflow instances that are blocked on a start-at.
-            var bookmarkResults = await _bookmarkFinder.FindBookmarksAsync<StartAt>(tenantId: TenantId, cancellationToken: cancellationToken).ToList();
+            await ScheduleBookmarksAsync<StartAtBookmark>((bookmark, model) =>
+                _workflowInstanceScheduler.ScheduleAsync(bookmark.WorkflowInstanceId, bookmark.ActivityId, model.ExecuteAt, null, cancellationToken), cancellationToken);
+            
+            await ScheduleTriggersAsync<StartAtBookmark>((trigger, model) => 
+                _workflowDefinitionScheduler.ScheduleAsync(trigger.WorkflowDefinitionId, trigger.ActivityId, model.ExecuteAt, null, cancellationToken), cancellationToken);
+        }
+        
+        private async Task ScheduleTimerEventsAsync(CancellationToken cancellationToken)
+        {
+            await ScheduleBookmarksAsync<TimerBookmark>((bookmark, model) =>
+                _workflowInstanceScheduler.ScheduleAsync(bookmark.WorkflowInstanceId, bookmark.ActivityId, model.ExecuteAt, null, cancellationToken), cancellationToken);
+            
+            await ScheduleTriggersAsync<TimerBookmark>((trigger, model) => 
+                _workflowDefinitionScheduler.ScheduleAsync(trigger.WorkflowDefinitionId, trigger.ActivityId, model.ExecuteAt, model.Interval, cancellationToken), cancellationToken);
+        }
+        
+        private async Task ScheduleCronEventsAsync(CancellationToken cancellationToken)
+        {
+            await ScheduleBookmarksAsync<CronBookmark>((bookmark, model) =>
+                _workflowInstanceScheduler.ScheduleAsync(bookmark.WorkflowInstanceId!, bookmark.ActivityId, model.ExecuteAt!.Value, null, cancellationToken), cancellationToken);
+            
+            await ScheduleTriggersAsync<CronBookmark>((trigger, model) => 
+                _workflowDefinitionScheduler.ScheduleAsync(trigger.WorkflowDefinitionId, trigger.ActivityId, model.ExecuteAt!.Value, null, cancellationToken), cancellationToken);
+        }
+        
+        private async Task ScheduleTriggersAsync<T>(Func<TriggerFinderResult, T, Task> scheduleAction, CancellationToken cancellationToken) where T : IBookmark
+        {
+            var results = await _triggerFinder.FindTriggersByTypeAsync<T>(TenantId, cancellationToken).ToList();
 
-            _logger.LogDebug("Found {BookmarkResultCount} bookmarks for StartAt", bookmarkResults.Count);
+            _logger.LogDebug("Found {TriggerResultCount} triggers for Timer", results.Count);
             var index = 0;
 
-            foreach (var result in bookmarkResults)
+            foreach (var result in results)
             {
-                var bookmark = (StartAtBookmark)result.Bookmark;
-                await _workflowInstanceScheduler.ScheduleAsync(result.WorkflowInstanceId!, result.ActivityId, bookmark.ExecuteAt, null, cancellationToken);
+                var bookmark = (T)result.Bookmark;
+                await scheduleAction(result, bookmark);
 
                 index++;
-                _logger.LogDebug("Scheduled {CurrentBookmarkIndex} of {BookmarkResultCount}", index, bookmarkResults.Count);
+                _logger.LogDebug("Scheduled {CurrentTriggerIndex} of {TriggerResultCount}", index, results.Count);
             }
         }
 
-        private async Task ScheduleTimerEventWorkflowsAsync(CancellationToken cancellationToken)
+        private async Task ScheduleBookmarksAsync<T>(Func<Bookmark, T, Task> scheduleAction, CancellationToken cancellationToken) where T : IBookmark
         {
-            // Schedule workflow instances that are blocked on a timer.
-            var bookmarkResults = await _bookmarkFinder.FindBookmarksAsync<Timer>(tenantId: TenantId, cancellationToken: cancellationToken).ToList();
+            var bookmarks = await _bookmarkFinder.FindBookmarksByTypeAsync<T>(TenantId, cancellationToken).ToList();
 
-            _logger.LogDebug("Found {BookmarkResultCount} bookmarks for Timer", bookmarkResults.Count);
+            _logger.LogDebug("Found {BookmarkResultCount} bookmarks for {BookmarkType}", bookmarks.Count, typeof(T).Name);
             var index = 0;
 
-            foreach (var result in bookmarkResults)
+            foreach (var result in bookmarks)
             {
-                var bookmark = (TimerBookmark)result.Bookmark;
-                await _workflowInstanceScheduler.ScheduleAsync(result.WorkflowInstanceId!, result.ActivityId, bookmark.ExecuteAt, null, cancellationToken);
+                var bookmark = _bookmarkSerializer.Deserialize<T>(result.Model);
+                await scheduleAction(result, bookmark);
 
                 index++;
-                _logger.LogDebug("Scheduled {CurrentBookmarkIndex} of {BookmarkResultCount}", index, bookmarkResults.Count);
-            }
-        }
-
-        private async Task ScheduleCronEventWorkflowsAsync(CancellationToken cancellationToken)
-        {
-            // Schedule workflow instances blocked on a cron event.
-            var bookmarkResults = await _bookmarkFinder.FindBookmarksAsync<Cron>(tenantId: TenantId, cancellationToken: cancellationToken).ToList();
-
-            _logger.LogDebug("Found {BookmarkResultCount} bookmarks for StartAt", bookmarkResults.Count);
-            var index = 0;
-
-            foreach (var result in bookmarkResults)
-            {
-                var trigger = (CronBookmark)result.Bookmark;
-                await _workflowInstanceScheduler.ScheduleAsync(result.WorkflowInstanceId!, result.ActivityId, trigger.ExecuteAt!.Value, null, cancellationToken);
-
-                index++;
-                _logger.LogDebug("Scheduled {CurrentBookmarkIndex} of {BookmarkResultCount}", index, bookmarkResults.Count);
+                _logger.LogDebug("Scheduled {CurrentBookmarkIndex} of {BookmarkResultCount}", index, bookmarks.Count);
             }
         }
     }
