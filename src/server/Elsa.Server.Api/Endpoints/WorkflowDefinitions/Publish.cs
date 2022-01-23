@@ -1,12 +1,11 @@
-﻿using System.Threading;
+﻿using System.Net.Mime;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
-using Elsa.Persistence;
 using Elsa.Server.Api.Swagger.Examples;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.Filters;
 
@@ -19,13 +18,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
     public class Publish : ControllerBase
     {
         private readonly IWorkflowPublisher _workflowPublisher;
-        private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
-
-        public Publish(IWorkflowPublisher workflowPublisher, IWorkflowDefinitionStore workflowDefinitionStore)
-        {
-            _workflowPublisher = workflowPublisher;
-            _workflowDefinitionStore = workflowDefinitionStore;
-        }
+        public Publish(IWorkflowPublisher workflowPublisher) => _workflowPublisher = workflowPublisher;
 
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status202Accepted, Type = typeof(WorkflowDefinition))]
@@ -48,7 +41,10 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             // Publish the draft.
             var publishedWorkflowDefinition = await _workflowPublisher.PublishAsync(draft, cancellationToken);
 
-            return AcceptedAtAction("Handle", "GetByVersionId", new { versionId = publishedWorkflowDefinition.Id, apiVersion = apiVersion.ToString() }, publishedWorkflowDefinition);
+            var workflowDefinitionJson = SerializationHelper.SerializeWorkflowDefinition(publishedWorkflowDefinition);
+            var result = AcceptedAtAction("Handle", "GetByVersionId", new { versionId = publishedWorkflowDefinition.Id, apiVersion = apiVersion.ToString() }, workflowDefinitionJson);
+            result.ContentTypes.Add(MediaTypeNames.Application.Json);
+            return result;
         }
     }
 }
