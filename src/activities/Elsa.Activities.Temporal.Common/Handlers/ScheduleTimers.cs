@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Temporal.Common.Bookmarks;
@@ -8,7 +7,6 @@ using Elsa.Events;
 using Elsa.Services;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using Rebus.Extensions;
 
 namespace Elsa.Activities.Temporal.Common.Handlers
 {

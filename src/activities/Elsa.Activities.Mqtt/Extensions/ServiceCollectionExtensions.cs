@@ -9,7 +9,6 @@ using Elsa.Activities.Mqtt.Testing.Handlers;
 using Elsa.Events;
 using Elsa.Options;
 using Elsa.Runtime;
-using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Activities.Mqtt.Extensions

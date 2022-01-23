@@ -6,7 +6,6 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Attributes;
 using Elsa.Models;
 using Elsa.Serialization;
 using Elsa.Services;

@@ -1,9 +1,6 @@
 using Elsa.Builders;
-using Elsa.Models;
 using Elsa.Testing.Shared.Unit;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
@@ -15,7 +12,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Azure.ServiceBus;
 using System.Threading;
-using Elsa.Runtime;
 using Elsa.Activities.AzureServiceBus.StartupTasks;
 using Elsa.Services;
 using Elsa.Services.Models;
