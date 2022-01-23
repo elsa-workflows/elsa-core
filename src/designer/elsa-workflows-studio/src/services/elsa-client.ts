@@ -136,6 +136,10 @@ export const createElsaClient = async function (serverUrl: string): Promise<Elsa
         return response.data;
       },
       findManyByDefinitionVersionIds: async (definitionVersionIds: Array<string>): Promise<Array<WorkflowBlueprintSummary>> => {
+
+        if (definitionVersionIds.length == 0)
+          return [];
+
         const idsQuery = definitionVersionIds.join(",")
         const response = await httpClient.get<Array<WorkflowBlueprintSummary>>(`v1/workflow-registry/by-definition-version-ids?ids=${idsQuery}`);
         return response.data;
