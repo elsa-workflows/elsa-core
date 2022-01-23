@@ -1,9 +1,9 @@
-using Elsa.Builders;
 using System;
 using System.Net.Mqtt;
 using System.Runtime.CompilerServices;
+using Elsa.Builders;
 
-namespace Elsa.Activities.Mqtt
+namespace Elsa.Activities.Mqtt.Activities.MqttMessageReceived
 {
     public static class MqttMessageReceivedBuilderExtensions
     {

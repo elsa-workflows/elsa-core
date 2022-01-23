@@ -7,6 +7,7 @@ using System;
 using System.Net.Mqtt;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.Mqtt.Activities.MqttMessageReceived;
 
 namespace Elsa.Activities.Mqtt.Services
 {

@@ -155,13 +155,6 @@ export class ElsaWorkflowInstanceListScreen {
     this.currentPageSize = Math.max(Math.min(this.currentPageSize, ElsaWorkflowInstanceListScreen.MAX_PAGE_SIZE), ElsaWorkflowInstanceListScreen.MIN_PAGE_SIZE);
   }
 
-  async loadWorkflowBlueprints() {
-    const elsaClient = await this.createClient();
-    const versionOptions: VersionOptions = {allVersions: true};
-    const workflowBlueprintPagedList = await elsaClient.workflowRegistryApi.list(null, null, versionOptions);
-    this.workflowBlueprints = workflowBlueprintPagedList.items;
-  }
-
   async loadWorkflowInstances() {
     this.currentPage = isNaN(this.currentPage) ? ElsaWorkflowInstanceListScreen.START_PAGE : this.currentPage;
     this.currentPage = Math.max(this.currentPage, ElsaWorkflowInstanceListScreen.START_PAGE);
@@ -176,6 +169,12 @@ export class ElsaWorkflowInstanceListScreen {
     }
 
     this.setSelectAllIndeterminateState();
+  }
+
+  async loadWorkflowBlueprints(definitionVersionIds: Array<string>) {
+    const elsaClient = await this.createClient();
+    const workflowBlueprintPagedList = await elsaClient.workflowRegistryApi.findManyByDefinitionVersionIds(definitionVersionIds);
+    this.workflowBlueprints = workflowBlueprintPagedList.items;
   }
 
   createClient() {

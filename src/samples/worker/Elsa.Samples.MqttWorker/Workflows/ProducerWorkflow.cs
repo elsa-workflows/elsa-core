@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using NodaTime;
 using System;
 using System.Net.Mqtt;
+using Elsa.Activities.Mqtt.Activities.SendMqttMessage;
 
 namespace Elsa.Samples.MqttWorker.Workflows
 {

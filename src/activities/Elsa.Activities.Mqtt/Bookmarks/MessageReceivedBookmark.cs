@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net.Mqtt;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.Mqtt.Activities.MqttMessageReceived;
 using Elsa.Attributes;
 
 namespace Elsa.Activities.Mqtt.Bookmarks
