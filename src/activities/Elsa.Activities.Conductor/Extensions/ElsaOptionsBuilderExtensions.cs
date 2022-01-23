@@ -37,10 +37,7 @@ namespace Elsa.Activities.Conductor.Extensions
                 .AddActivityTypeProvider<EventActivityTypeProvider>()
                 .AddActivityTypeProvider<TaskActivityTypeProvider>()
                 .AddBookmarkProvider<EventBookmarkProvider>()
-                .AddBookmarkProvider<TaskBookmarkProvider>()
-                .AddSingleton<Scoped<IEnumerable<ICommandsProvider>>>()
-                .AddSingleton<Scoped<IEnumerable<IEventsProvider>>>()
-                .AddSingleton<Scoped<IEnumerable<ITasksProvider>>>();
+                .AddBookmarkProvider<TaskBookmarkProvider>();
 
             elsa
                 .AddActivitiesFrom<SendCommand>()

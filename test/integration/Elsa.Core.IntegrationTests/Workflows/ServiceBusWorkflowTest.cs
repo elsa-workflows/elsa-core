@@ -43,7 +43,6 @@ namespace Elsa.Core.IntegrationTests.Workflows
                         .AddSingleton(TopicMessageSenderFactory.Object)
                         .AddSingleton(TopicMessageReceiverFactory.Object)
                         .AddSingleton<IWorkflowLaunchpad, WorkflowLaunchpad>()
-                        .AddSingleton<Scoped<IWorkflowLaunchpad>>()
                         .AddSingleton<IServiceBusTopicsStarter, ServiceBusTopicsStarter>()
                         .AddSingleton(WorkflowRegistryMoq.Object)
                         .AddBookmarkProvider<TopicMessageReceivedBookmarkProvider>()

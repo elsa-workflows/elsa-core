@@ -37,7 +37,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             _workers = new List<QueueWorker>();
         }
 
-        public async Task CreateWorkersAsync(IReadOnlyCollection<Trigger> triggers, CancellationToken cancellationToken = default)
+        public async Task CreateWorkersAsync(IEnumerable<Trigger> triggers, CancellationToken cancellationToken = default)
         {
             await _semaphore.WaitAsync(cancellationToken);
 
@@ -57,7 +57,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             }
         }
 
-        public async Task CreateWorkersAsync(IReadOnlyCollection<Bookmark> bookmarks, CancellationToken cancellationToken = default)
+        public async Task CreateWorkersAsync(IEnumerable<Bookmark> bookmarks, CancellationToken cancellationToken = default)
         {
             await _semaphore.WaitAsync(cancellationToken);
 
@@ -77,13 +77,13 @@ namespace Elsa.Activities.AzureServiceBus.Services
             }
         }
 
-        public async Task RemoveWorkersAsync(IReadOnlyCollection<Trigger> triggers, CancellationToken cancellationToken = default)
+        public async Task RemoveWorkersAsync(IEnumerable<Trigger> triggers, CancellationToken cancellationToken = default)
         {
             var workflowDefinitionIds = Filter(triggers).Select(x => x.WorkflowDefinitionId).Distinct().ToList();
             await RemoveWorkersAsync(workflowDefinitionIds);
         }
         
-        public async Task RemoveWorkersAsync(IReadOnlyCollection<Bookmark> bookmarks, CancellationToken cancellationToken = default)
+        public async Task RemoveWorkersAsync(IEnumerable<Bookmark> bookmarks, CancellationToken cancellationToken = default)
         {
             var workflowInstanceIds = Filter(bookmarks).Select(x => x.WorkflowInstanceId).Distinct().ToList();
             await RemoveWorkersAsync(workflowInstanceIds);

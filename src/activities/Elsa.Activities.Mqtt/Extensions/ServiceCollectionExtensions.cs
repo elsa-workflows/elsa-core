@@ -23,7 +23,6 @@ namespace Elsa.Activities.Mqtt.Extensions
                 .AddSingleton<IMessageReceiverClientFactory>(sp => sp.GetRequiredService<BusClientFactory>())
                 .AddSingleton<IMessageSenderClientFactory>(sp => sp.GetRequiredService<BusClientFactory>())
                 .AddSingleton<IMqttTopicsStarter, MqttTopicsStarter>()
-                .AddSingleton<Scoped<IWorkflowLaunchpad>>()
                 .AddStartupTask<StartMqttTopics>()
                 .AddBookmarkProvider<MessageReceivedBookmarkProvider>()
                 .AddSingleton<IMqttTestClientManager, MqttTestClientManager>()
