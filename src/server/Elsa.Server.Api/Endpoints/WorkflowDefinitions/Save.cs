@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Mime;
@@ -9,6 +10,7 @@ using Elsa.Server.Api.Swagger.Examples;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Formatters;
 using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.Filters;
 
@@ -78,9 +80,10 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             if (!isNew)
                 return Json(workflowDefinition, SerializationHelper.GetSettingsForWorkflowDefinition());
 
-            var workflowDefinitionJson = SerializationHelper.SerializeWorkflowDefinition(workflowDefinition);
-            var result = CreatedAtAction("Handle", "GetByVersionId", new { versionId = workflowDefinition.Id, apiVersion = apiVersion.ToString() }, workflowDefinitionJson);
-            result.ContentTypes.Add(MediaTypeNames.Application.Json);
+            var settings = SerializationHelper.GetSettingsForWorkflowDefinition();
+            var result = CreatedAtAction("Handle", "GetByVersionId", new { versionId = workflowDefinition.Id, apiVersion = apiVersion.ToString() }, workflowDefinition);
+            result.Formatters.Clear();
+            result.Formatters.Add(new NewtonsoftJsonOutputFormatter(settings, ArrayPool<char>.Shared, new MvcOptions()));
             return result;
         }
 
