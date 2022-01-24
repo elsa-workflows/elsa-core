@@ -42,10 +42,6 @@ namespace Elsa.Activities.AzureServiceBus.Extensions
             options.AddPubSubConsumer<RestartServiceBusQueuesConsumer, TriggersDeleted>("WorkflowManagementEvents");
             options.AddPubSubConsumer<RestartServiceBusQueuesConsumer, BookmarkIndexingFinished>("WorkflowManagementEvents");
             options.AddPubSubConsumer<RestartServiceBusQueuesConsumer, BookmarksDeleted>("WorkflowManagementEvents");
-            options.AddPubSubConsumer<RestartServiceBusTopicsConsumer, TriggerIndexingFinished>("WorkflowManagementEvents");
-            options.AddPubSubConsumer<RestartServiceBusTopicsConsumer, TriggersDeleted>("WorkflowManagementEvents");
-            options.AddPubSubConsumer<RestartServiceBusTopicsConsumer, BookmarkIndexingFinished>("WorkflowManagementEvents");
-            options.AddPubSubConsumer<RestartServiceBusTopicsConsumer, BookmarksDeleted>("WorkflowManagementEvents");
 
             options
                 .AddActivity<AzureServiceBusQueueMessageReceived>()

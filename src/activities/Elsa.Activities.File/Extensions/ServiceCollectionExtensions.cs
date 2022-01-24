@@ -41,7 +41,6 @@ namespace Microsoft.Extensions.DependencyInjection
             builder.Services.AddBookmarkProvider<FileCreatedBookmarkProvider>()
                 .AddAutoMapperProfile<FileSystemEventProfile>()
                 .AddSingleton<FileSystemWatchersStarter>()
-                .AddSingleton<Scoped<IWorkflowLaunchpad>>()
                 .AddHostedService<StartFileSystemWatchers>();
 
             return builder;

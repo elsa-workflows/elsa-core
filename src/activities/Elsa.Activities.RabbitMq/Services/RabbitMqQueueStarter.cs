@@ -22,6 +22,7 @@ namespace Elsa.Activities.RabbitMq.Services
         private readonly ICollection<Worker> _workers;
         private readonly IMessageReceiverClientFactory _messageReceiverClientFactory;
         private readonly ILogger _logger;
+        private readonly IBookmarkSerializer _bookmarkSerializer;
 
         public RabbitMqQueueStarter(
             IMessageReceiverClientFactory messageReceiverClientFactory,
@@ -34,6 +35,7 @@ namespace Elsa.Activities.RabbitMq.Services
             _scopeFactory = scopeFactory;
             _serviceProvider = serviceProvider;
             _logger = logger;
+            _bookmarkSerializer = bookmarkSerializer;
             _workers = new List<Worker>();
         }
 
@@ -81,7 +83,7 @@ namespace Elsa.Activities.RabbitMq.Services
 
             foreach (var trigger in triggers)
             {
-                var bookmark = (MessageReceivedBookmark)trigger.Bookmark;
+                var bookmark =_bookmarkSerializer.Deserialize<MessageReceivedBookmark>(trigger.Model);
                 
                 var connectionString = bookmark.ConnectionString;
                 var exchangeName = bookmark.ExchangeName;

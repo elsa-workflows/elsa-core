@@ -20,7 +20,6 @@ namespace Elsa.Activities.RabbitMq.Extensions
                 .AddSingleton<IMessageReceiverClientFactory>(sp => sp.GetRequiredService<BusClientFactory>())
                 .AddSingleton<IMessageSenderClientFactory>(sp => sp.GetRequiredService<BusClientFactory>())
                 .AddSingleton<IRabbitMqQueueStarter, RabbitMqQueueStarter>()
-                .AddSingleton<Scoped<IWorkflowLaunchpad>>()
                 .AddSingleton<IRabbitMqTestQueueManager, RabbitMqTestQueueManager>()
                 .AddNotificationHandlersFrom<ConfigureRabbitMqActivitiesForTestHandler>()
                 .AddStartupTask<StartRabbitMqQueues>()

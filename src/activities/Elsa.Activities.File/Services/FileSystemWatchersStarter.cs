@@ -22,19 +22,18 @@ namespace Elsa.Activities.File.Services
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly SemaphoreSlim _semaphore = new(1);
         private readonly ICollection<FileSystemWatcher> _watchers;
-        private readonly Scoped<IWorkflowLaunchpad> _workflowLaunchpad;
+        private readonly IBookmarkSerializer _bookmarkSerializer;
 
         public FileSystemWatchersStarter(ILogger<FileSystemWatchersStarter> logger,
             IMapper mapper,
             IServiceScopeFactory scopeFactory,
-            IServiceProvider serviceProvider,
-            Scoped<IWorkflowLaunchpad> workflowLaunchpad)
+            IBookmarkSerializer bookmarkSerializer)
         {
             _logger = logger;
             _mapper = mapper;
             _scopeFactory = scopeFactory;
+            _bookmarkSerializer = bookmarkSerializer;
             _watchers = new List<FileSystemWatcher>();
-            _workflowLaunchpad = workflowLaunchpad;
         }
 
         public async Task CreateAndAddWatchersAsync(CancellationToken cancellationToken = default)
@@ -53,7 +52,7 @@ namespace Elsa.Activities.File.Services
 
                 foreach (var trigger in triggers)
                 {
-                    var bookmark = (FileSystemEventBookmark) trigger.Bookmark;
+                    var bookmark = _bookmarkSerializer.Deserialize<FileSystemEventBookmark>(trigger.Model);
 
                     var changeTypes = bookmark.ChangeTypes;
                     var notifyFilters = bookmark.NotifyFilters;
@@ -154,7 +153,10 @@ namespace Elsa.Activities.File.Services
             var model = _mapper.Map<FileSystemEvent>(e);
             var bookmark = new FileSystemEventBookmark(path, pattern, changeTypes, notifyFilter);
             var launchContext = new WorkflowsQuery(nameof(WatchDirectory), bookmark);
-            await _workflowLaunchpad.UseServiceAsync(s => s.CollectAndDispatchWorkflowsAsync(launchContext, new WorkflowInput(model)));
+
+            using var scope = _scopeFactory.CreateScope();
+            var workflowLaunchpad = scope.ServiceProvider.GetRequiredService<IWorkflowLaunchpad>();
+            await workflowLaunchpad.CollectAndDispatchWorkflowsAsync(launchContext, new WorkflowInput(model));
         }
         #endregion
     }
