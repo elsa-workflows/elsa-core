@@ -14,11 +14,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
     public class Delete : ControllerBase
     {
         private readonly IWorkflowPublisher _workflowPublisher;
-
-        public Delete(IWorkflowPublisher workflowPublisher)
-        {
-            _workflowPublisher = workflowPublisher;
-        }
+        public Delete(IWorkflowPublisher workflowPublisher) => _workflowPublisher = workflowPublisher;
 
         [HttpDelete]
         [ProducesResponseType(StatusCodes.Status202Accepted)]

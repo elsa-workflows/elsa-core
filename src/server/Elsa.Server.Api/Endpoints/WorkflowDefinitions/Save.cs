@@ -1,16 +1,14 @@
-using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Mime;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Serialization;
+using Elsa.Server.Api.Helpers;
 using Elsa.Server.Api.Swagger.Examples;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Formatters;
 using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.Filters;
 
@@ -80,19 +78,16 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             if (!isNew)
                 return Json(workflowDefinition, SerializationHelper.GetSettingsForWorkflowDefinition());
 
-            var settings = SerializationHelper.GetSettingsForWorkflowDefinition();
-            var result = CreatedAtAction("Handle", "GetByVersionId", new { versionId = workflowDefinition.Id, apiVersion = apiVersion.ToString() }, workflowDefinition);
-            result.Formatters.Clear();
-            result.Formatters.Add(new NewtonsoftJsonOutputFormatter(settings, ArrayPool<char>.Shared, new MvcOptions()));
-            return result;
+            return CreatedAtAction("Handle", "GetByVersionId", new { versionId = workflowDefinition.Id, apiVersion = apiVersion.ToString() }, workflowDefinition)
+                .ConfigureForWorkflowDefinition();
         }
 
         private Variables ParseVariables(string? json)
         {
             if (string.IsNullOrWhiteSpace(json))
                 return new Variables();
-            
-            var dictionary =_contentSerializer.Deserialize<Dictionary<string, object?>>(json); 
+
+            var dictionary = _contentSerializer.Deserialize<Dictionary<string, object?>>(json);
             var variables = new Variables(dictionary);
 
             return variables;

@@ -9,7 +9,6 @@ using Elsa.Builders;
 using Elsa.Converters;
 using Elsa.Decorators;
 using Elsa.Design;
-using Elsa.Events;
 using Elsa.Expressions;
 using Elsa.Handlers;
 using Elsa.HostedServices;

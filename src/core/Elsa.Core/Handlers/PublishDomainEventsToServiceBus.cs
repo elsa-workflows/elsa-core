@@ -7,9 +7,6 @@ using MediatR;
 namespace Elsa.Handlers
 {
     public class PublishDomainEventsToServiceBus :
-        // INotificationHandler<WorkflowDefinitionPublished>, 
-        // INotificationHandler<WorkflowDefinitionRetracted>, 
-        // INotificationHandler<WorkflowDefinitionDeleted>,
         INotificationHandler<TriggerIndexingFinished>,
         INotificationHandler<TriggersDeleted>,
         INotificationHandler<BookmarkIndexingFinished>,
@@ -18,13 +15,9 @@ namespace Elsa.Handlers
         private readonly IEventPublisher _eventPublisher;
 
         public PublishDomainEventsToServiceBus(IEventPublisher eventPublisher) => _eventPublisher = eventPublisher;
-
-        // public Task Handle(WorkflowDefinitionPublished notification, CancellationToken cancellationToken) => _eventPublisher.PublishAsync(notification);
-        // public Task Handle(WorkflowDefinitionRetracted notification, CancellationToken cancellationToken) => _eventPublisher.PublishAsync(notification);
-        // public Task Handle(WorkflowDefinitionDeleted notification, CancellationToken cancellationToken) => _eventPublisher.PublishAsync(notification);
-        public Task Handle(TriggerIndexingFinished notification, CancellationToken cancellationToken) => _eventPublisher.PublishAsync(notification);
-        public Task Handle(TriggersDeleted notification, CancellationToken cancellationToken) => _eventPublisher.PublishAsync(notification);
-        public Task Handle(BookmarkIndexingFinished notification, CancellationToken cancellationToken) => _eventPublisher.PublishAsync(notification);
-        public Task Handle(BookmarksDeleted notification, CancellationToken cancellationToken) => _eventPublisher.PublishAsync(notification);
+        public async Task Handle(TriggerIndexingFinished notification, CancellationToken cancellationToken) => await _eventPublisher.PublishAsync(notification);
+        public async Task Handle(TriggersDeleted notification, CancellationToken cancellationToken) => await _eventPublisher.PublishAsync(notification);
+        public async Task Handle(BookmarkIndexingFinished notification, CancellationToken cancellationToken) => await _eventPublisher.PublishAsync(notification);
+        public async Task Handle(BookmarksDeleted notification, CancellationToken cancellationToken) => await _eventPublisher.PublishAsync(notification);
     }
 }

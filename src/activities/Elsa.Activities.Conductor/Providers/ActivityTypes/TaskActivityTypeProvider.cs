@@ -10,6 +10,7 @@ using Elsa.Metadata;
 using Elsa.Providers.Activities;
 using Elsa.Services;
 using Elsa.Services.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Activities.Conductor.Providers.ActivityTypes
 {
@@ -17,13 +18,13 @@ namespace Elsa.Activities.Conductor.Providers.ActivityTypes
     {
         private readonly IDescribesActivityType _describesActivityType;
         private readonly IActivityActivator _activityActivator;
-        private readonly Scoped<IEnumerable<ITasksProvider>> _scopedTasksProviders;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
 
-        public TaskActivityTypeProvider(IDescribesActivityType describesActivityType, IActivityActivator activityActivator, Scoped<IEnumerable<ITasksProvider>> scopedTasksProviders)
+        public TaskActivityTypeProvider(IDescribesActivityType describesActivityType, IActivityActivator activityActivator, IServiceScopeFactory serviceScopeFactory)
         {
             _describesActivityType = describesActivityType;
             _activityActivator = activityActivator;
-            _scopedTasksProviders = scopedTasksProviders;
+            _serviceScopeFactory = serviceScopeFactory;
         }
 
         public async ValueTask<IEnumerable<ActivityType>> GetActivityTypesAsync(CancellationToken cancellationToken = default)
@@ -74,8 +75,12 @@ namespace Elsa.Activities.Conductor.Providers.ActivityTypes
             };
         }
 
-        private async Task<IEnumerable<TaskDefinition>> GetTasksAsync(CancellationToken cancellationToken) => 
-            await _scopedTasksProviders.UseServiceAsync(async taskProviders => await GetTasksAsync(taskProviders, cancellationToken).ToListAsync(cancellationToken));
+        private async Task<IEnumerable<TaskDefinition>> GetTasksAsync(CancellationToken cancellationToken)
+        {
+            using var scope = _serviceScopeFactory.CreateScope();
+            var providers = scope.ServiceProvider.GetRequiredService<IEnumerable<ITasksProvider>>();
+            return await GetTasksAsync(providers, cancellationToken).ToListAsync(cancellationToken);
+        }
 
         private static async IAsyncEnumerable<TaskDefinition> GetTasksAsync(IEnumerable<ITasksProvider> taskProviders, [EnumeratorCancellation] CancellationToken cancellationToken)
         {

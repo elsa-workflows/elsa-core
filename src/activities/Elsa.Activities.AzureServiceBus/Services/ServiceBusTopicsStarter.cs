@@ -1,16 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.AzureServiceBus.Bookmarks;
 using Elsa.Models;
-using Elsa.Persistence;
-using Elsa.Persistence.Specifications.Triggers;
-using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Services;
-using Elsa.Services.Models;
 using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -18,6 +13,8 @@ using Rebus.Extensions;
 
 namespace Elsa.Activities.AzureServiceBus.Services
 {
+    public record TopicWorkerKey(string Tag, string TopicName, string SubscriptionName);
+
     // TODO: Look for a way to merge ServiceBusQueuesStarter with ServiceBusTopicsStarter - there's a lot of overlap.
     public class ServiceBusTopicsStarter : IServiceBusTopicsStarter
     {
@@ -26,7 +23,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<ServiceBusTopicsStarter> _logger;
-        private readonly ICollection<TopicWorker> _workers;
+        private readonly IDictionary<TopicWorkerKey, TopicWorker> _workers;
         private readonly SemaphoreSlim _semaphore = new(1);
 
         public ServiceBusTopicsStarter(
@@ -41,7 +38,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             _serviceProvider = serviceProvider;
             _logger = logger;
             _bookmarkSerializer = bookmarkSerializer;
-            _workers = new List<TopicWorker>();
+            _workers = new Dictionary<TopicWorkerKey, TopicWorker>();
         }
 
         public async Task CreateWorkersAsync(IReadOnlyCollection<Trigger> triggers, CancellationToken cancellationToken = default)
@@ -91,12 +88,12 @@ namespace Elsa.Activities.AzureServiceBus.Services
             var workers =
                 from worker in _workers
                 from workflowId in workflowDefinitionIds
-                where worker.Tag == workflowId
+                where worker.Key.Tag == workflowId
                 select worker;
 
             foreach (var worker in workers.ToList())
             {
-                await worker.DisposeAsync();
+                await worker.Value.DisposeAsync();
                 _workers.Remove(worker);
             }
         }
@@ -111,9 +108,15 @@ namespace Elsa.Activities.AzureServiceBus.Services
         {
             try
             {
-                var receiver = await _receiverFactory.GetTopicReceiverAsync(topicName, subscriptionName, cancellationToken);
-                var worker = ActivatorUtilities.CreateInstance<TopicWorker>(_serviceProvider, tag, receiver, (Func<IReceiverClient, Task>)DisposeReceiverAsync);
-                _workers.Add(worker);
+                var key = new TopicWorkerKey(tag, topicName, subscriptionName);
+                var worker = _workers.ContainsKey(key) ? _workers[key] : default;
+
+                if (worker == null)
+                {
+                    var receiver = await _receiverFactory.GetTopicReceiverAsync(topicName, subscriptionName, cancellationToken);
+                    worker = ActivatorUtilities.CreateInstance<TopicWorker>(_serviceProvider, tag, receiver, (Func<IReceiverClient, Task>)DisposeReceiverAsync);
+                    _workers.Add(key, worker);
+                }
             }
             catch (Exception e)
             {
@@ -126,16 +129,16 @@ namespace Elsa.Activities.AzureServiceBus.Services
             var workers =
                 from worker in _workers
                 from tag in tags
-                where worker.Tag == tag
+                where worker.Key.Tag == tag
                 select worker;
 
             foreach (var worker in workers.ToList())
                 await RemoveWorkerAsync(worker);
         }
 
-        private async Task RemoveWorkerAsync(TopicWorker worker)
+        private async Task RemoveWorkerAsync(KeyValuePair<TopicWorkerKey, TopicWorker> worker)
         {
-            await worker.DisposeAsync();
+            await worker.Value.DisposeAsync();
             _workers.Remove(worker);
         }
 

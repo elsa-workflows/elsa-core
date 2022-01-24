@@ -2,7 +2,6 @@ using System;
 using System.Linq.Expressions;
 using Elsa.Models;
 using Elsa.Services;
-using Humanizer;
 using LinqKit;
 using Rebus.Extensions;
 

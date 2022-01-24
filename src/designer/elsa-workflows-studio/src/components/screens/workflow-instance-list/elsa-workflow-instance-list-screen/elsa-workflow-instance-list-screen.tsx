@@ -70,7 +70,6 @@ export class ElsaWorkflowInstanceListScreen {
     if (!!this.history)
       this.applyQueryString(this.history.location.search);
 
-    //await this.loadWorkflowBlueprints();
     await this.loadWorkflowInstances();
 
     const t = this.t;
@@ -133,7 +132,7 @@ export class ElsaWorkflowInstanceListScreen {
 
   t = (key: string, options?: any) => this.i18next.t(key, options);
 
-  applyQueryString(queryString?: string) {
+  private applyQueryString(queryString?: string) {
     const query = parseQuery(queryString);
 
     this.selectedWorkflowId = query.workflow;
@@ -147,7 +146,7 @@ export class ElsaWorkflowInstanceListScreen {
     this.currentPageSize = Math.max(Math.min(this.currentPageSize, ElsaWorkflowInstanceListScreen.MAX_PAGE_SIZE), ElsaWorkflowInstanceListScreen.MIN_PAGE_SIZE);
   }
 
-  async loadWorkflowInstances() {
+  private async loadWorkflowInstances() {
     this.currentPage = isNaN(this.currentPage) ? ElsaWorkflowInstanceListScreen.START_PAGE : this.currentPage;
     this.currentPage = Math.max(this.currentPage, ElsaWorkflowInstanceListScreen.START_PAGE);
     this.currentPageSize = isNaN(this.currentPageSize) ? ElsaWorkflowInstanceListScreen.DEFAULT_PAGE_SIZE : this.currentPageSize;
@@ -524,7 +523,7 @@ export class ElsaWorkflowInstanceListScreen {
                   name: 'Not Found',
                   displayName: '(Workflow definition not found)'
                 };
-                const displayName = workflowBlueprint.displayName || workflowBlueprint.name || 'Untitled';
+                const displayName = workflowBlueprint.displayName || workflowBlueprint.name || '(Untitled)';
                 const statusColor = this.getStatusColor(workflowInstance.workflowStatus);
                 const instanceViewUrl = `${basePath}/workflow-instances/${workflowInstance.id}`;
                 const correlationId = !!workflowInstance.correlationId ? workflowInstance.correlationId : ''
@@ -611,8 +610,7 @@ export class ElsaWorkflowInstanceListScreen {
               })}
               </tbody>
             </table>
-            <elsa-pager page={this.currentPage} pageSize={this.currentPageSize} totalCount={totalCount}
-                        history={this.history} onPaged={this.onPaged} culture={this.culture}/>
+            <elsa-pager page={this.currentPage} pageSize={this.currentPageSize} totalCount={totalCount} history={this.history} onPaged={this.onPaged} culture={this.culture}/>
           </div>
         </div>
       </div>

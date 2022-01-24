@@ -91,13 +91,13 @@ namespace Elsa.Activities.Temporal.Common.HostedServices
         private async Task ScheduleCronEventsAsync(CancellationToken cancellationToken)
         {
             await ScheduleBookmarksAsync<CronBookmark>((bookmark, model) =>
-                _workflowInstanceScheduler.ScheduleAsync(bookmark.WorkflowInstanceId!, bookmark.ActivityId, model.ExecuteAt!.Value, null, cancellationToken), cancellationToken);
+                _workflowInstanceScheduler.ScheduleAsync(bookmark.WorkflowInstanceId!, bookmark.ActivityId, model.CronExpression, cancellationToken), cancellationToken);
             
             await ScheduleTriggersAsync<CronBookmark>((trigger, model) => 
-                _workflowDefinitionScheduler.ScheduleAsync(trigger.WorkflowDefinitionId, trigger.ActivityId, model.ExecuteAt!.Value, null, cancellationToken), cancellationToken);
+                _workflowDefinitionScheduler.ScheduleAsync(trigger.WorkflowDefinitionId, trigger.ActivityId, model.CronExpression, cancellationToken), cancellationToken);
         }
         
-        private async Task ScheduleTriggersAsync<T>(Func<TriggerFinderResult, T, Task> scheduleAction, CancellationToken cancellationToken) where T : IBookmark
+        private async Task ScheduleTriggersAsync<T>(Func<Trigger, T, Task> scheduleAction, CancellationToken cancellationToken) where T : IBookmark
         {
             var results = await _triggerFinder.FindTriggersByTypeAsync<T>(TenantId, cancellationToken).ToList();
 
@@ -106,7 +106,7 @@ namespace Elsa.Activities.Temporal.Common.HostedServices
 
             foreach (var result in results)
             {
-                var bookmark = (T)result.Bookmark;
+                var bookmark = _bookmarkSerializer.Deserialize<T>(result.Model);
                 await scheduleAction(result, bookmark);
 
                 index++;

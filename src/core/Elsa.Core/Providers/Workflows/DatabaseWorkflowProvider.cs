@@ -45,7 +45,7 @@ namespace Elsa.Providers.Workflows
                 specification = specification.WithTenant(tenantId);
 
             var paging = skip != null && take != null ? new Paging(skip.Value, take.Value) : default;
-            var orderBy = new OrderBy<WorkflowDefinition>(x => x.Id, SortDirection.Ascending);
+            var orderBy = new OrderBy<WorkflowDefinition>(x => x.Name!, SortDirection.Ascending);
             var workflowDefinitions = await _workflowDefinitionStore.FindManyAsync(specification, orderBy, paging, cancellationToken);
 
             foreach (var workflowDefinition in workflowDefinitions)

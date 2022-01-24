@@ -292,6 +292,11 @@ export interface WorkflowStorageDescriptor {
   displayName?: string;
 }
 
+export interface WorkflowProviderDescriptor {
+  name: string;
+  displayName?: string;
+}
+
 export interface PagedList<T> {
   items: Array<T>;
   page?: number;

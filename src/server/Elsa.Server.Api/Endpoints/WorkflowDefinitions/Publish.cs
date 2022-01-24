@@ -1,7 +1,7 @@
-﻿using System.Net.Mime;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
+using Elsa.Server.Api.Helpers;
 using Elsa.Server.Api.Swagger.Examples;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
@@ -41,10 +41,8 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             // Publish the draft.
             var publishedWorkflowDefinition = await _workflowPublisher.PublishAsync(draft, cancellationToken);
 
-            var workflowDefinitionJson = SerializationHelper.SerializeWorkflowDefinition(publishedWorkflowDefinition);
-            var result = AcceptedAtAction("Handle", "GetByVersionId", new { versionId = publishedWorkflowDefinition.Id, apiVersion = apiVersion.ToString() }, workflowDefinitionJson);
-            result.ContentTypes.Add(MediaTypeNames.Application.Json);
-            return result;
+            return AcceptedAtAction("Handle", "GetByVersionId", new { versionId = publishedWorkflowDefinition.Id, apiVersion = apiVersion.ToString() }, publishedWorkflowDefinition)
+                .ConfigureForWorkflowDefinition();
         }
     }
 }

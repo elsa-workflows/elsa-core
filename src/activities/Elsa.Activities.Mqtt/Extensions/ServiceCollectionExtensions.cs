@@ -9,7 +9,6 @@ using Elsa.Activities.Mqtt.Testing.Handlers;
 using Elsa.Events;
 using Elsa.Options;
 using Elsa.Runtime;
-using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Activities.Mqtt.Extensions
@@ -23,7 +22,6 @@ namespace Elsa.Activities.Mqtt.Extensions
                 .AddSingleton<IMessageReceiverClientFactory>(sp => sp.GetRequiredService<BusClientFactory>())
                 .AddSingleton<IMessageSenderClientFactory>(sp => sp.GetRequiredService<BusClientFactory>())
                 .AddSingleton<IMqttTopicsStarter, MqttTopicsStarter>()
-                .AddSingleton<Scoped<IWorkflowLaunchpad>>()
                 .AddStartupTask<StartMqttTopics>()
                 .AddBookmarkProvider<MessageReceivedBookmarkProvider>()
                 .AddSingleton<IMqttTestClientManager, MqttTestClientManager>()

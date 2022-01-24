@@ -1,5 +1,4 @@
 using Elsa.Activities.Console;
-using Elsa.Activities.Mqtt;
 using Elsa.Activities.Temporal;
 using Elsa.Builders;
 using Microsoft.Extensions.Configuration;

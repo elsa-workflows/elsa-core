@@ -16,6 +16,7 @@ namespace Elsa.Activities.Mqtt.Services
     public class MqttTopicsStarter : IMqttTopicsStarter
     {
         private readonly IMessageReceiverClientFactory _receiverFactory;
+        private readonly IBookmarkSerializer _bookmarkSerializer;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<MqttTopicsStarter> _logger;
@@ -23,11 +24,13 @@ namespace Elsa.Activities.Mqtt.Services
 
         public MqttTopicsStarter(
             IMessageReceiverClientFactory receiverFactory,
+            IBookmarkSerializer bookmarkSerializer,
             IServiceScopeFactory scopeFactory,
             IServiceProvider serviceProvider,
             ILogger<MqttTopicsStarter> logger)
         {
             _receiverFactory = receiverFactory;
+            _bookmarkSerializer = bookmarkSerializer;
             _scopeFactory = scopeFactory;
             _serviceProvider = serviceProvider;
             _logger = logger;
@@ -63,10 +66,10 @@ namespace Elsa.Activities.Mqtt.Services
             using var scope = _scopeFactory.CreateScope();
             var triggerFinder = scope.ServiceProvider.GetRequiredService<ITriggerFinder>();
             var triggers = await triggerFinder.FindTriggersByTypeAsync<MessageReceivedBookmark>(cancellationToken: cancellationToken);
-            
+
             foreach (var trigger in triggers)
             {
-                var bookmark = (MessageReceivedBookmark)trigger.Bookmark;
+                var bookmark = _bookmarkSerializer.Deserialize<MessageReceivedBookmark>(trigger.Model);
                 var topic = bookmark.Topic;
                 var host = bookmark.Host;
                 var port = bookmark.Port;

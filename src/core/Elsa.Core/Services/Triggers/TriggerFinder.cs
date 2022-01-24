@@ -46,12 +46,10 @@ namespace Elsa.Services.Triggers
             return query;
         }
 
-        public async Task<IEnumerable<TriggerFinderResult>> FindTriggersByTypeAsync(string modelType, string? tenantId, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<Trigger>> FindTriggersByTypeAsync(string modelType, string? tenantId, CancellationToken cancellationToken = default)
         {
             var specification = new TriggerModelTypeSpecification(modelType, tenantId);
-            var triggers = await _triggerStore.FindManyAsync(specification, cancellationToken: cancellationToken);
-
-            return SelectResults(triggers);
+            return await _triggerStore.FindManyAsync(specification, cancellationToken: cancellationToken);
         }
 
         private IEnumerable<TriggerFinderResult> SelectResults(IEnumerable<Trigger> triggers) =>

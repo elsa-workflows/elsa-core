@@ -1,19 +1,16 @@
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Attributes;
 using Elsa.Events;
 using Elsa.Models;
+using Elsa.Options;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications.Triggers;
 using Elsa.Providers.Workflows;
 using Elsa.Services.Models;
-using Elsa.Services.Workflows;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Open.Linq.AsyncExtensions;
@@ -23,12 +20,12 @@ namespace Elsa.Services.Triggers
 {
     public class TriggerIndexer : ITriggerIndexer
     {
-        private static Func<IWorkflowProvider, bool> SkipDynamicProviders => x => !x.GetType().GetCustomAttributes<SkipTriggerIndexingAttribute>().Any();
         private readonly ITriggerStore _triggerStore;
         private readonly IBookmarkSerializer _bookmarkSerializer;
         private readonly IMediator _mediator;
         private readonly IIdGenerator _idGenerator;
         private readonly IEnumerable<IWorkflowProvider> _workflowProviders;
+        private readonly ElsaOptions _elsaOptions;
         private readonly ILogger _logger;
         private readonly Stopwatch _stopwatch = new();
         private readonly IGetsTriggersForWorkflowBlueprints _getsTriggersForWorkflows;
@@ -39,6 +36,7 @@ namespace Elsa.Services.Triggers
             IMediator mediator,
             IIdGenerator idGenerator,
             IEnumerable<IWorkflowProvider> workflowProviders,
+            ElsaOptions elsaOptions,
             ILogger<TriggerIndexer> logger,
             IGetsTriggersForWorkflowBlueprints getsTriggersForWorkflows)
         {
@@ -47,13 +45,14 @@ namespace Elsa.Services.Triggers
             _mediator = mediator;
             _idGenerator = idGenerator;
             _workflowProviders = workflowProviders;
+            _elsaOptions = elsaOptions;
             _logger = logger;
             _getsTriggersForWorkflows = getsTriggersForWorkflows;
         }
 
         public async Task IndexTriggersAsync(CancellationToken cancellationToken = default)
         {
-            var workflowBlueprints = await GetStaticWorkflowBlueprintsAsync(cancellationToken).ToListAsync(cancellationToken);
+            var workflowBlueprints = await GetWorkflowBlueprintsAsync(cancellationToken).ToListAsync(cancellationToken);
             await IndexTriggersAsync(workflowBlueprints, cancellationToken);
         }
 
@@ -92,7 +91,7 @@ namespace Elsa.Services.Triggers
                     Model = _bookmarkSerializer.Serialize(bookmark),
                     ModelType = bookmark.GetType().GetSimpleAssemblyQualifiedName()
                 };
-                
+
                 triggers.Add(trigger);
                 await _triggerStore.SaveAsync(trigger, cancellationToken);
             }
@@ -116,11 +115,12 @@ namespace Elsa.Services.Triggers
             _logger.LogDebug("Deleted {DeletedTriggerCount} triggers for workflow {WorkflowDefinitionId}", count, workflowDefinitionId);
         }
 
-        private async IAsyncEnumerable<IWorkflowBlueprint> GetStaticWorkflowBlueprintsAsync([EnumeratorCancellation] CancellationToken cancellationToken)
+        private async IAsyncEnumerable<IWorkflowBlueprint> GetWorkflowBlueprintsAsync([EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            var staticWorkflowProviders = _workflowProviders.Where(SkipDynamicProviders).ToList();
+            var excludedProviderTypes = _elsaOptions.WorkflowTriggerIndexingOptions.ExcludedProviders;
+            var workflowProviders = _workflowProviders.Where(x => !excludedProviderTypes.Contains(x.GetType())).ToList();
 
-            foreach (var workflowProvider in staticWorkflowProviders)
+            foreach (var workflowProvider in workflowProviders)
             {
                 var workflowBlueprints = workflowProvider.ListAsync(VersionOptions.Published, cancellationToken: cancellationToken);
 

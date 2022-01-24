@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Scripting.Liquid.Services;
 using Elsa.Services;
-using Elsa.Services.Models;
 using Fluid;
 using Fluid.Values;
 

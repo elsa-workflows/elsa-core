@@ -9,6 +9,7 @@ using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -18,25 +19,24 @@ namespace Elsa.Activities.AzureServiceBus.Services
     {
         // TODO: Design multi-tenancy. 
         private const string? TenantId = default;
-
-        private readonly Scoped<IWorkflowLaunchpad> _workflowLaunchpad;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly Func<IReceiverClient, Task> _disposeReceiverAction;
         private readonly ILogger _logger;
 
         protected WorkerBase(
             string tag,
             IReceiverClient receiverClient,
-            Scoped<IWorkflowLaunchpad> workflowLaunchpad,
+            IServiceScopeFactory serviceScopeFactory,
             IOptions<AzureServiceBusOptions> options,
-            Func<IReceiverClient, Task> disposeReceiverAction, 
+            Func<IReceiverClient, Task> disposeReceiverAction,
             ILogger logger)
         {
             Tag = tag;
             ReceiverClient = receiverClient;
-            _workflowLaunchpad = workflowLaunchpad;
+            _serviceScopeFactory = serviceScopeFactory;
             _disposeReceiverAction = disposeReceiverAction;
             _logger = logger;
-            
+
             ReceiverClient.RegisterMessageHandler(OnMessageReceived, new MessageHandlerOptions(ExceptionReceivedHandler)
             {
                 AutoComplete = false,
@@ -77,8 +77,10 @@ namespace Elsa.Activities.AzureServiceBus.Services
 
             var bookmark = CreateBookmark(message);
             var launchContext = new WorkflowsQuery(ActivityType, bookmark, correlationId);
-            
-            await _workflowLaunchpad.UseServiceAsync(service => service.CollectAndDispatchWorkflowsAsync(launchContext, new WorkflowInput(model), cancellationToken));
+
+            using var scope = _serviceScopeFactory.CreateScope();
+            var workflowLaunchpad = scope.ServiceProvider.GetRequiredService<IWorkflowLaunchpad>();
+            await workflowLaunchpad.CollectAndDispatchWorkflowsAsync(launchContext, new WorkflowInput(model), cancellationToken);
         }
 
         private Task ExceptionReceivedHandler(ExceptionReceivedEventArgs e)
