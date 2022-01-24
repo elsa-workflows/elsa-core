@@ -52,7 +52,7 @@ namespace Elsa.Services.Triggers
 
         public async Task IndexTriggersAsync(CancellationToken cancellationToken = default)
         {
-            var workflowBlueprints = await GetStaticWorkflowBlueprintsAsync(cancellationToken).ToListAsync(cancellationToken);
+            var workflowBlueprints = await GetWorkflowBlueprintsAsync(cancellationToken).ToListAsync(cancellationToken);
             await IndexTriggersAsync(workflowBlueprints, cancellationToken);
         }
 
@@ -115,12 +115,12 @@ namespace Elsa.Services.Triggers
             _logger.LogDebug("Deleted {DeletedTriggerCount} triggers for workflow {WorkflowDefinitionId}", count, workflowDefinitionId);
         }
 
-        private async IAsyncEnumerable<IWorkflowBlueprint> GetStaticWorkflowBlueprintsAsync([EnumeratorCancellation] CancellationToken cancellationToken)
+        private async IAsyncEnumerable<IWorkflowBlueprint> GetWorkflowBlueprintsAsync([EnumeratorCancellation] CancellationToken cancellationToken)
         {
             var excludedProviderTypes = _elsaOptions.WorkflowTriggerIndexingOptions.ExcludedProviders;
-            var staticWorkflowProviders = _workflowProviders.Where(x => !excludedProviderTypes.Contains(x.GetType())).ToList();
+            var workflowProviders = _workflowProviders.Where(x => !excludedProviderTypes.Contains(x.GetType())).ToList();
 
-            foreach (var workflowProvider in staticWorkflowProviders)
+            foreach (var workflowProvider in workflowProviders)
             {
                 var workflowBlueprints = workflowProvider.ListAsync(VersionOptions.Published, cancellationToken: cancellationToken);
 
