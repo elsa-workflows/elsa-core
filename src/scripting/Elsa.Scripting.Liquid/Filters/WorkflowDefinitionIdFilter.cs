@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Elsa.Models;
 using Elsa.Scripting.Liquid.Services;
 using Elsa.Services;
-using Elsa.Services.Models;
 using Fluid;
 using Fluid.Values;
 
@@ -20,16 +20,27 @@ namespace Elsa.Scripting.Liquid.Filters
             var queryType = arguments.Values?.FirstOrDefault()?.ToStringValue() ?? "name";
             var queryValue = input.ToStringValue().ToLowerInvariant();
 
-            Func<IWorkflowBlueprint, bool> predicate = queryType switch
+            var task = queryType switch
             {
-                "name" => x => string.Equals(x.Name, queryValue, StringComparison.OrdinalIgnoreCase),
-                "tag" => x => string.Equals(x.Tag, queryValue, StringComparison.OrdinalIgnoreCase),
+                "name" => GetWorkflowDefinitionIdByName(queryValue) ,
+                "tag" => GetWorkflowDefinitionIdByTag(queryValue),
                 _ => throw new ArgumentOutOfRangeException()
             };
 
-            var workflowBlueprint = await _workflowRegistry.FindAsync(predicate);
-            var workflowDefinitionId = workflowBlueprint?.Id;
+            var workflowDefinitionId = await task;
             return new StringValue(workflowDefinitionId);
+        }
+        
+        private async Task<string?> GetWorkflowDefinitionIdByTag(string tag)
+        {
+            var workflowBlueprint = await _workflowRegistry.FindByTagAsync(tag, VersionOptions.Published);
+            return workflowBlueprint?.Id;
+        }
+
+        private async Task<string?> GetWorkflowDefinitionIdByName(string name)
+        {
+            var workflowBlueprint = await _workflowRegistry.FindByNameAsync(name, VersionOptions.Published);
+            return workflowBlueprint?.Id;
         }
     }
 }

@@ -19,10 +19,10 @@ namespace Elsa.Persistence.Specifications.Bookmarks
 
         public override Expression<Func<Bookmark, bool>> ToExpression() =>
             CorrelationId == null
-            ? bookmark => bookmark.TenantId == TenantId
-                && bookmark.ActivityType == ActivityType
-            : bookmark => bookmark.TenantId == TenantId
-                && bookmark.ActivityType == ActivityType
-                && bookmark.CorrelationId == CorrelationId;
+                ? bookmark => bookmark.TenantId == TenantId
+                              && bookmark.ActivityType == ActivityType
+                : bookmark => bookmark.TenantId == TenantId
+                              && bookmark.ActivityType == ActivityType
+                              && bookmark.CorrelationId == CorrelationId;
     }
 }

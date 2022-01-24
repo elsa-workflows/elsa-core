@@ -38,7 +38,7 @@ namespace Elsa.WorkflowTesting.Services
             string? tenantId = default,
             CancellationToken cancellationToken = default)
         {
-            var workflowBlueprint = await _workflowRegistry.GetAsync(workflowDefinitionId, tenantId, VersionOptions.SpecificVersion(version), cancellationToken);
+            var workflowBlueprint = await _workflowRegistry.FindAsync(workflowDefinitionId, VersionOptions.SpecificVersion(version), tenantId, cancellationToken);
 
             if (workflowBlueprint == null)
                 return null;

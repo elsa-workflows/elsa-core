@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
@@ -23,19 +22,18 @@ namespace Elsa.Activities.File.Services
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly SemaphoreSlim _semaphore = new(1);
         private readonly ICollection<FileSystemWatcher> _watchers;
-        private readonly Scoped<IWorkflowLaunchpad> _workflowLaunchpad;
+        private readonly IBookmarkSerializer _bookmarkSerializer;
 
         public FileSystemWatchersStarter(ILogger<FileSystemWatchersStarter> logger,
             IMapper mapper,
             IServiceScopeFactory scopeFactory,
-            IServiceProvider serviceProvider,
-            Scoped<IWorkflowLaunchpad> workflowLaunchpad)
+            IBookmarkSerializer bookmarkSerializer)
         {
             _logger = logger;
             _mapper = mapper;
             _scopeFactory = scopeFactory;
+            _bookmarkSerializer = bookmarkSerializer;
             _watchers = new List<FileSystemWatcher>();
-            _workflowLaunchpad = workflowLaunchpad;
         }
 
         public async Task CreateAndAddWatchersAsync(CancellationToken cancellationToken = default)
@@ -44,27 +42,37 @@ namespace Elsa.Activities.File.Services
 
             try
             {
-                if (_watchers.Any())
-                {
-                    foreach (var watcher in _watchers)
-                        watcher.Dispose();
+                DisposeExistingWatchers();
 
-                    _watchers.Clear();
-                }
+                using var scope = _scopeFactory.CreateScope();
+                var triggerFinder = scope.ServiceProvider.GetRequiredService<ITriggerFinder>();
+                await triggerFinder.FindTriggersAsync<WatchDirectory>(null, cancellationToken);
+                
+                var triggers = await triggerFinder.FindTriggersByTypeAsync<FileSystemEventBookmark>(cancellationToken: cancellationToken);
 
-                var activities = GetActivityInstancesAsync(cancellationToken);
-                await foreach (var a in activities.WithCancellation(cancellationToken))
+                foreach (var trigger in triggers)
                 {
-                    var changeTypes = await a.EvaluatePropertyValueAsync(x => x.ChangeTypes, cancellationToken);
-                    var notifyFilters = await a.EvaluatePropertyValueAsync(x => x.NotifyFilters, cancellationToken);
-                    var path = await a.EvaluatePropertyValueAsync(x => x.Path, cancellationToken);
-                    var pattern = await a.EvaluatePropertyValueAsync(x => x.Pattern, cancellationToken);
+                    var bookmark = _bookmarkSerializer.Deserialize<FileSystemEventBookmark>(trigger.Model);
+
+                    var changeTypes = bookmark.ChangeTypes;
+                    var notifyFilters = bookmark.NotifyFilters;
+                    var path = bookmark.Path;
+                    var pattern = bookmark.Pattern;
                     CreateAndAddWatcher(path, pattern, changeTypes, notifyFilters);
                 }
             }
             finally
             {
                 _semaphore.Release();
+            }
+        }
+        
+        private void DisposeExistingWatchers()
+        {
+            foreach (var watcher in _watchers.ToList())
+            {
+                watcher.Dispose();
+                _watchers.Remove(watcher);
             }
         }
 
@@ -96,31 +104,6 @@ namespace Elsa.Activities.File.Services
 
             watcher.EnableRaisingEvents = true;
             _watchers.Add(watcher);
-        }
-
-        private async IAsyncEnumerable<IActivityBlueprintWrapper<WatchDirectory>> GetActivityInstancesAsync([EnumeratorCancellation] CancellationToken cancellationToken)
-        {
-            using (var scope = _scopeFactory.CreateScope())
-            {
-                var workflowRegistry = scope.ServiceProvider.GetRequiredService<IWorkflowRegistry>();
-                var workflowBlueprintReflector = scope.ServiceProvider.GetRequiredService<IWorkflowBlueprintReflector>();
-                var workflows = await workflowRegistry.ListActiveAsync(cancellationToken);
-
-                var query = from workflow in workflows
-                            from activity in workflow.Activities
-                            where activity.Type == nameof(WatchDirectory)
-                            select workflow;
-
-                foreach (var workflow in query)
-                {
-                    var workflowBlueprintWrapper = await workflowBlueprintReflector.ReflectAsync(scope.ServiceProvider, workflow, cancellationToken);
-
-                    foreach (var activity in workflowBlueprintWrapper.Filter<WatchDirectory>())
-                    {
-                        yield return activity;
-                    }
-                }
-            }
         }
 
         private void EnsurePathExists(string path)
@@ -170,7 +153,10 @@ namespace Elsa.Activities.File.Services
             var model = _mapper.Map<FileSystemEvent>(e);
             var bookmark = new FileSystemEventBookmark(path, pattern, changeTypes, notifyFilter);
             var launchContext = new WorkflowsQuery(nameof(WatchDirectory), bookmark);
-            await _workflowLaunchpad.UseServiceAsync(s => s.CollectAndDispatchWorkflowsAsync(launchContext, new WorkflowInput(model)));
+
+            using var scope = _scopeFactory.CreateScope();
+            var workflowLaunchpad = scope.ServiceProvider.GetRequiredService<IWorkflowLaunchpad>();
+            await workflowLaunchpad.CollectAndDispatchWorkflowsAsync(launchContext, new WorkflowInput(model));
         }
         #endregion
     }

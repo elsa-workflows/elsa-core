@@ -3,7 +3,6 @@ using Elsa.Activities.File;
 using Elsa.Activities.File.Bookmarks;
 using Elsa.Activities.File.Services;
 using Elsa.Activities.File.StartupTasks;
-using Elsa.Runtime;
 using System;
 using Elsa.Activities.File.Consumers;
 using Elsa.Options;
@@ -34,15 +33,15 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddActivity<TempFile>()
                 .AddActivity<WatchDirectory>();
 
-            builder.AddPubSubConsumer<RecreateFileSystemWatchersConsumer, WorkflowDefinitionPublished>("WorkflowDefinitionEvents");
-            builder.AddPubSubConsumer<RecreateFileSystemWatchersConsumer, WorkflowDefinitionRetracted>("WorkflowDefinitionEvents");
-            builder.AddPubSubConsumer<RecreateFileSystemWatchersConsumer, WorkflowDefinitionDeleted>("WorkflowDefinitionEvents");
-
+            builder.AddPubSubConsumer<RecreateFileSystemWatchersConsumer, TriggerIndexingFinished>("WorkflowManagementEvents");
+            builder.AddPubSubConsumer<RecreateFileSystemWatchersConsumer, TriggersDeleted>("WorkflowManagementEvents");
+            builder.AddPubSubConsumer<RecreateFileSystemWatchersConsumer, BookmarkIndexingFinished>("WorkflowManagementEvents");
+            builder.AddPubSubConsumer<RecreateFileSystemWatchersConsumer, BookmarksDeleted>("WorkflowManagementEvents");
+            
             builder.Services.AddBookmarkProvider<FileCreatedBookmarkProvider>()
                 .AddAutoMapperProfile<FileSystemEventProfile>()
                 .AddSingleton<FileSystemWatchersStarter>()
-                .AddSingleton<Scoped<IWorkflowLaunchpad>>()
-                .AddStartupTask<StartFileSystemWatchers>();
+                .AddHostedService<StartFileSystemWatchers>();
 
             return builder;
         }

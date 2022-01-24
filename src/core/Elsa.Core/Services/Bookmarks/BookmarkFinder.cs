@@ -7,9 +7,6 @@ using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
 using Elsa.Persistence.Specifications.Bookmarks;
-using Newtonsoft.Json;
-using NodaTime;
-using NodaTime.Serialization.JsonNet;
 
 namespace Elsa.Services.Bookmarks
 {
@@ -17,13 +14,13 @@ namespace Elsa.Services.Bookmarks
     {
         private readonly IBookmarkStore _bookmarkStore;
         private readonly IBookmarkHasher _hasher;
-        private readonly JsonSerializerSettings _serializerSettings;
+        private readonly IBookmarkSerializer _serializer;
 
-        public BookmarkFinder(IBookmarkStore bookmarkStore, IBookmarkHasher hasher)
+        public BookmarkFinder(IBookmarkStore bookmarkStore, IBookmarkHasher hasher, IBookmarkSerializer serializer)
         {
             _bookmarkStore = bookmarkStore;
             _hasher = hasher;
-            _serializerSettings = new JsonSerializerSettings().ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
+            _serializer = serializer;
         }
 
         public async Task<IEnumerable<BookmarkFinderResult>> FindBookmarksAsync(string activityType, IEnumerable<IBookmark> bookmarks, string? correlationId = default, string? tenantId = default, CancellationToken cancellationToken = default)
@@ -36,6 +33,13 @@ namespace Elsa.Services.Bookmarks
 
             var records = await _bookmarkStore.FindManyAsync(specification, cancellationToken: cancellationToken);
             return SelectResults(records);
+        }
+
+        // TODO: Implement this to return all bookmarks of the specified bookmark model type.
+        public async Task<IEnumerable<Bookmark>> FindBookmarksByTypeAsync(string bookmarkType, string? tenantId = default, CancellationToken cancellationToken = default)
+        {
+            var specification = new BookmarkTypeSpecification(bookmarkType, tenantId);
+            return await _bookmarkStore.FindManyAsync(specification, cancellationToken: cancellationToken);
         }
 
         private ISpecification<Bookmark> BuildSpecification(string activityType, IEnumerable<IBookmark> bookmarks, string? correlationId, string? tenantId)
@@ -53,7 +57,7 @@ namespace Elsa.Services.Bookmarks
         private IEnumerable<BookmarkFinderResult> SelectResults(IEnumerable<Bookmark> bookmarks) =>
             from bookmark in bookmarks
             let bookmarkType = Type.GetType(bookmark.ModelType)
-            let model = (IBookmark) JsonConvert.DeserializeObject(bookmark.Model, bookmarkType, _serializerSettings)!
+            let model = _serializer.Deserialize(bookmark.Model, bookmarkType)
             select new BookmarkFinderResult(bookmark.WorkflowInstanceId, bookmark.ActivityId, model, bookmark.CorrelationId);
     }
 }

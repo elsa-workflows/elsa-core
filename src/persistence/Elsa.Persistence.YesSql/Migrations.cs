@@ -71,9 +71,18 @@ namespace Elsa.Persistence.YesSql
                     .Column<string>(nameof(BookmarkIndex.CorrelationId)),
                 CollectionNames.Bookmarks);
 
-            return 2;
+            SchemaBuilder.CreateMapIndexTable<TriggerIndex>(
+                table => table
+                    .Column<string?>(nameof(TriggerIndex.TriggerId))
+                    .Column<string?>(nameof(TriggerIndex.TenantId))
+                    .Column<string>(nameof(TriggerIndex.Hash))
+                    .Column<string>(nameof(TriggerIndex.ActivityType))
+                    .Column<string>(nameof(TriggerIndex.WorkflowDefinitionId)),
+                CollectionNames.Triggers);
+
+            return 3;
         }
-        
+
         public int UpdateFrom1()
         {
             SchemaBuilder.AlterIndexTable<WorkflowInstanceIndex>(
@@ -81,6 +90,20 @@ namespace Elsa.Persistence.YesSql
                 CollectionNames.WorkflowInstances);
 
             return 2;
+        }
+
+        public int UpdateFrom2()
+        {
+            SchemaBuilder.CreateMapIndexTable<TriggerIndex>(
+                table => table
+                    .Column<string?>(nameof(TriggerIndex.TriggerId))
+                    .Column<string?>(nameof(TriggerIndex.TenantId))
+                    .Column<string>(nameof(TriggerIndex.Hash))
+                    .Column<string>(nameof(TriggerIndex.ActivityType))
+                    .Column<string>(nameof(TriggerIndex.WorkflowDefinitionId)),
+                CollectionNames.Triggers);
+
+            return 3;
         }
     }
 }

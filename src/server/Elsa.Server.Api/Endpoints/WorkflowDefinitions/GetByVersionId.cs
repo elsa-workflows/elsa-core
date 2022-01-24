@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications.WorkflowDefinitions;
-using Elsa.Serialization;
 using Elsa.Server.Api.Helpers;
 using Elsa.Server.Api.Swagger.Examples;
 using Microsoft.AspNetCore.Http;
@@ -21,7 +20,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
     {
         private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
 
-        public GetByVersionId(IWorkflowDefinitionStore workflowDefinitionStore, IContentSerializer serializer) => _workflowDefinitionStore = workflowDefinitionStore;
+        public GetByVersionId(IWorkflowDefinitionStore workflowDefinitionStore) => _workflowDefinitionStore = workflowDefinitionStore;
 
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(WorkflowDefinition))]

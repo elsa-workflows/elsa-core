@@ -1,7 +1,10 @@
 using Elsa.Services;
 using System.Collections.Generic;
+using System.Net.Mqtt;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.Mqtt.Activities.MqttMessageReceived;
+using Elsa.Attributes;
 
 namespace Elsa.Activities.Mqtt.Bookmarks
 {
@@ -11,20 +14,22 @@ namespace Elsa.Activities.Mqtt.Bookmarks
         {
         }
 
-        public MessageReceivedBookmark(string topic, string host, int port, string username, string password)
+        public MessageReceivedBookmark(string topic, string host, int port, string username, string password, MqttQualityOfService qos)
         {
             Topic = topic;
             Host = host;
             Port = port;
             Username = username;
             Password = password;
+            Qos = qos;
         }
 
         public string Topic { get; set; } = default!;
         public string Host { get; set; } = default!;
-        public int Port { get; set; } = default!;
+        public int Port { get; set; }
         public string Username { get; set; } = default!;
         public string Password { get; set; } = default!;
+        [ExcludeFromHash] public MqttQualityOfService Qos { get; set; }
     }
 
     public class MessageReceivedBookmarkProvider : BookmarkProvider<MessageReceivedBookmark, MqttMessageReceived>
@@ -38,7 +43,8 @@ namespace Elsa.Activities.Mqtt.Bookmarks
                     Host = (await context.ReadActivityPropertyAsync(x => x.Host, cancellationToken))!,
                     Port = (await context.ReadActivityPropertyAsync(x => x.Port, cancellationToken))!,
                     Username = (await context.ReadActivityPropertyAsync(x => x.Username, cancellationToken))!,
-                    Password = (await context.ReadActivityPropertyAsync(x => x.Password, cancellationToken))!
+                    Password = (await context.ReadActivityPropertyAsync(x => x.Password, cancellationToken))!,
+                    Qos = (await context.ReadActivityPropertyAsync(x => x.QualityOfService, cancellationToken))!
                 })
             };
     }

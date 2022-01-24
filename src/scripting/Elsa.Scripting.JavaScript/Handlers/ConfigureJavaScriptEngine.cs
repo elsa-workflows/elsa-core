@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
 using Elsa.Persistence.Specifications.WorkflowExecutionLogRecords;
@@ -147,15 +148,17 @@ namespace Elsa.Scripting.JavaScript.Handlers
             }
         }
 
-        private string? GetWorkflowDefinitionIdByTag(ActivityExecutionContext activityExecutionContext, string tag) => GetWorkflowDefinitionId(activityExecutionContext, x => string.Equals(x.Tag, tag, StringComparison.OrdinalIgnoreCase));
-
-        private string? GetWorkflowDefinitionIdByName(ActivityExecutionContext activityExecutionContext, string name) =>
-            GetWorkflowDefinitionId(activityExecutionContext, x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase));
-
-        private string? GetWorkflowDefinitionId(ActivityExecutionContext activityExecutionContext, Func<IWorkflowBlueprint, bool> filter)
+        private string? GetWorkflowDefinitionIdByTag(ActivityExecutionContext activityExecutionContext, string tag)
         {
             var workflowRegistry = activityExecutionContext.GetService<IWorkflowRegistry>();
-            var workflowBlueprint = workflowRegistry.FindAsync(filter).Result;
+            var workflowBlueprint = workflowRegistry.FindByTagAsync(tag, VersionOptions.Published).Result;
+            return workflowBlueprint?.Id;
+        }
+
+        private string? GetWorkflowDefinitionIdByName(ActivityExecutionContext activityExecutionContext, string name)
+        {
+            var workflowRegistry = activityExecutionContext.GetService<IWorkflowRegistry>();
+            var workflowBlueprint = workflowRegistry.FindByNameAsync(name, VersionOptions.Published).Result;
             return workflowBlueprint?.Id;
         }
 

@@ -70,10 +70,16 @@ namespace Elsa.Services.Messaging
         private IBus GetOrCreateServiceBus(Type messageType, string? queueName)
         {
             _semaphore.Wait();
-            
+
             try
             {
-                queueName ??= _messageTypeQueueDictionary[messageType];
+                if (queueName == null)
+                {
+                    if (_messageTypeQueueDictionary.ContainsKey(messageType))
+                        queueName = _messageTypeQueueDictionary[messageType];
+                    else
+                        queueName = PrefixQueueName(ServiceBusOptions.FormatQueueName(messageType.Name));
+                }
 
                 if (!_serviceBuses.TryGetValue(queueName, out var bus))
                 {

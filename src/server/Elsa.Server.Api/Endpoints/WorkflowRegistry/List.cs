@@ -5,29 +5,31 @@ using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using Elsa.Models;
+using Elsa.Persistence.Specifications;
+using Elsa.Providers.Workflows;
 using Elsa.Server.Api.Models;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection;
-using Open.Linq.AsyncExtensions;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{apiVersion:apiVersion}/workflow-registry")]
+    [Route("v{apiVersion:apiVersion}/workflow-registry/{providerName}")]
     [Produces("application/json")]
     public class List : Controller
     {
-        private readonly IWorkflowRegistry _workflowRegistry;
+        private readonly IEnumerable<IWorkflowProvider> _workflowProviders;
+        private readonly ITenantAccessor _tenantAccessor;
         private readonly IMapper _mapper;
         private readonly IServiceProvider _serviceProvider;
 
-        public List(IWorkflowRegistry workflowRegistry, IWorkflowBlueprintReflector workflowBlueprintReflector, IMapper mapper, IServiceProvider serviceProvider)
+        public List(IEnumerable<IWorkflowProvider> workflowProviders, ITenantAccessor tenantAccessor, IMapper mapper, IServiceProvider serviceProvider)
         {
-            _workflowRegistry = workflowRegistry;
+            _workflowProviders = workflowProviders;
+            _tenantAccessor = tenantAccessor;
             _mapper = mapper;
             _serviceProvider = serviceProvider;
         }
@@ -38,25 +40,22 @@ namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
             Summary = "Returns a list of workflow blueprints.",
             Description = "Returns paginated a list of workflow blueprints. When no version options are specified, the latest version is returned.",
             OperationId = "WorkflowBlueprints.List",
-            Tags = new[] {"WorkflowBlueprints"})
+            Tags = new[] { "WorkflowBlueprints" })
         ]
-        public async Task<ActionResult<PagedList<WorkflowBlueprintSummaryModel>>> Handle(int? page = default, int? pageSize = default, VersionOptions? version = default, CancellationToken cancellationToken = default)
+        public async Task<ActionResult<PagedList<WorkflowBlueprintSummaryModel>>> Handle(string providerName, int? page = default, int? pageSize = default, VersionOptions? version = default, CancellationToken cancellationToken = default)
         {
-            version ??= VersionOptions.LatestOrPublished;
-            var workflowBlueprints = await _workflowRegistry.FindManyAsync(x => x.WithVersion(version.Value), cancellationToken).ToList();
-            var totalCount = workflowBlueprints.Count;
+            var workflowProvider = _workflowProviders.FirstOrDefault(x => x.GetType().Name == providerName);
+
+            if (workflowProvider == null)
+                return BadRequest(new { Error = $"Unknown workflow provider: {providerName}" });
+
+            version ??= VersionOptions.Latest;
+            var tenantId = await _tenantAccessor.GetTenantIdAsync(cancellationToken);
             var skip = page * pageSize;
-            var items = workflowBlueprints.AsEnumerable();
+            var workflowBlueprints = await workflowProvider.ListAsync(version.Value, skip, pageSize, tenantId, cancellationToken).ToListAsync(cancellationToken);
+            var totalCount = await workflowProvider.CountAsync(version.Value, tenantId, cancellationToken);
+            var mappedItems = _mapper.Map<IEnumerable<WorkflowBlueprintSummaryModel>>(workflowBlueprints).ToList();
 
-            if (skip != null)
-                items = items.Skip(skip.Value);
-
-            if (pageSize != null)
-                items = items.Take(pageSize.Value);
-
-            using var scope = _serviceProvider.CreateScope();
-            var mappedItems = _mapper.Map<IEnumerable<WorkflowBlueprintSummaryModel>>(items).ToList();
-                
             return new PagedList<WorkflowBlueprintSummaryModel>(mappedItems, page, pageSize, totalCount);
         }
     }

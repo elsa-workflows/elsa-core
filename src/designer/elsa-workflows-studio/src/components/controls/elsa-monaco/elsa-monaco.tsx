@@ -1,5 +1,5 @@
 import {Component, Event, EventEmitter, h, Host, Method, Prop, Watch} from '@stencil/core';
-import {initializeMonacoWorker} from "./elsa-monaco-utils";
+import {initializeMonacoWorker, Monaco} from "./elsa-monaco-utils";
 import state from '../../../utils/store';
 
 export interface MonacoValueChangedArgs {
@@ -13,8 +13,7 @@ export interface MonacoValueChangedArgs {
   shadow: false
 })
 export class ElsaMonaco {
-
-  monaco = (window as any).monaco;
+  private monaco: Monaco;
 
   @Prop({attribute: 'monaco-lib-path'}) monacoLibPath: string;
   @Prop({attribute: 'editor-height', reflect: true}) editorHeight: string = '5em';
@@ -64,102 +63,98 @@ export class ElsaMonaco {
     const newModel = monaco.editor.createModel(libSource, 'typescript', monaco.Uri.parse(libUri));
   }
 
-  componentWillLoad() {
+  async componentWillLoad() {
     const monacoLibPath = this.monacoLibPath ?? state.monacoLibPath;
-    initializeMonacoWorker(monacoLibPath);
+    this.monaco = await initializeMonacoWorker(monacoLibPath);
     this.registerLiquid();
   }
 
   componentDidLoad() {
-    const require = (window as any).require;
+    const monaco = this.monaco;
+    const language = this.language;
 
-    require(['require', 'vs/editor/editor.main'], async require => {
-      const monaco = this.monaco;
-      const language = this.language;
+    // Validation settings.
+    monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
+      noSemanticValidation: true,
+      noSyntaxValidation: false,
+    });
 
-      // Validation settings.
-      monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
-        noSemanticValidation: true,
-        noSyntaxValidation: false,
-      });
+    // Compiler options.
+    monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
+      target: monaco.languages.typescript.ScriptTarget.ES2020,
+      lib: [],
+      allowNonTsExtensions: true
+    });
 
-      // Compiler options.
-      monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
-        target: monaco.languages.typescript.ScriptTarget.ES2020,
-        lib: [],
-        allowNonTsExtensions: true
-      });
+    monaco.languages.typescript.javascriptDefaults.setEagerModelSync(true);
 
-      monaco.languages.typescript.javascriptDefaults.setEagerModelSync(true);
+    const defaultOptions = {
+      value: this.value,
+      language: language,
+      fontFamily: "Roboto Mono, monospace",
+      renderLineHighlight: 'none',
+      minimap: {
+        enabled: false
+      },
+      automaticLayout: true,
+      lineNumbers: "on",
+      theme: "vs",
+      roundedSelection: true,
+      scrollBeyondLastLine: false,
+      readOnly: false,
+      overviewRulerLanes: 0,
+      overviewRulerBorder: false,
+      lineDecorationsWidth: 0,
+      hideCursorInOverviewRuler: true,
+      glyphMargin: false
+    };
 
-      const defaultOptions = {
-        value: this.value,
-        language: language,
-        fontFamily: "Roboto Mono, monospace",
-        renderLineHighlight: 'none',
-        minimap: {
-          enabled: false
-        },
-        automaticLayout: true,
-        lineNumbers: "on",
-        theme: "vs",
-        roundedSelection: true,
-        scrollBeyondLastLine: false,
-        readOnly: false,
-        overviewRulerLanes: 0,
-        overviewRulerBorder: false,
-        lineDecorationsWidth: 0,
-        hideCursorInOverviewRuler: true,
-        glyphMargin: false
-      };
+    let options = defaultOptions;
 
-      let options = defaultOptions;
-
-      if (this.singleLineMode) {
-        options = {
-          ...defaultOptions, ...{
-            wordWrap: 'off',
-            lineNumbers: 'off',
-            lineNumbersMinChars: 0,
-            folding: false,
-            scrollBeyondLastColumn: 0,
-            scrollbar: {horizontal: 'hidden', vertical: 'hidden'},
-            find: {addExtraSpaceOnTop: false, autoFindInSelection: 'never', seedSearchStringFromSelection: false},
-          }
+    if (this.singleLineMode) {
+      options = {
+        ...defaultOptions, ...{
+          wordWrap: 'off',
+          lineNumbers: 'off',
+          lineNumbersMinChars: 0,
+          folding: false,
+          scrollBeyondLastColumn: 0,
+          scrollbar: {horizontal: 'hidden', vertical: 'hidden'},
+          find: {addExtraSpaceOnTop: false, autoFindInSelection: 'never', seedSearchStringFromSelection: false},
         }
       }
+    }
 
-      this.editor = monaco.editor.create(this.container, options);
+    this.editor = monaco.editor.create(this.container, options);
 
-      this.editor.onDidChangeModelContent(e => {
-        const value = this.editor.getValue();
-        const markers = monaco.editor.getModelMarkers({owner: language});
-        this.valueChanged.emit({value: value, markers: markers});
+    this.editor.onDidChangeModelContent(e => {
+      const value = this.editor.getValue();
+      const markers = monaco.editor.getModelMarkers({owner: language});
+      this.valueChanged.emit({value: value, markers: markers});
+    });
+
+    if (this.singleLineMode) {
+      this.editor.onKeyDown(e => {
+        if (e.keyCode == monaco.KeyCode.Enter) {
+          // We only prevent enter when the suggest model is not active
+          if (this.editor.getContribution('editor.contrib.suggestController').model.state == 0) {
+            e.preventDefault();
+          }
+        }
       });
 
-      if (this.singleLineMode) {
-        this.editor.onKeyDown(e => {
-          if (e.keyCode == monaco.KeyCode.Enter) {
-            // We only prevent enter when the suggest model is not active
-            if (this.editor.getContribution('editor.contrib.suggestController').model.state == 0) {
-              e.preventDefault();
-            }
+      this.editor.onDidPaste(e => {
+        if (e.range.endLineNumber > 1) {
+          let newContent = "";
+          const model = this.editor.getModel();
+          let lineCount = model.getLineCount();
+          for (let i = 0; i < lineCount; i++) {
+            newContent += model.getLineContent(i + 1);
           }
-        });
-
-        this.editor.onDidPaste(e => {
-          if (e.range.endLineNumber > 1) {
-            let newContent = "";
-            const model = this.editor.getModel();
-            let lineCount = model.getLineCount();
-            for (let i = 0; i < lineCount; i++) {
-              newContent += model.getLineContent(i + 1);
-            }
-            model.setValue(newContent);
-          }
-        });
-      }
-    });
+          model.setValue(newContent);
+        }
+      });
+    }
   }
 
   disconnectedCallback() {

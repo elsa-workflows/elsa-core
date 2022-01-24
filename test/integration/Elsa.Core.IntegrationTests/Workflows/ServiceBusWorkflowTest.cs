@@ -1,9 +1,6 @@
 using Elsa.Builders;
-using Elsa.Models;
 using Elsa.Testing.Shared.Unit;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
@@ -15,7 +12,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Azure.ServiceBus;
 using System.Threading;
-using Elsa.Runtime;
 using Elsa.Activities.AzureServiceBus.StartupTasks;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -43,11 +39,10 @@ namespace Elsa.Core.IntegrationTests.Workflows
                         .AddSingleton(TopicMessageSenderFactory.Object)
                         .AddSingleton(TopicMessageReceiverFactory.Object)
                         .AddSingleton<IWorkflowLaunchpad, WorkflowLaunchpad>()
-                        .AddSingleton<Scoped<IWorkflowLaunchpad>>()
                         .AddSingleton<IServiceBusTopicsStarter, ServiceBusTopicsStarter>()
                         .AddSingleton(WorkflowRegistryMoq.Object)
                         .AddBookmarkProvider<TopicMessageReceivedBookmarkProvider>()
-                        .AddStartupTask<StartServiceBusTopics>();
+                        .AddHostedService<StartServiceBusTopics>();
 
                     services
                         .AddSingleton(new ServiceBusWorkflow(WaitHandleTest));
@@ -63,7 +58,7 @@ namespace Elsa.Core.IntegrationTests.Workflows
             Func<Message, CancellationToken, Task> handler = default!;
 
             SenderClient
-                .Setup(x => x.SendAsync(It.IsAny<Microsoft.Azure.ServiceBus.Message>()))
+                .Setup(x => x.SendAsync(It.IsAny<Message>()))
                 .Callback<Message>(msg =>
                 {
                     // Hack needed to avoid issue when getting msg from SB.
@@ -97,14 +92,6 @@ namespace Elsa.Core.IntegrationTests.Workflows
                 .Returns(Task.FromResult(ReceiverClient.Object));
 
             _serviceBusBluePrint = WorkflowBuilder.Build<ServiceBusWorkflow>();
-
-            WorkflowRegistryMoq
-                .Setup(x => x.ListActiveAsync(It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new List<IWorkflowBlueprint>() { _serviceBusBluePrint }.AsEnumerable()));
-
-            WorkflowRegistryMoq
-                .Setup(x => x.GetAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<VersionOptions>(), It.IsAny<CancellationToken>(), false))
-                .Returns(Task.FromResult(_serviceBusBluePrint)!);
         }
 
         [Fact(DisplayName = "Send Message Bus after Suspend to avoid receiving response before indexing bookmark.")]

@@ -14,9 +14,12 @@ namespace Elsa.Services
         /// Gets the triggers for all of the specified workflow blueprints.
         /// </summary>
         /// <param name="workflowBlueprints">The workflow blueprints for which to get triggers.</param>
-        /// <param name="cancellationToken">An optional cancellation token.</param>
-        /// <returns>A task which exposes an enumerable collection of workflow triggers.</returns>
-        Task<IEnumerable<WorkflowTrigger>> GetTriggersAsync(IEnumerable<IWorkflowBlueprint> workflowBlueprints,
-                                                            CancellationToken cancellationToken = default);
+        Task<IEnumerable<WorkflowTrigger>> GetTriggersAsync(IEnumerable<IWorkflowBlueprint> workflowBlueprints, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Gets the triggers for the specified workflow blueprint.
+        /// </summary>
+        /// <param name="workflowBlueprints">The workflow blueprint for which to get triggers.</param>
+        Task<IEnumerable<WorkflowTrigger>> GetTriggersAsync(IWorkflowBlueprint workflowBlueprint, CancellationToken cancellationToken = default);
     }
 }

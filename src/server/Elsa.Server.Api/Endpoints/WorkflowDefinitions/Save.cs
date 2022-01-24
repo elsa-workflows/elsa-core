@@ -86,8 +86,8 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
         {
             if (string.IsNullOrWhiteSpace(json))
                 return new Variables();
-            
-            var dictionary =_contentSerializer.Deserialize<Dictionary<string, object?>>(json); 
+
+            var dictionary = _contentSerializer.Deserialize<Dictionary<string, object?>>(json);
             var variables = new Variables(dictionary);
 
             return variables;

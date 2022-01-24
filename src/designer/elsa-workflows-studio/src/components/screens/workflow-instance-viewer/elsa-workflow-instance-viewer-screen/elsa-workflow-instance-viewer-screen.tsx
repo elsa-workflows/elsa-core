@@ -60,6 +60,7 @@ export class ElsaWorkflowInstanceViewerScreen {
     let workflowInstance: WorkflowInstance = {
       id: null,
       definitionId: null,
+      definitionVersionId: null,
       version: null,
       workflowStatus: WorkflowStatus.Idle,
       variables: {data: {}},

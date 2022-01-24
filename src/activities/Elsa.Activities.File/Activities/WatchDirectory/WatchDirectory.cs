@@ -1,12 +1,12 @@
+using System.ComponentModel.DataAnnotations;
+using System.IO;
 using Elsa.Activities.File.Models;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
+using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
-using System.ComponentModel.DataAnnotations;
-using System.IO;
-using Elsa.Expressions;
 
 namespace Elsa.Activities.File
 {

@@ -1,7 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
-using Elsa.Persistence;
 using Elsa.Server.Api.Helpers;
 using Elsa.Server.Api.Swagger.Examples;
 using Elsa.Services;
@@ -19,13 +18,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
     public class Publish : ControllerBase
     {
         private readonly IWorkflowPublisher _workflowPublisher;
-        private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
-
-        public Publish(IWorkflowPublisher workflowPublisher, IWorkflowDefinitionStore workflowDefinitionStore)
-        {
-            _workflowPublisher = workflowPublisher;
-            _workflowDefinitionStore = workflowDefinitionStore;
-        }
+        public Publish(IWorkflowPublisher workflowPublisher) => _workflowPublisher = workflowPublisher;
 
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status202Accepted, Type = typeof(WorkflowDefinition))]

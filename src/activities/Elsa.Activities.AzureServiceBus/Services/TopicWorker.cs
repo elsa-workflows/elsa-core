@@ -5,6 +5,7 @@ using Elsa.Activities.AzureServiceBus.Options;
 using Elsa.Services;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -13,11 +14,12 @@ namespace Elsa.Activities.AzureServiceBus.Services
     public class TopicWorker : WorkerBase
     {
         public TopicWorker(
+            string tag,
             IReceiverClient receiverClient,
-            Scoped<IWorkflowLaunchpad> workflowLaunchpad,
+            IServiceScopeFactory serviceScopeFactory,
             IOptions<AzureServiceBusOptions> options,
             Func<IReceiverClient, Task> disposeReceiverAction,
-            ILogger<TopicWorker> logger) : base(receiverClient, workflowLaunchpad, options, disposeReceiverAction, logger)
+            ILogger<TopicWorker> logger) : base(tag, receiverClient, serviceScopeFactory, options, disposeReceiverAction, logger)
         {
         }
 

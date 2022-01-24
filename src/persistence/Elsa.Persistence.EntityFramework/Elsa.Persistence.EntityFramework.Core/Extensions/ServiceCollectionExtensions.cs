@@ -218,8 +218,9 @@ namespace Elsa.Persistence.EntityFramework.Core.Extensions
                 .AddScoped<EntityFrameworkWorkflowDefinitionStore>()
                 .AddScoped<EntityFrameworkWorkflowInstanceStore>()
                 .AddScoped<EntityFrameworkWorkflowExecutionLogRecordStore>()
-                .AddScoped<EntityFrameworkBookmarkStore>();
-
+                .AddScoped<EntityFrameworkBookmarkStore>()
+                .AddScoped<EntityFrameworkTriggerStore>();
+            
             if (autoRunMigrations)
                 elsa.Services.AddStartupTask<RunMigrations>();
 
@@ -227,7 +228,8 @@ namespace Elsa.Persistence.EntityFramework.Core.Extensions
                 .UseWorkflowDefinitionStore(sp => sp.GetRequiredService<EntityFrameworkWorkflowDefinitionStore>())
                 .UseWorkflowInstanceStore(sp => sp.GetRequiredService<EntityFrameworkWorkflowInstanceStore>())
                 .UseWorkflowExecutionLogStore(sp => sp.GetRequiredService<EntityFrameworkWorkflowExecutionLogRecordStore>())
-                .UseWorkflowTriggerStore(sp => sp.GetRequiredService<EntityFrameworkBookmarkStore>());
+                .UseWorkflowTriggerStore(sp => sp.GetRequiredService<EntityFrameworkBookmarkStore>())
+                .UseWorkflowBookmarkTriggerStore(sp => sp.GetRequiredService<EntityFrameworkTriggerStore>());
         }
     }
 }

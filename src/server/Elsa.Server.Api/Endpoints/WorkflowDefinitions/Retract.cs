@@ -43,7 +43,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
 
             if (workflowDefinition == null)
                 return NotFound();
-            
+
             workflowDefinition = await _workflowPublisher.RetractAsync(workflowDefinition, cancellationToken);
             
             return AcceptedAtAction("Handle", "GetByVersionId", new { versionId = workflowDefinition.Id, apiVersion = apiVersion.ToString() }, workflowDefinition)

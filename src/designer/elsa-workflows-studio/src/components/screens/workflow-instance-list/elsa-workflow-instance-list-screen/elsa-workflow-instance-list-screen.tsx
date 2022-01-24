@@ -3,15 +3,7 @@ import {injectHistory, LocationSegments, RouterHistory} from "@stencil/router";
 import * as collection from 'lodash/collection';
 import * as array from 'lodash/array';
 import {confirmDialogService, createElsaClient, eventBus} from "../../../../services";
-import {
-  EventTypes,
-  OrderBy,
-  PagedList,
-  VersionOptions,
-  WorkflowBlueprintSummary,
-  WorkflowInstanceSummary,
-  WorkflowStatus
-} from "../../../../models";
+import {EventTypes, OrderBy, PagedList, WorkflowBlueprintSummary, WorkflowInstanceSummary, WorkflowStatus} from "../../../../models";
 import {DropdownButtonItem, DropdownButtonOrigin} from "../../../controls/elsa-dropdown-button/models";
 import {Map, parseQuery} from '../../../../utils/utils';
 import moment from "moment";
@@ -78,7 +70,6 @@ export class ElsaWorkflowInstanceListScreen {
     if (!!this.history)
       this.applyQueryString(this.history.location.search);
 
-    await this.loadWorkflowBlueprints();
     await this.loadWorkflowInstances();
 
     const t = this.t;
@@ -141,7 +132,7 @@ export class ElsaWorkflowInstanceListScreen {
 
   t = (key: string, options?: any) => this.i18next.t(key, options);
 
-  applyQueryString(queryString?: string) {
+  private applyQueryString(queryString?: string) {
     const query = parseQuery(queryString);
 
     this.selectedWorkflowId = query.workflow;
@@ -155,14 +146,7 @@ export class ElsaWorkflowInstanceListScreen {
     this.currentPageSize = Math.max(Math.min(this.currentPageSize, ElsaWorkflowInstanceListScreen.MAX_PAGE_SIZE), ElsaWorkflowInstanceListScreen.MIN_PAGE_SIZE);
   }
 
-  async loadWorkflowBlueprints() {
-    const elsaClient = await this.createClient();
-    const versionOptions: VersionOptions = {allVersions: true};
-    const workflowBlueprintPagedList = await elsaClient.workflowRegistryApi.list(null, null, versionOptions);
-    this.workflowBlueprints = workflowBlueprintPagedList.items;
-  }
-
-  async loadWorkflowInstances() {
+  private async loadWorkflowInstances() {
     this.currentPage = isNaN(this.currentPage) ? ElsaWorkflowInstanceListScreen.START_PAGE : this.currentPage;
     this.currentPage = Math.max(this.currentPage, ElsaWorkflowInstanceListScreen.START_PAGE);
     this.currentPageSize = isNaN(this.currentPageSize) ? ElsaWorkflowInstanceListScreen.DEFAULT_PAGE_SIZE : this.currentPageSize;
@@ -174,6 +158,9 @@ export class ElsaWorkflowInstanceListScreen {
       this.currentPage = maxPage;
       this.workflowInstances = await elsaClient.workflowInstancesApi.list(this.currentPage, this.currentPageSize, this.selectedWorkflowId, this.selectedWorkflowStatus, this.selectedOrderByState, this.currentSearchTerm, this.correlationId);
     }
+
+    const definitionVersionIds = this.workflowInstances.items.map(x => x.definitionVersionId);
+    this.workflowBlueprints = await elsaClient.workflowRegistryApi.findManyByDefinitionVersionIds(definitionVersionIds);
 
     this.setSelectAllIndeterminateState();
   }
@@ -532,11 +519,11 @@ export class ElsaWorkflowInstanceListScreen {
               </thead>
               <tbody class="elsa-bg-white elsa-divide-y elsa-divide-gray-100">
               {workflowInstances.map(workflowInstance => {
-                const workflowBlueprint = workflowBlueprints.find(x => x.id == workflowInstance.definitionId && x.version == workflowInstance.version) ?? {
+                const workflowBlueprint = workflowBlueprints.find(x => x.versionId == workflowInstance.definitionVersionId) ?? {
                   name: 'Not Found',
                   displayName: '(Workflow definition not found)'
                 };
-                const displayName = workflowBlueprint.displayName || workflowBlueprint.name || 'Untitled';
+                const displayName = workflowBlueprint.displayName || workflowBlueprint.name || '(Untitled)';
                 const statusColor = this.getStatusColor(workflowInstance.workflowStatus);
                 const instanceViewUrl = `${basePath}/workflow-instances/${workflowInstance.id}`;
                 const correlationId = !!workflowInstance.correlationId ? workflowInstance.correlationId : ''
@@ -623,8 +610,7 @@ export class ElsaWorkflowInstanceListScreen {
               })}
               </tbody>
             </table>
-            <elsa-pager page={this.currentPage} pageSize={this.currentPageSize} totalCount={totalCount}
-                        history={this.history} onPaged={this.onPaged} culture={this.culture}/>
+            <elsa-pager page={this.currentPage} pageSize={this.currentPageSize} totalCount={totalCount} history={this.history} onPaged={this.onPaged} culture={this.culture}/>
           </div>
         </div>
       </div>

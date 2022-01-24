@@ -66,10 +66,10 @@ namespace Elsa.Services.Workflows
 
         public async Task<RunWorkflowResult> ResumeWorkflowAsync(WorkflowInstance workflowInstance, string? activityId = default, WorkflowInput? input = default, CancellationToken cancellationToken = default)
         {
-            var workflowBlueprint = await _workflowRegistry.GetAsync(
+            var workflowBlueprint = await _workflowRegistry.FindAsync(
                 workflowInstance.DefinitionId,
-                workflowInstance.TenantId,
                 VersionOptions.SpecificVersion(workflowInstance.Version),
+                workflowInstance.TenantId,
                 cancellationToken);
 
             if (workflowBlueprint == null)

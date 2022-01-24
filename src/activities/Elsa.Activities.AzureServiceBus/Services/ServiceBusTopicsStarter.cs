@@ -1,58 +1,122 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Persistence;
-using Elsa.Persistence.Specifications.WorkflowInstances;
+using Elsa.Activities.AzureServiceBus.Bookmarks;
+using Elsa.Models;
 using Elsa.Services;
-using Elsa.Services.Models;
 using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Rebus.Extensions;
 
 namespace Elsa.Activities.AzureServiceBus.Services
 {
+    public record TopicWorkerKey(string Tag, string TopicName, string SubscriptionName);
+
     // TODO: Look for a way to merge ServiceBusQueuesStarter with ServiceBusTopicsStarter - there's a lot of overlap.
     public class ServiceBusTopicsStarter : IServiceBusTopicsStarter
     {
         private readonly ITopicMessageReceiverFactory _receiverFactory;
+        private readonly IBookmarkSerializer _bookmarkSerializer;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<ServiceBusTopicsStarter> _logger;
-        private readonly ICollection<TopicWorker> _workers;
+        private readonly IDictionary<TopicWorkerKey, TopicWorker> _workers;
+        private readonly SemaphoreSlim _semaphore = new(1);
 
         public ServiceBusTopicsStarter(
             ITopicMessageReceiverFactory receiverFactory,
             IServiceScopeFactory scopeFactory,
             IServiceProvider serviceProvider,
-            ILogger<ServiceBusTopicsStarter> logger)
+            ILogger<ServiceBusTopicsStarter> logger,
+            IBookmarkSerializer bookmarkSerializer)
         {
             _receiverFactory = receiverFactory;
             _scopeFactory = scopeFactory;
             _serviceProvider = serviceProvider;
             _logger = logger;
-            _workers = new List<TopicWorker>();
+            _bookmarkSerializer = bookmarkSerializer;
+            _workers = new Dictionary<TopicWorkerKey, TopicWorker>();
         }
 
-        public async Task CreateWorkersAsync(CancellationToken stoppingToken)
+        public async Task CreateWorkersAsync(IReadOnlyCollection<Trigger> triggers, CancellationToken cancellationToken = default)
         {
-            var cancellationToken = stoppingToken;
-            await DisposeExistingWorkersAsync();
-            var entities = (await GetTopicSubscriptionNamesAsync(cancellationToken).ToListAsync(cancellationToken)).Distinct();
+            await _semaphore.WaitAsync(cancellationToken);
 
-            foreach (var entity in entities) 
-                await CreateAndAddWorkerAsync(entity.topicName, entity.subscriptionName, cancellationToken);
+            var filteredTriggers = Filter(triggers).ToList();
+
+            try
+            {
+                foreach (var trigger in filteredTriggers)
+                {
+                    var bookmark = _bookmarkSerializer.Deserialize<TopicMessageReceivedBookmark>(trigger.Model);
+                    await CreateAndAddWorkerAsync(trigger.WorkflowDefinitionId, bookmark.TopicName, bookmark.SubscriptionName, cancellationToken);
+                }
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
         }
 
-        private async Task CreateAndAddWorkerAsync(string topicName, string subscriptionName, CancellationToken cancellationToken)
+        public async Task CreateWorkersAsync(IReadOnlyCollection<Bookmark> bookmarks, CancellationToken cancellationToken = default)
+        {
+            await _semaphore.WaitAsync(cancellationToken);
+
+            var filteredBookmarks = Filter(bookmarks).ToList();
+
+            try
+            {
+                foreach (var bookmark in filteredBookmarks)
+                {
+                    var bookmarkModel = _bookmarkSerializer.Deserialize<TopicMessageReceivedBookmark>(bookmark.Model);
+                    await CreateAndAddWorkerAsync(bookmark.WorkflowInstanceId, bookmarkModel.TopicName, bookmarkModel.SubscriptionName, cancellationToken);
+                }
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+        }
+
+        public async Task RemoveWorkersAsync(IReadOnlyCollection<Trigger> triggers, CancellationToken cancellationToken = default)
+        {
+            var workflowDefinitionIds = Filter(triggers).Select(x => x.WorkflowDefinitionId).Distinct().ToList();
+
+            var workers =
+                from worker in _workers
+                from workflowId in workflowDefinitionIds
+                where worker.Key.Tag == workflowId
+                select worker;
+
+            foreach (var worker in workers.ToList())
+            {
+                await worker.Value.DisposeAsync();
+                _workers.Remove(worker);
+            }
+        }
+
+        public async Task RemoveWorkersAsync(IReadOnlyCollection<Bookmark> bookmarks, CancellationToken cancellationToken = default)
+        {
+            var workflowInstanceIds = Filter(bookmarks).Select(x => x.WorkflowInstanceId).Distinct().ToList();
+            await RemoveWorkersAsync(workflowInstanceIds);
+        }
+
+        private async Task CreateAndAddWorkerAsync(string tag, string topicName, string subscriptionName, CancellationToken cancellationToken)
         {
             try
             {
-                var receiver = await _receiverFactory.GetTopicReceiverAsync(topicName, subscriptionName, cancellationToken);
-                var worker = ActivatorUtilities.CreateInstance<TopicWorker>(_serviceProvider, receiver, (Func<IReceiverClient, Task>) DisposeReceiverAsync);
-                _workers.Add(worker);
+                var key = new TopicWorkerKey(tag, topicName, subscriptionName);
+                var worker = _workers.ContainsKey(key) ? _workers[key] : default;
+
+                if (worker == null)
+                {
+                    var receiver = await _receiverFactory.GetTopicReceiverAsync(topicName, subscriptionName, cancellationToken);
+                    worker = ActivatorUtilities.CreateInstance<TopicWorker>(_serviceProvider, tag, receiver, (Func<IReceiverClient, Task>)DisposeReceiverAsync);
+                    _workers.Add(key, worker);
+                }
             }
             catch (Exception e)
             {
@@ -60,52 +124,36 @@ namespace Elsa.Activities.AzureServiceBus.Services
             }
         }
 
-        private async Task DisposeExistingWorkersAsync()
+        private async Task RemoveWorkersAsync(IEnumerable<string> tags)
         {
-            foreach (var worker in _workers.ToList())
-            {
-                await worker.DisposeAsync();
-                _workers.Remove(worker);
-            }
+            var workers =
+                from worker in _workers
+                from tag in tags
+                where worker.Key.Tag == tag
+                select worker;
+
+            foreach (var worker in workers.ToList())
+                await RemoveWorkerAsync(worker);
+        }
+
+        private async Task RemoveWorkerAsync(KeyValuePair<TopicWorkerKey, TopicWorker> worker)
+        {
+            await worker.Value.DisposeAsync();
+            _workers.Remove(worker);
         }
 
         private async Task DisposeReceiverAsync(IReceiverClient messageReceiver) => await _receiverFactory.DisposeReceiverAsync(messageReceiver);
 
-        private async IAsyncEnumerable<(string topicName, string subscriptionName)> GetTopicSubscriptionNamesAsync([EnumeratorCancellation] CancellationToken cancellationToken)
+        private IEnumerable<Trigger> Filter(IEnumerable<Trigger> triggers)
         {
-            using var scope = _scopeFactory.CreateScope();
-            var workflowRegistry = scope.ServiceProvider.GetRequiredService<IWorkflowRegistry>();
-            var workflowBlueprintReflector = scope.ServiceProvider.GetRequiredService<IWorkflowBlueprintReflector>();
-            var workflowInstanceStore = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
-            var workflows = await workflowRegistry.ListActiveAsync(cancellationToken);
-
-            var query =
-                from workflow in workflows
-                from activity in workflow.Activities
-                where activity.Type == nameof(AzureServiceBusTopicMessageReceived)
-                select workflow;
-
-            foreach (var workflow in query)
-            {
-                // If a workflow is not published, only consider it for processing if it has at least one non-ended workflow instance.
-                if (!workflow.IsPublished && !await WorkflowHasNonFinishedWorkflowsAsync(workflow, workflowInstanceStore, cancellationToken))
-                    continue;
-                
-                var workflowBlueprintWrapper = await workflowBlueprintReflector.ReflectAsync(scope.ServiceProvider, workflow, cancellationToken);
-
-                foreach (var activity in workflowBlueprintWrapper.Filter<AzureServiceBusTopicMessageReceived>())
-                {
-                    var topicName = await activity.EvaluatePropertyValueAsync(x => x.TopicName, cancellationToken);
-                    var subscriptionName = await activity.EvaluatePropertyValueAsync(x => x.SubscriptionName, cancellationToken);
-                    yield return (topicName, subscriptionName)!;
-                }
-            }
+            var bookmarkType = typeof(TopicMessageReceivedBookmark).GetSimpleAssemblyQualifiedName();
+            return triggers.Where(x => x.ModelType == bookmarkType);
         }
-        
-        private static async Task<bool> WorkflowHasNonFinishedWorkflowsAsync(IWorkflowBlueprint workflowBlueprint, IWorkflowInstanceStore workflowInstanceStore, CancellationToken cancellationToken)
+
+        private IEnumerable<Bookmark> Filter(IEnumerable<Bookmark> triggers)
         {
-            var count = await workflowInstanceStore.CountAsync(new UnfinishedWorkflowSpecification().WithWorkflowDefinition(workflowBlueprint.Id), cancellationToken);
-            return count > 0;
+            var modeType = typeof(TopicMessageReceivedBookmark).GetSimpleAssemblyQualifiedName();
+            return triggers.Where(x => x.ModelType == modeType);
         }
     }
 }
