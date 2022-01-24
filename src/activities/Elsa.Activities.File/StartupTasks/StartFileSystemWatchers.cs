@@ -9,17 +9,7 @@ namespace Elsa.Activities.File.StartupTasks
     public class StartFileSystemWatchers : BackgroundService
     {
         private readonly FileSystemWatchersStarter _starter;
-
-        private readonly IServiceScopeFactory _scopeFactory;
-
-        public StartFileSystemWatchers(FileSystemWatchersStarter starter)
-        {
-            _starter = starter;
-        }
-
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-        {
-            await _starter.CreateAndAddWatchersAsync(stoppingToken);
-        }
+        public StartFileSystemWatchers(FileSystemWatchersStarter starter) => _starter = starter;
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken) => await _starter.CreateAndAddWatchersAsync(stoppingToken);
     }
 }
