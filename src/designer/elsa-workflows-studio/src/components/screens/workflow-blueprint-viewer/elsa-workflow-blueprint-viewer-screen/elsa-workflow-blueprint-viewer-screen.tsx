@@ -90,6 +90,7 @@ export class ElsaWorkflowBlueprintViewerScreen {
   async loadActivityDescriptors() {
     const client = await createElsaClient(this.serverUrl);
     state.activityDescriptors = await client.activitiesApi.list();
+    console.log(state.activityDescriptors);
   }
 
   updateModels(workflowBlueprint: WorkflowBlueprint) {
