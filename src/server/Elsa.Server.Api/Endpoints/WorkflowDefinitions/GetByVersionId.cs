@@ -19,6 +19,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
     public class GetByVersionId : Controller
     {
         private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
+
         public GetByVersionId(IWorkflowDefinitionStore workflowDefinitionStore) => _workflowDefinitionStore = workflowDefinitionStore;
 
         [HttpGet]
