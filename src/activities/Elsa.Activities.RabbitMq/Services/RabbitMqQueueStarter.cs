@@ -10,6 +10,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.RabbitMq.Bookmarks;
 
 namespace Elsa.Activities.RabbitMq.Services
 {
@@ -23,11 +24,11 @@ namespace Elsa.Activities.RabbitMq.Services
         private readonly ILogger _logger;
 
         public RabbitMqQueueStarter(
-            IConfiguration configuration, 
             IMessageReceiverClientFactory messageReceiverClientFactory,
             IServiceScopeFactory scopeFactory, 
             IServiceProvider serviceProvider, 
-            ILogger<RabbitMqQueueStarter> logger)
+            ILogger<RabbitMqQueueStarter> logger,
+            IBookmarkSerializer bookmarkSerializer)
         {
             _messageReceiverClientFactory = messageReceiverClientFactory;
             _scopeFactory = scopeFactory;
@@ -75,35 +76,22 @@ namespace Elsa.Activities.RabbitMq.Services
         public async IAsyncEnumerable<RabbitMqBusConfiguration> GetConfigurationsAsync<T>(Func<IWorkflowBlueprint, bool>? predicate, [EnumeratorCancellation] CancellationToken cancellationToken) where T : IRabbitMqActivity
         {
             using var scope = _scopeFactory.CreateScope();
-            var workflowRegistry = scope.ServiceProvider.GetRequiredService<IWorkflowRegistry>();
-            var workflowBlueprintReflector = scope.ServiceProvider.GetRequiredService<IWorkflowBlueprintReflector>();
-            var workflows = await workflowRegistry.ListActiveAsync(cancellationToken);
+            var triggerFinder = scope.ServiceProvider.GetRequiredService<ITriggerFinder>();
+            var triggers = await triggerFinder.FindTriggersByTypeAsync<MessageReceivedBookmark>(cancellationToken: cancellationToken);
 
-            var query =
-                from workflow in workflows
-                from activity in workflow.Activities
-                where activity.Type == typeof(T).Name
-                select workflow;
-
-            var filteredQuery = predicate == null ? query : query.Where(predicate);
-
-            foreach (var workflow in filteredQuery)
+            foreach (var trigger in triggers)
             {
-                var workflowBlueprintWrapper = await workflowBlueprintReflector.ReflectAsync(scope.ServiceProvider, workflow, cancellationToken);
+                var bookmark = (MessageReceivedBookmark)trigger.Bookmark;
+                
+                var connectionString = bookmark.ConnectionString;
+                var exchangeName = bookmark.ExchangeName;
+                var routingKey = bookmark.RoutingKey;
+                var headers = bookmark.Headers;
 
-                foreach (var activity in workflowBlueprintWrapper.Filter<T>())
-                {
-                    var connectionString = await activity.EvaluatePropertyValueAsync(x => x.ConnectionString, cancellationToken);
-                    var routingKey = await activity.EvaluatePropertyValueAsync(x => x.RoutingKey, cancellationToken);
-                    var exchangeName = await activity.EvaluatePropertyValueAsync(x => x.ExchangeName, cancellationToken);
-                    var headers = await activity.EvaluatePropertyValueAsync(x => x.Headers, cancellationToken);
-
-                    var config = new RabbitMqBusConfiguration(connectionString!, exchangeName, routingKey!, headers!);
-
-                    yield return config!;
-                }
+                yield return new RabbitMqBusConfiguration(connectionString!, exchangeName!, routingKey!, headers);
             }
         }
+        
         private async Task DisposeExistingWorkersAsync()
         {
             foreach (var worker in _workers.ToList())

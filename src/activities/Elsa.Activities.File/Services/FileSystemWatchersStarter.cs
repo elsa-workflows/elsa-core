@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
@@ -44,27 +43,37 @@ namespace Elsa.Activities.File.Services
 
             try
             {
-                if (_watchers.Any())
-                {
-                    foreach (var watcher in _watchers)
-                        watcher.Dispose();
+                DisposeExistingWatchers();
 
-                    _watchers.Clear();
-                }
+                using var scope = _scopeFactory.CreateScope();
+                var triggerFinder = scope.ServiceProvider.GetRequiredService<ITriggerFinder>();
+                await triggerFinder.FindTriggersAsync<WatchDirectory>(null, cancellationToken);
+                
+                var triggers = await triggerFinder.FindTriggersByTypeAsync<FileSystemEventBookmark>(cancellationToken: cancellationToken);
 
-                var activities = GetActivityInstancesAsync(cancellationToken);
-                await foreach (var a in activities.WithCancellation(cancellationToken))
+                foreach (var trigger in triggers)
                 {
-                    var changeTypes = await a.EvaluatePropertyValueAsync(x => x.ChangeTypes, cancellationToken);
-                    var notifyFilters = await a.EvaluatePropertyValueAsync(x => x.NotifyFilters, cancellationToken);
-                    var path = await a.EvaluatePropertyValueAsync(x => x.Path, cancellationToken);
-                    var pattern = await a.EvaluatePropertyValueAsync(x => x.Pattern, cancellationToken);
+                    var bookmark = (FileSystemEventBookmark) trigger.Bookmark;
+
+                    var changeTypes = bookmark.ChangeTypes;
+                    var notifyFilters = bookmark.NotifyFilters;
+                    var path = bookmark.Path;
+                    var pattern = bookmark.Pattern;
                     CreateAndAddWatcher(path, pattern, changeTypes, notifyFilters);
                 }
             }
             finally
             {
                 _semaphore.Release();
+            }
+        }
+        
+        private void DisposeExistingWatchers()
+        {
+            foreach (var watcher in _watchers.ToList())
+            {
+                watcher.Dispose();
+                _watchers.Remove(watcher);
             }
         }
 
@@ -96,31 +105,6 @@ namespace Elsa.Activities.File.Services
 
             watcher.EnableRaisingEvents = true;
             _watchers.Add(watcher);
-        }
-
-        private async IAsyncEnumerable<IActivityBlueprintWrapper<WatchDirectory>> GetActivityInstancesAsync([EnumeratorCancellation] CancellationToken cancellationToken)
-        {
-            using (var scope = _scopeFactory.CreateScope())
-            {
-                var workflowRegistry = scope.ServiceProvider.GetRequiredService<IWorkflowRegistry>();
-                var workflowBlueprintReflector = scope.ServiceProvider.GetRequiredService<IWorkflowBlueprintReflector>();
-                var workflows = await workflowRegistry.ListActiveAsync(cancellationToken);
-
-                var query = from workflow in workflows
-                            from activity in workflow.Activities
-                            where activity.Type == nameof(WatchDirectory)
-                            select workflow;
-
-                foreach (var workflow in query)
-                {
-                    var workflowBlueprintWrapper = await workflowBlueprintReflector.ReflectAsync(scope.ServiceProvider, workflow, cancellationToken);
-
-                    foreach (var activity in workflowBlueprintWrapper.Filter<WatchDirectory>())
-                    {
-                        yield return activity;
-                    }
-                }
-            }
         }
 
         private void EnsurePathExists(string path)
