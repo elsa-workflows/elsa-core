@@ -611,8 +611,7 @@ export class ElsaWorkflowInstanceListScreen {
               })}
               </tbody>
             </table>
-            <elsa-pager page={this.currentPage} pageSize={this.currentPageSize} totalCount={totalCount}
-                        history={this.history} onPaged={this.onPaged} culture={this.culture}/>
+            <elsa-pager page={this.currentPage} pageSize={this.currentPageSize} totalCount={totalCount} history={this.history} onPaged={this.onPaged} culture={this.culture}/>
           </div>
         </div>
       </div>

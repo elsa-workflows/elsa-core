@@ -62,8 +62,20 @@ export const createElsaClient = async function (serverUrl: string): Promise<Elsa
     },
     workflowDefinitionsApi: {
       list: async (page?: number, pageSize?: number, versionOptions?: VersionOptions) => {
-        const versionOptionsString = getVersionOptionsString(versionOptions);
-        const response = await httpClient.get<PagedList<WorkflowDefinitionSummary>>(`v1/workflow-definitions?version=${versionOptionsString}`);
+        const queryString = {
+          version: getVersionOptionsString(versionOptions)
+        };
+
+        if (!!page || page === 0)
+          queryString['page'] = page;
+
+        if (!!pageSize)
+          queryString['pageSize'] = pageSize;
+
+        const queryStringItems = collection.map(queryString, (v, k) => `${k}=${v}`);
+        const queryStringText = queryStringItems.length > 0 ? `?${queryStringItems.join('&')}` : '';
+        const response = await httpClient.get<PagedList<WorkflowDefinitionSummary>>(`v1/workflow-definitions${queryStringText}`);
+
         return response.data;
       },
       getMany: async (ids: Array<string>, versionOptions?: VersionOptions) => {
