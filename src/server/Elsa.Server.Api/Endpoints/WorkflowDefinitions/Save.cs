@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Mime;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Serialization;
+using Elsa.Server.Api.Helpers;
 using Elsa.Server.Api.Swagger.Examples;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
@@ -78,10 +78,8 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             if (!isNew)
                 return Json(workflowDefinition, SerializationHelper.GetSettingsForWorkflowDefinition());
 
-            var workflowDefinitionJson = SerializationHelper.SerializeWorkflowDefinition(workflowDefinition);
-            var result = CreatedAtAction("Handle", "GetByVersionId", new { versionId = workflowDefinition.Id, apiVersion = apiVersion.ToString() }, workflowDefinitionJson);
-            result.ContentTypes.Add(MediaTypeNames.Application.Json);
-            return result;
+            return CreatedAtAction("Handle", "GetByVersionId", new { versionId = workflowDefinition.Id, apiVersion = apiVersion.ToString() }, workflowDefinition)
+                .ConfigureForWorkflowDefinition();
         }
 
         private Variables ParseVariables(string? json)
