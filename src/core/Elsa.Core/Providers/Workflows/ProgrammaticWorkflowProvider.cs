@@ -25,7 +25,7 @@ namespace Elsa.Providers.Workflows
         }
 
         public override IAsyncEnumerable<IWorkflowBlueprint> ListAsync(VersionOptions versionOptions, int? skip = default, int? take = default, string? tenantId = default, CancellationToken cancellationToken = default) =>
-            List(versionOptions, skip, take, tenantId).ToAsyncEnumerable();
+            List(versionOptions, skip, take, tenantId).OrderBy(x => x.Name).ToAsyncEnumerable();
 
         public override ValueTask<int> CountAsync(VersionOptions versionOptions, string? tenantId = default, CancellationToken cancellationToken = default) =>
             new(List(versionOptions, tenantId: tenantId).Count());
@@ -54,7 +54,7 @@ namespace Elsa.Providers.Workflows
             return new ValueTask<IEnumerable<IWorkflowBlueprint>>(workflowBlueprints);
         }
 
-        private IEnumerable<IWorkflowBlueprint> List(VersionOptions versionOptions, int? skip = default, int? take = default, string? tenantId = default, CancellationToken cancellationToken = default)
+        private IEnumerable<IWorkflowBlueprint> List(VersionOptions versionOptions, int? skip = default, int? take = default, string? tenantId = default)
         {
             var enumerable = GetWorkflows().WithVersion(versionOptions);
 

@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using Elsa.Models;
+using Elsa.Persistence.Specifications;
 using Elsa.Providers.Workflows;
 using Elsa.Server.Api.Models;
 using Elsa.Services;
@@ -16,7 +17,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{apiVersion:apiVersion}/workflow-registry")]
+    [Route("v{apiVersion:apiVersion}/workflow-registry/{providerName}")]
     [Produces("application/json")]
     public class List : Controller
     {
@@ -48,9 +49,10 @@ namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
             if (workflowProvider == null)
                 return BadRequest(new { Error = $"Unknown workflow provider: {providerName}" });
 
-            version ??= VersionOptions.LatestOrPublished;
+            version ??= VersionOptions.Latest;
             var tenantId = await _tenantAccessor.GetTenantIdAsync(cancellationToken);
-            var workflowBlueprints = await workflowProvider.ListAsync(version.Value, page, pageSize, tenantId, cancellationToken).ToListAsync(cancellationToken);
+            var skip = page * pageSize;
+            var workflowBlueprints = await workflowProvider.ListAsync(version.Value, skip, pageSize, tenantId, cancellationToken).ToListAsync(cancellationToken);
             var totalCount = await workflowProvider.CountAsync(version.Value, tenantId, cancellationToken);
             var mappedItems = _mapper.Map<IEnumerable<WorkflowBlueprintSummaryModel>>(workflowBlueprints).ToList();
 

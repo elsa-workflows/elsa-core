@@ -49,7 +49,7 @@ namespace Elsa.Providers.Workflows
             string? tenantId = default,
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
-            var enumerable = ListInternalAsync(cancellationToken).WithVersion(versionOptions);
+            var enumerable = ListInternalAsync(cancellationToken).OrderBy(x => x.Name).WithVersion(versionOptions);
 
             if (!string.IsNullOrWhiteSpace(tenantId))
                 enumerable = enumerable.Where(x => x.TenantId == tenantId);

@@ -20,7 +20,7 @@ import {
   WorkflowExecutionLogRecord,
   WorkflowInstance,
   WorkflowInstanceSummary,
-  WorkflowPersistenceBehavior,
+  WorkflowPersistenceBehavior, WorkflowProviderDescriptor,
   WorkflowStatus,
   WorkflowStorageDescriptor
 } from "../models";
@@ -141,9 +141,20 @@ export const createElsaClient = async function (serverUrl: string): Promise<Elsa
       }
     },
     workflowRegistryApi: {
-      list: async (page?: number, pageSize?: number, versionOptions?: VersionOptions): Promise<PagedList<WorkflowBlueprintSummary>> => {
-        const versionOptionsString = getVersionOptionsString(versionOptions);
-        const response = await httpClient.get<PagedList<WorkflowBlueprintSummary>>(`v1/workflow-registry?version=${versionOptionsString}`);
+      list: async (providerName: string, page?: number, pageSize?: number, versionOptions?: VersionOptions): Promise<PagedList<WorkflowBlueprintSummary>> => {
+        const queryString = {
+          version: getVersionOptionsString(versionOptions)
+        };
+
+        if (!!page || page === 0)
+          queryString['page'] = page;
+
+        if (!!pageSize)
+          queryString['pageSize'] = pageSize;
+
+        const queryStringItems = collection.map(queryString, (v, k) => `${k}=${v}`);
+        const queryStringText = queryStringItems.length > 0 ? `?${queryStringItems.join('&')}` : '';
+        const response = await httpClient.get<PagedList<WorkflowBlueprintSummary>>(`v1/workflow-registry/${providerName}${queryStringText}`);
         return response.data;
       },
       findManyByDefinitionVersionIds: async (definitionVersionIds: Array<string>): Promise<Array<WorkflowBlueprintSummary>> => {
@@ -258,6 +269,12 @@ export const createElsaClient = async function (serverUrl: string): Promise<Elsa
         return response.data;
       }
     },
+    workflowProvidersApi: {
+      list: async () => {
+        const response = await httpClient.get<Array<WorkflowProviderDescriptor>>('v1/workflow-providers');
+        return response.data;
+      }
+    },
     workflowChannelsApi: {
       list: async () => {
         const response = await httpClient.get<Array<string>>('v1/workflow-channels');
@@ -285,6 +302,7 @@ export interface ElsaClient {
   designerApi: DesignerApi;
   activityStatsApi: ActivityStatsApi;
   workflowStorageProvidersApi: WorkflowStorageProvidersApi;
+  workflowProvidersApi: WorkflowProvidersApi;
   workflowChannelsApi: WorkflowChannelsApi;
   workflowTestApi: WorkflowTestApi;
   featuresApi: FeaturesApi;
@@ -329,7 +347,7 @@ export interface WorkflowTestApi {
 }
 
 export interface WorkflowRegistryApi {
-  list(page?: number, pageSize?: number, versionOptions?: VersionOptions): Promise<PagedList<WorkflowBlueprintSummary>>;
+  list(providerName: string, page?: number, pageSize?: number, versionOptions?: VersionOptions): Promise<PagedList<WorkflowBlueprintSummary>>;
 
   findManyByDefinitionVersionIds(definitionVersionIds: Array<string>): Promise<Array<WorkflowBlueprintSummary>>;
 
@@ -390,6 +408,10 @@ export interface ActivityStatsApi {
 
 export interface WorkflowStorageProvidersApi {
   list(): Promise<Array<WorkflowStorageDescriptor>>;
+}
+
+export interface WorkflowProvidersApi {
+  list(): Promise<Array<WorkflowProviderDescriptor>>;
 }
 
 export interface WorkflowChannelsApi {
