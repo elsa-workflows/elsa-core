@@ -1,16 +1,19 @@
-import {h} from "@stencil/core";
 import 'reflect-metadata';
+import {h} from "@stencil/core";
+import {Container, Service} from "typedi";
 import {ActivityTraits} from '../../models';
-import {ActivityDisplayContext, ActivityDriver} from '../../services';
-import {Service} from "typedi";
-import {ActivityIcon, ActivityIconRegistry} from "../../services/activity-icon-registry";
+import {ActivityDisplayContext, ActivityDriver, ActivityIcon, ActivityIconRegistry} from '../../services';
 
 @Service()
 export class DefaultActivityDriver implements ActivityDriver {
-  constructor(private iconRegistry: ActivityIconRegistry) {
+  private readonly iconRegistry: ActivityIconRegistry;
+
+  constructor() {
+    this.iconRegistry = Container.get(ActivityIconRegistry);
   }
 
   display(context: ActivityDisplayContext): any {
+    const iconRegistry = this.iconRegistry;
     const activityDescriptor = context.activityDescriptor;
     const nodeType = activityDescriptor.nodeType;
     const text = activityDescriptor?.displayName;
@@ -18,7 +21,7 @@ export class DefaultActivityDriver implements ActivityDriver {
     const borderColor = isTrigger ? 'border-green-600' : 'border-blue-600';
     const backgroundColor = isTrigger ? 'bg-green-400' : 'bg-blue-400';
     const iconBackgroundColor = isTrigger ? 'bg-green-500' : 'bg-blue-500';
-    const icon = this.iconRegistry.has(nodeType) ? this.iconRegistry.get(nodeType) : null;
+    const icon = iconRegistry.has(nodeType) ? iconRegistry.get(nodeType) : null;
 
     return (`
           <div>

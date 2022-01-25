@@ -21,6 +21,7 @@ import {TriggerSelectedArgs, TriggersUpdatedArgs} from '../trigger-container/tri
 import {DeleteTriggerRequestedArgs, TriggerUpdatedArgs} from "../trigger-properties-editor/trigger-properties-editor";
 import {WorkflowPropsUpdatedArgs} from "../workflow-properties-editor/workflow-properties-editor";
 import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
+import {PluginRegistry} from "../../../services/plugin-registry";
 
 export interface WorkflowUpdatedArgs {
   workflow: Workflow;
@@ -31,7 +32,7 @@ export interface WorkflowUpdatedArgs {
   styleUrl: 'workflow-editor.scss',
 })
 export class WorkflowEditor {
-
+  private readonly pluginRegistry: PluginRegistry;
   private canvas: HTMLElsaCanvasElement;
   private container: HTMLDivElement;
   private toolbox: HTMLElsaToolboxElement;
@@ -53,6 +54,7 @@ export class WorkflowEditor {
   private workflowInstance?: WorkflowInstance;
 
   constructor() {
+    this.pluginRegistry = Container.get(PluginRegistry);
     this.saveChangesDebounced = debounce(this.saveChanges, 1000);
   }
 

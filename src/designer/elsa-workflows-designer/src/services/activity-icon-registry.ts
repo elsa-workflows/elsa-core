@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import {Service} from "typedi";
 import * as Icons from "../components/icons/activities";
 

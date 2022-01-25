@@ -39,6 +39,7 @@ public static class ServiceCollectionExtensions
             .AddSingleton<IWorkflowStateSerializer, WorkflowStateSerializer>()
             .AddSingleton<IActivitySchedulerFactory, ActivitySchedulerFactory>()
             .AddSingleton<IActivityNodeResolver, OutboundActivityNodeResolver>()
+            .AddSingleton<IActivityNodeResolver, SwitchActivityNodeResolver>()
             .AddSingleton<ITypeSystem, TypeSystem>()
             .AddSingleton<IHasher, Hasher>()
             .AddSingleton<IIdentityGenerator, IdentityGenerator>()

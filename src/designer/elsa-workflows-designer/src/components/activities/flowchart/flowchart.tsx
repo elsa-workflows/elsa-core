@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import {Component, Element, Event, EventEmitter, h, Method, Prop, Watch} from '@stencil/core';
 import {Edge, Graph, Model, Node, NodeView, Segment} from '@antv/x6';
 import {v4 as uuid} from 'uuid';
@@ -8,21 +9,30 @@ import {ContainerActivityComponent} from '../container-activity-component';
 import {AddActivityArgs} from '../../designer/canvas/canvas';
 import {Activity, ActivityDescriptor, ActivitySelectedArgs, ContainerSelectedArgs, GraphUpdatedArgs} from '../../../models';
 import {createGraph} from './graph-factory';
-import {createNode} from './node-factory';
 import {Connection, Flowchart} from './models';
 import WorkflowEditorTunnel from '../../designer/state';
 import {ActivityNode, flattenList, walkActivities} from "./activity-walker";
 import PositionEventArgs = NodeView.PositionEventArgs;
 import FromJSONData = Model.FromJSONData;
-import Options = Segment.Options;
+import {NodeFactory} from "./node-factory";
+import {Container} from "typedi";
+import {EventBus} from "../../../services";
+import {ConnectionCreatedEventArgs, FlowchartEvents} from "./events";
 
 @Component({
   tag: 'elsa-flowchart',
   styleUrl: 'flowchart.scss',
 })
 export class FlowchartComponent implements ContainerActivityComponent {
+  private readonly eventBus: EventBus;
+  private readonly nodeFactory: NodeFactory;
   private rootId: string = uuid();
   private silent: boolean = false; // Whether to emit events or not.
+
+  constructor() {
+    this.eventBus = Container.get(EventBus);
+    this.nodeFactory = Container.get(NodeFactory);
+  }
 
   @Prop({mutable: true}) public activityDescriptors: Array<ActivityDescriptor> = [];
   @Prop({mutable: true}) public root?: Activity;
@@ -63,7 +73,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
       },
     };
 
-    const node = createNode(descriptor, activity, x, y);
+    const node = this.nodeFactory.createNode(descriptor, activity, x, y);
     graph.addNode(node);
   }
 
@@ -193,7 +203,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
       const position = activity.metadata.designer?.position || {x: 100, y: 100};
       const {x, y} = position;
       const descriptor = descriptors.find(x => x.nodeType == activity.nodeType)
-      const node = createNode(descriptor, activity, x, y);
+      const node = this.nodeFactory.createNode(descriptor, activity, x, y);
 
       nodes.push(node);
 
@@ -320,7 +330,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
     }
   }
 
-  private onEdgeConnected = (e: { isNew: boolean, edge: Edge }) => {
+  private onEdgeConnected = async (e: { isNew: boolean, edge: Edge }) => {
     const edge = e.edge;
     const sourceNode = edge.getSourceNode();
     const targetNode = edge.getTargetNode();
@@ -329,14 +339,27 @@ export class FlowchartComponent implements ContainerActivityComponent {
     const sourcePort = sourceNode.getPort(edge.getSourcePortId()).id;
     const targetPort = targetNode.getPort(edge.getTargetPortId()).id;
 
-    edge.data = {
+    const connection: Connection = {
       source: sourceActivity.id,
       sourcePort: sourcePort,
       target: targetActivity.id,
       targetPort: targetPort
-    } as Connection;
-  }
+    };
 
+    edge.data = connection;
+
+    const eventArgs: ConnectionCreatedEventArgs = {
+      graph: this.graph,
+      connection,
+      sourceNode,
+      targetNode,
+      sourceActivity,
+      targetActivity,
+      edge
+    }
+
+    await this.eventBus.emit(FlowchartEvents.ConnectionCreated, this, eventArgs);
+  }
 
   private onGraphChanged = async () => {
     if (this.silent)
