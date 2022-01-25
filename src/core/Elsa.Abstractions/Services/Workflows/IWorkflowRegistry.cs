@@ -29,6 +29,6 @@ namespace Elsa.Services
         /// <summary>
         /// Returns a list of <see cref="WorkflowBlueprint"/> objects for the specified set of workflow definition version IDs.
         /// </summary>
-        Task<IEnumerable<IWorkflowBlueprint>> FindByDefinitionVersionIds(IEnumerable<string> definitionVersionIds, CancellationToken cancellationToken);
+        Task<IEnumerable<IWorkflowBlueprint>> FindManyByDefinitionVersionIds(IEnumerable<string> definitionVersionIds, CancellationToken cancellationToken = default);
     }
 }

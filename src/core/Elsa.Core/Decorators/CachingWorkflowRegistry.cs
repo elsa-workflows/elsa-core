@@ -44,10 +44,10 @@ namespace Elsa.Decorators
             return await FindInternalAsync(cacheKey, () => _workflowRegistry.FindByTagAsync(tag, versionOptions, tenantId, cancellationToken), cancellationToken);
         }
 
-        public async Task<IEnumerable<IWorkflowBlueprint>> FindByDefinitionVersionIds(IEnumerable<string> definitionVersionIds, CancellationToken cancellationToken)
+        public async Task<IEnumerable<IWorkflowBlueprint>> FindManyByDefinitionVersionIds(IEnumerable<string> definitionVersionIds, CancellationToken cancellationToken)
         {
             // TODO: Maybe cache this as well?
-            return await _workflowRegistry.FindByDefinitionVersionIds(definitionVersionIds, cancellationToken);
+            return await _workflowRegistry.FindManyByDefinitionVersionIds(definitionVersionIds, cancellationToken);
         }
 
         public async Task<IWorkflowBlueprint?> FindInternalAsync(string cacheKey, Func<Task<IWorkflowBlueprint?>> findAction, CancellationToken cancellationToken = default)

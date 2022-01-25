@@ -38,7 +38,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
         public async Task<ActionResult> Handle(string ids, CancellationToken cancellationToken = default)
         {
             var idList = ids.Split(",");
-            var workflowBlueprints = await _workflowRegistry.FindByDefinitionVersionIds(idList, cancellationToken).ToList();
+            var workflowBlueprints = await _workflowRegistry.FindManyByDefinitionVersionIds(idList, cancellationToken).ToList();
             var mappedItems = _mapper.Map<IEnumerable<WorkflowBlueprintSummaryModel>>(workflowBlueprints).ToList();
 
             return Ok(mappedItems);
