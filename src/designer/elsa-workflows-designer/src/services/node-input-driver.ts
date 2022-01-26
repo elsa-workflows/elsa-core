@@ -4,6 +4,7 @@ export interface NodeInputContext {
   node: Node;
   nodeDescriptor: NodeDescriptor;
   inputDescriptor: InputDescriptor;
+  notifyInputChanged: () => void;
   inputChanged: (value: any, syntax: string) => void;
 }
 

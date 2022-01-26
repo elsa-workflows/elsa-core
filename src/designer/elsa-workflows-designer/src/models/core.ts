@@ -90,5 +90,6 @@ export interface RegisterLocation {
 export enum SyntaxNames {
   Literal = 'Literal',
   JavaScript = 'JavaScript',
+  Liquid = 'Liquid',
   Json = 'Json'
 }

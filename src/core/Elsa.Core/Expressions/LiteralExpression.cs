@@ -6,8 +6,13 @@ namespace Elsa.Expressions;
 
 public class LiteralExpression : IExpression
 {
+    // ReSharper disable once UnusedMember.Global
+    public LiteralExpression()
+    {
+    }
+    
     public LiteralExpression(object? value) => Value = value;
-    public object? Value { get; }
+    public object? Value { get; set; }
 }
 
 public class LiteralExpression<T> : LiteralExpression

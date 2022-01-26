@@ -64,6 +64,7 @@ export class TriggerPropertiesEditor {
         node: trigger,
         nodeDescriptor: triggerDescriptor,
         inputDescriptor,
+        notifyInputChanged: () => this.triggerUpdated.emit({trigger}),
         inputChanged: (v, s) => this.onPropertyEditorChanged(inputDescriptor, v, s)
       };
 

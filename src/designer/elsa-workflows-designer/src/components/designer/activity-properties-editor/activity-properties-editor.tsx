@@ -10,7 +10,7 @@ import {
   TabChangedArgs,
   TabDefinition
 } from '../../../models';
-import {InputDriverRegistry} from "../../../services/input-driver-registry";
+import {InputDriverRegistry} from "../../../services";
 import {Container} from "typedi";
 import {NodeInputContext} from "../../../services/node-input-driver";
 import {FormEntry} from "../../shared/forms/form-entry";
@@ -63,6 +63,7 @@ export class ActivityPropertiesEditor {
         node: activity,
         nodeDescriptor: activityDescriptor,
         inputDescriptor,
+        notifyInputChanged: () => this.activityUpdated.emit({activity}),
         inputChanged: (v, s) => this.onPropertyEditorChanged(inputDescriptor, v, s)
       };
 

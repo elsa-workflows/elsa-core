@@ -13,19 +13,25 @@ public class WorkflowSerializerOptionsProvider
     public JsonSerializerOptions CreateApiOptions() => CreateDefaultOptions();
     public JsonSerializerOptions CreatePersistenceOptions() => CreateDefaultOptions(ReferenceHandler.Preserve);
     
-    public JsonSerializerOptions CreateDefaultOptions(ReferenceHandler? referenceHandler = default) => new()
+    public JsonSerializerOptions CreateDefaultOptions(ReferenceHandler? referenceHandler = default)
     {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        ReferenceHandler = referenceHandler,
-        Converters =
+        var options = new JsonSerializerOptions()
         {
-            Create<JsonStringEnumConverter>(),
-            Create<TypeJsonConverter>(),
-            Create<ActivityJsonConverterFactory>(),
-            Create<TriggerJsonConverterFactory>(),
-            Create<FlowchartJsonConverter>()
-        }
-    };
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            ReferenceHandler = referenceHandler,
+            Converters =
+            {
+                Create<JsonStringEnumConverter>(),
+                Create<TypeJsonConverter>(),
+                Create<ActivityJsonConverterFactory>(),
+                Create<TriggerJsonConverterFactory>(),
+                Create<ExpressionJsonConverterFactory>(),
+                Create<FlowchartJsonConverter>()
+            }
+        };
+
+        return options;
+    }
 
     private T Create<T>() => ActivatorUtilities.CreateInstance<T>(_serviceProvider);
 }

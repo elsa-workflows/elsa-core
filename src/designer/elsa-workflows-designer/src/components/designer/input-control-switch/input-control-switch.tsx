@@ -4,6 +4,7 @@ import {enter, leave, toggle} from 'el-transition'
 import {SyntaxSelectorIcon} from "../../icons/tooling/syntax-selector";
 import {MonacoValueChangedArgs} from "../../shared/monaco-editor/monaco-editor";
 import {Hint} from "../../shared/forms/hint";
+import {mapSyntaxToLanguage} from "../../../utils";
 
 export interface ExpressionChangedArs {
   expression: string;
@@ -119,7 +120,7 @@ export class InputControlSwitch {
 
   private renderEditor = () => {
     const selectedSyntax = this.syntax;
-    const monacoLanguage = this.mapSyntaxToLanguage(selectedSyntax);
+    const monacoLanguage = mapSyntaxToLanguage(selectedSyntax);
     const value = this.expression;
     const showMonaco = !!selectedSyntax && selectedSyntax != 'Literal' && !!this.supportedSyntaxes.find(x => x === selectedSyntax);
     const expressionEditorClass = showMonaco ? 'block' : 'hidden';
@@ -143,19 +144,6 @@ export class InputControlSwitch {
       </div>
     );
   }
-
-  private mapSyntaxToLanguage = (syntax: string): string => {
-    switch (syntax) {
-      case 'Json':
-        return 'json';
-      case 'JavaScript':
-        return 'javascript';
-      case 'Liquid':
-        return 'handlebars';
-      default:
-        return 'plaintext';
-    }
-  };
 
   private toggleContextMenu() {
     toggle(this.contextMenu);

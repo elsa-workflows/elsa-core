@@ -19,7 +19,7 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
         _activityRegistry = activityRegistry;
         _serviceProvider = serviceProvider;
     }
-        
+
     public override IActivity Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (!JsonDocument.TryParseValue(ref reader, out var doc))
@@ -36,7 +36,7 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
 
         var newOptions = new JsonSerializerOptions(options);
         newOptions.Converters.Add(new InputJsonConverterFactory(_serviceProvider));
-            
+
         var context = new ActivityConstructorContext(doc.RootElement, newOptions);
         var activity = activityDescriptor.Constructor(context);
 

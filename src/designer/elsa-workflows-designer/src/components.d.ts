@@ -143,6 +143,9 @@ export namespace Components {
         "monacoLibPath": string;
         "serverUrl": string;
     }
+    interface ElsaSwitchEditor {
+        "inputContext": NodeInputContext;
+    }
     interface ElsaToolbox {
         "graph": Graph;
     }
@@ -331,6 +334,12 @@ declare global {
         prototype: HTMLElsaStudioElement;
         new (): HTMLElsaStudioElement;
     };
+    interface HTMLElsaSwitchEditorElement extends Components.ElsaSwitchEditor, HTMLStencilElement {
+    }
+    var HTMLElsaSwitchEditorElement: {
+        prototype: HTMLElsaSwitchEditorElement;
+        new (): HTMLElsaSwitchEditorElement;
+    };
     interface HTMLElsaToolboxElement extends Components.ElsaToolbox, HTMLStencilElement {
     }
     var HTMLElsaToolboxElement: {
@@ -426,6 +435,7 @@ declare global {
         "elsa-single-line-input": HTMLElsaSingleLineInputElement;
         "elsa-slide-over-panel": HTMLElsaSlideOverPanelElement;
         "elsa-studio": HTMLElsaStudioElement;
+        "elsa-switch-editor": HTMLElsaSwitchEditorElement;
         "elsa-toolbox": HTMLElsaToolboxElement;
         "elsa-toolbox-activities": HTMLElsaToolboxActivitiesElement;
         "elsa-toolbox-triggers": HTMLElsaToolboxTriggersElement;
@@ -566,6 +576,9 @@ declare namespace LocalJSX {
         "monacoLibPath"?: string;
         "serverUrl"?: string;
     }
+    interface ElsaSwitchEditor {
+        "inputContext"?: NodeInputContext;
+    }
     interface ElsaToolbox {
         "graph"?: Graph;
     }
@@ -644,6 +657,7 @@ declare namespace LocalJSX {
         "elsa-single-line-input": ElsaSingleLineInput;
         "elsa-slide-over-panel": ElsaSlideOverPanel;
         "elsa-studio": ElsaStudio;
+        "elsa-switch-editor": ElsaSwitchEditor;
         "elsa-toolbox": ElsaToolbox;
         "elsa-toolbox-activities": ElsaToolboxActivities;
         "elsa-toolbox-triggers": ElsaToolboxTriggers;
@@ -684,6 +698,7 @@ declare module "@stencil/core" {
             "elsa-single-line-input": LocalJSX.ElsaSingleLineInput & JSXBase.HTMLAttributes<HTMLElsaSingleLineInputElement>;
             "elsa-slide-over-panel": LocalJSX.ElsaSlideOverPanel & JSXBase.HTMLAttributes<HTMLElsaSlideOverPanelElement>;
             "elsa-studio": LocalJSX.ElsaStudio & JSXBase.HTMLAttributes<HTMLElsaStudioElement>;
+            "elsa-switch-editor": LocalJSX.ElsaSwitchEditor & JSXBase.HTMLAttributes<HTMLElsaSwitchEditorElement>;
             "elsa-toolbox": LocalJSX.ElsaToolbox & JSXBase.HTMLAttributes<HTMLElsaToolboxElement>;
             "elsa-toolbox-activities": LocalJSX.ElsaToolboxActivities & JSXBase.HTMLAttributes<HTMLElsaToolboxActivitiesElement>;
             "elsa-toolbox-triggers": LocalJSX.ElsaToolboxTriggers & JSXBase.HTMLAttributes<HTMLElsaToolboxTriggersElement>;

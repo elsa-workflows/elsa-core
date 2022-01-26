@@ -49,7 +49,7 @@ public class ActivityDescriber : IActivityDescriber
             };
 
         var properties = activityType.GetProperties();
-        var inputProperties = properties.Where(x => typeof(Input).IsAssignableFrom(x.PropertyType)).ToList();
+        var inputProperties = properties.Where(x => typeof(Input).IsAssignableFrom(x.PropertyType) || x.GetCustomAttribute<InputAttribute>() != null).ToList();
         var outputProperties = properties.Where(x => typeof(Output).IsAssignableFrom(x.PropertyType)).ToList();
         var isTrigger = activityType.IsAssignableTo(typeof(ITrigger));
 
@@ -73,7 +73,7 @@ public class ActivityDescriber : IActivityDescriber
 
         return ValueTask.FromResult(descriptor);
     }
-    
+
     private IEnumerable<InputDescriptor> DescribeInputProperties(IEnumerable<PropertyInfo> properties)
     {
         foreach (var propertyInfo in properties)

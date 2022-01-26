@@ -11,10 +11,10 @@ public class SwitchActivityNodeResolver : IActivityNodeResolver
     public IEnumerable<IActivity> GetPorts(IActivity activity)
     {
         var @switch = (Switch)activity;
-        var cases = @switch.Cases;
+        var cases = @switch.Cases.Where(x => x.Activity != null);
 
         foreach (var @case in cases)
-            yield return @case.Activity;
+            yield return @case.Activity!;
 
         if (@switch.Default != null)
             yield return @switch.Default;

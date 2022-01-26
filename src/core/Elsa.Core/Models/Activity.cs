@@ -12,7 +12,7 @@ public abstract class Activity : IActivity
     public string NodeType { get; set; }
     public IDictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
 
-    public virtual ValueTask ExecuteAsync(ActivityExecutionContext context)
+    protected virtual ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         Execute(context);
         return ValueTask.CompletedTask;
@@ -21,6 +21,8 @@ public abstract class Activity : IActivity
     protected virtual void Execute(ActivityExecutionContext context)
     {
     }
+
+    ValueTask IActivity.ExecuteAsync(ActivityExecutionContext context) => ExecuteAsync(context);
 }
 
 public abstract class ActivityWithResult : Activity

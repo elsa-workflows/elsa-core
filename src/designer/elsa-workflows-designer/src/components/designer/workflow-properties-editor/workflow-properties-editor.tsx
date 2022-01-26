@@ -66,8 +66,8 @@ export class WorkflowPropertiesEditor {
     const publication = workflow.publication;
 
     const workflowDetails = {
-      'ID': identity.id,
       'Definition ID': identity.definitionId,
+      'Version ID': identity.id,
       'Version': identity.version,
       'Status': publication.isPublished ? 'Published' : 'Draft'
     };

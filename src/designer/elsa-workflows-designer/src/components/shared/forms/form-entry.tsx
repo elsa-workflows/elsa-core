@@ -6,11 +6,13 @@ export interface FormEntryProps {
   fieldId: string;
   key?: string;
   hint?: string;
+  padding?: string;
 }
 
-export const FormEntry: FunctionalComponent<FormEntryProps> = ({label, hint, fieldId, key}, children) => {
+export const FormEntry: FunctionalComponent<FormEntryProps> = ({label, hint, fieldId, key, padding}, children) => {
+  padding ??= 'p-4';
   return (
-    <div class="p-4">
+    <div class={padding}>
       <label htmlFor={fieldId}>
         {label}
       </label>

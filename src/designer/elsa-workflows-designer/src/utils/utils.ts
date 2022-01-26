@@ -37,6 +37,19 @@ export const getVersionOptionsString = (versionOptions?: VersionOptions) => {
             : versionOptions.version.toString();
 };
 
+export const mapSyntaxToLanguage = (syntax: string): string => {
+  switch (syntax) {
+    case 'Json':
+      return 'json';
+    case 'JavaScript':
+      return 'javascript';
+    case 'Liquid':
+      return 'handlebars';
+    default:
+      return 'plaintext';
+  }
+};
+
 export const getInputPropertyName = (inputContext: NodeInputContext) => {
   const inputProperty = inputContext.inputDescriptor;
   const propertyName = inputProperty.name;

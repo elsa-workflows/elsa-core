@@ -10,7 +10,7 @@ public class WriteHttpResponse : Activity
     public Input<HttpStatusCode> StatusCode { get; set; } = new(HttpStatusCode.OK);
     public Input<string?> Content { get; set; } = new("");
 
-    public override async ValueTask ExecuteAsync(ActivityExecutionContext context)
+    protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var httpContextAccessor = context.GetRequiredService<IHttpContextAccessor>();
         var httpContext = httpContextAccessor.HttpContext;
