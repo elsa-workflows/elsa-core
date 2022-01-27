@@ -572,7 +572,7 @@ export class ElsaWorkflowDesigner {
 
   setEntities() {
     this.graph = new dagreD3.graphlib.Graph().setGraph({ranksep: 30});
-    this.graph.graph().rankdir = this.getLayoutDirection();
+    (this.graph.graph() as any).rankdir = this.getLayoutDirection();
 
     const rootActivities = this.getRootActivities();
 
@@ -684,7 +684,7 @@ export class ElsaWorkflowDesigner {
   onWorkflowExecuted = () => {
     const firstNode = d3.select(this.el).select('.node.activity');
 
-    const node = this.graph.node(firstNode.data()) as any;
+    const node = this.graph.node(firstNode.data() as any) as any;
     const activity = node.activity;
     const activityId = activity.activityId;
 
