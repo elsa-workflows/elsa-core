@@ -91,6 +91,12 @@ namespace Elsa.Providers.Workflows
             return await TryMaterializeBlueprintsAsync(definitions, cancellationToken).ToListAsync(cancellationToken);
         }
 
+        public override async ValueTask<IEnumerable<IWorkflowBlueprint>> FindManyByNames(IEnumerable<string> names, CancellationToken cancellationToken = default)
+        {
+            var definitions = await _workflowDefinitionStore.FindManyAsync(new ManyWorkflowDefinitionVersionIdsSpecification(names), cancellationToken: cancellationToken);
+            return await TryMaterializeBlueprintsAsync(definitions, cancellationToken).ToListAsync(cancellationToken);
+        }
+
         private async Task<IWorkflowBlueprint?> TryMaterializeBlueprintAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken)
         {
             try

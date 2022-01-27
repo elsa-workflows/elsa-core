@@ -35,6 +35,9 @@ namespace Elsa.Services.Workflows
         public async Task<IEnumerable<IWorkflowBlueprint>> FindManyByDefinitionVersionIds(IEnumerable<string> definitionVersionIds, CancellationToken cancellationToken) =>
             await FindManyInternalAsync(provider => provider.FindManyByDefinitionVersionIds(definitionVersionIds, cancellationToken), cancellationToken).ToListAsync(cancellationToken);
 
+        public async Task<IEnumerable<IWorkflowBlueprint>> FindManyByNames(IEnumerable<string> names, CancellationToken cancellationToken = default) =>
+            await FindManyInternalAsync(provider => provider.FindManyByNames(names, cancellationToken), cancellationToken).ToListAsync(cancellationToken);
+
         private async Task<IWorkflowBlueprint?> FindInternalAsync(Func<IWorkflowProvider, ValueTask<IWorkflowBlueprint?>> providerAction, CancellationToken cancellationToken = default)
         {
             var providers = _workflowProviders;
