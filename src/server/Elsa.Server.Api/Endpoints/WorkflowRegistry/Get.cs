@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
@@ -48,6 +49,10 @@ namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
                 return NotFound();
 
             var model = await _workflowBlueprintMapper.MapAsync(workflowBlueprint, cancellationToken);
+            
+            // Filter out activities from composite activities.
+            model.Activities = model.Activities.Where(x => x.ParentId == null || x.ParentId == workflowBlueprint.Id).ToList();
+            
             return Json(model, _contentSerializer.GetSettings());
         }
     }
