@@ -13,11 +13,12 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\..\..\..\Rebus\Rebus.AzureServiceBus\Rebus.AzureServiceBus\Rebus.AzureServiceBus.csproj" />
         <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-        <PackageReference Include="Rebus.AzureServiceBus" Version="9.0.5" />
-    </ItemGroup>
+<!--    <ItemGroup>-->
+<!--        <PackageReference Include="Rebus.AzureServiceBus" Version="9.0.8" />-->
+<!--    </ItemGroup>-->
 
 </Project>

@@ -253,7 +253,7 @@ namespace Microsoft.Extensions.DependencyInjection
             // Service Bus.
             services
                 .AddSingleton<ServiceBusFactory>()
-                .AddSingleton<IServiceBusFactory, ServiceBusFactory>()
+                .AddSingleton<IServiceBusFactory>(sp => sp.GetRequiredService<ServiceBusFactory>())
                 .AddSingleton<ICommandSender, CommandSender>()
                 .AddSingleton<IEventPublisher, EventPublisher>();
 
