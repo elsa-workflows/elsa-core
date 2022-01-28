@@ -53,7 +53,7 @@ namespace Elsa.Handlers
 
         private async ValueTask SaveWorkflowAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken)
         {
-            _logger.LogTrace("Persisting workflow instance {instanceId}", workflowInstance.Id);
+            _logger.LogTrace("Persisting workflow instance {WorkflowInstanceId}", workflowInstance.Id);
 
             // Can't prune data - we need to figure out a better way to remove activity output data.
             // Doing it right now causes issues when transferring output data from composite activities.
