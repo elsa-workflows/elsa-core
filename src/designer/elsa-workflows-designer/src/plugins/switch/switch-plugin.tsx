@@ -1,20 +1,21 @@
 import 'reflect-metadata';
 import {h} from '@stencil/core';
 import {Container, Service} from "typedi";
-import {InputControlRegistry} from "../../services";
+import {ActivityDriverRegistry, InputControlRegistry} from "../../services";
 import {Plugin} from "../../models";
-import {NodeHandlerRegistry} from "../../components/activities/flowchart/node-handler-registry";
-import {SwitchNodeHandler} from "./switch-node-handler";
+import {SwitchActivityDriver} from "./switch-activity-driver";
 
 
 @Service()
 export class SwitchPlugin implements Plugin {
+  private static readonly ActivityTypeName: string = 'ControlFlow.Switch';
 
   constructor() {
+    const activityTypeName = SwitchPlugin.ActivityTypeName;
+    const driverRegistry = Container.get(ActivityDriverRegistry);
     const inputControlRegistry = Container.get(InputControlRegistry);
-    const nodeHandlerRegistry = Container.get(NodeHandlerRegistry);
 
-    inputControlRegistry.add('switch-editor', c => <elsa-switch-editor inputContext={c} />)
-    nodeHandlerRegistry.add('ControlFlow.Switch', () => Container.get(SwitchNodeHandler));
+    driverRegistry.add(activityTypeName, () => Container.get(SwitchActivityDriver));
+    inputControlRegistry.add('switch-editor', c => <elsa-switch-editor inputContext={c}/>);
   }
 }
