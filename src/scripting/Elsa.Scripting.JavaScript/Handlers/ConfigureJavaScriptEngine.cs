@@ -51,6 +51,7 @@ namespace Elsa.Scripting.JavaScript.Handlers
             engine.SetValue("parseGuid", (Func<string, Guid>)(Guid.Parse));
             engine.SetValue("setVariable", (Action<string, object>)((name, value) => activityExecutionContext.SetVariable(name, value)));
             engine.SetValue("getVariable", (Func<string, object?>)(name => activityExecutionContext.GetVariable(name)));
+            engine.SetValue("getTransientVariable", (Func<string, object?>)(name => activityExecutionContext.GetTransientVariable(name)));
             engine.SetValue("isNullOrWhiteSpace", (Func<string, bool>)(string.IsNullOrWhiteSpace));
             engine.SetValue("isNullOrEmpty", (Func<string, bool>)(string.IsNullOrEmpty));
             engine.SetValue("getWorkflowDefinitionIdByName", (Func<string, string?>)(name => GetWorkflowDefinitionIdByName(activityExecutionContext, name)));
