@@ -158,6 +158,8 @@ namespace Elsa.Options
 
         public ElsaOptionsBuilder AddPubSubMessageType(Type messageType, string? queueName = default)
         {
+            queueName ??= messageType.Name;
+            
             ElsaOptions.PubSubMessageTypes.Add(new MessageTypeConfig(messageType, queueName));
             return this;
         }
