@@ -157,6 +157,16 @@ export const createElsaClient = async function (serverUrl: string): Promise<Elsa
         const response = await httpClient.get<PagedList<WorkflowBlueprintSummary>>(`v1/workflow-registry/${providerName}${queryStringText}`);
         return response.data;
       },
+      listAll: async (versionOptions?: VersionOptions): Promise<Array<WorkflowBlueprintSummary>> => {
+        const queryString = {
+          version: getVersionOptionsString(versionOptions)
+        };
+
+        const queryStringItems = collection.map(queryString, (v, k) => `${k}=${v}`);
+        const queryStringText = queryStringItems.length > 0 ? `?${queryStringItems.join('&')}` : '';
+        const response = await httpClient.get<Array<WorkflowBlueprintSummary>>(`v1/workflow-registry${queryStringText}`);
+        return response.data;
+      },
       findManyByDefinitionVersionIds: async (definitionVersionIds: Array<string>): Promise<Array<WorkflowBlueprintSummary>> => {
 
         if (definitionVersionIds.length == 0)
@@ -348,6 +358,8 @@ export interface WorkflowTestApi {
 
 export interface WorkflowRegistryApi {
   list(providerName: string, page?: number, pageSize?: number, versionOptions?: VersionOptions): Promise<PagedList<WorkflowBlueprintSummary>>;
+
+  listAll(versionOptions?: VersionOptions): Promise<Array<WorkflowBlueprintSummary>>;
 
   findManyByDefinitionVersionIds(definitionVersionIds: Array<string>): Promise<Array<WorkflowBlueprintSummary>>;
 

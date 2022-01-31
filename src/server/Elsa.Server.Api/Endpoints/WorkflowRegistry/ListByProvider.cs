@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using Elsa.Models;
-using Elsa.Persistence.Specifications;
 using Elsa.Providers.Workflows;
 using Elsa.Server.Api.Models;
 using Elsa.Services;
@@ -19,19 +18,17 @@ namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
     [ApiVersion("1")]
     [Route("v{apiVersion:apiVersion}/workflow-registry/{providerName}")]
     [Produces("application/json")]
-    public class List : Controller
+    public class ListByProvider : Controller
     {
         private readonly IEnumerable<IWorkflowProvider> _workflowProviders;
         private readonly ITenantAccessor _tenantAccessor;
         private readonly IMapper _mapper;
-        private readonly IServiceProvider _serviceProvider;
 
-        public List(IEnumerable<IWorkflowProvider> workflowProviders, ITenantAccessor tenantAccessor, IMapper mapper, IServiceProvider serviceProvider)
+        public ListByProvider(IEnumerable<IWorkflowProvider> workflowProviders, ITenantAccessor tenantAccessor, IMapper mapper, IServiceProvider serviceProvider)
         {
             _workflowProviders = workflowProviders;
             _tenantAccessor = tenantAccessor;
             _mapper = mapper;
-            _serviceProvider = serviceProvider;
         }
 
         [HttpGet]
