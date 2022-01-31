@@ -12,6 +12,8 @@ namespace Elsa.Client.Models
         [DataMember(Order = 4)] public string Category { get; set; } = default!;
         [DataMember(Order = 5)] public ActivityTraits Traits { get; set; }
         [DataMember(Order = 6)] public string[] Outcomes { get; set; } = Array.Empty<string>();
-        [DataMember(Order = 7)] public ActivityPropertyDescriptor[] Properties { get; set; } = Array.Empty<ActivityPropertyDescriptor>();
+        [DataMember(Order = 7)] public ActivityInputDescriptor[] Properties { get; set; } = Array.Empty<ActivityInputDescriptor>();
+        [DataMember(Order = 7)] public ActivityInputDescriptor[] InputProperties { get; set; } = Array.Empty<ActivityInputDescriptor>();
+        [DataMember(Order = 7)] public ActivityOutputDescriptor[] OutputProperties { get; set; } = Array.Empty<ActivityOutputDescriptor>();
     }
 }
