@@ -3,14 +3,16 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.Scheduling.Contracts;
-using Elsa.Activities.Scheduling.Jobs;
+using Elsa.Modules.Scheduling.Contracts;
+using Elsa.Modules.Scheduling.Jobs;
+using Elsa.Modules.Scheduling.Triggers;
 using Elsa.Persistence.Entities;
 using Elsa.Persistence.Extensions;
 using Elsa.Scheduling.Contracts;
 using Elsa.Scheduling.Schedules;
+using Timer = Elsa.Modules.Scheduling.Triggers.Timer;
 
-namespace Elsa.Activities.Scheduling.Services;
+namespace Elsa.Modules.Scheduling.Services;
 
 public class WorkflowTriggerScheduler : IWorkflowTriggerScheduler
 {

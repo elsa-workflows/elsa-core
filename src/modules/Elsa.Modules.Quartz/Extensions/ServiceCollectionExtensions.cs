@@ -1,7 +1,7 @@
-using Elsa.Activities.Scheduling.Jobs;
 using Elsa.Modules.Quartz.Contracts;
 using Elsa.Modules.Quartz.Jobs;
 using Elsa.Modules.Quartz.Services;
+using Elsa.Modules.Scheduling.Jobs;
 using Elsa.Scheduling.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz;

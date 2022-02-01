@@ -1,10 +1,10 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.Scheduling.Contracts;
 using Elsa.Mediator.Contracts;
+using Elsa.Modules.Scheduling.Contracts;
 using Elsa.Runtime.Notifications;
 
-namespace Elsa.Activities.Scheduling.Handlers;
+namespace Elsa.Modules.Scheduling.Handlers;
 
 // Updates scheduled jobs based on the updated workflow triggers.
 public class ScheduleWorkflowsHandler : INotificationHandler<TriggerIndexingFinished>, INotificationHandler<WorkflowExecuted>

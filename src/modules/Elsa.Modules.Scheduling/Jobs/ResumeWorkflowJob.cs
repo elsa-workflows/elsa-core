@@ -6,7 +6,7 @@ using Elsa.Runtime.Models;
 using Elsa.Scheduling.Abstractions;
 using Elsa.Scheduling.Contracts;
 
-namespace Elsa.Activities.Scheduling.Jobs;
+namespace Elsa.Modules.Scheduling.Jobs;
 
 public record ResumeWorkflowJob(string WorkflowInstanceId, Bookmark Bookmark) : IJob
 {

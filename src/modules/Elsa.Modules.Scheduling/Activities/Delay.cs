@@ -3,7 +3,7 @@ using Elsa.Attributes;
 using Elsa.Contracts;
 using Elsa.Models;
 
-namespace Elsa.Activities.Scheduling;
+namespace Elsa.Modules.Scheduling.Activities;
 
 public class Delay : Activity
 {

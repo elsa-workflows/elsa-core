@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Elsa.Models;
 using Microsoft.AspNetCore.Http;
 
-namespace Elsa.Activities.Http;
+namespace Elsa.Modules.Http;
 
 public class WriteHttpResponse : Activity
 {

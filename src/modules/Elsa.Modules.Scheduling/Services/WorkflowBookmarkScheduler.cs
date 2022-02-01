@@ -3,14 +3,15 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.Scheduling.Contracts;
-using Elsa.Activities.Scheduling.Jobs;
 using Elsa.Extensions;
 using Elsa.Models;
+using Elsa.Modules.Scheduling.Activities;
+using Elsa.Modules.Scheduling.Contracts;
+using Elsa.Modules.Scheduling.Jobs;
 using Elsa.Scheduling.Contracts;
 using Elsa.Scheduling.Schedules;
 
-namespace Elsa.Activities.Scheduling.Services;
+namespace Elsa.Modules.Scheduling.Services;
 
 public class WorkflowBookmarkScheduler : IWorkflowBookmarkScheduler
 {

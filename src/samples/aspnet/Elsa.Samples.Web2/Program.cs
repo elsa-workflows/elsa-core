@@ -1,6 +1,6 @@
-using Elsa.Activities.Http.Extensions;
 using Elsa.Api.Extensions;
 using Elsa.Extensions;
+using Elsa.Modules.Http.Extensions;
 using Elsa.Persistence.InMemory.Extensions;
 using Elsa.Persistence.Middleware.WorkflowExecution;
 using Elsa.Pipelines.WorkflowExecution.Components;

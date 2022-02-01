@@ -7,7 +7,7 @@ using Elsa.Runtime.Contracts;
 using Elsa.Runtime.Models;
 using Microsoft.AspNetCore.Http;
 
-namespace Elsa.Activities.Http.Middleware;
+namespace Elsa.Modules.Http.Middleware;
 
 public class HttpTriggerMiddleware
 {

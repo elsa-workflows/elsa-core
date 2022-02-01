@@ -1,6 +1,6 @@
 using System;
 
-namespace Elsa.Activities.Http;
+namespace Elsa.Modules.Http;
 
 public class HttpRequestModel
 {

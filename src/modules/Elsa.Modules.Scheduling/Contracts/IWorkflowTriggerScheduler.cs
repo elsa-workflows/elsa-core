@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Persistence.Entities;
 
-namespace Elsa.Activities.Scheduling.Contracts;
+namespace Elsa.Modules.Scheduling.Contracts;
 
 /// <summary>
 /// Schedules jobs for the specified list of workflow triggers.

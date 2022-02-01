@@ -1,13 +1,13 @@
-using Elsa.Activities.Scheduling.Contracts;
-using Elsa.Activities.Scheduling.Handlers;
-using Elsa.Activities.Scheduling.HostedServices;
-using Elsa.Activities.Scheduling.Jobs;
-using Elsa.Activities.Scheduling.Services;
 using Elsa.Mediator.Extensions;
+using Elsa.Modules.Scheduling.Contracts;
+using Elsa.Modules.Scheduling.Handlers;
+using Elsa.Modules.Scheduling.HostedServices;
+using Elsa.Modules.Scheduling.Jobs;
+using Elsa.Modules.Scheduling.Services;
 using Elsa.Scheduling.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Activities.Scheduling.Extensions;
+namespace Elsa.Modules.Scheduling.Extensions;
 
 public static class ServiceCollectionExtensions
 {

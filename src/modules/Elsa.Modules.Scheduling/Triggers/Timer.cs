@@ -4,7 +4,7 @@ using Elsa.Attributes;
 using Elsa.Contracts;
 using Elsa.Models;
 
-namespace Elsa.Activities.Scheduling;
+namespace Elsa.Modules.Scheduling.Triggers;
 
 /// <summary>
 /// Represents a timer to periodically trigger the workflow it is associated with.

@@ -5,7 +5,7 @@ using Elsa.Attributes;
 using Elsa.Management.Models;
 using Elsa.Models;
 
-namespace Elsa.Activities.Http;
+namespace Elsa.Modules.Http;
 
 public class HttpTrigger : TriggerActivity
 {

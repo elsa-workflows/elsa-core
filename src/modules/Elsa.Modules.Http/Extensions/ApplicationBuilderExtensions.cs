@@ -1,7 +1,7 @@
-using Elsa.Activities.Http.Middleware;
+using Elsa.Modules.Http.Middleware;
 using Microsoft.AspNetCore.Builder;
 
-namespace Elsa.Activities.Http.Extensions;
+namespace Elsa.Modules.Http.Extensions;
 
 public static class ApplicationBuilderExtensions
 {

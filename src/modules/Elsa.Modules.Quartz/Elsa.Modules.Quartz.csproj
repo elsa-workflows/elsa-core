@@ -13,7 +13,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\activities\Elsa.Activities.Scheduling\Elsa.Activities.Scheduling.csproj" />
+      <ProjectReference Include="..\Elsa.Modules.Scheduling\Elsa.Modules.Scheduling.csproj" />
     </ItemGroup>
 
 </Project>
