@@ -35,12 +35,12 @@ export interface NodePropertyDescriptor {
   type: Type;
   displayName?: string;
   description?: string;
-  order: number;
+  order?: number;
   isBrowsable?: boolean;
 }
 
 export interface InputDescriptor extends NodePropertyDescriptor {
-  uiHint: string;
+  uiHint?: string;
   options?: any;
   category?: string;
   defaultValue?: any;

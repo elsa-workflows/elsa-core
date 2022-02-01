@@ -5,7 +5,7 @@ namespace Elsa.ActivityNodeResolvers;
 
 public class SwitchActivityNodeResolver : IActivityNodeResolver
 {
-    public int Priority => -1;
+    public int Priority => 0;
     public bool GetSupportsActivity(IActivity activity) => activity is Switch;
 
     public IEnumerable<IActivity> GetPorts(IActivity activity)

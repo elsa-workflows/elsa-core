@@ -7,16 +7,17 @@
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
 import { ActionDefinition, ActionInvokedArgs, Activity, ActivityDescriptor, ActivitySelectedArgs, ContainerSelectedArgs, GraphUpdatedArgs, IntellisenseContext, SelectListItem, TabChangedArgs, TabDefinition, Trigger, TriggerDescriptor, Workflow, WorkflowInstance, WorkflowInstanceSummary, WorkflowSummary } from "./models";
 import { ActivityUpdatedArgs, DeleteActivityRequestedArgs } from "./components/designer/activity-properties-editor/activity-properties-editor";
+import { ContainerActivityComponent } from "./components/activities/container-activity-component";
 import { AddActivityArgs } from "./components/designer/canvas/canvas";
 import { NodeInputContext } from "./services/node-input-driver";
 import { MenuItem } from "./components/shared/context-menu/models";
 import { DropdownButtonItem, DropdownButtonOrigin } from "./components/shared/dropdown-button/models";
+import { Graph } from "@antv/x6";
 import { AddActivityArgs as AddActivityArgs1 } from "./components/designer/canvas/canvas";
 import { ExpressionChangedArs } from "./components/designer/input-control-switch/input-control-switch";
 import { MonacoLib, MonacoValueChangedArgs } from "./components/shared/monaco-editor/monaco-editor";
 import { PagerData } from "./components/shared/pager/pager";
 import { PanelPosition, PanelStateChangedArgs } from "./components/designer/panel/models";
-import { Graph } from "@antv/x6";
 import { TriggerDeselectedArgs, TriggerSelectedArgs, TriggersUpdatedArgs } from "./components/designer/trigger-container/trigger-container";
 import { DeleteTriggerRequestedArgs, TriggerUpdatedArgs } from "./components/designer/trigger-properties-editor/trigger-properties-editor";
 import { WorkflowUpdatedArgs } from "./components/designer/workflow-editor/workflow-editor";
@@ -33,6 +34,7 @@ export namespace Components {
     interface ElsaCanvas {
         "addActivity": (args: AddActivityArgs) => Promise<void>;
         "exportGraph": () => Promise<Activity>;
+        "getRootComponent": () => Promise<ContainerActivityComponent>;
         "importGraph": (root: Activity) => Promise<void>;
         "interactiveMode": boolean;
         "updateLayout": () => Promise<void>;
@@ -59,6 +61,7 @@ export namespace Components {
         "activityDescriptors": Array<ActivityDescriptor>;
         "addActivity": (args: AddActivityArgs) => Promise<void>;
         "exportRoot": () => Promise<Activity>;
+        "getGraph": () => Promise<Graph>;
         "importRoot": (root: Activity) => Promise<void>;
         "interactiveMode": boolean;
         "root"?: Activity;
@@ -177,6 +180,7 @@ export namespace Components {
     }
     interface ElsaWorkflowEditor {
         "activityDescriptors": Array<ActivityDescriptor>;
+        "getCanvas": () => Promise<HTMLElsaCanvasElement>;
         "getWorkflow": () => Promise<Workflow>;
         "importWorkflow": (workflow: Workflow, workflowInstance?: WorkflowInstance) => Promise<void>;
         "importWorkflowMetadata": (workflow: Workflow) => Promise<void>;

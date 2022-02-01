@@ -10,7 +10,7 @@ export class PortProviderRegistry {
   private map: Map<string, PortProviderFactory> = new Map<string, PortProviderFactory>();
   private defaultProviderFactory: PortProviderFactory = () => Container.get(DefaultPortProvider);
 
-  public register(activityType: string, defaultProviderFactory: PortProviderFactory) {
+  public add(activityType: string, defaultProviderFactory: PortProviderFactory) {
     this.map.set(activityType, defaultProviderFactory);
   }
 

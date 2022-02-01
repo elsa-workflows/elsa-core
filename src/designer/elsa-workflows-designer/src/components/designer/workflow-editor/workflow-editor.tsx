@@ -1,12 +1,12 @@
-import {Component, h, Listen, Prop, State, Event, EventEmitter, Method, Watch} from '@stencil/core';
+import {Component, h, Listen, Prop, State, Event, EventEmitter, Method, Watch, Element} from '@stencil/core';
 import {debounce} from 'lodash';
 import {v4 as uuid} from 'uuid';
 import {Container} from "typedi";
 import {PanelPosition, PanelStateChangedArgs} from '../panel/models';
 import {
   Activity,
-  ActivityDescriptor,
-  ActivitySelectedArgs, ContainerSelectedArgs,
+  ActivityDescriptor, ActivityPropertyChangedEventArgs,
+  ActivitySelectedArgs, ContainerSelectedArgs, EventTypes,
   GraphUpdatedArgs, Trigger,
   TriggerDescriptor,
   Workflow, WorkflowInstance
@@ -16,7 +16,7 @@ import {
   ActivityUpdatedArgs,
   DeleteActivityRequestedArgs
 } from '../activity-properties-editor/activity-properties-editor';
-import {ActivityDriverRegistry} from '../../../services';
+import {ActivityDriverRegistry, EventBus} from '../../../services';
 import {TriggerSelectedArgs, TriggersUpdatedArgs} from '../trigger-container/trigger-container';
 import {DeleteTriggerRequestedArgs, TriggerUpdatedArgs} from "../trigger-properties-editor/trigger-properties-editor";
 import {WorkflowPropsUpdatedArgs} from "../workflow-properties-editor/workflow-properties-editor";
@@ -33,6 +33,7 @@ export interface WorkflowUpdatedArgs {
 })
 export class WorkflowEditor {
   private readonly pluginRegistry: PluginRegistry;
+  private readonly eventBus: EventBus;
   private canvas: HTMLElsaCanvasElement;
   private container: HTMLDivElement;
   private toolbox: HTMLElsaToolboxElement;
@@ -41,6 +42,7 @@ export class WorkflowEditor {
   private deleteActivity: (activity: Activity) => void;
   private applyTriggerChanges: (trigger: Trigger) => void;
   private deleteTrigger: (trigger: Trigger) => void;
+  private readonly emitActivityChangedDebounced: (e: ActivityPropertyChangedEventArgs) => void;
   private readonly saveChangesDebounced: () => void;
 
   private workflow: Workflow = {
@@ -54,10 +56,13 @@ export class WorkflowEditor {
   private workflowInstance?: WorkflowInstance;
 
   constructor() {
+    this.eventBus = Container.get(EventBus);
     this.pluginRegistry = Container.get(PluginRegistry);
+    this.emitActivityChangedDebounced = debounce(this.emitActivityChanged, 100);
     this.saveChangesDebounced = debounce(this.saveChanges, 1000);
   }
 
+  @Element() el: HTMLElsaWorkflowEditorElement;
   @Prop({attribute: 'monaco-lib-path'}) public monacoLibPath: string;
   @Prop() public activityDescriptors: Array<ActivityDescriptor> = [];
   @Prop() public triggerDescriptors: Array<TriggerDescriptor> = [];
@@ -87,14 +92,14 @@ export class WorkflowEditor {
   }
 
   @Listen('containerSelected')
-  async handleContainerSelected(e: CustomEvent<ContainerSelectedArgs>) {
+  private async handleContainerSelected(e: CustomEvent<ContainerSelectedArgs>) {
     this.selectedActivity = null;
     this.selectedTrigger = null;
     await this.triggerContainer.deselectAll();
   }
 
   @Listen('activitySelected')
-  async handleActivitySelected(e: CustomEvent<ActivitySelectedArgs>) {
+  private async handleActivitySelected(e: CustomEvent<ActivitySelectedArgs>) {
     this.selectedActivity = e.detail.activity;
     this.selectedTrigger = null;
     await this.triggerContainer.deselectAll();
@@ -103,7 +108,7 @@ export class WorkflowEditor {
   }
 
   @Listen('triggerSelected')
-  async handleTriggerSelected(e: CustomEvent<TriggerSelectedArgs>) {
+  private async handleTriggerSelected(e: CustomEvent<TriggerSelectedArgs>) {
     this.selectedTrigger = e.detail.trigger;
     this.selectedActivity = null;
     this.applyTriggerChanges = e.detail.applyChanges;
@@ -111,35 +116,41 @@ export class WorkflowEditor {
   }
 
   @Listen('triggerDeselected')
-  async handleTriggerDeselected(e: CustomEvent<TriggerSelectedArgs>) {
+  private async handleTriggerDeselected(e: CustomEvent<TriggerSelectedArgs>) {
     this.selectedTrigger = null;
   }
 
   @Listen('graphUpdated')
-  handleGraphUpdated(e: CustomEvent<GraphUpdatedArgs>) {
+  private handleGraphUpdated(e: CustomEvent<GraphUpdatedArgs>) {
     if (this.interactiveMode)
       this.saveChangesDebounced();
   }
 
   @Method()
-  async registerActivityDrivers(register: (registry: ActivityDriverRegistry) => void): Promise<void> {
+  public async getCanvas(): Promise<HTMLElsaCanvasElement> {
+    return this.canvas;
+  }
+
+  @Method()
+  public async registerActivityDrivers(register: (registry: ActivityDriverRegistry) => void): Promise<void> {
     const registry = Container.get(ActivityDriverRegistry);
     register(registry);
   }
 
-  @Method() getWorkflow(): Promise<Workflow> {
+  @Method()
+  public getWorkflow(): Promise<Workflow> {
     return this.getWorkflowInternal();
   }
 
   @Method()
-  async importWorkflow(workflow: Workflow, workflowInstance?: WorkflowInstance): Promise<void> {
+  public async importWorkflow(workflow: Workflow, workflowInstance?: WorkflowInstance): Promise<void> {
     this.workflowInstance = workflowInstance;
     await this.importWorkflowMetadata(workflow);
     await this.canvas.importGraph(workflow.root);
   }
 
   @Method()
-  async importWorkflowMetadata(workflow: Workflow): Promise<void> {
+  public async importWorkflowMetadata(workflow: Workflow): Promise<void> {
     this.workflow = workflow;
     this.triggers = workflow.triggers;
   }
@@ -218,6 +229,10 @@ export class WorkflowEditor {
     return workflow;
   };
 
+  private emitActivityChanged = async (activity: Activity, propertyName: string) => {
+    await this.eventBus.emit(EventTypes.Activity.PropertyChanged, this, activity, propertyName, this);
+  };
+
   private saveChanges = async (): Promise<void> => {
     const workflow = await this.getWorkflowInternal();
     this.workflowUpdated.emit({workflow});
@@ -261,6 +276,7 @@ export class WorkflowEditor {
   private onActivityUpdated = (e: CustomEvent<ActivityUpdatedArgs>) => {
     const updatedActivity = e.detail.activity;
     this.applyActivityChanges(updatedActivity);
+    this.emitActivityChangedDebounced({...e.detail, workflowEditor: this.el});
     this.saveChangesDebounced();
   }
 

@@ -1,5 +1,9 @@
+import 'reflect-metadata';
+import {Container} from "typedi"
 import {camelCase} from "lodash";
-import {Activity, ActivityDescriptor, Container} from "../../../models";
+import {Activity, ActivityDescriptor} from "../../../models";
+import {PortProviderRegistry} from "./port-provider-registry";
+import {TransposeHandlerRegistry} from "./transpose-handler-registry";
 
 export interface ActivityNode {
   activity: Activity;
@@ -13,11 +17,11 @@ export interface ActivityPort {
   port: string;
 }
 
-export function walkActivities(root: Activity, descriptors: Array<ActivityDescriptor>, untranspose: boolean): ActivityNode {
+export function walkActivities(root: Activity, descriptors: Array<ActivityDescriptor>): ActivityNode {
   const collectedActivities = new Set<Activity>([root]);
   const graph: ActivityNode = {activity: root, parents: [], children: []};
   const collectedNodes = new Set<ActivityNode>([graph]);
-  walkRecursive(graph, root, collectedActivities, collectedNodes, descriptors, untranspose);
+  walkRecursive(graph, root, collectedActivities, collectedNodes, descriptors);
   return graph;
 }
 
@@ -36,7 +40,7 @@ export function flattenList(activities: Array<ActivityNode>): Array<ActivityNode
   return list;
 }
 
-function walkRecursive(node: ActivityNode, activity: Activity, collectedActivities: Set<Activity>, collectedNodes: Set<ActivityNode>, descriptors: Array<ActivityDescriptor>, untranspose: boolean) {
+function walkRecursive(node: ActivityNode, activity: Activity, collectedActivities: Set<Activity>, collectedNodes: Set<ActivityNode>, descriptors: Array<ActivityDescriptor>) {
   const ports = getPorts(node, activity, descriptors);
 
   for (const port of ports) {
@@ -45,42 +49,22 @@ function walkRecursive(node: ActivityNode, activity: Activity, collectedActiviti
 
     if (!childNode) {
       childNode = {activity: port.activity, children: [], parents: [], port: port.port};
-
-      if (untranspose) {
-        const propName = camelCase(port.port);
-        delete activity[propName];
-      }
-
       collectedNodes.add(childNode);
     }
 
     childNode.parents.push(node);
     node.children.push(childNode);
     collectedActivities.add(port.activity);
-    walkRecursive(childNode, port.activity, collectedActivities, collectedNodes, descriptors, untranspose);
+    walkRecursive(childNode, port.activity, collectedActivities, collectedNodes, descriptors);
   }
 }
 
 function getPorts(node: ActivityNode, activity: Activity, descriptors: Array<ActivityDescriptor>): Array<ActivityPort> {
-  const descriptor = descriptors.find(x => x.nodeType == activity.nodeType);
-
-  if (!descriptor)
-    return [];
-
-  let ports: Array<ActivityPort> = [];
-
-  for (const outPort of descriptor.outPorts) {
-    const outPortName = camelCase(outPort.name);
-    const outbound: Activity | Array<Activity> = activity[outPortName];
-
-    if (!!outbound) {
-      if (Array.isArray(outbound)) {
-        for (const a of outbound)
-          ports.push({activity: a, port: outPort.name});
-      } else
-        ports.push({activity: outbound, port: outPort.name});
-    }
-  }
-
-  return ports;
+  const portProviderRegistry = Container.get(PortProviderRegistry);
+  const transposeHandlerRegistry = Container.get(TransposeHandlerRegistry);
+  const transposeHandler = transposeHandlerRegistry.get(activity.nodeType);
+  const portProvider = portProviderRegistry.get(activity.nodeType);
+  const activityDescriptor = descriptors.find(x => x.nodeType == activity.nodeType);
+  const untransposedConnections = transposeHandler.untranspose({activity, activityDescriptor});
+  return untransposedConnections.map(x => ({activity: x.target, port: x.sourcePort}));
 }

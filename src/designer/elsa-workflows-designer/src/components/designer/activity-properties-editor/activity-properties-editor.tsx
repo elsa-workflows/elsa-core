@@ -17,6 +17,9 @@ import {FormEntry} from "../../shared/forms/form-entry";
 
 export interface ActivityUpdatedArgs {
   activity: Activity;
+  activityDescriptor: ActivityDescriptor;
+  propertyName: string;
+  inputDescriptor: InputDescriptor;
 }
 
 export interface DeleteActivityRequestedArgs {
@@ -63,7 +66,7 @@ export class ActivityPropertiesEditor {
         node: activity,
         nodeDescriptor: activityDescriptor,
         inputDescriptor,
-        notifyInputChanged: () => this.activityUpdated.emit({activity}),
+        notifyInputChanged: () => this.activityUpdated.emit({activity, activityDescriptor, propertyName: camelCase(inputDescriptor.name), inputDescriptor}),
         inputChanged: (v, s) => this.onPropertyEditorChanged(inputDescriptor, v, s)
       };
 
@@ -116,12 +119,19 @@ export class ActivityPropertiesEditor {
     const inputElement = e.target as HTMLInputElement;
 
     activity.id = inputElement.value;
-    this.activityUpdated.emit({activity: activity});
+    const activityDescriptor = this.findActivityDescriptor();
+    const inputDescriptor: InputDescriptor = {
+      name: 'Id',
+      displayName: 'Id',
+      type: 'string'
+    };
+    this.activityUpdated.emit({activity, activityDescriptor, propertyName: 'id', inputDescriptor});
   }
 
   private onPropertyEditorChanged = (inputDescriptor: InputDescriptor, propertyValue: any, syntax: string) => {
     const activity = this.activity;
     const propertyName = inputDescriptor.name;
+    const activityDescriptor = this.findActivityDescriptor();
     const camelCasePropertyName = camelCase(propertyName);
 
     activity[camelCasePropertyName] = {
@@ -132,7 +142,7 @@ export class ActivityPropertiesEditor {
       }
     };
 
-    this.activityUpdated.emit({activity: activity});
+    this.activityUpdated.emit({activity, activityDescriptor, propertyName: camelCasePropertyName, inputDescriptor});
   }
 
   private onDeleteActivity = () => this.deleteActivityRequested.emit({activity: this.activity});

@@ -1,8 +1,8 @@
 import 'reflect-metadata';
 import {Component, Element, Event, EventEmitter, h, Method, Prop, Watch} from '@stencil/core';
-import {Edge, Graph, Model, Node, NodeView, Segment} from '@antv/x6';
+import {Edge, Graph, Model, Node, NodeView} from '@antv/x6';
 import {v4 as uuid} from 'uuid';
-import {camelCase, first} from 'lodash';
+import {first} from 'lodash';
 import './shapes';
 import './ports';
 import {ContainerActivityComponent} from '../container-activity-component';
@@ -12,12 +12,13 @@ import {createGraph} from './graph-factory';
 import {Connection, Flowchart} from './models';
 import WorkflowEditorTunnel from '../../designer/state';
 import {ActivityNode, flattenList, walkActivities} from "./activity-walker";
-import PositionEventArgs = NodeView.PositionEventArgs;
-import FromJSONData = Model.FromJSONData;
 import {NodeFactory} from "./node-factory";
 import {Container} from "typedi";
 import {EventBus} from "../../../services";
 import {ConnectionCreatedEventArgs, FlowchartEvents} from "./events";
+import {TransposeHandlerRegistry} from "./transpose-handler-registry";
+import PositionEventArgs = NodeView.PositionEventArgs;
+import FromJSONData = Model.FromJSONData;
 
 @Component({
   tag: 'elsa-flowchart',
@@ -46,6 +47,11 @@ export class FlowchartComponent implements ContainerActivityComponent {
   @Event() activitySelected: EventEmitter<ActivitySelectedArgs>;
   @Event() containerSelected: EventEmitter<ContainerSelectedArgs>;
   @Event() graphUpdated: EventEmitter<GraphUpdatedArgs>;
+
+  @Method()
+  public async getGraph(): Promise<Graph> {
+    return this.graph;
+  }
 
   @Method()
   public async updateLayout(): Promise<void> {
@@ -149,19 +155,17 @@ export class FlowchartComponent implements ContainerActivityComponent {
     const remainingConnections: Array<Connection> = []; // The connections remaining after transposition.
     let remainingActivities: Array<Activity> = [...activities]; // The activities remaining after transposition.
     const activityDescriptors = this.activityDescriptors;
+    const transposeHandlerRegistry = Container.get(TransposeHandlerRegistry);
 
     // Transpose connections to activity outbound port properties.
     for (const connection of connections) {
       const source = activities.find(x => x.id == connection.source);
       const target = activities.find(x => x.id == connection.target);
       const sourceDescriptor = activityDescriptors.find(x => x.nodeType == source.nodeType);
-      const matchingTargetPort = sourceDescriptor.outPorts.find(x => x.name == connection.sourcePort);
+      const targetDescriptor = activityDescriptors.find(x => x.nodeType == target.nodeType);
+      const transposeHandler = transposeHandlerRegistry.get(source.nodeType);
 
-      if (!!matchingTargetPort) {
-        // Assign the target activity directly to the outbound port of the source activity.
-        const outPortPropName = camelCase(connection.sourcePort);
-        source[outPortPropName] = target;
-
+      if (transposeHandler.transpose({source, target, connection, sourceDescriptor, targetDescriptor})) {
         // Remove the target activity from the list.
         remainingActivities = remainingActivities.filter(x => x != target);
       } else {
@@ -185,8 +189,9 @@ export class FlowchartComponent implements ContainerActivityComponent {
     this.rootId = root.id;
     const descriptors = this.activityDescriptors;
     const flowchart = root as Flowchart;
-    const flowchartGraph = walkActivities(flowchart, this.activityDescriptors, true);
+    const flowchartGraph = walkActivities(flowchart, this.activityDescriptors);
     const flowchartNodes = flattenList(flowchartGraph.children);
+    const transposeHandlerRegistry = Container.get(TransposeHandlerRegistry);
 
     // Clear inbound port for start activity.
     const startActivityNode = flowchartNodes.find(x => x.activity.id === flowchart.start);
@@ -194,27 +199,27 @@ export class FlowchartComponent implements ContainerActivityComponent {
     if (startActivityNode.port)
       delete startActivityNode.port;
 
-    const nodes: Array<Node.Metadata> = [];
+
     let edges: Array<Edge.Metadata> = [];
 
     // Create an X6 node for each activity.
-    for (const activityNode of flowchartNodes) {
+    const nodes: Array<Node.Metadata> = flowchartNodes.map(activityNode => {
       const activity = activityNode.activity;
       const position = activity.metadata.designer?.position || {x: 100, y: 100};
       const {x, y} = position;
       const descriptor = descriptors.find(x => x.nodeType == activity.nodeType)
-      const node = this.nodeFactory.createNode(descriptor, activity, x, y);
+      return this.nodeFactory.createNode(descriptor, activity, x, y);
+    });
 
-      nodes.push(node);
-
-      // Create X6 edges for each child activity.
-      const childEdges = this.createEdges(flowchartNodes, activityNode);
+    // Create X6 edges for each child activity.
+    for (const rootNodes of flowchartNodes) {
+      const childEdges = this.createEdges(rootNodes);
       edges = [...edges, ...childEdges];
     }
 
     // Create X6 edges for each connection in the flowchart.
     for (const connection of flowchart.connections) {
-      const edge: Edge.Metadata = this.createEdge(flowchartNodes, connection);
+      const edge: Edge.Metadata = this.createEdge(connection);
       edges.push(edge);
     }
 
@@ -226,11 +231,11 @@ export class FlowchartComponent implements ContainerActivityComponent {
     this.graph.unfreeze();
   };
 
-  private createEdges = (allNodes: Array<ActivityNode>, activityNode: ActivityNode): Array<Edge.Metadata> => {
+  private createEdges = (activityNode: ActivityNode): Array<Edge.Metadata> => {
     let edges: Array<Edge.Metadata> = [];
 
     for (const childNode of activityNode.children) {
-      const edge = this.createEdge(allNodes, {
+      const edge = this.createEdge({
         source: activityNode.activity.id,
         sourcePort: childNode.port,
         target: childNode.activity.id,
@@ -243,7 +248,18 @@ export class FlowchartComponent implements ContainerActivityComponent {
     return edges;
   }
 
-  private createEdge = (allNodes: Array<ActivityNode>, connection: Connection): Edge.Metadata => {
+  // private createEdges = (connections: Array<Connection>): Array<Edge.Metadata> => {
+  //   let edges: Array<Edge.Metadata> = [];
+  //
+  //   for (const connection of connections) {
+  //     const edge = this.createEdge(connection);
+  //     edges.push(edge);
+  //   }
+  //
+  //   return edges;
+  // }
+
+  private createEdge = (connection: Connection): Edge.Metadata => {
     return {
       shape: 'elsa-edge',
       zIndex: -1,

@@ -23,11 +23,11 @@
     "generate": "stencil generate"
   },
   "dependencies": {
-    "@antv/x6": "^1.29.1",
-    "@stencil/core": "^2.12.0",
+    "@antv/x6": "^1.30.0",
+    "@stencil/core": "^2.13.0",
     "@stencil/state-tunnel": "^1.0.1",
     "@stencil/store": "^1.5.0",
-    "axios": "^0.24.0",
+    "axios": "^0.25.0",
     "axios-middleware": "^0.3.1",
     "reflect-metadata": "^0.1.13",
     "typedi": "^0.10.0",
@@ -44,12 +44,12 @@
     "@stencil/postcss": "^2.1.0",
     "@stencil/sass": "^1.5.2",
     "@tailwindcss/forms": "^0.4.0",
-    "@tailwindcss/typography": "^0.5.0",
-    "@types/jquery": "^3.5.11",
+    "@tailwindcss/typography": "^0.5.1",
+    "@types/jquery": "^3.5.13",
     "@types/jquery-mousewheel": "^3.1.9",
-    "autoprefixer": "^10.4.0",
-    "postcss": "^8.4.5",
-    "tailwindcss": "^3.0.7"
+    "autoprefixer": "^10.4.2",
+    "postcss": "^8.4.6",
+    "tailwindcss": "^3.0.18"
   },
   "license": "MIT"
 }

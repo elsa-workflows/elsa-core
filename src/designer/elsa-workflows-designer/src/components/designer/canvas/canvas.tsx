@@ -19,6 +19,11 @@ export class Canvas {
   @Prop() public interactiveMode: boolean = true;
 
   @Method()
+  public async getRootComponent(): Promise<ContainerActivityComponent> {
+    return this.root;
+  }
+
+  @Method()
   public async addActivity(args: AddActivityArgs): Promise<void> {
     await this.root.addActivity(args);
   }
