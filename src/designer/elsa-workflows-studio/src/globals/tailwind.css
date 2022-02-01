@@ -3523,6 +3523,11 @@ select {
   border-bottom-right-radius: 0.375rem;
 }
 
+.elsa-rounded-r {
+  border-top-right-radius: 0.25rem;
+  border-bottom-right-radius: 0.25rem;
+}
+
 .elsa-border {
   border-width: 1px;
 }
