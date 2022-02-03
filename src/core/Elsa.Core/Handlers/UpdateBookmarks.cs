@@ -8,7 +8,7 @@ using MediatR;
 namespace Elsa.Handlers
 {
     public class UpdateBookmarks : 
-        INotificationHandler<WorkflowInstanceSaved>, 
+        INotificationHandler<WorkflowExecutionFinished>, 
         INotificationHandler<ManyWorkflowInstancesDeleted>, 
         INotificationHandler<ManyWorkflowInstancesAdded>
     {
@@ -19,9 +19,9 @@ namespace Elsa.Handlers
             _bookmarkIndexer = bookmarkIndexer;
         }
 
-        public async Task Handle(WorkflowInstanceSaved notification, CancellationToken cancellationToken)
+        public async Task Handle(WorkflowExecutionFinished notification, CancellationToken cancellationToken)
         {
-            var workflowInstance = notification.WorkflowInstance;
+            var workflowInstance = notification.WorkflowExecutionContext.WorkflowInstance;
             await _bookmarkIndexer.IndexBookmarksAsync(workflowInstance, cancellationToken);
         }
 
