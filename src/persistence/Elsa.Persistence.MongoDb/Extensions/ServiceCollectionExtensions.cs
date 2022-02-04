@@ -44,6 +44,7 @@ namespace Elsa.Persistence.MongoDb
                 .AddSingleton(sp => sp.GetRequiredService<TDbContext>().WorkflowInstances)
                 .AddSingleton(sp => sp.GetRequiredService<TDbContext>().WorkflowExecutionLog)
                 .AddSingleton(sp => sp.GetRequiredService<TDbContext>().Bookmarks)
+                .AddSingleton(sp => sp.GetRequiredService<TDbContext>().Triggers);
                 .AddStartupTask<DatabaseInitializer>();
 
             elsa
