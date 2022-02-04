@@ -1,28 +1,31 @@
 using System;
-using Elsa.Persistence.MongoDb.Options;
-using Elsa.Webhooks.Models;
-using Elsa.Webhooks.Persistence.MongoDb.Data;
-using Microsoft.Extensions.Options;
+using System.Collections.Generic;
+using Elsa.MultiTenancy;
 using MongoDB.Driver;
 
 namespace Elsa.Webhooks.Persistence.MongoDb.Services
 {
     public class ElsaMongoDbContext
     {
-        public ElsaMongoDbContext(IOptions<ElsaMongoDbOptions> options)
+        private readonly IDictionary<string, IMongoDatabase> _databases = new Dictionary<string, IMongoDatabase>();
+
+        public ElsaMongoDbContext(ITenantStore tenantStore)
         {
-            var connectionString = options.Value.ConnectionString;
-            var mongoClient = new MongoClient(connectionString);
-            var databaseName = options.Value.DatabaseName is not null and not "" ? options.Value.DatabaseName : MongoUrl.Create(connectionString).DatabaseName;
+            foreach (var tenant in tenantStore.GetTenants())
+            {
+                var client = new MongoClient(tenant.ConnectionString);
 
-            if (databaseName == null)
-                throw new Exception("Please specify a database name, either via the connection string or via the DatabaseName setting.");
+                var dbName = MongoUrl.Create(tenant.ConnectionString).DatabaseName;
 
-            MongoDatabase = mongoClient.GetDatabase(databaseName);
+                if (dbName == null)
+                    throw new Exception($"Please specify a database name for [{tenant.Name}] tenant via the connection string.");
+
+                if (_databases.ContainsKey(dbName)) continue;
+
+                _databases.Add(tenant.ConnectionString, client.GetDatabase(dbName));
+            }
         }
 
-        protected IMongoDatabase MongoDatabase { get; }
-
-        public IMongoCollection<WebhookDefinition> WebhookDefinitions => MongoDatabase.GetCollection<WebhookDefinition>(CollectionNames.WebhookDefinitions);
+        public IMongoDatabase GetDatabase(string connectionString) => _databases[connectionString];
     }
 }

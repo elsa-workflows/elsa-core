@@ -13,14 +13,8 @@ namespace Elsa.Retention.Extensions
         {
             services
                 .Configure(configureOptions)
-                .AddScoped<CleanupJob>();
-
-            var multitenancyEnabled = configuration.GetValue<bool>("Elsa:MultiTenancy");
-
-            if (multitenancyEnabled)
-                services.AddHostedService<MultitenantCleanupService>();
-            else
-                services.AddHostedService<CleanupService>();
+                .AddScoped<CleanupJob>()
+                .AddHostedService<CleanupService>();
 
             return services;
         }

@@ -4,12 +4,12 @@ using MongoDB.Driver;
 
 namespace Elsa.Persistence.MongoDb.Services
 {
-    public class MultitenantElsaMongoDbContextProvider
+    public class ElsaMongoDbContextProvider
     {
-        private readonly MultitenantElsaMongoDbContext _context;
+        private readonly ElsaMongoDbContext _context;
         private readonly ITenantProvider _tenantProvider;
 
-        public MultitenantElsaMongoDbContextProvider(MultitenantElsaMongoDbContext context, ITenantProvider tenantProvider)
+        public ElsaMongoDbContextProvider(ElsaMongoDbContext context, ITenantProvider tenantProvider)
         {
             _context = context;
             _tenantProvider = tenantProvider;
@@ -24,7 +24,7 @@ namespace Elsa.Persistence.MongoDb.Services
         {
             var connectionString = _tenantProvider.GetCurrentTenant().ConnectionString;
 
-            return _context.GetTenantDatabase(connectionString);
+            return _context.GetDatabase(connectionString);
         }
     }
 }

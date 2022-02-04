@@ -29,7 +29,7 @@ namespace Elsa.Samples.WatchDirectoryWorker
                     services
                         .AddElsa(options => options
                             .AddConsoleActivities()
-                            .AddFileActivities(options => options.MultitenancyEnabled = false)
+                            .AddFileActivities()
                             .AddQuartzTemporalActivities()
                             .AddWorkflow<TimerCreateFile>(sp => ActivatorUtilities.CreateInstance<TimerCreateFile>(services.BuildServiceProvider(), _directory))
                             .AddWorkflow<WatchDirectoryCreatedWorkflow>(sp => new WatchDirectoryCreatedWorkflow(_directory)));

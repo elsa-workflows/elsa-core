@@ -4,6 +4,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.MultiTenancy;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Services;
@@ -17,37 +18,43 @@ namespace Elsa.Activities.AzureServiceBus.Services
     // TODO: Look for a way to merge ServiceBusQueuesStarter with ServiceBusTopicsStarter - there's a lot of overlap.
     public class ServiceBusTopicsStarter : IServiceBusTopicsStarter
     {
-        protected readonly ILogger<ServiceBusTopicsStarter> _logger;
-        protected readonly ICollection<TopicWorker> _workers;
-        protected readonly IServiceScopeFactory _scopeFactory;
         private readonly ITopicMessageReceiverFactory _receiverFactory;
+        private readonly IServiceScopeFactory _scopeFactory;
+        private readonly ILogger<ServiceBusTopicsStarter> _logger;
+        private readonly ICollection<TopicWorker> _workers;
+        private readonly ITenantStore _tenantStore;
 
         public ServiceBusTopicsStarter(
             ITopicMessageReceiverFactory receiverFactory,
             IServiceScopeFactory scopeFactory,
-            ILogger<ServiceBusTopicsStarter> logger)
+            ILogger<ServiceBusTopicsStarter> logger,
+            ITenantStore tenantStore)
         {
             _receiverFactory = receiverFactory;
             _scopeFactory = scopeFactory;
             _logger = logger;
             _workers = new List<TopicWorker>();
+            _tenantStore = tenantStore;
         }
 
-        public virtual async Task CreateWorkersAsync(CancellationToken stoppingToken)
+        public async Task CreateWorkersAsync(CancellationToken stoppingToken)
         {
             var cancellationToken = stoppingToken;
 
             await DisposeExistingWorkersAsync();
 
-            using var scope = _scopeFactory.CreateScope();
+            foreach (var tenant in _tenantStore.GetTenants())
+            {
+                using var scope = _scopeFactory.CreateScopeForTenant(tenant);
 
-            var entities = (await GetTopicSubscriptionNamesAsync(cancellationToken, scope.ServiceProvider).ToListAsync(cancellationToken)).Distinct();
+                var entities = (await GetTopicSubscriptionNamesAsync(cancellationToken, scope.ServiceProvider).ToListAsync(cancellationToken)).Distinct();
 
-            foreach (var entity in entities)
-                await CreateAndAddWorkerAsync(scope.ServiceProvider, entity.topicName, entity.subscriptionName, cancellationToken);
+                foreach (var (topicName, subscriptionName) in entities)
+                    await CreateAndAddWorkerAsync(scope.ServiceProvider, topicName, subscriptionName, cancellationToken);
+            }
         }
 
-        protected async Task CreateAndAddWorkerAsync(IServiceProvider serviceProvider, string topicName, string subscriptionName, CancellationToken cancellationToken)
+        private async Task CreateAndAddWorkerAsync(IServiceProvider serviceProvider, string topicName, string subscriptionName, CancellationToken cancellationToken)
         {
             try
             {
@@ -61,7 +68,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             }
         }
 
-        protected async Task DisposeExistingWorkersAsync()
+        private async Task DisposeExistingWorkersAsync()
         {
             foreach (var worker in _workers.ToList())
             {
@@ -70,7 +77,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             }
         }
 
-        protected async IAsyncEnumerable<(string topicName, string subscriptionName)> GetTopicSubscriptionNamesAsync([EnumeratorCancellation] CancellationToken cancellationToken, IServiceProvider serviceProvider)
+        private async IAsyncEnumerable<(string topicName, string subscriptionName)> GetTopicSubscriptionNamesAsync([EnumeratorCancellation] CancellationToken cancellationToken, IServiceProvider serviceProvider)
         {
             var workflowRegistry = serviceProvider.GetRequiredService<IWorkflowRegistry>();
             var workflowBlueprintReflector = serviceProvider.GetRequiredService<IWorkflowBlueprintReflector>();

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Abstractions.MultiTenancy;
 using Elsa.Caching;
 using Elsa.Events;
 using Elsa.Models;
@@ -23,7 +24,8 @@ namespace Elsa.Decorators
         private readonly IMemoryCache _memoryCache;
         private readonly ICacheSignal _cacheSignal;
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
-        protected virtual string GenerateCacheKey() => CacheKey;
+        private readonly ITenantProvider _tenantProvider;
+        private string GenerateCacheKey() => $"{CacheKey}_{_tenantProvider.GetCurrentTenant().Prefix}";
 
         public const string CacheKey = "WorkflowRegistry";
 
@@ -31,12 +33,14 @@ namespace Elsa.Decorators
             IWorkflowRegistry workflowRegistry,
             IMemoryCache memoryCache,
             ICacheSignal cacheSignal,
-            IWorkflowInstanceStore workflowInstanceStore)
+            IWorkflowInstanceStore workflowInstanceStore,
+            ITenantProvider tenantProvider)
         {
             _workflowRegistry = workflowRegistry;
             _memoryCache = memoryCache;
             _cacheSignal = cacheSignal;
             _workflowInstanceStore = workflowInstanceStore;
+            _tenantProvider = tenantProvider;
     }
 
         public async Task<IEnumerable<IWorkflowBlueprint>> ListAsync(CancellationToken cancellationToken) => await ListInternalAsync(cancellationToken);

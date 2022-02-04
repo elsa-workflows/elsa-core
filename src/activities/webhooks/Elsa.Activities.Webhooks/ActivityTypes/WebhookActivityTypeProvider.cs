@@ -14,7 +14,6 @@ using Elsa.Webhooks.Models;
 using Elsa.Webhooks.Persistence;
 using Humanizer;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Activities.Webhooks.ActivityTypes
 {
@@ -24,21 +23,19 @@ namespace Elsa.Activities.Webhooks.ActivityTypes
         private const string WebhooksActivityTypeSuffix = "Webhook";
         private const string WebhooksActivityCategory = "Webhooks";
 
-        protected readonly IServiceScopeFactory _serviceScopeFactory;
+        protected readonly IWebhookDefinitionStore _webhookDefinitionStore;
         private readonly IActivityActivator _activityActivator;
 
-        public WebhookActivityTypeProvider(IActivityActivator activityActivator, IServiceScopeFactory serviceScopeFactory)
+        public WebhookActivityTypeProvider(IActivityActivator activityActivator, IWebhookDefinitionStore webhookDefinitionStore)
         {
             _activityActivator = activityActivator;
-            _serviceScopeFactory = serviceScopeFactory;
+            _webhookDefinitionStore = webhookDefinitionStore;
         }
 
-        public virtual async ValueTask<IEnumerable<ActivityType>> GetActivityTypesAsync(CancellationToken cancellationToken = default)
+        public async ValueTask<IEnumerable<ActivityType>> GetActivityTypesAsync(CancellationToken cancellationToken = default)
         {
-            using var scope = _serviceScopeFactory.CreateScope();
-            var webhookDefinitionStore = scope.ServiceProvider.GetRequiredService<IWebhookDefinitionStore>();
             var specification = Specification<WebhookDefinition>.Identity;
-            var definitions = await webhookDefinitionStore.FindManyAsync(specification, cancellationToken: cancellationToken);
+            var definitions = await _webhookDefinitionStore.FindManyAsync(specification, cancellationToken: cancellationToken);
             var activityTypes = new List<ActivityType>();
 
             foreach (var definition in definitions)
@@ -50,7 +47,7 @@ namespace Elsa.Activities.Webhooks.ActivityTypes
             return activityTypes;
         }
 
-        protected ActivityType CreateWebhookActivityType(WebhookDefinition webhook)
+        private ActivityType CreateWebhookActivityType(WebhookDefinition webhook)
         {
             var activityTypeName = webhook.Name.EndsWith(WebhooksActivityTypeSuffix) ? webhook.Name : $"{webhook.Name}{WebhooksActivityTypeSuffix}";
             var activityDisplayName = activityTypeName.Humanize();

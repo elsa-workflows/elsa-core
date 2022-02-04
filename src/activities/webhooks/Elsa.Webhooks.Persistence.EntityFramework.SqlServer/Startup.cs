@@ -12,7 +12,7 @@ namespace Elsa.Webhooks.Persistence.EntityFramework.SqlServer
     {
         protected override string ProviderName => "SqlServer";
         protected override void Configure(DbContextOptionsBuilder options, string connectionString) => options.UseWebhookSqlServer(connectionString);
-        protected override void ConfigureForMultitenancy(DbContextOptionsBuilder options, IServiceProvider serviceProvider)
+        protected override void ConfigureFor(DbContextOptionsBuilder options, IServiceProvider serviceProvider)
         {
             var tenantProvider = serviceProvider.GetRequiredService<ITenantProvider>();
 

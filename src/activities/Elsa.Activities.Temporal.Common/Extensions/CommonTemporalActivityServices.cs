@@ -30,13 +30,9 @@ namespace Elsa.Activities.Temporal
             var timersOptions = new TimersOptions(options.Services);
             configure?.Invoke(timersOptions);
 
-            if (options.ElsaOptions.MultitenancyEnabled)
-                options.Services.AddHostedService<ScopedBackgroundService<StartJobs>>();
-            else
-                options.Services.AddHostedService<ScopedBackgroundService<MultitenantStartJobs>>();
-
             options.Services
                 .AddNotificationHandlers(typeof(RemoveScheduledTriggers))
+                .AddHostedService<ScopedBackgroundService<StartJobs>>()
                 .AddBookmarkProvider<TimerBookmarkProvider>()
                 .AddBookmarkProvider<CronBookmarkProvider>()
                 .AddBookmarkProvider<StartAtBookmarkProvider>();

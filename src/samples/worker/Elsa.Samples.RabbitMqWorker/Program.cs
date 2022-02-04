@@ -20,7 +20,7 @@ namespace Elsa.Samples.RabbitMqWorker
                         .AddElsa(options => options
                             .AddConsoleActivities()
                             .AddQuartzTemporalActivities()
-                            .AddRabbitMqActivities(options => options.MultitenancyEnabled = false)
+                            .AddRabbitMqActivities()
                             .AddWorkflow<ConsumerWorkflow>()
                             .AddWorkflow<ProducerWorkflow>()
                             .StartWorkflow<SendAndReceiveWorkflow>()

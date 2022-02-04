@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Elsa.Activities.Temporal.Common.Bookmarks;
 using Elsa.Activities.Temporal.Common.Services;
 using Elsa.HostedServices;
+using Elsa.MultiTenancy;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -21,16 +22,18 @@ namespace Elsa.Activities.Temporal.Common.HostedServices
         // TODO: Figure out how to start jobs across multiple tenants / how to get a list of all tenants. 
         private const string? TenantId = default;
 
-        protected readonly IServiceScopeFactory _scopeFactory;
+        private readonly IServiceScopeFactory _scopeFactory;
         private readonly IDistributedLockProvider _distributedLockProvider;
         private readonly ILogger<StartJobs> _logger;
         private readonly AsyncRetryPolicy _retryPolicy;
+        private readonly ITenantStore _tenantStore;
 
-        public StartJobs(IDistributedLockProvider distributedLockProvider, ILogger<StartJobs> logger, IServiceScopeFactory scopeFactory)
+        public StartJobs(IDistributedLockProvider distributedLockProvider, ILogger<StartJobs> logger, IServiceScopeFactory scopeFactory, ITenantStore tenantStore)
         {
             _distributedLockProvider = distributedLockProvider;
             _logger = logger;
             _scopeFactory = scopeFactory;
+            _tenantStore = tenantStore;
 
             _retryPolicy = Policy
                 .Handle<Exception>()
@@ -49,13 +52,16 @@ namespace Elsa.Activities.Temporal.Common.HostedServices
             await _retryPolicy.ExecuteAsync(async () => await ExecuteInternalAsync(stoppingToken));
         }
 
-        protected virtual async Task ExecuteInternalAsync(CancellationToken cancellationToken)
+        private async Task ExecuteInternalAsync(CancellationToken cancellationToken)
         {
-            using var scope = _scopeFactory.CreateScope();
-            await ScheduleWorkflowsAsync(scope.ServiceProvider, cancellationToken);
+            foreach (var tenant in _tenantStore.GetTenants())
+            {
+                using var scope = _scopeFactory.CreateScopeForTenant(tenant);
+                await ScheduleWorkflowsAsync(scope.ServiceProvider, cancellationToken);
+            }
         }
 
-        protected async Task ScheduleWorkflowsAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken)
+        private async Task ScheduleWorkflowsAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken)
         {
             var bookmarkFinder = serviceProvider.GetRequiredService<IBookmarkFinder>();
             var workflowScheduler = serviceProvider.GetRequiredService<IWorkflowInstanceScheduler>();

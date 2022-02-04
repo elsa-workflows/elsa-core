@@ -14,33 +14,11 @@ namespace Elsa.Persistence.EntityFramework.Core
 
         public override void ConfigureElsa(ElsaOptionsBuilder elsa, IConfiguration configuration)
         {
-            var multiTenancyEnabled = configuration.GetValue<bool>("Elsa:MultiTenancy");
-
-            if (multiTenancyEnabled)
-                elsa.UseNonPooledEntityFrameworkPersistence((serviceProvider, options) => ConfigureForMultitenancy(options, serviceProvider), ServiceLifetime.Scoped, autoRunMigrations: false, multitenancyEnabled: true);
-            else
-            {
-                var section = configuration.GetSection($"Elsa:Features:DefaultPersistence");
-                var connectionStringName = section.GetValue<string>("ConnectionStringIdentifier");
-                var connectionString = section.GetValue<string>("ConnectionString");
-
-                if (string.IsNullOrWhiteSpace(connectionString))
-                {
-                    if (string.IsNullOrWhiteSpace(connectionStringName))
-                        connectionStringName = ProviderName;
-
-                    connectionString = configuration.GetConnectionString(connectionStringName);
-                }
-
-                if (string.IsNullOrWhiteSpace(connectionString))
-                    connectionString = GetDefaultConnectionString();
-
-                elsa.UseEntityFrameworkPersistence(options => Configure(options, connectionString));
-            }
+            elsa.UseNonPooledEntityFrameworkPersistence((serviceProvider, options) => Configure(options, serviceProvider), ServiceLifetime.Scoped);
         }
 
         protected virtual string GetDefaultConnectionString() => throw new Exception($"No connection string specified for the {ProviderName} provider");
         protected abstract void Configure(DbContextOptionsBuilder options, string connectionString);
-        protected abstract void ConfigureForMultitenancy(DbContextOptionsBuilder options, IServiceProvider serviceProvider);
+        protected abstract void Configure(DbContextOptionsBuilder options, IServiceProvider serviceProvider);
     }
 }

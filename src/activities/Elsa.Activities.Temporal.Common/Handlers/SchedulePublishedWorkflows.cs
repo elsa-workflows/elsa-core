@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Elsa.Activities.Temporal.Common.Bookmarks;
 using Elsa.Activities.Temporal.Common.Services;
 using Elsa.Events;
+using Elsa.MultiTenancy;
 using Elsa.Services;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,22 +17,27 @@ namespace Elsa.Activities.Temporal.Common.Handlers
         // TODO: Design multi-tenancy. 
         private const string? TenantId = default;
 
-        protected readonly IServiceScopeFactory _scopeFactory;
+        private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger<SchedulePublishedWorkflows> _logger;
+        private readonly ITenantStore _tenantStore;
 
-        public SchedulePublishedWorkflows(ILogger<SchedulePublishedWorkflows> logger, IServiceScopeFactory scopeFactory)
+        public SchedulePublishedWorkflows(ILogger<SchedulePublishedWorkflows> logger, IServiceScopeFactory scopeFactory, ITenantStore tenantStore)
         {
             _logger = logger;
             _scopeFactory = scopeFactory;
+            _tenantStore = tenantStore;
         }
 
-        public virtual async Task Handle(TriggerIndexingFinished notification, CancellationToken cancellationToken)
+        public async Task Handle(TriggerIndexingFinished notification, CancellationToken cancellationToken)
         {
-            using var scope = _scopeFactory.CreateScope();
-            await SchedulePublishedWorkflowsInternalAsync(scope.ServiceProvider, cancellationToken);
+            foreach (var tenant in _tenantStore.GetTenants())
+            {
+                using var scope = _scopeFactory.CreateScopeForTenant(tenant);
+                await SchedulePublishedWorkflowsInternalAsync(scope.ServiceProvider, cancellationToken);
+            }
         }
 
-        protected async Task SchedulePublishedWorkflowsInternalAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken)
+        private async Task SchedulePublishedWorkflowsInternalAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken)
         {
             var triggerFinder = serviceProvider.GetRequiredService<ITriggerFinder>();
             var workflowScheduler = serviceProvider.GetRequiredService<IWorkflowDefinitionScheduler>();

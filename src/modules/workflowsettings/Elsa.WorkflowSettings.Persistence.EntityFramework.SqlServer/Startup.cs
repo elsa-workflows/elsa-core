@@ -12,7 +12,7 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.SqlServer
     {
         protected override string ProviderName => "SqlServer";
         protected override void Configure(DbContextOptionsBuilder options, string connectionString) => options.UseWorkflowSettingsSqlServer(connectionString);
-        protected override void ConfigureForMultitenancy(DbContextOptionsBuilder options, IServiceProvider serviceProvider)
+        protected override void Configure(DbContextOptionsBuilder options, IServiceProvider serviceProvider)
         {
             var tenantProvider = serviceProvider.GetRequiredService<ITenantProvider>();
 

@@ -5,12 +5,12 @@ using MongoDB.Driver;
 
 namespace Elsa.WorkflowSettings.Persistence.MongoDb.Services
 {
-    public class MultitenantElsaMongoDbContextProvider
+    public class ElsaMongoDbContextProvider
     {
-        private readonly MultitenantElsaMongoDbContext _context;
+        private readonly ElsaMongoDbContext _context;
         private readonly ITenantProvider _tenantProvider;
 
-        public MultitenantElsaMongoDbContextProvider(MultitenantElsaMongoDbContext context, ITenantProvider tenantProvider)
+        public ElsaMongoDbContextProvider(ElsaMongoDbContext context, ITenantProvider tenantProvider)
         {
             _context = context;
             _tenantProvider = tenantProvider;

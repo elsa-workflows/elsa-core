@@ -12,6 +12,15 @@ namespace Elsa.WorkflowSettings.Persistence.MongoDb.Extensions
 {
     public static class WorkflowSettingsServiceCollectionExtensions
     {
+        public static WorkflowSettingsOptionsBuilder UseWorkflowSettingsMongoDbPersistence(this WorkflowSettingsOptionsBuilder workflowSettingsOptions) => UseWorkflowSettingsMongoDbPersistence<ElsaMongoDbContext>(workflowSettingsOptions);
+
+        public static WorkflowSettingsOptionsBuilder UseWorkflowSettingsMongoDbPersistence<TDbContext>(this WorkflowSettingsOptionsBuilder workflowSettingsOptions) where TDbContext : ElsaMongoDbContext
+        {
+            AddCore<TDbContext>(workflowSettingsOptions);
+
+            return workflowSettingsOptions;
+        }
+
         public static WorkflowSettingsOptionsBuilder UseWorkflowSettingsMongoDbPersistence(this WorkflowSettingsOptionsBuilder workflowSettingsOptions, Action<ElsaMongoDbOptions> configureOptions) => UseWorkflowSettingsMongoDbPersistence<ElsaMongoDbContext>(workflowSettingsOptions, configureOptions);
 
         public static WorkflowSettingsOptionsBuilder UseWorkflowSettingsMongoDbPersistence<TDbContext>(this WorkflowSettingsOptionsBuilder workflowSettingsOptions, Action<ElsaMongoDbOptions> configureOptions) where TDbContext : ElsaMongoDbContext
@@ -30,37 +39,15 @@ namespace Elsa.WorkflowSettings.Persistence.MongoDb.Extensions
             return workflowSettingsOptions;
         }
 
-        public static WorkflowSettingsOptionsBuilder UseWorkflowSettingsMongoDbPersistenceWithMultitenancy(this WorkflowSettingsOptionsBuilder workflowSettingsOptions) => UseWorkflowSettingsMongoDbPersistenceWithMultitenancy<MultitenantElsaMongoDbContext>(workflowSettingsOptions);
-
-        public static WorkflowSettingsOptionsBuilder UseWorkflowSettingsMongoDbPersistenceWithMultitenancy<TDbContext>(this WorkflowSettingsOptionsBuilder workflowSettingsOptions) where TDbContext : MultitenantElsaMongoDbContext
-        {
-            AddCoreForMultitenancy<TDbContext>(workflowSettingsOptions);
-            return workflowSettingsOptions;
-        }
-
         private static void AddCore<TDbContext>(WorkflowSettingsOptionsBuilder workflowSettingsOptions) where TDbContext : ElsaMongoDbContext
-        {
-            workflowSettingsOptions.Services
-                .AddSingleton<MongoDbWorkflowSettingsStore>()
-                .AddSingleton<TDbContext>()
-                .AddSingleton<ElsaMongoDbContext, TDbContext>()
-                .AddSingleton<Func<IMongoCollection<WorkflowSetting>>>(sp => () => sp.GetRequiredService<ElsaMongoDbContext>().WorkflowSettings)
-                .AddStartupTask<DatabaseInitializer>();
-
-            workflowSettingsOptions.UseWorkflowSettingsStore(sp => sp.GetRequiredService<MongoDbWorkflowSettingsStore>());
-
-            DatabaseRegister.RegisterMapsAndSerializers();
-        }
-
-        private static void AddCoreForMultitenancy<TDbContext>(WorkflowSettingsOptionsBuilder workflowSettingsOptions) where TDbContext : MultitenantElsaMongoDbContext
         {
             workflowSettingsOptions.Services
                 .AddScoped<MongoDbWorkflowSettingsStore>()
                 .AddSingleton<TDbContext>()
-                .AddSingleton<MultitenantElsaMongoDbContext, TDbContext>()
-                .AddScoped<MultitenantElsaMongoDbContextProvider>()
-                .AddScoped<Func<IMongoCollection<WorkflowSetting>>>(sp => () => sp.GetRequiredService<MultitenantElsaMongoDbContextProvider>().WorkflowSettings)
-                .AddStartupTask<MultitenantDatabaseInitializer>();
+                .AddSingleton<ElsaMongoDbContext, TDbContext>()
+                .AddScoped<ElsaMongoDbContextProvider>()
+                .AddScoped<Func<IMongoCollection<WorkflowSetting>>>(sp => () => sp.GetRequiredService<ElsaMongoDbContextProvider>().WorkflowSettings)
+                .AddStartupTask<DatabaseInitializer>();
 
             workflowSettingsOptions.UseWorkflowSettingsStore(sp => sp.GetRequiredService<MongoDbWorkflowSettingsStore>());
 

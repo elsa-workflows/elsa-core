@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.MultiTenancy;
 using Elsa.Services;
 using Elsa.Webhooks.Persistence.EntityFramework.Core.Services;
 using Microsoft.EntityFrameworkCore;
@@ -12,21 +13,28 @@ namespace Elsa.Webhooks.Persistence.EntityFramework.Core.StartupTasks
     /// </summary>
     public class RunMigrations : IStartupTask
     {
-        protected readonly IServiceScopeFactory _scopeFactory;
+        private readonly IServiceScopeFactory _scopeFactory;
+        private readonly ITenantStore _tenantStore;
 
-        public RunMigrations(IServiceScopeFactory scopeFactory)
+        public RunMigrations(IServiceScopeFactory scopeFactory, ITenantStore tenantStore)
         {
             _scopeFactory = scopeFactory;
+            _tenantStore = tenantStore;
         }
 
         public int Order => 0;
         
-        public virtual async Task ExecuteAsync(CancellationToken cancellationToken = default)
+        public async Task ExecuteAsync(CancellationToken cancellationToken = default)
         {
-            await ExecuteInternalAsync(cancellationToken);
+            foreach (var tenant in _tenantStore.GetTenants())
+            {
+                var scope = _scopeFactory.CreateScopeForTenant(tenant);
+
+                await ExecuteInternalAsync(cancellationToken, scope);
+            }
         }
 
-        protected async Task ExecuteInternalAsync(CancellationToken cancellationToken = default, IServiceScope? serviceScope = default)
+        private async Task ExecuteInternalAsync(CancellationToken cancellationToken = default, IServiceScope? serviceScope = default)
         {
             using var scope = serviceScope ?? _scopeFactory.CreateScope();
 

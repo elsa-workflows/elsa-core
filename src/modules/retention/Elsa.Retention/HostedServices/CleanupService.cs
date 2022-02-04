@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.MultiTenancy;
 using Elsa.Retention.Jobs;
 using Elsa.Retention.Options;
 using Elsa.Services;
@@ -20,35 +21,41 @@ namespace Elsa.Retention.HostedServices
         private readonly IDistributedLockProvider _distributedLockProvider;
         private readonly ILogger<CleanupService> _logger;
         private readonly TimeSpan _interval;
+        private readonly ITenantStore _tenantStore;
 
-        public CleanupService(IOptions<CleanupOptions> options, IServiceScopeFactory serviceScopeFactory, IDistributedLockProvider distributedLockProvider, ILogger<CleanupService> logger)
+        public CleanupService(IOptions<CleanupOptions> options, IServiceScopeFactory serviceScopeFactory, IDistributedLockProvider distributedLockProvider, ILogger<CleanupService> logger, ITenantStore tenantStore)
         {
             _serviceScopeFactory = serviceScopeFactory;
             _distributedLockProvider = distributedLockProvider;
             _logger = logger;
             _interval = options.Value.SweepInterval.ToTimeSpan();
+            _tenantStore = tenantStore;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            using var scope = _serviceScopeFactory.CreateScope();
-            var job = scope.ServiceProvider.GetRequiredService<CleanupJob>();
-
-            while (!stoppingToken.IsCancellationRequested)
+            foreach (var tenant in _tenantStore.GetTenants())
             {
-                await Task.Delay(_interval, stoppingToken);
-                await using var handle = await _distributedLockProvider.AcquireLockAsync(nameof(CleanupService), cancellationToken: stoppingToken);
+                using var scope = _serviceScopeFactory.CreateScopeForTenant(tenant);
+                var job = scope.ServiceProvider.GetRequiredService<CleanupJob>();
 
-                if (handle == null)
-                    continue;
+                while (!stoppingToken.IsCancellationRequested)
+                {
+                    await Task.Delay(_interval, stoppingToken);
+                    await using var handle = await _distributedLockProvider.AcquireLockAsync(nameof(CleanupService), cancellationToken: stoppingToken);
 
-                try
-                {
-                    await job.ExecuteAsync(stoppingToken);
-                }
-                catch (Exception e)
-                {
-                    _logger.LogError(e, "Failed to perform cleanup this time around. Next cleanup attempt will happen in {Interval}", _interval);
+                    if (handle == null)
+                        continue;
+
+                    try
+                    {
+                        await job.ExecuteAsync(stoppingToken);
+                    }
+                    catch (Exception e)
+                    {
+                        var tenantName = tenant.Name ?? tenant.Prefix;
+                        _logger.LogError(e, "Failed to perform cleanup for tenant {Tenant} this time around. Next cleanup attempt will happen in {Interval}", tenantName, _interval);
+                    }
                 }
             }
         }

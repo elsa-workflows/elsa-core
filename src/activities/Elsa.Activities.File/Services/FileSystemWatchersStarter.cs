@@ -10,6 +10,7 @@ using Elsa.Abstractions.MultiTenancy;
 using Elsa.Activities.File.Bookmarks;
 using Elsa.Activities.File.Models;
 using Elsa.Models;
+using Elsa.MultiTenancy;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,29 +18,32 @@ using Microsoft.Extensions.Logging;
 
 namespace Elsa.Activities.File.Services
 {
-    public class FileSystemWatchersStarter : IFileSystemWatchersStarter
+    public class FileSystemWatchersStarter
     {
-        protected readonly SemaphoreSlim _semaphore = new(1);
-        protected readonly ICollection<Tuple<FileSystemWatcher, Tenant?>> _watchers;
-        protected readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger<FileSystemWatchersStarter> _logger;
         private readonly IMapper _mapper;
+        private readonly IServiceScopeFactory _scopeFactory;
+        private readonly SemaphoreSlim _semaphore = new(1);
+        private readonly ICollection<Tuple<FileSystemWatcher, Tenant>> _watchers;
         private readonly Scoped<IWorkflowLaunchpad> _workflowLaunchpad;
+        private readonly ITenantStore _tenantStore;
 
         public FileSystemWatchersStarter(
             ILogger<FileSystemWatchersStarter> logger,
             IMapper mapper,
             IServiceScopeFactory scopeFactory,
-            Scoped<IWorkflowLaunchpad> workflowLaunchpad)
+            Scoped<IWorkflowLaunchpad> workflowLaunchpad,
+            ITenantStore tenantStore)
         {
             _logger = logger;
             _mapper = mapper;
             _scopeFactory = scopeFactory;
-            _watchers = new List<Tuple<FileSystemWatcher, Tenant?>>();
+            _watchers = new List<Tuple<FileSystemWatcher, Tenant>>();
             _workflowLaunchpad = workflowLaunchpad;
+            _tenantStore = tenantStore;
         }
 
-        public virtual async Task CreateAndAddWatchersAsync(CancellationToken cancellationToken = default)
+        public async Task CreateAndAddWatchersAsync(CancellationToken cancellationToken = default)
         {
             await _semaphore.WaitAsync(cancellationToken);
 
@@ -53,16 +57,19 @@ namespace Elsa.Activities.File.Services
                     _watchers.Clear();
                 }
 
-                using var scope = _scopeFactory.CreateScope();
-
-                var activities = GetActivityInstancesAsync(scope.ServiceProvider, cancellationToken);
-                await foreach (var a in activities.WithCancellation(cancellationToken))
+                foreach (var tenant in _tenantStore.GetTenants())
                 {
-                    var changeTypes = await a.EvaluatePropertyValueAsync(x => x.ChangeTypes, cancellationToken);
-                    var notifyFilters = await a.EvaluatePropertyValueAsync(x => x.NotifyFilters, cancellationToken);
-                    var path = await a.EvaluatePropertyValueAsync(x => x.Path, cancellationToken);
-                    var pattern = await a.EvaluatePropertyValueAsync(x => x.Pattern, cancellationToken);
-                    CreateAndAddWatcher(path, pattern, changeTypes, notifyFilters);
+                    using var scope = _scopeFactory.CreateScopeForTenant(tenant);
+
+                    var activities = GetActivityInstancesAsync(scope.ServiceProvider, cancellationToken);
+                    await foreach (var a in activities.WithCancellation(cancellationToken))
+                    {
+                        var changeTypes = await a.EvaluatePropertyValueAsync(x => x.ChangeTypes, cancellationToken);
+                        var notifyFilters = await a.EvaluatePropertyValueAsync(x => x.NotifyFilters, cancellationToken);
+                        var path = await a.EvaluatePropertyValueAsync(x => x.Path, cancellationToken);
+                        var pattern = await a.EvaluatePropertyValueAsync(x => x.Pattern, cancellationToken);
+                        CreateAndAddWatcher(path, pattern, changeTypes, notifyFilters, tenant);
+                    }
                 }
             }
             finally
@@ -71,7 +78,7 @@ namespace Elsa.Activities.File.Services
             }
         }
 
-        protected void CreateAndAddWatcher(string? path, string? pattern, WatcherChangeTypes changeTypes, NotifyFilters notifyFilters, Tenant? tenant = default)
+        private void CreateAndAddWatcher(string? path, string? pattern, WatcherChangeTypes changeTypes, NotifyFilters notifyFilters, Tenant tenant)
         {
             if (string.IsNullOrWhiteSpace(path))
                 throw new ArgumentException("File watcher path must not be null or empty");
@@ -101,7 +108,7 @@ namespace Elsa.Activities.File.Services
             _watchers.Add(Tuple.Create(watcher, tenant));
         }
 
-        protected async IAsyncEnumerable<IActivityBlueprintWrapper<WatchDirectory>> GetActivityInstancesAsync(IServiceProvider serviceProvider, [EnumeratorCancellation] CancellationToken cancellationToken)
+        private async IAsyncEnumerable<IActivityBlueprintWrapper<WatchDirectory>> GetActivityInstancesAsync(IServiceProvider serviceProvider, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             var workflowRegistry = serviceProvider.GetRequiredService<IWorkflowRegistry>();
             var workflowBlueprintReflector = serviceProvider.GetRequiredService<IWorkflowBlueprintReflector>();
@@ -171,12 +178,9 @@ namespace Elsa.Activities.File.Services
             var bookmark = new FileSystemEventBookmark(path, pattern, changeTypes, notifyFilter);
             var launchContext = new WorkflowsQuery(nameof(WatchDirectory), bookmark);
 
-            var tenant = _watchers.FirstOrDefault(x => x.Item1 == watcher)?.Item2;
+            var tenant = _watchers.FirstOrDefault(x => x.Item1 == watcher).Item2;
 
-            if (tenant != null)
-                await _workflowLaunchpad.UseServiceWithTenantAsync(s => s.CollectAndDispatchWorkflowsAsync(launchContext, new WorkflowInput(model)), tenant);
-            else
-                await _workflowLaunchpad.UseServiceAsync(s => s.CollectAndDispatchWorkflowsAsync(launchContext, new WorkflowInput(model)));
+            await _workflowLaunchpad.UseServiceWithTenantAsync(s => s.CollectAndDispatchWorkflowsAsync(launchContext, new WorkflowInput(model)), tenant);
         }
 
         #endregion

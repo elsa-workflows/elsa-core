@@ -83,7 +83,6 @@ namespace Elsa.Samples.Server.Host
                     .AddWorkflowsFrom<Startup>()
                     .AddFeatures(startups, Configuration)
                     .ConfigureWorkflowChannels(options => elsaSection.GetSection("WorkflowChannels").Bind(options))
-                    .AddMultitenancy(Configuration)
                 )
                 .AddRetentionServices(options => elsaSection.GetSection("Retention").Bind(options), Configuration);
 

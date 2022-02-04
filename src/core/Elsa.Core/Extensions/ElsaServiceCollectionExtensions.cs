@@ -42,7 +42,6 @@ using Elsa.StartupTasks;
 using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using NodaTime;
 using Rebus.Handlers;
@@ -86,8 +85,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped<CooldownLoopHandler>()
                 .AddSingleton<IDistributedLockProvider, DistributedLockProvider>()
                 .AddScoped<ContinueRunningWorkflows>()
-                .AddScoped<MultitenantContinueRunningWorkflows>()
-                .AddStartupTask(sp => CreateContinueRunningWorkflows(sp, options))
+                .AddStartupTask<ContinueRunningWorkflows>()
                 .AddStartupTask<CreateSubscriptions>()
                 .AddStartupTask<IndexTriggers>()
                 .AddScoped<ITenantProvider, TenantProvider>()
@@ -169,7 +167,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped<IWorkflowRegistry, WorkflowRegistry>()
                 .AddSingleton<IActivityActivator, ActivityActivator>()
                 .AddSingleton<ITokenService, TokenService>()
-                .AddScoped(sp => CreateWorkflowRunner(sp, elsaOptions.ElsaOptions))
+                .AddScoped<IWorkflowRunner, WorkflowRunner>()
                 .AddScoped<WorkflowStarter>()
                 .AddScoped<WorkflowResumer>()
                 .AddScoped<IStartsWorkflow>(sp => sp.GetRequiredService<WorkflowStarter>())
@@ -246,10 +244,10 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IBookmarkHasher, BookmarkHasher>()
                 .AddScoped<IBookmarkIndexer, BookmarkIndexer>()
                 .AddScoped<IBookmarkFinder, BookmarkFinder>()
-                .AddScoped(sp => CreateTriggerIndexer(sp, elsaOptions.ElsaOptions))
+                .AddScoped<ITriggerIndexer, TriggerIndexer>()
                 .AddScoped<IGetsTriggersForWorkflowBlueprints, TriggersForBlueprintsProvider>()
                 .AddTransient<IGetsTriggersForActivityBlueprintAndWorkflow, TriggersForActivityBlueprintAndWorkflowProvider>()
-                .AddScoped(sp => CreateTriggerStore(sp, elsaOptions.ElsaOptions))
+                .AddScoped<ITriggerStore, TriggerStore>()
                 .AddScoped<ITriggerFinder, TriggerFinder>()
                 .AddBookmarkProvider<SignalReceivedBookmarkProvider>()
                 .AddBookmarkProvider<RunWorkflowBookmarkProvider>();
@@ -285,7 +283,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services
                 .AddMemoryCache()
                 .AddScoped<ISignaler, Signaler>()
-                .Decorate<IWorkflowRegistry>((decorated, sp) => CreateDecoratedWorkflowRegistry(sp, decorated, elsaOptions.ElsaOptions));
+                .Decorate<IWorkflowRegistry, CachingWorkflowRegistry>();
 
             // Builder API.
             services
@@ -312,46 +310,6 @@ namespace Microsoft.Extensions.DependencyInjection
             return options
                 .AddActivitiesFrom<ElsaOptions>()
                 .AddActivitiesFrom<CompositeActivity>();
-        }
-
-        private static IStartupTask CreateContinueRunningWorkflows(IServiceProvider serviceProvider, ElsaOptions options)
-        {
-            if (options.MultitenancyEnabled)
-                return ActivatorUtilities.GetServiceOrCreateInstance<MultitenantContinueRunningWorkflows>(serviceProvider);
-            else
-                return ActivatorUtilities.GetServiceOrCreateInstance<ContinueRunningWorkflows>(serviceProvider);
-        }
-        
-        private static ITriggerIndexer CreateTriggerIndexer(IServiceProvider serviceProvider, ElsaOptions options)
-        {
-            if (options.MultitenancyEnabled)
-                return ActivatorUtilities.GetServiceOrCreateInstance<MultitenantTriggerIndexer>(serviceProvider);
-            else
-                return ActivatorUtilities.GetServiceOrCreateInstance<TriggerIndexer>(serviceProvider);
-        }
-        
-        private static ITriggerStore CreateTriggerStore(IServiceProvider serviceProvider, ElsaOptions options)
-        {
-            if (options.MultitenancyEnabled)
-                return ActivatorUtilities.GetServiceOrCreateInstance<MultitenantTriggerStore>(serviceProvider);
-            else
-                return ActivatorUtilities.GetServiceOrCreateInstance<TriggerStore>(serviceProvider);
-        }
-        
-        private static IWorkflowRegistry CreateDecoratedWorkflowRegistry(IServiceProvider serviceProvider, IWorkflowRegistry workflowRegistry, ElsaOptions options)
-        {
-            if (options.MultitenancyEnabled)
-                return ActivatorUtilities.CreateInstance<MultitenantCachingWorkflowRegistry>(serviceProvider, workflowRegistry);
-            else
-                return ActivatorUtilities.CreateInstance<CachingWorkflowRegistry>(serviceProvider, workflowRegistry);
-        }
-
-        private static IWorkflowRunner CreateWorkflowRunner(IServiceProvider serviceProvider, ElsaOptions options)
-        {
-            if (options.MultitenancyEnabled)
-                return ActivatorUtilities.CreateInstance<MultitenantWorkflowRunner>(serviceProvider);
-            else
-                return ActivatorUtilities.CreateInstance<WorkflowRunner>(serviceProvider);
         }
     }
 }

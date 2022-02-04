@@ -109,9 +109,8 @@ namespace Elsa.Persistence.EntityFramework.Core.Extensions
         public static ElsaOptionsBuilder UseNonPooledEntityFrameworkPersistence(this ElsaOptionsBuilder elsa,
             Action<DbContextOptionsBuilder> configure,
             ServiceLifetime serviceLifetime = ServiceLifetime.Singleton,
-            bool autoRunMigrations = false,
-            bool multitenancyEnabled = false) =>
-            elsa.UseNonPooledEntityFrameworkPersistence<ElsaContext>(configure, serviceLifetime, autoRunMigrations, multitenancyEnabled);
+            bool autoRunMigrations = false) =>
+            elsa.UseNonPooledEntityFrameworkPersistence<ElsaContext>(configure, serviceLifetime, autoRunMigrations);
 
         /// <summary>
         /// Configures Elsa to use Entity Framework Core for persistence, without using pooled DB Context instances.
@@ -137,9 +136,8 @@ namespace Elsa.Persistence.EntityFramework.Core.Extensions
         public static ElsaOptionsBuilder UseNonPooledEntityFrameworkPersistence<TElsaContext>(this ElsaOptionsBuilder elsa,
             Action<DbContextOptionsBuilder> configure,
             ServiceLifetime serviceLifetime = ServiceLifetime.Singleton,
-            bool autoRunMigrations = false,
-            bool multitenancyEnabled = false) where TElsaContext : ElsaContext =>
-            elsa.UseNonPooledEntityFrameworkPersistence<TElsaContext>((_, builder) => configure(builder), serviceLifetime, autoRunMigrations, multitenancyEnabled);
+            bool autoRunMigrations = false) where TElsaContext : ElsaContext =>
+            elsa.UseNonPooledEntityFrameworkPersistence<TElsaContext>((_, builder) => configure(builder), serviceLifetime, autoRunMigrations);
 
         /// <summary>
         /// Configures Elsa to use Entity Framework Core for persistence, without using pooled DB Context instances.
@@ -164,9 +162,8 @@ namespace Elsa.Persistence.EntityFramework.Core.Extensions
         public static ElsaOptionsBuilder UseNonPooledEntityFrameworkPersistence(this ElsaOptionsBuilder elsa,
             Action<IServiceProvider, DbContextOptionsBuilder> configure,
             ServiceLifetime serviceLifetime = ServiceLifetime.Singleton,
-            bool autoRunMigrations = false,
-            bool multitenancyEnabled = false) =>
-            elsa.UseNonPooledEntityFrameworkPersistence<ElsaContext>(configure, serviceLifetime, autoRunMigrations,  multitenancyEnabled);
+            bool autoRunMigrations = false) =>
+            elsa.UseNonPooledEntityFrameworkPersistence<ElsaContext>(configure, serviceLifetime, autoRunMigrations);
 
         /// <summary>
         /// Configures Elsa to use Entity Framework Core for persistence, without using pooled DB Context instances.
@@ -192,16 +189,14 @@ namespace Elsa.Persistence.EntityFramework.Core.Extensions
         public static ElsaOptionsBuilder UseNonPooledEntityFrameworkPersistence<TElsaContext>(this ElsaOptionsBuilder elsa,
             Action<IServiceProvider, DbContextOptionsBuilder> configure,
             ServiceLifetime serviceLifetime = ServiceLifetime.Singleton,
-            bool autoRunMigrations = false,
-            bool multitenancyEnabled = false) where TElsaContext : ElsaContext =>
-            UseEntityFrameworkPersistence<TElsaContext>(elsa, configure, autoRunMigrations, false, serviceLifetime, multitenancyEnabled);
+            bool autoRunMigrations = false) where TElsaContext : ElsaContext =>
+            UseEntityFrameworkPersistence<TElsaContext>(elsa, configure, autoRunMigrations, false, serviceLifetime);
 
         static ElsaOptionsBuilder UseEntityFrameworkPersistence<TElsaContext>(ElsaOptionsBuilder elsa,
             Action<IServiceProvider, DbContextOptionsBuilder> configure,
             bool autoRunMigrations,
             bool useContextPooling,
-            ServiceLifetime serviceLifetime,
-            bool multitenancyEnabled = false) where TElsaContext : ElsaContext
+            ServiceLifetime serviceLifetime) where TElsaContext : ElsaContext
         {
             /* Auto-running migrations is intentionally unavailable when not using context pooling.
              * When we aren't using pooling then it probably means that each DB Context is different
@@ -235,12 +230,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Extensions
                 .AddScoped<EntityFrameworkBookmarkStore>();
 
             if (autoRunMigrations)
-            {
-                if (multitenancyEnabled)
-                    elsa.Services.AddStartupTask<MultitenantRunMigrations>();
-                else
-                    elsa.Services.AddStartupTask<RunMigrations>();
-            }
+                elsa.Services.AddStartupTask<RunMigrations>();
 
             return elsa
                 .UseWorkflowDefinitionStore(sp => sp.GetRequiredService<EntityFrameworkWorkflowDefinitionStore>())

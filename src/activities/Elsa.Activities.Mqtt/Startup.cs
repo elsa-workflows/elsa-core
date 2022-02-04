@@ -10,9 +10,7 @@ namespace Elsa.Activities.Mqtt
     {
         public override void ConfigureElsa(ElsaOptionsBuilder elsa, IConfiguration configuration)
         {
-            var multitenancyEnabled = configuration.GetValue<bool>("Elsa:MultiTenancy");
-
-            elsa.AddMqttActivities(options => options.MultitenancyEnabled = multitenancyEnabled);
+            elsa.AddMqttActivities();
         }
     }
 }

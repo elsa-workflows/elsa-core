@@ -16,29 +16,7 @@ namespace Elsa.WorkflowSettings.Persistence.MongoDb
             var services = elsa.Services;
             var workflowSettingsOptionsBuilder = new WorkflowSettingsOptionsBuilder(services);
 
-            var multiTenancyEnabled = configuration.GetValue<bool>("Elsa:MultiTenancy");
-
-            if (multiTenancyEnabled)
-                workflowSettingsOptionsBuilder.UseWorkflowSettingsMongoDbPersistenceWithMultitenancy();
-            else
-            {
-                var section = configuration.GetSection($"Elsa:Features:WorkflowSettings");
-                var connectionStringName = section.GetValue<string>("ConnectionStringIdentifier");
-                var connectionString = section.GetValue<string>("ConnectionString");
-
-                if (string.IsNullOrWhiteSpace(connectionString))
-                {
-                    if (string.IsNullOrWhiteSpace(connectionStringName))
-                        connectionStringName = "MongoDb";
-
-                    connectionString = configuration.GetConnectionString(connectionStringName);
-                }
-
-                if (string.IsNullOrWhiteSpace(connectionString))
-                    connectionString = "mongodb://localhost:27017/Elsa";
-
-                workflowSettingsOptionsBuilder.UseWorkflowSettingsMongoDbPersistence(options => options.ConnectionString = connectionString);
-            }
+            workflowSettingsOptionsBuilder.UseWorkflowSettingsMongoDbPersistence();
 
             services.AddScoped(sp => workflowSettingsOptionsBuilder.WorkflowSettingsOptions.WorkflowSettingsStoreFactory(sp));
 

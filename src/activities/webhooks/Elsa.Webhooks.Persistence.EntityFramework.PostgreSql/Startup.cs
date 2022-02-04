@@ -12,7 +12,7 @@ namespace Elsa.Webhooks.Persistence.EntityFramework.PostgreSql
     {
         protected override string ProviderName => "PostgreSql";
         protected override void Configure(DbContextOptionsBuilder options, string connectionString) => options.UseWebhookPostgreSql(connectionString);
-        protected override void ConfigureForMultitenancy(DbContextOptionsBuilder options, IServiceProvider serviceProvider)
+        protected override void ConfigureFor(DbContextOptionsBuilder options, IServiceProvider serviceProvider)
         {
             var tenantProvider = serviceProvider.GetRequiredService<ITenantProvider>();
 

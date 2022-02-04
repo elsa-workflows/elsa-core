@@ -25,13 +25,9 @@ namespace Elsa.Activities.Webhooks.Extensions
 
             services
                 .AddScoped(sp => sp.GetRequiredService<WebhookOptions>().WebhookDefinitionStoreFactory(sp))
+                .AddScoped<IActivityTypeProvider, WebhookActivityTypeProvider>()
                 .AddBookmarkProvider<WebhookBookmarkProvider>()
                 .AddNotificationHandlersFrom<EvictWorkflowRegistryCacheHandler>();
-
-            if (elsaOptions.ElsaOptions.MultitenancyEnabled)
-                services.AddScoped<IActivityTypeProvider, MultitenantWebhookActivityTypeProvider>();
-            else
-                services.AddActivityTypeProvider<WebhookActivityTypeProvider>();
 
             services.Decorate<IWebhookDefinitionStore, InitializingWebhookDefinitionStore>();
             services.Decorate<IWebhookDefinitionStore, EventPublishingWebhookDefinitionStore>();

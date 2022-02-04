@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Abstractions.MultiTenancy;
 using Elsa.ActivityResults;
 using Elsa.Events;
 using Elsa.Models;
@@ -22,12 +23,13 @@ namespace Elsa.Services.Workflows
         private static readonly ActivityOperation Execute = (context, activity) => activity.ExecuteAsync(context);
         private static readonly ActivityOperation Resume = (context, activity) => activity.ResumeAsync(context);
 
-        protected readonly IServiceScopeFactory _serviceScopeFactory;
-        protected readonly ILogger _logger;
-        protected readonly IWorkflowStorageService _workflowStorageService;
-        protected readonly IMediator _mediator;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
+        private readonly ILogger _logger;
+        private readonly IWorkflowStorageService _workflowStorageService;
+        private readonly IMediator _mediator;
         private readonly IWorkflowContextManager _workflowContextManager;
         private readonly IGetsStartActivities _startingActivitiesProvider;
+        private readonly ITenantProvider _tenantProvider;
 
         public WorkflowRunner(
             IWorkflowContextManager workflowContextManager,
@@ -35,7 +37,8 @@ namespace Elsa.Services.Workflows
             IServiceScopeFactory serviceScopeFactory,
             IGetsStartActivities startingActivitiesProvider,
             IWorkflowStorageService workflowStorageService,
-            ILogger<WorkflowRunner> logger)
+            ILogger<WorkflowRunner> logger,
+            ITenantProvider tenantProvider)
         {
             _mediator = mediator;
             _serviceScopeFactory = serviceScopeFactory;
@@ -43,9 +46,10 @@ namespace Elsa.Services.Workflows
             _workflowStorageService = workflowStorageService;
             _logger = logger;
             _workflowContextManager = workflowContextManager;
+            _tenantProvider = tenantProvider;
         }
 
-        public virtual async Task<RunWorkflowResult> RunWorkflowAsync(
+        public async Task<RunWorkflowResult> RunWorkflowAsync(
             IWorkflowBlueprint workflowBlueprint,
             WorkflowInstance workflowInstance,
             string? activityId = default,
@@ -53,7 +57,10 @@ namespace Elsa.Services.Workflows
             CancellationToken cancellationToken = default)
         {
             using var loggingScope = _logger.BeginScope(new Dictionary<string, object> { ["WorkflowInstanceId"] = workflowInstance.Id });
-            using var workflowExecutionScope = _serviceScopeFactory.CreateScope();
+
+            var tenant = _tenantProvider.GetCurrentTenant();
+
+            using var workflowExecutionScope = _serviceScopeFactory.CreateScopeForTenant(tenant);
 
             if (input?.Input != null)
             {
@@ -70,7 +77,7 @@ namespace Elsa.Services.Workflows
             return result;
         }
 
-        protected virtual async Task<RunWorkflowResult> RunWorkflowInternalAsync(WorkflowExecutionContext workflowExecutionContext, string? activityId = default, CancellationToken cancellationToken = default)
+        public virtual async Task<RunWorkflowResult> RunWorkflowInternalAsync(WorkflowExecutionContext workflowExecutionContext, string? activityId = default, CancellationToken cancellationToken = default)
         {
             var workflowInstance = workflowExecutionContext.WorkflowInstance;
 

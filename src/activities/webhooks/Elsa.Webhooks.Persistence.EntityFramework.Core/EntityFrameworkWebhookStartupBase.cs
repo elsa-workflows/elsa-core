@@ -17,32 +17,13 @@ namespace Elsa.Webhooks.Persistence.EntityFramework.Core
         {
             var optionsBuilder = new WebhookOptionsBuilder(elsa.Services);
 
-            var multiTenancyEnabled = configuration.GetValue<bool>("Elsa:MultiTenancy");
+            optionsBuilder.UseNonPooledEntityFrameworkPersistence((serviceProvider, options) => ConfigureFor(options, serviceProvider), ServiceLifetime.Scoped);
 
-            if (multiTenancyEnabled)
-                optionsBuilder.UseNonPooledEntityFrameworkPersistence((serviceProvider, options) => ConfigureForMultitenancy(options, serviceProvider), ServiceLifetime.Scoped, autoRunMigrations: false, multitenancyEnabled: true);
-            else
-            {
-                var section = configuration.GetSection($"Elsa:Features:Webhooks");
-                var connectionStringName = section.GetValue<string>("ConnectionStringIdentifier");
-                var connectionString = section.GetValue<string>("ConnectionString");
-
-                if (string.IsNullOrWhiteSpace(connectionStringName))
-                    connectionStringName = ProviderName;
-
-                if (string.IsNullOrWhiteSpace(connectionString))
-                    connectionString = configuration.GetConnectionString(connectionStringName);
-
-                if (string.IsNullOrWhiteSpace(connectionString))
-                    connectionString = GetDefaultConnectionString();
-
-                optionsBuilder.UseEntityFrameworkPersistence(ef => Configure(ef, connectionString));
-                elsa.Services.AddSingleton(optionsBuilder.WebhookOptions);
-            }
+            elsa.Services.AddSingleton(optionsBuilder.WebhookOptions);
         }
 
         protected virtual string GetDefaultConnectionString() => throw new Exception($"No connection string specified for the {ProviderName} provider");
         protected abstract void Configure(DbContextOptionsBuilder options, string connectionString);
-        protected abstract void ConfigureForMultitenancy(DbContextOptionsBuilder options, IServiceProvider serviceProvider);
+        protected abstract void ConfigureFor(DbContextOptionsBuilder options, IServiceProvider serviceProvider);
     }
 }

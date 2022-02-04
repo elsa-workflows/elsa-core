@@ -13,6 +13,15 @@ namespace Elsa.Webhooks.Persistence.MongoDb.Extensions
 {
     public static class WebhookServiceCollectionExtensions
     {
+        public static WebhookOptionsBuilder UseWebhookMongoDbPersistence(this WebhookOptionsBuilder webhookOptions) => UseWebhookMongoDbPersistence<ElsaMongoDbContext>(webhookOptions);
+
+        public static WebhookOptionsBuilder UseWebhookMongoDbPersistence<TDbContext>(this WebhookOptionsBuilder webhookOptions) where TDbContext : ElsaMongoDbContext
+        {
+            AddCore<TDbContext>(webhookOptions);
+
+            return webhookOptions;
+        }
+
         public static WebhookOptionsBuilder UseWebhookMongoDbPersistence(this WebhookOptionsBuilder webhookOptions, Action<ElsaMongoDbOptions> configureOptions) => UseWebhookMongoDbPersistence<ElsaMongoDbContext>(webhookOptions, configureOptions);
 
         public static WebhookOptionsBuilder UseWebhookMongoDbPersistence<TDbContext>(this WebhookOptionsBuilder webhookOptions, Action<ElsaMongoDbOptions> configureOptions) where TDbContext : ElsaMongoDbContext
@@ -32,37 +41,15 @@ namespace Elsa.Webhooks.Persistence.MongoDb.Extensions
             return webhookOptions;
         }
 
-        public static WebhookOptionsBuilder UseWebhookMongoDbPersistenceWithMultitenancy(this WebhookOptionsBuilder webhookOptions) => UseWebhookMongoDbPersistenceWithMultitenancy<MultitenantElsaMongoDbContext>(webhookOptions);
-
-        public static WebhookOptionsBuilder UseWebhookMongoDbPersistenceWithMultitenancy<TDbContext>(this WebhookOptionsBuilder webhookOptions) where TDbContext : MultitenantElsaMongoDbContext
-        {
-            AddCoreForMultitenancy<TDbContext>(webhookOptions);
-            return webhookOptions;
-        }
-
         private static void AddCore<TDbContext>(WebhookOptionsBuilder webhookOptions) where TDbContext : ElsaMongoDbContext
-        {
-            webhookOptions.Services
-                .AddSingleton<MongoDbWebhookDefinitionStore>()
-                .AddSingleton<TDbContext>()
-                .AddSingleton<ElsaMongoDbContext, TDbContext>()
-                .AddSingleton<Func<IMongoCollection<WebhookDefinition>>>(sp => () => sp.GetRequiredService<ElsaMongoDbContext>().WebhookDefinitions)
-                .AddStartupTask<DatabaseInitializer>();
-
-            webhookOptions.UseWebhookDefinitionStore(sp => sp.GetRequiredService<MongoDbWebhookDefinitionStore>());
-
-            DatabaseRegister.RegisterMapsAndSerializers();
-        }
-
-        private static void AddCoreForMultitenancy<TDbContext>(WebhookOptionsBuilder webhookOptions) where TDbContext : MultitenantElsaMongoDbContext
         {
             webhookOptions.Services
                 .AddScoped<MongoDbWebhookDefinitionStore>()
                 .AddSingleton<TDbContext>()
-                .AddSingleton<MultitenantElsaMongoDbContext, TDbContext>()
-                .AddScoped<MultitenantElsaMongoDbContextProvider>()
-                .AddScoped<Func<IMongoCollection<WebhookDefinition>>>(sp => () => sp.GetRequiredService<MultitenantElsaMongoDbContextProvider>().WebhookDefinitions)
-                .AddStartupTask<MultitenantDatabaseInitializer>();
+                .AddSingleton<ElsaMongoDbContext, TDbContext>()
+                .AddScoped<ElsaMongoDbContextProvider>()
+                .AddScoped<Func<IMongoCollection<WebhookDefinition>>>(sp => () => sp.GetRequiredService<ElsaMongoDbContextProvider>().WebhookDefinitions)
+                .AddStartupTask<DatabaseInitializer>();
 
             webhookOptions.UseWebhookDefinitionStore(sp => sp.GetRequiredService<MongoDbWebhookDefinitionStore>());
 

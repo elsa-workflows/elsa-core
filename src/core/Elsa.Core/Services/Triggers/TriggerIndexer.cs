@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Events;
+using Elsa.MultiTenancy;
 using Elsa.Services.Models;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,32 +14,38 @@ using Microsoft.Extensions.Logging;
 namespace Elsa.Services.Triggers
 {
     public class TriggerIndexer : ITriggerIndexer
-    { 
-        protected readonly IMediator _mediator;
-        protected readonly IServiceScopeFactory _scopeFactory;
+    {
+        private readonly IMediator _mediator;
         private readonly ILogger _logger;
         private readonly Stopwatch _stopwatch = new();
+        private readonly IServiceScopeFactory _scopeFactory;
+        private readonly ITenantStore _tenantStore;
 
         public TriggerIndexer(
             IMediator mediator,
             ILogger<TriggerIndexer> logger,
-            IServiceScopeFactory scopeFactory)
+            IServiceScopeFactory scopeFactory,
+            ITenantStore tenantStore)
         {
             _mediator = mediator;
             _logger = logger;
             _scopeFactory = scopeFactory;
+            _tenantStore = tenantStore;
         }
 
-        public virtual async Task IndexTriggersAsync(CancellationToken cancellationToken = default)
+        public async Task IndexTriggersAsync(CancellationToken cancellationToken = default)
         {
-            using var scope = _scopeFactory.CreateScope();
+            foreach (var tenant in _tenantStore.GetTenants())
+            {
+                using var scope = _scopeFactory.CreateScopeForTenant(tenant);
 
-            await IndexTriggersInternalAsync(scope.ServiceProvider, cancellationToken);            
+                await IndexTriggersInternalAsync(scope.ServiceProvider, cancellationToken);
+            }
 
             await _mediator.Publish(new TriggerIndexingFinished(), cancellationToken);
         }
 
-        protected async Task IndexTriggersInternalAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken)
+        private async Task IndexTriggersInternalAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken)
         {
             var workflowRegistry = serviceProvider.GetRequiredService<IWorkflowRegistry>();
 

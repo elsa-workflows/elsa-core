@@ -10,21 +10,16 @@ namespace Elsa.WorkflowTesting.Api.Extensions
         {
             return app.UseEndpoints(endpoints =>
             {
-                var multiTenancyEnabled = configuration.GetValue<bool>("Elsa:MultiTenancy");
+                endpoints.MapHub<WorkflowTestHub>("/hubs/workflowTest");
 
-                if (multiTenancyEnabled)
+                var tenantsConfiguration = configuration.GetSection("Elsa:Tenants").GetChildren();
+
+                foreach (var tenantConfig in tenantsConfiguration)
                 {
-                    var tenantsConfiguration = configuration.GetSection("Elsa:Tenants").GetChildren();
+                    var prefix = tenantConfig.GetSection("Prefix").Value;
 
-                    foreach (var tenantConfig in tenantsConfiguration)
-                    {
-                        var prefix = tenantConfig.GetSection("Prefix").Value;
-
-                        endpoints.MapHub<WorkflowTestHub>($"/{prefix}/hubs/workflowTest");
-                    }
+                    endpoints.MapHub<WorkflowTestHub>($"/{prefix}/hubs/workflowTest");
                 }
-                else
-                    endpoints.MapHub<WorkflowTestHub>("/hubs/workflowTest");
             });
         }
     }

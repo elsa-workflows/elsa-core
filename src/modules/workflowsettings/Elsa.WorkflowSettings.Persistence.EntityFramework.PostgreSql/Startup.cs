@@ -12,7 +12,7 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.PostgreSql
     {
         protected override string ProviderName => "PostgreSql";
         protected override void Configure(DbContextOptionsBuilder options, string connectionString) => options.UseWorkflowSettingsPostgreSql(connectionString);
-        protected override void ConfigureForMultitenancy(DbContextOptionsBuilder options, IServiceProvider serviceProvider)
+        protected override void Configure(DbContextOptionsBuilder options, IServiceProvider serviceProvider)
         {
             var tenantProvider = serviceProvider.GetRequiredService<ITenantProvider>();
 

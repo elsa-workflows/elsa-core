@@ -18,7 +18,5 @@ namespace Elsa.Retention.Options
         /// The maximum number of workflow instances to delete at the same time.
         /// </summary>
         public int PageSize { get; set; } = 100;
-
-        public bool MultitenancyEnabled { get; set; } = false;
     }
 }

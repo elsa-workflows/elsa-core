@@ -7,9 +7,9 @@ namespace Elsa.Activities.File.StartupTasks
 {
     public class StartFileSystemWatchers : IStartupTask
     {
-        private readonly IFileSystemWatchersStarter _starter;
+        private readonly FileSystemWatchersStarter _starter;
 
-        public StartFileSystemWatchers(IFileSystemWatchersStarter starter) => _starter = starter;
+        public StartFileSystemWatchers(FileSystemWatchersStarter starter) => _starter = starter;
 
         public int Order => 2000;
 

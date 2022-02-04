@@ -26,41 +26,12 @@ namespace Elsa.Persistence.YesSql
                 .AddScoped<YesSqlWorkflowInstanceStore>()
                 .AddScoped<YesSqlWorkflowExecutionLogStore>()
                 .AddScoped<YesSqlBookmarkStore>()
-                .AddSingleton(sp => CreateStore(sp, configure))
-                .AddSingleton<ISessionProvider, SessionProvider>()
-                .AddScoped(CreateSession)
-                .AddScoped<IDataMigrationManager, DataMigrationManager>()
-                .AddStartupTask<DatabaseInitializer>()
-                .AddStartupTask<RunMigrations>()
-                .AddDataMigration<Migrations>()
-                .AddAutoMapperProfile<AutoMapperProfile>()
-                .AddIndexProvider<WorkflowDefinitionIndexProvider>()
-                .AddIndexProvider<WorkflowInstanceIndexProvider>()
-                .AddIndexProvider<WorkflowExecutionLogRecordIndexProvider>()
-                .AddIndexProvider<BookmarkIndexProvider>();
-
-            return elsa
-                .UseWorkflowDefinitionStore(sp => sp.GetRequiredService<YesSqlWorkflowDefinitionStore>())
-                .UseWorkflowInstanceStore(sp => sp.GetRequiredService<YesSqlWorkflowInstanceStore>())
-                .UseWorkflowTriggerStore(sp => sp.GetRequiredService<YesSqlBookmarkStore>())
-                .UseWorkflowExecutionLogStore(sp => sp.GetRequiredService<YesSqlWorkflowExecutionLogStore>());
-        }
-
-        public static ElsaOptionsBuilder UseYesSqlPersistenceWithMultitenancy(this ElsaOptionsBuilder elsa, Action<IConfiguration> configure) => elsa.UseYesSqlPersistenceWithMultitenancy((_, config) => configure(config));
-
-        public static ElsaOptionsBuilder UseYesSqlPersistenceWithMultitenancy(this ElsaOptionsBuilder elsa, Action<IServiceProvider, IConfiguration> configure)
-        {
-            elsa.Services
-                .AddScoped<YesSqlWorkflowDefinitionStore>()
-                .AddScoped<YesSqlWorkflowInstanceStore>()
-                .AddScoped<YesSqlWorkflowExecutionLogStore>()
-                .AddScoped<YesSqlBookmarkStore>()
                 .AddScoped(sp => CreateStore(sp, configure))
                 .AddScoped<ISessionProvider, SessionProvider>()
                 .AddScoped(CreateSession)
                 .AddScoped<IDataMigrationManager, DataMigrationManager>()
-                .AddStartupTask<MultitenantDatabaseInitializer>()
-                .AddStartupTask<MultitenantRunMigrations>()
+                .AddStartupTask<DatabaseInitializer>()
+                .AddStartupTask<RunMigrations>()
                 .AddDataMigration<Migrations>()
                 .AddAutoMapperProfile<AutoMapperProfile>()
                 .AddIndexProvider<WorkflowDefinitionIndexProvider>()

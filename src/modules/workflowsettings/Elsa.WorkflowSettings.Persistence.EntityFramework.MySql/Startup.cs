@@ -12,7 +12,7 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.MySql
     {
         protected override string ProviderName => "MySql";
         protected override void Configure(DbContextOptionsBuilder options, string connectionString) => options.UseWorkflowSettingsMySql(connectionString);
-        protected override void ConfigureForMultitenancy(DbContextOptionsBuilder options, IServiceProvider serviceProvider)
+        protected override void Configure(DbContextOptionsBuilder options, IServiceProvider serviceProvider)
         {
             var tenantProvider = serviceProvider.GetRequiredService<ITenantProvider>();
 

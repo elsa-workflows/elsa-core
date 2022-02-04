@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Abstractions.MultiTenancy;
 using Elsa.Activities.Http.Bookmarks;
 using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.Http.Models;
@@ -36,9 +37,11 @@ namespace Elsa.Activities.Http.Middleware
             IWorkflowInstanceStore workflowInstanceStore,
             IWorkflowRegistry workflowRegistry,
             IWorkflowBlueprintReflector workflowBlueprintReflector,
-            IEnumerable<IHttpRequestBodyParser> contentParsers)
+            IEnumerable<IHttpRequestBodyParser> contentParsers,
+            ITenantProvider tenantProvider)
         {
-            var basePath = options.Value.BasePath;
+            var basePath = GetBasePath(options.Value.BasePath, tenantProvider);
+
             var path = GetPath(basePath, httpContext);
 
             if (path == null)
@@ -211,5 +214,12 @@ namespace Elsa.Activities.Http.Middleware
         private string? GetPath(PathString? basePath, HttpContext httpContext) => basePath != null
             ? httpContext.Request.Path.StartsWithSegments(basePath.Value, out _, out var remainingPath) ? remainingPath.Value.ToLowerInvariant() : null
             : httpContext.Request.Path.Value.ToLowerInvariant();
+
+        private PathString? GetBasePath(PathString? basePath, ITenantProvider tenantProvider)
+        {
+            var tenantPrefix = tenantProvider.TryGetCurrentTenant()?.Prefix;
+
+            return string.IsNullOrEmpty(tenantPrefix) ? basePath : $"/{tenantPrefix}{basePath}";
+        }
     }
 }

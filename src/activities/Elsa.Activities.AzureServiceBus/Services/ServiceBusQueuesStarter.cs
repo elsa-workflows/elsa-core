@@ -4,6 +4,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.MultiTenancy;
 using Elsa.Services;
 using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,24 +15,27 @@ namespace Elsa.Activities.AzureServiceBus.Services
     // TODO: Look for a way to merge ServiceBusQueuesStarter with ServiceBusTopicsStarter - there's a lot of overlap.
     public class ServiceBusQueuesStarter : IServiceBusQueuesStarter
     {
-        protected readonly IServiceScopeFactory _scopeFactory;
-        protected readonly ILogger _logger;
-        protected readonly ICollection<QueueWorker> _workers;
-        protected readonly SemaphoreSlim _semaphore = new(1);
         private readonly IQueueMessageReceiverClientFactory _messageReceiverClientFactory;
+        private readonly IServiceScopeFactory _scopeFactory;
+        private readonly ILogger _logger;
+        private readonly ICollection<QueueWorker> _workers;
+        private readonly SemaphoreSlim _semaphore = new(1);
+        private readonly ITenantStore _tenantStore;
 
         public ServiceBusQueuesStarter(
             IQueueMessageReceiverClientFactory messageReceiverClientFactory,
             IServiceScopeFactory scopeFactory,
-            ILogger<ServiceBusQueuesStarter> logger)
+            ILogger<ServiceBusQueuesStarter> logger,
+            ITenantStore tenantStore)
         {
             _messageReceiverClientFactory = messageReceiverClientFactory;
             _logger = logger;
             _scopeFactory = scopeFactory;
+            _tenantStore = tenantStore;
             _workers = new List<QueueWorker>();
         }
 
-        public virtual async Task CreateWorkersAsync(CancellationToken cancellationToken = default)
+        public async Task CreateWorkersAsync(CancellationToken cancellationToken = default)
         {
             await _semaphore.WaitAsync(cancellationToken);
 
@@ -39,12 +43,15 @@ namespace Elsa.Activities.AzureServiceBus.Services
             {
                 await DisposeExistingWorkersAsync();
 
-                using var scope = _scopeFactory.CreateScope();
+                foreach (var tenant in _tenantStore.GetTenants())
+                {
+                    using var scope = _scopeFactory.CreateScopeForTenant(tenant);
 
-                var queueNames = (await GetQueueNamesAsync(cancellationToken, scope.ServiceProvider).ToListAsync(cancellationToken)).Distinct();
+                    var queueNames = (await GetQueueNamesAsync(cancellationToken, scope.ServiceProvider).ToListAsync(cancellationToken)).Distinct();
 
-                foreach (var queueName in queueNames)
-                    await CreateAndAddWorkerAsync(scope.ServiceProvider, queueName, cancellationToken);
+                    foreach (var queueName in queueNames)
+                        await CreateAndAddWorkerAsync(scope.ServiceProvider, queueName, cancellationToken);
+                }
             }
             finally
             {
@@ -52,7 +59,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             }
         }
 
-        protected async Task DisposeExistingWorkersAsync()
+        private async Task DisposeExistingWorkersAsync()
         {
             foreach (var worker in _workers.ToList())
             {
@@ -61,7 +68,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             }
         }
 
-        protected async IAsyncEnumerable<string> GetQueueNamesAsync([EnumeratorCancellation] CancellationToken cancellationToken, IServiceProvider serviceProvider)
+        private async IAsyncEnumerable<string> GetQueueNamesAsync([EnumeratorCancellation] CancellationToken cancellationToken, IServiceProvider serviceProvider)
         {
             var workflowRegistry = serviceProvider.GetRequiredService<IWorkflowRegistry>();
             var workflowBlueprintReflector = serviceProvider.GetRequiredService<IWorkflowBlueprintReflector>();
@@ -98,7 +105,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             }
         }
 
-        protected async Task CreateAndAddWorkerAsync(IServiceProvider serviceProvider, string queueName, CancellationToken cancellationToken)
+        private async Task CreateAndAddWorkerAsync(IServiceProvider serviceProvider, string queueName, CancellationToken cancellationToken)
         {
             try
             {

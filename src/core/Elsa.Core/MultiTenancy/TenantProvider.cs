@@ -35,18 +35,11 @@ namespace Elsa.MultiTenancy
         {
             if (path == null) return null;
 
+            var tenants = tenantStore.GetTenants();
+
             var currentTenantPrefix = path?.Value.Split("/").FirstOrDefault(x => x != string.Empty);
 
-            var tenantPrefixes = tenantStore.GetTenantPrefixes();
-
-            if (tenantPrefixes.Contains(currentTenantPrefix))
-            {
-                return tenantStore.GetTenantByPrefix(currentTenantPrefix);
-            }
-            else
-            {
-                return null;
-            }
+            return tenants.FirstOrDefault(x => x.IsDefault || x.Prefix == currentTenantPrefix);
         }
     }
 }

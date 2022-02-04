@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
+using Elsa.MultiTenancy;
 using Elsa.Options;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications.WorkflowInstances;
@@ -22,39 +23,45 @@ namespace Elsa.StartupTasks
     /// </summary>
     public class ContinueRunningWorkflows : IStartupTask
     {
-        protected readonly IServiceScopeFactory _scopeFactory;
-        protected readonly IDistributedLockProvider _distributedLockProvider;
-        protected readonly ElsaOptions _elsaOptions;
+        private readonly IServiceScopeFactory _scopeFactory;
+        private readonly IDistributedLockProvider _distributedLockProvider;
+        private readonly ElsaOptions _elsaOptions;
         private readonly ILogger _logger;
+        private readonly ITenantStore _tenantStore;
 
         public ContinueRunningWorkflows(
             IDistributedLockProvider distributedLockProvider,
             IServiceScopeFactory scopeFactory,
             ElsaOptions elsaOptions,
-            ILogger<ContinueRunningWorkflows> logger)
+            ILogger<ContinueRunningWorkflows> logger,
+            ITenantStore tenantStore)
         {
             _distributedLockProvider = distributedLockProvider;
             _scopeFactory = scopeFactory;
             _elsaOptions = elsaOptions;
             _logger = logger;
+            _tenantStore = tenantStore;
         }
 
         public int Order => 1000;
 
-        public virtual async Task ExecuteAsync(CancellationToken cancellationToken = default)
+        public async Task ExecuteAsync(CancellationToken cancellationToken = default)
         {
             await using var handle = await _distributedLockProvider.AcquireLockAsync(GetType().Name, _elsaOptions.DistributedLockTimeout, cancellationToken);
 
             if (handle == null)
                 return;
 
-            using var scope = _scopeFactory.CreateScope();
+            foreach (var tenant in _tenantStore.GetTenants())
+            {
+                using var scope = _scopeFactory.CreateScopeForTenant(tenant);
 
-            await ResumeIdleWorkflows(scope.ServiceProvider, cancellationToken);
-            await ResumeRunningWorkflowsAsync(scope.ServiceProvider, cancellationToken);
+                await ResumeIdleWorkflows(scope.ServiceProvider, cancellationToken);
+                await ResumeRunningWorkflowsAsync(scope.ServiceProvider, cancellationToken);
+            }
         }
 
-        protected async Task ResumeIdleWorkflows(IServiceProvider serviceProvider, CancellationToken cancellationToken)
+        private async Task ResumeIdleWorkflows(IServiceProvider serviceProvider, CancellationToken cancellationToken)
         {
             var workflowInstanceStore = serviceProvider.GetRequiredService<IWorkflowInstanceStore>();
             var workflowInstanceDispatcher = serviceProvider.GetRequiredService<IWorkflowInstanceDispatcher>();
@@ -83,7 +90,7 @@ namespace Elsa.StartupTasks
             }
         }
 
-        protected async Task ResumeRunningWorkflowsAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken)
+        private async Task ResumeRunningWorkflowsAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken)
         {
             var workflowInstanceStore = serviceProvider.GetRequiredService<IWorkflowInstanceStore>();
             var workflowInstanceDispatcher = serviceProvider.GetRequiredService<IWorkflowInstanceDispatcher>();

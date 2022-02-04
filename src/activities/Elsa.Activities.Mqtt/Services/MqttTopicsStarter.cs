@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Mqtt.Options;
+using Elsa.MultiTenancy;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Services;
@@ -16,39 +17,46 @@ namespace Elsa.Activities.Mqtt.Services
 {
     public class MqttTopicsStarter : IMqttTopicsStarter
     {
-        protected readonly ICollection<Worker> _workers;
-        protected readonly IServiceScopeFactory _scopeFactory;
-        protected readonly ILogger<MqttTopicsStarter> _logger;
         private readonly IMessageReceiverClientFactory _receiverFactory;
+        private readonly IServiceScopeFactory _scopeFactory;
+        private readonly IServiceProvider _serviceProvider;
+        private readonly ILogger _logger;
+        private readonly ICollection<Worker> _workers;
+        private readonly ITenantStore _tenantStore;
 
         public MqttTopicsStarter(
             IMessageReceiverClientFactory receiverFactory,
             IServiceScopeFactory scopeFactory,
-            ILogger<MqttTopicsStarter> logger)
+            ILogger<MqttTopicsStarter> logger,
+            ITenantStore tenantStore)
         {
             _receiverFactory = receiverFactory;
             _scopeFactory = scopeFactory;
             _logger = logger;
+            _tenantStore = tenantStore;
             _workers = new List<Worker>();
         }
 
-        public virtual async Task CreateWorkersAsync(CancellationToken cancellationToken)
+        public async Task CreateWorkersAsync(CancellationToken cancellationToken)
         {
             await DisposeExistingWorkersAsync();
 
-            using var scope = _scopeFactory.CreateScope();
-
-            var configs = (await GetConfigurationsAsync(null, scope.ServiceProvider, cancellationToken).ToListAsync(cancellationToken)).Distinct();
-
-            foreach (var config in configs)
+            foreach (var tenant in _tenantStore.GetTenants())
             {
-                try
+                using var scope = _scopeFactory.CreateScopeForTenant(tenant);
+
+                var configs = (await GetConfigurationsAsync(null, scope.ServiceProvider, cancellationToken).ToListAsync(cancellationToken)).Distinct();
+
+                foreach (var config in configs)
                 {
-                    _workers.Add(await CreateWorkerAsync(scope.ServiceProvider, config, cancellationToken));
-                }
-                catch (Exception e)
-                {
-                    _logger.LogWarning(e, "Failed to create a receiver for topic {Topic}", config.Topic);
+                    try
+                    {
+                        _workers.Add(await CreateWorkerAsync(scope.ServiceProvider, config, cancellationToken));
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogWarning(e, "Failed to create a receiver for topic {Topic}", config.Topic);
+                    }
                 }
             }
         }
@@ -96,7 +104,7 @@ namespace Elsa.Activities.Mqtt.Services
             return ActivatorUtilities.CreateInstance<Worker>(serviceProvider, receiver, (Func<IMqttClientWrapper, Task>)DisposeReceiverAsync);
         }
 
-        protected async Task DisposeExistingWorkersAsync()
+        private async Task DisposeExistingWorkersAsync()
         {
             foreach (var worker in _workers.ToList())
             {

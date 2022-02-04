@@ -12,7 +12,6 @@ namespace Elsa.Activities.AzureServiceBus
         public override void ConfigureElsa(ElsaOptionsBuilder elsa, IConfiguration configuration)
         {
             var section = configuration.GetSection("Elsa:Features:Azure:ServiceBus");
-            var multitenancyEnabled = configuration.GetValue<bool>("Elsa:MultiTenancy");
 
             elsa.AddAzureServiceBusActivities(options =>
             {
@@ -23,7 +22,6 @@ namespace Elsa.Activities.AzureServiceBus
                 
                 var connectionStringName = section.GetValue<string>("ConnectionStringName");
                 options.ConnectionString = configuration.GetConnectionString(connectionStringName);
-                options.MultitenancyEnabled = multitenancyEnabled;
             });
         }
     }
