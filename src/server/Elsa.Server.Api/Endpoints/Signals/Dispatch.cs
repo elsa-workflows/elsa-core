@@ -28,7 +28,7 @@ namespace Elsa.Server.Api.Endpoints.Signals
         [SwaggerOperation(
             Summary = "Signals all workflows waiting on the specified signal name synchronously.",
             Description = "Signals all workflows waiting on the specified signal name synchronously.",
-            OperationId = "Signals.Execute",
+            OperationId = "Signals.Dispatch",
             Tags = new[] { "Signals" })
         ]
         public async Task<IActionResult> Handle(string signalName, DispatchSignalRequest request, CancellationToken cancellationToken = default)
