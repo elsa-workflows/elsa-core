@@ -19,7 +19,7 @@ namespace Elsa
             ActivityExecutionContext activityExecutionContext,
             CancellationToken cancellationToken) where TActivity : IActivity
         {
-            var expression = (MemberExpression) propertyExpression.Body;
+            var expression = (MemberExpression)propertyExpression.Body;
             string propertyName = expression.Member.Name;
             return EvaluateActivityPropertyValue<T>(workflowBlueprint, activityId, propertyName, activityExecutionContext, cancellationToken);
         }
@@ -32,7 +32,7 @@ namespace Elsa
             CancellationToken cancellationToken)
         {
             var value = await workflowBlueprint.EvaluateActivityPropertyValue(activityId, propertyName, activityExecutionContext, cancellationToken);
-            return value == null ? default : (T) value;
+            return value == null ? default : (T)value;
         }
 
         public static async ValueTask<object?> EvaluateActivityPropertyValue(
@@ -59,23 +59,22 @@ namespace Elsa
 
             return value;
         }
-        
+
         public static object? GetActivityPropertyRawValue(this IWorkflowBlueprint workflowBlueprint, string activityId, string propertyName)
         {
             var provider = workflowBlueprint.ActivityPropertyProviders.GetProvider(activityId, propertyName);
             var value = provider?.RawValue;
-            
+
             return value;
         }
 
-        public static IEnumerable<IWorkflowBlueprint> WithVersion(
-            this IEnumerable<IWorkflowBlueprint> query,
-            VersionOptions version) =>
-            query.AsQueryable().WithVersion(version);
+        public static IEnumerable<IWorkflowBlueprint> WithVersion(this IEnumerable<IWorkflowBlueprint> enumerable, VersionOptions version) =>
+            enumerable.AsQueryable().WithVersion(version).OrderByDescending(x => x.Version);
 
-        public static IQueryable<IWorkflowBlueprint> WithVersion(
-            this IQueryable<IWorkflowBlueprint> query,
-            VersionOptions version) =>
+        public static IAsyncEnumerable<IWorkflowBlueprint> WithVersion(this IAsyncEnumerable<IWorkflowBlueprint> enumerable, VersionOptions version) => 
+            enumerable.Where(x => x.WithVersion(version)).OrderByDescending(x => x.Version);
+        
+        public static IQueryable<IWorkflowBlueprint> WithVersion(this IQueryable<IWorkflowBlueprint> query, VersionOptions version) =>
             query.Where(x => x.WithVersion(version)).OrderByDescending(x => x.Version);
 
         public static bool WithVersion(this IWorkflowBlueprint workflowBlueprint, VersionOptions version)

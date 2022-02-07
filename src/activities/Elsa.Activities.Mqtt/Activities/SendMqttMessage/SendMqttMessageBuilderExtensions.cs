@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Elsa.Builders;
 using Elsa.Services.Models;
 
-namespace Elsa.Activities.Mqtt
+namespace Elsa.Activities.Mqtt.Activities.SendMqttMessage
 {
     public static class SendMqttMessageBuilderExtensions
     {

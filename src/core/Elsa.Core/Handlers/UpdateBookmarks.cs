@@ -7,7 +7,10 @@ using MediatR;
 
 namespace Elsa.Handlers
 {
-    public class UpdateBookmarks : INotificationHandler<WorkflowInstanceSaved>, INotificationHandler<ManyWorkflowInstancesDeleted>, INotificationHandler<ManyWorkflowInstancesAdded>
+    public class UpdateBookmarks : 
+        INotificationHandler<WorkflowExecutionFinished>, 
+        INotificationHandler<ManyWorkflowInstancesDeleted>, 
+        INotificationHandler<ManyWorkflowInstancesAdded>
     {
         private readonly IBookmarkIndexer _bookmarkIndexer;
 
@@ -16,21 +19,24 @@ namespace Elsa.Handlers
             _bookmarkIndexer = bookmarkIndexer;
         }
 
-        public async Task Handle(WorkflowInstanceSaved notification, CancellationToken cancellationToken)
+        public async Task Handle(WorkflowExecutionFinished notification, CancellationToken cancellationToken)
         {
-            var workflowInstance = notification.WorkflowInstance;
+            var workflowInstance = notification.WorkflowExecutionContext.WorkflowInstance;
             await _bookmarkIndexer.IndexBookmarksAsync(workflowInstance, cancellationToken);
         }
 
         public async Task Handle(ManyWorkflowInstancesDeleted notification, CancellationToken cancellationToken)
         {
             var workflowInstanceIds = notification.WorkflowInstances.Select(x => x.Id).ToList();
-            await _bookmarkIndexer.DeleteBookmarksAsync(workflowInstanceIds, cancellationToken);
+
+            foreach (var workflowInstanceId in workflowInstanceIds)
+                await _bookmarkIndexer.DeleteBookmarksAsync(workflowInstanceId, cancellationToken);
         }
 
         public async Task Handle(ManyWorkflowInstancesAdded notification, CancellationToken cancellationToken)
         {
-            await _bookmarkIndexer.IndexBookmarksAsync(notification.WorkflowInstances, cancellationToken);
+            foreach (var workflowInstance in notification.WorkflowInstances)
+                await _bookmarkIndexer.IndexBookmarksAsync(workflowInstance, cancellationToken);
         }
     }
 }

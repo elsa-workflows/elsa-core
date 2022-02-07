@@ -2,7 +2,9 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Models;
 using Elsa.Services;
+using Rebus.Extensions;
 
 namespace Elsa
 {
@@ -35,5 +37,11 @@ namespace Elsa
             string? tenantId,
             CancellationToken cancellationToken = default) where T : IActivity =>
             triggerFinder.FindTriggersAsync(typeof(T).Name, Enumerable.Empty<IBookmark>(), tenantId, cancellationToken);
+        
+        public static Task<IEnumerable<Trigger>> FindTriggersByTypeAsync<T>(
+            this ITriggerFinder triggerFinder,
+            string? tenantId = default,
+            CancellationToken cancellationToken = default) where T : IBookmark =>
+            triggerFinder.FindTriggersByTypeAsync(typeof(T).GetSimpleAssemblyQualifiedName(), tenantId, cancellationToken);
     }
 }

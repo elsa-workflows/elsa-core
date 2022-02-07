@@ -34,15 +34,15 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddActivity<TempFile>()
                 .AddActivity<WatchDirectory>();
 
-            builder.AddPubSubConsumer<RecreateFileSystemWatchersConsumer, WorkflowDefinitionPublished>("WorkflowDefinitionEvents");
-            builder.AddPubSubConsumer<RecreateFileSystemWatchersConsumer, WorkflowDefinitionRetracted>("WorkflowDefinitionEvents");
-            builder.AddPubSubConsumer<RecreateFileSystemWatchersConsumer, WorkflowDefinitionDeleted>("WorkflowDefinitionEvents");
-
+            builder.AddPubSubConsumer<RecreateFileSystemWatchersConsumer, TriggerIndexingFinished>("WorkflowManagementEvents");
+            builder.AddPubSubConsumer<RecreateFileSystemWatchersConsumer, TriggersDeleted>("WorkflowManagementEvents");
+            builder.AddPubSubConsumer<RecreateFileSystemWatchersConsumer, BookmarkIndexingFinished>("WorkflowManagementEvents");
+            builder.AddPubSubConsumer<RecreateFileSystemWatchersConsumer, BookmarksDeleted>("WorkflowManagementEvents");
+            
             builder.Services.AddBookmarkProvider<FileCreatedBookmarkProvider>()
                 .AddAutoMapperProfile<FileSystemEventProfile>()
                 .AddSingleton<FileSystemWatchersStarter>()
-                .AddSingleton<Scoped<IWorkflowLaunchpad>>()
-                .AddStartupTask<StartFileSystemWatchers>();
+                .AddHostedService<StartFileSystemWatchers>();
 
             return builder;
         }

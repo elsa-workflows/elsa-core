@@ -31,7 +31,7 @@ namespace Elsa.Activities.Temporal
             configure?.Invoke(timersOptions);
 
             options.Services
-                .AddNotificationHandlers(typeof(RemoveScheduledTriggers))
+                .AddNotificationHandlers(typeof(UnscheduleTimers))
                 .AddHostedService<ScopedBackgroundService<StartJobs>>()
                 .AddBookmarkProvider<TimerBookmarkProvider>()
                 .AddBookmarkProvider<CronBookmarkProvider>()

@@ -4,7 +4,7 @@ using Elsa.Design;
 using Elsa.Expressions;
 using Elsa.Services;
 
-namespace Elsa.Activities.Mqtt
+namespace Elsa.Activities.Mqtt.Activities
 {
     public abstract class MqttBaseActivity : Activity
     {

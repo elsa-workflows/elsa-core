@@ -26,6 +26,7 @@ namespace Elsa.Persistence.YesSql
                 .AddScoped<YesSqlWorkflowInstanceStore>()
                 .AddScoped<YesSqlWorkflowExecutionLogStore>()
                 .AddScoped<YesSqlBookmarkStore>()
+                .AddScoped<YesSqlTriggerStore>()
                 .AddScoped(sp => CreateStore(sp, configure))
                 .AddScoped<ISessionProvider, SessionProvider>()
                 .AddScoped(CreateSession)
@@ -43,7 +44,8 @@ namespace Elsa.Persistence.YesSql
                 .UseWorkflowDefinitionStore(sp => sp.GetRequiredService<YesSqlWorkflowDefinitionStore>())
                 .UseWorkflowInstanceStore(sp => sp.GetRequiredService<YesSqlWorkflowInstanceStore>())
                 .UseWorkflowTriggerStore(sp => sp.GetRequiredService<YesSqlBookmarkStore>())
-                .UseWorkflowExecutionLogStore(sp => sp.GetRequiredService<YesSqlWorkflowExecutionLogStore>());
+                .UseWorkflowExecutionLogStore(sp => sp.GetRequiredService<YesSqlWorkflowExecutionLogStore>())
+                .UseWorkflowBookmarkTriggerStore(sp => sp.GetRequiredService<YesSqlTriggerStore>());
         }
 
         public static IServiceCollection AddIndexProvider<T>(this IServiceCollection services) where T : class, IIndexProvider => services.AddSingleton<IIndexProvider, T>();

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\..\..\common.props" />
-    <Import Project="..\..\..\configureawait.props" />
+    <Import Project="..\..\..\common.props"/>
+    <Import Project="..\..\..\configureawait.props"/>
 
     <PropertyGroup>
         <TargetFramework>netstandard2.1</TargetFramework>
@@ -13,19 +13,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Fluid.Core" Version="2.0.13" />
-        <PackageReference Update="Microsoft.SourceLink.GitHub" Version="1.1.1">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-        </PackageReference>
-        <PackageReference Update="Fody" Version="6.6.0">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-        </PackageReference>
+        <PackageReference Include="Fluid.Core" Version="2.0.13"/>
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
+        <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj"/>
     </ItemGroup>
 
 </Project>

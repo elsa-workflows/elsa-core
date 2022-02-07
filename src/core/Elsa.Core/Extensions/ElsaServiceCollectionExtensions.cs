@@ -7,11 +7,9 @@ using Elsa.Activities.Signaling;
 using Elsa.Activities.Signaling.Services;
 using Elsa.Activities.Workflows;
 using Elsa.Builders;
-using Elsa.Consumers;
 using Elsa.Converters;
 using Elsa.Decorators;
 using Elsa.Design;
-using Elsa.Events;
 using Elsa.Expressions;
 using Elsa.Handlers;
 using Elsa.HostedServices;
@@ -74,7 +72,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped(options.WorkflowDefinitionStoreFactory)
                 .AddScoped(options.WorkflowInstanceStoreFactory)
                 .AddScoped(options.WorkflowExecutionLogStoreFactory)
-                .AddScoped(options.WorkflowTriggerStoreFactory)
+                .AddScoped(options.BookmarkStoreFactory)
+                .AddScoped(options.TriggerStoreFactory)
                 .AddSingleton(options.DistributedLockingOptions.DistributedLockProviderFactory)
                 .AddScoped(options.WorkflowDefinitionDispatcherFactory)
                 .AddScoped(options.WorkflowInstanceDispatcherFactory)
@@ -242,12 +241,12 @@ namespace Microsoft.Extensions.DependencyInjection
             // Bookmarks.
             services
                 .AddSingleton<IBookmarkHasher, BookmarkHasher>()
+                .AddSingleton<IBookmarkSerializer, BookmarkSerializer>()
                 .AddScoped<IBookmarkIndexer, BookmarkIndexer>()
                 .AddScoped<IBookmarkFinder, BookmarkFinder>()
                 .AddScoped<ITriggerIndexer, TriggerIndexer>()
                 .AddScoped<IGetsTriggersForWorkflowBlueprints, TriggersForBlueprintsProvider>()
                 .AddTransient<IGetsTriggersForActivityBlueprintAndWorkflow, TriggersForActivityBlueprintAndWorkflowProvider>()
-                .AddScoped<ITriggerStore, TriggerStore>()
                 .AddScoped<ITriggerFinder, TriggerFinder>()
                 .AddBookmarkProvider<SignalReceivedBookmarkProvider>()
                 .AddBookmarkProvider<RunWorkflowBookmarkProvider>();
@@ -259,17 +258,14 @@ namespace Microsoft.Extensions.DependencyInjection
             // Service Bus.
             services
                 .AddSingleton<ServiceBusFactory>()
-                .AddSingleton<IServiceBusFactory, ServiceBusFactory>()
+                .AddSingleton<IServiceBusFactory>(sp => sp.GetRequiredService<ServiceBusFactory>())
                 .AddSingleton<ICommandSender, CommandSender>()
                 .AddSingleton<IEventPublisher, EventPublisher>();
 
             elsaOptions
                 .AddCompetingConsumer<TriggerWorkflowsRequestConsumer, TriggerWorkflowsRequest>("ExecuteWorkflow")
                 .AddCompetingConsumer<ExecuteWorkflowDefinitionRequestConsumer, ExecuteWorkflowDefinitionRequest>("ExecuteWorkflow")
-                .AddCompetingConsumer<ExecuteWorkflowInstanceRequestConsumer, ExecuteWorkflowInstanceRequest>("ExecuteWorkflow")
-                .AddPubSubConsumer<UpdateWorkflowTriggersIndexConsumer, WorkflowDefinitionPublished>("WorkflowDefinitionEvents")
-                .AddPubSubConsumer<UpdateWorkflowTriggersIndexConsumer, WorkflowDefinitionRetracted>("WorkflowDefinitionEvents")
-                .AddPubSubConsumer<UpdateWorkflowTriggersIndexConsumer, WorkflowDefinitionDeleted>("WorkflowDefinitionEvents");
+                .AddCompetingConsumer<ExecuteWorkflowInstanceRequestConsumer, ExecuteWorkflowInstanceRequest>("ExecuteWorkflow");
 
             // AutoMapper.
             services

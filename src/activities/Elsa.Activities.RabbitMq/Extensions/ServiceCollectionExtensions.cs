@@ -9,7 +9,7 @@ using Elsa.Runtime;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Activities.RabbitMq
+namespace Elsa.Activities.RabbitMq.Extensions
 {
     public static class ServiceCollectionExtensions
     {
@@ -20,14 +20,15 @@ namespace Elsa.Activities.RabbitMq
                 .AddSingleton<IMessageReceiverClientFactory>(sp => sp.GetRequiredService<BusClientFactory>())
                 .AddSingleton<IMessageSenderClientFactory>(sp => sp.GetRequiredService<BusClientFactory>())
                 .AddSingleton<IRabbitMqQueueStarter, RabbitMqQueueStarter>()
-                .AddSingleton<Scoped<IWorkflowLaunchpad>>()
                 .AddSingleton<IRabbitMqTestQueueManager, RabbitMqTestQueueManager>()
                 .AddNotificationHandlersFrom<ConfigureRabbitMqActivitiesForTestHandler>()
                 .AddStartupTask<StartRabbitMqQueues>()
                 .AddBookmarkProvider<QueueMessageReceivedBookmarkProvider>();
 
-            options.AddPubSubConsumer<RestartRabbitMqBusConsumer, WorkflowDefinitionPublished>("WorkflowDefinitionEvents");
-            options.AddPubSubConsumer<RestartRabbitMqBusConsumer, WorkflowDefinitionRetracted>("WorkflowDefinitionEvents");
+            options.AddPubSubConsumer<RestartRabbitMqBusConsumer, TriggerIndexingFinished>("WorkflowManagementEvents");
+            options.AddPubSubConsumer<RestartRabbitMqBusConsumer, TriggersDeleted>("WorkflowManagementEvents");
+            options.AddPubSubConsumer<RestartRabbitMqBusConsumer, BookmarkIndexingFinished>("WorkflowManagementEvents");
+            options.AddPubSubConsumer<RestartRabbitMqBusConsumer, BookmarksDeleted>("WorkflowManagementEvents");
 
             options
                 .AddActivity<RabbitMqMessageReceived>()

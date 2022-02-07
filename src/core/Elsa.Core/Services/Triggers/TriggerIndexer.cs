@@ -1,75 +1,132 @@
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Events;
-using Elsa.MultiTenancy;
+using Elsa.Models;
+using Elsa.Options;
+using Elsa.Persistence;
+using Elsa.Persistence.Specifications.Triggers;
+using Elsa.Providers.Workflows;
 using Elsa.Services.Models;
 using MediatR;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Open.Linq.AsyncExtensions;
+using Rebus.Extensions;
 
 namespace Elsa.Services.Triggers
 {
     public class TriggerIndexer : ITriggerIndexer
     {
+        private readonly ITriggerStore _triggerStore;
+        private readonly IBookmarkSerializer _bookmarkSerializer;
         private readonly IMediator _mediator;
+        private readonly IIdGenerator _idGenerator;
+        private readonly IEnumerable<IWorkflowProvider> _workflowProviders;
+        private readonly ElsaOptions _elsaOptions;
         private readonly ILogger _logger;
         private readonly Stopwatch _stopwatch = new();
-        private readonly IServiceScopeFactory _scopeFactory;
-        private readonly ITenantStore _tenantStore;
+        private readonly IGetsTriggersForWorkflowBlueprints _getsTriggersForWorkflows;
 
         public TriggerIndexer(
+            ITriggerStore triggerStore,
+            IBookmarkSerializer bookmarkSerializer,
             IMediator mediator,
+            IIdGenerator idGenerator,
+            IEnumerable<IWorkflowProvider> workflowProviders,
+            ElsaOptions elsaOptions,
             ILogger<TriggerIndexer> logger,
-            IServiceScopeFactory scopeFactory,
-            ITenantStore tenantStore)
+            IGetsTriggersForWorkflowBlueprints getsTriggersForWorkflows)
         {
+            _triggerStore = triggerStore;
+            _bookmarkSerializer = bookmarkSerializer;
             _mediator = mediator;
+            _idGenerator = idGenerator;
+            _workflowProviders = workflowProviders;
+            _elsaOptions = elsaOptions;
             _logger = logger;
-            _scopeFactory = scopeFactory;
-            _tenantStore = tenantStore;
+            _getsTriggersForWorkflows = getsTriggersForWorkflows;
         }
 
         public async Task IndexTriggersAsync(CancellationToken cancellationToken = default)
         {
-            foreach (var tenant in _tenantStore.GetTenants())
-            {
-                using var scope = _scopeFactory.CreateScopeForTenant(tenant);
-
-                await IndexTriggersInternalAsync(scope.ServiceProvider, cancellationToken);
-            }
-
-            await _mediator.Publish(new TriggerIndexingFinished(), cancellationToken);
+            var workflowBlueprints = await GetWorkflowBlueprintsAsync(cancellationToken).ToListAsync(cancellationToken);
+            await IndexTriggersAsync(workflowBlueprints, cancellationToken);
         }
 
-        private async Task IndexTriggersInternalAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken)
+        public async Task IndexTriggersAsync(IEnumerable<IWorkflowBlueprint> workflowBlueprints, CancellationToken cancellationToken = default)
         {
-            var workflowRegistry = serviceProvider.GetRequiredService<IWorkflowRegistry>();
-
-            var allWorkflowBlueprints = await workflowRegistry.ListActiveAsync(cancellationToken);
-            var publishedWorkflowBlueprints = allWorkflowBlueprints.Where(x => x.IsPublished && !x.IsDisabled).ToList();
-
-            await IndexTriggersInternalAsync(publishedWorkflowBlueprints, serviceProvider, cancellationToken);
-        }
-
-        private async Task IndexTriggersInternalAsync(IEnumerable<IWorkflowBlueprint> workflowBlueprints, IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
-        {
-            var triggersForBookmarksProvider = serviceProvider.GetRequiredService<IGetsTriggersForWorkflowBlueprints>();
-            var triggerStore = serviceProvider.GetRequiredService<ITriggerStore>();
-
             _stopwatch.Restart();
             _logger.LogInformation("Indexing triggers");
 
-            var workflowBlueprintList = workflowBlueprints.ToList();
-            var triggers = (await triggersForBookmarksProvider.GetTriggersAsync(workflowBlueprintList, cancellationToken)).ToList();
+            foreach (var workflowBlueprint in workflowBlueprints)
+                await IndexTriggersAsync(workflowBlueprint, cancellationToken);
 
             _stopwatch.Stop();
-            _logger.LogInformation("Indexed {TriggerCount} triggers in {ElapsedTime}", triggers.Count, _stopwatch.Elapsed);
-              
-            await triggerStore.StoreAsync(triggers, cancellationToken);
+            _logger.LogInformation("Indexed triggers in {ElapsedTime}", _stopwatch.Elapsed);
+        }
+
+        public async Task IndexTriggersAsync(IWorkflowBlueprint workflowBlueprint, CancellationToken cancellationToken = default)
+        {
+            // Delete existing triggers.
+            await DeleteTriggersAsync(workflowBlueprint.Id, cancellationToken);
+
+            // Get new triggers.
+            var workflowTriggers = (await _getsTriggersForWorkflows.GetTriggersAsync(workflowBlueprint, cancellationToken)).ToList();
+            var triggers = new List<Trigger>();
+
+            foreach (var workflowTrigger in workflowTriggers)
+            {
+                var bookmark = workflowTrigger.Bookmark;
+                var trigger = new Trigger
+                {
+                    Id = _idGenerator.Generate(),
+                    ActivityId = workflowTrigger.ActivityId,
+                    ActivityType = workflowTrigger.ActivityType,
+                    Hash = workflowTrigger.BookmarkHash,
+                    TenantId = workflowTrigger.TenantId,
+                    WorkflowDefinitionId = workflowTrigger.WorkflowDefinitionId,
+                    Model = _bookmarkSerializer.Serialize(bookmark),
+                    ModelType = bookmark.GetType().GetSimpleAssemblyQualifiedName()
+                };
+
+                triggers.Add(trigger);
+                await _triggerStore.SaveAsync(trigger, cancellationToken);
+            }
+
+            // Publish event.
+            await _mediator.Publish(new TriggerIndexingFinished(workflowBlueprint.Id, triggers), cancellationToken);
+        }
+
+        public async Task DeleteTriggersAsync(string workflowDefinitionId, CancellationToken cancellationToken = default)
+        {
+            var specification = new WorkflowDefinitionIdSpecification(workflowDefinitionId);
+            var triggers = await _triggerStore.FindManyAsync(specification, cancellationToken: cancellationToken).ToList();
+            var count = triggers.Count;
+
+            // Delete triggers.
+            await _triggerStore.DeleteManyAsync(specification, cancellationToken);
+
+            // Publish event.
+            await _mediator.Publish(new TriggersDeleted(workflowDefinitionId, triggers), cancellationToken);
+
+            _logger.LogDebug("Deleted {DeletedTriggerCount} triggers for workflow {WorkflowDefinitionId}", count, workflowDefinitionId);
+        }
+
+        private async IAsyncEnumerable<IWorkflowBlueprint> GetWorkflowBlueprintsAsync([EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            var excludedProviderTypes = _elsaOptions.WorkflowTriggerIndexingOptions.ExcludedProviders;
+            var workflowProviders = _workflowProviders.Where(x => !excludedProviderTypes.Contains(x.GetType())).ToList();
+
+            foreach (var workflowProvider in workflowProviders)
+            {
+                var workflowBlueprints = workflowProvider.ListAsync(VersionOptions.Published, cancellationToken: cancellationToken);
+
+                await foreach (var workflowBlueprint in workflowBlueprints.WithCancellation(cancellationToken))
+                    yield return workflowBlueprint;
+            }
         }
     }
 }

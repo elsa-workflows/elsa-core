@@ -7,7 +7,7 @@ using Elsa.Design;
 using Elsa.Expressions;
 using Elsa.Services.Models;
 
-namespace Elsa.Activities.Mqtt
+namespace Elsa.Activities.Mqtt.Activities.SendMqttMessage
 {
     [Trigger(
         Category = "MQTT",

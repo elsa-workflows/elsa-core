@@ -1,4 +1,4 @@
-import {Component, h, Prop, State, Event, EventEmitter} from '@stencil/core';
+import {Component, h, Prop, State, Event} from '@stencil/core';
 import * as collection from 'lodash/collection';
 import {eventBus, createElsaClient} from "../../../../services";
 import {
@@ -7,44 +7,96 @@ import {
   VersionOptions,
   WorkflowBlueprintSummary,
   ConfigureWorkflowRegistryColumnsContext,
-  ConfigureWorkflowRegistryUpdatingContext
+  ConfigureWorkflowRegistryUpdatingContext,
+  WorkflowProviderDescriptor
 } from "../../../../models";
 import {MenuItem} from "../../../controls/elsa-context-menu/models";
-import {RouterHistory} from "@stencil/router";
+import {injectHistory, LocationSegments, RouterHistory} from "@stencil/router";
 import Tunnel from "../../../../data/dashboard";
+import {DropdownButtonItem, DropdownButtonOrigin} from "../../../controls/elsa-dropdown-button/models";
+import {parseQuery} from "../../../../utils/utils";
+import {PagerData} from "../../../controls/elsa-pager/elsa-pager";
 
 @Component({
   tag: 'elsa-workflow-registry-list-screen',
   shadow: false,
 })
 export class ElsaWorkflowRegistryListScreen {
-  @Prop() history?: RouterHistory;
-  @Prop() serverUrl: string;
-  @Prop() basePath: string;
-  @Prop() culture: string;
-  @State() workflowBlueprints: PagedList<WorkflowBlueprintSummary> = {items: [], page: 1, pageSize: 50, totalCount: 0};
+  static readonly DEFAULT_PAGE_SIZE = 5;
+  static readonly MIN_PAGE_SIZE = 5;
+  static readonly MAX_PAGE_SIZE = 100;
+  static readonly START_PAGE = 0;
 
-  confirmDialog: HTMLElsaConfirmDialogElement;
+  @Prop() public history?: RouterHistory;
+  @Prop() public serverUrl: string;
+  @Prop() public basePath: string;
+  @Prop() public culture: string;
+  @State() private currentProviderName: string = "ProgrammaticWorkflowProvider";
+  @State() private workflowProviders: Array<WorkflowProviderDescriptor> = [];
+  @State() private workflowBlueprints: PagedList<WorkflowBlueprintSummary> = {items: [], page: 1, pageSize: 50, totalCount: 0};
+
+  @State() private currentPage: number = 0;
+  @State() private currentPageSize: number = ElsaWorkflowRegistryListScreen.DEFAULT_PAGE_SIZE;
+  @State() private currentSearchTerm?: string;
+
+  private confirmDialog: HTMLElsaConfirmDialogElement;
+
+  private unlistenRouteChanged: () => void;
+
   private workflowRegistryColumns: ConfigureWorkflowRegistryColumnsContext = {
     data: null
   };
 
   async componentWillLoad() {
+    await this.loadWorkflowProviders();
+
+    if (!!this.history)
+      this.applyQueryString(this.history.location.search);
+
+
     await this.loadWorkflowBlueprints();
     await eventBus.emit(EventTypes.WorkflowRegistryLoadingColumns, this, this.workflowRegistryColumns);
   }
 
   connectedCallback() {
+    if (!!this.history)
+      this.unlistenRouteChanged = this.history.listen(e => this.routeChanged(e));
+
     eventBus.on(EventTypes.WorkflowUpdated, this.onLoadWorkflowBlueprints);
     eventBus.on(EventTypes.WorkflowRegistryUpdated, this.onLoadWorkflowBlueprints);
   }
 
   disconnectedCallback() {
+    if (!!this.unlistenRouteChanged)
+      this.unlistenRouteChanged();
+
     eventBus.detach(EventTypes.WorkflowUpdated, this.onLoadWorkflowBlueprints);
     eventBus.detach(EventTypes.WorkflowRegistryUpdated, this.onLoadWorkflowBlueprints);
   }
 
-  async onDisableWorkflowClick(e: Event, workflowBlueprintId: string) {
+  private applyQueryString(queryString?: string) {
+    const query = parseQuery(queryString);
+
+    if(!!query.provider)
+      this.currentProviderName = query.provider;
+
+    this.currentPage = !!query.page ? parseInt(query.page) : 0;
+    this.currentPage = isNaN(this.currentPage) ? ElsaWorkflowRegistryListScreen.START_PAGE : this.currentPage;
+    this.currentPageSize = !!query.pageSize ? parseInt(query.pageSize) : ElsaWorkflowRegistryListScreen.DEFAULT_PAGE_SIZE;
+    this.currentPageSize = isNaN(this.currentPageSize) ? ElsaWorkflowRegistryListScreen.DEFAULT_PAGE_SIZE : this.currentPageSize;
+    this.currentPageSize = Math.max(Math.min(this.currentPageSize, ElsaWorkflowRegistryListScreen.MAX_PAGE_SIZE), ElsaWorkflowRegistryListScreen.MIN_PAGE_SIZE);
+  }
+
+  private async routeChanged(e: LocationSegments) {
+
+    if (!e.pathname.toLowerCase().endsWith('workflow-registry'))
+      return;
+
+    this.applyQueryString(e.search);
+    await this.loadWorkflowBlueprints();
+  }
+
+  private async onDisableWorkflowClick(e: Event, workflowBlueprintId: string) {
     const result = await this.confirmDialog.show('Disable Workflow', 'Are you sure you wish to disable this workflow?');
 
     if (!result)
@@ -53,7 +105,7 @@ export class ElsaWorkflowRegistryListScreen {
     await this.updateFeature(workflowBlueprintId, 'disabled', 'true');
   }
 
-  async onEnableWorkflowClick(e: Event, workflowBlueprintId: string) {
+  private async onEnableWorkflowClick(e: Event, workflowBlueprintId: string) {
     const result = await this.confirmDialog.show('Enable Workflow', 'Are you sure you wish to enable this workflow?');
 
     if (!result)
@@ -62,23 +114,41 @@ export class ElsaWorkflowRegistryListScreen {
     await this.updateFeature(workflowBlueprintId, 'disabled', 'false');
   }
 
-  async updateFeature(workflowBlueprintId: string, key: string, value: string) {
+  private async updateFeature(workflowBlueprintId: string, key: string, value: string) {
     const workflowRegistryUpdating: ConfigureWorkflowRegistryUpdatingContext = {
       params: [workflowBlueprintId, key, value]
     };
     await eventBus.emit(EventTypes.WorkflowRegistryUpdating, this, workflowRegistryUpdating);
   }
 
-  async onLoadWorkflowBlueprints() {
+  private async onLoadWorkflowBlueprints() {
     await this.loadWorkflowBlueprints();
   }
 
-  async loadWorkflowBlueprints() {
+  private onPaged = async (e: CustomEvent<PagerData>) => {
+    this.currentPage = e.detail.page;
+    await this.loadWorkflowBlueprints();
+  };
+
+  private async onWorkflowProviderChanged(value: string) {
+    this.currentProviderName = value;
+    this.currentPage = 0;
+    await this.loadWorkflowBlueprints();
+  }
+
+  private async loadWorkflowProviders() {
     const elsaClient = await this.createClient();
-    const page = 0;
-    const pageSize = 50;
-    const versionOptions: VersionOptions = {allVersions: true};
-    this.workflowBlueprints = await elsaClient.workflowRegistryApi.list(page, pageSize, versionOptions);
+    this.workflowProviders = await elsaClient.workflowProvidersApi.list();
+    this.currentProviderName = this.workflowProviders.length > 0 ? this.workflowProviders[0].name : undefined;
+  }
+
+  private async loadWorkflowBlueprints() {
+    const elsaClient = await this.createClient();
+    const page = this.currentPage;
+    const pageSize = this.currentPageSize;
+    const versionOptions: VersionOptions = {isLatest: true};
+    const providerName = this.currentProviderName;
+    this.workflowBlueprints = await elsaClient.workflowRegistryApi.list(providerName, page, pageSize, versionOptions);
   }
 
   createClient() {
@@ -87,6 +157,7 @@ export class ElsaWorkflowRegistryListScreen {
 
   render() {
     const workflowBlueprints = this.workflowBlueprints.items;
+    const totalCount = this.workflowBlueprints.totalCount;
     const groupings = collection.groupBy(workflowBlueprints, 'id');
     const basePath = this.basePath;
 
@@ -136,6 +207,13 @@ export class ElsaWorkflowRegistryListScreen {
 
     return (
       <div>
+
+        <div class="elsa-p-8 elsa-flex elsa-content-end elsa-justify-right elsa-bg-white elsa-space-x-4">
+          <div class="elsa-flex-shrink-0">
+            {this.renderWorkflowProviderFilter()}
+          </div>
+        </div>
+
         <div class="elsa-align-middle elsa-inline-block elsa-min-w-full elsa-border-b elsa-border-gray-200">
           <table class="elsa-min-w-full">
             <thead>
@@ -173,7 +251,7 @@ export class ElsaWorkflowRegistryListScreen {
                 workflowDisplayName = workflowBlueprint.name;
 
               if (!workflowDisplayName || workflowDisplayName.trim().length == 0)
-                workflowDisplayName = 'Untitled';
+                workflowDisplayName = '(Untitled)';
 
               const editUrl = `${basePath}/workflow-registry/${workflowBlueprint.id}`;
               const instancesUrl = `${basePath}/workflow-instances?workflow=${workflowBlueprint.id}`;
@@ -234,12 +312,36 @@ export class ElsaWorkflowRegistryListScreen {
             })}
             </tbody>
           </table>
+          <elsa-pager page={this.currentPage} pageSize={this.currentPageSize} totalCount={totalCount} history={this.history} onPaged={this.onPaged} culture={this.culture}/>
         </div>
 
         <elsa-confirm-dialog ref={el => this.confirmDialog = el}/>
       </div>
     );
   }
+
+  renderWorkflowProviderFilter() {
+
+    const items: Array<DropdownButtonItem> = this.workflowProviders.map(x => ({text: x.displayName, value: x.name}));
+    const selectedProvider = this.workflowProviders.find(x => x.name == this.currentProviderName);
+    const selectedProviderText = selectedProvider?.displayName || '';
+
+    const renderIcon = function () {
+      return <svg class="elsa-mr-3 elsa-h-5 elsa-w-5 elsa-text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke="none" d="M0 0h24v24H0z"/>
+        <rect x="4" y="4" width="6" height="6" rx="1"/>
+        <rect x="14" y="4" width="6" height="6" rx="1"/>
+        <rect x="4" y="14" width="6" height="6" rx="1"/>
+        <rect x="14" y="14" width="6" height="6" rx="1"/>
+      </svg>;
+    };
+
+    return <elsa-dropdown-button
+      text={selectedProviderText} items={items} icon={renderIcon()}
+      origin={DropdownButtonOrigin.TopRight}
+      onItemSelected={e => this.onWorkflowProviderChanged(e.detail.value)}/>
+  }
 }
 
 Tunnel.injectProps(ElsaWorkflowRegistryListScreen, ['serverUrl', 'culture', 'basePath']);
+injectHistory(ElsaWorkflowRegistryListScreen);

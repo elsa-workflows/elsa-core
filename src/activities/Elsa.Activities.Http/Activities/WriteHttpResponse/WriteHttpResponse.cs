@@ -8,11 +8,15 @@ using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Expressions;
 using Elsa.Serialization;
+using Elsa.Serialization.Converters;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Localization;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
+using NodaTime;
+using NodaTime.Serialization.JsonNet;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Http
@@ -143,8 +147,33 @@ namespace Elsa.Activities.Http
                 return;
             }
 
-            var json = JsonConvert.SerializeObject(content, DefaultContentSerializer.CreateDefaultJsonSerializationSettings());
+            var serializerSetting = CreateSerializerSettings();
+            var json = JsonConvert.SerializeObject(content, serializerSetting);
             await response.WriteAsync(json, cancellationToken);
+        }
+
+        private JsonSerializerSettings CreateSerializerSettings()
+        {
+            var settings = new JsonSerializerSettings()
+            {
+                NullValueHandling = NullValueHandling.Ignore,
+                ReferenceLoopHandling = ReferenceLoopHandling.Serialize
+            };
+            
+            settings.ContractResolver = new CamelCasePropertyNamesContractResolver
+            {
+                NamingStrategy = new CamelCaseNamingStrategy
+                {
+                    ProcessDictionaryKeys = false,
+                    ProcessExtensionDataNames = true,
+                    OverrideSpecifiedNames = false
+                }
+            };
+
+            settings.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
+            settings.Converters.Add(new FlagEnumConverter(new DefaultNamingStrategy()));
+            settings.Converters.Add(new TypeJsonConverter());
+            return settings;
         }
     }
 }

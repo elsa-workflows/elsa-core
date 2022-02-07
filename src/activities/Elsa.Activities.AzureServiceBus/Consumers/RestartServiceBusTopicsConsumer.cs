@@ -5,12 +5,13 @@ using Rebus.Handlers;
 
 namespace Elsa.Activities.AzureServiceBus.Consumers
 {
-    public class RestartServiceBusTopicsConsumer : IHandleMessages<WorkflowDefinitionPublished>, IHandleMessages<WorkflowDefinitionRetracted>, IHandleMessages<WorkflowDefinitionDeleted>
+    public class RestartServiceBusTopicsConsumer : IHandleMessages<TriggerIndexingFinished>, IHandleMessages<TriggersDeleted>, IHandleMessages<BookmarkIndexingFinished>, IHandleMessages<BookmarksDeleted>
     {
         private readonly IServiceBusTopicsStarter _serviceBusTopicsStarter;
         public RestartServiceBusTopicsConsumer(IServiceBusTopicsStarter serviceBusTopicsStarter) => _serviceBusTopicsStarter = serviceBusTopicsStarter;
-        public Task Handle(WorkflowDefinitionPublished message) => _serviceBusTopicsStarter.CreateWorkersAsync();
-        public Task Handle(WorkflowDefinitionRetracted message) => _serviceBusTopicsStarter.CreateWorkersAsync();
-        public Task Handle(WorkflowDefinitionDeleted message) => _serviceBusTopicsStarter.CreateWorkersAsync();
+        public async Task Handle(TriggerIndexingFinished message) => await _serviceBusTopicsStarter.CreateWorkersAsync(message.Triggers);
+        public async Task Handle(TriggersDeleted message) => await _serviceBusTopicsStarter.RemoveWorkersAsync(message.Triggers);
+        public async Task Handle(BookmarkIndexingFinished message) => await _serviceBusTopicsStarter.CreateWorkersAsync(message.Bookmarks);
+        public async Task Handle(BookmarksDeleted message) => await _serviceBusTopicsStarter.CreateWorkersAsync(message.Bookmarks);
     }
 }

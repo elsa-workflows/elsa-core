@@ -5,6 +5,7 @@ using System.Reflection;
 using Elsa.Builders;
 using Elsa.Caching;
 using Elsa.Persistence;
+using Elsa.Providers.Workflows;
 using Elsa.Providers.WorkflowStorage;
 using Elsa.Services;
 using Elsa.Services.Messaging;
@@ -68,13 +69,13 @@ namespace Elsa.Options
         public ElsaOptionsBuilder AddActivity(Type activityType)
         {
             Services.AddTransient(activityType);
-            Services.AddTransient(sp => (IActivity) sp.GetRequiredService(activityType));
-            ElsaOptions.ActivityFactory.Add(activityType, provider => (IActivity) ActivatorUtilities.GetServiceOrCreateInstance(provider, activityType));
+            Services.AddTransient(sp => (IActivity)sp.GetRequiredService(activityType));
+            ElsaOptions.ActivityFactory.Add(activityType, provider => (IActivity)ActivatorUtilities.GetServiceOrCreateInstance(provider, activityType));
             return this;
         }
 
         public ElsaOptionsBuilder AddActivitiesFrom(Assembly assembly) => AddActivitiesFrom(new[] { assembly });
-        public ElsaOptionsBuilder AddActivitiesFrom(params Assembly[] assemblies) => AddActivitiesFrom((IEnumerable<Assembly>) assemblies);
+        public ElsaOptionsBuilder AddActivitiesFrom(params Assembly[] assemblies) => AddActivitiesFrom((IEnumerable<Assembly>)assemblies);
         public ElsaOptionsBuilder AddActivitiesFrom(params Type[] assemblyMarkerTypes) => AddActivitiesFrom(assemblyMarkerTypes.Select(x => x.Assembly).Distinct());
         public ElsaOptionsBuilder AddActivitiesFrom<TMarker>() where TMarker : class => AddActivitiesFrom(typeof(TMarker));
 
@@ -106,8 +107,8 @@ namespace Elsa.Options
                 return this;
 
             Services.AddSingleton(workflowType);
-            Services.AddSingleton(sp => (IWorkflow) sp.GetRequiredService(workflowType));
-            workflowFactory.Add(workflowType, provider => (IWorkflow) ActivatorUtilities.GetServiceOrCreateInstance(provider, workflowType));
+            Services.AddSingleton(sp => (IWorkflow)sp.GetRequiredService(workflowType));
+            workflowFactory.Add(workflowType, provider => (IWorkflow)ActivatorUtilities.GetServiceOrCreateInstance(provider, workflowType));
             return this;
         }
 
@@ -157,6 +158,8 @@ namespace Elsa.Options
 
         public ElsaOptionsBuilder AddPubSubMessageType(Type messageType, string? queueName = default)
         {
+            queueName ??= messageType.Name;
+            
             ElsaOptions.PubSubMessageTypes.Add(new MessageTypeConfig(messageType, queueName));
             return this;
         }
@@ -189,7 +192,13 @@ namespace Elsa.Options
 
         public ElsaOptionsBuilder UseWorkflowTriggerStore(Func<IServiceProvider, IBookmarkStore> factory)
         {
-            ElsaOptions.WorkflowTriggerStoreFactory = factory;
+            ElsaOptions.BookmarkStoreFactory = factory;
+            return this;
+        }
+
+        public ElsaOptionsBuilder UseWorkflowBookmarkTriggerStore(Func<IServiceProvider, ITriggerStore> factory)
+        {
+            ElsaOptions.TriggerStoreFactory = factory;
             return this;
         }
 
@@ -228,6 +237,12 @@ namespace Elsa.Options
         public ElsaOptionsBuilder AddCustomTenantAccessor<T>() where T : class, ITenantAccessor
         {
             Services.AddScoped<ITenantAccessor, T>();
+            return this;
+        }
+
+        public ElsaOptionsBuilder ExcludeWorkflowProviderFromStartupIndexing<T>() where T : IWorkflowProvider
+        {
+            ElsaOptions.WorkflowTriggerIndexingOptions.ExcludedProviders.Add(typeof(T));
             return this;
         }
     }

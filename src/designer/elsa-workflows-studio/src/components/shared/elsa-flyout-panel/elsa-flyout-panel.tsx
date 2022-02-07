@@ -72,7 +72,7 @@ export class ElsaFlyoutPanel {
                 </button>
                 <div
                   class="elsa-h-full elsa-flex elsa-flex-col elsa-py-6 elsa-bg-white elsa-shadow-xl elsa-bg-white">
-                  <div class="elsa-h-full elsa-mt-8 elsa-p-6">
+                  <div class="elsa-h-full elsa-mt-8 elsa-p-6 elsa-flex elsa-flex-col">
                       <div class="elsa-border-b elsa-border-gray-200">
                         <nav class="-elsa-mb-px elsa-flex elsa-space-x-8" aria-label="Tabs">
                           <slot name="header"/>

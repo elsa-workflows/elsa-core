@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Elsa.Builders;
 using Elsa.Services.Models;
 
-namespace Elsa.Activities.Mqtt
+namespace Elsa.Activities.Mqtt.Activities.MqttMessageReceived
 {
     public static class MqttMessageReceivedExtensions
     {

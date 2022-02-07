@@ -12,26 +12,26 @@ namespace Elsa
             this IWorkflowRegistry workflowRegistry,
             string? tenantId,
             CancellationToken cancellationToken = default) =>
-            workflowRegistry.GetAsync(typeof(T).Name, tenantId, VersionOptions.Latest, cancellationToken);
+            workflowRegistry.FindAsync(typeof(T).Name, VersionOptions.Latest, tenantId, cancellationToken);
 
         public static Task<IWorkflowBlueprint?> GetWorkflowAsync<T>(
             this IWorkflowRegistry workflowRegistry,
             CancellationToken cancellationToken = default) =>
             workflowRegistry.GetWorkflowAsync<T>(default, cancellationToken);
-        
+
         public static Task<IWorkflowBlueprint?> GetWorkflowAsync(
             this IWorkflowRegistry workflowRegistry,
             string id,
             VersionOptions versionOptions,
             CancellationToken cancellationToken = default) =>
             workflowRegistry.GetWorkflowAsync(id, default, versionOptions, cancellationToken);
-        
+
         public static Task<IWorkflowBlueprint?> GetWorkflowAsync(
             this IWorkflowRegistry workflowRegistry,
             string id,
             string? tenantId,
             VersionOptions versionOptions,
             CancellationToken cancellationToken = default) =>
-            workflowRegistry.GetAsync(id, tenantId, versionOptions, cancellationToken);
+            workflowRegistry.FindAsync(id, versionOptions, tenantId, cancellationToken);
     }
 }

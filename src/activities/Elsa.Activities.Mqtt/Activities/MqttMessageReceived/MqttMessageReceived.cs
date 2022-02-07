@@ -6,7 +6,7 @@ using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Services.Models;
 
-namespace Elsa.Activities.Mqtt
+namespace Elsa.Activities.Mqtt.Activities.MqttMessageReceived
 {
     [Trigger(
         Category = "MQTT",
