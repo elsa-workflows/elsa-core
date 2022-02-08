@@ -3,6 +3,7 @@ using Azure.Core;
 using Elsa.Options;
 using Elsa.Services.Messaging;
 using Rebus.Config;
+using Rebus.Retry.Simple;
 
 namespace Elsa.Rebus.AzureServiceBus
 {
@@ -40,15 +41,16 @@ namespace Elsa.Rebus.AzureServiceBus
                 .Transport(t =>
                 {
                     if (queueName.Length > 50)
-                        queueName = queueName.Substring(queueName.Length - 50);
+                        queueName = queueName.Substring(queueName.Length - 50 - "_error".Length);
 
                     var transport = t.UseAzureServiceBus(connectionString, queueName, tokenProvider);
 
                     if (context.AutoDeleteOnIdle)
                         transport.SetAutoDeleteOnIdle(TimeSpan.FromMinutes(5));
-                    
+
                     configureTransport?.Invoke(new ConfigureTransportContext(context, transport));
-                });
+                })
+                .Options(options => options.SimpleRetryStrategy($"{queueName}_error"));
         }
     }
 
