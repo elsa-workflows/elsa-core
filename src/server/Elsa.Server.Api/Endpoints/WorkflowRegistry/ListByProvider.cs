@@ -36,7 +36,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
         [SwaggerOperation(
             Summary = "Returns a list of workflow blueprints.",
             Description = "Returns paginated a list of workflow blueprints. When no version options are specified, the latest version is returned.",
-            OperationId = "WorkflowBlueprints.List",
+            OperationId = "WorkflowBlueprints.ListByProvider",
             Tags = new[] { "WorkflowBlueprints" })
         ]
         public async Task<ActionResult<PagedList<WorkflowBlueprintSummaryModel>>> Handle(string providerName, int? page = default, int? pageSize = default, VersionOptions? version = default, CancellationToken cancellationToken = default)
