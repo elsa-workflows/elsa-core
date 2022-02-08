@@ -24,6 +24,8 @@ namespace Elsa.Activities.ControlFlow
             DefaultSyntax = SyntaxNames.Json,
             SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
+        // Using IEnumerable here so the EnumerableResultConverter does not need to serialize/deserialize the collection instance - so to be able to return the instance as it is
+        // See here for further details: https://github.com/elsa-workflows/elsa-core/pull/2737
         public IEnumerable Items { get; set; } = new Collection<object>();
 
         [ActivityOutput] public object? Output { get; set; }
