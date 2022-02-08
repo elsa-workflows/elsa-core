@@ -67,6 +67,7 @@
     "@types/d3": "^7.0.0",
     "@types/dagre-d3": "^0.6.2",
     "@types/node": "^16.7.13",
+    "ansi-regex": "^6.0.1",
     "autoprefixer": "10.4.2",
     "copyfiles": "^2.4.1",
     "cross-env": "^7.0.3",
