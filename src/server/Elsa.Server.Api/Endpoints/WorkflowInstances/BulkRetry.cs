@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
@@ -31,7 +31,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
         [SwaggerOperation(
             Summary = "Retries a faulted workflow instance.",
             Description = "Retries a workflow instance.",
-            OperationId = "WorkflowInstances.Retry",
+            OperationId = "WorkflowInstances.BulkRetry",
             Tags = new[] { "WorkflowInstances" })
         ]
         public async Task<IActionResult> Handle(BulkRetryWorkflowsRequest request, CancellationToken cancellationToken = default)
