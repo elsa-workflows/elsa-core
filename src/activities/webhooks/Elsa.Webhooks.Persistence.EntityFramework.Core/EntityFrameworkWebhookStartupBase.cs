@@ -17,7 +17,7 @@ namespace Elsa.Webhooks.Persistence.EntityFramework.Core
         {
             var optionsBuilder = new WebhookOptionsBuilder(elsa.Services);
 
-            optionsBuilder.UseNonPooledEntityFrameworkPersistence((serviceProvider, options) => ConfigureFor(options, serviceProvider), ServiceLifetime.Scoped);
+            optionsBuilder.UseNonPooledEntityFrameworkPersistence((serviceProvider, options) => ConfigureFor(options, serviceProvider), ServiceLifetime.Scoped, autoRunMigrations: true);
 
             elsa.Services.AddSingleton(optionsBuilder.WebhookOptions);
         }

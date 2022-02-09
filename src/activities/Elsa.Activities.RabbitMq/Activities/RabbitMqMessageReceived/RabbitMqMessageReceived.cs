@@ -1,6 +1,4 @@
 using System.Collections.Generic;
-using System.Threading.Tasks;
-using Elsa.Activities.RabbitMq.Configuration;
 using Elsa.Activities.RabbitMq.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
@@ -58,16 +56,10 @@ namespace Elsa.Activities.RabbitMq
         [ActivityOutput(Hint = "Received message")]
         public object? Output { get; set; }
         
-        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context) => context.WorkflowExecutionContext.IsFirstPass ? ExecuteInternalAsync(context) : await SuspendInternalAsync();
+        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => context.WorkflowExecutionContext.IsFirstPass ? ExecuteInternalAsync(context) : Suspend();
         
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context) => ExecuteInternalAsync(context);
         
-        private async ValueTask<IActivityExecutionResult> SuspendInternalAsync()
-        {
-            await StartClient();
-
-            return Suspend();
-        }
 
         private IActivityExecutionResult ExecuteInternalAsync(ActivityExecutionContext context)
         {
@@ -81,13 +73,6 @@ namespace Elsa.Activities.RabbitMq
             context.JournalData.Add("Headers", message.Headers);
 
             return Done();
-        }
-        private async Task StartClient()
-        {
-            var config = new RabbitMqBusConfiguration(ConnectionString, ExchangeName, RoutingKey, Headers);
-
-            var client = await _messageReceiverClientFactory.GetReceiverAsync(config);
-            client.StartClient();
         }
     }
 }

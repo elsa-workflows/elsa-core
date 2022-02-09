@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.RabbitMq.Bookmarks;
 using Elsa.Activities.RabbitMq.Configuration;
-using Elsa.Models;
 using Elsa.MultiTenancy;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -51,7 +50,7 @@ namespace Elsa.Activities.RabbitMq.Services
                 {
                     using var scope = _scopeFactory.CreateScopeForTenant(tenant);
 
-                    var receiverConfigs = (await GetConfigurationsAsync<RabbitMqMessageReceived>(null, scope.ServiceProvider, cancellationToken).ToListAsync(cancellationToken)).GroupBy(c => c.GetHashCode()).Select(x => x.First());
+                    var receiverConfigs = (await GetConfigurationsAsync<RabbitMqMessageReceived>(scope.ServiceProvider, cancellationToken).ToListAsync(cancellationToken)).GroupBy(c => c.GetHashCode()).Select(x => x.First());
 
                     foreach (var config in receiverConfigs)
                     {
@@ -80,13 +79,12 @@ namespace Elsa.Activities.RabbitMq.Services
 
         private async Task DisposeWorkerAsync(IClient messageReceiver) => await _messageReceiverClientFactory.DisposeReceiverAsync(messageReceiver);
 
-        public async IAsyncEnumerable<RabbitMqBusConfiguration> GetConfigurationsAsync<T>(Func<Trigger, bool>? predicate, IServiceProvider serviceProvider, [EnumeratorCancellation] CancellationToken cancellationToken) where T : IRabbitMqActivity
+        private async IAsyncEnumerable<RabbitMqBusConfiguration> GetConfigurationsAsync<T>(IServiceProvider serviceProvider, [EnumeratorCancellation] CancellationToken cancellationToken) where T : IRabbitMqActivity
         {
             var triggerFinder = serviceProvider.GetRequiredService<ITriggerFinder>();
             var triggers = await triggerFinder.FindTriggersByTypeAsync<MessageReceivedBookmark>(cancellationToken: cancellationToken);
-            var filteredTriggers = predicate == null ? triggers : triggers.Where(predicate);
 
-            foreach (var trigger in filteredTriggers)
+            foreach (var trigger in triggers)
             {
                 var bookmark =_bookmarkSerializer.Deserialize<MessageReceivedBookmark>(trigger.Model);
                 

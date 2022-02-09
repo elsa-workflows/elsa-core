@@ -1,9 +1,13 @@
+using Elsa.Activities.RabbitMq.Configuration;
 using Elsa.Activities.RabbitMq.Services;
+using Elsa.Models;
+using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -45,7 +49,7 @@ namespace Elsa.Activities.RabbitMq.Testing
                 else
                     _workers[workflowInstanceId] = new List<Worker>();
 
-                var workerConfigs = (await _rabbitMqQueueStarter.GetConfigurationsAsync<RabbitMqMessageReceived>(x => x.WorkflowDefinitionId == workflowId, scope.ServiceProvider, cancellationToken).ToListAsync(cancellationToken)).Distinct();
+                var workerConfigs = (await GetConfigurationsAsync(scope.ServiceProvider, workflowId, cancellationToken).ToListAsync(cancellationToken));
 
                 foreach (var config in workerConfigs)
                 {
@@ -75,6 +79,29 @@ namespace Elsa.Activities.RabbitMq.Testing
             }
 
             _workers[workflowInstance].Clear();
+        }
+
+        private async IAsyncEnumerable<RabbitMqBusConfiguration> GetConfigurationsAsync(IServiceProvider serviceProvider, string workflowDefinitionId, [EnumeratorCancellation]CancellationToken cancellationToken)
+        {
+            var workflowRegistry = serviceProvider.GetRequiredService<IWorkflowRegistry>();
+            var workflowBlueprintReflector = serviceProvider.GetRequiredService<IWorkflowBlueprintReflector>();
+            var workflow = await workflowRegistry.GetWorkflowAsync(workflowDefinitionId, VersionOptions.Latest, cancellationToken);
+
+            if (workflow == null) yield break;
+
+            var workflowBlueprintWrapper = await workflowBlueprintReflector.ReflectAsync(serviceProvider, workflow, cancellationToken);
+
+            foreach (var activity in workflowBlueprintWrapper.Filter<RabbitMqMessageReceived>())
+            {
+                var connectionString = await activity.EvaluatePropertyValueAsync(x => x.ConnectionString, cancellationToken);
+                var routingKey = await activity.EvaluatePropertyValueAsync(x => x.RoutingKey, cancellationToken);
+                var exchangeName = await activity.EvaluatePropertyValueAsync(x => x.ExchangeName, cancellationToken);
+                var headers = await activity.EvaluatePropertyValueAsync(x => x.Headers, cancellationToken);
+
+                var config = new RabbitMqBusConfiguration(connectionString!, exchangeName!, routingKey!, headers!);
+
+                yield return config;
+            }
         }
     }
 }

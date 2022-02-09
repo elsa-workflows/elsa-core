@@ -18,7 +18,7 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.Core
             var services = elsa.Services;
             var workflowSettingsOptionsBuilder = new WorkflowSettingsOptionsBuilder(services);
 
-            workflowSettingsOptionsBuilder.UseNonPooledEntityFrameworkPersistence((serviceProvider, options) => Configure(options, serviceProvider), ServiceLifetime.Scoped);
+            workflowSettingsOptionsBuilder.UseNonPooledEntityFrameworkPersistence((serviceProvider, options) => Configure(options, serviceProvider), ServiceLifetime.Scoped, autoRunMigrations: true);
 
             services.AddScoped(sp => workflowSettingsOptionsBuilder.WorkflowSettingsOptions.WorkflowSettingsStoreFactory(sp));
 

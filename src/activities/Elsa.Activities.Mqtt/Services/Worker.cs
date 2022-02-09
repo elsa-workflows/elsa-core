@@ -31,7 +31,7 @@ namespace Elsa.Activities.Mqtt.Services
             _disposeReceiverAction = disposeReceiverAction;
             _tenant = tenantProvider.GetCurrentTenant();
 
-            _receiverClient.SetMessageHandler(OnMessageReceived);
+            _receiverClient.SubscribeWithHandlerAsync(_receiverClient.Options.Topic, OnMessageReceived);
         }
 
         private string ActivityType => nameof(MqttMessageReceived);

@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Mqtt.Bookmarks;
 using Elsa.Activities.Mqtt.Options;
-using Elsa.Models;
 using Elsa.MultiTenancy;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -46,7 +45,7 @@ namespace Elsa.Activities.Mqtt.Services
             {
                 using var scope = _scopeFactory.CreateScopeForTenant(tenant);
 
-                var configs = (await GetConfigurationsAsync(null, scope.ServiceProvider, cancellationToken).ToListAsync(cancellationToken)).Distinct();
+                var configs = (await GetConfigurationsAsync(scope.ServiceProvider, cancellationToken).ToListAsync(cancellationToken)).Distinct();
 
                 foreach (var config in configs)
                 {
@@ -68,13 +67,12 @@ namespace Elsa.Activities.Mqtt.Services
             return ActivatorUtilities.CreateInstance<Worker>(serviceProvider, receiver, (Func<IMqttClientWrapper, Task>)DisposeReceiverAsync);
         }
 
-        public async IAsyncEnumerable<MqttClientOptions> GetConfigurationsAsync(Func<Trigger, bool>? predicate, IServiceProvider serviceProvider, [EnumeratorCancellation] CancellationToken cancellationToken)
+        private async IAsyncEnumerable<MqttClientOptions> GetConfigurationsAsync(IServiceProvider serviceProvider, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             var triggerFinder = serviceProvider.GetRequiredService<ITriggerFinder>();
             var triggers = await triggerFinder.FindTriggersByTypeAsync<MessageReceivedBookmark>(cancellationToken: cancellationToken);
-            var filteredTriggers = predicate == null ? triggers : triggers.Where(predicate);
 
-            foreach (var trigger in filteredTriggers)
+            foreach (var trigger in triggers)
             {
                 var bookmark = _bookmarkSerializer.Deserialize<MessageReceivedBookmark>(trigger.Model);
                 var topic = bookmark.Topic;

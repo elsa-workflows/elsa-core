@@ -1,9 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.Mqtt.Activities.MqttMessageReceived;
+using Elsa.Activities.Mqtt.Options;
 using Elsa.Activities.Mqtt.Services;
+using Elsa.Models;
+using Elsa.Persistence;
+using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -41,7 +47,7 @@ namespace Elsa.Activities.Mqtt.Testing
                     _workers[workflowInstanceId] = new List<Worker>();
                 }
 
-                var receiverConfigs = (await _mqttTopicsStarter.GetConfigurationsAsync(x => x.WorkflowDefinitionId == workflowId, scope.ServiceProvider, cancellationToken).ToListAsync(cancellationToken)).Distinct();
+                var receiverConfigs = (await GetConfigurationsAsync(scope.ServiceProvider, workflowId, cancellationToken).ToListAsync(cancellationToken));
 
                 foreach (var config in receiverConfigs)
                 {
@@ -71,6 +77,28 @@ namespace Elsa.Activities.Mqtt.Testing
             }
 
             _workers[workflowInstance].Clear();
+        }
+
+        private async IAsyncEnumerable<MqttClientOptions> GetConfigurationsAsync(IServiceProvider serviceProvider, string workflowDefinitionId, [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            var workflowRegistry = serviceProvider.GetRequiredService<IWorkflowRegistry>();
+            var workflowBlueprintReflector = serviceProvider.GetRequiredService<IWorkflowBlueprintReflector>();
+            var workflowInstanceStore = serviceProvider.GetRequiredService<IWorkflowInstanceStore>();
+            var workflow = await workflowRegistry.GetWorkflowAsync(workflowDefinitionId, VersionOptions.Latest, cancellationToken);
+
+            var workflowBlueprintWrapper = await workflowBlueprintReflector.ReflectAsync(serviceProvider, workflow, cancellationToken);
+
+            foreach (var activity in workflowBlueprintWrapper.Filter<MqttMessageReceived>())
+            {
+                var topic = await activity.EvaluatePropertyValueAsync(x => x.Topic, cancellationToken);
+                var host = await activity.EvaluatePropertyValueAsync(x => x.Host, cancellationToken);
+                var port = await activity.EvaluatePropertyValueAsync(x => x.Port, cancellationToken);
+                var username = await activity.EvaluatePropertyValueAsync(x => x.Username, cancellationToken);
+                var password = await activity.EvaluatePropertyValueAsync(x => x.Password, cancellationToken);
+                var qos = await activity.EvaluatePropertyValueAsync(x => x.QualityOfService, cancellationToken);
+
+                yield return new MqttClientOptions(topic!, host!, port!, username!, password!, qos);
+            }
         }
     }
 }

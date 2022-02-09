@@ -31,13 +31,13 @@ namespace Elsa.Activities.RabbitMq.Bookmarks
         public override async ValueTask<IEnumerable<BookmarkResult>> GetBookmarksAsync(BookmarkProviderContext<RabbitMqMessageReceived> context, CancellationToken cancellationToken) =>
             new[]
             {
-                Result(new MessageReceivedBookmark
-                {
-                    ExchangeName = (await context.ReadActivityPropertyAsync(x => x.ExchangeName, cancellationToken))!,
-                    RoutingKey = (await context.ReadActivityPropertyAsync(x => x.RoutingKey, cancellationToken))!,
-                    ConnectionString = (await context.ReadActivityPropertyAsync(x => x.ConnectionString, cancellationToken))!,
-                    Headers = (await context.ReadActivityPropertyAsync(x => x.Headers, cancellationToken))!
-                })
+                Result(
+                    new MessageReceivedBookmark(
+                        exchangeName: (await context.ReadActivityPropertyAsync(x => x.ExchangeName, cancellationToken))!,
+                        routingKey: (await context.ReadActivityPropertyAsync(x => x.RoutingKey, cancellationToken))!,
+                        connectionString: (await context.ReadActivityPropertyAsync(x => x.ConnectionString, cancellationToken))!,
+                        headers: (await context.ReadActivityPropertyAsync(x => x.Headers, cancellationToken))!
+                ))
             };
     }
 }

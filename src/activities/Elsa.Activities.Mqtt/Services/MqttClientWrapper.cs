@@ -9,21 +9,17 @@ namespace Elsa.Activities.Mqtt.Services
 {
     public class MqttClientWrapper : IMqttClientWrapper
     {
-        private readonly ILogger _logger;
-        private Func<MqttApplicationMessage, Task>? _messageHandler;
-
         public IMqttClient Client { get; }
         public MqttClientOptions Options { get; }
 
 
-        public MqttClientWrapper(IMqttClient client, MqttClientOptions options, ILogger<MqttClientWrapper> logger)
+        public MqttClientWrapper(IMqttClient client, MqttClientOptions options)
         {
             Client = client;
             Options = options;
-            _logger = logger;
         }
 
-        public async Task SubscribeAsync(string topic)
+        public async Task SubscribeWithHandlerAsync(string topic, Func<MqttApplicationMessage, Task> handler)
         {
             await ConnectAsync();
 
@@ -31,13 +27,7 @@ namespace Elsa.Activities.Mqtt.Services
 
             Client.MessageStream.Subscribe(async message =>
             {
-                if (_messageHandler != null)
-                    await _messageHandler(message);
-                else
-                    _logger.LogWarning("Attempted to subscribe to topic {Topic}, but no message handler was set.", Options.Topic);
-
-                await Client.UnsubscribeAsync(topic);
-                await DisconnectAsync();
+                await handler(message);
             });
         }
 
@@ -50,11 +40,6 @@ namespace Elsa.Activities.Mqtt.Services
             await Client.PublishAsync(applicationMessage, Options.QualityOfService);
 
             await DisconnectAsync();
-        }
-
-        public void SetMessageHandler(Func<MqttApplicationMessage, Task> handler)
-        {
-            _messageHandler = handler;
         }
 
         public void Dispose()

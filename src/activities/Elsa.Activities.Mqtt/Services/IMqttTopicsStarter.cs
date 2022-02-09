@@ -1,9 +1,7 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Mqtt.Options;
-using Elsa.Models;
 
 namespace Elsa.Activities.Mqtt.Services
 {
@@ -11,6 +9,5 @@ namespace Elsa.Activities.Mqtt.Services
     {
         Task CreateWorkersAsync(CancellationToken cancellationToken = default);
         Task<Worker> CreateWorkerAsync(IServiceProvider serviceProvider, MqttClientOptions config, CancellationToken cancellationToken);
-        IAsyncEnumerable<MqttClientOptions> GetConfigurationsAsync(Func<Trigger, bool>? predicate, IServiceProvider serviceProvider, CancellationToken cancellationToken);
     }
 }
