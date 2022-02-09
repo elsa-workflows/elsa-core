@@ -28,7 +28,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
         [SwaggerOperation(
             Summary = "Cancels a workflow instance.",
             Description = "Retries a workflow instance.",
-            OperationId = "WorkflowInstances.Retry",
+            OperationId = "WorkflowInstances.Cancel",
             Tags = new[] { "WorkflowInstances" })
         ]
         public async Task<IActionResult> Handle(string id, CancellationToken cancellationToken = default)

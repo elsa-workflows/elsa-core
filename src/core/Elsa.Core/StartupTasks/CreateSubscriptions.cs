@@ -17,7 +17,11 @@ namespace Elsa.StartupTasks
         private readonly IList<MessageTypeConfig> _competingMessageTypes;
         private readonly IEnumerable<MessageTypeConfig> _pubSubMessageTypes;
 
-        public CreateSubscriptions(IServiceBusFactory serviceBusFactory, ElsaOptions elsaOptions, IContainerNameAccessor containerNameAccessor, IDistributedLockProvider distributedLockProvider)
+        public CreateSubscriptions(
+            IServiceBusFactory serviceBusFactory,
+            ElsaOptions elsaOptions,
+            IContainerNameAccessor containerNameAccessor,
+            IDistributedLockProvider distributedLockProvider)
         {
             _serviceBusFactory = serviceBusFactory;
             _elsaOptions = elsaOptions;
@@ -65,7 +69,7 @@ namespace Elsa.StartupTasks
             {
                 var queueName = $"{containerName}:{messageTypeGroup.Key}";
                 var messageTypes = messageTypeGroup.Select(x => x.MessageType).ToList();
-                var bus = _serviceBusFactory.ConfigureServiceBus(messageTypes, queueName);
+                var bus = _serviceBusFactory.ConfigureServiceBus(messageTypes, queueName, true);
 
                 foreach (var messageType in messageTypes)
                     await bus.Subscribe(messageType);

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\..\..\common.props"/>
-    <Import Project="..\..\..\configureawait.props"/>
+    <Import Project="..\..\..\common.props" />
+    <Import Project="..\..\..\configureawait.props" />
 
     <PropertyGroup>
         <TargetFramework>netstandard2.1</TargetFramework>
@@ -15,38 +15,38 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AutoMapper" Version="10.1.1"/>
-        <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="8.1.1"/>
-        <PackageReference Include="DistributedLock.Core" Version="1.0.4"/>
-        <PackageReference Include="DistributedLock.FileSystem" Version="1.0.1"/>
-        <PackageReference Include="Humanizer.Core" Version="2.13.14"/>
-        <PackageReference Include="MediatR" Version="9.0.0"/>
-        <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="9.0.0"/>
-        <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="6.0.1"/>
-        <PackageReference Include="Microsoft.AspNetCore.DataProtection.Abstractions" Version="6.0.1"/>
-        <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0"/>
-        <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="6.0.0"/>
-        <PackageReference Include="Microsoft.CSharp" Version="4.7.0"/>
-        <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="6.0.0"/>
-        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="6.0.0"/>
-        <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.0"/>
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0"/>
-        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="6.0.0"/>
-        <PackageReference Include="Microsoft.Extensions.Localization" Version="6.0.1"/>
-        <PackageReference Include="Microsoft.Extensions.Logging" Version="6.0.0"/>
-        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="6.0.0"/>
-        <PackageReference Include="NodaTime.Serialization.JsonNet" Version="3.0.0"/>
-        <PackageReference Include="Open.Linq.AsyncExtensions" Version="1.2.0"/>
-        <PackageReference Include="Rebus.Microsoft.Extensions.Logging" Version="2.0.0"/>
-        <PackageReference Include="Rebus.ServiceProvider" Version="7.0.0"/>
-        <PackageReference Include="Scrutor" Version="3.3.0"/>
-        <PackageReference Include="Storage.Net" Version="9.3.0"/>
-        <PackageReference Include="System.Linq.Async" Version="5.1.0"/>
-        <PackageReference Include="System.Threading.Channels" Version="6.0.0"/>
+        <PackageReference Include="AutoMapper" Version="10.1.1" />
+        <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="8.1.1" />
+        <PackageReference Include="DistributedLock.Core" Version="1.0.4" />
+        <PackageReference Include="DistributedLock.FileSystem" Version="1.0.1" />
+        <PackageReference Include="Humanizer.Core" Version="2.13.14" />
+        <PackageReference Include="MediatR" Version="9.0.0" />
+        <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="9.0.0" />
+        <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="6.0.1" />
+        <PackageReference Include="Microsoft.AspNetCore.DataProtection.Abstractions" Version="6.0.1" />
+        <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
+        <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="6.0.0" />
+        <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+        <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="6.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="6.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.0" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="6.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Localization" Version="6.0.1" />
+        <PackageReference Include="Microsoft.Extensions.Logging" Version="6.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="6.0.0" />
+        <PackageReference Include="NodaTime.Serialization.JsonNet" Version="3.0.0" />
+        <PackageReference Include="Open.Linq.AsyncExtensions" Version="1.2.0" />
+        <PackageReference Include="Rebus.Microsoft.Extensions.Logging" Version="2.0.0" />
+        <PackageReference Include="Rebus.ServiceProvider" Version="7.0.0" />
+        <PackageReference Include="Scrutor" Version="3.3.0" />
+        <PackageReference Include="Storage.Net" Version="9.3.0" />
+        <PackageReference Include="System.Linq.Async" Version="5.1.0" />
+        <PackageReference Include="System.Threading.Channels" Version="6.0.0" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Elsa.Abstractions\Elsa.Abstractions.csproj"/>
+        <ProjectReference Include="..\Elsa.Abstractions\Elsa.Abstractions.csproj" />
     </ItemGroup>
 
 </Project>
