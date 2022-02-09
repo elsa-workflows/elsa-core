@@ -1,8 +1,3 @@
-using Elsa.Activities.Mqtt.Options;
-using Elsa.Services;
-using Elsa.Services.Models;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,6 +5,12 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Mqtt.Bookmarks;
+using Elsa.Activities.Mqtt.Options;
+using Elsa.Models;
+using Elsa.MultiTenancy;
+using Elsa.Services;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Activities.Mqtt.Services
 {
@@ -18,56 +19,62 @@ namespace Elsa.Activities.Mqtt.Services
         private readonly IMessageReceiverClientFactory _receiverFactory;
         private readonly IBookmarkSerializer _bookmarkSerializer;
         private readonly IServiceScopeFactory _scopeFactory;
-        private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<MqttTopicsStarter> _logger;
         private readonly ICollection<Worker> _workers;
+        private readonly ITenantStore _tenantStore;
 
         public MqttTopicsStarter(
             IMessageReceiverClientFactory receiverFactory,
             IBookmarkSerializer bookmarkSerializer,
             IServiceScopeFactory scopeFactory,
-            IServiceProvider serviceProvider,
-            ILogger<MqttTopicsStarter> logger)
+            ILogger<MqttTopicsStarter> logger,
+            ITenantStore tenantStore)
         {
             _receiverFactory = receiverFactory;
             _bookmarkSerializer = bookmarkSerializer;
             _scopeFactory = scopeFactory;
-            _serviceProvider = serviceProvider;
             _logger = logger;
             _workers = new List<Worker>();
+            _tenantStore = tenantStore;
         }
 
         public async Task CreateWorkersAsync(CancellationToken cancellationToken)
         {
             await DisposeExistingWorkersAsync();
-            var configs = (await GetConfigurationsAsync(null, cancellationToken).ToListAsync(cancellationToken)).Distinct();
 
-            foreach (var config in configs)
+            foreach (var tenant in _tenantStore.GetTenants())
             {
-                try
+                using var scope = _scopeFactory.CreateScopeForTenant(tenant);
+
+                var configs = (await GetConfigurationsAsync(null, scope.ServiceProvider, cancellationToken).ToListAsync(cancellationToken)).Distinct();
+
+                foreach (var config in configs)
                 {
-                    _workers.Add(await CreateWorkerAsync(config, cancellationToken));
-                }
-                catch (Exception e)
-                {
-                    _logger.LogWarning(e, "Failed to create a receiver for topic {Topic}", config.Topic);
+                    try
+                    {
+                        _workers.Add(await CreateWorkerAsync(scope.ServiceProvider, config, cancellationToken));
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogWarning(e, "Failed to create a receiver for topic {Topic}", config.Topic);
+                    }
                 }
             }
         }
 
-        public async Task<Worker> CreateWorkerAsync(MqttClientOptions config, CancellationToken cancellationToken)
+        public async Task<Worker> CreateWorkerAsync(IServiceProvider serviceProvider, MqttClientOptions config, CancellationToken cancellationToken)
         {
             var receiver = await _receiverFactory.GetReceiverAsync(config, cancellationToken);
-            return ActivatorUtilities.CreateInstance<Worker>(_serviceProvider, receiver, (Func<IMqttClientWrapper, Task>)DisposeReceiverAsync);
+            return ActivatorUtilities.CreateInstance<Worker>(serviceProvider, receiver, (Func<IMqttClientWrapper, Task>)DisposeReceiverAsync);
         }
 
-        public async IAsyncEnumerable<MqttClientOptions> GetConfigurationsAsync(Func<IWorkflowBlueprint, bool>? predicate, [EnumeratorCancellation] CancellationToken cancellationToken)
+        public async IAsyncEnumerable<MqttClientOptions> GetConfigurationsAsync(Func<Trigger, bool>? predicate, IServiceProvider serviceProvider, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            using var scope = _scopeFactory.CreateScope();
-            var triggerFinder = scope.ServiceProvider.GetRequiredService<ITriggerFinder>();
+            var triggerFinder = serviceProvider.GetRequiredService<ITriggerFinder>();
             var triggers = await triggerFinder.FindTriggersByTypeAsync<MessageReceivedBookmark>(cancellationToken: cancellationToken);
+            var filteredTriggers = predicate == null ? triggers : triggers.Where(predicate);
 
-            foreach (var trigger in triggers)
+            foreach (var trigger in filteredTriggers)
             {
                 var bookmark = _bookmarkSerializer.Deserialize<MessageReceivedBookmark>(trigger.Model);
                 var topic = bookmark.Topic;

@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Abstractions.MultiTenancy;
 using Elsa.Activities.AzureServiceBus.Bookmarks;
 using Elsa.Models;
+using Elsa.MultiTenancy;
 using Elsa.Services;
 using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,7 +22,6 @@ namespace Elsa.Activities.AzureServiceBus.Services
     {
         private readonly ITopicMessageReceiverFactory _receiverFactory;
         private readonly IBookmarkSerializer _bookmarkSerializer;
-        private readonly IServiceScopeFactory _scopeFactory;
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<ServiceBusTopicsStarter> _logger;
         private readonly IDictionary<TopicWorkerKey, TopicWorker> _workers;
@@ -28,20 +29,18 @@ namespace Elsa.Activities.AzureServiceBus.Services
 
         public ServiceBusTopicsStarter(
             ITopicMessageReceiverFactory receiverFactory,
-            IServiceScopeFactory scopeFactory,
             IServiceProvider serviceProvider,
             ILogger<ServiceBusTopicsStarter> logger,
             IBookmarkSerializer bookmarkSerializer)
         {
             _receiverFactory = receiverFactory;
-            _scopeFactory = scopeFactory;
             _serviceProvider = serviceProvider;
             _logger = logger;
             _bookmarkSerializer = bookmarkSerializer;
             _workers = new Dictionary<TopicWorkerKey, TopicWorker>();
         }
 
-        public async Task CreateWorkersAsync(IReadOnlyCollection<Trigger> triggers, CancellationToken cancellationToken = default)
+        public async Task CreateWorkersAsync(IReadOnlyCollection<Trigger> triggers, Tenant tenant, CancellationToken cancellationToken = default)
         {
             await _semaphore.WaitAsync(cancellationToken);
 
@@ -52,7 +51,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
                 foreach (var trigger in filteredTriggers)
                 {
                     var bookmark = _bookmarkSerializer.Deserialize<TopicMessageReceivedBookmark>(trigger.Model);
-                    await CreateAndAddWorkerAsync(trigger.WorkflowDefinitionId, bookmark.TopicName, bookmark.SubscriptionName, cancellationToken);
+                    await CreateAndAddWorkerAsync(trigger.WorkflowDefinitionId, bookmark.TopicName, bookmark.SubscriptionName, tenant, cancellationToken);
                 }
             }
             finally
@@ -61,7 +60,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             }
         }
 
-        public async Task CreateWorkersAsync(IReadOnlyCollection<Bookmark> bookmarks, CancellationToken cancellationToken = default)
+        public async Task CreateWorkersAsync(IReadOnlyCollection<Bookmark> bookmarks, Tenant tenant, CancellationToken cancellationToken = default)
         {
             await _semaphore.WaitAsync(cancellationToken);
 
@@ -72,7 +71,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
                 foreach (var bookmark in filteredBookmarks)
                 {
                     var bookmarkModel = _bookmarkSerializer.Deserialize<TopicMessageReceivedBookmark>(bookmark.Model);
-                    await CreateAndAddWorkerAsync(bookmark.WorkflowInstanceId, bookmarkModel.TopicName, bookmarkModel.SubscriptionName, cancellationToken);
+                    await CreateAndAddWorkerAsync(bookmark.WorkflowInstanceId, bookmarkModel.TopicName, bookmarkModel.SubscriptionName, tenant, cancellationToken);
                 }
             }
             finally
@@ -104,7 +103,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             await RemoveWorkersAsync(workflowInstanceIds);
         }
 
-        private async Task CreateAndAddWorkerAsync(string tag, string topicName, string subscriptionName, CancellationToken cancellationToken)
+        private async Task CreateAndAddWorkerAsync(string tag, string topicName, string subscriptionName, Tenant tenant, CancellationToken cancellationToken)
         {
             try
             {
@@ -114,7 +113,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
                 if (worker == null)
                 {
                     var receiver = await _receiverFactory.GetTopicReceiverAsync(topicName, subscriptionName, cancellationToken);
-                    worker = ActivatorUtilities.CreateInstance<TopicWorker>(_serviceProvider, tag, receiver, (Func<IReceiverClient, Task>)DisposeReceiverAsync);
+                    worker = ActivatorUtilities.CreateInstance<TopicWorker>(_serviceProvider, tag, receiver, (Func<IReceiverClient, Task>)DisposeReceiverAsync, tenant);
                     _workers.Add(key, worker);
                 }
             }

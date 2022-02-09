@@ -75,7 +75,7 @@ namespace ElsaDashboard.Samples.AspNetCore.Monolith
             app.UseEndpoints(endpoints =>
             {
                 // Maps a SignalR hub for the designer to connect to when testing workflows.
-                endpoints.MapWorkflowTestHub();
+                endpoints.MapWorkflowTestHub(Configuration);
                 
                 // Elsa Server uses ASP.NET Core Controllers.
                 endpoints.MapControllers();

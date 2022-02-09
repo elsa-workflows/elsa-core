@@ -45,7 +45,7 @@ namespace Elsa.Activities.RabbitMq.Testing
                 else
                     _workers[workflowInstanceId] = new List<Worker>();
 
-                var workerConfigs = (await _rabbitMqQueueStarter.GetConfigurationsAsync<RabbitMqMessageReceived>(x => x.Id == workflowId, scope.ServiceProvider, cancellationToken).ToListAsync(cancellationToken)).Distinct();
+                var workerConfigs = (await _rabbitMqQueueStarter.GetConfigurationsAsync<RabbitMqMessageReceived>(x => x.WorkflowDefinitionId == workflowId, scope.ServiceProvider, cancellationToken).ToListAsync(cancellationToken)).Distinct();
 
                 foreach (var config in workerConfigs)
                 {

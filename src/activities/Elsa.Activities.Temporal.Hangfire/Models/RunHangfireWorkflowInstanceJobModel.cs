@@ -1,4 +1,6 @@
-﻿namespace Elsa.Activities.Temporal.Hangfire.Models
+using Elsa.Abstractions.MultiTenancy;
+
+namespace Elsa.Activities.Temporal.Hangfire.Models
 {
     public class RunHangfireWorkflowInstanceJobModel
     {

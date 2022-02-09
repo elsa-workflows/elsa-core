@@ -41,7 +41,7 @@ namespace Elsa.Activities.Mqtt.Testing
                     _workers[workflowInstanceId] = new List<Worker>();
                 }
 
-                var receiverConfigs = (await _mqttTopicsStarter.GetConfigurationsAsync(x => x.Id == workflowId, scope.ServiceProvider, cancellationToken).ToListAsync(cancellationToken)).Distinct();
+                var receiverConfigs = (await _mqttTopicsStarter.GetConfigurationsAsync(x => x.WorkflowDefinitionId == workflowId, scope.ServiceProvider, cancellationToken).ToListAsync(cancellationToken)).Distinct();
 
                 foreach (var config in receiverConfigs)
                 {

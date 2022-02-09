@@ -1,3 +1,4 @@
+using Elsa.Abstractions.MultiTenancy;
 using MediatR;
 
 namespace Elsa.WorkflowTesting.Events
@@ -5,10 +6,12 @@ namespace Elsa.WorkflowTesting.Events
     public class WorkflowTestExecutionStopped : INotification
     {
         public string WorkflowInstanceId { get; }
+        public Tenant Tenant { get; }
 
-        public WorkflowTestExecutionStopped(string workflowInstanceId)
+        public WorkflowTestExecutionStopped(string workflowInstanceId, Tenant tenant)
         {
             WorkflowInstanceId = workflowInstanceId;
+            Tenant = tenant;
         }
     }
 }

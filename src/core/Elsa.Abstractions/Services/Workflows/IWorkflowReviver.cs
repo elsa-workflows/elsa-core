@@ -1,5 +1,6 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Abstractions.MultiTenancy;
 using Elsa.Models;
 using Elsa.Services.Models;
 
@@ -12,6 +13,6 @@ namespace Elsa.Services
     {
         Task<WorkflowInstance> ReviveAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default);
         Task<RunWorkflowResult> ReviveAndRunAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default);
-        Task<WorkflowInstance> ReviveAndQueueAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default);
+        Task<WorkflowInstance> ReviveAndQueueAsync(WorkflowInstance workflowInstance, Tenant tenant,  CancellationToken cancellationToken = default);
     }
 }

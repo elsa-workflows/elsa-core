@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Elsa.Abstractions.MultiTenancy;
 using Microsoft.AspNetCore.Http;
@@ -11,7 +12,7 @@ namespace Elsa.MultiTenancy
 
         public TenantProvider(IHttpContextAccessor accessor, ITenantStore tenantStore)
         {
-            _currentTenant = GetTenant(accessor.HttpContext?.Request.Path, tenantStore);
+            _currentTenant = GetTenant(accessor.HttpContext?.Request.Path, tenantStore.GetTenants());
         }
 
         public Tenant GetCurrentTenant()
@@ -26,20 +27,22 @@ namespace Elsa.MultiTenancy
             return _currentTenant;
         }
 
-        public void SetCurrentTenant(Tenant? tenant)
+        public void SetCurrentTenant(Tenant tenant)
         {
             _currentTenant = tenant;
         }
 
-        private Tenant? GetTenant(PathString? path, ITenantStore tenantStore)
+        private Tenant? GetTenant(PathString? path, IEnumerable<Tenant> tenants)
         {
-            if (path == null) return null;
+            var defaultTenant = tenants.FirstOrDefault(x => x.IsDefault);
 
-            var tenants = tenantStore.GetTenants();
+            if (defaultTenant != null) return defaultTenant;
 
-            var currentTenantPrefix = path?.Value.Split("/").FirstOrDefault(x => x != string.Empty);
+            if (!path.HasValue) return null;            
 
-            return tenants.FirstOrDefault(x => x.IsDefault || x.Prefix == currentTenantPrefix);
+            var currentTenantPrefix = path.Value.Value.Split("/").FirstOrDefault(x => x != string.Empty);
+
+            return tenants.FirstOrDefault(x => x.Prefix == currentTenantPrefix);
         }
     }
 }

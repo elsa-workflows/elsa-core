@@ -20,7 +20,7 @@ namespace Elsa.Activities.RabbitMq.Services
         private readonly Func<IClient, Task> _disposeReceiverAction;
         private string ActivityType => nameof(RabbitMqMessageReceived);
         private TimeSpan _delay = TimeSpan.FromMilliseconds(200);
-        private readonly Tenant? _tenant;
+        private readonly Tenant _tenant;
 
         public Worker(
             IServiceScopeFactory scopeFactory,
@@ -33,7 +33,7 @@ namespace Elsa.Activities.RabbitMq.Services
             _client = client;
             _disposeReceiverAction = disposeReceiverAction;
             _logger = logger;
-            _tenant = tenantProvider.TryGetCurrentTenant();
+            _tenant = tenantProvider.GetCurrentTenant();
 
             _client.SubscribeWithHandler(OnMessageReceived);
         }
@@ -59,7 +59,7 @@ namespace Elsa.Activities.RabbitMq.Services
             var bookmark = new MessageReceivedBookmark(config.ExchangeName, config.RoutingKey, config.ConnectionString, config.Headers);
             var launchContext = new WorkflowsQuery(ActivityType, bookmark);
 
-            using var scope = _scopeFactory.CreateScope();
+            using var scope = _scopeFactory.CreateScopeForTenant(_tenant);
             var workflowLaunchpad = scope.ServiceProvider.GetRequiredService<IWorkflowLaunchpad>();
             await workflowLaunchpad.CollectAndDispatchWorkflowsAsync(launchContext, new WorkflowInput(message), cancellationToken);
         }

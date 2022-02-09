@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Abstractions.MultiTenancy;
 using Elsa.Exceptions;
 using Elsa.Models;
 using Elsa.Persistence;
@@ -69,11 +70,11 @@ namespace Elsa.Services.Workflows
             return await _resumesWorkflow.ResumeWorkflowAsync(workflowInstance, null, null, cancellationToken);
         }
 
-        public async Task<WorkflowInstance> ReviveAndQueueAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken)
+        public async Task<WorkflowInstance> ReviveAndQueueAsync(WorkflowInstance workflowInstance, Tenant tenant, CancellationToken cancellationToken)
         {
             workflowInstance = await ReviveAsync(workflowInstance, cancellationToken);
             var currentActivity = await GetActivityToScheduleAsync(workflowInstance, cancellationToken);
-            await _workflowInstanceDispatcher.DispatchAsync(new ExecuteWorkflowInstanceRequest(workflowInstance.Id, currentActivity.ActivityId), cancellationToken);
+            await _workflowInstanceDispatcher.DispatchAsync(new ExecuteWorkflowInstanceRequest(tenant, workflowInstance.Id, currentActivity.ActivityId), cancellationToken);
             return workflowInstance;
         }
 

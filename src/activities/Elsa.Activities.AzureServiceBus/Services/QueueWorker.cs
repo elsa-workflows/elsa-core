@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
+using Elsa.Abstractions.MultiTenancy;
 using Elsa.Activities.AzureServiceBus.Bookmarks;
 using Elsa.Activities.AzureServiceBus.Options;
 using Elsa.Services;
@@ -19,7 +20,8 @@ namespace Elsa.Activities.AzureServiceBus.Services
             IServiceScopeFactory serviceScopeFactory,
             IOptions<AzureServiceBusOptions> options,
             Func<IReceiverClient, Task> disposeReceiverAction,
-            ILogger<QueueWorker> logger) : base(tag, messageReceiver, serviceScopeFactory, options, disposeReceiverAction, logger)
+            Tenant? tenant,
+            ILogger<QueueWorker> logger) : base(tag, messageReceiver, tenant, serviceScopeFactory, options, disposeReceiverAction, logger)
         {
         }
 

@@ -1,9 +1,3 @@
-using Elsa.Activities.RabbitMq.Configuration;
-using Elsa.Services;
-using Elsa.Services.Models;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +5,12 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.RabbitMq.Bookmarks;
+using Elsa.Activities.RabbitMq.Configuration;
+using Elsa.Models;
+using Elsa.MultiTenancy;
+using Elsa.Services;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Activities.RabbitMq.Services
 {
@@ -18,25 +18,25 @@ namespace Elsa.Activities.RabbitMq.Services
     {
         private readonly SemaphoreSlim _semaphore = new(1);
         private readonly IServiceScopeFactory _scopeFactory;
-        private readonly IServiceProvider _serviceProvider;
         private readonly ICollection<Worker> _workers;
         private readonly IMessageReceiverClientFactory _messageReceiverClientFactory;
         private readonly ILogger _logger;
         private readonly IBookmarkSerializer _bookmarkSerializer;
+        private readonly ITenantStore _tenantStore;
 
         public RabbitMqQueueStarter(
             IMessageReceiverClientFactory messageReceiverClientFactory,
             IServiceScopeFactory scopeFactory, 
-            IServiceProvider serviceProvider, 
             ILogger<RabbitMqQueueStarter> logger,
-            IBookmarkSerializer bookmarkSerializer)
+            IBookmarkSerializer bookmarkSerializer,
+            ITenantStore tenantStore)
         {
             _messageReceiverClientFactory = messageReceiverClientFactory;
             _scopeFactory = scopeFactory;
-            _serviceProvider = serviceProvider;
             _logger = logger;
             _bookmarkSerializer = bookmarkSerializer;
             _workers = new List<Worker>();
+            _tenantStore = tenantStore;
         }
 
         public async Task CreateWorkersAsync(CancellationToken cancellationToken = default)
@@ -47,17 +47,22 @@ namespace Elsa.Activities.RabbitMq.Services
             {
                 await DisposeExistingWorkersAsync();
 
-                var receiverConfigs = (await GetConfigurationsAsync<RabbitMqMessageReceived>(null, cancellationToken).ToListAsync(cancellationToken)).GroupBy(c => c.GetHashCode()).Select(x => x.First());
-
-                foreach (var config in receiverConfigs)
+                foreach (var tenant in _tenantStore.GetTenants())
                 {
-                    try
+                    using var scope = _scopeFactory.CreateScopeForTenant(tenant);
+
+                    var receiverConfigs = (await GetConfigurationsAsync<RabbitMqMessageReceived>(null, scope.ServiceProvider, cancellationToken).ToListAsync(cancellationToken)).GroupBy(c => c.GetHashCode()).Select(x => x.First());
+
+                    foreach (var config in receiverConfigs)
                     {
-                        _workers.Add(await CreateWorkerAsync(config, cancellationToken));
-                    }
-                    catch (Exception e)
-                    {
-                        _logger.LogWarning(e, "Failed to create a receiver for routing key {RoutingKey}", config.RoutingKey);
+                        try
+                        {
+                            _workers.Add(await CreateWorkerAsync(scope.ServiceProvider, config, cancellationToken));
+                        }
+                        catch (Exception e)
+                        {
+                            _logger.LogWarning(e, "Failed to create a receiver for routing key {RoutingKey}", config.RoutingKey);
+                        }
                     }
                 }
             }
@@ -67,21 +72,21 @@ namespace Elsa.Activities.RabbitMq.Services
             }
         }
 
-        public async Task<Worker> CreateWorkerAsync(RabbitMqBusConfiguration config, CancellationToken cancellationToken = default)
+        public async Task<Worker> CreateWorkerAsync(IServiceProvider serviceProvider, RabbitMqBusConfiguration config, CancellationToken cancellationToken = default)
         {
             var receiver = await _messageReceiverClientFactory.GetReceiverAsync(config, cancellationToken);
-            return ActivatorUtilities.CreateInstance<Worker>(_serviceProvider, (Func<IClient, Task>)DisposeWorkerAsync, receiver);
+            return ActivatorUtilities.CreateInstance<Worker>(serviceProvider, (Func<IClient, Task>)DisposeWorkerAsync, receiver);
         }
 
         private async Task DisposeWorkerAsync(IClient messageReceiver) => await _messageReceiverClientFactory.DisposeReceiverAsync(messageReceiver);
 
-        public async IAsyncEnumerable<RabbitMqBusConfiguration> GetConfigurationsAsync<T>(Func<IWorkflowBlueprint, bool>? predicate, [EnumeratorCancellation] CancellationToken cancellationToken) where T : IRabbitMqActivity
+        public async IAsyncEnumerable<RabbitMqBusConfiguration> GetConfigurationsAsync<T>(Func<Trigger, bool>? predicate, IServiceProvider serviceProvider, [EnumeratorCancellation] CancellationToken cancellationToken) where T : IRabbitMqActivity
         {
-            using var scope = _scopeFactory.CreateScope();
-            var triggerFinder = scope.ServiceProvider.GetRequiredService<ITriggerFinder>();
+            var triggerFinder = serviceProvider.GetRequiredService<ITriggerFinder>();
             var triggers = await triggerFinder.FindTriggersByTypeAsync<MessageReceivedBookmark>(cancellationToken: cancellationToken);
+            var filteredTriggers = predicate == null ? triggers : triggers.Where(predicate);
 
-            foreach (var trigger in triggers)
+            foreach (var trigger in filteredTriggers)
             {
                 var bookmark =_bookmarkSerializer.Deserialize<MessageReceivedBookmark>(trigger.Model);
                 

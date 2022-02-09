@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Abstractions.MultiTenancy;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications.WorkflowInstances;
@@ -20,11 +21,13 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
     {
         private readonly IWorkflowInstanceStore _store;
         private readonly IWorkflowReviver _reviver;
+        private readonly ITenantProvider _tenantProvider;
 
-        public BulkRetry(IWorkflowInstanceStore store, IWorkflowReviver reviver)
+        public BulkRetry(IWorkflowInstanceStore store, IWorkflowReviver reviver, ITenantProvider tenantProvider)
         {
             _store = store;
             _reviver = reviver;
+            _tenantProvider = tenantProvider;
         }
 
         [HttpPost]
@@ -40,8 +43,10 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
             var workflowInstances = (await _store.FindManyAsync(new WorkflowInstanceIdsSpecification(request.WorkflowInstanceIds), cancellationToken: cancellationToken)).ToList();
             var faultedWorkflowInstances = workflowInstances.Where(x => x.WorkflowStatus == WorkflowStatus.Faulted).ToList();
 
+            var tenant = _tenantProvider.GetCurrentTenant();
+
             foreach (var workflowInstance in faultedWorkflowInstances) 
-                await _reviver.ReviveAndQueueAsync(workflowInstance, cancellationToken);
+                await _reviver.ReviveAndQueueAsync(workflowInstance, tenant, cancellationToken);
 
             return Ok(new
             {

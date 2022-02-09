@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Abstractions.MultiTenancy;
 using Elsa.Events;
 using Elsa.Models;
 using Elsa.Providers.WorkflowStorage;
@@ -36,6 +37,8 @@ namespace Elsa.Services.Models
             
             // This is a service that needs to be bound to the same lifetime scope as the workflow execution context.
             WorkflowExecutionLog = ActivatorUtilities.CreateInstance<WorkflowExecutionLog>(serviceProvider);
+            var tenantProvider = serviceProvider.GetRequiredService<ITenantProvider>();
+            Tenant = tenantProvider.GetCurrentTenant();
         }
 
         public IWorkflowBlueprint WorkflowBlueprint { get; }
@@ -80,6 +83,7 @@ namespace Elsa.Services.Models
         public WorkflowStatus Status => WorkflowInstance.WorkflowStatus;
         public bool HasBlockingActivities => WorkflowInstance.BlockingActivities.Any();
         public object? WorkflowContext { get; set; }
+        public Tenant Tenant { get; }
 
         /// <summary>
         /// A collection of tasks to execute after the workflow is suspended.
@@ -108,7 +112,7 @@ namespace Elsa.Services.Models
         public async Task RemoveBlockingActivityAsync(BlockingActivity blockingActivity)
         {
             WorkflowInstance.BlockingActivities.Remove(blockingActivity);
-            await Mediator.Publish(new BlockingActivityRemoved(this, blockingActivity));
+            await Mediator.Publish(new BlockingActivityRemoved(this, blockingActivity, Tenant));
         }
 
         public async Task EvictScopeAsync(IActivityBlueprint scope) => await Mediator.Publish(new ScopeEvicted(this, scope));

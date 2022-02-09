@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Abstractions.MultiTenancy;
 using Elsa.Events;
 using Elsa.Models;
 using Elsa.Persistence;
@@ -44,7 +45,7 @@ namespace Elsa.Services.Workflows
             return definition;
         }
 
-        public async Task<WorkflowDefinition?> PublishAsync(string workflowDefinitionId, CancellationToken cancellationToken = default)
+        public async Task<WorkflowDefinition?> PublishAsync(string workflowDefinitionId, Tenant tenant, CancellationToken cancellationToken = default)
         {
             var definition = await _workflowDefinitionStore.FindByDefinitionIdAsync(
                 workflowDefinitionId,
@@ -54,10 +55,10 @@ namespace Elsa.Services.Workflows
             if (definition == null)
                 return null;
 
-            return await PublishAsync(definition, cancellationToken);
+            return await PublishAsync(definition, tenant, cancellationToken);
         }
 
-        public async Task<WorkflowDefinition> PublishAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken = default)
+        public async Task<WorkflowDefinition> PublishAsync(WorkflowDefinition workflowDefinition, Tenant tenant, CancellationToken cancellationToken = default)
         {
             var definitionId = workflowDefinition.DefinitionId;
             
@@ -81,7 +82,7 @@ namespace Elsa.Services.Workflows
 
             await _mediator.Publish(new WorkflowDefinitionPublishing(workflowDefinition), cancellationToken);
             await _workflowDefinitionStore.SaveAsync(workflowDefinition, cancellationToken);
-            await _mediator.Publish(new WorkflowDefinitionPublished(workflowDefinition), cancellationToken);
+            await _mediator.Publish(new WorkflowDefinitionPublished(workflowDefinition, tenant), cancellationToken);
             return workflowDefinition;
         }
         

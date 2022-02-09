@@ -19,6 +19,7 @@ namespace Elsa.Persistence.MongoDb.Services
         public IMongoCollection<WorkflowInstance> WorkflowInstances => GetDatabase().GetCollection<WorkflowInstance>(CollectionNames.WorkflowInstances);
         public IMongoCollection<WorkflowExecutionLogRecord> WorkflowExecutionLog => GetDatabase().GetCollection<WorkflowExecutionLogRecord>(CollectionNames.WorkflowExecutionLog);
         public IMongoCollection<Bookmark> Bookmarks => GetDatabase().GetCollection<Bookmark>(CollectionNames.Bookmarks);
+        public IMongoCollection<Trigger> Triggers => GetDatabase().GetCollection<Trigger>(CollectionNames.Triggers);
 
         private IMongoDatabase GetDatabase()
         {

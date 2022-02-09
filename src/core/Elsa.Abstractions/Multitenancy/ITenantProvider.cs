@@ -4,6 +4,6 @@ namespace Elsa.Abstractions.MultiTenancy
     {
         Tenant GetCurrentTenant();
         Tenant? TryGetCurrentTenant();
-        void SetCurrentTenant(Tenant? tenant);
+        void SetCurrentTenant(Tenant tenant);
     }
 }

@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Abstractions.MultiTenancy;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services;
@@ -18,11 +19,13 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
     {
         private readonly IWorkflowInstanceStore _store;
         private readonly IWorkflowReviver _reviver;
+        private readonly ITenantProvider _tenantProvider;
 
-        public Retry(IWorkflowInstanceStore store, IWorkflowReviver reviver)
+        public Retry(IWorkflowInstanceStore store, IWorkflowReviver reviver, ITenantProvider tenantProvider)
         {
             _store = store;
             _reviver = reviver;
+            _tenantProvider = tenantProvider;
         }
 
         [HttpPost]
@@ -43,9 +46,11 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
             if (workflowInstance == null)
                 return NotFound();
 
+            var tenant = _tenantProvider.GetCurrentTenant();
+
             if (options?.RunImmediately == false)
             {
-                workflowInstance = await _reviver.ReviveAndQueueAsync(workflowInstance, cancellationToken);
+                workflowInstance = await _reviver.ReviveAndQueueAsync(workflowInstance, tenant, cancellationToken);
 
                 var model = new
                 {

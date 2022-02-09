@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Abstractions.MultiTenancy;
 using Elsa.Activities.AzureServiceBus.Models;
 using Elsa.Activities.AzureServiceBus.Options;
 using Elsa.Models;
@@ -22,20 +23,23 @@ namespace Elsa.Activities.AzureServiceBus.Services
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly Func<IReceiverClient, Task> _disposeReceiverAction;
         private readonly ILogger _logger;
+        private readonly Tenant _tenant;
 
         protected WorkerBase(
             string tag,
             IReceiverClient receiverClient,
+            Tenant tenant,
             IServiceScopeFactory serviceScopeFactory,
             IOptions<AzureServiceBusOptions> options,
             Func<IReceiverClient, Task> disposeReceiverAction,
-            ILogger logger)
+            ILogger logger)            
         {
             Tag = tag;
             ReceiverClient = receiverClient;
             _serviceScopeFactory = serviceScopeFactory;
             _disposeReceiverAction = disposeReceiverAction;
             _logger = logger;
+            _tenant = tenant;
 
             ReceiverClient.RegisterMessageHandler(OnMessageReceived, new MessageHandlerOptions(ExceptionReceivedHandler)
             {
@@ -78,7 +82,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             var bookmark = CreateBookmark(message);
             var launchContext = new WorkflowsQuery(ActivityType, bookmark, correlationId);
 
-            using var scope = _serviceScopeFactory.CreateScope();
+            using var scope = _serviceScopeFactory.CreateScopeForTenant(_tenant);
             var workflowLaunchpad = scope.ServiceProvider.GetRequiredService<IWorkflowLaunchpad>();
             await workflowLaunchpad.CollectAndDispatchWorkflowsAsync(launchContext, new WorkflowInput(model), cancellationToken);
         }

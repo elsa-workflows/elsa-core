@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Abstractions.MultiTenancy;
 using Elsa.Models;
 using Elsa.MultiTenancy;
 using Elsa.Options;
@@ -56,12 +57,12 @@ namespace Elsa.StartupTasks
             {
                 using var scope = _scopeFactory.CreateScopeForTenant(tenant);
 
-                await ResumeIdleWorkflows(scope.ServiceProvider, cancellationToken);
-                await ResumeRunningWorkflowsAsync(scope.ServiceProvider, cancellationToken);
+                await ResumeIdleWorkflows(scope.ServiceProvider, tenant, cancellationToken);
+                await ResumeRunningWorkflowsAsync(scope.ServiceProvider, tenant, cancellationToken);
             }
         }
 
-        private async Task ResumeIdleWorkflows(IServiceProvider serviceProvider, CancellationToken cancellationToken)
+        private async Task ResumeIdleWorkflows(IServiceProvider serviceProvider, Tenant tenant, CancellationToken cancellationToken)
         {
             var workflowInstanceStore = serviceProvider.GetRequiredService<IWorkflowInstanceStore>();
             var workflowInstanceDispatcher = serviceProvider.GetRequiredService<IWorkflowInstanceDispatcher>();
@@ -86,11 +87,11 @@ namespace Elsa.StartupTasks
                 _logger.LogInformation("Resuming {WorkflowInstanceId}", instance.Id);
 
                 var input = await GetWorkflowInputAsync(serviceProvider, instance, cancellationToken);
-                await workflowInstanceDispatcher.DispatchAsync(new ExecuteWorkflowInstanceRequest(instance.Id, Input: input), cancellationToken);
+                await workflowInstanceDispatcher.DispatchAsync(new ExecuteWorkflowInstanceRequest(tenant, instance.Id, Input: input), cancellationToken);
             }
         }
 
-        private async Task ResumeRunningWorkflowsAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken)
+        private async Task ResumeRunningWorkflowsAsync(IServiceProvider serviceProvider, Tenant tenant, CancellationToken cancellationToken)
         {
             var workflowInstanceStore = serviceProvider.GetRequiredService<IWorkflowInstanceStore>();
             var workflowInstanceDispatcher = serviceProvider.GetRequiredService<IWorkflowInstanceDispatcher>();
@@ -134,7 +135,7 @@ namespace Elsa.StartupTasks
 
                 var scheduledActivity = instance.CurrentActivity ?? instance.ScheduledActivities.Peek();
                 var input = await GetWorkflowInputAsync(serviceProvider, instance, cancellationToken);
-                await workflowInstanceDispatcher.DispatchAsync(new ExecuteWorkflowInstanceRequest(instance.Id, scheduledActivity.ActivityId, input), cancellationToken);
+                await workflowInstanceDispatcher.DispatchAsync(new ExecuteWorkflowInstanceRequest(tenant, instance.Id, scheduledActivity.ActivityId, input), cancellationToken);
             }
         }
 

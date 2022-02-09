@@ -1,8 +1,7 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using Elsa.Providers.Workflows;
 using Elsa.Server.Api.Services;
-using Elsa.Services.WorkflowStorage;
 using Humanizer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -13,6 +12,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowProviders
     [ApiController]
     [ApiVersion("1")]
     [Route("v{version:apiVersion}/workflow-providers")]
+    [Route("{tenant}/v{version:apiVersion}/workflow-providers")]
     [Produces("application/json")]
     public class List : Controller
     {

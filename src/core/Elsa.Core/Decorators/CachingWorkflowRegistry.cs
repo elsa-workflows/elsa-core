@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Abstractions.MultiTenancy;
 using Elsa.Caching;
 using Elsa.Events;
 using Elsa.Models;
@@ -14,33 +15,36 @@ namespace Elsa.Decorators
 {
     public class CachingWorkflowRegistry : IWorkflowRegistry, INotificationHandler<WorkflowDefinitionSaved>, INotificationHandler<WorkflowDefinitionDeleted>
     {
-        public const string RootKey = "WorkflowRegistry";
+        public const string RootKeyBase = "WorkflowRegistry";
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IMemoryCache _memoryCache;
         private readonly ICacheSignal _cacheSignal;
+        private readonly ITenantProvider _tenantProvider;
+        private string GenerateRootKey() => $"{RootKeyBase}:{_tenantProvider.GetCurrentTenant().Prefix}";
 
-        public CachingWorkflowRegistry(IWorkflowRegistry workflowRegistry, IMemoryCache memoryCache, ICacheSignal cacheSignal)
+        public CachingWorkflowRegistry(IWorkflowRegistry workflowRegistry, IMemoryCache memoryCache, ICacheSignal cacheSignal, ITenantProvider tenantProvider)
         {
             _workflowRegistry = workflowRegistry;
             _memoryCache = memoryCache;
             _cacheSignal = cacheSignal;
+            _tenantProvider = tenantProvider;
         }
 
         public async Task<IWorkflowBlueprint?> FindAsync(string definitionId, VersionOptions versionOptions, string? tenantId = default, CancellationToken cancellationToken = default)
         {
-            var cacheKey = $"{RootKey}:definition:id:{definitionId}:{versionOptions}:{tenantId}";
+            var cacheKey = $"{GenerateRootKey()}:definition:id:{definitionId}:{versionOptions}:{tenantId}";
             return await FindInternalAsync(cacheKey, () => _workflowRegistry.FindAsync(definitionId, versionOptions, tenantId, cancellationToken), cancellationToken);
         }
 
         public async Task<IWorkflowBlueprint?> FindByNameAsync(string name, VersionOptions versionOptions, string? tenantId = default, CancellationToken cancellationToken = default)
         {
-            var cacheKey = $"{RootKey}:definition:name:{name}:{versionOptions}:{tenantId}";
+            var cacheKey = $"{GenerateRootKey()}:definition:name:{name}:{versionOptions}:{tenantId}";
             return await FindInternalAsync(cacheKey, () => _workflowRegistry.FindByNameAsync(name, versionOptions, tenantId, cancellationToken), cancellationToken);
         }
 
         public async Task<IWorkflowBlueprint?> FindByTagAsync(string tag, VersionOptions versionOptions, string? tenantId = default, CancellationToken cancellationToken = default)
         {
-            var cacheKey = $"{RootKey}:definition:name:{tag}:{versionOptions}:{tenantId}";
+            var cacheKey = $"{GenerateRootKey()}:definition:name:{tag}:{versionOptions}:{tenantId}";
             return await FindInternalAsync(cacheKey, () => _workflowRegistry.FindByTagAsync(tag, versionOptions, tenantId, cancellationToken), cancellationToken);
         }
 
@@ -72,7 +76,7 @@ namespace Elsa.Decorators
             });
         }
 
-        private string GetEvictionKey(string definitionId) => $"{RootKey}:definition:id:{definitionId}";
+        private string GetEvictionKey(string definitionId) => $"{GenerateRootKey()}:definition:id:{definitionId}";
 
         Task INotificationHandler<WorkflowDefinitionSaved>.Handle(WorkflowDefinitionSaved notification, CancellationToken cancellationToken)
         {

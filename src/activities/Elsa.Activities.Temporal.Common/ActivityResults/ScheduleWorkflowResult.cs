@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Abstractions.MultiTenancy;
 using Elsa.Activities.Temporal.Common.Services;
 using Elsa.ActivityResults;
 using Elsa.Services.Models;
@@ -26,7 +27,10 @@ namespace Elsa.Activities.Temporal.Common.ActivityResults
             
             async ValueTask ScheduleWorkflowAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
             {
-                var scheduler = workflowExecutionContext.ServiceProvider.GetRequiredService<IWorkflowInstanceScheduler>(); 
+                var scheduler = workflowExecutionContext.ServiceProvider.GetRequiredService<IWorkflowInstanceScheduler>();
+                var tenantProvider = workflowExecutionContext.ServiceProvider.GetRequiredService<ITenantProvider>();
+                var tenant = tenantProvider.GetCurrentTenant();
+
                 await scheduler.ScheduleAsync(workflowInstanceId, activityId, executeAt, null, cancellationToken);
             }
 

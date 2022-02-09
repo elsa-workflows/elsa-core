@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.Mqtt.Activities.MqttMessageReceived;
 using Elsa.Events;
 using Elsa.WorkflowTesting.Events;
 using MediatR;

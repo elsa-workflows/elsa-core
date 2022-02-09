@@ -9,6 +9,7 @@ using Elsa.Services;
 using Elsa.Services.Models;
 using Elsa.Activities.Mqtt.Activities.MqttMessageReceived;
 using Microsoft.Extensions.DependencyInjection;
+using Elsa.Abstractions.MultiTenancy;
 
 namespace Elsa.Activities.Mqtt.Services
 {
@@ -17,15 +18,18 @@ namespace Elsa.Activities.Mqtt.Services
         private readonly Func<IMqttClientWrapper, Task> _disposeReceiverAction;
         private readonly IMqttClientWrapper _receiverClient;
         private readonly IServiceScopeFactory _serviceScopeFactory;
+        private readonly Tenant _tenant;
 
         public Worker(
             IMqttClientWrapper receiverClient,
             IServiceScopeFactory serviceScopeFactory,
-            Func<IMqttClientWrapper, Task> disposeReceiverAction)
+            Func<IMqttClientWrapper, Task> disposeReceiverAction,
+            ITenantProvider tenantProvider)
         {
             _receiverClient = receiverClient;
             _serviceScopeFactory = serviceScopeFactory;
             _disposeReceiverAction = disposeReceiverAction;
+            _tenant = tenantProvider.GetCurrentTenant();
 
             _receiverClient.SetMessageHandler(OnMessageReceived);
         }
@@ -39,7 +43,8 @@ namespace Elsa.Activities.Mqtt.Services
         {
             var bookmark = CreateBookmark(_receiverClient.Options);
             var launchContext = new WorkflowsQuery(ActivityType, bookmark);
-            using var scope = _serviceScopeFactory.CreateScope();
+
+            using var scope = _serviceScopeFactory.CreateScopeForTenant(_tenant);
             var workflowLaunchpad = scope.ServiceProvider.GetRequiredService<IWorkflowLaunchpad>();
             await workflowLaunchpad.CollectAndDispatchWorkflowsAsync(launchContext, new WorkflowInput(message), cancellationToken);
         }

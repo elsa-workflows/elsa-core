@@ -9,7 +9,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores;
 
 public class EntityFrameworkTriggerStore : ElsaContextEntityFrameworkStore<Trigger>, ITriggerStore
 {
-    public EntityFrameworkTriggerStore(IElsaContextFactory dbContextFactory, IMapper mapper) : base(dbContextFactory, mapper)
+    public EntityFrameworkTriggerStore(Func<IElsaContextFactory> getDbContextFactory, IMapper mapper) : base(getDbContextFactory, mapper)
     {
     }
 

@@ -1,5 +1,6 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Abstractions.MultiTenancy;
 using NodaTime;
 
 namespace Elsa.Activities.Temporal.Common.Services

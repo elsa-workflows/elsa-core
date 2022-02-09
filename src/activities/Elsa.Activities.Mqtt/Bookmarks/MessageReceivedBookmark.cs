@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Mqtt.Activities.MqttMessageReceived;
 using Elsa.Attributes;
+using Elsa.Services;
 
 namespace Elsa.Activities.Mqtt.Bookmarks
 {

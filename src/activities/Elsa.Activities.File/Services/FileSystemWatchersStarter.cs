@@ -8,6 +8,7 @@ using AutoMapper;
 using Elsa.Activities.File.Bookmarks;
 using Elsa.Activities.File.Models;
 using Elsa.Models;
+using Elsa.MultiTenancy;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,17 +24,20 @@ namespace Elsa.Activities.File.Services
         private readonly SemaphoreSlim _semaphore = new(1);
         private readonly ICollection<FileSystemWatcher> _watchers;
         private readonly IBookmarkSerializer _bookmarkSerializer;
+        private readonly ITenantStore _tenantStore;
 
         public FileSystemWatchersStarter(ILogger<FileSystemWatchersStarter> logger,
             IMapper mapper,
             IServiceScopeFactory scopeFactory,
-            IBookmarkSerializer bookmarkSerializer)
+            IBookmarkSerializer bookmarkSerializer,
+            ITenantStore tenantStore)
         {
             _logger = logger;
             _mapper = mapper;
             _scopeFactory = scopeFactory;
             _bookmarkSerializer = bookmarkSerializer;
             _watchers = new List<FileSystemWatcher>();
+            _tenantStore = tenantStore;
         }
 
         public async Task CreateAndAddWatchersAsync(CancellationToken cancellationToken = default)
@@ -44,21 +48,24 @@ namespace Elsa.Activities.File.Services
             {
                 DisposeExistingWatchers();
 
-                using var scope = _scopeFactory.CreateScope();
-                var triggerFinder = scope.ServiceProvider.GetRequiredService<ITriggerFinder>();
-                await triggerFinder.FindTriggersAsync<WatchDirectory>(null, cancellationToken);
-                
-                var triggers = await triggerFinder.FindTriggersByTypeAsync<FileSystemEventBookmark>(cancellationToken: cancellationToken);
-
-                foreach (var trigger in triggers)
+                foreach (var tenant in _tenantStore.GetTenants())
                 {
-                    var bookmark = _bookmarkSerializer.Deserialize<FileSystemEventBookmark>(trigger.Model);
+                    using var scope = _scopeFactory.CreateScopeForTenant(tenant);
+                    var triggerFinder = scope.ServiceProvider.GetRequiredService<ITriggerFinder>();
+                    await triggerFinder.FindTriggersAsync<WatchDirectory>(null, cancellationToken);
 
-                    var changeTypes = bookmark.ChangeTypes;
-                    var notifyFilters = bookmark.NotifyFilters;
-                    var path = bookmark.Path;
-                    var pattern = bookmark.Pattern;
-                    CreateAndAddWatcher(path, pattern, changeTypes, notifyFilters);
+                    var triggers = await triggerFinder.FindTriggersByTypeAsync<FileSystemEventBookmark>(cancellationToken: cancellationToken);
+
+                    foreach (var trigger in triggers)
+                    {
+                        var bookmark = _bookmarkSerializer.Deserialize<FileSystemEventBookmark>(trigger.Model);
+
+                        var changeTypes = bookmark.ChangeTypes;
+                        var notifyFilters = bookmark.NotifyFilters;
+                        var path = bookmark.Path;
+                        var pattern = bookmark.Pattern;
+                        CreateAndAddWatcher(path, pattern, changeTypes, notifyFilters);
+                    }
                 }
             }
             finally

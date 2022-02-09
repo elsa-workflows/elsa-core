@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Events;
@@ -23,7 +23,7 @@ namespace Elsa.Handlers
         {
             // Before processing tasks, make sure bookmarks are up to date.
             var workflowInstance = notification.WorkflowExecutionContext.WorkflowInstance;
-            await _bookmarkIndexer.IndexBookmarksAsync(workflowInstance, cancellationToken);
+            await _bookmarkIndexer.IndexBookmarksAsync(workflowInstance, notification.Tenant, cancellationToken);
             
             try
             {
