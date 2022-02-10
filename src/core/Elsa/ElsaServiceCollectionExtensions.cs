@@ -2,6 +2,8 @@ using System;
 using Elsa.Options;
 using Elsa.Runtime;
 using Elsa.Scripting.Liquid.Extensions;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Hosting.Internal;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -12,6 +14,7 @@ namespace Microsoft.Extensions.DependencyInjection
             this IServiceCollection services,
             Action<ElsaOptionsBuilder>? configure = default) =>
             services
+                .AddSingleton<IHostApplicationLifetime, ApplicationLifetime>()
                 .AddStartupRunner()
                 .AddElsaCore(configure)
                 .AddJavaScriptExpressionEvaluator()
