@@ -3,7 +3,7 @@ using Rebus.Exceptions;
 
 namespace Elsa.Exceptions
 {
-    public class WorkflowException : Exception, IFailFastException
+    public class WorkflowException : Exception
     {
         public WorkflowException(string message) : base(message)
         {
