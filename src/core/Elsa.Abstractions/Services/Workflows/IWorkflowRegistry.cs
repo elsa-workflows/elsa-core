@@ -35,5 +35,10 @@ namespace Elsa.Services
         /// Returns a list of <see cref="WorkflowBlueprint"/> objects for the specified set of workflow names.
         /// </summary>
         Task<IEnumerable<IWorkflowBlueprint>> FindManyByNames(IEnumerable<string> names, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Adds the specified blueprint to the registry.
+        /// </summary>
+        void Add(IWorkflowBlueprint workflowBlueprint);
     }
 }

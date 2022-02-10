@@ -56,6 +56,8 @@ namespace Elsa.Decorators
             return await _workflowRegistry.FindManyByNames(names, cancellationToken);
         }
 
+        public void Add(IWorkflowBlueprint workflowBlueprint) => _workflowRegistry.Add(workflowBlueprint);
+
         public async Task<IWorkflowBlueprint?> FindInternalAsync(string cacheKey, Func<Task<IWorkflowBlueprint?>> findAction, CancellationToken cancellationToken = default)
         {
             return await _memoryCache.GetOrCreateAsync(cacheKey, async entry =>
