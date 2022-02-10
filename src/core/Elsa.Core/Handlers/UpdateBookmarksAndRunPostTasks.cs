@@ -1,28 +1,34 @@
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Events;
+using Elsa.Persistence;
 using Elsa.Services;
 using MediatR;
 
 namespace Elsa.Handlers
 {
-    public class UpdateBookmarks : 
+    public class UpdateBookmarksAndRunPostTasks : 
         INotificationHandler<WorkflowExecutionFinished>, 
         INotificationHandler<ManyWorkflowInstancesDeleted>, 
         INotificationHandler<ManyWorkflowInstancesAdded>
     {
         private readonly IBookmarkIndexer _bookmarkIndexer;
+        private readonly IWorkflowInstanceStore _workflowInstanceStore;
 
-        public UpdateBookmarks(IBookmarkIndexer bookmarkIndexer)
+        public UpdateBookmarksAndRunPostTasks(IBookmarkIndexer bookmarkIndexer, IWorkflowInstanceStore workflowInstanceStore)
         {
             _bookmarkIndexer = bookmarkIndexer;
+            _workflowInstanceStore = workflowInstanceStore;
         }
 
         public async Task Handle(WorkflowExecutionFinished notification, CancellationToken cancellationToken)
         {
             var workflowInstance = notification.WorkflowExecutionContext.WorkflowInstance;
             await _bookmarkIndexer.IndexBookmarksAsync(workflowInstance, cancellationToken);
+
+            await RunPostSuspensionTasksAsync(notification, cancellationToken);
         }
 
         public async Task Handle(ManyWorkflowInstancesDeleted notification, CancellationToken cancellationToken)
@@ -37,6 +43,19 @@ namespace Elsa.Handlers
         {
             foreach (var workflowInstance in notification.WorkflowInstances)
                 await _bookmarkIndexer.IndexBookmarksAsync(workflowInstance, cancellationToken);
+        }
+
+        private async Task RunPostSuspensionTasksAsync(WorkflowExecutionFinished notification, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await notification.WorkflowExecutionContext.ProcessRegisteredTasksAsync(cancellationToken);
+            }
+            catch (Exception e)
+            {
+                notification.WorkflowExecutionContext.Fault(e, "Error occurred while executing post-suspension task", null, null, false);
+                await _workflowInstanceStore.SaveAsync(notification.WorkflowExecutionContext.WorkflowInstance, cancellationToken);
+            }
         }
     }
 }
