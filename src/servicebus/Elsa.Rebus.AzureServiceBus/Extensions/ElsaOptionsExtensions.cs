@@ -41,7 +41,7 @@ namespace Elsa.Rebus.AzureServiceBus
                 .Transport(t =>
                 {
                     if (queueName.Length > 50)
-                        queueName = queueName.Substring(queueName.Length - 50 - "_error".Length);
+                        queueName = queueName.Substring(queueName.Length - 50);
 
                     var transport = t.UseAzureServiceBus(connectionString, queueName, tokenProvider);
 
@@ -49,8 +49,7 @@ namespace Elsa.Rebus.AzureServiceBus
                         transport.SetAutoDeleteOnIdle(TimeSpan.FromMinutes(5));
 
                     configureTransport?.Invoke(new ConfigureTransportContext(context, transport));
-                })
-                .Options(options => options.SimpleRetryStrategy($"{queueName}_error"));
+                });
         }
     }
 
