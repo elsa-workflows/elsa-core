@@ -1,4 +1,4 @@
-using System.Collections;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Elsa.ActivityResults;
@@ -24,8 +24,8 @@ namespace Elsa.Activities.ControlFlow
             DefaultSyntax = SyntaxNames.Json,
             SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
-        public IEnumerable Items { get; set; } = new Collection<object>();
-
+        public ICollection<object> Items { get; set; } = new Collection<object>();
+        
         [ActivityOutput] public object? Output { get; set; }
 
         private int? CurrentIndex
@@ -50,7 +50,7 @@ namespace Elsa.Activities.ControlFlow
                 return Done();
             }
 
-            var collection = Items.OfType<object>().ToList();
+            var collection = Items.ToList();
             var currentIndex = CurrentIndex ?? 0;
 
             if (currentIndex < collection.Count)
@@ -65,7 +65,7 @@ namespace Elsa.Activities.ControlFlow
                 Output = currentValue;
                 context.JournalData.Add("Current Index", currentIndex);
                 context.LogOutputProperty(this, nameof(Output), Output);
-
+                
                 return Outcome(OutcomeNames.Iterate, currentValue);
             }
 
