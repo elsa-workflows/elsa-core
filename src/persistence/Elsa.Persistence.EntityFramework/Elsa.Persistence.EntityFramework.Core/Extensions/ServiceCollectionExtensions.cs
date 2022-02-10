@@ -228,8 +228,8 @@ namespace Elsa.Persistence.EntityFramework.Core.Extensions
                 .UseWorkflowDefinitionStore(sp => sp.GetRequiredService<EntityFrameworkWorkflowDefinitionStore>())
                 .UseWorkflowInstanceStore(sp => sp.GetRequiredService<EntityFrameworkWorkflowInstanceStore>())
                 .UseWorkflowExecutionLogStore(sp => sp.GetRequiredService<EntityFrameworkWorkflowExecutionLogRecordStore>())
-                .UseWorkflowTriggerStore(sp => sp.GetRequiredService<EntityFrameworkBookmarkStore>())
-                .UseWorkflowBookmarkTriggerStore(sp => sp.GetRequiredService<EntityFrameworkTriggerStore>());
+                .UseBookmarkStore(sp => sp.GetRequiredService<EntityFrameworkBookmarkStore>())
+                .UseTriggerStore(sp => sp.GetRequiredService<EntityFrameworkTriggerStore>());
         }
     }
 }
