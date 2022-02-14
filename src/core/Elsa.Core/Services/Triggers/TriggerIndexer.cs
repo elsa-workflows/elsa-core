@@ -30,7 +30,6 @@ namespace Elsa.Services.Triggers
         private readonly ElsaOptions _elsaOptions;
         private readonly ILogger _logger;
         private readonly Stopwatch _stopwatch = new();
-        private readonly IGetsTriggersForWorkflowBlueprints _getsTriggersForWorkflows;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ITenantStore _tenantStore;
 
@@ -40,7 +39,6 @@ namespace Elsa.Services.Triggers
             IIdGenerator idGenerator,
             ElsaOptions elsaOptions,
             ILogger<TriggerIndexer> logger,
-            IGetsTriggersForWorkflowBlueprints getsTriggersForWorkflows,
             IServiceScopeFactory scopeFactory,
             ITenantStore tenantStore)
         {
@@ -49,7 +47,6 @@ namespace Elsa.Services.Triggers
             _idGenerator = idGenerator;
             _elsaOptions = elsaOptions;
             _logger = logger;
-            _getsTriggersForWorkflows = getsTriggersForWorkflows;
             _scopeFactory = scopeFactory;
             _tenantStore = tenantStore;
         }
@@ -117,12 +114,13 @@ namespace Elsa.Services.Triggers
         private async Task IndexTriggersAsync(IWorkflowBlueprint workflowBlueprint, IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
         {
             var triggerStore = serviceProvider.GetRequiredService<ITriggerStore>();
+            var getsTriggersForWorkflows = serviceProvider.GetRequiredService<IGetsTriggersForWorkflowBlueprints>();
 
             // Delete existing triggers.
             await DeleteTriggersAsync(workflowBlueprint.Id, serviceProvider, cancellationToken);
 
             // Get new triggers.
-            var workflowTriggers = (await _getsTriggersForWorkflows.GetTriggersAsync(workflowBlueprint, cancellationToken)).ToList();
+            var workflowTriggers = (await getsTriggersForWorkflows.GetTriggersAsync(workflowBlueprint, cancellationToken)).ToList();
             var triggers = new List<Trigger>();
 
             foreach (var workflowTrigger in workflowTriggers)
