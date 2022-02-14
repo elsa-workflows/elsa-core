@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Elsa.Models;
 using Elsa.Providers.Workflows;
+using Elsa.Server.Api.Helpers;
 using Elsa.Server.Api.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -40,12 +41,14 @@ public class ListAll : Controller
         OperationId = "WorkflowBlueprints.List",
         Tags = new[] { "WorkflowBlueprints" })
     ]
-    public async Task<ActionResult<ICollection<WorkflowBlueprintSummaryModel>>> Handle(VersionOptions? version = default, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Handle(VersionOptions? version = default, CancellationToken cancellationToken = default)
     {
         version ??= VersionOptions.Latest;
         var tenantId = await _tenantAccessor.GetTenantIdAsync(cancellationToken);
         var workflowBlueprints = await ListAllAsync(tenantId, version.Value, cancellationToken).OrderBy(x => x.DisplayName ?? x.Name ?? "(Untitled)").ToListAsync(cancellationToken);
-        return _mapper.Map<IEnumerable<WorkflowBlueprintSummaryModel>>(workflowBlueprints).ToList();
+        var model = _mapper.Map<IEnumerable<WorkflowBlueprintSummaryModel>>(workflowBlueprints).ToList();
+
+        return Ok(model).ConfigureForWorkflowDefinition();
     }
 
     private async IAsyncEnumerable<IWorkflowBlueprint> ListAllAsync(string? tenantId, VersionOptions versionOptions, [EnumeratorCancellation] CancellationToken cancellationToken)

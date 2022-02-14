@@ -2,6 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Signaling.Services;
 using Elsa.Server.Api.ActionFilters;
+using Elsa.Server.Api.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Open.Linq.AsyncExtensions;
@@ -16,10 +17,12 @@ namespace Elsa.Server.Api.Endpoints.Signals
     public class Dispatch : Controller
     {
         private readonly ISignaler _signaler;
+        private readonly IEndpointContentSerializerSettingsProvider _serializerSettingsProvider;
 
-        public Dispatch(ISignaler signaler)
+        public Dispatch(ISignaler signaler, IEndpointContentSerializerSettingsProvider serializerSettingsProvider)
         {
             _signaler = signaler;
+            _serializerSettingsProvider = serializerSettingsProvider;
         }
 
         [HttpPost]
@@ -38,7 +41,7 @@ namespace Elsa.Server.Api.Endpoints.Signals
             if (Response.HasStarted)
                 return new EmptyResult();
 
-            return Ok(new DispatchSignalResponse(result));
+            return Json(new DispatchSignalResponse(result), _serializerSettingsProvider.GetSettings());
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
+using Elsa.Server.Api.Helpers;
 using Elsa.Server.Api.Models;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
@@ -41,7 +42,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
             var workflowBlueprints = await _workflowRegistry.FindManyByDefinitionVersionIds(idList, cancellationToken).ToList();
             var mappedItems = _mapper.Map<IEnumerable<WorkflowBlueprintSummaryModel>>(workflowBlueprints).ToList();
 
-            return Ok(mappedItems);
+            return Ok(mappedItems).ConfigureForWorkflowDefinition();
         }
     }
 }

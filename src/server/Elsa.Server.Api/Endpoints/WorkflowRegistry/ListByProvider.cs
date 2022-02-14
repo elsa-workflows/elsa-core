@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Elsa.Models;
 using Elsa.Providers.Workflows;
+using Elsa.Server.Api.Helpers;
 using Elsa.Server.Api.Models;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
@@ -39,7 +40,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
             OperationId = "WorkflowBlueprints.ListByProvider",
             Tags = new[] { "WorkflowBlueprints" })
         ]
-        public async Task<ActionResult<PagedList<WorkflowBlueprintSummaryModel>>> Handle(string providerName, int? page = default, int? pageSize = default, VersionOptions? version = default, CancellationToken cancellationToken = default)
+        public async Task<IActionResult> Handle(string providerName, int? page = default, int? pageSize = default, VersionOptions? version = default, CancellationToken cancellationToken = default)
         {
             var workflowProvider = _workflowProviders.FirstOrDefault(x => x.GetType().Name == providerName);
 
@@ -53,7 +54,8 @@ namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
             var totalCount = await workflowProvider.CountAsync(version.Value, tenantId, cancellationToken);
             var mappedItems = _mapper.Map<IEnumerable<WorkflowBlueprintSummaryModel>>(workflowBlueprints).ToList();
 
-            return new PagedList<WorkflowBlueprintSummaryModel>(mappedItems, page, pageSize, totalCount);
+            var model = new PagedList<WorkflowBlueprintSummaryModel>(mappedItems, page, pageSize, totalCount);
+            return Ok(model).ConfigureForWorkflowDefinition();
         }
     }
 }

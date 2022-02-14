@@ -6,6 +6,7 @@ using Swashbuckle.AspNetCore.Annotations;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
+using Elsa.Server.Api.Helpers;
 
 namespace Elsa.Server.Api.Endpoints.Workflows
 {
@@ -51,7 +52,7 @@ namespace Elsa.Server.Api.Endpoints.Workflows
                 result.Executed,
                 result.ActivityId,
                 result.WorkflowInstance
-            ));
+            )).ConfigureForEndpoint();
         }
     }
 }
