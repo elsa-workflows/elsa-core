@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\..\..\common.props"/>
-    <Import Project="..\..\..\configureawait.props"/>
+    <Import Project="..\..\..\common.props" />
+    <Import Project="..\..\..\configureawait.props" />
 
     <PropertyGroup>
         <TargetFramework>netstandard2.1</TargetFramework>
@@ -14,22 +14,22 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="DistributedLock.Core" Version="1.0.4"/>
-        <PackageReference Include="LinqKit.Core" Version="1.1.27"/>
-        <PackageReference Include="MediatR" Version="9.0.0"/>
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0"/>
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.1"/>
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0"/>
-        <PackageReference Include="Microsoft.Extensions.Localization.Abstractions" Version="6.0.1"/>
-        <PackageReference Include="Microsoft.Extensions.Primitives" Version="6.0.0"/>
-        <PackageReference Include="NodaTime" Version="3.0.9"/>
-        <PackageReference Include="NodaTime.Serialization.JsonNet" Version="3.0.0"/>
-        <PackageReference Include="Open.Linq.AsyncExtensions" Version="1.2.0"/>
-        <PackageReference Include="Rebus" Version="6.6.2"/>
-        <PackageReference Include="System.ComponentModel.Annotations" Version="6.0.0-preview.4.21253.7"/>
-        <PackageReference Include="System.Linq.Async" Version="5.1.0"/>
-        <PackageReference Include="System.Text.Json" Version="6.0.1"/>
-        <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4"/>
+        <PackageReference Include="DistributedLock.Core" Version="1.0.4" />
+        <PackageReference Include="LinqKit.Core" Version="1.1.27" />
+        <PackageReference Include="MediatR" Version="10.0.1" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Localization.Abstractions" Version="6.0.1" />
+        <PackageReference Include="Microsoft.Extensions.Primitives" Version="6.0.0" />
+        <PackageReference Include="NodaTime" Version="3.0.9" />
+        <PackageReference Include="NodaTime.Serialization.JsonNet" Version="3.0.0" />
+        <PackageReference Include="Open.Linq.AsyncExtensions" Version="1.2.0" />
+        <PackageReference Include="Rebus" Version="6.6.2" />
+        <PackageReference Include="System.ComponentModel.Annotations" Version="6.0.0-preview.4.21253.7" />
+        <PackageReference Include="System.Linq.Async" Version="5.1.0" />
+        <PackageReference Include="System.Text.Json" Version="6.0.1" />
+        <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4" />
     </ItemGroup>
 
 </Project>
