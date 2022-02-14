@@ -1,7 +1,6 @@
 using Elsa.Activities.RabbitMq.Configuration;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;

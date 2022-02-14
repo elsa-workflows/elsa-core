@@ -1,7 +1,6 @@
 using Elsa.Activities.File.Services;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace Elsa.Activities.File.StartupTasks

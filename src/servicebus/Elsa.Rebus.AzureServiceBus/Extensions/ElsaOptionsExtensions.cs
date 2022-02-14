@@ -3,7 +3,6 @@ using Azure.Core;
 using Elsa.Options;
 using Elsa.Services.Messaging;
 using Rebus.Config;
-using Rebus.Retry.Simple;
 
 namespace Elsa.Rebus.AzureServiceBus
 {

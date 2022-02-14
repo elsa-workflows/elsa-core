@@ -8,7 +8,6 @@ using Elsa.Activities.File.Consumers;
 using Elsa.Options;
 using Elsa.Activities.File.MapperProfiles;
 using Elsa.Events;
-using Elsa.Services;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
