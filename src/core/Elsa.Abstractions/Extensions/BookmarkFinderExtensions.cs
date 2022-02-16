@@ -15,16 +15,20 @@ namespace Elsa
             IEnumerable<IBookmark> bookmarks,
             string? correlationId = default,
             string? tenantId = default,
+            int skip = 0,
+            int take = int.MaxValue,
             CancellationToken cancellationToken = default) where T : IActivity =>
-            bookmarkFinder.FindBookmarksAsync(typeof(T).GetSimpleAssemblyQualifiedName(), bookmarks, correlationId, tenantId, cancellationToken);
+            bookmarkFinder.FindBookmarksAsync(typeof(T).GetSimpleAssemblyQualifiedName(), bookmarks, correlationId, tenantId, skip, take, cancellationToken);
 
         public static Task<IEnumerable<BookmarkFinderResult>> FindBookmarksAsync<T>(
             this IBookmarkFinder bookmarkFinder,
             IBookmark bookmark,
             string? correlationId = default,
             string? tenantId = default,
+            int skip = 0,
+            int take = int.MaxValue,
             CancellationToken cancellationToken = default) where T : IActivity =>
-            bookmarkFinder.FindBookmarksAsync(typeof(T).GetSimpleAssemblyQualifiedName(), new[] { bookmark }, correlationId, tenantId, cancellationToken);
+            bookmarkFinder.FindBookmarksAsync(typeof(T).GetSimpleAssemblyQualifiedName(), new[] { bookmark }, correlationId, tenantId, skip, take, cancellationToken);
 
         public static Task<IEnumerable<BookmarkFinderResult>> FindBookmarksAsync(
             this IBookmarkFinder bookmarkFinder,
@@ -32,20 +36,26 @@ namespace Elsa
             IBookmark bookmark,
             string? correlationId = default,
             string? tenantId = default,
+            int skip = 0,
+            int take = int.MaxValue,
             CancellationToken cancellationToken = default) =>
-            bookmarkFinder.FindBookmarksAsync(activityType, new[] { bookmark }, correlationId, tenantId, cancellationToken);
+            bookmarkFinder.FindBookmarksAsync(activityType, new[] { bookmark }, correlationId, tenantId, skip, take, cancellationToken);
 
         public static Task<IEnumerable<BookmarkFinderResult>> FindBookmarksAsync<T>(
             this IBookmarkFinder bookmarkFinder,
             string? correlationId = default,
             string? tenantId = default,
+            int skip = 0,
+            int take = int.MaxValue,
             CancellationToken cancellationToken = default) where T : IActivity =>
-            bookmarkFinder.FindBookmarksAsync(typeof(T).GetSimpleAssemblyQualifiedName(), Enumerable.Empty<IBookmark>(), correlationId, tenantId, cancellationToken);
+            bookmarkFinder.FindBookmarksAsync(typeof(T).GetSimpleAssemblyQualifiedName(), Enumerable.Empty<IBookmark>(), correlationId, tenantId, skip, take, cancellationToken);
 
         public static Task<IEnumerable<Bookmark>> FindBookmarksByTypeAsync<T>(
             this IBookmarkFinder bookmarkFinder,
             string? tenantId = default,
+            int skip = 0,
+            int take = int.MaxValue,
             CancellationToken cancellationToken = default) where T : IBookmark =>
-            bookmarkFinder.FindBookmarksByTypeAsync(typeof(T).GetSimpleAssemblyQualifiedName(), tenantId, cancellationToken);
+            bookmarkFinder.FindBookmarksByTypeAsync(typeof(T).GetSimpleAssemblyQualifiedName(), tenantId, skip, take, cancellationToken);
     }
 }

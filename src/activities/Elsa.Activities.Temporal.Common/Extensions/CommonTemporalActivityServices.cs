@@ -1,7 +1,9 @@
 using System;
 using Elsa.Activities.Temporal.Common.Bookmarks;
+using Elsa.Activities.Temporal.Common.Consumers;
 using Elsa.Activities.Temporal.Common.Handlers;
 using Elsa.Activities.Temporal.Common.HostedServices;
+using Elsa.Activities.Temporal.Common.Messages;
 using Elsa.Activities.Temporal.Common.Options;
 using Elsa.HostedServices;
 using Elsa.Options;
@@ -42,6 +44,10 @@ namespace Elsa.Activities.Temporal
                 .AddActivity<Timer>()
                 .AddActivity<StartAt>()
                 .AddActivity<ClearTimer>();
+
+            // Register a consumer to process instructions to schedule activities from bookmarks.
+            options.AddCompetingConsumer<ScheduleBookmarkConsumer, ScheduleTemporalBookmark>("ScheduleBookmark");
+            options.AddCompetingConsumer<ScheduleTriggerConsumer, ScheduleTemporalTrigger>("ScheduleBookmark");
 
             return options;
         }

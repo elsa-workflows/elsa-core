@@ -37,7 +37,7 @@ namespace Elsa.Services.Workflows
             string? contextId = default,
             CancellationToken cancellationToken = default)
         {
-            var results = await _bookmarkFinder.FindBookmarksAsync(activityType, bookmark, correlationId, tenantId, cancellationToken).ToList();
+            var results = await _bookmarkFinder.FindBookmarksAsync(activityType, bookmark, correlationId, tenantId, cancellationToken: cancellationToken).ToList();
             await ResumeWorkflowsAsync(results, input, cancellationToken);
         }
 
