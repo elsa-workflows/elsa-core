@@ -16,7 +16,7 @@ namespace Elsa.Scripting.Liquid
 {
     public class LiquidParserTests
     {
-        [Fact(DisplayName = "Liquid should render subtemplaes")]
+        [Fact(DisplayName = "Liquid should render subtemplates")]
         public async Task Render()
         {
             var options = new LiquidOptions();
