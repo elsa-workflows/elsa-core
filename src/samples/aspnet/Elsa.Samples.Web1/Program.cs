@@ -6,6 +6,8 @@ using Elsa.Extensions;
 using Elsa.Management.Contracts;
 using Elsa.Management.Extensions;
 using Elsa.Mediator.Extensions;
+using Elsa.Modules.AzureServiceBus.Activities;
+using Elsa.Modules.AzureServiceBus.Extensions;
 using Elsa.Modules.Http;
 using Elsa.Modules.Http.Extensions;
 using Elsa.Modules.Quartz.Services;
@@ -24,12 +26,14 @@ using Elsa.Scheduling.Extensions;
 using Elsa.Scripting.JavaScript.Extensions;
 using Elsa.Scripting.Liquid.Extensions;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 var builder = WebApplication.CreateBuilder(args);
 
 var services = builder.Services;
+var configuration = builder.Configuration;
 
 // Add services.
 services
@@ -42,12 +46,13 @@ services
     .AddScheduling(new QuartzSchedulingServiceProvider())
     .AddHttpActivityServices()
     .AddSchedulingActivities()
-    
+    .AddAzureServiceBusServices(options => configuration.GetSection("AzureServiceBus").Bind(options))
     .ConfigureWorkflowRuntime(options =>
     {
         options.Workflows.Add("HelloWorldWorkflow", new HelloWorldWorkflow());
         options.Workflows.Add("HttpWorkflow", new HttpWorkflow());
         options.Workflows.Add("ForkedHttpWorkflow", new ForkedHttpWorkflow());
+        options.Workflows.Add("AzureServiceBusWorkflow", new AzureServiceBusWorkflow());
         options.Workflows.Add(nameof(CompositeActivitiesWorkflow), new CompositeActivitiesWorkflow());
     });
 
@@ -65,6 +70,7 @@ services
     .AddActivity<Delay>()
     .AddActivity<ForEach>()
     .AddActivity<Switch>()
+    .AddActivity<Send>()
     ;
 
 // Register available triggers.

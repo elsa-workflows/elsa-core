@@ -59,7 +59,7 @@ public class ActivityExecutionContext
     public void SetBookmark(object? payload, ExecuteActivityDelegate? callback = default)
     {
         var hasher = GetRequiredService<IHasher>();
-        
+
         var identityGenerator = GetRequiredService<IIdentityGenerator>();
         var payloadSerializer = GetRequiredService<IPayloadSerializer>();
         var payloadJson = payload != null ? payloadSerializer.Serialize(payload) : default;
@@ -87,7 +87,7 @@ public class ActivityExecutionContext
     }
 
     public T GetRequiredService<T>() where T : notnull => WorkflowExecutionContext.GetRequiredService<T>();
-    public T? Get<T>(Input<T> input) => Get<T>(input.LocationReference);
+    public T? Get<T>(Input<T>? input) => input == null ? default : Get<T>(input.LocationReference);
 
     public object? Get(RegisterLocationReference locationReference)
     {
