@@ -49,7 +49,7 @@ namespace Elsa.Decorators
                 if (workflowInstance == null)
                 {
                     _logger.LogWarning("Could not run workflow instance with ID {WorkflowInstanceId} because it does not exist", workflowInstanceId);
-                    return new RunWorkflowResult(workflowInstance, activityId, false);
+                    return new RunWorkflowResult(workflowInstance, activityId, null, false);
                 }
 
                 var correlationId = workflowInstance.CorrelationId;

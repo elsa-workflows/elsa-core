@@ -74,9 +74,9 @@ namespace Elsa.Activities.Http.Middleware
             }
 
             var isTest = pendingWorkflowInstance.GetMetadata("isTest");
-            var workflowBlueprint = (isTest != null && Convert.ToBoolean(isTest)) ?
-                await workflowRegistry.FindAsync(pendingWorkflowInstance.DefinitionId, VersionOptions.Latest, TenantId, cancellationToken) :
-                await workflowRegistry.FindAsync(pendingWorkflowInstance.DefinitionId, VersionOptions.Published, TenantId, cancellationToken);
+            var workflowBlueprint = (isTest != null && Convert.ToBoolean(isTest))
+                ? await workflowRegistry.FindAsync(pendingWorkflowInstance.DefinitionId, VersionOptions.Latest, TenantId, cancellationToken)
+                : await workflowRegistry.FindAsync(pendingWorkflowInstance.DefinitionId, VersionOptions.Published, TenantId, cancellationToken);
 
             if (workflowBlueprint is null || workflowBlueprint.IsDisabled)
             {
@@ -116,6 +116,7 @@ namespace Elsa.Activities.Http.Middleware
             }
 
             var useDispatch = httpContext.Request.GetUseDispatch();
+
             if (useDispatch)
             {
                 await workflowLaunchpad.DispatchPendingWorkflowAsync(pendingWorkflow, new WorkflowInput(inputModel), cancellationToken);
@@ -126,29 +127,16 @@ namespace Elsa.Activities.Http.Middleware
             }
             else
             {
-                await workflowLaunchpad.ExecutePendingWorkflowAsync(pendingWorkflow, new WorkflowInput(inputModel), cancellationToken);
+                var result = await workflowLaunchpad.ExecutePendingWorkflowAsync(pendingWorkflow, new WorkflowInput(inputModel), cancellationToken);
+
                 pendingWorkflowInstance = await workflowInstanceStore.FindByIdAsync(pendingWorkflow.WorkflowInstanceId, cancellationToken);
 
                 if (pendingWorkflowInstance is not null
                     && pendingWorkflowInstance.WorkflowStatus == WorkflowStatus.Faulted
                     && !httpContext.Response.HasStarted)
                 {
-                    httpContext.Response.ContentType = "application/json";
-                    httpContext.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-
-                    var faultedResponse = JsonConvert.SerializeObject(new
-                    {
-                        errorMessage = $"Workflow faulted at {pendingWorkflowInstance.FaultedAt!} with error: {pendingWorkflowInstance.Fault!.Message}",
-                        exception = pendingWorkflowInstance.Fault?.Exception,
-                        workflow = new
-                        {
-                            name = pendingWorkflowInstance.Name,
-                            version = pendingWorkflowInstance.Version,
-                            instanceId = pendingWorkflowInstance.Id
-                        }
-                    });
-
-                    await httpContext.Response.WriteAsync(faultedResponse, cancellationToken);
+                    var faultHandler = options.Value.HttpEndpointWorkflowFaultHandlerFactory(httpContext.RequestServices);
+                    await faultHandler.HandleAsync(new HttpEndpointFaultedWorkflowContext(httpContext, pendingWorkflowInstance, result.Exception, cancellationToken));
                 }
             }
         }
@@ -167,7 +155,7 @@ namespace Elsa.Activities.Http.Middleware
                 return true;
 
             var authorizationHandler = options.HttpEndpointAuthorizationHandlerFactory(httpContext.RequestServices);
-            
+
             return await authorizationHandler.AuthorizeAsync(new AuthorizeHttpEndpointContext(httpContext, httpEndpoint, workflowBlueprint, pendingWorkflow.WorkflowInstanceId, cancellationToken));
         }
 
