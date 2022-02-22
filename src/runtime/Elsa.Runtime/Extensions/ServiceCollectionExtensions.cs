@@ -24,6 +24,7 @@ public static class ServiceCollectionExtensions
                 .AddSingleton<IStimulusInterpreter, StimulusInterpreter>()
                 .AddSingleton<IWorkflowInstructionExecutor, WorkflowInstructionExecutor>()
                 .AddSingleton<ITriggerIndexer, TriggerIndexer>()
+                .AddSingleton<IBookmarkManager, BookmarkManager>()
 
                 // Stimulus handlers.
                 .AddStimulusHandler<TriggerWorkflowsStimulusHandler>()
@@ -44,8 +45,8 @@ public static class ServiceCollectionExtensions
                 .AddNotificationHandlersFrom(typeof(ServiceCollectionExtensions))
             
                 // Hosted Services.
-                .AddHostedService<RegisterDescriptorsHostedService>()
-                .AddHostedService<RegisterExpressionSyntaxDescriptorsHostedService>();
+                .AddHostedService<RegisterDescriptors>()
+                .AddHostedService<RegisterExpressionSyntaxDescriptors>();
             ;
     }
 
@@ -60,5 +61,5 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddStimulusHandler<T>(this IServiceCollection services) where T : class, IStimulusHandler => services.AddSingleton<IStimulusHandler, T>();
     public static IServiceCollection AddInstructionInterpreter<T>(this IServiceCollection services) where T : class, IWorkflowInstructionInterpreter => services.AddSingleton<IWorkflowInstructionInterpreter, T>();
     public static IServiceCollection ConfigureWorkflowRuntime(this IServiceCollection services, Action<WorkflowRuntimeOptions> configure) => services.Configure(configure);
-    public static IServiceCollection IndexWorkflowTriggers(this IServiceCollection services) => services.AddHostedService<IndexWorkflowTriggersHostedService>();
+    public static IServiceCollection IndexWorkflowTriggers(this IServiceCollection services) => services.AddHostedService<IndexWorkflowTriggers>();
 }

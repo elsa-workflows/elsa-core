@@ -1,5 +1,7 @@
 using Elsa.Models;
 using Elsa.Persistence.Entities;
+using Elsa.Runtime.Models;
+using Elsa.Runtime.Notifications;
 
 namespace Elsa.Runtime.Contracts;
 
@@ -8,10 +10,10 @@ public interface ITriggerIndexer
     /// <summary>
     /// Indexes triggers from all workflows.
     /// </summary>
-    Task IndexTriggersAsync(CancellationToken cancellationToken = default);
+    Task<ICollection<IndexedWorkflow>> IndexTriggersAsync(CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Indexes triggers of the specified workflow.
     /// </summary>
-    Task<IEnumerable<WorkflowTrigger>> IndexTriggersAsync(Workflow workflow, CancellationToken cancellationToken = default);
+    Task<IndexedWorkflow> IndexTriggersAsync(Workflow workflow, CancellationToken cancellationToken = default);
 }

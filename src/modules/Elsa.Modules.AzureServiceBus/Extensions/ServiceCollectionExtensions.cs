@@ -1,6 +1,8 @@
 ﻿using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
+using Elsa.Mediator.Extensions;
 using Elsa.Modules.AzureServiceBus.Contracts;
+using Elsa.Modules.AzureServiceBus.Handlers;
 using Elsa.Modules.AzureServiceBus.HostedServices;
 using Elsa.Modules.AzureServiceBus.Options;
 using Elsa.Modules.AzureServiceBus.Providers;
@@ -25,13 +27,21 @@ public static class ServiceCollectionExtensions
             .AddSingleton(CreateServiceBusManagementClient)
             .AddSingleton(CreateServiceBusClient)
             .AddSingleton<ConfigurationQueueTopicAndSubscriptionProvider>()
-            .AddTransient<IServiceBusInitializer, ServiceBusInitializer>()
+            .AddSingleton<IWorkerManager, WorkerManager>()
+            .AddTransient<IServiceBusInitializer, ServiceBusInitializer>();
+
+        // Definition providers.
+        services
             .AddSingleton<IQueueProvider>(sp => sp.GetRequiredService<ConfigurationQueueTopicAndSubscriptionProvider>())
             .AddSingleton<ITopicProvider>(sp => sp.GetRequiredService<ConfigurationQueueTopicAndSubscriptionProvider>())
             .AddSingleton<ISubscriptionProvider>(sp => sp.GetRequiredService<ConfigurationQueueTopicAndSubscriptionProvider>());
 
+        // Hosted services.
         if (autoCreateQueuesTopicsAndSubscriptions)
             services.AddHostedService<CreateQueuesTopicsAndSubscriptions>();
+
+        // Handlers.
+        services.AddHandlersFrom<UpdateWorkers>();
 
         return services;
     }

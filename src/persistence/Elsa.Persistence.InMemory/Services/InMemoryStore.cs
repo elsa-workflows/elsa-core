@@ -12,7 +12,7 @@ public class InMemoryStore<TEntity> where TEntity : Entity
 
     public void SaveMany(IEnumerable<TEntity> entities)
     {
-        foreach (var entity in entities) 
+        foreach (var entity in entities)
             Save(entity);
     }
 
@@ -43,6 +43,20 @@ public class InMemoryStore<TEntity> where TEntity : Entity
         {
             count++;
             Entities.Remove(id);
+        }
+
+        return count;
+    }
+
+    public int DeleteMany(IEnumerable<TEntity> entities)
+    {
+        var count = 0;
+        var list = entities.ToList();
+
+        foreach (var entity in list)
+        {
+            count++;
+            Entities.Remove(entity.Id);
         }
 
         return count;

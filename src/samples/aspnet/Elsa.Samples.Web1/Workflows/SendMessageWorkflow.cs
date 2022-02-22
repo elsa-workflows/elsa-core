@@ -5,11 +5,11 @@ using Elsa.Runtime.Contracts;
 
 namespace Elsa.Samples.Web1.Workflows;
 
-public class AzureServiceBusWorkflow : IWorkflow
+public class SendMessageWorkflow : IWorkflow
 {
     public void Build(IWorkflowDefinitionBuilder workflow)
     {
-        workflow.WithRoot(new Send
+        workflow.WithRoot(new SendMessage
         {
             QueueOrTopic = new Input<string>("inbox"),
             MessageBody = new Input<object>(new { Subject = "Greetings", Message = "Hello World!" }),

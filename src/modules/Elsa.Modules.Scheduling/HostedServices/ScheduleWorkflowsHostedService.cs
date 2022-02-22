@@ -39,7 +39,7 @@ public class ScheduleWorkflowsHostedService : BackgroundService
 
     private async Task ScheduleTriggersAsync(CancellationToken cancellationToken)
     {
-        var timerTriggers = (await _requestSender.RequestAsync(FindWorkflowTriggers.ForTrigger<Timer>(), cancellationToken)).ToImmutableList();
+        var timerTriggers = (await _requestSender.RequestAsync(FindWorkflowTriggersByName.ForTrigger<Timer>(), cancellationToken)).ToImmutableList();
         await _workflowTriggerScheduler.ScheduleTriggersAsync(timerTriggers, cancellationToken);
     }
 

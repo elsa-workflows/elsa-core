@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
@@ -8,7 +9,9 @@ using Elsa.Mediator.Contracts;
 using Elsa.Models;
 using Elsa.Persistence.Commands;
 using Elsa.Persistence.Entities;
+using Elsa.Persistence.Requests;
 using Elsa.Runtime.Contracts;
+using Elsa.Runtime.Models;
 using Elsa.Runtime.Notifications;
 using Microsoft.Extensions.Logging;
 
@@ -25,6 +28,7 @@ public class TriggerIndexer : ITriggerIndexer
     private readonly IWorkflowRegistry _workflowRegistry;
     private readonly IExpressionEvaluator _expressionEvaluator;
     private readonly IIdentityGenerator _identityGenerator;
+    private readonly IRequestSender _requestSender;
     private readonly ICommandSender _commandSender;
     private readonly IEventPublisher _eventPublisher;
     private readonly IServiceProvider _serviceProvider;
@@ -35,6 +39,7 @@ public class TriggerIndexer : ITriggerIndexer
         IWorkflowRegistry workflowRegistry,
         IExpressionEvaluator expressionEvaluator,
         IIdentityGenerator identityGenerator,
+        IRequestSender requestSender,
         ICommandSender commandSender,
         IEventPublisher eventPublisher,
         IServiceProvider serviceProvider,
@@ -44,6 +49,7 @@ public class TriggerIndexer : ITriggerIndexer
         _workflowRegistry = workflowRegistry;
         _expressionEvaluator = expressionEvaluator;
         _identityGenerator = identityGenerator;
+        _requestSender = requestSender;
         _commandSender = commandSender;
         _eventPublisher = eventPublisher;
         _serviceProvider = serviceProvider;
@@ -51,7 +57,7 @@ public class TriggerIndexer : ITriggerIndexer
         _logger = logger;
     }
 
-    public async Task IndexTriggersAsync(CancellationToken cancellationToken = default)
+    public async Task<ICollection<IndexedWorkflow>> IndexTriggersAsync(CancellationToken cancellationToken = default)
     {
         var stopwatch = new Stopwatch();
 
@@ -60,36 +66,48 @@ public class TriggerIndexer : ITriggerIndexer
 
         // Only stream workflows from providers that are not "dynamic" (such as DatabaseWorkflowProvider).
         var workflows = _workflowRegistry.StreamAllAsync(WorkflowRegistry.SkipDynamicProviders, cancellationToken);
-        //var collectedTriggers = new List<WorkflowTrigger>();
 
+        // Index each workflow.
+        var indexedWorkflows = new Collection<IndexedWorkflow>();
         await foreach (var workflow in workflows.WithCancellation(cancellationToken))
         {
-            //var triggers = await GetTriggersAsync(workflow, cancellationToken).ToListAsync(cancellationToken);
-            await IndexTriggersAsync(workflow, cancellationToken);
+            var indexedWorkflow = await IndexTriggersAsync(workflow, cancellationToken);
+            indexedWorkflows.Add(indexedWorkflow);
         }
 
-        // // Replace triggers for the specified workflow.
-        // await _commandSender.ExecuteAsync(new ReplaceWorkflowTriggers(collectedTriggers), cancellationToken);
+        // Publish event.
+        await _eventPublisher.PublishAsync(new WorkflowIndexingCompleted(indexedWorkflows), cancellationToken);
 
         stopwatch.Stop();
         _logger.LogInformation("Finished indexing workflow triggers in {ElapsedTime}", stopwatch.Elapsed);
-
-        // // Publish event.
-        // await _eventPublisher.PublishAsync(new TriggerIndexingFinished(collectedTriggers), cancellationToken);
+        return indexedWorkflows;
     }
 
-    public async Task<IEnumerable<WorkflowTrigger>> IndexTriggersAsync(Workflow workflow, CancellationToken cancellationToken = default)
+    public async Task<IndexedWorkflow> IndexTriggersAsync(Workflow workflow, CancellationToken cancellationToken = default)
     {
-        // Collect new triggers.
-        var triggers = await GetTriggersAsync(workflow, cancellationToken).ToListAsync(cancellationToken);
+        // Get current triggers
+        var currentTriggers = await GetCurrentTriggersAsync(workflow.Identity.DefinitionId, cancellationToken);
+
+        // Collect new triggers **if workflow is published**.
+        var newTriggers = workflow.Publication.IsPublished
+            ? await GetTriggersAsync(workflow, cancellationToken).ToListAsync(cancellationToken)
+            : new List<WorkflowTrigger>(0);
+
+        // Diff triggers.
+        var diff = Diff.For(currentTriggers, newTriggers);
 
         // Replace triggers for the specified workflow.
-        await _commandSender.ExecuteAsync(new ReplaceWorkflowTriggers(workflow, triggers), cancellationToken);
+        await _commandSender.ExecuteAsync(new ReplaceWorkflowTriggers(workflow, diff.Removed, diff.Added), cancellationToken);
+
+        var indexedWorkflow = new IndexedWorkflow(workflow, diff.Added, diff.Removed);
 
         // Publish event.
-        await _eventPublisher.PublishAsync(new TriggerIndexingFinished(triggers), cancellationToken);
-        return triggers;
+        await _eventPublisher.PublishAsync(new WorkflowTriggersIndexed(indexedWorkflow), cancellationToken);
+        return indexedWorkflow;
     }
+
+    private async Task<ICollection<WorkflowTrigger>> GetCurrentTriggersAsync(string workflowDefinitionId, CancellationToken cancellationToken) =>
+        await _requestSender.RequestAsync(new FindWorkflowTriggersByWorkflowDefinition(workflowDefinitionId), cancellationToken);
 
     private async IAsyncEnumerable<WorkflowTrigger> GetTriggersAsync(Workflow workflow, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {

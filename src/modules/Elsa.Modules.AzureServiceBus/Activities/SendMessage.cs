@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace Elsa.Modules.AzureServiceBus.Activities;
 
 [Activity("Azure.ServiceBus.Send", "Send a message to a queue or topic", "Azure Service Bus")]
-public class Send : Activity
+public class SendMessage : Activity
 {
     public Input<object> MessageBody { get; set; } = default!;
     public Input<string> QueueOrTopic { get; set; } = default!;
@@ -55,7 +55,7 @@ public class Send : Activity
 
     private static bool ValidatePreconditions(ActivityExecutionContext context, string? queueOrTopic, object? messageBody)
     {
-        var logger = context.GetRequiredService<ILogger<Send>>();
+        var logger = context.GetRequiredService<ILogger<SendMessage>>();
 
         if (string.IsNullOrWhiteSpace(queueOrTopic))
         {

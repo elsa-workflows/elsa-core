@@ -7,11 +7,11 @@ namespace Elsa.Runtime.HostedServices;
 /// <summary>
 /// Asynchronously indexes all workflows in the background.
 /// </summary>
-public class IndexWorkflowTriggersHostedService : BackgroundService
+public class IndexWorkflowTriggers : BackgroundService
 {
     private readonly IServiceScopeFactory _serviceScopeFactory;
 
-    public IndexWorkflowTriggersHostedService(IServiceScopeFactory serviceScopeFactory)
+    public IndexWorkflowTriggers(IServiceScopeFactory serviceScopeFactory)
     {
         _serviceScopeFactory = serviceScopeFactory;
     }

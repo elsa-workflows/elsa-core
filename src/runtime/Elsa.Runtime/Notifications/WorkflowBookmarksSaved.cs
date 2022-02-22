@@ -3,4 +3,4 @@ using Elsa.Persistence.Entities;
 
 namespace Elsa.Runtime.Notifications;
 
-public record TriggerIndexingFinished(ICollection<WorkflowTrigger> Triggers) : INotification;
+public record WorkflowBookmarksSaved(List<WorkflowBookmark> Bookmarks) : INotification;

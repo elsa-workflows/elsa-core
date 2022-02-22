@@ -18,7 +18,7 @@ public static class ServiceCollectionExtensions
             .AddSingleton<IWorkflowBookmarkScheduler, WorkflowBookmarkScheduler>()
             .AddJobHandler<RunWorkflowJobHandler>()
             .AddJobHandler<ResumeWorkflowJobHandler>()
-            .AddNotificationHandlersFrom<ScheduleWorkflowsHandler>()
+            .AddNotificationHandlersFrom<ScheduleWorkflows>()
             .AddHostedService<ScheduleWorkflowsHostedService>();
 
         return services;

@@ -4,6 +4,7 @@ using System.Net.Http;
 using Elsa.Attributes;
 using Elsa.Management.Models;
 using Elsa.Models;
+using Elsa.Modules.Http.Models;
 
 namespace Elsa.Modules.Http;
 
@@ -19,7 +20,7 @@ public class HttpTrigger : TriggerActivity
 
     [Output] public Output<HttpRequestModel>? Result { get; set; }
 
-    protected override IEnumerable<object> GetHashInputs(TriggerIndexingContext context) => GetHashInputs(context.ExpressionExecutionContext);
+    protected override IEnumerable<object> GetPayloads(TriggerIndexingContext context) => GetHashInputs(context.ExpressionExecutionContext);
     protected override void Execute(ActivityExecutionContext context) => context.SetBookmarks(GetHashInputs(context.ExpressionExecutionContext));
 
     private IEnumerable<object> GetHashInputs(ExpressionExecutionContext context)
@@ -27,6 +28,6 @@ public class HttpTrigger : TriggerActivity
         // Generate a bookmark hash for path and selected methods.
         var path = context.Get(Path);
         var methods = context.Get(SupportedMethods);
-        return methods!.Select(x => (path!.ToLowerInvariant(), x.ToLowerInvariant())).Cast<object>().ToArray();
+        return methods!.Select(x => new HttpTriggerPayload(path!, x.ToLowerInvariant())).Cast<object>().ToArray();
     }
 }

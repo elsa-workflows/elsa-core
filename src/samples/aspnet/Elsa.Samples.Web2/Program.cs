@@ -2,13 +2,14 @@ using Elsa.Api.Extensions;
 using Elsa.Extensions;
 using Elsa.Modules.Http.Extensions;
 using Elsa.Persistence.InMemory.Extensions;
-using Elsa.Persistence.Middleware.WorkflowExecution;
 using Elsa.Pipelines.WorkflowExecution.Components;
+using Elsa.Runtime.Middleware;
 using Elsa.Runtime.ProtoActor.Extensions;
 using Elsa.Samples.Web2.Workflows;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using WorkflowExecutionBuilderExtensions = Elsa.Runtime.Extensions.WorkflowExecutionBuilderExtensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,8 +27,7 @@ builder.Services
 var app = builder.Build();
 
 // Configure workflow engine execution pipeline.
-app.Services.ConfigureDefaultWorkflowExecutionPipeline(pipeline => pipeline
-    .UsePersistence()
+app.Services.ConfigureDefaultWorkflowExecutionPipeline(pipeline => WorkflowExecutionBuilderExtensions.UsePersistence(pipeline)
     .UseActivityScheduler()
 );
 

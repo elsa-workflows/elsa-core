@@ -7,11 +7,6 @@ using Elsa.Runtime.Notifications;
 
 namespace Elsa.Runtime.Middleware;
 
-public static class PersistWorkflowExecutionLogMiddlewareExtensions
-{
-    public static IWorkflowExecutionBuilder UseWorkflowExecutionEvents(this IWorkflowExecutionBuilder builder) => builder.UseMiddleware<PublishWorkflowExecutionEventsMiddleware>();
-}
-
 /// <summary>
 /// Processes collected bookmarks.
 /// </summary>

@@ -18,11 +18,24 @@ public class TriggerActivity : Activity, ITrigger
         set => NodeType = value;
     }
 
-    public virtual ValueTask<IEnumerable<object>> GetPayloadsAsync(TriggerIndexingContext context, CancellationToken cancellationToken = default)
+    ValueTask<IEnumerable<object>> ITrigger.GetPayloadsAsync(TriggerIndexingContext context, CancellationToken cancellationToken) => GetPayloadsAsync(context, cancellationToken);
+    
+    /// <summary>
+    /// Override this method to return a list of trigger payloads.  
+    /// </summary>
+    protected virtual ValueTask<IEnumerable<object>> GetPayloadsAsync(TriggerIndexingContext context, CancellationToken cancellationToken = default)
     {
-        var hashes = GetHashInputs(context);
+        var hashes = GetPayloads(context);
         return ValueTask.FromResult(hashes);
     }
 
-    protected virtual IEnumerable<object> GetHashInputs(TriggerIndexingContext context) => Enumerable.Empty<object>();
+    /// <summary>
+    /// Override this method to return a list of trigger payloads.
+    /// </summary>
+    protected virtual IEnumerable<object> GetPayloads(TriggerIndexingContext context) => new[]{ GetPayload(context) };
+    
+    /// <summary>
+    /// Override this method to return a trigger payloads.
+    /// </summary>
+    protected virtual object GetPayload(TriggerIndexingContext context) => new();
 }

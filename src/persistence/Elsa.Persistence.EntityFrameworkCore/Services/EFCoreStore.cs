@@ -60,13 +60,21 @@ public class EFCoreStore<TEntity> : IStore<TEntity> where TEntity : Entity
         return await dbContext.SaveChangesAsync(cancellationToken) == 1;
     }
 
+    public async Task<int> DeleteManyAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await CreateDbContextAsync(cancellationToken);
+        var list = entities.ToList();
+        await dbContext.BulkDeleteAsync(list, cancellationToken: cancellationToken);
+        return list.Count;
+    }
+
     public async Task<int> DeleteWhereAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
         var set = dbContext.Set<TEntity>();
         return await set.Where(predicate).BatchDeleteWithWorkAroundAsync(dbContext, cancellationToken);
     }
-    
+
     public async Task<IEnumerable<TEntity>> QueryAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
@@ -74,12 +82,12 @@ public class EFCoreStore<TEntity> : IStore<TEntity> where TEntity : Entity
         var queryable = query(set.AsQueryable());
 
         queryable = query(queryable);
-        
+
         return Load(dbContext, queryable).ToList();
     }
 
     public IEnumerable<TEntity> Load(ElsaDbContext dbContext, IEnumerable<TEntity> entities) => OnLoading(dbContext, entities.ToList());
-    
+
     private void OnSaving(ElsaDbContext dbContext, TEntity entity)
     {
         var handler = _serviceProvider.GetService<IEntitySerializer<TEntity>>();

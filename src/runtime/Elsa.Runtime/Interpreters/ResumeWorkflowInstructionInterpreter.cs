@@ -36,7 +36,7 @@ public class ResumeWorkflowInstructionInterpreter : WorkflowInstructionInterpret
         {
             _logger
                 .LogWarning(
-                    "Workflow bookmark {WorkflowBookmarkId} for workflow definition {WorkflowDefinitionId} points to workflow instance ID {WorkflowInstanceId}, but no such workflow instance was found", workflowBookmark.Id, workflowBookmark.WorkflowDefinitionId, workflowBookmark.WorkflowInstanceId);
+                    "Workflow bookmark {WorkflowBookmarkId} for workflow definition {WorkflowDefinitionId} references workflow instance ID {WorkflowInstanceId}, but no such workflow instance was found", workflowBookmark.Id, workflowBookmark.WorkflowDefinitionId, workflowBookmark.WorkflowInstanceId);
 
             return null;
         }
@@ -45,7 +45,7 @@ public class ResumeWorkflowInstructionInterpreter : WorkflowInstructionInterpret
 
         if (workflow == null)
         {
-            _logger.LogWarning("Workflow bookmark {WorkflowBookmarkId} points to workflow definition ID {WorkflowDefinitionId}, but no such workflow definition was found", workflowBookmark.Id, workflowBookmark.WorkflowDefinitionId);
+            _logger.LogWarning("Workflow bookmark {WorkflowBookmarkId} references workflow definition ID {WorkflowDefinitionId}, but no such workflow definition was found", workflowBookmark.Id, workflowBookmark.WorkflowDefinitionId);
             return null;
         }
 

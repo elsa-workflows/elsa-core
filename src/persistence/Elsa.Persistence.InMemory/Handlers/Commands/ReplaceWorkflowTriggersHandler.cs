@@ -1,4 +1,3 @@
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Mediator.Contracts;
@@ -19,9 +18,8 @@ public class ReplaceWorkflowTriggersHandler : ICommandHandler<ReplaceWorkflowTri
 
     public Task<Unit> HandleAsync(ReplaceWorkflowTriggers command, CancellationToken cancellationToken)
     {
-        var ids = command.WorkflowTriggers.Select(x => x.Id).ToList();
-        _store.DeleteWhere(x => ids.Contains(x.Id));
-        _store.SaveMany(command.WorkflowTriggers);
+        _store.DeleteMany(command.Removed);
+        _store.SaveMany(command.Added);
 
         return Task.FromResult(Unit.Instance);
     }

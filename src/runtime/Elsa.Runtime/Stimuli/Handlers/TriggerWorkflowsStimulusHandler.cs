@@ -13,7 +13,7 @@ public class TriggerWorkflowsStimulusHandler : StimulusHandler<StandardStimulus>
 
     protected override async ValueTask<IEnumerable<IWorkflowInstruction>> GetInstructionsAsync(StandardStimulus stimulus, CancellationToken cancellationToken = default)
     {
-        var workflowTriggers = (await _mediator.RequestAsync(new FindWorkflowTriggers(stimulus.ActivityTypeName, stimulus.Hash), cancellationToken)).ToList();
+        var workflowTriggers = (await _mediator.RequestAsync(new FindWorkflowTriggersByName(stimulus.ActivityTypeName, stimulus.Hash), cancellationToken)).ToList();
         return workflowTriggers.Select(x => new TriggerWorkflowInstruction(x));
     }
 }

@@ -16,7 +16,6 @@ using Elsa.Modules.Scheduling.Extensions;
 using Elsa.Modules.Scheduling.Triggers;
 using Elsa.Persistence.EntityFrameworkCore.Extensions;
 using Elsa.Persistence.EntityFrameworkCore.Sqlite;
-using Elsa.Persistence.Middleware.WorkflowExecution;
 using Elsa.Pipelines.WorkflowExecution.Components;
 using Elsa.Runtime.Middleware;
 using Elsa.Runtime.ProtoActor.Extensions;
@@ -29,6 +28,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using WorkflowExecutionBuilderExtensions = Elsa.Runtime.Extensions.WorkflowExecutionBuilderExtensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -49,11 +49,13 @@ services
     .AddAzureServiceBusServices(options => configuration.GetSection("AzureServiceBus").Bind(options))
     .ConfigureWorkflowRuntime(options =>
     {
-        options.Workflows.Add("HelloWorldWorkflow", new HelloWorldWorkflow());
-        options.Workflows.Add("HttpWorkflow", new HttpWorkflow());
-        options.Workflows.Add("ForkedHttpWorkflow", new ForkedHttpWorkflow());
-        options.Workflows.Add("AzureServiceBusWorkflow", new AzureServiceBusWorkflow());
+        // Register workflows.
+        options.Workflows.Add(nameof(HelloWorldWorkflow), new HelloWorldWorkflow());
+        options.Workflows.Add(nameof(HttpWorkflow), new HttpWorkflow());
+        options.Workflows.Add(nameof(ForkedHttpWorkflow), new ForkedHttpWorkflow());
         options.Workflows.Add(nameof(CompositeActivitiesWorkflow), new CompositeActivitiesWorkflow());
+        options.Workflows.Add(nameof(SendMessageWorkflow), new SendMessageWorkflow());
+        options.Workflows.Add(nameof(ReceiveMessageWorkflow), new ReceiveMessageWorkflow());
     });
 
 // Testing only: allow client app to connect from anywhere.
@@ -70,7 +72,7 @@ services
     .AddActivity<Delay>()
     .AddActivity<ForEach>()
     .AddActivity<Switch>()
-    .AddActivity<Send>()
+    .AddActivity<SendMessage>()
     ;
 
 // Register available triggers.
@@ -95,10 +97,7 @@ wellKnownTypeRegistry.RegisterType<bool>("boolean");
 wellKnownTypeRegistry.RegisterType<string>("string");
 
 // Configure workflow engine execution pipeline.
-serviceProvider.ConfigureDefaultWorkflowExecutionPipeline(pipeline => pipeline
-    .UsePersistence()
-    .UseWorkflowExecutionLogPersistence()
-    .UseWorkflowExecutionEvents()
+serviceProvider.ConfigureDefaultWorkflowExecutionPipeline(pipeline => WorkflowExecutionBuilderExtensions.UseWorkflowExecutionEvents(WorkflowExecutionBuilderExtensions.UseWorkflowExecutionLogPersistence(WorkflowExecutionBuilderExtensions.UsePersistence(pipeline)))
     .UseActivityScheduler()
 );
 

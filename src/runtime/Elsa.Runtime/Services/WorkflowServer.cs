@@ -7,7 +7,7 @@ namespace Elsa.Runtime.Services;
 
 /// <summary>
 /// A workflow server represents a logical unit of services to invoke workflows.
-/// It's basically a thin wrapper around a service provider built from a given service collection using <see cref="WorkflowEngineBuilder"/>.
+/// It's essentially a thin wrapper around a service provider built from a given service collection using <see cref="WorkflowEngineBuilder"/>.
 /// May be useful for scenarios where you have multiple tenants in a system or if you simply want to use different workflow engine configurations within the same application.
 /// </summary>
 public class WorkflowServer : IWorkflowServer

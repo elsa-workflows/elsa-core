@@ -15,4 +15,19 @@ public class WorkflowBookmark : Entity
     public string? CallbackMethodName { get; set; }
 
     public Bookmark ToBookmark() => new(Id, Name, Hash, Payload, ActivityId, ActivityInstanceId, CallbackMethodName);
+
+    public static WorkflowBookmark FromBookmark(Bookmark bookmark, WorkflowInstance workflowInstance) =>
+        new()
+        {
+            Id = bookmark.Id,
+            WorkflowDefinitionId = workflowInstance.DefinitionId,
+            WorkflowInstanceId = workflowInstance.Id,
+            CorrelationId = workflowInstance.CorrelationId,
+            Hash = bookmark.Hash,
+            Payload = bookmark.Payload,
+            Name = bookmark.Name,
+            ActivityId = bookmark.ActivityId,
+            ActivityInstanceId = bookmark.ActivityInstanceId,
+            CallbackMethodName = bookmark.CallbackMethodName
+        };
 }

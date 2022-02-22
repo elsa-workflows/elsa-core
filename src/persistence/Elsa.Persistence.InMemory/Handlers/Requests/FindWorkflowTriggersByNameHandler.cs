@@ -9,12 +9,12 @@ using Elsa.Persistence.Requests;
 
 namespace Elsa.Persistence.InMemory.Handlers.Requests;
 
-public class FindWorkflowTriggersHandler : IRequestHandler<FindWorkflowTriggers, IEnumerable<WorkflowTrigger>>
+public class FindWorkflowTriggersByNameHandler : IRequestHandler<FindWorkflowTriggersByName, ICollection<WorkflowTrigger>>
 {
     private readonly InMemoryStore<WorkflowTrigger> _store;
-    public FindWorkflowTriggersHandler(InMemoryStore<WorkflowTrigger> store) => _store = store;
+    public FindWorkflowTriggersByNameHandler(InMemoryStore<WorkflowTrigger> store) => _store = store;
 
-    public Task<IEnumerable<WorkflowTrigger>> HandleAsync(FindWorkflowTriggers request, CancellationToken cancellationToken)
+    public Task<ICollection<WorkflowTrigger>> HandleAsync(FindWorkflowTriggersByName request, CancellationToken cancellationToken)
     {
         var triggers = _store.Query(query =>
         {
@@ -26,6 +26,6 @@ public class FindWorkflowTriggersHandler : IRequestHandler<FindWorkflowTriggers,
             return query;
         });
 
-        return Task.FromResult(triggers);
+        return Task.FromResult<ICollection<WorkflowTrigger>>(triggers.ToList());
     }
 }

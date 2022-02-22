@@ -11,7 +11,7 @@ public static class Trigger
     public static IResult Handle(string eventName, IHasher hasher)
     {
         var hash = hasher.Hash(eventName);
-        var stimulus = Stimuli.Standard(nameof(Event), hash);
+        var stimulus = Stimulus.Standard(nameof(Event), hash);
         return new ProcessStimulusResult(stimulus);
     }
 }

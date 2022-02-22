@@ -5,14 +5,14 @@ using Elsa.Persistence.Requests;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Handlers.Requests;
 
-public class FindWorkflowTriggersHandler : IRequestHandler<FindWorkflowTriggers, IEnumerable<WorkflowTrigger>>
+public class FindWorkflowTriggersByNameHandler : IRequestHandler<FindWorkflowTriggersByName, ICollection<WorkflowTrigger>>
 {
     private readonly IStore<WorkflowTrigger> _store;
-    public FindWorkflowTriggersHandler(IStore<WorkflowTrigger> store) => _store = store;
+    public FindWorkflowTriggersByNameHandler(IStore<WorkflowTrigger> store) => _store = store;
 
-    public async Task<IEnumerable<WorkflowTrigger>> HandleAsync(FindWorkflowTriggers request, CancellationToken cancellationToken)
+    public async Task<ICollection<WorkflowTrigger>> HandleAsync(FindWorkflowTriggersByName request, CancellationToken cancellationToken)
     {
-        return await _store.QueryAsync(query =>
+        var triggers = await _store.QueryAsync(query =>
         {
             query = query.Where(x => x.Name == request.Name);
 
@@ -21,5 +21,7 @@ public class FindWorkflowTriggersHandler : IRequestHandler<FindWorkflowTriggers,
 
             return query;
         }, cancellationToken);
+
+        return triggers.ToList();
     }
 }

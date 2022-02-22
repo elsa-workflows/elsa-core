@@ -3,12 +3,12 @@ using Microsoft.Extensions.Hosting;
 
 namespace Elsa.Runtime.HostedServices;
 
-public class RegisterDescriptorsHostedService : IHostedService
+public class RegisterDescriptors : IHostedService
 {
     private readonly IActivityRegistryPopulator _activityRegistryPopulator;
     private readonly ITriggerRegistryPopulator _triggerRegistryPopulator;
 
-    public RegisterDescriptorsHostedService(IActivityRegistryPopulator activityRegistryPopulator, ITriggerRegistryPopulator triggerRegistryPopulator)
+    public RegisterDescriptors(IActivityRegistryPopulator activityRegistryPopulator, ITriggerRegistryPopulator triggerRegistryPopulator)
     {
         _activityRegistryPopulator = activityRegistryPopulator;
         _triggerRegistryPopulator = triggerRegistryPopulator;

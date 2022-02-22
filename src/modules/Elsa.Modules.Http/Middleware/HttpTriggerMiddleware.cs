@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Elsa.Contracts;
 using Elsa.Helpers;
+using Elsa.Modules.Http.Models;
 using Elsa.Runtime.Contracts;
 using Elsa.Runtime.Models;
 using Microsoft.AspNetCore.Http;
@@ -25,11 +26,11 @@ public class HttpTriggerMiddleware
         var path = GetPath(httpContext);
         var method = httpContext.Request.Method!.ToLowerInvariant();
         var abortToken = httpContext.RequestAborted;
-        var hash = _hasher.Hash((path.ToLowerInvariant(), method.ToLowerInvariant()));
+        var hash = _hasher.Hash(new HttpTriggerPayload(path, method));
         var activityTypeName = TypeNameHelper.GenerateTypeName<HttpTrigger>();
-        var stimulus = Stimuli.Standard(activityTypeName, hash);
+        var stimulus = Stimulus.Standard(activityTypeName, hash);
         var executionResults = (await workflowServer.ExecuteStimulusAsync(stimulus, abortToken)).ToList();
-            
+
         if (!executionResults.Any())
         {
             await _next(httpContext);
@@ -42,12 +43,12 @@ public class HttpTriggerMiddleware
         {
             response.ContentType = "application/json";
             response.StatusCode = StatusCodes.Status200OK;
-                
+
             var model = new
             {
                 workflowInstanceIds = executionResults.Select(x => x.ExecuteWorkflowResult.WorkflowState.Id).ToArray()
             };
-                
+
             var json = JsonSerializer.Serialize(model);
             await response.WriteAsync(json, abortToken);
         }

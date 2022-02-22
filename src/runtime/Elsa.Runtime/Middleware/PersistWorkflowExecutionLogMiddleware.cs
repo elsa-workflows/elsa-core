@@ -6,12 +6,7 @@ using Elsa.Persistence.Entities;
 using Elsa.Pipelines.WorkflowExecution;
 using Elsa.Pipelines.WorkflowExecution.Components;
 
-namespace Elsa.Persistence.Middleware.WorkflowExecution;
-
-public static class PersistWorkflowExecutionLogMiddlewareExtensions
-{
-    public static IWorkflowExecutionBuilder UseWorkflowExecutionLogPersistence(this IWorkflowExecutionBuilder builder) => builder.UseMiddleware<PersistWorkflowExecutionLogMiddleware>();
-}
+namespace Elsa.Runtime.Middleware;
 
 /// <summary>
 /// Takes care of persisting a workflow instance after workflow execution.
