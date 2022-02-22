@@ -9,12 +9,12 @@ using System.Threading.Tasks;
 
 namespace Elsa.Activities.SQL.Extensions
 {
-    using PostgreSql = Elsa.Activities.SQL.Activities.PostgreSql;
+    using SqlActivity = Elsa.Activities.SQL.Activities.SqlActivity;
     public static class ServiceCollectionExtensions
     {
         public static ElsaOptionsBuilder AddSqlActivities(this ElsaOptionsBuilder elsa)
         {
-            return elsa.AddActivity<PostgreSql>();
+            return elsa.AddActivity<SqlActivity>();
         }
     }
 }

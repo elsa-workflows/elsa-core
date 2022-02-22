@@ -21,11 +21,11 @@ namespace Elsa.Activities.SQL.Activities
     /// Stores a set of possible user actions and halts the workflow until one of the actions has been performed.
     /// </summary>
     [Trigger(
-        Category = "Postgre Sql",
+        Category = "Sql",
         Description = "Run SQL scripts",
         Outcomes = new string[0]
     )]
-    public class PostgreSql : Activity
+    public class SqlActivity : Activity
     {
 
         [ActivityInput(
@@ -48,7 +48,7 @@ namespace Elsa.Activities.SQL.Activities
 
         [ActivityOutput] public int? Output { get; set; }
 
-        public PostgreSql() {}
+        public SqlActivity() {}
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => ExecuteQuery();
 
