@@ -8,13 +8,6 @@ namespace Elsa.Abstractions.Multitenancy
         public TenantConfiguration Configuration { get; }
         public bool IsDefault { get; }
 
-        public Tenant(string name, TenantConfiguration configuration, bool isDefault = false)
-        {
-            Name = name;
-            Configuration = configuration;
-            IsDefault = isDefault;
-        }
-
         public Tenant(string name, Dictionary<string, string> configuration, bool isDefault = false)
         {
             Name = name;

@@ -34,13 +34,14 @@ namespace Elsa.Activities.Temporal.Common.HostedServices
             IDistributedLockProvider distributedLockProvider,
             ICommandSender commandSender,
             ITenantStore tenantStore,
-            IServiceScopeFactory scopeFactory)
+            IServiceScopeFactory scopeFactory,
+            ILogger<StartJobs> logger)
         {
             _distributedLockProvider = distributedLockProvider;
             _commandSender = commandSender;
-            _logger = logger;
             _tenantStore = tenantStore;
             _scopeFactory = scopeFactory;
+            _logger = logger;
 
             _retryPolicy = Policy
                 .Handle<Exception>()
@@ -64,47 +65,39 @@ namespace Elsa.Activities.Temporal.Common.HostedServices
 
         private async Task ExecuteInternalAsync(IServiceProvider serviceProvider, Tenant tenant, CancellationToken cancellationToken)
         {
-            var workflowInstanceScheduler = serviceProvider.GetRequiredService<IWorkflowInstanceScheduler>();
-            var workflowDefinitionScheduler = serviceProvider.GetRequiredService<IWorkflowDefinitionScheduler>();
             var triggerFinder = serviceProvider.GetRequiredService<ITriggerFinder>();
             var bookmarkFinder = serviceProvider.GetRequiredService<IBookmarkFinder>();
 
-            await ScheduleTimerEventsAsync(workflowInstanceScheduler, workflowDefinitionScheduler, triggerFinder, bookmarkFinder, cancellationToken);
-            await ScheduleCronEventsAsync(workflowInstanceScheduler, workflowDefinitionScheduler, triggerFinder, bookmarkFinder, cancellationToken);
-            await ScheduleStartAtEventsAsync(workflowInstanceScheduler, workflowDefinitionScheduler, triggerFinder, bookmarkFinder, cancellationToken);
+            await ScheduleTimerEventsAsync(triggerFinder, bookmarkFinder, cancellationToken);
+            await ScheduleCronEventsAsync(triggerFinder, bookmarkFinder, cancellationToken);
+            await ScheduleStartAtEventsAsync(triggerFinder, bookmarkFinder, cancellationToken);
         }
 
         private async Task ScheduleStartAtEventsAsync(
-            IWorkflowInstanceScheduler workflowInstanceScheduler,
-            IWorkflowDefinitionScheduler workflowDefinitionScheduler,
             ITriggerFinder triggerFinder,
             IBookmarkFinder bookmarkFinder,
             CancellationToken cancellationToken)
         {
-            await ScheduleBookmarksAsync<StartAtBookmark>(cancellationToken);
-            await ScheduleTriggersAsync<StartAtBookmark>(cancellationToken);
+            await ScheduleBookmarksAsync<StartAtBookmark>(bookmarkFinder, cancellationToken);
+            await ScheduleTriggersAsync<StartAtBookmark>(triggerFinder, cancellationToken);
         }
 
         private async Task ScheduleTimerEventsAsync(
-            IWorkflowInstanceScheduler workflowInstanceScheduler,
-            IWorkflowDefinitionScheduler workflowDefinitionScheduler,
             ITriggerFinder triggerFinder,
             IBookmarkFinder bookmarkFinder,
             CancellationToken cancellationToken)
         {
-            await ScheduleBookmarksAsync<TimerBookmark>(cancellationToken);
-            await ScheduleTriggersAsync<TimerBookmark>(cancellationToken);
+            await ScheduleBookmarksAsync<TimerBookmark>(bookmarkFinder, cancellationToken);
+            await ScheduleTriggersAsync<TimerBookmark>(triggerFinder, cancellationToken);
         }
 
         private async Task ScheduleCronEventsAsync(
-            IWorkflowInstanceScheduler workflowInstanceScheduler,
-            IWorkflowDefinitionScheduler workflowDefinitionScheduler,
             ITriggerFinder triggerFinder,
             IBookmarkFinder bookmarkFinder,
             CancellationToken cancellationToken)
         {
-            await ScheduleBookmarksAsync<CronBookmark>(cancellationToken);
-            await ScheduleTriggersAsync<CronBookmark>(cancellationToken);
+            await ScheduleBookmarksAsync<CronBookmark>(bookmarkFinder, cancellationToken);
+            await ScheduleTriggersAsync<CronBookmark>(triggerFinder, cancellationToken);
         }
 
         private async Task ScheduleTriggersAsync<T>(ITriggerFinder triggerFinder, CancellationToken cancellationToken) where T : IBookmark
