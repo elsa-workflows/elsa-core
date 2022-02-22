@@ -5,7 +5,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Elsa.Activities.SQL.Extensions;
 using Elsa.Activities.SQL.Persistence;
-using Elsa.Activities.SQL.Services;
 using Elsa.Attributes;
 using Elsa.Options;
 using Elsa.Persistence.EntityFramework.Core.Services;
@@ -22,7 +21,7 @@ namespace Elsa.Activities.SQL
         {
             elsa.AddSqlActivities();
 
-            elsa.Services.AddScoped<ElsaContextFactory<SqlActivityContext>>();
+            //elsa.Services.AddScoped<ElsaContextFactory<SqlActivityContext>>();
         }
 
     }

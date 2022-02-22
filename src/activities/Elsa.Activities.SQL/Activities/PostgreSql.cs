@@ -13,10 +13,7 @@ using Elsa.Design;
 using Elsa.Expressions;
 using Microsoft.Extensions.Configuration;
 using Elsa.Activities.SQL.Configuration;
-using Elsa.Persistence.EntityFramework.Core.Services;
-using Microsoft.EntityFrameworkCore;
-using Elsa.Activities.SQL.Services;
-using Elsa.Activities.SQL.Persistence;
+using Elsa.Activities.SQL.Client;
 
 namespace Elsa.Activities.SQL.Activities
 {
@@ -30,50 +27,36 @@ namespace Elsa.Activities.SQL.Activities
     )]
     public class PostgreSql : Activity
     {
-        private readonly IContentSerializer _serializer;
-        private readonly IConfiguration _configuration;
 
         [ActivityInput(
             Hint = "SQl script to execute",
+            UIHint = ActivityInputUIHints.MultiLine,
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string Query { get; set; } = default!;
+
 
         /// <summary>
         /// The ConnectionStrings to run SQL
         /// </summary>
         [ActivityInput(
-            UIHint = ActivityInputUIHints.CheckList,
-            Hint = "SQL databases to run query",
-            Options = new[] { "PostgreSql", "MongoDb", "MySql", "Sqlite", "SqlServer" },
-            DefaultSyntax = SyntaxNames.Json,
-            SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+            Hint = "The ConnectionStrings to run SQL",
+            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
+        )]
+        public string ConnectionString { get; set; } = default!;
 
-        public HashSet<string> Databases { get; set; } = new() { "PostgreSql" };
 
         [ActivityOutput] public int? Output { get; set; }
 
-        public PostgreSql(IContentSerializer serializer, IConfiguration configuration, SqlActivityStore store)
-        {
-            _configuration = configuration;
-            _serializer = serializer;
-            _store = store;
-        }
+        public PostgreSql() {}
 
-        private readonly SqlActivityStore _store;
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => ExecuteQuery();
 
         private IActivityExecutionResult ExecuteQuery()
         {
-            var connectionString = _configuration[$"ConnectionStrings:{Databases.First()}"];
-            var context = _store.GetContext();
+            var sql = new SqlClient(ConnectionString);
+            Output = sql.Execute(Query);
 
-
-            var config = new QueryConfiguration(connectionString, Databases.First());
-          //  var execution = new QueryExecution(config);
-
-          //  Output = execution.Run();
-             
             return Done();
         }
     }
