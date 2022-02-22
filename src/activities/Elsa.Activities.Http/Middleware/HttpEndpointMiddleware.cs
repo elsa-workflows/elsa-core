@@ -122,7 +122,11 @@ namespace Elsa.Activities.Http.Middleware
                 {
                     httpContext.Response.ContentType = MediaTypeNames.Application.Json;
                     httpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
-                    await httpContext.Response.WriteAsync(JsonConvert.SerializeObject(new { error = e.Message }), cancellationToken);
+                    await httpContext.Response.WriteAsync(JsonConvert.SerializeObject(new
+                    {
+                        error = "Could not parse content",
+                        message = e.Message
+                    }), cancellationToken);
                     return;
                 }
             }
