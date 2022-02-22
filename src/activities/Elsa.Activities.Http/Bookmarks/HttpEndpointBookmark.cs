@@ -3,14 +3,11 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Services;
-using Elsa.Services.Bookmarks;
 using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Activities.Http.Bookmarks
 {
-    public record HttpEndpointBookmark(PathString Path, string? Method) : IBookmark
-    {
-    }
+    public record HttpEndpointBookmark(PathString Path, string? Method) : IBookmark;
 
     public class HttpEndpointBookmarkProvider : BookmarkProvider<HttpEndpointBookmark, HttpEndpoint>
     {

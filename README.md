@@ -149,19 +149,28 @@ Version 2.0
 - [x] State Machines
 - [ ] Test Workflows from Designer
 - [ ] Debug Workflows from Designer
-- [ ] Sagas
 - [ ] Localization Support
 - [ ] Lucene Indexing
 
-Version 3.0 (engine redesign)
+Version 3.0 (engine + designer redesign)
 
-- [ ] Programming model similar to WF
-- [ ] Sequential Workflows
-- [ ] Flowchart Workflows
+- [x] Programming model similar to WF
+- [x] Sequential Workflows
+- [x] Flowchart Workflows
 - [ ] State Machine Workflows
 - [ ] Sagas
-- [ ] BPMS Workflows
-- [ ] Actor Model for Distributed Workflows
+- [ ] BPMN Workflows
+- [x] Actor Model for Distributed Workflows
+
+Additional goals for Elsa 3 (separate from core library)
+- [ ] Modular workflow server application framework: unobtrusively add new capabilities to the workflow engine. Requires a common ORM in order to extend persistence layer in a modular fashion. EF Core has the potential to abstract away any & all DB providers, including MongoDB.
+- [ ] Modular & themeable dashboard application framework: unobtrusively add UI (screens & widgets) to the dashboard (could be Blazor). The dashboard would be a SPA, invoking API endpoints by the modular workflow server.
+- [ ] Module: ability for users to visually define API endpoints and implement their logic using workflows ("code behind" concept of VB and WinForms). With Swagger integration for Open API.
+- [ ] Module: ability to define logical forms (form name and fields) and implement their submission logic visually using workflows (also "code behind" concept).
+
+
+The secondary goals for Elsa 3 aim to bring about a low-code framework & platform for rapid application development. This shoud apply to the full spectrum of application development, ranging from embedded software (e.g Raspberry PI) to microservices & serverless architectures. Where one would normally write C# code to handle UI events or implement API endpoints, one can now visually design their logic using workflows.
+
 
 ## Workflow Designer
 

@@ -49,6 +49,9 @@ export namespace Components {
     interface ElsaCopyButton {
         "value": string;
     }
+    interface ElsaDesignerPanel {
+        "culture": string;
+    }
     interface ElsaDesignerTree {
         "activityBorderColor"?: (activity: ActivityModel) => string;
         "activityContextMenu"?: ActivityContextMenuState;
@@ -201,8 +204,9 @@ export namespace Components {
         "addPlugin": (pluginType: any) => Promise<void>;
         "addPlugins": (pluginTypes: Array<any>) => Promise<void>;
         "basePath": string;
+        "config": string;
         "culture": string;
-        "featuresString": string;
+        "features": any;
         "monacoLibPath": string;
         "serverUrl": string;
     }
@@ -282,13 +286,16 @@ export namespace Components {
     interface ElsaWorkflowDefinitionEditorNotifications {
     }
     interface ElsaWorkflowDefinitionEditorScreen {
+        "basePath": string;
         "culture": string;
         "exportWorkflow": () => Promise<void>;
+        "features": string;
         "getServerUrl": () => Promise<string>;
         "getWorkflowDefinitionId": () => Promise<string>;
         "history": RouterHistory;
         "importWorkflow": (file: File) => Promise<void>;
         "monacoLibPath": string;
+        "serverFeatures": Array<string>;
         "serverUrl": string;
         "workflowDefinitionId": string;
     }
@@ -407,6 +414,12 @@ declare global {
     var HTMLElsaCopyButtonElement: {
         prototype: HTMLElsaCopyButtonElement;
         new (): HTMLElsaCopyButtonElement;
+    };
+    interface HTMLElsaDesignerPanelElement extends Components.ElsaDesignerPanel, HTMLStencilElement {
+    }
+    var HTMLElsaDesignerPanelElement: {
+        prototype: HTMLElsaDesignerPanelElement;
+        new (): HTMLElsaDesignerPanelElement;
     };
     interface HTMLElsaDesignerTreeElement extends Components.ElsaDesignerTree, HTMLStencilElement {
     }
@@ -729,6 +742,7 @@ declare global {
         "elsa-context-menu": HTMLElsaContextMenuElement;
         "elsa-control": HTMLElsaControlElement;
         "elsa-copy-button": HTMLElsaCopyButtonElement;
+        "elsa-designer-panel": HTMLElsaDesignerPanelElement;
         "elsa-designer-tree": HTMLElsaDesignerTreeElement;
         "elsa-dictionary-property": HTMLElsaDictionaryPropertyElement;
         "elsa-dropdown-button": HTMLElsaDropdownButtonElement;
@@ -812,6 +826,11 @@ declare namespace LocalJSX {
     }
     interface ElsaCopyButton {
         "value"?: string;
+    }
+    interface ElsaDesignerPanel {
+        "culture"?: string;
+        "onFeatureChanged"?: (event: CustomEvent<string>) => void;
+        "onFeatureStatusChanged"?: (event: CustomEvent<string>) => void;
     }
     interface ElsaDesignerTree {
         "activityBorderColor"?: (activity: ActivityModel) => string;
@@ -971,8 +990,9 @@ declare namespace LocalJSX {
     }
     interface ElsaStudioRoot {
         "basePath"?: string;
+        "config"?: string;
         "culture"?: string;
-        "featuresString"?: string;
+        "features"?: any;
         "monacoLibPath"?: string;
         "onInitialized"?: (event: CustomEvent<ElsaStudio>) => void;
         "onInitializing"?: (event: CustomEvent<ElsaStudio>) => void;
@@ -1049,10 +1069,13 @@ declare namespace LocalJSX {
     interface ElsaWorkflowDefinitionEditorNotifications {
     }
     interface ElsaWorkflowDefinitionEditorScreen {
+        "basePath"?: string;
         "culture"?: string;
+        "features"?: string;
         "history"?: RouterHistory;
         "monacoLibPath"?: string;
         "onWorkflowSaved"?: (event: CustomEvent<WorkflowDefinition>) => void;
+        "serverFeatures"?: Array<string>;
         "serverUrl"?: string;
         "workflowDefinitionId"?: string;
     }
@@ -1132,6 +1155,7 @@ declare namespace LocalJSX {
         "elsa-context-menu": ElsaContextMenu;
         "elsa-control": ElsaControl;
         "elsa-copy-button": ElsaCopyButton;
+        "elsa-designer-panel": ElsaDesignerPanel;
         "elsa-designer-tree": ElsaDesignerTree;
         "elsa-dictionary-property": ElsaDictionaryProperty;
         "elsa-dropdown-button": ElsaDropdownButton;
@@ -1198,6 +1222,7 @@ declare module "@stencil/core" {
             "elsa-context-menu": LocalJSX.ElsaContextMenu & JSXBase.HTMLAttributes<HTMLElsaContextMenuElement>;
             "elsa-control": LocalJSX.ElsaControl & JSXBase.HTMLAttributes<HTMLElsaControlElement>;
             "elsa-copy-button": LocalJSX.ElsaCopyButton & JSXBase.HTMLAttributes<HTMLElsaCopyButtonElement>;
+            "elsa-designer-panel": LocalJSX.ElsaDesignerPanel & JSXBase.HTMLAttributes<HTMLElsaDesignerPanelElement>;
             "elsa-designer-tree": LocalJSX.ElsaDesignerTree & JSXBase.HTMLAttributes<HTMLElsaDesignerTreeElement>;
             "elsa-dictionary-property": LocalJSX.ElsaDictionaryProperty & JSXBase.HTMLAttributes<HTMLElsaDictionaryPropertyElement>;
             "elsa-dropdown-button": LocalJSX.ElsaDropdownButton & JSXBase.HTMLAttributes<HTMLElsaDropdownButtonElement>;

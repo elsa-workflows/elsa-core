@@ -1,18 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net5.0</TargetFramework>
+        <TargetFramework>net6.0</TargetFramework>
         <IsPackable>false</IsPackable>
         <Nullable>enable</Nullable>
     </PropertyGroup>
-
+    
     <ItemGroup>
-        <PackageReference Include="AutoFixture" Version="4.17.0" />
-        <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="5.0.10" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.11.0" />
-        <PackageReference Include="System.ComponentModel.TypeConverter" Version="4.3.0" />
-        <PackageReference Include="xunit" Version="2.4.1" />
-        <PackageReference Include="XunitXml.TestLogger" Version="3.0.66" />
+        <PackageReference Include="AutoFixture" Version="4.17.0"/>
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="6.0.1"/>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.11.0"/>
+        <PackageReference Include="System.ComponentModel.TypeConverter" Version="4.3.0"/>
+        <PackageReference Include="xunit" Version="2.4.1"/>
+        <PackageReference Include="XunitXml.TestLogger" Version="3.0.66"/>
         <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
@@ -24,19 +24,19 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\..\src\clients\Elsa.Client\Elsa.Client.csproj" />
-      <ProjectReference Include="..\..\..\src\samples\server\Elsa.Samples.Server.Host\Elsa.Samples.Server.Host.csproj" />
-      <ProjectReference Include="..\..\shared\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj" />
+        <ProjectReference Include="..\..\..\src\clients\Elsa.Client\Elsa.Client.csproj"/>
+        <ProjectReference Include="..\..\..\src\samples\server\Elsa.Samples.Server.Host\Elsa.Samples.Server.Host.csproj"/>
+        <ProjectReference Include="..\..\shared\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Assets" />
+        <Folder Include="Assets"/>
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="Assets\hello-world-workflow.json">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
+        <None Update="Assets\hello-world-workflow.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
 </Project>

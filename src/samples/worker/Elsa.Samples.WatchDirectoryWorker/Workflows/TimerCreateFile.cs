@@ -3,12 +3,8 @@ using Elsa.Activities.Temporal;
 using Elsa.Builders;
 using NodaTime;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Elsa.Samples.WatchDirectoryWorker.Workflows
 {

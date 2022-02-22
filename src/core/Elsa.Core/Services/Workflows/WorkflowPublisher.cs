@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Elsa.Events;
 using Elsa.Models;
 using Elsa.Persistence;
-using Elsa.Persistence.Specifications;
 using Elsa.Persistence.Specifications.WorkflowDefinitions;
 using MediatR;
 using Open.Linq.AsyncExtensions;

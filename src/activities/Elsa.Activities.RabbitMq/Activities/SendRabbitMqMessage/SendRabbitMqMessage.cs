@@ -27,14 +27,20 @@ namespace Elsa.Activities.RabbitMq
         }
 
         [ActivityInput(
-            Hint = "Topic",
+            Hint = "Exchange where message will be published",
             Order = 1,
+            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        public string ExchangeName { get; set; } = default!;
+
+        [ActivityInput(
+            Hint = "Topic",
+            Order = 2,
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string RoutingKey { get; set; } = default!;
 
         [ActivityInput(
             Hint = "List of headers that should be present in the message",
-            Order = 2,
+            Order = 3,
             UIHint = ActivityInputUIHints.Dictionary,
             DefaultSyntax = SyntaxNames.Json,
             SupportedSyntaxes = new[] { SyntaxNames.Json })]
@@ -42,13 +48,13 @@ namespace Elsa.Activities.RabbitMq
 
         [ActivityInput(
             Hint = "Message body",
-            Order = 3,
+            Order = 4,
             UIHint = ActivityInputUIHints.MultiLine,
             SupportedSyntaxes = new[] { SyntaxNames.Json })]
         public string Message { get; set; } = default!;
 
         [ActivityInput(
-            Hint = "RabbitMQ connection string",
+            Hint = "RabbitMQ connection string [amqp://user:pass@host:10000/vhost] - https://www.rabbitmq.com/uri-spec.html",
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid },
             Order = 1,
             Category = PropertyCategories.Configuration)]
@@ -56,7 +62,7 @@ namespace Elsa.Activities.RabbitMq
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            var config = new RabbitMqBusConfiguration(ConnectionString, RoutingKey, Headers);
+            var config = new RabbitMqBusConfiguration(ConnectionString, ExchangeName, RoutingKey, Headers);
 
             var client = await _messageSenderClientFactory.GetSenderAsync(config);
 

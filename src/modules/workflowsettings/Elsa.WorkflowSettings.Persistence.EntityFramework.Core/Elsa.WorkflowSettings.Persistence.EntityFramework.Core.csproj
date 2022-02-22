@@ -4,7 +4,7 @@
     <Import Project="..\..\..\..\configureawait.props" />
 
     <PropertyGroup>
-        <TargetFramework>netstandard2.1</TargetFramework>
+        <TargetFrameworks>netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
         <Description>
             Elsa Workflow Settings is an optional part of Elsa Workflows.
             This package provides Entity Framework Core entities used by the Workflow Settings persistence EF Core providers.
@@ -12,9 +12,14 @@
         <PackageTags>elsa, workflow settings, efcore</PackageTags>
     </PropertyGroup>
 
-    <ItemGroup>
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net5.0'">
         <PackageReference Include="EFCore.BulkExtensions" Version="5.4.0" />
         <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.10" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net6.0'">
+        <PackageReference Include="EFCore.BulkExtensions" Version="6.2.3" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.1" />
     </ItemGroup>
 
     <ItemGroup>

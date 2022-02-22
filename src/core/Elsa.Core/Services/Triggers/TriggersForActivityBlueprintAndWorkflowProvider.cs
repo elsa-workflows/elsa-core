@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Services.Bookmarks;
 using Elsa.Services.Models;
 
 namespace Elsa.Services.Triggers
@@ -86,7 +85,13 @@ namespace Elsa.Services.Triggers
         {
             var bookmarkResults = (await provider.GetBookmarksAsync(context, cancellationToken)).ToList();
             return bookmarkResults
-                .Select(x => new WorkflowTrigger(workflowBlueprint, activityBlueprint.Id, x.ActivityTypeName ?? activityBlueprint.Type, _bookmarkHasher.Hash(x.Bookmark), x.Bookmark))
+                .Select(x => new WorkflowTrigger(
+                    workflowBlueprint.Id,
+                    activityBlueprint.Id,
+                    x.ActivityTypeName ?? activityBlueprint.Type,
+                    _bookmarkHasher.Hash(x.Bookmark),
+                    x.Bookmark,
+                    workflowBlueprint.TenantId))
                 .ToList();
         }
     }

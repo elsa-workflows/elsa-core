@@ -1,4 +1,3 @@
-using System;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
@@ -21,12 +20,14 @@ namespace Elsa.Persistence.YesSql.Stores
     {
         private readonly IClock _clock;
 
-        public YesSqlWorkflowInstanceStore(ISessionProvider sessionProvider, IIdGenerator idGenerator, IMapper mapper, IClock clock, ILogger<YesSqlWorkflowInstanceStore> logger) : base(sessionProvider, idGenerator, mapper, logger, CollectionNames.WorkflowInstances)
+        public YesSqlWorkflowInstanceStore(ISessionProvider sessionProvider, IIdGenerator idGenerator, IMapper mapper, IClock clock, ILogger<YesSqlWorkflowInstanceStore> logger) : base(sessionProvider, idGenerator, mapper, logger,
+            CollectionNames.WorkflowInstances)
         {
             _clock = clock;
         }
 
-        protected override async Task<WorkflowInstanceDocument?> FindDocumentAsync(ISession session, WorkflowInstance entity, CancellationToken cancellationToken) => await Query<WorkflowInstanceIndex>(session, x => x.InstanceId == entity.Id).FirstOrDefaultAsync();
+        protected override async Task<WorkflowInstanceDocument?> FindDocumentAsync(ISession session, WorkflowInstance entity, CancellationToken cancellationToken) =>
+            await Query<WorkflowInstanceIndex>(session, x => x.InstanceId == entity.Id).FirstOrDefaultAsync();
 
         protected override IQuery<WorkflowInstanceDocument> MapSpecification(ISession session, ISpecification<WorkflowInstance> specification) =>
             specification switch
@@ -50,18 +51,25 @@ namespace Elsa.Persistence.YesSql.Stores
                 }
             }
         }
-        
+
         // TODO: This is a workaround. The real fix might be to remove the specification pattern and replace with repository abstractions with finite methods, or automatically dig into And and Or specifications and map each branch into a YesSQL queryable predicate.
         private IQuery<WorkflowInstanceDocument> MapAndSpecification(ISession session, AndSpecification<WorkflowInstance> and)
         {
             var left = and.Left;
             var right = and.Right;
-            
-            if(left is WorkflowCreatedBeforeSpecification workflowCreatedBeforeSpecification && right is WorkflowFinishedStatusSpecification workflowFinishedStatusSpecification)
+
+            if (left is WorkflowCreatedBeforeSpecification workflowCreatedBeforeSpecification && right is WorkflowFinishedStatusSpecification workflowFinishedStatusSpecification)
             {
                 var createdAtFilter = workflowCreatedBeforeSpecification.Instant.ToDateTimeUtc();
                 var rightExpression = AutoMapSpecification<WorkflowInstanceIndex>(workflowFinishedStatusSpecification);
-                return Query<WorkflowInstanceIndex>(session, x => x.CreatedAt <=  createdAtFilter).Where(rightExpression);
+                return Query<WorkflowInstanceIndex>(session, x => x.CreatedAt <= createdAtFilter).Where(rightExpression);
+            }
+
+            if (left is UnfinishedWorkflowSpecification unfinishedWorkflowSpecification && right is WorkflowDefinitionVersionIdsSpecification workflowDefinitionVersionIdsSpecification)
+            {
+                var ids = workflowDefinitionVersionIdsSpecification.WorkflowDefinitionVersionIds;
+                var leftExpression = AutoMapSpecification<WorkflowInstanceIndex>(unfinishedWorkflowSpecification);
+                return Query<WorkflowInstanceIndex>(session, x => x.DefinitionVersionId.IsIn(ids)).Where(leftExpression);
             }
 
             return AutoMapSpecification<WorkflowInstanceIndex>(session, and);

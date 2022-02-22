@@ -14,6 +14,7 @@ namespace Elsa.Persistence.YesSql
                     .Column<string?>(nameof(WorkflowDefinitionIndex.TenantId))
                     .Column<string>(nameof(WorkflowDefinitionIndex.DefinitionId))
                     .Column<string>(nameof(WorkflowDefinitionIndex.DefinitionVersionId))
+                    .Column<string>(nameof(WorkflowDefinitionIndex.Name))
                     .Column<int>(nameof(WorkflowDefinitionIndex.Version))
                     .Column<bool>(nameof(WorkflowDefinitionIndex.IsLatest))
                     .Column<bool>(nameof(WorkflowDefinitionIndex.IsPublished))
@@ -25,6 +26,7 @@ namespace Elsa.Persistence.YesSql
                     .Column<string?>(nameof(WorkflowInstanceIndex.TenantId))
                     .Column<string>(nameof(WorkflowInstanceIndex.InstanceId))
                     .Column<string>(nameof(WorkflowInstanceIndex.DefinitionId))
+                    .Column<string>(nameof(WorkflowInstanceIndex.DefinitionVersionId))
                     .Column<int>(nameof(WorkflowInstanceIndex.Version))
                     .Column<string?>(nameof(WorkflowInstanceIndex.CorrelationId))
                     .Column<string?>(nameof(WorkflowInstanceIndex.ContextId))
@@ -70,7 +72,49 @@ namespace Elsa.Persistence.YesSql
                     .Column<string>(nameof(BookmarkIndex.CorrelationId)),
                 CollectionNames.Bookmarks);
 
-            return 1;
+            SchemaBuilder.CreateMapIndexTable<TriggerIndex>(
+                table => table
+                    .Column<string?>(nameof(TriggerIndex.TriggerId))
+                    .Column<string?>(nameof(TriggerIndex.TenantId))
+                    .Column<string>(nameof(TriggerIndex.Hash))
+                    .Column<string>(nameof(TriggerIndex.ActivityType))
+                    .Column<string>(nameof(TriggerIndex.WorkflowDefinitionId)),
+                CollectionNames.Triggers);
+
+            return 4;
+        }
+
+        public int UpdateFrom1()
+        {
+            SchemaBuilder.AlterIndexTable<WorkflowInstanceIndex>(
+                table => table.AddColumn<string>(nameof(WorkflowInstanceIndex.DefinitionVersionId)),
+                CollectionNames.WorkflowInstances);
+
+            return 2;
+        }
+
+        public int UpdateFrom2()
+        {
+            SchemaBuilder.CreateMapIndexTable<TriggerIndex>(
+                table => table
+                    .Column<string?>(nameof(TriggerIndex.TriggerId))
+                    .Column<string?>(nameof(TriggerIndex.TenantId))
+                    .Column<string>(nameof(TriggerIndex.Hash))
+                    .Column<string>(nameof(TriggerIndex.ActivityType))
+                    .Column<string>(nameof(TriggerIndex.WorkflowDefinitionId)),
+                CollectionNames.Triggers);
+
+            return 3;
+        }
+
+        public int UpdateFrom3()
+        {
+            SchemaBuilder.AlterIndexTable<WorkflowDefinitionIndex>(
+                table => table
+                    .AddColumn<string?>(nameof(WorkflowDefinitionIndex.Name)),
+                CollectionNames.WorkflowDefinitions);
+
+            return 4;
         }
     }
 }

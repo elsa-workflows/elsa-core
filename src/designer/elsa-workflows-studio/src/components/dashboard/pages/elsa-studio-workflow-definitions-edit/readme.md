@@ -24,6 +24,9 @@ graph TD;
   elsa-studio-workflow-definitions-edit --> elsa-workflow-definition-editor-screen
   elsa-workflow-definition-editor-screen --> elsa-workflow-fault-information
   elsa-workflow-definition-editor-screen --> elsa-workflow-performance-information
+  elsa-workflow-definition-editor-screen --> elsa-tab-header
+  elsa-workflow-definition-editor-screen --> elsa-tab-content
+  elsa-workflow-definition-editor-screen --> elsa-designer-panel
   elsa-workflow-definition-editor-screen --> elsa-designer-tree
   elsa-workflow-definition-editor-screen --> elsa-workflow-settings-modal
   elsa-workflow-definition-editor-screen --> elsa-workflow-definition-editor-notifications
@@ -32,8 +35,6 @@ graph TD;
   elsa-workflow-definition-editor-screen --> elsa-modal-dialog
   elsa-workflow-definition-editor-screen --> elsa-workflow-publish-button
   elsa-workflow-definition-editor-screen --> elsa-flyout-panel
-  elsa-workflow-definition-editor-screen --> elsa-tab-header
-  elsa-workflow-definition-editor-screen --> elsa-tab-content
   elsa-workflow-definition-editor-screen --> elsa-workflow-properties-panel
   elsa-workflow-definition-editor-screen --> elsa-workflow-test-panel
   elsa-workflow-definition-editor-screen --> context-consumer

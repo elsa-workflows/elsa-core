@@ -68,6 +68,7 @@ namespace Elsa.Activities.Temporal
                 return Done();
             }
 
+            // Ensure the workflow instance is persisted so that bookmarks will be updated before scheduling a timer.
             await _workflowInstanceStore.SaveAsync(context.WorkflowExecutionContext.WorkflowInstance, cancellationToken);
             await _workflowScheduler.ScheduleAsync(workflowInstance.Id, Id, executeAt, null, cancellationToken);
 

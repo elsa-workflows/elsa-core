@@ -1,0 +1,7 @@
+{
+  "workflowLayout": {
+    "enabled": true,
+    "ui": true,
+    "defaultValue": "topbottom"
+  }
+}

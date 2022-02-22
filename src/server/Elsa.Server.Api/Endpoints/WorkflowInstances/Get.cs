@@ -2,6 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Persistence;
+using Elsa.Serialization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -15,10 +16,12 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
     public class Get : Controller
     {
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
+        private readonly IContentSerializer _contentSerializer;
 
-        public Get(IWorkflowInstanceStore workflowInstanceStore)
+        public Get(IWorkflowInstanceStore workflowInstanceStore, IContentSerializer contentSerializer)
         {
             _workflowInstanceStore = workflowInstanceStore;
+            _contentSerializer = contentSerializer;
         }
 
         [HttpGet]
@@ -29,10 +32,10 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
             OperationId = "WorkflowInstances.Get",
             Tags = new[] { "WorkflowInstances" })
         ]
-        public async Task<ActionResult<WorkflowInstance>> Handle(string id, CancellationToken cancellationToken = default)
+        public async Task<IActionResult> Handle(string id, CancellationToken cancellationToken = default)
         {
             var workflowInstance = await _workflowInstanceStore.FindByIdAsync(id, cancellationToken);
-            return workflowInstance ?? (ActionResult<WorkflowInstance>) NotFound();
+            return workflowInstance == null ? NotFound() : Json(workflowInstance, _contentSerializer.GetSettings());
         }
     }
 }

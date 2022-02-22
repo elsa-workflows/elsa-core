@@ -52,6 +52,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
     public class WorkflowBlueprintSummaryModel
     {
         public string Id { get; set; } = default!;
+        public string VersionId { get; set; } = default!;
         public string? Name { get; set; }
         public string? DisplayName { get; set; }
         public string? Description { get; set; }

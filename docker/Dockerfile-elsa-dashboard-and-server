@@ -1,4 +1,4 @@
-FROM node:15-alpine as client-build
+FROM node:17-alpine as client-build
 
 WORKDIR /app
 COPY /src .
@@ -11,7 +11,7 @@ WORKDIR /app/designer/bindings/aspnet/Elsa.Designer.Components.Web
 RUN npm install --force
 RUN npm run build
 
-FROM mcr.microsoft.com/dotnet/sdk:5.0-buster-slim-amd64 AS build
+FROM mcr.microsoft.com/dotnet/sdk:6.0-bullseye-slim-amd64 AS build
 WORKDIR /source
 
 # restore packages
@@ -24,10 +24,10 @@ RUN dotnet restore "./src/samples/dashboard/aspnetcore/ElsaDashboard.Samples.Asp
 # build and publish (UseAppHost=false creates platform independent binaries)
 WORKDIR /source/src/samples/dashboard/aspnetcore/ElsaDashboard.Samples.AspNetCore.Monolith
 RUN dotnet build "ElsaDashboard.Samples.AspNetCore.Monolith.csproj" -c Release -o /app/build
-RUN dotnet publish "ElsaDashboard.Samples.AspNetCore.Monolith.csproj" -c Release -o /app/publish /p:UseAppHost=false --no-restore -f net5.0
+RUN dotnet publish "ElsaDashboard.Samples.AspNetCore.Monolith.csproj" -c Release -o /app/publish /p:UseAppHost=false --no-restore -f net6.0
 
 # move binaries into smaller base image
-FROM mcr.microsoft.com/dotnet/aspnet:5.0-buster-slim AS base
+FROM mcr.microsoft.com/dotnet/aspnet:6.0-bullseye-slim-amd64 AS base
 WORKDIR /app
 COPY --from=build /app/publish ./
 

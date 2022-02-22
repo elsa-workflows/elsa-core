@@ -20,13 +20,13 @@ namespace Elsa.Services.Messaging
             var bus = GetBus(message, queueName);
             await bus.Send(message, headers);
         }
-        
+
         public async Task DeferAsync(object message, Duration delay, string? queueName = default, IDictionary<string, string>? headers = default, CancellationToken cancellationToken = default)
         {
             var bus = GetBus(message, queueName);
             await bus.Defer(delay.ToTimeSpan(), message, headers);
         }
-        
+
         private IBus GetBus(object message, string? queueName) => _serviceBusFactory.GetServiceBus(message.GetType(), queueName);
     }
 }

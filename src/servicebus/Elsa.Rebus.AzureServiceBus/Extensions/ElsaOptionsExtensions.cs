@@ -14,17 +14,25 @@ namespace Elsa.Rebus.AzureServiceBus
         public static ElsaOptionsBuilder UseAzureServiceBus(this ElsaOptionsBuilder elsaOptions, string connectionString, TokenCredential tokenCredential) =>
             elsaOptions.UseServiceBus(context => ConfigureAzureServiceBusEndpoint(context, connectionString, tokenCredential, default));
 
+        [Obsolete("This method will be removed in the next version. Please use the overload that accepts Action<ConfigureTransportContext> instead")]
         public static ElsaOptionsBuilder UseAzureServiceBus(this ElsaOptionsBuilder elsaOptions, string connectionString, Action<AzureServiceBusTransportSettings> configureTransport) =>
+            elsaOptions.UseServiceBus(context => ConfigureAzureServiceBusEndpoint(context, connectionString, default, x => configureTransport(x.TransportSettings)));
+
+        public static ElsaOptionsBuilder UseAzureServiceBus(this ElsaOptionsBuilder elsaOptions, string connectionString, Action<ConfigureTransportContext> configureTransport) =>
             elsaOptions.UseServiceBus(context => ConfigureAzureServiceBusEndpoint(context, connectionString, default, configureTransport));
 
+        [Obsolete("This method will be removed in the next version. Please use the overload that accepts Action<ConfigureTransportContext> instead")]
         public static ElsaOptionsBuilder UseAzureServiceBus(this ElsaOptionsBuilder elsaOptions, string connectionString, TokenCredential tokenCredential, Action<AzureServiceBusTransportSettings> configureTransport) =>
+            elsaOptions.UseServiceBus(context => ConfigureAzureServiceBusEndpoint(context, connectionString, tokenCredential, x => configureTransport(x.TransportSettings)));
+
+        public static ElsaOptionsBuilder UseAzureServiceBus(this ElsaOptionsBuilder elsaOptions, string connectionString, TokenCredential tokenCredential, Action<ConfigureTransportContext> configureTransport) =>
             elsaOptions.UseServiceBus(context => ConfigureAzureServiceBusEndpoint(context, connectionString, tokenCredential, configureTransport));
 
         private static void ConfigureAzureServiceBusEndpoint(
             ServiceBusEndpointConfigurationContext context,
             string connectionString,
             TokenCredential? tokenProvider,
-            Action<AzureServiceBusTransportSettings>? configureTransport)
+            Action<ConfigureTransportContext>? configureTransport)
         {
             var queueName = context.QueueName;
 
@@ -33,10 +41,16 @@ namespace Elsa.Rebus.AzureServiceBus
                 {
                     if (queueName.Length > 50)
                         queueName = queueName.Substring(queueName.Length - 50);
-                    
+
                     var transport = t.UseAzureServiceBus(connectionString, queueName, tokenProvider);
-                    configureTransport?.Invoke(transport);
+
+                    if (context.AutoDeleteOnIdle)
+                        transport.SetAutoDeleteOnIdle(TimeSpan.FromMinutes(5));
+
+                    configureTransport?.Invoke(new ConfigureTransportContext(context, transport));
                 });
         }
     }
+
+    public record ConfigureTransportContext(ServiceBusEndpointConfigurationContext ConfigurationContext, AzureServiceBusTransportSettings TransportSettings);
 }

@@ -1,5 +1,4 @@
 using System.Threading.Tasks;
-using Elsa.Samples.ProgrammaticCompositeActivitiesConsole.Activities;
 using Elsa.Samples.ProgrammaticCompositeActivitiesConsole.Workflows;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;

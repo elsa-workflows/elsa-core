@@ -12,7 +12,7 @@ services:
         container_name: elsa-dashboard-with-server
         environment:
             - ASPNETCORE_ENVIRONMENT=Development
-            - Elsa:Server:BaseAddress=http://localhost:6868
+            - Elsa:Server:BaseUrl=http://localhost:6868
             - Elsa:Smtp:Host=smtp4dev
         ports:
             - "6868:80"
@@ -20,7 +20,7 @@ services:
             - smtp4dev
     
     smtp4dev:
-        image: rnwood/smtp4dev:linux-amd64-3.1.0-ci0856
+        image: rnwood/smtp4dev:3.1.3-ci20211206101
         container_name: elsa-smtp4dev
         ports:
             - "3000:80"

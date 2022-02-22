@@ -15,7 +15,7 @@ namespace Elsa.Activities.RabbitMq.Services
     public class Client : IClient
     {
         private BuiltinHandlerActivator _activator;
-        private IBus _bus;
+        private IBus? _bus;
 
         public RabbitMqBusConfiguration Configuration { get; }
 
@@ -42,18 +42,18 @@ namespace Elsa.Activities.RabbitMq.Services
                 }))
                 .Transport(t =>
                 {
-                    t.UseRabbitMq(Configuration.ConnectionString, $"Elsa{Guid.NewGuid().ToString("n").ToUpper()}").InputQueueOptions(o => o.SetAutoDelete(autoDelete: true));
+                    t.UseRabbitMq(Configuration.ConnectionString, $"Elsa{Guid.NewGuid().ToString("n").ToUpper()}");
                 })
                 .Start();
 
-            _bus.Advanced.Topics.Subscribe(Configuration.RoutingKey);
+            _bus.Advanced.Topics.Subscribe(Configuration.TopicFullName);
         }
 
         public async Task PublishMessage(string message)
         {
             if (_bus == null) ConfigureAsOneWayClient();
 
-            await _bus.Advanced.Topics.Publish(Configuration.RoutingKey, message, Configuration.Headers);
+            await _bus!.Advanced.Topics.Publish(Configuration.TopicFullName, message, Configuration.Headers);
         }
 
         public void Dispose()
@@ -63,13 +63,13 @@ namespace Elsa.Activities.RabbitMq.Services
 
         public void StartClient()
         {
-            if (_bus.Advanced.Workers.Count == 0)
+            if (_bus?.Advanced.Workers.Count == 0)
                 _bus.Advanced.Workers.SetNumberOfWorkers(1);
         }
 
         public void StopClient()
         {
-            if (_bus.Advanced.Workers.Count == 1)
+            if (_bus?.Advanced.Workers.Count == 1)
                 _bus.Advanced.Workers.SetNumberOfWorkers(0);
         }
 

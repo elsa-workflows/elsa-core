@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Events;
@@ -31,6 +32,8 @@ namespace Elsa.Services.Workflows
             if (workflowInstance.WorkflowStatus != WorkflowStatus.Idle && workflowInstance.WorkflowStatus != WorkflowStatus.Running && workflowInstance.WorkflowStatus != WorkflowStatus.Suspended)
                 return new CancelWorkflowInstanceResult(CancelWorkflowInstanceResultStatus.InvalidStatus, workflowInstance);
 
+            workflowInstance.BlockingActivities = new HashSet<BlockingActivity>();
+            workflowInstance.CurrentActivity = null;
             workflowInstance.WorkflowStatus = WorkflowStatus.Cancelled;
             workflowInstance.CancelledAt = _clock.GetCurrentInstant();
 

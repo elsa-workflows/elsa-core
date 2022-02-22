@@ -2,11 +2,11 @@
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Persistence;
+using Elsa.Server.Api.Helpers;
 using Elsa.Server.Api.Swagger.Examples;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.Filters;
 
@@ -43,10 +43,11 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
 
             if (workflowDefinition == null)
                 return NotFound();
-            
+
             workflowDefinition = await _workflowPublisher.RetractAsync(workflowDefinition, cancellationToken);
             
-            return AcceptedAtAction("Handle", "GetByVersionId", new { versionId = workflowDefinition.Id, apiVersion = apiVersion.ToString() }, workflowDefinition);
+            return AcceptedAtAction("Handle", "GetByVersionId", new { versionId = workflowDefinition.Id, apiVersion = apiVersion.ToString() }, workflowDefinition)
+                .ConfigureForWorkflowDefinition();
         }
     }
 }

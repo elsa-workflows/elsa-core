@@ -31,6 +31,7 @@ namespace Elsa.Scripting.JavaScript.Handlers
             output.AppendLine("declare function parseGuid(text: string): Guid");
             output.AppendLine("declare function setVariable(name: string, value?: any): void;");
             output.AppendLine("declare function getVariable(name: string): any;");
+            output.AppendLine("declare function getTransientVariable(name: string): any;");
             output.AppendLine("declare function getConfig(section: string): any;");
             output.AppendLine("declare function isNullOrWhiteSpace(text: string): boolean;");
             output.AppendLine("declare function isNullOrEmpty(text: string): boolean;");

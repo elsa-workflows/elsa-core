@@ -25,6 +25,7 @@
 
 - stencil-route-link
 - [elsa-context-menu](../../../controls/elsa-context-menu)
+- [elsa-pager](../../../controls/elsa-pager)
 - [elsa-confirm-dialog](../../../shared/elsa-confirm-dialog)
 - context-consumer
 
@@ -33,6 +34,7 @@
 graph TD;
   elsa-workflow-definitions-list-screen --> stencil-route-link
   elsa-workflow-definitions-list-screen --> elsa-context-menu
+  elsa-workflow-definitions-list-screen --> elsa-pager
   elsa-workflow-definitions-list-screen --> elsa-confirm-dialog
   elsa-workflow-definitions-list-screen --> context-consumer
   elsa-confirm-dialog --> elsa-modal-dialog

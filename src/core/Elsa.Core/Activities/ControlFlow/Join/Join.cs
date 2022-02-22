@@ -64,10 +64,10 @@ namespace Elsa.Activities.ControlFlow
             var ancestorActivityIds = workflowExecutionContext.GetInboundActivityPath(Id).ToList();
             var activities = workflowExecutionContext.WorkflowBlueprint.Activities.ToDictionary(x => x.Id);
             var ancestors = ancestorActivityIds.Select(x => activities[x]).ToList();
-            var forks = ancestors.Where(x => x.Type == nameof(Fork)).ToList();
+            var owningFork = ancestors.FirstOrDefault(x => x.Type == nameof(Fork));
 
-            await RemoveBlockingActivitiesAsync(workflowExecutionContext, forks);
-            await RemoveScopeActivitiesAsync(workflowExecutionContext, ancestors, forks);
+            await RemoveBlockingActivitiesAsync(workflowExecutionContext, owningFork);
+            await RemoveScopeActivitiesAsync(workflowExecutionContext, ancestors, owningFork);
 
             // Clear the recorded inbound transitions. This is necessary in case we're in a looping construct. 
             InboundTransitions = new List<string>();
@@ -86,12 +86,6 @@ namespace Elsa.Activities.ControlFlow
                 JoinMode.WaitAny => inboundConnections.Any(x => recordedInboundTransitions.Contains(GetTransitionKey(x))),
                 _ => false
             };
-        }
-
-        private async Task RemoveBlockingActivitiesAsync(WorkflowExecutionContext workflowExecutionContext, IEnumerable<IActivityBlueprint> forks)
-        {
-            foreach (var fork in forks) 
-                await RemoveBlockingActivitiesAsync(workflowExecutionContext, fork);
         }
 
         private async Task RemoveBlockingActivitiesAsync(WorkflowExecutionContext workflowExecutionContext, IActivityBlueprint? fork)

@@ -14,9 +14,7 @@ using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Open.Linq.AsyncExtensions;
@@ -77,10 +75,10 @@ namespace Elsa.Activities.Http.Middleware
 
             var isTest = pendingWorkflowInstance.GetMetadata("isTest");
             var workflowBlueprint = (isTest != null && Convert.ToBoolean(isTest)) ?
-                await workflowRegistry.FindAsync(x => x.Id == pendingWorkflowInstance.DefinitionId, cancellationToken) :
-                await workflowRegistry.FindAsync(x => x.IsPublished && x.Id == pendingWorkflowInstance.DefinitionId && !x.IsDisabled, cancellationToken);
+                await workflowRegistry.FindAsync(pendingWorkflowInstance.DefinitionId, VersionOptions.Latest, TenantId, cancellationToken) :
+                await workflowRegistry.FindAsync(pendingWorkflowInstance.DefinitionId, VersionOptions.Published, TenantId, cancellationToken);
 
-            if (workflowBlueprint is null)
+            if (workflowBlueprint is null || workflowBlueprint.IsDisabled)
             {
                 await _next(httpContext);
                 return;

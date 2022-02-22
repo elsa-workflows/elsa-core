@@ -1,10 +1,8 @@
 using Elsa.Activities.Console;
 using Elsa.Activities.MassTransit;
-using Elsa.Activities.Primitives;
 using Elsa.Builders;
 using Elsa.Samples.MassTransitRabbitMq.Messages;
 using Elsa.Activities.ControlFlow;
-using System;
 
 namespace Elsa.Samples.MassTransitRabbitMq.Workflows
 {

@@ -68,6 +68,7 @@ export interface ActivityDesignDisplayContext {
   displayName?: string;
   bodyDisplay: string;
   outcomes: Array<string>;
+  expanded?: boolean;
 }
 
 export interface ActivityUpdatedContext {

@@ -371,9 +371,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Retention", "src\modul
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflowtesting", "workflowtesting", "{1B0F0880-8390-4A1C-9AE8-D13427626794}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.WorkflowTesting", "src\modules\Elsa.WorkflowTesting\Elsa.WorkflowTesting.csproj", "{0327324E-0B80-4A6A-A7D6-DD521657666F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.WorkflowTesting", "src\modules\workflowtesting\Elsa.WorkflowTesting\Elsa.WorkflowTesting.csproj", "{0327324E-0B80-4A6A-A7D6-DD521657666F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.WorkflowTesting.Api", "src\modules\Elsa.WorkflowTesting.Api\Elsa.WorkflowTesting.Api.csproj", "{4A4DC44E-D50F-49B8-A9DE-DED26FC05166}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.WorkflowTesting.Api", "src\modules\workflowtesting\Elsa.WorkflowTesting.Api\Elsa.WorkflowTesting.Api.csproj", "{4A4DC44E-D50F-49B8-A9DE-DED26FC05166}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.UniqueCorrelatedWorkflows", "src\samples\aspnet\Elsa.Samples.UniqueCorrelatedWorkflows\Elsa.Samples.UniqueCorrelatedWorkflows.csproj", "{4CD8293D-4544-4A23-BDEF-15B66D5E924F}"
 EndProject
@@ -382,6 +382,11 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.RabbitMqWorker", "src\samples\worker\Elsa.Samples.RabbitMqWorker\Elsa.Samples.RabbitMqWorker.csproj", "{67C58C2B-B873-47C8-B5B9-93B0587EE634}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.SQL", "src\activities\Elsa.Activities.SQL\Elsa.Activities.SQL.csproj", "{12E86018-047F-4B80-B2D2-B3C7334FB8DD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.Mqtt", "src\activities\Elsa.Activities.Mqtt\Elsa.Activities.Mqtt.csproj", "{791D50F6-EAF2-4E20-9EDF-3BAF9CB7F796}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.MqttWorker", "src\samples\worker\Elsa.Samples.MqttWorker\Elsa.Samples.MqttWorker.csproj", "{8B58C3EA-20C2-491A-ADEC-E41F0EC787FB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.NestedForks", "src\samples\aspnet\Elsa.Samples.NestedForks\Elsa.Samples.NestedForks.csproj", "{A7253665-5F7A-4BCB-B78B-E2E897E90DE4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -909,6 +914,18 @@ Global
 		{12E86018-047F-4B80-B2D2-B3C7334FB8DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{12E86018-047F-4B80-B2D2-B3C7334FB8DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{12E86018-047F-4B80-B2D2-B3C7334FB8DD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{791D50F6-EAF2-4E20-9EDF-3BAF9CB7F796}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{791D50F6-EAF2-4E20-9EDF-3BAF9CB7F796}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{791D50F6-EAF2-4E20-9EDF-3BAF9CB7F796}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{791D50F6-EAF2-4E20-9EDF-3BAF9CB7F796}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8B58C3EA-20C2-491A-ADEC-E41F0EC787FB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8B58C3EA-20C2-491A-ADEC-E41F0EC787FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8B58C3EA-20C2-491A-ADEC-E41F0EC787FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8B58C3EA-20C2-491A-ADEC-E41F0EC787FB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A7253665-5F7A-4BCB-B78B-E2E897E90DE4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A7253665-5F7A-4BCB-B78B-E2E897E90DE4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A7253665-5F7A-4BCB-B78B-E2E897E90DE4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A7253665-5F7A-4BCB-B78B-E2E897E90DE4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1080,6 +1097,9 @@ Global
 		{0D430863-8275-4880-BB09-C307B5EC3837} = {B43B546E-23F3-46E8-ACB7-D04F05CDA180}
 		{67C58C2B-B873-47C8-B5B9-93B0587EE634} = {E42743A0-FBDD-4150-9D53-6000496D9B87}
 		{12E86018-047F-4B80-B2D2-B3C7334FB8DD} = {B43B546E-23F3-46E8-ACB7-D04F05CDA180}
+		{791D50F6-EAF2-4E20-9EDF-3BAF9CB7F796} = {B43B546E-23F3-46E8-ACB7-D04F05CDA180}
+		{8B58C3EA-20C2-491A-ADEC-E41F0EC787FB} = {E42743A0-FBDD-4150-9D53-6000496D9B87}
+		{A7253665-5F7A-4BCB-B78B-E2E897E90DE4} = {22E75696-6FE9-436A-9097-EE21C603F818}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}

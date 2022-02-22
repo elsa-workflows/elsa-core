@@ -2,15 +2,15 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>net5.0</TargetFramework>
+        <TargetFramework>net6.0</TargetFramework>
         <IsPackable>false</IsPackable>
         <RootNamespace>Elsa.Samples.Timers</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Hangfire.SqlServer" Version="1.7.25" />
-        <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
-        <PackageReference Include="System.Text.Encodings.Web" Version="5.0.1" />
+        <PackageReference Include="Hangfire.SqlServer" Version="1.7.28" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.0" />
+        <PackageReference Include="System.Text.Encodings.Web" Version="6.0.0" />
     </ItemGroup>
 
     <ItemGroup>

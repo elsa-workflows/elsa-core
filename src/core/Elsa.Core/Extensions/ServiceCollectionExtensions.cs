@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using Elsa;
 using Elsa.Options;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 

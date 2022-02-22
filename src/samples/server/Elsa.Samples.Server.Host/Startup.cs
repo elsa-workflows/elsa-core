@@ -1,3 +1,4 @@
+using Elsa.Providers.Workflows;
 using Elsa.Retention.Extensions;
 using Elsa.WorkflowTesting.Api.Extensions;
 using Hangfire;
@@ -45,6 +46,7 @@ namespace Elsa.Samples.Server.Host
                 typeof(Elsa.Activities.File.Startup),
                 typeof(Elsa.Activities.RabbitMq.Startup),
                 typeof(Elsa.Activities.SQL.Startup),
+                typeof(Elsa.Activities.Mqtt.Startup),
                 typeof(Persistence.EntityFramework.Sqlite.Startup),
                 typeof(Persistence.EntityFramework.SqlServer.Startup),
                 typeof(Persistence.EntityFramework.MySql.Startup),
@@ -83,6 +85,11 @@ namespace Elsa.Samples.Server.Host
                     .AddWorkflowsFrom<Startup>()
                     .AddFeatures(startups, Configuration)
                     .ConfigureWorkflowChannels(options => elsaSection.GetSection("WorkflowChannels").Bind(options))
+                    
+                    // Optionally opt-out of indexing workflows stored in the database.
+                    // These will be indexed when published/unpublished/deleted, so no need to do it during startup.
+                    // Unless you have existing workflow definitions in the DB for which no triggers have yet been created.
+                    .ExcludeWorkflowProviderFromStartupIndexing<DatabaseWorkflowProvider>()
                 )
                 .AddRetentionServices(options => elsaSection.GetSection("Retention").Bind(options));
 
@@ -96,8 +103,8 @@ namespace Elsa.Samples.Server.Host
             // In a production environment, make sure to allow only origins you trust.
             services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("Content-Disposition")));
 
-            //Workflow Testing
-            //services.AddWorkflowTestingServices();
+            // Workflow Testing
+            services.AddWorkflowTestingServices();
         }
 
         public void Configure(IApplicationBuilder app)
@@ -117,11 +124,13 @@ namespace Elsa.Samples.Server.Host
                     .AllowCredentials())
                 .UseElsaFeatures()
                 .UseRouting()
-                .UseEndpoints(endpoints => { endpoints.MapControllers(); })
-                //.MapWorkflowTestHub()
-                ;
+                .UseEndpoints(endpoints =>
+                {
+                    endpoints.MapControllers();
+                    endpoints.MapWorkflowTestHub();
+                });
         }
-        
+
         private void AddHangfire(IServiceCollection services, string dbConnectionString)
         {
             services
