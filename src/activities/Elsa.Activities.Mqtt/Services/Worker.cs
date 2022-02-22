@@ -9,7 +9,7 @@ using Elsa.Services;
 using Elsa.Services.Models;
 using Elsa.Activities.Mqtt.Activities.MqttMessageReceived;
 using Microsoft.Extensions.DependencyInjection;
-using Elsa.Abstractions.MultiTenancy;
+using Elsa.Abstractions.Multitenancy;
 
 namespace Elsa.Activities.Mqtt.Services
 {

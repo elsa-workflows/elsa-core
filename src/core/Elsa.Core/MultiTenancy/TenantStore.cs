@@ -1,8 +1,9 @@
 using System.Collections.Generic;
-using Elsa.Abstractions.MultiTenancy;
+using System.Linq;
+using Elsa.Abstractions.Multitenancy;
 using Microsoft.Extensions.Configuration;
 
-namespace Elsa.MultiTenancy
+namespace Elsa.Multitenancy
 {
     public class TenantStore : ITenantStore
     {
@@ -12,7 +13,7 @@ namespace Elsa.MultiTenancy
         {
             var tenants = new List<Tenant>();
 
-            var multiTenancyEnabled = configuration.GetValue<bool>("Elsa:MultiTenancy");
+            var multiTenancyEnabled = configuration.GetValue<bool>("Elsa:Multitenancy");
 
             if (multiTenancyEnabled)
             {
@@ -21,10 +22,10 @@ namespace Elsa.MultiTenancy
                 foreach (var tenantConfig in tenantsConfiguration)
                 {
                     var name = tenantConfig.GetSection("Name").Value;
-                    var prefix = tenantConfig.GetSection("Prefix").Value;
-                    var connectionString = tenantConfig.GetSection("ConnectionString").Value;
 
-                    tenants.Add(new Tenant(name, prefix, connectionString));
+                    var configurationValues = new Dictionary<string, string>(tenantConfig.AsEnumerable().Select(x => new KeyValuePair<string, string>(x.Key.Replace($"Elsa:Tenants:{tenantConfig.Key}:", string.Empty), x.Value)));
+
+                    tenants.Add(new Tenant(name, configurationValues));
                 }
             }
             else
@@ -38,7 +39,13 @@ namespace Elsa.MultiTenancy
                     connectionString = configuration.GetConnectionString(connectionStringName);
                 }
 
-                tenants.Add(new Tenant("Default", string.Empty, connectionString, isDefault: true));
+                var configurationValues = new Dictionary<string, string>
+                {
+                    { "DatabaseConnectionString", connectionString },
+                    { "Prefix", string.Empty },
+                };
+
+                tenants.Add(new Tenant("Default", configurationValues, isDefault: true));
             }
 
             _tenants = tenants;

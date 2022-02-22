@@ -1,6 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Abstractions.MultiTenancy;
+using Elsa.Abstractions.Multitenancy;
 using Elsa.Models;
 using Elsa.Server.Api.Helpers;
 using Elsa.Server.Api.Swagger.Examples;

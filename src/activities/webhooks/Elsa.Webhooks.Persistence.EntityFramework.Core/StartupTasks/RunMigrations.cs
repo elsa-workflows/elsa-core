@@ -1,6 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.MultiTenancy;
+using Elsa.Multitenancy;
 using Elsa.Services;
 using Elsa.Webhooks.Persistence.EntityFramework.Core.Services;
 using Microsoft.EntityFrameworkCore;

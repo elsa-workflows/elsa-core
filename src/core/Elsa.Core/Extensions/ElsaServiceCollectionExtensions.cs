@@ -1,7 +1,7 @@
 using System;
 using System.ComponentModel;
 using Elsa;
-using Elsa.Abstractions.MultiTenancy;
+using Elsa.Abstractions.Multitenancy;
 using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Signaling;
 using Elsa.Activities.Signaling.Services;
@@ -15,7 +15,7 @@ using Elsa.Handlers;
 using Elsa.HostedServices;
 using Elsa.Mapping;
 using Elsa.Metadata;
-using Elsa.MultiTenancy;
+using Elsa.Multitenancy;
 using Elsa.Options;
 using Elsa.Persistence;
 using Elsa.Persistence.Decorators;

@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Elsa.Abstractions.MultiTenancy;
+using Elsa.Abstractions.Multitenancy;
 using Elsa.Models;
 using MediatR;
 

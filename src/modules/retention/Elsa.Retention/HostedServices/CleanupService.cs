@@ -1,7 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.MultiTenancy;
+using Elsa.Multitenancy;
 using Elsa.Retention.Jobs;
 using Elsa.Retention.Options;
 using Elsa.Services;
@@ -53,7 +53,7 @@ namespace Elsa.Retention.HostedServices
                     }
                     catch (Exception e)
                     {
-                        var tenantName = tenant.Name ?? tenant.Prefix;
+                        var tenantName = tenant.Name ?? tenant.Configuration.GetPrefix();
                         _logger.LogError(e, "Failed to perform cleanup for tenant {Tenant} this time around. Next cleanup attempt will happen in {Interval}", tenantName, _interval);
                     }
                 }

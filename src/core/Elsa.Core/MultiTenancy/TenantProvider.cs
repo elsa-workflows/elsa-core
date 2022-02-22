@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Elsa.Abstractions.MultiTenancy;
+using Elsa.Abstractions.Multitenancy;
 using Microsoft.AspNetCore.Http;
 
-namespace Elsa.MultiTenancy
+namespace Elsa.Multitenancy
 {
     public class TenantProvider : ITenantProvider
     {
@@ -42,7 +42,7 @@ namespace Elsa.MultiTenancy
 
             var currentTenantPrefix = path.Value.Value.Split("/").FirstOrDefault(x => x != string.Empty);
 
-            return tenants.FirstOrDefault(x => x.Prefix == currentTenantPrefix);
+            return tenants.FirstOrDefault(x => x.Configuration.GetPrefix() == currentTenantPrefix);
         }
     }
 }

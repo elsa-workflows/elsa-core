@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Mqtt.Bookmarks;
 using Elsa.Activities.Mqtt.Options;
-using Elsa.MultiTenancy;
+using Elsa.Multitenancy;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

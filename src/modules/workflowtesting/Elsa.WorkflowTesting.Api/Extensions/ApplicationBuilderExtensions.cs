@@ -11,7 +11,7 @@ namespace Elsa.WorkflowTesting.Api.Extensions
 
         public static IEndpointRouteBuilder MapWorkflowTestHub(this IEndpointRouteBuilder endpoints, IConfiguration configuration)
         {
-            var multiTenancyEnabled = configuration.GetValue<bool>("Elsa:MultiTenancy");
+            var multiTenancyEnabled = configuration.GetValue<bool>("Elsa:Multitenancy");
             var tenantsConfiguration = configuration.GetSection("Elsa:Tenants").GetChildren();
 
             if (multiTenancyEnabled)

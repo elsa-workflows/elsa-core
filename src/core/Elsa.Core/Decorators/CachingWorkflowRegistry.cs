@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Abstractions.MultiTenancy;
+using Elsa.Abstractions.Multitenancy;
 using Elsa.Caching;
 using Elsa.Events;
 using Elsa.Models;
@@ -20,7 +20,7 @@ namespace Elsa.Decorators
         private readonly IMemoryCache _memoryCache;
         private readonly ICacheSignal _cacheSignal;
         private readonly ITenantProvider _tenantProvider;
-        private string GenerateRootKey() => $"{RootKeyBase}:{_tenantProvider.GetCurrentTenant().Prefix}";
+        private string GenerateRootKey() => $"{RootKeyBase}:{_tenantProvider.GetCurrentTenant().Configuration.GetPrefix()}";
 
         public CachingWorkflowRegistry(IWorkflowRegistry workflowRegistry, IMemoryCache memoryCache, ICacheSignal cacheSignal, ITenantProvider tenantProvider)
         {

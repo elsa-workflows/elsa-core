@@ -1,5 +1,5 @@
 using System;
-using Elsa.Abstractions.MultiTenancy;
+using Elsa.Abstractions.Multitenancy;
 using Elsa.Attributes;
 using Elsa.Options;
 using Elsa.Services.Startup;
@@ -22,7 +22,7 @@ namespace Elsa.Persistence.YesSql
         {
             var tenantProvider = serviceProvider.GetRequiredService<ITenantProvider>();
 
-            var connectionString = tenantProvider.GetCurrentTenant().ConnectionString;
+            var connectionString = tenantProvider.GetCurrentTenant().Configuration.GetDatabaseConnectionString();
 
             options.UseSqLite(connectionString);
         }
@@ -37,7 +37,7 @@ namespace Elsa.Persistence.YesSql
         {
             var tenantProvider = serviceProvider.GetRequiredService<ITenantProvider>();
 
-            var connectionString = tenantProvider.GetCurrentTenant().ConnectionString;
+            var connectionString = tenantProvider.GetCurrentTenant().Configuration.GetDatabaseConnectionString();
 
             options.UseSqlServer(connectionString);
         }
@@ -52,7 +52,7 @@ namespace Elsa.Persistence.YesSql
         {
             var tenantProvider = serviceProvider.GetRequiredService<ITenantProvider>();
 
-            var connectionString = tenantProvider.GetCurrentTenant().ConnectionString;
+            var connectionString = tenantProvider.GetCurrentTenant().Configuration.GetDatabaseConnectionString();
 
             options.UseMySql(connectionString);
         }
@@ -67,7 +67,7 @@ namespace Elsa.Persistence.YesSql
         {
             var tenantProvider = serviceProvider.GetRequiredService<ITenantProvider>();
 
-            var connectionString = tenantProvider.GetCurrentTenant().ConnectionString;
+            var connectionString = tenantProvider.GetCurrentTenant().Configuration.GetDatabaseConnectionString();
 
             options.UsePostgreSql(connectionString);
         }

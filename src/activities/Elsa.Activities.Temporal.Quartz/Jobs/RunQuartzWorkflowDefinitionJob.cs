@@ -1,5 +1,5 @@
 using System.Threading.Tasks;
-using Elsa.Abstractions.MultiTenancy;
+using Elsa.Abstractions.Multitenancy;
 using Elsa.Services;
 using Quartz;
 

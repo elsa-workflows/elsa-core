@@ -1,4 +1,4 @@
-using Elsa.Abstractions.MultiTenancy;
+using Elsa.Abstractions.Multitenancy;
 using Elsa.Models;
 using Elsa.Services.Models;
 using MediatR;

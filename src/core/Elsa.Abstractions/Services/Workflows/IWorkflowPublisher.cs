@@ -1,6 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Abstractions.MultiTenancy;
+using Elsa.Abstractions.Multitenancy;
 using Elsa.Models;
 
 namespace Elsa.Services

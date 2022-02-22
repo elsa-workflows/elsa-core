@@ -1,6 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.MultiTenancy;
+using Elsa.Multitenancy;
 using Elsa.Services;
 using Elsa.WorkflowSettings.Persistence.YesSql.Data;
 using Microsoft.Extensions.DependencyInjection;

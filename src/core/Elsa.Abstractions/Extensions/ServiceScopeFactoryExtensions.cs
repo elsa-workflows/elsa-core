@@ -1,4 +1,4 @@
-using Elsa.Abstractions.MultiTenancy;
+using Elsa.Abstractions.Multitenancy;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa

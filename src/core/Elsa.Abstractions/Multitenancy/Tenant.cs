@@ -1,17 +1,24 @@
-namespace Elsa.Abstractions.MultiTenancy
+using System.Collections.Generic;
+
+namespace Elsa.Abstractions.Multitenancy
 {
     public class Tenant
     {
         public string Name { get; }
-        public string Prefix { get; }
-        public string ConnectionString { get; }
+        public TenantConfiguration Configuration { get; }
         public bool IsDefault { get; }
 
-        public Tenant(string name, string prefix, string connectionString, bool isDefault = false)
+        public Tenant(string name, TenantConfiguration configuration, bool isDefault = false)
         {
             Name = name;
-            Prefix = prefix;
-            ConnectionString = connectionString;
+            Configuration = configuration;
+            IsDefault = isDefault;
+        }
+
+        public Tenant(string name, Dictionary<string, string> configuration, bool isDefault = false)
+        {
+            Name = name;
+            Configuration = new TenantConfiguration(configuration);
             IsDefault = isDefault;
         }
     }

@@ -1,5 +1,5 @@
 using System;
-using Elsa.Abstractions.MultiTenancy;
+using Elsa.Abstractions.Multitenancy;
 using Elsa.Activities.Webhooks;
 using Elsa.Activities.Webhooks.Persistence.Decorators;
 using Elsa.Attributes;
@@ -25,7 +25,7 @@ namespace Elsa.Webhooks.Persistence.YesSql
         {
             var tenantProvider = serviceProvider.GetRequiredService<ITenantProvider>();
 
-            var connectionString = tenantProvider.GetCurrentTenant().ConnectionString;
+            var connectionString = tenantProvider.GetCurrentTenant().Configuration.GetDatabaseConnectionString();
 
             options.UseSqLite(connectionString);
         }
@@ -40,7 +40,7 @@ namespace Elsa.Webhooks.Persistence.YesSql
         {
             var tenantProvider = serviceProvider.GetRequiredService<ITenantProvider>();
 
-            var connectionString = tenantProvider.GetCurrentTenant().ConnectionString;
+            var connectionString = tenantProvider.GetCurrentTenant().Configuration.GetDatabaseConnectionString();
 
             options.UseSqlServer(connectionString);
         }
@@ -55,7 +55,7 @@ namespace Elsa.Webhooks.Persistence.YesSql
         {
             var tenantProvider = serviceProvider.GetRequiredService<ITenantProvider>();
 
-            var connectionString = tenantProvider.GetCurrentTenant().ConnectionString;
+            var connectionString = tenantProvider.GetCurrentTenant().Configuration.GetDatabaseConnectionString();
 
             options.UseMySql(connectionString);
         }
@@ -70,7 +70,7 @@ namespace Elsa.Webhooks.Persistence.YesSql
         {
             var tenantProvider = serviceProvider.GetRequiredService<ITenantProvider>();
 
-            var connectionString = tenantProvider.GetCurrentTenant().ConnectionString;
+            var connectionString = tenantProvider.GetCurrentTenant().Configuration.GetDatabaseConnectionString();
 
             options.UsePostgreSql(connectionString);
         }

@@ -1,4 +1,4 @@
-using Elsa.Abstractions.MultiTenancy;
+using Elsa.Abstractions.Multitenancy;
 using Elsa.Webhooks.Models;
 using Elsa.Webhooks.Persistence.MongoDb.Data;
 using MongoDB.Driver;
@@ -20,7 +20,7 @@ namespace Elsa.Webhooks.Persistence.MongoDb.Services
 
         private IMongoDatabase GetMongoDatabase()
         {
-            var connectionString = _tenantProvider.GetCurrentTenant().ConnectionString;
+            var connectionString = _tenantProvider.GetCurrentTenant().Configuration.GetDatabaseConnectionString();
 
             return _context.GetDatabase(connectionString);
         }

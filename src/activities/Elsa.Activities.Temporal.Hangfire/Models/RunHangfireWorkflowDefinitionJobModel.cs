@@ -1,4 +1,4 @@
-using Elsa.Abstractions.MultiTenancy;
+using Elsa.Abstractions.Multitenancy;
 
 namespace Elsa.Activities.Temporal.Hangfire.Models
 {

@@ -1,5 +1,5 @@
 using System;
-using Elsa.Abstractions.MultiTenancy;
+using Elsa.Abstractions.Multitenancy;
 using Elsa.Attributes;
 using Elsa.Persistence.EntityFramework.Core;
 using Microsoft.EntityFrameworkCore;
@@ -16,7 +16,7 @@ namespace Elsa.Persistence.EntityFramework.MySql
         {
             var tenantProvider = serviceProvider.GetRequiredService<ITenantProvider>();
 
-            var connectionString = tenantProvider.GetCurrentTenant().ConnectionString;
+            var connectionString = tenantProvider.GetCurrentTenant().Configuration.GetDatabaseConnectionString();
 
             options.UseMySql(connectionString);
         }

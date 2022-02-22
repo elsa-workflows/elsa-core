@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Elsa.MultiTenancy;
+using Elsa.Multitenancy;
 using MongoDB.Driver;
 
 namespace Elsa.WorkflowSettings.Persistence.MongoDb.Services
@@ -13,16 +13,18 @@ namespace Elsa.WorkflowSettings.Persistence.MongoDb.Services
         {
             foreach (var tenant in tenantStore.GetTenants())
             {
-                var client = new MongoClient(tenant.ConnectionString);
+                var connectionString = tenant.Configuration.GetDatabaseConnectionString();
 
-                var dbName = MongoUrl.Create(tenant.ConnectionString).DatabaseName;
+                var client = new MongoClient(connectionString);
+
+                var dbName = MongoUrl.Create(connectionString).DatabaseName;
 
                 if (dbName == null)
                     throw new Exception($"Please specify a database name for [{tenant.Name}] tenant via the connection string.");
 
                 if (_databases.ContainsKey(dbName)) continue;
 
-                _databases.Add(tenant.ConnectionString, client.GetDatabase(dbName));
+                _databases.Add(connectionString, client.GetDatabase(dbName));
             }
         }
 

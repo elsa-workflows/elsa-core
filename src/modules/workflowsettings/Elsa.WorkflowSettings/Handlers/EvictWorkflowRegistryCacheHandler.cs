@@ -1,6 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Abstractions.MultiTenancy;
+using Elsa.Abstractions.Multitenancy;
 using Elsa.Caching;
 using Elsa.Decorators;
 using Elsa.Services;
@@ -55,7 +55,7 @@ namespace Elsa.WorkflowSettings.Handlers
 
         private string GenerateCacheKey(string keyBase)
         {
-            var tenantPrefix = _tenantProvider.TryGetCurrentTenant()?.Prefix;
+            var tenantPrefix = _tenantProvider.TryGetCurrentTenant()?.Configuration.GetPrefix();
             return string.IsNullOrEmpty(tenantPrefix) ? keyBase : $"{keyBase}_{tenantPrefix}";
         }
     }

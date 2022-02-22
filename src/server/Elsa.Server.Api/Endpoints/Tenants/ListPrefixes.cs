@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
-using Elsa.MultiTenancy;
+using Elsa.Multitenancy;
 using Elsa.Serialization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -34,7 +34,7 @@ namespace Elsa.Server.Api.Endpoints.Tenants
         ]
         public IActionResult Handle()
         {
-            var prefixes = _tenantStore.GetTenants().Where(x => !x.IsDefault && !string.IsNullOrEmpty(x.Prefix)).Select(x => x.Prefix).ToList();
+            var prefixes = _tenantStore.GetTenants().Where(x => !x.IsDefault && !string.IsNullOrEmpty(x.Configuration.GetPrefix())).Select(x => x.Configuration.GetPrefix()).ToList();
 
             return Json(prefixes, _contentSerializer.GetSettings());
         }

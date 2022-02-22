@@ -1,4 +1,4 @@
-using Elsa.Abstractions.MultiTenancy;
+using Elsa.Abstractions.Multitenancy;
 using Elsa.Models;
 using MongoDB.Driver;
 
@@ -23,7 +23,7 @@ namespace Elsa.Persistence.MongoDb.Services
 
         private IMongoDatabase GetDatabase()
         {
-            var connectionString = _tenantProvider.GetCurrentTenant().ConnectionString;
+            var connectionString = _tenantProvider.GetCurrentTenant().Configuration.GetDatabaseConnectionString();
 
             return _context.GetDatabase(connectionString);
         }

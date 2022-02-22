@@ -8,7 +8,7 @@ using AutoMapper;
 using Elsa.Activities.File.Bookmarks;
 using Elsa.Activities.File.Models;
 using Elsa.Models;
-using Elsa.MultiTenancy;
+using Elsa.Multitenancy;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;

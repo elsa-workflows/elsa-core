@@ -1,4 +1,4 @@
-namespace Elsa.Abstractions.MultiTenancy
+namespace Elsa.Abstractions.Multitenancy
 {
     public interface ITenantProvider
     {

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Abstractions.MultiTenancy;
+using Elsa.Abstractions.Multitenancy;
 using Elsa.Activities.Http.Bookmarks;
 using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.Http.Models;
@@ -217,7 +217,7 @@ namespace Elsa.Activities.Http.Middleware
 
         private PathString? GetBasePath(PathString? basePath, ITenantProvider tenantProvider)
         {
-            var tenantPrefix = tenantProvider.TryGetCurrentTenant()?.Prefix;
+            var tenantPrefix = tenantProvider.TryGetCurrentTenant()?.Configuration.GetPrefix();
 
             return string.IsNullOrEmpty(tenantPrefix) ? basePath : $"/{tenantPrefix}{basePath}";
         }
