@@ -6,39 +6,31 @@ using System.Threading.Tasks;
 using Elsa.Activities.AzureServiceBus.Bookmarks;
 using Elsa.Models;
 using Elsa.Services;
-using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Rebus.Extensions;
 
 namespace Elsa.Activities.AzureServiceBus.Services
 {
-    public record TopicWorkerKey(string Tag, string TopicName, string SubscriptionName);
+    public record WorkerKey(string Tag, string QueueOrTopic, string? Subscription);
 
-    // TODO: Look for a way to merge ServiceBusQueuesStarter with ServiceBusTopicsStarter - there's a lot of overlap.
-    public class ServiceBusTopicsStarter : IServiceBusTopicsStarter
+    public class WorkersStarter : IWorkersStarter
     {
-        private readonly ITopicMessageReceiverFactory _receiverFactory;
         private readonly IBookmarkSerializer _bookmarkSerializer;
-        private readonly IServiceScopeFactory _scopeFactory;
         private readonly IServiceProvider _serviceProvider;
-        private readonly ILogger<ServiceBusTopicsStarter> _logger;
-        private readonly IDictionary<TopicWorkerKey, TopicWorker> _workers;
+        private readonly ILogger<WorkersStarter> _logger;
+        private readonly IDictionary<WorkerKey, Worker> _workers;
         private readonly SemaphoreSlim _semaphore = new(1);
 
-        public ServiceBusTopicsStarter(
-            ITopicMessageReceiverFactory receiverFactory,
-            IServiceScopeFactory scopeFactory,
+        public WorkersStarter(
             IServiceProvider serviceProvider,
-            ILogger<ServiceBusTopicsStarter> logger,
-            IBookmarkSerializer bookmarkSerializer)
+            IBookmarkSerializer bookmarkSerializer,
+            ILogger<WorkersStarter> logger)
         {
-            _receiverFactory = receiverFactory;
-            _scopeFactory = scopeFactory;
             _serviceProvider = serviceProvider;
             _logger = logger;
             _bookmarkSerializer = bookmarkSerializer;
-            _workers = new Dictionary<TopicWorkerKey, TopicWorker>();
+            _workers = new Dictionary<WorkerKey, Worker>();
         }
 
         public async Task CreateWorkersAsync(IReadOnlyCollection<Trigger> triggers, CancellationToken cancellationToken = default)
@@ -51,8 +43,8 @@ namespace Elsa.Activities.AzureServiceBus.Services
             {
                 foreach (var trigger in filteredTriggers)
                 {
-                    var bookmark = _bookmarkSerializer.Deserialize<TopicMessageReceivedBookmark>(trigger.Model);
-                    await CreateAndAddWorkerAsync(trigger.WorkflowDefinitionId, bookmark.TopicName, bookmark.SubscriptionName, cancellationToken);
+                    var bookmark = _bookmarkSerializer.Deserialize<MessageReceivedBookmark>(trigger.Model);
+                    await CreateAndAddWorkerAsync(trigger.WorkflowDefinitionId, bookmark.QueueOrTopic, bookmark.Subscription, cancellationToken);
                 }
             }
             finally
@@ -71,8 +63,8 @@ namespace Elsa.Activities.AzureServiceBus.Services
             {
                 foreach (var bookmark in filteredBookmarks)
                 {
-                    var bookmarkModel = _bookmarkSerializer.Deserialize<TopicMessageReceivedBookmark>(bookmark.Model);
-                    await CreateAndAddWorkerAsync(bookmark.WorkflowInstanceId, bookmarkModel.TopicName, bookmarkModel.SubscriptionName, cancellationToken);
+                    var bookmarkModel = _bookmarkSerializer.Deserialize<MessageReceivedBookmark>(bookmark.Model);
+                    await CreateAndAddWorkerAsync(bookmark.WorkflowInstanceId, bookmarkModel.QueueOrTopic, bookmarkModel.Subscription, cancellationToken);
                 }
             }
             finally
@@ -104,23 +96,26 @@ namespace Elsa.Activities.AzureServiceBus.Services
             await RemoveWorkersAsync(workflowInstanceIds);
         }
 
-        private async Task CreateAndAddWorkerAsync(string tag, string topicName, string subscriptionName, CancellationToken cancellationToken)
+        private async Task CreateAndAddWorkerAsync(string tag, string queueOrTopic, string? subscription, CancellationToken cancellationToken)
         {
             try
             {
-                var key = new TopicWorkerKey(tag, topicName, subscriptionName);
+                var key = new WorkerKey(tag, queueOrTopic, subscription);
                 var worker = _workers.ContainsKey(key) ? _workers[key] : default;
 
                 if (worker == null)
                 {
-                    var receiver = await _receiverFactory.GetTopicReceiverAsync(topicName, subscriptionName, cancellationToken);
-                    worker = ActivatorUtilities.CreateInstance<TopicWorker>(_serviceProvider, tag, receiver, (Func<IReceiverClient, Task>)DisposeReceiverAsync);
+                    worker = ActivatorUtilities.CreateInstance<Worker>(_serviceProvider, queueOrTopic, subscription!, tag);
                     _workers.Add(key, worker);
+                    await worker.StartAsync(cancellationToken);
                 }
             }
             catch (Exception e)
             {
-                _logger.LogWarning(e, "Failed to create a receiver for topic {TopicName} and subscription {SubscriptionName}", topicName, subscriptionName);
+                if(subscription == null)
+                    _logger.LogWarning(e, "Failed to create a receiver for {Queue}", queueOrTopic);
+                else
+                    _logger.LogWarning(e, "Failed to create a receiver for {Topic} and subscription {Subscription}", queueOrTopic, subscription);
             }
         }
 
@@ -136,23 +131,21 @@ namespace Elsa.Activities.AzureServiceBus.Services
                 await RemoveWorkerAsync(worker);
         }
 
-        private async Task RemoveWorkerAsync(KeyValuePair<TopicWorkerKey, TopicWorker> worker)
+        private async Task RemoveWorkerAsync(KeyValuePair<WorkerKey, Worker> worker)
         {
             await worker.Value.DisposeAsync();
             _workers.Remove(worker);
         }
 
-        private async Task DisposeReceiverAsync(IReceiverClient messageReceiver) => await _receiverFactory.DisposeReceiverAsync(messageReceiver);
-
         private IEnumerable<Trigger> Filter(IEnumerable<Trigger> triggers)
         {
-            var bookmarkType = typeof(TopicMessageReceivedBookmark).GetSimpleAssemblyQualifiedName();
+            var bookmarkType = typeof(MessageReceivedBookmark).GetSimpleAssemblyQualifiedName();
             return triggers.Where(x => x.ModelType == bookmarkType);
         }
 
         private IEnumerable<Bookmark> Filter(IEnumerable<Bookmark> triggers)
         {
-            var modeType = typeof(TopicMessageReceivedBookmark).GetSimpleAssemblyQualifiedName();
+            var modeType = typeof(MessageReceivedBookmark).GetSimpleAssemblyQualifiedName();
             return triggers.Where(x => x.ModelType == modeType);
         }
     }

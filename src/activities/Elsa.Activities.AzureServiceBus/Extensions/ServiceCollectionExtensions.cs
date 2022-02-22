@@ -1,4 +1,9 @@
 using System;
+using Azure;
+using Azure.Core;
+using Azure.Core.Pipeline;
+using Azure.Messaging.ServiceBus;
+using Azure.Messaging.ServiceBus.Administration;
 using Elsa.Activities.AzureServiceBus.Bookmarks;
 using Elsa.Activities.AzureServiceBus.Consumers;
 using Elsa.Activities.AzureServiceBus.Options;
@@ -6,10 +11,9 @@ using Elsa.Activities.AzureServiceBus.Services;
 using Elsa.Activities.AzureServiceBus.StartupTasks;
 using Elsa.Events;
 using Elsa.Options;
-using Microsoft.Azure.ServiceBus;
-using Microsoft.Azure.ServiceBus.Management;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Microsoft.Rest.TransientFaultHandling;
 
 namespace Elsa.Activities.AzureServiceBus.Extensions
 {
@@ -25,50 +29,54 @@ namespace Elsa.Activities.AzureServiceBus.Extensions
             options.Services
                 .AddSingleton(CreateServiceBusConnection)
                 .AddSingleton(CreateServiceBusManagementClient)
-                .AddSingleton<BusClientFactory>()
-                .AddSingleton<IQueueMessageSenderFactory>(sp => sp.GetRequiredService<BusClientFactory>())
-                .AddSingleton<IQueueMessageReceiverClientFactory>(sp => sp.GetRequiredService<BusClientFactory>())
-                .AddSingleton<ITopicMessageSenderFactory>(sp => sp.GetRequiredService<BusClientFactory>())
-                .AddSingleton<ITopicMessageReceiverFactory>(sp => sp.GetRequiredService<BusClientFactory>())
-                .AddSingleton<IServiceBusQueuesStarter, ServiceBusQueuesStarter>()
-                .AddSingleton<IServiceBusTopicsStarter, ServiceBusTopicsStarter>()
-                .AddHostedService<StartServiceBusQueues>()
-                .AddHostedService<StartServiceBusTopics>()
-                .AddBookmarkProvider<QueueMessageReceivedBookmarkProvider>()
-                .AddBookmarkProvider<TopicMessageReceivedBookmarkProvider>()
+                .AddSingleton<IMessageSenderFactory, MessageSenderFactory>()
+                .AddSingleton<IWorkersStarter, WorkersStarter>()
+                .AddHostedService<StartWorkers>()
+                .AddBookmarkProvider<MessageReceivedBookmarkProvider>()
                 ;
 
-            options.AddPubSubConsumer<RestartServiceBusQueuesConsumer, TriggerIndexingFinished>("WorkflowManagementEvents");
-            options.AddPubSubConsumer<RestartServiceBusQueuesConsumer, TriggersDeleted>("WorkflowManagementEvents");
-            options.AddPubSubConsumer<RestartServiceBusQueuesConsumer, BookmarkIndexingFinished>("WorkflowManagementEvents");
-            options.AddPubSubConsumer<RestartServiceBusQueuesConsumer, BookmarksDeleted>("WorkflowManagementEvents");
             options.AddPubSubConsumer<RestartServiceBusTopicsConsumer, TriggerIndexingFinished>("WorkflowManagementEvents");
             options.AddPubSubConsumer<RestartServiceBusTopicsConsumer, TriggersDeleted>("WorkflowManagementEvents");
             options.AddPubSubConsumer<RestartServiceBusTopicsConsumer, BookmarkIndexingFinished>("WorkflowManagementEvents");
             options.AddPubSubConsumer<RestartServiceBusTopicsConsumer, BookmarksDeleted>("WorkflowManagementEvents");
 
             options
-                .AddActivity<AzureServiceBusQueueMessageReceived>()
-                .AddActivity<SendAzureServiceBusQueueMessage>()
-                .AddActivity<SendAzureServiceBusTopicMessage>()
-                .AddActivity<AzureServiceBusTopicMessageReceived>()
-                ;
+                .AddActivity<AzureServiceBusMessageReceived>()
+                .AddActivity<SendAzureServiceBusMessageActivity>();
 
             return options;
         }
 
-        private static ServiceBusConnection CreateServiceBusConnection(IServiceProvider serviceProvider)
+        private static ServiceBusClient CreateServiceBusConnection(IServiceProvider serviceProvider)
         {
             var options = serviceProvider.GetRequiredService<IOptions<AzureServiceBusOptions>>().Value;
             var connectionString = options.ConnectionString;
-            return new ServiceBusConnection(connectionString, RetryPolicy.Default);
+
+            return new ServiceBusClient(connectionString, new ServiceBusClientOptions
+            {
+                RetryOptions = new ServiceBusRetryOptions
+                {
+                    Mode = ServiceBusRetryMode.Fixed,
+                    Delay = TimeSpan.FromSeconds(10),
+                    MaxRetries = 100
+                }
+            });
         }
 
-        private static ManagementClient CreateServiceBusManagementClient(IServiceProvider serviceProvider)
+        private static ServiceBusAdministrationClient CreateServiceBusManagementClient(IServiceProvider serviceProvider)
         {
             var options = serviceProvider.GetRequiredService<IOptions<AzureServiceBusOptions>>().Value;
             var connectionString = options.ConnectionString;
-            return new ManagementClient(connectionString);
+
+            return new ServiceBusAdministrationClient(connectionString, new ServiceBusAdministrationClientOptions
+            {
+                Retry =
+                {
+                    Mode = RetryMode.Fixed,
+                    Delay = TimeSpan.FromSeconds(5),
+                    MaxRetries = 5
+                }
+            });
         }
     }
 }

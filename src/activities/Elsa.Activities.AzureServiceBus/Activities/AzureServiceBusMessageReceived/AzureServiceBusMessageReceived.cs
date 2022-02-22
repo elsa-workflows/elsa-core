@@ -8,27 +8,32 @@ using Elsa.Serialization;
 using Elsa.Services;
 using Elsa.Services.Models;
 
+// ReSharper disable ExplicitCallerInfoArgument
+// ReSharper disable once CheckNamespace
 namespace Elsa.Activities.AzureServiceBus
 {
-    [Trigger(Category = "Azure Service Bus", DisplayName = "Service Bus Message Received", Description = "Triggered when a message is received on the specified queue", Outcomes = new[] { OutcomeNames.Done })]
-    public class AzureServiceBusQueueMessageReceived : Activity
+    [Trigger(Category = "Azure Service Bus", DisplayName = "Message Received", Description = "Triggered when a message is received on the specified queue or topic and subscription", Outcomes = new[] { OutcomeNames.Done })]
+    public class AzureServiceBusMessageReceived : Activity
     {
         private readonly IContentSerializer _serializer;
 
-        public AzureServiceBusQueueMessageReceived(IContentSerializer serializer)
+        public AzureServiceBusMessageReceived(IContentSerializer serializer)
         {
             _serializer = serializer;
         }
 
         [ActivityInput(SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
-        public string QueueName { get; set; } = default!;
+        public string QueueOrTopic { get; set; } = default!;
+
+        [ActivityInput(SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        public string Subscription { get; set; } = default!;
 
         [ActivityInput]
         public Type MessageType { get; set; } = default!;
         
         [ActivityOutput]
         public object? Output { get; set; }
-        
+
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => context.WorkflowExecutionContext.IsFirstPass ? ExecuteInternal(context) : Suspend();
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context) => ExecuteInternal(context);
 

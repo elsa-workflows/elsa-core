@@ -5,20 +5,26 @@ using Elsa.Expressions;
 using Elsa.Serialization;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Microsoft.Azure.ServiceBus;
-using Microsoft.Azure.ServiceBus.Core;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using Azure.Messaging.ServiceBus;
 using Elsa.Activities.AzureServiceBus.ActivityExecutionResults;
 using NodaTime;
 
 namespace Elsa.Activities.AzureServiceBus
 {
-    public abstract class AzureServiceBusSendActivity : Activity
+    public class SendAzureServiceBusMessageActivity : Activity
     {
         private readonly IContentSerializer _serializer;
-        protected AzureServiceBusSendActivity(IContentSerializer serializer) => _serializer = serializer;
+        public SendAzureServiceBusMessageActivity(IContentSerializer serializer) => _serializer = serializer;
+
+        [ActivityInput(Hint = "Enter the name of the queue to send the message to. Leave empty of you want to send to a topic.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        public string? Queue { get; set; } = default!;
+
+        [ActivityInput(Hint = "Enter the name of the topic to send the message to. Leave empty of you want to send to a queue.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        public string? Topic { get; set; } = default!;
 
         [ActivityInput(SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid, SyntaxNames.Json })]
         public object Message { get; set; } = default!;
@@ -30,7 +36,7 @@ namespace Elsa.Activities.AzureServiceBus
         public string ContentType { get; set; } = default!;
 
         [ActivityInput(Category = PropertyCategories.Advanced, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
-        public string? Label { get; set; }
+        public string? Subject { get; set; }
 
         [ActivityInput(Category = PropertyCategories.Advanced, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string? To { get; set; }
@@ -65,37 +71,28 @@ namespace Elsa.Activities.AzureServiceBus
         [ActivityInput(Category = PropertyCategories.Advanced, DefaultSyntax = SyntaxNames.Json, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid, SyntaxNames.Json }, UIHint = ActivityInputUIHints.MultiLine)]
         public IDictionary<string, object>? UserProperties { get; set; } = new Dictionary<string, object>();
 
-        [ActivityInput(Category = PropertyCategories.Advanced,Hint = "If set, the message will be sent to the Service Bus only after the workflow is suspended, which is useful for the Request/Response pattern.", DefaultValue = false)]
+        [ActivityInput(Category = PropertyCategories.Advanced, Hint = "If set, the message will be sent to the Service Bus only after the workflow is suspended, which is useful for the Request/Response pattern.", DefaultValue = false)]
         public bool SendMessageOnSuspend { get; set; }
 
-        protected abstract Task<ISenderClient> GetSenderAsync();
-
-        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
+        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
             var message = CreateMessage(Message);
 
             if (!string.IsNullOrWhiteSpace(context.WorkflowExecutionContext.CorrelationId))
                 message.CorrelationId = context.WorkflowExecutionContext.CorrelationId;
 
-            var sender = await GetSenderAsync();
-            
-            if(SendMessageOnSuspend)
-                return Combine(Done(), new ServiceBusActionResult(sender, message));
-            
-            await sender.SendAsync(message);
-            return Done();
+            return Combine(Done(), new ServiceBusActionResult(Queue, Topic, message, SendMessageOnSuspend));
         }
 
-        protected Message CreateMessage(Object input)
+        private ServiceBusMessage CreateMessage(Object input)
         {
             var message = Extensions.MessageBodyExtensions.CreateMessage(_serializer, input);
 
             message.CorrelationId = CorrelationId;
             message.ContentType = ContentType;
-            message.Label = Label;
+            message.Subject = Subject;
             message.To = To;
             message.PartitionKey = PartitionKey;
-            message.ViaPartitionKey = ViaPartitionKey;
             message.ReplyTo = ReplyTo;
             message.SessionId = SessionId;
             message.ReplyToSessionId = ReplyToSessionId;
@@ -107,11 +104,11 @@ namespace Elsa.Activities.AzureServiceBus
                 message.TimeToLive = TimeToLive.Value.ToTimeSpan();
 
             if (ScheduledEnqueueTimeUtc != null)
-                message.ScheduledEnqueueTimeUtc = ScheduledEnqueueTimeUtc.Value.ToDateTimeUtc();
+                message.ScheduledEnqueueTime = ScheduledEnqueueTimeUtc.Value.ToDateTimeUtc();
 
             if (UserProperties != null)
-                foreach (var props in UserProperties)
-                    message.UserProperties.Add(props.Key, props.Value);
+                foreach (var (key, value) in UserProperties)
+                    message.ApplicationProperties[key] = value;
 
             return message;
         }
