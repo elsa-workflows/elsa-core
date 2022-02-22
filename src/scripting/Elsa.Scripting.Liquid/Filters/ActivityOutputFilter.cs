@@ -22,7 +22,7 @@ namespace Elsa.Scripting.Liquid.Filters
         {
             var activityName = input.ToStringValue();
             var activityPropertyName = arguments.Values.First().ToStringValue();
-            var activityExecutionContext = (ActivityExecutionContext) context.Model;
+            var activityExecutionContext = (ActivityExecutionContext) context.Model.ToObjectValue();
             var activityBlueprint = activityExecutionContext.WorkflowExecutionContext.GetActivityBlueprintByName(activityName)!;
             var activityId = activityBlueprint.Id;
             var storageProviderName = activityBlueprint.PropertyStorageProviders.GetItem(activityPropertyName);

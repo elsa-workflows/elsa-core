@@ -33,9 +33,8 @@ namespace Elsa.Scripting.Liquid.Services
 
         private async Task<TemplateContext> CreateTemplateContextAsync(ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
         {
-            var context = new TemplateContext(new TemplateOptions());
+            var context = new TemplateContext(activityExecutionContext, new TemplateOptions());
             context.SetValue("ActivityExecutionContext", activityExecutionContext);
-            context.Model = activityExecutionContext;
             await _mediator.Publish(new EvaluatingLiquidExpression(context, activityExecutionContext), cancellationToken);
             return context;
         }
