@@ -14,12 +14,13 @@ namespace Elsa.Services.Workflows
 {
     public class WorkflowRegistry : IWorkflowRegistry
     {
-        private readonly IEnumerable<IWorkflowProvider> _workflowProviders;
+        private readonly ListWorkflowProvider _listWorkflowProvider = new();
+        private readonly ICollection<IWorkflowProvider> _workflowProviders;
         private readonly IMediator _mediator;
 
         public WorkflowRegistry(IEnumerable<IWorkflowProvider> workflowProviders, IMediator mediator)
         {
-            _workflowProviders = workflowProviders;
+            _workflowProviders = workflowProviders.Append(_listWorkflowProvider).ToList();
             _mediator = mediator;
         }
 
@@ -37,6 +38,8 @@ namespace Elsa.Services.Workflows
 
         public async Task<IEnumerable<IWorkflowBlueprint>> FindManyByNames(IEnumerable<string> names, CancellationToken cancellationToken = default) =>
             await FindManyInternalAsync(provider => provider.FindManyByNames(names, cancellationToken), cancellationToken).ToListAsync(cancellationToken);
+
+        public void Add(IWorkflowBlueprint workflowBlueprint) => _listWorkflowProvider.Add(workflowBlueprint);
 
         private async Task<IWorkflowBlueprint?> FindInternalAsync(Func<IWorkflowProvider, ValueTask<IWorkflowBlueprint?>> providerAction, CancellationToken cancellationToken = default)
         {

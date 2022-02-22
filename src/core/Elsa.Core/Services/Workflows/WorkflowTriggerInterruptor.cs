@@ -73,7 +73,7 @@ namespace Elsa.Services.Workflows
 
         private async IAsyncEnumerable<RunWorkflowResult> InterruptActivityTypeInternalAsync(string activityType, WorkflowInput? input, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            var bookmarks = await _bookmarkFinder.FindBookmarksAsync(activityType, Enumerable.Empty<IBookmark>(), null, null, cancellationToken);
+            var bookmarks = await _bookmarkFinder.FindBookmarksAsync(activityType, Enumerable.Empty<IBookmark>(), cancellationToken: cancellationToken);
             var workflowInstanceIds = bookmarks.Select(x => x.WorkflowInstanceId).Distinct().ToList();
             var workflowInstances = await _workflowInstanceStore.FindManyAsync(new ManyWorkflowInstanceIdsSpecification(workflowInstanceIds), cancellationToken: cancellationToken);
 

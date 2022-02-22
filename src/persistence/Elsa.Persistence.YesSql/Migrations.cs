@@ -14,6 +14,7 @@ namespace Elsa.Persistence.YesSql
                     .Column<string?>(nameof(WorkflowDefinitionIndex.TenantId))
                     .Column<string>(nameof(WorkflowDefinitionIndex.DefinitionId))
                     .Column<string>(nameof(WorkflowDefinitionIndex.DefinitionVersionId))
+                    .Column<string>(nameof(WorkflowDefinitionIndex.Name))
                     .Column<int>(nameof(WorkflowDefinitionIndex.Version))
                     .Column<bool>(nameof(WorkflowDefinitionIndex.IsLatest))
                     .Column<bool>(nameof(WorkflowDefinitionIndex.IsPublished))
@@ -80,7 +81,7 @@ namespace Elsa.Persistence.YesSql
                     .Column<string>(nameof(TriggerIndex.WorkflowDefinitionId)),
                 CollectionNames.Triggers);
 
-            return 3;
+            return 4;
         }
 
         public int UpdateFrom1()
@@ -104,6 +105,16 @@ namespace Elsa.Persistence.YesSql
                 CollectionNames.Triggers);
 
             return 3;
+        }
+
+        public int UpdateFrom3()
+        {
+            SchemaBuilder.AlterIndexTable<WorkflowDefinitionIndex>(
+                table => table
+                    .AddColumn<string?>(nameof(WorkflowDefinitionIndex.Name)),
+                CollectionNames.WorkflowDefinitions);
+
+            return 4;
         }
     }
 }

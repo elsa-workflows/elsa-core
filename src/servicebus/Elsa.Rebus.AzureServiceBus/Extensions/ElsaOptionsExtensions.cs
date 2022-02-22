@@ -46,7 +46,7 @@ namespace Elsa.Rebus.AzureServiceBus
 
                     if (context.AutoDeleteOnIdle)
                         transport.SetAutoDeleteOnIdle(TimeSpan.FromMinutes(5));
-                    
+
                     configureTransport?.Invoke(new ConfigureTransportContext(context, transport));
                 });
         }

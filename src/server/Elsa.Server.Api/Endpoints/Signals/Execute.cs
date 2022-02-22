@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Signaling.Services;
 using Elsa.Server.Api.ActionFilters;
+using Elsa.Server.Api.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -19,10 +20,12 @@ namespace Elsa.Server.Api.Endpoints.Signals
     public class Execute : Controller
     {
         private readonly ISignaler _signaler;
+        private readonly IEndpointContentSerializerSettingsProvider _serializerSettingsProvider;
 
-        public Execute(ISignaler signaler)
+        public Execute(ISignaler signaler, IEndpointContentSerializerSettingsProvider serializerSettingsProvider)
         {
             _signaler = signaler;
+            _serializerSettingsProvider = serializerSettingsProvider;
         }
 
         [HttpPost]
@@ -41,7 +44,9 @@ namespace Elsa.Server.Api.Endpoints.Signals
             if (Response.HasStarted)
                 return new EmptyResult();
 
-            return Ok(new ExecuteSignalResponse(result.Select(x => new CollectedWorkflow(x.WorkflowInstanceId, x.ActivityId)).ToList()));
+            return Json(
+                new ExecuteSignalResponse(result.Select(x => new CollectedWorkflow(x.WorkflowInstanceId, x.ActivityId)).ToList()),
+                _serializerSettingsProvider.GetSettings());
         }
     }
 }

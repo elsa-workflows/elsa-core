@@ -385,6 +385,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.Mqtt", "src
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.MqttWorker", "src\samples\worker\Elsa.Samples.MqttWorker\Elsa.Samples.MqttWorker.csproj", "{8B58C3EA-20C2-491A-ADEC-E41F0EC787FB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.NestedForks", "src\samples\aspnet\Elsa.Samples.NestedForks\Elsa.Samples.NestedForks.csproj", "{A7253665-5F7A-4BCB-B78B-E2E897E90DE4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -915,6 +917,10 @@ Global
 		{8B58C3EA-20C2-491A-ADEC-E41F0EC787FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8B58C3EA-20C2-491A-ADEC-E41F0EC787FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8B58C3EA-20C2-491A-ADEC-E41F0EC787FB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A7253665-5F7A-4BCB-B78B-E2E897E90DE4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A7253665-5F7A-4BCB-B78B-E2E897E90DE4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A7253665-5F7A-4BCB-B78B-E2E897E90DE4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A7253665-5F7A-4BCB-B78B-E2E897E90DE4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1087,6 +1093,7 @@ Global
 		{67C58C2B-B873-47C8-B5B9-93B0587EE634} = {E42743A0-FBDD-4150-9D53-6000496D9B87}
 		{791D50F6-EAF2-4E20-9EDF-3BAF9CB7F796} = {B43B546E-23F3-46E8-ACB7-D04F05CDA180}
 		{8B58C3EA-20C2-491A-ADEC-E41F0EC787FB} = {E42743A0-FBDD-4150-9D53-6000496D9B87}
+		{A7253665-5F7A-4BCB-B78B-E2E897E90DE4} = {22E75696-6FE9-436A-9097-EE21C603F818}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}

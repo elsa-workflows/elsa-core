@@ -9,7 +9,6 @@ using Elsa.Activities.File.StartupTasks;
 using Elsa.Events;
 using Elsa.Options;
 using Elsa.Runtime;
-using Elsa.Services;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection

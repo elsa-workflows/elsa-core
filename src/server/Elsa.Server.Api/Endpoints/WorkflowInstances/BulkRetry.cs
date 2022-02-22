@@ -5,6 +5,7 @@ using Elsa.Abstractions.Multitenancy;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications.WorkflowInstances;
+using Elsa.Server.Api.Services;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -21,12 +22,14 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
     {
         private readonly IWorkflowInstanceStore _store;
         private readonly IWorkflowReviver _reviver;
+        private readonly IEndpointContentSerializerSettingsProvider _serializerSettingsProvider;
         private readonly ITenantProvider _tenantProvider;
 
-        public BulkRetry(IWorkflowInstanceStore store, IWorkflowReviver reviver, ITenantProvider tenantProvider)
+        public BulkRetry(IWorkflowInstanceStore store, IWorkflowReviver reviver, IEndpointContentSerializerSettingsProvider serializerSettingsProvider, ITenantProvider tenantProvider)
         {
             _store = store;
             _reviver = reviver;
+            _serializerSettingsProvider = serializerSettingsProvider;
             _tenantProvider = tenantProvider;
         }
 
@@ -48,10 +51,10 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
             foreach (var workflowInstance in faultedWorkflowInstances) 
                 await _reviver.ReviveAndQueueAsync(workflowInstance, tenant, cancellationToken);
 
-            return Ok(new
+            return Json(new
             {
                 ScheduledWorkflowCount = faultedWorkflowInstances.Count
-            });
+            }, _serializerSettingsProvider.GetSettings());
         }
     }
 }

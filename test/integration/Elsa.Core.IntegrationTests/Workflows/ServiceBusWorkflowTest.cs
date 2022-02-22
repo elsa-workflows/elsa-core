@@ -18,11 +18,15 @@ using Elsa.Services.Models;
 using System.Reflection;
 using Elsa.Services.Workflows;
 using Elsa.Activities.AzureServiceBus.Bookmarks;
+using Elsa.Activities.AzureServiceBus.Extensions;
+using Elsa.Models;
 
 namespace Elsa.Core.IntegrationTests.Workflows
 {
     public class ServiceBusWorkflowTest : WorkflowsUnitTestBase
     {
+        private static readonly Mock<IQueueMessageSenderFactory> QueueMessageSenderFactory = new();
+        private static readonly Mock<IQueueMessageReceiverClientFactory> QueueMessageReceiverFactory = new();
         private static readonly Mock<ITopicMessageSenderFactory> TopicMessageSenderFactory = new();
         private static readonly Mock<ITopicMessageReceiverFactory> TopicMessageReceiverFactory = new();
         private static readonly Mock<ISenderClient> SenderClient = new();
@@ -36,6 +40,8 @@ namespace Elsa.Core.IntegrationTests.Workflows
                 services =>
                 {
                     services
+                        .AddSingleton(QueueMessageSenderFactory.Object)
+                        .AddSingleton(QueueMessageReceiverFactory.Object)
                         .AddSingleton(TopicMessageSenderFactory.Object)
                         .AddSingleton(TopicMessageReceiverFactory.Object)
                         .AddSingleton<IWorkflowLaunchpad, WorkflowLaunchpad>()
@@ -50,8 +56,7 @@ namespace Elsa.Core.IntegrationTests.Workflows
                 options =>
                 {
                     options
-                        .AddActivity<SendAzureServiceBusTopicMessage>()
-                        .AddActivity<AzureServiceBusTopicMessageReceived>()
+                        .AddAzureServiceBusActivities(null)
                         ;
                 })
         {
@@ -71,13 +76,20 @@ namespace Elsa.Core.IntegrationTests.Workflows
                     systemProperties.GetType().InvokeMember("SequenceNumber", bindings, Type.DefaultBinder, systemProperties, new object[] { 1 });
                     bindings = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.SetProperty;
                     msg.GetType().InvokeMember("SystemProperties", bindings, Type.DefaultBinder, msg, new object[] { systemProperties });
+                    
+                    WaitHandleTest.WaitOne(TimeSpan.FromSeconds(1000));
                     handler!.Invoke(msg, new CancellationToken());
+                    WaitHandleTest.Reset();
                 })
                 .Returns(Task.FromResult(1));
 
             ReceiverClient
                 .Setup(x => x.RegisterMessageHandler(It.IsAny<Func<Message, CancellationToken, Task>>(), It.IsAny<MessageHandlerOptions>()))
-                .Callback<Func<Message, CancellationToken, Task>, MessageHandlerOptions>((messageHandler, _) => { handler = messageHandler; });
+                .Callback<Func<Message, CancellationToken, Task>, MessageHandlerOptions>((messageHandler, _) =>
+                {
+                    handler = messageHandler;
+                    WaitHandleTest.Set();
+                });
 
             ReceiverClient
                 .Setup(x => x.Path)
@@ -92,13 +104,17 @@ namespace Elsa.Core.IntegrationTests.Workflows
                 .Returns(Task.FromResult(ReceiverClient.Object));
 
             _serviceBusBluePrint = WorkflowBuilder.Build<ServiceBusWorkflow>();
+
+            WorkflowRegistryMoq
+                .Setup(x => x.FindAsync(It.IsAny<string>(), It.IsAny<VersionOptions>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(_serviceBusBluePrint);
         }
 
         [Fact(DisplayName = "Send Message Bus after Suspend to avoid receiving response before indexing bookmark.")]
         public async Task SendRequestAfterSuspend()
         {
             await WorkflowStarter.StartWorkflowAsync(_serviceBusBluePrint);
-            var result = WaitHandleTest.WaitOne(TimeSpan.FromSeconds(10));
+            var result = WaitHandleTest.WaitOne(TimeSpan.FromSeconds(1000));
             Assert.True(result);
         }
     }
