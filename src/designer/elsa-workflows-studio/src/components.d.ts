@@ -18,6 +18,10 @@ import { ToastNotificationOptions } from "./components/shared/elsa-toast-notific
 import { WebhookDefinition } from "./modules/elsa-webhooks/models";
 import { ActivityStats } from ".";
 export namespace Components {
+    interface CredentialManagerItemsList {
+        "basePath": string;
+        "culture": string;
+    }
     interface ElsaActivityEditorModal {
         "culture": string;
     }
@@ -48,9 +52,6 @@ export namespace Components {
     }
     interface ElsaCopyButton {
         "value": string;
-    }
-    interface ElsaDesignerPanel {
-        "culture": string;
     }
     interface ElsaDesignerTree {
         "activityBorderColor"?: (activity: ActivityModel) => string;
@@ -367,6 +368,12 @@ export namespace Components {
     }
 }
 declare global {
+    interface HTMLCredentialManagerItemsListElement extends Components.CredentialManagerItemsList, HTMLStencilElement {
+    }
+    var HTMLCredentialManagerItemsListElement: {
+        prototype: HTMLCredentialManagerItemsListElement;
+        new (): HTMLCredentialManagerItemsListElement;
+    };
     interface HTMLElsaActivityEditorModalElement extends Components.ElsaActivityEditorModal, HTMLStencilElement {
     }
     var HTMLElsaActivityEditorModalElement: {
@@ -414,12 +421,6 @@ declare global {
     var HTMLElsaCopyButtonElement: {
         prototype: HTMLElsaCopyButtonElement;
         new (): HTMLElsaCopyButtonElement;
-    };
-    interface HTMLElsaDesignerPanelElement extends Components.ElsaDesignerPanel, HTMLStencilElement {
-    }
-    var HTMLElsaDesignerPanelElement: {
-        prototype: HTMLElsaDesignerPanelElement;
-        new (): HTMLElsaDesignerPanelElement;
     };
     interface HTMLElsaDesignerTreeElement extends Components.ElsaDesignerTree, HTMLStencilElement {
     }
@@ -734,6 +735,7 @@ declare global {
         new (): HTMLElsaWorkflowTestPanelElement;
     };
     interface HTMLElementTagNameMap {
+        "credential-manager-items-list": HTMLCredentialManagerItemsListElement;
         "elsa-activity-editor-modal": HTMLElsaActivityEditorModalElement;
         "elsa-activity-picker-modal": HTMLElsaActivityPickerModalElement;
         "elsa-check-list-property": HTMLElsaCheckListPropertyElement;
@@ -742,7 +744,6 @@ declare global {
         "elsa-context-menu": HTMLElsaContextMenuElement;
         "elsa-control": HTMLElsaControlElement;
         "elsa-copy-button": HTMLElsaCopyButtonElement;
-        "elsa-designer-panel": HTMLElsaDesignerPanelElement;
         "elsa-designer-tree": HTMLElsaDesignerTreeElement;
         "elsa-dictionary-property": HTMLElsaDictionaryPropertyElement;
         "elsa-dropdown-button": HTMLElsaDropdownButtonElement;
@@ -798,6 +799,10 @@ declare global {
     }
 }
 declare namespace LocalJSX {
+    interface CredentialManagerItemsList {
+        "basePath"?: string;
+        "culture"?: string;
+    }
     interface ElsaActivityEditorModal {
         "culture"?: string;
     }
@@ -826,11 +831,6 @@ declare namespace LocalJSX {
     }
     interface ElsaCopyButton {
         "value"?: string;
-    }
-    interface ElsaDesignerPanel {
-        "culture"?: string;
-        "onFeatureChanged"?: (event: CustomEvent<string>) => void;
-        "onFeatureStatusChanged"?: (event: CustomEvent<string>) => void;
     }
     interface ElsaDesignerTree {
         "activityBorderColor"?: (activity: ActivityModel) => string;
@@ -1147,6 +1147,7 @@ declare namespace LocalJSX {
         "workflowTestActivityId"?: string;
     }
     interface IntrinsicElements {
+        "credential-manager-items-list": CredentialManagerItemsList;
         "elsa-activity-editor-modal": ElsaActivityEditorModal;
         "elsa-activity-picker-modal": ElsaActivityPickerModal;
         "elsa-check-list-property": ElsaCheckListProperty;
@@ -1155,7 +1156,6 @@ declare namespace LocalJSX {
         "elsa-context-menu": ElsaContextMenu;
         "elsa-control": ElsaControl;
         "elsa-copy-button": ElsaCopyButton;
-        "elsa-designer-panel": ElsaDesignerPanel;
         "elsa-designer-tree": ElsaDesignerTree;
         "elsa-dictionary-property": ElsaDictionaryProperty;
         "elsa-dropdown-button": ElsaDropdownButton;
@@ -1214,6 +1214,7 @@ export { LocalJSX as JSX };
 declare module "@stencil/core" {
     export namespace JSX {
         interface IntrinsicElements {
+            "credential-manager-items-list": LocalJSX.CredentialManagerItemsList & JSXBase.HTMLAttributes<HTMLCredentialManagerItemsListElement>;
             "elsa-activity-editor-modal": LocalJSX.ElsaActivityEditorModal & JSXBase.HTMLAttributes<HTMLElsaActivityEditorModalElement>;
             "elsa-activity-picker-modal": LocalJSX.ElsaActivityPickerModal & JSXBase.HTMLAttributes<HTMLElsaActivityPickerModalElement>;
             "elsa-check-list-property": LocalJSX.ElsaCheckListProperty & JSXBase.HTMLAttributes<HTMLElsaCheckListPropertyElement>;
@@ -1222,7 +1223,6 @@ declare module "@stencil/core" {
             "elsa-context-menu": LocalJSX.ElsaContextMenu & JSXBase.HTMLAttributes<HTMLElsaContextMenuElement>;
             "elsa-control": LocalJSX.ElsaControl & JSXBase.HTMLAttributes<HTMLElsaControlElement>;
             "elsa-copy-button": LocalJSX.ElsaCopyButton & JSXBase.HTMLAttributes<HTMLElsaCopyButtonElement>;
-            "elsa-designer-panel": LocalJSX.ElsaDesignerPanel & JSXBase.HTMLAttributes<HTMLElsaDesignerPanelElement>;
             "elsa-designer-tree": LocalJSX.ElsaDesignerTree & JSXBase.HTMLAttributes<HTMLElsaDesignerTreeElement>;
             "elsa-dictionary-property": LocalJSX.ElsaDictionaryProperty & JSXBase.HTMLAttributes<HTMLElsaDictionaryPropertyElement>;
             "elsa-dropdown-button": LocalJSX.ElsaDropdownButton & JSXBase.HTMLAttributes<HTMLElsaDropdownButtonElement>;

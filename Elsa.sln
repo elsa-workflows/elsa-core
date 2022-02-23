@@ -381,12 +381,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.RabbitMq", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.RabbitMqWorker", "src\samples\worker\Elsa.Samples.RabbitMqWorker\Elsa.Samples.RabbitMqWorker.csproj", "{67C58C2B-B873-47C8-B5B9-93B0587EE634}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.SQL", "src\activities\Elsa.Activities.SQL\Elsa.Activities.SQL.csproj", "{12E86018-047F-4B80-B2D2-B3C7334FB8DD}"
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.Mqtt", "src\activities\Elsa.Activities.Mqtt\Elsa.Activities.Mqtt.csproj", "{791D50F6-EAF2-4E20-9EDF-3BAF9CB7F796}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.Sql", "src\activities\Elsa.Activities.SQL\Elsa.Activities.Sql.csproj", "{12E86018-047F-4B80-B2D2-B3C7334FB8DD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.MqttWorker", "src\samples\worker\Elsa.Samples.MqttWorker\Elsa.Samples.MqttWorker.csproj", "{8B58C3EA-20C2-491A-ADEC-E41F0EC787FB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.Mqtt", "src\activities\Elsa.Activities.Mqtt\Elsa.Activities.Mqtt.csproj", "{791D50F6-EAF2-4E20-9EDF-3BAF9CB7F796}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.NestedForks", "src\samples\aspnet\Elsa.Samples.NestedForks\Elsa.Samples.NestedForks.csproj", "{A7253665-5F7A-4BCB-B78B-E2E897E90DE4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.MqttWorker", "src\samples\worker\Elsa.Samples.MqttWorker\Elsa.Samples.MqttWorker.csproj", "{8B58C3EA-20C2-491A-ADEC-E41F0EC787FB}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.NestedForks", "src\samples\aspnet\Elsa.Samples.NestedForks\Elsa.Samples.NestedForks.csproj", "{A7253665-5F7A-4BCB-B78B-E2E897E90DE4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
