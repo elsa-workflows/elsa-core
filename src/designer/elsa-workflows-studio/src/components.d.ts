@@ -18,6 +18,10 @@ import { ToastNotificationOptions } from "./components/shared/elsa-toast-notific
 import { WebhookDefinition } from "./modules/elsa-webhooks/models";
 import { ActivityStats } from ".";
 export namespace Components {
+    interface CredentialManagerItemsList {
+        "basePath": string;
+        "culture": string;
+    }
     interface ElsaActivityEditorModal {
         "culture": string;
     }
@@ -360,6 +364,12 @@ export namespace Components {
     }
 }
 declare global {
+    interface HTMLCredentialManagerItemsListElement extends Components.CredentialManagerItemsList, HTMLStencilElement {
+    }
+    var HTMLCredentialManagerItemsListElement: {
+        prototype: HTMLCredentialManagerItemsListElement;
+        new (): HTMLCredentialManagerItemsListElement;
+    };
     interface HTMLElsaActivityEditorModalElement extends Components.ElsaActivityEditorModal, HTMLStencilElement {
     }
     var HTMLElsaActivityEditorModalElement: {
@@ -721,6 +731,7 @@ declare global {
         new (): HTMLElsaWorkflowTestPanelElement;
     };
     interface HTMLElementTagNameMap {
+        "credential-manager-items-list": HTMLCredentialManagerItemsListElement;
         "elsa-activity-editor-modal": HTMLElsaActivityEditorModalElement;
         "elsa-activity-picker-modal": HTMLElsaActivityPickerModalElement;
         "elsa-check-list-property": HTMLElsaCheckListPropertyElement;
@@ -784,6 +795,10 @@ declare global {
     }
 }
 declare namespace LocalJSX {
+    interface CredentialManagerItemsList {
+        "basePath"?: string;
+        "culture"?: string;
+    }
     interface ElsaActivityEditorModal {
         "culture"?: string;
     }
@@ -1124,6 +1139,7 @@ declare namespace LocalJSX {
         "workflowTestActivityId"?: string;
     }
     interface IntrinsicElements {
+        "credential-manager-items-list": CredentialManagerItemsList;
         "elsa-activity-editor-modal": ElsaActivityEditorModal;
         "elsa-activity-picker-modal": ElsaActivityPickerModal;
         "elsa-check-list-property": ElsaCheckListProperty;
@@ -1190,6 +1206,7 @@ export { LocalJSX as JSX };
 declare module "@stencil/core" {
     export namespace JSX {
         interface IntrinsicElements {
+            "credential-manager-items-list": LocalJSX.CredentialManagerItemsList & JSXBase.HTMLAttributes<HTMLCredentialManagerItemsListElement>;
             "elsa-activity-editor-modal": LocalJSX.ElsaActivityEditorModal & JSXBase.HTMLAttributes<HTMLElsaActivityEditorModalElement>;
             "elsa-activity-picker-modal": LocalJSX.ElsaActivityPickerModal & JSXBase.HTMLAttributes<HTMLElsaActivityPickerModalElement>;
             "elsa-check-list-property": LocalJSX.ElsaCheckListProperty & JSXBase.HTMLAttributes<HTMLElsaCheckListPropertyElement>;
