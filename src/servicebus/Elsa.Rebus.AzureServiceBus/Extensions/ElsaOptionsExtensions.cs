@@ -42,6 +42,7 @@ namespace Elsa.Rebus.AzureServiceBus
                     if (queueName.Length > 50)
                         queueName = queueName.Substring(queueName.Length - 50);
 
+                    t.UseNativeDeadlettering();
                     var transport = t.UseAzureServiceBus(connectionString, queueName, tokenProvider);
 
                     if (context.AutoDeleteOnIdle)
