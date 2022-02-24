@@ -20,6 +20,6 @@ public class UserRegistrationWorkflow : IWorkflow
 
             // Store the user in the database;
             .Then<StoreUser>(storeUser => storeUser
-                .WithUser(context => context.GetInput<HttpRequestModel>()!.GetBody<User>()));
+                .WithUser(context => context.GetInput<HttpRequestModel>()!.GetBody<User>() with { }));
     }
 }
