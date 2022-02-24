@@ -84,6 +84,16 @@ namespace Elsa.Providers.Workflows
             return await ListInternalAsync(cancellationToken).FirstOrDefaultAsync(predicate.Compile(), cancellationToken);
         }
 
+        public override async ValueTask<IWorkflowBlueprint?> FindByDefinitionVersionIdAsync(string definitionVersionId, string? tenantId = default, CancellationToken cancellationToken = default)
+        {
+            Expression<Func<IWorkflowBlueprint, bool>> predicate = x => x.VersionId == definitionVersionId;
+
+            if (!string.IsNullOrWhiteSpace(tenantId))
+                predicate = predicate.And(x => x.TenantId == tenantId);
+
+            return await ListInternalAsync(cancellationToken).FirstOrDefaultAsync(predicate.Compile(), cancellationToken);
+        }
+
         public override async ValueTask<IWorkflowBlueprint?> FindByNameAsync(string name, VersionOptions versionOptions, string? tenantId = default, CancellationToken cancellationToken = default)
         {
             Expression<Func<IWorkflowBlueprint, bool>> predicate = x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase) && x.WithVersion(versionOptions);

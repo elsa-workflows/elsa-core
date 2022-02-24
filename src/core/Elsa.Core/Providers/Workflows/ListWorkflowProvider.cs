@@ -54,6 +54,17 @@ public class ListWorkflowProvider : WorkflowProvider
         return new ValueTask<IWorkflowBlueprint?>(workflowBlueprint);
     }
 
+    public override ValueTask<IWorkflowBlueprint?> FindByDefinitionVersionIdAsync(string definitionVersionId, string? tenantId = default, CancellationToken cancellationToken = default)
+    {
+        var queryable = _workflowBlueprints.AsQueryable().Where(x => x.VersionId == definitionVersionId);
+
+        if (tenantId != null)
+            queryable = queryable.Where(x => x.TenantId == tenantId);
+
+        var workflowBlueprint = queryable.FirstOrDefault();
+        return new ValueTask<IWorkflowBlueprint?>(workflowBlueprint);
+    }
+
     public override ValueTask<IWorkflowBlueprint?> FindByNameAsync(string name, VersionOptions versionOptions, string? tenantId = default, CancellationToken cancellationToken = default)
     {
         var queryable = _workflowBlueprints.AsQueryable().Where(x => x.Name == name).WithVersion(versionOptions);
