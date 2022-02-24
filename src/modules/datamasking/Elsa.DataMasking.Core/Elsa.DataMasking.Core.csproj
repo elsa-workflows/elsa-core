@@ -18,10 +18,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\..\core\Elsa.Core\Elsa.Core.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Filters" />
+        <ProjectReference Include="..\..\..\server\Elsa.Server.Core\Elsa.Server.Core.csproj" />
     </ItemGroup>
 
 </Project>
