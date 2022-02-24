@@ -32,7 +32,7 @@
   // Integration demos.
 
   // Import publicly exposed services and models.
-  import {confirmDialogService, EventTypes, WebhooksPlugin, WorkflowSettingsPlugin} from "/build/index.esm.js";
+  import {confirmDialogService, EventTypes, WebhooksPlugin, CredentialManagerPlugin, WorkflowSettingsPlugin} from "/build/index.esm.js";
 
   // Custom plugin that changes the icon of the ReadLine activity.
   function CustomReadLinePlugin(elsaStudio) {
@@ -219,6 +219,7 @@
       WorkflowModelChangedListenerPlugin,
       CustomActivityEditorPlugin,
       WebhooksPlugin,
+      CredentialManagerPlugin,
       WorkflowSettingsPlugin
     ]);
   });

@@ -5,8 +5,8 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
-import { ActivityDefinitionProperty, ActivityDescriptor, ActivityModel, ActivityPropertyDescriptor, ElsaStudio, IntellisenseContext, OrderBy, SelectListItem, VersionOptions, WorkflowBlueprint, WorkflowDefinition, WorkflowExecutionLogRecord, WorkflowFault, WorkflowInstance, WorkflowModel, WorkflowStatus } from "./models";
 import { LocationSegments, MatchResults, RouterHistory } from "@stencil/router";
+import { ActivityDefinitionProperty, ActivityDescriptor, ActivityModel, ActivityPropertyDescriptor, ElsaStudio, IntellisenseContext, OrderBy, SelectListItem, VersionOptions, WorkflowBlueprint, WorkflowDefinition, WorkflowExecutionLogRecord, WorkflowFault, WorkflowInstance, WorkflowModel, WorkflowStatus } from "./models";
 import { MenuItem } from "./components/controls/elsa-context-menu/models";
 import { VNode } from "@stencil/core";
 import { ActivityContextMenuState, LayoutDirection, WorkflowDesignerMode } from "./components/designers/tree/elsa-designer-tree/models";
@@ -21,6 +21,12 @@ export namespace Components {
     interface CredentialManagerItemsList {
         "basePath": string;
         "culture": string;
+    }
+    interface CredentialManagerListScreen {
+        "basePath": string;
+        "culture": string;
+        "history"?: RouterHistory;
+        "serverUrl": string;
     }
     interface ElsaActivityEditorModal {
         "culture": string;
@@ -369,6 +375,12 @@ declare global {
     var HTMLCredentialManagerItemsListElement: {
         prototype: HTMLCredentialManagerItemsListElement;
         new (): HTMLCredentialManagerItemsListElement;
+    };
+    interface HTMLCredentialManagerListScreenElement extends Components.CredentialManagerListScreen, HTMLStencilElement {
+    }
+    var HTMLCredentialManagerListScreenElement: {
+        prototype: HTMLCredentialManagerListScreenElement;
+        new (): HTMLCredentialManagerListScreenElement;
     };
     interface HTMLElsaActivityEditorModalElement extends Components.ElsaActivityEditorModal, HTMLStencilElement {
     }
@@ -732,6 +744,7 @@ declare global {
     };
     interface HTMLElementTagNameMap {
         "credential-manager-items-list": HTMLCredentialManagerItemsListElement;
+        "credential-manager-list-screen": HTMLCredentialManagerListScreenElement;
         "elsa-activity-editor-modal": HTMLElsaActivityEditorModalElement;
         "elsa-activity-picker-modal": HTMLElsaActivityPickerModalElement;
         "elsa-check-list-property": HTMLElsaCheckListPropertyElement;
@@ -798,6 +811,12 @@ declare namespace LocalJSX {
     interface CredentialManagerItemsList {
         "basePath"?: string;
         "culture"?: string;
+    }
+    interface CredentialManagerListScreen {
+        "basePath"?: string;
+        "culture"?: string;
+        "history"?: RouterHistory;
+        "serverUrl"?: string;
     }
     interface ElsaActivityEditorModal {
         "culture"?: string;
@@ -1140,6 +1159,7 @@ declare namespace LocalJSX {
     }
     interface IntrinsicElements {
         "credential-manager-items-list": CredentialManagerItemsList;
+        "credential-manager-list-screen": CredentialManagerListScreen;
         "elsa-activity-editor-modal": ElsaActivityEditorModal;
         "elsa-activity-picker-modal": ElsaActivityPickerModal;
         "elsa-check-list-property": ElsaCheckListProperty;
@@ -1207,6 +1227,7 @@ declare module "@stencil/core" {
     export namespace JSX {
         interface IntrinsicElements {
             "credential-manager-items-list": LocalJSX.CredentialManagerItemsList & JSXBase.HTMLAttributes<HTMLCredentialManagerItemsListElement>;
+            "credential-manager-list-screen": LocalJSX.CredentialManagerListScreen & JSXBase.HTMLAttributes<HTMLCredentialManagerListScreenElement>;
             "elsa-activity-editor-modal": LocalJSX.ElsaActivityEditorModal & JSXBase.HTMLAttributes<HTMLElsaActivityEditorModalElement>;
             "elsa-activity-picker-modal": LocalJSX.ElsaActivityPickerModal & JSXBase.HTMLAttributes<HTMLElsaActivityPickerModalElement>;
             "elsa-check-list-property": LocalJSX.ElsaCheckListProperty & JSXBase.HTMLAttributes<HTMLElsaCheckListPropertyElement>;

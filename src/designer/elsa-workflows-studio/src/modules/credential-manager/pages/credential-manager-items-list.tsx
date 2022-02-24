@@ -10,7 +10,7 @@ import Tunnel from "../../../data/dashboard";
   tag: 'credential-manager-items-list',
   shadow: false,
 })
-export class ElsaStudioWebhookDefinitionsList {
+export class CredentialManagerItemsList {
   @Prop() culture: string;
   @Prop() basePath: string;
   private i18next: i18n;
@@ -38,10 +38,10 @@ export class ElsaStudioWebhookDefinitionsList {
             </stencil-route-link>
           </div>
         </div>
-
-        <elsa-webhook-definitions-list-screen />
+        
+        <credential-manager-list-screen />
       </div>
     );
   }
 }
-Tunnel.injectProps(ElsaStudioWebhookDefinitionsList, ['culture', 'basePath']);
+Tunnel.injectProps(CredentialManagerItemsList, ['culture', 'basePath']);
