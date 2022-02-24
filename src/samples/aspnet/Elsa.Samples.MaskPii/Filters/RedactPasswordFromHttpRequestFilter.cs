@@ -8,7 +8,7 @@ namespace Elsa.Samples.MaskPii.Filters;
 /// <summary>
 /// Redacts user passwords received on HTTP Endpoint activities.
 /// </summary>
-public class RedactPasswordFilter : HttpEndpointWorkflowJournalFilter
+public class RedactPasswordFromHttpRequestFilter : HttpEndpointWorkflowJournalFilter
 {
     protected override bool GetSupportsPath(WorkflowJournalFilterContext context, string path) => path == "/workflows/users/signup";
 
