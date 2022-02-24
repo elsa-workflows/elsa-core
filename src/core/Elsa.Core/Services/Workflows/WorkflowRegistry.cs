@@ -27,6 +27,9 @@ namespace Elsa.Services.Workflows
         public async Task<IWorkflowBlueprint?> FindAsync(string definitionId, VersionOptions versionOptions, string? tenantId = default, CancellationToken cancellationToken = default) =>
             await FindInternalAsync(provider => provider.FindAsync(definitionId, versionOptions, tenantId, cancellationToken), cancellationToken);
 
+        public async Task<IWorkflowBlueprint?> FindByDefinitionVersionIdAsync(string definitionVersionId, string? tenantId = default, CancellationToken cancellationToken = default) =>
+            await FindInternalAsync(provider => provider.FindByDefinitionVersionIdAsync(definitionVersionId, tenantId, cancellationToken), cancellationToken);
+
         public async Task<IWorkflowBlueprint?> FindByNameAsync(string name, VersionOptions versionOptions, string? tenantId = default, CancellationToken cancellationToken = default) =>
             await FindInternalAsync(provider => provider.FindByNameAsync(name, versionOptions, tenantId, cancellationToken), cancellationToken);
 

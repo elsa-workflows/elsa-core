@@ -73,6 +73,12 @@ namespace Elsa.Providers.Workflows
             return workflowDefinition == null ? null : await TryMaterializeBlueprintAsync(workflowDefinition, cancellationToken);
         }
 
+        public override async ValueTask<IWorkflowBlueprint?> FindByDefinitionVersionIdAsync(string definitionVersionId, string? tenantId = default, CancellationToken cancellationToken = default)
+        {
+            var workflowDefinition = await _workflowDefinitionStore.FindAsync(new WorkflowDefinitionVersionIdSpecification(definitionVersionId), cancellationToken);
+            return workflowDefinition == null ? null : await TryMaterializeBlueprintAsync(workflowDefinition, cancellationToken);
+        }
+
         public override async ValueTask<IWorkflowBlueprint?> FindByNameAsync(string name, VersionOptions versionOptions, string? tenantId = default, CancellationToken cancellationToken = default)
         {
             var workflowDefinition = await _workflowDefinitionStore.FindAsync(new WorkflowDefinitionNameSpecification(name, versionOptions), cancellationToken);

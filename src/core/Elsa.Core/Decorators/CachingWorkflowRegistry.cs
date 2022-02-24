@@ -32,6 +32,12 @@ namespace Elsa.Decorators
             return await FindInternalAsync(cacheKey, () => _workflowRegistry.FindAsync(definitionId, versionOptions, tenantId, cancellationToken), cancellationToken);
         }
 
+        public async Task<IWorkflowBlueprint?> FindByDefinitionVersionIdAsync(string definitionVersionId, string? tenantId = default, CancellationToken cancellationToken = default)
+        {
+            var cacheKey = $"{RootKey}:definition-version:id:{definitionVersionId}:{tenantId}";
+            return await FindInternalAsync(cacheKey, () => _workflowRegistry.FindByDefinitionVersionIdAsync(definitionVersionId, tenantId, cancellationToken), cancellationToken);
+        }
+
         public async Task<IWorkflowBlueprint?> FindByNameAsync(string name, VersionOptions versionOptions, string? tenantId = default, CancellationToken cancellationToken = default)
         {
             var cacheKey = $"{RootKey}:definition:name:{name}:{versionOptions}:{tenantId}";
