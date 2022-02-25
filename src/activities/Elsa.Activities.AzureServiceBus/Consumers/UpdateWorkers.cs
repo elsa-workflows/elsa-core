@@ -5,10 +5,10 @@ using Rebus.Handlers;
 
 namespace Elsa.Activities.AzureServiceBus.Consumers
 {
-    public class RestartServiceBusTopicsConsumer : IHandleMessages<TriggerIndexingFinished>, IHandleMessages<TriggersDeleted>, IHandleMessages<BookmarkIndexingFinished>, IHandleMessages<BookmarksDeleted>
+    public class UpdateWorkers : IHandleMessages<TriggerIndexingFinished>, IHandleMessages<TriggersDeleted>, IHandleMessages<BookmarkIndexingFinished>, IHandleMessages<BookmarksDeleted>
     {
         private readonly IWorkersStarter _workersStarter;
-        public RestartServiceBusTopicsConsumer(IWorkersStarter workersStarter) => _workersStarter = workersStarter;
+        public UpdateWorkers(IWorkersStarter workersStarter) => _workersStarter = workersStarter;
         public async Task Handle(TriggerIndexingFinished message) => await _workersStarter.CreateWorkersAsync(message.Triggers);
         public async Task Handle(TriggersDeleted message) => await _workersStarter.RemoveWorkersAsync(message.Triggers);
         public async Task Handle(BookmarkIndexingFinished message) => await _workersStarter.CreateWorkersAsync(message.Bookmarks);

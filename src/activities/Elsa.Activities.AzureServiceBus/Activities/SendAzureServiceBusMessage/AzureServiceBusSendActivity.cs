@@ -26,7 +26,7 @@ namespace Elsa.Activities.AzureServiceBus
 
         [ActivityInput(Category = PropertyCategories.Advanced, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string ContentType { get; set; } = default!;
-        
+
         [ActivityInput(Label = "Subject", Category = PropertyCategories.Advanced, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string? Label { get; set; }
 

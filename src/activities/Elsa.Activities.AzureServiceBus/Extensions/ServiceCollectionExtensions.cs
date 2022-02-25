@@ -1,7 +1,5 @@
 using System;
-using Azure;
 using Azure.Core;
-using Azure.Core.Pipeline;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
 using Elsa.Activities.AzureServiceBus.Bookmarks;
@@ -13,7 +11,6 @@ using Elsa.Events;
 using Elsa.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Microsoft.Rest.TransientFaultHandling;
 
 namespace Elsa.Activities.AzureServiceBus.Extensions
 {
@@ -35,10 +32,10 @@ namespace Elsa.Activities.AzureServiceBus.Extensions
                 .AddBookmarkProvider<MessageReceivedBookmarkProvider>()
                 ;
 
-            options.AddPubSubConsumer<RestartServiceBusTopicsConsumer, TriggerIndexingFinished>("WorkflowManagementEvents");
-            options.AddPubSubConsumer<RestartServiceBusTopicsConsumer, TriggersDeleted>("WorkflowManagementEvents");
-            options.AddPubSubConsumer<RestartServiceBusTopicsConsumer, BookmarkIndexingFinished>("WorkflowManagementEvents");
-            options.AddPubSubConsumer<RestartServiceBusTopicsConsumer, BookmarksDeleted>("WorkflowManagementEvents");
+            options.AddPubSubConsumer<UpdateWorkers, TriggerIndexingFinished>("WorkflowManagementEvents");
+            options.AddPubSubConsumer<UpdateWorkers, TriggersDeleted>("WorkflowManagementEvents");
+            options.AddPubSubConsumer<UpdateWorkers, BookmarkIndexingFinished>("WorkflowManagementEvents");
+            options.AddPubSubConsumer<UpdateWorkers, BookmarksDeleted>("WorkflowManagementEvents");
 
             options
                 .AddActivity<AzureServiceBusQueueMessageReceived>()
