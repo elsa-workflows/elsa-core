@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,14 +13,12 @@ using Rebus.Extensions;
 
 namespace Elsa.Activities.AzureServiceBus.Services
 {
-    public record WorkerKey(string Tag, string QueueOrTopic, string? Subscription);
-
     public class WorkersStarter : IWorkersStarter
     {
         private readonly IBookmarkSerializer _bookmarkSerializer;
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<WorkersStarter> _logger;
-        private readonly IDictionary<WorkerKey, Worker> _workers;
+        private readonly ICollection<Worker> _workers;
         private readonly SemaphoreSlim _semaphore = new(1);
 
         public WorkersStarter(
@@ -30,7 +29,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             _serviceProvider = serviceProvider;
             _logger = logger;
             _bookmarkSerializer = bookmarkSerializer;
-            _workers = new Dictionary<WorkerKey, Worker>();
+            _workers = new Collection<Worker>();
         }
 
         public async Task CreateWorkersAsync(IReadOnlyCollection<Trigger> triggers, CancellationToken cancellationToken = default)
@@ -80,12 +79,12 @@ namespace Elsa.Activities.AzureServiceBus.Services
             var workers =
                 from worker in _workers
                 from workflowId in workflowDefinitionIds
-                where worker.Key.Tag == workflowId
+                where worker.Tag == workflowId
                 select worker;
 
             foreach (var worker in workers.ToList())
             {
-                await worker.Value.DisposeAsync();
+                await worker.DisposeAsync();
                 _workers.Remove(worker);
             }
         }
@@ -100,13 +99,12 @@ namespace Elsa.Activities.AzureServiceBus.Services
         {
             try
             {
-                var key = new WorkerKey(tag, queueOrTopic, subscription);
-                var worker = _workers.ContainsKey(key) ? _workers[key] : default;
+                var worker = _workers.FirstOrDefault(x => x.Tag == tag && x.QueueOrTopic == queueOrTopic && x.Subscription == subscription);
 
                 if (worker == null)
                 {
-                    worker = ActivatorUtilities.CreateInstance<Worker>(_serviceProvider, queueOrTopic, subscription!, tag);
-                    _workers.Add(key, worker);
+                    worker = ActivatorUtilities.CreateInstance<Worker>(_serviceProvider, queueOrTopic, subscription ?? "", tag);
+                    _workers.Add(worker);
                     await worker.StartAsync(cancellationToken);
                 }
             }
@@ -124,16 +122,16 @@ namespace Elsa.Activities.AzureServiceBus.Services
             var workers =
                 from worker in _workers
                 from tag in tags
-                where worker.Key.Tag == tag
+                where worker.Tag == tag
                 select worker;
 
             foreach (var worker in workers.ToList())
                 await RemoveWorkerAsync(worker);
         }
 
-        private async Task RemoveWorkerAsync(KeyValuePair<WorkerKey, Worker> worker)
+        private async Task RemoveWorkerAsync(Worker worker)
         {
-            await worker.Value.DisposeAsync();
+            await worker.DisposeAsync();
             _workers.Remove(worker);
         }
 

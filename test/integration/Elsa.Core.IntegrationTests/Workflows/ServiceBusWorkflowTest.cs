@@ -120,13 +120,13 @@ namespace Elsa.Core.IntegrationTests.Workflows
         {
             builder
                 .WriteLine(ctx => $"Start! - correlationId: {ctx.WorkflowInstance.CorrelationId}")
-                .SendMessage(setup =>
+                .SendTopicMessage(setup =>
                 {
-                    setup.Set(x => x.Topic, "testtopic2");
+                    setup.Set(x => x.TopicName, "testtopic2");
                     setup.Set(x => x.Message, "\"Hello World\"");
                     setup.Set(x => x.SendMessageOnSuspend, true);
                 })
-                .MessageReceived("testtopic2", "testsub")
+                .TopicMessageReceived("testtopic2", "testsub")
                 .Then(() => _autoEvent.Set())
                 .WriteLine(ctx => "End: " + (string)ctx.Input!);
         }

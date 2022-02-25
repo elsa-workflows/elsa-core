@@ -15,11 +15,13 @@ namespace Elsa.Activities.AzureServiceBus.Models
         public string? ViaPartitionKey { get; set; }
         public string? ReplyTo { get; set; }
         public string? SessionId { get; set; }
-        public DateTime ExpiresAtUtc { get; set; }
+
+        [Obsolete("This property does not seem to appear on the ServiceBusMessage type")] public DateTime ExpiresAtUtc { get; set; }
+
         public TimeSpan TimeToLive { get; set; }
         public string? ReplyToSessionId { get; set; }
         public DateTime ScheduledEnqueueTimeUtc { get; set; }
-        public IDictionary<string, object> UserProperties { get; set; } = new Dictionary<string,object>();
+        public IDictionary<string, object> UserProperties { get; set; } = new Dictionary<string, object>();
 
         public object ExtractHeaders() =>
             new
@@ -32,7 +34,6 @@ namespace Elsa.Activities.AzureServiceBus.Models
                 PartitionKey,
                 ReplyTo,
                 UserProperties,
-                ExpiresAtUtc,
                 TimeToLive,
                 ViaPartitionKey,
                 ReplyToSessionId,

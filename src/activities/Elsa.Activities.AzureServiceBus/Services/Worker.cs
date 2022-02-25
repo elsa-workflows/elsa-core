@@ -19,7 +19,6 @@ namespace Elsa.Activities.AzureServiceBus.Services
 {
     public class Worker : IAsyncDisposable
     {
-        private const string ActivityType = nameof(AzureServiceBusMessageReceived);
         private const string? TenantId = default;
         private readonly ServiceBusAdministrationClient _administrationClient;
         private readonly IClock _clock;
@@ -39,7 +38,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             ILogger<Worker> logger)
         {
             QueueOrTopic = queueOrTopic;
-            Subscription = subscription;
+            Subscription = subscription == "" ? null : subscription;
             Tag = tag;
             ServiceBusClient = serviceBusClient;
             _administrationClient = administrationClient;
@@ -61,6 +60,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
         public string? Subscription { get; }
         public string Tag { get; }
         protected ServiceBusClient ServiceBusClient { get; set; }
+        private string ActivityType => Subscription == null ? nameof(AzureServiceBusQueueMessageReceived) : nameof(AzureServiceBusTopicMessageReceived);
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
@@ -109,24 +109,21 @@ namespace Elsa.Activities.AzureServiceBus.Services
                 To = message.To,
                 MessageId = message.MessageId,
                 PartitionKey = message.PartitionKey,
-                ViaPartitionKey = message.PartitionKey,
+                ViaPartitionKey = message.TransactionPartitionKey,
                 ReplyTo = message.ReplyTo,
                 SessionId = message.SessionId,
-                ExpiresAtUtc = _clock.GetCurrentInstant().ToDateTimeUtc().Add(message.TimeToLive),
                 TimeToLive = message.TimeToLive,
                 ReplyToSessionId = message.ReplyToSessionId,
                 ScheduledEnqueueTimeUtc = message.ScheduledEnqueueTime.UtcDateTime,
                 UserProperties = new Dictionary<string, object>(message.ApplicationProperties),
             };
 
-            var bookmark = CreateBookmark();
+            var bookmark = new MessageReceivedBookmark(QueueOrTopic, Subscription);
             var launchContext = new WorkflowsQuery(ActivityType, bookmark, correlationId);
 
             using var scope = _serviceScopeFactory.CreateScope();
             var workflowLaunchpad = scope.ServiceProvider.GetRequiredService<IWorkflowLaunchpad>();
             await workflowLaunchpad.CollectAndDispatchWorkflowsAsync(launchContext, new WorkflowInput(model), cancellationToken);
         }
-
-        private IBookmark CreateBookmark() => new MessageReceivedBookmark(QueueOrTopic, Subscription);
     }
 }

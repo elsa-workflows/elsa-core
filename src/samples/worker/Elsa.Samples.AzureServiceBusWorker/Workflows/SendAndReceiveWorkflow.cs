@@ -15,7 +15,7 @@ namespace Elsa.Samples.AzureServiceBusWorker.Workflows
                 return $"Start! - correlationId: {correlationId}";
             })
             .SendTopicMessage("testtopic2", "\"Hello World\"")
-            .MessageReceived<string>("testtopic2", "testsub")
+            .TopicMessageReceived("testtopic2", "testsub")
             .WriteLine(ctx => "End: " + (string)ctx.Input);
     }
 }
