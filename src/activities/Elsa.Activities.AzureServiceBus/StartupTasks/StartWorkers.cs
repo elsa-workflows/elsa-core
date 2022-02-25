@@ -11,12 +11,12 @@ namespace Elsa.Activities.AzureServiceBus.StartupTasks
 {
     public class StartWorkers : BackgroundService
     {
-        private readonly IWorkerManager _serviceBusQueuesStarter;
+        private readonly IWorkerManager _workerManager;
         private readonly IServiceScopeFactory _scopeFactory;
 
-        public StartWorkers(IWorkerManager serviceBusQueuesStarter, IServiceScopeFactory scopeFactory)
+        public StartWorkers(IWorkerManager workerManager, IServiceScopeFactory scopeFactory)
         {
-            _serviceBusQueuesStarter = serviceBusQueuesStarter;
+            _workerManager = workerManager;
             _scopeFactory = scopeFactory;
         }
 
@@ -29,14 +29,14 @@ namespace Elsa.Activities.AzureServiceBus.StartupTasks
             var bookmarks = await bookmarkFinder.FindBookmarksByTypeAsync<MessageReceivedBookmark>(cancellationToken: stoppingToken).ToList();
 
             // For each bookmark, start a worker.
-            await _serviceBusQueuesStarter.CreateWorkersAsync(bookmarks, stoppingToken);
+            await _workerManager.CreateWorkersAsync(bookmarks, stoppingToken);
 
             // Load triggers.
             var triggerFinder = scope.ServiceProvider.GetRequiredService<ITriggerFinder>();
             var triggers = await triggerFinder.FindTriggersByTypeAsync<MessageReceivedBookmark>(cancellationToken: stoppingToken).ToList();
 
             // For each trigger, start a worker.
-            await _serviceBusQueuesStarter.CreateWorkersAsync(triggers, stoppingToken);
+            await _workerManager.CreateWorkersAsync(triggers, stoppingToken);
         }
     }
 }
