@@ -1,8 +1,3 @@
-using Elsa.Activities.RabbitMq.Configuration;
-using Elsa.Services;
-using Elsa.Services.Models;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,6 +5,11 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.RabbitMq.Bookmarks;
+using Elsa.Activities.RabbitMq.Configuration;
+using Elsa.Activities.RabbitMq.Helpers;
+using Elsa.Services;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Activities.RabbitMq.Services
 {
@@ -46,7 +46,7 @@ namespace Elsa.Activities.RabbitMq.Services
             {
                 await DisposeExistingWorkersAsync();
 
-                var receiverConfigs = (await GetConfigurationsAsync<RabbitMqMessageReceived>(null, cancellationToken).ToListAsync(cancellationToken)).GroupBy(c => c.GetHashCode()).Select(x => x.First());
+                var receiverConfigs = (await GetConfigurationsAsync(cancellationToken).ToListAsync(cancellationToken)).GroupBy(c => c.GetHashCode()).Select(x => x.First());
 
                 foreach (var config in receiverConfigs)
                 {
@@ -74,7 +74,7 @@ namespace Elsa.Activities.RabbitMq.Services
 
         private async Task DisposeWorkerAsync(IClient messageReceiver) => await _messageReceiverClientFactory.DisposeReceiverAsync(messageReceiver);
 
-        public async IAsyncEnumerable<RabbitMqBusConfiguration> GetConfigurationsAsync<T>(Func<IWorkflowBlueprint, bool>? predicate, [EnumeratorCancellation] CancellationToken cancellationToken) where T : IRabbitMqActivity
+        public async IAsyncEnumerable<RabbitMqBusConfiguration> GetConfigurationsAsync([EnumeratorCancellation] CancellationToken cancellationToken)
         {
             using var scope = _scopeFactory.CreateScope();
             var triggerFinder = scope.ServiceProvider.GetRequiredService<ITriggerFinder>();
@@ -82,17 +82,37 @@ namespace Elsa.Activities.RabbitMq.Services
 
             foreach (var trigger in triggers)
             {
-                var bookmark =_bookmarkSerializer.Deserialize<MessageReceivedBookmark>(trigger.Model);
+                var bookmarkModel =_bookmarkSerializer.Deserialize<MessageReceivedBookmark>(trigger.Model);
                 
-                var connectionString = bookmark.ConnectionString;
-                var exchangeName = bookmark.ExchangeName;
-                var routingKey = bookmark.RoutingKey;
-                var headers = bookmark.Headers;
+                var configuration = CreateConfigurationFromBookmark(bookmarkModel, trigger.ActivityId);
 
-                yield return new RabbitMqBusConfiguration(connectionString!, exchangeName!, routingKey!, headers);
+                yield return configuration;
+            }
+
+            var bookmarkFinder = scope.ServiceProvider.GetRequiredService<IBookmarkFinder>();
+            var bookmarks = await bookmarkFinder.FindBookmarksByTypeAsync<MessageReceivedBookmark>(cancellationToken: cancellationToken);
+
+            foreach (var bookmark in bookmarks)
+            {
+                var bookmarkModel = _bookmarkSerializer.Deserialize<MessageReceivedBookmark>(bookmark.Model);
+
+                var configuration = CreateConfigurationFromBookmark(bookmarkModel, bookmark.ActivityId);
+
+                yield return configuration;
             }
         }
-        
+
+        private RabbitMqBusConfiguration CreateConfigurationFromBookmark(MessageReceivedBookmark bookmark, string activityId)
+        {
+            var connectionString = bookmark.ConnectionString;
+            var exchangeName = bookmark.ExchangeName;
+            var routingKey = bookmark.RoutingKey;
+            var headers = bookmark.Headers;
+            var clientId = RabbitMqClientConfigurationHelper.GetClientId(activityId);
+
+            return new RabbitMqBusConfiguration(connectionString!, exchangeName!, routingKey!, headers, clientId);
+        }
+
         private async Task DisposeExistingWorkersAsync()
         {
             foreach (var worker in _workers.ToList())
