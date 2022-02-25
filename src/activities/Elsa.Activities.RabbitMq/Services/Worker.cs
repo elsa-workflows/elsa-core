@@ -41,8 +41,6 @@ namespace Elsa.Activities.RabbitMq.Services
             _logger.LogDebug("Message received for routing key {RoutingKey}", _client.Configuration.RoutingKey);
 
             await TriggerWorkflowsAsync(message, cancellationToken);
-
-            _client.StopClient();
         }
 
         private async Task TriggerWorkflowsAsync(TransportMessage message, CancellationToken cancellationToken)

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Mime;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Bookmarks;
@@ -108,11 +109,26 @@ namespace Elsa.Activities.Http.Middleware
             if (readContent)
             {
                 var targetType = await activityWrapper.EvaluatePropertyValueAsync(x => x.TargetType, cancellationToken);
-                inputModel = inputModel with
+
+                try
                 {
-                    RawBody = await request.ReadContentAsStringAsync(cancellationToken),
-                    Body = await contentParser.ParseAsync(request, targetType, cancellationToken)
-                };
+                    inputModel = inputModel with
+                    {
+                        RawBody = await request.ReadContentAsStringAsync(cancellationToken),
+                        Body = await contentParser.ParseAsync(request, targetType, cancellationToken)
+                    };
+                }
+                catch (JsonReaderException e)
+                {
+                    httpContext.Response.ContentType = MediaTypeNames.Application.Json;
+                    httpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
+                    await httpContext.Response.WriteAsync(JsonConvert.SerializeObject(new
+                    {
+                        error = "Could not parse content",
+                        message = e.Message
+                    }), cancellationToken);
+                    return;
+                }
             }
 
             var useDispatch = httpContext.Request.GetUseDispatch();
@@ -121,7 +137,7 @@ namespace Elsa.Activities.Http.Middleware
             {
                 await workflowLaunchpad.DispatchPendingWorkflowAsync(pendingWorkflow, new WorkflowInput(inputModel), cancellationToken);
 
-                httpContext.Response.ContentType = "application/json";
+                httpContext.Response.ContentType = MediaTypeNames.Application.Json;
                 httpContext.Response.StatusCode = (int)HttpStatusCode.Accepted;
                 await httpContext.Response.WriteAsync(JsonConvert.SerializeObject(pendingWorkflows), cancellationToken);
             }

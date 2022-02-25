@@ -31,7 +31,6 @@ namespace Elsa.Activities.RabbitMq.Services
 
             _bus = Configure
                 .With(_activator)
-                .Options(o => o.SetNumberOfWorkers(0))
                 .Routing(r => r.AddTransportMessageForwarder(async transportMessage =>
                 {
                     if (!AllHeadersMatch(transportMessage.Headers)) return ForwardAction.None;
@@ -42,7 +41,7 @@ namespace Elsa.Activities.RabbitMq.Services
                 }))
                 .Transport(t =>
                 {
-                    t.UseRabbitMq(Configuration.ConnectionString, $"Elsa{Guid.NewGuid().ToString("n").ToUpper()}");
+                    t.UseRabbitMq(Configuration.ConnectionString, Configuration.ClientId).InputQueueOptions(x => x.SetAutoDelete(Configuration.AutoDeleteQueue));
                 })
                 .Start();
 
@@ -59,18 +58,6 @@ namespace Elsa.Activities.RabbitMq.Services
         public void Dispose()
         {
             _activator.Dispose();
-        }
-
-        public void StartClient()
-        {
-            if (_bus?.Advanced.Workers.Count == 0)
-                _bus.Advanced.Workers.SetNumberOfWorkers(1);
-        }
-
-        public void StopClient()
-        {
-            if (_bus?.Advanced.Workers.Count == 1)
-                _bus.Advanced.Workers.SetNumberOfWorkers(0);
         }
 
         private void ConfigureAsOneWayClient()
