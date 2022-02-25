@@ -1,4 +1,5 @@
 using Elsa.Activities.RabbitMq.Configuration;
+using Elsa.Activities.RabbitMq.Helpers;
 using Elsa.Activities.RabbitMq.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
@@ -17,7 +18,7 @@ namespace Elsa.Activities.RabbitMq
         Description = "Send Message to RabbitMQ",
         Outcomes = new[] { OutcomeNames.Done }
     )]
-    public class SendRabbitMqMessage : Activity, IRabbitMqActivity
+    public class SendRabbitMqMessage : Activity
     {
         private readonly IMessageSenderClientFactory _messageSenderClientFactory;
 
@@ -60,9 +61,11 @@ namespace Elsa.Activities.RabbitMq
             Category = PropertyCategories.Configuration)]
         public string ConnectionString { get; set; } = default!;
 
+        public string ClientId => RabbitMqClientConfigurationHelper.GetClientId(Id);
+
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            var config = new RabbitMqBusConfiguration(ConnectionString, ExchangeName, RoutingKey, Headers);
+            var config = new RabbitMqBusConfiguration(ConnectionString, ExchangeName, RoutingKey, Headers, ClientId);
 
             var client = await _messageSenderClientFactory.GetSenderAsync(config);
 
