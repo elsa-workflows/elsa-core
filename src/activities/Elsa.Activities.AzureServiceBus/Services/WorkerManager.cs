@@ -13,18 +13,18 @@ using Rebus.Extensions;
 
 namespace Elsa.Activities.AzureServiceBus.Services
 {
-    public class WorkersStarter : IWorkersStarter
+    public class WorkerManager : IWorkerManager
     {
         private readonly IBookmarkSerializer _bookmarkSerializer;
         private readonly IServiceProvider _serviceProvider;
-        private readonly ILogger<WorkersStarter> _logger;
+        private readonly ILogger<WorkerManager> _logger;
         private readonly ICollection<Worker> _workers;
         private readonly SemaphoreSlim _semaphore = new(1);
 
-        public WorkersStarter(
+        public WorkerManager(
             IServiceProvider serviceProvider,
             IBookmarkSerializer bookmarkSerializer,
-            ILogger<WorkersStarter> logger)
+            ILogger<WorkerManager> logger)
         {
             _serviceProvider = serviceProvider;
             _logger = logger;

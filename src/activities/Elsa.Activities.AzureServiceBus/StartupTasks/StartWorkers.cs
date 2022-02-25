@@ -11,10 +11,10 @@ namespace Elsa.Activities.AzureServiceBus.StartupTasks
 {
     public class StartWorkers : BackgroundService
     {
-        private readonly IWorkersStarter _serviceBusQueuesStarter;
+        private readonly IWorkerManager _serviceBusQueuesStarter;
         private readonly IServiceScopeFactory _scopeFactory;
 
-        public StartWorkers(IWorkersStarter serviceBusQueuesStarter, IServiceScopeFactory scopeFactory)
+        public StartWorkers(IWorkerManager serviceBusQueuesStarter, IServiceScopeFactory scopeFactory)
         {
             _serviceBusQueuesStarter = serviceBusQueuesStarter;
             _scopeFactory = scopeFactory;

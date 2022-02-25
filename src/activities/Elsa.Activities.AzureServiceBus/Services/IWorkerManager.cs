@@ -5,7 +5,7 @@ using Elsa.Models;
 
 namespace Elsa.Activities.AzureServiceBus.Services
 {
-    public interface IWorkersStarter
+    public interface IWorkerManager
     {
         Task CreateWorkersAsync(IReadOnlyCollection<Trigger> triggers, CancellationToken cancellationToken = default);
         Task CreateWorkersAsync(IReadOnlyCollection<Bookmark> bookmarks, CancellationToken cancellationToken = default);

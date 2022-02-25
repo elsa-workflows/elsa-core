@@ -37,7 +37,7 @@ namespace Elsa.Core.IntegrationTests.Workflows
                     services
                         .AddSingleton(QueueMessageSenderFactory.Object)
                         .AddSingleton<IWorkflowLaunchpad, WorkflowLaunchpad>()
-                        .AddSingleton<IWorkersStarter, WorkersStarter>()
+                        .AddSingleton<IWorkerManager, WorkerManager>()
                         .AddSingleton(WorkflowRegistryMoq.Object)
                         .AddBookmarkProvider<MessageReceivedBookmarkProvider>()
                         .AddHostedService<StartWorkers>();

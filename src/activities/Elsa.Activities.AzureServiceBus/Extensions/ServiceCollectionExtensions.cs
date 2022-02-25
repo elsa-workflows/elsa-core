@@ -27,7 +27,7 @@ namespace Elsa.Activities.AzureServiceBus.Extensions
                 .AddSingleton(CreateServiceBusConnection)
                 .AddSingleton(CreateServiceBusManagementClient)
                 .AddSingleton<IMessageSenderFactory, MessageSenderFactory>()
-                .AddSingleton<IWorkersStarter, WorkersStarter>()
+                .AddSingleton<IWorkerManager, WorkerManager>()
                 .AddHostedService<StartWorkers>()
                 .AddBookmarkProvider<MessageReceivedBookmarkProvider>()
                 ;
