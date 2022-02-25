@@ -11,8 +11,6 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Threading;
 using Elsa.Services;
 using Elsa.Services.Models;
-using System.Reflection;
-using Azure.Messaging.ServiceBus;
 using Elsa.Activities.AzureServiceBus;
 using Elsa.Activities.AzureServiceBus.Bookmarks;
 using Elsa.Services.Workflows;
@@ -24,18 +22,16 @@ namespace Elsa.Core.IntegrationTests.Workflows
 {
     public class ServiceBusWorkflowTest : WorkflowsUnitTestBase
     {
-        private static readonly Mock<IMessageSenderFactory> QueueMessageSenderFactory = new();
-        private static readonly Mock<ServiceBusSender> SenderClient = new();
+        private const string ConnectionString = ""; // Put your ASB connection string here if you want to test.
         private static readonly Mock<IWorkflowRegistry> WorkflowRegistryMoq = new();
         private static readonly AutoResetEvent WaitHandleTest = new(false);
-        private static IWorkflowBlueprint _serviceBusBluePrint = default!;
+        private static IWorkflowBlueprint _serviceBusBlueprint = default!;
 
         public ServiceBusWorkflowTest(ITestOutputHelper testOutputHelper)
             : base(testOutputHelper,
                 services =>
                 {
                     services
-                        .AddSingleton(QueueMessageSenderFactory.Object)
                         .AddSingleton<IWorkflowLaunchpad, WorkflowLaunchpad>()
                         .AddSingleton<IWorkerManager, WorkerManager>()
                         .AddSingleton(WorkflowRegistryMoq.Object)
@@ -48,64 +44,28 @@ namespace Elsa.Core.IntegrationTests.Workflows
                 options =>
                 {
                     options
-                        .AddAzureServiceBusActivities(null)
+                        .AddAzureServiceBusActivities(option => option.ConnectionString = ConnectionString)
                         ;
                 })
         {
-            Func<ServiceBusMessage, CancellationToken, Task> handler = default!;
-
-            SenderClient
-                .Setup(x => x.SendMessageAsync(It.IsAny<ServiceBusMessage>(), It.IsAny<CancellationToken>()))
-                .Callback<ServiceBusMessage>(msg =>
-                {
-                    // // Hack needed to avoid issue when getting msg from SB.
-                    // var systemProperties = msg.ApplicationProperties;
-                    //
-                    // var bindings = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.SetProperty;
-                    // var value = DateTime.UtcNow.AddMinutes(1);
-                    //
-                    // systemProperties.GetType().InvokeMember("EnqueuedTimeUtc", bindings, Type.DefaultBinder, systemProperties, new object[] { value });
-                    // systemProperties.GetType().InvokeMember("SequenceNumber", bindings, Type.DefaultBinder, systemProperties, new object[] { 1 });
-                    // bindings = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.SetProperty;
-                    // msg.GetType().InvokeMember("SystemProperties", bindings, Type.DefaultBinder, msg, new object[] { systemProperties });
-                    
-                    WaitHandleTest.WaitOne(TimeSpan.FromSeconds(1000));
-                    handler!.Invoke(msg, new CancellationToken());
-                    WaitHandleTest.Reset();
-                })
-                .Returns(Task.FromResult(1));
-
-            // ReceiverClient
-            //     .Setup(x => x.RegisterMessageHandler(It.IsAny<Func<Message, CancellationToken, Task>>(), It.IsAny<MessageHandlerOptions>()))
-            //     .Callback<Func<Message, CancellationToken, Task>, MessageHandlerOptions>((messageHandler, _) =>
-            //     {
-            //         handler = messageHandler;
-            //         WaitHandleTest.Set();
-            //     });
-            //
-            // ReceiverClient
-            //     .Setup(x => x.Path)
-            //     .Returns($"testtopic2/subscriptions/testsub");
-            //
-            // TopicMessageSenderFactory
-            //     .Setup(x => x.GetTopicSenderAsync(It.IsAny<string>(), default))
-            //     .Returns(Task.FromResult(SenderClient.Object));
-            //
-            // TopicMessageReceiverFactory
-            //     .Setup(x => x.GetTopicReceiverAsync(It.IsAny<string>(), It.IsAny<string>(), default))
-            //     .Returns(Task.FromResult(ReceiverClient.Object));
-
-            _serviceBusBluePrint = WorkflowBuilder.Build<ServiceBusWorkflow>();
+            
+            _serviceBusBlueprint = WorkflowBuilder.Build<ServiceBusWorkflow>();
 
             WorkflowRegistryMoq
                 .Setup(x => x.FindAsync(It.IsAny<string>(), It.IsAny<VersionOptions>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(_serviceBusBluePrint);
+                .ReturnsAsync(_serviceBusBlueprint);
         }
 
         [Fact(DisplayName = "Send Message Bus after Suspend to avoid receiving response before indexing bookmark.")]
         public async Task SendRequestAfterSuspend()
         {
-            await WorkflowStarter.StartWorkflowAsync(_serviceBusBluePrint);
+            if (string.IsNullOrWhiteSpace(ConnectionString))
+            {
+                TestOutputHelper.WriteLine("Azure eService Bus integration test is disabled. Provide a connection string to enable.");
+                return;
+            }
+            
+            await WorkflowStarter.StartWorkflowAsync(_serviceBusBlueprint);
             var result = WaitHandleTest.WaitOne(TimeSpan.FromSeconds(1000));
             Assert.True(result);
         }
