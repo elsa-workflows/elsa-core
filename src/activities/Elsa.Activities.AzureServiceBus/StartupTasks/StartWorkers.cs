@@ -5,17 +5,18 @@ using Elsa.Activities.AzureServiceBus.Services;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Activities.AzureServiceBus.StartupTasks
 {
-    public class StartServiceBusQueues : BackgroundService
+    public class StartWorkers : BackgroundService
     {
-        private readonly IServiceBusQueuesStarter _serviceBusQueuesStarter;
+        private readonly IWorkerManager _workerManager;
         private readonly IServiceScopeFactory _scopeFactory;
 
-        public StartServiceBusQueues(IServiceBusQueuesStarter serviceBusQueuesStarter, IServiceScopeFactory scopeFactory)
+        public StartWorkers(IWorkerManager workerManager, IServiceScopeFactory scopeFactory)
         {
-            _serviceBusQueuesStarter = serviceBusQueuesStarter;
+            _workerManager = workerManager;
             _scopeFactory = scopeFactory;
         }
 
@@ -25,17 +26,17 @@ namespace Elsa.Activities.AzureServiceBus.StartupTasks
             var bookmarkFinder = scope.ServiceProvider.GetRequiredService<IBookmarkFinder>();
 
             // Load bookmarks.
-            var bookmarks = await bookmarkFinder.FindBookmarksByTypeAsync<QueueMessageReceivedBookmark>(cancellationToken: stoppingToken);
+            var bookmarks = await bookmarkFinder.FindBookmarksByTypeAsync<MessageReceivedBookmark>(cancellationToken: stoppingToken).ToList();
 
             // For each bookmark, start a worker.
-            await _serviceBusQueuesStarter.CreateWorkersAsync(bookmarks, stoppingToken);
+            await _workerManager.CreateWorkersAsync(bookmarks, stoppingToken);
 
             // Load triggers.
             var triggerFinder = scope.ServiceProvider.GetRequiredService<ITriggerFinder>();
-            var triggers = await triggerFinder.FindTriggersByTypeAsync<QueueMessageReceivedBookmark>(cancellationToken: stoppingToken);
+            var triggers = await triggerFinder.FindTriggersByTypeAsync<MessageReceivedBookmark>(cancellationToken: stoppingToken).ToList();
 
             // For each trigger, start a worker.
-            await _serviceBusQueuesStarter.CreateWorkersAsync(triggers, stoppingToken);
+            await _workerManager.CreateWorkersAsync(triggers, stoppingToken);
         }
     }
 }
