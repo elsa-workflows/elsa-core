@@ -1,10 +1,10 @@
 import { Component, h, Prop, State } from "@stencil/core";
+import { isValidCron } from "cron-validator";
+import cronstrue from "cronstrue";
 import { ActivityDefinitionProperty, ActivityModel, ActivityPropertyDescriptor, SyntaxNames } from "../../../../models";
 
-import { CronExpressionInput } from 'cron-expression-input';
-
 @Component({
-    tag: 'elsa-cron-expression-property'   
+    tag: 'elsa-cron-expression-property',
 })
 
 export class ElsaCronExpressionProperty {
@@ -13,19 +13,28 @@ export class ElsaCronExpressionProperty {
     @Prop() propertyDescriptor: ActivityPropertyDescriptor;
     @Prop() propertyModel: ActivityDefinitionProperty;
     @State() currentValue: string;
+    @State() valueDescription: string;
 
     onChange(e: Event) {
         const input = e.currentTarget as HTMLInputElement;
         const defaultSyntax = this.propertyDescriptor.defaultSyntax || SyntaxNames.Literal;
         this.propertyModel.expressions[defaultSyntax] = this.currentValue = input.value;
+        this.updateDescription();
     }
     componentWillLoad() {
         const defaultSyntax = this.propertyDescriptor.defaultSyntax || SyntaxNames.Literal;
         this.currentValue = this.propertyModel.expressions[defaultSyntax] || undefined;
+        this.updateDescription();
     }
 
     onDefaultSyntaxValueChanged(e: CustomEvent) {
         this.currentValue = e.detail;
+    }
+
+    updateDescription() {
+        this.valueDescription = isValidCron(this.currentValue,  { seconds: true, allowBlankDay: true }) ? 
+                                    cronstrue.toString(this.currentValue) : 
+                                    "Invalid Cron";    
     }
 
     render() {
@@ -55,9 +64,13 @@ export class ElsaCronExpressionProperty {
                 onDefaultSyntaxValueChanged={e => this.onDefaultSyntaxValueChanged(e)}
                 editor-height="5em"
                 single-line={true}>
-                <div>
-                    <cron-expression-input height="34px" width="250px" value={value} color="d58512"></cron-expression-input>
-                </div>
+                    <div>
+                <input type="text" id={fieldId} name={fieldName} value={value} onChange={e => this.onChange(e)}
+               class="disabled:elsa-opacity-50 disabled:elsa-cursor-not-allowed focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300"
+               disabled={isReadOnly}/>
+               <p class="elsa-mt-2 elsa-text-sm elsa-text-gray-500">{this.valueDescription}</p>
+               </div>
+               
             </elsa-property-editor>
         );
     }
