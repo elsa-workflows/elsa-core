@@ -11,6 +11,6 @@ namespace Elsa.Activities.Mqtt.Services
     {
         Task CreateWorkersAsync(CancellationToken cancellationToken = default);
         Task<Worker> CreateWorkerAsync(MqttClientOptions config, CancellationToken cancellationToken);
-        IAsyncEnumerable<MqttClientOptions> GetConfigurationsAsync(Func<IWorkflowBlueprint, bool>? predicate, CancellationToken cancellationToken);
+        IAsyncEnumerable<MqttClientOptions> GetConfigurationsAsync(CancellationToken cancellationToken);
     }
 }

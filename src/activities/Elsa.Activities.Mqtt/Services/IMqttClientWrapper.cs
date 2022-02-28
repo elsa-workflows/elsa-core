@@ -12,6 +12,6 @@ namespace Elsa.Activities.Mqtt.Services
 
         Task SubscribeAsync(string topic);
         Task PublishMessageAsync(string topic, string message);
-        void SetMessageHandler(Func<MqttApplicationMessage, Task> handler);
+        Task SetMessageHandlerAsync(Func<MqttApplicationMessage, Task> handler);
     }
 }

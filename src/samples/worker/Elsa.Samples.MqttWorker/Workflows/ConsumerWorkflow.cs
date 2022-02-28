@@ -29,7 +29,6 @@ namespace Elsa.Samples.MqttWorker.Workflows
         public void Build(IWorkflowBuilder builder)
         {
             builder
-                .Timer(Duration.FromSeconds(5))
                 .MessageReceived("/temperature", _host, _port, _username, _password, _qos)
                 .WriteLine(context =>
                 {
