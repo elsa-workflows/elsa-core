@@ -1,4 +1,5 @@
 using Elsa.Activities.RabbitMq.Configuration;
+using Elsa.Activities.RabbitMq.Helpers;
 using Elsa.Activities.RabbitMq.Services;
 using Elsa.Models;
 using Elsa.Services;
@@ -99,6 +100,9 @@ namespace Elsa.Activities.RabbitMq.Testing
                 var headers = await activity.EvaluatePropertyValueAsync(x => x.Headers, cancellationToken);
 
                 var config = new RabbitMqBusConfiguration(connectionString!, exchangeName!, routingKey!, headers!);
+
+                yield return config;
+            }
 
                 yield return config;
             }

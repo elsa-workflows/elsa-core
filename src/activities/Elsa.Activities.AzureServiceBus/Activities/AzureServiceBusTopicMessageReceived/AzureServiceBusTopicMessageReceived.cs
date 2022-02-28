@@ -28,23 +28,20 @@ namespace Elsa.Activities.AzureServiceBus
         [ActivityInput(SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string SubscriptionName { get; set; } = default!;
 
-        [ActivityInput]
-        public Type MessageType { get; set; } = default!;
-        
-        [ActivityOutput]
-        public object? Output { get; set; }
+        [ActivityInput] public Type MessageType { get; set; } = default!;
+        [ActivityOutput] public object? Output { get; set; }
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => context.WorkflowExecutionContext.IsFirstPass ? ExecuteInternal(context) : Suspend();
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context) => ExecuteInternal(context);
 
         private IActivityExecutionResult ExecuteInternal(ActivityExecutionContext context)
         {
-            var message = (MessageModel) context.Input!;
+            var message = (MessageModel)context.Input!;
             Output = message.ReadBody(MessageType, _serializer);
-            
+
             context.LogOutputProperty(this, nameof(Output), Output);
             context.JournalData.Add("Headers", message.ExtractHeaders());
-            
+
             return Done();
         }
     }

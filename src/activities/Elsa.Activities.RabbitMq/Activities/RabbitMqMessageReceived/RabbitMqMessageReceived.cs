@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Elsa.Activities.RabbitMq.Services;
+using Elsa.Activities.RabbitMq.Helpers;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
@@ -16,14 +16,8 @@ namespace Elsa.Activities.RabbitMq
         Description = "Triggers when RabbitMQ message matching specified routing key is received",
         Outcomes = new[] { OutcomeNames.Done }
     )]
-    public class RabbitMqMessageReceived : Activity, IRabbitMqActivity
+    public class RabbitMqMessageReceived : Activity
     {
-        private readonly IMessageReceiverClientFactory _messageReceiverClientFactory;
-
-        public RabbitMqMessageReceived(IMessageReceiverClientFactory messageReceiverClientFactory)
-        {
-            _messageReceiverClientFactory = messageReceiverClientFactory;
-        }
 
         [ActivityInput(
             Hint = "Exchange to listen to",
@@ -52,14 +46,15 @@ namespace Elsa.Activities.RabbitMq
             Category = PropertyCategories.Configuration)]
         public string ConnectionString { get; set; } = default!;
 
+        public string ClientId => RabbitMqClientConfigurationHelper.GetClientId(Id);
+
 
         [ActivityOutput(Hint = "Received message")]
         public object? Output { get; set; }
-        
+
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => context.WorkflowExecutionContext.IsFirstPass ? ExecuteInternalAsync(context) : Suspend();
-        
+
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context) => ExecuteInternalAsync(context);
-        
 
         private IActivityExecutionResult ExecuteInternalAsync(ActivityExecutionContext context)
         {

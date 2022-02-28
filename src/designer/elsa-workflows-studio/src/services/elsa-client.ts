@@ -38,15 +38,13 @@ export const createHttpClient = async function (baseAddress: string): Promise<Ax
   const config: AxiosRequestConfig = {
     baseURL: baseAddress// + getTenant()
   };
+  _httpClient = axios.create(config);
+  const service = new Service(_httpClient);
 
   await eventBus.emit(EventTypes.HttpClientConfigCreated, this, {config});
+  await eventBus.emit(EventTypes.HttpClientCreated, this, {service, _httpClient});
 
-  const httpClient = axios.create(config);
-  const service = new Service(httpClient);
-
-  await eventBus.emit(EventTypes.HttpClientCreated, this, {service, httpClient});
-
-  return _httpClient = httpClient;
+  return _httpClient;
 }
 
 export const createElsaClient = async function (serverUrl: string): Promise<ElsaClient> {

@@ -77,7 +77,7 @@ namespace Elsa.Services.Workflows
 
             if (workflowBlueprint.IsDisabled)
             {
-                return new RunWorkflowResult(workflowInstance, activityId, false);
+                return new RunWorkflowResult(workflowInstance, activityId, null, false);
             }
 
             return await _workflowRunner.RunWorkflowAsync(workflowBlueprint, workflowInstance, activityId, input, cancellationToken);

@@ -350,7 +350,7 @@ export class ElsaWorkflowInstanceJournal {
     const activityModel = !!this.workflowModel && this.selectedActivityId ? this.workflowModel.activities.find(x => x.activityId === this.selectedActivityId) : null;
 
     if (!activityModel)
-      return <p>No activity selected</p>;
+      return <p class="elsa-mt-4">No activity selected</p>;
 
     // Hide expressions field from properties so that we only display the evaluated value.
     const model = {...activityModel, properties: activityModel.properties.map(x => ({name: x.name, value: x.value}))}

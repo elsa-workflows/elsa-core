@@ -41,7 +41,7 @@ namespace Elsa.Activities.RabbitMq.Services
                 }))
                 .Transport(t =>
                 {
-                    t.UseRabbitMq(Configuration.ConnectionString, $"Elsa{Guid.NewGuid().ToString("n").ToUpper()}");
+                    t.UseRabbitMq(Configuration.ConnectionString, Configuration.ClientId).InputQueueOptions(x => x.SetAutoDelete(Configuration.AutoDeleteQueue));
                 })
                 .Start();
 

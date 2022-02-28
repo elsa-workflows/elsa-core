@@ -53,6 +53,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IAbsoluteUrlProvider, DefaultAbsoluteUrlProvider>()
                 .AddSingleton<AllowAnonymousHttpEndpointAuthorizationHandler>()
                 .AddSingleton(sp => sp.GetRequiredService<IOptions<HttpActivityOptions>>().Value.HttpEndpointAuthorizationHandlerFactory(sp))
+                .AddSingleton(sp => sp.GetRequiredService<IOptions<HttpActivityOptions>>().Value.HttpEndpointWorkflowFaultHandlerFactory(sp))
                 .AddBookmarkProvider<HttpEndpointBookmarkProvider>()
                 .AddHttpContextAccessor()
                 .AddNotificationHandlers(typeof(ConfigureJavaScriptEngine))

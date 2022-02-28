@@ -17,7 +17,6 @@ namespace Elsa.Activities.RabbitMq.Bookmarks
             RoutingKey = routingKey;
             ConnectionString = connectionString;
             Headers = headers ?? new Dictionary<string, string>();
-
         }
 
         public string ExchangeName { get; set; } = default!;
