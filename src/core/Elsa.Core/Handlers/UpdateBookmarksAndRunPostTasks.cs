@@ -17,13 +17,13 @@ namespace Elsa.Handlers
     {
         private readonly IBookmarkIndexer _bookmarkIndexer;
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
-        private readonly Tenant _tenant;
+        private readonly ITenantProvider _tenantProvider;
 
         public UpdateBookmarksAndRunPostTasks(IBookmarkIndexer bookmarkIndexer, IWorkflowInstanceStore workflowInstanceStore, ITenantProvider tenantProvider)
         {
             _bookmarkIndexer = bookmarkIndexer;
             _workflowInstanceStore = workflowInstanceStore;
-            _tenant = tenantProvider.GetCurrentTenant();
+            _tenantProvider = tenantProvider;
         }
 
         public async Task Handle(WorkflowExecutionFinished notification, CancellationToken cancellationToken)
@@ -37,15 +37,18 @@ namespace Elsa.Handlers
         public async Task Handle(ManyWorkflowInstancesDeleted notification, CancellationToken cancellationToken)
         {
             var workflowInstanceIds = notification.WorkflowInstances.Select(x => x.Id).ToList();
+            var tenant = await _tenantProvider.GetCurrentTenantAsync();
 
             foreach (var workflowInstanceId in workflowInstanceIds)
-                await _bookmarkIndexer.DeleteBookmarksAsync(workflowInstanceId, _tenant, cancellationToken);
+                await _bookmarkIndexer.DeleteBookmarksAsync(workflowInstanceId, tenant, cancellationToken);
         }
 
         public async Task Handle(ManyWorkflowInstancesAdded notification, CancellationToken cancellationToken)
         {
+            var tenant = await _tenantProvider.GetCurrentTenantAsync();
+
             foreach (var workflowInstance in notification.WorkflowInstances)
-                await _bookmarkIndexer.IndexBookmarksAsync(workflowInstance, _tenant, cancellationToken);
+                await _bookmarkIndexer.IndexBookmarksAsync(workflowInstance, tenant, cancellationToken);
         }
 
         private async Task RunPostSuspensionTasksAsync(WorkflowExecutionFinished notification, CancellationToken cancellationToken)

@@ -1,6 +1,6 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Multitenancy;
 using Elsa.Services;
 
 namespace Elsa.StartupTasks
@@ -16,9 +16,6 @@ namespace Elsa.StartupTasks
         
         public int Order => 1000;
         
-        public async Task ExecuteAsync(CancellationToken cancellationToken = default)
-        {
-            await _triggerIndexer.IndexTriggersAsync(cancellationToken);
-        }
+        public async Task ExecuteAsync(CancellationToken cancellationToken = default) => await _triggerIndexer.IndexTriggersAsync(cancellationToken);
     }
 }

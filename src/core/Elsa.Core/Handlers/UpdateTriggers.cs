@@ -1,7 +1,6 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Abstractions.Multitenancy;
 using Elsa.Events;
 using Elsa.Models;
 using Elsa.Services;
@@ -28,7 +27,7 @@ public class UpdateTriggers :
         _logger = logger;
     }
 
-    public async Task Handle(WorkflowDefinitionPublished notification, CancellationToken cancellationToken) => await IndexTriggersAsync(notification.WorkflowDefinition, notification.Tenant, cancellationToken);
+    public async Task Handle(WorkflowDefinitionPublished notification, CancellationToken cancellationToken) => await IndexTriggersAsync(notification.WorkflowDefinition, cancellationToken);
 
     public async Task Handle(WorkflowDefinitionDeleted notification, CancellationToken cancellationToken)
     {
@@ -48,12 +47,12 @@ public class UpdateTriggers :
             await _triggerIndexer.DeleteTriggersAsync(workflowDefinition.DefinitionId, cancellationToken);
     }
     
-    private async Task IndexTriggersAsync(WorkflowDefinition workflowDefinition, Tenant tenant, CancellationToken cancellationToken)
+    private async Task IndexTriggersAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken)
     {
         var workflowBlueprint = await TryMaterializeBlueprintAsync(workflowDefinition, cancellationToken);
         
         if(workflowBlueprint != null)
-            await _triggerIndexer.IndexTriggersAsync(workflowBlueprint, tenant, cancellationToken);
+            await _triggerIndexer.IndexTriggersAsync(workflowBlueprint, cancellationToken);
     }
     
     private async Task<IWorkflowBlueprint?> TryMaterializeBlueprintAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken)

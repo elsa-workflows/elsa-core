@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Abstractions.Multitenancy;
 using Elsa.Models;
 using Elsa.Serialization;
 using Elsa.Server.Api.Helpers;
@@ -25,14 +24,12 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
         private readonly IWorkflowPublisher _workflowPublisher;
         private readonly ITenantAccessor _tenantAccessor;
         private readonly IContentSerializer _contentSerializer;
-        private readonly ITenantProvider _tenantProvider;
 
-        public Save(IWorkflowPublisher workflowPublisher, ITenantAccessor tenantAccessor, IContentSerializer contentSerializer, ITenantProvider tenantProvider)
+        public Save(IWorkflowPublisher workflowPublisher, ITenantAccessor tenantAccessor, IContentSerializer contentSerializer)
         {
             _workflowPublisher = workflowPublisher;
             _tenantAccessor = tenantAccessor;
             _contentSerializer = contentSerializer;
-            _tenantProvider = tenantProvider;
         }
 
         [HttpPost]
@@ -74,10 +71,8 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
 
             workflowDefinition.TenantId = await _tenantAccessor.GetTenantIdAsync(cancellationToken);
 
-            var tenant = _tenantProvider.GetCurrentTenant();
-
             if (request.Publish)
-                workflowDefinition = await _workflowPublisher.PublishAsync(workflowDefinition, tenant, cancellationToken);
+                workflowDefinition = await _workflowPublisher.PublishAsync(workflowDefinition, cancellationToken);
             else
                 workflowDefinition = await _workflowPublisher.SaveDraftAsync(workflowDefinition, cancellationToken);
 

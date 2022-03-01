@@ -61,11 +61,11 @@ namespace Elsa.Activities.RabbitMq
             Category = PropertyCategories.Configuration)]
         public string ConnectionString { get; set; } = default!;
 
-        public string ClientId => RabbitMqClientConfigurationHelper.GetClientId(Id);
-
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            var config = new RabbitMqBusConfiguration(ConnectionString, ExchangeName, RoutingKey, Headers, ClientId);
+            var clientId = RabbitMqClientConfigurationHelper.GetClientId(Id);
+
+            var config = new RabbitMqBusConfiguration(ConnectionString, ExchangeName, RoutingKey, Headers, clientId);
 
             var client = await _messageSenderClientFactory.GetSenderAsync(config);
 

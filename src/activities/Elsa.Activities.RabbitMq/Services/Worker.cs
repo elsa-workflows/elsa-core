@@ -18,9 +18,9 @@ namespace Elsa.Activities.RabbitMq.Services
         private readonly IClient _client;
         private readonly ILogger _logger;
         private readonly Func<IClient, Task> _disposeReceiverAction;
+        private readonly ITenantProvider _tenantProvider;
         private string ActivityType => nameof(RabbitMqMessageReceived);
         private TimeSpan _delay = TimeSpan.FromMilliseconds(200);
-        private readonly Tenant _tenant;
 
         public Worker(
             IServiceScopeFactory scopeFactory,
@@ -33,12 +33,13 @@ namespace Elsa.Activities.RabbitMq.Services
             _client = client;
             _disposeReceiverAction = disposeReceiverAction;
             _logger = logger;
-            _tenant = tenantProvider.GetCurrentTenant();
+            _tenantProvider = tenantProvider;
 
             _client.SubscribeWithHandler(OnMessageReceived);
         }
 
         public async ValueTask DisposeAsync() => await _disposeReceiverAction(_client);
+        public string Id => _client.Configuration.ClientId;
 
         private async Task OnMessageReceived(TransportMessage message, CancellationToken cancellationToken)
         {
@@ -57,7 +58,9 @@ namespace Elsa.Activities.RabbitMq.Services
             var bookmark = new MessageReceivedBookmark(config.ExchangeName, config.RoutingKey, config.ConnectionString, config.Headers);
             var launchContext = new WorkflowsQuery(ActivityType, bookmark);
 
-            using var scope = _scopeFactory.CreateScopeForTenant(_tenant);
+            var tenant = await _tenantProvider.GetCurrentTenantAsync();
+
+            using var scope = _scopeFactory.CreateScopeForTenant(tenant);
             var workflowLaunchpad = scope.ServiceProvider.GetRequiredService<IWorkflowLaunchpad>();
             await workflowLaunchpad.CollectAndDispatchWorkflowsAsync(launchContext, new WorkflowInput(message), cancellationToken);
         }

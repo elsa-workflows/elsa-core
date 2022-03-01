@@ -59,7 +59,7 @@ namespace Elsa.Services.Bookmarks
             _logger = logger;
         }
 
-        public async Task IndexBookmarksAsync(IEnumerable<WorkflowInstance> workflowInstances, Tenant tenant, CancellationToken cancellationToken)
+        public async Task IndexBookmarksAsync(IEnumerable<WorkflowInstance> workflowInstances, ITenant tenant, CancellationToken cancellationToken)
         {
             var workflowInstanceList = workflowInstances.ToList();
 
@@ -67,7 +67,7 @@ namespace Elsa.Services.Bookmarks
                 await IndexBookmarksAsync(workflowInstance, tenant, cancellationToken);
         }
 
-        public async Task IndexBookmarksAsync(WorkflowInstance workflowInstance, Tenant tenant, CancellationToken cancellationToken)
+        public async Task IndexBookmarksAsync(WorkflowInstance workflowInstance, ITenant tenant, CancellationToken cancellationToken)
         {
             _stopwatch.Restart();
             _logger.LogInformation("Indexing bookmarks for workflow instance {WorkflowInstanceId}", workflowInstance.Id);
@@ -102,7 +102,7 @@ namespace Elsa.Services.Bookmarks
             _logger.LogInformation("Indexed {BookmarkCount} bookmarks for workflow instance {WorkflowInstanceId} in {ElapsedTime}", entities.Count, workflowInstance.Id, _stopwatch.Elapsed);
         }
 
-        public async Task DeleteBookmarksAsync(string workflowInstanceId, Tenant tenant, CancellationToken cancellationToken = default)
+        public async Task DeleteBookmarksAsync(string workflowInstanceId, ITenant tenant, CancellationToken cancellationToken = default)
         {
             var specification = new WorkflowInstanceIdSpecification(workflowInstanceId);
             var bookmarks = await _bookmarkStore.FindManyAsync(specification, cancellationToken: cancellationToken).ToList();

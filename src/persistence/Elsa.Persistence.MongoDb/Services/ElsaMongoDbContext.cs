@@ -11,9 +11,11 @@ namespace Elsa.Persistence.MongoDb.Services
 
         public ElsaMongoDbContext(ITenantStore tenantStore)
         {
-            foreach (var tenant in tenantStore.GetTenants())
+            var tenants = tenantStore.GetTenantsAsync().GetAwaiter().GetResult();
+
+            foreach (var tenant in tenants)
             {
-                var connectionString = tenant.Configuration.GetDatabaseConnectionString();
+                var connectionString = tenant.GetDatabaseConnectionString();
 
                 var client = new MongoClient(connectionString);
 

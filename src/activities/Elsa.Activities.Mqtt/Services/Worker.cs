@@ -18,7 +18,7 @@ namespace Elsa.Activities.Mqtt.Services
         private readonly Func<IMqttClientWrapper, Task> _disposeReceiverAction;
         private readonly IMqttClientWrapper _receiverClient;
         private readonly IServiceScopeFactory _serviceScopeFactory;
-        private readonly Tenant _tenant;
+        private readonly ITenantProvider _tenantProvider;
 
         public Worker(
             IMqttClientWrapper receiverClient,
@@ -29,22 +29,24 @@ namespace Elsa.Activities.Mqtt.Services
             _receiverClient = receiverClient;
             _serviceScopeFactory = serviceScopeFactory;
             _disposeReceiverAction = disposeReceiverAction;
-            _tenant = tenantProvider.GetCurrentTenant();
+            _tenantProvider = tenantProvider;
 
             _receiverClient.SubscribeWithHandlerAsync(_receiverClient.Options.Topic, OnMessageReceived);
         }
 
-        private string ActivityType => nameof(MqttMessageReceived);
         public async ValueTask DisposeAsync() => await _disposeReceiverAction(_receiverClient);
+        public string Id => _receiverClient.Options.ClientId;
 
+        private string ActivityType => nameof(MqttMessageReceived);
         private IBookmark CreateBookmark(MqttClientOptions options) => new MessageReceivedBookmark(options.Topic, options.Host, options.Port, options.Username, options.Password, options.QualityOfService);
 
         private async Task TriggerWorkflowsAsync(MqttApplicationMessage message, CancellationToken cancellationToken)
         {
             var bookmark = CreateBookmark(_receiverClient.Options);
             var launchContext = new WorkflowsQuery(ActivityType, bookmark);
+            var tenant = await _tenantProvider.GetCurrentTenantAsync();
 
-            using var scope = _serviceScopeFactory.CreateScopeForTenant(_tenant);
+            using var scope = _serviceScopeFactory.CreateScopeForTenant(tenant);
             var workflowLaunchpad = scope.ServiceProvider.GetRequiredService<IWorkflowLaunchpad>();
             await workflowLaunchpad.CollectAndDispatchWorkflowsAsync(launchContext, new WorkflowInput(message), cancellationToken);
         }

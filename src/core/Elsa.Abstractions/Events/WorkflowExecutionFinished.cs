@@ -9,11 +9,11 @@ namespace Elsa.Events
     public class WorkflowExecutionFinished : WorkflowNotification
     {
 
-        public WorkflowExecutionFinished(WorkflowExecutionContext workflowExecutionContext, Tenant tenant) : base(workflowExecutionContext)
+        public WorkflowExecutionFinished(WorkflowExecutionContext workflowExecutionContext, ITenant tenant) : base(workflowExecutionContext)
         {
             Tenant = tenant;
         }
 
-        public Tenant Tenant { get; }
+        public ITenant Tenant { get; }
     }
 }

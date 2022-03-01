@@ -5,4 +5,4 @@ using MediatR;
 
 namespace Elsa.Events;
 
-public record BookmarksDeleted(string WorkflowInstanceId, IReadOnlyCollection<Bookmark> Bookmarks, Tenant Tenant) : INotification;
+public record BookmarksDeleted(string WorkflowInstanceId, IReadOnlyCollection<Bookmark> Bookmarks, ITenant Tenant) : INotification;

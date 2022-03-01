@@ -5,4 +5,4 @@ using MediatR;
 
 namespace Elsa.Events;
 
-public record BookmarkIndexingFinished(string WorkflowInstanceId, IReadOnlyCollection<Bookmark> Bookmarks, Tenant Tenant) : INotification;
+public record BookmarkIndexingFinished(string WorkflowInstanceId, IReadOnlyCollection<Bookmark> Bookmarks, ITenant Tenant) : INotification;

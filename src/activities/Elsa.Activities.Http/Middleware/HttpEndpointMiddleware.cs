@@ -41,7 +41,7 @@ namespace Elsa.Activities.Http.Middleware
             IEnumerable<IHttpRequestBodyParser> contentParsers,
             ITenantProvider tenantProvider)
         {
-            var basePath = GetBasePath(options.Value.BasePath, tenantProvider);
+            var basePath = await GetBasePath(options.Value.BasePath, tenantProvider);
 
             var path = GetPath(basePath, httpContext);
 
@@ -219,9 +219,10 @@ namespace Elsa.Activities.Http.Middleware
             ? httpContext.Request.Path.StartsWithSegments(basePath.Value, out _, out var remainingPath) ? remainingPath.Value.ToLowerInvariant() : null
             : httpContext.Request.Path.Value.ToLowerInvariant();
 
-        private PathString? GetBasePath(PathString? basePath, ITenantProvider tenantProvider)
+        private async Task<PathString?> GetBasePath(PathString? basePath, ITenantProvider tenantProvider)
         {
-            var tenantPrefix = tenantProvider.TryGetCurrentTenant()?.Configuration.GetPrefix();
+            var tenant = await tenantProvider.TryGetCurrentTenantAsync(); ;
+            var tenantPrefix = tenant?.GetPrefix();
 
             return string.IsNullOrEmpty(tenantPrefix) ? basePath : $"/{tenantPrefix}{basePath}";
         }

@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Elsa.Activities.Mqtt.Helpers;
 using Elsa.Activities.Mqtt.Options;
 using Elsa.Activities.Mqtt.Services;
 using Elsa.ActivityResults;
@@ -36,7 +37,9 @@ namespace Elsa.Activities.Mqtt.Activities.SendMqttMessage
         
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            var options = new MqttClientOptions(Topic, Host, Port, Username, Password, QualityOfService);
+            var clientId = MqttClientConfigurationHelper.GetClientId(Id);
+
+            var options = new MqttClientOptions(Topic, Host, Port, Username, Password, QualityOfService, clientId);
 
             var client = await _messageSenderClientFactory.GetSenderAsync(options);
 

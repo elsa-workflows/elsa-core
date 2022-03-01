@@ -17,19 +17,22 @@ namespace Elsa.Services.Workflows
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
         private readonly IGetsStartActivities _startingActivitiesProvider;
+        private readonly ITenantProvider _tenantProvider;
 
         public WorkflowReviver(
             IResumesWorkflow resumesWorkflow,
             IWorkflowInstanceDispatcher workflowInstanceDispatcher,
             IWorkflowRegistry workflowRegistry,
             IWorkflowInstanceStore workflowInstanceStore,
-            IGetsStartActivities startingActivitiesProvider)
+            IGetsStartActivities startingActivitiesProvider,
+            ITenantProvider tenantProvider)
         {
             _resumesWorkflow = resumesWorkflow;
             _workflowInstanceDispatcher = workflowInstanceDispatcher;
             _workflowRegistry = workflowRegistry;
             _workflowInstanceStore = workflowInstanceStore;
             _startingActivitiesProvider = startingActivitiesProvider ?? throw new ArgumentNullException(nameof(startingActivitiesProvider));
+            _tenantProvider = tenantProvider;
         }
 
         public async Task<WorkflowInstance> ReviveAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken)
@@ -70,10 +73,12 @@ namespace Elsa.Services.Workflows
             return await _resumesWorkflow.ResumeWorkflowAsync(workflowInstance, null, null, cancellationToken);
         }
 
-        public async Task<WorkflowInstance> ReviveAndQueueAsync(WorkflowInstance workflowInstance, Tenant tenant, CancellationToken cancellationToken)
+        public async Task<WorkflowInstance> ReviveAndQueueAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken)
         {
             workflowInstance = await ReviveAsync(workflowInstance, cancellationToken);
             var currentActivity = await GetActivityToScheduleAsync(workflowInstance, cancellationToken);
+
+            var tenant = await _tenantProvider.GetCurrentTenantAsync();
             await _workflowInstanceDispatcher.DispatchAsync(new ExecuteWorkflowInstanceRequest(tenant, workflowInstance.Id, currentActivity.ActivityId), cancellationToken);
             return workflowInstance;
         }

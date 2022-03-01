@@ -8,8 +8,8 @@ namespace Elsa.Events
     /// </summary>
     public class WorkflowSuspended : WorkflowNotification
     {
-        public Tenant Tenant { get; }
-        public WorkflowSuspended(WorkflowExecutionContext workflowExecutionContext, Tenant tenant) : base(workflowExecutionContext)
+        public ITenant Tenant { get; }
+        public WorkflowSuspended(WorkflowExecutionContext workflowExecutionContext, ITenant tenant) : base(workflowExecutionContext)
         {
             Tenant = tenant;
         }

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Elsa.Abstractions.Multitenancy;
 using Microsoft.Extensions.Configuration;
 
@@ -7,11 +8,11 @@ namespace Elsa.Multitenancy
 {
     public class TenantStore : ITenantStore
     {
-        private readonly List<Tenant> _tenants;
+        private readonly IList<ITenant> _tenants;
 
         public TenantStore(IConfiguration configuration)
         {
-            var tenants = new List<Tenant>();
+            var tenants = new List<ITenant>();
 
             var multiTenancyEnabled = configuration.GetValue<bool>("Elsa:Multitenancy");
 
@@ -51,6 +52,6 @@ namespace Elsa.Multitenancy
             _tenants = tenants;
         }
 
-        public IList<Tenant> GetTenants() => _tenants;
+        public Task<IList<ITenant>> GetTenantsAsync() => Task.FromResult(_tenants);
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Elsa.Activities.Webhooks;
 using Elsa.Options;
 using Elsa.Services.Startup;
@@ -17,13 +18,13 @@ namespace Elsa.Webhooks.Persistence.EntityFramework.Core
         {
             var optionsBuilder = new WebhookOptionsBuilder(elsa.Services);
 
-            optionsBuilder.UseNonPooledEntityFrameworkPersistence((serviceProvider, options) => ConfigureFor(options, serviceProvider), ServiceLifetime.Scoped, autoRunMigrations: true);
+            optionsBuilder.UseNonPooledEntityFrameworkPersistence((serviceProvider, options) => Configure(options, serviceProvider), ServiceLifetime.Scoped, autoRunMigrations: true);
 
             elsa.Services.AddSingleton(optionsBuilder.WebhookOptions);
         }
 
         protected virtual string GetDefaultConnectionString() => throw new Exception($"No connection string specified for the {ProviderName} provider");
         protected abstract void Configure(DbContextOptionsBuilder options, string connectionString);
-        protected abstract void ConfigureFor(DbContextOptionsBuilder options, IServiceProvider serviceProvider);
+        protected abstract Task Configure(DbContextOptionsBuilder options, IServiceProvider serviceProvider);
     }
 }

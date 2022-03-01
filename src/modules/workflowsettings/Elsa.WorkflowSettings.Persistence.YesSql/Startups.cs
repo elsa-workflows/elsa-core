@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Elsa.Abstractions.Multitenancy;
 using Elsa.Attributes;
 using Elsa.Options;
@@ -20,11 +21,11 @@ namespace Elsa.WorkflowSettings.Persistence.YesSql
         protected override string ProviderName => "Sqlite";
         protected override string GetDefaultConnectionString() => "Data Source=elsa.yessql.db;Cache=Shared";
         protected override void Configure(global::YesSql.IConfiguration options, string connectionString) => options.UseSqLite(connectionString);
-        protected override void ConfigureFor(global::YesSql.IConfiguration options, IServiceProvider serviceProvider)
+        protected override async Task Configure(global::YesSql.IConfiguration options, IServiceProvider serviceProvider)
         {
             var tenantProvider = serviceProvider.GetRequiredService<ITenantProvider>();
-
-            var connectionString = tenantProvider.GetCurrentTenant().Configuration.GetDatabaseConnectionString();
+            var tenant = await tenantProvider.GetCurrentTenantAsync();
+            var connectionString = tenant.GetDatabaseConnectionString();
 
             options.UseSqLite(connectionString);
         }
@@ -35,11 +36,11 @@ namespace Elsa.WorkflowSettings.Persistence.YesSql
     {
         protected override string ProviderName => "SqlServer";
         protected override void Configure(global::YesSql.IConfiguration options, string connectionString) => options.UseSqlServer(connectionString);
-        protected override void ConfigureFor(global::YesSql.IConfiguration options, IServiceProvider serviceProvider)
+        protected override async Task Configure(global::YesSql.IConfiguration options, IServiceProvider serviceProvider)
         {
             var tenantProvider = serviceProvider.GetRequiredService<ITenantProvider>();
-
-            var connectionString = tenantProvider.GetCurrentTenant().Configuration.GetDatabaseConnectionString();
+            var tenant = await tenantProvider.GetCurrentTenantAsync();
+            var connectionString = tenant.GetDatabaseConnectionString();
 
             options.UseSqlServer(connectionString);
         }
@@ -50,11 +51,11 @@ namespace Elsa.WorkflowSettings.Persistence.YesSql
     {
         protected override string ProviderName => "MySql";
         protected override void Configure(global::YesSql.IConfiguration options, string connectionString) => options.UseMySql(connectionString);
-        protected override void ConfigureFor(global::YesSql.IConfiguration options, IServiceProvider serviceProvider)
+        protected override async Task Configure(global::YesSql.IConfiguration options, IServiceProvider serviceProvider)
         {
             var tenantProvider = serviceProvider.GetRequiredService<ITenantProvider>();
-
-            var connectionString = tenantProvider.GetCurrentTenant().Configuration.GetDatabaseConnectionString();
+            var tenant = await tenantProvider.GetCurrentTenantAsync();
+            var connectionString = tenant.GetDatabaseConnectionString();
 
             options.UseMySql(connectionString);
         }
@@ -65,11 +66,11 @@ namespace Elsa.WorkflowSettings.Persistence.YesSql
     {
         protected override string ProviderName => "PostgreSql";
         protected override void Configure(global::YesSql.IConfiguration options, string connectionString) => options.UsePostgreSql(connectionString);
-        protected override void ConfigureFor(global::YesSql.IConfiguration options, IServiceProvider serviceProvider)
+        protected override async Task Configure(global::YesSql.IConfiguration options, IServiceProvider serviceProvider)
         {
             var tenantProvider = serviceProvider.GetRequiredService<ITenantProvider>();
-
-            var connectionString = tenantProvider.GetCurrentTenant().Configuration.GetDatabaseConnectionString();
+            var tenant = await tenantProvider.GetCurrentTenantAsync();
+            var connectionString = tenant.GetDatabaseConnectionString();
 
             options.UsePostgreSql(connectionString);
         }
@@ -84,7 +85,7 @@ namespace Elsa.WorkflowSettings.Persistence.YesSql
             var services = elsa.Services;
             var workflowSettingsOptionsBuilder = new WorkflowSettingsOptionsBuilder(services);
 
-            workflowSettingsOptionsBuilder.UseWorkflowSettingsYesSqlPersistence((serviceProvider, options) => ConfigureFor(options, serviceProvider));
+            workflowSettingsOptionsBuilder.UseWorkflowSettingsYesSqlPersistence((serviceProvider, options) => Configure(options, serviceProvider));
 
             services.AddScoped(sp => workflowSettingsOptionsBuilder.WorkflowSettingsOptions.WorkflowSettingsStoreFactory(sp));
 
@@ -93,6 +94,6 @@ namespace Elsa.WorkflowSettings.Persistence.YesSql
 
         protected virtual string GetDefaultConnectionString() => throw new Exception($"No connection string specified for the {ProviderName} provider");
         protected abstract void Configure(global::YesSql.IConfiguration options, string connectionString);
-        protected abstract void ConfigureFor(global::YesSql.IConfiguration options, IServiceProvider serviceProvider);
+        protected abstract Task Configure(global::YesSql.IConfiguration options, IServiceProvider serviceProvider);
     }
 }

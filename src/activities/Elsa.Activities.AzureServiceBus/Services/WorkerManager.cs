@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Elsa.Abstractions.Multitenancy;
 using Elsa.Activities.AzureServiceBus.Bookmarks;
 using Elsa.Models;
-using Elsa.Multitenancy;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -34,7 +33,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             _workers = new Collection<Worker>();
         }
 
-        public async Task CreateWorkersAsync(IReadOnlyCollection<Trigger> triggers, Tenant tenant, CancellationToken cancellationToken = default)
+        public async Task CreateWorkersAsync(IReadOnlyCollection<Trigger> triggers, ITenant tenant, CancellationToken cancellationToken = default)
         {
             await _semaphore.WaitAsync(cancellationToken);
 
@@ -54,7 +53,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             }
         }
 
-        public async Task CreateWorkersAsync(IReadOnlyCollection<Bookmark> bookmarks, Tenant tenant, CancellationToken cancellationToken = default)
+        public async Task CreateWorkersAsync(IReadOnlyCollection<Bookmark> bookmarks, ITenant tenant, CancellationToken cancellationToken = default)
         {
             await _semaphore.WaitAsync(cancellationToken);
 
@@ -97,7 +96,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             await RemoveWorkersAsync(workflowInstanceIds);
         }
 
-        private async Task CreateAndAddWorkerAsync(string tag, string queueOrTopic, string? subscription, Tenant tenant, CancellationToken cancellationToken)
+        private async Task CreateAndAddWorkerAsync(string tag, string queueOrTopic, string? subscription, ITenant tenant, CancellationToken cancellationToken)
         {
             try
             {

@@ -11,8 +11,9 @@ namespace Elsa.Activities.Mqtt.Options
         public string Username { get; }
         public string Password { get; }
         public MqttQualityOfService QualityOfService { get; }
+        public string ClientId { get; }
 
-        public MqttClientOptions(string topic, string host, int port, string username, string password, MqttQualityOfService qos)
+        public MqttClientOptions(string topic, string host, int port, string username, string password, MqttQualityOfService qos, string clientId)
         {
             Topic = topic;
             Host = host;
@@ -20,11 +21,12 @@ namespace Elsa.Activities.Mqtt.Options
             Username = username;
             Password = password;
             QualityOfService = qos;
+            ClientId = clientId;
         }
 
         public MqttClientCredentials GenerateMqttClientCredentials()
         {
-            return new MqttClientCredentials($"Elsa{ Guid.NewGuid():N}", Username, Password);
+            return new MqttClientCredentials(ClientId, Username, Password);
         }
 
         public override int GetHashCode()

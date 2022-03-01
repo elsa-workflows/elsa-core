@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,8 +10,8 @@ namespace Elsa.Services
     public interface ITriggerIndexer
     {
         Task IndexTriggersAsync(CancellationToken cancellationToken = default);
-        Task IndexTriggersAsync(IEnumerable<IWorkflowBlueprint> workflowBlueprints, Tenant tenant, CancellationToken cancellationToken = default);
-        Task IndexTriggersAsync(IWorkflowBlueprint workflowBlueprint, Tenant tenant, CancellationToken cancellationToken = default);
+        Task IndexTriggersAsync(IEnumerable<IWorkflowBlueprint> workflowBlueprints, CancellationToken cancellationToken = default);
+        Task IndexTriggersAsync(IWorkflowBlueprint workflowBlueprint, CancellationToken cancellationToken = default);
         Task DeleteTriggersAsync(string workflowDefinitionId, CancellationToken cancellationToken = default);
     }
 }

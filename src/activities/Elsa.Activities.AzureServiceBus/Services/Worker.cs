@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
+using Elsa.Abstractions.Multitenancy;
 using Elsa.Activities.AzureServiceBus.Bookmarks;
 using Elsa.Activities.AzureServiceBus.Models;
 using Elsa.Activities.AzureServiceBus.Options;
@@ -25,6 +26,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly ILogger _logger;
         private readonly ServiceBusProcessor _processor;
+        private readonly ITenant _tenant;
 
         public Worker(
             string queueOrTopic,
@@ -35,7 +37,8 @@ namespace Elsa.Activities.AzureServiceBus.Services
             IClock clock,
             IServiceScopeFactory serviceScopeFactory,
             IOptions<AzureServiceBusOptions> options,
-            ILogger<Worker> logger)
+            ILogger<Worker> logger,
+            ITenant tenant)
         {
             QueueOrTopic = queueOrTopic;
             Subscription = subscription == "" ? null : subscription;
@@ -45,6 +48,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             _clock = clock;
             _serviceScopeFactory = serviceScopeFactory;
             _logger = logger;
+            _tenant = tenant;
 
             var processorOptions = new ServiceBusProcessorOptions
             {
@@ -121,7 +125,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             var bookmark = new MessageReceivedBookmark(QueueOrTopic, Subscription);
             var launchContext = new WorkflowsQuery(ActivityType, bookmark, correlationId);
 
-            using var scope = _serviceScopeFactory.CreateScope();
+            using var scope = _serviceScopeFactory.CreateScopeForTenant(_tenant);
             var workflowLaunchpad = scope.ServiceProvider.GetRequiredService<IWorkflowLaunchpad>();
             await workflowLaunchpad.CollectAndDispatchWorkflowsAsync(launchContext, new WorkflowInput(model), cancellationToken);
         }

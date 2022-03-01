@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Elsa.Abstractions.Multitenancy;
 using Elsa.Activities.Webhooks;
 using Elsa.Activities.Webhooks.Persistence.Decorators;
@@ -21,11 +22,11 @@ namespace Elsa.Webhooks.Persistence.YesSql
         protected override string ProviderName => "Sqlite";
         protected override string GetDefaultConnectionString() => "Data Source=elsa.yessql.db;Cache=Shared";
         protected override void Configure(global::YesSql.IConfiguration options, string connectionString) => options.UseSqLite(connectionString);
-        protected override void Configure(global::YesSql.IConfiguration options, IServiceProvider serviceProvider)
+        protected override async Task Configure(global::YesSql.IConfiguration options, IServiceProvider serviceProvider)
         {
             var tenantProvider = serviceProvider.GetRequiredService<ITenantProvider>();
-
-            var connectionString = tenantProvider.GetCurrentTenant().Configuration.GetDatabaseConnectionString();
+            var tenant = await tenantProvider.GetCurrentTenantAsync();
+            var connectionString = tenant.GetDatabaseConnectionString();
 
             options.UseSqLite(connectionString);
         }
@@ -36,11 +37,11 @@ namespace Elsa.Webhooks.Persistence.YesSql
     {
         protected override string ProviderName => "SqlServer";
         protected override void Configure(global::YesSql.IConfiguration options, string connectionString) => options.UseSqlServer(connectionString);
-        protected override void Configure(global::YesSql.IConfiguration options, IServiceProvider serviceProvider)
+        protected override async Task Configure(global::YesSql.IConfiguration options, IServiceProvider serviceProvider)
         {
             var tenantProvider = serviceProvider.GetRequiredService<ITenantProvider>();
-
-            var connectionString = tenantProvider.GetCurrentTenant().Configuration.GetDatabaseConnectionString();
+            var tenant = await tenantProvider.GetCurrentTenantAsync();
+            var connectionString = tenant.GetDatabaseConnectionString();
 
             options.UseSqlServer(connectionString);
         }
@@ -51,11 +52,11 @@ namespace Elsa.Webhooks.Persistence.YesSql
     {
         protected override string ProviderName => "MySql";
         protected override void Configure(global::YesSql.IConfiguration options, string connectionString) => options.UseMySql(connectionString);
-        protected override void Configure(global::YesSql.IConfiguration options, IServiceProvider serviceProvider)
+        protected override async Task Configure(global::YesSql.IConfiguration options, IServiceProvider serviceProvider)
         {
             var tenantProvider = serviceProvider.GetRequiredService<ITenantProvider>();
-
-            var connectionString = tenantProvider.GetCurrentTenant().Configuration.GetDatabaseConnectionString();
+            var tenant = await tenantProvider.GetCurrentTenantAsync();
+            var connectionString = tenant.GetDatabaseConnectionString();
 
             options.UseMySql(connectionString);
         }
@@ -66,11 +67,11 @@ namespace Elsa.Webhooks.Persistence.YesSql
     {
         protected override string ProviderName => "PostgreSql";
         protected override void Configure(global::YesSql.IConfiguration options, string connectionString) => options.UsePostgreSql(connectionString);
-        protected override void Configure(global::YesSql.IConfiguration options, IServiceProvider serviceProvider)
+        protected override async Task Configure(global::YesSql.IConfiguration options, IServiceProvider serviceProvider)
         {
             var tenantProvider = serviceProvider.GetRequiredService<ITenantProvider>();
-
-            var connectionString = tenantProvider.GetCurrentTenant().Configuration.GetDatabaseConnectionString();
+            var tenant = await tenantProvider.GetCurrentTenantAsync();
+            var connectionString = tenant.GetDatabaseConnectionString();
 
             options.UsePostgreSql(connectionString);
         }
@@ -94,6 +95,6 @@ namespace Elsa.Webhooks.Persistence.YesSql
 
         protected virtual string GetDefaultConnectionString() => throw new Exception($"No connection string specified for the {ProviderName} provider");
         protected abstract void Configure(global::YesSql.IConfiguration options, string connectionString);
-        protected abstract void Configure(global::YesSql.IConfiguration options, IServiceProvider serviceProvider);
+        protected abstract Task Configure(global::YesSql.IConfiguration options, IServiceProvider serviceProvider);
     }
 }

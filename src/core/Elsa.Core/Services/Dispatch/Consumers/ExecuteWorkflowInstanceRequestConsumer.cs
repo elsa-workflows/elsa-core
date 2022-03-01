@@ -17,7 +17,7 @@ namespace Elsa.Services.Dispatch.Consumers
 
         public async Task Handle(ExecuteWorkflowInstanceRequest message)
         {
-            if (message.Tenant != null) _tenantProvider.SetCurrentTenant(message.Tenant);
+            if (message.Tenant != null) await _tenantProvider.SetCurrentTenantAsync(message.Tenant);
 
             await _workflowInstanceExecutor.ExecuteAsync(message.WorkflowInstanceId, message.ActivityId, message.Input);
         }

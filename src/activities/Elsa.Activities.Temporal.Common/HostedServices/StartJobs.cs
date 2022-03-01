@@ -1,7 +1,6 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Abstractions.Multitenancy;
 using Elsa.Activities.Temporal.Common.Bookmarks;
 using Elsa.Activities.Temporal.Common.Messages;
 using Elsa.HostedServices;
@@ -56,14 +55,14 @@ namespace Elsa.Activities.Temporal.Common.HostedServices
             if (handle == null)
                 return;
 
-            foreach (var tenant in _tenantStore.GetTenants())
+            foreach (var tenant in await _tenantStore.GetTenantsAsync())
             {
                 using var scope = _scopeFactory.CreateScopeForTenant(tenant);
-                await _retryPolicy.ExecuteAsync(async () => await ExecuteInternalAsync(scope.ServiceProvider, tenant, stoppingToken));
+                await _retryPolicy.ExecuteAsync(async () => await ExecuteInternalAsync(scope.ServiceProvider, stoppingToken));
             }
         }
 
-        private async Task ExecuteInternalAsync(IServiceProvider serviceProvider, Tenant tenant, CancellationToken cancellationToken)
+        private async Task ExecuteInternalAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken)
         {
             var triggerFinder = serviceProvider.GetRequiredService<ITriggerFinder>();
             var bookmarkFinder = serviceProvider.GetRequiredService<IBookmarkFinder>();

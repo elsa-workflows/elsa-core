@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Elsa.Abstractions.Multitenancy;
 using Elsa.Attributes;
 using Elsa.WorkflowSettings.Persistence.EntityFramework.Core;
@@ -12,11 +13,11 @@ namespace Elsa.WorkflowSettings.Persistence.EntityFramework.SqlServer
     {
         protected override string ProviderName => "SqlServer";
         protected override void Configure(DbContextOptionsBuilder options, string connectionString) => options.UseWorkflowSettingsSqlServer(connectionString);
-        protected override void Configure(DbContextOptionsBuilder options, IServiceProvider serviceProvider)
+        protected override async Task Configure(DbContextOptionsBuilder options, IServiceProvider serviceProvider)
         {
             var tenantProvider = serviceProvider.GetRequiredService<ITenantProvider>();
-
-            var connectionString = tenantProvider.GetCurrentTenant().Configuration.GetDatabaseConnectionString();
+            var tenant = await tenantProvider.GetCurrentTenantAsync();
+            var connectionString = tenant.GetDatabaseConnectionString();
 
             options.UseWorkflowSettingsSqlServer(connectionString);
         }

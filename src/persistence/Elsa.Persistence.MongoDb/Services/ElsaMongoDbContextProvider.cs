@@ -23,7 +23,8 @@ namespace Elsa.Persistence.MongoDb.Services
 
         private IMongoDatabase GetDatabase()
         {
-            var connectionString = _tenantProvider.GetCurrentTenant().Configuration.GetDatabaseConnectionString();
+            var tenant = _tenantProvider.GetCurrentTenantAsync().GetAwaiter().GetResult();
+            var connectionString = tenant.GetDatabaseConnectionString();
 
             return _context.GetDatabase(connectionString);
         }

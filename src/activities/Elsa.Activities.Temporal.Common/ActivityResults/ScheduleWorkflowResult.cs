@@ -29,7 +29,7 @@ namespace Elsa.Activities.Temporal.Common.ActivityResults
             {
                 var scheduler = workflowExecutionContext.ServiceProvider.GetRequiredService<IWorkflowInstanceScheduler>();
                 var tenantProvider = workflowExecutionContext.ServiceProvider.GetRequiredService<ITenantProvider>();
-                var tenant = tenantProvider.GetCurrentTenant();
+                var tenant = tenantProvider.GetCurrentTenantAsync();
 
                 await scheduler.ScheduleAsync(workflowInstanceId, activityId, executeAt, null, cancellationToken);
             }

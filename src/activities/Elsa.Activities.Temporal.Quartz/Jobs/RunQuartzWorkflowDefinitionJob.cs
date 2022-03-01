@@ -21,7 +21,7 @@ namespace Elsa.Activities.Temporal.Quartz.Jobs
             var cancellationToken = context.CancellationToken;
             var workflowDefinitionId = dataMap.GetString("WorkflowDefinitionId")!;
             var activityId = dataMap.GetString("ActivityId")!;
-            var tenant = _tenantProvider.GetCurrentTenant();
+            var tenant = await _tenantProvider.GetCurrentTenantAsync();
 
             await _workflowDefinitionDispatcher.DispatchAsync(new ExecuteWorkflowDefinitionRequest(tenant, workflowDefinitionId, activityId), cancellationToken);
         }

@@ -46,8 +46,6 @@ namespace Elsa.Activities.RabbitMq
             Category = PropertyCategories.Configuration)]
         public string ConnectionString { get; set; } = default!;
 
-        public string ClientId => RabbitMqClientConfigurationHelper.GetClientId(Id);
-
 
         [ActivityOutput(Hint = "Received message")]
         public object? Output { get; set; }

@@ -1,6 +1,5 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Abstractions.Multitenancy;
 using Elsa.Models;
 using Elsa.Server.Api.Helpers;
 using Elsa.Server.Api.Swagger.Examples;
@@ -20,11 +19,9 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
     public class Publish : ControllerBase
     {
         private readonly IWorkflowPublisher _workflowPublisher;
-        private readonly ITenantProvider _tenantProvider;
-        public Publish(IWorkflowPublisher workflowPublisher, ITenantProvider tenantProvider)
+        public Publish(IWorkflowPublisher workflowPublisher)
         {
             _workflowPublisher = workflowPublisher;
-            _tenantProvider = tenantProvider;
         }
 
         [HttpPost]
@@ -45,10 +42,8 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             if (draft == null)
                 return NotFound();
 
-            var tenant = _tenantProvider.GetCurrentTenant();
-
             // Publish the draft.
-            var publishedWorkflowDefinition = await _workflowPublisher.PublishAsync(draft, tenant, cancellationToken);
+            var publishedWorkflowDefinition = await _workflowPublisher.PublishAsync(draft, cancellationToken);
 
             return AcceptedAtAction("Handle", "GetByVersionId", new { versionId = publishedWorkflowDefinition.Id, apiVersion = apiVersion.ToString() }, publishedWorkflowDefinition)
                 .ConfigureForWorkflowDefinition();

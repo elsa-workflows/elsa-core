@@ -1,3 +1,10 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
+using Elsa.Abstractions.Multitenancy;
 using Elsa.Activities.RabbitMq.Configuration;
 using Elsa.Activities.RabbitMq.Helpers;
 using Elsa.Activities.RabbitMq.Services;
@@ -5,12 +12,6 @@ using Elsa.Models;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Elsa.Activities.RabbitMq.Testing
 {
@@ -56,7 +57,7 @@ namespace Elsa.Activities.RabbitMq.Testing
                 {
                     try
                     {
-                        _workers[workflowInstanceId].Add(await _rabbitMqQueueStarter.CreateWorkerAsync(scope.ServiceProvider, config, cancellationToken));
+                        _workers[workflowInstanceId].Add(await _rabbitMqQueueStarter.CreateWorkerAsync(config, scope.ServiceProvider, cancellationToken));
                     }
                     catch (Exception e)
                     {
@@ -98,11 +99,9 @@ namespace Elsa.Activities.RabbitMq.Testing
                 var routingKey = await activity.EvaluatePropertyValueAsync(x => x.RoutingKey, cancellationToken);
                 var exchangeName = await activity.EvaluatePropertyValueAsync(x => x.ExchangeName, cancellationToken);
                 var headers = await activity.EvaluatePropertyValueAsync(x => x.Headers, cancellationToken);
+                var clientId = RabbitMqClientConfigurationHelper.GetTestClientId(activity.ActivityBlueprint.Id);
 
-                var config = new RabbitMqBusConfiguration(connectionString!, exchangeName!, routingKey!, headers!);
-
-                yield return config;
-            }
+                var config = new RabbitMqBusConfiguration(connectionString!, exchangeName!, routingKey!, headers!, clientId);
 
                 yield return config;
             }

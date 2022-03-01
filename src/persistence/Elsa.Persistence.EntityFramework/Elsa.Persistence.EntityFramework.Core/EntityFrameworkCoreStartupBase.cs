@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Elsa.Options;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Services.Startup;
@@ -19,6 +20,6 @@ namespace Elsa.Persistence.EntityFramework.Core
 
         protected virtual string GetDefaultConnectionString() => throw new Exception($"No connection string specified for the {ProviderName} provider");
         protected abstract void Configure(DbContextOptionsBuilder options, string connectionString);
-        protected abstract void Configure(DbContextOptionsBuilder options, IServiceProvider serviceProvider);
+        protected abstract Task Configure(DbContextOptionsBuilder options, IServiceProvider serviceProvider);
     }
 }

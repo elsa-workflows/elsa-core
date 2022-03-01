@@ -1,10 +1,11 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Elsa.Abstractions.Multitenancy;
 
 namespace Elsa.Multitenancy
 {
     public interface ITenantStore
     {
-        IList<Tenant> GetTenants();
+        Task<IList<ITenant>> GetTenantsAsync();
     }
 }

@@ -16,7 +16,7 @@ namespace Elsa.Activities.AzureServiceBus.StartupTasks
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ITenantStore _tenantStore;
 
-        public StartWorkers(IWorkerManager workerManager, IServiceScopeFactory scopeFactory)
+        public StartWorkers(IWorkerManager workerManager, IServiceScopeFactory scopeFactory, ITenantStore tenantStore)
         {
             _workerManager = workerManager;
             _scopeFactory = scopeFactory;
@@ -25,23 +25,23 @@ namespace Elsa.Activities.AzureServiceBus.StartupTasks
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            foreach (var tenant in _tenantStore.GetTenants())
+            foreach (var tenant in await _tenantStore.GetTenantsAsync())
             {
                 using var scope = _scopeFactory.CreateScopeForTenant(tenant);
                 var bookmarkFinder = scope.ServiceProvider.GetRequiredService<IBookmarkFinder>();
 
                 // Load bookmarks.
-            var bookmarks = await bookmarkFinder.FindBookmarksByTypeAsync<MessageReceivedBookmark>(cancellationToken: stoppingToken).ToList();
+                var bookmarks = await bookmarkFinder.FindBookmarksByTypeAsync<MessageReceivedBookmark>(cancellationToken: stoppingToken).ToList();
 
                 // For each bookmark, start a worker.
-            await _workerManager.CreateWorkersAsync(bookmarks, stoppingToken);
+                await _workerManager.CreateWorkersAsync(bookmarks, tenant, stoppingToken);
 
                 // Load triggers.
                 var triggerFinder = scope.ServiceProvider.GetRequiredService<ITriggerFinder>();
-            var triggers = await triggerFinder.FindTriggersByTypeAsync<MessageReceivedBookmark>(cancellationToken: stoppingToken).ToList();
+                var triggers = await triggerFinder.FindTriggersByTypeAsync<MessageReceivedBookmark>(cancellationToken: stoppingToken).ToList();
 
                 // For each trigger, start a worker.
-            await _workerManager.CreateWorkersAsync(triggers, stoppingToken);
+                await _workerManager.CreateWorkersAsync(triggers, tenant, stoppingToken);
             }
         }
     }

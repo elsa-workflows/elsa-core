@@ -49,7 +49,7 @@ namespace Elsa.Activities.File.Services
             {
                 DisposeExistingWatchers();
 
-                foreach (var tenant in _tenantStore.GetTenants())
+                foreach (var tenant in await _tenantStore.GetTenantsAsync())
                 {
                     using var scope = _scopeFactory.CreateScopeForTenant(tenant);
                     var triggerFinder = scope.ServiceProvider.GetRequiredService<ITriggerFinder>();

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Elsa.Multitenancy;
 using Elsa.Serialization;
 using Microsoft.AspNetCore.Http;
@@ -32,9 +33,10 @@ namespace Elsa.Server.Api.Endpoints.Tenants
             OperationId = "Tenants.ListPrefixes",
             Tags = new[] { "Tenants" })
         ]
-        public IActionResult Handle()
+        public async Task<IActionResult> Handle()
         {
-            var prefixes = _tenantStore.GetTenants().Where(x => !x.IsDefault && !string.IsNullOrEmpty(x.Configuration.GetPrefix())).Select(x => x.Configuration.GetPrefix()).ToList();
+            var tenants = await _tenantStore.GetTenantsAsync();
+            var prefixes = tenants.Where(x => !x.IsDefault && !string.IsNullOrEmpty(x.GetPrefix())).Select(x => x.GetPrefix()).ToList();
 
             return Json(prefixes, _contentSerializer.GetSettings());
         }

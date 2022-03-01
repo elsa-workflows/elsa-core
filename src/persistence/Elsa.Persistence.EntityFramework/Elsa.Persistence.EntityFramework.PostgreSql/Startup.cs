@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Elsa.Abstractions.Multitenancy;
 using Elsa.Attributes;
 using Elsa.Persistence.EntityFramework.Core;
@@ -12,11 +13,12 @@ namespace Elsa.Persistence.EntityFramework.PostgreSql
     {
         protected override string ProviderName => "PostgreSql";
         protected override void Configure(DbContextOptionsBuilder options, string connectionString) => options.UsePostgreSql(connectionString);
-        protected override void Configure(DbContextOptionsBuilder options, IServiceProvider serviceProvider)
+        protected override async Task Configure(DbContextOptionsBuilder options, IServiceProvider serviceProvider)
         {
             var tenantProvider = serviceProvider.GetRequiredService<ITenantProvider>();
+            var tenant = await tenantProvider.GetCurrentTenantAsync();
 
-            var connectionString = tenantProvider.GetCurrentTenant().Configuration.GetDatabaseConnectionString();
+            var connectionString = tenant.GetDatabaseConnectionString();
 
             options.UsePostgreSql(connectionString);
         }

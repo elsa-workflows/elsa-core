@@ -1,10 +1,8 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Multitenancy;
 using Elsa.Persistence.EntityFramework.Core.Services;
 using Elsa.Services;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Persistence.EntityFramework.Core.StartupTasks
 {
@@ -13,34 +11,18 @@ namespace Elsa.Persistence.EntityFramework.Core.StartupTasks
     /// </summary>
     public class RunMigrations : IStartupTask
     {
-        private readonly IServiceScopeFactory _scopeFactory;
-        private readonly ITenantStore _tenantStore;
+        private readonly IElsaContextFactory _dbContextFactory;
 
-        public RunMigrations(IServiceScopeFactory scopeFactory, ITenantStore tenantStore)
+        public RunMigrations(IElsaContextFactory dbContextFactoryFactory)
         {
-            _scopeFactory = scopeFactory;
-            _tenantStore = tenantStore;
+            _dbContextFactory = dbContextFactoryFactory;
         }
 
         public int Order => 0;
-        
+
         public async Task ExecuteAsync(CancellationToken cancellationToken = default)
         {
-            foreach (var tenant in _tenantStore.GetTenants())
-            {
-                var scope = _scopeFactory.CreateScopeForTenant(tenant);
-
-                await ExecuteInternalAsync(cancellationToken, scope);
-            }
-        }
-
-        private async Task ExecuteInternalAsync(CancellationToken cancellationToken = default, IServiceScope? serviceScope = default)
-        {
-            using var scope = serviceScope ?? _scopeFactory.CreateScope();
-
-            var dbContextFactory = scope.ServiceProvider.GetRequiredService<IElsaContextFactory>();
-
-            await using var dbContext = dbContextFactory.CreateDbContext();
+            await using var dbContext = _dbContextFactory.CreateDbContext();
             await dbContext.Database.MigrateAsync(cancellationToken);
             await dbContext.DisposeAsync();
         }

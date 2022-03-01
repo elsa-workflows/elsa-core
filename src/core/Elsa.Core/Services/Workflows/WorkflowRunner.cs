@@ -58,7 +58,7 @@ namespace Elsa.Services.Workflows
         {
             using var loggingScope = _logger.BeginScope(new Dictionary<string, object> { ["WorkflowInstanceId"] = workflowInstance.Id });
 
-            var tenant = _tenantProvider.GetCurrentTenant();
+            var tenant = await _tenantProvider.GetCurrentTenantAsync();
 
             using var workflowExecutionScope = _serviceScopeFactory.CreateScopeForTenant(tenant);
 
@@ -77,7 +77,7 @@ namespace Elsa.Services.Workflows
             return result;
         }
 
-        public virtual async Task<RunWorkflowResult> RunWorkflowInternalAsync(WorkflowExecutionContext workflowExecutionContext, Tenant tenant, string? activityId = default, CancellationToken cancellationToken = default)
+        public virtual async Task<RunWorkflowResult> RunWorkflowInternalAsync(WorkflowExecutionContext workflowExecutionContext, ITenant tenant, string? activityId = default, CancellationToken cancellationToken = default)
         {
             var workflowInstance = workflowExecutionContext.WorkflowInstance;
 

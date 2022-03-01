@@ -6,9 +6,9 @@ namespace Elsa.WorkflowTesting.Events
     public class WorkflowTestExecutionStopped : INotification
     {
         public string WorkflowInstanceId { get; }
-        public Tenant Tenant { get; }
+        public ITenant Tenant { get; }
 
-        public WorkflowTestExecutionStopped(string workflowInstanceId, Tenant tenant)
+        public WorkflowTestExecutionStopped(string workflowInstanceId, ITenant tenant)
         {
             WorkflowInstanceId = workflowInstanceId;
             Tenant = tenant;

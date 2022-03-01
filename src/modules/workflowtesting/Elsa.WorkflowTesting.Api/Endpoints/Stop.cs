@@ -40,7 +40,7 @@ namespace Elsa.WorkflowTesting.Api.Endpoints
         ]
         public async Task<IActionResult> Handle([FromBody] WorkflowTestStopRequest request, CancellationToken cancellationToken = default)
         {
-            var tenant = _tenantProvider.GetCurrentTenant();
+            var tenant = await _tenantProvider.GetCurrentTenantAsync();
 
             await _mediator.Publish(new WorkflowTestExecutionStopped(request.WorkflowInstanceId, tenant), cancellationToken);
 

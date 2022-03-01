@@ -5,5 +5,5 @@ using MediatR;
 
 namespace Elsa.Events
 {
-    public record TriggerIndexingFinished(string WorkflowDefinitionId, IReadOnlyCollection<Trigger> Triggers, Tenant Tenant) : INotification;
+    public record TriggerIndexingFinished(string WorkflowDefinitionId, IReadOnlyCollection<Trigger> Triggers, ITenant Tenant) : INotification;
 }

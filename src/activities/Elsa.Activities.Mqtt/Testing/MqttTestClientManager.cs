@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Mqtt.Activities.MqttMessageReceived;
+using Elsa.Activities.Mqtt.Helpers;
 using Elsa.Activities.Mqtt.Options;
 using Elsa.Activities.Mqtt.Services;
 using Elsa.Models;
@@ -53,7 +54,7 @@ namespace Elsa.Activities.Mqtt.Testing
                 {
                     try
                     {
-                        _workers[workflowInstanceId].Add(await _mqttTopicsStarter.CreateWorkerAsync(scope.ServiceProvider, config, cancellationToken));
+                        _workers[workflowInstanceId].Add(await _mqttTopicsStarter.CreateWorkerAsync(config, scope.ServiceProvider, cancellationToken));
                     }
                     catch (Exception e)
                     {
@@ -96,8 +97,9 @@ namespace Elsa.Activities.Mqtt.Testing
                 var username = await activity.EvaluatePropertyValueAsync(x => x.Username, cancellationToken);
                 var password = await activity.EvaluatePropertyValueAsync(x => x.Password, cancellationToken);
                 var qos = await activity.EvaluatePropertyValueAsync(x => x.QualityOfService, cancellationToken);
+                var clientId = MqttClientConfigurationHelper.GetTestClientId(activity.ActivityBlueprint.Id);
 
-                yield return new MqttClientOptions(topic!, host!, port!, username!, password!, qos);
+                yield return new MqttClientOptions(topic!, host!, port!, username!, password!, qos, clientId);
             }
         }
     }

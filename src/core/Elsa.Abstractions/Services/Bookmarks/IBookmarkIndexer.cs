@@ -7,7 +7,7 @@ namespace Elsa.Services
 {
     public interface IBookmarkIndexer
     {
-        Task IndexBookmarksAsync(WorkflowInstance workflowInstance, Tenant tenant, CancellationToken cancellationToken = default);
-        Task DeleteBookmarksAsync(string workflowInstanceId, Tenant tenant, CancellationToken cancellationToken = default);
+        Task IndexBookmarksAsync(WorkflowInstance workflowInstance, ITenant tenant, CancellationToken cancellationToken = default);
+        Task DeleteBookmarksAsync(string workflowInstanceId, ITenant tenant, CancellationToken cancellationToken = default);
     }
 }

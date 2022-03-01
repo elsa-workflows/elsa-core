@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Elsa.Abstractions.Multitenancy;
 using Microsoft.AspNetCore.Http;
 
@@ -8,31 +9,32 @@ namespace Elsa.Multitenancy
 {
     public class TenantProvider : ITenantProvider
     {
-        private Tenant? _currentTenant;
+        private ITenant? _currentTenant;
 
         public TenantProvider(IHttpContextAccessor accessor, ITenantStore tenantStore)
         {
-            _currentTenant = GetTenant(accessor.HttpContext?.Request.Path, tenantStore.GetTenants());
+            _currentTenant = GetTenant(accessor.HttpContext?.Request.Path, tenantStore.GetTenantsAsync().GetAwaiter().GetResult());
         }
 
-        public Tenant GetCurrentTenant()
+        public Task<ITenant> GetCurrentTenantAsync()
         {
             if (_currentTenant == null) throw new Exception("Unable to retrieve current tenant");
 
-            return _currentTenant;
+            return Task.FromResult(_currentTenant);
         }
 
-        public Tenant? TryGetCurrentTenant()
+        public Task<ITenant?> TryGetCurrentTenantAsync()
         {
-            return _currentTenant;
+            return Task.FromResult(_currentTenant);
         }
 
-        public void SetCurrentTenant(Tenant tenant)
+        public Task SetCurrentTenantAsync(ITenant tenant)
         {
             _currentTenant = tenant;
+            return Task.CompletedTask;
         }
 
-        private Tenant? GetTenant(PathString? path, IEnumerable<Tenant> tenants)
+        private ITenant? GetTenant(PathString? path, IEnumerable<ITenant> tenants)
         {
             var defaultTenant = tenants.FirstOrDefault(x => x.IsDefault);
 
@@ -42,7 +44,7 @@ namespace Elsa.Multitenancy
 
             var currentTenantPrefix = path.Value.Value.Split("/").FirstOrDefault(x => x != string.Empty);
 
-            return tenants.FirstOrDefault(x => x.Configuration.GetPrefix() == currentTenantPrefix);
+            return tenants.FirstOrDefault(x => x.GetPrefix() == currentTenantPrefix);
         }
     }
 }

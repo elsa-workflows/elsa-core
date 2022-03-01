@@ -20,7 +20,7 @@ namespace Elsa.Decorators
         private readonly IMemoryCache _memoryCache;
         private readonly ICacheSignal _cacheSignal;
         private readonly ITenantProvider _tenantProvider;
-        private string GenerateRootKey() => $"{RootKeyBase}:{_tenantProvider.GetCurrentTenant().Configuration.GetPrefix()}";
+        private async Task<string> GenerateRootKey() => $"{RootKeyBase}:{(await _tenantProvider.GetCurrentTenantAsync()).GetPrefix()}";
 
         public CachingWorkflowRegistry(IWorkflowRegistry workflowRegistry, IMemoryCache memoryCache, ICacheSignal cacheSignal, ITenantProvider tenantProvider)
         {
@@ -38,7 +38,7 @@ namespace Elsa.Decorators
 
         public async Task<IWorkflowBlueprint?> FindByDefinitionVersionIdAsync(string definitionVersionId, string? tenantId = default, CancellationToken cancellationToken = default)
         {
-            var cacheKey = $"{RootKey}:definition-version:id:{definitionVersionId}:{tenantId}";
+            var cacheKey = $"{GenerateRootKey()}:definition-version:id:{definitionVersionId}:{tenantId}";
             return await FindInternalAsync(cacheKey, () => _workflowRegistry.FindByDefinitionVersionIdAsync(definitionVersionId, tenantId, cancellationToken), cancellationToken);
         }
 

@@ -34,7 +34,7 @@ namespace Elsa.Retention.HostedServices
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            foreach (var tenant in _tenantStore.GetTenants())
+            foreach (var tenant in await _tenantStore.GetTenantsAsync())
             {
                 using var scope = _serviceScopeFactory.CreateScopeForTenant(tenant);
                 var job = scope.ServiceProvider.GetRequiredService<CleanupJob>();
@@ -53,7 +53,7 @@ namespace Elsa.Retention.HostedServices
                     }
                     catch (Exception e)
                     {
-                        var tenantName = tenant.Name ?? tenant.Configuration.GetPrefix();
+                        var tenantName = tenant.Name ?? tenant.GetPrefix();
                         _logger.LogError(e, "Failed to perform cleanup for tenant {Tenant} this time around. Next cleanup attempt will happen in {Interval}", tenantName, _interval);
                     }
                 }

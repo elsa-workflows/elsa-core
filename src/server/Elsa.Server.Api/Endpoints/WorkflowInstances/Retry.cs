@@ -1,6 +1,5 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Abstractions.Multitenancy;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Server.Api.Helpers;
@@ -22,14 +21,12 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
         private readonly IWorkflowInstanceStore _store;
         private readonly IWorkflowReviver _reviver;
         private readonly IEndpointContentSerializerSettingsProvider _serializerSettingsProvider;
-        private readonly ITenantProvider _tenantProvider;
 
-        public Retry(IWorkflowInstanceStore store, IWorkflowReviver reviver, IEndpointContentSerializerSettingsProvider serializerSettingsProvider, ITenantProvider tenantProvider)
+        public Retry(IWorkflowInstanceStore store, IWorkflowReviver reviver, IEndpointContentSerializerSettingsProvider serializerSettingsProvider)
         {
             _store = store;
             _reviver = reviver;
             _serializerSettingsProvider = serializerSettingsProvider;
-            _tenantProvider = tenantProvider;
         }
 
         [HttpPost]
@@ -50,11 +47,9 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
             if (workflowInstance == null)
                 return NotFound();
 
-            var tenant = _tenantProvider.GetCurrentTenant();
-
             if (options?.RunImmediately == false)
             {
-                workflowInstance = await _reviver.ReviveAndQueueAsync(workflowInstance, tenant, cancellationToken);
+                workflowInstance = await _reviver.ReviveAndQueueAsync(workflowInstance, cancellationToken);
 
                 var model = new
                 {
