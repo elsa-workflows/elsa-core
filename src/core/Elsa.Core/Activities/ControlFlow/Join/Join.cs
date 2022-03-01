@@ -120,6 +120,9 @@ namespace Elsa.Activities.ControlFlow
         {
             var scopes = workflowExecutionContext.WorkflowInstance.Scopes.AsEnumerable().Reverse().ToList();
 
+            // Take only ancestors up until the specified fork (if any).
+            if (fork != null) ancestors = ancestors.TakeUntil(x => x.Id == fork.Id).ToList();
+
             for (var i = 0; i < scopes.Count; i++)
             {
                 var activityScope = scopes.ElementAt(i);
