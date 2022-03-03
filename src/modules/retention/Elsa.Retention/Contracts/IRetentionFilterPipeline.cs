@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,10 +12,30 @@ namespace Elsa.Retention.Contracts;
 public interface IRetentionFilterPipeline
 {
     /// <summary>
-    /// Adds a filter to the end of the pipeline.
+    /// Adds a filter to the end of the pipeline. 
+    /// </summary>
+    void AddFilter(Func<IServiceProvider, IRetentionFilter> filterFactory);
+    
+    /// <summary>
+    /// Adds a filter to the end of the pipeline. 
+    /// </summary>
+    void AddFilter(Func<IRetentionFilter> filterFactory);
+    
+    /// <summary>
+    /// Adds a filter to the end of the pipeline. 
     /// </summary>
     void AddFilter(IRetentionFilter filter);
     
+    /// <summary>
+    /// Adds a filter to the end of the pipeline.
+    /// </summary>
+    void AddFilter(Type filterType);
+
+    /// <summary>
+    /// Adds a filter to the end of the pipeline.
+    /// </summary>
+    void AddFilter<T>() where T : IRetentionFilter;
+
     /// <summary>
     /// Returns a filtered list of workflow instances that need to be deleted.
     /// </summary>

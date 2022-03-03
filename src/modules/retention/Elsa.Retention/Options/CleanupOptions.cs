@@ -25,6 +25,6 @@ namespace Elsa.Retention.Options
         /// <summary>
         /// An action that configures the retention filter pipeline. Can be replaced with your own action to configure a custom pipeline with custom filters. 
         /// </summary>
-        public Action<IRetentionFilterPipeline> ConfigurePipeline { get; set; } = pipeline => pipeline.AddFilter(new CompletedWorkflowFilter());
+        public Action<IRetentionFilterPipeline> ConfigurePipeline { get; set; } = pipeline => pipeline.AddFilter<CompletedWorkflowFilter>();
     }
 }
