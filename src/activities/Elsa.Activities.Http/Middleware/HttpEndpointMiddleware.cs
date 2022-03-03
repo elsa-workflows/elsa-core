@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Mime;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Bookmarks;
@@ -74,9 +75,9 @@ namespace Elsa.Activities.Http.Middleware
             }
 
             var isTest = pendingWorkflowInstance.GetMetadata("isTest");
-            var workflowBlueprint = (isTest != null && Convert.ToBoolean(isTest)) ?
-                await workflowRegistry.FindAsync(pendingWorkflowInstance.DefinitionId, VersionOptions.Latest, TenantId, cancellationToken) :
-                await workflowRegistry.FindAsync(pendingWorkflowInstance.DefinitionId, VersionOptions.Published, TenantId, cancellationToken);
+            var workflowBlueprint = (isTest != null && Convert.ToBoolean(isTest))
+                ? await workflowRegistry.FindAsync(pendingWorkflowInstance.DefinitionId, VersionOptions.Latest, TenantId, cancellationToken)
+                : await workflowRegistry.FindAsync(pendingWorkflowInstance.DefinitionId, VersionOptions.Published, TenantId, cancellationToken);
 
             if (workflowBlueprint is null || workflowBlueprint.IsDisabled)
             {
@@ -108,47 +109,50 @@ namespace Elsa.Activities.Http.Middleware
             if (readContent)
             {
                 var targetType = await activityWrapper.EvaluatePropertyValueAsync(x => x.TargetType, cancellationToken);
-                inputModel = inputModel with
+
+                try
                 {
-                    RawBody = await request.ReadContentAsStringAsync(cancellationToken),
-                    Body = await contentParser.ParseAsync(request, targetType, cancellationToken)
-                };
+                    inputModel = inputModel with
+                    {
+                        RawBody = await request.ReadContentAsStringAsync(cancellationToken),
+                        Body = await contentParser.ParseAsync(request, targetType, cancellationToken)
+                    };
+                }
+                catch (JsonReaderException e)
+                {
+                    httpContext.Response.ContentType = MediaTypeNames.Application.Json;
+                    httpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
+                    await httpContext.Response.WriteAsync(JsonConvert.SerializeObject(new
+                    {
+                        error = "Could not parse content",
+                        message = e.Message
+                    }), cancellationToken);
+                    return;
+                }
             }
 
             var useDispatch = httpContext.Request.GetUseDispatch();
+
             if (useDispatch)
             {
                 await workflowLaunchpad.DispatchPendingWorkflowAsync(pendingWorkflow, new WorkflowInput(inputModel), cancellationToken);
 
-                httpContext.Response.ContentType = "application/json";
+                httpContext.Response.ContentType = MediaTypeNames.Application.Json;
                 httpContext.Response.StatusCode = (int)HttpStatusCode.Accepted;
                 await httpContext.Response.WriteAsync(JsonConvert.SerializeObject(pendingWorkflows), cancellationToken);
             }
             else
             {
-                await workflowLaunchpad.ExecutePendingWorkflowAsync(pendingWorkflow, new WorkflowInput(inputModel), cancellationToken);
+                var result = await workflowLaunchpad.ExecutePendingWorkflowAsync(pendingWorkflow, new WorkflowInput(inputModel), cancellationToken);
+
                 pendingWorkflowInstance = await workflowInstanceStore.FindByIdAsync(pendingWorkflow.WorkflowInstanceId, cancellationToken);
 
                 if (pendingWorkflowInstance is not null
                     && pendingWorkflowInstance.WorkflowStatus == WorkflowStatus.Faulted
                     && !httpContext.Response.HasStarted)
                 {
-                    httpContext.Response.ContentType = "application/json";
-                    httpContext.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-
-                    var faultedResponse = JsonConvert.SerializeObject(new
-                    {
-                        errorMessage = $"Workflow faulted at {pendingWorkflowInstance.FaultedAt!} with error: {pendingWorkflowInstance.Fault!.Message}",
-                        exception = pendingWorkflowInstance.Fault?.Exception,
-                        workflow = new
-                        {
-                            name = pendingWorkflowInstance.Name,
-                            version = pendingWorkflowInstance.Version,
-                            instanceId = pendingWorkflowInstance.Id
-                        }
-                    });
-
-                    await httpContext.Response.WriteAsync(faultedResponse, cancellationToken);
+                    var faultHandler = options.Value.HttpEndpointWorkflowFaultHandlerFactory(httpContext.RequestServices);
+                    await faultHandler.HandleAsync(new HttpEndpointFaultedWorkflowContext(httpContext, pendingWorkflowInstance, result.Exception, cancellationToken));
                 }
             }
         }
@@ -167,7 +171,7 @@ namespace Elsa.Activities.Http.Middleware
                 return true;
 
             var authorizationHandler = options.HttpEndpointAuthorizationHandlerFactory(httpContext.RequestServices);
-            
+
             return await authorizationHandler.AuthorizeAsync(new AuthorizeHttpEndpointContext(httpContext, httpEndpoint, workflowBlueprint, pendingWorkflow.WorkflowInstanceId, cancellationToken));
         }
 

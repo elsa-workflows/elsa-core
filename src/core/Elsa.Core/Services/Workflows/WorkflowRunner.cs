@@ -96,7 +96,7 @@ namespace Elsa.Services.Workflows
             if (!validateWorkflowExecution.CanExecuteWorkflow)
             {
                 _logger.LogInformation("Workflow execution prevented for workflow {WorkflowInstanceId}", workflowInstance.Id);
-                return new RunWorkflowResult(workflowInstance, activityId, false);
+                return new RunWorkflowResult(workflowInstance, activityId, null, false);
             }
 
             await _mediator.Publish(new WorkflowExecuting(workflowExecutionContext), cancellationToken);
@@ -119,8 +119,7 @@ namespace Elsa.Services.Workflows
                     break;
 
                 case WorkflowStatus.Running:
-                    await RunWorkflowAsync(workflowExecutionContext, cancellationToken);
-                    runWorkflowResult = new RunWorkflowResult(workflowInstance, activityId, true);
+                    runWorkflowResult = await RunWorkflowAsync(workflowExecutionContext, activity, cancellationToken);
                     break;
 
                 case WorkflowStatus.Suspended:
@@ -164,46 +163,72 @@ namespace Elsa.Services.Workflows
             try
             {
                 if (!await CanExecuteAsync(workflowExecutionContext, activity, false, cancellationToken))
-                    return new RunWorkflowResult(workflowExecutionContext.WorkflowInstance, activity.Id, false);
+                    return new RunWorkflowResult(workflowExecutionContext.WorkflowInstance, activity.Id, null, false);
 
                 var currentStatus = workflowExecutionContext.WorkflowInstance.WorkflowStatus;
                 workflowExecutionContext.Begin();
                 workflowExecutionContext.ScheduleActivity(activity.Id);
                 await _mediator.Publish(new WorkflowStatusChanged(workflowExecutionContext.WorkflowInstance, workflowExecutionContext.WorkflowInstance.WorkflowStatus, currentStatus), cancellationToken);
-                await RunAsync(workflowExecutionContext, Execute, cancellationToken);
-                return new RunWorkflowResult(workflowExecutionContext.WorkflowInstance, activity.Id, true);
+                await RunCoreAsync(workflowExecutionContext, Execute, cancellationToken);
+                return new RunWorkflowResult(workflowExecutionContext.WorkflowInstance, activity?.Id, null, true);
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning(e, "Failed to run workflow {WorkflowInstanceId}", workflowExecutionContext.WorkflowInstance.Id);
+                workflowExecutionContext.Fault(e, activity?.Id, null, false);
+                
+                if(activity != null)
+                    workflowExecutionContext.AddEntry(activity, "Faulted", null, SimpleException.FromException(e));
+                
+                return new RunWorkflowResult(workflowExecutionContext.WorkflowInstance, activity?.Id, e, false);
+            }
+        }
+
+        private async Task<RunWorkflowResult> RunWorkflowAsync(WorkflowExecutionContext workflowExecutionContext, IActivityBlueprint? activity, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await RunCoreAsync(workflowExecutionContext, Execute, cancellationToken);
+                return new RunWorkflowResult(workflowExecutionContext.WorkflowInstance, activity?.Id, null, true);
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning(e, "Failed to run workflow {WorkflowInstanceId}", workflowExecutionContext.WorkflowInstance.Id);
+                workflowExecutionContext.Fault(e, null, null, false);
+
+                if (activity != null)
+                    workflowExecutionContext.AddEntry(activity, "Faulted", null, SimpleException.FromException(e));
+
+                return new RunWorkflowResult(workflowExecutionContext.WorkflowInstance, activity?.Id, e, false);
+            }
+        }
+
+        private async Task<RunWorkflowResult> ResumeWorkflowAsync(WorkflowExecutionContext workflowExecutionContext, IActivityBlueprint activity, CancellationToken cancellationToken)
+        {
+            try
+            {
+                if (!await CanExecuteAsync(workflowExecutionContext, activity, true, cancellationToken))
+                    return new RunWorkflowResult(workflowExecutionContext.WorkflowInstance, activity.Id, null, false);
+
+                var blockingActivities = workflowExecutionContext.WorkflowInstance.BlockingActivities.Where(x => x.ActivityId == activity.Id).ToList();
+
+                foreach (var blockingActivity in blockingActivities)
+                    await workflowExecutionContext.RemoveBlockingActivityAsync(blockingActivity);
+
+                var currentStatus = workflowExecutionContext.WorkflowInstance.WorkflowStatus;
+                workflowExecutionContext.Resume();
+                workflowExecutionContext.ScheduleActivity(activity.Id);
+                await _mediator.Publish(new WorkflowStatusChanged(workflowExecutionContext.WorkflowInstance, workflowExecutionContext.WorkflowInstance.WorkflowStatus, currentStatus), cancellationToken);
+                await RunCoreAsync(workflowExecutionContext, Resume, cancellationToken);
+                return new RunWorkflowResult(workflowExecutionContext.WorkflowInstance, activity.Id, null, true);
             }
             catch (Exception e)
             {
                 _logger.LogWarning(e, "Failed to run workflow {WorkflowInstanceId}", workflowExecutionContext.WorkflowInstance.Id);
                 workflowExecutionContext.Fault(e, activity.Id, null, false);
                 workflowExecutionContext.AddEntry(activity, "Faulted", null, SimpleException.FromException(e));
+                return new RunWorkflowResult(workflowExecutionContext.WorkflowInstance, activity.Id, e, false);
             }
-
-            return new RunWorkflowResult(workflowExecutionContext.WorkflowInstance, activity.Id, false);
-        }
-
-        private async Task RunWorkflowAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
-        {
-            await RunAsync(workflowExecutionContext, Execute, cancellationToken);
-        }
-
-        private async Task<RunWorkflowResult> ResumeWorkflowAsync(WorkflowExecutionContext workflowExecutionContext, IActivityBlueprint activityBlueprint, CancellationToken cancellationToken)
-        {
-            if (!await CanExecuteAsync(workflowExecutionContext, activityBlueprint, true, cancellationToken))
-                return new RunWorkflowResult(workflowExecutionContext.WorkflowInstance, activityBlueprint.Id, false);
-
-            var blockingActivities = workflowExecutionContext.WorkflowInstance.BlockingActivities.Where(x => x.ActivityId == activityBlueprint.Id).ToList();
-
-            foreach (var blockingActivity in blockingActivities)
-                await workflowExecutionContext.RemoveBlockingActivityAsync(blockingActivity);
-
-            var currentStatus = workflowExecutionContext.WorkflowInstance.WorkflowStatus;
-            workflowExecutionContext.Resume();
-            workflowExecutionContext.ScheduleActivity(activityBlueprint.Id);
-            await _mediator.Publish(new WorkflowStatusChanged(workflowExecutionContext.WorkflowInstance, workflowExecutionContext.WorkflowInstance.WorkflowStatus, currentStatus), cancellationToken);
-            await RunAsync(workflowExecutionContext, Resume, cancellationToken);
-            return new RunWorkflowResult(workflowExecutionContext.WorkflowInstance, activityBlueprint.Id, true);
         }
 
         private async ValueTask<bool> CanExecuteAsync(WorkflowExecutionContext workflowExecutionContext, IActivityBlueprint activityBlueprint, bool resuming, CancellationToken cancellationToken)
@@ -230,19 +255,6 @@ namespace Elsa.Services.Workflows
             }
 
             return canExecute;
-        }
-
-        private async ValueTask RunAsync(WorkflowExecutionContext workflowExecutionContext, ActivityOperation activityOperation, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                await RunCoreAsync(workflowExecutionContext, activityOperation, cancellationToken);
-            }
-            catch (Exception e)
-            {
-                _logger.LogWarning(e, "Failed to run workflow {WorkflowInstanceId}", workflowExecutionContext.WorkflowInstance.Id);
-                workflowExecutionContext.Fault(e, null, null, activityOperation == Resume);
-            }
         }
 
         private async ValueTask RunCoreAsync(WorkflowExecutionContext workflowExecutionContext, ActivityOperation activityOperation, CancellationToken cancellationToken = default)
