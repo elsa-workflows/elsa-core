@@ -27,7 +27,7 @@ namespace Elsa.Activities.Mqtt.Services
             _serviceScopeFactory = serviceScopeFactory;
             _disposeReceiverAction = disposeReceiverAction;
 
-            _receiverClient.SetMessageHandler(OnMessageReceived);
+            _receiverClient.SetMessageHandlerAsync(OnMessageReceived);
         }
 
         private string ActivityType => nameof(MqttMessageReceived);
@@ -45,5 +45,6 @@ namespace Elsa.Activities.Mqtt.Services
         }
 
         private async Task OnMessageReceived(MqttApplicationMessage message) => await TriggerWorkflowsAsync(message, CancellationToken.None);
+
     }
 }
