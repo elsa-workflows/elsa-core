@@ -1,3 +1,6 @@
+using System;
+using Elsa.Retention.Contracts;
+using Elsa.Retention.Filters;
 using NodaTime;
 
 namespace Elsa.Retention.Options
@@ -18,5 +21,10 @@ namespace Elsa.Retention.Options
         /// The maximum number of workflow instances to process at the same time.
         /// </summary>
         public int BatchSize { get; set; } = 100;
+
+        /// <summary>
+        /// An action that configures the retention filter pipeline. Can be replaced with your own action to configure a custom pipeline with custom filters. 
+        /// </summary>
+        public Action<IRetentionFilterPipeline> ConfigurePipeline { get; set; } = pipeline => pipeline.AddFilter(new CompletedWorkflowFilter());
     }
 }
