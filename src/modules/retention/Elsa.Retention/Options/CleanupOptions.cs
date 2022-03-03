@@ -15,8 +15,8 @@ namespace Elsa.Retention.Options
         public Duration TimeToLive { get; set; }
 
         /// <summary>
-        /// The maximum number of workflow instances to delete at the same time.
+        /// The maximum number of workflow instances to process at the same time.
         /// </summary>
-        public int PageSize { get; set; } = 100;
+        public int BatchSize { get; set; } = 100;
     }
 }
