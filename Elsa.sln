@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.31424.327
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.32210.238
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Core", "src\core\Elsa.Core\Elsa.Core.csproj", "{300EE2D5-54C5-46F2-AD03-BB43589EA074}"
 EndProject
@@ -381,7 +381,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.RabbitMq", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.RabbitMqWorker", "src\samples\worker\Elsa.Samples.RabbitMqWorker\Elsa.Samples.RabbitMqWorker.csproj", "{67C58C2B-B873-47C8-B5B9-93B0587EE634}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.Sql", "src\activities\Elsa.Activities.SQL\Elsa.Activities.Sql.csproj", "{12E86018-047F-4B80-B2D2-B3C7334FB8DD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.ExecuteSqlServerQuery", "src\activities\Elsa.Activities.SQL\Elsa.Activities.ExecuteSqlServerQuery.csproj", "{12E86018-047F-4B80-B2D2-B3C7334FB8DD}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.Mqtt", "src\activities\Elsa.Activities.Mqtt\Elsa.Activities.Mqtt.csproj", "{791D50F6-EAF2-4E20-9EDF-3BAF9CB7F796}"
 EndProject

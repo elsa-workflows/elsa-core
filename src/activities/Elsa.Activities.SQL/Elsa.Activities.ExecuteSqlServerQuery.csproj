@@ -11,6 +11,10 @@
       </Description>
       <PackageTags>elsa, workflows</PackageTags>
   </PropertyGroup>
+    
+  <ItemGroup>
+    <PackageReference Include="System.Data.SqlClient" Version="4.8.3" />
+  </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />

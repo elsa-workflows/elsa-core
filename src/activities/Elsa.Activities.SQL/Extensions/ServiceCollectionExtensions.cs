@@ -1,14 +1,19 @@
 
-using Elsa.Activities.Sql.Activities;
+using Elsa.Activities.ExecuteSqlServerQuery.Activities;
+using Elsa.Activities.ExecuteSqlServerQuery.Factory;
 using Elsa.Options;
+using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Activities.Sql.Extensions
+namespace Elsa.Activities.ExecuteSqlServerQuery.Extensions
 {
     public static class ServiceCollectionExtensions
     {
         public static ElsaOptionsBuilder AddSqlActivities(this ElsaOptionsBuilder elsa)
         {
-            return elsa.AddActivity<SqlActivity>();
+            elsa.Services
+                .AddSingleton<ISqlClientFactory, SqlClientFactory>();
+
+            return elsa.AddActivity<Activities.ExecuteSqlServerQuery>();
         }
     }
 }

@@ -4,19 +4,20 @@ using Elsa.Services.Models;
 using Elsa.ActivityResults;
 using Elsa.Design;
 using Elsa.Expressions;
-using Elsa.Activities.Sql.Client;
+using Elsa.Activities.ExecuteSqlServerQuery.Client;
+using Elsa.Activities.ExecuteSqlServerQuery.Factory;
 
-namespace Elsa.Activities.Sql.Activities
+namespace Elsa.Activities.ExecuteSqlServerQuery.Activities
 {
     /// <summary>
     /// Execute an SQL query on given database using connection string
     /// </summary>
     [Trigger(
-        Category = "SQL",
+        Category = "Execute Sql Query",
         Description = "Run SQL scripts",
         Outcomes = new string[0]
     )]
-    public class SqlActivity : Activity
+    public class ExecuteSqlServerQuery : Activity
     {
         [ActivityInput(
             Hint = "SQl script to execute",
@@ -36,14 +37,19 @@ namespace Elsa.Activities.Sql.Activities
 
         [ActivityOutput] public int? Output { get; set; }
 
-        public SqlActivity() {}
+        private readonly ISqlClientFactory _sqlClientFactory;
+
+        public ExecuteSqlServerQuery(ISqlClientFactory sqlClientFactory) 
+        {
+            _sqlClientFactory = sqlClientFactory;
+        }
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => ExecuteQuery();
 
         private IActivityExecutionResult ExecuteQuery()
         {
-            var sql = new SqlClient(ConnectionString);
-            Output = sql.Execute(Query);
+            var sqlServerClient = _sqlClientFactory.CreateClient(ConnectionString);
+            Output = sqlServerClient.Execute(Query);
 
             return Done();
         }
