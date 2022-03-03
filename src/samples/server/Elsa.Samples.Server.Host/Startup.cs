@@ -100,7 +100,7 @@ namespace Elsa.Samples.Server.Host
                     // Configure a custom filter pipeline that deletes completed AND faulted workflows.
                     options.ConfigurePipeline = pipeline => pipeline
                         .AddFilter(new WorkflowStatusFilter(WorkflowStatus.Cancelled, WorkflowStatus.Faulted, WorkflowStatus.Finished))
-                        // Could add additional filters.
+                        // Could add additional filters. For example, if there's a way to know that some workflow is a child workflow, maybe don't delete the parent.
                         ;
                 });
 
