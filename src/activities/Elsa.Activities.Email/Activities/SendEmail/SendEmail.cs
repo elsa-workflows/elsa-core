@@ -80,7 +80,7 @@ namespace Elsa.Activities.Email
             var cancellationToken = context.CancellationToken;
             var message = new MimeMessage();
             var from = string.IsNullOrWhiteSpace(From) ? _options.DefaultSender : From;
-            
+
             message.Sender = MailboxAddress.Parse(from);
             message.From.Add(MailboxAddress.Parse(from));
             message.Subject = Subject;
@@ -115,48 +115,48 @@ namespace Elsa.Activities.Email
                         case Uri url:
                             await AttachOnlineFileAsync(bodyBuilder, url, cancellationToken);
                             break;
-                        case string path when path.Contains("://"):
+                        case string path when path?.Contains("://") == true:
                             await AttachOnlineFileAsync(bodyBuilder, new Uri(path), cancellationToken);
                             break;
-                        case string path:
+                        case string path when !string.IsNullOrWhiteSpace(path):
                             await AttachLocalFileAsync(bodyBuilder, path, cancellationToken);
                             break;
                         case byte[] bytes:
-                        {
-                            var fileName = $"Attachment-{++index}";
-                            var contentType = "application/binary";
-                            bodyBuilder.Attachments.Add(fileName, bytes, ContentType.Parse(contentType));
-                            break;
-                        } 
+                            {
+                                var fileName = $"Attachment-{++index}";
+                                var contentType = "application/binary";
+                                bodyBuilder.Attachments.Add(fileName, bytes, ContentType.Parse(contentType));
+                                break;
+                            }
                         case Stream stream:
-                        {
-                            var fileName = $"Attachment-{++index}";
-                            var contentType = "application/binary";
-                            await bodyBuilder.Attachments.AddAsync(fileName, stream, ContentType.Parse(contentType), cancellationToken);
-                            break;
-                        } 
+                            {
+                                var fileName = $"Attachment-{++index}";
+                                var contentType = "application/binary";
+                                await bodyBuilder.Attachments.AddAsync(fileName, stream, ContentType.Parse(contentType), cancellationToken);
+                                break;
+                            }
                         case EmailAttachment emailAttachment:
-                        {
-                            var fileName = emailAttachment.FileName ?? $"Attachment-{++index}";
-                            var contentType = emailAttachment.ContentType ?? "application/binary";
-                            var parsedContentType = ContentType.Parse(contentType);
-                            
-                            if(emailAttachment.Content is byte[] bytes)
-                                bodyBuilder.Attachments.Add(fileName, bytes, parsedContentType);
-                            
-                            else if(emailAttachment.Content is Stream stream)
-                                await bodyBuilder.Attachments.AddAsync(fileName, stream, parsedContentType, cancellationToken);
-                            
-                            break;
-                        }
+                            {
+                                var fileName = emailAttachment.FileName ?? $"Attachment-{++index}";
+                                var contentType = emailAttachment.ContentType ?? "application/binary";
+                                var parsedContentType = ContentType.Parse(contentType);
+
+                                if (emailAttachment.Content is byte[] bytes)
+                                    bodyBuilder.Attachments.Add(fileName, bytes, parsedContentType);
+
+                                else if (emailAttachment.Content is Stream stream)
+                                    await bodyBuilder.Attachments.AddAsync(fileName, stream, parsedContentType, cancellationToken);
+
+                                break;
+                            }
                         default:
-                        {
-                            var json = _contentSerializer.Serialize(attachmentObject);
-                            var fileName = $"Attachment-{++index}";
-                            var contentType = "application/json";
-                            bodyBuilder.Attachments.Add(fileName, Encoding.UTF8.GetBytes(json), ContentType.Parse(contentType));
-                            break;
-                        }
+                            {
+                                var json = _contentSerializer.Serialize(attachmentObject);
+                                var fileName = $"Attachment-{++index}";
+                                var contentType = "application/json";
+                                bodyBuilder.Attachments.Add(fileName, Encoding.UTF8.GetBytes(json), ContentType.Parse(contentType));
+                                break;
+                            }
                     }
                 }
             }
