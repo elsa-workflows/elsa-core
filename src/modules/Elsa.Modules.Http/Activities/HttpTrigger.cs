@@ -8,7 +8,7 @@ using Elsa.Modules.Http.Models;
 
 namespace Elsa.Modules.Http;
 
-public class HttpTrigger : TriggerActivity
+public class HttpTrigger : Trigger
 {
     [Input] public Input<string> Path { get; set; } = default!;
 
@@ -20,7 +20,7 @@ public class HttpTrigger : TriggerActivity
 
     [Output] public Output<HttpRequestModel>? Result { get; set; }
 
-    protected override IEnumerable<object> GetPayloads(TriggerIndexingContext context) => GetHashInputs(context.ExpressionExecutionContext);
+    protected override IEnumerable<object> GetTriggerPayloads(TriggerIndexingContext context) => GetHashInputs(context.ExpressionExecutionContext);
     protected override void Execute(ActivityExecutionContext context) => context.SetBookmarks(GetHashInputs(context.ExpressionExecutionContext));
 
     private IEnumerable<object> GetHashInputs(ExpressionExecutionContext context)

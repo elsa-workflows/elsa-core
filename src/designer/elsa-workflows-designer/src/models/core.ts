@@ -10,10 +10,10 @@ export interface Node {
   [name: string]: any;
 }
 
-export interface Trigger extends Node {
+export interface Activity extends Node {
 }
 
-export interface Activity extends Node {
+export interface Trigger extends Activity {
 }
 
 export interface Container extends Activity {
@@ -36,7 +36,6 @@ export interface Workflow {
   publication: WorkflowPublication;
   metadata: WorkflowMetadata;
   root: Activity;
-  triggers: Array<Trigger>;
 }
 
 export interface WorkflowMetadata {

@@ -5,7 +5,6 @@ GREATER             :   '>';
 INCREMENT           :   '++';
 DECREMENT           :   '--';
 NEW                 :   'new';
-TRIGGER             :   'trigger';
 VARIABLE            :   'variable';
 LET                 :   'let';
 IF                  :   'if';

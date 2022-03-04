@@ -17,7 +17,6 @@ public static partial class Workflows
         string? Name,
         string? Description,
         IActivity? Root,
-        ICollection<ITrigger>? Triggers,
         bool Publish);
 
     public static async Task<IResult> PostAsync(
@@ -49,12 +48,10 @@ public static partial class Workflows
 
         // Update the draft with the received model.
         var root = model.Root ?? new Sequence();
-        var triggers = model.Triggers ?? new List<ITrigger>();
 
         draft = draft with
         {
             Root = root,
-            Triggers = triggers,
             Metadata = draft.Metadata with
             {
                 Name = model.Name,

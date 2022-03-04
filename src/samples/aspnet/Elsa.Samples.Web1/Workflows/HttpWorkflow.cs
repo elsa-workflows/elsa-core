@@ -19,18 +19,16 @@ public class HttpWorkflow : IWorkflow
 
     public void Build(IWorkflowDefinitionBuilder workflow)
     {
-        // Add triggers.
-        workflow.AddTrigger(new HttpTrigger
-        {
-            Path = new Input<string>("/hello-world"),
-            SupportedMethods = new Input<ICollection<string>>(new[] { HttpMethods.Get })
-        });
-
         // Setup workflow graph.
         workflow.WithRoot(new Sequence
         {
             Activities =
             {
+                new HttpTrigger
+                {
+                    Path = new Input<string>("/hello-world"),
+                    SupportedMethods = new Input<ICollection<string>>(new[] { HttpMethods.Get })
+                },
                 new If
                 {
                     Condition = new Input<bool>(true),

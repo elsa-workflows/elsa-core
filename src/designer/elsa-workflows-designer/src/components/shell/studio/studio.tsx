@@ -2,7 +2,7 @@ import {Component, Element, h, Listen, Prop, Watch} from '@stencil/core';
 import 'reflect-metadata';
 import {Container} from 'typedi';
 import {ElsaApiClientProvider, ElsaClient, SaveWorkflowRequest, ServerSettings} from '../../../services';
-import {ActivityDescriptor, TriggerDescriptor, VersionOptions, Workflow, WorkflowInstanceSummary, WorkflowSummary} from '../../../models';
+import {ActivityDescriptor, VersionOptions, Workflow, WorkflowInstanceSummary, WorkflowSummary} from '../../../models';
 import {WorkflowUpdatedArgs} from '../../designer/workflow-editor/workflow-editor';
 import {PublishClickedArgs} from "../../toolbar/workflow-publish-button/workflow-publish-button";
 import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
@@ -12,7 +12,6 @@ import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
 })
 export class Studio {
   private activityDescriptors: Array<ActivityDescriptor>;
-  private triggerDescriptors: Array<TriggerDescriptor>;
   private elsaClient: ElsaClient;
   private workflowEditorElement?: HTMLElsaWorkflowEditorElement;
 
@@ -88,12 +87,10 @@ export class Studio {
     const elsaClientProvider = Container.get(ElsaApiClientProvider);
     this.elsaClient = await elsaClientProvider.getClient();
     this.activityDescriptors = await this.elsaClient.descriptors.activities.list();
-    this.triggerDescriptors = await this.elsaClient.descriptors.triggers.list();
     this.workflowEditorElement = this.el.getElementsByTagName('elsa-workflow-editor')[0] as HTMLElsaWorkflowEditorElement;
 
     if (!!this.workflowEditorElement) {
       this.workflowEditorElement.activityDescriptors = this.activityDescriptors;
-      this.workflowEditorElement.triggerDescriptors = this.triggerDescriptors;
       this.workflowEditorElement.monacoLibPath = this.monacoLibPath;
     }
   }
@@ -108,7 +105,6 @@ export class Studio {
       name: workflow.metadata.name,
       description: workflow.metadata.description,
       publish: publish,
-      triggers: workflow.triggers,
       root: workflow.root
     };
 

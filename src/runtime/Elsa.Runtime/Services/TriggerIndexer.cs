@@ -12,7 +12,6 @@ using Elsa.Persistence.Entities;
 using Elsa.Persistence.Requests;
 using Elsa.Runtime.Contracts;
 using Elsa.Runtime.Models;
-using Elsa.Runtime.Notifications;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Runtime.Services;
@@ -26,6 +25,7 @@ namespace Elsa.Runtime.Services;
 public class TriggerIndexer : ITriggerIndexer
 {
     private readonly IWorkflowRegistry _workflowRegistry;
+    private readonly IActivityWalker _activityWalker;
     private readonly IExpressionEvaluator _expressionEvaluator;
     private readonly IIdentityGenerator _identityGenerator;
     private readonly IRequestSender _requestSender;
@@ -37,6 +37,7 @@ public class TriggerIndexer : ITriggerIndexer
 
     public TriggerIndexer(
         IWorkflowRegistry workflowRegistry,
+        IActivityWalker activityWalker,
         IExpressionEvaluator expressionEvaluator,
         IIdentityGenerator identityGenerator,
         IRequestSender requestSender,
@@ -47,6 +48,7 @@ public class TriggerIndexer : ITriggerIndexer
         ILogger<TriggerIndexer> logger)
     {
         _workflowRegistry = workflowRegistry;
+        _activityWalker = activityWalker;
         _expressionEvaluator = expressionEvaluator;
         _identityGenerator = identityGenerator;
         _requestSender = requestSender;
@@ -112,11 +114,11 @@ public class TriggerIndexer : ITriggerIndexer
     private async IAsyncEnumerable<WorkflowTrigger> GetTriggersAsync(Workflow workflow, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var context = new WorkflowIndexingContext(workflow);
-        var triggerSources = workflow.Triggers;
+        var triggerNodes = _activityWalker.Walk(workflow.Root).Flatten().Where(x => x.Activity is ITrigger { TriggerMode: TriggerMode.WorkflowDefinition }).ToList();
 
-        foreach (var triggerSource in triggerSources)
+        foreach (var triggerNode in triggerNodes)
         {
-            var triggers = await GetTriggersAsync(workflow, context, triggerSource, cancellationToken);
+            var triggers = await GetTriggersAsync(workflow, context, (ITrigger)triggerNode.Activity, cancellationToken);
 
             foreach (var trigger in triggers)
                 yield return trigger;
@@ -167,7 +169,7 @@ public class TriggerIndexer : ITriggerIndexer
     {
         try
         {
-            return (await trigger.GetPayloadsAsync(context, cancellationToken)).ToList();
+            return (await trigger.GetTriggerPayloadsAsync(context, cancellationToken)).ToList();
         }
         catch (Exception e)
         {

@@ -1,6 +1,5 @@
 using Elsa.Api.Endpoints.ActivityDescriptors;
 using Elsa.Api.Endpoints.Events;
-using Elsa.Api.Endpoints.TriggerDescriptors;
 using Elsa.Api.Endpoints.WorkflowInstances;
 using Elsa.Api.Endpoints.Workflows;
 using Microsoft.AspNetCore.Routing;
@@ -13,6 +12,5 @@ public static class EndpointRouteBuilderExtensions
         .MapWorkflows()
         .MapWorkflowInstances()
         .MapActivityDescriptors()
-        .MapTriggerDescriptors()
         .MapEvents();
 }

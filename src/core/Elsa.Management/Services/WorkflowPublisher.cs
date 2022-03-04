@@ -34,7 +34,6 @@ namespace Elsa.Management.Services
                 WorkflowPublication.LatestDraft,
                 new WorkflowMetadata(CreatedAt: _systemClock.UtcNow),
                 new Sequence(),
-                new List<ITrigger>(),
                 new List<Variable>());
         }
 

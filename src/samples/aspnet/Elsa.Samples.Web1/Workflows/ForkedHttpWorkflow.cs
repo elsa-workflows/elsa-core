@@ -15,18 +15,16 @@ public class ForkedHttpWorkflow : IWorkflow
 {
     public void Build(IWorkflowDefinitionBuilder workflow)
     {
-        // Add triggers.
-        workflow.AddTrigger(new HttpTrigger
-        {
-            Path = new Input<string>("/fork"),
-            SupportedMethods = new Input<ICollection<string>>(new[] { HttpMethods.Get })
-        });
-
         // Setup workflow graph.
         workflow.WithRoot(new Sequence
         {
             Activities =
             {
+                new HttpTrigger
+                {
+                    Path = new Input<string>("/fork"),
+                    SupportedMethods = new Input<ICollection<string>>(new[] { HttpMethods.Get })
+                },
                 new Fork
                 {
                     JoinMode = new Input<JoinMode>(JoinMode.WaitAll),

@@ -13,7 +13,7 @@ public class Timer : Trigger
 {
     [Input] public Input<TimeSpan> Interval { get; set; } = default!;
 
-    protected override IEnumerable<object> GetPayloads(TriggerIndexingContext context)
+    protected override IEnumerable<object> GetTriggerPayloads(TriggerIndexingContext context)
     {
         var interval = context.ExpressionExecutionContext.Get(Interval);
         var clock = context.ExpressionExecutionContext.GetRequiredService<ISystemClock>();

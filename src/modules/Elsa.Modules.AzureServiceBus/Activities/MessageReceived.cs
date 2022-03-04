@@ -7,7 +7,7 @@ using Elsa.Modules.AzureServiceBus.Models;
 namespace Elsa.Modules.AzureServiceBus.Activities;
 
 [Activity("Azure.ServiceBus.MessageReceived", "Executes when a message is received from the configured queue or topic and subscription", "Azure Service Bus")]
-public class MessageReceived : TriggerActivity
+public class MessageReceived : Trigger
 {
     internal const string MessageReceivedInputKey = "ReceivedMessage";
     public Input<string> QueueOrTopic { get; set; } = default!;
@@ -33,7 +33,7 @@ public class MessageReceived : TriggerActivity
     /// </summary>
     public IFormatter? Formatter { get; set; }
 
-    protected override object GetPayload(TriggerIndexingContext context) => GetPayload(context.ExpressionExecutionContext);
+    protected override object GetTriggerPayload(TriggerIndexingContext context) => GetPayload(context.ExpressionExecutionContext);
 
     protected override void Execute(ActivityExecutionContext context)
     {

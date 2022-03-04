@@ -13,22 +13,8 @@ public class IdentityGraphService : IIdentityGraphService
         _activityWalker = activityWalker;
     }
 
-    public void AssignIdentities(Workflow workflow)
-    {
-        AssignIdentities(workflow.Root);
+    public void AssignIdentities(Workflow workflow) => AssignIdentities(workflow.Root);
 
-        var triggers = workflow.Triggers;
-
-        if (triggers == null)
-            return;
-
-        foreach (var trigger in triggers)
-        {
-            if(trigger is IActivity activity)
-                AssignIdentities(activity);
-        }
-    }
-        
     public void AssignIdentities(IActivity root)
     {
         var graph = _activityWalker.Walk(root);

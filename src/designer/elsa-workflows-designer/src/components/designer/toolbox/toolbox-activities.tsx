@@ -2,7 +2,7 @@ import {Component, h, Prop, State, Watch} from "@stencil/core";
 import {Addon, Graph} from '@antv/x6';
 import groupBy from 'lodash/groupBy';
 import {Container} from 'typedi';
-import {ActivityDescriptor, TriggerDescriptor} from '../../../models';
+import {ActivityDescriptor} from '../../../models';
 import {ActivityDriverRegistry} from '../../../services';
 import WorkflowEditorTunnel from '../state';
 
@@ -18,7 +18,6 @@ interface ActivityCategoryModel {
 export class ToolboxActivities {
   @Prop() graph: Graph;
   @Prop({mutable: true}) activityDescriptors: Array<ActivityDescriptor> = [];
-  @Prop({mutable: true}) triggerDescriptors: Array<TriggerDescriptor> = [];
   @State() activityCategoryModels: Array<ActivityCategoryModel> = [];
   private dnd: Addon.Dnd;
   private renderedActivities: Map<string, string>;
@@ -71,17 +70,9 @@ export class ToolboxActivities {
     this.handleActivityDescriptorsChanged(this.activityDescriptors);
   }
 
-  private onActivityStartDrag(e: DragEvent, activityDescriptor: ActivityDescriptor) {
+  private static onActivityStartDrag(e: DragEvent, activityDescriptor: ActivityDescriptor) {
     const json = JSON.stringify(activityDescriptor);
-    const triggerDescriptor = this.triggerDescriptors.find(x => x.nodeType == activityDescriptor.nodeType);
-    const isTrigger = !!triggerDescriptor;
-
     e.dataTransfer.setData('activity-descriptor', json);
-
-    if (isTrigger) {
-      const triggerDescriptorJson = JSON.stringify(triggerDescriptor);
-      e.dataTransfer.setData('trigger-descriptor', triggerDescriptorJson);
-    }
   }
 
   private onToggleActivityCategory(categoryModel: ActivityCategoryModel) {
@@ -121,7 +112,7 @@ export class ToolboxActivities {
                 return (
                   <div class="w-full flex items-center pl-10 pr-2 py-2">
                     <div class="cursor-move"
-                         onDragStart={e => this.onActivityStartDrag(e, activityDescriptor)}>
+                         onDragStart={e => ToolboxActivities.onActivityStartDrag(e, activityDescriptor)}>
                       <div innerHTML={activityHtml} draggable={true}/>
                     </div>
                   </div>
@@ -136,4 +127,4 @@ export class ToolboxActivities {
   }
 }
 
-WorkflowEditorTunnel.injectProps(ToolboxActivities, ['activityDescriptors', 'triggerDescriptors']);
+WorkflowEditorTunnel.injectProps(ToolboxActivities, ['activityDescriptors']);

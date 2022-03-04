@@ -18,13 +18,6 @@ export interface ActivityDescriptor extends NodeDescriptor {
   outPorts: Array<Port>;
 }
 
-export interface TriggerDescriptor extends NodeDescriptor {
-}
-
-export interface TriggerDescriptorResponse {
-  triggerDescriptors: Array<TriggerDescriptor>;
-}
-
 export enum ActivityTraits {
   Action = 1,
   Trigger = 2

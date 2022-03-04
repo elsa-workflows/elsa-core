@@ -17,7 +17,7 @@ using Elsa.Modules.Scheduling.Triggers;
 using Elsa.Persistence.EntityFrameworkCore.Extensions;
 using Elsa.Persistence.EntityFrameworkCore.Sqlite;
 using Elsa.Pipelines.WorkflowExecution.Components;
-using Elsa.Runtime.Middleware;
+using Elsa.Runtime.Extensions;
 using Elsa.Runtime.ProtoActor.Extensions;
 using Elsa.Samples.Web1.Activities;
 using Elsa.Samples.Web1.Workflows;
@@ -28,7 +28,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using WorkflowExecutionBuilderExtensions = Elsa.Runtime.Extensions.WorkflowExecutionBuilderExtensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -70,15 +69,11 @@ services
     .AddActivity<HttpTrigger>()
     .AddActivity<Flowchart>()
     .AddActivity<Delay>()
+    .AddActivity<Timer>()
     .AddActivity<ForEach>()
     .AddActivity<Switch>()
     .AddActivity<SendMessage>()
     ;
-
-// Register available triggers.
-services
-    .AddTrigger<HttpTrigger>()
-    .AddTrigger<Timer>();
 
 // Register scripting languages.
 services
@@ -97,8 +92,12 @@ wellKnownTypeRegistry.RegisterType<bool>("boolean");
 wellKnownTypeRegistry.RegisterType<string>("string");
 
 // Configure workflow engine execution pipeline.
-serviceProvider.ConfigureDefaultWorkflowExecutionPipeline(pipeline => WorkflowExecutionBuilderExtensions.UseWorkflowExecutionEvents(WorkflowExecutionBuilderExtensions.UseWorkflowExecutionLogPersistence(WorkflowExecutionBuilderExtensions.UsePersistence(pipeline)))
-    .UseActivityScheduler()
+serviceProvider.ConfigureDefaultWorkflowExecutionPipeline(pipeline =>
+    pipeline
+        .UseWorkflowExecutionEvents()
+        .UseWorkflowExecutionLogPersistence()
+        .UsePersistence()
+        .UseActivityScheduler()
 );
 
 if (app.Environment.IsDevelopment())

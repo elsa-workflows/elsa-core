@@ -13,13 +13,12 @@ import {
   PagedList,
   SelectList,
   Trigger,
-  TriggerDescriptor,
-  TriggerDescriptorResponse, VersionOptions,
+  VersionOptions,
   Workflow, WorkflowInstance, WorkflowInstanceSummary, WorkflowStatus, WorkflowSummary
 } from '../models';
 import 'reflect-metadata';
 import {ServerSettings} from './server-settings';
-import {getVersionOptionsString} from "../utils/utils";
+import {getVersionOptionsString} from "../utils";
 
 function serializeQueryString(queryString: object): string {
   const filteredItems = _(queryString).omitBy(_.isUndefined).omitBy(_.isNull).value();
@@ -53,12 +52,6 @@ export async function createElsaClient(serverUrl: string): Promise<ElsaClient> {
         async list(): Promise<Array<ActivityDescriptor>> {
           const response = await httpClient.get<ActivityDescriptorResponse>('api/descriptors/activities');
           return response.data.activityDescriptors;
-        }
-      },
-      triggers: {
-        async list(): Promise<Array<TriggerDescriptor>> {
-          const response = await httpClient.get<TriggerDescriptorResponse>('api/descriptors/triggers');
-          return response.data.triggerDescriptors;
         }
       }
     },
@@ -140,15 +133,10 @@ export interface ElsaClient {
 
 export interface DescriptorsApi {
   activities: ActivityDescriptorsApi;
-  triggers: TriggerDescriptorsApi;
 }
 
 export interface ActivityDescriptorsApi {
   list(): Promise<Array<ActivityDescriptor>>;
-}
-
-export interface TriggerDescriptorsApi {
-  list(): Promise<Array<TriggerDescriptor>>;
 }
 
 export interface WorkflowsApi {
@@ -180,7 +168,6 @@ export interface SaveWorkflowRequest {
   definitionId: string;
   name?: string;
   description?: string;
-  triggers?: Array<Trigger>;
   publish: boolean;
   root?: Activity
 }

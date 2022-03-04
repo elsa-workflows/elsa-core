@@ -5,11 +5,15 @@ import {Container} from "typedi";
 import {PanelPosition, PanelStateChangedArgs} from '../panel/models';
 import {
   Activity,
-  ActivityDescriptor, ActivityPropertyChangedEventArgs,
-  ActivitySelectedArgs, ContainerSelectedArgs, EventTypes,
-  GraphUpdatedArgs, Trigger,
-  TriggerDescriptor,
-  Workflow, WorkflowInstance
+  ActivityDescriptor,
+  ActivityPropertyChangedEventArgs,
+  ActivitySelectedArgs,
+  ContainerSelectedArgs,
+  EventTypes,
+  GraphUpdatedArgs,
+  Trigger,
+  Workflow,
+  WorkflowInstance
 } from '../../../models';
 import WorkflowEditorTunnel, {WorkflowDesignerState} from '../state';
 import {
@@ -17,8 +21,6 @@ import {
   DeleteActivityRequestedArgs
 } from '../activity-properties-editor/activity-properties-editor';
 import {ActivityDriverRegistry, EventBus} from '../../../services';
-import {TriggerSelectedArgs, TriggersUpdatedArgs} from '../trigger-container/trigger-container';
-import {DeleteTriggerRequestedArgs, TriggerUpdatedArgs} from "../trigger-properties-editor/trigger-properties-editor";
 import {WorkflowPropsUpdatedArgs} from "../workflow-properties-editor/workflow-properties-editor";
 import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
 import {PluginRegistry} from "../../../services/plugin-registry";
@@ -37,7 +39,6 @@ export class WorkflowEditor {
   private canvas: HTMLElsaCanvasElement;
   private container: HTMLDivElement;
   private toolbox: HTMLElsaToolboxElement;
-  private triggerContainer: HTMLElsaTriggerContainerElement;
   private applyActivityChanges: (activity: Activity) => void;
   private deleteActivity: (activity: Activity) => void;
   private applyTriggerChanges: (trigger: Trigger) => void;
@@ -49,8 +50,7 @@ export class WorkflowEditor {
     root: null,
     identity: {id: uuid(), definitionId: uuid(), version: 1},
     publication: {isLatest: true, isPublished: false},
-    metadata: {},
-    triggers: []
+    metadata: {}
   };
 
   private workflowInstance?: WorkflowInstance;
@@ -65,11 +65,8 @@ export class WorkflowEditor {
   @Element() el: HTMLElsaWorkflowEditorElement;
   @Prop({attribute: 'monaco-lib-path'}) public monacoLibPath: string;
   @Prop() public activityDescriptors: Array<ActivityDescriptor> = [];
-  @Prop() public triggerDescriptors: Array<TriggerDescriptor> = [];
   @Event() public workflowUpdated: EventEmitter<WorkflowUpdatedArgs>
   @State() private selectedActivity?: Activity;
-  @State() private selectedTrigger?: Trigger;
-  @State() private triggers: Array<Trigger> = [];
 
   private get interactiveMode(): boolean {
     return !this.workflowInstance;
@@ -94,30 +91,13 @@ export class WorkflowEditor {
   @Listen('containerSelected')
   private async handleContainerSelected(e: CustomEvent<ContainerSelectedArgs>) {
     this.selectedActivity = null;
-    this.selectedTrigger = null;
-    await this.triggerContainer.deselectAll();
   }
 
   @Listen('activitySelected')
   private async handleActivitySelected(e: CustomEvent<ActivitySelectedArgs>) {
     this.selectedActivity = e.detail.activity;
-    this.selectedTrigger = null;
-    await this.triggerContainer.deselectAll();
     this.applyActivityChanges = e.detail.applyChanges;
     this.deleteActivity = e.detail.deleteActivity;
-  }
-
-  @Listen('triggerSelected')
-  private async handleTriggerSelected(e: CustomEvent<TriggerSelectedArgs>) {
-    this.selectedTrigger = e.detail.trigger;
-    this.selectedActivity = null;
-    this.applyTriggerChanges = e.detail.applyChanges;
-    this.deleteTrigger = e.detail.deleteTrigger;
-  }
-
-  @Listen('triggerDeselected')
-  private async handleTriggerDeselected(e: CustomEvent<TriggerSelectedArgs>) {
-    this.selectedTrigger = null;
   }
 
   @Listen('graphUpdated')
@@ -152,14 +132,12 @@ export class WorkflowEditor {
   @Method()
   public async importWorkflowMetadata(workflow: Workflow): Promise<void> {
     this.workflow = workflow;
-    this.triggers = workflow.triggers;
   }
 
   public render() {
     const tunnelState: WorkflowDesignerState = {
       workflow: this.workflow,
       activityDescriptors: this.activityDescriptors,
-      triggerDescriptors: this.triggerDescriptors
     };
 
     const interactiveMode = this.interactiveMode;
@@ -172,17 +150,6 @@ export class WorkflowEditor {
             position={PanelPosition.Left}
             onExpandedStateChanged={e => this.onActivityPickerPanelStateChanged(e.detail)}>
             <elsa-toolbox ref={el => this.toolbox = el}/>
-          </elsa-panel>
-          <elsa-panel
-            class="elsa-trigger-container"
-            onExpandedStateChanged={e => this.onTriggerContainerPanelStateChanged(e.detail)}
-            position={PanelPosition.Top}>
-            <elsa-trigger-container
-              interactiveMode={interactiveMode}
-              triggerDescriptors={this.triggerDescriptors}
-              triggers={this.triggers}
-              onTriggersUpdated={e => this.onTriggersUpdated(e.detail)}
-              ref={el => this.triggerContainer = el}/>
           </elsa-panel>
           <elsa-canvas
             class="absolute" ref={el => this.canvas = el}
@@ -204,12 +171,6 @@ export class WorkflowEditor {
   }
 
   private renderSelectedObject = () => {
-    if (!!this.selectedTrigger)
-      return <elsa-trigger-properties-editor
-        trigger={this.selectedTrigger}
-        onTriggerUpdated={e => this.onTriggerUpdated(e)}
-        onDeleteTriggerRequested={e => this.onDeleteTriggerRequested(e)}/>
-
     if (!!this.selectedActivity)
       return <elsa-activity-properties-editor
         activity={this.selectedActivity}
@@ -253,13 +214,7 @@ export class WorkflowEditor {
   }
 
   private onActivityPickerPanelStateChanged = async (e: PanelStateChangedArgs) => await this.updateContainerLayout('activity-picker-closed', e.expanded)
-  private onTriggerContainerPanelStateChanged = async (e: PanelStateChangedArgs) => await this.updateContainerLayout('trigger-container-closed', e.expanded)
   private onActivityEditorPanelStateChanged = async (e: PanelStateChangedArgs) => await this.updateContainerLayout('object-editor-closed', e.expanded)
-
-  private onTriggersUpdated = async (e: TriggersUpdatedArgs) => {
-    this.workflow.triggers = e.triggers;
-    await this.saveChangesDebounced();
-  };
 
   private onDragOver = (e: DragEvent) => {
     if (this.interactiveMode)
@@ -280,21 +235,10 @@ export class WorkflowEditor {
     this.saveChangesDebounced();
   }
 
-  private onTriggerUpdated = (e: CustomEvent<TriggerUpdatedArgs>) => {
-    const updatedTrigger = e.detail.trigger;
-    this.applyTriggerChanges(updatedTrigger);
-    this.saveChangesDebounced();
-  }
-
   private onWorkflowPropsUpdated = (e: CustomEvent<WorkflowPropsUpdatedArgs>) => this.saveChangesDebounced()
 
   private onDeleteActivityRequested = (e: CustomEvent<DeleteActivityRequestedArgs>) => {
     this.deleteActivity(e.detail.activity);
     this.selectedActivity = null;
-  };
-
-  private onDeleteTriggerRequested = (e: CustomEvent<DeleteTriggerRequestedArgs>) => {
-    this.deleteTrigger(e.detail.trigger);
-    this.selectedTrigger = null;
   };
 }

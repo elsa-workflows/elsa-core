@@ -1,22 +1,36 @@
 using Elsa.Contracts;
-using Elsa.Helpers;
 
 namespace Elsa.Models;
 
-public class Trigger : ITrigger
+public abstract class Trigger : Activity, ITrigger
 {
-    protected Trigger() => NodeType = TypeNameHelper.GenerateTypeName(GetType());
-    protected Trigger(string triggerType) => NodeType = triggerType;
-
-    public string Id { get; set; } = default!;
-    public string NodeType { get; set; }
-    public IDictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
-
-    public virtual ValueTask<IEnumerable<object>> GetPayloadsAsync(TriggerIndexingContext context, CancellationToken cancellationToken = default)
+    protected Trigger()
     {
-        var hashes = GetPayloads(context);
+    }
+
+    protected Trigger(string triggerType) : base(triggerType)
+    {
+    }
+
+    public TriggerMode TriggerMode { get; set; } = TriggerMode.WorkflowDefinition;
+    ValueTask<IEnumerable<object>> ITrigger.GetTriggerPayloadsAsync(TriggerIndexingContext context, CancellationToken cancellationToken) => GetTriggerPayloadsAsync(context, cancellationToken);
+    
+    /// <summary>
+    /// Override this method to return a list of trigger payloads.  
+    /// </summary>
+    protected virtual ValueTask<IEnumerable<object>> GetTriggerPayloadsAsync(TriggerIndexingContext context, CancellationToken cancellationToken = default)
+    {
+        var hashes = GetTriggerPayloads(context);
         return ValueTask.FromResult(hashes);
     }
 
-    protected virtual IEnumerable<object> GetPayloads(TriggerIndexingContext context) => Enumerable.Empty<object>();
+    /// <summary>
+    /// Override this method to return a list of trigger payloads.
+    /// </summary>
+    protected virtual IEnumerable<object> GetTriggerPayloads(TriggerIndexingContext context) => new[]{ GetTriggerPayload(context) };
+    
+    /// <summary>
+    /// Override this method to return a trigger payload.
+    /// </summary>
+    protected virtual object GetTriggerPayload(TriggerIndexingContext context) => new();
 }

@@ -5,7 +5,7 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
-import { ActionDefinition, ActionInvokedArgs, Activity, ActivityDescriptor, ActivitySelectedArgs, ContainerSelectedArgs, GraphUpdatedArgs, IntellisenseContext, SelectListItem, TabChangedArgs, TabDefinition, Trigger, TriggerDescriptor, Workflow, WorkflowInstance, WorkflowInstanceSummary, WorkflowSummary } from "./models";
+import { ActionDefinition, ActionInvokedArgs, Activity, ActivityDescriptor, ActivitySelectedArgs, ContainerSelectedArgs, GraphUpdatedArgs, IntellisenseContext, SelectListItem, TabChangedArgs, TabDefinition, Workflow, WorkflowInstance, WorkflowInstanceSummary, WorkflowSummary } from "./models";
 import { ActivityUpdatedArgs, DeleteActivityRequestedArgs } from "./components/designer/activity-properties-editor/activity-properties-editor";
 import { ContainerActivityComponent } from "./components/activities/container-activity-component";
 import { AddActivityArgs } from "./components/designer/canvas/canvas";
@@ -18,8 +18,6 @@ import { ExpressionChangedArs } from "./components/designer/input-control-switch
 import { MonacoLib, MonacoValueChangedArgs } from "./components/shared/monaco-editor/monaco-editor";
 import { PagerData } from "./components/shared/pager/pager";
 import { PanelPosition, PanelStateChangedArgs } from "./components/designer/panel/models";
-import { TriggerDeselectedArgs, TriggerSelectedArgs, TriggersUpdatedArgs } from "./components/designer/trigger-container/trigger-container";
-import { DeleteTriggerRequestedArgs, TriggerUpdatedArgs } from "./components/designer/trigger-properties-editor/trigger-properties-editor";
 import { WorkflowUpdatedArgs } from "./components/designer/workflow-editor/workflow-editor";
 import { ActivityDriverRegistry } from "./services";
 import { WorkflowPropsUpdatedArgs } from "./components/designer/workflow-properties-editor/workflow-properties-editor";
@@ -155,24 +153,6 @@ export namespace Components {
     interface ElsaToolboxActivities {
         "activityDescriptors": Array<ActivityDescriptor>;
         "graph": Graph;
-        "triggerDescriptors": Array<TriggerDescriptor>;
-    }
-    interface ElsaToolboxTriggers {
-        "activityDescriptors": Array<ActivityDescriptor>;
-        "graph": Graph;
-        "triggerDescriptors": Array<TriggerDescriptor>;
-    }
-    interface ElsaTriggerContainer {
-        "deselectAll": () => Promise<void>;
-        "interactiveMode": boolean;
-        "triggerDescriptors": Array<TriggerDescriptor>;
-        "triggers": Array<Trigger>;
-    }
-    interface ElsaTriggerPropertiesEditor {
-        "hide": () => Promise<void>;
-        "show": () => Promise<void>;
-        "trigger"?: Trigger;
-        "triggerDescriptors": Array<TriggerDescriptor>;
     }
     interface ElsaWorkflowBrowser {
         "hide": () => Promise<void>;
@@ -186,7 +166,6 @@ export namespace Components {
         "importWorkflowMetadata": (workflow: Workflow) => Promise<void>;
         "monacoLibPath": string;
         "registerActivityDrivers": (register: (registry: ActivityDriverRegistry) => void) => Promise<void>;
-        "triggerDescriptors": Array<TriggerDescriptor>;
     }
     interface ElsaWorkflowInstanceBrowser {
         "hide": () => Promise<void>;
@@ -356,24 +335,6 @@ declare global {
         prototype: HTMLElsaToolboxActivitiesElement;
         new (): HTMLElsaToolboxActivitiesElement;
     };
-    interface HTMLElsaToolboxTriggersElement extends Components.ElsaToolboxTriggers, HTMLStencilElement {
-    }
-    var HTMLElsaToolboxTriggersElement: {
-        prototype: HTMLElsaToolboxTriggersElement;
-        new (): HTMLElsaToolboxTriggersElement;
-    };
-    interface HTMLElsaTriggerContainerElement extends Components.ElsaTriggerContainer, HTMLStencilElement {
-    }
-    var HTMLElsaTriggerContainerElement: {
-        prototype: HTMLElsaTriggerContainerElement;
-        new (): HTMLElsaTriggerContainerElement;
-    };
-    interface HTMLElsaTriggerPropertiesEditorElement extends Components.ElsaTriggerPropertiesEditor, HTMLStencilElement {
-    }
-    var HTMLElsaTriggerPropertiesEditorElement: {
-        prototype: HTMLElsaTriggerPropertiesEditorElement;
-        new (): HTMLElsaTriggerPropertiesEditorElement;
-    };
     interface HTMLElsaWorkflowBrowserElement extends Components.ElsaWorkflowBrowser, HTMLStencilElement {
     }
     var HTMLElsaWorkflowBrowserElement: {
@@ -442,9 +403,6 @@ declare global {
         "elsa-switch-editor": HTMLElsaSwitchEditorElement;
         "elsa-toolbox": HTMLElsaToolboxElement;
         "elsa-toolbox-activities": HTMLElsaToolboxActivitiesElement;
-        "elsa-toolbox-triggers": HTMLElsaToolboxTriggersElement;
-        "elsa-trigger-container": HTMLElsaTriggerContainerElement;
-        "elsa-trigger-properties-editor": HTMLElsaTriggerPropertiesEditorElement;
         "elsa-workflow-browser": HTMLElsaWorkflowBrowserElement;
         "elsa-workflow-editor": HTMLElsaWorkflowEditorElement;
         "elsa-workflow-instance-browser": HTMLElsaWorkflowInstanceBrowserElement;
@@ -589,26 +547,6 @@ declare namespace LocalJSX {
     interface ElsaToolboxActivities {
         "activityDescriptors"?: Array<ActivityDescriptor>;
         "graph"?: Graph;
-        "triggerDescriptors"?: Array<TriggerDescriptor>;
-    }
-    interface ElsaToolboxTriggers {
-        "activityDescriptors"?: Array<ActivityDescriptor>;
-        "graph"?: Graph;
-        "triggerDescriptors"?: Array<TriggerDescriptor>;
-    }
-    interface ElsaTriggerContainer {
-        "interactiveMode"?: boolean;
-        "onTriggerDeselected"?: (event: CustomEvent<TriggerDeselectedArgs>) => void;
-        "onTriggerSelected"?: (event: CustomEvent<TriggerSelectedArgs>) => void;
-        "onTriggersUpdated"?: (event: CustomEvent<TriggersUpdatedArgs>) => void;
-        "triggerDescriptors"?: Array<TriggerDescriptor>;
-        "triggers"?: Array<Trigger>;
-    }
-    interface ElsaTriggerPropertiesEditor {
-        "onDeleteTriggerRequested"?: (event: CustomEvent<DeleteTriggerRequestedArgs>) => void;
-        "onTriggerUpdated"?: (event: CustomEvent<TriggerUpdatedArgs>) => void;
-        "trigger"?: Trigger;
-        "triggerDescriptors"?: Array<TriggerDescriptor>;
     }
     interface ElsaWorkflowBrowser {
         "onWorkflowDefinitionSelected"?: (event: CustomEvent<WorkflowSummary>) => void;
@@ -617,7 +555,6 @@ declare namespace LocalJSX {
         "activityDescriptors"?: Array<ActivityDescriptor>;
         "monacoLibPath"?: string;
         "onWorkflowUpdated"?: (event: CustomEvent<WorkflowUpdatedArgs>) => void;
-        "triggerDescriptors"?: Array<TriggerDescriptor>;
     }
     interface ElsaWorkflowInstanceBrowser {
         "onWorkflowInstanceSelected"?: (event: CustomEvent<WorkflowInstanceSummary>) => void;
@@ -664,9 +601,6 @@ declare namespace LocalJSX {
         "elsa-switch-editor": ElsaSwitchEditor;
         "elsa-toolbox": ElsaToolbox;
         "elsa-toolbox-activities": ElsaToolboxActivities;
-        "elsa-toolbox-triggers": ElsaToolboxTriggers;
-        "elsa-trigger-container": ElsaTriggerContainer;
-        "elsa-trigger-properties-editor": ElsaTriggerPropertiesEditor;
         "elsa-workflow-browser": ElsaWorkflowBrowser;
         "elsa-workflow-editor": ElsaWorkflowEditor;
         "elsa-workflow-instance-browser": ElsaWorkflowInstanceBrowser;
@@ -705,9 +639,6 @@ declare module "@stencil/core" {
             "elsa-switch-editor": LocalJSX.ElsaSwitchEditor & JSXBase.HTMLAttributes<HTMLElsaSwitchEditorElement>;
             "elsa-toolbox": LocalJSX.ElsaToolbox & JSXBase.HTMLAttributes<HTMLElsaToolboxElement>;
             "elsa-toolbox-activities": LocalJSX.ElsaToolboxActivities & JSXBase.HTMLAttributes<HTMLElsaToolboxActivitiesElement>;
-            "elsa-toolbox-triggers": LocalJSX.ElsaToolboxTriggers & JSXBase.HTMLAttributes<HTMLElsaToolboxTriggersElement>;
-            "elsa-trigger-container": LocalJSX.ElsaTriggerContainer & JSXBase.HTMLAttributes<HTMLElsaTriggerContainerElement>;
-            "elsa-trigger-properties-editor": LocalJSX.ElsaTriggerPropertiesEditor & JSXBase.HTMLAttributes<HTMLElsaTriggerPropertiesEditorElement>;
             "elsa-workflow-browser": LocalJSX.ElsaWorkflowBrowser & JSXBase.HTMLAttributes<HTMLElsaWorkflowBrowserElement>;
             "elsa-workflow-editor": LocalJSX.ElsaWorkflowEditor & JSXBase.HTMLAttributes<HTMLElsaWorkflowEditorElement>;
             "elsa-workflow-instance-browser": LocalJSX.ElsaWorkflowInstanceBrowser & JSXBase.HTMLAttributes<HTMLElsaWorkflowInstanceBrowserElement>;

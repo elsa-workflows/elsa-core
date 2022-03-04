@@ -15,7 +15,6 @@ public class WorkflowDefinitionMapper
             new WorkflowPublication(definition.IsLatest, definition.IsPublished),
             new WorkflowMetadata(definition.Name, definition.Description, definition.CreatedAt),
             definition.Root,
-            definition.Triggers,
             definition.Variables);
     }
 
@@ -33,7 +32,6 @@ public class WorkflowDefinitionMapper
         definition.Name = metadata.Name;
         definition.Description = metadata.Description;
         definition.Root = workflow.Root;
-        definition.Triggers = workflow.Triggers;
         definition.CreatedAt = metadata.CreatedAt;
         definition.IsLatest = publication.IsLatest;
         definition.IsPublished = publication.IsPublished;

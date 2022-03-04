@@ -7,10 +7,9 @@ public record Workflow(
     WorkflowPublication Publication,
     WorkflowMetadata Metadata,
     IActivity Root,
-    ICollection<ITrigger> Triggers,
     ICollection<Variable> Variables)
 {
-    public static Workflow FromActivity(IActivity root) => new(WorkflowIdentity.VersionOne, WorkflowPublication.LatestDraft, new WorkflowMetadata(), root, new List<ITrigger>(), new List<Variable>());
+    public static Workflow FromActivity(IActivity root) => new(WorkflowIdentity.VersionOne, WorkflowPublication.LatestDraft, new WorkflowMetadata(), root, new List<Variable>());
 
     public Workflow WithVersion(int version) => this with { Identity = Identity with { Version = version } };
     public Workflow IncrementVersion() => WithVersion(Identity.Version + 1);

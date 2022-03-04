@@ -9,7 +9,6 @@ namespace Elsa.Persistence.EntityFrameworkCore.Configuration
         public void Configure(EntityTypeBuilder<WorkflowDefinition> builder)
         {
             builder.Ignore(x => x.Root);
-            builder.Ignore(x => x.Triggers);
             builder.Property<string>("Data");
 
             builder.HasIndex(x => new {x.DefinitionId, x.Version}).HasDatabaseName($"IX_{nameof(WorkflowDefinition)}_{nameof(WorkflowDefinition.DefinitionId)}_{nameof(WorkflowDefinition.Version)}").IsUnique();
