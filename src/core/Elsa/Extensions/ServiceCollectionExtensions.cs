@@ -33,7 +33,7 @@ public static class ServiceCollectionExtensions
 
             // Core.
             .AddSingleton<IActivityInvoker, ActivityInvoker>()
-            .AddSingleton<IWorkflowEngine, WorkflowEngine>()
+            .AddSingleton<IWorkflowRunner, WorkflowRunner>()
             .AddSingleton<IActivityWalker, ActivityWalker>()
             .AddSingleton<IIdentityGraphService, IdentityGraphService>()
             .AddSingleton<IWorkflowStateSerializer, WorkflowStateSerializer>()

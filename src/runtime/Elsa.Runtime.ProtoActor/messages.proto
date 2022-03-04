@@ -9,21 +9,25 @@ message Unit {}
 message ExecuteWorkflowDefinition {
   string id = 1;
   int32 version = 2;
+  optional Input input = 3;
 }
 
 message DispatchWorkflowDefinition {
   string id = 1;
   int32 version = 2;
+  optional Input input = 3;
 }
 
 message ExecuteWorkflowInstance {
   string id = 1;
   optional Bookmark bookmark = 2;
+  optional Input input = 3;
 }
 
 message DispatchWorkflowInstance {
   string id = 1;
   optional Bookmark bookmark = 2;
+  optional Input input = 3;
 }
 
 message ExecuteWorkflowResponse {
@@ -37,7 +41,7 @@ message DispatchWorkflowResponse {
 message HandleStimulusRequest {
   string activityTypeName = 1;
   optional string hash = 2;
-  map<string, Json> data = 3;
+  optional Input input = 3;
 }
 
 message Bookmark {
@@ -52,4 +56,8 @@ message Bookmark {
 
 message Json {
   string text = 1;
+}
+
+message Input {
+  map<string, Json> Data = 1;
 }

@@ -34,7 +34,8 @@ namespace Elsa.Management.Services
                 WorkflowPublication.LatestDraft,
                 new WorkflowMetadata(CreatedAt: _systemClock.UtcNow),
                 new Sequence(),
-                new List<ITrigger>());
+                new List<ITrigger>(),
+                new List<Variable>());
         }
 
         public async Task<Workflow?> PublishAsync(string definitionId, CancellationToken cancellationToken = default)

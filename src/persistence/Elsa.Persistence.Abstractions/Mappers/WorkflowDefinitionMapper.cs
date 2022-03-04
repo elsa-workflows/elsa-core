@@ -15,7 +15,8 @@ public class WorkflowDefinitionMapper
             new WorkflowPublication(definition.IsLatest, definition.IsPublished),
             new WorkflowMetadata(definition.Name, definition.Description, definition.CreatedAt),
             definition.Root,
-            definition.Triggers);
+            definition.Triggers,
+            definition.Variables);
     }
 
     public WorkflowDefinition? Map(Workflow? workflow) => workflow == null ? null : Map(workflow, new WorkflowDefinition());

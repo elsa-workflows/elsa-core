@@ -72,9 +72,37 @@ public class Worker : IAsyncDisposable
     {
         var payload = new MessageReceivedTriggerPayload(QueueOrTopic, Subscription);
         var hash = _hasher.Hash(payload);
-        var stimulus = Stimulus.Standard(BookmarkName, hash);
+        var messageModel = CreateMessageModel(message);
+        var stimulus = Stimulus.Standard(BookmarkName, hash, new Dictionary<string, object?> { [MessageReceived.MessageReceivedInputKey] = messageModel });
         var executionResults = (await _workflowServer.ExecuteStimulusAsync(stimulus, cancellationToken)).ToList();
 
         _logger.LogInformation("Triggered {WorkflowCount} workflows", executionResults.Count);
     }
+
+    private ReceivedServiceBusMessageModel CreateMessageModel(ServiceBusReceivedMessage message) =>
+        new(
+            message.Body.ToArray(),
+            message.Subject,
+            message.ContentType,
+            message.To,
+            message.CorrelationId,
+            message.DeliveryCount,
+            message.EnqueuedTime,
+            message.ScheduledEnqueueTime,
+            message.ExpiresAt,
+            message.LockedUntil,
+            message.TimeToLive,
+            message.LockToken,
+            message.MessageId,
+            message.PartitionKey,
+            message.TransactionPartitionKey,
+            message.ReplyTo,
+            message.SequenceNumber,
+            message.EnqueuedSequenceNumber,
+            message.SessionId,
+            message.ReplyToSessionId,
+            message.DeadLetterReason,
+            message.DeadLetterSource,
+            message.DeadLetterErrorDescription,
+            message.ApplicationProperties);
 }

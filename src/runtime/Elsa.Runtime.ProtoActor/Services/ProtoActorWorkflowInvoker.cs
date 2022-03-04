@@ -5,8 +5,11 @@ using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Runtime.Contracts;
 using Elsa.Runtime.Models;
+using Elsa.Runtime.ProtoActor.Extensions;
 using Elsa.Runtime.ProtoActor.Messages;
 using Elsa.State;
+using Google.Protobuf.Collections;
+using Proto;
 using Proto.Cluster;
 
 namespace Elsa.Runtime.ProtoActor.Services;
@@ -25,13 +28,14 @@ public class ProtoActorWorkflowInvoker : IWorkflowInvoker
 
     public async Task<ExecuteWorkflowResult> ExecuteAsync(ExecuteWorkflowDefinitionRequest request, CancellationToken cancellationToken = default)
     {
-        var (definitionId, version) = request;
+        var (definitionId, version, input) = request;
         var name = GetActorName(definitionId, version);
 
         var message = new ExecuteWorkflowDefinition
         {
             Id = definitionId,
-            Version = version
+            Version = version,
+            Input = input?.Serialize()
         };
 
         var response = await _cluster.RequestAsync<ExecuteWorkflowResponse>(name, GrainKinds.WorkflowDefinition, message, cancellationToken);
@@ -43,14 +47,15 @@ public class ProtoActorWorkflowInvoker : IWorkflowInvoker
 
     public async Task<ExecuteWorkflowResult> ExecuteAsync(ExecuteWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
-        var (instanceId, bookmark) = request;
+        var (instanceId, bookmark, input) = request;
         var name = GetActorName(instanceId);
         var bookmarkMessage = MapBookmark(bookmark);
 
         var message = new ExecuteWorkflowInstance
         {
             Id = instanceId,
-            Bookmark = bookmarkMessage
+            Bookmark = bookmarkMessage,
+            Input = input?.Serialize()
         };
 
         var response = await _cluster.RequestAsync<ExecuteWorkflowResponse>(name, GrainKinds.WorkflowInstance, message, cancellationToken);
@@ -59,33 +64,35 @@ public class ProtoActorWorkflowInvoker : IWorkflowInvoker
 
         return new ExecuteWorkflowResult(workflowState, bookmarks);
     }
-    
+
     public async Task<DispatchWorkflowResult> DispatchAsync(DispatchWorkflowDefinitionRequest request, CancellationToken cancellationToken = default)
     {
-        var (definitionId, version) = request;
+        var (definitionId, version, input) = request;
         var name = GetActorName(definitionId, version);
 
         var message = new DispatchWorkflowDefinition
         {
             Id = definitionId,
-            Version = version
+            Version = version,
+            Input = input?.Serialize()
         };
 
         await _cluster.RequestAsync<Unit>(name, GrainKinds.WorkflowDefinition, message, cancellationToken);
 
         return new DispatchWorkflowResult();
     }
-    
+
     public async Task<DispatchWorkflowResult> DispatchAsync(DispatchWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
-        var (instanceId, bookmark) = request;
+        var (instanceId, bookmark, input) = request;
         var name = GetActorName(instanceId);
         var bookmarkMessage = MapBookmark(bookmark);
 
         var message = new DispatchWorkflowInstance
         {
             Id = instanceId,
-            Bookmark = bookmarkMessage
+            Bookmark = bookmarkMessage,
+            Input = input?.Serialize()
         };
 
         await _cluster.RequestAsync<Unit>(name, GrainKinds.WorkflowInstance, message, cancellationToken);

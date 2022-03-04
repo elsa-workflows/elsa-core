@@ -12,14 +12,14 @@ namespace Elsa.Runtime.Interpreters;
 
 public class ResumeWorkflowInstructionInterpreter : WorkflowInstructionInterpreter<ResumeWorkflowInstruction>
 {
-    private readonly IWorkflowEngine _workflowEngine;
+    private readonly IWorkflowRunner _workflowRunner;
     private readonly IWorkflowRegistry _workflowRegistry;
     private readonly IRequestSender _mediator;
     private readonly ILogger _logger;
 
-    public ResumeWorkflowInstructionInterpreter(IWorkflowEngine workflowEngine, IWorkflowRegistry workflowRegistry, IRequestSender mediator, ILogger<ResumeWorkflowInstructionInterpreter> logger)
+    public ResumeWorkflowInstructionInterpreter(IWorkflowRunner workflowRunner, IWorkflowRegistry workflowRegistry, IRequestSender mediator, ILogger<ResumeWorkflowInstructionInterpreter> logger)
     {
-        _workflowEngine = workflowEngine;
+        _workflowRunner = workflowRunner;
         _workflowRegistry = workflowRegistry;
         _mediator = mediator;
         _logger = logger;
@@ -52,7 +52,8 @@ public class ResumeWorkflowInstructionInterpreter : WorkflowInstructionInterpret
         // Resume workflow instance.
         var bookmark = new Bookmark(workflowBookmark.Id, workflowBookmark.Name, workflowBookmark.Hash, workflowBookmark.Payload, workflowBookmark.ActivityId, workflowBookmark.ActivityInstanceId, workflowBookmark.CallbackMethodName);
         var workflowState = workflowInstance.WorkflowState;
-        var workflowExecutionResult = await _workflowEngine.ExecuteAsync(workflow, workflowState, bookmark, cancellationToken);
+        var input = instruction.Input;
+        var workflowExecutionResult = await _workflowRunner.RunAsync(workflow, workflowState, bookmark, input, cancellationToken);
 
         // Update workflow instance with new workflow state.
         workflowInstance.WorkflowState = workflowExecutionResult.WorkflowState;

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading;
@@ -9,6 +10,7 @@ using Elsa.Models;
 using Elsa.Persistence.Models;
 using Elsa.Persistence.Requests;
 using Elsa.Runtime.Contracts;
+using Elsa.Runtime.ProtoActor.Extensions;
 using Elsa.Runtime.ProtoActor.Messages;
 using Elsa.State;
 using Proto;
@@ -23,13 +25,13 @@ public class WorkflowOperatorActor : IActor
 {
     private readonly IRequestSender _requestSender;
     private readonly IWorkflowRegistry _workflowRegistry;
-    private readonly IWorkflowEngine _workflowEngine;
+    private readonly IWorkflowRunner _workflowRunner;
 
-    public WorkflowOperatorActor(IRequestSender requestSender, IWorkflowRegistry workflowRegistry, IWorkflowEngine workflowEngine)
+    public WorkflowOperatorActor(IRequestSender requestSender, IWorkflowRegistry workflowRegistry, IWorkflowRunner workflowRunner)
     {
         _requestSender = requestSender;
         _workflowRegistry = workflowRegistry;
-        _workflowEngine = workflowEngine;
+        _workflowRunner = workflowRunner;
     }
 
     public Task ReceiveAsync(IContext context) => context.Message switch
@@ -55,8 +57,9 @@ public class WorkflowOperatorActor : IActor
 
         var workflowState = workflowInstance.WorkflowState;
         var bookmarkMessage = message.Bookmark;
+        var input = message.Input?.Deserialize();
 
-        var executionResult = await ExecuteAsync(workflow, workflowState, bookmarkMessage, cancellationToken);
+        var executionResult = await ExecuteAsync(workflow, workflowState, bookmarkMessage, input, cancellationToken);
         var response = MapResult(executionResult);
 
         context.Respond(response);
@@ -88,10 +91,10 @@ public class WorkflowOperatorActor : IActor
         return response;
     }
 
-    private async Task<ExecuteWorkflowResult> ExecuteAsync(Workflow workflow, WorkflowState workflowState, Bookmark? bookmarkMessage, CancellationToken cancellationToken)
+    private async Task<ExecuteWorkflowResult> ExecuteAsync(Workflow workflow, WorkflowState workflowState, Bookmark? bookmarkMessage, IReadOnlyDictionary<string, object?>? input, CancellationToken cancellationToken)
     {
         if (bookmarkMessage == null)
-            return await _workflowEngine.ExecuteAsync(workflow, workflowState, cancellationToken);
+            return await _workflowRunner.RunAsync(workflow, workflowState, input, cancellationToken);
 
         var bookmark =
             new Elsa.Models.Bookmark(
@@ -103,6 +106,6 @@ public class WorkflowOperatorActor : IActor
                 bookmarkMessage.ActivityInstanceId,
                 bookmarkMessage.CallbackMethodName);
 
-        return await _workflowEngine.ExecuteAsync(workflow, workflowState, bookmark, cancellationToken);
+        return await _workflowRunner.RunAsync(workflow, workflowState, bookmark, input, cancellationToken);
     }
 }

@@ -1,3 +1,3 @@
 namespace Elsa.Runtime.Models;
 
-public record DispatchWorkflowDefinitionRequest(string DefinitionId, int Version);
+public record DispatchWorkflowDefinitionRequest(string DefinitionId, int Version, IReadOnlyDictionary<string, object?>? Input = default);

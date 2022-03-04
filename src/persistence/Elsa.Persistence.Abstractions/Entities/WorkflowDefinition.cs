@@ -1,4 +1,5 @@
 using Elsa.Contracts;
+using Elsa.Models;
 
 namespace Elsa.Persistence.Entities;
 
@@ -14,6 +15,7 @@ public class WorkflowDefinition : Entity
     public int Version { get; set; } = 1;
     public IActivity Root { get; set; } = default!;
     public ICollection<ITrigger> Triggers { get; set; } = new List<ITrigger>();
+    public ICollection<Variable> Variables { get; set; } = new List<Variable>();
     public bool IsLatest { get; set; }
     public bool IsPublished { get; set; }
 

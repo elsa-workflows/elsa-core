@@ -8,6 +8,7 @@ public interface IWorkflowDefinitionBuilder
     int Version { get; }
     IActivity? Root { get; }
     ICollection<ITrigger> Triggers { get; }
+    ICollection<Variable> Variables { get; set; }
     IWorkflowDefinitionBuilder WithDefinitionId(string definitionId);
     IWorkflowDefinitionBuilder WithVersion(int version);
     IWorkflowDefinitionBuilder WithRoot(IActivity root);

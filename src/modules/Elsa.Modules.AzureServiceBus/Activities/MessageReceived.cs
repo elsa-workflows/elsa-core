@@ -1,4 +1,6 @@
+using Azure.Messaging.ServiceBus;
 using Elsa.Attributes;
+using Elsa.Formatting.Contracts;
 using Elsa.Models;
 using Elsa.Modules.AzureServiceBus.Models;
 
@@ -7,10 +9,50 @@ namespace Elsa.Modules.AzureServiceBus.Activities;
 [Activity("Azure.ServiceBus.MessageReceived", "Executes when a message is received from the configured queue or topic and subscription", "Azure Service Bus")]
 public class MessageReceived : TriggerActivity
 {
+    internal const string MessageReceivedInputKey = "ReceivedMessage";
     public Input<string> QueueOrTopic { get; set; } = default!;
     public Input<string>? Subscription { get; set; } = default!;
 
-    protected override object GetPayload(TriggerIndexingContext context)
+    /// <summary>
+    /// The expected .NET the received message contains. The received message will be deserialized into this type. Defaults to <see cref="string"/>. 
+    /// </summary>
+    public Input<Type> ExpectedMessageType { get; set; } = new(typeof(string));
+
+    /// <summary>
+    /// The received transport message.
+    /// </summary>
+    public Output<ReceivedServiceBusMessageModel>? ReceivedMessage { get; set; }
+
+    /// <summary>
+    /// The parsed body of the received message. 
+    /// </summary>
+    public Output<object>? ReceivedMessageBody { get; set; }
+
+    /// <summary>
+    /// The formatter to use to parse the message. 
+    /// </summary>
+    public IFormatter? Formatter { get; set; }
+
+    protected override object GetPayload(TriggerIndexingContext context) => GetPayload(context.ExpressionExecutionContext);
+
+    protected override void Execute(ActivityExecutionContext context)
+    {
+        var payload = GetPayload(context.ExpressionExecutionContext);
+        context.SetBookmark(payload, Resume);
+    }
+
+    private async ValueTask Resume(ActivityExecutionContext context)
+    {
+        var receivedMessage = (ReceivedServiceBusMessageModel)context.WorkflowExecutionContext.Input[MessageReceivedInputKey]!;
+        var bodyAsString = receivedMessage.Body.ToString() ?? "";
+        var targetType = context.Get(ExpectedMessageType);
+        var body = Formatter == null ? bodyAsString : await Formatter.FromStringAsync(bodyAsString, targetType, context.CancellationToken);
+        
+        context.Set(ReceivedMessage, receivedMessage);
+        context.Set(ReceivedMessageBody, body);
+    }
+
+    private object GetPayload(ExpressionExecutionContext context)
     {
         var queueOrTopic = context.Get(QueueOrTopic)!;
         var subscription = context.Get(Subscription);

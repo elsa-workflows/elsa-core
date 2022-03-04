@@ -47,7 +47,8 @@ public class WorkflowDefinitionActor : IActor
 
         var executeWorkflowInstanceMessage = new ExecuteWorkflowInstance
         {
-            Id = workflowInstance.Id
+            Id = workflowInstance.Id,
+            Input = message.Input
         };
 
         var response = await context.ClusterRequestAsync<ExecuteWorkflowResponse>(workflowInstance.Id, GrainKinds.WorkflowInstance, executeWorkflowInstanceMessage, cancellationToken);
@@ -62,7 +63,8 @@ public class WorkflowDefinitionActor : IActor
 
         var dispatchWorkflowInstanceMessage = new DispatchWorkflowInstance
         {
-            Id = workflowInstance.Id
+            Id = workflowInstance.Id,
+            Input = message.Input
         };
 
         await context.ClusterRequestAsync<Unit>(workflowInstance.Id, GrainKinds.WorkflowInstance, dispatchWorkflowInstanceMessage, cancellationToken);

@@ -55,8 +55,8 @@ class Program
         var workflowGraph = workflowFactory();
         var workflow = Workflow.FromActivity(workflowGraph);
 
-        var workflowEngine = serviceProvider.GetRequiredService<IWorkflowEngine>();
-        var workflowExecutionResult = await workflowEngine.ExecuteAsync(workflow);
+        var workflowEngine = serviceProvider.GetRequiredService<IWorkflowRunner>();
+        var workflowExecutionResult = await workflowEngine.RunAsync(workflow);
         var workflowState = workflowExecutionResult.WorkflowState;
         var bookmarks = new List<Bookmark>(workflowExecutionResult.Bookmarks);
 
@@ -77,7 +77,7 @@ class Program
 
                 Console.ReadLine();
 
-                var resumeResult = await workflowEngine.ExecuteAsync(workflow, workflowState, bookmark);
+                var resumeResult = await workflowEngine.RunAsync(workflow, workflowState, bookmark);
                 workflowState = resumeResult.WorkflowState;
                 bookmarks = resumeResult.Bookmarks.ToList();
             }

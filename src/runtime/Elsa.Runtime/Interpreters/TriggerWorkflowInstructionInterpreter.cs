@@ -33,7 +33,7 @@ public class TriggerWorkflowInstructionInterpreter : WorkflowInstructionInterpre
             return null;
 
         // Execute workflow.
-        var executeRequest = new ExecuteWorkflowDefinitionRequest(workflowId, workflow.Identity.Version);
+        var executeRequest = new ExecuteWorkflowDefinitionRequest(workflowId, workflow.Identity.Version, instruction.Input);
         var workflowExecutionResult = await _workflowInvoker.ExecuteAsync(executeRequest, cancellationToken);
 
         return new ExecuteWorkflowInstructionResult(workflow, workflowExecutionResult);
@@ -51,7 +51,7 @@ public class TriggerWorkflowInstructionInterpreter : WorkflowInstructionInterpre
             return null;
 
         // Execute workflow.
-        var dispatchRequest = new DispatchWorkflowDefinitionRequest(definitionId, workflow.Identity.Version);
+        var dispatchRequest = new DispatchWorkflowDefinitionRequest(definitionId, workflow.Identity.Version, instruction.Input);
         await _workflowInvoker.DispatchAsync(dispatchRequest, cancellationToken);
 
         return new DispatchWorkflowInstructionResult();

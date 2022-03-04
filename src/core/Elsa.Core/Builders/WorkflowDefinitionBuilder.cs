@@ -11,6 +11,7 @@ public class WorkflowDefinitionBuilder : IWorkflowDefinitionBuilder
     public int Version { get; private set; } = 1;
     public IActivity? Root { get; private set; }
     public ICollection<ITrigger> Triggers { get; } = new List<ITrigger>();
+    public ICollection<Variable> Variables { get; set; } = new List<Variable>();
 
     public IWorkflowDefinitionBuilder WithId(string id)
     {
@@ -50,6 +51,6 @@ public class WorkflowDefinitionBuilder : IWorkflowDefinitionBuilder
         var identity = new WorkflowIdentity(definitionId, Version, id);
         var publication = WorkflowPublication.LatestAndPublished;
         var metadata = new WorkflowMetadata();
-        return new Workflow(identity, publication, metadata, root, Triggers);
+        return new Workflow(identity, publication, metadata, root, Triggers, Variables);
     }
 }

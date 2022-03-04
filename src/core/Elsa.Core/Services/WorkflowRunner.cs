@@ -5,10 +5,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Services;
 
-public class WorkflowEngine : IWorkflowEngine
+public class WorkflowRunner : IWorkflowRunner
 {
-    private static ValueTask Noop(ActivityExecutionContext context) => new();
-
     private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly IActivityWalker _activityWalker;
     private readonly IWorkflowExecutionPipeline _pipeline;
@@ -16,7 +14,7 @@ public class WorkflowEngine : IWorkflowEngine
     private readonly IIdentityGraphService _identityGraphService;
     private readonly IActivitySchedulerFactory _schedulerFactory;
 
-    public WorkflowEngine(
+    public WorkflowRunner(
         IServiceScopeFactory serviceScopeFactory,
         IActivityWalker activityWalker,
         IWorkflowExecutionPipeline pipeline,
@@ -32,49 +30,49 @@ public class WorkflowEngine : IWorkflowEngine
         _schedulerFactory = schedulerFactory;
     }
 
-    public async Task<ExecuteWorkflowResult> ExecuteAsync(Workflow workflow, CancellationToken cancellationToken = default)
+    public async Task<ExecuteWorkflowResult> RunAsync(Workflow workflow, IReadOnlyDictionary<string, object?>? input, CancellationToken cancellationToken = default)
     {
         // Create a child scope.
         using var scope = _serviceScopeFactory.CreateScope();
 
         // Setup a workflow execution context.
-        var workflowExecutionContext = CreateWorkflowExecutionContext(scope.ServiceProvider, workflow, default, default, default, cancellationToken);
+        var workflowExecutionContext = CreateWorkflowExecutionContext(scope.ServiceProvider, workflow, default, default, input, default, cancellationToken);
 
         // Schedule the first node.
         workflowExecutionContext.ScheduleRoot();
 
-        return await ExecuteAsync(workflowExecutionContext);
+        return await RunAsync(workflowExecutionContext);
     }
 
-    public async Task<ExecuteWorkflowResult> ExecuteAsync(Workflow workflow, WorkflowState workflowState, CancellationToken cancellationToken = default)
+    public async Task<ExecuteWorkflowResult> RunAsync(Workflow workflow, WorkflowState workflowState, IReadOnlyDictionary<string, object?>? input, CancellationToken cancellationToken = default)
     {
         // Create a child scope.
         using var scope = _serviceScopeFactory.CreateScope();
 
         // Create workflow execution context.
-        var workflowExecutionContext = CreateWorkflowExecutionContext(scope.ServiceProvider, workflow, workflowState, default, default, cancellationToken);
+        var workflowExecutionContext = CreateWorkflowExecutionContext(scope.ServiceProvider, workflow, workflowState, default, input, default, cancellationToken);
         
         // Schedule the first node.
         workflowExecutionContext.ScheduleRoot();
         
-        return await ExecuteAsync(workflowExecutionContext);
+        return await RunAsync(workflowExecutionContext);
     }
 
-    public async Task<ExecuteWorkflowResult> ExecuteAsync(Workflow workflow, WorkflowState workflowState, Bookmark? bookmark, CancellationToken cancellationToken = default)
+    public async Task<ExecuteWorkflowResult> RunAsync(Workflow workflow, WorkflowState workflowState, Bookmark? bookmark, IReadOnlyDictionary<string, object?>? input, CancellationToken cancellationToken = default)
     {
         // Create a child scope.
         using var scope = _serviceScopeFactory.CreateScope();
 
         // Create workflow execution context.
-        var workflowExecutionContext = CreateWorkflowExecutionContext(scope.ServiceProvider, workflow, workflowState, bookmark, default, cancellationToken);
+        var workflowExecutionContext = CreateWorkflowExecutionContext(scope.ServiceProvider, workflow, workflowState, bookmark, input, default, cancellationToken);
 
         if (bookmark != null) 
             workflowExecutionContext.ScheduleBookmark(bookmark);
 
-        return await ExecuteAsync(workflowExecutionContext);
+        return await RunAsync(workflowExecutionContext);
     }
 
-    public async Task<ExecuteWorkflowResult> ExecuteAsync(WorkflowExecutionContext workflowExecutionContext)
+    public async Task<ExecuteWorkflowResult> RunAsync(WorkflowExecutionContext workflowExecutionContext)
     {
         // Execute the activity execution pipeline.
         await _pipeline.ExecuteAsync(workflowExecutionContext);
@@ -86,11 +84,12 @@ public class WorkflowEngine : IWorkflowEngine
         return new ExecuteWorkflowResult(workflowState, workflowExecutionContext.Bookmarks);
     }
 
-    public WorkflowExecutionContext CreateWorkflowExecutionContext(
+    private WorkflowExecutionContext CreateWorkflowExecutionContext(
         IServiceProvider serviceProvider,
         Workflow workflow,
         WorkflowState? workflowState,
         Bookmark? bookmark,
+        IReadOnlyDictionary<string, object?>? input,
         ExecuteActivityDelegate? executeActivityDelegate,
         CancellationToken cancellationToken)
     {
@@ -106,7 +105,7 @@ public class WorkflowEngine : IWorkflowEngine
         var scheduler = _schedulerFactory.CreateScheduler();
 
         // Setup a workflow execution context.
-        var workflowExecutionContext = new WorkflowExecutionContext(serviceProvider, workflow, graph, scheduler, bookmark, executeActivityDelegate, cancellationToken);
+        var workflowExecutionContext = new WorkflowExecutionContext(serviceProvider, workflow, graph, scheduler, bookmark, input, executeActivityDelegate, cancellationToken);
 
         // Restore workflow execution context from state, if provided.
         if (workflowState != null)

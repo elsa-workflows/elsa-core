@@ -36,7 +36,8 @@ public class WorkflowInstanceActor : IActor
         var executeWorkflowInstanceMessage = new ExecuteWorkflowInstance
         {
             Id = workflowInstanceId,
-            Bookmark = message.Bookmark
+            Bookmark = message.Bookmark,
+            Input = message.Input
         };
             
         context.Send(pid, executeWorkflowInstanceMessage);

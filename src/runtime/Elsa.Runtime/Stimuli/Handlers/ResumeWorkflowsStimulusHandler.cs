@@ -14,6 +14,6 @@ public class ResumeWorkflowsStimulusHandler : StimulusHandler<StandardStimulus>
     protected override async ValueTask<IEnumerable<IWorkflowInstruction>> GetInstructionsAsync(StandardStimulus stimulus, CancellationToken cancellationToken = default)
     {
         var workflowBookmarks = (await _mediator.RequestAsync(new FindWorkflowBookmarks(stimulus.ActivityTypeName, stimulus.Hash), cancellationToken)).ToList();
-        return workflowBookmarks.Select(x => new ResumeWorkflowInstruction(x));
+        return workflowBookmarks.Select(x => new ResumeWorkflowInstruction(x, stimulus.Input));
     }
 }

@@ -16,7 +16,7 @@ public class WorkflowIndexingContext
     {
         if (!Registers.TryGetValue(activity, out var register))
         {
-            register = new Register();
+            register = Workflow.CreateRegister();
             Registers[activity] = register;
         }
 
