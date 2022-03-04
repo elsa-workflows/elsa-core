@@ -15,5 +15,5 @@ public class TriggerIndexingContext
         Trigger = trigger;
     }
 
-    public T? Get<T>(Input<T> input) => ExpressionExecutionContext.Get<T>(input);
+    public T? Get<T>(Input<T>? input) => ExpressionExecutionContext.Get(input);
 }

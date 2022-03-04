@@ -13,7 +13,7 @@ public class MessageReceived : TriggerActivity
     protected override object GetPayload(TriggerIndexingContext context)
     {
         var queueOrTopic = context.Get(QueueOrTopic)!;
-        var subscription = context.Get(Subscription!)!;
+        var subscription = context.Get(Subscription);
         return new MessageReceivedTriggerPayload(queueOrTopic, subscription);
     }
 }

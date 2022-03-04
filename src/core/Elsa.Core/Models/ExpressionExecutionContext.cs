@@ -19,7 +19,7 @@ public class ExpressionExecutionContext
     public RegisterLocation GetLocation(RegisterLocationReference locationReference) => GetLocationInternal(locationReference) ?? throw new InvalidOperationException();
     public object Get(RegisterLocationReference locationReference) => GetLocation(locationReference).Value!;
     public T Get<T>(RegisterLocationReference locationReference) => (T)Get(locationReference);
-    public T? Get<T>(Input<T> input) => (T?)GetLocation(input.LocationReference).Value;
+    public T? Get<T>(Input<T>? input) => input != null ? (T?)GetLocation(input.LocationReference).Value : default;
 
     public void Set(RegisterLocationReference locationReference, object? value)
     {
