@@ -3,13 +3,14 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Modules.Scheduling.Activities;
 using Elsa.Modules.Scheduling.Contracts;
 using Elsa.Modules.Scheduling.Jobs;
+using Elsa.Persistence.Entities;
 using Elsa.Scheduling.Contracts;
 using Elsa.Scheduling.Schedules;
+using Elsa.Persistence.Extensions;
 
 namespace Elsa.Modules.Scheduling.Services;
 
@@ -23,23 +24,34 @@ public class WorkflowBookmarkScheduler : IWorkflowBookmarkScheduler
         _jobScheduler = jobScheduler;
     }
 
-    public async Task ScheduleBookmarksAsync(string workflowInstanceId, IEnumerable<Bookmark> bookmarks, CancellationToken cancellationToken = default)
+    public async Task ScheduleBookmarksAsync(string workflowInstanceId, IEnumerable<WorkflowBookmark> bookmarks, CancellationToken cancellationToken = default)
     {
         var bookmarkList = bookmarks.ToList();
 
         // Select all Delay bookmarks.
         var delayBookmarks = bookmarkList.Filter<Delay>().ToList();
-
-        // Unschedule all triggers for the distinct set of affected workflows.
         var groupKeys = new[] { RootGroupKey, workflowInstanceId };
-        await _jobScheduler.ClearAsync(groupKeys, cancellationToken);
 
         // Schedule a trigger for each bookmark.
         foreach (var bookmark in delayBookmarks)
         {
             var payload = JsonSerializer.Deserialize<DelayPayload>(bookmark.Payload!)!;
             var resumeAt = payload.ResumeAt;
-            await _jobScheduler.ScheduleAsync(new ResumeWorkflowJob(workflowInstanceId, bookmark), new SpecificInstantSchedule(resumeAt), groupKeys, cancellationToken);
+            var job = new ResumeWorkflowJob(workflowInstanceId, bookmark.ToBookmark());
+            var schedule = new SpecificInstantSchedule(resumeAt);
+            await _jobScheduler.ScheduleAsync(job, schedule, groupKeys, cancellationToken);
+        }
+    }
+
+    public async Task UnscheduleBookmarksAsync(string workflowInstanceId, IEnumerable<WorkflowBookmark> bookmarks, CancellationToken cancellationToken = default)
+    {
+        var bookmarkList = bookmarks.ToList();
+        var delayBookmarks = bookmarkList.Filter<Delay>().ToList();
+
+        foreach (var bookmark in delayBookmarks)
+        {
+            var job = new ResumeWorkflowJob(workflowInstanceId, bookmark.ToBookmark());
+            await _jobScheduler.UnscheduleAsync(job, cancellationToken);
         }
     }
 }

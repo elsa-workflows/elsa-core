@@ -6,6 +6,7 @@ using Elsa.Modules.Scheduling.Jobs;
 using Elsa.Modules.Scheduling.Services;
 using Elsa.Scheduling.Extensions;
 using Microsoft.Extensions.DependencyInjection;
+using ScheduleWorkflows = Elsa.Modules.Scheduling.HostedServices.ScheduleWorkflows;
 
 namespace Elsa.Modules.Scheduling.Extensions;
 
@@ -18,8 +19,8 @@ public static class ServiceCollectionExtensions
             .AddSingleton<IWorkflowBookmarkScheduler, WorkflowBookmarkScheduler>()
             .AddJobHandler<RunWorkflowJobHandler>()
             .AddJobHandler<ResumeWorkflowJobHandler>()
-            .AddNotificationHandlersFrom<ScheduleWorkflows>()
-            .AddHostedService<ScheduleWorkflowsHostedService>();
+            .AddNotificationHandlersFrom<Handlers.ScheduleWorkflows>()
+            .AddHostedService<ScheduleWorkflows>();
 
         return services;
     }

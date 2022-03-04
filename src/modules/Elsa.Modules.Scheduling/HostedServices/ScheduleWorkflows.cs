@@ -13,34 +13,22 @@ using Timer = Elsa.Modules.Scheduling.Triggers.Timer;
 namespace Elsa.Modules.Scheduling.HostedServices;
 
 /// <summary>
-/// Loads all timer-specific workflow triggers from the database and create scheduled jobs for them. 
+/// Loads all timer-specific workflow bookmarks from the database and create scheduled jobs for them. 
 /// </summary>
-public class ScheduleWorkflowsHostedService : BackgroundService
+public class ScheduleWorkflows : BackgroundService
 {
     private readonly IRequestSender _requestSender;
-    private readonly IWorkflowTriggerScheduler _workflowTriggerScheduler;
     private readonly IWorkflowBookmarkScheduler _workflowBookmarkScheduler;
 
-    public ScheduleWorkflowsHostedService(
-        IRequestSender requestSender,
-        IWorkflowTriggerScheduler workflowTriggerScheduler,
-        IWorkflowBookmarkScheduler workflowBookmarkScheduler)
+    public ScheduleWorkflows(IRequestSender requestSender, IWorkflowBookmarkScheduler workflowBookmarkScheduler)
     {
         _requestSender = requestSender;
-        _workflowTriggerScheduler = workflowTriggerScheduler;
         _workflowBookmarkScheduler = workflowBookmarkScheduler;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await ScheduleTriggersAsync(stoppingToken);
         await ScheduleBookmarksAsync(stoppingToken);
-    }
-
-    private async Task ScheduleTriggersAsync(CancellationToken cancellationToken)
-    {
-        var timerTriggers = (await _requestSender.RequestAsync(FindWorkflowTriggersByName.ForTrigger<Timer>(), cancellationToken)).ToImmutableList();
-        await _workflowTriggerScheduler.ScheduleTriggersAsync(timerTriggers, cancellationToken);
     }
 
     private async Task ScheduleBookmarksAsync(CancellationToken cancellationToken)
@@ -51,8 +39,7 @@ public class ScheduleWorkflowsHostedService : BackgroundService
         foreach (var bookmarksGroup in groupedBookmarks)
         {
             var workflowInstanceId = bookmarksGroup.Key;
-            var bookmarks = bookmarksGroup.Select(x => x.ToBookmark()).ToList();
-            await _workflowBookmarkScheduler.ScheduleBookmarksAsync(workflowInstanceId, bookmarks, cancellationToken);
+            await _workflowBookmarkScheduler.ScheduleBookmarksAsync(workflowInstanceId, bookmarksGroup, cancellationToken);
         }
     }
 }

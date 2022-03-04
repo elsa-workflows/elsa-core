@@ -4,10 +4,10 @@ using Elsa.Runtime.Contracts;
 
 namespace Elsa.Runtime.Handlers;
 
-public class IndexWorkflowTriggersHandler : INotificationHandler<WorkflowPublished>, INotificationHandler<WorkflowRetracted>
+public class IndexWorkflowTriggers : INotificationHandler<WorkflowPublished>, INotificationHandler<WorkflowRetracted>
 {
     private readonly ITriggerIndexer _triggerIndexer;
-    public IndexWorkflowTriggersHandler(ITriggerIndexer triggerIndexer) => _triggerIndexer = triggerIndexer;
+    public IndexWorkflowTriggers(ITriggerIndexer triggerIndexer) => _triggerIndexer = triggerIndexer;
     public async Task HandleAsync(WorkflowPublished notification, CancellationToken cancellationToken) => await _triggerIndexer.IndexTriggersAsync(notification.Workflow, cancellationToken);
     public async Task HandleAsync(WorkflowRetracted notification, CancellationToken cancellationToken) => await _triggerIndexer.IndexTriggersAsync(notification.Workflow, cancellationToken);
 }

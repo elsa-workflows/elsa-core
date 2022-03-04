@@ -57,7 +57,7 @@ public class TriggerIndexer : ITriggerIndexer
         _logger = logger;
     }
 
-    public async Task<ICollection<IndexedWorkflow>> IndexTriggersAsync(CancellationToken cancellationToken = default)
+    public async Task<ICollection<IndexedWorkflowTriggers>> IndexTriggersAsync(CancellationToken cancellationToken = default)
     {
         var stopwatch = new Stopwatch();
 
@@ -68,7 +68,7 @@ public class TriggerIndexer : ITriggerIndexer
         var workflows = _workflowRegistry.StreamAllAsync(WorkflowRegistry.SkipDynamicProviders, cancellationToken);
 
         // Index each workflow.
-        var indexedWorkflows = new Collection<IndexedWorkflow>();
+        var indexedWorkflows = new Collection<IndexedWorkflowTriggers>();
         await foreach (var workflow in workflows.WithCancellation(cancellationToken))
         {
             var indexedWorkflow = await IndexTriggersAsync(workflow, cancellationToken);
@@ -83,7 +83,7 @@ public class TriggerIndexer : ITriggerIndexer
         return indexedWorkflows;
     }
 
-    public async Task<IndexedWorkflow> IndexTriggersAsync(Workflow workflow, CancellationToken cancellationToken = default)
+    public async Task<IndexedWorkflowTriggers> IndexTriggersAsync(Workflow workflow, CancellationToken cancellationToken = default)
     {
         // Get current triggers
         var currentTriggers = await GetCurrentTriggersAsync(workflow.Identity.DefinitionId, cancellationToken);
@@ -99,7 +99,7 @@ public class TriggerIndexer : ITriggerIndexer
         // Replace triggers for the specified workflow.
         await _commandSender.ExecuteAsync(new ReplaceWorkflowTriggers(workflow, diff.Removed, diff.Added), cancellationToken);
 
-        var indexedWorkflow = new IndexedWorkflow(workflow, diff.Added, diff.Removed);
+        var indexedWorkflow = new IndexedWorkflowTriggers(workflow, diff.Added, diff.Removed);
 
         // Publish event.
         await _eventPublisher.PublishAsync(new WorkflowTriggersIndexed(indexedWorkflow), cancellationToken);

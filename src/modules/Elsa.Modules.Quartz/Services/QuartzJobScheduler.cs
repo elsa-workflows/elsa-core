@@ -31,6 +31,13 @@ public class QuartzJobScheduler : IJobScheduler
         await ScheduleJob(quartzTrigger, cancellationToken);
     }
 
+    public async Task UnscheduleAsync(IElsaJob job, CancellationToken cancellationToken = default)
+    {
+        var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
+        var triggerKey = new TriggerKey(job.JobId);
+        await scheduler.UnscheduleJob(triggerKey, cancellationToken);
+    }
+
     public async Task ClearAsync(string[]? groupKeys = default, CancellationToken cancellationToken = default)
     {
         var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
@@ -53,7 +60,7 @@ public class QuartzJobScheduler : IJobScheduler
             _logger.LogWarning(e, "Failed to schedule trigger {TriggerKey}", trigger.Key.ToString());
         }
     }
-    
+
     private ITrigger CreateTrigger(IElsaJob job, IElsaSchedule schedule, string[]? groupKeys)
     {
         var jobName = job.GetType().Name;
@@ -87,11 +94,10 @@ public class QuartzJobScheduler : IJobScheduler
 
         return builder.Build();
     }
-    
+
     private static string BuildGroupKey(string[]? groupKeys)
     {
         var groupKeyInputs = new[] { RootGroupKey }.Concat(groupKeys ?? Array.Empty<string>());
         return string.Join(":", groupKeyInputs);
     }
-
 }

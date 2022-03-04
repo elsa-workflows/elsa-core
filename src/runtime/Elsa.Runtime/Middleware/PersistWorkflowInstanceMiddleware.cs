@@ -8,6 +8,7 @@ using Elsa.Persistence.Requests;
 using Elsa.Pipelines.WorkflowExecution;
 using Elsa.Pipelines.WorkflowExecution.Components;
 using Elsa.Runtime.Contracts;
+using Elsa.Runtime.Models;
 
 namespace Elsa.Runtime.Middleware;
 
@@ -18,6 +19,7 @@ public class PersistWorkflowInstanceMiddleware : WorkflowExecutionMiddleware
 {
     private readonly IRequestSender _requestSender;
     private readonly ICommandSender _commandSender;
+    private readonly IEventPublisher _eventPublisher;
     private readonly IWorkflowStateSerializer _workflowStateSerializer;
     private readonly IBookmarkManager _bookmarkManager;
     private readonly IIdentityGenerator _identityGenerator;
@@ -27,6 +29,7 @@ public class PersistWorkflowInstanceMiddleware : WorkflowExecutionMiddleware
         WorkflowMiddlewareDelegate next,
         IRequestSender requestSender,
         ICommandSender commandSender,
+        IEventPublisher eventPublisher,
         IBookmarkManager bookmarkManager,
         IWorkflowStateSerializer workflowStateSerializer,
         IIdentityGenerator identityGenerator,
@@ -34,6 +37,7 @@ public class PersistWorkflowInstanceMiddleware : WorkflowExecutionMiddleware
     {
         _requestSender = requestSender;
         _commandSender = commandSender;
+        _eventPublisher = eventPublisher;
         _bookmarkManager = bookmarkManager;
         _workflowStateSerializer = workflowStateSerializer;
         _identityGenerator = identityGenerator;
@@ -95,5 +99,8 @@ public class PersistWorkflowInstanceMiddleware : WorkflowExecutionMiddleware
         // Persist created bookmarks.
         var createdBookmarks = diff.Added.Select(x => WorkflowBookmark.FromBookmark(x, workflowInstance)).ToList();
         await _bookmarkManager.SaveBookmarksAsync(createdBookmarks, cancellationToken);
+        
+        // Publish an event so that observers can update their workers.
+        await _eventPublisher.PublishAsync(new WorkflowBookmarksIndexed(new IndexedWorkflowBookmarks(workflowState, createdBookmarks, removedBookmarks)), cancellationToken);
     }
 }

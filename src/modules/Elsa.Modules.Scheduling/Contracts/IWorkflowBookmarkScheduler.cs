@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
+using Elsa.Persistence.Entities;
 
 namespace Elsa.Modules.Scheduling.Contracts;
 
@@ -10,5 +11,6 @@ namespace Elsa.Modules.Scheduling.Contracts;
 /// </summary>
 public interface IWorkflowBookmarkScheduler
 {
-    Task ScheduleBookmarksAsync(string workflowInstanceId, IEnumerable<Bookmark> bookmarks, CancellationToken cancellationToken = default);
+    Task ScheduleBookmarksAsync(string workflowInstanceId, IEnumerable<WorkflowBookmark> bookmarks, CancellationToken cancellationToken = default);
+    Task UnscheduleBookmarksAsync(string workflowInstanceId, IEnumerable<WorkflowBookmark> bookmarks, CancellationToken cancellationToken = default);
 }

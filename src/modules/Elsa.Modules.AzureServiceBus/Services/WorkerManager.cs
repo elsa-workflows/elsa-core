@@ -26,6 +26,7 @@ public class WorkerManager : IWorkerManager, IAsyncDisposable
             return;
         }
 
+        subscription ??= "";
         worker = ActivatorUtilities.CreateInstance<Worker>(_serviceProvider, queueOrTopic, subscription!);
 
         _workers.Add(worker);

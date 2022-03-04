@@ -25,7 +25,7 @@ public class Worker : IAsyncDisposable
     public Worker(string queueOrTopic, string? subscription, ServiceBusClient client, IHasher hasher, IWorkflowServer workflowServer, ILogger<Worker> logger)
     {
         QueueOrTopic = queueOrTopic;
-        Subscription = subscription;
+        Subscription = subscription == "" ? default : subscription;
         _hasher = hasher;
         _workflowServer = workflowServer;
         _logger = logger;
@@ -64,7 +64,7 @@ public class Worker : IAsyncDisposable
 
     private Task OnErrorAsync(ProcessErrorEventArgs args)
     {
-        _logger.LogError(args.Exception, "An error occurred while processing {EnrityPath}", args.EntityPath);
+        _logger.LogError(args.Exception, "An error occurred while processing {EntityPath}", args.EntityPath);
         return Task.CompletedTask;
     }
 

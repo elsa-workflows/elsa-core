@@ -7,4 +7,4 @@ namespace Elsa.Runtime.Models;
 /// Published when the all workflows' triggers have been indexed.
 /// </summary>
 /// <param name="IndexedWorkflows">Contains the workflows that were indexed and their resulting triggers.</param>
-public record WorkflowIndexingCompleted(ICollection<IndexedWorkflow> IndexedWorkflows) : INotification;
+public record WorkflowIndexingCompleted(ICollection<IndexedWorkflowTriggers> IndexedWorkflows) : INotification;

@@ -28,8 +28,8 @@ public class UpdateWorkers : INotificationHandler<WorkflowTriggersIndexed>, INot
     /// </summary>
     public async Task HandleAsync(WorkflowTriggersIndexed notification, CancellationToken cancellationToken)
     {
-        var added = notification.IndexedWorkflow.AddedTriggers.Filter<MessageReceived>().Select(x => DeserializePayload(x.Payload!));
-        var removed = notification.IndexedWorkflow.RemovedTriggers.Filter<MessageReceived>().Select(x => DeserializePayload(x.Payload!));
+        var added = notification.IndexedWorkflowTriggers.AddedTriggers.Filter<MessageReceived>().Select(x => DeserializePayload(x.Payload!));
+        var removed = notification.IndexedWorkflowTriggers.RemovedTriggers.Filter<MessageReceived>().Select(x => DeserializePayload(x.Payload!));
 
         await StopWorkersAsync(removed, cancellationToken);
         await StartWorkersAsync(added, cancellationToken);
