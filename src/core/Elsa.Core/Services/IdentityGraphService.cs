@@ -71,9 +71,10 @@ public class IdentityGraphService : IIdentityGraphService
         if (!string.IsNullOrWhiteSpace(activityNode.NodeId))
             return activityNode.NodeId;
 
-        var type = activityNode.Activity.TypeName;
-        var index = GetNextIndexFor(type, identityCounters);
-        var name = $"{Camelize(type)}{index + 1}";
+        var fullTypeName = activityNode.Activity.TypeName;
+        var shortTypeName = fullTypeName.Split('.').Last();
+        var index = GetNextIndexFor(shortTypeName, identityCounters);
+        var name = $"{shortTypeName}{index + 1}";
         return name;
     }
 
@@ -91,6 +92,4 @@ public class IdentityGraphService : IIdentityGraphService
 
         return index;
     }
-
-    private string Camelize(string symbol) => char.ToLowerInvariant(symbol[0]) + symbol[1..];
 }
