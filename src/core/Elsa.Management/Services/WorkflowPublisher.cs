@@ -39,7 +39,7 @@ namespace Elsa.Management.Services
 
         public async Task<Workflow?> PublishAsync(string definitionId, CancellationToken cancellationToken = default)
         {
-            var workflow = await _mediator.RequestAsync(new FindWorkflow(definitionId, VersionOptions.Latest), cancellationToken);
+            var workflow = await _mediator.RequestAsync(new FindWorkflowByDefinitionId(definitionId, VersionOptions.Latest), cancellationToken);
 
             if (workflow == null)
                 return null;
@@ -78,7 +78,7 @@ namespace Elsa.Management.Services
 
         public async Task<Workflow?> RetractAsync(string definitionId, CancellationToken cancellationToken = default)
         {
-            var workflow = await _mediator.RequestAsync(new FindWorkflow(definitionId, VersionOptions.Published), cancellationToken);
+            var workflow = await _mediator.RequestAsync(new FindWorkflowByDefinitionId(definitionId, VersionOptions.Published), cancellationToken);
 
             if (workflow == null)
                 return null;
@@ -102,7 +102,7 @@ namespace Elsa.Management.Services
 
         public async Task<Workflow?> GetDraftAsync(string definitionId, CancellationToken cancellationToken = default)
         {
-            var workflow = await _mediator.RequestAsync(new FindWorkflow(definitionId, VersionOptions.Latest), cancellationToken);
+            var workflow = await _mediator.RequestAsync(new FindWorkflowByDefinitionId(definitionId, VersionOptions.Latest), cancellationToken);
 
             if (workflow == null)
                 return null;
@@ -126,7 +126,7 @@ namespace Elsa.Management.Services
         {
             var draft = workflow;
             var definitionId = workflow.Identity.DefinitionId;
-            var latestVersion = await _mediator.RequestAsync(new FindWorkflow(definitionId, VersionOptions.Latest), cancellationToken);
+            var latestVersion = await _mediator.RequestAsync(new FindWorkflowByDefinitionId(definitionId, VersionOptions.Latest), cancellationToken);
 
             if (latestVersion?.Publication is { IsPublished: true, IsLatest: true })
             {

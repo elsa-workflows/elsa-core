@@ -9,7 +9,7 @@ using Elsa.Persistence.Requests;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Handlers.Requests;
 
-public class FindWorkflowHandler : IRequestHandler<FindWorkflow, Workflow?>
+public class FindWorkflowHandler : IRequestHandler<FindWorkflowByDefinitionId, Workflow?>, IRequestHandler<FindWorkflowByName, Workflow?>
 {
     private readonly IStore<WorkflowDefinition> _store;
     private readonly WorkflowDefinitionMapper _mapper;
@@ -20,9 +20,18 @@ public class FindWorkflowHandler : IRequestHandler<FindWorkflow, Workflow?>
         _mapper = mapper;
     }
 
-    public async Task<Workflow?> HandleAsync(FindWorkflow request, CancellationToken cancellationToken)
+    public async Task<Workflow?> HandleAsync(FindWorkflowByDefinitionId request, CancellationToken cancellationToken)
     {
         Expression<Func<WorkflowDefinition, bool>> predicate = x => x.DefinitionId == request.DefinitionId;
+        predicate = predicate.WithVersion(request.VersionOptions);
+        var definition = await _store.FindAsync(predicate, cancellationToken);
+
+        return _mapper.Map(definition);
+    }
+
+    public async Task<Workflow?> HandleAsync(FindWorkflowByName request, CancellationToken cancellationToken)
+    {
+        Expression<Func<WorkflowDefinition, bool>> predicate = x => x.Name == request.Name;
         predicate = predicate.WithVersion(request.VersionOptions);
         var definition = await _store.FindAsync(predicate, cancellationToken);
 

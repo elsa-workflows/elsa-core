@@ -3,8 +3,8 @@ using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Runtime.Contracts;
 using Elsa.Runtime.Models;
-using Elsa.Scheduling.Abstractions;
-using Elsa.Scheduling.Contracts;
+using Elsa.Jobs.Abstractions;
+using Elsa.Jobs.Contracts;
 
 namespace Elsa.Modules.Scheduling.Jobs;
 

@@ -1,12 +1,12 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Scheduling.Contracts;
+using Elsa.Jobs.Contracts;
 
-namespace Elsa.Scheduling.Abstractions;
+namespace Elsa.Jobs.Abstractions;
 
 public abstract class JobHandler<T> : IJobHandler where T : IJob
 {
-    public bool Supports(IJob job) => job is T;
+    public bool GetSupports(IJob job) => job is T;
 
     public virtual Task HandleAsync(IJob job, CancellationToken cancellationToken) => HandleAsync((T)job, cancellationToken);
 

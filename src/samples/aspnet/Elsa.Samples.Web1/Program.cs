@@ -3,6 +3,7 @@ using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Workflows;
 using Elsa.Api.Extensions;
 using Elsa.Extensions;
+using Elsa.Jobs.Extensions;
 using Elsa.Management.Contracts;
 using Elsa.Management.Extensions;
 using Elsa.Mediator.Extensions;
@@ -22,7 +23,6 @@ using Elsa.Runtime.Extensions;
 using Elsa.Runtime.ProtoActor.Extensions;
 using Elsa.Samples.Web1.Activities;
 using Elsa.Samples.Web1.Workflows;
-using Elsa.Scheduling.Extensions;
 using Elsa.Scripting.JavaScript.Extensions;
 using Elsa.Scripting.Liquid.Extensions;
 using Microsoft.AspNetCore.Builder;
@@ -43,9 +43,9 @@ services
     .AddProtoActorWorkflowHost()
     .IndexWorkflowTriggers()
     .AddElsaManagement()
-    .AddScheduling(new QuartzSchedulingServiceProvider())
+    .AddJobs(new QuartzSchedulingServiceProvider())
     .AddHttpActivityServices()
-    .AddSchedulingActivities()
+    .AddJobServices()
     .AddAzureServiceBusServices(options => configuration.GetSection("AzureServiceBus").Bind(options))
     .ConfigureWorkflowRuntime(options =>
     {

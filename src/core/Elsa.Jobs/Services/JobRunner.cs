@@ -3,22 +3,22 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Scheduling.Contracts;
+using Elsa.Jobs.Contracts;
 
-namespace Elsa.Scheduling.Services;
+namespace Elsa.Jobs.Services;
 
-public class JobManager : IJobManager
+public class JobRunner : IJobRunner
 {
     private readonly IEnumerable<IJobHandler> _handlers;
 
-    public JobManager(IEnumerable<IJobHandler> handlers)
+    public JobRunner(IEnumerable<IJobHandler> handlers)
     {
         _handlers = handlers;
     }
 
-    public async Task ExecuteJobAsync(IJob job, CancellationToken cancellationToken = default)
+    public async Task RunJobAsync(IJob job, CancellationToken cancellationToken = default)
     {
-        var handler = _handlers.FirstOrDefault(x => x.Supports(job));
+        var handler = _handlers.FirstOrDefault(x => x.GetSupports(job));
 
         if (handler == null)
             throw new NotSupportedException($"The specified job of type {job.GetType().Name} does not have a handler");

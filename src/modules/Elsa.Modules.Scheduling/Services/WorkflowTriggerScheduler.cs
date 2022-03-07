@@ -8,8 +8,8 @@ using Elsa.Modules.Scheduling.Jobs;
 using Elsa.Modules.Scheduling.Triggers;
 using Elsa.Persistence.Entities;
 using Elsa.Persistence.Extensions;
-using Elsa.Scheduling.Contracts;
-using Elsa.Scheduling.Schedules;
+using Elsa.Jobs.Contracts;
+using Elsa.Jobs.Schedules;
 using Timer = Elsa.Modules.Scheduling.Triggers.Timer;
 
 namespace Elsa.Modules.Scheduling.Services;

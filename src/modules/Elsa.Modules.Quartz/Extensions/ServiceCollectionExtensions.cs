@@ -1,21 +1,21 @@
+using Elsa.Jobs.Contracts;
 using Elsa.Modules.Quartz.Contracts;
 using Elsa.Modules.Quartz.Jobs;
 using Elsa.Modules.Quartz.Services;
 using Elsa.Modules.Scheduling.Jobs;
-using Elsa.Scheduling.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz;
-using IElsaJob = Elsa.Scheduling.Contracts.IJob;
+using IJob = Elsa.Jobs.Contracts.IJob;
 
 namespace Elsa.Modules.Quartz.Extensions;
 
 public static class ServiceCollectionExtensions
 {
     /// <summary>
-    /// This will register both Quartz as well as Elsa-specific services and jobs.
-    /// If you prefer to register Quartz yourself, use <see cref="ConfigureQuartzModule"/>
+    /// Registers both Quartz as well as Elsa-specific services and jobs.
+    /// If you register Quartz yourself, use <see cref="AddQuartzModule"/> instead.
     /// </summary>
-    public static IServiceCollection AddQuartzModule(
+    public static IServiceCollection AddQuartzAndModule(
         this IServiceCollection services,
         Action<QuartzOptions>? configureQuartzOptions = default,
         Action<IServiceCollectionQuartzConfigurator>? configureQuartz = default,
@@ -28,15 +28,15 @@ public static class ServiceCollectionExtensions
             .AddQuartz(configure =>
             {
                 ConfigureQuartz(configure, configureQuartz);
-                ConfigureQuartzModule(services, configure);
+                AddQuartzModule(services, configure);
             })
             .AddQuartzHostedService(options => ConfigureQuartzHostedService(options, configureQuartzHostedService));
     }
 
     /// <summary>
-    /// This will register Elsa-specific services and jobs, but will **not** register Quartz itself. To register Quartz, you need to do so yourself, or use <see cref="AddQuartzModule"/> to register & configure Quartz for Elsa.
+    /// This will register Elsa-specific services and jobs, but will **not** register Quartz itself. To register Quartz, you need to do so yourself, or use <see cref="AddQuartzAndModule"/> to register & configure Quartz for Elsa.
     /// </summary>
-    public static IServiceCollection ConfigureQuartzModule(this IServiceCollection services, IServiceCollectionQuartzConfigurator quartz)
+    public static IServiceCollection AddQuartzModule(this IServiceCollection services, IServiceCollectionQuartzConfigurator quartz)
     {
         services
             .AddSingleton<IElsaJobSerializer, ElsaJobSerializer>()
@@ -61,7 +61,7 @@ public static class ServiceCollectionExtensions
         configureQuartzHostedService?.Invoke(options);
     }
 
-    private static IServiceCollectionQuartzConfigurator AddJob<TJob>(this IServiceCollectionQuartzConfigurator quartz) where TJob : IElsaJob =>
+    private static IServiceCollectionQuartzConfigurator AddJob<TJob>(this IServiceCollectionQuartzConfigurator quartz) where TJob : IJob =>
         quartz.AddJob<QuartzJob<TJob>>(job => job.StoreDurably().WithIdentity(typeof(TJob).Name));
 
     private static void ConfigureQuartz(IServiceCollectionQuartzConfigurator quartz, Action<IServiceCollectionQuartzConfigurator>? configureQuartz)

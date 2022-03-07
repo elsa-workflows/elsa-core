@@ -2,9 +2,13 @@
 
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <LangVersion>Latest</LangVersion>
     </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Hangfire.Core" Version="1.7.28" />
+    </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\..\core\Elsa.Jobs\Elsa.Jobs.csproj" />

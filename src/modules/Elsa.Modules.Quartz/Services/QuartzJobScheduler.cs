@@ -1,12 +1,12 @@
-﻿using Elsa.Modules.Quartz.Contracts;
-using Elsa.Scheduling.Contracts;
-using Elsa.Scheduling.Schedules;
+﻿using Elsa.Jobs.Contracts;
+using Elsa.Jobs.Schedules;
+using Elsa.Modules.Quartz.Contracts;
 using Microsoft.Extensions.Logging;
 using Quartz;
 using Quartz.Impl.Matchers;
-using IElsaJobScheduler = Elsa.Scheduling.Contracts.IJobScheduler;
-using IElsaJob = Elsa.Scheduling.Contracts.IJob;
-using IElsaSchedule = Elsa.Scheduling.Contracts.ISchedule;
+using IElsaJobScheduler = Elsa.Jobs.Contracts.IJobScheduler;
+using IElsaSchedule = Elsa.Jobs.Contracts.ISchedule;
+using IJob = Elsa.Jobs.Contracts.IJob;
 
 namespace Elsa.Modules.Quartz.Services;
 
@@ -25,13 +25,13 @@ public class QuartzJobScheduler : IJobScheduler
         _logger = logger;
     }
 
-    public async Task ScheduleAsync(IElsaJob job, IElsaSchedule schedule, string[]? groupKeys, CancellationToken cancellationToken = default)
+    public async Task ScheduleAsync(IJob job, IElsaSchedule schedule, string[]? groupKeys, CancellationToken cancellationToken = default)
     {
         var quartzTrigger = CreateTrigger(job, schedule, groupKeys);
         await ScheduleJob(quartzTrigger, cancellationToken);
     }
 
-    public async Task UnscheduleAsync(IElsaJob job, CancellationToken cancellationToken = default)
+    public async Task UnscheduleAsync(IJob job, CancellationToken cancellationToken = default)
     {
         var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
         var triggerKey = new TriggerKey(job.JobId);
@@ -61,7 +61,7 @@ public class QuartzJobScheduler : IJobScheduler
         }
     }
 
-    private ITrigger CreateTrigger(IElsaJob job, IElsaSchedule schedule, string[]? groupKeys)
+    private ITrigger CreateTrigger(IJob job, IElsaSchedule schedule, string[]? groupKeys)
     {
         var jobName = job.GetType().Name;
         var groupKey = BuildGroupKey(groupKeys);

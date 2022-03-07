@@ -10,11 +10,11 @@ public record WorkflowInstanceSummary(
     WorkflowStatus WorkflowStatus,
     string CorrelationId,
     string? Name,
-    DateTime CreatedAt,
-    DateTime? LastExecutedAt,
-    DateTime? FinishedAt,
-    DateTime? CancelledAt,
-    DateTime? FaultedAt)
+    DateTimeOffset CreatedAt,
+    DateTimeOffset? LastExecutedAt,
+    DateTimeOffset? FinishedAt,
+    DateTimeOffset? CancelledAt,
+    DateTimeOffset? FaultedAt)
 {
     public static WorkflowInstanceSummary FromInstance(WorkflowInstance workflowInstance) => new(
         workflowInstance.Id,

@@ -4,5 +4,5 @@ namespace Elsa.Services;
 
 public class SystemClock : ISystemClock
 {
-    public DateTime UtcNow => DateTime.UtcNow;
+    public DateTimeOffset UtcNow => DateTimeOffset.UtcNow;
 }

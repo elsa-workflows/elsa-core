@@ -48,6 +48,9 @@ public class ActivityExecutionContext
     /// </summary>
     public ActivityNode ActivityNode => WorkflowExecutionContext.FindNodeByActivity(Activity);
 
+    /// <summary>
+    /// A list of bookmarks created by the current activity.
+    /// </summary>
     public IReadOnlyCollection<Bookmark> Bookmarks => new ReadOnlyCollection<Bookmark>(_bookmarks);
 
     /// <summary>
@@ -59,16 +62,31 @@ public class ActivityExecutionContext
     /// A dictionary of received inputs.
     /// </summary>
     public IReadOnlyDictionary<string, object> Input => WorkflowExecutionContext.Input;
+    
+    /// <summary>
+    /// Journal data will be added to the workflow execution log for the "Executed" event.  
+    /// </summary>
+    public IDictionary<string, object?> JournalData { get; private set; } = new Dictionary<string, object?>();
 
-    public void ScheduleActivity(IActivity activity, ActivityCompletionCallback? completionCallback = default, IEnumerable<RegisterLocationReference>? locationReferences = default, object? tag = default) =>
+    public void ScheduleActivity(IActivity? activity, ActivityCompletionCallback? completionCallback = default, IEnumerable<RegisterLocationReference>? locationReferences = default, object? tag = default)
+    {
+        if (activity == null)
+            return;
+
         WorkflowExecutionContext.Schedule(activity, this, completionCallback, locationReferences, tag);
+    }
 
-    public void ScheduleActivity(IActivity activity, ActivityExecutionContext owner, ActivityCompletionCallback? completionCallback = default, IEnumerable<RegisterLocationReference>? locationReferences = default, object? tag = default) =>
+    public void ScheduleActivity(IActivity? activity, ActivityExecutionContext owner, ActivityCompletionCallback? completionCallback = default, IEnumerable<RegisterLocationReference>? locationReferences = default, object? tag = default)
+    {
+        if (activity == null)
+            return;
+
         WorkflowExecutionContext.Schedule(activity, owner, completionCallback, locationReferences, tag);
+    }
 
-    public void ScheduleActivities(params IActivity[] activities) => ScheduleActivities((IEnumerable<IActivity>)activities);
+    public void ScheduleActivities(params IActivity?[] activities) => ScheduleActivities((IEnumerable<IActivity?>)activities);
 
-    public void ScheduleActivities(IEnumerable<IActivity> activities, ActivityCompletionCallback? completionCallback = default)
+    public void ScheduleActivities(IEnumerable<IActivity?> activities, ActivityCompletionCallback? completionCallback = default)
     {
         foreach (var activity in activities)
             ScheduleActivity(activity, completionCallback);

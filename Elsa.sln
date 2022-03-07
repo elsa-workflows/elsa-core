@@ -76,7 +76,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "modules", "modules", "{5BA4
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Modules.Quartz", "src\modules\Elsa.Modules.Quartz\Elsa.Modules.Quartz.csproj", "{7D5A49B4-9A9B-496E-803B-DEB85B2C3132}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Scheduling", "src\core\Elsa.Scheduling\Elsa.Scheduling.csproj", "{50697882-E38B-4CE7-B041-8009C18490E0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Jobs", "src\core\Elsa.Jobs\Elsa.Jobs.csproj", "{50697882-E38B-4CE7-B041-8009C18490E0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Modules.Http", "src\modules\Elsa.Modules.Http\Elsa.Modules.Http.csproj", "{82E26BF9-5F3A-4365-899A-AB1FFD54AA45}"
 EndProject
@@ -87,6 +87,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Formatting", "src\core\Elsa.Formatting\Elsa.Formatting.csproj", "{49716A83-239C-4913-BC11-E379ED2F676E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Modules.JavaScript", "src\modules\Elsa.Modules.JavaScript\Elsa.Modules.JavaScript.csproj", "{D31581AB-A6C1-4B73-AB63-45667F6C82AE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Modules.Hangfire", "src\modules\Elsa.Modules.Hangfire\Elsa.Modules.Hangfire.csproj", "{0601A2A6-2C62-418B-9104-8CDE497E5283}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -194,6 +196,10 @@ Global
 		{D31581AB-A6C1-4B73-AB63-45667F6C82AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D31581AB-A6C1-4B73-AB63-45667F6C82AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D31581AB-A6C1-4B73-AB63-45667F6C82AE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0601A2A6-2C62-418B-9104-8CDE497E5283}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0601A2A6-2C62-418B-9104-8CDE497E5283}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0601A2A6-2C62-418B-9104-8CDE497E5283}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0601A2A6-2C62-418B-9104-8CDE497E5283}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{155227F0-A33B-40AA-A4B4-06F813EB921B} = {61017E64-6D00-49CB-9E81-5002DC8F7D5F}
@@ -233,5 +239,6 @@ Global
 		{24C7095B-5CDD-4369-9F34-5565A019B195} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{49716A83-239C-4913-BC11-E379ED2F676E} = {C6658DE0-2B2F-47F0-BB61-2CA66D435C09}
 		{D31581AB-A6C1-4B73-AB63-45667F6C82AE} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
+		{0601A2A6-2C62-418B-9104-8CDE497E5283} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 	EndGlobalSection
 EndGlobal

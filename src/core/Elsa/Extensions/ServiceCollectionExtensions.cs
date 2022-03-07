@@ -1,9 +1,5 @@
-using System;
 using Elsa.ActivityNodeResolvers;
 using Elsa.Contracts;
-using Elsa.Dsl.Abstractions;
-using Elsa.Dsl.Extensions;
-using Elsa.Dsl.Services;
 using Elsa.Expressions;
 using Elsa.Options;
 using Elsa.Persistence.Extensions;
@@ -11,8 +7,6 @@ using Elsa.Pipelines.ActivityExecution;
 using Elsa.Pipelines.WorkflowExecution;
 using Elsa.Runtime.Contracts;
 using Elsa.Runtime.Extensions;
-using Elsa.Runtime.HostedServices;
-using Elsa.Runtime.Options;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -40,14 +34,10 @@ public static class ServiceCollectionExtensions
             .AddSingleton<IActivitySchedulerFactory, ActivitySchedulerFactory>()
             .AddSingleton<IActivityNodeResolver, OutboundActivityNodeResolver>()
             .AddSingleton<IActivityNodeResolver, SwitchActivityNodeResolver>()
-            .AddSingleton<ITypeSystem, TypeSystem>()
             .AddSingleton<IHasher, Hasher>()
             .AddSingleton<IIdentityGenerator, IdentityGenerator>()
             .AddSingleton<ISystemClock, SystemClock>()
             .AddSingleton<IBookmarkDataSerializer, BookmarkDataSerializer>()
-
-            // DSL.
-            .AddDsl()
 
             // Expressions.
             .AddSingleton<IExpressionEvaluator, ExpressionEvaluator>()

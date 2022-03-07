@@ -9,5 +9,6 @@ namespace Elsa.Runtime.Contracts;
 public interface IWorkflowProvider
 {
     ValueTask<Workflow?> FindByDefinitionIdAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default);
+    ValueTask<Workflow?> FindByNameAsync(string name, VersionOptions versionOptions, CancellationToken cancellationToken = default);
     IAsyncEnumerable<Workflow> StreamAllAsync(CancellationToken cancellationToken = default);
 }

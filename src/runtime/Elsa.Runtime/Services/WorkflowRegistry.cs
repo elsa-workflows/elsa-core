@@ -26,7 +26,20 @@ public class WorkflowRegistry : IWorkflowRegistry
 
         return default!;
     }
-    
+
+    public async Task<Workflow?> FindByNameAsync(string name, VersionOptions versionOptions, CancellationToken cancellationToken = default)
+    {
+        foreach (var workflowProvider in _workflowProviders)
+        {
+            var workflow = await workflowProvider.FindByNameAsync(name, versionOptions, cancellationToken);
+
+            if (workflow != null)
+                return workflow;
+        }
+
+        return default!;
+    }
+
     public IAsyncEnumerable<Workflow> StreamAllAsync(CancellationToken cancellationToken = default) => StreamAllAsync(_workflowProviders, cancellationToken);
 
     public IAsyncEnumerable<Workflow> StreamAllAsync(Func<IWorkflowProvider, bool> includeProvider, CancellationToken cancellationToken = default)

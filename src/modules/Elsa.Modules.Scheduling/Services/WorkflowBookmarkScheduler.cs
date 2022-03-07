@@ -8,8 +8,8 @@ using Elsa.Modules.Scheduling.Activities;
 using Elsa.Modules.Scheduling.Contracts;
 using Elsa.Modules.Scheduling.Jobs;
 using Elsa.Persistence.Entities;
-using Elsa.Scheduling.Contracts;
-using Elsa.Scheduling.Schedules;
+using Elsa.Jobs.Contracts;
+using Elsa.Jobs.Schedules;
 using Elsa.Persistence.Extensions;
 
 namespace Elsa.Modules.Scheduling.Services;

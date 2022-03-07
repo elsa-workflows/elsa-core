@@ -31,6 +31,12 @@ public class ConfigurationWorkflowProvider : IWorkflowProvider
         return ValueTask.FromResult(result);
     }
 
+    public ValueTask<Workflow?> FindByNameAsync(string name, VersionOptions versionOptions, CancellationToken cancellationToken = default)
+    {
+        var result = _workflows.FirstOrDefault(x => x.Metadata.Name == name && x.WithVersion(versionOptions));
+        return ValueTask.FromResult(result);
+    }
+
     public IAsyncEnumerable<Workflow> StreamAllAsync(CancellationToken cancellationToken = default) => _workflows.ToAsyncEnumerable();
 
     private IEnumerable<Workflow> CreateWorkflowDefinitions() => _options.Workflows.Values.Select(BuildWorkflowDefinition).ToList();

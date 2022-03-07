@@ -20,4 +20,4 @@ public class Delay : Activity
     }
 }
 
-public record DelayPayload(DateTime ResumeAt);
+public record DelayPayload(DateTimeOffset ResumeAt);

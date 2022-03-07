@@ -1,8 +1,8 @@
+using Elsa.Jobs.Contracts;
 using Elsa.Modules.Quartz.Contracts;
 using Elsa.Modules.Quartz.Services;
-using Elsa.Scheduling.Contracts;
 using Quartz;
-using IElsaJob = Elsa.Scheduling.Contracts.IJob;
+using IJob = Elsa.Jobs.Contracts.IJob;
 using IQuartzJob = Quartz.IJob;
 
 namespace Elsa.Modules.Quartz.Jobs;
@@ -11,21 +11,21 @@ namespace Elsa.Modules.Quartz.Jobs;
 /// A generic Quartz job that executes Elsa scheduled jobs.
 /// </summary>
 /// <typeparam name="TElsaJob"></typeparam>
-public class QuartzJob<TElsaJob> : IQuartzJob where TElsaJob : IElsaJob
+public class QuartzJob<TElsaJob> : IQuartzJob where TElsaJob : IJob
 {
     private readonly IElsaJobSerializer _elsaJobSerializer;
-    private readonly IJobManager _jobManager;
+    private readonly IJobRunner _jobRunner;
 
-    public QuartzJob(IElsaJobSerializer elsaJobSerializer, IJobManager jobManager)
+    public QuartzJob(IElsaJobSerializer elsaJobSerializer, IJobRunner jobRunner)
     {
         _elsaJobSerializer = elsaJobSerializer;
-        _jobManager = jobManager;
+        _jobRunner = jobRunner;
     }
 
     public async Task Execute(IJobExecutionContext context)
     {
         var json = context.MergedJobDataMap.GetString(QuartzJobScheduler.JobDataKey)!;
         var elsaJob = _elsaJobSerializer.Deserialize<TElsaJob>(json);
-        await _jobManager.ExecuteJobAsync(elsaJob, context.CancellationToken);
+        await _jobRunner.RunJobAsync(elsaJob, context.CancellationToken);
     }
 }

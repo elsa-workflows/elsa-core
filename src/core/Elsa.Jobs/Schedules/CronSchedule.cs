@@ -1,6 +1,6 @@
-using Elsa.Scheduling.Contracts;
+using Elsa.Jobs.Contracts;
 
-namespace Elsa.Scheduling.Schedules;
+namespace Elsa.Jobs.Schedules;
 
 public class CronSchedule : ISchedule
 {

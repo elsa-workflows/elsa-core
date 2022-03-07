@@ -7,7 +7,7 @@
 //
 // public interface IWorkflowInstanceStore
 // {
-//     Task<WorkflowInstance?> GetByIdAsync(string id, CancellationToken cancellationToken = default);
+//     Task<WorkflowInstance?> FindByIdAsync(string id, CancellationToken cancellationToken = default);
 //     Task SaveAsync(WorkflowInstance record, CancellationToken cancellationToken = default);
 //     Task SaveManyAsync(IEnumerable<WorkflowInstance> records, CancellationToken cancellationToken = default);
 // }

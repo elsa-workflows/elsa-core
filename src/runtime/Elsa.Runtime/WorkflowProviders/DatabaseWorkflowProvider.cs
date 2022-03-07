@@ -19,7 +19,10 @@ public class DatabaseWorkflowProvider : IWorkflowProvider
     public DatabaseWorkflowProvider(IRequestSender requestSender) => _requestSender = requestSender;
 
     public async ValueTask<Workflow?> FindByDefinitionIdAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default) =>
-        await _requestSender.RequestAsync(new FindWorkflow(definitionId, versionOptions), cancellationToken);
+        await _requestSender.RequestAsync(new FindWorkflowByDefinitionId(definitionId, versionOptions), cancellationToken);
+
+    public async ValueTask<Workflow?> FindByNameAsync(string name, VersionOptions versionOptions, CancellationToken cancellationToken = default) =>
+        await _requestSender.RequestAsync(new FindWorkflowByName(name, versionOptions), cancellationToken);
 
     public async IAsyncEnumerable<Workflow> StreamAllAsync([EnumeratorCancellation] CancellationToken cancellationToken = default)
     {

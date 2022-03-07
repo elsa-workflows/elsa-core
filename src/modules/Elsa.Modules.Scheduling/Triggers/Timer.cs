@@ -22,4 +22,4 @@ public class Timer : EventGenerator
     }
 }
 
-public record TimerPayload(DateTime StartAt, TimeSpan Interval);
+public record TimerPayload(DateTimeOffset StartAt, TimeSpan Interval);

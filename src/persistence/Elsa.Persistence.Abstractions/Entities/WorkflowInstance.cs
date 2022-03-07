@@ -11,9 +11,9 @@ public class WorkflowInstance : Entity
     public WorkflowStatus WorkflowStatus { get; set; }
     public string CorrelationId { get; init; } = default!;
     public string? Name { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public DateTime? LastExecutedAt { get; set; }
-    public DateTime? FinishedAt { get; set; }
-    public DateTime? CancelledAt { get; set; }
-    public DateTime? FaultedAt { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset? LastExecutedAt { get; set; }
+    public DateTimeOffset? FinishedAt { get; set; }
+    public DateTimeOffset? CancelledAt { get; set; }
+    public DateTimeOffset? FaultedAt { get; set; }
 }

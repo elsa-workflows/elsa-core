@@ -1,6 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Scheduling.Contracts;
+namespace Elsa.Jobs.Contracts;
 
 public interface ISchedulingServiceProvider
 {

@@ -11,6 +11,11 @@ public class Variable : RegisterLocationReference
         DefaultValue = defaultValue;
     }
 
+    public Variable(string name, object? defaultValue = default) : this(defaultValue)
+    {
+        Name = name;
+    }
+
     public string? Name { get; set; }
     public object? DefaultValue { get; }
     public override RegisterLocation Declare() => new(DefaultValue);

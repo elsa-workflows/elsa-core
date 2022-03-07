@@ -4,4 +4,4 @@ using Elsa.Persistence.Models;
 
 namespace Elsa.Persistence.Requests;
 
-public record FindWorkflowByDefinitionId(string DefinitionId, VersionOptions VersionOptions) : IRequest<Workflow?>;
+public record FindWorkflowByName(string Name, VersionOptions VersionOptions) : IRequest<Workflow?>;
