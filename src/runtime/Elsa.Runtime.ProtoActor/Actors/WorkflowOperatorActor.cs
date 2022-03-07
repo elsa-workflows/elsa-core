@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Contracts;
+using Elsa.Management.Serialization;
 using Elsa.Mediator.Contracts;
 using Elsa.Models;
 using Elsa.Persistence.Models;
@@ -26,12 +27,14 @@ public class WorkflowOperatorActor : IActor
     private readonly IRequestSender _requestSender;
     private readonly IWorkflowRegistry _workflowRegistry;
     private readonly IWorkflowRunner _workflowRunner;
+    private readonly WorkflowSerializerOptionsProvider _workflowSerializerOptionsProvider;
 
-    public WorkflowOperatorActor(IRequestSender requestSender, IWorkflowRegistry workflowRegistry, IWorkflowRunner workflowRunner)
+    public WorkflowOperatorActor(IRequestSender requestSender, IWorkflowRegistry workflowRegistry, IWorkflowRunner workflowRunner, WorkflowSerializerOptionsProvider workflowSerializerOptionsProvider)
     {
         _requestSender = requestSender;
         _workflowRegistry = workflowRegistry;
         _workflowRunner = workflowRunner;
+        _workflowSerializerOptionsProvider = workflowSerializerOptionsProvider;
     }
 
     public Task ReceiveAsync(IContext context) => context.Message switch
@@ -58,7 +61,6 @@ public class WorkflowOperatorActor : IActor
         var workflowState = workflowInstance.WorkflowState;
         var bookmarkMessage = message.Bookmark;
         var input = message.Input?.Deserialize();
-
         var executionResult = await ExecuteAsync(workflow, workflowState, bookmarkMessage, input, cancellationToken);
         var response = MapResult(executionResult);
 
@@ -77,12 +79,14 @@ public class WorkflowOperatorActor : IActor
             ActivityInstanceId = x.ActivityInstanceId,
             CallbackMethodName = x.CallbackMethodName
         });
+        
+        var options = _workflowSerializerOptionsProvider.CreatePersistenceOptions();
 
         var response = new ExecuteWorkflowResponse
         {
             WorkflowState = new Json
             {
-                Text = JsonSerializer.Serialize(result.WorkflowState)
+                Text = JsonSerializer.Serialize(result.WorkflowState, options)
             }
         };
 
