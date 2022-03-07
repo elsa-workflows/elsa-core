@@ -31,7 +31,7 @@ public class Worker : IAsyncDisposable
         _logger = logger;
 
         var options = new ServiceBusProcessorOptions();
-        var processor = subscription == null ? client.CreateProcessor(queueOrTopic, options) : client.CreateProcessor(queueOrTopic, subscription, options);
+        var processor = string.IsNullOrEmpty(subscription) ? client.CreateProcessor(queueOrTopic, options) : client.CreateProcessor(queueOrTopic, subscription, options);
 
         processor.ProcessMessageAsync += OnMessageReceivedAsync;
         processor.ProcessErrorAsync += OnErrorAsync;
@@ -73,7 +73,7 @@ public class Worker : IAsyncDisposable
         var payload = new MessageReceivedTriggerPayload(QueueOrTopic, Subscription);
         var hash = _hasher.Hash(payload);
         var messageModel = CreateMessageModel(message);
-        var stimulus = Stimulus.Standard(BookmarkName, hash, new Dictionary<string, object?> { [MessageReceived.MessageReceivedInputKey] = messageModel });
+        var stimulus = Stimulus.Standard(BookmarkName, hash, new { ReceivedMessage = messageModel });
         var executionResults = (await _workflowServer.ExecuteStimulusAsync(stimulus, cancellationToken)).ToList();
 
         _logger.LogInformation("Triggered {WorkflowCount} workflows", executionResults.Count);
