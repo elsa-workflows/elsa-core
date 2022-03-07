@@ -6,7 +6,7 @@ namespace Elsa.Management.Models;
 
 public class TriggerDescriptor : NodeDescriptor
 {
-    [JsonIgnore] public Func<TriggerConstructorContext, ITrigger> Constructor { get; init; } = default!;
+    [JsonIgnore] public Func<TriggerConstructorContext, IEventGenerator> Constructor { get; init; } = default!;
 }
 
 public record TriggerConstructorContext(JsonElement Element, JsonSerializerOptions SerializerOptions);

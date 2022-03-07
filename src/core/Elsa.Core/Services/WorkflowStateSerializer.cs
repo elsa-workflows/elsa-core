@@ -124,11 +124,12 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
     {
         ActivityExecutionContext CreateActivityExecutionContext(ActivityExecutionContextState activityExecutionContextState)
         {
+            var cancellationToken = workflowExecutionContext.CancellationToken;
             var activity = workflowExecutionContext.FindActivityById(activityExecutionContextState.ScheduledActivityId);
             var register = new Register(activityExecutionContextState.Register.Locations);
-            var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, register, default);
+            var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, register, default, cancellationToken);
             var properties = activityExecutionContextState.Properties;
-            var activityExecutionContext = new ActivityExecutionContext(workflowExecutionContext, default, expressionExecutionContext, activity, workflowExecutionContext.CancellationToken)
+            var activityExecutionContext = new ActivityExecutionContext(workflowExecutionContext, default, expressionExecutionContext, activity, cancellationToken)
             {
                 Id = activityExecutionContextState.Id,
                 Properties = properties

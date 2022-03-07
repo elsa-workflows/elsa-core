@@ -50,7 +50,7 @@ public class ResumeWorkflowInstructionInterpreter : WorkflowInstructionInterpret
         }
 
         // Resume workflow instance.
-        var bookmark = new Bookmark(workflowBookmark.Id, workflowBookmark.Name, workflowBookmark.Hash, workflowBookmark.Payload, workflowBookmark.ActivityId, workflowBookmark.ActivityInstanceId, workflowBookmark.CallbackMethodName);
+        var bookmark = new Bookmark(workflowBookmark.Id, workflowBookmark.Name, workflowBookmark.Hash, workflowBookmark.Data, workflowBookmark.ActivityId, workflowBookmark.ActivityInstanceId, workflowBookmark.CallbackMethodName);
         var workflowState = workflowInstance.WorkflowState;
         var input = instruction.Input;
         var workflowExecutionResult = await _workflowRunner.RunAsync(workflow, workflowState, bookmark, input, cancellationToken);

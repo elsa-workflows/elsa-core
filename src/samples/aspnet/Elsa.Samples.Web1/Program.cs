@@ -66,7 +66,7 @@ services
     .AddActivity<WriteLines>()
     .AddActivity<ReadLine>()
     .AddActivity<If>()
-    .AddActivity<HttpTrigger>()
+    .AddActivity<HttpEndpoint>()
     .AddActivity<Flowchart>()
     .AddActivity<Delay>()
     .AddActivity<Timer>()

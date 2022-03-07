@@ -16,7 +16,7 @@ public class Delay : Activity
         var resumeAt = clock.UtcNow.Add(timeSpan);
         var payload = new DelayPayload(resumeAt);
 
-        context.SetBookmark(payload);
+        context.CreateBookmark(payload);
     }
 }
 

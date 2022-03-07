@@ -8,7 +8,7 @@ using Elsa.Modules.Http.Models;
 
 namespace Elsa.Modules.Http;
 
-public class HttpTrigger : Trigger
+public class HttpEndpoint : Trigger
 {
     [Input] public Input<string> Path { get; set; } = default!;
 
@@ -20,14 +20,14 @@ public class HttpTrigger : Trigger
 
     [Output] public Output<HttpRequestModel>? Result { get; set; }
 
-    protected override IEnumerable<object> GetTriggerPayloads(TriggerIndexingContext context) => GetHashInputs(context.ExpressionExecutionContext);
-    protected override void Execute(ActivityExecutionContext context) => context.SetBookmarks(GetHashInputs(context.ExpressionExecutionContext));
+    protected override IEnumerable<object> GetTriggerData(TriggerIndexingContext context) => GetBookmarkData(context.ExpressionExecutionContext);
+    protected override void Execute(ActivityExecutionContext context) => context.SetBookmarks(GetBookmarkData(context.ExpressionExecutionContext));
 
-    private IEnumerable<object> GetHashInputs(ExpressionExecutionContext context)
+    private IEnumerable<object> GetBookmarkData(ExpressionExecutionContext context)
     {
-        // Generate a bookmark hash for path and selected methods.
+        // Generate bookmark data for path and selected methods.
         var path = context.Get(Path);
         var methods = context.Get(SupportedMethods);
-        return methods!.Select(x => new HttpTriggerPayload(path!, x.ToLowerInvariant())).Cast<object>().ToArray();
+        return methods!.Select(x => new HttpBookmarkData(path!, x.ToLowerInvariant())).Cast<object>().ToArray();
     }
 }

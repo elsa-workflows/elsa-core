@@ -28,7 +28,7 @@ public class ActivityInvoker : IActivityInvoker
         // Setup an activity execution context.
         var register = workflowExecutionContext.Workflow.CreateRegister();
         
-        var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, register, parentActivityExecutionContext?.ExpressionExecutionContext);
+        var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, register, parentActivityExecutionContext?.ExpressionExecutionContext, cancellationToken);
         var activityExecutionContext = new ActivityExecutionContext(workflowExecutionContext, parentActivityExecutionContext, expressionExecutionContext, activity, cancellationToken);
 
         // Declare locations.

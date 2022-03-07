@@ -4,7 +4,7 @@ public record Bookmark(
     string Id,
     string Name,
     string? Hash,
-    string? Payload,
+    string? Data,
     string ActivityId,
     string ActivityInstanceId,
     string? CallbackMethodName = default

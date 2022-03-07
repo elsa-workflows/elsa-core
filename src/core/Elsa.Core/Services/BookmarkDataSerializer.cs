@@ -3,11 +3,11 @@ using Elsa.Contracts;
 
 namespace Elsa.Services;
 
-public class PayloadSerializer : IPayloadSerializer
+public class BookmarkDataSerializer : IBookmarkDataSerializer
 {
     private readonly JsonSerializerOptions _settings;
 
-    public PayloadSerializer()
+    public BookmarkDataSerializer()
     {
         _settings = new JsonSerializerOptions
         {

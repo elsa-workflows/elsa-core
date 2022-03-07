@@ -20,7 +20,7 @@ public class ForkedHttpWorkflow : IWorkflow
         {
             Activities =
             {
-                new HttpTrigger
+                new HttpEndpoint
                 {
                     Path = new Input<string>("/fork"),
                     SupportedMethods = new Input<ICollection<string>>(new[] { HttpMethods.Get })
@@ -34,7 +34,7 @@ public class ForkedHttpWorkflow : IWorkflow
                         {
                             Activities =
                             {
-                                new HttpTrigger { Path = new Input<string>("/fork/branch-1"), },
+                                new HttpEndpoint { Path = new Input<string>("/fork/branch-1"), },
                                 new WriteLine("Branch 1 continues!")
                             }
                         },
@@ -42,7 +42,7 @@ public class ForkedHttpWorkflow : IWorkflow
                         {
                             Activities =
                             {
-                                new HttpTrigger { Path = new Input<string>("/fork/branch-2"), },
+                                new HttpEndpoint { Path = new Input<string>("/fork/branch-2"), },
                                 new WriteLine("Branch 2 continues!")
                             }
                         }

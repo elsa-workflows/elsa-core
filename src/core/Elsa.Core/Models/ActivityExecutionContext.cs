@@ -47,29 +47,28 @@ public class ActivityExecutionContext
             ScheduleActivity(activity, completionCallback);
     }
 
-    public void SetBookmarks(IEnumerable<object> payloads, ExecuteActivityDelegate? callback = default)
+    public void SetBookmarks(IEnumerable<object> bookmarkData, ExecuteActivityDelegate? callback = default)
     {
-        foreach (var hashInput in payloads)
-            SetBookmark(payloads, callback);
+        foreach (var bookmarkDatum in bookmarkData)
+            CreateBookmark(bookmarkDatum, callback);
     }
 
     public void SetBookmarks(IEnumerable<Bookmark> bookmarks) => _bookmarks.AddRange(bookmarks);
-    public void SetBookmark(Bookmark bookmark) => _bookmarks.Add(bookmark);
+    public void CreateBookmark(Bookmark bookmark) => _bookmarks.Add(bookmark);
 
-    public void SetBookmark(object? payload, ExecuteActivityDelegate? callback = default)
+    public void CreateBookmark(object? bookmarkDatum, ExecuteActivityDelegate? callback = default)
     {
         var hasher = GetRequiredService<IHasher>();
-
         var identityGenerator = GetRequiredService<IIdentityGenerator>();
-        var payloadSerializer = GetRequiredService<IPayloadSerializer>();
-        var payloadJson = payload != null ? payloadSerializer.Serialize(payload) : default;
-        var hash = payloadJson != null ? hasher.Hash(payloadJson) : default;
+        var bookmarkDataSerializer = GetRequiredService<IBookmarkDataSerializer>();
+        var bookmarkDatumJson = bookmarkDatum != null ? bookmarkDataSerializer.Serialize(bookmarkDatum) : default;
+        var hash = bookmarkDatumJson != null ? hasher.Hash(bookmarkDatumJson) : default;
 
-        SetBookmark(new Bookmark(
+        CreateBookmark(new Bookmark(
             identityGenerator.GenerateId(),
-            Activity.NodeType,
+            Activity.TypeName,
             hash,
-            payloadJson,
+            bookmarkDatumJson,
             Activity.Id,
             Id,
             callback?.Method.Name));

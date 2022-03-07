@@ -1,11 +1,11 @@
 namespace Elsa.Modules.Http.Models;
 
-public record HttpTriggerPayload
+public record HttpBookmarkData
 {
     private readonly string _path = default!;
     private readonly string _method = default!;
 
-    public HttpTriggerPayload(string path, string method)
+    public HttpBookmarkData(string path, string method)
     {
         Path = path;
         Method = method;

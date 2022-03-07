@@ -26,8 +26,8 @@ public class HttpTriggerMiddleware
         var path = GetPath(httpContext);
         var method = httpContext.Request.Method!.ToLowerInvariant();
         var abortToken = httpContext.RequestAborted;
-        var hash = _hasher.Hash(new HttpTriggerPayload(path, method));
-        var activityTypeName = TypeNameHelper.GenerateTypeName<HttpTrigger>();
+        var hash = _hasher.Hash(new HttpBookmarkData(path, method));
+        var activityTypeName = TypeNameHelper.GenerateTypeName<HttpEndpoint>();
         var stimulus = Stimulus.Standard(activityTypeName, hash);
         var executionResults = (await workflowServer.ExecuteStimulusAsync(stimulus, abortToken)).ToList();
 

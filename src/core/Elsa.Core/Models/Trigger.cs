@@ -8,29 +8,28 @@ public abstract class Trigger : Activity, ITrigger
     {
     }
 
-    protected Trigger(string triggerType) : base(triggerType)
+    protected Trigger(string activityType) : base(activityType)
     {
     }
-
-    public TriggerMode TriggerMode { get; set; } = TriggerMode.WorkflowDefinition;
-    ValueTask<IEnumerable<object>> ITrigger.GetTriggerPayloadsAsync(TriggerIndexingContext context, CancellationToken cancellationToken) => GetTriggerPayloadsAsync(context, cancellationToken);
+    
+    ValueTask<IEnumerable<object>> ITrigger.GetTriggerDataAsync(TriggerIndexingContext context) => GetTriggerDataAsync(context);
     
     /// <summary>
-    /// Override this method to return a list of trigger payloads.  
+    /// Override this method to return trigger data.  
     /// </summary>
-    protected virtual ValueTask<IEnumerable<object>> GetTriggerPayloadsAsync(TriggerIndexingContext context, CancellationToken cancellationToken = default)
+    protected virtual ValueTask<IEnumerable<object>> GetTriggerDataAsync(TriggerIndexingContext context)
     {
-        var hashes = GetTriggerPayloads(context);
+        var hashes = GetTriggerData(context);
         return ValueTask.FromResult(hashes);
     }
 
     /// <summary>
-    /// Override this method to return a list of trigger payloads.
+    /// Override this method to return trigger data.
     /// </summary>
-    protected virtual IEnumerable<object> GetTriggerPayloads(TriggerIndexingContext context) => new[]{ GetTriggerPayload(context) };
+    protected virtual IEnumerable<object> GetTriggerData(TriggerIndexingContext context) => new[]{ GetTriggerDatum(context) };
     
     /// <summary>
-    /// Override this method to return a trigger payload.
+    /// Override this method to return a trigger datum.
     /// </summary>
-    protected virtual object GetTriggerPayload(TriggerIndexingContext context) => new();
+    protected virtual object GetTriggerDatum(TriggerIndexingContext context) => new();
 }

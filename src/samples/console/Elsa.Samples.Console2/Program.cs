@@ -28,7 +28,7 @@ typeSystem.Register("Variable<>", typeof(Variable<>));
 typeSystem.Register<Sequence>();
 typeSystem.Register<ReadLine>();
 typeSystem.Register<WriteLine>();
-typeSystem.Register<HttpTrigger>();
+typeSystem.Register<HttpEndpoint>();
 typeSystem.Register<Timer>();
 
 functionActivityRegistry.RegisterFunction("print", nameof(WriteLine), new[] { nameof(WriteLine.Text) });

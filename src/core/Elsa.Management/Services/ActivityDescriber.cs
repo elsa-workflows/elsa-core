@@ -51,7 +51,7 @@ public class ActivityDescriber : IActivityDescriber
         var properties = activityType.GetProperties();
         var inputProperties = properties.Where(x => typeof(Input).IsAssignableFrom(x.PropertyType) || x.GetCustomAttribute<InputAttribute>() != null).ToList();
         var outputProperties = properties.Where(x => typeof(Output).IsAssignableFrom(x.PropertyType)).ToList();
-        var isTrigger = activityType.IsAssignableTo(typeof(ITrigger));
+        var isTrigger = activityType.IsAssignableTo(typeof(IEventGenerator));
 
         var descriptor = new ActivityDescriptor
         {
@@ -66,7 +66,7 @@ public class ActivityDescriber : IActivityDescriber
             Constructor = context =>
             {
                 var activity = _activityFactory.Create(activityType, context);
-                activity.NodeType = fullTypeName;
+                activity.TypeName = fullTypeName;
                 return activity;
             }
         };

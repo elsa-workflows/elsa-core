@@ -7,5 +7,5 @@ namespace Elsa.Persistence.Requests;
 
 public record FindWorkflowTriggersByName(string Name, string? Hash = default) : IRequest<ICollection<WorkflowTrigger>>
 {
-    public static FindWorkflowTriggersByName ForTrigger<T>(string? hash = default) where T : ITrigger => new(TypeNameHelper.GenerateTypeName<T>(), hash);
+    public static FindWorkflowTriggersByName ForTrigger<T>(string? hash = default) where T : IEventGenerator => new(TypeNameHelper.GenerateTypeName<T>(), hash);
 }

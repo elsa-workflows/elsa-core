@@ -24,7 +24,6 @@ public class WorkflowSerializerOptionsProvider
                 Create<JsonStringEnumConverter>(),
                 Create<TypeJsonConverter>(),
                 Create<ActivityJsonConverterFactory>(),
-                Create<TriggerJsonConverterFactory>(),
                 Create<ExpressionJsonConverterFactory>(),
                 Create<FlowchartJsonConverter>()
             }

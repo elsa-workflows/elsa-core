@@ -21,7 +21,7 @@ public static class TypeSystemExtensions
     {
         var kind = TypeKind.Unknown;
         var isActivity = typeof(IActivity).IsAssignableFrom(type);
-        var isTrigger = typeof(ITrigger).IsAssignableFrom(type);
+        var isTrigger = typeof(IEventGenerator).IsAssignableFrom(type);
         var isPrimitive = type.IsPrimitive;
         var isObject = type.IsClass || type.IsValueType; 
 

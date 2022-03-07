@@ -5,17 +5,23 @@ namespace Elsa.Models;
 
 public abstract class Activity : IActivity
 {
-    protected Activity() => NodeType = TypeNameHelper.GenerateTypeName(GetType());
-    protected Activity(string activityType) => NodeType = activityType;
+    protected Activity() => TypeName = TypeNameHelper.GenerateTypeName(GetType());
+    protected Activity(string activityType) => TypeName = activityType;
 
     public string Id { get; set; } = default!;
-    public string NodeType { get; set; }
+    public string TypeName { get; set; }
+    public bool CanStartWorkflow { get; set; }
     public IDictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
 
     protected virtual ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         Execute(context);
         return ValueTask.CompletedTask;
+    }
+
+    public ValueTask<IEnumerable<object>> GetBookmarkPayloadsAsync(TriggerIndexingContext context, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
     }
 
     protected virtual void Execute(ActivityExecutionContext context)

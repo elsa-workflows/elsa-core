@@ -110,7 +110,7 @@ public class ProtoActorWorkflowInvoker : IWorkflowInvoker
             Id = bookmark.Id,
             Name = bookmark.Name,
             Hash = bookmark.Hash,
-            Payload = bookmark.Payload,
+            Payload = bookmark.Data,
             ActivityId = bookmark.ActivityId,
             ActivityInstanceId = bookmark.ActivityInstanceId,
             CallbackMethodName = bookmark.CallbackMethodName,

@@ -113,26 +113,79 @@ public class TriggerIndexer : ITriggerIndexer
 
     private async IAsyncEnumerable<WorkflowTrigger> GetTriggersAsync(Workflow workflow, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        var context = new WorkflowIndexingContext(workflow);
-        var triggerNodes = _activityWalker.Walk(workflow.Root).Flatten().Where(x => x.Activity is ITrigger { TriggerMode: TriggerMode.WorkflowDefinition }).ToList();
+        var context = new WorkflowIndexingContext(workflow, cancellationToken);
+        
+        // Get a list of activities that are configured as "startable".
+        var startableNodes = _activityWalker
+            .Walk(workflow.Root)
+            .Flatten()
+            .Where(x => x.Activity.CanStartWorkflow)
+            .ToList();
 
-        foreach (var triggerNode in triggerNodes)
+        // For each startable node, create triggers.
+        foreach (var node in startableNodes)
         {
-            var triggers = await GetTriggersAsync(workflow, context, (ITrigger)triggerNode.Activity, cancellationToken);
+            var triggers = await GetTriggersAsync(context, (IEventGenerator)node.Activity, cancellationToken);
 
             foreach (var trigger in triggers)
                 yield return trigger;
         }
     }
 
-    private async Task<IEnumerable<WorkflowTrigger>> GetTriggersAsync(Workflow workflow, WorkflowIndexingContext context, ITrigger trigger, CancellationToken cancellationToken)
+    private async Task<IEnumerable<WorkflowTrigger>> GetTriggersAsync(WorkflowIndexingContext context, IActivity activity, CancellationToken cancellationToken)
+    {
+        // If the activity implements ITrigger, request its trigger data. Otherwise, create one trigger datum.
+        if (activity is ITrigger trigger)
+            return await CreateWorkflowTriggersAsync(context, trigger);
+
+        // Else, create a single workflow trigger with no additional data.
+        var simpleTrigger = CreateWorkflowTrigger(context, activity);
+
+        return new[] { simpleTrigger };
+    }
+
+    private WorkflowTrigger CreateWorkflowTrigger(WorkflowIndexingContext context, IActivity activity)
+    {
+        var workflow = context.Workflow;
+        return new WorkflowTrigger
+        {
+            Id = _identityGenerator.GenerateId(),
+            WorkflowDefinitionId = workflow.Identity.DefinitionId,
+            Name = activity.TypeName
+        };
+    }
+
+    private async Task<ICollection<WorkflowTrigger>> CreateWorkflowTriggersAsync(WorkflowIndexingContext context, ITrigger trigger)
+    {
+        var workflow = context.Workflow;
+        var cancellationToken = context.CancellationToken;
+        var expressionExecutionContext = await CreateExpressionExecutionContextAsync(context, trigger);
+
+        var triggerIndexingContext = new TriggerIndexingContext(context, expressionExecutionContext, trigger, cancellationToken);
+        var triggerData = await TryGetTriggerDataAsync(trigger, triggerIndexingContext);
+        var triggerTypeName = trigger.TypeName;
+
+        var triggers = triggerData.Select(x => new WorkflowTrigger
+        {
+            Id = _identityGenerator.GenerateId(),
+            WorkflowDefinitionId = workflow.Identity.DefinitionId,
+            Name = triggerTypeName,
+            Hash = _hasher.Hash(x),
+            Data = JsonSerializer.Serialize(x)
+        });
+            
+        return triggers.ToList();
+    }
+
+    private async Task<ExpressionExecutionContext> CreateExpressionExecutionContextAsync(WorkflowIndexingContext context, ITrigger trigger)
     {
         var inputs = trigger.GetInputs();
         var assignedInputs = inputs.Where(x => x.LocationReference != null!).ToList();
         var register = context.GetOrCreateRegister(trigger);
-        var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, register, default);
+        var cancellationToken = context.CancellationToken;
+        var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, register, default, cancellationToken);
 
-        // Evaluate trigger inputs.
+        // Evaluate activity inputs before requesting trigger data.
         foreach (var input in assignedInputs)
         {
             var locationReference = input.LocationReference;
@@ -148,32 +201,18 @@ public class TriggerIndexer : ITriggerIndexer
             }
         }
 
-        var triggerIndexingContext = new TriggerIndexingContext(context, expressionExecutionContext, trigger);
-        var payloads = await TryGetPayloadsAsync(trigger, triggerIndexingContext, cancellationToken);
-        var triggerType = trigger.GetType();
-        var triggerTypeName = TypeNameHelper.GenerateTypeName(triggerType);
-
-        var triggers = payloads.Select(x => new WorkflowTrigger
-        {
-            Id = _identityGenerator.GenerateId(),
-            WorkflowDefinitionId = workflow.Identity.DefinitionId,
-            Name = triggerTypeName,
-            Hash = _hasher.Hash(x),
-            Payload = JsonSerializer.Serialize(x)
-        });
-
-        return triggers;
+        return expressionExecutionContext;
     }
 
-    private async Task<ICollection<object>> TryGetPayloadsAsync(ITrigger trigger, TriggerIndexingContext context, CancellationToken cancellationToken)
+    private async Task<ICollection<object>> TryGetTriggerDataAsync(ITrigger trigger, TriggerIndexingContext context)
     {
         try
         {
-            return (await trigger.GetTriggerPayloadsAsync(context, cancellationToken)).ToList();
+            return (await trigger.GetTriggerDataAsync(context)).ToList();
         }
         catch (Exception e)
         {
-            _logger.LogWarning(e, "Failed to get hash inputs");
+            _logger.LogWarning(e, "Failed to get trigger data for activity {ActivityId}", trigger.Id);
         }
 
         return Array.Empty<object>();

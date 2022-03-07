@@ -1,4 +1,3 @@
-using Azure.Messaging.ServiceBus;
 using Elsa.Attributes;
 using Elsa.Formatting.Contracts;
 using Elsa.Models;
@@ -33,12 +32,12 @@ public class MessageReceived : Trigger
     /// </summary>
     public IFormatter? Formatter { get; set; }
 
-    protected override object GetTriggerPayload(TriggerIndexingContext context) => GetPayload(context.ExpressionExecutionContext);
+    protected override object GetTriggerDatum(TriggerIndexingContext context) => GetBookmarkData(context.ExpressionExecutionContext);
 
     protected override void Execute(ActivityExecutionContext context)
     {
-        var payload = GetPayload(context.ExpressionExecutionContext);
-        context.SetBookmark(payload, Resume);
+        var bookmarkData = GetBookmarkData(context.ExpressionExecutionContext);
+        context.CreateBookmark(bookmarkData, Resume);
     }
 
     private async ValueTask Resume(ActivityExecutionContext context)
@@ -52,7 +51,7 @@ public class MessageReceived : Trigger
         context.Set(ReceivedMessageBody, body);
     }
 
-    private object GetPayload(ExpressionExecutionContext context)
+    private object GetBookmarkData(ExpressionExecutionContext context)
     {
         var queueOrTopic = context.Get(QueueOrTopic)!;
         var subscription = context.Get(Subscription);

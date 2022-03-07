@@ -68,7 +68,7 @@ public class ActivityInvokerMiddleware : IActivityExecutionMiddleware
     {
         var activity = context.Activity;
         var workflowExecutionContext = context.WorkflowExecutionContext;
-        var logEntry = new WorkflowExecutionLogEntry(activity.Id, activity.NodeType, _clock.UtcNow, eventName, message, source, payload);
+        var logEntry = new WorkflowExecutionLogEntry(activity.Id, activity.TypeName, _clock.UtcNow, eventName, message, source, payload);
         workflowExecutionContext.ExecutionLog.Add(logEntry);
     }
 

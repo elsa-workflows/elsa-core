@@ -35,6 +35,6 @@ public class Event : Activity
         var hasher = context.GetRequiredService<IHasher>();
         var eventName = context.Get(EventName)!;
         var hash = hasher.Hash(eventName);
-        context.SetBookmark(hash);
+        context.CreateBookmark(hash);
     }
 }

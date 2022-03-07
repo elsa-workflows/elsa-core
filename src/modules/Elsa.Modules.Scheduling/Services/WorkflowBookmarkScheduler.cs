@@ -35,7 +35,7 @@ public class WorkflowBookmarkScheduler : IWorkflowBookmarkScheduler
         // Schedule a trigger for each bookmark.
         foreach (var bookmark in delayBookmarks)
         {
-            var payload = JsonSerializer.Deserialize<DelayPayload>(bookmark.Payload!)!;
+            var payload = JsonSerializer.Deserialize<DelayPayload>(bookmark.Data!)!;
             var resumeAt = payload.ResumeAt;
             var job = new ResumeWorkflowJob(workflowInstanceId, bookmark.ToBookmark());
             var schedule = new SpecificInstantSchedule(resumeAt);

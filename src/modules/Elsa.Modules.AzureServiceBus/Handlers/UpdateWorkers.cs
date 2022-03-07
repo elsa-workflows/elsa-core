@@ -14,10 +14,10 @@ namespace Elsa.Modules.AzureServiceBus.Handlers;
 /// </summary>
 public class UpdateWorkers : INotificationHandler<WorkflowTriggersIndexed>, INotificationHandler<WorkflowBookmarksDeleted>, INotificationHandler<WorkflowBookmarksSaved>
 {
-    private readonly IPayloadSerializer _serializer;
+    private readonly IBookmarkDataSerializer _serializer;
     private readonly IWorkerManager _workerManager;
 
-    public UpdateWorkers(IPayloadSerializer serializer, IWorkerManager workerManager)
+    public UpdateWorkers(IBookmarkDataSerializer serializer, IWorkerManager workerManager)
     {
         _serializer = serializer;
         _workerManager = workerManager;
@@ -28,8 +28,8 @@ public class UpdateWorkers : INotificationHandler<WorkflowTriggersIndexed>, INot
     /// </summary>
     public async Task HandleAsync(WorkflowTriggersIndexed notification, CancellationToken cancellationToken)
     {
-        var added = notification.IndexedWorkflowTriggers.AddedTriggers.Filter<MessageReceived>().Select(x => DeserializePayload(x.Payload!));
-        var removed = notification.IndexedWorkflowTriggers.RemovedTriggers.Filter<MessageReceived>().Select(x => DeserializePayload(x.Payload!));
+        var added = notification.IndexedWorkflowTriggers.AddedTriggers.Filter<MessageReceived>().Select(x => DeserializePayload(x.Data!));
+        var removed = notification.IndexedWorkflowTriggers.RemovedTriggers.Filter<MessageReceived>().Select(x => DeserializePayload(x.Data!));
 
         await StopWorkersAsync(removed, cancellationToken);
         await StartWorkersAsync(added, cancellationToken);
@@ -40,7 +40,7 @@ public class UpdateWorkers : INotificationHandler<WorkflowTriggersIndexed>, INot
     /// </summary>
     public async Task HandleAsync(WorkflowBookmarksDeleted notification, CancellationToken cancellationToken)
     {
-        var payloads = notification.Bookmarks.Filter<MessageReceived>().Select(x => DeserializePayload(x.Payload!));
+        var payloads = notification.Bookmarks.Filter<MessageReceived>().Select(x => DeserializePayload(x.Data!));
         await StopWorkersAsync(payloads, cancellationToken);
     }
 
@@ -49,7 +49,7 @@ public class UpdateWorkers : INotificationHandler<WorkflowTriggersIndexed>, INot
     /// </summary>
     public async Task HandleAsync(WorkflowBookmarksSaved notification, CancellationToken cancellationToken)
     {
-        var payloads = notification.Bookmarks.Filter<MessageReceived>().Select(x => DeserializePayload(x.Payload!));
+        var payloads = notification.Bookmarks.Filter<MessageReceived>().Select(x => DeserializePayload(x.Data!));
         await StartWorkersAsync(payloads, cancellationToken);
     }
 

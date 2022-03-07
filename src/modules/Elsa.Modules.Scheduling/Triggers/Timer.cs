@@ -7,13 +7,13 @@ using Elsa.Models;
 namespace Elsa.Modules.Scheduling.Triggers;
 
 /// <summary>
-/// Represents a timer to periodically trigger the workflow it is associated with.
+/// Represents a timer to periodically trigger the workflow.
 /// </summary>
-public class Timer : Trigger
+public class Timer : EventGenerator
 {
     [Input] public Input<TimeSpan> Interval { get; set; } = default!;
 
-    protected override IEnumerable<object> GetTriggerPayloads(TriggerIndexingContext context)
+    protected override IEnumerable<object> GetTriggerData(TriggerIndexingContext context)
     {
         var interval = context.ExpressionExecutionContext.Get(Interval);
         var clock = context.ExpressionExecutionContext.GetRequiredService<ISystemClock>();

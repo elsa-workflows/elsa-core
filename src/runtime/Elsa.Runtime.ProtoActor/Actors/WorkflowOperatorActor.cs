@@ -71,7 +71,7 @@ public class WorkflowOperatorActor : IActor
         {
             Id = x.Id,
             Hash = x.Hash,
-            Payload = x.Payload,
+            Payload = x.Data,
             Name = x.Name,
             ActivityId = x.ActivityId,
             ActivityInstanceId = x.ActivityInstanceId,

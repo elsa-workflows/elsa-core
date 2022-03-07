@@ -24,7 +24,7 @@ public class HttpWorkflow : IWorkflow
         {
             Activities =
             {
-                new HttpTrigger
+                new HttpEndpoint
                 {
                     Path = new Input<string>("/hello-world"),
                     SupportedMethods = new Input<ICollection<string>>(new[] { HttpMethods.Get })
@@ -34,7 +34,7 @@ public class HttpWorkflow : IWorkflow
                     Condition = new Input<bool>(true),
                     Then = new Sequence(
                         new WriteLine("It's true!"),
-                        new HttpTrigger
+                        new HttpEndpoint
                         {
                             Path = new Input<string>("/hello-world/true"),
                             SupportedMethods = new Input<ICollection<string>>(new[] { HttpMethods.Post })

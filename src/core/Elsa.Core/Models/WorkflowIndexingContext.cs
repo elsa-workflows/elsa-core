@@ -4,13 +4,15 @@ namespace Elsa.Models;
 
 public class WorkflowIndexingContext
 {
-    public WorkflowIndexingContext(Workflow workflow)
+    public WorkflowIndexingContext(Workflow workflow, CancellationToken cancellationToken)
     {
         Workflow = workflow;
+        CancellationToken = cancellationToken;
     }
 
     public Workflow Workflow { get; }
     public IDictionary<ITrigger, Register> Registers { get; } = new Dictionary<ITrigger, Register>();
+    public CancellationToken CancellationToken { get; }
 
     public Register GetOrCreateRegister(ITrigger activity)
     {

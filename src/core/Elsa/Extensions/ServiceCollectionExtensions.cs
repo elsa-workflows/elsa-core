@@ -44,7 +44,7 @@ public static class ServiceCollectionExtensions
             .AddSingleton<IHasher, Hasher>()
             .AddSingleton<IIdentityGenerator, IdentityGenerator>()
             .AddSingleton<ISystemClock, SystemClock>()
-            .AddSingleton<IPayloadSerializer, PayloadSerializer>()
+            .AddSingleton<IBookmarkDataSerializer, BookmarkDataSerializer>()
 
             // DSL.
             .AddDsl()
@@ -75,5 +75,4 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddWorkflowProvider<T>(this IServiceCollection services) where T : class, IWorkflowProvider => services.AddSingleton<IWorkflowProvider, T>();
     public static IServiceCollection AddStimulusHandler<T>(this IServiceCollection services) where T : class, IStimulusHandler => services.AddSingleton<IStimulusHandler, T>();
     public static IServiceCollection AddInstructionInterpreter<T>(this IServiceCollection services) where T : class, IWorkflowInstructionInterpreter => services.AddSingleton<IWorkflowInstructionInterpreter, T>();
-    public static IServiceCollection ConfigureWorkflowRuntime(this IServiceCollection services, Action<WorkflowRuntimeOptions> configure) => services.Configure(configure);
 }

@@ -6,15 +6,17 @@ public class ExpressionExecutionContext
 {
     private readonly IServiceProvider _serviceProvider;
 
-    public ExpressionExecutionContext(IServiceProvider serviceProvider, Register register, ExpressionExecutionContext? parentContext)
+    public ExpressionExecutionContext(IServiceProvider serviceProvider, Register register, ExpressionExecutionContext? parentContext, CancellationToken cancellationToken)
     {
         _serviceProvider = serviceProvider;
         Register = register;
         ParentContext = parentContext;
+        CancellationToken = cancellationToken;
     }
 
     public Register Register { get; }
     public ExpressionExecutionContext? ParentContext { get; set; }
+    public CancellationToken CancellationToken { get; }
 
     public RegisterLocation GetLocation(RegisterLocationReference locationReference) => GetLocationInternal(locationReference) ?? throw new InvalidOperationException();
     public object Get(RegisterLocationReference locationReference) => GetLocation(locationReference).Value!;

@@ -34,7 +34,7 @@ public class WorkflowTriggerScheduler : IWorkflowTriggerScheduler
         foreach (var trigger in timerTriggers)
         {
             // Schedule trigger.
-            var (dateTime, timeSpan) = JsonSerializer.Deserialize<TimerPayload>(trigger.Payload!)!;
+            var (dateTime, timeSpan) = JsonSerializer.Deserialize<TimerPayload>(trigger.Data!)!;
             var groupKeys = new[] { RootGroupKey, trigger.WorkflowDefinitionId };
             await _jobScheduler.ScheduleAsync(new RunWorkflowJob(trigger.WorkflowDefinitionId), new RecurringSchedule(dateTime, timeSpan), groupKeys, cancellationToken);
         }
