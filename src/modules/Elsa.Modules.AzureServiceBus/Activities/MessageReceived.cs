@@ -5,7 +5,7 @@ using Elsa.Modules.AzureServiceBus.Models;
 
 namespace Elsa.Modules.AzureServiceBus.Activities;
 
-[Activity("Azure.ServiceBus.MessageReceived", "Executes when a message is received from the configured queue or topic and subscription", "Azure Service Bus")]
+[Activity("Elsa.AzureServiceBus.MessageReceived", "Executes when a message is received from the configured queue or topic and subscription", "Azure Service Bus")]
 public class MessageReceived : Trigger
 {
     internal const string MessageReceivedInputKey = "ReceivedMessage";
