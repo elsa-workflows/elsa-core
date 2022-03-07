@@ -125,14 +125,14 @@ public class TriggerIndexer : ITriggerIndexer
         // For each startable node, create triggers.
         foreach (var node in startableNodes)
         {
-            var triggers = await GetTriggersAsync(context, (IEventGenerator)node.Activity, cancellationToken);
+            var triggers = await GetTriggersAsync(context, node.Activity);
 
             foreach (var trigger in triggers)
                 yield return trigger;
         }
     }
 
-    private async Task<IEnumerable<WorkflowTrigger>> GetTriggersAsync(WorkflowIndexingContext context, IActivity activity, CancellationToken cancellationToken)
+    private async Task<IEnumerable<WorkflowTrigger>> GetTriggersAsync(WorkflowIndexingContext context, IActivity activity)
     {
         // If the activity implements ITrigger, request its trigger data. Otherwise, create one trigger datum.
         if (activity is ITrigger trigger)
