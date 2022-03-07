@@ -1,8 +1,5 @@
 using System;
 
-namespace Elsa.Modules.Http;
+namespace Elsa.Modules.Http.Models;
 
-public class HttpRequestModel
-{
-    public Uri Url { get; set; } = default!;
-}
+public record HttpRequestModel(Uri RequestUri);
