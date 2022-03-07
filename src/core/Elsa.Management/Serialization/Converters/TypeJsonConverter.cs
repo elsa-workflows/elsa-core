@@ -16,6 +16,11 @@ public class TypeJsonConverter : JsonConverter<Type>
         _wellKnownTypeRegistry = wellKnownTypeRegistry;
     }
 
+    public override bool CanConvert(Type typeToConvert)
+    {
+        return typeToConvert == typeof(Type) || typeToConvert.FullName == "System.RuntimeType";
+    }
+
     public override Type? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         var typeAlias = reader.GetString()!;
