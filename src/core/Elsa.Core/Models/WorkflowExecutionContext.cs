@@ -21,7 +21,7 @@ public class WorkflowExecutionContext
         ActivityNode graph,
         IActivityScheduler scheduler,
         Bookmark? bookmark,
-        IReadOnlyDictionary<string, object?>? input,
+        IReadOnlyDictionary<string, object>? input,
         ExecuteActivityDelegate? executeDelegate,
         CancellationToken cancellationToken)
     {
@@ -32,7 +32,7 @@ public class WorkflowExecutionContext
         _nodes = graph.Flatten().Distinct().ToList();
         Scheduler = scheduler;
         Bookmark = bookmark;
-        Input = input ?? new Dictionary<string, object?>();
+        Input = input ?? new Dictionary<string, object>();
         ExecuteDelegate = executeDelegate;
         CancellationToken = cancellationToken;
         NodeIdLookup = _nodes.ToDictionary(x => x.NodeId);
@@ -47,7 +47,7 @@ public class WorkflowExecutionContext
     public IDictionary<IActivity, ActivityNode> NodeActivityLookup { get; }
     public IActivityScheduler Scheduler { get; }
     public Bookmark? Bookmark { get; }
-    public IReadOnlyDictionary<string, object?> Input { get; }
+    public IReadOnlyDictionary<string, object> Input { get; }
     public IDictionary<string, object?> Properties { get; set; } = new Dictionary<string, object?>();
     public ExecuteActivityDelegate? ExecuteDelegate { get; set; }
     public CancellationToken CancellationToken { get; }

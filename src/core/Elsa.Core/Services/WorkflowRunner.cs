@@ -30,7 +30,7 @@ public class WorkflowRunner : IWorkflowRunner
         _schedulerFactory = schedulerFactory;
     }
 
-    public async Task<ExecuteWorkflowResult> RunAsync(Workflow workflow, IReadOnlyDictionary<string, object?>? input, CancellationToken cancellationToken = default)
+    public async Task<ExecuteWorkflowResult> RunAsync(Workflow workflow, IReadOnlyDictionary<string, object>? input, CancellationToken cancellationToken = default)
     {
         // Create a child scope.
         using var scope = _serviceScopeFactory.CreateScope();
@@ -44,7 +44,7 @@ public class WorkflowRunner : IWorkflowRunner
         return await RunAsync(workflowExecutionContext);
     }
 
-    public async Task<ExecuteWorkflowResult> RunAsync(Workflow workflow, WorkflowState workflowState, IReadOnlyDictionary<string, object?>? input, CancellationToken cancellationToken = default)
+    public async Task<ExecuteWorkflowResult> RunAsync(Workflow workflow, WorkflowState workflowState, IReadOnlyDictionary<string, object>? input, CancellationToken cancellationToken = default)
     {
         // Create a child scope.
         using var scope = _serviceScopeFactory.CreateScope();
@@ -58,7 +58,7 @@ public class WorkflowRunner : IWorkflowRunner
         return await RunAsync(workflowExecutionContext);
     }
 
-    public async Task<ExecuteWorkflowResult> RunAsync(Workflow workflow, WorkflowState workflowState, Bookmark? bookmark, IReadOnlyDictionary<string, object?>? input, CancellationToken cancellationToken = default)
+    public async Task<ExecuteWorkflowResult> RunAsync(Workflow workflow, WorkflowState workflowState, Bookmark? bookmark, IReadOnlyDictionary<string, object>? input, CancellationToken cancellationToken = default)
     {
         // Create a child scope.
         using var scope = _serviceScopeFactory.CreateScope();
@@ -89,7 +89,7 @@ public class WorkflowRunner : IWorkflowRunner
         Workflow workflow,
         WorkflowState? workflowState,
         Bookmark? bookmark,
-        IReadOnlyDictionary<string, object?>? input,
+        IReadOnlyDictionary<string, object>? input,
         ExecuteActivityDelegate? executeActivityDelegate,
         CancellationToken cancellationToken)
     {

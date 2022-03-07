@@ -3,4 +3,4 @@ using Elsa.Runtime.Contracts;
 
 namespace Elsa.Runtime.Instructions;
 
-public record ResumeWorkflowInstruction(WorkflowBookmark WorkflowBookmark, IReadOnlyDictionary<string, object?>? Input) : IWorkflowInstruction;
+public record ResumeWorkflowInstruction(WorkflowBookmark WorkflowBookmark, IReadOnlyDictionary<string, object>? Input) : IWorkflowInstruction;
