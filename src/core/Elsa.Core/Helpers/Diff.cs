@@ -21,8 +21,8 @@ public static class Diff
 {
     public static Diff<T> For<T>(ICollection<T> firstSet, ICollection<T> secondSet)
     {
-        var added = firstSet.Except(secondSet).ToList();
-        var removed = secondSet.Except(firstSet).ToList();
+        var removed = firstSet.Except(secondSet).ToList();
+        var added = secondSet.Except(firstSet).ToList();
         var unchanged = firstSet.Intersect(secondSet).ToList();
 
         return new Diff<T>(added, removed, unchanged);
