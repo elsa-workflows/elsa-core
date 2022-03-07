@@ -43,7 +43,7 @@ public class MessageReceived : Trigger
     private async ValueTask Resume(ActivityExecutionContext context)
     {
         var receivedMessage = (ReceivedServiceBusMessageModel)context.WorkflowExecutionContext.Input[MessageReceivedInputKey]!;
-        var bodyAsString = receivedMessage.Body.ToString() ?? "";
+        var bodyAsString =  new BinaryData(receivedMessage.Body).ToString();
         var targetType = context.Get(ExpectedMessageType);
         var body = Formatter == null ? bodyAsString : await Formatter.FromStringAsync(bodyAsString, targetType, context.CancellationToken);
         
