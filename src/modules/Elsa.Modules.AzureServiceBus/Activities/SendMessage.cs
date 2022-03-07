@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Elsa.Modules.AzureServiceBus.Activities;
 
-[Activity("Azure.ServiceBus.Send", "Send a message to a queue or topic", "Azure Service Bus")]
+[Activity("Elsa.AzureServiceBus.Send", "Send a message to a queue or topic", "Azure Service Bus")]
 public class SendMessage : Activity
 {
     public Input<object> MessageBody { get; set; } = default!;
