@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using Elsa.Contracts;
+using Elsa.Extensions;
 
 namespace Elsa.Models;
 
@@ -26,12 +27,38 @@ public class ActivityExecutionContext
     public WorkflowExecutionContext WorkflowExecutionContext { get; }
     public ActivityExecutionContext? ParentActivityExecutionContext { get; internal set; }
     public ExpressionExecutionContext ExpressionExecutionContext { get; }
+
+    /// <summary>
+    /// The currently executing activity.
+    /// </summary>
     public IActivity Activity { get; set; }
+
+    /// <summary>
+    /// A cancellation token to use when invoking asynchronous operations.
+    /// </summary>
     public CancellationToken CancellationToken { get; }
-    public IDictionary<string, object?> Properties { get; set; } = new Dictionary<string, object?>();
+
+    /// <summary>
+    /// A dictionary of values that can be associated with the activity. 
+    /// </summary>
+    public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
+
+    /// <summary>
+    /// Returns the <see cref="ActivityNode"/> metadata about the current activity.
+    /// </summary>
     public ActivityNode ActivityNode => WorkflowExecutionContext.FindNodeByActivity(Activity);
+
     public IReadOnlyCollection<Bookmark> Bookmarks => new ReadOnlyCollection<Bookmark>(_bookmarks);
-    public bool Continue { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets a value that indicates if the workflow should continue executing or not.
+    /// </summary>
+    public bool Continue { get; private set; } = true;
+
+    /// <summary>
+    /// A dictionary of received inputs.
+    /// </summary>
+    public IReadOnlyDictionary<string, object> Input => WorkflowExecutionContext.Input;
 
     public void ScheduleActivity(IActivity activity, ActivityCompletionCallback? completionCallback = default, IEnumerable<RegisterLocationReference>? locationReferences = default, object? tag = default) =>
         WorkflowExecutionContext.Schedule(activity, this, completionCallback, locationReferences, tag);
@@ -47,13 +74,13 @@ public class ActivityExecutionContext
             ScheduleActivity(activity, completionCallback);
     }
 
-    public void SetBookmarks(IEnumerable<object> bookmarkData, ExecuteActivityDelegate? callback = default)
+    public void CreateBookmarks(IEnumerable<object> bookmarkData, ExecuteActivityDelegate? callback = default)
     {
         foreach (var bookmarkDatum in bookmarkData)
             CreateBookmark(bookmarkDatum, callback);
     }
 
-    public void SetBookmarks(IEnumerable<Bookmark> bookmarks) => _bookmarks.AddRange(bookmarks);
+    public void CreateBookmarks(IEnumerable<Bookmark> bookmarks) => _bookmarks.AddRange(bookmarks);
     public void CreateBookmark(Bookmark bookmark) => _bookmarks.Add(bookmark);
 
     public void CreateBookmark(object? bookmarkDatum, ExecuteActivityDelegate? callback = default)
@@ -74,10 +101,10 @@ public class ActivityExecutionContext
             callback?.Method.Name));
     }
 
-    public T? GetProperty<T>(string key) => Properties.TryGetValue(key, out var value) ? (T?)value : default;
-    public void SetProperty<T>(string key, T value) => Properties[key] = value;
+    public T? GetProperty<T>(string key) => Properties.TryGetValue<T?>(key, out var value) ? value : default;
+    public void SetProperty<T>(string key, T value) where T : notnull => Properties[key] = value;
 
-    public T UpdateProperty<T>(string key, Func<T?, T> updater)
+    public T UpdateProperty<T>(string key, Func<T?, T> updater) where T : notnull
     {
         var value = GetProperty<T?>(key);
         value = updater(value);
@@ -102,6 +129,7 @@ public class ActivityExecutionContext
 
     public void Set(RegisterLocationReference locationReference, object? value) => ExpressionExecutionContext.Set(locationReference, value);
     public void Set(Output? output, object? value) => ExpressionExecutionContext.Set(output, value);
+    public void Set<T>(Output<T>? output, T value) => ExpressionExecutionContext.Set(output, value);
 
     public async Task<T?> EvaluateAsync<T>(Input<T> input)
     {

@@ -2,6 +2,9 @@ using Elsa.Contracts;
 
 namespace Elsa.Models;
 
+/// <summary>
+/// Represents an activity in the context of an hierarchical tree structure, providing access to its siblings, parents and children.
+/// </summary>
 public class ActivityNode
 {
     public ActivityNode(IActivity activity)
