@@ -16,7 +16,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
                     Id = table.Column<string>(type: "TEXT", nullable: false),
                     Name = table.Column<string>(type: "TEXT", nullable: false),
                     Hash = table.Column<string>(type: "TEXT", nullable: true),
-                    Payload = table.Column<string>(type: "TEXT", nullable: true),
+                    Data = table.Column<string>(type: "TEXT", nullable: true),
                     WorkflowDefinitionId = table.Column<string>(type: "TEXT", nullable: false),
                     WorkflowInstanceId = table.Column<string>(type: "TEXT", nullable: false),
                     CorrelationId = table.Column<string>(type: "TEXT", nullable: false),
@@ -98,12 +98,35 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
                     WorkflowDefinitionId = table.Column<string>(type: "TEXT", nullable: false),
                     Name = table.Column<string>(type: "TEXT", nullable: false),
                     Hash = table.Column<string>(type: "TEXT", nullable: true),
-                    Payload = table.Column<string>(type: "TEXT", nullable: true)
+                    Data = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_WorkflowTriggers", x => x.Id);
                 });
+
+            migrationBuilder.CreateTable(
+                name: "Variable",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "TEXT", nullable: false),
+                    Name = table.Column<string>(type: "TEXT", nullable: true),
+                    WorkflowDefinitionId = table.Column<string>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Variable", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Variable_WorkflowDefinitions_WorkflowDefinitionId",
+                        column: x => x.WorkflowDefinitionId,
+                        principalTable: "WorkflowDefinitions",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Variable_WorkflowDefinitionId",
+                table: "Variable",
+                column: "WorkflowDefinitionId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowBookmark_ActivityId",
@@ -255,10 +278,10 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "WorkflowBookmarks");
+                name: "Variable");
 
             migrationBuilder.DropTable(
-                name: "WorkflowDefinitions");
+                name: "WorkflowBookmarks");
 
             migrationBuilder.DropTable(
                 name: "WorkflowExecutionLogRecords");
@@ -268,6 +291,9 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
 
             migrationBuilder.DropTable(
                 name: "WorkflowTriggers");
+
+            migrationBuilder.DropTable(
+                name: "WorkflowDefinitions");
         }
     }
 }

@@ -11,13 +11,31 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
 {
     [DbContext(typeof(ElsaDbContext))]
-    [Migration("20220117205849_Initial")]
+    [Migration("20220307110612_Initial")]
     partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "6.0.1");
+
+            modelBuilder.Entity("Elsa.Models.Variable", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("WorkflowDefinitionId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WorkflowDefinitionId");
+
+                    b.ToTable("Variable");
+                });
 
             modelBuilder.Entity("Elsa.Persistence.Entities.WorkflowBookmark", b =>
                 {
@@ -39,14 +57,14 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Data")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Hash")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Payload")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("WorkflowDefinitionId")
@@ -267,14 +285,14 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Data")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Hash")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Payload")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("WorkflowDefinitionId")
@@ -293,6 +311,18 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
                         .HasDatabaseName("IX_WorkflowTrigger_WorkflowDefinitionId");
 
                     b.ToTable("WorkflowTriggers");
+                });
+
+            modelBuilder.Entity("Elsa.Models.Variable", b =>
+                {
+                    b.HasOne("Elsa.Persistence.Entities.WorkflowDefinition", null)
+                        .WithMany("Variables")
+                        .HasForeignKey("WorkflowDefinitionId");
+                });
+
+            modelBuilder.Entity("Elsa.Persistence.Entities.WorkflowDefinition", b =>
+                {
+                    b.Navigation("Variables");
                 });
 #pragma warning restore 612, 618
         }
