@@ -143,9 +143,11 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
         // Reconstruct hierarchy.
         foreach (var contextState in state.ActivityExecutionContexts.Where(x => !string.IsNullOrWhiteSpace(x.ParentContextId)))
         {
+            var parentContext = lookup[contextState.ParentContextId!];
             var contextId = contextState.Id;
             var context = lookup[contextId];
-            context.ParentActivityExecutionContext = lookup[contextState.ParentContextId!];
+            context.ExpressionExecutionContext.ParentContext = parentContext.ExpressionExecutionContext; 
+            context.ParentActivityExecutionContext = parentContext;
         }
         
         workflowExecutionContext.ActivityExecutionContexts = activityExecutionContexts;
