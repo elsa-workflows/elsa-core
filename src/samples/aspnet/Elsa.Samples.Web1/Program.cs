@@ -10,6 +10,7 @@ using Elsa.Modules.AzureServiceBus.Activities;
 using Elsa.Modules.AzureServiceBus.Extensions;
 using Elsa.Modules.Http;
 using Elsa.Modules.Http.Extensions;
+using Elsa.Modules.JavaScript.Activities;
 using Elsa.Modules.Quartz.Services;
 using Elsa.Modules.Scheduling.Activities;
 using Elsa.Modules.Scheduling.Extensions;
@@ -55,6 +56,7 @@ services
         options.Workflows.Add(nameof(CompositeActivitiesWorkflow), new CompositeActivitiesWorkflow());
         options.Workflows.Add(nameof(SendMessageWorkflow), new SendMessageWorkflow());
         options.Workflows.Add(nameof(ReceiveMessageWorkflow), new ReceiveMessageWorkflow());
+        options.Workflows.Add(nameof(RunJavaScriptWorkflow), new RunJavaScriptWorkflow());
     });
 
 // Testing only: allow client app to connect from anywhere.
@@ -73,6 +75,7 @@ services
     .AddActivity<ForEach>()
     .AddActivity<Switch>()
     .AddActivity<SendMessage>()
+    .AddActivity<RunJavaScript>()
     ;
 
 // Register scripting languages.
