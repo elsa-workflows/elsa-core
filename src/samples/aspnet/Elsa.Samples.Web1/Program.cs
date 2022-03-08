@@ -9,6 +9,7 @@ using Elsa.Management.Extensions;
 using Elsa.Mediator.Extensions;
 using Elsa.Modules.AzureServiceBus.Activities;
 using Elsa.Modules.AzureServiceBus.Extensions;
+using Elsa.Modules.Hangfire.Services;
 using Elsa.Modules.Http;
 using Elsa.Modules.Http.Extensions;
 using Elsa.Modules.JavaScript.Activities;
@@ -43,7 +44,7 @@ services
     .AddProtoActorWorkflowHost()
     .IndexWorkflowTriggers()
     .AddElsaManagement()
-    .AddJobs(new QuartzSchedulingServiceProvider())
+    .AddJobs(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider())
     .AddHttpActivityServices()
     .AddJobServices()
     .AddAzureServiceBusServices(options => configuration.GetSection("AzureServiceBus").Bind(options))

@@ -1,5 +1,4 @@
 using Elsa.Jobs.Contracts;
-using Elsa.Modules.Quartz.Contracts;
 using Elsa.Modules.Quartz.Services;
 using Quartz;
 using IJob = Elsa.Jobs.Contracts.IJob;
@@ -13,19 +12,19 @@ namespace Elsa.Modules.Quartz.Jobs;
 /// <typeparam name="TElsaJob"></typeparam>
 public class QuartzJob<TElsaJob> : IQuartzJob where TElsaJob : IJob
 {
-    private readonly IElsaJobSerializer _elsaJobSerializer;
+    private readonly IJobSerializer _jobSerializer;
     private readonly IJobRunner _jobRunner;
 
-    public QuartzJob(IElsaJobSerializer elsaJobSerializer, IJobRunner jobRunner)
+    public QuartzJob(IJobSerializer jobSerializer, IJobRunner jobRunner)
     {
-        _elsaJobSerializer = elsaJobSerializer;
+        _jobSerializer = jobSerializer;
         _jobRunner = jobRunner;
     }
 
     public async Task Execute(IJobExecutionContext context)
     {
         var json = context.MergedJobDataMap.GetString(QuartzJobScheduler.JobDataKey)!;
-        var elsaJob = _elsaJobSerializer.Deserialize<TElsaJob>(json);
+        var elsaJob = _jobSerializer.Deserialize<TElsaJob>(json);
         await _jobRunner.RunJobAsync(elsaJob, context.CancellationToken);
     }
 }

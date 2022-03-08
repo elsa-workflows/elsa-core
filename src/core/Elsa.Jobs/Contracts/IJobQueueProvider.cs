@@ -2,7 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Jobs.Contracts;
 
-public interface ISchedulingServiceProvider
+public interface IJobQueueProvider
 {
     void ConfigureServices(IServiceCollection services);
 }

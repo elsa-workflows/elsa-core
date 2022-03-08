@@ -7,6 +7,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\..\modules\Elsa.Modules.AzureServiceBus\Elsa.Modules.AzureServiceBus.csproj" />
+        <ProjectReference Include="..\..\..\modules\Elsa.Modules.Hangfire\Elsa.Modules.Hangfire.csproj" />
         <ProjectReference Include="..\..\..\modules\Elsa.Modules.Http\Elsa.Modules.Http.csproj" />
         <ProjectReference Include="..\..\..\modules\Elsa.Modules.JavaScript\Elsa.Modules.JavaScript.csproj" />
         <ProjectReference Include="..\..\..\modules\Elsa.Modules.Scheduling\Elsa.Modules.Scheduling.csproj" />

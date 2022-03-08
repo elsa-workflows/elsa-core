@@ -1,10 +1,9 @@
 using System.Text.Json;
 using Elsa.Jobs.Contracts;
-using Elsa.Modules.Quartz.Contracts;
 
-namespace Elsa.Modules.Quartz.Services;
+namespace Elsa.Jobs.Services;
 
-public class ElsaJobSerializer : IElsaJobSerializer
+public class JobSerializer : IJobSerializer
 {
     public string Serialize(IJob job)
     {

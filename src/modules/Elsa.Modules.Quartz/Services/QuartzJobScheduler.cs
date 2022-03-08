@@ -1,6 +1,5 @@
 ﻿using Elsa.Jobs.Contracts;
 using Elsa.Jobs.Schedules;
-using Elsa.Modules.Quartz.Contracts;
 using Microsoft.Extensions.Logging;
 using Quartz;
 using Quartz.Impl.Matchers;
@@ -14,13 +13,13 @@ public class QuartzJobScheduler : IJobScheduler
 {
     public const string JobDataKey = "ElsaJob";
     public const string RootGroupKey = "ElsaJobs";
-    private readonly IElsaJobSerializer _elsaJobSerializer;
+    private readonly IJobSerializer _jobSerializer;
     private readonly ISchedulerFactory _schedulerFactory;
     private readonly ILogger _logger;
 
-    public QuartzJobScheduler(IElsaJobSerializer elsaJobSerializer, ISchedulerFactory schedulerFactory, ILogger<QuartzJobScheduler> logger)
+    public QuartzJobScheduler(IJobSerializer jobSerializer, ISchedulerFactory schedulerFactory, ILogger<QuartzJobScheduler> logger)
     {
-        _elsaJobSerializer = elsaJobSerializer;
+        _jobSerializer = jobSerializer;
         _schedulerFactory = schedulerFactory;
         _logger = logger;
     }
@@ -66,7 +65,7 @@ public class QuartzJobScheduler : IJobScheduler
         var jobName = job.GetType().Name;
         var groupKey = BuildGroupKey(groupKeys);
         var triggerKey = new TriggerKey(job.JobId, groupKey);
-        var json = _elsaJobSerializer.Serialize(job);
+        var json = _jobSerializer.Serialize(job);
         var builder = TriggerBuilder.Create().ForJob(jobName).WithIdentity(triggerKey).UsingJobData(JobDataKey, json);
 
         switch (schedule)
