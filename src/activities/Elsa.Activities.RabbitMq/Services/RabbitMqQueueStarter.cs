@@ -76,10 +76,12 @@ namespace Elsa.Activities.RabbitMq.Services
         {
             try
             {
-                if (!_workers.Any(x => x.Id == configuration.ClientId))
-                {
-                    _workers.Add(await CreateWorkerAsync(configuration, services, cancellationToken));
-                }
+                var existingWorker = _workers.FirstOrDefault(x => x.Id == configuration.ClientId);
+
+                if (existingWorker != null)
+                    _workers.Remove(existingWorker);
+
+                _workers.Add(await CreateWorkerAsync(configuration, services, cancellationToken));
 
             }
             catch (Exception e)

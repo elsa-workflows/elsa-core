@@ -23,7 +23,7 @@ namespace Elsa.WorkflowTesting.Api.Handlers
             var workflowInstance = await _workflowInstanceStore.FindByIdAsync(notification.WorkflowInstanceId, cancellationToken);
 
             if (workflowInstance != null)
-                await _bookmarkIndexer.IndexBookmarksAsync(workflowInstance, notification.Tenant, cancellationToken);
+                await _bookmarkIndexer.IndexBookmarksAsync(workflowInstance, cancellationToken);
         }
     }
 }

@@ -27,7 +27,8 @@ namespace Elsa.Activities.RabbitMq.Services
 
         public void SubscribeWithHandler(Func<TransportMessage, CancellationToken, Task> handler)
         {
-            if (_bus != null) return;
+            if (_bus != null)
+                _bus.Dispose();
 
             _bus = Configure
                 .With(_activator)

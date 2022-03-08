@@ -22,24 +22,19 @@ namespace Elsa.Activities.Mqtt.Testing
         private readonly IDictionary<string, ICollection<Worker>> _workers;
         private readonly IMqttTopicsStarter _mqttTopicsStarter;
         private readonly ILogger _logger;
-        private readonly IServiceScopeFactory _scopeFactory;
 
         public MqttTestClientManager(
             IMqttTopicsStarter mqttTopicsStarter,
-            ILogger<MqttTestClientManager> logger,
-            IServiceScopeFactory scopeFactory)
+            ILogger<MqttTestClientManager> logger)
         {
             _mqttTopicsStarter = mqttTopicsStarter;
             _logger = logger;
             _workers = new Dictionary<string, ICollection<Worker>>();
-            _scopeFactory = scopeFactory;
         }
 
-        public async Task CreateTestWorkersAsync(string workflowId, string workflowInstanceId, CancellationToken cancellationToken = default)
+        public async Task CreateTestWorkersAsync(IServiceProvider serviceProvider, string workflowId, string workflowInstanceId, CancellationToken cancellationToken = default)
         {
             await _semaphore.WaitAsync(cancellationToken);
-
-            using var scope = _scopeFactory.CreateScope();
 
             try
             {
@@ -48,13 +43,13 @@ namespace Elsa.Activities.Mqtt.Testing
                     _workers[workflowInstanceId] = new List<Worker>();
                 }
 
-                var receiverConfigs = (await GetConfigurationsAsync(scope.ServiceProvider, workflowId, cancellationToken).ToListAsync(cancellationToken));
+                var receiverConfigs = (await GetConfigurationsAsync(serviceProvider, workflowId, cancellationToken).ToListAsync(cancellationToken));
 
                 foreach (var config in receiverConfigs)
                 {
                     try
                     {
-                        _workers[workflowInstanceId].Add(await _mqttTopicsStarter.CreateWorkerAsync(config, scope.ServiceProvider, cancellationToken));
+                        _workers[workflowInstanceId].Add(await _mqttTopicsStarter.CreateWorkerAsync(config, serviceProvider, cancellationToken));
                     }
                     catch (Exception e)
                     {

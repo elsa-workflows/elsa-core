@@ -1,4 +1,3 @@
-using Elsa.Abstractions.Multitenancy;
 using Elsa.Services.Models;
 
 namespace Elsa.Events
@@ -8,10 +7,6 @@ namespace Elsa.Events
     /// </summary>
     public class WorkflowSuspended : WorkflowNotification
     {
-        public ITenant Tenant { get; }
-        public WorkflowSuspended(WorkflowExecutionContext workflowExecutionContext, ITenant tenant) : base(workflowExecutionContext)
-        {
-            Tenant = tenant;
-        }
+        public WorkflowSuspended(WorkflowExecutionContext workflowExecutionContext) : base(workflowExecutionContext) { }
     }
 }

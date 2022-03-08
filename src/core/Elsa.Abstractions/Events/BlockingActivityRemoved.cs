@@ -7,15 +7,13 @@ namespace Elsa.Events
 {
     public class BlockingActivityRemoved : INotification
     {
-        public BlockingActivityRemoved(WorkflowExecutionContext workflowExecutionContext, BlockingActivity blockingActivity, ITenant tenant)
+        public BlockingActivityRemoved(WorkflowExecutionContext workflowExecutionContext, BlockingActivity blockingActivity)
         {
             WorkflowExecutionContext = workflowExecutionContext;
             BlockingActivity = blockingActivity;
-            Tenant = tenant;
         }
 
         public WorkflowExecutionContext WorkflowExecutionContext { get; }
         public BlockingActivity BlockingActivity { get; }
-        public ITenant Tenant { get; }
     }
 }

@@ -26,7 +26,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly ILogger _logger;
         private readonly ServiceBusProcessor _processor;
-        private readonly ITenant _tenant;
+        private readonly ITenantProvider _tenantProvider;
 
         public Worker(
             string queueOrTopic,
@@ -38,7 +38,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             IServiceScopeFactory serviceScopeFactory,
             IOptions<AzureServiceBusOptions> options,
             ILogger<Worker> logger,
-            ITenant tenant)
+            ITenantProvider tenantProvider)
         {
             QueueOrTopic = queueOrTopic;
             Subscription = subscription == "" ? null : subscription;
@@ -48,7 +48,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             _clock = clock;
             _serviceScopeFactory = serviceScopeFactory;
             _logger = logger;
-            _tenant = tenant;
+            _tenantProvider = tenantProvider;
 
             var processorOptions = new ServiceBusProcessorOptions
             {
@@ -125,7 +125,9 @@ namespace Elsa.Activities.AzureServiceBus.Services
             var bookmark = new MessageReceivedBookmark(QueueOrTopic, Subscription);
             var launchContext = new WorkflowsQuery(ActivityType, bookmark, correlationId);
 
-            using var scope = _serviceScopeFactory.CreateScopeForTenant(_tenant);
+            var tenant = await _tenantProvider.GetCurrentTenantAsync();
+
+            using var scope = _serviceScopeFactory.CreateScopeForTenant(tenant);
             var workflowLaunchpad = scope.ServiceProvider.GetRequiredService<IWorkflowLaunchpad>();
             await workflowLaunchpad.CollectAndDispatchWorkflowsAsync(launchContext, new WorkflowInput(model), cancellationToken);
         }

@@ -4,7 +4,6 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Abstractions.Multitenancy;
 using Elsa.Activities.AzureServiceBus.Bookmarks;
 using Elsa.Models;
 using Elsa.Services;
@@ -17,7 +16,6 @@ namespace Elsa.Activities.AzureServiceBus.Services
     public class WorkerManager : IWorkerManager
     {
         private readonly IBookmarkSerializer _bookmarkSerializer;
-        private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<WorkerManager> _logger;
         private readonly ICollection<Worker> _workers;
         private readonly SemaphoreSlim _semaphore = new(1);
@@ -27,13 +25,12 @@ namespace Elsa.Activities.AzureServiceBus.Services
             IBookmarkSerializer bookmarkSerializer,
             ILogger<WorkerManager> logger)
         {
-            _serviceProvider = serviceProvider;
             _logger = logger;
             _bookmarkSerializer = bookmarkSerializer;
             _workers = new Collection<Worker>();
         }
 
-        public async Task CreateWorkersAsync(IReadOnlyCollection<Trigger> triggers, ITenant tenant, CancellationToken cancellationToken = default)
+        public async Task CreateWorkersAsync(IReadOnlyCollection<Trigger> triggers, IServiceProvider services, CancellationToken cancellationToken = default)
         {
             await _semaphore.WaitAsync(cancellationToken);
 
@@ -44,7 +41,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
                 foreach (var trigger in filteredTriggers)
                 {
                     var bookmark = _bookmarkSerializer.Deserialize<MessageReceivedBookmark>(trigger.Model);
-                    await CreateAndAddWorkerAsync(trigger.WorkflowDefinitionId, bookmark.QueueOrTopic, bookmark.Subscription, tenant, cancellationToken);
+                    await CreateAndAddWorkerAsync(trigger.WorkflowDefinitionId, bookmark.QueueOrTopic, bookmark.Subscription, services, cancellationToken);
                 }
             }
             finally
@@ -53,7 +50,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             }
         }
 
-        public async Task CreateWorkersAsync(IReadOnlyCollection<Bookmark> bookmarks, ITenant tenant, CancellationToken cancellationToken = default)
+        public async Task CreateWorkersAsync(IReadOnlyCollection<Bookmark> bookmarks, IServiceProvider services, CancellationToken cancellationToken = default)
         {
             await _semaphore.WaitAsync(cancellationToken);
 
@@ -64,7 +61,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
                 foreach (var bookmark in filteredBookmarks)
                 {
                     var bookmarkModel = _bookmarkSerializer.Deserialize<MessageReceivedBookmark>(bookmark.Model);
-                    await CreateAndAddWorkerAsync(bookmark.WorkflowInstanceId, bookmarkModel.QueueOrTopic, bookmarkModel.Subscription, tenant, cancellationToken);
+                    await CreateAndAddWorkerAsync(bookmark.WorkflowInstanceId, bookmarkModel.QueueOrTopic, bookmarkModel.Subscription, services, cancellationToken);
                 }
             }
             finally
@@ -96,7 +93,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
             await RemoveWorkersAsync(workflowInstanceIds);
         }
 
-        private async Task CreateAndAddWorkerAsync(string tag, string queueOrTopic, string? subscription, ITenant tenant, CancellationToken cancellationToken)
+        private async Task CreateAndAddWorkerAsync(string tag, string queueOrTopic, string? subscription, IServiceProvider services, CancellationToken cancellationToken)
         {
             try
             {
@@ -104,7 +101,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
 
                 if (worker == null)
                 {
-                    worker = ActivatorUtilities.CreateInstance<Worker>(_serviceProvider, queueOrTopic, subscription ?? "", tag, tenant);
+                    worker = ActivatorUtilities.CreateInstance<Worker>(services, queueOrTopic, subscription ?? "", tag);
                     _workers.Add(worker);
                     await worker.StartAsync(cancellationToken);
                 }

@@ -1,12 +1,13 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Mqtt.Services;
 using Elsa.Events;
-using Rebus.Handlers;
+using MediatR;
 
 namespace Elsa.Activities.Mqtt.Consumers
 {
-    public class RestartMqttTopicsConsumer : IHandleMessages<TriggerIndexingFinished>, IHandleMessages<TriggersDeleted>, IHandleMessages<BookmarkIndexingFinished>, IHandleMessages<BookmarksDeleted>
+    public class RestartMqttTopicsConsumer : INotificationHandler<TriggerIndexingFinished>, INotificationHandler<TriggersDeleted>, INotificationHandler<BookmarkIndexingFinished>, INotificationHandler<BookmarksDeleted>
     {
         private readonly IMqttTopicsStarter _mqttTopicsStarter;
         private readonly IServiceProvider _services;
@@ -17,9 +18,9 @@ namespace Elsa.Activities.Mqtt.Consumers
             _services = services;
         }
 
-        public Task Handle(TriggerIndexingFinished message) => _mqttTopicsStarter.CreateWorkersAsync(message.Triggers, _services);
-        public Task Handle(TriggersDeleted message) => _mqttTopicsStarter.RemoveWorkersAsync(message.Triggers);
-        public Task Handle(BookmarkIndexingFinished message) => _mqttTopicsStarter.CreateWorkersAsync(message.Bookmarks, _services);
-        public Task Handle(BookmarksDeleted message) => _mqttTopicsStarter.CreateWorkersAsync(message.Bookmarks, _services);
+        public Task Handle(TriggerIndexingFinished message, CancellationToken cancellationToken) => _mqttTopicsStarter.CreateWorkersAsync(message.Triggers, _services);
+        public Task Handle(TriggersDeleted message, CancellationToken cancellationToken) => _mqttTopicsStarter.RemoveWorkersAsync(message.Triggers);
+        public Task Handle(BookmarkIndexingFinished message, CancellationToken cancellationToken) => _mqttTopicsStarter.CreateWorkersAsync(message.Bookmarks, _services);
+        public Task Handle(BookmarksDeleted message, CancellationToken cancellationToken) => _mqttTopicsStarter.CreateWorkersAsync(message.Bookmarks, _services);
     }
 }

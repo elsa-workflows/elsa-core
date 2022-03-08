@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Abstractions.Multitenancy;
 using Elsa.Events;
 using Elsa.Models;
 using Elsa.Persistence;
@@ -59,15 +58,15 @@ namespace Elsa.Services.Bookmarks
             _logger = logger;
         }
 
-        public async Task IndexBookmarksAsync(IEnumerable<WorkflowInstance> workflowInstances, ITenant tenant, CancellationToken cancellationToken)
+        public async Task IndexBookmarksAsync(IEnumerable<WorkflowInstance> workflowInstances, CancellationToken cancellationToken)
         {
             var workflowInstanceList = workflowInstances.ToList();
 
             foreach (var workflowInstance in workflowInstanceList.Where(x => x.WorkflowStatus == WorkflowStatus.Suspended))
-                await IndexBookmarksAsync(workflowInstance, tenant, cancellationToken);
+                await IndexBookmarksAsync(workflowInstance, cancellationToken);
         }
 
-        public async Task IndexBookmarksAsync(WorkflowInstance workflowInstance, ITenant tenant, CancellationToken cancellationToken)
+        public async Task IndexBookmarksAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken)
         {
             _stopwatch.Restart();
             _logger.LogInformation("Indexing bookmarks for workflow instance {WorkflowInstanceId}", workflowInstance.Id);
@@ -96,19 +95,19 @@ namespace Elsa.Services.Bookmarks
             await _bookmarkStore.AddManyAsync(entities, cancellationToken);
             var oldBookmarkIds = oldBookmarks.Select(x => x.Id).ToList();
             await _bookmarkStore.DeleteManyAsync(new BookmarkIdsSpecification(oldBookmarkIds), cancellationToken);
-            await _publisher.Publish(new BookmarkIndexingFinished(workflowInstanceId, bookmarks, tenant), cancellationToken);
+            await _publisher.Publish(new BookmarkIndexingFinished(workflowInstanceId, bookmarks), cancellationToken);
             
             _stopwatch.Stop();
             _logger.LogInformation("Indexed {BookmarkCount} bookmarks for workflow instance {WorkflowInstanceId} in {ElapsedTime}", entities.Count, workflowInstance.Id, _stopwatch.Elapsed);
         }
 
-        public async Task DeleteBookmarksAsync(string workflowInstanceId, ITenant tenant, CancellationToken cancellationToken = default)
+        public async Task DeleteBookmarksAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
         {
             var specification = new WorkflowInstanceIdSpecification(workflowInstanceId);
             var bookmarks = await _bookmarkStore.FindManyAsync(specification, cancellationToken: cancellationToken).ToList();
             var count = bookmarks.Count;
 
-            await _publisher.Publish(new BookmarksDeleted(workflowInstanceId, bookmarks, tenant), cancellationToken);
+            await _publisher.Publish(new BookmarksDeleted(workflowInstanceId, bookmarks), cancellationToken);
             _logger.LogDebug("Deleted {DeletedBookmarkCount} bookmarks for workflow {WorkflowInstanceId}", count, workflowInstanceId);
         }
 

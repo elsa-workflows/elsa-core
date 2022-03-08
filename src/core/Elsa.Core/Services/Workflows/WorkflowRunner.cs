@@ -72,12 +72,12 @@ namespace Elsa.Services.Workflows
             }
 
             var workflowExecutionContext = new WorkflowExecutionContext(workflowExecutionScope.ServiceProvider, workflowBlueprint, workflowInstance, input?.Input);
-            var result = await RunWorkflowInternalAsync(workflowExecutionContext, tenant, activityId, cancellationToken);
+            var result = await RunWorkflowInternalAsync(workflowExecutionContext, activityId, cancellationToken);
             await workflowExecutionContext.WorkflowExecutionLog.FlushAsync(cancellationToken);
             return result;
         }
 
-        public virtual async Task<RunWorkflowResult> RunWorkflowInternalAsync(WorkflowExecutionContext workflowExecutionContext, ITenant tenant, string? activityId = default, CancellationToken cancellationToken = default)
+        public virtual async Task<RunWorkflowResult> RunWorkflowInternalAsync(WorkflowExecutionContext workflowExecutionContext, string? activityId = default, CancellationToken cancellationToken = default)
         {
             var workflowInstance = workflowExecutionContext.WorkflowInstance;
 
@@ -151,14 +151,14 @@ namespace Elsa.Services.Workflows
                 WorkflowStatus.Cancelled => new INotification[] { new WorkflowCancelled(workflowExecutionContext), new WorkflowInstanceCancelled(workflowInstance) },
                 WorkflowStatus.Finished => new INotification[] { new WorkflowCompleted(workflowExecutionContext) },
                 WorkflowStatus.Faulted => new INotification[] { new WorkflowFaulted(workflowExecutionContext) },
-                WorkflowStatus.Suspended => new INotification[] { new WorkflowSuspended(workflowExecutionContext, tenant) },
+                WorkflowStatus.Suspended => new INotification[] { new WorkflowSuspended(workflowExecutionContext) },
                 _ => Array.Empty<INotification>()
             };
 
             foreach (var statusEvent in statusEvents)
                 await _mediator.Publish(statusEvent, cancellationToken);
 
-            await _mediator.Publish(new WorkflowExecutionFinished(workflowExecutionContext, tenant), cancellationToken);
+            await _mediator.Publish(new WorkflowExecutionFinished(workflowExecutionContext), cancellationToken);
             return runWorkflowResult;
         }
 

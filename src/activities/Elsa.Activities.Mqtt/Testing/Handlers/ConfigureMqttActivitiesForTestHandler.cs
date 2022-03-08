@@ -12,10 +12,12 @@ namespace Elsa.Activities.Mqtt.Testing.Handlers
     public class ConfigureMqttActivitiesForTestHandler : INotificationHandler<WorkflowExecuting>, INotificationHandler<WorkflowFaulted>, INotificationHandler<WorkflowCompleted>, INotificationHandler<WorkflowTestExecutionStopped>
     {
         private readonly IMqttTestClientManager _mqttTestClientManager;
+        private readonly IServiceProvider _serviceProvider;
 
-        public ConfigureMqttActivitiesForTestHandler(IMqttTestClientManager mqttTestClientManager)
+        public ConfigureMqttActivitiesForTestHandler(IMqttTestClientManager mqttTestClientManager, IServiceProvider serviceProvider)
         {
             _mqttTestClientManager = mqttTestClientManager;
+            _serviceProvider = serviceProvider;
         }
 
         public async Task Handle(WorkflowExecuting notification, CancellationToken cancellationToken)
@@ -31,7 +33,7 @@ namespace Elsa.Activities.Mqtt.Testing.Handlers
 
             var workflowInstanceId = notification.WorkflowExecutionContext.WorkflowInstance.Id;
 
-            await _mqttTestClientManager.CreateTestWorkersAsync(workflowBlueprint.Id, workflowInstanceId, cancellationToken);
+            await _mqttTestClientManager.CreateTestWorkersAsync(_serviceProvider, workflowBlueprint.Id, workflowInstanceId, cancellationToken);
         }
 
         public async Task Handle(WorkflowFaulted notification, CancellationToken cancellationToken)

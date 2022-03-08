@@ -1,3 +1,4 @@
+using Elsa.Abstractions.Multitenancy;
 using Elsa.Events;
 using Elsa.WorkflowTesting.Events;
 using MediatR;
@@ -11,10 +12,12 @@ namespace Elsa.Activities.RabbitMq.Testing
     public class ConfigureRabbitMqActivitiesForTestHandler : INotificationHandler<WorkflowExecuting>, INotificationHandler<WorkflowFaulted>, INotificationHandler<WorkflowCompleted>, INotificationHandler<WorkflowTestExecutionStopped>
     {
         private readonly IRabbitMqTestQueueManager _rabbitMqTestQueueManager;
+        private readonly ITenantProvider _tenantProvider;
 
-        public ConfigureRabbitMqActivitiesForTestHandler(IRabbitMqTestQueueManager rabbitMqTestQueueManager)
+        public ConfigureRabbitMqActivitiesForTestHandler(IRabbitMqTestQueueManager rabbitMqTestQueueManager, ITenantProvider tenantProvider)
         {
             _rabbitMqTestQueueManager = rabbitMqTestQueueManager;
+            _tenantProvider = tenantProvider;
         }
 
         public async Task Handle(WorkflowExecuting notification, CancellationToken cancellationToken)
@@ -31,8 +34,9 @@ namespace Elsa.Activities.RabbitMq.Testing
             var workflowId = notification.WorkflowExecutionContext.WorkflowBlueprint.Id;
             var workflowInstanceId = notification.WorkflowExecutionContext.WorkflowInstance.Id;
 
+            var tenant = await _tenantProvider.GetCurrentTenantAsync();
 
-            await _rabbitMqTestQueueManager.CreateTestWorkersAsync(workflowId, workflowInstanceId, cancellationToken);
+            await _rabbitMqTestQueueManager.CreateTestWorkersAsync(tenant, workflowId, workflowInstanceId, cancellationToken);
         }
 
         public Task Handle(WorkflowFaulted notification, CancellationToken cancellationToken)

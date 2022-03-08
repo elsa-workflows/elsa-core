@@ -21,24 +21,24 @@ namespace Elsa.Activities.RabbitMq.Testing
         private readonly IDictionary<string, ICollection<Worker>> _workers;
         private readonly IRabbitMqQueueStarter _rabbitMqQueueStarter;
         private readonly ILogger _logger;
-        private readonly IServiceScopeFactory _scopeFactory;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
 
         public RabbitMqTestQueueManager(
             IRabbitMqQueueStarter rabbitMqQueueStarter,
             ILogger<RabbitMqTestQueueManager> logger,
-            IServiceScopeFactory scopeFactory)
+            IServiceScopeFactory serviceScopeFactory)
         {
             _rabbitMqQueueStarter = rabbitMqQueueStarter;
             _logger = logger;
             _workers = new Dictionary<string, ICollection<Worker>>();
-            _scopeFactory = scopeFactory;
+            _serviceScopeFactory = serviceScopeFactory;
         }
 
-        public async Task CreateTestWorkersAsync(string workflowId, string workflowInstanceId, CancellationToken cancellationToken = default)
+        public async Task CreateTestWorkersAsync(ITenant tenant, string workflowId, string workflowInstanceId, CancellationToken cancellationToken = default)
         {
             await _semaphore.WaitAsync(cancellationToken);
 
-            using var scope = _scopeFactory.CreateScope();
+            using var scope = _serviceScopeFactory.CreateScopeForTenant(tenant);
 
             try
             {

@@ -76,10 +76,12 @@ namespace Elsa.Activities.Mqtt.Services
         {
             try
             {
-                if (!_workers.Any(x => x.Id == options.ClientId))
-                {
-                    _workers.Add(await CreateWorkerAsync(options, services, cancellationToken));
-                }
+                var existingWorker = _workers.FirstOrDefault(x => x.Id == options.ClientId);
+
+                if (existingWorker != null)
+                    _workers.Remove(existingWorker);
+
+                _workers.Add(await CreateWorkerAsync(options, services, cancellationToken));
 
             }
             catch (Exception e)

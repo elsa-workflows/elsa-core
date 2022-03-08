@@ -38,7 +38,6 @@ namespace Elsa.Services.Models
             // This is a service that needs to be bound to the same lifetime scope as the workflow execution context.
             WorkflowExecutionLog = ActivatorUtilities.CreateInstance<WorkflowExecutionLog>(serviceProvider);
             var tenantProvider = serviceProvider.GetRequiredService<ITenantProvider>();
-            Tenant = tenantProvider.GetCurrentTenantAsync().GetAwaiter().GetResult();
         }
 
         public IWorkflowBlueprint WorkflowBlueprint { get; }
@@ -83,7 +82,6 @@ namespace Elsa.Services.Models
         public WorkflowStatus Status => WorkflowInstance.WorkflowStatus;
         public bool HasBlockingActivities => WorkflowInstance.BlockingActivities.Any();
         public object? WorkflowContext { get; set; }
-        public ITenant Tenant { get; }
 
         /// <summary>
         /// A collection of tasks to execute after the workflow is suspended.
@@ -112,7 +110,7 @@ namespace Elsa.Services.Models
         public async Task RemoveBlockingActivityAsync(BlockingActivity blockingActivity)
         {
             WorkflowInstance.BlockingActivities.Remove(blockingActivity);
-            await Mediator.Publish(new BlockingActivityRemoved(this, blockingActivity, Tenant));
+            await Mediator.Publish(new BlockingActivityRemoved(this, blockingActivity));
         }
 
         public async Task EvictScopeAsync(IActivityBlueprint scope) => await Mediator.Publish(new ScopeEvicted(this, scope));

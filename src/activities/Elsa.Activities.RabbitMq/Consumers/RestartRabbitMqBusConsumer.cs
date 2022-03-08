@@ -1,12 +1,13 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.RabbitMq.Services;
 using Elsa.Events;
-using Rebus.Handlers;
+using MediatR;
 
 namespace Elsa.Activities.RabbitMq.Consumers
 {
-    public class RestartRabbitMqBusConsumer : IHandleMessages<TriggerIndexingFinished>, IHandleMessages<TriggersDeleted>, IHandleMessages<BookmarkIndexingFinished>, IHandleMessages<BookmarksDeleted>
+    public class RestartRabbitMqBusConsumer : INotificationHandler<TriggerIndexingFinished>, INotificationHandler<TriggersDeleted>, INotificationHandler<BookmarkIndexingFinished>, INotificationHandler<BookmarksDeleted>
     {
         private readonly IRabbitMqQueueStarter _rabbitMqQueueStarter;
         private readonly IServiceProvider _services;
@@ -15,10 +16,12 @@ namespace Elsa.Activities.RabbitMq.Consumers
         {
             _rabbitMqQueueStarter = rabbitMqQueueStarter;
             _services = services;
+
         }
-        public Task Handle(TriggerIndexingFinished message) => _rabbitMqQueueStarter.CreateWorkersAsync(message.Triggers, _services);
-        public Task Handle(TriggersDeleted message) => _rabbitMqQueueStarter.RemoveWorkersAsync(message.Triggers);
-        public Task Handle(BookmarkIndexingFinished message) => _rabbitMqQueueStarter.CreateWorkersAsync(message.Bookmarks, _services);
-        public Task Handle(BookmarksDeleted message) => _rabbitMqQueueStarter.CreateWorkersAsync(message.Bookmarks, _services);
+
+        public Task Handle(TriggerIndexingFinished message, CancellationToken cancellationToken) => _rabbitMqQueueStarter.CreateWorkersAsync(message.Triggers, _services);
+        public Task Handle(TriggersDeleted message, CancellationToken cancellationToken) => _rabbitMqQueueStarter.RemoveWorkersAsync(message.Triggers);
+        public Task Handle(BookmarkIndexingFinished message, CancellationToken cancellationToken) => _rabbitMqQueueStarter.CreateWorkersAsync(message.Bookmarks, _services);
+        public Task Handle(BookmarksDeleted message, CancellationToken cancellationToken) => _rabbitMqQueueStarter.CreateWorkersAsync(message.Bookmarks, _services);
     }
 }

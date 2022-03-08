@@ -1,7 +1,6 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Abstractions.Multitenancy;
 using Elsa.Activities.RabbitMq.Bookmarks;
 using Elsa.Activities.RabbitMq.Services;
 using Elsa.Services;

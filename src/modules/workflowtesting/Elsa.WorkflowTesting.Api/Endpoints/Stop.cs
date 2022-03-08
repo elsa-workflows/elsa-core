@@ -1,6 +1,5 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Abstractions.Multitenancy;
 using Elsa.Server.Api.ActionFilters;
 using Elsa.WorkflowTesting.Api.Models;
 using Elsa.WorkflowTesting.Events;
@@ -19,12 +18,10 @@ namespace Elsa.WorkflowTesting.Api.Endpoints
     public class Stop : Controller
     {
         private readonly IMediator _mediator;
-        ITenantProvider _tenantProvider;
 
-        public Stop(IMediator mediator, ITenantProvider tenantProvider)
+        public Stop(IMediator mediator)
         {
             _mediator = mediator;
-            _tenantProvider = tenantProvider;
         }
 
 
@@ -40,9 +37,7 @@ namespace Elsa.WorkflowTesting.Api.Endpoints
         ]
         public async Task<IActionResult> Handle([FromBody] WorkflowTestStopRequest request, CancellationToken cancellationToken = default)
         {
-            var tenant = await _tenantProvider.GetCurrentTenantAsync();
-
-            await _mediator.Publish(new WorkflowTestExecutionStopped(request.WorkflowInstanceId, tenant), cancellationToken);
+            await _mediator.Publish(new WorkflowTestExecutionStopped(request.WorkflowInstanceId), cancellationToken);
 
             return Ok();
         }

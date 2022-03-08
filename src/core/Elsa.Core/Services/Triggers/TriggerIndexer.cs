@@ -13,6 +13,7 @@ using Elsa.Persistence.Specifications.Triggers;
 using Elsa.Providers.Workflows;
 using Elsa.Services.Models;
 using MediatR;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Open.Linq.AsyncExtensions;
 using Rebus.Extensions;
@@ -30,7 +31,6 @@ namespace Elsa.Services.Triggers
         private readonly ILogger _logger;
         private readonly Stopwatch _stopwatch = new();
         private readonly IGetsTriggersForWorkflowBlueprints _getsTriggersForWorkflows;
-        private readonly ITenantProvider _tenantProvider;
 
         public TriggerIndexer(
             ITriggerStore triggerStore,
@@ -40,8 +40,7 @@ namespace Elsa.Services.Triggers
             IEnumerable<IWorkflowProvider> workflowProviders,
             ElsaOptions elsaOptions,
             ILogger<TriggerIndexer> logger,
-            IGetsTriggersForWorkflowBlueprints getsTriggersForWorkflows,
-            ITenantProvider tenantProvider)
+            IGetsTriggersForWorkflowBlueprints getsTriggersForWorkflows)
         {
             _triggerStore = triggerStore;
             _bookmarkSerializer = bookmarkSerializer;
@@ -51,7 +50,6 @@ namespace Elsa.Services.Triggers
             _elsaOptions = elsaOptions;
             _logger = logger;
             _getsTriggersForWorkflows = getsTriggersForWorkflows;
-            _tenantProvider = tenantProvider;
         }
 
         public async Task IndexTriggersAsync(CancellationToken cancellationToken = default)
@@ -100,10 +98,8 @@ namespace Elsa.Services.Triggers
                 await _triggerStore.SaveAsync(trigger, cancellationToken);
             }
 
-            var tenant = await _tenantProvider.GetCurrentTenantAsync();
-
             // Publish event.
-            await _mediator.Publish(new TriggerIndexingFinished(workflowBlueprint.Id, triggers, tenant), cancellationToken);
+            await _mediator.Publish(new TriggerIndexingFinished(workflowBlueprint.Id, triggers), cancellationToken);
         }
 
         public async Task DeleteTriggersAsync(string workflowDefinitionId, CancellationToken cancellationToken = default)
