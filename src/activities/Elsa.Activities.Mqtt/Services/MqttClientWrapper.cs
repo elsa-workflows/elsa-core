@@ -42,6 +42,9 @@ namespace Elsa.Activities.Mqtt.Services
             await DisconnectAsync();
         }
 
+           
+            await SubscribeAsync(Options.Topic);
+            
         public void Dispose()
         {
             if (Client.IsConnected) DisconnectAsync().Wait();

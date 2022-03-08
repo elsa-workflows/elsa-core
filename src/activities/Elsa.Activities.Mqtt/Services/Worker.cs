@@ -52,5 +52,6 @@ namespace Elsa.Activities.Mqtt.Services
         }
 
         private async Task OnMessageReceived(MqttApplicationMessage message) => await TriggerWorkflowsAsync(message, CancellationToken.None);
+
     }
 }

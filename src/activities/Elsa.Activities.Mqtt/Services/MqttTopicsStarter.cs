@@ -15,6 +15,7 @@ namespace Elsa.Activities.Mqtt.Services
 {
     public class MqttTopicsStarter : IMqttTopicsStarter
     {
+        private readonly SemaphoreSlim _semaphore = new(1);
         private readonly IMessageReceiverClientFactory _receiverFactory;
         private readonly IBookmarkSerializer _bookmarkSerializer;
         private readonly ILogger<MqttTopicsStarter> _logger;
@@ -38,6 +39,9 @@ namespace Elsa.Activities.Mqtt.Services
 
             try
             {
+
+            try
+            {
                 foreach (var trigger in triggers)
                 {
                     var bookmark = _bookmarkSerializer.Deserialize<MessageReceivedBookmark>(trigger.Model);
@@ -47,7 +51,7 @@ namespace Elsa.Activities.Mqtt.Services
                 }
             }
             finally
-            {
+                {
                 _semaphore.Release();
             }
         }
@@ -94,6 +98,12 @@ namespace Elsa.Activities.Mqtt.Services
         {
             var receiver = await _receiverFactory.GetReceiverAsync(clientOptions, cancellationToken);
             return ActivatorUtilities.CreateInstance<Worker>(services, receiver, (Func<IMqttClientWrapper, Task>)DisposeReceiverAsync);
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+
         }
 
         public async Task RemoveWorkersAsync(IReadOnlyCollection<Trigger> triggers, CancellationToken cancellationToken = default)
@@ -118,6 +128,25 @@ namespace Elsa.Activities.Mqtt.Services
 
             foreach (var worker in workers.ToList())
                 await RemoveWorkerAsync(worker);
+                yield return configuration;
+
+            var bookmarkFinder = scope.ServiceProvider.GetRequiredService<IBookmarkFinder>();
+            var bookmarks = await bookmarkFinder.FindBookmarksByTypeAsync<MessageReceivedBookmark>(cancellationToken: cancellationToken);
+
+            foreach (var bookmark in bookmarks)
+            {
+                var bookmarkModel = _bookmarkSerializer.Deserialize<MessageReceivedBookmark>(bookmark.Model);
+
+                var configuration = CreateConfigurationFromBookmark(bookmarkModel, bookmark.ActivityId);
+
+                yield return configuration;
+            }
+
+        }
+
+        private MqttClientOptions CreateConfigurationFromBookmark(MessageReceivedBookmark bookmark, string activityId)
+        {
+            return new MqttClientOptions(bookmark.Topic,bookmark.Host,bookmark.Port,bookmark.Username,bookmark.Password,bookmark.Qos);
         }
 
         private async Task RemoveWorkerAsync(Worker worker)

@@ -27,9 +27,9 @@ namespace Elsa.Activities.Mqtt.Activities.MqttMessageReceived
         public object? Output { get; set; }
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => context.WorkflowExecutionContext.IsFirstPass ? ExecuteInternalAsync(context) : Suspend();
-        
+
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context) => ExecuteInternalAsync(context);
-        
+
         private IActivityExecutionResult ExecuteInternalAsync(ActivityExecutionContext context)
         {
             if (context.Input != null)
