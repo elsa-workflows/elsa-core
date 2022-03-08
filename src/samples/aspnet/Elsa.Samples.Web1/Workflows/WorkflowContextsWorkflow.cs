@@ -1,4 +1,5 @@
 using Elsa.Activities.Console;
+using Elsa.Activities.Workflows;
 using Elsa.Contracts;
 using Elsa.Models;
 using Elsa.Modules.WorkflowContexts.Abstractions;
@@ -12,11 +13,18 @@ public class WorkflowContextsWorkflow : IWorkflow
 {
     public void Build(IWorkflowDefinitionBuilder workflow)
     {
-        var documentContext = new WorkflowContext<Document, DocumentProvider>();
+        var documentContext = workflow.CreateWorkflowContext<Document, DocumentProvider>();
+        var customerContext = workflow.CreateWorkflowContext<Customer, CustomerProvider>();
         
         workflow
-            .AddWorkflowContext(documentContext)
-            .WithRoot(new WriteLine(context => $"Document title: {documentContext.Get(context)!.Title}"));
+            .WithRoot(new Sequence
+            {
+                Activities =
+                {
+                    new WriteLine(context => $"Document title: {documentContext.Get(context)!.Title}"),
+                    new WriteLine(context => $"Customer name: {customerContext.Get(context)!.Name}"),
+                }
+            });
     }
 }
 
@@ -35,9 +43,29 @@ public class DocumentProvider : WorkflowContextProvider<Document>
     }
 }
 
+public class CustomerProvider : WorkflowContextProvider<Customer>
+{
+    protected override Customer? Load(WorkflowExecutionContext workflowExecutionContext)
+    {
+        var idGenerator = workflowExecutionContext.GetRequiredService<IIdentityGenerator>();
+
+        return new Customer
+        {
+            Id = idGenerator.GenerateId(),
+            Name = "Joanna",
+        };
+    }
+}
+
 public class Document
 {
     public string Id { get; set; } = default!;
     public string Title { get; set; } = default!;
     public string Body { get; set; } = default!;
+}
+
+public class Customer
+{
+    public string Id { get; set; } = default!;
+    public string Name { get; set; } = default!;
 }
