@@ -15,7 +15,8 @@ public class WorkflowDefinitionMapper
             new WorkflowPublication(definition.IsLatest, definition.IsPublished),
             new WorkflowMetadata(definition.Name, definition.Description, definition.CreatedAt),
             definition.Root,
-            definition.Variables);
+            definition.Variables,
+            definition.ApplicationProperties);
     }
 
     public WorkflowDefinition? Map(Workflow? workflow) => workflow == null ? null : Map(workflow, new WorkflowDefinition());
@@ -35,6 +36,8 @@ public class WorkflowDefinitionMapper
         definition.CreatedAt = metadata.CreatedAt;
         definition.IsLatest = publication.IsLatest;
         definition.IsPublished = publication.IsPublished;
+        definition.Variables = workflow.Variables;
+        definition.ApplicationProperties = workflow.ApplicationProperties;
 
         return definition;
     }

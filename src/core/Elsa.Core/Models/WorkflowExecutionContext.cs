@@ -48,7 +48,18 @@ public class WorkflowExecutionContext
     public IActivityScheduler Scheduler { get; }
     public Bookmark? Bookmark { get; }
     public IReadOnlyDictionary<string, object> Input { get; }
+    
+    /// <summary>
+    /// A dictionary that can be used by application code and activities to store information. Values need to be serializable, since this dictionary will be persisted alongside the workflow instance. 
+    /// </summary>
     public IDictionary<string, object?> Properties { get; set; } = new Dictionary<string, object?>();
+    
+    /// <summary>
+    /// A dictionary that can be used by application code and middleware to store information and even services. Values do not need to be serializable, since this dictionary will not be persisted.
+    /// All data will be gone once workflow execution completes. 
+    /// </summary>
+    public IDictionary<string, object?> TransientProperties { get; set; } = new Dictionary<string, object?>();
+    
     public ExecuteActivityDelegate? ExecuteDelegate { get; set; }
     public CancellationToken CancellationToken { get; }
     public IReadOnlyCollection<Bookmark> Bookmarks => new ReadOnlyCollection<Bookmark>(_bookmarks);

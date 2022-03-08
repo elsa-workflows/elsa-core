@@ -15,6 +15,7 @@ public class WorkflowDefinition : Entity
     public int Version { get; set; } = 1;
     public IActivity Root { get; set; } = default!;
     public ICollection<Variable> Variables { get; set; } = new List<Variable>();
+    public IDictionary<string, object> ApplicationProperties { get; set; } = new Dictionary<string, object>();
     public bool IsLatest { get; set; }
     public bool IsPublished { get; set; }
 

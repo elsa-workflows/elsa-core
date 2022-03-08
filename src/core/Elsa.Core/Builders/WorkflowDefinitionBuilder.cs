@@ -11,6 +11,7 @@ public class WorkflowDefinitionBuilder : IWorkflowDefinitionBuilder
     public int Version { get; private set; } = 1;
     public IActivity? Root { get; private set; }
     public ICollection<Variable> Variables { get; set; } = new List<Variable>();
+    public IDictionary<string, object> ApplicationProperties { get; set; } = new Dictionary<string, object>();
 
     public IWorkflowDefinitionBuilder WithId(string id)
     {
@@ -36,6 +37,18 @@ public class WorkflowDefinitionBuilder : IWorkflowDefinitionBuilder
         return this;
     }
 
+    public IWorkflowDefinitionBuilder WithVariable(Variable variable)
+    {
+        Variables.Add(variable);
+        return this;
+    }
+
+    public IWorkflowDefinitionBuilder WithApplicationProperty(string name, object value)
+    {
+        ApplicationProperties[name] = value;
+        return this;
+    }
+
     public Workflow BuildWorkflow()
     {
         var definitionId = DefinitionId ?? Guid.NewGuid().ToString("N");
@@ -44,6 +57,6 @@ public class WorkflowDefinitionBuilder : IWorkflowDefinitionBuilder
         var identity = new WorkflowIdentity(definitionId, Version, id);
         var publication = WorkflowPublication.LatestAndPublished;
         var metadata = new WorkflowMetadata();
-        return new Workflow(identity, publication, metadata, root, Variables);
+        return new Workflow(identity, publication, metadata, root, Variables, ApplicationProperties);
     }
 }

@@ -15,7 +15,7 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
     {
         _serviceProvider = serviceProvider;
     }
-    
+
     public WorkflowState ReadState(WorkflowExecutionContext workflowExecutionContext)
     {
         var state = new WorkflowState
@@ -44,7 +44,7 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
     {
         state.Properties = workflowExecutionContext.Properties;
     }
-        
+
     private void SetProperties(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
         workflowExecutionContext.Properties = state.Properties;
@@ -127,7 +127,9 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
             var cancellationToken = workflowExecutionContext.CancellationToken;
             var activity = workflowExecutionContext.FindActivityById(activityExecutionContextState.ScheduledActivityId);
             var register = new Register(activityExecutionContextState.Register.Locations);
-            var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, register, default, cancellationToken);
+            var workflow = workflowExecutionContext.Workflow;
+
+            var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, register, workflow, new Dictionary<string, object?>(), default, cancellationToken);
             var properties = activityExecutionContextState.Properties;
             var activityExecutionContext = new ActivityExecutionContext(workflowExecutionContext, default, expressionExecutionContext, activity, cancellationToken)
             {
@@ -136,7 +138,7 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
             };
             return activityExecutionContext;
         }
-        
+
         var activityExecutionContexts = state.ActivityExecutionContexts.Select(CreateActivityExecutionContext).ToList();
         var lookup = activityExecutionContexts.ToDictionary(x => x.Id);
 
@@ -146,10 +148,10 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
             var parentContext = lookup[contextState.ParentContextId!];
             var contextId = contextState.Id;
             var context = lookup[contextId];
-            context.ExpressionExecutionContext.ParentContext = parentContext.ExpressionExecutionContext; 
+            context.ExpressionExecutionContext.ParentContext = parentContext.ExpressionExecutionContext;
             context.ParentActivityExecutionContext = parentContext;
         }
-        
+
         workflowExecutionContext.ActivityExecutionContexts = activityExecutionContexts;
     }
 

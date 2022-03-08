@@ -114,7 +114,7 @@ public class TriggerIndexer : ITriggerIndexer
     private async IAsyncEnumerable<WorkflowTrigger> GetTriggersAsync(Workflow workflow, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var context = new WorkflowIndexingContext(workflow, cancellationToken);
-        
+
         // Get a list of activities that are configured as "startable".
         var startableNodes = _activityWalker
             .Walk(workflow.Root)
@@ -173,7 +173,7 @@ public class TriggerIndexer : ITriggerIndexer
             Hash = _hasher.Hash(x),
             Data = JsonSerializer.Serialize(x)
         });
-            
+
         return triggers.ToList();
     }
 
@@ -183,7 +183,7 @@ public class TriggerIndexer : ITriggerIndexer
         var assignedInputs = inputs.Where(x => x.LocationReference != null!).ToList();
         var register = context.GetOrCreateRegister(trigger);
         var cancellationToken = context.CancellationToken;
-        var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, register, default, cancellationToken);
+        var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, register, context.Workflow, new Dictionary<string, object?>(), default, cancellationToken);
 
         // Evaluate activity inputs before requesting trigger data.
         foreach (var input in assignedInputs)

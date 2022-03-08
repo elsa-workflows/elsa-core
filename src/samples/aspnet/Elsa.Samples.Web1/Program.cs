@@ -17,6 +17,7 @@ using Elsa.Modules.Quartz.Services;
 using Elsa.Modules.Scheduling.Activities;
 using Elsa.Modules.Scheduling.Extensions;
 using Elsa.Modules.Scheduling.Triggers;
+using Elsa.Modules.WorkflowContexts.Extensions;
 using Elsa.Persistence.EntityFrameworkCore.Extensions;
 using Elsa.Persistence.EntityFrameworkCore.Sqlite;
 using Elsa.Pipelines.WorkflowExecution.Components;
@@ -58,6 +59,7 @@ services
         options.Workflows.Add(nameof(SendMessageWorkflow), new SendMessageWorkflow());
         options.Workflows.Add(nameof(ReceiveMessageWorkflow), new ReceiveMessageWorkflow());
         options.Workflows.Add(nameof(RunJavaScriptWorkflow), new RunJavaScriptWorkflow());
+        options.Workflows.Add(nameof(WorkflowContextsWorkflow), new WorkflowContextsWorkflow());
     });
 
 // Testing only: allow client app to connect from anywhere.
@@ -101,6 +103,7 @@ serviceProvider.ConfigureDefaultWorkflowExecutionPipeline(pipeline =>
         .UseWorkflowExecutionEvents()
         .UseWorkflowExecutionLogPersistence()
         .UsePersistence()
+        .UseWorkflowContexts()
         .UseActivityScheduler()
 );
 

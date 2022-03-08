@@ -11,31 +11,13 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
 {
     [DbContext(typeof(ElsaDbContext))]
-    [Migration("20220307110612_Initial")]
+    [Migration("20220308133708_Initial")]
     partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "6.0.1");
-
-            modelBuilder.Entity("Elsa.Models.Variable", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Name")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("WorkflowDefinitionId")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("WorkflowDefinitionId");
-
-                    b.ToTable("Variable");
-                });
 
             modelBuilder.Entity("Elsa.Persistence.Entities.WorkflowBookmark", b =>
                 {
@@ -103,7 +85,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime>("CreatedAt")
+                    b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Data")
@@ -174,7 +156,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
                     b.Property<string>("Source")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime>("Timestamp")
+                    b.Property<DateTimeOffset>("Timestamp")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("WorkflowInstanceId")
@@ -206,14 +188,14 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime?>("CancelledAt")
+                    b.Property<DateTimeOffset?>("CancelledAt")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("CorrelationId")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime>("CreatedAt")
+                    b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Data")
@@ -227,13 +209,13 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime?>("FaultedAt")
+                    b.Property<DateTimeOffset?>("FaultedAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime?>("FinishedAt")
+                    b.Property<DateTimeOffset?>("FinishedAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime?>("LastExecutedAt")
+                    b.Property<DateTimeOffset?>("LastExecutedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
@@ -311,18 +293,6 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
                         .HasDatabaseName("IX_WorkflowTrigger_WorkflowDefinitionId");
 
                     b.ToTable("WorkflowTriggers");
-                });
-
-            modelBuilder.Entity("Elsa.Models.Variable", b =>
-                {
-                    b.HasOne("Elsa.Persistence.Entities.WorkflowDefinition", null)
-                        .WithMany("Variables")
-                        .HasForeignKey("WorkflowDefinitionId");
-                });
-
-            modelBuilder.Entity("Elsa.Persistence.Entities.WorkflowDefinition", b =>
-                {
-                    b.Navigation("Variables");
                 });
 #pragma warning restore 612, 618
         }
