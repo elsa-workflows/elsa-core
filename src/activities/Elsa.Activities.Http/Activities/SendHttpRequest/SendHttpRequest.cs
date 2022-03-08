@@ -118,7 +118,8 @@ namespace Elsa.Activities.Http
             DefaultSyntax = SyntaxNames.Json,
             DefaultValue = new[] { 200 },
             SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid },
-            ConsiderValuesAsOutcomes = true
+            ConsiderValuesAsOutcomes = true,
+            IsDesignerCritical = true
         )]
         public ICollection<int>? SupportedStatusCodes { get; set; } = new HashSet<int>(new[] { 200 });
 
