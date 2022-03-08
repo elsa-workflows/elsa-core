@@ -62,7 +62,7 @@ public class ActivityExecutionContext
     /// A dictionary of received inputs.
     /// </summary>
     public IReadOnlyDictionary<string, object> Input => WorkflowExecutionContext.Input;
-    
+
     /// <summary>
     /// Journal data will be added to the workflow execution log for the "Executed" event.  
     /// </summary>
@@ -98,10 +98,12 @@ public class ActivityExecutionContext
             CreateBookmark(bookmarkDatum, callback);
     }
 
-    public void CreateBookmarks(IEnumerable<Bookmark> bookmarks) => _bookmarks.AddRange(bookmarks);
-    public void CreateBookmark(Bookmark bookmark) => _bookmarks.Add(bookmark);
+    public void AddBookmarks(IEnumerable<Bookmark> bookmarks) => _bookmarks.AddRange(bookmarks);
+    public void AddBookmark(Bookmark bookmark) => _bookmarks.Add(bookmark);
 
-    public void CreateBookmark(object? bookmarkDatum, ExecuteActivityDelegate? callback = default)
+    public Bookmark CreateBookmark(ExecuteActivityDelegate callback) => CreateBookmark(default, callback);
+    
+    public Bookmark CreateBookmark(object? bookmarkDatum = default, ExecuteActivityDelegate? callback = default)
     {
         var hasher = GetRequiredService<IHasher>();
         var identityGenerator = GetRequiredService<IIdentityGenerator>();
@@ -109,17 +111,20 @@ public class ActivityExecutionContext
         var bookmarkDatumJson = bookmarkDatum != null ? bookmarkDataSerializer.Serialize(bookmarkDatum) : default;
         var hash = bookmarkDatumJson != null ? hasher.Hash(bookmarkDatumJson) : default;
 
-        CreateBookmark(new Bookmark(
+        var bookmark = new Bookmark(
             identityGenerator.GenerateId(),
             Activity.TypeName,
             hash,
             bookmarkDatumJson,
             Activity.Id,
             Id,
-            callback?.Method.Name));
+            callback?.Method.Name);
+
+        AddBookmark(bookmark);
+        return bookmark;
     }
 
-    public T? GetProperty<T>(string key) => Properties.TryGetValue<T?>(key, out var value) ? value : default;
+    public T? GetProperty<T>(string key) => Properties!.TryGetValue<T?>(key, out var value) ? value : default;
     public void SetProperty<T>(string key, T value) where T : notnull => Properties[key] = value;
 
     public T UpdateProperty<T>(string key, Func<T?, T> updater) where T : notnull

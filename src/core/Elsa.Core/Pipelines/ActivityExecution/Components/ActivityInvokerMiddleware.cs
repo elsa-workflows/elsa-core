@@ -64,13 +64,7 @@ public class ActivityInvokerMiddleware : IActivityExecutionMiddleware
         await CompleteParentsAsync(context);
     }
 
-    private void LogExecutionRecord(ActivityExecutionContext context, string eventName, string? message = default, string? source = default, object? payload = default)
-    {
-        var activity = context.Activity;
-        var workflowExecutionContext = context.WorkflowExecutionContext;
-        var logEntry = new WorkflowExecutionLogEntry(activity.Id, activity.TypeName, _clock.UtcNow, eventName, message, source, payload);
-        workflowExecutionContext.ExecutionLog.Add(logEntry);
-    }
+    private void LogExecutionRecord(ActivityExecutionContext context, string eventName, string? message = default, string? source = default, object? payload = default) => context.AddExecutionLogEntry(eventName, message, source, payload);
 
     private async Task EvaluateInputPropertiesAsync(ActivityExecutionContext context)
     {

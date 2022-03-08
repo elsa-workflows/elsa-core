@@ -37,10 +37,12 @@ public class WorkflowExecutionContext
         CancellationToken = cancellationToken;
         NodeIdLookup = _nodes.ToDictionary(x => x.NodeId);
         NodeActivityLookup = _nodes.ToDictionary(x => x.Activity);
+        Register = workflow.CreateRegister();
     }
 
     public Workflow Workflow { get; }
-    public ActivityNode Graph { get; set; }
+    public ActivityNode Graph { get; }
+    public Register Register { get; }
     public string Id { get; set; }
     public IReadOnlyCollection<ActivityNode> Nodes => new ReadOnlyCollection<ActivityNode>(_nodes);
     public IDictionary<string, ActivityNode> NodeIdLookup { get; }
@@ -48,18 +50,18 @@ public class WorkflowExecutionContext
     public IActivityScheduler Scheduler { get; }
     public Bookmark? Bookmark { get; }
     public IReadOnlyDictionary<string, object> Input { get; }
-    
+
     /// <summary>
     /// A dictionary that can be used by application code and activities to store information. Values need to be serializable, since this dictionary will be persisted alongside the workflow instance. 
     /// </summary>
     public IDictionary<string, object?> Properties { get; set; } = new Dictionary<string, object?>();
-    
+
     /// <summary>
     /// A dictionary that can be used by application code and middleware to store information and even services. Values do not need to be serializable, since this dictionary will not be persisted.
     /// All data will be gone once workflow execution completes. 
     /// </summary>
     public IDictionary<string, object?> TransientProperties { get; set; } = new Dictionary<string, object?>();
-    
+
     public ExecuteActivityDelegate? ExecuteDelegate { get; set; }
     public CancellationToken CancellationToken { get; }
     public IReadOnlyCollection<Bookmark> Bookmarks => new ReadOnlyCollection<Bookmark>(_bookmarks);
@@ -99,7 +101,7 @@ public class WorkflowExecutionContext
         RemoveCompletionCallback(entry);
         return entry.CompletionCallback;
     }
-    
+
     public void RemoveCompletionCallback(ActivityCompletionCallbackEntry entry) => _completionCallbackEntries.Remove(entry);
 
     public ActivityNode FindNodeById(string nodeId) => NodeIdLookup[nodeId];
@@ -141,8 +143,27 @@ public class WorkflowExecutionContext
         var activityInvoker = GetRequiredService<IActivityInvoker>();
         var workItem = new ActivityWorkItem(bookmarkedActivity.Id, async () => await activityInvoker.InvokeAsync(bookmarkedActivityContext));
         Scheduler.Push(workItem);
-        
+
         // If no resumption point was specified, use Noop to prevent the regular "ExecuteAsync" method to be invoked.
         ExecuteDelegate = bookmark.CallbackMethodName != null ? bookmarkedActivity.GetResumeActivityDelegate(bookmark.CallbackMethodName) : Noop;
+    }
+
+    public T? GetVariable<T>(string name) => (T?)GetVariable(name);
+    public T? GetVariable<T>() => (T?)GetVariable(typeof(T).Name);
+
+    public object? GetVariable(string name)
+    {
+        var variable = Workflow.Variables.FirstOrDefault(x => x.Name == name);
+        return variable?.Get(Register);
+    }
+
+    public Variable SetVariable<T>(T? value) => SetVariable(typeof(T).Name, value);
+    public Variable SetVariable<T>(string name, T? value) => SetVariable(name, (object?)value);
+
+    public Variable SetVariable(string name, object? value)
+    {
+        var variable = Workflow.Variables.FirstOrDefault(x => x.Name == name) ?? new Variable(name, value);
+        variable.Set(Register, value);
+        return variable;
     }
 }

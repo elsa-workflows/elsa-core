@@ -88,13 +88,13 @@ public class ActivityDescriber : IActivityDescriber
                 wrappedPropertyType,
                 GetUIHint(wrappedPropertyType, inputAttribute),
                 inputAttribute?.DisplayName ?? propertyInfo.Name.Humanize(LetterCasing.Title),
-                descriptionAttribute?.Description,
+                descriptionAttribute?.Description ?? inputAttribute?.Description,
                 _optionsResolver.GetOptions(propertyInfo),
                 inputAttribute?.Category,
                 inputAttribute?.Order ?? 0,
                 _defaultValueResolver.GetDefaultValue(propertyInfo),
                 inputAttribute?.DefaultSyntax,
-                //inputAttribute?.SupportedSyntaxes, TODO: Come up with a different way to specify support languages for activity inputs. By default, maybe all pros should support all registered scripting languages?
+                //inputAttribute?.SupportedSyntaxes, TODO: Come up with a different way to specify support languages for activity inputs. By default, maybe all props should support all registered scripting languages?
                 inputAttribute?.IsReadOnly ?? false,
                 inputAttribute?.IsBrowsable ?? true
             );

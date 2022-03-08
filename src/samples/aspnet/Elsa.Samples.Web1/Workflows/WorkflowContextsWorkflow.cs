@@ -4,7 +4,6 @@ using Elsa.Contracts;
 using Elsa.Models;
 using Elsa.Modules.WorkflowContexts.Abstractions;
 using Elsa.Modules.WorkflowContexts.Extensions;
-using Elsa.Modules.WorkflowContexts.Models;
 using Elsa.Runtime.Contracts;
 
 namespace Elsa.Samples.Web1.Workflows;

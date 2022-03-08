@@ -25,7 +25,7 @@ public class InputAttribute : Attribute
     // /// <summary>
     // /// A brief description about this property for workflow tooling to use when displaying activity editors.
     // /// </summary>
-    // public string? Description { get; set; }
+    public string? Description { get; set; }
 
     /// <summary>
     /// A category to group this property with.
@@ -68,7 +68,7 @@ public class InputAttribute : Attribute
     public string[]? SupportedSyntaxes { get; set; }
 
     /// <summary>
-    /// A value indicating whether this property should be displayed but as read-only.
+    /// A value indicating whether this property should be displayed as read-only.
     /// </summary>
     public bool IsReadOnly { get; set; }
 

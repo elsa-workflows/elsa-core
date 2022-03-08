@@ -26,7 +26,24 @@ public class ExpressionExecutionContext
     public object Get(RegisterLocationReference locationReference) => GetLocation(locationReference).Value!;
     public T Get<T>(RegisterLocationReference locationReference) => (T)Get(locationReference);
     public T? Get<T>(Input<T>? input) => input != null ? (T?)GetLocation(input.LocationReference).Value : default;
-    public T? GetVariable<T>(string name, object? defaultValue = default) => Get<T>(new Variable(name, defaultValue));
+    public T? GetVariable<T>(string name) => (T?)GetVariable(name);
+    public T? GetVariable<T>() => (T?)GetVariable(typeof(T).Name);
+
+    public object? GetVariable(string name)
+    {
+        var variable = Workflow.Variables.FirstOrDefault(x => x.Name == name);
+        return variable?.Get(Register);
+    }
+    
+    public Variable SetVariable<T>(T? value) => SetVariable(typeof(T).Name, value);
+    public Variable SetVariable<T>(string name, T? value) => SetVariable(name, (object?)value);
+
+    public Variable SetVariable(string name, object? value)
+    {
+        var variable = Workflow.Variables.FirstOrDefault(x => x.Name == name) ?? new Variable(name, value);
+        variable.Set(Register, value);
+        return variable;
+    }
 
     public void Set(RegisterLocationReference locationReference, object? value)
     {

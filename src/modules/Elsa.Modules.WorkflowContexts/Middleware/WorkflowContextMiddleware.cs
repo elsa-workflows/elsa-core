@@ -1,6 +1,7 @@
 using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Modules.WorkflowContexts.Contracts;
+using Elsa.Modules.WorkflowContexts.Extensions;
 using Elsa.Modules.WorkflowContexts.Models;
 using Elsa.Pipelines.WorkflowExecution;
 using Elsa.Pipelines.WorkflowExecution.Components;
@@ -36,8 +37,7 @@ public class WorkflowContextMiddleware : WorkflowExecutionMiddleware
             var value = await provider.LoadAsync(context);
 
             // Store the loaded value into the workflow execution context.
-            var contextDictionary = context.TransientProperties.GetOrAdd("WorkflowContexts", () => new Dictionary<WorkflowContext, object?>());
-            contextDictionary.Add(workflowContext, value);
+            context.SetWorkflowContext(workflowContext, value);
         }
 
         // Invoke the next middleware.
@@ -47,8 +47,7 @@ public class WorkflowContextMiddleware : WorkflowExecutionMiddleware
         foreach (var workflowContext in workflowContexts!)
         {
             // Get the loaded value from the workflow execution context.
-            var contextDictionary = context.TransientProperties.GetOrAdd("WorkflowContexts", () => new Dictionary<WorkflowContext, object?>());
-            var value = contextDictionary[workflowContext];
+            var value = context.GetWorkflowContext(workflowContext);
 
             var provider = (IWorkflowContextProvider)ActivatorUtilities.GetServiceOrCreateInstance(_serviceProvider, workflowContext.ProviderType);
             await provider.SaveAsync(context, value);
