@@ -3,7 +3,6 @@ using System.Net.Mqtt;
 using System.Text;
 using System.Threading.Tasks;
 using Elsa.Activities.Mqtt.Options;
-using Microsoft.Extensions.Logging;
 
 namespace Elsa.Activities.Mqtt.Services
 {
@@ -42,9 +41,6 @@ namespace Elsa.Activities.Mqtt.Services
             await DisconnectAsync();
         }
 
-           
-            await SubscribeAsync(Options.Topic);
-            
         public void Dispose()
         {
             if (Client.IsConnected) DisconnectAsync().Wait();
@@ -53,7 +49,7 @@ namespace Elsa.Activities.Mqtt.Services
 
         private async Task ConnectAsync()
         {
-            if (!Client.IsConnected) await Client.ConnectAsync(Options.GenerateMqttClientCredentials(), null, true); 
+            if (!Client.IsConnected) await Client.ConnectAsync(Options.GenerateMqttClientCredentials(), null, true);
         }
 
         private async Task DisconnectAsync()
