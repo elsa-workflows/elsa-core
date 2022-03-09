@@ -24,7 +24,7 @@ public class If : Activity
         var nextNode = result ? Then : Else;
 
         if (nextNode != null)
-            context.SubmitActivity(nextNode, OnChildCompletedAsync);
+            context.PostActivity(nextNode, OnChildCompletedAsync);
     }
 
     private ValueTask OnChildCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext)

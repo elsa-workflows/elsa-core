@@ -32,7 +32,7 @@ public class ForEach : Activity
         CurrentValue.Set(context, currentItem);
 
         if (Body != null)
-            context.SubmitActivity(Body, OnChildCompleted);
+            context.PostActivity(Body, OnChildCompleted);
 
         // Increment index.
         context.UpdateProperty<int>(CurrentIndexProperty, x => x + 1);

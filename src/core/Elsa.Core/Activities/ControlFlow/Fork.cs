@@ -11,7 +11,7 @@ public class Fork : Activity
     [Input] public Input<JoinMode> JoinMode { get; set; } = new(ControlFlow.JoinMode.WaitAny);
     [Outbound] public ICollection<IActivity> Branches { get; set; } = new List<IActivity>();
 
-    protected override void Execute(ActivityExecutionContext context) => context.ScheduleActivities(Branches.Reverse(), CompleteChildAsync);
+    protected override void Execute(ActivityExecutionContext context) => context.PostActivities(Branches.Reverse(), CompleteChildAsync);
 
     private ValueTask CompleteChildAsync(ActivityExecutionContext context, ActivityExecutionContext childContext)
     {

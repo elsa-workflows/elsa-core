@@ -18,7 +18,7 @@ public class Composite : Activity
 
     protected override void Execute(ActivityExecutionContext context)
     {
-        context.SubmitActivity(Root, OnCompletedAsync);
+        context.PostActivity(Root, OnCompletedAsync);
     }
 
     protected virtual ValueTask OnCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext) => ValueTask.CompletedTask;
@@ -46,7 +46,7 @@ public class Composite<T> : Activity<T>
 
     protected override void Execute(ActivityExecutionContext context)
     {
-        context.SubmitActivity(Root, OnCompletedAsync);
+        context.PostActivity(Root, OnCompletedAsync);
     }
 
     protected virtual ValueTask OnCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext) => ValueTask.CompletedTask;

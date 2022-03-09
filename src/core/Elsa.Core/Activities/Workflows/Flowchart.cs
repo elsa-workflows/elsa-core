@@ -16,7 +16,7 @@ public class Flowchart : Container
         if (Start == null!)
             return;
 
-        context.SubmitActivity(Start, OnChildCompleted);
+        context.PostActivity(Start, OnChildCompleted);
     }
 
     private ValueTask OnChildCompleted(ActivityExecutionContext context, ActivityExecutionContext childContext)
@@ -33,6 +33,6 @@ public class Flowchart : Container
         var outboundConnections = Connections.Where(x => x.Source == parent).ToList();
         var children = outboundConnections.Select(x => x.Target).ToList();
 
-        context.ScheduleActivities(children, OnChildCompleted);
+        context.PostActivities(children, OnChildCompleted);
     }
 }

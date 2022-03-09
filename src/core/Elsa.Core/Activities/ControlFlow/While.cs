@@ -39,7 +39,7 @@ public class While : Activity
         var loop = context.Get(Condition);
 
         if (loop)
-            context.SubmitActivity(Body, OnBodyCompleted);
+            context.PostActivity(Body, OnBodyCompleted);
     }
 
     private async ValueTask OnBodyCompleted(ActivityExecutionContext context, ActivityExecutionContext childContext)
@@ -47,6 +47,6 @@ public class While : Activity
         var loop = await context.EvaluateAsync(Condition);
 
         if (loop)
-            context.SubmitActivity(Body, OnBodyCompleted);
+            context.PostActivity(Body, OnBodyCompleted);
     }
 }

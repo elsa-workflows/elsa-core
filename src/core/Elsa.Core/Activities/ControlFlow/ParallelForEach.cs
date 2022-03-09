@@ -26,7 +26,7 @@ public class ParallelForEach<T> : Activity
             };
             
             // Schedule a body of work for each item.
-            context.SubmitActivity(Body, OnChildCompleted, new[]{localVariable});
+            context.PostActivity(Body, OnChildCompleted, new[]{localVariable});
         }
     }
 

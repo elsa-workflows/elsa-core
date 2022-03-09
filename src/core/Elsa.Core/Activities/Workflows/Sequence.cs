@@ -35,7 +35,7 @@ public class Sequence : Container
             return;
             
         var nextActivity = childActivities.ElementAt(currentIndex);
-        context.SubmitActivity(nextActivity, OnChildCompleted);
+        context.PostActivity(nextActivity, OnChildCompleted);
         context.UpdateProperty<int>(CurrentIndexProperty, x => x + 1);
     }
 
