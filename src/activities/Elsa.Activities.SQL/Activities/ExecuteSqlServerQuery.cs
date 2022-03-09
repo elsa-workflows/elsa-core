@@ -23,7 +23,7 @@ namespace Elsa.Activities.ExecuteSqlServerQuery.Activities
         /// SQl script to execute
         /// </summary>
         [ActivityInput(
-            Hint = "SQl script to execute",
+            Hint = "SQL script to execute",
             UIHint = ActivityInputUIHints.MultiLine,
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
