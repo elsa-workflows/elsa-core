@@ -17,7 +17,7 @@ namespace Elsa.Activities.ExecuteSqlServerQuery
     {
         public override void ConfigureElsa(ElsaOptionsBuilder elsa, IConfiguration configuration)
         {
-            elsa.AddSqlActivities();
+            elsa.AddSqlServerActivities();
         }
 
     }

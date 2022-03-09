@@ -19,6 +19,9 @@ namespace Elsa.Activities.ExecuteSqlServerQuery.Activities
     )]
     public class ExecuteSqlServerQuery : Activity
     {
+        /// <summary>
+        /// SQl script to execute
+        /// </summary>
         [ActivityInput(
             Hint = "SQl script to execute",
             UIHint = ActivityInputUIHints.MultiLine,
@@ -27,10 +30,10 @@ namespace Elsa.Activities.ExecuteSqlServerQuery.Activities
         public string Query { get; set; } = default!;
 
         /// <summary>
-        /// The ConnectionStrings to run SQL
+        /// Connection string to run SQL
         /// </summary>
         [ActivityInput(
-            Hint = "The ConnectionStrings to run SQL",
+            Hint = "Connection string to run SQL",
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string ConnectionString { get; set; } = default!;
