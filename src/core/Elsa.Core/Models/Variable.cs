@@ -13,6 +13,7 @@ public class Variable : RegisterLocationReference
 
     public Variable(string name, object? defaultValue = default) : this(defaultValue)
     {
+        Id = name;
         Name = name;
     }
 
@@ -28,6 +29,10 @@ public class Variable<T> : Variable
     }
 
     public Variable(T value) : base(value ?? default)
+    {
+    }
+    
+    public Variable(string name, T value = default!) : base(name, value ?? default)
     {
     }
         

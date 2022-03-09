@@ -30,13 +30,13 @@ public static class WhileWorkflow
                         {
                             new WriteLine(context => $"Iteration {counter.Get(context) + 1}"),
                             new WriteLine(context => $"Local variable: {localVariable.Get(context)}"),
-                            new UpdateVariable<string>
+                            new SetVariable<string>
                             {
                                 Variable = localVariable,
                                 Value = new Input<string>("Bar")
                             },
                             new WriteLine(context => $"Updated local variable: {localVariable.Get(context)}"),
-                            new UpdateVariable<int>
+                            new SetVariable<int>
                             {
                                 Variable = counter,
                                 Value = new Input<int>(context => counter.Get(context) + 1)

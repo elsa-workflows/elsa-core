@@ -27,6 +27,10 @@ public class DelegateReference<T> : DelegateReference
     public DelegateReference(Func<ExpressionExecutionContext, T?> @delegate) : base(x => @delegate(x))
     {
     }
+    
+    public DelegateReference(Func<ValueTask<T?>> @delegate) : base(_ => @delegate())
+    {
+    }
         
     public DelegateReference(Func<ExpressionExecutionContext, ValueTask<T?>> @delegate) : base(x => @delegate(x))
     {

@@ -25,6 +25,14 @@ public class Input<T> : Input
     {
     }
 
+    public Input(Func<ExpressionExecutionContext, ValueTask<T?>> @delegate) : this(new DelegateReference<T>(@delegate))
+    {
+    }
+    
+    public Input(Func<ValueTask<T?>> @delegate) : this(new DelegateReference<T>(@delegate))
+    {
+    }
+    
     public Input(Func<ExpressionExecutionContext, T> @delegate) : this(new DelegateReference<T>(@delegate))
     {
     }

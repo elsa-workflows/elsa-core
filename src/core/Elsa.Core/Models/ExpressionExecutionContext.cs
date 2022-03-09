@@ -29,19 +29,15 @@ public class ExpressionExecutionContext
     public T? GetVariable<T>(string name) => (T?)GetVariable(name);
     public T? GetVariable<T>() => (T?)GetVariable(typeof(T).Name);
 
-    public object? GetVariable(string name)
-    {
-        var variable = Workflow.Variables.FirstOrDefault(x => x.Name == name);
-        return variable?.Get(Register);
-    }
-    
+    public object? GetVariable(string name) => new Variable(name).Get(this);
+
     public Variable SetVariable<T>(T? value) => SetVariable(typeof(T).Name, value);
     public Variable SetVariable<T>(string name, T? value) => SetVariable(name, (object?)value);
 
     public Variable SetVariable(string name, object? value)
     {
-        var variable = Workflow.Variables.FirstOrDefault(x => x.Name == name) ?? new Variable(name, value);
-        variable.Set(Register, value);
+        var variable = new Variable(name, value);
+        Set(variable, value);
         return variable;
     }
 

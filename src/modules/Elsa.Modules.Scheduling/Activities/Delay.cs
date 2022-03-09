@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Contracts;
 using Elsa.Models;
@@ -27,6 +28,12 @@ public class Delay : Activity
 
         context.CreateBookmark(payload);
     }
+
+    public static Delay FromMilliseconds(double value) => new(System.TimeSpan.FromMilliseconds(value));
+    public static Delay FromSeconds(double value) => new(System.TimeSpan.FromSeconds(value));
+    public static Delay FromMinutes(double value) => new(System.TimeSpan.FromMinutes(value));
+    public static Delay FromHours(double value) => new(System.TimeSpan.FromHours(value));
+    public static Delay FromDays(double value) => new(System.TimeSpan.FromDays(value));
 }
 
 public record DelayPayload(DateTimeOffset ResumeAt);

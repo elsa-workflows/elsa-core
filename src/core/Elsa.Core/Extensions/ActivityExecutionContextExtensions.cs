@@ -22,6 +22,6 @@ public static class ActivityExecutionContextExtensions
         return logEntry;
     }
 
-    public static Variable SetVariable(this ActivityExecutionContext context, string name, object? value) => context.WorkflowExecutionContext.SetVariable(name, value);
-    public static T? GetVariable<T>(this ActivityExecutionContext context, string name) => context.WorkflowExecutionContext.GetVariable<T?>(name);
+    public static Variable SetVariable(this ActivityExecutionContext context, string name, object? value) => context.ExpressionExecutionContext.SetVariable(name, value);
+    public static T? GetVariable<T>(this ActivityExecutionContext context, string name) => context.ExpressionExecutionContext.GetVariable<T?>(name);
 }
