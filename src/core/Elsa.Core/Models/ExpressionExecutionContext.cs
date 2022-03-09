@@ -26,6 +26,8 @@ public class ExpressionExecutionContext
     public object Get(RegisterLocationReference locationReference) => GetLocation(locationReference).Value!;
     public T Get<T>(RegisterLocationReference locationReference) => (T)Get(locationReference);
     public T? Get<T>(Input<T>? input) => input != null ? (T?)GetLocation(input.LocationReference).Value : default;
+    public T? Get<T>(Output<T>? output) => output != null ? (T?)GetLocation(output.LocationReference).Value : default;
+    public object? Get(Output? output) => output != null ? GetLocation(output.LocationReference).Value : default;
     public T? GetVariable<T>(string name) => (T?)GetVariable(name);
     public T? GetVariable<T>() => (T?)GetVariable(typeof(T).Name);
 

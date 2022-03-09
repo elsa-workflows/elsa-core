@@ -33,9 +33,12 @@ public static class ActivityExtensions
 
         return query.Select(x => x!).ToList();
     }
-        
-        
-        
+    
+    /// <summary>
+    /// Creates an input from the activity's result.
+    /// </summary>
+    public static Input<T> CreateInput<T>(this Activity<T> activity) => activity.Result.CreateInput();
+
     public static IEnumerable<Variable> GetVariables(this IActivity activity)
     {
         var properties = activity.GetType().GetProperties();

@@ -38,4 +38,5 @@ public abstract class ActivityWithResult : Activity
 
 public abstract class Activity<T> : ActivityWithResult
 {
+    public new Output<T>? Result { get; set; }
 }

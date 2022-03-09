@@ -14,6 +14,17 @@ public enum ForOperator
 
 public class For : Activity
 {
+    public For()
+    {
+    }
+
+    public For(int start, int end, ForOperator forOperator = ForOperator.LessThanOrEqual)
+    {
+        Start = new Input<int>(start);
+        End = new Input<int>(end);
+        Operator = new Input<ForOperator>(forOperator);
+    }
+    
     public Input<int> Start { get; set; } = new(0);
     public Input<int> End { get; set; } = new(0);
     public Input<int> Step { get; set; } = new(1);

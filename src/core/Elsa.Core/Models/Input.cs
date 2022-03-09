@@ -40,6 +40,14 @@ public class Input<T> : Input
     public Input(Variable<T> variable) : base(new VariableExpression(variable), variable, typeof(T))
     {
     }
+    
+    public Input(Output<T>? output) : base(new OutputExpression<T>(output), output?.LocationReference ?? new Literal(), typeof(T))
+    {
+    }
+    
+    public Input(Output? output) : base(new OutputExpression(output), output?.LocationReference ?? new Literal(), typeof(T))
+    {
+    }
 
     public Input(Literal<T> literal) : base(new LiteralExpression(literal.Value), literal, typeof(T))
     {

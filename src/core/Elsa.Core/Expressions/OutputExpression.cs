@@ -1,0 +1,36 @@
+using Elsa.Contracts;
+using Elsa.Models;
+
+namespace Elsa.Expressions;
+
+public class OutputExpression : IExpression
+{
+    public OutputExpression(Output? output)
+    {
+        Output = output;
+    }
+
+    public OutputExpression()
+    {
+    }
+
+    public Output? Output { get; set; }
+}
+
+public class OutputExpression<T> : OutputExpression
+{
+    public OutputExpression(Output<T>? output) : base(output)
+    {
+    }
+}
+
+public class OutputExpressionHandler : IExpressionHandler
+{
+    public ValueTask<object?> EvaluateAsync(IExpression expression, Type returnType, ExpressionExecutionContext context)
+    {
+        var outputExpression = (OutputExpression)expression;
+        var output = outputExpression.Output;
+        var value = context.Get(output);
+        return ValueTask.FromResult(value);
+    }
+}
