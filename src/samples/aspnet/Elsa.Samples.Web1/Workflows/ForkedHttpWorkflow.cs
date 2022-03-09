@@ -27,7 +27,7 @@ public class ForkedHttpWorkflow : IWorkflow
                 },
                 new Fork
                 {
-                    JoinMode = new Input<JoinMode>(JoinMode.WaitAll),
+                    JoinMode = JoinMode.WaitAll,
                     Branches =
                     {
                         new Sequence

@@ -36,5 +36,6 @@ public class Variable<T> : Variable
     {
     }
         
+    public new T? Get(ActivityExecutionContext context) => (T?)base.Get(context);
     public new T? Get(ExpressionExecutionContext context) => (T?)base.Get(context);
 }

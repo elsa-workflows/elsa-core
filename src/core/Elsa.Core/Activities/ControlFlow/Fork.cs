@@ -8,7 +8,7 @@ namespace Elsa.Activities.ControlFlow;
 
 public class Fork : Activity
 {
-    [Input] public Input<JoinMode> JoinMode { get; set; } = new(ControlFlow.JoinMode.WaitAny);
+    [Input] public JoinMode JoinMode { get; set; } = JoinMode.WaitAny;
     [Outbound] public ICollection<IActivity> Branches { get; set; } = new List<IActivity>();
 
     protected override void Execute(ActivityExecutionContext context) => context.PostActivities(Branches.Reverse(), CompleteChildAsync);
@@ -32,17 +32,17 @@ public class Fork : Activity
         });
 
         var allChildActivityIds = Branches.Select(x => x.Id).ToImmutableHashSet();
-        var joinMode = context.Get(JoinMode);
+        var joinMode = JoinMode;
 
         switch (joinMode)
         {
-            case ControlFlow.JoinMode.WaitAny:
+            case JoinMode.WaitAny:
             {
                 // Remove any and all bookmarks from other branches.
                 RemoveBookmarks(context);
             }
                 break;
-            case ControlFlow.JoinMode.WaitAll:
+            case JoinMode.WaitAll:
             {
                 var allSet = allChildActivityIds.All(x => completedActivityIds.Contains(x));
 

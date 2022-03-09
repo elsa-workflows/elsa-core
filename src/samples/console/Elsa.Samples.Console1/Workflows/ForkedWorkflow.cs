@@ -15,7 +15,7 @@ public static class ForkedWorkflow
             new WriteLine("Forking..."),
             new Fork
             {
-                JoinMode = new Input<JoinMode>(JoinMode.WaitAll),
+                JoinMode = JoinMode.WaitAll,
                 Branches =
                 {
                     new Sequence(

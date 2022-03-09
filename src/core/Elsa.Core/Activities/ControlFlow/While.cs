@@ -6,28 +6,29 @@ namespace Elsa.Activities.ControlFlow;
 
 public class While : Activity
 {
-    public While()
+    public While(IActivity? body = default)
     {
+        Body = body!;
     }
 
-    public While(Input<bool> condition)
+    public While(Input<bool> condition, IActivity? body = default) : this(body)
     {
         Condition = condition;
     }
 
-    public While(Func<ExpressionExecutionContext, ValueTask<bool>> condition) : this(new Input<bool>(condition))
+    public While(Func<ExpressionExecutionContext, ValueTask<bool>> condition, IActivity? body = default) : this(new Input<bool>(condition), body)
     {
     }
     
-    public While(Func<ExpressionExecutionContext, bool> condition) : this(new Input<bool>(condition))
+    public While(Func<ExpressionExecutionContext, bool> condition, IActivity? body = default) : this(new Input<bool>(condition), body)
     {
     }
     
-    public While(Func<ValueTask<bool>> condition) : this(new Input<bool>(condition))
+    public While(Func<ValueTask<bool>> condition, IActivity? body = default) : this(new Input<bool>(condition), body)
     {
     }
     
-    public While(Func<bool> condition) : this(new Input<bool>(condition))
+    public While(Func<bool> condition, IActivity? body = default) : this(new Input<bool>(condition), body)
     {
     }
 
