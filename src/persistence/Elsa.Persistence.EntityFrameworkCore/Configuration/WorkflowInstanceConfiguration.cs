@@ -9,6 +9,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Configuration
         public void Configure(EntityTypeBuilder<WorkflowInstance> builder)
         {
             builder.Ignore(x => x.WorkflowState);
+            builder.Ignore(x => x.Fault);
             builder.Property<string>("Data");
             builder.HasIndex(x => new { x.WorkflowStatus, x.DefinitionId, x.Version }).HasDatabaseName($"IX_{nameof(WorkflowInstance)}_{nameof(WorkflowInstance.WorkflowStatus)}_{nameof(WorkflowInstance.DefinitionId)}_{nameof(WorkflowInstance.Version)}");
             builder.HasIndex(x => new { x.WorkflowStatus, x.DefinitionId }).HasDatabaseName($"IX_{nameof(WorkflowInstance)}_{nameof(WorkflowInstance.WorkflowStatus)}_{nameof(WorkflowInstance.DefinitionId)}");

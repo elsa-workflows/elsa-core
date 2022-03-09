@@ -54,7 +54,7 @@ public class Inline<T> : Activity<T>
     public Inline(Func<ActivityExecutionContext, ValueTask<T>> activity, RegisterLocationReference? output = default)
     {
         _activity = activity;
-        if (output != null) Result = new Output<T>(output);
+        if (output != null) Result = new Output<T?>(output);
     }
 
     public Inline(Func<ValueTask<T>> activity, RegisterLocationReference? output = default) : this(_ => activity(), output)

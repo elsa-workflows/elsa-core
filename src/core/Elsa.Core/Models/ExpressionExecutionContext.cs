@@ -6,7 +6,13 @@ public class ExpressionExecutionContext
 {
     private readonly IServiceProvider _serviceProvider;
 
-    public ExpressionExecutionContext(IServiceProvider serviceProvider, Register register, Workflow workflow, IDictionary<string, object?> transientProperties, ExpressionExecutionContext? parentContext, CancellationToken cancellationToken)
+    public ExpressionExecutionContext(
+        IServiceProvider serviceProvider,
+        Register register,
+        Workflow workflow,
+        IDictionary<string, object?> transientProperties,
+        ExpressionExecutionContext? parentContext,
+        CancellationToken cancellationToken)
     {
         _serviceProvider = serviceProvider;
         Register = register;
@@ -30,7 +36,6 @@ public class ExpressionExecutionContext
     public object? Get(Output? output) => output != null ? GetLocation(output.LocationReference).Value : default;
     public T? GetVariable<T>(string name) => (T?)GetVariable(name);
     public T? GetVariable<T>() => (T?)GetVariable(typeof(T).Name);
-
     public object? GetVariable(string name) => new Variable(name).Get(this);
 
     public Variable SetVariable<T>(T? value) => SetVariable(typeof(T).Name, value);

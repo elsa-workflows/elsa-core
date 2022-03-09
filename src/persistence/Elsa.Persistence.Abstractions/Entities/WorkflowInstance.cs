@@ -1,3 +1,4 @@
+using Elsa.Persistence.Models;
 using Elsa.State;
 
 namespace Elsa.Persistence.Entities;
@@ -11,6 +12,7 @@ public class WorkflowInstance : Entity
     public WorkflowStatus WorkflowStatus { get; set; }
     public string CorrelationId { get; init; } = default!;
     public string? Name { get; set; }
+    public WorkflowFault? Fault { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? LastExecutedAt { get; set; }
     public DateTimeOffset? FinishedAt { get; set; }

@@ -2,6 +2,7 @@ using System.Text.Json;
 using Elsa.Management.Serialization;
 using Elsa.Persistence.Entities;
 using Elsa.Persistence.EntityFrameworkCore.Contracts;
+using Elsa.Persistence.Models;
 using Elsa.State;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Handlers.Serialization;
@@ -17,7 +18,7 @@ public class WorkflowInstanceSerializer : IEntitySerializer<WorkflowInstance>
 
     public void Serialize(ElsaDbContext dbContext, WorkflowInstance entity)
     {
-        var data = new WorkflowInstanceState(entity.WorkflowState);
+        var data = new WorkflowInstanceState(entity.WorkflowState, entity.Fault);
         var options = _workflowSerializerOptionsProvider.CreatePersistenceOptions();
         var json = JsonSerializer.Serialize(data, options);
 
@@ -26,7 +27,7 @@ public class WorkflowInstanceSerializer : IEntitySerializer<WorkflowInstance>
 
     public void Deserialize(ElsaDbContext dbContext, WorkflowInstance entity)
     {
-        var data = new WorkflowInstanceState(entity.WorkflowState);
+        var data = new WorkflowInstanceState(entity.WorkflowState, entity.Fault);
         var json = (string?)dbContext.Entry(entity).Property("Data").CurrentValue;
 
         if (!string.IsNullOrWhiteSpace(json))
@@ -36,6 +37,7 @@ public class WorkflowInstanceSerializer : IEntitySerializer<WorkflowInstance>
         }
 
         entity.WorkflowState = data.WorkflowState;
+        entity.Fault = data.Fault;
     }
 
     // Can't use records when using System.Text.Json serialization and reference handling. Hence, using a class with default constructor.
@@ -45,11 +47,13 @@ public class WorkflowInstanceSerializer : IEntitySerializer<WorkflowInstance>
         {
         }
 
-        public WorkflowInstanceState(WorkflowState workflowState)
+        public WorkflowInstanceState(WorkflowState workflowState, WorkflowFault? fault)
         {
             WorkflowState = workflowState;
+            Fault = fault;
         }
         
         public WorkflowState WorkflowState { get; init; } = default!;
+        public WorkflowFault? Fault { get; set; }
     }
 }

@@ -23,7 +23,7 @@ public static class DictionaryExtensions
         return ConvertValue<T>(dictionary[key]);
     }
 
-    public static T GetOrAdd<T>(this IDictionary<string, object?> dictionary, string key, Func<T> valueFactory) where T : notnull
+    public static T? GetOrAdd<T>(this IDictionary<string, object?> dictionary, string key, Func<T> valueFactory) where T : notnull
     {
         if (dictionary.TryGetValue<T>(key, out var value))
             return value;

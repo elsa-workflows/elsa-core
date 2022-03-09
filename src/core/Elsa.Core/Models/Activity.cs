@@ -33,10 +33,26 @@ public abstract class Activity : IActivity
 
 public abstract class ActivityWithResult : Activity
 {
+    protected ActivityWithResult()
+    {
+    }
+
+    protected ActivityWithResult(string activityType) : base(activityType)
+    {
+    }
+
     public Output? Result { get; set; }
 }
 
 public abstract class Activity<T> : ActivityWithResult
 {
-    public new Output<T>? Result { get; set; }
+    protected Activity() : base()
+    {
+    }
+
+    protected Activity(string activityType) : base(activityType)
+    {
+    }
+
+    public new Output<T?>? Result { get; set; }
 }
