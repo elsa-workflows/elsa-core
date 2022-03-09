@@ -6,6 +6,14 @@ namespace Elsa.Activities.ControlFlow;
 
 public class If : Activity
 {
+    public If()
+    {
+    }
+
+    public If(Input<bool> condition) => Condition = condition;
+    public If(Func<ExpressionExecutionContext, bool> condition) => Condition = new Input<bool>(condition);
+    public If(Func<bool> condition) => Condition = new Input<bool>(condition);
+
     [Input] public Input<bool> Condition { get; set; } = new(new Literal<bool>(false));
     [Outbound] public IActivity? Then { get; set; }
     [Outbound] public IActivity? Else { get; set; }
@@ -16,7 +24,7 @@ public class If : Activity
         var nextNode = result ? Then : Else;
 
         if (nextNode != null)
-            context.ScheduleActivity(nextNode, OnChildCompletedAsync);
+            context.SubmitActivity(nextNode, OnChildCompletedAsync);
     }
 
     private ValueTask OnChildCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext)

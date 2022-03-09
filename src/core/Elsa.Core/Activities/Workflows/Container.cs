@@ -12,6 +12,13 @@ public abstract class Container : Activity, IContainer
     }
 
     protected Container(params IActivity[] activities) => Activities = activities;
+    
+    protected Container(ICollection<Variable> variables, params IActivity[] activities)
+    {
+        Variables = variables;
+        Activities = activities;
+    }
+
     [Outbound] public ICollection<IActivity> Activities { get; set; } = new List<IActivity>();
     public ICollection<Variable> Variables { get; set; } = new Collection<Variable>();
 

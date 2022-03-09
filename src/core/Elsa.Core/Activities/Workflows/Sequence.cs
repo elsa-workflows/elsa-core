@@ -16,6 +16,10 @@ public class Sequence : Container
     public Sequence(params IActivity[] activities) : base(activities)
     {
     }
+    
+    public Sequence(ICollection<Variable> variables, params IActivity[] activities) : base(variables, activities)
+    {
+    }
 
     protected override void ScheduleChildren(ActivityExecutionContext context)
     {
@@ -31,7 +35,7 @@ public class Sequence : Container
             return;
             
         var nextActivity = childActivities.ElementAt(currentIndex);
-        context.ScheduleActivity(nextActivity, OnChildCompleted);
+        context.SubmitActivity(nextActivity, OnChildCompleted);
         context.UpdateProperty<int>(CurrentIndexProperty, x => x + 1);
     }
 

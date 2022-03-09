@@ -20,7 +20,7 @@ public static class VariablesWorkflow
                 new WriteLine(context => greeting.Get(context)),
                 new ReadLine
                 {
-                    Output = new Output<string?>(name)
+                    Result = new Output<string?>(name)
                 },
                 new WriteLine(new DelegateReference(context => $"Nice to meet you, {name.Get(context)}!")),
             }

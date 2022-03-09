@@ -32,7 +32,7 @@ typeSystem.Register<HttpEndpoint>();
 typeSystem.Register<Timer>();
 
 functionActivityRegistry.RegisterFunction("print", nameof(WriteLine), new[] { nameof(WriteLine.Text) });
-functionActivityRegistry.RegisterFunction("read", nameof(ReadLine), new[] { nameof(ReadLine.Output) });
+functionActivityRegistry.RegisterFunction("read", nameof(ReadLine), new[] { nameof(ReadLine.Result) });
 
 var assembly = Assembly.GetExecutingAssembly();
 var resource = assembly.GetManifestResourceStream("Elsa.Samples.Console2.Sample1.elsa");

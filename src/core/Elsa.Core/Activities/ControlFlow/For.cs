@@ -55,7 +55,7 @@ public class For : Activity
 
         if (loop)
         {
-            context.ScheduleActivity(iterateNode, OnChildComplete);
+            context.SubmitActivity(iterateNode, OnChildComplete);
 
             // Update loop variable.
             CurrentValue.Set(context.ExpressionExecutionContext, currentValue);

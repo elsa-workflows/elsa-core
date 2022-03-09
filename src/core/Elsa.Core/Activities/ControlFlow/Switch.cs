@@ -21,12 +21,12 @@ public class Switch : Activity
         if (matchingCase != null)
         {
             if (matchingCase.Activity != null)
-                context.ScheduleActivity(matchingCase.Activity);
+                context.SubmitActivity(matchingCase.Activity);
             return;
         }
 
         if (Default != null)
-            context.ScheduleActivity(Default);
+            context.SubmitActivity(Default);
     }
 
     private async Task<SwitchCase?> FindMatchingCaseAsync(ExpressionExecutionContext context)
