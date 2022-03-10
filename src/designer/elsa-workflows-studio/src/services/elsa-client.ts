@@ -152,7 +152,7 @@ export const createElsaClient = async function (serverUrl: string): Promise<Elsa
 
         const queryStringItems = collection.map(queryString, (v, k) => `${k}=${v}`);
         const queryStringText = queryStringItems.length > 0 ? `?${queryStringItems.join('&')}` : '';
-        const response = await httpClient.get<PagedList<WorkflowBlueprintSummary>>(`v1/workflow-registry/${providerName}${queryStringText}`);
+        const response = await httpClient.get<PagedList<WorkflowBlueprintSummary>>(`v1/workflow-registry/by-provider/${providerName}${queryStringText}`);
         return response.data;
       },
       listAll: async (versionOptions?: VersionOptions): Promise<Array<WorkflowBlueprintSummary>> => {
