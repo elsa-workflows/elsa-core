@@ -152,7 +152,7 @@ export class ElsaWorkflowInstanceListScreen {
 
   private async loadWorkflowBlueprints() {
     const elsaClient = await this.createClient();
-    this.workflowBlueprints = await elsaClient.workflowRegistryApi.listAll();
+    this.workflowBlueprints = await elsaClient.workflowRegistryApi.listAll({allVersions: true});
   }
 
   private async loadWorkflowInstances() {
