@@ -30,8 +30,6 @@ namespace Elsa.Samples.Server.Host
         {
             var elsaSection = Configuration.GetSection("Elsa");
 
-            services.AddControllers();
-
             // TODO: Determine startup types based on project references, similar to Orchard Core's Targets.props for Applications and Modules.
             // Note that simply loading all referenced assemblies will not include assemblies where no types have been referenced in this project (due to assembly trimming?).
             var startups = new[]
