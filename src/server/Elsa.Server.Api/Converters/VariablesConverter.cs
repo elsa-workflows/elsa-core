@@ -22,26 +22,7 @@ public class VariablesConverter : JsonConverter
         var variables = (Variables)(value ?? new Variables());
         var variablesSerializerSettings = DefaultContentSerializer.CreateDefaultJsonSerializationSettings();
         variablesSerializerSettings.PreserveReferencesHandling = PreserveReferencesHandling.None;
-        
-        // Convert ExpandoObject to JArray/JObject.
-        object? ProcessVariable(object? v)
-        {
-            if (v is ExpandoObject expandoObject)
-            {
-                return JObject.FromObject(expandoObject);
-            }
-
-            if (v is ICollection<ExpandoObject> expandoObjects)
-            {
-                return new JArray(expandoObjects.Select(JObject.FromObject).Cast<object>().ToArray());
-            }
-
-            return v;
-        }
-        
-        var variablesDictionary = variables.Data.ToDictionary(x => x.Key, x => ProcessVariable(x.Value));
-        
-        var json = JsonConvert.SerializeObject(variablesDictionary, Formatting.Indented, variablesSerializerSettings);
+        var json = JsonConvert.SerializeObject(variables.Data, Formatting.Indented, variablesSerializerSettings);
         serializer.Serialize(writer, json);
     }
 

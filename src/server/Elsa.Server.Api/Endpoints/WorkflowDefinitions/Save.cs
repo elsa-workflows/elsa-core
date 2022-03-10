@@ -90,19 +90,6 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
                 return new Variables();
 
             var dictionary = _contentSerializer.Deserialize<Dictionary<string, object?>>(json);
-
-            object? ProcessVariable(object? variable)
-            {
-                return variable switch
-                {
-                    JArray jArray => jArray.Select(x => x.ToObject<ExpandoObject>()).ToList(),
-                    JObject jObject => jObject.ToObject<ExpandoObject>(),
-                    _ => variable
-                };
-            }
-
-            dictionary = dictionary.ToDictionary(x => x.Key, x => ProcessVariable(x.Value));
-
             var variables = new Variables(dictionary);
 
             return variables;
