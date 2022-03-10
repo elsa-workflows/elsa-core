@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using Elsa.Activities.Http.Extensions;
 using Elsa.Scripting.Liquid.Services;
 using Elsa.Services.Models;
@@ -11,7 +11,7 @@ namespace Elsa.Activities.Http.Liquid
     {
         public ValueTask<FluidValue> ProcessAsync(FluidValue input, FilterArguments arguments, TemplateContext context)
         {
-            var activityExecutionContext = (ActivityExecutionContext) context.Model;
+            var activityExecutionContext = (ActivityExecutionContext) context.Model.ToObjectValue();
             var signalName = input.ToStringValue();
             var url = activityExecutionContext.GenerateSignalUrl(signalName);
             return new ValueTask<FluidValue>(new StringValue(url));

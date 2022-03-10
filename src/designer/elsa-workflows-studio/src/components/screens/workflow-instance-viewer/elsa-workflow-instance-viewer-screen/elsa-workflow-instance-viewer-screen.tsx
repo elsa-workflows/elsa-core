@@ -19,8 +19,13 @@ import {
 } from "../../../../models";
 import {ActivityStats, createElsaClient} from "../../../../services/elsa-client";
 import state from '../../../../utils/store';
-import {ActivityContextMenuState, WorkflowDesignerMode} from "../../../designers/tree/elsa-designer-tree/models";
+import {
+  ActivityContextMenuState,
+  LayoutDirection,
+  WorkflowDesignerMode
+} from "../../../designers/tree/elsa-designer-tree/models";
 import Tunnel from "../../../../data/dashboard";
+import {featuresDataManager} from "../../../../services";
 
 @Component({
   tag: 'elsa-workflow-instance-viewer-screen',
@@ -48,6 +53,7 @@ export class ElsaWorkflowInstanceViewerScreen {
   designer: HTMLElsaDesignerTreeElement;
   journal: HTMLElsaWorkflowInstanceJournalElement;
   contextMenu: HTMLElement;
+  layoutDirection = LayoutDirection.TopBottom;
 
   @Method()
   async getServerUrl(): Promise<string> {
@@ -60,6 +66,7 @@ export class ElsaWorkflowInstanceViewerScreen {
     let workflowInstance: WorkflowInstance = {
       id: null,
       definitionId: null,
+      definitionVersionId: null,
       version: null,
       workflowStatus: WorkflowStatus.Idle,
       variables: {data: {}},
@@ -118,6 +125,12 @@ export class ElsaWorkflowInstanceViewerScreen {
   }
 
   async componentWillLoad() {
+    const layoutFeature = featuresDataManager.getFeatureConfig(featuresDataManager.supportedFeatures.workflowLayout);
+
+    if (layoutFeature && layoutFeature.enabled) {
+      this.layoutDirection = layoutFeature.value as LayoutDirection;
+    }
+
     await this.serverUrlChangedHandler(this.serverUrl);
     await this.workflowInstanceIdChangedHandler(this.workflowInstanceId);
   }
@@ -317,6 +330,7 @@ export class ElsaWorkflowInstanceViewerScreen {
       <div class="elsa-flex-1 elsa-flex">
         <elsa-designer-tree model={this.workflowModel}
                             class="elsa-flex-1" ref={el => this.designer = el}
+                            layoutDirection={this.layoutDirection}
                             mode={WorkflowDesignerMode.Instance}
                             activityContextMenuButton={this.renderActivityStatsButton}
                             activityBorderColor={this.getActivityBorderColor}

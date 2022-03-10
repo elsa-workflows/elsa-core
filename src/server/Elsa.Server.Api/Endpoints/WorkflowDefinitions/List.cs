@@ -7,14 +7,12 @@ using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
 using Elsa.Persistence.Specifications.WorkflowDefinitions;
-using Elsa.Serialization;
-using Elsa.Server.Api.Attributes;
+using Elsa.Server.Api.Helpers;
 using Elsa.Server.Api.Models;
 using Elsa.Server.Api.Swagger.Examples;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.Filters;
 
@@ -27,14 +25,12 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
     public class List : Controller
     {
         private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
-        private readonly IContentSerializer _serializer;
         private readonly IMapper _mapper;
         private readonly ITenantAccessor _tenantAccessor;
 
-        public List(IWorkflowDefinitionStore workflowDefinitionStore, IContentSerializer serializer, IMapper mapper, ITenantAccessor tenantAccessor)
+        public List(IWorkflowDefinitionStore workflowDefinitionStore, IMapper mapper, ITenantAccessor tenantAccessor)
         {
             _workflowDefinitionStore = workflowDefinitionStore;
-            _serializer = serializer;
             _mapper = mapper;
             _tenantAccessor = tenantAccessor;
         }

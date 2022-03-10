@@ -87,8 +87,6 @@ export class ElsaStudioRoot {
         });
     }
 
-    const elsaClient = await elsaClientFactory();
-
     const elsaStudio: ElsaStudio = this.elsaStudio = {
       serverUrl: this.serverUrl,
       basePath: this.basePath,
@@ -112,6 +110,7 @@ export class ElsaStudioRoot {
     propertyDisplayManager.initialize(elsaStudio);
     featuresDataManager.initialize(elsaStudio);
 
+    const elsaClient = await elsaClientFactory();
     elsaStudio.serverFeatures = await elsaClient.featuresApi.list();
   }
 

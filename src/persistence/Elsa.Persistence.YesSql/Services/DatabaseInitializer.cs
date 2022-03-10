@@ -23,6 +23,7 @@ namespace Elsa.Persistence.YesSql.Services
             await _store.InitializeCollectionAsync(CollectionNames.WorkflowInstances);
             await _store.InitializeCollectionAsync(CollectionNames.WorkflowExecutionLog);
             await _store.InitializeCollectionAsync(CollectionNames.Bookmarks);
+            await _store.InitializeCollectionAsync(CollectionNames.Triggers);
         }
     }
 }

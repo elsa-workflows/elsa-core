@@ -5,9 +5,7 @@ using System.Threading.Tasks;
 using Elsa.Builders;
 using Elsa.Models;
 using Elsa.Persistence;
-using Elsa.Services.Bookmarks;
 using Elsa.Services.Models;
-using Elsa.Services.Triggers;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Services.Workflows
@@ -19,19 +17,27 @@ namespace Elsa.Services.Workflows
         private readonly Func<IWorkflowBuilder> _workflowBuilderFactory;
         private readonly IWorkflowRunner _workflowRunner;
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
+        private readonly IWorkflowRegistry _workflowRegistry;
 
-        public WorkflowStarter(ITriggerFinder triggerFinder, IWorkflowFactory workflowFactory, Func<IWorkflowBuilder> workflowBuilderFactory, IWorkflowRunner workflowRunner, IWorkflowInstanceStore workflowInstanceStore)
+        public WorkflowStarter(
+            ITriggerFinder triggerFinder,
+            IWorkflowFactory workflowFactory,
+            Func<IWorkflowBuilder> workflowBuilderFactory,
+            IWorkflowRunner workflowRunner,
+            IWorkflowInstanceStore workflowInstanceStore,
+            IWorkflowRegistry workflowRegistry)
         {
             _triggerFinder = triggerFinder;
             _workflowFactory = workflowFactory;
             _workflowBuilderFactory = workflowBuilderFactory;
             _workflowRunner = workflowRunner;
             _workflowInstanceStore = workflowInstanceStore;
+            _workflowRegistry = workflowRegistry;
         }
 
         public async Task FindAndStartWorkflowsAsync(string activityType, IBookmark bookmark, string? tenantId, WorkflowInput? input = default, string? contextId = default, CancellationToken cancellationToken = default)
         {
-            var results = await _triggerFinder.FindTriggersAsync(activityType, bookmark, tenantId, cancellationToken).ToList();
+            var results = await _triggerFinder.FindTriggersAsync(activityType, bookmark, tenantId, cancellationToken: cancellationToken).ToList();
             await StartWorkflowsAsync(results, input, contextId, cancellationToken);
         }
 
@@ -43,7 +49,7 @@ namespace Elsa.Services.Workflows
             string? contextId = default,
             CancellationToken cancellationToken = default)
         {
-            var results = await _triggerFinder.FindTriggersAsync(activityType, bookmark, tenantId, cancellationToken).ToList();
+            var results = await _triggerFinder.FindTriggersAsync(activityType, bookmark, tenantId, cancellationToken: cancellationToken).ToList();
             await StartWorkflowsAsync(results, input, contextId, cancellationToken);
         }
 
@@ -54,11 +60,11 @@ namespace Elsa.Services.Workflows
             CancellationToken cancellationToken = default)
         {
             var runWorkflowResults = new List<RunWorkflowResult>();
-            
+
             foreach (var result in results)
             {
-                var workflowBlueprint = result.WorkflowBlueprint;
-                var runWorkflowResult = await StartWorkflowAsync(workflowBlueprint, result.ActivityId, input, contextId: contextId, cancellationToken: cancellationToken);
+                var workflowBlueprint = await _workflowRegistry.GetWorkflowAsync(result.WorkflowDefinitionId, VersionOptions.Published, cancellationToken);
+                var runWorkflowResult = await StartWorkflowAsync(workflowBlueprint!, result.ActivityId, input, contextId: contextId, cancellationToken: cancellationToken);
                 runWorkflowResults.Add(runWorkflowResult);
             }
 
@@ -66,13 +72,13 @@ namespace Elsa.Services.Workflows
         }
 
         public async Task<IEnumerable<RunWorkflowResult>> StartWorkflowsAsync(
-            IEnumerable<IWorkflowBlueprint> workflowBlueprints, 
-            WorkflowInput? input = default, 
-            string? contextId = default, 
+            IEnumerable<IWorkflowBlueprint> workflowBlueprints,
+            WorkflowInput? input = default,
+            string? contextId = default,
             CancellationToken cancellationToken = default)
         {
             var runWorkflowResults = new List<RunWorkflowResult>();
-            
+
             foreach (var workflowBlueprint in workflowBlueprints)
             {
                 var runWorkflowResult = await StartWorkflowAsync(workflowBlueprint, null, input, contextId: contextId, cancellationToken: cancellationToken);
@@ -96,7 +102,7 @@ namespace Elsa.Services.Workflows
                 correlationId,
                 contextId,
                 tenantId,
-                cancellationToken: cancellationToken);
+                cancellationToken);
 
             await _workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
             return await _workflowRunner.RunWorkflowAsync(workflowBlueprint, workflowInstance, activityId, input, cancellationToken);

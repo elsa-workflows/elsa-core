@@ -52,9 +52,12 @@ namespace Elsa.Activities.Mqtt.Services
             await DisconnectAsync();
         }
 
-        public void SetMessageHandler(Func<MqttApplicationMessage, Task> handler)
+        public async Task SetMessageHandlerAsync(Func<MqttApplicationMessage, Task> handler)
         {
+           
             _messageHandler = handler;
+            await SubscribeAsync(Options.Topic);
+            
         }
 
         public void Dispose()

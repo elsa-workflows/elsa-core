@@ -12,7 +12,6 @@ using Elsa.Providers.WorkflowStorage;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Elsa.Services.WorkflowStorage;
-using NetBox.Extensions;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Workflows
@@ -83,6 +82,7 @@ namespace Elsa.Activities.Workflows
             Hint = "Optional custom attributes to associate with the workflow to run.",
             Category = PropertyCategories.Advanced,
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid, SyntaxNames.Json })]
+        [Obsolete("Will be removed in future versions.")]
         public Variables? CustomAttributes { get; set; } = default!;
 
         [ActivityInput(
@@ -105,12 +105,12 @@ namespace Elsa.Activities.Workflows
 
             if (workflowBlueprint == null || workflowBlueprint.Id == context.WorkflowInstance.DefinitionId)
                 return Outcome("Not Found");
-            
+
             var result = await _startsWorkflow.StartWorkflowAsync(workflowBlueprint!, TenantId, new WorkflowInput(Input), CorrelationId, ContextId, cancellationToken: cancellationToken);
             var childWorkflowInstance = result.WorkflowInstance!;
             var childWorkflowStatus = childWorkflowInstance.WorkflowStatus;
             ChildWorkflowInstanceId = childWorkflowInstance.Id;
-            
+
             context.JournalData.Add("Workflow Blueprint ID", workflowBlueprint.Id);
             context.JournalData.Add("Workflow Instance ID", childWorkflowInstance.Id);
             context.JournalData.Add("Workflow Instance Status", childWorkflowInstance.WorkflowStatus);
@@ -127,16 +127,16 @@ namespace Elsa.Activities.Workflows
 
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
         {
-            var model = (FinishedWorkflowModel) context.WorkflowExecutionContext.Input!;
+            var model = (FinishedWorkflowModel)context.WorkflowExecutionContext.Input!;
             return OnResumeInternal(context, model);
         }
 
         private async Task<IActivityExecutionResult> ResumeSynchronouslyAsync(ActivityExecutionContext context, WorkflowInstance childWorkflowInstance, CancellationToken cancellationToken)
         {
             var outputReference = childWorkflowInstance.Output;
-            
-            var output = outputReference != null 
-                ? await _workflowStorageService.LoadAsync(outputReference.ProviderName, new WorkflowStorageContext(childWorkflowInstance, outputReference.ActivityId), "Output", cancellationToken) 
+
+            var output = outputReference != null
+                ? await _workflowStorageService.LoadAsync(outputReference.ProviderName, new WorkflowStorageContext(childWorkflowInstance, outputReference.ActivityId), "Output", cancellationToken)
                 : null;
 
             var model = new FinishedWorkflowModel
@@ -144,7 +144,7 @@ namespace Elsa.Activities.Workflows
                 WorkflowOutput = output,
                 WorkflowInstanceId = childWorkflowInstance.Id
             };
-            
+
             context.LogOutputProperty(this, "Output", output);
             context.JournalData.Add("Child Workflow Instance ID", childWorkflowInstance.Id);
 
@@ -175,21 +175,10 @@ namespace Elsa.Activities.Workflows
 
         private async Task<IWorkflowBlueprint?> FindWorkflowBlueprintAsync(CancellationToken cancellationToken)
         {
-            var query = await _workflowRegistry.ListAsync(cancellationToken);
+            if (string.IsNullOrWhiteSpace(WorkflowDefinitionId))
+                return null;
 
-            query = query.Where(x => x.WithVersion(VersionOptions.Published));
-
-            if (WorkflowDefinitionId != null)
-                query = query.Where(x => x.Id == WorkflowDefinitionId);
-
-            if (TenantId != null)
-                query = query.Where(x => x.TenantId == TenantId);
-
-            if (CustomAttributes != null)
-                foreach (var customAttribute in CustomAttributes.Data)
-                    query = query.Where(x => Equals(x.CustomAttributes.Get(customAttribute.Key), customAttribute.Value));
-
-            return query.FirstOrDefault();
+            return await _workflowRegistry.FindAsync(WorkflowDefinitionId, VersionOptions.Published, TenantId, cancellationToken);
         }
 
         public enum RunWorkflowMode

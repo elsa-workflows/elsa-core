@@ -26,7 +26,7 @@ namespace Elsa.Services.Workflows
             var workflowInstance = await WorkflowInstanceStore.FindByIdAsync(workflowInstanceId, cancellationToken);
 
             if (!ValidatePreconditions(workflowInstanceId, workflowInstance, activityId))
-                return new RunWorkflowResult(workflowInstance, activityId, false);
+                return new RunWorkflowResult(workflowInstance, activityId, null,false);
 
             return await _workflowRunner.ResumeWorkflowAsync(
                 workflowInstance!,
@@ -38,7 +38,7 @@ namespace Elsa.Services.Workflows
         public async Task<RunWorkflowResult> ExecuteAsync(WorkflowInstance workflowInstance, string? activityId, WorkflowInput? input = default, CancellationToken cancellationToken = default)
         {
             if (!ValidatePreconditions(workflowInstance.Id, workflowInstance, activityId))
-                return new RunWorkflowResult(workflowInstance, activityId, false);
+                return new RunWorkflowResult(workflowInstance, activityId, null,false);
 
             return await _workflowRunner.ResumeWorkflowAsync(
                 workflowInstance!,

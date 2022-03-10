@@ -1,19 +1,13 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.Http.Services;
-using Elsa.Models;
 using Elsa.Scripting.JavaScript.Events;
 using Elsa.Scripting.JavaScript.Messages;
 using Elsa.Services;
 using MediatR;
 using Microsoft.AspNetCore.Http;
-using NJsonSchema;
-using NJsonSchema.CodeGeneration.TypeScript;
 
 namespace Elsa.Activities.Http.JavaScript
 {
@@ -50,6 +44,10 @@ namespace Elsa.Activities.Http.JavaScript
                 "signalUrl",
                 (Func<string, string>)(signal => activityExecutionContext.GenerateSignalUrl(signal))
             );
+            engine.SetValue(
+                "getRemoteIPAddress",
+                (Func<string>)(() => _httpContextAccessor.HttpContext!.Connection.RemoteIpAddress.ToString())
+            );
 
             return Task.CompletedTask;
         }
@@ -61,6 +59,7 @@ namespace Elsa.Activities.Http.JavaScript
             output.AppendLine("declare function queryString(name: string): string;");
             output.AppendLine("declare function absoluteUrl(url: string): string;");
             output.AppendLine("declare function signalUrl(signal: string): string;");
+            output.AppendLine("declare function getRemoteIPAddress(): string;");
    
             return Task.CompletedTask;
         }

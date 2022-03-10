@@ -3,7 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Design;
-using Elsa.Serialization;
+using Elsa.Server.Api.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,12 +19,12 @@ namespace Elsa.Server.Api.Endpoints.Designer.RuntimeSelectListItems
     public class Get : Controller
     {
         private readonly IServiceProvider _serviceProvider;
-        private readonly IContentSerializer _contentSerializer;
+        private readonly IEndpointContentSerializerSettingsProvider _serializerSettingsProvider;
 
-        public Get(IServiceProvider serviceProvider, IContentSerializer contentSerializer)
+        public Get(IServiceProvider serviceProvider, IEndpointContentSerializerSettingsProvider serializerSettingsProvider)
         {
             _serviceProvider = serviceProvider;
-            _contentSerializer = contentSerializer;
+            _serializerSettingsProvider = serializerSettingsProvider;
         }
 
         [HttpPost]
@@ -40,7 +40,7 @@ namespace Elsa.Server.Api.Endpoints.Designer.RuntimeSelectListItems
             var type = Type.GetType(model.ProviderTypeName)!;
             var provider = ActivatorUtilities.GetServiceOrCreateInstance(_serviceProvider, type);
             var context = model.Context;
-            var serializerSettings = _contentSerializer.GetSettings();
+            var serializerSettings = _serializerSettingsProvider.GetSettings();
             var selectList = await GetSelectList(provider, context, cancellationToken);
 
             return Json(selectList, serializerSettings);
@@ -51,7 +51,9 @@ namespace Elsa.Server.Api.Endpoints.Designer.RuntimeSelectListItems
             if (provider is IRuntimeSelectListProvider newProvider)
                 return await newProvider.GetSelectListAsync(context, cancellationToken);
 
+#pragma warning disable CS0618
             var items = await ((IRuntimeSelectListItemsProvider)provider).GetItemsAsync(context, cancellationToken);
+#pragma warning restore CS0618
 
             return new SelectList
             {

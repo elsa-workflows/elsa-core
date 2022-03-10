@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using Elsa;
 using Elsa.Activities.Console;
 using Elsa.Options;
 

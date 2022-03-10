@@ -4,7 +4,6 @@ using Elsa.Events;
 using Elsa.Models;
 using Elsa.Providers.WorkflowStorage;
 using Elsa.Services;
-using Elsa.Services.Models;
 using Elsa.Services.WorkflowStorage;
 using MediatR;
 

@@ -8,7 +8,7 @@ export interface WorkflowDefinition {
   displayName?: string;
   description?: string;
   version: number;
-  variables?: Variables;
+  variables?: string;
   customAttributes?: Variables;
   contextOptions?: WorkflowContextOptions;
   isSingleton?: boolean;
@@ -79,6 +79,7 @@ export interface WorkflowBlueprint extends CompositeActivityBlueprint {
 
 export interface WorkflowBlueprintSummary {
   id: string;
+  versionId: string;
   name?: string;
   displayName?: string;
   description?: string;
@@ -94,6 +95,7 @@ export interface WorkflowBlueprintSummary {
 export interface WorkflowInstance {
   id: string;
   definitionId: string;
+  definitionVersionId: string;
   tenantId?: string;
   version: number;
   workflowStatus: WorkflowStatus;
@@ -119,6 +121,7 @@ export interface WorkflowInstance {
 export interface WorkflowInstanceSummary {
   id: string;
   definitionId: string;
+  definitionVersionId: string;
   tenantId?: string;
   version: number;
   workflowStatus: WorkflowStatus;
@@ -285,6 +288,11 @@ export interface ActivityPropertyDescriptor {
 }
 
 export interface WorkflowStorageDescriptor {
+  name: string;
+  displayName?: string;
+}
+
+export interface WorkflowProviderDescriptor {
   name: string;
   displayName?: string;
 }

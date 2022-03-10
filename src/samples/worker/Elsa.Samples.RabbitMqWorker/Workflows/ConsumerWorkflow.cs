@@ -1,9 +1,7 @@
 using Elsa.Activities.Console;
 using Elsa.Activities.RabbitMq;
-using Elsa.Activities.Temporal;
 using Elsa.Builders;
 using Microsoft.Extensions.Configuration;
-using NodaTime;
 
 namespace Elsa.Samples.RabbitMqWorker.Workflows
 {
@@ -18,7 +16,6 @@ namespace Elsa.Samples.RabbitMqWorker.Workflows
         public void Build(IWorkflowBuilder builder)
         {
             builder
-                .Timer(Duration.FromSeconds(5))
                 .MessageReceived(_connectionString, "Podcasts.Weather")
                 .WriteLine(context =>
                 {

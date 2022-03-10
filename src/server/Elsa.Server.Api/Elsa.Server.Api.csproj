@@ -16,7 +16,7 @@
     <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1'">
         <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.16" />
     </ItemGroup>
-    
+
     <ItemGroup Condition=" '$(TargetFramework)' == 'net5.0'">
         <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="5.0.10" />
     </ItemGroup>
@@ -26,7 +26,7 @@
     </ItemGroup>
 
     <ItemGroup>
-            <FrameworkReference Include="Microsoft.AspNetCore.App" />
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning" Version="5.0.0" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning.ApiExplorer" Version="5.0.0" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
@@ -40,6 +40,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\core\Elsa\Elsa.csproj" />
+        <ProjectReference Include="..\Elsa.Server.Core\Elsa.Server.Core.csproj" />
     </ItemGroup>
 
 </Project>

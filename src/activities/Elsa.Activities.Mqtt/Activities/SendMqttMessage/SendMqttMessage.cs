@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Elsa.Activities.Mqtt.Options;
 using Elsa.Activities.Mqtt.Services;
 using Elsa.ActivityResults;
@@ -5,9 +6,8 @@ using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Expressions;
 using Elsa.Services.Models;
-using System.Threading.Tasks;
 
-namespace Elsa.Activities.Mqtt
+namespace Elsa.Activities.Mqtt.Activities.SendMqttMessage
 {
     [Trigger(
         Category = "MQTT",

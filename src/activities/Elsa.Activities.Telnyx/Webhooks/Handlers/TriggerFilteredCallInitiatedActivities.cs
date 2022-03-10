@@ -7,12 +7,10 @@ using Elsa.Activities.Telnyx.Providers.Bookmarks;
 using Elsa.Activities.Telnyx.Webhooks.Events;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Abstract;
 using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
-using Elsa.Activities.Telnyx.Webhooks.Services;
 using Elsa.Models;
 using Elsa.Services;
 using Elsa.Services.Models;
 using MediatR;
-using Microsoft.Extensions.Logging;
 
 namespace Elsa.Activities.Telnyx.Webhooks.Handlers
 {

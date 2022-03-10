@@ -1,10 +1,10 @@
 using Elsa.Activities.Console;
-using Elsa.Activities.Mqtt;
 using Elsa.Activities.Temporal;
 using Elsa.Builders;
 using Microsoft.Extensions.Configuration;
 using NodaTime;
 using System.Net.Mqtt;
+using Elsa.Activities.Mqtt.Activities.MqttMessageReceived;
 
 namespace Elsa.Samples.MqttWorker.Workflows
 {
@@ -29,7 +29,6 @@ namespace Elsa.Samples.MqttWorker.Workflows
         public void Build(IWorkflowBuilder builder)
         {
             builder
-                .Timer(Duration.FromSeconds(5))
                 .MessageReceived("/temperature", _host, _port, _username, _password, _qos)
                 .WriteLine(context =>
                 {
