@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,6 +10,7 @@ using Elsa.Server.Api.Swagger.Examples;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json.Linq;
 using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.Filters;
 
@@ -88,6 +90,19 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
                 return new Variables();
 
             var dictionary = _contentSerializer.Deserialize<Dictionary<string, object?>>(json);
+
+            object? ProcessVariable(object? variable)
+            {
+                return variable switch
+                {
+                    JArray jArray => jArray.Select(x => x.ToObject<ExpandoObject>()).ToList(),
+                    JObject jObject => jObject.ToObject<ExpandoObject>(),
+                    _ => variable
+                };
+            }
+
+            dictionary = dictionary.ToDictionary(x => x.Key, x => ProcessVariable(x.Value));
+
             var variables = new Variables(dictionary);
 
             return variables;

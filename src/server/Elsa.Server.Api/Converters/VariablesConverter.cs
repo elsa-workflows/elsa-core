@@ -1,7 +1,11 @@
 using System;
+using System.Collections.Generic;
+using System.Dynamic;
+using System.Linq;
 using Elsa.Models;
 using Elsa.Serialization;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Elsa.Server.Api.Converters;
 
@@ -18,7 +22,26 @@ public class VariablesConverter : JsonConverter
         var variables = (Variables)(value ?? new Variables());
         var variablesSerializerSettings = DefaultContentSerializer.CreateDefaultJsonSerializationSettings();
         variablesSerializerSettings.PreserveReferencesHandling = PreserveReferencesHandling.None;
-        var json = JsonConvert.SerializeObject(variables.Data, Formatting.Indented, variablesSerializerSettings);
+        
+        // Convert ExpandoObject to JArray/JObject.
+        object? ProcessVariable(object? v)
+        {
+            if (v is ExpandoObject expandoObject)
+            {
+                return JObject.FromObject(expandoObject);
+            }
+
+            if (v is ICollection<ExpandoObject> expandoObjects)
+            {
+                return new JArray(expandoObjects.Select(JObject.FromObject).Cast<object>().ToArray());
+            }
+
+            return v;
+        }
+        
+        var variablesDictionary = variables.Data.ToDictionary(x => x.Key, x => ProcessVariable(x.Value));
+        
+        var json = JsonConvert.SerializeObject(variablesDictionary, Formatting.Indented, variablesSerializerSettings);
         serializer.Serialize(writer, json);
     }
 
