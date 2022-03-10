@@ -3,11 +3,12 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
+using Elsa.Serialization;
+using Elsa.Server.Api.Helpers;
 using Elsa.Server.Api.Swagger.Examples;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.Filters;
 
@@ -17,15 +18,17 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
     [ApiVersion("1")]
     [Route("v{apiVersion:apiVersion}/workflow-definitions")]
     [Produces("application/json")]
-    public partial class Save : ControllerBase
+    public partial class Save : Controller
     {
         private readonly IWorkflowPublisher _workflowPublisher;
         private readonly ITenantAccessor _tenantAccessor;
+        private readonly IContentSerializer _contentSerializer;
 
-        public Save(IWorkflowPublisher workflowPublisher, ITenantAccessor tenantAccessor)
+        public Save(IWorkflowPublisher workflowPublisher, ITenantAccessor tenantAccessor, IContentSerializer contentSerializer)
         {
             _workflowPublisher = workflowPublisher;
             _tenantAccessor = tenantAccessor;
+            _contentSerializer = contentSerializer;
         }
 
         [HttpPost]
@@ -56,7 +59,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             workflowDefinition.Connections = FilterInvalidConnections(request).ToList();
             workflowDefinition.Description = request.Description?.Trim();
             workflowDefinition.Name = request.Name?.Trim();
-            workflowDefinition.Variables = request.Variables ?? new Variables();
+            workflowDefinition.Variables = ParseVariables(request.Variables);
             workflowDefinition.IsSingleton = request.IsSingleton;
             workflowDefinition.PersistenceBehavior = request.PersistenceBehavior;
             workflowDefinition.DeleteCompletedInstances = request.DeleteCompletedInstances;
@@ -72,9 +75,22 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             else
                 workflowDefinition = await _workflowPublisher.SaveDraftAsync(workflowDefinition, cancellationToken);
 
-            return isNew
-                ? CreatedAtAction("Handle", "GetByVersionId", new { versionId = workflowDefinition.Id, apiVersion = apiVersion.ToString() }, workflowDefinition)
-                : Ok(workflowDefinition);
+            if (!isNew)
+                return Json(workflowDefinition, SerializationHelper.GetSettingsForWorkflowDefinition());
+
+            return CreatedAtAction("Handle", "GetByVersionId", new { versionId = workflowDefinition.Id, apiVersion = apiVersion.ToString() }, workflowDefinition)
+                .ConfigureForWorkflowDefinition();
+        }
+
+        private Variables ParseVariables(string? json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+                return new Variables();
+
+            var dictionary = _contentSerializer.Deserialize<Dictionary<string, object?>>(json);
+            var variables = new Variables(dictionary);
+
+            return variables;
         }
 
         private IEnumerable<ConnectionDefinition> FilterInvalidConnections(SaveWorkflowDefinitionRequest request)

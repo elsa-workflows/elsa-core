@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Dynamic;
 using System.Net.Http;
 using System.Threading;
@@ -15,14 +14,15 @@ namespace Elsa.Activities.Http.Parsers.Response
         public int Priority => 0;
         public bool GetSupportsContentType(string contentType) => GetIsJsonContentType(contentType);
 
-        public async Task<object> ReadAsync(SendHttpRequest activity, HttpResponseMessage response, CancellationToken cancellationToken)
+        public async Task<object> ReadAsync(HttpResponseMessage response, object context, CancellationToken cancellationToken)
         {
+            var activity = context as SendHttpRequest;
             var contentType = response.Content.Headers.ContentType.MediaType;
 
             if (GetIsJsonContentType(contentType))
             {
                 var json = (await response.Content.ReadAsStringAsync()).Trim();
-                var targetType = activity.ResponseContentTargetType ?? typeof(ExpandoObject);
+                var targetType = activity?.ResponseContentTargetType ?? typeof(ExpandoObject);
                 return JsonConvert.DeserializeObject(json, targetType)!;
             }
 

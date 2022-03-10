@@ -1,5 +1,7 @@
 using Elsa.ActivityResults;
 using Elsa.Attributes;
+using Elsa.Design;
+using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
 using System.ComponentModel.DataAnnotations;
@@ -13,7 +15,7 @@ namespace Elsa.Activities.File
     public class DeleteFile : Activity
     {
         [Required]
-        [ActivityInput(Hint = "Path of the file to delete.")]
+        [ActivityInput(Hint = "Path of the file to delete.",  UIHint = ActivityInputUIHints.SingleLine, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string? Path { get; set; }
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)

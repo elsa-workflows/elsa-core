@@ -18,9 +18,9 @@ namespace Elsa.Samples.RabbitMqWorker.Workflows
         public void Build(IWorkflowBuilder builder)
         {
             builder
-                .Timer(Duration.FromSeconds(5))
+                .Timer(Duration.FromSeconds(10))
                 .WriteLine("Sending a weather update with the \"Podcasts.Weather\" topic.")
-                .SendTopicMessage(_connectionString, "Podcasts.Weather", null, "Cloudy with a chance of meatballs");
+                .SendTopicMessage(_connectionString, "Podcasts.Weather", "Cloudy with a chance of meatballs");
         }
     }
 }

@@ -1,6 +1,5 @@
 using Elsa.Persistence.EntityFramework.Core;
 using Microsoft.EntityFrameworkCore;
-using System;
 
 namespace Elsa.Persistence.EntityFramework.Oracle
 {

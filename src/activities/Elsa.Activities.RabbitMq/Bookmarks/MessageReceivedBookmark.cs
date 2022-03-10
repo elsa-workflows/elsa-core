@@ -11,14 +11,15 @@ namespace Elsa.Activities.RabbitMq.Bookmarks
         {
         }
 
-        public MessageReceivedBookmark(string routingKey, string connectionString, Dictionary<string, string> headers)
+        public MessageReceivedBookmark(string exchangeName, string routingKey, string connectionString, Dictionary<string, string> headers)
         {
+            ExchangeName = exchangeName;
             RoutingKey = routingKey;
             ConnectionString = connectionString;
             Headers = headers ?? new Dictionary<string, string>();
-
         }
 
+        public string ExchangeName { get; set; } = default!;
         public string RoutingKey { get; set; } = default!;
         public string ConnectionString { get; set; } = default!;
         public Dictionary<string, string> Headers { get; set; } = default!;
@@ -29,12 +30,13 @@ namespace Elsa.Activities.RabbitMq.Bookmarks
         public override async ValueTask<IEnumerable<BookmarkResult>> GetBookmarksAsync(BookmarkProviderContext<RabbitMqMessageReceived> context, CancellationToken cancellationToken) =>
             new[]
             {
-                Result(new MessageReceivedBookmark
-                {
-                    RoutingKey = (await context.ReadActivityPropertyAsync(x => x.RoutingKey, cancellationToken))!,
-                    ConnectionString = (await context.ReadActivityPropertyAsync(x => x.ConnectionString, cancellationToken))!,
-                    Headers = (await context.ReadActivityPropertyAsync(x => x.Headers, cancellationToken))!
-                })
+                Result(
+                    new MessageReceivedBookmark(
+                        exchangeName: (await context.ReadActivityPropertyAsync(x => x.ExchangeName, cancellationToken))!,
+                        routingKey: (await context.ReadActivityPropertyAsync(x => x.RoutingKey, cancellationToken))!,
+                        connectionString: (await context.ReadActivityPropertyAsync(x => x.ConnectionString, cancellationToken))!,
+                        headers: (await context.ReadActivityPropertyAsync(x => x.Headers, cancellationToken))!
+                ))
             };
     }
 }

@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Elsa.Activities.Temporal.Common.Services;
 using Elsa.Activities.Temporal.Quartz.Jobs;
+using Elsa.Exceptions;
 using Elsa.Options;
 using Elsa.Services;
 using Microsoft.Extensions.Logging;
@@ -75,10 +76,11 @@ namespace Elsa.Activities.Temporal.Quartz.Services
         {
             var scheduler = await _schedulerProvider.GetSchedulerAsync(cancellationToken);
             var sharedResource = $"{nameof(QuartzWorkflowInstanceScheduler)}:{trigger.Key}";
-            await using var handle = await _distributedLockProvider.AcquireLockAsync(sharedResource, _elsaOptions.DistributedLockTimeout, cancellationToken);
+            var distributedLockTimeout = _elsaOptions.DistributedLockTimeout;
+            await using var handle = await _distributedLockProvider.AcquireLockAsync(sharedResource, distributedLockTimeout, cancellationToken);
 
             if (handle == null)
-                return;
+                throw new LockAcquisitionException($"Failed to acquire a distributed lock within the configured amount of time ({distributedLockTimeout})");
 
             try
             {
@@ -90,7 +92,8 @@ namespace Elsa.Activities.Temporal.Quartz.Services
             }
             catch (SchedulerException e)
             {
-                _logger.LogWarning(e, "Failed to schedule trigger {TriggerKey}", trigger.Key.ToString());
+                _logger.LogError(e, "Failed to schedule trigger {TriggerKey}", trigger.Key.ToString());
+                throw;
             }
         }
 

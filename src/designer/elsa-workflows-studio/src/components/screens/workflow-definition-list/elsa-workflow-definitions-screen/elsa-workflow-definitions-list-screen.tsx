@@ -1,32 +1,66 @@
 import {Component, Event, h, Prop, State} from '@stencil/core';
-import {createElsaClient, SaveWorkflowDefinitionRequest} from "../../../../services/elsa-client";
-import {PagedList, VersionOptions, WorkflowDefinitionSummary} from "../../../../models";
-import {RouterHistory} from "@stencil/router";
+import {createElsaClient} from "../../../../services";
+import {OrderBy, PagedList, VersionOptions, WorkflowDefinitionSummary} from "../../../../models";
+import {injectHistory, LocationSegments, RouterHistory} from "@stencil/router";
 import {i18n} from "i18next";
 import {loadTranslations} from "../../../i18n/i18n-loader";
 import {resources} from "./localizations";
 import {GetIntlMessage} from "../../../i18n/intl-message";
 import Tunnel from "../../../../data/dashboard";
+import {PagerData} from "../../../controls/elsa-pager/elsa-pager";
+import {parseQuery} from "../../../../utils/utils";
 
 @Component({
   tag: 'elsa-workflow-definitions-list-screen',
   shadow: false,
 })
 export class ElsaWorkflowDefinitionsListScreen {
+  static readonly DEFAULT_PAGE_SIZE = 15;
+  static readonly MIN_PAGE_SIZE = 5;
+  static readonly MAX_PAGE_SIZE = 100;
+  static readonly START_PAGE = 0;
+
   @Prop() history?: RouterHistory;
   @Prop({attribute: 'server-url'}) serverUrl: string;
   @Prop() culture: string;
   @Prop() basePath: string;
   @State() workflowDefinitions: PagedList<WorkflowDefinitionSummary> = {items: [], page: 1, pageSize: 50, totalCount: 0};
   @State() publishedWorkflowDefinitions: WorkflowDefinitionSummary[] = [];
+  @State() currentPage: number = 0;
+  @State() currentPageSize: number = ElsaWorkflowDefinitionsListScreen.DEFAULT_PAGE_SIZE;
   private i18next: i18n;
+  private confirmDialog: HTMLElsaConfirmDialogElement;
+  private unlistenRouteChanged: () => void;
 
-  confirmDialog: HTMLElsaConfirmDialogElement;
+  connectedCallback() {
+    if (!!this.history)
+      this.unlistenRouteChanged = this.history.listen(e => this.routeChanged(e));
+  }
+
+  disconnectedCallback() {
+    if (!!this.unlistenRouteChanged)
+      this.unlistenRouteChanged();
+  }
 
   async componentWillLoad() {
     this.i18next = await loadTranslations(this.culture, resources);
+
+    if (!!this.history)
+      this.applyQueryString(this.history.location.search);
+
     await this.loadWorkflowDefinitions();
   }
+
+  applyQueryString(queryString?: string) {
+    const query = parseQuery(queryString);
+
+    this.currentPage = !!query.page ? parseInt(query.page) : 0;
+    this.currentPage = isNaN(this.currentPage) ? ElsaWorkflowDefinitionsListScreen.START_PAGE : this.currentPage;
+    this.currentPageSize = !!query.pageSize ? parseInt(query.pageSize) : ElsaWorkflowDefinitionsListScreen.DEFAULT_PAGE_SIZE;
+    this.currentPageSize = isNaN(this.currentPageSize) ? ElsaWorkflowDefinitionsListScreen.DEFAULT_PAGE_SIZE : this.currentPageSize;
+    this.currentPageSize = Math.max(Math.min(this.currentPageSize, ElsaWorkflowDefinitionsListScreen.MAX_PAGE_SIZE), ElsaWorkflowDefinitionsListScreen.MIN_PAGE_SIZE);
+  }
+
   async onPublishClick (e: Event, workflowDefinition: WorkflowDefinitionSummary) {
     const elsaClient = await this.createClient();
     await elsaClient.workflowDefinitionsApi.publish(workflowDefinition.definitionId);
@@ -51,15 +85,29 @@ export class ElsaWorkflowDefinitionsListScreen {
     await this.loadWorkflowDefinitions();
   }
 
+  async routeChanged(e: LocationSegments) {
+
+    if (!e.pathname.toLowerCase().endsWith('workflow-definitions'))
+      return;
+
+    this.applyQueryString(e.search);
+    await this.loadWorkflowDefinitions();
+  }
+
+  onPaged = async (e: CustomEvent<PagerData>) => {
+    this.currentPage = e.detail.page;
+    await this.loadWorkflowDefinitions();
+  };
+
   async loadWorkflowDefinitions() {
     const elsaClient = await this.createClient();
-    const page = 0;
-    const pageSize = 50;
+    const page = this.currentPage;
+    const pageSize = this.currentPageSize;
     const latestVersionOptions: VersionOptions = {isLatest: true};
     const publishedVersionOptions: VersionOptions = {isPublished: true};
     const latestWorkflowDefinitions = await elsaClient.workflowDefinitionsApi.list(page, pageSize, latestVersionOptions);
-    const unpublishedWorkflowDefinitionIds = latestWorkflowDefinitions.items.filter(x => !x.isPublished).map(x => x.definitionId);
-    this.publishedWorkflowDefinitions = await elsaClient.workflowDefinitionsApi.getMany(unpublishedWorkflowDefinitionIds, publishedVersionOptions);
+    const publishedWorkflowDefinitionIds = latestWorkflowDefinitions.items.filter(x => x.isPublished).map(x => x.definitionId);
+    this.publishedWorkflowDefinitions = await elsaClient.workflowDefinitionsApi.getMany(publishedWorkflowDefinitionIds, publishedVersionOptions);
     this.workflowDefinitions = latestWorkflowDefinitions;
   }
 
@@ -69,6 +117,7 @@ export class ElsaWorkflowDefinitionsListScreen {
 
   render() {
     const workflowDefinitions = this.workflowDefinitions.items;
+    const totalCount = this.workflowDefinitions.totalCount;
     const i18next = this.i18next;
     const IntlMessage = GetIntlMessage(i18next);
     const basePath = this.basePath;
@@ -170,6 +219,7 @@ export class ElsaWorkflowDefinitionsListScreen {
             })}
             </tbody>
           </table>
+          <elsa-pager page={this.currentPage} pageSize={this.currentPageSize} totalCount={totalCount} history={this.history} onPaged={this.onPaged} culture={this.culture}/>
         </div>
 
         <elsa-confirm-dialog ref={el => this.confirmDialog = el} culture={this.culture}/>
@@ -179,3 +229,4 @@ export class ElsaWorkflowDefinitionsListScreen {
 }
 
 Tunnel.injectProps(ElsaWorkflowDefinitionsListScreen, ['serverUrl', 'culture', 'basePath']);
+injectHistory(ElsaWorkflowDefinitionsListScreen);

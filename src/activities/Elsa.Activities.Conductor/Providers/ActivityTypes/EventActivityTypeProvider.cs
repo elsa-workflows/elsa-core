@@ -10,6 +10,7 @@ using Elsa.Metadata;
 using Elsa.Providers.Activities;
 using Elsa.Services;
 using Elsa.Services.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Activities.Conductor.Providers.ActivityTypes
 {
@@ -17,13 +18,13 @@ namespace Elsa.Activities.Conductor.Providers.ActivityTypes
     {
         private readonly IDescribesActivityType _describesActivityType;
         private readonly IActivityActivator _activityActivator;
-        private readonly Scoped<IEnumerable<IEventsProvider>> _scopedEventsProviders;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
 
-        public EventActivityTypeProvider(IDescribesActivityType describesActivityType, IActivityActivator activityActivator, Scoped<IEnumerable<IEventsProvider>> scopedEventsProviders)
+        public EventActivityTypeProvider(IDescribesActivityType describesActivityType, IActivityActivator activityActivator, IServiceScopeFactory serviceScopeFactory)
         {
             _describesActivityType = describesActivityType;
             _activityActivator = activityActivator;
-            _scopedEventsProviders = scopedEventsProviders;
+            _serviceScopeFactory = serviceScopeFactory;
         }
 
         public async ValueTask<IEnumerable<ActivityType>> GetActivityTypesAsync(CancellationToken cancellationToken = default)
@@ -74,8 +75,12 @@ namespace Elsa.Activities.Conductor.Providers.ActivityTypes
             };
         }
 
-        private async Task<IEnumerable<EventDefinition>> GetEventsAsync(CancellationToken cancellationToken) => 
-            await _scopedEventsProviders.UseServiceAsync(async eventProviders => await GetEventsAsync(eventProviders, cancellationToken).ToListAsync(cancellationToken));
+        private async Task<IEnumerable<EventDefinition>> GetEventsAsync(CancellationToken cancellationToken)
+        {
+            using var scope = _serviceScopeFactory.CreateScope();
+            var providers = scope.ServiceProvider.GetRequiredService<IEnumerable<IEventsProvider>>();
+            return await GetEventsAsync(providers, cancellationToken).ToListAsync(cancellationToken);
+        }
 
         private static async IAsyncEnumerable<EventDefinition> GetEventsAsync(IEnumerable<IEventsProvider> eventProviders, [EnumeratorCancellation] CancellationToken cancellationToken)
         {

@@ -2,6 +2,8 @@
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Persistence;
+using Elsa.Server.Api.Helpers;
+using Elsa.Server.Api.Services;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -17,11 +19,13 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
     {
         private readonly IWorkflowInstanceStore _store;
         private readonly IWorkflowReviver _reviver;
+        private readonly IEndpointContentSerializerSettingsProvider _serializerSettingsProvider;
 
-        public Retry(IWorkflowInstanceStore store, IWorkflowReviver reviver)
+        public Retry(IWorkflowInstanceStore store, IWorkflowReviver reviver, IEndpointContentSerializerSettingsProvider serializerSettingsProvider)
         {
             _store = store;
             _reviver = reviver;
+            _serializerSettingsProvider = serializerSettingsProvider;
         }
 
         [HttpPost]
@@ -62,13 +66,15 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
                 {
                     WorkflowInstanceId = workflowInstance.Id,
                     Fault = workflowInstance.Fault
-                });
+                }).ConfigureForEndpoint();
 
-            return Response.HasStarted ? (IActionResult) new EmptyResult() : Ok(new
-            {
-                WorkflowInstanceId = workflowInstance.Id,
-                WorkflowStatus = workflowInstance.WorkflowStatus
-            });
+            return Response.HasStarted
+                ? new EmptyResult()
+                : Json(new
+                {
+                    WorkflowInstanceId = workflowInstance.Id,
+                    WorkflowStatus = workflowInstance.WorkflowStatus
+                }, _serializerSettingsProvider.GetSettings());
         }
     }
 }

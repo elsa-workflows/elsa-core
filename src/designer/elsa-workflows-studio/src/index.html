@@ -14,7 +14,7 @@
 </head>
 <body>
 
-<elsa-studio-root server-url="https://localhost:11000" monaco-lib-path="build/assets/js/monaco-editor/min" culture="en-US">
+<elsa-studio-root server-url="https://localhost:11000" monaco-lib-path="build/assets/js/monaco-editor/min" culture="en-US" config="build/assets/designer.config.json">
   <!-- The root dashboard component -->
   <elsa-studio-dashboard></elsa-studio-dashboard>
 
@@ -193,6 +193,7 @@
       // Initialize the property editor.
       propertyEditor.propertyDescriptor = propertyDescriptor;
       propertyEditor.propertyModel = propertyModel;
+      propertyEditor.activityModel = activity;
 
       // Setup change handler for custom control that updates the property model.
       inputElement.addEventListener('change', (e) => {

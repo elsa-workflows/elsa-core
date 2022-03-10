@@ -29,9 +29,12 @@ graph TD;
   elsa-studio-workflow-registry --> context-consumer
   elsa-workflow-registry-list-screen --> elsa-context-menu
   elsa-workflow-registry-list-screen --> stencil-route-link
+  elsa-workflow-registry-list-screen --> elsa-pager
   elsa-workflow-registry-list-screen --> elsa-confirm-dialog
+  elsa-workflow-registry-list-screen --> elsa-dropdown-button
   elsa-workflow-registry-list-screen --> context-consumer
   elsa-confirm-dialog --> elsa-modal-dialog
+  elsa-dropdown-button --> stencil-route-link
   style elsa-studio-workflow-registry fill:#f9f,stroke:#333,stroke-width:4px
 ```
 

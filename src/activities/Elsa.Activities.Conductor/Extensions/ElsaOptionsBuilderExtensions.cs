@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Elsa.Activities.Conductor.Consumers;
 using Elsa.Activities.Conductor.Models;
 using Elsa.Activities.Conductor.Options;
@@ -10,7 +9,6 @@ using Elsa.Activities.Conductor.Providers.Events;
 using Elsa.Activities.Conductor.Providers.Tasks;
 using Elsa.Activities.Conductor.Services;
 using Elsa.Options;
-using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Polly;
@@ -37,10 +35,7 @@ namespace Elsa.Activities.Conductor.Extensions
                 .AddActivityTypeProvider<EventActivityTypeProvider>()
                 .AddActivityTypeProvider<TaskActivityTypeProvider>()
                 .AddBookmarkProvider<EventBookmarkProvider>()
-                .AddBookmarkProvider<TaskBookmarkProvider>()
-                .AddSingleton<Scoped<IEnumerable<ICommandsProvider>>>()
-                .AddSingleton<Scoped<IEnumerable<IEventsProvider>>>()
-                .AddSingleton<Scoped<IEnumerable<ITasksProvider>>>();
+                .AddBookmarkProvider<TaskBookmarkProvider>();
 
             elsa
                 .AddActivitiesFrom<SendCommand>()

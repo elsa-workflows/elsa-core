@@ -7,28 +7,29 @@ using Rebus.Messages;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Activities.RabbitMq.Services
 {
     public class Worker : IAsyncDisposable
     {
+        private readonly IServiceScopeFactory _scopeFactory;
         private readonly IClient _client;
         private readonly ILogger _logger;
         private readonly Func<IClient, Task> _disposeReceiverAction;
-        private readonly Scoped<IWorkflowLaunchpad> _workflowLaunchpad;
         private string ActivityType => nameof(RabbitMqMessageReceived);
         private TimeSpan _delay = TimeSpan.FromMilliseconds(200);
 
         public Worker(
-            Scoped<IWorkflowLaunchpad> workflowLaunchpad,
+            IServiceScopeFactory scopeFactory,
             IClient client,
             Func<IClient, Task> disposeReceiverAction,
             ILogger<Worker> logger)
         {
+            _scopeFactory = scopeFactory;
             _client = client;
             _disposeReceiverAction = disposeReceiverAction;
             _logger = logger;
-            _workflowLaunchpad = workflowLaunchpad;
 
             _client.SubscribeWithHandler(OnMessageReceived);
         }
@@ -40,8 +41,6 @@ namespace Elsa.Activities.RabbitMq.Services
             _logger.LogDebug("Message received for routing key {RoutingKey}", _client.Configuration.RoutingKey);
 
             await TriggerWorkflowsAsync(message, cancellationToken);
-
-            _client.StopClient();
         }
 
         private async Task TriggerWorkflowsAsync(TransportMessage message, CancellationToken cancellationToken)
@@ -51,10 +50,12 @@ namespace Elsa.Activities.RabbitMq.Services
 
             var config = _client.Configuration;
 
-            var bookmark = new MessageReceivedBookmark(config.RoutingKey, config.ConnectionString, config.Headers);
+            var bookmark = new MessageReceivedBookmark(config.ExchangeName, config.RoutingKey, config.ConnectionString, config.Headers);
             var launchContext = new WorkflowsQuery(ActivityType, bookmark);
 
-            await _workflowLaunchpad.UseServiceAsync(service => service.CollectAndDispatchWorkflowsAsync(launchContext, new WorkflowInput(message), cancellationToken));
+            using var scope = _scopeFactory.CreateScope();
+            var workflowLaunchpad = scope.ServiceProvider.GetRequiredService<IWorkflowLaunchpad>();
+            await workflowLaunchpad.CollectAndDispatchWorkflowsAsync(launchContext, new WorkflowInput(message), cancellationToken);
         }
     }
 }

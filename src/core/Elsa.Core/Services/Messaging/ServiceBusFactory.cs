@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using Elsa.Options;
 using Elsa.Serialization;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Rebus.Bus;
 using Rebus.Config;
@@ -22,13 +23,17 @@ namespace Elsa.Services.Messaging
         private readonly IDictionary<Type, string> _messageTypeQueueDictionary = new Dictionary<Type, string>();
         private readonly DependencyInjectionHandlerActivator _handlerActivator;
         private readonly SemaphoreSlim _semaphore = new(1);
+        private readonly IList<BusEntry> _busEntries = new List<BusEntry>();
+        
+        public record BusEntry(IBus Bus, IEnumerable<Type> MessageTypes);
 
-        public ServiceBusFactory(ElsaOptions elsaOptions, ILoggerFactory loggerFactory, IServiceProvider serviceProvider)
+        public ServiceBusFactory(ElsaOptions elsaOptions, ILoggerFactory loggerFactory, IServiceProvider serviceProvider, IHostApplicationLifetime hostApplicationLifetime)
         {
             _elsaOptions = elsaOptions;
             _loggerFactory = loggerFactory;
             _serviceProvider = serviceProvider;
             _handlerActivator = new DependencyInjectionHandlerActivator(serviceProvider);
+            hostApplicationLifetime.ApplicationStopping.Register(UnsubscribeFromTopics);
         }
 
         public void Dispose()
@@ -37,14 +42,14 @@ namespace Elsa.Services.Messaging
                 bus.Dispose();
         }
 
-        public IBus ConfigureServiceBus(IEnumerable<Type> messageTypes, string queueName)
+        public IBus ConfigureServiceBus(IEnumerable<Type> messageTypes, string queueName, bool autoCleanup = false)
         {
             queueName = ServiceBusOptions.FormatQueueName(queueName);
             var prefixedQueueName = PrefixQueueName(queueName);
             var messageTypeList = messageTypes.ToList();
             var configurer = Configure.With(_handlerActivator);
             var map = messageTypeList.ToDictionary(x => x, _ => prefixedQueueName);
-            var configureContext = new ServiceBusEndpointConfigurationContext(configurer, prefixedQueueName, map, _serviceProvider);
+            var configureContext = new ServiceBusEndpointConfigurationContext(configurer, prefixedQueueName, map, _serviceProvider, autoCleanup);
 
             // Default options.
             configurer
@@ -62,6 +67,9 @@ namespace Elsa.Services.Messaging
             foreach (var messageType in messageTypeList)
                 _messageTypeQueueDictionary[messageType] = prefixedQueueName;
 
+            if (autoCleanup) 
+                _busEntries.Add(new BusEntry(newBus, messageTypeList));
+
             return newBus;
         }
 
@@ -70,10 +78,16 @@ namespace Elsa.Services.Messaging
         private IBus GetOrCreateServiceBus(Type messageType, string? queueName)
         {
             _semaphore.Wait();
-            
+
             try
             {
-                queueName ??= _messageTypeQueueDictionary[messageType];
+                if (queueName == null)
+                {
+                    if (_messageTypeQueueDictionary.ContainsKey(messageType))
+                        queueName = _messageTypeQueueDictionary[messageType];
+                    else
+                        queueName = PrefixQueueName(ServiceBusOptions.FormatQueueName(messageType.Name));
+                }
 
                 if (!_serviceBuses.TryGetValue(queueName, out var bus))
                 {
@@ -87,6 +101,13 @@ namespace Elsa.Services.Messaging
             {
                 _semaphore.Release();
             }
+        }
+        
+        private void UnsubscribeFromTopics()
+        {
+            foreach (var (bus, messageTypes) in _busEntries)
+            foreach (var messageType in messageTypes)
+                bus.Unsubscribe(messageType);
         }
 
         private string PrefixQueueName(string name) => $"{_elsaOptions.ServiceBusOptions.QueuePrefix}{name}";
