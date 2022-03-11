@@ -1,4 +1,4 @@
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 
 namespace Elsa.Activities.ExecuteSqlServerQuery.Client
 {
