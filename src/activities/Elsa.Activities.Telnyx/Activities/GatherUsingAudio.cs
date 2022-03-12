@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Elsa.Activities.Telnyx.Client.Models;
 using Elsa.Activities.Telnyx.Client.Services;
@@ -18,7 +19,7 @@ namespace Elsa.Activities.Telnyx.Activities
     [Job(
         Category = Constants.Category,
         Description = "Play an audio file on the call until the required DTMF signals are gathered to build interactive menus.",
-        Outcomes = new[] { TelnyxOutcomeNames.GatheringInput, TelnyxOutcomeNames.GatherCompleted, TelnyxOutcomeNames.CallIsNoLongerActive },
+        Outcomes = new[] { TelnyxOutcomeNames.GatherCompleted, TelnyxOutcomeNames.CallIsNoLongerActive, TelnyxOutcomeNames.ValidInput, TelnyxOutcomeNames.InvalidInput },
         DisplayName = "Gather Using Audio"
     )]
     public class GatherUsingAudio : Activity
@@ -96,7 +97,7 @@ namespace Elsa.Activities.Telnyx.Activities
             DefaultValue = 60000,
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public int? TimeoutMillis { get; set; } = 60000;
-        
+
         [ActivityOutput(Hint = "The received payload when gathering completed.")]
         public CallGatherEndedPayload? ReceivedPayload { get; set; }
 
@@ -121,7 +122,7 @@ namespace Elsa.Activities.Telnyx.Activities
             try
             {
                 await _telnyxClient.Calls.GatherUsingAudioAsync(callControlId, request, context.CancellationToken);
-                return Combine(Outcome(TelnyxOutcomeNames.GatheringInput), Suspend());
+                return Suspend();
             }
             catch (ApiException e)
             {
@@ -131,12 +132,23 @@ namespace Elsa.Activities.Telnyx.Activities
                 throw new WorkflowException(e.Content ?? e.Message, e);
             }
         }
-        
+
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
         {
             ReceivedPayload = context.GetInput<CallGatherEndedPayload>();
             context.LogOutputProperty(this, "Received Payload", ReceivedPayload);
-            return Outcome(TelnyxOutcomeNames.GatherCompleted);
+
+            var outcomes = new List<string>
+            {
+                TelnyxOutcomeNames.GatherCompleted
+            };
+
+            if (ReceivedPayload!.Status == "valid")
+                outcomes.Add(TelnyxOutcomeNames.ValidInput);
+            else
+                outcomes.Add(TelnyxOutcomeNames.InvalidInput);
+
+            return Outcomes(outcomes);
         }
 
         private string? EmptyToNull(string? value) => value is "" ? null : value;
