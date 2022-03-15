@@ -9,7 +9,7 @@ import { ActionDefinition, ActionInvokedArgs, Activity, ActivityDescriptor, Acti
 import { ActivityUpdatedArgs, DeleteActivityRequestedArgs } from "./components/designer/activity-properties-editor/activity-properties-editor";
 import { ContainerActivityComponent } from "./components/activities/container-activity-component";
 import { AddActivityArgs } from "./components/designer/canvas/canvas";
-import { NodeInputContext } from "./services/node-input-driver";
+import { ActivityInputContext } from "./services/node-input-driver";
 import { MenuItem } from "./components/shared/context-menu/models";
 import { DropdownButtonItem, DropdownButtonOrigin } from "./components/shared/dropdown-button/models";
 import { Graph } from "@antv/x6";
@@ -38,10 +38,10 @@ export namespace Components {
         "updateLayout": () => Promise<void>;
     }
     interface ElsaCheckListInput {
-        "inputContext": NodeInputContext;
+        "inputContext": ActivityInputContext;
     }
     interface ElsaCodeEditorInput {
-        "inputContext": NodeInputContext;
+        "inputContext": ActivityInputContext;
     }
     interface ElsaContextMenu {
         "menuItems": Array<MenuItem>;
@@ -53,7 +53,7 @@ export namespace Components {
         "text": string;
     }
     interface ElsaDropdownInput {
-        "inputContext": NodeInputContext;
+        "inputContext": ActivityInputContext;
     }
     interface ElsaFlowchart {
         "activityDescriptors": Array<ActivityDescriptor>;
@@ -112,10 +112,10 @@ export namespace Components {
         "value": string;
     }
     interface ElsaMultiLineInput {
-        "inputContext": NodeInputContext;
+        "inputContext": ActivityInputContext;
     }
     interface ElsaMultiTextInput {
-        "inputContext": NodeInputContext;
+        "inputContext": ActivityInputContext;
     }
     interface ElsaPager {
         "page": number;
@@ -126,10 +126,10 @@ export namespace Components {
         "position": PanelPosition;
     }
     interface ElsaRadioListInput {
-        "inputContext": NodeInputContext;
+        "inputContext": ActivityInputContext;
     }
     interface ElsaSingleLineInput {
-        "inputContext": NodeInputContext;
+        "inputContext": ActivityInputContext;
     }
     interface ElsaSlideOverPanel {
         "actions": Array<ActionDefinition>;
@@ -145,7 +145,7 @@ export namespace Components {
         "serverUrl": string;
     }
     interface ElsaSwitchEditor {
-        "inputContext": NodeInputContext;
+        "inputContext": ActivityInputContext;
     }
     interface ElsaToolbox {
         "graph": Graph;
@@ -423,10 +423,10 @@ declare namespace LocalJSX {
         "interactiveMode"?: boolean;
     }
     interface ElsaCheckListInput {
-        "inputContext"?: NodeInputContext;
+        "inputContext"?: ActivityInputContext;
     }
     interface ElsaCodeEditorInput {
-        "inputContext"?: NodeInputContext;
+        "inputContext"?: ActivityInputContext;
     }
     interface ElsaContextMenu {
         "menuItems"?: Array<MenuItem>;
@@ -439,7 +439,7 @@ declare namespace LocalJSX {
         "text"?: string;
     }
     interface ElsaDropdownInput {
-        "inputContext"?: NodeInputContext;
+        "inputContext"?: ActivityInputContext;
     }
     interface ElsaFlowchart {
         "activityDescriptors"?: Array<ActivityDescriptor>;
@@ -504,10 +504,10 @@ declare namespace LocalJSX {
         "value"?: string;
     }
     interface ElsaMultiLineInput {
-        "inputContext"?: NodeInputContext;
+        "inputContext"?: ActivityInputContext;
     }
     interface ElsaMultiTextInput {
-        "inputContext"?: NodeInputContext;
+        "inputContext"?: ActivityInputContext;
     }
     interface ElsaPager {
         "onPaginated"?: (event: CustomEvent<PagerData>) => void;
@@ -520,10 +520,10 @@ declare namespace LocalJSX {
         "position"?: PanelPosition;
     }
     interface ElsaRadioListInput {
-        "inputContext"?: NodeInputContext;
+        "inputContext"?: ActivityInputContext;
     }
     interface ElsaSingleLineInput {
-        "inputContext"?: NodeInputContext;
+        "inputContext"?: ActivityInputContext;
     }
     interface ElsaSlideOverPanel {
         "actions"?: Array<ActionDefinition>;
@@ -539,7 +539,7 @@ declare namespace LocalJSX {
         "serverUrl"?: string;
     }
     interface ElsaSwitchEditor {
-        "inputContext"?: NodeInputContext;
+        "inputContext"?: ActivityInputContext;
     }
     interface ElsaToolbox {
         "graph"?: Graph;

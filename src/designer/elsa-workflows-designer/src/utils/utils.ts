@@ -1,7 +1,7 @@
 import moment from 'moment';
 import {camelCase} from 'lodash';
 import {ActivityInput, VersionOptions} from '../models';
-import {NodeInputContext} from '../services/node-input-driver';
+import {ActivityInputContext} from '../services/node-input-driver';
 
 export function formatTimestamp(timestamp?: Date, defaultText?: string): string {
   return !!timestamp ? moment(timestamp).format('DD-MM-YYYY HH:mm:ss') : defaultText;
@@ -50,13 +50,13 @@ export const mapSyntaxToLanguage = (syntax: string): string => {
   }
 };
 
-export const getInputPropertyName = (inputContext: NodeInputContext) => {
+export const getInputPropertyName = (inputContext: ActivityInputContext) => {
   const inputProperty = inputContext.inputDescriptor;
   const propertyName = inputProperty.name;
   return camelCase(propertyName);
 }
 
-export const getInputPropertyValue = (inputContext: NodeInputContext): ActivityInput => {
+export const getInputPropertyValue = (inputContext: ActivityInputContext): ActivityInput => {
   const propName = getInputPropertyName(inputContext);
   return inputContext.node[propName] as ActivityInput;
 };

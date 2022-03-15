@@ -68,7 +68,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
 
     const activity: Activity = {
       id: uuid(),
-      nodeType: descriptor.nodeType,
+      typeName: descriptor.activityType,
       metadata: {
         designer: {
           position: {
@@ -161,9 +161,9 @@ export class FlowchartComponent implements ContainerActivityComponent {
     for (const connection of connections) {
       const source = activities.find(x => x.id == connection.source);
       const target = activities.find(x => x.id == connection.target);
-      const sourceDescriptor = activityDescriptors.find(x => x.nodeType == source.nodeType);
-      const targetDescriptor = activityDescriptors.find(x => x.nodeType == target.nodeType);
-      const transposeHandler = transposeHandlerRegistry.get(source.nodeType);
+      const sourceDescriptor = activityDescriptors.find(x => x.activityType == source.typeName);
+      const targetDescriptor = activityDescriptors.find(x => x.activityType == target.typeName);
+      const transposeHandler = transposeHandlerRegistry.get(source.typeName);
 
       if (transposeHandler.transpose({source, target, connection, sourceDescriptor, targetDescriptor})) {
         // Remove the target activity from the list.
@@ -175,7 +175,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
     }
 
     return {
-      nodeType: 'Workflows.Flowchart',
+      typeName: 'Workflows.Flowchart',
       activities: remainingActivities,
       connections: remainingConnections,
       id: this.rootId,
@@ -207,7 +207,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
       const activity = activityNode.activity;
       const position = activity.metadata.designer?.position || {x: 100, y: 100};
       const {x, y} = position;
-      const descriptor = descriptors.find(x => x.nodeType == activity.nodeType)
+      const descriptor = descriptors.find(x => x.activityType == activity.typeName)
       return this.nodeFactory.createNode(descriptor, activity, x, y);
     });
 

@@ -104,9 +104,9 @@ public class WorkflowExecutionContext
 
     public void RemoveCompletionCallback(ActivityCompletionCallbackEntry entry) => _completionCallbackEntries.Remove(entry);
 
-    public ActivityNode FindNodeById(string nodeId) => NodeIdLookup[nodeId];
+    public ActivityNode FindActivityNodeById(string nodeId) => NodeIdLookup[nodeId];
     public ActivityNode FindNodeByActivity(IActivity activity) => NodeActivityLookup[activity];
-    public IActivity FindActivityById(string activityId) => FindNodeById(activityId).Activity;
+    public IActivity FindActivityById(string activityId) => FindActivityNodeById(activityId).Activity;
     public T? GetProperty<T>(string key) => Properties.TryGetValue(key, out var value) ? (T?)value : default(T);
     public void SetProperty<T>(string key, T value) => Properties[key] = value;
 

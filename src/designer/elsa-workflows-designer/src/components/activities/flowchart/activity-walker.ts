@@ -62,9 +62,9 @@ function walkRecursive(node: ActivityNode, activity: Activity, collectedActiviti
 function getPorts(node: ActivityNode, activity: Activity, descriptors: Array<ActivityDescriptor>): Array<ActivityPort> {
   const portProviderRegistry = Container.get(PortProviderRegistry);
   const transposeHandlerRegistry = Container.get(TransposeHandlerRegistry);
-  const transposeHandler = transposeHandlerRegistry.get(activity.nodeType);
+  const transposeHandler = transposeHandlerRegistry.get(activity.typeName);
   const portProvider = portProviderRegistry.get(activity.nodeType);
-  const activityDescriptor = descriptors.find(x => x.nodeType == activity.nodeType);
+  const activityDescriptor = descriptors.find(x => x.activityType == activity.typeName);
   const untransposedConnections = transposeHandler.untranspose({activity, activityDescriptor});
   return untransposedConnections.map(x => ({activity: x.target, port: x.sourcePort}));
 }

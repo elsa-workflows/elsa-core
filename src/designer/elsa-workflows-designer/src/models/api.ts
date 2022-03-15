@@ -5,14 +5,11 @@ export interface ActivityDescriptorResponse {
   activityDescriptors: Array<ActivityDescriptor>;
 }
 
-export interface NodeDescriptor {
-  nodeType: string;
+export interface ActivityDescriptor {
+  activityType: string;
   displayName: string;
   category: string;
   inputProperties: Array<InputDescriptor>
-}
-
-export interface ActivityDescriptor extends NodeDescriptor {
   traits: ActivityTraits;
   inPorts: Array<Port>;
   outPorts: Array<Port>;
@@ -23,7 +20,7 @@ export enum ActivityTraits {
   Trigger = 2
 }
 
-export interface NodePropertyDescriptor {
+export interface PropertyDescriptor {
   name: string;
   type: Type;
   displayName?: string;
@@ -32,7 +29,7 @@ export interface NodePropertyDescriptor {
   isBrowsable?: boolean;
 }
 
-export interface InputDescriptor extends NodePropertyDescriptor {
+export interface InputDescriptor extends PropertyDescriptor {
   uiHint?: string;
   options?: any;
   category?: string;
@@ -42,7 +39,7 @@ export interface InputDescriptor extends NodePropertyDescriptor {
   isReadOnly?: boolean;
 }
 
-export interface OutputDescriptor extends NodePropertyDescriptor {
+export interface OutputDescriptor extends PropertyDescriptor {
 }
 
 export interface Port {

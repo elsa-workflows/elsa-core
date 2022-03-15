@@ -35,7 +35,7 @@ public class Join : Activity
                 var workflowExecutionContext = context.WorkflowExecutionContext;
 
                 // Record last executed activity ID.
-                var lastActivityId = context.WorkflowExecutionContext.ExecutionLog.LastOrDefault(x => x.EventName == WorkflowExecutionLogEventNames.Executed)?.NodeId;
+                var lastActivityId = context.WorkflowExecutionContext.ExecutionLog.LastOrDefault(x => x.EventName == WorkflowExecutionLogEventNames.Executed)?.ActivityId;
 
                 if (lastActivityId != null)
                 {

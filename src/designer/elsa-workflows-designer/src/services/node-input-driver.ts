@@ -1,17 +1,17 @@
-import {InputDescriptor, NodeDescriptor, Node} from "../models";
+import {Activity, ActivityDescriptor, InputDescriptor} from "../models";
 
-export interface NodeInputContext {
-  node: Node;
-  nodeDescriptor: NodeDescriptor;
+export interface ActivityInputContext {
+  node: Activity;
+  nodeDescriptor: ActivityDescriptor;
   inputDescriptor: InputDescriptor;
   notifyInputChanged: () => void;
   inputChanged: (value: any, syntax: string) => void;
 }
 
 export interface NodeInputDriver {
-  supportsInput(context: NodeInputContext): boolean;
+  supportsInput(context: ActivityInputContext): boolean;
 
   get priority(): number;
 
-  renderInput(context: NodeInputContext): any;
+  renderInput(context: ActivityInputContext): any;
 }

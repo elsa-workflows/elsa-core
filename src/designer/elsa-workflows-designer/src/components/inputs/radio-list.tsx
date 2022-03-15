@@ -1,6 +1,6 @@
 import {Component, h, Prop, State} from '@stencil/core';
 import {LiteralExpression, SelectList, SyntaxNames} from "../../models";
-import {NodeInputContext} from "../../services/node-input-driver";
+import {ActivityInputContext} from "../../services/node-input-driver";
 import {getSelectListItems, getInputPropertyValue} from "../../utils";
 import {ExpressionChangedArs} from "../designer/input-control-switch/input-control-switch";
 
@@ -11,7 +11,7 @@ import {ExpressionChangedArs} from "../designer/input-control-switch/input-contr
 export class RadioList {
   private selectList: SelectList = {items: [], isFlagsEnum: false};
 
-  @Prop() public inputContext: NodeInputContext;
+  @Prop() public inputContext: ActivityInputContext;
   @State() private selectedValue?: string;
 
   public async componentWillLoad() {

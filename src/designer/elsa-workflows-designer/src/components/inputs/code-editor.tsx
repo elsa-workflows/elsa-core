@@ -1,6 +1,6 @@
 import {Component, h, Prop} from '@stencil/core';
 import {EditorHeight, LiteralExpression, SyntaxNames} from "../../models";
-import {NodeInputContext} from "../../services/node-input-driver";
+import {ActivityInputContext} from "../../services/node-input-driver";
 import {getInputPropertyValue} from "../../utils";
 import {MonacoValueChangedArgs} from "../shared/monaco-editor/monaco-editor";
 import {ExpressionChangedArs} from "../designer/input-control-switch/input-control-switch";
@@ -16,7 +16,7 @@ interface CodeEditorOptions {
   shadow: false
 })
 export class CodeEditorInput {
-  @Prop() public inputContext: NodeInputContext;
+  @Prop() public inputContext: ActivityInputContext;
 
   public render() {
     const inputContext = this.inputContext;

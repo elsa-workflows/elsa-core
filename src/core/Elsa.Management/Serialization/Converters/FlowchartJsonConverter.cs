@@ -54,12 +54,12 @@ public class FlowchartJsonConverter : JsonConverter<Flowchart>
 
         var model = new
         {
-            NodeType = value.TypeName,
-            Id = value.Id,
-            Metadata = value.Metadata,
+            value.TypeName,
+            value.Id,
+            value.Metadata,
             Start = value.Start?.Id,
-            Activities = value.Activities,
-            Connections = value.Connections
+            value.Activities,
+            value.Connections
         };
 
         JsonSerializer.Serialize(writer, model, connectionSerializerOptions);

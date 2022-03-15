@@ -1,4 +1,4 @@
-import {NodeInputDriver, NodeInputContext} from "../../services/node-input-driver";
+import {NodeInputDriver, ActivityInputContext} from "../../services/node-input-driver";
 import {Container} from "typedi";
 import {InputControlRegistry} from "../../services/input-control-registry";
 import {h} from "@stencil/core";
@@ -16,14 +16,14 @@ export class DefaultInputDriver implements NodeInputDriver {
     return -1;
   }
 
-  renderInput(context: NodeInputContext): any {
+  renderInput(context: ActivityInputContext): any {
     const inputDescriptor = context.inputDescriptor;
     const uiHint = inputDescriptor.uiHint;
     const inputControl = this.inputControlRegistry.get(uiHint);
     return inputControl(context);
   }
 
-  supportsInput(context: NodeInputContext): boolean {
+  supportsInput(context: ActivityInputContext): boolean {
     const uiHint = context.inputDescriptor.uiHint;
     return this.inputControlRegistry.has(uiHint);
   }

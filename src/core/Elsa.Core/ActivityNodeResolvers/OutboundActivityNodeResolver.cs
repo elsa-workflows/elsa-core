@@ -18,10 +18,10 @@ public class OutboundActivityNodeResolver : IActivityNodeResolver
 
     private static IEnumerable<IActivity?> GetSinglePorts(IActivity activity)
     {
-        var nodeType = activity.GetType();
+        var activityType = activity.GetType();
 
         var ports =
-            from prop in nodeType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            from prop in activityType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
             where typeof(IActivity).IsAssignableFrom(prop.PropertyType) || typeof(IEnumerable<IActivity>).IsAssignableFrom(prop.PropertyType)
             let portAttr = prop.GetCustomAttribute<OutboundAttribute>()
             let nodeAttr = prop.GetCustomAttribute<NodeAttribute>()

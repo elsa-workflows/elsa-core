@@ -1,6 +1,6 @@
-import {Activity, Node} from "./core";
-import {ActivityDescriptor, InputDescriptor, NodeDescriptor} from "./api";
-import {NodeInputContext} from "../services/node-input-driver";
+import {ActivityInputContext} from "../services/node-input-driver";
+import {Activity} from "./core";
+import {ActivityDescriptor} from "./api";
 
 export interface TabDefinition {
   displayText: string;
@@ -66,15 +66,15 @@ export class DefaultActions {
   });
 }
 
-export interface RenderNodePropsContext {
-  node: Node;
-  nodeDescriptor: NodeDescriptor;
+export interface RenderActivityPropsContext {
+  activity: Activity;
+  activityDescriptor: ActivityDescriptor;
   title: string;
-  properties: Array<RenderNodePropContext>;
+  properties: Array<RenderActivityPropContext>;
 }
 
-export interface RenderNodePropContext {
-  inputContext: NodeInputContext
+export interface RenderActivityPropContext {
+  inputContext: ActivityInputContext
   inputControl?: any;
 }
 

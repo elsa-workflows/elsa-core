@@ -39,7 +39,7 @@ public class WorkflowBookmarkScheduler : IWorkflowBookmarkScheduler
             var resumeAt = payload.ResumeAt;
             var job = new ResumeWorkflowJob(workflowInstanceId, bookmark.ToBookmark());
             var schedule = new SpecificInstantSchedule(resumeAt);
-            await _jobScheduler.ScheduleAsync(job, schedule, groupKeys, cancellationToken);
+            await _jobScheduler.ScheduleAsync(job, bookmark.Id, schedule, groupKeys, cancellationToken);
         }
     }
 
@@ -50,8 +50,7 @@ public class WorkflowBookmarkScheduler : IWorkflowBookmarkScheduler
 
         foreach (var bookmark in delayBookmarks)
         {
-            var job = new ResumeWorkflowJob(workflowInstanceId, bookmark.ToBookmark());
-            await _jobScheduler.UnscheduleAsync(job, cancellationToken);
+            await _jobScheduler.UnscheduleAsync(bookmark.Id, cancellationToken);
         }
     }
 }

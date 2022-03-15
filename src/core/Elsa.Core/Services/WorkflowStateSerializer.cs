@@ -66,17 +66,17 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
 
     private void SetOutput(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
-        foreach (var nodeEntry in state.ActivityOutput)
+        foreach (var entry in state.ActivityOutput)
         {
-            var nodeId = nodeEntry.Key;
-            var node = workflowExecutionContext.FindNodeById(nodeId);
-            var nodeType = node.GetType();
+            var activityId = entry.Key;
+            var node = workflowExecutionContext.FindActivityNodeById(activityId);
+            var activityType = node.Activity.GetType();
 
-            foreach (var outputEntry in nodeEntry.Value)
+            foreach (var outputEntry in entry.Value)
             {
                 var propertyName = outputEntry.Key;
                 var propertyValue = outputEntry.Value;
-                var propertyInfo = nodeType.GetProperty(propertyName, BindingFlags.Public)!;
+                var propertyInfo = activityType.GetProperty(propertyName, BindingFlags.Public)!;
                 propertyInfo.SetValue(node, propertyValue);
             }
         }
@@ -87,7 +87,7 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
         foreach (var completionCallbackEntry in state.CompletionCallbacks)
         {
             var owner = workflowExecutionContext.ActivityExecutionContexts.First(x => x.Id == completionCallbackEntry.OwnerId);
-            var child = workflowExecutionContext.FindNodeById(completionCallbackEntry.ChildId).Activity;
+            var child = workflowExecutionContext.FindActivityNodeById(completionCallbackEntry.ChildId).Activity;
             var callbackName = completionCallbackEntry.MethodName;
             var callbackDelegate = owner.Activity.GetActivityCompletionCallback(callbackName);
             workflowExecutionContext.AddCompletionCallback(owner, child, callbackDelegate);

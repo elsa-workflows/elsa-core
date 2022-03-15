@@ -5,14 +5,14 @@ import {
   Activity,
   ActivityDescriptor,
   DefaultActions, InputDescriptor,
-  RenderNodePropContext,
-  RenderNodePropsContext,
+  RenderActivityPropContext,
+  RenderActivityPropsContext,
   TabChangedArgs,
   TabDefinition
 } from '../../../models';
 import {InputDriverRegistry} from "../../../services";
 import {Container} from "typedi";
-import {NodeInputContext} from "../../../services/node-input-driver";
+import {ActivityInputContext} from "../../../services/node-input-driver";
 import {FormEntry} from "../../shared/forms/form-entry";
 
 export interface ActivityUpdatedArgs {
@@ -31,7 +31,7 @@ export interface DeleteActivityRequestedArgs {
 })
 export class ActivityPropertiesEditor {
   private slideOverPanel: HTMLElsaSlideOverPanelElement;
-  private renderContext: RenderNodePropsContext;
+  private renderContext: RenderActivityPropsContext;
   private readonly inputDriverRegistry: InputDriverRegistry;
 
   constructor() {
@@ -58,11 +58,11 @@ export class ActivityPropertiesEditor {
   public componentWillRender() {
     const activity = this.activity;
     const activityDescriptor = this.findActivityDescriptor();
-    const title = activityDescriptor?.displayName ?? activityDescriptor?.nodeType ?? 'Unknown Activity';
+    const title = activityDescriptor?.displayName ?? activityDescriptor?.activityType ?? 'Unknown Activity';
     const driverRegistry = this.inputDriverRegistry;
 
-    const renderPropertyContexts: Array<RenderNodePropContext> = activityDescriptor.inputProperties.map(inputDescriptor => {
-      const renderInputContext: NodeInputContext = {
+    const renderPropertyContexts: Array<RenderActivityPropContext> = activityDescriptor.inputProperties.map(inputDescriptor => {
+      const renderInputContext: ActivityInputContext = {
         node: activity,
         nodeDescriptor: activityDescriptor,
         inputDescriptor,
@@ -80,15 +80,15 @@ export class ActivityPropertiesEditor {
     });
 
     this.renderContext = {
-      node: activity,
-      nodeDescriptor: activityDescriptor,
+      activity,
+      activityDescriptor,
       title,
       properties: renderPropertyContexts
     }
   }
 
   public render() {
-    const {nodeDescriptor, title} = this.renderContext;
+    const {activityDescriptor, title} = this.renderContext;
 
     const propertiesTab: TabDefinition = {
       displayText: 'Properties',
@@ -100,7 +100,7 @@ export class ActivityPropertiesEditor {
       content: () => this.renderCommonTab()
     };
 
-    const tabs = !!nodeDescriptor ? [propertiesTab, commonTab] : [];
+    const tabs = !!activityDescriptor ? [propertiesTab, commonTab] : [];
     const actions = [DefaultActions.Delete(this.onDeleteActivity)];
 
     return (
@@ -111,7 +111,7 @@ export class ActivityPropertiesEditor {
     );
   }
 
-  private findActivityDescriptor = (): ActivityDescriptor => !!this.activity ? this.activityDescriptors.find(x => x.nodeType == this.activity.nodeType) : null;
+  private findActivityDescriptor = (): ActivityDescriptor => !!this.activity ? this.activityDescriptors.find(x => x.activityType == this.activity.typeName) : null;
   private onSelectedTabIndexChanged = (e: CustomEvent<TabChangedArgs>) => this.selectedTabIndex = e.detail.selectedTabIndex
 
   private onActivityIdChanged = (e: any) => {
@@ -148,8 +148,8 @@ export class ActivityPropertiesEditor {
   private onDeleteActivity = () => this.deleteActivityRequested.emit({activity: this.activity});
 
   private renderPropertiesTab = () => {
-    const {node, properties} = this.renderContext;
-    const activityId = node.id;
+    const {activity, properties} = this.renderContext;
+    const activityId = activity.id;
 
     return <div>
       <FormEntry fieldId="ActivityId" label="ID" hint="The ID of the activity.">
@@ -157,7 +157,7 @@ export class ActivityPropertiesEditor {
       </FormEntry>
 
       {properties.filter(x => !!x.inputControl).map(propertyContext => {
-        const key = `${node.id}-${propertyContext.inputContext.inputDescriptor.name}`;
+        const key = `${activity.id}-${propertyContext.inputContext.inputDescriptor.name}`;
         return <div key={key}>
           {propertyContext.inputControl}
         </div>;

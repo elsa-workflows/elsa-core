@@ -78,16 +78,16 @@ public class IdentityGraphService : IIdentityGraphService
         return name;
     }
 
-    private int GetNextIndexFor(string nodeType, IDictionary<string, int> identityCounters)
+    private int GetNextIndexFor(string activityType, IDictionary<string, int> identityCounters)
     {
-        if (!identityCounters.TryGetValue(nodeType, out var index))
+        if (!identityCounters.TryGetValue(activityType, out var index))
         {
-            identityCounters[nodeType] = index;
+            identityCounters[activityType] = index;
         }
         else
         {
-            index = identityCounters[nodeType] + 1;
-            identityCounters[nodeType] = index;
+            index = identityCounters[activityType] + 1;
+            identityCounters[activityType] = index;
         }
 
         return index;

@@ -2,15 +2,12 @@ import {Type} from "./shared";
 import {Expression} from "./expressions";
 import {VersionOptions} from "./api";
 
-export interface Node {
+export interface Activity {
   id: string;
-  nodeType: string;
+  typeName: string;
   metadata: any;
 
   [name: string]: any;
-}
-
-export interface Activity extends Node {
 }
 
 export interface Trigger extends Activity {

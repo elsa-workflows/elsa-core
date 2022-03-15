@@ -1,6 +1,6 @@
 import {Component, h, Prop, State} from "@stencil/core";
 import {camelCase} from 'lodash';
-import {NodeInputContext} from "../../services/node-input-driver";
+import {ActivityInputContext} from "../../services/node-input-driver";
 import {mapSyntaxToLanguage} from "../../utils";
 import {SyntaxNames} from "../../models";
 import {SwitchCase} from "./models";
@@ -14,7 +14,7 @@ import {FormEntry} from "../../components/shared/forms/form-entry";
   shadow: false
 })
 export class SwitchEditor {
-  @Prop() public inputContext: NodeInputContext;
+  @Prop() public inputContext: ActivityInputContext;
   @State() private cases: Array<SwitchCase> = [];
   private supportedSyntaxes: Array<string> = [SyntaxNames.JavaScript, SyntaxNames.Literal];
 

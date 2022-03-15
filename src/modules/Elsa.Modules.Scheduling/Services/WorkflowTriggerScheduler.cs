@@ -36,7 +36,7 @@ public class WorkflowTriggerScheduler : IWorkflowTriggerScheduler
             // Schedule trigger.
             var (dateTime, timeSpan) = JsonSerializer.Deserialize<TimerPayload>(trigger.Data!)!;
             var groupKeys = new[] { RootGroupKey, trigger.WorkflowDefinitionId };
-            await _jobScheduler.ScheduleAsync(new RunWorkflowJob(trigger.WorkflowDefinitionId), new RecurringSchedule(dateTime, timeSpan), groupKeys, cancellationToken);
+            await _jobScheduler.ScheduleAsync(new RunWorkflowJob(trigger.WorkflowDefinitionId), trigger.WorkflowDefinitionId, new RecurringSchedule(dateTime, timeSpan), groupKeys, cancellationToken);
         }
     }
 

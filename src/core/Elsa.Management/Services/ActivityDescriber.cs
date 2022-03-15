@@ -57,7 +57,7 @@ public class ActivityDescriber : IActivityDescriber
         {
             Category = category,
             Description = description,
-            NodeType = fullTypeName,
+            ActivityType = fullTypeName,
             DisplayName = displayName,
             Traits = isTrigger ? ActivityTraits.Trigger : ActivityTraits.Action,
             OutPorts = outboundPorts.ToList(),
@@ -106,7 +106,8 @@ public class ActivityDescriber : IActivityDescriber
         foreach (var propertyInfo in properties)
         {
             var activityPropertyAttribute = propertyInfo.GetCustomAttribute<OutputAttribute>();
-            var wrappedPropertyType = propertyInfo.PropertyType.GenericTypeArguments[0];
+            var typeArgs = propertyInfo.PropertyType.GenericTypeArguments;
+            var wrappedPropertyType = typeArgs.Any() ? typeArgs[0] : typeof(object);
 
             yield return new OutputDescriptor
             (

@@ -1,6 +1,6 @@
 import {Component, Prop, h} from '@stencil/core';
 import {LiteralExpression, SyntaxNames} from "../../models";
-import {NodeInputContext} from "../../services/node-input-driver";
+import {ActivityInputContext} from "../../services/node-input-driver";
 import {getInputPropertyValue} from "../../utils";
 import {ExpressionChangedArs} from "../designer/input-control-switch/input-control-switch";
 
@@ -9,7 +9,7 @@ import {ExpressionChangedArs} from "../designer/input-control-switch/input-contr
   shadow: false
 })
 export class MultiLineInput {
-  @Prop() inputContext: NodeInputContext;
+  @Prop() inputContext: ActivityInputContext;
 
   public render() {
     const inputContext = this.inputContext;

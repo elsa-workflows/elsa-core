@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import {Service} from 'typedi';
-import {NodeInputDriver, NodeInputContext} from './node-input-driver';
+import {NodeInputDriver, ActivityInputContext} from './node-input-driver';
 import {DefaultInputDriver} from "../drivers/input/default-input-driver";
 
 @Service()
@@ -12,7 +12,7 @@ export class InputDriverRegistry {
     this.drivers = _.orderBy(drivers, x => x.priority, 'desc');
   }
 
-  public get(context: NodeInputContext): NodeInputDriver {
+  public get(context: ActivityInputContext): NodeInputDriver {
     return this.drivers.find(x => x.supportsInput(context));
   }
 }

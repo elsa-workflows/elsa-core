@@ -1,6 +1,6 @@
 import {Component, Prop, h} from '@stencil/core';
 import {LiteralExpression, SelectList, SyntaxNames} from "../../models";
-import {NodeInputContext} from "../../services/node-input-driver";
+import {ActivityInputContext} from "../../services/node-input-driver";
 import {getInputPropertyValue, getSelectListItems} from "../../utils";
 import {ExpressionChangedArs} from "../designer/input-control-switch/input-control-switch";
 
@@ -9,7 +9,7 @@ import {ExpressionChangedArs} from "../designer/input-control-switch/input-contr
   shadow: false
 })
 export class SingleLineInput {
-  @Prop() public inputContext: NodeInputContext;
+  @Prop() public inputContext: ActivityInputContext;
 
   private selectList: SelectList = {items: [], isFlagsEnum: false};
 

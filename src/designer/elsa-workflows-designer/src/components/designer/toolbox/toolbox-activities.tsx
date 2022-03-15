@@ -56,11 +56,11 @@ export class ToolboxActivities {
     const activityDriverRegistry = Container.get(ActivityDriverRegistry);
 
     for (const activityDescriptor of value) {
-      const nodeType = activityDescriptor.nodeType;
-      const driver = activityDriverRegistry.createDriver(nodeType);
+      const activityType = activityDescriptor.activityType;
+      const driver = activityDriverRegistry.createDriver(activityType);
       const html = driver.display({displayType: 'picker', activityDescriptor: activityDescriptor});
 
-      renderedActivities.set(nodeType, html);
+      renderedActivities.set(activityType, html);
     }
 
     this.renderedActivities = renderedActivities;
@@ -108,7 +108,7 @@ export class ToolboxActivities {
             <div class={`space-y-1 ${categoryContentClass}`}>
 
               {activityDescriptors.map(activityDescriptor => {
-                const activityHtml = renderedActivities.get(activityDescriptor.nodeType);
+                const activityHtml = renderedActivities.get(activityDescriptor.activityType);
                 return (
                   <div class="w-full flex items-center pl-10 pr-2 py-2">
                     <div class="cursor-move"

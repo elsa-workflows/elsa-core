@@ -15,13 +15,13 @@ export class DefaultActivityDriver implements ActivityDriver {
   display(context: ActivityDisplayContext): any {
     const iconRegistry = this.iconRegistry;
     const activityDescriptor = context.activityDescriptor;
-    const nodeType = activityDescriptor.nodeType;
+    const activityType = activityDescriptor.activityType;
     const text = activityDescriptor?.displayName;
     const isTrigger = (activityDescriptor?.traits & ActivityTraits.Trigger) == ActivityTraits.Trigger;
     const borderColor = isTrigger ? 'border-green-600' : 'border-blue-600';
     const backgroundColor = isTrigger ? 'bg-green-400' : 'bg-blue-400';
     const iconBackgroundColor = isTrigger ? 'bg-green-500' : 'bg-blue-500';
-    const icon = iconRegistry.has(nodeType) ? iconRegistry.get(nodeType) : null;
+    const icon = iconRegistry.has(activityType) ? iconRegistry.get(activityType) : null;
 
     return (`
           <div>

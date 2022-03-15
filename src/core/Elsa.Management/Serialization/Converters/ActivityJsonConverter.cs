@@ -25,7 +25,7 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
         if (!JsonDocument.TryParseValue(ref reader, out var doc))
             throw new JsonException("Failed to parse JsonDocument");
 
-        if (!doc.RootElement.TryGetProperty("nodeType", out var activityTypeNameElement))
+        if (!doc.RootElement.TryGetProperty("typeName", out var activityTypeNameElement))
             throw new JsonException("Failed to extract activity type property");
 
         var activityTypeName = activityTypeNameElement.GetString()!;

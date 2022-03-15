@@ -45,7 +45,7 @@ services
     .AddProtoActorWorkflowHost()
     .IndexWorkflowTriggers()
     .AddElsaManagement()
-    .AddJobs(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider())
+    .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider())
     .AddHttpActivityServices()
     .AddJobServices()
     .AddAzureServiceBusServices(options => configuration.GetSection("AzureServiceBus").Bind(options))
@@ -53,6 +53,7 @@ services
     {
         // Register workflows.
         options.Workflows.Add(nameof(HelloWorldWorkflow), new HelloWorldWorkflow());
+        options.Workflows.Add(nameof(HeartbeatWorkflow), new HeartbeatWorkflow());
         options.Workflows.Add(nameof(HttpWorkflow), new HttpWorkflow());
         options.Workflows.Add(nameof(ForkedHttpWorkflow), new ForkedHttpWorkflow());
         options.Workflows.Add(nameof(CompositeActivitiesWorkflow), new CompositeActivitiesWorkflow());
