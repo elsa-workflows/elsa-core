@@ -1,48 +1,18 @@
-import {Component, Event, h, Host, Prop, State} from '@stencil/core';
-import {eventBus, propertyDisplayManager} from '../../../../services';
-import state from '../../../../utils/store';
-import {
-  ActivityDescriptor,
-  ActivityModel,
-  ActivityPropertyDescriptor,
-  EventTypes,
-  WorkflowStorageDescriptor
-} from "../../../../models";
-import {checkBox, FormContext, section, selectField, SelectOption, textArea, textInput} from "../../../../utils/forms";
-import {i18n} from "i18next";
-import {loadTranslations} from "../../../i18n/i18n-loader";
-import {resources} from "./localizations";
-
-export interface TabModel {
-  tabName: string;
-  renderContent: () => any;
-}
-
-export interface ActivityEditorRenderProps {
-  activityDescriptor?: ActivityDescriptor;
-  activityModel?: ActivityModel;
-  propertyCategories?: Array<string>;
-  defaultProperties?: Array<ActivityPropertyDescriptor>;
-  tabs?: Array<TabModel>;
-  selectedTabName?: string;
-}
-
-export interface ActivityEditorEventArgs {
-  activityDescriptor: ActivityDescriptor;
-  activityModel: ActivityModel;
-}
-
-export interface ActivityEditorAppearingEventArgs extends ActivityEditorEventArgs {
-}
-
-export interface ActivityEditorDisappearingEventArgs extends ActivityEditorEventArgs {
-}
+import { Component, h, Host, Prop, State } from "@stencil/core";
+import { i18n } from "i18next";
+import { resources } from "../../../components/controls/elsa-pager/localizations";
+import { loadTranslations } from "../../../components/i18n/i18n-loader";
+import { ActivityEditorRenderProps, TabModel, ActivityEditorAppearingEventArgs, ActivityEditorDisappearingEventArgs } from "../../../components/screens/workflow-definition-editor/elsa-activity-editor-modal/elsa-activity-editor-modal";
+import { WorkflowStorageDescriptor, ActivityModel, ActivityDescriptor, EventTypes, ActivityPropertyDescriptor } from "../../../models";
+import { eventBus, propertyDisplayManager } from "../../../services";
+import { FormContext, SelectOption, selectField, section, checkBox, textInput, textArea } from "../../../utils/forms";
+import state from "../../../utils/store";
 
 @Component({
-  tag: 'elsa-activity-editor-modal',
-  shadow: false,
+    tag: 'elsa-secert-editor-modal',
+    shadow: false
 })
-export class ElsaActivityEditorModal {
+export class ElsaSecretEditorModel {
   @Prop() culture: string;
   @State() workflowStorageDescriptors: Array<WorkflowStorageDescriptor> = [];
   @State() activityModel: ActivityModel;
@@ -57,11 +27,11 @@ export class ElsaActivityEditorModal {
   timestamp: Date = new Date();
 
   connectedCallback() {
-    eventBus.on(EventTypes.ActivityEditor.Show, this.onShowActivityEditor);
+    eventBus.on(EventTypes.SecretsEditor.Show, this.onShowActivityEditor);
   }
 
   disconnectedCallback() {
-    eventBus.detach(EventTypes.ActivityEditor.Show, this.onShowActivityEditor);
+    eventBus.detach(EventTypes.SecretsEditor.Show, this.onShowActivityEditor);
   }
 
   async componentWillLoad() {
@@ -109,7 +79,7 @@ export class ElsaActivityEditorModal {
 
     if (defaultProperties.length > 0) {
       tabs.push({
-        tabName: t('Tabs.Properties.Name'),
+        tabName: 'General',
         renderContent: () => this.renderPropertiesTab(activityModel)
       });
     }
@@ -124,14 +94,17 @@ export class ElsaActivityEditorModal {
     }
 
     tabs.push({
-      tabName: t('Tabs.Common.Name'),
+      tabName: 'Common',
       renderContent: () => this.renderCommonTab(activityModel)
     });
 
-    tabs.push({
-      tabName: t('Tabs.Storage.Name'),
-      renderContent: () => this.renderStorageTab(activityModel, activityDescriptor)
-    });
+    // tabs.push({
+    //   tabName: t('Tabs.Storage.Name'),
+    //   renderContent: () => this.renderStorageTab(activityModel, activityDescriptor)
+    // });
+
+    console.log('activityDescriptor', activityDescriptor);
+    console.log('tabs', tabs);
 
     this.renderProps = {
       activityDescriptor,
@@ -142,7 +115,7 @@ export class ElsaActivityEditorModal {
       selectedTabName: this.renderProps.selectedTabName
     };
 
-    await eventBus.emit(EventTypes.ActivityEditor.Rendering, this, this.renderProps);
+    await eventBus.emit(EventTypes.SecretsEditor.Rendering, this, this.renderProps);
 
     let selectedTabName = this.renderProps.selectedTabName
     tabs = this.renderProps.tabs;
@@ -174,10 +147,12 @@ export class ElsaActivityEditorModal {
 
   onShowActivityEditor = async (activity: ActivityModel, animate: boolean) => {
     this.activityModel = JSON.parse(JSON.stringify(activity));
-    this.activityDescriptor = state.activityDescriptors.find(x => x.type == activity.type);
+    console.log('this.activityModel', this.activityModel)
+    this.activityDescriptor = state.secretsDescriptors.find(x => x.type == activity.type);
     this.workflowStorageDescriptors = state.workflowStorageDescriptors;
     this.formContext = new FormContext(this.activityModel, newValue => this.activityModel = newValue);
-    console.log('this.formContext activity', this.formContext);
+
+    console.log('this.formContext', this.formContext)
     this.timestamp = new Date();
     this.renderProps = {};
     await this.show(animate);
@@ -198,7 +173,7 @@ export class ElsaActivityEditorModal {
       activityDescriptor: this.activityDescriptor
     };
 
-    await eventBus.emit(EventTypes.ActivityEditor.Appearing, this, args);
+    await eventBus.emit(EventTypes.SecretsEditor.Appearing, this, args);
   };
 
   onDialogHidden = async () => {
@@ -207,7 +182,7 @@ export class ElsaActivityEditorModal {
       activityDescriptor: this.activityDescriptor,
     };
 
-    await eventBus.emit(EventTypes.ActivityEditor.Disappearing, this, args);
+    await eventBus.emit(EventTypes.SecretsEditor.Disappearing, this, args);
   };
 
   render() {
@@ -286,43 +261,43 @@ export class ElsaActivityEditorModal {
       ));
   }
 
-  renderStorageTab(activityModel: ActivityModel, activityDescriptor: ActivityDescriptor) {
-    const formContext = this.formContext;
-    const t = this.t;
-    let storageDescriptorOptions: Array<SelectOption> = this.workflowStorageDescriptors.map(x => ({
-      value: x.name,
-      text: x.displayName
-    }));
-    let outputProperties = activityDescriptor.outputProperties.filter(x => !x.disableWorkflowProviderSelection);
-    let inputProperties = activityDescriptor.inputProperties.filter(x => !x.disableWorkflowProviderSelection);
+  // renderStorageTab(activityModel: ActivityModel, activityDescriptor: ActivityDescriptor) {
+  //   const formContext = this.formContext;
+  //   const t = this.t;
+  //   let storageDescriptorOptions: Array<SelectOption> = this.workflowStorageDescriptors.map(x => ({
+  //     value: x.name,
+  //     text: x.displayName
+  //   }));
+  //   let outputProperties = activityDescriptor.outputProperties.filter(x => !x.disableWorkflowProviderSelection);
+  //   let inputProperties = activityDescriptor.inputProperties.filter(x => !x.disableWorkflowProviderSelection);
 
-    storageDescriptorOptions = [{value: null, text: 'Default'}, ...storageDescriptorOptions];
+  //   storageDescriptorOptions = [{value: null, text: 'Default'}, ...storageDescriptorOptions];
 
-    const renderPropertyStorageSelectField = function (propertyDescriptor: ActivityPropertyDescriptor) {
-      const propertyName = propertyDescriptor.name;
-      const fieldName = `propertyStorageProviders.${propertyName}`;
-      return selectField(formContext, fieldName, propertyName, activityModel.propertyStorageProviders[propertyName], storageDescriptorOptions, null, fieldName);
-    }
+  //   const renderPropertyStorageSelectField = function (propertyDescriptor: ActivityPropertyDescriptor) {
+  //     const propertyName = propertyDescriptor.name;
+  //     const fieldName = `propertyStorageProviders.${propertyName}`;
+  //     return selectField(formContext, fieldName, propertyName, activityModel.propertyStorageProviders[propertyName], storageDescriptorOptions, null, fieldName);
+  //   }
 
-    return (
-      <div class="elsa-space-y-8 elsa-w-full">
-        {section('Workflow Context')}
-        {checkBox(formContext, 'loadWorkflowContext', 'Load Workflow Context', activityModel.loadWorkflowContext, 'When enabled, this will load the workflow context into memory before executing this activity.', 'loadWorkflowContext')}
-        {checkBox(formContext, 'saveWorkflowContext', 'Save Workflow Context', activityModel.saveWorkflowContext, 'When enabled, this will save the workflow context back into storage after executing this activity.', 'saveWorkflowContext')}
+  //   return (
+  //     <div class="elsa-space-y-8 elsa-w-full">
+  //       {section('Workflow Context')}
+  //       {checkBox(formContext, 'loadWorkflowContext', 'Load Workflow Context', activityModel.loadWorkflowContext, 'When enabled, this will load the workflow context into memory before executing this activity.', 'loadWorkflowContext')}
+  //       {checkBox(formContext, 'saveWorkflowContext', 'Save Workflow Context', activityModel.saveWorkflowContext, 'When enabled, this will save the workflow context back into storage after executing this activity.', 'saveWorkflowContext')}
 
-        {section('Workflow Instance')}
-        {checkBox(formContext, 'persistWorkflow', 'Save Workflow Instance', activityModel.persistWorkflow, 'When enabled, this will save the workflow instance back into storage right after executing this activity.', 'persistWorkflow')}
+  //       {section('Workflow Instance')}
+  //       {checkBox(formContext, 'persistWorkflow', 'Save Workflow Instance', activityModel.persistWorkflow, 'When enabled, this will save the workflow instance back into storage right after executing this activity.', 'persistWorkflow')}
 
-        {Object.keys(outputProperties).length > 0 ? (
-          [section('Activity Output', 'Configure the desired storage for each output property of this activity.'), outputProperties.map(renderPropertyStorageSelectField)]
-        ) : undefined}
+  //       {Object.keys(outputProperties).length > 0 ? (
+  //         [section('Activity Output', 'Configure the desired storage for each output property of this activity.'), outputProperties.map(renderPropertyStorageSelectField)]
+  //       ) : undefined}
 
-        {Object.keys(inputProperties).length > 0 ? (
-          [section('Activity Input', 'Configure the desired storage for each input property of this activity.'), inputProperties.map(renderPropertyStorageSelectField)]
-        ) : undefined}
-      </div>
-    );
-  }
+  //       {Object.keys(inputProperties).length > 0 ? (
+  //         [section('Activity Input', 'Configure the desired storage for each input property of this activity.'), inputProperties.map(renderPropertyStorageSelectField)]
+  //       ) : undefined}
+  //     </div>
+  //   );
+  // }
 
   renderCommonTab(activityModel: ActivityModel) {
     const formContext = this.formContext;

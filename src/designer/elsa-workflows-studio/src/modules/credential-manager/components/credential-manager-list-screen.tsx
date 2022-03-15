@@ -1,9 +1,10 @@
 import { Component, h, Prop, State } from "@stencil/core";
 import { RouterHistory } from "@stencil/router";
 import collection from "lodash/collection";
-import { PagedList } from "../../..";
+import { eventBus, EventTypes, PagedList } from "../../..";
 import { WebhookDefinitionSummary } from "../../elsa-webhooks/models";
 import Tunnel from "../../../data/dashboard";
+import {v4 as uuid} from 'uuid';
 
 @Component({
     tag: 'credential-manager-list-screen',
@@ -20,6 +21,41 @@ export class CredentialManagerListScreen {
   
     async componentWillLoad() {
       await this.loadWebhookDefinitions();
+      eventBus.on(EventTypes.SecretPicked, this.onActivityPicked);
+    }
+
+    onActivityPicked = async args => {
+      const activityDescriptor = args as any;
+      console.log('args in list', args);
+      const activityModel = this.newActivity(activityDescriptor);
+      console.log('activityModel after map ', activityModel);
+
+     // this.addingSecret = true;
+      await this.showActivityEditorInternal(activityModel, false);
+    };
+
+    async showActivityEditorInternal(activity: any, animate: boolean) {
+      await eventBus.emit(EventTypes.SecretsEditor.Show, this, activity, animate);
+    }
+
+    newActivity(activityDescriptor): any {
+      const activity: any = {
+        activityId: uuid(),
+        type: activityDescriptor.type,
+        outcomes: activityDescriptor.outcomes,
+        displayName: activityDescriptor.displayName,
+        properties: [],
+        propertyStorageProviders: {}
+      };
+  
+      for (const property of activityDescriptor.inputProperties) {
+        activity.properties[property.name] = {
+          syntax: '',
+          expression: '',
+        };
+      }
+  
+      return activity;
     }
   
     async onDeleteClick(e: Event, webhookDefinition: WebhookDefinitionSummary) {

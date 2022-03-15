@@ -12,12 +12,20 @@ export const EventTypes = {
     Appearing: 'activity-editor-appearing',
     Disappearing: 'activity-editor-disappearing'
   },
+  SecretsEditor: {
+    Show: 'show-secrets-editor',
+    Rendering: 'secrets-editor.rendering',
+    Appearing: 'secrets-editor-appearing',
+    Disappearing: 'activity-secrets-disappearing'
+  },
   Dashboard: {
     Appearing: 'dashboard.appearing'
   },
   ShowActivityPicker: 'show-activity-picker',
+  ShowSecretsPicker: 'show-secrets-picker',
   ShowWorkflowSettings: 'show-workflow-settings',
   ActivityPicked: 'activity-picked',
+  SecretPicked: 'secret-picked',
   UpdateActivity: 'update-activity',
   UpdateWorkflowSettings: 'update-workflow-settings',
   WorkflowModelChanged: 'workflow-model-changed',

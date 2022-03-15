@@ -3,6 +3,7 @@
 const { state, onChange } = createStore({
   activityDescriptors: [],
   workflowStorageDescriptors: [],
+  secretsDescriptors: [],
   monacoLibPath: ''
 });
 
