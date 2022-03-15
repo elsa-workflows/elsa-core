@@ -12,7 +12,7 @@ namespace Elsa.Activities.Sql.Activities
     /// Execute an SQL query on given database using connection string
     /// </summary>
     [Trigger(
-        Category = "SQL",
+        Category = "SQL Server",
         DisplayName = "Execute Sql Query",
         Description = "Execute given SQL query and returned execution result",
         Outcomes = new string[0]
