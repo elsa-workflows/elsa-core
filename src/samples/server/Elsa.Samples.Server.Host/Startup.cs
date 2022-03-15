@@ -45,6 +45,7 @@ namespace Elsa.Samples.Server.Host
                 typeof(Elsa.Activities.Telnyx.Startup),
                 typeof(Elsa.Activities.File.Startup),
                 typeof(Elsa.Activities.RabbitMq.Startup),
+                typeof(Elsa.Activities.ExecuteSqlServerQuery.Startup),
                 typeof(Elsa.Activities.Mqtt.Startup),
                 typeof(Persistence.EntityFramework.Sqlite.Startup),
                 typeof(Persistence.EntityFramework.SqlServer.Startup),
