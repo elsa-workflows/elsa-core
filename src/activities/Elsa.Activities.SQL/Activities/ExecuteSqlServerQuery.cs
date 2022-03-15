@@ -4,10 +4,9 @@ using Elsa.Services.Models;
 using Elsa.ActivityResults;
 using Elsa.Design;
 using Elsa.Expressions;
-using Elsa.Activities.ExecuteSqlServerQuery.Client;
-using Elsa.Activities.ExecuteSqlServerQuery.Factory;
+using Elsa.Activities.Sql.Factory;
 
-namespace Elsa.Activities.ExecuteSqlServerQuery.Activities
+namespace Elsa.Activities.Sql.Activities
 {
     /// <summary>
     /// Execute an SQL query on given database using connection string

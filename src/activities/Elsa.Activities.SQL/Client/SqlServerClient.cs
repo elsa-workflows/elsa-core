@@ -1,6 +1,6 @@
 using Microsoft.Data.SqlClient;
 
-namespace Elsa.Activities.ExecuteSqlServerQuery.Client
+namespace Elsa.Activities.Sql.Client
 {
     public class SqlServerClient : ISqlServerClient
     {

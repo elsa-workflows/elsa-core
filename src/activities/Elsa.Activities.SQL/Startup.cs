@@ -1,16 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Elsa.Activities.ExecuteSqlServerQuery.Extensions;
+using Elsa.Activities.Sql.Extensions;
 using Elsa.Attributes;
 using Elsa.Options;
 using Elsa.Services.Startup;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Activities.ExecuteSqlServerQuery
+namespace Elsa.Activities.Sql
 {
     [Feature("ExecuteSqlServerQuery")]
     public class Startup : StartupBase

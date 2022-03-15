@@ -1,11 +1,6 @@
-using Elsa.Activities.ExecuteSqlServerQuery.Client;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Elsa.Activities.Sql.Client;
 
-namespace Elsa.Activities.ExecuteSqlServerQuery.Factory
+namespace Elsa.Activities.Sql.Factory
 {
     public interface ISqlClientFactory
     {
