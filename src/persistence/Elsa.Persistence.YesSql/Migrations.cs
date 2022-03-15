@@ -67,6 +67,7 @@ namespace Elsa.Persistence.YesSql
                     .Column<string?>(nameof(BookmarkIndex.BookmarkId))
                     .Column<string?>(nameof(BookmarkIndex.TenantId))
                     .Column<string>(nameof(BookmarkIndex.Hash))
+                    .Column<string>(nameof(BookmarkIndex.ModelType))
                     .Column<string>(nameof(BookmarkIndex.ActivityType))
                     .Column<string>(nameof(BookmarkIndex.WorkflowInstanceId))
                     .Column<string>(nameof(BookmarkIndex.CorrelationId)),
@@ -77,11 +78,12 @@ namespace Elsa.Persistence.YesSql
                     .Column<string?>(nameof(TriggerIndex.TriggerId))
                     .Column<string?>(nameof(TriggerIndex.TenantId))
                     .Column<string>(nameof(TriggerIndex.Hash))
+                    .Column<string>(nameof(TriggerIndex.ModelType))
                     .Column<string>(nameof(TriggerIndex.ActivityType))
                     .Column<string>(nameof(TriggerIndex.WorkflowDefinitionId)),
                 CollectionNames.Triggers);
 
-            return 4;
+            return 5;
         }
 
         public int UpdateFrom1()
@@ -115,6 +117,21 @@ namespace Elsa.Persistence.YesSql
                 CollectionNames.WorkflowDefinitions);
 
             return 4;
+        }
+        
+        public int UpdateFrom4()
+        {
+            SchemaBuilder.AlterIndexTable<TriggerIndex>(
+                table => table
+                    .AddColumn<string?>(nameof(TriggerIndex.ModelType)),
+                CollectionNames.Triggers);
+            
+            SchemaBuilder.AlterIndexTable<BookmarkIndex>(
+                table => table
+                    .AddColumn<string?>(nameof(BookmarkIndex.ModelType)),
+                CollectionNames.Bookmarks);
+
+            return 5;
         }
     }
 }
