@@ -24,16 +24,16 @@ public class QuartzJobScheduler : IJobScheduler
         _logger = logger;
     }
 
-    public async Task ScheduleAsync(IJob job, IElsaSchedule schedule, string[]? groupKeys, CancellationToken cancellationToken = default)
+    public async Task ScheduleAsync(IJob job, string name, IElsaSchedule schedule, string[]? groupKeys, CancellationToken cancellationToken = default)
     {
-        var quartzTrigger = CreateTrigger(job, schedule, groupKeys);
+        var quartzTrigger = CreateTrigger(job, name, schedule, groupKeys);
         await ScheduleJob(quartzTrigger, cancellationToken);
     }
 
-    public async Task UnscheduleAsync(IJob job, CancellationToken cancellationToken = default)
+    public async Task UnscheduleAsync(string name, CancellationToken cancellationToken = default)
     {
         var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
-        var triggerKey = new TriggerKey(job.JobId);
+        var triggerKey = new TriggerKey(name);
         await scheduler.UnscheduleJob(triggerKey, cancellationToken);
     }
 
@@ -60,11 +60,11 @@ public class QuartzJobScheduler : IJobScheduler
         }
     }
 
-    private ITrigger CreateTrigger(IJob job, IElsaSchedule schedule, string[]? groupKeys)
+    private ITrigger CreateTrigger(IJob job, string name, IElsaSchedule schedule, string[]? groupKeys)
     {
         var jobName = job.GetType().Name;
         var groupKey = BuildGroupKey(groupKeys);
-        var triggerKey = new TriggerKey(job.JobId, groupKey);
+        var triggerKey = new TriggerKey(name, groupKey);
         var json = _jobSerializer.Serialize(job);
         var builder = TriggerBuilder.Create().ForJob(jobName).WithIdentity(triggerKey).UsingJobData(JobDataKey, json);
 

@@ -1,6 +1,9 @@
+using System.Threading.Tasks;
+using Elsa.Jobs.Models;
+
 namespace Elsa.Jobs.Contracts;
 
 public interface IJob
 {
-    string JobId { get; }
+    ValueTask ExecuteAsync(JobExecutionContext context);
 }

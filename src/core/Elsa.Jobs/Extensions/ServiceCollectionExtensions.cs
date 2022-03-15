@@ -6,7 +6,7 @@ namespace Elsa.Jobs.Extensions;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddJobs(this IServiceCollection services, IJobSchedulerProvider schedulerProvider, IJobQueueProvider queueProvider)
+    public static IServiceCollection AddJobServices(this IServiceCollection services, IJobSchedulerProvider schedulerProvider, IJobQueueProvider queueProvider)
     {
         services
             .AddSingleton<IJobSerializer, JobSerializer>()
@@ -16,6 +16,4 @@ public static class ServiceCollectionExtensions
         queueProvider.ConfigureServices(services);
         return services;
     }
-
-    public static IServiceCollection AddJobHandler<T>(this IServiceCollection services) where T : class, IJobHandler => services.AddSingleton<IJobHandler, T>();
 }

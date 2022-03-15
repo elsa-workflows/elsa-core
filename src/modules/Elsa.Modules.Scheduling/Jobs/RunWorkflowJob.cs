@@ -1,29 +1,30 @@
-using System.Threading;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Elsa.Runtime.Contracts;
 using Elsa.Runtime.Models;
-using Elsa.Jobs.Abstractions;
 using Elsa.Jobs.Contracts;
+using Elsa.Jobs.Models;
 
 namespace Elsa.Modules.Scheduling.Jobs;
 
-public record RunWorkflowJob(string WorkflowId) : IJob
+public class RunWorkflowJob : Job
 {
-    public string JobId => WorkflowId;
-}
-
-public class RunWorkflowJobHandler : JobHandler<RunWorkflowJob>
-{
-    private readonly IWorkflowInvoker _workflowInvoker;
-
-    public RunWorkflowJobHandler(IWorkflowInvoker workflowInvoker)
+    [JsonConstructor]
+    public RunWorkflowJob()
     {
-        _workflowInvoker = workflowInvoker;
     }
 
-    protected override async Task HandleAsync(RunWorkflowJob job, CancellationToken cancellationToken)
+    public RunWorkflowJob(string workflowId)
     {
-        var request = new DispatchWorkflowDefinitionRequest(job.WorkflowId, 1);
-        await _workflowInvoker.DispatchAsync(request, cancellationToken);
+        WorkflowId = workflowId;
+    }
+
+    public string WorkflowId { get; set; } = default!;
+
+    protected override async ValueTask ExecuteAsync(JobExecutionContext context)
+    {
+        var request = new DispatchWorkflowDefinitionRequest(WorkflowId, 1);
+        var workflowInvoker = context.GetRequiredService<IWorkflowInvoker>();
+        await workflowInvoker.DispatchAsync(request, context.Cancellation);
     }
 }
