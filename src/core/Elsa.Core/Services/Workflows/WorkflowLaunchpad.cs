@@ -32,7 +32,6 @@ namespace Elsa.Services.Workflows
         private readonly IIdGenerator _idGenerator;
         private readonly ElsaOptions _elsaOptions;
         private readonly ILogger _logger;
-        private readonly ITenantProvider _tenantProvider;
 
 
         public WorkflowLaunchpad(
@@ -48,8 +47,7 @@ namespace Elsa.Services.Workflows
             IGetsStartActivities getsStartActivities,
             IIdGenerator idGenerator,
             ElsaOptions elsaOptions,
-            ILogger<WorkflowLaunchpad> logger,
-            ITenantProvider tenantProvider)
+            ILogger<WorkflowLaunchpad> logger)
         {
             _workflowInstanceStore = workflowInstanceStore;
             _bookmarkFinder = bookmarkFinder;
@@ -64,7 +62,6 @@ namespace Elsa.Services.Workflows
             _workflowRunner = workflowRunner;
             _workflowInstanceExecutor = workflowInstanceExecutor;
             _workflowFactory = workflowFactory;
-            _tenantProvider = tenantProvider;
         }
 
         public async Task<IEnumerable<CollectedWorkflow>> FindWorkflowsAsync(WorkflowsQuery query, CancellationToken cancellationToken = default)
@@ -202,7 +199,7 @@ namespace Elsa.Services.Workflows
         }
 
         public async Task DispatchPendingWorkflowAsync(CollectedWorkflow collectedWorkflow, WorkflowInput? input, CancellationToken cancellationToken = default) =>
-            await _workflowInstanceDispatcher.DispatchAsync(new ExecuteWorkflowInstanceRequest(await _tenantProvider.GetCurrentTenantAsync(), collectedWorkflow.WorkflowInstanceId, collectedWorkflow.ActivityId, input), cancellationToken);
+            await _workflowInstanceDispatcher.DispatchAsync(new ExecuteWorkflowInstanceRequest(collectedWorkflow.WorkflowInstanceId, collectedWorkflow.ActivityId, input), cancellationToken);
 
         public Task DispatchPendingWorkflowAsync(string workflowInstanceId, string? activityId, WorkflowInput? input, CancellationToken cancellationToken = default) =>
             DispatchPendingWorkflowAsync(new CollectedWorkflow(workflowInstanceId, activityId), input, cancellationToken);

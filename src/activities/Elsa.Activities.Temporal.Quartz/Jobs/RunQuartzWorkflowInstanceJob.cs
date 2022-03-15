@@ -1,5 +1,4 @@
 using System.Threading.Tasks;
-using Elsa.Abstractions.Multitenancy;
 using Elsa.Services;
 using Quartz;
 
@@ -8,13 +7,8 @@ namespace Elsa.Activities.Temporal.Quartz.Jobs
     public class RunQuartzWorkflowInstanceJob : IJob
     {
         private readonly IWorkflowInstanceDispatcher _workflowInstanceDispatcher;
-        private readonly ITenantProvider _tenantProvider;
 
-        public RunQuartzWorkflowInstanceJob(IWorkflowInstanceDispatcher workflowDefinitionDispatcher, ITenantProvider tenantProvider)
-        {
-            _workflowInstanceDispatcher = workflowDefinitionDispatcher;
-            _tenantProvider = tenantProvider;
-        }
+        public RunQuartzWorkflowInstanceJob(IWorkflowInstanceDispatcher workflowDefinitionDispatcher) => _workflowInstanceDispatcher = workflowDefinitionDispatcher;
 
         public async Task Execute(IJobExecutionContext context)
         {
@@ -22,9 +16,8 @@ namespace Elsa.Activities.Temporal.Quartz.Jobs
             var cancellationToken = context.CancellationToken;
             var workflowInstanceId = dataMap.GetString("WorkflowInstanceId")!;
             var activityId = dataMap.GetString("ActivityId")!;
-            var tenant = await _tenantProvider.GetCurrentTenantAsync();
 
-            await _workflowInstanceDispatcher.DispatchAsync(new ExecuteWorkflowInstanceRequest(tenant, workflowInstanceId, activityId), cancellationToken);
+            await _workflowInstanceDispatcher.DispatchAsync(new ExecuteWorkflowInstanceRequest(workflowInstanceId, activityId), cancellationToken);
         }
     }
 }

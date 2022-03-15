@@ -259,8 +259,8 @@ namespace Microsoft.Extensions.DependencyInjection
             services
                 .AddSingleton<ServiceBusFactory>()
                 .AddSingleton<IServiceBusFactory>(sp => sp.GetRequiredService<ServiceBusFactory>())
-                .AddSingleton<ICommandSender, CommandSender>()
-                .AddSingleton<IEventPublisher, EventPublisher>();
+                .AddScoped<ICommandSender, CommandSender>()
+                .AddScoped<IEventPublisher, EventPublisher>();
 
             elsaOptions
                 .AddCompetingConsumer<TriggerWorkflowsRequestConsumer, TriggerWorkflowsRequest>("ExecuteWorkflow")

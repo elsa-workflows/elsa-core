@@ -1,26 +1,23 @@
 using System;
-using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Mqtt.Services;
 using Elsa.Events;
-using MediatR;
+using Elsa.MultiTenancy;
+using Rebus.Handlers;
+using Rebus.Pipeline;
 
 namespace Elsa.Activities.Mqtt.Consumers
 {
-    public class RestartMqttTopicsConsumer : INotificationHandler<TriggerIndexingFinished>, INotificationHandler<TriggersDeleted>, INotificationHandler<BookmarkIndexingFinished>, INotificationHandler<BookmarksDeleted>
+    public class RestartMqttTopicsConsumer : MultitenantConsumer, IHandleMessages<TriggerIndexingFinished>, IHandleMessages<TriggersDeleted>, IHandleMessages<BookmarkIndexingFinished>, IHandleMessages<BookmarksDeleted>
     {
         private readonly IMqttTopicsStarter _mqttTopicsStarter;
-        private readonly IServiceProvider _services;
 
-        public RestartMqttTopicsConsumer(IMqttTopicsStarter mqttTopicsStarter, IServiceProvider services)
-        {
-            _mqttTopicsStarter = mqttTopicsStarter;
-            _services = services;
-        }
+        public RestartMqttTopicsConsumer(IMqttTopicsStarter mqttTopicsStarter, IMessageContext messageContext, IServiceProvider serviceProvider) : base(messageContext, serviceProvider) => _mqttTopicsStarter = mqttTopicsStarter;
 
-        public Task Handle(TriggerIndexingFinished message, CancellationToken cancellationToken) => _mqttTopicsStarter.CreateWorkersAsync(message.Triggers, _services);
-        public Task Handle(TriggersDeleted message, CancellationToken cancellationToken) => _mqttTopicsStarter.RemoveWorkersAsync(message.Triggers);
-        public Task Handle(BookmarkIndexingFinished message, CancellationToken cancellationToken) => _mqttTopicsStarter.CreateWorkersAsync(message.Bookmarks, _services);
-        public Task Handle(BookmarksDeleted message, CancellationToken cancellationToken) => _mqttTopicsStarter.CreateWorkersAsync(message.Bookmarks, _services);
+        public async Task Handle(TriggerIndexingFinished message) => await _mqttTopicsStarter.CreateWorkersAsync(message.Triggers, _serviceProvider);
+        public async Task Handle(TriggersDeleted message) => await _mqttTopicsStarter.RemoveWorkersAsync(message.Triggers);
+        public async Task Handle(BookmarkIndexingFinished message) => await _mqttTopicsStarter.CreateWorkersAsync(message.Bookmarks, _serviceProvider);
+        public async Task Handle(BookmarksDeleted message) => await _mqttTopicsStarter.CreateWorkersAsync(message.Bookmarks, _serviceProvider);
+
     }
 }

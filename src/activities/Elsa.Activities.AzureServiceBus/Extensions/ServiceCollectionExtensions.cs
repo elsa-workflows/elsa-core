@@ -11,6 +11,7 @@ using Elsa.Events;
 using Elsa.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Rebus.Pipeline;
 
 namespace Elsa.Activities.AzureServiceBus.Extensions
 {
@@ -24,6 +25,7 @@ namespace Elsa.Activities.AzureServiceBus.Extensions
                 options.Services.AddOptions<AzureServiceBusOptions>();
 
             options.Services
+                .AddTransient(sp => MessageContext.Current)
                 .AddSingleton(CreateServiceBusConnection)
                 .AddSingleton(CreateServiceBusManagementClient)
                 .AddSingleton<IMessageSenderFactory, MessageSenderFactory>()

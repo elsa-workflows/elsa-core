@@ -11,7 +11,7 @@ namespace Elsa.Retention.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddRetentionServices(this IServiceCollection services, Action<CleanupOptions> configureOptions, IConfiguration configuration)
+        public static IServiceCollection AddRetentionServices(this IServiceCollection services, Action<CleanupOptions> configureOptions)
         {
             services
                 .Configure(configureOptions)

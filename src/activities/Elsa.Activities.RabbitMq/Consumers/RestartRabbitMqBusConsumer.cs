@@ -1,27 +1,22 @@
 using System;
-using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.RabbitMq.Services;
 using Elsa.Events;
-using MediatR;
+using Elsa.MultiTenancy;
+using Rebus.Handlers;
+using Rebus.Pipeline;
 
 namespace Elsa.Activities.RabbitMq.Consumers
 {
-    public class RestartRabbitMqBusConsumer : INotificationHandler<TriggerIndexingFinished>, INotificationHandler<TriggersDeleted>, INotificationHandler<BookmarkIndexingFinished>, INotificationHandler<BookmarksDeleted>
+    public class RestartRabbitMqBusConsumer : MultitenantConsumer, IHandleMessages<TriggerIndexingFinished>, IHandleMessages<TriggersDeleted>, IHandleMessages<BookmarkIndexingFinished>, IHandleMessages<BookmarksDeleted>
     {
         private readonly IRabbitMqQueueStarter _rabbitMqQueueStarter;
-        private readonly IServiceProvider _services;
 
-        public RestartRabbitMqBusConsumer(IRabbitMqQueueStarter rabbitMqQueueStarter, IServiceProvider services)
-        {
-            _rabbitMqQueueStarter = rabbitMqQueueStarter;
-            _services = services;
+        public RestartRabbitMqBusConsumer(IRabbitMqQueueStarter rabbitMqQueueStarter, IMessageContext messageContext, IServiceProvider serviceProvider) : base(messageContext, serviceProvider) => _rabbitMqQueueStarter = rabbitMqQueueStarter;
 
-        }
-
-        public Task Handle(TriggerIndexingFinished message, CancellationToken cancellationToken) => _rabbitMqQueueStarter.CreateWorkersAsync(message.Triggers, _services);
-        public Task Handle(TriggersDeleted message, CancellationToken cancellationToken) => _rabbitMqQueueStarter.RemoveWorkersAsync(message.Triggers);
-        public Task Handle(BookmarkIndexingFinished message, CancellationToken cancellationToken) => _rabbitMqQueueStarter.CreateWorkersAsync(message.Bookmarks, _services);
-        public Task Handle(BookmarksDeleted message, CancellationToken cancellationToken) => _rabbitMqQueueStarter.CreateWorkersAsync(message.Bookmarks, _services);
+        public async Task Handle(TriggerIndexingFinished message) => await _rabbitMqQueueStarter.CreateWorkersAsync(message.Triggers, _serviceProvider);
+        public async Task Handle(TriggersDeleted message) => await _rabbitMqQueueStarter.RemoveWorkersAsync(message.Triggers);
+        public async Task Handle(BookmarkIndexingFinished message) => await _rabbitMqQueueStarter.CreateWorkersAsync(message.Bookmarks, _serviceProvider);
+        public async Task Handle(BookmarksDeleted message) => await _rabbitMqQueueStarter.CreateWorkersAsync(message.Bookmarks, _serviceProvider);
     }
 }

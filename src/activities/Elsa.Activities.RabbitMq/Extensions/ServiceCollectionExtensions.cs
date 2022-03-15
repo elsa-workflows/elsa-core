@@ -7,6 +7,7 @@ using Elsa.Events;
 using Elsa.Options;
 using Elsa.Runtime;
 using Microsoft.Extensions.DependencyInjection;
+using Rebus.Pipeline;
 
 namespace Elsa.Activities.RabbitMq.Extensions
 {
@@ -15,20 +16,20 @@ namespace Elsa.Activities.RabbitMq.Extensions
         public static ElsaOptionsBuilder AddRabbitMqActivities(this ElsaOptionsBuilder options)
         {
             options.Services
+                .AddTransient(sp => MessageContext.Current)
                 .AddSingleton<BusClientFactory>()
                 .AddSingleton<IMessageReceiverClientFactory>(sp => sp.GetRequiredService<BusClientFactory>())
                 .AddSingleton<IMessageSenderClientFactory>(sp => sp.GetRequiredService<BusClientFactory>())
                 .AddSingleton<IRabbitMqQueueStarter, RabbitMqQueueStarter>()
                 .AddSingleton<IRabbitMqTestQueueManager, RabbitMqTestQueueManager>()
                 .AddNotificationHandlersFrom<ConfigureRabbitMqActivitiesForTestHandler>()
-                .AddNotificationHandlersFrom<RestartRabbitMqBusConsumer>()
                 .AddStartupTask<StartRabbitMqQueues>()
                 .AddBookmarkProvider<QueueMessageReceivedBookmarkProvider>();
 
-            //options.AddPubSubConsumer<RestartRabbitMqBusConsumer, TriggerIndexingFinished>("WorkflowManagementEvents");
-            //options.AddPubSubConsumer<RestartRabbitMqBusConsumer, TriggersDeleted>("WorkflowManagementEvents");
-            //options.AddPubSubConsumer<RestartRabbitMqBusConsumer, BookmarkIndexingFinished>("WorkflowManagementEvents");
-            //options.AddPubSubConsumer<RestartRabbitMqBusConsumer, BookmarksDeleted>("WorkflowManagementEvents");
+            options.AddPubSubConsumer<RestartRabbitMqBusConsumer, TriggerIndexingFinished>("WorkflowManagementEvents");
+            options.AddPubSubConsumer<RestartRabbitMqBusConsumer, TriggersDeleted>("WorkflowManagementEvents");
+            options.AddPubSubConsumer<RestartRabbitMqBusConsumer, BookmarkIndexingFinished>("WorkflowManagementEvents");
+            options.AddPubSubConsumer<RestartRabbitMqBusConsumer, BookmarksDeleted>("WorkflowManagementEvents");
 
             options
                 .AddActivity<RabbitMqMessageReceived>()

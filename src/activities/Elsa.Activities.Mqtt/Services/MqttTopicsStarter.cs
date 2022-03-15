@@ -10,6 +10,7 @@ using Elsa.Models;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Rebus.Extensions;
 
 namespace Elsa.Activities.Mqtt.Services
 {
@@ -38,7 +39,9 @@ namespace Elsa.Activities.Mqtt.Services
 
             try
             {
-                foreach (var trigger in triggers)
+                var filteredTriggers = Filter(triggers);
+
+                foreach (var trigger in filteredTriggers)
                 {
                     var bookmark = _bookmarkSerializer.Deserialize<MessageReceivedBookmark>(trigger.Model);
                     var clientId = MqttClientConfigurationHelper.GetClientId(trigger.ActivityId);
@@ -58,7 +61,9 @@ namespace Elsa.Activities.Mqtt.Services
 
             try
             {
-                foreach (var bookmark in bookmarks)
+                var filteredBookmarks = Filter(bookmarks);
+
+                foreach (var bookmark in filteredBookmarks)
                 {
                     var bookmarkModel = _bookmarkSerializer.Deserialize<MessageReceivedBookmark>(bookmark.Model);
                     var clientId = MqttClientConfigurationHelper.GetClientId(bookmark.ActivityId);
@@ -124,6 +129,18 @@ namespace Elsa.Activities.Mqtt.Services
         {
             await worker.DisposeAsync();
             _workers.Remove(worker);
+        }
+
+        private IEnumerable<Trigger> Filter(IEnumerable<Trigger> triggers)
+        {
+            var bookmarkType = typeof(MessageReceivedBookmark).GetSimpleAssemblyQualifiedName();
+            return triggers.Where(x => x.ModelType == bookmarkType);
+        }
+
+        private IEnumerable<Bookmark> Filter(IEnumerable<Bookmark> bookmarks)
+        {
+            var modeType = typeof(MessageReceivedBookmark).GetSimpleAssemblyQualifiedName();
+            return bookmarks.Where(x => x.ModelType == modeType);
         }
 
         private async Task DisposeReceiverAsync(IMqttClientWrapper messageReceiver) => await _receiverFactory.DisposeReceiverAsync(messageReceiver);

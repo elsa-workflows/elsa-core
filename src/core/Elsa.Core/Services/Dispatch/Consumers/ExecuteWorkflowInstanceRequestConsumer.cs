@@ -1,24 +1,22 @@
+using System;
 using System.Threading.Tasks;
-using Elsa.Abstractions.Multitenancy;
+using Elsa.MultiTenancy;
 using Rebus.Handlers;
+using Rebus.Pipeline;
 
 namespace Elsa.Services.Dispatch.Consumers
 {
-    public class ExecuteWorkflowInstanceRequestConsumer : IHandleMessages<ExecuteWorkflowInstanceRequest>
+    public class ExecuteWorkflowInstanceRequestConsumer : MultitenantConsumer, IHandleMessages<ExecuteWorkflowInstanceRequest>
     {
         private readonly IWorkflowInstanceExecutor _workflowInstanceExecutor;
-        private readonly ITenantProvider _tenantProvider;
 
-        public ExecuteWorkflowInstanceRequestConsumer(IWorkflowInstanceExecutor workflowInstanceExecutor, ITenantProvider tenantProvider)
+        public ExecuteWorkflowInstanceRequestConsumer(IWorkflowInstanceExecutor workflowInstanceExecutor, IMessageContext messageContext, IServiceProvider serviceProvider) : base(messageContext, serviceProvider)
         {
             _workflowInstanceExecutor = workflowInstanceExecutor;
-            _tenantProvider = tenantProvider;
         }
 
         public async Task Handle(ExecuteWorkflowInstanceRequest message)
         {
-            if (message.Tenant != null) await _tenantProvider.SetCurrentTenantAsync(message.Tenant);
-
             await _workflowInstanceExecutor.ExecuteAsync(message.WorkflowInstanceId, message.ActivityId, message.Input);
         }
     }

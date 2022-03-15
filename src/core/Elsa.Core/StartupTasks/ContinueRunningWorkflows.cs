@@ -27,7 +27,6 @@ namespace Elsa.StartupTasks
         private readonly IWorkflowStorageService _workflowStorageService;
         private readonly ElsaOptions _elsaOptions;
         private readonly ILogger _logger;
-        private readonly ITenantProvider _tenantProvider;
 
         public ContinueRunningWorkflows(
             IWorkflowInstanceStore workflowInstanceStore,
@@ -35,8 +34,7 @@ namespace Elsa.StartupTasks
             IDistributedLockProvider distributedLockProvider,
             IWorkflowStorageService workflowStorageService,
             ElsaOptions elsaOptions,
-            ILogger<ContinueRunningWorkflows> logger, 
-            ITenantProvider tenantProvider)
+            ILogger<ContinueRunningWorkflows> logger)
         {
             _workflowInstanceStore = workflowInstanceStore;
             _workflowInstanceDispatcher = workflowInstanceDispatcher;
@@ -44,7 +42,6 @@ namespace Elsa.StartupTasks
             _workflowStorageService = workflowStorageService;
             _elsaOptions = elsaOptions;
             _logger = logger;
-            _tenantProvider = tenantProvider;
         }
 
         public int Order => 1000;
@@ -81,9 +78,8 @@ namespace Elsa.StartupTasks
 
                 _logger.LogInformation("Resuming {WorkflowInstanceId}", instance.Id);
 
-                var tenant = await _tenantProvider.GetCurrentTenantAsync();
                 var input = await GetWorkflowInputAsync(instance, cancellationToken);
-                await _workflowInstanceDispatcher.DispatchAsync(new ExecuteWorkflowInstanceRequest(tenant, instance.Id, Input: input), cancellationToken);
+                await _workflowInstanceDispatcher.DispatchAsync(new ExecuteWorkflowInstanceRequest(instance.Id, Input: input), cancellationToken);
             }
         }
 
@@ -126,10 +122,9 @@ namespace Elsa.StartupTasks
                     continue;
                 }
 
-                var tenant = await _tenantProvider.GetCurrentTenantAsync();
                 var scheduledActivity = instance.CurrentActivity ?? instance.ScheduledActivities.Peek();
                 var input = await GetWorkflowInputAsync(instance, cancellationToken);
-                await _workflowInstanceDispatcher.DispatchAsync(new ExecuteWorkflowInstanceRequest(tenant, instance.Id, scheduledActivity.ActivityId, input), cancellationToken);
+                await _workflowInstanceDispatcher.DispatchAsync(new ExecuteWorkflowInstanceRequest(instance.Id, scheduledActivity.ActivityId, input), cancellationToken);
             }
         }
 
