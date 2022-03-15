@@ -2,6 +2,7 @@ namespace Elsa.Activities.Sql.Client
 {
     public interface ISqlServerClient
     {
-        public int Execute(string sqlCommand);
+        public int ExecuteCommand(string sqlCommand);
+        public string ExecuteQuery(string sqlQuery);
     }
 }
