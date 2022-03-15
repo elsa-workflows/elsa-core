@@ -14,17 +14,17 @@ namespace Elsa.Multitenancy
         {
             var tenants = new List<ITenant>();
 
-            var multiTenancyEnabled = configuration.GetValue<bool>("Elsa:Multitenancy");
+            var multiTenancyEnabled = configuration.GetValue<bool>("Elsa:Multitenancy:Enabled");
 
             if (multiTenancyEnabled)
             {
-                var tenantsConfiguration = configuration.GetSection("Elsa:Tenants").GetChildren();
+                var tenantsConfiguration = configuration.GetSection("Elsa:Multitenancy:Tenants").GetChildren();
 
                 foreach (var tenantConfig in tenantsConfiguration)
                 {
                     var name = tenantConfig.GetSection("Name").Value;
 
-                    var configurationValues = new Dictionary<string, string>(tenantConfig.AsEnumerable().Select(x => new KeyValuePair<string, string>(x.Key.Replace($"Elsa:Tenants:{tenantConfig.Key}:", string.Empty), x.Value)));
+                    var configurationValues = new Dictionary<string, string>(tenantConfig.AsEnumerable().Select(x => new KeyValuePair<string, string>(x.Key.Replace($"Elsa:Multitenancy:Tenants:{tenantConfig.Key}:", string.Empty), x.Value)));
 
                     tenants.Add(new Tenant(name, configurationValues));
                 }
