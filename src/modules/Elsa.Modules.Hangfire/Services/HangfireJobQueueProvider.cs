@@ -28,12 +28,16 @@ public class HangfireJobQueueProvider : IJobQueueProvider
     {
         if (RegisterHangfire)
         {
-            var storageOptions = SqlServerStorageOptions ?? new SqlServerStorageOptions();
-            
-            services
-                .AddHangfire(configuration => configuration
-                    .UseSimpleAssemblyNameTypeSerializer()
-                    .UseSqlServerStorage(SqlServerConnectionString, storageOptions));
+            services.AddHangfire(configuration =>
+            {
+                configuration.UseSimpleAssemblyNameTypeSerializer();
+                
+                if (UseSqlServerStorage)
+                {
+                    var storageOptions = SqlServerStorageOptions ?? new SqlServerStorageOptions();
+                    configuration.UseSqlServerStorage(SqlServerConnectionString, storageOptions);
+                }
+            });
         }
 
         services.AddSingleton<IJobQueue, HangfireJobQueue>();

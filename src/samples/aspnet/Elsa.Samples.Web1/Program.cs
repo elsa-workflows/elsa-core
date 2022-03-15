@@ -47,7 +47,6 @@ services
     .AddElsaManagement()
     .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider())
     .AddHttpActivityServices()
-    .AddJobServices()
     .AddAzureServiceBusServices(options => configuration.GetSection("AzureServiceBus").Bind(options))
     .ConfigureWorkflowRuntime(options =>
     {
@@ -61,6 +60,7 @@ services
         options.Workflows.Add(nameof(ReceiveMessageWorkflow), new ReceiveMessageWorkflow());
         options.Workflows.Add(nameof(RunJavaScriptWorkflow), new RunJavaScriptWorkflow());
         options.Workflows.Add(nameof(WorkflowContextsWorkflow), new WorkflowContextsWorkflow());
+        options.Workflows.Add(nameof(SubmitJobWorkflow), new SubmitJobWorkflow());
     });
 
 // Testing only: allow client app to connect from anywhere.
