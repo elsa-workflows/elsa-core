@@ -32,7 +32,7 @@ namespace Elsa.Activities.Mqtt.Activities.MqttMessageReceived
 
         private IActivityExecutionResult ExecuteInternalAsync(ActivityExecutionContext context)
         {
-            if (context.Input != null)
+            if (context.Input != null && context.Input.GetType()==typeof(MqttApplicationMessage))
             {
                 var message = (MqttApplicationMessage)context.Input;
                 Output = System.Text.Encoding.UTF8.GetString(message.Payload);

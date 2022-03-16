@@ -39,7 +39,7 @@ namespace Elsa.Activities.OpcUa
             SupportedSyntaxes = new[] { SyntaxNames.Json },
             Order = 2,
             Category = PropertyCategories.Configuration)]
-        public int OperationTimeout { get; set; } = 15000;
+        public int Timeout { get; set; } = 15000;
 
         [ActivityInput(
             Hint = "SessionTimeout",
