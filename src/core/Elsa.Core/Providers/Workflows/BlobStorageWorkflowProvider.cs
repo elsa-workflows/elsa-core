@@ -126,6 +126,9 @@ namespace Elsa.Providers.Workflows
             return await ListInternalAsync(cancellationToken).Where(x => nameList.Contains(x.VersionId)).ToListAsync(cancellationToken);
         }
 
+        public override async ValueTask<IEnumerable<IWorkflowBlueprint>> FindManyByTagAsync(string tag, VersionOptions versionOptions, string? tenantId = default, CancellationToken cancellationToken = default) => 
+            await ListInternalAsync(cancellationToken).Where(x => string.Equals(tag, x.Tag, StringComparison.OrdinalIgnoreCase) && x.WithVersion(versionOptions)).ToListAsync(cancellationToken);
+
         private async IAsyncEnumerable<IWorkflowBlueprint> ListInternalAsync([EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             var blobs = await _storage.ListFilesAsync(new ListOptions(), cancellationToken);
