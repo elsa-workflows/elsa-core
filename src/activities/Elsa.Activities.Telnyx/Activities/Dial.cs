@@ -23,7 +23,7 @@ namespace Elsa.Activities.Telnyx.Activities
     [Action(
         Category = Constants.Category,
         Description = "Dial a number or SIP URI from a given connection.",
-        Outcomes = new[] { TelnyxOutcomeNames.Dialing, TelnyxOutcomeNames.CallInitiated, TelnyxOutcomeNames.Answered, TelnyxOutcomeNames.Hangup, OutcomeNames.Done },
+        Outcomes = new[] { TelnyxOutcomeNames.CallInitiated, TelnyxOutcomeNames.Answered, TelnyxOutcomeNames.Hangup, OutcomeNames.Done },
         DisplayName = "Dial"
     )]
     public class Dial : Activity

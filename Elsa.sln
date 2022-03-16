@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.0.31912.275
+VisualStudioVersion = 17.1.32210.238
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Core", "src\core\Elsa.Core\Elsa.Core.csproj", "{300EE2D5-54C5-46F2-AD03-BB43589EA074}"
 EndProject
@@ -381,11 +381,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.RabbitMq", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.RabbitMqWorker", "src\samples\worker\Elsa.Samples.RabbitMqWorker\Elsa.Samples.RabbitMqWorker.csproj", "{67C58C2B-B873-47C8-B5B9-93B0587EE634}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.Mqtt", "src\activities\Elsa.Activities.Mqtt\Elsa.Activities.Mqtt.csproj", "{791D50F6-EAF2-4E20-9EDF-3BAF9CB7F796}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.Sql", "src\activities\Elsa.Activities.Sql\Elsa.Activities.Sql.csproj", "{12E86018-047F-4B80-B2D2-B3C7334FB8DD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.MqttWorker", "src\samples\worker\Elsa.Samples.MqttWorker\Elsa.Samples.MqttWorker.csproj", "{8B58C3EA-20C2-491A-ADEC-E41F0EC787FB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Activities.Mqtt", "src\activities\Elsa.Activities.Mqtt\Elsa.Activities.Mqtt.csproj", "{791D50F6-EAF2-4E20-9EDF-3BAF9CB7F796}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.NestedForks", "src\samples\aspnet\Elsa.Samples.NestedForks\Elsa.Samples.NestedForks.csproj", "{A7253665-5F7A-4BCB-B78B-E2E897E90DE4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.MqttWorker", "src\samples\worker\Elsa.Samples.MqttWorker\Elsa.Samples.MqttWorker.csproj", "{8B58C3EA-20C2-491A-ADEC-E41F0EC787FB}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.NestedForks", "src\samples\aspnet\Elsa.Samples.NestedForks\Elsa.Samples.NestedForks.csproj", "{A7253665-5F7A-4BCB-B78B-E2E897E90DE4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.RebusErrorWorker", "src\samples\worker\Elsa.Samples.RebusErrorWorker\Elsa.Samples.RebusErrorWorker.csproj", "{9422DD57-A244-43ED-B0B8-5ED7684278FE}"
 EndProject
@@ -921,6 +923,10 @@ Global
 		{67C58C2B-B873-47C8-B5B9-93B0587EE634}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{67C58C2B-B873-47C8-B5B9-93B0587EE634}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{67C58C2B-B873-47C8-B5B9-93B0587EE634}.Release|Any CPU.Build.0 = Release|Any CPU
+		{12E86018-047F-4B80-B2D2-B3C7334FB8DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{12E86018-047F-4B80-B2D2-B3C7334FB8DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{12E86018-047F-4B80-B2D2-B3C7334FB8DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{12E86018-047F-4B80-B2D2-B3C7334FB8DD}.Release|Any CPU.Build.0 = Release|Any CPU
 		{791D50F6-EAF2-4E20-9EDF-3BAF9CB7F796}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{791D50F6-EAF2-4E20-9EDF-3BAF9CB7F796}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{791D50F6-EAF2-4E20-9EDF-3BAF9CB7F796}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -1123,6 +1129,7 @@ Global
 		{4CD8293D-4544-4A23-BDEF-15B66D5E924F} = {22E75696-6FE9-436A-9097-EE21C603F818}
 		{0D430863-8275-4880-BB09-C307B5EC3837} = {B43B546E-23F3-46E8-ACB7-D04F05CDA180}
 		{67C58C2B-B873-47C8-B5B9-93B0587EE634} = {E42743A0-FBDD-4150-9D53-6000496D9B87}
+		{12E86018-047F-4B80-B2D2-B3C7334FB8DD} = {B43B546E-23F3-46E8-ACB7-D04F05CDA180}
 		{791D50F6-EAF2-4E20-9EDF-3BAF9CB7F796} = {B43B546E-23F3-46E8-ACB7-D04F05CDA180}
 		{8B58C3EA-20C2-491A-ADEC-E41F0EC787FB} = {E42743A0-FBDD-4150-9D53-6000496D9B87}
 		{A7253665-5F7A-4BCB-B78B-E2E897E90DE4} = {22E75696-6FE9-436A-9097-EE21C603F818}

@@ -6,6 +6,9 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Elsa.Activities.MassTransit.Extensions;
 using Elsa.Activities.MassTransit.Consumers;
+using Elsa.Persistence.EntityFramework.Core.Extensions;
+using Elsa.Persistence.EntityFramework.Sqlite;
+using Elsa.Samples.MassTransitRabbitMq.Handlers;
 
 namespace Elsa.Samples.MassTransitRabbitMq
 {
@@ -15,8 +18,12 @@ namespace Elsa.Samples.MassTransitRabbitMq
 
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllers();
+            services.AddElsaApiEndpoints();
 
+            // Allow arbitrary client browser apps to access the API for demo purposes only.
+            // In a production environment, make sure to allow only origins you trust.
+            services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("Content-Disposition")));
+            
             services
                 .AddMassTransit(x =>
                 {
@@ -36,15 +43,23 @@ namespace Elsa.Samples.MassTransitRabbitMq
 
             services
                 .AddElsa(options => options
+                    .UseEntityFrameworkPersistence(ef => ef.UseSqlite())
                     .AddConsoleActivities()
                     .AddMassTransitActivities()
                     .AddWorkflow<TestWorkflow>()
                     .AddWorkflow<InterfaceTestWorkflow>()
                 );
+
+            // Register notification handlers from this project. Will register ConfigureJavaScriptEngine.
+            services.AddNotificationHandlersFrom<Startup>();
+
+            // Register custom type definitions for intellisense.
+            services.AddJavaScriptTypeDefinitionProvider<MessageTypeDefinitionProvider>();
         }
 
         public void Configure(IApplicationBuilder app)
         {
+            app.UseCors();
             app.UseRouting();
 
             app.UseEndpoints(endpoints =>

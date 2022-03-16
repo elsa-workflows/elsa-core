@@ -30,6 +30,11 @@ namespace Elsa.Services
         /// Finds a single workflow blueprint with the specified tag for the specified tenant and version.
         /// </summary>
         Task<IWorkflowBlueprint?> FindByTagAsync(string tag, VersionOptions versionOptions, string? tenantId = default, CancellationToken cancellationToken = default);
+        
+        /// <summary>
+        /// Finds multiple workflow blueprints with the specified tag for the specified tenant and version.
+        /// </summary>
+        Task<IEnumerable<IWorkflowBlueprint>> FindManyByTagAsync(string tag, VersionOptions versionOptions, string? tenantId = default, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Returns a list of <see cref="WorkflowBlueprint"/> objects for the specified set of workflow definition version IDs.

@@ -66,6 +66,12 @@ namespace Elsa.Providers.Workflows
             return new ValueTask<IEnumerable<IWorkflowBlueprint>>(workflowBlueprints);
         }
 
+        public override ValueTask<IEnumerable<IWorkflowBlueprint>> FindManyByTagAsync(string tag, VersionOptions versionOptions, string? tenantId = default, CancellationToken cancellationToken = default)
+        {
+            var workflowBlueprints = GetWorkflows().Where(x => string.Equals(x.Tag, tag, StringComparison.OrdinalIgnoreCase)).ToList();
+            return new ValueTask<IEnumerable<IWorkflowBlueprint>>(workflowBlueprints);
+        }
+
         private IEnumerable<IWorkflowBlueprint> List(VersionOptions versionOptions, int? skip = default, int? take = default, string? tenantId = default)
         {
             var enumerable = GetWorkflows().WithVersion(versionOptions);

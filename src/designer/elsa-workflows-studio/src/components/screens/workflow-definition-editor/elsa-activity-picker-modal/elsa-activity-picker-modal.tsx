@@ -35,7 +35,7 @@ export class ElsaActivityPickerModal {
     this.categories = ['All', ...activityDescriptors.map(x => x.category).distinct().sort()];
     const searchText = this.searchText ? this.searchText.toLowerCase() : '';
     let filteredActivityDescriptors = activityDescriptors;
-    
+
     if (searchText.length > 0) {
       filteredActivityDescriptors = filteredActivityDescriptors.filter(x => {
         const category = x.category || '';
@@ -84,7 +84,7 @@ export class ElsaActivityPickerModal {
     this.selectCategory(category);
   }
 
-  onSearchTextChange(e: TextEvent) {
+  onSearchTextChange(e: any) {
     this.searchText = (e.target as HTMLInputElement).value;
   }
 
@@ -133,8 +133,8 @@ export class ElsaActivityPickerModal {
                         <line x1="21" y1="21" x2="15" y2="15"/>
                       </svg>
                     </div>
-                    <input type="text" value={this.searchText} onInput={e => this.onSearchTextChange(e as TextEvent)}
-                           class="form-input elsa-block elsa-w-full elsa-pl-10 sm:elsa-text-sm sm:elsa-leading-5 focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-rounded-md elsa-border-gray-300" 
+                    <input type="text" value={this.searchText} onInput={e => this.onSearchTextChange(e)}
+                           class="form-input elsa-block elsa-w-full elsa-pl-10 sm:elsa-text-sm sm:elsa-leading-5 focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-rounded-md elsa-border-gray-300"
                            placeholder="Search activities"/>
                   </div>
                 </div>

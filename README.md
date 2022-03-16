@@ -113,7 +113,7 @@ Alternatively, you might run `.\build-assets-and-run-dashboard-monolith.ps1` tha
 ### Docker Compose
 
 Another quick way to try out Elsa is to run `build-and-run-dashboard-monolith-with-docker.ps1`, which will use Docker Compose to build an image and start a container.
-When the container starts, you can reach the Elsa Dashboard at http://localhost:6868 
+When the container starts, you can reach the Elsa Dashboard at http://localhost:14000 
 
 ## Roadmap
 
