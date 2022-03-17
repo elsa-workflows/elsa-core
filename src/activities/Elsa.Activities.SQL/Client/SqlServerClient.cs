@@ -29,7 +29,7 @@ namespace Elsa.Activities.Sql.Client
 
         public string ExecuteQuery(string sqlQuery)
         {
-            using (var connection = new SqlConnection("Data Source=DESKTOP-GU8EC6S;Initial Catalog=AspNetIdentityCore;Integrated Security=SSPI"))
+            using (var connection = new SqlConnection(_connectionString))
             {
                 connection.Open();
                 var command = new SqlCommand(sqlQuery, connection);
