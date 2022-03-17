@@ -7,8 +7,8 @@ using Elsa.Activities.File.MapperProfiles;
 using Elsa.Activities.File.Services;
 using Elsa.Activities.File.StartupTasks;
 using Elsa.Events;
+using Elsa.HostedServices;
 using Elsa.Options;
-using Elsa.Runtime;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -41,7 +41,7 @@ namespace Microsoft.Extensions.DependencyInjection
             builder.Services.AddBookmarkProvider<FileCreatedBookmarkProvider>()
                 .AddAutoMapperProfile<FileSystemEventProfile>()
                 .AddSingleton<FileSystemWatchersStarter>()
-                .AddHostedService<StartFileSystemWatchers>();
+                .AddHostedService<ScopedBackgroundService<StartFileSystemWatchers>>();
 
             return builder;
         }

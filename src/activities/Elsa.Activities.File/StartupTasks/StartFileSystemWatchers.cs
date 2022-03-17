@@ -1,15 +1,22 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.File.Services;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+using Elsa.HostedServices;
 
 namespace Elsa.Activities.File.StartupTasks
 {
-    public class StartFileSystemWatchers : BackgroundService
+    public class StartFileSystemWatchers : IScopedBackgroundService
     {
         private readonly FileSystemWatchersStarter _starter;
-        public StartFileSystemWatchers(FileSystemWatchersStarter starter) => _starter = starter;
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken) => await _starter.CreateAndAddWatchersAsync(stoppingToken);
+        private readonly IServiceProvider _serviceProvider;
+
+        public StartFileSystemWatchers(FileSystemWatchersStarter starter, IServiceProvider serviceProvider)
+        {
+            _starter = starter;
+            _serviceProvider = serviceProvider;
+        }
+
+        public async Task ExecuteAsync(CancellationToken stoppingToken) => await _starter.CreateAndAddWatchersAsync(_serviceProvider, stoppingToken);
     }
 }

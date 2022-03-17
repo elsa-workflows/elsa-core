@@ -1,14 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using Elsa.Activities.File.Bookmarks;
 using Elsa.Activities.File.Models;
 using Elsa.Models;
-using Elsa.Multitenancy;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,24 +22,21 @@ namespace Elsa.Activities.File.Services
         private readonly SemaphoreSlim _semaphore = new(1);
         private readonly ICollection<FileSystemWatcher> _watchers;
         private readonly IBookmarkSerializer _bookmarkSerializer;
-        private readonly ITenantStore _tenantStore;
 
         public FileSystemWatchersStarter(
             ILogger<FileSystemWatchersStarter> logger,
             IMapper mapper,
             IServiceScopeFactory scopeFactory,
-            IBookmarkSerializer bookmarkSerializer,
-            ITenantStore tenantStore)
+            IBookmarkSerializer bookmarkSerializer)
         {
             _logger = logger;
             _mapper = mapper;
             _scopeFactory = scopeFactory;
             _bookmarkSerializer = bookmarkSerializer;
             _watchers = new List<FileSystemWatcher>();
-            _tenantStore = tenantStore;
         }
 
-        public async Task CreateAndAddWatchersAsync(CancellationToken cancellationToken = default)
+        public async Task CreateAndAddWatchersAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
         {
             await _semaphore.WaitAsync(cancellationToken);
 
@@ -49,24 +44,20 @@ namespace Elsa.Activities.File.Services
             {
                 DisposeExistingWatchers();
 
-                foreach (var tenant in await _tenantStore.GetTenantsAsync())
+                var triggerFinder = serviceProvider.GetRequiredService<ITriggerFinder>();
+                await triggerFinder.FindTriggersAsync<WatchDirectory>(cancellationToken: cancellationToken);
+
+                var triggers = await triggerFinder.FindTriggersByTypeAsync<FileSystemEventBookmark>(cancellationToken: cancellationToken);
+
+                foreach (var trigger in triggers)
                 {
-                    using var scope = _scopeFactory.CreateScopeForTenant(tenant);
-                    var triggerFinder = scope.ServiceProvider.GetRequiredService<ITriggerFinder>();
-                    await triggerFinder.FindTriggersAsync<WatchDirectory>(cancellationToken: cancellationToken);
+                    var bookmark = _bookmarkSerializer.Deserialize<FileSystemEventBookmark>(trigger.Model);
 
-                    var triggers = await triggerFinder.FindTriggersByTypeAsync<FileSystemEventBookmark>(cancellationToken: cancellationToken);
-
-                    foreach (var trigger in triggers)
-                    {
-                        var bookmark = _bookmarkSerializer.Deserialize<FileSystemEventBookmark>(trigger.Model);
-
-                        var changeTypes = bookmark.ChangeTypes;
-                        var notifyFilters = bookmark.NotifyFilters;
-                        var path = bookmark.Path;
-                        var pattern = bookmark.Pattern;
-                        CreateAndAddWatcher(path, pattern, changeTypes, notifyFilters);
-                    }
+                    var changeTypes = bookmark.ChangeTypes;
+                    var notifyFilters = bookmark.NotifyFilters;
+                    var path = bookmark.Path;
+                    var pattern = bookmark.Pattern;
+                    CreateAndAddWatcher(path, pattern, changeTypes, notifyFilters, serviceProvider);
                 }
             }
             finally
@@ -77,14 +68,14 @@ namespace Elsa.Activities.File.Services
 
         private void DisposeExistingWatchers()
         {
-            foreach (var watcher in _watchers.ToList())
+            foreach (var watcher in _watchers)
             {
                 watcher.Dispose();
                 _watchers.Remove(watcher);
             }
         }
 
-        private void CreateAndAddWatcher(string? path, string? pattern, WatcherChangeTypes changeTypes, NotifyFilters notifyFilters)
+        private void CreateAndAddWatcher(string? path, string? pattern, WatcherChangeTypes changeTypes, NotifyFilters notifyFilters, IServiceProvider serviceProvider)
         {
             if (string.IsNullOrWhiteSpace(path))
                 throw new ArgumentException("File watcher path must not be null or empty");
@@ -99,18 +90,33 @@ namespace Elsa.Activities.File.Services
             };
 
             if (changeTypes == WatcherChangeTypes.Created || changeTypes == WatcherChangeTypes.All)
-                watcher.Created += FileCreated;
+                watcher.Created += (object sender, FileSystemEventArgs e) =>
+                {
+                    StartWorkflow((FileSystemWatcher)sender, e, serviceProvider);
+                };
 
             if (changeTypes == WatcherChangeTypes.Changed || changeTypes == WatcherChangeTypes.All)
-                watcher.Changed += FileChanged;
+                watcher.Changed += (object sender, FileSystemEventArgs e) =>
+                {
+                    if (e.ChangeType != WatcherChangeTypes.Changed) return;
+
+                    StartWorkflow((FileSystemWatcher)sender, e, serviceProvider);
+                };
 
             if (changeTypes == WatcherChangeTypes.Deleted || changeTypes == WatcherChangeTypes.All)
-                watcher.Deleted += FileDeleted;
+                watcher.Deleted += (object sender, FileSystemEventArgs e) =>
+                {
+                    StartWorkflow((FileSystemWatcher)sender, e, serviceProvider);
+                };
 
             if (changeTypes == WatcherChangeTypes.Renamed || changeTypes == WatcherChangeTypes.All)
-                watcher.Renamed += FileRenamed;
+                watcher.Renamed += (object sender, RenamedEventArgs e) =>
+                {
+                    StartWorkflow((FileSystemWatcher)sender, e, serviceProvider);
+                };
 
             watcher.EnableRaisingEvents = true;
+
             _watchers.Add(watcher);
         }
 
@@ -125,34 +131,7 @@ namespace Elsa.Activities.File.Services
             Directory.CreateDirectory(path);
         }
 
-        #region Watcher delegates
-
-        private void FileCreated(object sender, FileSystemEventArgs e)
-        {
-            StartWorkflow((FileSystemWatcher)sender, e);
-        }
-
-        private void FileChanged(object sender, FileSystemEventArgs e)
-        {
-            if (e.ChangeType != WatcherChangeTypes.Changed)
-            {
-                return;
-            }
-
-            StartWorkflow((FileSystemWatcher)sender, e);
-        }
-
-        private void FileDeleted(object sender, FileSystemEventArgs e)
-        {
-            StartWorkflow((FileSystemWatcher)sender, e);
-        }
-
-        private void FileRenamed(object sender, RenamedEventArgs e)
-        {
-            StartWorkflow((FileSystemWatcher)sender, e);
-        }
-
-        private async void StartWorkflow(FileSystemWatcher watcher, FileSystemEventArgs e)
+        private async void StartWorkflow(FileSystemWatcher watcher, FileSystemEventArgs e, IServiceProvider serviceProvider)
         {
             var changeTypes = e.ChangeType;
             var notifyFilter = watcher.NotifyFilter;
@@ -163,11 +142,8 @@ namespace Elsa.Activities.File.Services
             var bookmark = new FileSystemEventBookmark(path, pattern, changeTypes, notifyFilter);
             var launchContext = new WorkflowsQuery(nameof(WatchDirectory), bookmark);
 
-            using var scope = _scopeFactory.CreateScope();
-            var workflowLaunchpad = scope.ServiceProvider.GetRequiredService<IWorkflowLaunchpad>();
+            var workflowLaunchpad = serviceProvider.GetRequiredService<IWorkflowLaunchpad>();
             await workflowLaunchpad.CollectAndDispatchWorkflowsAsync(launchContext, new WorkflowInput(model));
         }
-
-        #endregion
     }
 }
