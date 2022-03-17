@@ -1,4 +1,5 @@
 using Microsoft.Data.SqlClient;
+using Newtonsoft.Json;
 using System;
 using System.Data;
 using System.Text;
@@ -28,34 +29,43 @@ namespace Elsa.Activities.Sql.Client
 
         public string ExecuteQuery(string sqlQuery)
         {
-            using (var connection = new SqlConnection(_connectionString))
+            using (var connection = new SqlConnection("Data Source=DESKTOP-GU8EC6S;Initial Catalog=AspNetIdentityCore;Integrated Security=SSPI"))
             {
                 connection.Open();
                 var command = new SqlCommand(sqlQuery, connection);
 
                 using (var reader = command.ExecuteReader())
                 {
-                    return ReadRows(reader);
+                    return ReadAsJson(reader);
                 }
             }
         }
 
-        private static string ReadRows(SqlDataReader reader)
+        private static string ReadAsJson(SqlDataReader reader)
         {
-            StringBuilder sb = new StringBuilder();
-            if (reader.HasRows)
-            {
-                if (sb.Length > 0) sb.Append("___");
+            var dataSet = new DataSet("dataSet");
 
-                while (reader.Read())
+            var schemaTable = reader.GetSchemaTable();
+            var data = new DataTable();
+            dataSet.Tables.Add(data);
+
+            foreach (DataRow row in schemaTable.Rows)
+            {
+                string colName = row.Field<string>("ColumnName");
+                Type t = row.Field<Type>("DataType");
+                data.Columns.Add(colName, t);
+            }
+
+            while (reader.Read())
+            {
+                var newRow = data.Rows.Add();
+                foreach (DataColumn col in data.Columns)
                 {
-                    for (int i = 0; i < reader.FieldCount; i++)
-                        if (reader.GetValue(i) != DBNull.Value)
-                            sb.AppendFormat("{0}-", Convert.ToString(reader.GetValue(i)));
+                    newRow[col.ColumnName] = reader[col.ColumnName];
                 }
             }
 
-            return sb.ToString();
+            return JsonConvert.SerializeObject(dataSet, Formatting.Indented);
         }
     }
 }
