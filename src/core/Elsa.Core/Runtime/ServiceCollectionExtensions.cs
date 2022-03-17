@@ -11,6 +11,7 @@ namespace Elsa.Runtime
         {
             return services
                 .AddScoped<IStartupRunner, StartupRunner>()
+                .AddScoped<ISharedStartupRunner, SharedStartupRunner>()
                 .AddHostedService<StartupRunnerHostedService>();
         }
 
@@ -26,6 +27,20 @@ namespace Elsa.Runtime
             return services
                 .AddScoped(factory)
                 .AddScoped<IStartupTask, TStartupTask>(sp => sp.GetRequiredService<TStartupTask>());
+        }
+
+        public static IServiceCollection AddSharedStartupTask<TSharedStartupTask>(this IServiceCollection services) where TSharedStartupTask : class, ISharedStartupTask
+        {
+            return services
+                .AddScoped<TSharedStartupTask>()
+                .AddScoped<ISharedStartupTask, TSharedStartupTask>(sp => sp.GetRequiredService<TSharedStartupTask>());
+        }
+
+        public static IServiceCollection AddSharedStartupTask<TSharedStartupTask>(this IServiceCollection services, Func<IServiceProvider, TSharedStartupTask> factory) where TSharedStartupTask : class, ISharedStartupTask
+        {
+            return services
+                .AddScoped(factory)
+                .AddScoped<ISharedStartupTask, TSharedStartupTask>(sp => sp.GetRequiredService<TSharedStartupTask>());
         }
     }
 }

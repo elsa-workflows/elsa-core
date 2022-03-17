@@ -8,7 +8,7 @@ using Elsa.Services;
 
 namespace Elsa.StartupTasks
 {
-    public class CreateSubscriptions : IStartupTask
+    public class CreateSubscriptions : ISharedStartupTask
     {
         private readonly IServiceBusFactory _serviceBusFactory;
         private readonly ElsaOptions _elsaOptions;

@@ -6,7 +6,7 @@ using Elsa.Services;
 
 namespace Elsa.Activities.Rebus.StartupTasks
 {
-    public class CreateSubscriptions : IStartupTask
+    public class CreateSubscriptions : ISharedStartupTask
     {
         private readonly IServiceBusFactory _serviceBusFactory;
         private readonly IEnumerable<Type> _messageTypes;

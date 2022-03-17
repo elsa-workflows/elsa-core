@@ -28,6 +28,10 @@ namespace Elsa.HostedServices
                 var startupRunner = scope.ServiceProvider.GetRequiredService<IStartupRunner>();
                 await startupRunner.StartupAsync(cancellationToken);
             }
+
+            using var sharedScope = _scopeFactory.CreateScope();
+            var sharedStartupRunner = sharedScope.ServiceProvider.GetRequiredService<ISharedStartupRunner>();
+            await sharedStartupRunner.StartupAsync(cancellationToken);
         }
 
         public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;

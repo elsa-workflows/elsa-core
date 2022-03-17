@@ -85,7 +85,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IDistributedLockProvider, DistributedLockProvider>()
                 .AddScoped<ContinueRunningWorkflows>()
                 .AddStartupTask<ContinueRunningWorkflows>()
-                .AddStartupTask<CreateSubscriptions>()
+                .AddSharedStartupTask<CreateSubscriptions>()
                 .AddStartupTask<IndexTriggers>()
                 .AddScoped<ITenantProvider, TenantProvider>()
                 .AddSingleton<ITenantStore, TenantStore>();

@@ -25,7 +25,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
             services
                 .AddBookmarkProvider<MessageReceivedTriggerProvider>()
-                .AddStartupTask(sp => ActivatorUtilities.CreateInstance<CreateSubscriptions>(sp, (object) messageTypes));
+                .AddSharedStartupTask(sp => ActivatorUtilities.CreateInstance<CreateSubscriptions>(sp, (object) messageTypes));
 
             options
                 .AddActivity<PublishRebusMessage>()
