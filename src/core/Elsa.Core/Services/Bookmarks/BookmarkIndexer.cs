@@ -95,6 +95,8 @@ namespace Elsa.Services.Bookmarks
             await _bookmarkStore.AddManyAsync(entities, cancellationToken);
             var oldBookmarkIds = oldBookmarks.Select(x => x.Id).ToList();
             await _bookmarkStore.DeleteManyAsync(new BookmarkIdsSpecification(oldBookmarkIds), cancellationToken);
+            await _publisher.Publish(new BookmarksDeleted(workflowInstanceId, bookmarks), cancellationToken);
+            _logger.LogDebug("Deleted {DeletedBookmarkCount} bookmarks for workflow {WorkflowInstanceId}", bookmarks.Count, workflowInstanceId); 
             await _publisher.Publish(new BookmarkIndexingFinished(workflowInstanceId, bookmarks), cancellationToken);
             
             _stopwatch.Stop();
