@@ -21,7 +21,6 @@ namespace Elsa.Services.Bookmarks
     {
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IBookmarkStore _bookmarkStore;
-        private readonly IWorkflowContextManager _workflowContextManager;
         private readonly IEnumerable<IBookmarkProvider> _providers;
         private readonly IActivityTypeService _activityTypeService;
         private readonly IIdGenerator _idGenerator;
@@ -35,7 +34,6 @@ namespace Elsa.Services.Bookmarks
         public BookmarkIndexer(
             IWorkflowRegistry workflowRegistry,
             IBookmarkStore bookmarkStore,
-            IWorkflowContextManager workflowContextManager,
             IEnumerable<IBookmarkProvider> providers,
             IActivityTypeService activityTypeService,
             IIdGenerator idGenerator,
@@ -47,7 +45,6 @@ namespace Elsa.Services.Bookmarks
         {
             _workflowRegistry = workflowRegistry;
             _bookmarkStore = bookmarkStore;
-            _workflowContextManager = workflowContextManager;
             _providers = providers;
             _activityTypeService = activityTypeService;
             _idGenerator = idGenerator;
