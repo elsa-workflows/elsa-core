@@ -23,7 +23,11 @@ using MimeKit;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Email
 {
-    [Action(Category = "Email", Description = "Send an email message.")]
+    [Action(
+        Category = "Email",
+        Description = "Send an email message.",
+        Outcomes = new[] { OutcomeNames.Done, "Unexpected Error" }
+    )]
     public class SendEmail : Activity
     {
         private readonly ISmtpService _smtpService;
@@ -75,6 +79,8 @@ namespace Elsa.Activities.Email
         [ActivityInput(Hint = "The body of the email message.", UIHint = ActivityInputUIHints.MultiLine, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string? Body { get; set; }
 
+        [ActivityOutput] public object? ResponseContent { get; set; }
+
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
             var cancellationToken = context.CancellationToken;
@@ -94,9 +100,19 @@ namespace Elsa.Activities.Email
             SetRecipientsEmailAddresses(message.Cc, Cc);
             SetRecipientsEmailAddresses(message.Bcc, Bcc);
 
-            await _smtpService.SendAsync(context, message, context.CancellationToken);
+            var outcomes = new List<string> { OutcomeNames.Done };
+            try
+            {
+                await _smtpService.SendAsync(context, message, context.CancellationToken);
+                outcomes.Add("Success");
+            }
+            catch (Exception ex)
+            {
+                outcomes.Add("Unexpected Error");
+                context.JournalData.Add("Error", ex.Message);
+            }
 
-            return Done();
+            return Outcomes(outcomes);
         }
 
         private async Task AddAttachmentsAsync(BodyBuilder bodyBuilder, CancellationToken cancellationToken)
