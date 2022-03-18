@@ -20,4 +20,10 @@ public abstract class ResourceBase<T> where T:ResourceBase<T>
         Endpoints.MapPost(pattern, handler);
         return (T)this;
     }
+    
+    protected T MapDelete(string pattern, Delegate handler)
+    {
+        Endpoints.MapDelete(pattern, handler);
+        return (T)this;
+    }
 }

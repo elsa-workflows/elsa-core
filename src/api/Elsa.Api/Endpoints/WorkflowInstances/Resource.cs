@@ -11,6 +11,7 @@ public class WorkflowInstancesResource : ResourceBase<WorkflowInstancesResource>
 
     public WorkflowInstancesResource List() => MapGet("api/workflow-instances", WorkflowInstances.ListAsync);
     public WorkflowInstancesResource Get() => MapGet("api/workflow-instances/{id}", WorkflowInstances.GetAsync);
+    public void Delete() => MapDelete("api/workflow-instances/{id}", WorkflowInstances.DeleteAsync);
 }
 
 public static class WorkflowsResourceExtensions
@@ -24,5 +25,6 @@ public static class WorkflowsResourceExtensions
     public static IEndpointRouteBuilder MapWorkflowInstances(this IEndpointRouteBuilder endpoints) => endpoints.MapWorkflowInstances(x => x
         .List()
         .Get()
+        .Delete()
     );
 }

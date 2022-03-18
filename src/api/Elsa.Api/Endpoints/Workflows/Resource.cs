@@ -15,6 +15,7 @@ public class WorkflowsResource : ResourceBase<WorkflowsResource>
     public WorkflowsResource Get() => MapGet("api/workflows/{definitionId}", Workflows.Get);
     public WorkflowsResource Execute() => MapPost("api/workflows/{definitionId}/execute", Workflows.ExecuteAsync);
     public WorkflowsResource Dispatch() => MapPost("api/workflows/{definitionId}/dispatch", Workflows.DispatchAsync);
+    public void Delete() => MapDelete("api/workflows/{definitionId}", Workflows.DeleteAsync);
 }
 
 public static class WorkflowsResourceExtensions
@@ -32,5 +33,6 @@ public static class WorkflowsResourceExtensions
         .List()
         .GetMany()
         .Get()
+        .Delete()
     );
 }
