@@ -12,9 +12,9 @@ namespace Elsa.Activities.File.Consumers
     {
         private readonly FileSystemWatchersStarter _fileSystemWatchersStarter;
         public RecreateFileSystemWatchersConsumer(FileSystemWatchersStarter fileSystemWatchersStarter, IMessageContext messageContext, IServiceProvider serviceProvider) : base(messageContext, serviceProvider) => _fileSystemWatchersStarter = fileSystemWatchersStarter;
-        public Task Handle(TriggerIndexingFinished message) => _fileSystemWatchersStarter.CreateAndAddWatchersAsync(_serviceProvider);
-        public Task Handle(TriggersDeleted message) => _fileSystemWatchersStarter.CreateAndAddWatchersAsync(_serviceProvider);
-        public Task Handle(BookmarkIndexingFinished message) => _fileSystemWatchersStarter.CreateAndAddWatchersAsync(_serviceProvider);
-        public Task Handle(BookmarksDeleted message) => _fileSystemWatchersStarter.CreateAndAddWatchersAsync(_serviceProvider);
+        public Task Handle(TriggerIndexingFinished message) => _fileSystemWatchersStarter.CreateAndAddWatchersAsync(ServiceProvider);
+        public Task Handle(TriggersDeleted message) => _fileSystemWatchersStarter.CreateAndAddWatchersAsync(ServiceProvider);
+        public Task Handle(BookmarkIndexingFinished message) => _fileSystemWatchersStarter.CreateAndAddWatchersAsync(ServiceProvider);
+        public Task Handle(BookmarksDeleted message) => _fileSystemWatchersStarter.CreateAndAddWatchersAsync(ServiceProvider);
     }
 }

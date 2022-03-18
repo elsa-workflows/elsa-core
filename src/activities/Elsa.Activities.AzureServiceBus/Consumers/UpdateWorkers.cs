@@ -14,9 +14,9 @@ namespace Elsa.Activities.AzureServiceBus.Consumers
 
         public UpdateWorkers(IWorkerManager workerManager, IMessageContext messageContext, IServiceProvider serviceProvider) : base(messageContext, serviceProvider) => _workerManager = workerManager;
 
-        public async Task Handle(TriggerIndexingFinished message) => await _workerManager.CreateWorkersAsync(message.Triggers, _serviceProvider);
+        public async Task Handle(TriggerIndexingFinished message) => await _workerManager.CreateWorkersAsync(message.Triggers, ServiceProvider);
         public async Task Handle(TriggersDeleted message) => await _workerManager.RemoveWorkersAsync(message.Triggers);
-        public async Task Handle(BookmarkIndexingFinished message) => await _workerManager.CreateWorkersAsync(message.Bookmarks, _serviceProvider);
-        public async Task Handle(BookmarksDeleted message) => await _workerManager.CreateWorkersAsync(message.Bookmarks, _serviceProvider);
+        public async Task Handle(BookmarkIndexingFinished message) => await _workerManager.CreateWorkersAsync(message.Bookmarks, ServiceProvider);
+        public async Task Handle(BookmarksDeleted message) => await _workerManager.CreateWorkersAsync(message.Bookmarks, ServiceProvider);
     }
 }

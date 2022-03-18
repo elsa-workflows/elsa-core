@@ -14,9 +14,9 @@ namespace Elsa.Activities.RabbitMq.Consumers
 
         public RestartRabbitMqBusConsumer(IRabbitMqQueueStarter rabbitMqQueueStarter, IMessageContext messageContext, IServiceProvider serviceProvider) : base(messageContext, serviceProvider) => _rabbitMqQueueStarter = rabbitMqQueueStarter;
 
-        public async Task Handle(TriggerIndexingFinished message) => await _rabbitMqQueueStarter.CreateWorkersAsync(message.Triggers, _serviceProvider);
+        public async Task Handle(TriggerIndexingFinished message) => await _rabbitMqQueueStarter.CreateWorkersAsync(message.Triggers, ServiceProvider);
         public async Task Handle(TriggersDeleted message) => await _rabbitMqQueueStarter.RemoveWorkersAsync(message.Triggers);
-        public async Task Handle(BookmarkIndexingFinished message) => await _rabbitMqQueueStarter.CreateWorkersAsync(message.Bookmarks, _serviceProvider);
-        public async Task Handle(BookmarksDeleted message) => await _rabbitMqQueueStarter.CreateWorkersAsync(message.Bookmarks, _serviceProvider);
+        public async Task Handle(BookmarkIndexingFinished message) => await _rabbitMqQueueStarter.CreateWorkersAsync(message.Bookmarks, ServiceProvider);
+        public async Task Handle(BookmarksDeleted message) => await _rabbitMqQueueStarter.CreateWorkersAsync(message.Bookmarks, ServiceProvider);
     }
 }

@@ -6,17 +6,17 @@ using Rebus.Pipeline;
 
 namespace Elsa.MultiTenancy
 {
-    public class MultitenantConsumer
+    public abstract class MultitenantConsumer
     {
-        protected readonly IServiceProvider _serviceProvider;
+        protected IServiceProvider ServiceProvider { get; }
 
-        public MultitenantConsumer(IMessageContext messageContext, IServiceProvider serviceProvider) 
+        protected MultitenantConsumer(IMessageContext messageContext, IServiceProvider serviceProvider) 
         { 
-            _serviceProvider = serviceProvider;
+            ServiceProvider = serviceProvider;
 
             var tenant = JsonConvert.DeserializeObject<Tenant>(messageContext.Headers["tenant"]);
 
-            var tenantProvider = _serviceProvider.GetRequiredService<ITenantProvider>();
+            var tenantProvider = ServiceProvider.GetRequiredService<ITenantProvider>();
             tenantProvider.SetCurrentTenantAsync(tenant!).GetAwaiter().GetResult();
         }
     }
