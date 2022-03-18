@@ -109,7 +109,7 @@ namespace Elsa.Activities.Email
             catch (Exception ex)
             {
                 outcomes.Add("Unexpected Error");
-                outcomes.Add(ex.Message);
+                context.JournalData.Add("Error", ex.Message);
             }
 
             return Outcomes(outcomes);
