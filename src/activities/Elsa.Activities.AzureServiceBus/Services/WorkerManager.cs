@@ -111,7 +111,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
 
                 if (worker == null)
                 {
-                    worker = ActivatorUtilities.CreateInstance<Worker>(_serviceProvider, queueOrTopic, subscription ?? "", tag);
+                    worker = ActivatorUtilities.CreateInstance<Worker>(_serviceProvider, queueOrTopic, subscription ?? "", tag, RemoveWorkerAsync);
                     _workers.Add(worker);
                     await worker.StartAsync(cancellationToken);
                 }

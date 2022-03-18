@@ -20,8 +20,8 @@ namespace Elsa.Activities.AzureServiceBus.Services
     public class Worker : IAsyncDisposable
     {
         private const string? TenantId = default;
+        private readonly Func<Worker, Task> _errorCallback;
         private readonly ServiceBusAdministrationClient _administrationClient;
-        private readonly IClock _clock;
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly ILogger _logger;
         private readonly ServiceBusProcessor _processor;
@@ -30,9 +30,9 @@ namespace Elsa.Activities.AzureServiceBus.Services
             string queueOrTopic,
             string? subscription,
             string tag,
+            Func<Worker, Task> errorCallback,
             ServiceBusClient serviceBusClient,
             ServiceBusAdministrationClient administrationClient,
-            IClock clock,
             IServiceScopeFactory serviceScopeFactory,
             IOptions<AzureServiceBusOptions> options,
             ILogger<Worker> logger)
@@ -41,8 +41,8 @@ namespace Elsa.Activities.AzureServiceBus.Services
             Subscription = subscription == "" ? null : subscription;
             Tag = tag;
             ServiceBusClient = serviceBusClient;
+            _errorCallback = errorCallback;
             _administrationClient = administrationClient;
-            _clock = clock;
             _serviceScopeFactory = serviceScopeFactory;
             _logger = logger;
 
@@ -90,10 +90,10 @@ namespace Elsa.Activities.AzureServiceBus.Services
             await TriggerWorkflowsAsync(new ServiceBusMessage(message), CancellationToken.None);
         }
 
-        private Task OnErrorAsync(ProcessErrorEventArgs args)
+        private async Task OnErrorAsync(ProcessErrorEventArgs args)
         {
             _logger.LogError(args.Exception, "An error occurred while processing {EntityPath}", args.EntityPath);
-            return Task.CompletedTask;
+            await _errorCallback(this);
         }
 
         private async Task TriggerWorkflowsAsync(ServiceBusMessage message, CancellationToken cancellationToken)
