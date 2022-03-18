@@ -74,18 +74,26 @@ namespace Elsa.Activities.AzureServiceBus.Services
 
         public async Task RemoveWorkersAsync(IReadOnlyCollection<Trigger> triggers, CancellationToken cancellationToken = default)
         {
+            await _semaphore.WaitAsync(cancellationToken);
             var workflowDefinitionIds = Filter(triggers).Select(x => x.WorkflowDefinitionId).Distinct().ToList();
 
-            var workers =
+            try
+            {
+                var workers =
                 from worker in _workers
                 from workflowId in workflowDefinitionIds
                 where worker.Tag == workflowId
                 select worker;
 
-            foreach (var worker in workers.ToList())
+                foreach (var worker in workers.ToList())
+                {
+                    await worker.DisposeAsync();
+                    _workers.Remove(worker);
+                }
+            }
+            finally
             {
-                await worker.DisposeAsync();
-                _workers.Remove(worker);
+                _semaphore.Release();
             }
         }
 
@@ -103,7 +111,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
 
                 if (worker == null)
                 {
-                    worker = ActivatorUtilities.CreateInstance<Worker>(_serviceProvider, queueOrTopic, subscription ?? "", tag);
+                    worker = ActivatorUtilities.CreateInstance<Worker>(_serviceProvider, queueOrTopic, subscription ?? "", tag, RemoveWorkerAsync);
                     _workers.Add(worker);
                     await worker.StartAsync(cancellationToken);
                 }

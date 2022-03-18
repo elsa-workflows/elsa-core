@@ -26,8 +26,7 @@ namespace Elsa.WorkflowTesting.Api.Endpoints
 
         [HttpPost]
         [ElsaJsonFormatter]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(WorkflowTestExecuteRequest))]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(WorkflowTestExecuteResponse))]
         [SwaggerOperation(
             Summary = "Executes the specified workflow definition version in test mode.",
             Description = "Executes the specified workflow definition version in test mode.",
@@ -41,7 +40,7 @@ namespace Elsa.WorkflowTesting.Api.Endpoints
             var startableWorkflow = await _workflowLaunchpad.FindStartableWorkflowAsync(request.WorkflowDefinitionId, request.Version, default, testCorrelation, default, tenantId, cancellationToken);
 
             if (startableWorkflow == null)
-                return NotFound();
+                return Ok(new WorkflowTestExecuteResponse { IsSuccess = false, IsAnotherInstanceRunning = true });
 
             startableWorkflow.WorkflowInstance.SetMetadata("isTest", true);
             startableWorkflow.WorkflowInstance.SetMetadata("signalRConnectionId", request.SignalRConnectionId);
@@ -51,7 +50,7 @@ namespace Elsa.WorkflowTesting.Api.Endpoints
             if (Response.HasStarted)
                 return new EmptyResult();
 
-            return Ok();
+            return Ok(new WorkflowTestExecuteResponse { IsSuccess = true });
         }
     }
 }
