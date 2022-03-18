@@ -92,7 +92,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
 
         private Task OnErrorAsync(ProcessErrorEventArgs args)
         {
-            _logger.LogError(args.Exception, "An error occurred while processing {EnrityPath}", args.EntityPath);
+            _logger.LogError(args.Exception, "An error occurred while processing {EntityPath}", args.EntityPath);
             return Task.CompletedTask;
         }
 
