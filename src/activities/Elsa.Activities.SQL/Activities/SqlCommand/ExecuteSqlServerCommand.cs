@@ -13,7 +13,7 @@ namespace Elsa.Activities.Sql.Activities
     /// </summary>
     [Trigger(
         Category = "SQL Server",
-        DisplayName = "Execute Sql Command",
+        DisplayName = "Execute SQL Command",
         Description = "Execute given SQL command and returned number of rows affected",
         Outcomes = new string[0]
     )]

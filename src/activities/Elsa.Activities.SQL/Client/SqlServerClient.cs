@@ -27,7 +27,7 @@ namespace Elsa.Activities.Sql.Client
             }
         }
 
-        public string ExecuteQuery(string sqlQuery)
+        public DataSet ExecuteQuery(string sqlQuery)
         {
             using (var connection = new SqlConnection(_connectionString))
             {
@@ -36,12 +36,12 @@ namespace Elsa.Activities.Sql.Client
 
                 using (var reader = command.ExecuteReader())
                 {
-                    return ReadAsJson(reader);
+                    return ReadAsDataSet(reader);
                 }
             }
         }
 
-        private static string ReadAsJson(SqlDataReader reader)
+        private static DataSet ReadAsDataSet(SqlDataReader reader)
         {
             var dataSet = new DataSet("dataSet");
 
@@ -65,7 +65,7 @@ namespace Elsa.Activities.Sql.Client
                 }
             }
 
-            return JsonConvert.SerializeObject(dataSet, Formatting.Indented);
+            return dataSet;
         }
     }
 }

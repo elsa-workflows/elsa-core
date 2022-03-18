@@ -5,6 +5,7 @@ using Elsa.ActivityResults;
 using Elsa.Design;
 using Elsa.Expressions;
 using Elsa.Activities.Sql.Factory;
+using System.Data;
 
 namespace Elsa.Activities.Sql.Activities
 {
@@ -13,7 +14,7 @@ namespace Elsa.Activities.Sql.Activities
     /// </summary>
     [Trigger(
         Category = "SQL Server",
-        DisplayName = "Execute Sql Query",
+        DisplayName = "Execute SQL Query",
         Description = "Execute given SQL query and returned execution result",
         Outcomes = new string[0]
     )]
@@ -38,7 +39,7 @@ namespace Elsa.Activities.Sql.Activities
         )]
         public string ConnectionString { get; set; } = default!;
 
-        [ActivityOutput] public string? Output { get; set; }
+        [ActivityOutput] public DataSet? Output { get; set; }
 
         private readonly ISqlClientFactory _sqlClientFactory;
 
