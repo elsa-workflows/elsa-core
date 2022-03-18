@@ -45,6 +45,9 @@ export class WorkflowBrowser {
   }
 
   private async onDeleteClick(e: MouseEvent, workflowDefinition: WorkflowSummary) {
+    const elsaClient = this.elsaClient;
+    await elsaClient.workflows.delete(workflowDefinition);
+    await this.loadWorkflowDefinitions();
 
     // const result = await this.confirmDialog.show(t('DeleteConfirmationModel.Title'), t('DeleteConfirmationModel.Message'));
     //

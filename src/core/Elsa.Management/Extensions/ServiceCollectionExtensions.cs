@@ -14,6 +14,7 @@ public static class ServiceCollectionExtensions
     {
         return services
             .AddSingleton<IWorkflowPublisher, WorkflowPublisher>()
+            .AddSingleton<IWorkflowInstancePublisher, WorkflowInstancePublisher>()
             .AddSingleton<IActivityDescriber, ActivityDescriber>()
             .AddSingleton<IActivityRegistry, ActivityRegistry>()
             .AddSingleton<IActivityRegistryPopulator, ActivityRegistryPopulator>()

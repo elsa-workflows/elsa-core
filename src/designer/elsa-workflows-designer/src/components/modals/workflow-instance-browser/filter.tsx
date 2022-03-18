@@ -31,6 +31,7 @@ export interface OrderByFilterProps {
   onChange: (orderBy: OrderBy) => void;
 }
 
+
 export const Filter: FunctionalComponent<FilterProps> = ({pageSizeFilter, workflowFilter, statusFilter, orderByFilter}) => {
 
   return <div class="p-8 flex content-end justify-right bg-white space-x-4">
@@ -57,7 +58,13 @@ const BulkActions: FunctionalComponent = () => {
   }];
 
   const onBulkActionSelected = (e: CustomEvent<DropdownButtonItem>) => {
-
+    const action = e.detail;
+    switch (action.name){
+      case 'Delete' :
+        break;
+      default:
+        action.handler();
+    }
   }
 
   return <elsa-dropdown-button
