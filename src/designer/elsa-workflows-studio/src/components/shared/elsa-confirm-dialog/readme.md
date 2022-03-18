@@ -43,6 +43,7 @@ Type: `Promise<boolean>`
  - [elsa-webhook-definitions-list-screen](../../../modules/elsa-webhooks/components/screens/webhook-definition-list/else-webhook-definitions-screen)
  - [elsa-workflow-definitions-list-screen](../../screens/workflow-definition-list/elsa-workflow-definitions-screen)
  - [elsa-workflow-registry-list-screen](../../screens/workflow-registry-list/elsa-workflow-registry-list-screen)
+ - [elsa-workflow-test-panel](../../screens/workflow-definition-editor/elsa-workflow-test-panel)
 
 ### Depends on
 
@@ -56,6 +57,7 @@ graph TD;
   elsa-webhook-definitions-list-screen --> elsa-confirm-dialog
   elsa-workflow-definitions-list-screen --> elsa-confirm-dialog
   elsa-workflow-registry-list-screen --> elsa-confirm-dialog
+  elsa-workflow-test-panel --> elsa-confirm-dialog
   style elsa-confirm-dialog fill:#f9f,stroke:#333,stroke-width:4px
 ```
 

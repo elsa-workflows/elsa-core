@@ -20,7 +20,8 @@ import {
   WorkflowExecutionLogRecord,
   WorkflowInstance,
   WorkflowInstanceSummary,
-  WorkflowPersistenceBehavior, WorkflowProviderDescriptor,
+  WorkflowPersistenceBehavior,
+  WorkflowProviderDescriptor,
   WorkflowStatus,
   WorkflowStorageDescriptor
 } from "../models";

@@ -46,7 +46,9 @@ graph TD;
   elsa-workflow-publish-button --> context-consumer
   elsa-workflow-properties-panel --> context-consumer
   elsa-workflow-test-panel --> elsa-copy-button
+  elsa-workflow-test-panel --> elsa-confirm-dialog
   elsa-workflow-test-panel --> context-consumer
+  elsa-confirm-dialog --> elsa-modal-dialog
   style elsa-studio-workflow-definitions-edit fill:#f9f,stroke:#333,stroke-width:4px
 ```
 
