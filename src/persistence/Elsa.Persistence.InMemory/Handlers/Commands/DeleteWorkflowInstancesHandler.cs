@@ -29,4 +29,14 @@ public class DeleteWorkflowInstancesHandler : ICommandHandler<DeleteWorkflowInst
 
         return Task.FromResult(Unit.Instance);
     }
+    
+    public Task<Unit> HandleAsync(DeleteWorkflowInstance command, CancellationToken cancellationToken)
+    {
+        if (command.InstanceId != null)
+        {
+            _store.Delete(command.InstanceId);
+        }
+
+        return Task.FromResult(Unit.Instance);
+    }
 }

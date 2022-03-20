@@ -56,6 +56,10 @@ export async function createElsaClient(serverUrl: string): Promise<ElsaClient> {
       }
     },
     workflows: {
+      async delete(request: DeleteWorkflowRequest) : Promise<Workflow>{
+        const response = await httpClient.delete<Workflow>(`api/workflows/${request.definitionId}`);
+        return response.data;
+      },
       async post(request: SaveWorkflowRequest): Promise<Workflow> {
         const response = await httpClient.post<Workflow>('api/workflows', request);
         return response.data;
@@ -108,6 +112,14 @@ export async function createElsaClient(serverUrl: string): Promise<ElsaClient> {
       async get(request: GetWorkflowInstanceRequest): Promise<WorkflowInstance> {
         const response = await httpClient.get<WorkflowInstance>(`api/workflow-instances/${request.id}`);
         return response.data;
+      },
+      async delete(request: DeleteWorkflowInstanceRequest): Promise<WorkflowInstanceSummary> {
+        const response = await httpClient.delete<WorkflowInstanceSummary>(`api/workflow-instances/${request.id}`);
+        return response.data;
+      },
+      async deleteMany(request: BulkDeleteWorkflowInstancesRequest): Promise<PagedList<WorkflowInstanceSummary>>  {
+        const response = await httpClient.delete<PagedList<WorkflowInstanceSummary>>(`api/workflow-instances/bulk`);
+        return response.data;
       }
     },
     designer: {
@@ -147,6 +159,8 @@ export interface WorkflowsApi {
   list(request: ListWorkflowsRequest): Promise<PagedList<WorkflowSummary>>;
 
   getMany(request: GetManyWorkflowsRequest): Promise<Array<WorkflowSummary>>;
+
+  delete(request: DeleteWorkflowRequest): Promise<Workflow>;
 }
 
 export interface WorkflowInstancesApi {
@@ -154,6 +168,10 @@ export interface WorkflowInstancesApi {
   list(request: ListWorkflowInstancesRequest): Promise<PagedList<WorkflowInstanceSummary>>;
 
   get(request: GetWorkflowInstanceRequest): Promise<WorkflowInstance>;
+
+  delete(request: DeleteWorkflowInstanceRequest) : Promise<WorkflowInstanceSummary>
+
+  deleteMany(request: BulkDeleteWorkflowInstancesRequest) : Promise<PagedList<WorkflowInstanceSummary>>
 }
 
 export interface DesignerApi {
@@ -170,6 +188,10 @@ export interface SaveWorkflowRequest {
   description?: string;
   publish: boolean;
   root?: Activity
+}
+
+export interface DeleteWorkflowRequest {
+  definitionId: string;
 }
 
 export interface GetWorkflowRequest {
@@ -202,6 +224,14 @@ export interface ListWorkflowInstancesRequest {
 
 export interface GetWorkflowInstanceRequest {
   id: string;
+}
+
+export interface DeleteWorkflowInstanceRequest {
+  id: string;
+}
+
+export interface BulkDeleteWorkflowInstancesRequest{
+  workflowInstanceIds: Array<string>;
 }
 
 @Service()
