@@ -29,7 +29,6 @@ namespace Elsa.Activities.AzureServiceBus.Services
         public Worker(
             string queueOrTopic,
             string? subscription,
-            string tag,
             Func<Worker, Task> errorCallback,
             ServiceBusClient serviceBusClient,
             ServiceBusAdministrationClient administrationClient,
@@ -39,7 +38,6 @@ namespace Elsa.Activities.AzureServiceBus.Services
         {
             QueueOrTopic = queueOrTopic;
             Subscription = subscription == "" ? null : subscription;
-            Tag = tag;
             ServiceBusClient = serviceBusClient;
             _errorCallback = errorCallback;
             _administrationClient = administrationClient;
@@ -58,7 +56,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
 
         public string QueueOrTopic { get; }
         public string? Subscription { get; }
-        public string Tag { get; }
+        public HashSet<string> Tags { get; } = new();
         protected ServiceBusClient ServiceBusClient { get; set; }
         private string ActivityType => Subscription == null ? nameof(AzureServiceBusQueueMessageReceived) : nameof(AzureServiceBusTopicMessageReceived);
 
