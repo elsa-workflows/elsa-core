@@ -20,7 +20,8 @@ import {
   WorkflowExecutionLogRecord,
   WorkflowInstance,
   WorkflowInstanceSummary,
-  WorkflowPersistenceBehavior, WorkflowProviderDescriptor,
+  WorkflowPersistenceBehavior,
+  WorkflowProviderDescriptor,
   WorkflowStatus,
   WorkflowStorageDescriptor
 } from "../models";
@@ -129,7 +130,8 @@ export const createElsaClient = async function (serverUrl: string): Promise<Elsa
     },
     workflowTestApi: {
       execute: async (request) => {
-        await httpClient.post<void>(`v1/workflow-test/execute`, request);
+          const response = await httpClient.post<WorkflowTestExecuteResponse>(`v1/workflow-test/execute`, request);
+          return response.data;
       },
       restartFromActivity: async (request) => {
         await httpClient.post<void>(`v1/workflow-test/restartFromActivity`, request);
@@ -152,7 +154,7 @@ export const createElsaClient = async function (serverUrl: string): Promise<Elsa
 
         const queryStringItems = collection.map(queryString, (v, k) => `${k}=${v}`);
         const queryStringText = queryStringItems.length > 0 ? `?${queryStringItems.join('&')}` : '';
-        const response = await httpClient.get<PagedList<WorkflowBlueprintSummary>>(`v1/workflow-registry/${providerName}${queryStringText}`);
+        const response = await httpClient.get<PagedList<WorkflowBlueprintSummary>>(`v1/workflow-registry/by-provider/${providerName}${queryStringText}`);
         return response.data;
       },
       listAll: async (versionOptions?: VersionOptions): Promise<Array<WorkflowBlueprintSummary>> => {
@@ -221,6 +223,9 @@ export const createElsaClient = async function (serverUrl: string): Promise<Elsa
       delete: async id => {
         await httpClient.delete(`v1/workflow-instances/${id}`);
       },
+      retry: async id => {
+        await httpClient.post(`v1/workflow-instances/${id}/retry`, { runImmediately: false });
+      },
       bulkCancel: async request => {
         const response = await httpClient.post(`v1/workflow-instances/bulk/cancel`, request);
         return response.data;
@@ -229,6 +234,10 @@ export const createElsaClient = async function (serverUrl: string): Promise<Elsa
         const response = await httpClient.delete(`v1/workflow-instances/bulk`, {
           data: request
         });
+        return response.data;
+      },
+      bulkRetry: async request => {
+        const response = await httpClient.post(`v1/workflow-instances/bulk/retry`, request);
         return response.data;
       }
     },
@@ -347,7 +356,7 @@ export interface WorkflowDefinitionsApi {
 
 export interface WorkflowTestApi {
 
-  execute(request: WorkflowTestExecuteRequest): Promise<void>;
+  execute(request: WorkflowTestExecuteRequest): Promise<WorkflowTestExecuteResponse>;
 
   restartFromActivity(request: WorkflowTestRestartFromActivityRequest): Promise<void>;
 
@@ -373,9 +382,13 @@ export interface WorkflowInstancesApi {
 
   delete(id: string): Promise<void>;
 
+  retry(id: string): Promise<void>;
+
   bulkCancel(request: BulkCancelWorkflowsRequest): Promise<BulkCancelWorkflowsResponse>;
 
   bulkDelete(request: BulkDeleteWorkflowsRequest): Promise<BulkDeleteWorkflowsResponse>;
+
+  bulkRetry(request: BulkRetryWorkflowsRequest): Promise<BulkRetryWorkflowsResponse>;
 }
 
 export interface WorkflowExecutionLogApi {
@@ -398,6 +411,14 @@ export interface BulkDeleteWorkflowsRequest {
 
 export interface BulkDeleteWorkflowsResponse {
   deletedWorkflowCount: number;
+}
+
+export interface BulkRetryWorkflowsRequest {
+  workflowInstanceIds: Array<string>;
+}
+
+export interface BulkRetryWorkflowsResponse {
+  retriedWorkflowCount: number;
 }
 
 export interface ScriptingApi {
@@ -461,6 +482,11 @@ export interface WorkflowTestRestartFromActivityRequest {
 
 export interface WorkflowTestStopRequest {
   workflowInstanceId: string
+}
+
+export interface WorkflowTestExecuteResponse{
+  isSuccess: boolean,
+  isAnotherInstanceRunning: boolean
 }
 
 export interface ExportWorkflowResponse {

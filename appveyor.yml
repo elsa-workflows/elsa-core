@@ -54,6 +54,8 @@ install:
             cd ..\bindings\aspnet\Elsa.Designer.Components.Web
 
             npm install --force
+            npm install -g webpack
+            npm install -g webpack-cli
 
             cd ..\..\..\..\..
 

@@ -10,8 +10,8 @@ namespace Elsa.Activities.AzureServiceBus.Consumers
         private readonly IWorkerManager _workerManager;
         public UpdateWorkers(IWorkerManager workerManager) => _workerManager = workerManager;
         public async Task Handle(TriggerIndexingFinished message) => await _workerManager.CreateWorkersAsync(message.Triggers);
-        public async Task Handle(TriggersDeleted message) => await _workerManager.RemoveWorkersAsync(message.Triggers);
+        public async Task Handle(TriggersDeleted message) => await _workerManager.RemoveTagsFromWorkersAsync(new[] { message.WorkflowDefinitionId });
         public async Task Handle(BookmarkIndexingFinished message) => await _workerManager.CreateWorkersAsync(message.Bookmarks);
-        public async Task Handle(BookmarksDeleted message) => await _workerManager.CreateWorkersAsync(message.Bookmarks);
+        public async Task Handle(BookmarksDeleted message) => await _workerManager.RemoveTagsFromWorkersAsync(new[] { message.WorkflowInstanceId });
     }
 }

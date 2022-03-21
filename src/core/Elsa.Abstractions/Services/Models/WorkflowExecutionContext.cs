@@ -283,6 +283,4 @@ namespace Elsa.Services.Models
             return scope;
         }
     }
-
-    public record ExecutionLogEntry(string ActivityId, string Outcome);
 }

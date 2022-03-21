@@ -12,13 +12,18 @@
         <PackageTags>elsa, workflow settings, efcore</PackageTags>
     </PropertyGroup>
 
+    <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1'">
+        <PackageReference Include="EFCore.BulkExtensions" Version="5.4.0" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.10" />
+    </ItemGroup>
+
     <ItemGroup Condition=" '$(TargetFramework)' == 'net5.0'">
         <PackageReference Include="EFCore.BulkExtensions" Version="5.4.0" />
         <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.10" />
     </ItemGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' == 'net6.0'">
-        <PackageReference Include="EFCore.BulkExtensions" Version="6.2.3" />
+        <PackageReference Include="EFCore.BulkExtensions" Version="6.2.9" />
         <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.1" />
     </ItemGroup>
 

@@ -18,7 +18,8 @@ export const resources = {
         'ContextMenu': {
           'View': 'View',
           'Cancel': 'Cancel',
-          'Delete': 'Delete'
+          'Delete': 'Delete',
+          'Retry': 'Retry'
         }
       },
       'CancelDialog': {
@@ -37,6 +38,10 @@ export const resources = {
         'Title': 'Delete Selected Workflow Instances',
         'Message': 'Are you sure you wish to permanently delete all selected workflow instances?'
       },
+      'BulkRetryDialog': {
+        'Title': 'Retry Selected Workflow Instances',
+        'Message': 'Are you sure you wish to retry all selected workflow instances?'
+      },
       'Pager': {
         'Display': 'Showing {{Start}} to {{End}} of {{Results}} results'
       },
@@ -44,7 +49,8 @@ export const resources = {
         'Title': 'Bulk Actions',
         'Actions': {
           'Cancel': 'Cancel',
-          'Delete': 'Delete'
+          'Delete': 'Delete',
+          'Retry': 'Retry'
         }
       },
       'Filters': {

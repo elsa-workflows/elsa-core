@@ -81,6 +81,9 @@ export class ElsaWorkflowInstanceListScreen {
     }, {
       text: t('BulkActions.Actions.Delete'),
       name: 'Delete',
+    }, {
+      text: t('BulkActions.Actions.Retry'),
+      name: 'Retry',
     }];
 
     await eventBus.emit(EventTypes.WorkflowInstanceBulkActionsLoading, this, {sender: this, bulkActions});
@@ -149,7 +152,7 @@ export class ElsaWorkflowInstanceListScreen {
 
   private async loadWorkflowBlueprints() {
     const elsaClient = await this.createClient();
-    this.workflowBlueprints = await elsaClient.workflowRegistryApi.listAll();
+    this.workflowBlueprints = await elsaClient.workflowRegistryApi.listAll({allVersions: true});
   }
 
   private async loadWorkflowInstances() {
@@ -322,6 +325,18 @@ export class ElsaWorkflowInstanceListScreen {
     await this.loadWorkflowInstances();
   }
 
+  async onRetryClick(e: Event, workflowInstance: WorkflowInstanceSummary) {
+    const t = this.t;
+    const result = await confirmDialogService.show(t('RetryDialog.Title'), t('RetryDialog.Message'));
+
+    if (!result)
+      return;
+
+    const elsaClient = await this.createClient();
+    await elsaClient.workflowInstancesApi.retry(workflowInstance.id);
+    await this.loadWorkflowInstances();
+  }
+
   async onBulkCancel() {
     const t = this.t;
     const result = await confirmDialogService.show(t('BulkCancelDialog.Title'), t('BulkCancelDialog.Message'));
@@ -350,6 +365,20 @@ export class ElsaWorkflowInstanceListScreen {
     this.currentPage = 0;
   }
 
+  async onBulkRetry() {
+    const t = this.t;
+    const result = await confirmDialogService.show(t('BulkRetryDialog.Title'), t('BulkRetryDialog.Message'));
+
+    if (!result)
+      return;
+
+    const elsaClient = await this.createClient();
+    await elsaClient.workflowInstancesApi.bulkRetry({workflowInstanceIds: this.selectedWorkflowInstanceIds});
+    this.selectedWorkflowInstanceIds = [];
+    await this.loadWorkflowInstances();
+    this.currentPage = 0;
+  }
+
   async onBulkActionSelected(e: CustomEvent<DropdownButtonItem>) {
     const action = e.detail;
 
@@ -359,6 +388,9 @@ export class ElsaWorkflowInstanceListScreen {
         break;
       case 'Delete':
         await this.onBulkDelete();
+        break;
+      case 'Retry':
+        await this.onBulkRetry();
         break;
       default:
         action.handler();
@@ -421,6 +453,17 @@ export class ElsaWorkflowInstanceListScreen {
           <line x1="14" y1="11" x2="14" y2="17"/>
           <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"/>
           <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"/>
+        </svg>
+      );
+    };
+
+    const renderRetryIcon = function () {
+      return (
+        <svg class="elsa-h-5 w-5 elsa-text-gray-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path stroke="none" d="M0 0h24v24H0z"/>
+          <path d="M12 17l-2 2l2 2m-2 -2h9a2 2 0 0 0 1.75 -2.75l-.55 -1"/>
+          <path d="M12 17l-2 2l2 2m-2 -2h9a2 2 0 0 0 1.75 -2.75l-.55 -1" transform="rotate(120 12 13)"/>
+          <path d="M12 17l-2 2l2 2m-2 -2h9a2 2 0 0 0 1.75 -2.75l-.55 -1" transform="rotate(240 12 13)"/>
         </svg>
       );
     };
@@ -538,6 +581,26 @@ export class ElsaWorkflowInstanceListScreen {
                 const finishedAt = !!workflowInstance.finishedAt ? moment(workflowInstance.finishedAt) : null;
                 const lastExecutedAt = !!workflowInstance.lastExecutedAt ? moment(workflowInstance.lastExecutedAt) : null;
                 const faultedAt = !!workflowInstance.faultedAt ? moment(workflowInstance.faultedAt) : null;
+                const isFaulted = workflowInstance.workflowStatus == WorkflowStatus.Faulted;
+
+                const contextMenuItems = [
+                  {text: t('Table.ContextMenu.View'), anchorUrl: instanceViewUrl, icon: renderViewIcon()},
+                  {
+                    text: t('Table.ContextMenu.Cancel'),
+                    clickHandler: e => this.onCancelClick(e, workflowInstance),
+                    icon: renderCancelIcon()
+                  },
+                    ...[isFaulted ? {
+                      text: t('Table.ContextMenu.Retry'),
+                      clickHandler: e => this.onRetryClick(e, workflowInstance),
+                      icon: renderRetryIcon()
+                    } : null],
+                  {
+                    text: t('Table.ContextMenu.Delete'),
+                    clickHandler: e => this.onDeleteClick(e, workflowInstance),
+                    icon: renderDeleteIcon()
+                  }
+                ].filter(x => x != null);
 
                 return <tr>
                   <td
@@ -595,19 +658,7 @@ export class ElsaWorkflowInstanceListScreen {
                     {!!faultedAt ? faultedAt.format('DD-MM-YYYY HH:mm:ss') : '-'}
                   </td>
                   <td class="elsa-pr-6">
-                    <elsa-context-menu history={this.history} menuItems={[
-                      {text: t('Table.ContextMenu.View'), anchorUrl: instanceViewUrl, icon: renderViewIcon()},
-                      {
-                        text: t('Table.ContextMenu.Cancel'),
-                        clickHandler: e => this.onCancelClick(e, workflowInstance),
-                        icon: renderCancelIcon()
-                      },
-                      {
-                        text: t('Table.ContextMenu.Delete'),
-                        clickHandler: e => this.onDeleteClick(e, workflowInstance),
-                        icon: renderDeleteIcon()
-                      }
-                    ]}/>
+                    <elsa-context-menu history={this.history} menuItems={contextMenuItems}/>
                   </td>
                 </tr>
               })}

@@ -14,14 +14,14 @@ namespace Elsa.Retention.HostedServices
     /// <summary>
     /// Periodically wipes workflow instances and their execution logs.
     /// </summary>
-    public class CleanupService : BackgroundService
+    public class CleanupHostedService : BackgroundService
     {
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly IDistributedLockProvider _distributedLockProvider;
-        private readonly ILogger<CleanupService> _logger;
+        private readonly ILogger<CleanupHostedService> _logger;
         private readonly TimeSpan _interval;
 
-        public CleanupService(IOptions<CleanupOptions> options, IServiceScopeFactory serviceScopeFactory, IDistributedLockProvider distributedLockProvider, ILogger<CleanupService> logger)
+        public CleanupHostedService(IOptions<CleanupOptions> options, IServiceScopeFactory serviceScopeFactory, IDistributedLockProvider distributedLockProvider, ILogger<CleanupHostedService> logger)
         {
             _serviceScopeFactory = serviceScopeFactory;
             _distributedLockProvider = distributedLockProvider;
@@ -37,7 +37,7 @@ namespace Elsa.Retention.HostedServices
             while (!stoppingToken.IsCancellationRequested)
             {
                 await Task.Delay(_interval, stoppingToken);
-                await using var handle = await _distributedLockProvider.AcquireLockAsync(nameof(CleanupService), cancellationToken: stoppingToken);
+                await using var handle = await _distributedLockProvider.AcquireLockAsync(nameof(CleanupHostedService), cancellationToken: stoppingToken);
 
                 if (handle == null)
                     continue;
