@@ -6,14 +6,14 @@ namespace Elsa.Jobs.Models;
 
 public class JobExecutionContext
 {
-    public JobExecutionContext(IServiceProvider serviceProvider, CancellationToken cancellation)
+    public JobExecutionContext(IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
         ServiceProvider = serviceProvider;
-        Cancellation = cancellation;
+        CancellationToken = cancellationToken;
     }
 
     public IServiceProvider ServiceProvider { get; }
-    public CancellationToken Cancellation { get; }
+    public CancellationToken CancellationToken { get; }
 
     public T GetRequiredService<T>() where T : notnull => ServiceProvider.GetRequiredService<T>();
 }

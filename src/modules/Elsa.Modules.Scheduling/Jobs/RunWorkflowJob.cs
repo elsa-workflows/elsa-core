@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using Elsa.Jobs.Abstractions;
 using Elsa.Runtime.Contracts;
 using Elsa.Runtime.Models;
 using Elsa.Jobs.Contracts;
@@ -25,6 +26,6 @@ public class RunWorkflowJob : Job
     {
         var request = new DispatchWorkflowDefinitionRequest(WorkflowId, 1);
         var workflowInvoker = context.GetRequiredService<IWorkflowInvoker>();
-        await workflowInvoker.DispatchAsync(request, context.Cancellation);
+        await workflowInvoker.DispatchAsync(request, context.CancellationToken);
     }
 }

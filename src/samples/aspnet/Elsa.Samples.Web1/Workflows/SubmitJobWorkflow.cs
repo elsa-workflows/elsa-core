@@ -3,6 +3,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Elsa.Activities.Primitives;
 using Elsa.Contracts;
+using Elsa.Jobs.Abstractions;
 using Elsa.Jobs.Contracts;
 using Elsa.Jobs.Models;
 using Elsa.Runtime.Contracts;
@@ -31,7 +32,7 @@ public class ReadTheInternetJob : Job
             BaseAddress = new Uri("https://www.google.com")
         };
 
-        var response = await httpClient.GetStringAsync("/", context.Cancellation);
+        var response = await httpClient.GetStringAsync("/", context.CancellationToken);
         Console.WriteLine(response);
     }
 }

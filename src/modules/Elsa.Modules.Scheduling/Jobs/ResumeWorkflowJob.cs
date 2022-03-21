@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using Elsa.Jobs.Abstractions;
 using Elsa.Models;
 using Elsa.Runtime.Contracts;
 using Elsa.Runtime.Models;
@@ -28,6 +29,6 @@ public class ResumeWorkflowJob : Job
     {
         var request = new DispatchWorkflowInstanceRequest(WorkflowInstanceId, Bookmark);
         var workflowInvoker = context.GetRequiredService<IWorkflowInvoker>();
-        await workflowInvoker.DispatchAsync(request, context.Cancellation);
+        await workflowInvoker.DispatchAsync(request, context.CancellationToken);
     }
 }

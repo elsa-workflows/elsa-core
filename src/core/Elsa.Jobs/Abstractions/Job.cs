@@ -1,7 +1,8 @@
 using System.Threading.Tasks;
+using Elsa.Jobs.Contracts;
 using Elsa.Jobs.Models;
 
-namespace Elsa.Jobs.Contracts;
+namespace Elsa.Jobs.Abstractions;
 
 public abstract class Job : IJob
 {
