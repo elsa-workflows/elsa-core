@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Elsa.Attributes;
 using Elsa.Formatting.Contracts;
 using Elsa.Models;
@@ -9,6 +10,31 @@ namespace Elsa.Modules.AzureServiceBus.Activities;
 public class MessageReceived : Trigger
 {
     internal const string MessageReceivedInputKey = "ReceivedMessage";
+
+    [JsonConstructor]
+    public MessageReceived()
+    {
+    }
+
+    public MessageReceived(Input<string> queue)
+    {
+        QueueOrTopic = queue;
+    }
+
+    public MessageReceived(string queue) : this(new Input<string>(queue))
+    {
+    }
+
+    public MessageReceived(Input<string> topic, Input<string> subscription)
+    {
+        QueueOrTopic = topic;
+        Subscription = subscription;
+    }
+
+    public MessageReceived(string topic, string subscription) : this(new Input<string>(topic), new Input<string>(subscription))
+    {
+    }
+
     public Input<string> QueueOrTopic { get; set; } = default!;
     public Input<string>? Subscription { get; set; } = default!;
 
@@ -43,10 +69,10 @@ public class MessageReceived : Trigger
     private async ValueTask Resume(ActivityExecutionContext context)
     {
         var receivedMessage = (ReceivedServiceBusMessageModel)context.WorkflowExecutionContext.Input[MessageReceivedInputKey]!;
-        var bodyAsString =  new BinaryData(receivedMessage.Body).ToString();
+        var bodyAsString = new BinaryData(receivedMessage.Body).ToString();
         var targetType = context.Get(ExpectedMessageType);
         var body = Formatter == null ? bodyAsString : await Formatter.FromStringAsync(bodyAsString, targetType, context.CancellationToken);
-        
+
         context.Set(ReceivedMessage, receivedMessage);
         context.Set(ReceivedMessageBody, body);
     }
