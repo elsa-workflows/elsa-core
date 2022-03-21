@@ -2,6 +2,7 @@ using Elsa.Jobs.Contracts;
 using Hangfire;
 using Hangfire.SqlServer;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 
 namespace Elsa.Modules.Hangfire.Services;
 
@@ -23,6 +24,7 @@ public class HangfireJobQueueProvider : IJobQueueProvider
     public bool UseSqlServerStorage { get; set; }
     public string? SqlServerConnectionString { get; set; }
     public SqlServerStorageOptions? SqlServerStorageOptions { get; set; }
+    public Action<BackgroundJobServerOptions>? ConfigureBackgroundServerOptions { get; set; }
 
     public void ConfigureServices(IServiceCollection services)
     {
@@ -31,13 +33,22 @@ public class HangfireJobQueueProvider : IJobQueueProvider
             services.AddHangfire(configuration =>
             {
                 configuration.UseSimpleAssemblyNameTypeSerializer();
-                
+                configuration.UseRecommendedSerializerSettings(json => json.TypeNameHandling = TypeNameHandling.Objects);
+
                 if (UseSqlServerStorage)
                 {
                     var storageOptions = SqlServerStorageOptions ?? new SqlServerStorageOptions();
                     configuration.UseSqlServerStorage(SqlServerConnectionString, storageOptions);
                 }
             });
+
+            if (UseSqlServerStorage)
+                services.AddHangfireServer((_, options) => ConfigureBackgroundServerOptions?.Invoke(options), new SqlServerStorage(SqlServerConnectionString));
+            else
+                services.AddHangfireServer(options =>
+                {
+                    ConfigureBackgroundServerOptions?.Invoke(options);
+                });
         }
 
         services.AddSingleton<IJobQueue, HangfireJobQueue>();

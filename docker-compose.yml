@@ -28,18 +28,28 @@ services:
       - "8600:8600"
       - "8600:8600/udp"
     command: "agent -server -bootstrap-expect 3 -ui -client 0.0.0.0"
+    
+  sqlserver:
+    image: "mcr.microsoft.com/mssql/server:2019-latest"
+    ports:
+      - "3433:1433"
+    environment:
+      SA_PASSWORD: "Elsa2022!"
+      ACCEPT_EULA: "Y"
+    volumes:
+      - c:\data\docker\sqlserver2019:/var/opt/mssql/data
 
   mongodb:
     image: mongo:latest
     ports:
-      - 127.0.0.1:27017:27017
+      - "127.0.0.1:27017:27017"
     volumes:
       - mongodb_data:/data/db
 
   redis:
     image: redis:latest
     ports:
-      - 127.0.0.1:6379:6379
+      - "127.0.0.1:6379:6379"
 
 networks:
   consul:

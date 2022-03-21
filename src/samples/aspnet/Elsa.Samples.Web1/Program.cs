@@ -37,6 +37,9 @@ var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 var configuration = builder.Configuration;
 
+// Run the SqlServer container from docker-compose.yml to start a SQL Server container.
+var sqlServerConnectionString = configuration.GetConnectionString("SqlServer");
+
 // Add services.
 services
     .AddElsa()
@@ -45,7 +48,7 @@ services
     .AddProtoActorWorkflowHost()
     .IndexWorkflowTriggers()
     .AddElsaManagement()
-    .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider())
+    .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider(sqlServerConnectionString))
     .AddHttpActivityServices()
     .AddAzureServiceBusServices(options => configuration.GetSection("AzureServiceBus").Bind(options))
     .ConfigureWorkflowRuntime(options =>
