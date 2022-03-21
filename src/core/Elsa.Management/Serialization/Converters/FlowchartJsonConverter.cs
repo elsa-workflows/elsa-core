@@ -21,12 +21,12 @@ public class FlowchartJsonConverter : JsonConverter<Flowchart>
             throw new JsonException("Failed to parse JsonDocument");
 
         var connectionsElement = doc.RootElement.GetProperty("connections");
-        var metadataElement = doc.RootElement.GetProperty("metadata");
+        var applicationPropertiesElement = doc.RootElement.GetProperty("applicationProperties");
         var activitiesElement = doc.RootElement.GetProperty("activities");
         var id = doc.RootElement.GetProperty("id").GetString()!;
         var startId = doc.RootElement.TryGetProperty("start", out var startElement) ? startElement.GetString() : default;
         var rootActivities = activitiesElement.Deserialize<ICollection<IActivity>>(options) ?? new List<IActivity>();
-        var metadata = metadataElement.Deserialize<IDictionary<string, object>>(options) ?? new Dictionary<string, object>();
+        var applicationProperties = applicationPropertiesElement.Deserialize<IDictionary<string, object>>(options) ?? new Dictionary<string, object>();
         var start = rootActivities.FirstOrDefault(x => x.Id == startId) ?? rootActivities.FirstOrDefault();
         var connectionSerializerOptions = new JsonSerializerOptions(options);
         var activities = WalkActivityTree(rootActivities).ToList();
@@ -38,7 +38,7 @@ public class FlowchartJsonConverter : JsonConverter<Flowchart>
         return new Flowchart
         {
             Id = id,
-            Metadata = metadata,
+            ApplicationProperties = applicationProperties,
             Activities = rootActivities,
             Connections = connections,
             Start = start,
@@ -56,7 +56,7 @@ public class FlowchartJsonConverter : JsonConverter<Flowchart>
         {
             value.TypeName,
             value.Id,
-            value.Metadata,
+            value.ApplicationProperties,
             Start = value.Start?.Id,
             value.Activities,
             value.Connections
