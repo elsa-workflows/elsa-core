@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Workflows;
@@ -49,19 +48,18 @@ public static partial class Workflows
         // Update the draft with the received model.
         var root = model.Root ?? new Sequence();
 
-        draft = draft with
+
+        draft.Root = root;
+
+        draft.Metadata = draft.Metadata with
         {
-            Root = root,
-            Metadata = draft.Metadata with
-            {
-                Name = model.Name,
-                Description = model.Description
-            }
+            Name = model.Name,
+            Description = model.Description
         };
-        
+
         draft = model.Publish ? await workflowPublisher.PublishAsync(draft, cancellationToken) : await workflowPublisher.SaveDraftAsync(draft, cancellationToken);
         var statusCode = isNew ? StatusCodes.Status201Created : StatusCodes.Status200OK;
-        
+
         return Results.Json(draft, serializerOptions, statusCode: statusCode);
     }
 }

@@ -1,23 +1,27 @@
+using Elsa.Activities.Workflows;
 using Elsa.Contracts;
 
 namespace Elsa.Models;
 
-public record Workflow(
-    WorkflowIdentity Identity,
-    WorkflowPublication Publication,
-    WorkflowMetadata Metadata,
-    IActivity Root,
-    ICollection<Variable> Variables,
-    IDictionary<string, object> ApplicationProperties)
+public class Workflow : Composite, ICloneable
 {
-    public static Workflow FromActivity(IActivity root) => new(WorkflowIdentity.VersionOne, WorkflowPublication.LatestDraft, new WorkflowMetadata(), root, new List<Variable>(), new Dictionary<string, object>());
+    public Workflow(
+        WorkflowIdentity identity,
+        WorkflowPublication publication,
+        WorkflowMetadata metadata,
+        IActivity root,
+        ICollection<Variable> variables,
+        IDictionary<string, object> applicationProperties)
+    {
+        Identity = identity;
+        Publication = publication;
+        Metadata = metadata;
+        Variables = variables;
+        ApplicationProperties = applicationProperties;
+        Root = root;
+    }
 
-    public Workflow WithVersion(int version) => this with { Identity = Identity with { Version = version } };
-    public Workflow IncrementVersion() => WithVersion(Identity.Version + 1);
-    public Workflow WithPublished(bool value = true) => this with { Publication = Publication with { IsPublished = value } };
-    public Workflow WithLatest(bool value = true) => this with { Publication = Publication with { IsLatest = value } };
-    public Workflow WithId(string value) => this with { Identity = Identity with { Id = value } };
-    public Workflow WithDefinitionId(string value) => this with { Identity = Identity with { DefinitionId = value } };
+    public static Workflow FromActivity(IActivity root) => new(WorkflowIdentity.VersionOne, WorkflowPublication.LatestDraft, new WorkflowMetadata(), root, new List<Variable>(), new Dictionary<string, object>());
 
     /// <summary>
     /// Creates a new memory register initialized with this workflow's variables.
@@ -28,4 +32,11 @@ public record Workflow(
         register.Declare(Variables);
         return register;
     }
+
+    public WorkflowIdentity Identity { get; set; }
+    public WorkflowPublication Publication { get; set; }
+    public WorkflowMetadata Metadata { get; set; }
+    public ICollection<Variable> Variables { get; init; }
+    public Workflow Clone() => (Workflow)((ICloneable)this).Clone();
+    object ICloneable.Clone() => MemberwiseClone();
 }

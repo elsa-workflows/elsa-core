@@ -58,12 +58,8 @@ namespace Elsa.Management.Services
 
             foreach (var publishedAndOrLatestWorkflow in publishedAndOrLatestWorkflows)
             {
-                var updatedDraft = publishedAndOrLatestWorkflow with
-                {
-                    Publication = WorkflowPublication.Draft
-                };
-
-                await _mediator.ExecuteAsync(new SaveWorkflow(updatedDraft), cancellationToken);
+                publishedAndOrLatestWorkflow.Publication = WorkflowPublication.Draft;
+                await _mediator.ExecuteAsync(new SaveWorkflow(publishedAndOrLatestWorkflow), cancellationToken);
             }
 
             workflow = workflow.Publication.IsPublished ? workflow.IncrementVersion() : workflow.WithPublished();
@@ -111,14 +107,14 @@ namespace Elsa.Management.Services
             if (!workflow.Publication.IsPublished)
                 return workflow;
 
-            var draft = workflow with
-            {
-                Identity = new WorkflowIdentity(
-                    workflow.Identity.DefinitionId,
-                    workflow.Identity.Version + 1,
-                    _identityGenerator.GenerateId()),
-                Publication = WorkflowPublication.LatestDraft
-            };
+            var draft = workflow.Clone();
+
+            draft.Identity = new WorkflowIdentity(
+                workflow.Identity.DefinitionId,
+                workflow.Identity.Version + 1,
+                _identityGenerator.GenerateId());
+            
+            draft.Publication = WorkflowPublication.LatestDraft;
 
             return draft;
         }
@@ -135,10 +131,7 @@ namespace Elsa.Management.Services
                 await _mediator.ExecuteAsync(new SaveWorkflow(latestVersion), cancellationToken);
             }
 
-            draft = draft with
-            {
-                Publication = WorkflowPublication.LatestDraft
-            };
+            draft.Publication = WorkflowPublication.LatestDraft;
             draft = Initialize(draft);
 
             await _mediator.ExecuteAsync(new SaveWorkflow(draft), cancellationToken);
@@ -162,7 +155,7 @@ namespace Elsa.Management.Services
                 workflow = workflow.WithDefinitionId(_identityGenerator.GenerateId());
 
             if (workflow.Identity.Version == 0)
-                workflow.WithVersion(1);
+                workflow = workflow.WithVersion(1);
 
             return workflow;
         }

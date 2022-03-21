@@ -62,7 +62,7 @@ class Program
 
         while (bookmarks.Any())
         {
-            workflow = workflow with { Root = workflowFactory() };
+            workflow.Root = workflowFactory();
             foreach (var bookmark in bookmarks.ToList())
             {
                 Console.WriteLine("Press enter to resume workflow with bookmark {0}.", new
