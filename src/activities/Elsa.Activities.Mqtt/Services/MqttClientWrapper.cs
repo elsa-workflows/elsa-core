@@ -36,8 +36,21 @@ namespace Elsa.Activities.Mqtt.Services
                 else
                     _logger.LogWarning("Attempted to subscribe to topic {Topic}, but no message handler was set.", Options.Topic);
 
-                await Client.UnsubscribeAsync(topic);
-                await DisconnectAsync();
+                //Verify isConnected before Unsubscribe
+                if (Client != null && Client.IsConnected)
+                {
+                    //sometimes Unsubscribe fail using System.Net.Mqtt
+                    try
+                    {
+                        await Client.UnsubscribeAsync(topic);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex,ex.Message);
+                    }
+                    
+                    await DisconnectAsync();
+                }
             });
         }
 
