@@ -6,7 +6,7 @@ using Elsa.Models;
 namespace Elsa.Activities.Workflows;
 
 /// <summary>
-/// Represents a composite activity that has a single <see cref="Root"/> activity.
+/// Represents a composite activity that has a single <see cref="Root"/> activity. Like a workflow, but without workflow-level properties.
 /// </summary>
 public class Composite : Activity
 {
@@ -14,7 +14,7 @@ public class Composite : Activity
     /// The activity to schedule when this activity executes.
     /// </summary>
     [Outbound]
-    public IActivity Root { get; protected set; } = new Sequence();
+    public IActivity Root { get; set; } = new Sequence();
 
     protected override void Execute(ActivityExecutionContext context)
     {
