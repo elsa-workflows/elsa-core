@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Elsa.Activities.Sql.Client
 {
-    public class SqlServerClient : ISqlServerClient
+    public class SqlServerClient : BaseSqlClient, ISqlClient
     {
         private readonly string? _connectionString;
         public SqlServerClient(string connectionString)
@@ -41,31 +41,5 @@ namespace Elsa.Activities.Sql.Client
             }
         }
 
-        private static DataSet ReadAsDataSet(SqlDataReader reader)
-        {
-            var dataSet = new DataSet("dataSet");
-
-            var schemaTable = reader.GetSchemaTable();
-            var data = new DataTable();
-            dataSet.Tables.Add(data);
-
-            foreach (DataRow row in schemaTable.Rows)
-            {
-                string colName = row.Field<string>("ColumnName");
-                Type t = row.Field<Type>("DataType");
-                data.Columns.Add(colName, t);
-            }
-
-            while (reader.Read())
-            {
-                var newRow = data.Rows.Add();
-                foreach (DataColumn col in data.Columns)
-                {
-                    newRow[col.ColumnName] = reader[col.ColumnName];
-                }
-            }
-
-            return dataSet;
-        }
     }
 }
