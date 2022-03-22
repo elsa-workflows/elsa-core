@@ -208,5 +208,5 @@ export const Ampq: Secret = {
     }
   ],
   traits: 1,
-  type: "For"
+  type: "AMPQ"
 }

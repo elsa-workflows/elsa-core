@@ -234,12 +234,12 @@ export class ElsaSecretEditorModel {
                 <div class="elsa-bg-gray-50 elsa-px-4 elsa-py-3 sm:elsa-px-6 sm:elsa-flex sm:elsa-flex-row-reverse">
                   <button type="submit"
                           class="elsa-ml-3 elsa-inline-flex elsa-justify-center elsa-py-2 elsa-px-4 elsa-border elsa-border-transparent elsa-shadow-sm elsa-text-sm elsa-font-medium elsa-rounded-md elsa-text-white elsa-bg-blue-600 hover:elsa-bg-blue-700 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500">
-                    {t('Buttons.Save')}
+                    {'Save'}
                   </button>
                   <button type="button"
                           onClick={() => this.onCancelClick()}
                           class="elsa-w-full elsa-inline-flex elsa-justify-center elsa-rounded-md elsa-border elsa-border-gray-300 elsa-shadow-sm elsa-px-4 elsa-py-2 elsa-bg-white elsa-text-base elsa-font-medium elsa-text-gray-700 hover:elsa-bg-gray-50 focus:elsa-outline-none focus:elsa-ring-2 focus:elsa-ring-offset-2 focus:elsa-ring-blue-500 sm:elsa-mt-0 sm:elsa-ml-3 sm:elsa-w-auto sm:elsa-text-sm">
-                    {t('Buttons.Cancel')}
+                    {'Cancel'}
                   </button>
                 </div>
               </div>
@@ -305,9 +305,8 @@ export class ElsaSecretEditorModel {
 
     return (
       <div class="elsa-space-y-8 elsa-w-full">
-        {textInput(formContext, 'name', t('Tabs.Common.Fields.Name.Label'), activityModel.name, t('Tabs.Common.Fields.Name.Hint'), 'activityName')}
-        {textInput(formContext, 'displayName', t('Tabs.Common.Fields.DisplayName.Label'), activityModel.displayName, t('Tabs.Common.Fields.DisplayName.Hint'), 'activityDisplayName')}
-        {textArea(formContext, 'description', t('Tabs.Common.Fields.Description.Label'), activityModel.description, t('Tabs.Common.Fields.Description.Hint'), 'activityDescription')}
+        {textInput(formContext, 'name', 'Name', activityModel.name, 'Secret\'s name', 'activityName')}
+        {textInput(formContext, 'type', 'Type', activityModel.displayName, 'Secret\'s type', 'activityDisplayName')}
       </div>
     );
   }
