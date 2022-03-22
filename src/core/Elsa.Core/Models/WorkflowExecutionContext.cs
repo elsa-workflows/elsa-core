@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using Elsa.Contracts;
-using Elsa.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Models;
@@ -60,7 +59,7 @@ public class WorkflowExecutionContext
     /// A dictionary that can be used by application code and middleware to store information and even services. Values do not need to be serializable, since this dictionary will not be persisted.
     /// All data will be gone once workflow execution completes. 
     /// </summary>
-    public IDictionary<string, object?> TransientProperties { get; set; } = new Dictionary<string, object?>();
+    public IDictionary<object, object?> TransientProperties { get; set; } = new Dictionary<object, object?>();
 
     public ExecuteActivityDelegate? ExecuteDelegate { get; set; }
     public CancellationToken CancellationToken { get; }

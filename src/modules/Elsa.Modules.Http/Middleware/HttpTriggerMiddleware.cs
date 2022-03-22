@@ -24,7 +24,7 @@ public class HttpTriggerMiddleware
         _hasher = hasher;
     }
 
-    public async Task InvokeAsync(HttpContext httpContext, IWorkflowServer workflowServer)
+    public async Task InvokeAsync(HttpContext httpContext, IWorkflowService workflowService)
     {
         var path = GetPath(httpContext);
         var request = httpContext.Request;
@@ -35,7 +35,7 @@ public class HttpTriggerMiddleware
         var requestModel = new HttpRequestModel(new Uri(request.GetEncodedUrl()));
         var input = new { HttpRequest = requestModel };
         var stimulus = Stimulus.Standard(activityTypeName, hash, input);
-        var executionResults = (await workflowServer.ExecuteStimulusAsync(stimulus, abortToken)).ToList();
+        var executionResults = (await workflowService.ExecuteStimulusAsync(stimulus, abortToken)).ToList();
 
         if (!executionResults.Any())
         {

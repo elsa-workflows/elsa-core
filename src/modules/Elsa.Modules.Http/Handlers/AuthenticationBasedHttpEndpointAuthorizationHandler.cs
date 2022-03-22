@@ -1,5 +1,4 @@
 using System.Threading.Tasks;
-using Elsa.Extensions;
 using Elsa.Modules.Http.Contracts;
 using Elsa.Modules.Http.Models;
 using Microsoft.AspNetCore.Authorization;

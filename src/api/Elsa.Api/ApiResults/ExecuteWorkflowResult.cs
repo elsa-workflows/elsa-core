@@ -1,6 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
+using Elsa.Persistence.Models;
 using Elsa.Runtime.Contracts;
 using Elsa.Runtime.Models;
 using Microsoft.AspNetCore.Http;
@@ -17,8 +18,8 @@ public class ExecuteWorkflowResult : IResult
     {
         var response = httpContext.Response;
         var workflowInvoker = httpContext.RequestServices.GetRequiredService<IWorkflowInvoker>();
-        var (definitionId, version, _) = Workflow.Identity;
-        var executeRequest = new ExecuteWorkflowDefinitionRequest(definitionId, version);
+        var definitionId = Workflow.Identity.DefinitionId;
+        var executeRequest = new ExecuteWorkflowDefinitionRequest(definitionId, VersionOptions.Published);
         var result = await workflowInvoker.ExecuteAsync(executeRequest, CancellationToken.None);
 
         if (!response.HasStarted)

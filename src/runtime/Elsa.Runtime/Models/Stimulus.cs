@@ -1,4 +1,3 @@
-using Elsa.Extensions;
 using Elsa.Runtime.Stimuli;
 
 namespace Elsa.Runtime.Models;

@@ -3,7 +3,6 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Models;
 using Elsa.Modules.Scheduling.Activities;
 using Elsa.Modules.Scheduling.Contracts;
 using Elsa.Modules.Scheduling.Jobs;

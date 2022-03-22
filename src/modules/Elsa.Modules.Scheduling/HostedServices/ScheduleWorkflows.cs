@@ -7,8 +7,6 @@ using Elsa.Modules.Scheduling.Activities;
 using Elsa.Modules.Scheduling.Contracts;
 using Elsa.Persistence.Requests;
 using Microsoft.Extensions.Hosting;
-using IWorkflowTriggerScheduler = Elsa.Modules.Scheduling.Contracts.IWorkflowTriggerScheduler;
-using Timer = Elsa.Modules.Scheduling.Triggers.Timer;
 
 namespace Elsa.Modules.Scheduling.HostedServices;
 

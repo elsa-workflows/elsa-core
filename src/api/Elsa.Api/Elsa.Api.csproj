@@ -12,11 +12,8 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\core\Elsa.Management\Elsa.Management.csproj" />
+      <ProjectReference Include="..\..\modules\Elsa.Modules.Activities\Elsa.Modules.Activities.csproj" />
       <ProjectReference Include="..\..\runtime\Elsa.Runtime\Elsa.Runtime.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="HostedServices" />
     </ItemGroup>
 
 </Project>

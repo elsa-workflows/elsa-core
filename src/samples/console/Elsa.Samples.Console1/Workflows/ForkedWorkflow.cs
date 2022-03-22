@@ -1,9 +1,7 @@
+using Elsa.Activities;
 using Elsa.Activities.Console;
-using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Primitives;
-using Elsa.Activities.Workflows;
 using Elsa.Contracts;
-using Elsa.Models;
 
 namespace Elsa.Samples.Console1.Workflows;
 

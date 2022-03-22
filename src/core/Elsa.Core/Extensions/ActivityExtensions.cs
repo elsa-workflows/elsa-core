@@ -2,7 +2,7 @@ using System.Reflection;
 using Elsa.Contracts;
 using Elsa.Models;
 
-namespace Elsa.Extensions;
+namespace Elsa;
 
 public static class ActivityExtensions
 {

@@ -1,4 +1,4 @@
-using Elsa.Activities.Workflows;
+using Elsa.Activities;
 using Elsa.Contracts;
 using Elsa.Management.Contracts;
 using Elsa.Management.Notifications;

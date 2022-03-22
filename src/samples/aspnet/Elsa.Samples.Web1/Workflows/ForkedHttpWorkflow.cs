@@ -1,8 +1,7 @@
 using System.Collections.Generic;
 using System.Net;
+using Elsa.Activities;
 using Elsa.Activities.Console;
-using Elsa.Activities.ControlFlow;
-using Elsa.Activities.Workflows;
 using Elsa.Contracts;
 using Elsa.Models;
 using Elsa.Modules.Http;

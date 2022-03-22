@@ -1,7 +1,6 @@
 using System.Collections.Generic;
+using Elsa.Activities;
 using Elsa.Activities.Console;
-using Elsa.Activities.ControlFlow;
-using Elsa.Activities.Workflows;
 using Elsa.Contracts;
 using Elsa.Models;
 

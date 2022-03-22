@@ -1,5 +1,5 @@
+using Elsa.Activities;
 using Elsa.Activities.Console;
-using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Workflows;
 using Elsa.Api.Extensions;
 using Elsa.Extensions;
@@ -15,7 +15,6 @@ using Elsa.Modules.Http.Extensions;
 using Elsa.Modules.JavaScript.Activities;
 using Elsa.Modules.Quartz.Services;
 using Elsa.Modules.Scheduling.Activities;
-using Elsa.Modules.Scheduling.Extensions;
 using Elsa.Modules.Scheduling.Triggers;
 using Elsa.Modules.WorkflowContexts.Extensions;
 using Elsa.Persistence.EntityFrameworkCore.Extensions;

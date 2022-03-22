@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace Elsa.Extensions;
+namespace Elsa;
 
 public static class ObjectExtensions
 {

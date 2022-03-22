@@ -1,7 +1,6 @@
 using System.Reflection;
 using Elsa.Attributes;
 using Elsa.Contracts;
-using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.State;
 
@@ -111,7 +110,7 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
                 ParentContextId = activityExecutionContext.ParentActivityExecutionContext?.Id,
                 ScheduledActivityId = activityExecutionContext.Activity.Id,
                 OwnerActivityId = activityExecutionContext.ParentActivityExecutionContext?.Activity.Id,
-                Properties = activityExecutionContext.Properties,
+                Properties = activityExecutionContext.ApplicationProperties,
                 Register = registerState
             };
             return activityExecutionContextState;
@@ -128,13 +127,13 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
             var activity = workflowExecutionContext.FindActivityById(activityExecutionContextState.ScheduledActivityId);
             var register = new Register(activityExecutionContextState.Register.Locations);
             var workflow = workflowExecutionContext.Workflow;
-
-            var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, register, workflow, new Dictionary<string, object?>(), default, cancellationToken);
+            var expressionInput = workflowExecutionContext.Input;
+            var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, register, workflow, expressionInput, workflowExecutionContext.TransientProperties, default, cancellationToken);
             var properties = activityExecutionContextState.Properties;
             var activityExecutionContext = new ActivityExecutionContext(workflowExecutionContext, default, expressionExecutionContext, activity, cancellationToken)
             {
                 Id = activityExecutionContextState.Id,
-                Properties = properties
+                ApplicationProperties = properties
             };
             return activityExecutionContext;
         }

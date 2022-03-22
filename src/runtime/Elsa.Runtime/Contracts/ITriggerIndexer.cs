@@ -1,7 +1,5 @@
 using Elsa.Models;
-using Elsa.Persistence.Entities;
 using Elsa.Runtime.Models;
-using Elsa.Runtime.Notifications;
 
 namespace Elsa.Runtime.Contracts;
 

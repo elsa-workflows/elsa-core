@@ -86,6 +86,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Modules.Hangfire", "sr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Modules.WorkflowContexts", "src\modules\Elsa.Modules.WorkflowContexts\Elsa.Modules.WorkflowContexts.csproj", "{302BFC43-ED2F-43AE-8AD4-FCD481B0AC67}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Modules.SetName", "src\modules\Elsa.Modules.SetName\Elsa.Modules.SetName.csproj", "{E4EB94A0-E6F6-4EFA-BE55-7CEED1D8431A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Modules.Activities", "src\modules\Elsa.Modules.Activities\Elsa.Modules.Activities.csproj", "{05249066-9125-47D8-847B-A86887B1D269}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -200,6 +204,14 @@ Global
 		{302BFC43-ED2F-43AE-8AD4-FCD481B0AC67}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{302BFC43-ED2F-43AE-8AD4-FCD481B0AC67}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{302BFC43-ED2F-43AE-8AD4-FCD481B0AC67}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E4EB94A0-E6F6-4EFA-BE55-7CEED1D8431A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E4EB94A0-E6F6-4EFA-BE55-7CEED1D8431A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E4EB94A0-E6F6-4EFA-BE55-7CEED1D8431A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E4EB94A0-E6F6-4EFA-BE55-7CEED1D8431A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{05249066-9125-47D8-847B-A86887B1D269}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{05249066-9125-47D8-847B-A86887B1D269}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{05249066-9125-47D8-847B-A86887B1D269}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{05249066-9125-47D8-847B-A86887B1D269}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{155227F0-A33B-40AA-A4B4-06F813EB921B} = {61017E64-6D00-49CB-9E81-5002DC8F7D5F}
@@ -240,5 +252,7 @@ Global
 		{D31581AB-A6C1-4B73-AB63-45667F6C82AE} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{0601A2A6-2C62-418B-9104-8CDE497E5283} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{302BFC43-ED2F-43AE-8AD4-FCD481B0AC67} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
+		{E4EB94A0-E6F6-4EFA-BE55-7CEED1D8431A} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
+		{05249066-9125-47D8-847B-A86887B1D269} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 	EndGlobalSection
 EndGlobal

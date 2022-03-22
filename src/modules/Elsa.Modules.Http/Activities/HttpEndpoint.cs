@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Net.Http;
 using Elsa.Attributes;
-using Elsa.Extensions;
 using Elsa.Management.Models;
 using Elsa.Models;
 using Elsa.Modules.Http.Models;

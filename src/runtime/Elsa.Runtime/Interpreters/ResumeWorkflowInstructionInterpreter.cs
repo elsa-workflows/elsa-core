@@ -1,14 +1,16 @@
 using Elsa.Contracts;
 using Elsa.Mediator.Contracts;
 using Elsa.Models;
+using Elsa.Persistence.Entities;
 using Elsa.Persistence.Models;
 using Elsa.Persistence.Requests;
 using Elsa.Runtime.Abstractions;
 using Elsa.Runtime.Contracts;
-using Elsa.Runtime.Instructions;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Runtime.Interpreters;
+
+public record ResumeWorkflowInstruction(WorkflowBookmark WorkflowBookmark, IReadOnlyDictionary<string, object>? Input) : IWorkflowInstruction;
 
 public class ResumeWorkflowInstructionInterpreter : WorkflowInstructionInterpreter<ResumeWorkflowInstruction>
 {

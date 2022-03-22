@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Contracts;
 using Elsa.Models;

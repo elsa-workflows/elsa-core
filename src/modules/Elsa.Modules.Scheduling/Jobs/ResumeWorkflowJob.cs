@@ -4,7 +4,6 @@ using Elsa.Jobs.Abstractions;
 using Elsa.Models;
 using Elsa.Runtime.Contracts;
 using Elsa.Runtime.Models;
-using Elsa.Jobs.Contracts;
 using Elsa.Jobs.Models;
 
 namespace Elsa.Modules.Scheduling.Jobs;

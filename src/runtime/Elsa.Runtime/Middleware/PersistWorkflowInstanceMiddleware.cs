@@ -17,6 +17,9 @@ namespace Elsa.Runtime.Middleware;
 /// </summary>
 public class PersistWorkflowInstanceMiddleware : WorkflowExecutionMiddleware
 {
+    public static readonly object WorkflowInstanceKey = new();
+    public static readonly object WorkflowInstanceNameKey = new();
+
     private readonly IRequestSender _requestSender;
     private readonly ICommandSender _commandSender;
     private readonly IEventPublisher _eventPublisher;
@@ -50,6 +53,11 @@ public class PersistWorkflowInstanceMiddleware : WorkflowExecutionMiddleware
         var workflow = context.Workflow;
         var (definitionId, version, definitionVersionId) = workflow.Identity;
         var existingWorkflowInstance = await _requestSender.RequestAsync(new FindWorkflowInstance(context.Id), cancellationToken);
+        var workflowInstanceName = default(string?);
+
+        // Get the workflow instance name, if any (could be provided by previously executed middleware). 
+        if (context.TransientProperties.TryGetValue(WorkflowInstanceNameKey, out var name))
+            workflowInstanceName = (string?)name;
 
         // Setup a new workflow instance if no existing instance was found.
         var workflowInstance = existingWorkflowInstance ?? new WorkflowInstance
@@ -61,8 +69,12 @@ public class PersistWorkflowInstanceMiddleware : WorkflowExecutionMiddleware
             CreatedAt = _clock.UtcNow,
             WorkflowStatus = WorkflowStatus.Running,
             CorrelationId = _identityGenerator.GenerateId(),
-            WorkflowState = _workflowStateSerializer.ReadState(context)
+            WorkflowState = _workflowStateSerializer.ReadState(context),
+            Name = workflowInstanceName
         };
+
+        // Store the workflow instance in the workflow execution context for other (middleware) components to use.
+        context.TransientProperties[WorkflowInstanceKey] = workflowInstance;
 
         // Get a copy of current bookmarks.
         var existingBookmarks = await _requestSender.RequestAsync(new FindWorkflowBookmarks(workflowInstance.Id), cancellationToken);
@@ -86,6 +98,10 @@ public class PersistWorkflowInstanceMiddleware : WorkflowExecutionMiddleware
         var workflowState = _workflowStateSerializer.ReadState(context);
         workflowInstance.WorkflowState = workflowState;
 
+        // Get the workflow instance name, if any (could be provided by previously executed middleware). 
+        if (context.TransientProperties.TryGetValue(WorkflowInstanceNameKey, out name))
+            workflowInstance.Name = (string?)name;
+
         // Persist updated workflow instance.
         await _commandSender.ExecuteAsync(new SaveWorkflowInstance(workflowInstance), cancellationToken);
 
@@ -99,7 +115,7 @@ public class PersistWorkflowInstanceMiddleware : WorkflowExecutionMiddleware
         // Persist created bookmarks.
         var createdBookmarks = diff.Added.Select(x => WorkflowBookmark.FromBookmark(x, workflowInstance)).ToList();
         await _bookmarkManager.SaveBookmarksAsync(createdBookmarks, cancellationToken);
-        
+
         // Publish an event so that observers can update their workers.
         await _eventPublisher.PublishAsync(new WorkflowBookmarksIndexed(new IndexedWorkflowBookmarks(workflowState, createdBookmarks, removedBookmarks)), cancellationToken);
     }

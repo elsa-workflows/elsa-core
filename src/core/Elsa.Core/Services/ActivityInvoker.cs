@@ -29,7 +29,8 @@ public class ActivityInvoker : IActivityInvoker
         var register = workflowExecutionContext.Register;
         var workflow = workflowExecutionContext.Workflow;
         var transientProperties = workflowExecutionContext.TransientProperties;
-        var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, register, workflow, transientProperties, parentActivityExecutionContext?.ExpressionExecutionContext, cancellationToken);
+        var input = workflowExecutionContext.Input;
+        var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, register, workflow, input, transientProperties, parentActivityExecutionContext?.ExpressionExecutionContext, cancellationToken);
         var activityExecutionContext = new ActivityExecutionContext(workflowExecutionContext, parentActivityExecutionContext, expressionExecutionContext, activity, cancellationToken);
 
         // Declare locations.

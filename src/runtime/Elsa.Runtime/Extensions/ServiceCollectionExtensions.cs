@@ -1,5 +1,4 @@
 using Elsa.Expressions;
-using Elsa.Extensions;
 using Elsa.Mediator.Extensions;
 using Elsa.Runtime.Contracts;
 using Elsa.Runtime.HostedServices;
@@ -39,7 +38,7 @@ public static class ServiceCollectionExtensions
                 .AddWorkflowProvider<DatabaseWorkflowProvider>()
 
                 // Workflow engine.
-                .AddSingleton<IWorkflowServer, WorkflowServer>()
+                .AddSingleton<IWorkflowService, WorkflowService>()
 
                 // Domain event handlers.
                 .AddNotificationHandlersFrom(typeof(ServiceCollectionExtensions))

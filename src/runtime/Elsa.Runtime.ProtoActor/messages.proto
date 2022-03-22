@@ -8,13 +8,13 @@ message Unit {}
 
 message ExecuteWorkflowDefinition {
   string id = 1;
-  int32 version = 2;
+  string versionOptions = 2;
   optional Input input = 3;
 }
 
 message DispatchWorkflowDefinition {
   string id = 1;
-  int32 version = 2;
+  string versionOptions = 2;
   optional Input input = 3;
 }
 

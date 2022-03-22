@@ -10,7 +10,6 @@ using Elsa.Persistence.InMemory.Extensions;
 using Elsa.Pipelines.ActivityExecution.Components;
 using Elsa.Pipelines.WorkflowExecution.Components;
 using Elsa.Runtime.Extensions;
-using Elsa.Runtime.Middleware;
 using Elsa.Samples.Console1.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

@@ -14,6 +14,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\modules\Elsa.Modules.Activities\Elsa.Modules.Activities.csproj" />
         <ProjectReference Include="..\..\persistence\Elsa.Persistence.InMemory\Elsa.Persistence.InMemory.csproj" />
         <ProjectReference Include="..\..\runtime\Elsa.Runtime\Elsa.Runtime.csproj" />
         <ProjectReference Include="..\Elsa.Core\Elsa.Core.csproj" />

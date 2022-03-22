@@ -6,17 +6,18 @@ public class ExpressionExecutionContext
 {
     private readonly IServiceProvider _serviceProvider;
 
-    public ExpressionExecutionContext(
-        IServiceProvider serviceProvider,
+    public ExpressionExecutionContext(IServiceProvider serviceProvider,
         Register register,
         Workflow workflow,
-        IDictionary<string, object?> transientProperties,
+        IReadOnlyDictionary<string, object> input,
+        IDictionary<object, object?> transientProperties,
         ExpressionExecutionContext? parentContext,
         CancellationToken cancellationToken)
     {
         _serviceProvider = serviceProvider;
         Register = register;
         Workflow = workflow;
+        Input = input;
         TransientProperties = transientProperties;
         ParentContext = parentContext;
         CancellationToken = cancellationToken;
@@ -24,7 +25,8 @@ public class ExpressionExecutionContext
 
     public Register Register { get; }
     public Workflow Workflow { get; }
-    public IDictionary<string, object?> TransientProperties { get; }
+    public IReadOnlyDictionary<string, object> Input { get; }
+    public IDictionary<object, object?> TransientProperties { get; }
     public ExpressionExecutionContext? ParentContext { get; set; }
     public CancellationToken CancellationToken { get; }
 

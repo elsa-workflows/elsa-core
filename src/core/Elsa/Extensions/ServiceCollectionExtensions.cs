@@ -1,3 +1,4 @@
+using Elsa.Activities.Extensions;
 using Elsa.ActivityNodeResolvers;
 using Elsa.Contracts;
 using Elsa.Expressions;
@@ -33,7 +34,6 @@ public static class ServiceCollectionExtensions
             .AddSingleton<IWorkflowStateSerializer, WorkflowStateSerializer>()
             .AddSingleton<IActivitySchedulerFactory, ActivitySchedulerFactory>()
             .AddSingleton<IActivityNodeResolver, OutboundActivityNodeResolver>()
-            .AddSingleton<IActivityNodeResolver, SwitchActivityNodeResolver>()
             .AddSingleton<IHasher, Hasher>()
             .AddSingleton<IIdentityGenerator, IdentityGenerator>()
             .AddSingleton<ISystemClock, SystemClock>()
@@ -46,6 +46,9 @@ public static class ServiceCollectionExtensions
             // Pipelines.
             .AddSingleton<IActivityExecutionPipeline, ActivityExecutionPipeline>()
             .AddSingleton<IWorkflowExecutionPipeline, WorkflowExecutionPipeline>()
+            
+            // Additional activity services.
+            .AddActivityServices()
 
             // Persistence services.
             .AddPersistenceServices()

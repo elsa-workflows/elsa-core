@@ -1,5 +1,4 @@
 using Elsa.Contracts;
-using Elsa.Extensions;
 using Elsa.Modules.WorkflowContexts.Contracts;
 using Elsa.Modules.WorkflowContexts.Models;
 

@@ -18,6 +18,22 @@ public class DelegateExpression<T> : DelegateExpression
     public DelegateExpression(DelegateReference<T> delegateReference) : base(delegateReference)
     {
     }
+
+    public DelegateExpression(Func<T?> @delegate) : this(new DelegateReference<T>(@delegate))
+    {
+    }
+        
+    public DelegateExpression(Func<ExpressionExecutionContext, T?> @delegate) : this(new DelegateReference<T>(@delegate))
+    {
+    }
+    
+    public DelegateExpression(Func<ValueTask<T?>> @delegate) : this(new DelegateReference<T>(_ => @delegate()))
+    {
+    }
+        
+    public DelegateExpression(Func<ExpressionExecutionContext, ValueTask<T?>> @delegate) : this(new DelegateReference<T>(@delegate))
+    {
+    }
 }
 
 public class DelegateExpressionHandler : IExpressionHandler

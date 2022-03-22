@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Elsa.Management.Contracts;
 using Elsa.Management.Serialization.Converters;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -7,8 +8,14 @@ namespace Elsa.Management.Serialization;
 
 public class WorkflowSerializerOptionsProvider
 {
+    private readonly IEnumerable<ISerializationOptionsConfigurator> _configurators;
     private readonly IServiceProvider _serviceProvider;
-    public WorkflowSerializerOptionsProvider(IServiceProvider serviceProvider) => _serviceProvider = serviceProvider;
+    
+    public WorkflowSerializerOptionsProvider(IEnumerable<ISerializationOptionsConfigurator> configurators, IServiceProvider serviceProvider)
+    {
+        _configurators = configurators;
+        _serviceProvider = serviceProvider;
+    }
 
     public JsonSerializerOptions CreateApiOptions() => CreateDefaultOptions();
     public JsonSerializerOptions CreatePersistenceOptions() => CreateDefaultOptions(ReferenceHandler.Preserve);
@@ -24,10 +31,12 @@ public class WorkflowSerializerOptionsProvider
                 Create<JsonStringEnumConverter>(),
                 Create<TypeJsonConverter>(),
                 Create<ActivityJsonConverterFactory>(),
-                Create<ExpressionJsonConverterFactory>(),
-                Create<FlowchartJsonConverter>()
+                Create<ExpressionJsonConverterFactory>()
             }
         };
+
+        // Give external packages a chance to further configure the serializer options. E.g. to add additional converters.
+        foreach (var configurator in _configurators) configurator.Configure(options);
 
         return options;
     }

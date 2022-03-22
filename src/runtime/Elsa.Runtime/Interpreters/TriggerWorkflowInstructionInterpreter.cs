@@ -1,12 +1,14 @@
 using Elsa.Models;
+using Elsa.Persistence.Entities;
 using Elsa.Persistence.Models;
 using Elsa.Runtime.Abstractions;
 using Elsa.Runtime.Contracts;
-using Elsa.Runtime.Instructions;
 using Elsa.Runtime.Models;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Runtime.Interpreters;
+
+public record TriggerWorkflowInstruction(WorkflowTrigger WorkflowTrigger, IReadOnlyDictionary<string, object>? Input) : IWorkflowInstruction;
 
 public class TriggerWorkflowInstructionInterpreter : WorkflowInstructionInterpreter<TriggerWorkflowInstruction>
 {
@@ -33,7 +35,7 @@ public class TriggerWorkflowInstructionInterpreter : WorkflowInstructionInterpre
             return null;
 
         // Execute workflow.
-        var executeRequest = new ExecuteWorkflowDefinitionRequest(workflowId, workflow.Identity.Version, instruction.Input);
+        var executeRequest = new ExecuteWorkflowDefinitionRequest(workflowId, VersionOptions.Published, instruction.Input);
         var workflowExecutionResult = await _workflowInvoker.ExecuteAsync(executeRequest, cancellationToken);
 
         return new ExecuteWorkflowInstructionResult(workflow, workflowExecutionResult);
@@ -51,7 +53,7 @@ public class TriggerWorkflowInstructionInterpreter : WorkflowInstructionInterpre
             return null;
 
         // Execute workflow.
-        var dispatchRequest = new DispatchWorkflowDefinitionRequest(definitionId, workflow.Identity.Version, instruction.Input);
+        var dispatchRequest = new DispatchWorkflowDefinitionRequest(definitionId, VersionOptions.Published, instruction.Input);
         await _workflowInvoker.DispatchAsync(dispatchRequest, cancellationToken);
 
         return new DispatchWorkflowInstructionResult();

@@ -3,13 +3,12 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
+using Elsa.Persistence.Models;
 using Elsa.Runtime.Contracts;
 using Elsa.Runtime.Models;
 using Elsa.Runtime.ProtoActor.Extensions;
 using Elsa.Runtime.ProtoActor.Messages;
 using Elsa.State;
-using Google.Protobuf.Collections;
-using Proto;
 using Proto.Cluster;
 
 namespace Elsa.Runtime.ProtoActor.Services;
@@ -28,14 +27,14 @@ public class ProtoActorWorkflowInvoker : IWorkflowInvoker
 
     public async Task<ExecuteWorkflowResult> ExecuteAsync(ExecuteWorkflowDefinitionRequest request, CancellationToken cancellationToken = default)
     {
-        var (definitionId, version, input) = request;
-        var name = GetActorName(definitionId, version);
+        var (definitionId, versionOptions, input) = request;
+        var name = GetActorName(definitionId, versionOptions);
 
         var message = new ExecuteWorkflowDefinition
         {
             Id = definitionId,
-            Version = version,
-            Input = input?.Serialize()
+            VersionOptions = versionOptions.ToString(),
+            Input = input!?.Serialize()
         };
 
         var response = await _cluster.RequestAsync<ExecuteWorkflowResponse>(name, GrainKinds.WorkflowDefinition, message, cancellationToken);
@@ -67,14 +66,14 @@ public class ProtoActorWorkflowInvoker : IWorkflowInvoker
 
     public async Task<DispatchWorkflowResult> DispatchAsync(DispatchWorkflowDefinitionRequest request, CancellationToken cancellationToken = default)
     {
-        var (definitionId, version, input) = request;
-        var name = GetActorName(definitionId, version);
+        var (definitionId, versionOptions, input) = request;
+        var name = GetActorName(definitionId, versionOptions);
 
         var message = new DispatchWorkflowDefinition
         {
             Id = definitionId,
-            Version = version,
-            Input = input?.Serialize()
+            VersionOptions = versionOptions.ToString(),
+            Input = input!?.Serialize()
         };
 
         await _cluster.RequestAsync<Unit>(name, GrainKinds.WorkflowDefinition, message, cancellationToken);
@@ -92,7 +91,7 @@ public class ProtoActorWorkflowInvoker : IWorkflowInvoker
         {
             Id = instanceId,
             Bookmark = bookmarkMessage,
-            Input = input?.Serialize()
+            Input = input!?.Serialize()
         };
 
         await _cluster.RequestAsync<Unit>(name, GrainKinds.WorkflowInstance, message, cancellationToken);
@@ -130,6 +129,6 @@ public class ProtoActorWorkflowInvoker : IWorkflowInvoker
         );
     }
 
-    private static string GetActorName(string definitionId, int version) => $"workflow-definition:{definitionId}:{version}";
+    private static string GetActorName(string definitionId, VersionOptions versionOptions) => $"workflow-definition:{definitionId}:{versionOptions.ToString()}";
     private static string GetActorName(string instanceId) => $"workflow-instance:{instanceId}";
 }

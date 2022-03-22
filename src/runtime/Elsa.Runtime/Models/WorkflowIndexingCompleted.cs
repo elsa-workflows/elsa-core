@@ -1,5 +1,4 @@
 using Elsa.Mediator.Contracts;
-using Elsa.Runtime.Notifications;
 
 namespace Elsa.Runtime.Models;
 

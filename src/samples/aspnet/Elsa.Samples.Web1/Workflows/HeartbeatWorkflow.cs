@@ -1,6 +1,6 @@
 using System;
+using Elsa.Activities;
 using Elsa.Activities.Console;
-using Elsa.Activities.Workflows;
 using Elsa.Contracts;
 using Elsa.Modules.Scheduling.Triggers;
 using Elsa.Runtime.Contracts;

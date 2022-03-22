@@ -2,7 +2,7 @@ using Elsa.Contracts;
 using Elsa.Helpers;
 using Elsa.Models;
 
-namespace Elsa.Extensions;
+namespace Elsa;
 
 public static class BookmarkExtensions
 {

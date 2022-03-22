@@ -1,6 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.Workflows;
+using Elsa.Activities;
 using Elsa.Contracts;
 using Elsa.Management.Contracts;
 using Elsa.Management.Serialization;

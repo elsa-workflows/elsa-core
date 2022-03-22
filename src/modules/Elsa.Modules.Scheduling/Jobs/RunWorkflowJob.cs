@@ -3,8 +3,8 @@ using System.Threading.Tasks;
 using Elsa.Jobs.Abstractions;
 using Elsa.Runtime.Contracts;
 using Elsa.Runtime.Models;
-using Elsa.Jobs.Contracts;
 using Elsa.Jobs.Models;
+using Elsa.Persistence.Models;
 
 namespace Elsa.Modules.Scheduling.Jobs;
 
@@ -24,7 +24,7 @@ public class RunWorkflowJob : Job
 
     protected override async ValueTask ExecuteAsync(JobExecutionContext context)
     {
-        var request = new DispatchWorkflowDefinitionRequest(WorkflowId, 1);
+        var request = new DispatchWorkflowDefinitionRequest(WorkflowId, VersionOptions.Published);
         var workflowInvoker = context.GetRequiredService<IWorkflowInvoker>();
         await workflowInvoker.DispatchAsync(request, context.CancellationToken);
     }

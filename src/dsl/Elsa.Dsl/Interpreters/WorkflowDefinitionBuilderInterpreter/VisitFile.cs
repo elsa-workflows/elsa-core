@@ -1,5 +1,5 @@
 ﻿using System.Linq;
-using Elsa.Activities.Workflows;
+using Elsa.Activities;
 using Elsa.Contracts;
 
 namespace Elsa.Dsl.Interpreters;

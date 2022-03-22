@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
+using Elsa.Activities;
 using Elsa.Activities.Console;
-using Elsa.Activities.Workflows;
 using Elsa.Attributes;
 using Elsa.Models;
 

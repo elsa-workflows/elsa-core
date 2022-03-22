@@ -18,16 +18,16 @@ public class Worker : IAsyncDisposable
     private static readonly string BookmarkName = TypeNameHelper.GenerateTypeName<MessageReceived>();
     private readonly ServiceBusProcessor _processor;
     private readonly IHasher _hasher;
-    private readonly IWorkflowServer _workflowServer;
+    private readonly IWorkflowService _workflowService;
     private readonly ILogger _logger;
     private int _refCount = 1;
 
-    public Worker(string queueOrTopic, string? subscription, ServiceBusClient client, IHasher hasher, IWorkflowServer workflowServer, ILogger<Worker> logger)
+    public Worker(string queueOrTopic, string? subscription, ServiceBusClient client, IHasher hasher, IWorkflowService workflowService, ILogger<Worker> logger)
     {
         QueueOrTopic = queueOrTopic;
         Subscription = subscription == "" ? default : subscription;
         _hasher = hasher;
-        _workflowServer = workflowServer;
+        _workflowService = workflowService;
         _logger = logger;
 
         var options = new ServiceBusProcessorOptions();
@@ -74,7 +74,7 @@ public class Worker : IAsyncDisposable
         var hash = _hasher.Hash(payload);
         var messageModel = CreateMessageModel(message);
         var stimulus = Stimulus.Standard(BookmarkName, hash, new { ReceivedMessage = messageModel });
-        var executionResults = (await _workflowServer.ExecuteStimulusAsync(stimulus, cancellationToken)).ToList();
+        var executionResults = (await _workflowService.ExecuteStimulusAsync(stimulus, cancellationToken)).ToList();
 
         _logger.LogInformation("Triggered {WorkflowCount} workflows", executionResults.Count);
     }

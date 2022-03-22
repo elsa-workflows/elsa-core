@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Elsa.Contracts;
-using Elsa.Extensions;
 using Elsa.Helpers;
 using Elsa.Mediator.Contracts;
 using Elsa.Models;
@@ -183,7 +182,9 @@ public class TriggerIndexer : ITriggerIndexer
         var assignedInputs = inputs.Where(x => x.LocationReference != null!).ToList();
         var register = context.GetOrCreateRegister(trigger);
         var cancellationToken = context.CancellationToken;
-        var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, register, context.Workflow, new Dictionary<string, object?>(), default, cancellationToken);
+        var expressionInput = new Dictionary<string, object>();
+        var transientProperties = new Dictionary<object, object?>();
+        var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, register, context.Workflow, expressionInput, transientProperties, default, cancellationToken);
 
         // Evaluate activity inputs before requesting trigger data.
         foreach (var input in assignedInputs)

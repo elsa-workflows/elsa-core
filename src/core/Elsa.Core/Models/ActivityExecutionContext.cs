@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using Elsa.Contracts;
-using Elsa.Extensions;
 
 namespace Elsa.Models;
 
@@ -41,7 +40,7 @@ public class ActivityExecutionContext
     /// <summary>
     /// A dictionary of values that can be associated with the activity. 
     /// </summary>
-    public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
+    public IDictionary<string, object> ApplicationProperties { get; set; } = new Dictionary<string, object>();
 
     /// <summary>
     /// Returns the <see cref="ActivityNode"/> metadata about the current activity.
@@ -124,14 +123,14 @@ public class ActivityExecutionContext
         return bookmark;
     }
 
-    public T? GetProperty<T>(string key) => Properties!.TryGetValue<T?>(key, out var value) ? value : default;
-    public void SetProperty<T>(string key, T value) where T : notnull => Properties[key] = value;
+    public T? GetProperty<T>(string key) => ApplicationProperties!.TryGetValue<T?>(key, out var value) ? value : default;
+    public void SetProperty<T>(string key, T value) where T : notnull => ApplicationProperties[key] = value;
 
     public T UpdateProperty<T>(string key, Func<T?, T> updater) where T : notnull
     {
         var value = GetProperty<T?>(key);
         value = updater(value);
-        Properties[key] = value;
+        ApplicationProperties[key] = value;
         return value;
     }
 

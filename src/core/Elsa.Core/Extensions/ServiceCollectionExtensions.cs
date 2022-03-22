@@ -2,7 +2,7 @@ using Elsa.Contracts;
 using Elsa.Options;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Extensions;
+namespace Elsa;
 
 public static class ServiceCollectionExtensions
 {

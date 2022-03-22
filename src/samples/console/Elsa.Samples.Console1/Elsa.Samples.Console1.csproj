@@ -16,6 +16,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\..\core\Elsa\Elsa.csproj" />
+      <ProjectReference Include="..\..\..\modules\Elsa.Modules.Activities\Elsa.Modules.Activities.csproj" />
     </ItemGroup>
 
 </Project>

@@ -1,4 +1,3 @@
-using Elsa.Extensions;
 using Elsa.Management.Contracts;
 using Elsa.Mediator.Extensions;
 using Elsa.Scripting.Liquid.Contracts;

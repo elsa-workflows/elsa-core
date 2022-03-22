@@ -1,5 +1,4 @@
-﻿using System.Threading.Tasks.Sources;
-using Elsa.Models;
+﻿using Elsa.Models;
 
 namespace Elsa.Modules.WorkflowContexts.Contracts;
 

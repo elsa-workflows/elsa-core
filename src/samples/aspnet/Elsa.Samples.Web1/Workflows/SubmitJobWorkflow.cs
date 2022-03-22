@@ -1,7 +1,7 @@
 using System;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Elsa.Activities.Primitives;
+using Elsa.Activities;
 using Elsa.Contracts;
 using Elsa.Jobs.Abstractions;
 using Elsa.Jobs.Contracts;

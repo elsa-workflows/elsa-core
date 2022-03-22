@@ -1,5 +1,4 @@
 using Elsa.Contracts;
-using Elsa.Extensions;
 using Elsa.Models;
 
 namespace Elsa.Services;

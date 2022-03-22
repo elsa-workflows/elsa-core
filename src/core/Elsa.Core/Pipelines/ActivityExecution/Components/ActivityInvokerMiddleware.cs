@@ -1,5 +1,4 @@
 using Elsa.Contracts;
-using Elsa.Extensions;
 using Elsa.Models;
 using Microsoft.Extensions.Logging;
 using Delegate = System.Delegate;

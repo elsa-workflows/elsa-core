@@ -1,4 +1,3 @@
-using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Modules.WorkflowContexts.Models;
 
@@ -13,15 +12,15 @@ public static class WorkflowExecutionContextExtensions
     public static object? GetWorkflowContext(this WorkflowExecutionContext workflowExecutionContext, WorkflowContext workflowContext) => workflowExecutionContext.TransientProperties.GetWorkflowContext(workflowContext);
     public static object? GetWorkflowContext(this ExpressionExecutionContext expressionExecutionContext, WorkflowContext workflowContext) => expressionExecutionContext.TransientProperties.GetWorkflowContext(workflowContext);
 
-    private static void SetWorkflowContext(this IDictionary<string, object?> transientProperties, WorkflowContext workflowContext, object? value)
+    private static void SetWorkflowContext(this IDictionary<object, object?> transientProperties, WorkflowContext workflowContext, object? value)
     {
-        var contextDictionary = transientProperties.GetOrAdd("WorkflowContexts", () => new Dictionary<Type, object?>());
+        var contextDictionary = transientProperties.GetOrAdd("WorkflowContexts", () => new Dictionary<Type, object?>())!;
         contextDictionary[workflowContext.ProviderType] = value;
     }
 
-    private static object? GetWorkflowContext(this IDictionary<string, object?> transientProperties, WorkflowContext workflowContext)
+    private static object? GetWorkflowContext(this IDictionary<object, object?> transientProperties, WorkflowContext workflowContext)
     {
-        var contextDictionary = transientProperties.GetOrAdd("WorkflowContexts", () => new Dictionary<Type, object?>());
+        var contextDictionary = transientProperties.GetOrAdd("WorkflowContexts", () => new Dictionary<Type, object?>())!;
         return contextDictionary[workflowContext.ProviderType];
     }
 }

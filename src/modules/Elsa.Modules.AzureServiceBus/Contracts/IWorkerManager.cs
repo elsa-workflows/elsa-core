@@ -1,4 +1,3 @@
-using Elsa.Modules.AzureServiceBus.Models;
 using Elsa.Modules.AzureServiceBus.Services;
 
 namespace Elsa.Modules.AzureServiceBus.Contracts;

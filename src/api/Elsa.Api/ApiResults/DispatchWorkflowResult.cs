@@ -1,6 +1,7 @@
 using System.Net;
 using System.Threading.Tasks;
 using Elsa.Models;
+using Elsa.Persistence.Models;
 using Elsa.Runtime.Contracts;
 using Elsa.Runtime.Models;
 using Microsoft.AspNetCore.Http;
@@ -17,8 +18,8 @@ public class DispatchWorkflowResult : IResult
     {
         var response = httpContext.Response;
         var workflowInvoker = httpContext.RequestServices.GetRequiredService<IWorkflowInvoker>();
-        var (definitionId, version, _) = Workflow.Identity;
-        var result = await workflowInvoker.DispatchAsync(new DispatchWorkflowDefinitionRequest(definitionId, version));
+        var definitionId = Workflow.Identity.DefinitionId;
+        var result = await workflowInvoker.DispatchAsync(new DispatchWorkflowDefinitionRequest(definitionId, VersionOptions.Published));
 
         response.StatusCode = (int)HttpStatusCode.OK;
         await response.WriteAsJsonAsync(result, httpContext.RequestAborted);

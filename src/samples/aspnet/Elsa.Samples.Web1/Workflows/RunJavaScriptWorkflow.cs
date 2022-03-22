@@ -1,5 +1,5 @@
+using Elsa.Activities;
 using Elsa.Activities.Console;
-using Elsa.Activities.Workflows;
 using Elsa.Contracts;
 using Elsa.Models;
 using Elsa.Modules.JavaScript.Activities;

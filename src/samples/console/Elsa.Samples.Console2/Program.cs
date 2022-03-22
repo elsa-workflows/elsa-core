@@ -1,8 +1,8 @@
 ﻿using System;
 using System.IO;
 using System.Reflection;
+using Elsa.Activities;
 using Elsa.Activities.Console;
-using Elsa.Activities.Workflows;
 using Elsa.Contracts;
 using Elsa.Dsl.Abstractions;
 using Elsa.Dsl.Contracts;
