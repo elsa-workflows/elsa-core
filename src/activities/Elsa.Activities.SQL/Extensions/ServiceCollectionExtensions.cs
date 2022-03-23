@@ -10,8 +10,8 @@ namespace Elsa.Activities.Sql.Extensions
         {
             elsa.Services
                 .AddSingleton<ISqlClientFactory, SqlClientFactory>();
-            elsa.AddActivity<Activities.ExecuteSqlServerQuery>();
-            elsa.AddActivity<Activities.ExecuteSqlServerCommand>();
+            elsa.AddActivity<Activities.ExecuteSqlQuery>();
+            elsa.AddActivity<Activities.ExecuteSqlCommand>();
 
             return elsa;
         }

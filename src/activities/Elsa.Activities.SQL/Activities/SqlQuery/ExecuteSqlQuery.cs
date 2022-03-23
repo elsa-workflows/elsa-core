@@ -6,6 +6,7 @@ using Elsa.Design;
 using Elsa.Expressions;
 using Elsa.Activities.Sql.Factory;
 using System.Data;
+using Elsa.Activities.Sql.Models;
 
 namespace Elsa.Activities.Sql.Activities
 {
@@ -13,13 +14,24 @@ namespace Elsa.Activities.Sql.Activities
     /// Execute an SQL query on given database using connection string
     /// </summary>
     [Trigger(
-        Category = "SQL Server",
+        Category = "SQL",
         DisplayName = "Execute SQL Query",
         Description = "Execute given SQL query and returned execution result",
-        Outcomes = new string[0]
+        Outcomes = new[] { OutcomeNames.Done }
     )]
-    public class ExecuteSqlServerQuery : Activity
+    public class ExecuteSqlQuery : Activity
     {
+        /// <summary>
+        /// Allowed databases to run SQL
+        /// </summary>
+        [ActivityInput(
+            UIHint = ActivityInputUIHints.Dropdown,
+            Hint = "Allowed databases to run SQL.",
+            Options = new[] { "MSSQL Server", "PostgreSql" },
+            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
+        )]
+        public string? Database { get; set; }
+
         /// <summary>
         /// SQl script to execute
         /// </summary>
@@ -43,7 +55,7 @@ namespace Elsa.Activities.Sql.Activities
 
         private readonly ISqlClientFactory _sqlClientFactory;
 
-        public ExecuteSqlServerQuery(ISqlClientFactory sqlClientFactory) 
+        public ExecuteSqlQuery(ISqlClientFactory sqlClientFactory) 
         {
             _sqlClientFactory = sqlClientFactory;
         }
@@ -52,7 +64,7 @@ namespace Elsa.Activities.Sql.Activities
 
         private IActivityExecutionResult ExecuteQuery()
         {
-            var sqlServerClient = _sqlClientFactory.CreateClient(ConnectionString);
+            var sqlServerClient = _sqlClientFactory.CreateClient(new CreateSqlClientModel(Database, ConnectionString));
             Output = sqlServerClient.ExecuteQuery(Query);
 
             return Done();
