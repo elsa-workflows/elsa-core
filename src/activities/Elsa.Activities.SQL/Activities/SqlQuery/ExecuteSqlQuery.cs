@@ -17,7 +17,7 @@ namespace Elsa.Activities.Sql.Activities
         Category = "SQL",
         DisplayName = "Execute SQL Query",
         Description = "Execute given SQL query and returned execution result",
-        Outcomes = new string[0]
+        Outcomes = new[] { OutcomeNames.Done }
     )]
     public class ExecuteSqlQuery : Activity
     {

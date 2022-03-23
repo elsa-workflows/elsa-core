@@ -16,7 +16,7 @@ namespace Elsa.Activities.Sql.Activities
         Category = "SQL",
         DisplayName = "Execute SQL Command",
         Description = "Execute given SQL command and returned number of rows affected",
-        Outcomes = new string[0]
+        Outcomes = new[] { OutcomeNames.Done }
     )]
     public class ExecuteSqlCommand : Activity
     {
