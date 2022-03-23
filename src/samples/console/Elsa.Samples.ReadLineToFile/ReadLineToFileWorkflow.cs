@@ -1,7 +1,8 @@
+using System.Text;
 using Elsa.Activities.Console;
 using Elsa.Activities.File;
+using Elsa.Activities.Primitives;
 using Elsa.Builders;
-using System.Text;
 
 namespace Elsa.Samples.ReadLineToFile
 {
@@ -10,21 +11,26 @@ namespace Elsa.Samples.ReadLineToFile
         public void Build(IWorkflowBuilder builder)
         {
             builder
-                .WriteLine("Enter text to write to file")
-                .ReadLine()
-                .WithName("ReadLine")
-                .TempFile()
-                .WithName("TempFile")
+                .WriteLine("Enter text to write to file:")
+                .ReadLine().WithName("ReadLine")
+                .TempFile().WithName("TempFile")
+                .SetVariable("TempFilePath", async context => await context.GetNamedActivityPropertyAsync<TempFile, string>("TempFile", x => x.Path))
                 .OutFile(setup =>
                 {
-                    setup.WithBytes(async context => Encoding.UTF8.GetBytes(await context.GetNamedActivityPropertyAsync<ReadLine, string>("ReadLine", x => x.Output)));
-                    setup.WithPath(async context => await context.GetNamedActivityPropertyAsync<TempFile, string>("TempFile", x => x.Path));
+                    setup.WithBytes(async context => Encoding.UTF8.GetBytes((await context.GetNamedActivityPropertyAsync<ReadLine, string>("ReadLine", x => x.Output))!));
+                    setup.WithPath(context => context.GetVariable<string>("TempFilePath"));
                     setup.WithMode(CopyMode.Overwrite);
                 })
-                .WriteLine(setup => setup.WithText(async context => await context.GetNamedActivityPropertyAsync<TempFile, string>("TempFile", x => x.Path)))
-                .WriteLine("Press any key to continue")
+                
+                .WriteLine(setup => setup.WithText(context => context.GetVariable<string>("TempFilePath")))
+                .WriteLine("Press any key to read back the file")
                 .ReadLine()
-                .DeleteFile(setup => setup.WithPath(async context => await context.GetNamedActivityPropertyAsync<TempFile, string>("TempFile", x => x.Path)));
+                .ReadFile(context => context.GetVariable<string>("TempFilePath")).WithName("ReadTempFile")
+                .WriteLine(async context => Encoding.UTF8.GetString((await context.GetNamedActivityPropertyAsync<ReadFile, byte[]>("ReadTempFile", x => x.Bytes))!))
+                .WriteLine("Press any key to delete the file")
+                .ReadLine()
+                .DeleteFile(setup => setup.WithPath(context => context.GetVariable<string>("TempFilePath")))
+                .WriteLine("File deleted");
         }
     }
 }
