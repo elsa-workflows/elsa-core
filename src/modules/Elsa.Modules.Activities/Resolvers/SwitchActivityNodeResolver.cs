@@ -1,6 +1,7 @@
+using Elsa.Activities;
 using Elsa.Contracts;
 
-namespace Elsa.Activities.Resolvers;
+namespace Elsa.Modules.Activities.Resolvers;
 
 /// <summary>
 /// Returns a list of outbound activities for a given <see cref="Switch"/> activity's branches.

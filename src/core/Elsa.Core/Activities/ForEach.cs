@@ -4,12 +4,25 @@ using Elsa.Models;
 
 namespace Elsa.Activities;
 
+[Activity("Elsa", "Control Flow", "Iterate over a set of values.")]
 public class ForEach : Activity
 {
-    [Input] public Input<ICollection<object>> Items { get; set; } = new(Array.Empty<object>());
-    [Outbound] public IActivity? Body { get; set; }
-    public Variable CurrentValue { get; set; } = new();
     private const string CurrentIndexProperty = "CurrentIndex";
+    
+    /// <summary>
+    /// The set of values to iterate.
+    /// </summary>
+    [Input] public Input<ICollection<object>> Items { get; set; } = new(Array.Empty<object>());
+    
+    /// <summary>
+    /// The activity to execute for each iteration.
+    /// </summary>
+    [Outbound] public IActivity? Body { get; set; }
+    
+    /// <summary>
+    /// The current value being iterated.
+    /// </summary>
+    public Variable CurrentValue { get; set; } = new();
 
     protected override void Execute(ActivityExecutionContext context)
     {

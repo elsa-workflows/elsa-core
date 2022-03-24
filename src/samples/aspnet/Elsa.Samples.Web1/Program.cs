@@ -1,12 +1,12 @@
 using Elsa.Activities;
-using Elsa.Activities.Console;
-using Elsa.Activities.Workflows;
 using Elsa.Api.Extensions;
 using Elsa.Extensions;
 using Elsa.Jobs.Extensions;
 using Elsa.Management.Contracts;
 using Elsa.Management.Extensions;
 using Elsa.Mediator.Extensions;
+using Elsa.Modules.Activities.Activities.Console;
+using Elsa.Modules.Activities.Activities.Workflows;
 using Elsa.Modules.AzureServiceBus.Activities;
 using Elsa.Modules.AzureServiceBus.Extensions;
 using Elsa.Modules.Hangfire.Services;

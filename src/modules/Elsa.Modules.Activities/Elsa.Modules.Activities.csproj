@@ -10,8 +10,4 @@
       <ProjectReference Include="..\..\runtime\Elsa.Runtime\Elsa.Runtime.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Activities\ControlFlow" />
-    </ItemGroup>
-
 </Project>

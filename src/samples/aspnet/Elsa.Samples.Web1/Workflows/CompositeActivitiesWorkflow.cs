@@ -1,7 +1,7 @@
 using Elsa.Activities;
-using Elsa.Activities.Console;
 using Elsa.Contracts;
 using Elsa.Models;
+using Elsa.Modules.Activities.Activities.Console;
 using Elsa.Runtime.Contracts;
 using Elsa.Samples.Web1.Activities;
 

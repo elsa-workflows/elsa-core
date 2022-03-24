@@ -2,8 +2,9 @@ using Elsa.Attributes;
 using Elsa.Contracts;
 using Elsa.Models;
 
-namespace Elsa.Activities.Primitives;
+namespace Elsa.Modules.Activities.Activities.Primitives;
 
+[Activity("Elsa", "Primitives", "Wait for an event to be triggered.")]
 public class Event : Activity
 {
     public Event()

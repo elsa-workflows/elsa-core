@@ -1,8 +1,10 @@
 using System.ComponentModel;
+using Elsa.Attributes;
 using Elsa.Models;
 
-namespace Elsa.Activities.Console;
+namespace Elsa.Modules.Activities.Activities.Console;
 
+[Activity("Elsa", "Console", "Write a line of text to the console.")]
 public class WriteLine : Activity
 {
     public WriteLine()

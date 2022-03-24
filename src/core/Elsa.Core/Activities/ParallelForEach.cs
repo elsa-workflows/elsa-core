@@ -4,6 +4,7 @@ using Elsa.Models;
 
 namespace Elsa.Activities;
 
+[Activity("Elsa", "Control Flow", "Schedule an activity for each item in parallel.")]
 public class ParallelForEach<T> : Activity
 {
     private const string CollectedCountProperty = nameof(CollectedCountProperty);

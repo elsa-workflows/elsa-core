@@ -4,12 +4,12 @@ using Elsa.Persistence.Models;
 using Elsa.Runtime.Contracts;
 using Microsoft.Extensions.Logging;
 
-namespace Elsa.Activities.Workflows;
+namespace Elsa.Modules.Activities.Activities.Workflows;
 
 /// <summary>
 /// Creates a new workflow instance of the specified workflow and dispatches it for execution.
 /// </summary>
-[Activity("Elsa", "Create a new workflow instance of the specified workflow and dispatches it for execution.")]
+[Activity("Elsa", "Workflows","Create a new workflow instance of the specified workflow and dispatches it for execution.")]
 public class DispatchWorkflow : Activity
 {
     public Input<string> WorkflowDefinitionId { get; set; } = new("");

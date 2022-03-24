@@ -6,7 +6,7 @@ using Elsa.Models;
 namespace Elsa.Activities;
 
 [Category("Workflows")]
-[Activity("Elsa", "Workflows", "Execute a set of activities in sequence")]
+[Activity("Elsa", "Workflows", "Execute a set of activities in sequence.")]
 public class Sequence : Container
 {
     private const string CurrentIndexProperty = "CurrentIndex";

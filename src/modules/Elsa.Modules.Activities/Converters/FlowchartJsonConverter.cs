@@ -1,9 +1,9 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Activities.Workflows;
 using Elsa.Contracts;
+using Elsa.Modules.Activities.Activities.Workflows;
 
-namespace Elsa.Activities.Converters;
+namespace Elsa.Modules.Activities.Converters;
 
 public class FlowchartJsonConverter : JsonConverter<Flowchart>
 {

@@ -1,7 +1,7 @@
 using System;
 using Elsa.Activities;
-using Elsa.Activities.Console;
 using Elsa.Contracts;
+using Elsa.Modules.Activities.Activities.Console;
 using Elsa.Modules.Scheduling.Triggers;
 using Elsa.Runtime.Contracts;
 

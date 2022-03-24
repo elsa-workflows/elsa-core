@@ -12,6 +12,7 @@ public enum ForOperator
     GreaterThanOrEqual
 }
 
+[Activity("Elsa", "Control Flow", "Iterate over a sequence of steps between a start and an end number.")]
 public class For : Activity
 {
     public For()

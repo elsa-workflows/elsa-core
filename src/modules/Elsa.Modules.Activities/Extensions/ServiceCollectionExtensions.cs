@@ -1,10 +1,10 @@
-using Elsa.Activities.Configurators;
-using Elsa.Activities.Resolvers;
 using Elsa.Contracts;
 using Elsa.Management.Contracts;
+using Elsa.Modules.Activities.Configurators;
+using Elsa.Modules.Activities.Resolvers;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Activities.Extensions;
+namespace Elsa.Modules.Activities.Extensions;
 
 public static class ServiceCollectionExtensions
 {

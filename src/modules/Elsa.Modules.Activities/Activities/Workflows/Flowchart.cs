@@ -1,13 +1,13 @@
-using System.ComponentModel;
 using Elsa.Attributes;
 using Elsa.Contracts;
 using Elsa.Models;
+using Container = Elsa.Activities.Container;
 
-namespace Elsa.Activities.Workflows;
+namespace Elsa.Modules.Activities.Activities.Workflows;
 
 public record Connection(IActivity Source, IActivity Target, string? SourcePort, string TargetPort);
 
-[Category("Workflows")]
+[Activity("Elsa", "Workflows", "A flowchart is a collection of activities and connections between them.")]
 public class Flowchart : Container
 {
     [Node] public IActivity? Start { get; set; } = default!;

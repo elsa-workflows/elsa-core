@@ -2,9 +2,7 @@ namespace Elsa.Helpers;
 
 public static class TypeNameHelper
 {
-    private static readonly string[] WellknownNamespaces = { "Elsa.Activities", "Elsa.Triggers" };
-
-    public static string? GenerateNamespace(Type activityType) => GenerateTypeNamespace(activityType);
+    public static string? GenerateNamespace(Type activityType) => activityType.Namespace;
 
     public static string GenerateTypeName(Type type, string? ns)
     {
@@ -28,17 +26,5 @@ public static class TypeNameHelper
         var index = ns.LastIndexOf('.');
 
         return index < 0 ? ns : ns[(index + 1)..];
-    }
-
-    private static string? GenerateTypeNamespace(Type type)
-    {
-        if (type.Namespace == null)
-            return null;
-
-        foreach (var wellknownNamespace in WellknownNamespaces)
-            if (type.Namespace.StartsWith(wellknownNamespace))
-                return type.Namespace[(wellknownNamespace.Length + 1)..];
-
-        return type.Namespace;
     }
 }

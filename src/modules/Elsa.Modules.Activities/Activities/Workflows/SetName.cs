@@ -3,13 +3,13 @@ using Elsa.Attributes;
 using Elsa.Models;
 using Elsa.Runtime.Middleware;
 
-namespace Elsa.Activities.Workflows;
+namespace Elsa.Modules.Activities.Activities.Workflows;
 
 /// <summary>
 /// Sets a transient property on the workflow execution context the specified name value.
 /// This value is used by the <see cref="PersistWorkflowInstanceMiddleware"/> component to update the name of the workflow instance. 
 /// </summary>
-[Activity("Elsa", "Set the name of the workflow instance to a specified value.")]
+[Activity("Elsa", "Workflows", "Set the name of the workflow instance to a specified value.")]
 public class SetName : Activity
 {
     internal static readonly object WorkflowInstanceNameKey = new();

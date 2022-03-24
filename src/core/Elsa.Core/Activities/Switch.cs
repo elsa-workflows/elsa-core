@@ -9,6 +9,7 @@ namespace Elsa.Activities;
 /// The Switch activity is an approximation of the `switch` construct in C#.
 /// When a case evaluates to true, the associated activity is then scheduled for execution.
 /// </summary>
+[Activity("Elsa", "Control Flow", "Evaluate a set of case conditions and schedule the activity for a matching case.")]
 public class Switch : Activity
 {
     [Input(UIHint = "switch-editor")] public ICollection<SwitchCase> Cases { get; set; } = new List<SwitchCase>();

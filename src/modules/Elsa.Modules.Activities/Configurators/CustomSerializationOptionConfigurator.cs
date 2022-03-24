@@ -1,10 +1,10 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Activities.Converters;
 using Elsa.Management.Contracts;
+using Elsa.Modules.Activities.Converters;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Activities.Configurators;
+namespace Elsa.Modules.Activities.Configurators;
 
 /// <summary>
 /// Add additional <see cref="JsonConverter"/> objects.

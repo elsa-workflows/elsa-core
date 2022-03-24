@@ -1,11 +1,14 @@
+using System.Text.Json.Serialization;
 using Elsa.Attributes;
 using Elsa.Contracts;
 using Elsa.Models;
 
 namespace Elsa.Activities;
 
+[Activity("Elsa", "Primitives", "Execute an activity while a given condition evaluates to true.")]
 public class While : Activity
 {
+    [JsonConstructor]
     public While(IActivity? body = default)
     {
         Body = body!;

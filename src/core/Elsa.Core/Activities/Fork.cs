@@ -5,9 +5,17 @@ using Elsa.Models;
 
 namespace Elsa.Activities;
 
+[Activity("Elsa", "Control Flow", "Branch execution into multiple branches.")]
 public class Fork : Activity
 {
+    /// <summary>
+    /// Controls when this activity yields control back to its parent activity.
+    /// </summary>
     [Input] public JoinMode JoinMode { get; set; } = JoinMode.WaitAny;
+    
+    /// <summary>
+    /// The branches to schedule.
+    /// </summary>
     [Outbound] public ICollection<IActivity> Branches { get; set; } = new List<IActivity>();
 
     protected override void Execute(ActivityExecutionContext context) => context.PostActivities(Branches.Reverse(), CompleteChildAsync);

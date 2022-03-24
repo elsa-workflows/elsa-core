@@ -1,8 +1,11 @@
+using System.ComponentModel;
 using Elsa.Attributes;
 using Elsa.Models;
 
 namespace Elsa.Activities;
 
+[Browsable(false)]
+[Activity("Elsa", "Primitives", "Set a workflow variable to a given value.")]
 public class SetVariable<T> : Activity
 {
     public SetVariable()
@@ -37,6 +40,7 @@ public class SetVariable<T> : Activity
     }
 }
 
+[Activity("Elsa", "Primitives", "Set a workflow variable to a given value.")]
 public class SetVariable : Activity
 {
     [Input] public Input<object?> Value { get; set; } = new(default(object));

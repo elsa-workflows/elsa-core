@@ -1,7 +1,9 @@
+using Elsa.Attributes;
 using Elsa.Models;
 
-namespace Elsa.Activities.Console;
+namespace Elsa.Modules.Activities.Activities.Console;
 
+[Activity("Elsa", "Console", "Read a line of text from the console.")]
 public class ReadLine : Activity<string>
 {
     public ReadLine()

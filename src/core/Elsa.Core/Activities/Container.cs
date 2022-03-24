@@ -5,6 +5,9 @@ using Elsa.Models;
 
 namespace Elsa.Activities;
 
+/// <summary>
+/// A base class for activities that control a collection of activities.
+/// </summary>
 public abstract class Container : Activity, IContainer
 {
     protected Container()

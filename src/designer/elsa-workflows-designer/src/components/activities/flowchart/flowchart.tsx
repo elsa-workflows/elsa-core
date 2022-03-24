@@ -175,7 +175,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
     }
 
     return {
-      typeName: 'Workflows.Flowchart',
+      typeName: 'Elsa.Flowchart',
       activities: remainingActivities,
       connections: remainingConnections,
       id: this.rootId,

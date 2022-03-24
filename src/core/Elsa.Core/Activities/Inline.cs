@@ -1,3 +1,4 @@
+using Elsa.Attributes;
 using Elsa.Models;
 
 namespace Elsa.Activities;
@@ -5,6 +6,7 @@ namespace Elsa.Activities;
 /// <summary>
 /// Represents an inline code activity that can be used to execute arbitrary .NET code from a workflow.
 /// </summary>
+[Activity("Elsa", "Primitives", "Evaluate a Boolean condition to determine which path to execute next.")]
 public class Inline : Activity
 {
     private readonly Func<ActivityExecutionContext, ValueTask> _activity;
