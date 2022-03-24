@@ -63,7 +63,7 @@ function getPorts(node: ActivityNode, activity: Activity, descriptors: Array<Act
   const portProviderRegistry = Container.get(PortProviderRegistry);
   const transposeHandlerRegistry = Container.get(TransposeHandlerRegistry);
   const transposeHandler = transposeHandlerRegistry.get(activity.typeName);
-  const portProvider = portProviderRegistry.get(activity.nodeType);
+  const portProvider = portProviderRegistry.get(activity.typeName);
   const activityDescriptor = descriptors.find(x => x.activityType == activity.typeName);
   const untransposedConnections = transposeHandler.untranspose({activity, activityDescriptor});
   return untransposedConnections.map(x => ({activity: x.target, port: x.sourcePort}));

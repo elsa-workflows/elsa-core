@@ -20,7 +20,7 @@ export class SwitchPortUpdater {
     const activity = e.activity;
     const propertyName = e.propertyName;
 
-    if (activity.nodeType !== SwitchPlugin.ActivityTypeName || propertyName !== 'cases')
+    if (activity.typeName !== SwitchPlugin.ActivityTypeName || propertyName !== 'cases')
       return;
 
     const switchActivity = activity as SwitchActivity;
