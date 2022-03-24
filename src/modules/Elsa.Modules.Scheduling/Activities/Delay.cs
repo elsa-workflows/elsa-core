@@ -5,7 +5,7 @@ using Elsa.Models;
 
 namespace Elsa.Modules.Scheduling.Activities;
 
-[Activity("Scheduling", "Delays execution for the specified amount of time.")]
+[Activity( "Elsa", "Scheduling", "Delay execution for the specified amount of time.")]
 public class Delay : Activity
 {
     public Delay()

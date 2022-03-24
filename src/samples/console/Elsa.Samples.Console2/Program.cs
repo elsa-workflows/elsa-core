@@ -10,7 +10,7 @@ using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Modules.Activities.Activities.Console;
 using Elsa.Modules.Http;
-using Elsa.Modules.Scheduling.Triggers;
+using Elsa.Modules.Scheduling.Activities;
 using Elsa.Persistence.InMemory.Extensions;
 using Elsa.Scripting.JavaScript.Extensions;
 using Microsoft.Extensions.DependencyInjection;

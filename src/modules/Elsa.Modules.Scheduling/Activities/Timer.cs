@@ -5,11 +5,12 @@ using Elsa.Attributes;
 using Elsa.Contracts;
 using Elsa.Models;
 
-namespace Elsa.Modules.Scheduling.Triggers;
+namespace Elsa.Modules.Scheduling.Activities;
 
 /// <summary>
 /// Represents a timer to periodically trigger the workflow.
 /// </summary>
+[Activity( "Elsa", "Scheduling", "Trigger workflow execution at a specific interval.")] 
 public class Timer : EventGenerator
 {
     [JsonConstructor]

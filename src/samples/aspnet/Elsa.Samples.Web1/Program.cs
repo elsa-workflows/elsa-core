@@ -15,7 +15,6 @@ using Elsa.Modules.Http.Extensions;
 using Elsa.Modules.JavaScript.Activities;
 using Elsa.Modules.Quartz.Services;
 using Elsa.Modules.Scheduling.Activities;
-using Elsa.Modules.Scheduling.Triggers;
 using Elsa.Modules.WorkflowContexts.Extensions;
 using Elsa.Persistence.EntityFrameworkCore.Extensions;
 using Elsa.Persistence.EntityFrameworkCore.Sqlite;
