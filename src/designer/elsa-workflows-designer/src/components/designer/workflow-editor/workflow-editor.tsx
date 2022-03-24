@@ -185,7 +185,6 @@ export class WorkflowEditor {
   private getWorkflowInternal = async (): Promise<Workflow> => {
     const root = await this.canvas.exportGraph();
     const workflow = this.workflow;
-
     workflow.root = root;
     return workflow;
   };

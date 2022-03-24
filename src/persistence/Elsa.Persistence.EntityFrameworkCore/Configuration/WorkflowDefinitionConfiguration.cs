@@ -10,6 +10,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Configuration
         {
             builder.Ignore(x => x.Root);
             builder.Ignore(x => x.Variables);
+            builder.Ignore(x => x.Metadata);
             builder.Ignore(x => x.ApplicationProperties);
             builder.Property<string>("Data");
 

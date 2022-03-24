@@ -16,6 +16,7 @@ public class WorkflowDefinitionMapper
             new WorkflowMetadata(definition.Name, definition.Description, definition.CreatedAt),
             definition.Root,
             definition.Variables,
+            definition.Metadata,
             definition.ApplicationProperties);
     }
 
@@ -25,7 +26,7 @@ public class WorkflowDefinitionMapper
     {
         var identity = workflow.Identity;
         var publication = workflow.Publication;
-        var metadata = workflow.Metadata;
+        var metadata = workflow.WorkflowMetadata;
 
         definition.Id = identity.Id;
         definition.DefinitionId = identity.DefinitionId;
@@ -37,6 +38,7 @@ public class WorkflowDefinitionMapper
         definition.IsLatest = publication.IsLatest;
         definition.IsPublished = publication.IsPublished;
         definition.Variables = workflow.Variables;
+        definition.Metadata = workflow.Metadata;
         definition.ApplicationProperties = workflow.ApplicationProperties;
 
         return definition;

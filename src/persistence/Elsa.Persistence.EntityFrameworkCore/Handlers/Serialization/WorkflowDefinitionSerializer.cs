@@ -22,6 +22,7 @@ public class WorkflowDefinitionSerializer : IEntitySerializer<WorkflowDefinition
         {
             entity.Root,
             entity.Variables,
+            entity.Metadata,
             entity.ApplicationProperties
         };
 
@@ -33,7 +34,7 @@ public class WorkflowDefinitionSerializer : IEntitySerializer<WorkflowDefinition
 
     public void Deserialize(ElsaDbContext dbContext, WorkflowDefinition entity)
     {
-        var data = new WorkflowDefinitionState(entity.Root, entity.Variables, entity.ApplicationProperties);
+        var data = new WorkflowDefinitionState(entity.Root, entity.Variables, entity.Metadata, entity.ApplicationProperties);
         var json = (string?) dbContext.Entry(entity).Property("Data").CurrentValue;
 
         if (!string.IsNullOrWhiteSpace(json))
@@ -44,6 +45,7 @@ public class WorkflowDefinitionSerializer : IEntitySerializer<WorkflowDefinition
 
         entity.Root = data.Root;
         entity.Variables = data.Variables;
+        entity.Metadata = data.Metadata;
         entity.ApplicationProperties = data.ApplicationProperties;
     }
     
@@ -54,15 +56,17 @@ public class WorkflowDefinitionSerializer : IEntitySerializer<WorkflowDefinition
         {
         }
 
-        public WorkflowDefinitionState(IActivity root, ICollection<Variable> variables, IDictionary<string, object> applicationProperties)
+        public WorkflowDefinitionState(IActivity root, ICollection<Variable> variables, IDictionary<string, object> metadata, IDictionary<string, object> applicationProperties)
         {
             Root = root;
             Variables = variables;
+            Metadata = metadata;
             ApplicationProperties = applicationProperties;
         }
         
         public IActivity Root { get; init; } = default!;
         public ICollection<Variable> Variables { get; set; } = new List<Variable>();
+        public IDictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
         public IDictionary<string, object> ApplicationProperties { get; set; } = new Dictionary<string, object>();
     }
 }

@@ -10,7 +10,7 @@ public record Connection(IActivity Source, IActivity Target, string? SourcePort,
 [Activity("Elsa", "Workflows", "A flowchart is a collection of activities and connections between them.")]
 public class Flowchart : Container
 {
-    [Node] public IActivity? Start { get; set; } = default!;
+    [Node] public IActivity? Start { get; set; }
     public ICollection<Connection> Connections { get; set; } = new List<Connection>();
 
     protected override void ScheduleChildren(ActivityExecutionContext context)

@@ -28,5 +28,6 @@ public class ActivityAttribute : Attribute
     public string? Namespace { get; }
     public string? TypeName { get; }
     public string? Description { get; }
+    public string? DisplayName { get; }
     public string? Category { get; }
 }

@@ -51,7 +51,7 @@ public static partial class Workflows
 
         draft.Root = root;
 
-        draft.Metadata = draft.Metadata with
+        draft.WorkflowMetadata = draft.WorkflowMetadata with
         {
             Name = model.Name,
             Description = model.Description

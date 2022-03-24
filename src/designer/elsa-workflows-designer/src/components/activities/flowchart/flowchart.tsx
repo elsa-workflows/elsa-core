@@ -69,6 +69,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
     const activity: Activity = {
       id: uuid(),
       typeName: descriptor.activityType,
+      applicationProperties: {},
       metadata: {
         designer: {
           position: {
@@ -181,6 +182,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
       id: this.rootId,
       start: first(activities)?.id,
       metadata: {},
+      applicationProperties: {},
       variables: []
     } as Flowchart;
   }

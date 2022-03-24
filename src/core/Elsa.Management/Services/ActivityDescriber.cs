@@ -27,15 +27,16 @@ public class ActivityDescriber : IActivityDescriber
 
     public ValueTask<ActivityDescriptor> DescribeActivityAsync(Type activityType, CancellationToken cancellationToken = default)
     {
-        var ns = TypeNameHelper.GenerateNamespace(activityType);
-        var typeName = activityType.Name;
-        var fullTypeName = TypeNameHelper.GenerateTypeName(activityType, ns);
+        var activityAttr = activityType.GetCustomAttribute<ActivityAttribute>();
+        var ns = activityAttr?.Namespace ?? TypeNameHelper.GenerateNamespace(activityType);
+        var typeName = activityAttr?.TypeName ?? activityType.Name;
+        var fullTypeName = $"{ns}.{typeName}";
         var displayNameAttr = activityType.GetCustomAttribute<DisplayNameAttribute>();
-        var displayName = displayNameAttr?.DisplayName ?? typeName.Humanize(LetterCasing.Title);
+        var displayName = displayNameAttr?.DisplayName ?? activityAttr?.DisplayName ?? typeName.Humanize(LetterCasing.Title);
         var categoryAttr = activityType.GetCustomAttribute<CategoryAttribute>();
-        var category = categoryAttr?.Category ?? TypeNameHelper.GetCategoryFromNamespace(ns) ?? "Miscellaneous";
+        var category = categoryAttr?.Category ?? activityAttr?.Category ?? TypeNameHelper.GetCategoryFromNamespace(ns) ?? "Miscellaneous";
         var descriptionAttr = activityType.GetCustomAttribute<DescriptionAttribute>();
-        var description = descriptionAttr?.Description;
+        var description = descriptionAttr?.Description ?? activityAttr?.Description;
 
         var outboundPorts =
             from prop in activityType.GetProperties(BindingFlags.Public | BindingFlags.Instance)

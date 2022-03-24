@@ -35,6 +35,7 @@ namespace Elsa.Management.Services
                 new WorkflowMetadata(CreatedAt: _systemClock.UtcNow),
                 new Sequence(),
                 new List<Variable>(),
+                new Dictionary<string, object>(),
                 new Dictionary<string, object>());
         }
 

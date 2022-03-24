@@ -12,6 +12,7 @@ public abstract class Activity : IActivity
     public string TypeName { get; set; }
     public bool CanStartWorkflow { get; set; }
     public IDictionary<string, object> ApplicationProperties { get; set; } = new Dictionary<string, object>();
+    public IDictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
 
     protected virtual ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
