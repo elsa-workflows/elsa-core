@@ -108,7 +108,7 @@ namespace Elsa.Persistence.EntityFramework.Oracle.Migrations
 
                     b.Property<string>("ModelType")
                         .IsRequired()
-                        .HasColumnType("NCLOB");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("TenantId")
                         .HasColumnType("NVARCHAR2(450)");
