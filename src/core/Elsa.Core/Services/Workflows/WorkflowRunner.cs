@@ -274,7 +274,8 @@ namespace Elsa.Services.Workflows
                 var output = outputReference != null ? await _workflowStorageService.LoadAsync(outputReference.ProviderName, new WorkflowStorageContext(workflowInstance, outputReference.ActivityId), "Output", cancellationToken) : null;
                 var input = !burstStarted ? workflowExecutionContext.Input : scheduledActivity.Input ?? output;
                 var activityExecutionContext = new ActivityExecutionContext(scope, workflowExecutionContext, activityBlueprint, input, resuming, cancellationToken);
-
+                var isComposite = activityBlueprint is CompositeActivityBlueprint; 
+                
                 try
                 {
                     var runtimeActivityInstance = await activityExecutionContext.ActivateActivityAsync(cancellationToken);
@@ -282,6 +283,7 @@ namespace Elsa.Services.Workflows
                     using var executionScope = AmbientActivityExecutionContext.EnterScope(activityExecutionContext);
                     await _mediator.Publish(new ActivityActivating(activityExecutionContext), cancellationToken);
                     var activity = await activityType.ActivateAsync(activityExecutionContext);
+                    var CompositeScheduledValue = isComposite && (activity is CompositeActivity comp) && comp.IsScheduled;
 
                     if (!burstStarted)
                     {
@@ -292,18 +294,35 @@ namespace Elsa.Services.Workflows
                     if (resuming)
                         await _mediator.Publish(new ActivityResuming(activityExecutionContext, activity), cancellationToken);
 
-                    await _mediator.Publish(new ActivityExecuting(activityExecutionContext, activity), cancellationToken);
+
+                    await CheckIfCompositeEventAsync(isComposite
+                        , !CompositeScheduledValue
+                        , new ActivityExecuting(activityExecutionContext, activity)
+                        , _mediator
+                        , cancellationToken);
+                    
                     var result = await TryExecuteActivityAsync(activityOperation, activityExecutionContext, activity, cancellationToken);
 
                     if (result == null)
                         return;
 
-                    await _mediator.Publish(new ActivityExecuted(activityExecutionContext, activity), cancellationToken);
+
+                    await CheckIfCompositeEventAsync(isComposite
+                        , CompositeScheduledValue
+                        , new ActivityExecuted(activityExecutionContext, activity)
+                        , _mediator
+                        , cancellationToken);
+
                     await _mediator.Publish(new ActivityExecutionResultExecuting(result, activityExecutionContext), cancellationToken);
                     await result.ExecuteAsync(activityExecutionContext, cancellationToken);
                     workflowExecutionContext.CompletePass();
                     workflowInstance.LastExecutedActivityId = currentActivityId;
-                    await _mediator.Publish(new ActivityExecutionResultExecuted(result, activityExecutionContext), cancellationToken);
+                    await CheckIfCompositeEventAsync(isComposite
+                        , CompositeScheduledValue
+                        , new ActivityExecutionResultExecuted(result, activityExecutionContext)
+                        , _mediator
+                        , cancellationToken);
+                    
                     await _mediator.Publish(new WorkflowExecutionPassCompleted(workflowExecutionContext, activityExecutionContext), cancellationToken);
 
                     if (!workflowExecutionContext.HasScheduledActivities)
@@ -325,6 +344,21 @@ namespace Elsa.Services.Workflows
 
             if (workflowExecutionContext.Status == WorkflowStatus.Running)
                 await workflowExecutionContext.CompleteAsync();
+        }
+
+        // because Composite Activity doesn't encapsulate child activity
+        // but create an activity before and after
+        // so we have to get only the begin event of first activity
+        // and end event of last activity.
+        private async Task CheckIfCompositeEventAsync(bool isComposite, bool scheduleValue, INotification notification,IMediator mediator,  CancellationToken cancellationToken)
+        {
+            if(isComposite)
+            {
+                if (scheduleValue)
+                    await mediator.Publish(notification, cancellationToken);
+            }
+            else
+                await mediator.Publish(notification, cancellationToken);
         }
 
         private async ValueTask<IActivityExecutionResult?> TryExecuteActivityAsync(
