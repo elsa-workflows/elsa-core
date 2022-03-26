@@ -136,6 +136,7 @@ export class ElsaSecretEditorModel {
     const form: any = e.target;
     const formData = new FormData(form);
     this.updateActivity(formData);
+    console.log('this.activityModel', this.activityModel);
     await eventBus.emit(EventTypes.UpdateActivity, this, this.activityModel);
     await this.hide(true);
   };

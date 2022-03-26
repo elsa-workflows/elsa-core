@@ -9,6 +9,8 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\..\..\Elsa.Secrets.Persistance.EntityFramework.Sqlite\Elsa.Secrets.Persistence.EntityFramework.Sqlite.csproj" />
+        <ProjectReference Include="..\..\..\..\Elsa.Secrets\Elsa.Secrets.csproj" />
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.AzureServiceBus\Elsa.Activities.AzureServiceBus.csproj" />
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.BlobStorage\Elsa.Activities.BlobStorage.csproj" />
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.Conductor\Elsa.Activities.Conductor.csproj" />
