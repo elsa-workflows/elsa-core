@@ -14,4 +14,8 @@
       <ProjectReference Include="..\..\scripting\Elsa.Scripting.JavaScript\Elsa.Scripting.JavaScript.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Abstractions" />
+    </ItemGroup>
+
 </Project>

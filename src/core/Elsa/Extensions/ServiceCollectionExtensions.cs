@@ -1,6 +1,7 @@
 using Elsa.ActivityNodeResolvers;
 using Elsa.Contracts;
 using Elsa.Expressions;
+using Elsa.Mediator.Extensions;
 using Elsa.Modules.Activities.Extensions;
 using Elsa.Options;
 using Elsa.Persistence.Extensions;
@@ -52,6 +53,9 @@ public static class ServiceCollectionExtensions
 
             // Persistence services.
             .AddPersistenceServices()
+            
+            // Mediator.
+            .AddMediator()
 
             // Logging
             .AddLogging();

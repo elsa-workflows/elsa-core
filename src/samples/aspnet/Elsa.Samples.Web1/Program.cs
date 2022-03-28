@@ -41,7 +41,6 @@ var sqlServerConnectionString = configuration.GetConnectionString("SqlServer");
 // Add services.
 services
     .AddElsa()
-    .AddMediator()
     .AddEntityFrameworkCorePersistence((_, ef) => ef.UseSqlite())
     .AddProtoActorWorkflowHost()
     .IndexWorkflowTriggers()

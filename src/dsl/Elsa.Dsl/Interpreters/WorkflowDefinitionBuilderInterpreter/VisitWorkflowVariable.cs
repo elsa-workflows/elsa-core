@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Elsa.Contracts;
 using Elsa.Models;
 
@@ -32,7 +33,7 @@ public partial class WorkflowDefinitionBuilderInterpreter
         {
             // When an activity is assigned to a workflow variable, what we really are doing is setting the variable to the activity's output.
             var activityType = activity.GetType();
-            var outputProperty = activityType.GetProperty("Output");
+            var outputProperty = activityType.GetProperties().FirstOrDefault(x => x.Name == "Result");
 
             if (outputProperty == null)
                 throw new Exception("Cannot assign output of an activity that does not have an Output property.");

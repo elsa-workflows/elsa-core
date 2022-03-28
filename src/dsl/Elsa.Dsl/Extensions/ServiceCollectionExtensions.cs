@@ -11,6 +11,7 @@ public static class ServiceCollectionExtensions
     {
         return services
             .AddSingleton<IDslEngine, DslEngine>()
+            .AddSingleton<ITypeSystem, TypeSystem>()
             .AddSingleton<IFunctionActivityRegistry, FunctionActivityRegistry>();
     }
 }

@@ -40,6 +40,13 @@ namespace Elsa.Scripting.JavaScript.Services
             });
 
             configureEngine?.Invoke(engine);
+            
+            // Add workflow variables.
+            var variables = GetVariables(context);
+            foreach (var variable in variables)
+            {
+                engine.SetValue(variable.Key, variable.Value.Value);
+            }
 
             // Allow listeners invoked by the mediator to configure the engine.
             await _mediator.PublishAsync(new EvaluatingJavaScript(engine, context), cancellationToken);
@@ -51,6 +58,25 @@ namespace Elsa.Scripting.JavaScript.Services
         {
             var result = engine.Execute(expression).GetCompletionValue();
             return result?.ToObject();
+        }
+
+        private IDictionary<string, RegisterLocation> GetVariables(ExpressionExecutionContext context)
+        {
+            var currentContext = context;
+            var dictionary = new Dictionary<string, RegisterLocation>();
+
+            while (currentContext != null)
+            {
+                foreach (var l in currentContext.Register.Locations)
+                {
+                    if(!dictionary.ContainsKey(l.Key))
+                        dictionary.Add(l.Key, l.Value);
+                }
+                
+                currentContext = currentContext.ParentContext;
+            }
+
+            return dictionary;
         }
     }
 }

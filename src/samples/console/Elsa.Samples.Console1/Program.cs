@@ -89,7 +89,6 @@ class Program
 
         services
             .AddElsa()
-            .AddMediator()
             .AddInMemoryPersistence()
             .AddLogging(logging => logging.AddConsole().SetMinimumLevel(LogLevel.Warning));
 

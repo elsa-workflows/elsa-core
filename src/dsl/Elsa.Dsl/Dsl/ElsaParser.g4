@@ -5,11 +5,7 @@ options { tokenVocab = ElsaLexer; }
 program                
     :   (stat | LINE_COMMENT)*
     ;
-    
-trigger
-    :   TRIGGER object
-    ;
-    
+
 object
     :   ID objectInitializer?
     ;
@@ -78,8 +74,7 @@ property
     ;
     
 stat
-    :   trigger ';'                                             #triggerStat
-    |   object ';'                                              #objectStat       
+    :   object ';'                                              #objectStat       
     |   'if' expr 'then' thenStat ('else' elseStat)?            #ifStat
     |   'for' '(' ID '=' expr ';' expr ';' expr ')' stat        #forStat
     |   'return' expr? ';'                                      #returnStat                              

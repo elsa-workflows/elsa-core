@@ -35,7 +35,7 @@ public class FunctionActivityRegistry : IFunctionActivityRegistry
         var propertyNameList = propertyNames?.ToList() ?? new List<string>();
         var properties = propertyNameList.Select(propertyName =>
         {
-            var property = activityType.GetProperty(propertyName);
+            var property = activityType.GetProperties().FirstOrDefault(x => x.Name == propertyName);
 
             if (property == null)
                 throw new Exception($"Activity type {typeDescriptor.Type.Name} does not have a property named {propertyName}");
