@@ -18,7 +18,8 @@ namespace Elsa.Server.Api.Swagger.Examples
                 false,
                 WorkflowPersistenceBehavior.Suspended,
                 true,
-                false
+                false,
+				new Variables()
             );
     }
 }
