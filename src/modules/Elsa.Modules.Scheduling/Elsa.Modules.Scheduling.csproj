@@ -10,8 +10,4 @@
       <ProjectReference Include="..\..\core\Elsa.Jobs\Elsa.Jobs.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Triggers" />
-    </ItemGroup>
-
 </Project>

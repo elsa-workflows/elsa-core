@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Elsa.Attributes;
 using Elsa.Contracts;
 using Elsa.Expressions;
@@ -33,7 +34,7 @@ public class Switch : Activity
     private async Task<SwitchCase?> FindMatchingCaseAsync(ExpressionExecutionContext context)
     {
         var expressionEvaluator = context.GetRequiredService<IExpressionEvaluator>();
-        
+
         foreach (var switchCase in Cases)
         {
             var result = await expressionEvaluator.EvaluateAsync<bool>(switchCase.Condition, context);
@@ -51,8 +52,35 @@ public class Switch : Activity
 /// </summary>
 public class SwitchCase
 {
-    // ReSharper disable once EmptyConstructor
+    [JsonConstructor]
     public SwitchCase()
+    {
+    }
+
+    public SwitchCase(string label, IExpression condition, IActivity activity)
+    {
+        Label = label;
+        Condition = condition;
+        Activity = activity;
+    }
+
+    public SwitchCase(string label, DelegateReference<bool> condition, IActivity activity) : this(label, new DelegateExpression(condition), activity)
+    {
+    }
+
+    public SwitchCase(string label, Func<ExpressionExecutionContext, ValueTask<bool>> condition, IActivity activity) : this(label, new DelegateReference<bool>(condition), activity)
+    {
+    }
+
+    public SwitchCase(string label, Func<ValueTask<bool>> condition, IActivity activity) : this(label, new DelegateReference<bool>(condition), activity)
+    {
+    }
+
+    public SwitchCase(string label, Func<ExpressionExecutionContext, bool> condition, IActivity activity) : this(label, new DelegateReference<bool>(condition), activity)
+    {
+    }
+
+    public SwitchCase(string label, Func<bool> condition, IActivity activity) : this(label, new DelegateReference<bool>(condition), activity)
     {
     }
 

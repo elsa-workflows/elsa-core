@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Elsa.Attributes;
 using Elsa.Contracts;
 using Elsa.Models;
@@ -60,6 +61,20 @@ public class ForEach : Activity
 
 public class ForEach<T> : ForEach
 {
+    [JsonConstructor]
+    public ForEach()
+    {
+    }
+
+    public ForEach(Input<ICollection<T>> items)
+    {
+        Items = items;
+    }
+
+    public ForEach(ICollection<T> items) : this(new Input<ICollection<T>>(items))
+    {
+    }
+    
     [Input]
     public new Input<ICollection<T>> Items
     {
