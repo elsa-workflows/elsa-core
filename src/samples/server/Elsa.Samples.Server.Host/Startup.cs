@@ -2,7 +2,6 @@ using Elsa.Models;
 using Elsa.Providers.Workflows;
 using Elsa.Retention.Extensions;
 using Elsa.Retention.Filters;
-using Elsa.Secrets.Models;
 using Elsa.WorkflowTesting.Api.Extensions;
 using Hangfire;
 using Hangfire.SQLite;

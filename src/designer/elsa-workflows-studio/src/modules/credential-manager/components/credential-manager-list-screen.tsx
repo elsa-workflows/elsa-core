@@ -1,10 +1,13 @@
 import { Component, h, Prop, State } from "@stencil/core";
 import { RouterHistory } from "@stencil/router";
 import collection from "lodash/collection";
-import { eventBus, EventTypes, PagedList } from "../../..";
+import { ActivityModel, eventBus, EventTypes, PagedList } from "../../..";
 import { WebhookDefinitionSummary } from "../../elsa-webhooks/models";
 import Tunnel from "../../../data/dashboard";
 import {v4 as uuid} from 'uuid';
+import { createElsaSecretsClient, ElsaSecretsClient } from "../services/credantial-manager.client";
+import { Secret } from "../models/secret.model";
+import { createElsaWebhooksClient } from "../../elsa-webhooks/services/elsa-client";
 
 @Component({
     tag: 'credential-manager-list-screen',
@@ -15,13 +18,22 @@ export class CredentialManagerListScreen {
     @Prop() serverUrl: string;
     @Prop() basePath: string;
     @Prop() culture: string;
-    @State() webhookDefinitions: PagedList<WebhookDefinitionSummary> = {items: [], page: 1, pageSize: 50, totalCount: 0};
+    @State() webhookDefinitions: Array<ActivityModel> = []
   
     confirmDialog: HTMLElsaConfirmDialogElement;
+    client: ElsaSecretsClient;
   
     async componentWillLoad() {
-      await this.loadWebhookDefinitions();
+      await this.loadSecrets();
+
       eventBus.on(EventTypes.SecretPicked, this.onActivityPicked);
+      eventBus.on(EventTypes.UpdateSecret, this.onUpdateSecret);
+    }
+
+    async onUpdateSecret(secretModel: ActivityModel) {
+      console.log("update secret", secretModel);
+      const client = await createElsaSecretsClient('https://localhost:11000');
+      client.secretsApi.save(secretModel)
     }
 
     onActivityPicked = async args => {
@@ -59,21 +71,21 @@ export class CredentialManagerListScreen {
     }
   
     async onDeleteClick(e: Event, webhookDefinition: WebhookDefinitionSummary) {
-      const result = await this.confirmDialog.show('Delete Webhook Definition', 'Are you sure you wish to permanently delete this webhook?');
+      const result = await this.confirmDialog.show('Delete Secret', 'Are you sure you wish to permanently delete this secret?');
   
       if (!result)
         return;
   
-      //const elsaClient = createElsaWebhooksClient(this.serverUrl);
-      //await elsaClient.webhookDefinitionsApi.delete(webhookDefinition.id);
-      await this.loadWebhookDefinitions();
+      const elsaClient = await createElsaSecretsClient(this.serverUrl);
+      await elsaClient.secretsApi.delete(webhookDefinition.id);
+      await this.loadSecrets();
     }
   
-    async loadWebhookDefinitions() {
-      //const elsaClient = createElsaWebhooksClient(this.serverUrl);
-      const page = 0;
-      const pageSize = 50;
-      //this.webhookDefinitions = await elsaClient.webhookDefinitionsApi.list(page, pageSize);
+    async loadSecrets() {
+      const elsaClient = await createElsaSecretsClient(this.serverUrl);
+
+      this.webhookDefinitions = await elsaClient.secretsApi.list();
+      console.log(this.webhookDefinitions);
     }
   
     render() {
@@ -101,8 +113,8 @@ export class CredentialManagerListScreen {
               </tr>
               </thead>
               <tbody class="elsa-bg-white elsa-divide-y elsa-divide-gray-100">
-              {collection.map(list, item => {
-  
+              {webhookDefinitions?.map(item => {
+                console.log(item)
                 const webhookDefinition: WebhookDefinitionSummary = item;
                 let webhookDisplayName = webhookDefinition.name;
   
