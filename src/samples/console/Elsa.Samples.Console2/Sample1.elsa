@@ -1,3 +1,14 @@
-print("Hi! What's your name?");
-variable name = read();
-print(js => `Nice to meet you, ${name}!`);
+print("What's your age?");
+variable age = ReadLine;
+
+if(age > 16)
+{
+    print("Enjoy your driver's license!");
+    // delay(5000);
+    // await signal
+    print("But be careful!");
+}
+else
+    print("Enjoy your bicycle!");
+                        
+print("Goodbye.");
