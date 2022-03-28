@@ -12,5 +12,6 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
         bool IsSingleton,
         WorkflowPersistenceBehavior PersistenceBehavior,
         bool IsPublished,
-        bool IsLatest);
+        bool IsLatest,
+		Variables CustomAttributes);
 }
