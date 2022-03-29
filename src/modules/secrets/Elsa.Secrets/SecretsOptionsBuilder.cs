@@ -19,7 +19,7 @@ namespace Elsa.Secrets
         public IServiceCollection Services { get; }
         public SectersOptions SectersOptions { get; }
 
-        public SecretsOptionsBuilder UseWorkflowSettingsStore(Func<IServiceProvider, ISecretsStore> factory)
+        public SecretsOptionsBuilder UseSecretsStore(Func<IServiceProvider, ISecretsStore> factory)
         {
             SectersOptions.SecretsStoreFactory = factory;
             return this;

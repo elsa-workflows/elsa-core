@@ -177,7 +177,6 @@ export class ElsaActivityEditorModal {
     this.activityDescriptor = state.activityDescriptors.find(x => x.type == activity.type);
     this.workflowStorageDescriptors = state.workflowStorageDescriptors;
     this.formContext = new FormContext(this.activityModel, newValue => this.activityModel = newValue);
-    console.log('this.formContext activity', this.formContext);
     this.timestamp = new Date();
     this.renderProps = {};
     await this.show(animate);

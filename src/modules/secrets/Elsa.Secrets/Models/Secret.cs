@@ -15,18 +15,5 @@ namespace Elsa.Secrets.Models
         public string? Name { get; set; }
         public string? DisplayName { get; set; }
         public string PropertiesJson { get; set; }
-
-
-        //[NotMapped]
-        //public ICollection<SecretProperty> Properties {
-        //    get
-        //    {
-        //        return (ICollection<SecretProperty>)JsonConvert.DeserializeObject(PropertiesJson);
-        //    }
-        //    set
-        //    {
-        //        PropertiesJson = JsonConvert.SerializeObject(value);
-        //    }
-        //}
     }
 }

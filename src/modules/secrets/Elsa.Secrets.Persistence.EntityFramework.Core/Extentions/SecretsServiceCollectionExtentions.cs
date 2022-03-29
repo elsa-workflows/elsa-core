@@ -24,7 +24,7 @@ namespace Elsa.Secrets.Persistence.EntityFramework.Core.Extentions
         /// https://docs.microsoft.com/en-us/ef/core/performance/advanced-performance-topics?tabs=with-constant#dbcontext-pooling.
         /// </para>
         /// </remarks>
-        /// <param name="workflowSettingsOptions">An Elsa options builder</param>
+        /// <param name="sectersOptions">An Elsa options builder</param>
         /// <param name="configure">A configuration builder callback</param>
         /// <param name="autoRunMigrations">If <c>true</c> then database migrations will be auto-executed on startup</param>
         /// <returns>The Elsa options builder, so calls may be chained</returns>
@@ -42,10 +42,10 @@ namespace Elsa.Secrets.Persistence.EntityFramework.Core.Extentions
         /// https://docs.microsoft.com/en-us/ef/core/performance/advanced-performance-topics?tabs=with-constant#dbcontext-pooling.
         /// </para>
         /// </remarks>
-        /// <param name="workflowSettingsOptions">An Elsa options builder</param>
+        /// <param name="sectersOptions">An Elsa options builder</param>
         /// <param name="configure">A configuration builder callback</param>
         /// <param name="autoRunMigrations">If <c>true</c> then database migrations will be auto-executed on startup</param>
-        /// <typeparam name="TWorkflowSettingsContext">The concrete type of <see cref="WorkflowSettingsContext"/> to use.</typeparam>
+        /// <typeparam name="TSecretsContext">The concrete type of <see cref="SecretsContext"/> to use.</typeparam>
         /// <returns>The Elsa options builder, so calls may be chained</returns>
         public static SecretsOptionsBuilder UseEntityFrameworkPersistence<TSecretsContext>(this SecretsOptionsBuilder sectersOptions,
             Action<DbContextOptionsBuilder> configure,
@@ -61,7 +61,7 @@ namespace Elsa.Secrets.Persistence.EntityFramework.Core.Extentions
         /// https://docs.microsoft.com/en-us/ef/core/performance/advanced-performance-topics?tabs=with-constant#dbcontext-pooling.
         /// </para>
         /// </remarks>
-        /// <param name="workflowSettingsOptions">An Elsa options builder</param>
+        /// <param name="sectersOptions">An Elsa options builder</param>
         /// <param name="configure">A configuration builder callback, which also provides access to a service provider</param>
         /// <param name="autoRunMigrations">If <c>true</c> then database migrations will be auto-executed on startup</param>
         /// <returns>The Elsa options builder, so calls may be chained</returns>
@@ -79,10 +79,10 @@ namespace Elsa.Secrets.Persistence.EntityFramework.Core.Extentions
         /// https://docs.microsoft.com/en-us/ef/core/performance/advanced-performance-topics?tabs=with-constant#dbcontext-pooling.
         /// </para>
         /// </remarks>
-        /// <param name="workflowSettingsOptions">An Elsa options builder</param>
+        /// <param name="secretsOptions">An Elsa options builder</param>
         /// <param name="configure">A configuration builder callback, which also provides access to a service provider</param>
         /// <param name="autoRunMigrations">If <c>true</c> then database migrations will be auto-executed on startup</param>
-        /// <typeparam name="TWorkflowSettingsContext">The concrete type of <see cref="WorkflowSettingsContext"/> to use.</typeparam>
+        /// <typeparam name="TSecretsContext">The concrete type of <see cref="SecretsContext"/> to use.</typeparam>
         /// <returns>The Elsa options builder, so calls may be chained</returns>
         public static SecretsOptionsBuilder UseEntityFrameworkPersistence<TSecretsContext>(this SecretsOptionsBuilder secretsOptions,
             Action<IServiceProvider, DbContextOptionsBuilder> configure,
@@ -104,16 +104,16 @@ namespace Elsa.Secrets.Persistence.EntityFramework.Core.Extentions
         /// which is suitable for your use-case.
         /// </para>
         /// </remarks>
-        /// <param name="workflowSettingsOptions">An Elsa options builder</param>
+        /// <param name="secretsOptions">An Elsa options builder</param>
         /// <param name="configure">A configuration builder callback</param>
         /// <param name="serviceLifetime">The service lifetime which will be used for each DB Context instance</param>
         /// <param name="autoRunMigrations">If <c>true</c> then database migrations will be auto-executed on startup</param>
         /// <returns>The Elsa options builder, so calls may be chained</returns>
-        public static SecretsOptionsBuilder UseNonPooledEntityFrameworkPersistence(this SecretsOptionsBuilder workflowSettingsOptions,
+        public static SecretsOptionsBuilder UseNonPooledEntityFrameworkPersistence(this SecretsOptionsBuilder secretsOptions,
             Action<DbContextOptionsBuilder> configure,
             ServiceLifetime serviceLifetime = ServiceLifetime.Singleton,
             bool autoRunMigrations = false) =>
-            workflowSettingsOptions.UseNonPooledEntityFrameworkPersistence<SecretsContext>(configure, serviceLifetime, autoRunMigrations);
+            secretsOptions.UseNonPooledEntityFrameworkPersistence<SecretsContext>(configure, serviceLifetime, autoRunMigrations);
 
         /// <summary>
         /// Configures Elsa to use Entity Framework Core for persistence, without using pooled DB Context instances.
@@ -130,11 +130,11 @@ namespace Elsa.Secrets.Persistence.EntityFramework.Core.Extentions
         /// which is suitable for your use-case.
         /// </para>
         /// </remarks>
-        /// <param name="workflowSettingsOptions">An Elsa options builder</param>
+        /// <param name="secretsOption">An Elsa options builder</param>
         /// <param name="configure">A configuration builder callback</param>
         /// <param name="serviceLifetime">The service lifetime which will be used for each DB Context instance</param>
         /// <param name="autoRunMigrations">If <c>true</c> then database migrations will be auto-executed on startup</param>
-        /// <typeparam name="TWorkflowSettingsContext">The concrete type of <see cref="WorkflowSettingsContext"/> to use.</typeparam>
+        /// <typeparam name="TSecretsContext">The concrete type of <see cref="SecretsContext"/> to use.</typeparam>
         /// <returns>The Elsa options builder, so calls may be chained</returns>
         public static SecretsOptionsBuilder UseNonPooledEntityFrameworkPersistence<TSecretsContext>(this SecretsOptionsBuilder secretsOption,
             Action<DbContextOptionsBuilder> configure,
@@ -157,7 +157,7 @@ namespace Elsa.Secrets.Persistence.EntityFramework.Core.Extentions
         /// which is suitable for your use-case.
         /// </para>
         /// </remarks>
-        /// <param name="workflowSettingsOptions">An Elsa options builder</param>
+        /// <param name="secretsOptions">An Elsa options builder</param>
         /// <param name="configure">A configuration builder callback, which also provides access to a service provider</param>
         /// <param name="serviceLifetime">The service lifetime which will be used for each DB Context instance</param>
         /// <param name="autoRunMigrations">If <c>true</c> then database migrations will be auto-executed on startup</param>
@@ -183,19 +183,19 @@ namespace Elsa.Secrets.Persistence.EntityFramework.Core.Extentions
         /// which is suitable for your use-case.
         /// </para>
         /// </remarks>
-        /// <param name="workflowSettingsOptions">An Elsa options builder</param>
+        /// <param name="secretsOptions">An Elsa options builder</param>
         /// <param name="configure">A configuration builder callback, which also provides access to a service provider</param>
         /// <param name="serviceLifetime">The service lifetime which will be used for each DB Context instance</param>
         /// <param name="autoRunMigrations">If <c>true</c> then database migrations will be auto-executed on startup</param>
-        /// <typeparam name="TWorkflowSettingsContext">The concrete type of <see cref="WorkflowSettingsContext"/> to use.</typeparam>
+        /// <typeparam name="TSecretsContext">The concrete type of <see cref="SecretsContext"/> to use.</typeparam>
         /// <returns>The Elsa options builder, so calls may be chained</returns>
-        public static SecretsOptionsBuilder UseNonPooledEntityFrameworkPersistence<TSecretsContext>(this SecretsOptionsBuilder workflowSettingsOptions,
+        public static SecretsOptionsBuilder UseNonPooledEntityFrameworkPersistence<TSecretsContext>(this SecretsOptionsBuilder secretsOptions,
             Action<IServiceProvider, DbContextOptionsBuilder> configure,
             ServiceLifetime serviceLifetime = ServiceLifetime.Singleton,
             bool autoRunMigrations = false) where TSecretsContext : SecretsContext =>
-            UseEntityFrameworkPersistence<TSecretsContext>(workflowSettingsOptions, configure, autoRunMigrations, false, serviceLifetime);
+            UseEntityFrameworkPersistence<TSecretsContext>(secretsOptions, configure, autoRunMigrations, false, serviceLifetime);
 
-        static SecretsOptionsBuilder UseEntityFrameworkPersistence<TSecretsContext>(SecretsOptionsBuilder workflowSettingsOptions,
+        static SecretsOptionsBuilder UseEntityFrameworkPersistence<TSecretsContext>(SecretsOptionsBuilder secretsOptions,
             Action<IServiceProvider, DbContextOptionsBuilder> configure,
             bool autoRunMigrations,
             bool useContextPooling,
@@ -213,20 +213,20 @@ namespace Elsa.Secrets.Persistence.EntityFramework.Core.Extentions
              */
 
             if (useContextPooling)
-                workflowSettingsOptions.Services.AddPooledDbContextFactory<TSecretsContext>(configure);
+                secretsOptions.Services.AddPooledDbContextFactory<TSecretsContext>(configure);
             else
-                workflowSettingsOptions.Services.AddDbContextFactory<TSecretsContext>(configure, serviceLifetime);
+                secretsOptions.Services.AddDbContextFactory<TSecretsContext>(configure, serviceLifetime);
 
-            workflowSettingsOptions.Services
+            secretsOptions.Services
                 .AddSingleton<ISecretsContextFactory, SecretsContextFactory<TSecretsContext>>()
                 .AddScoped<EntityFrameworkSecretsStore>();
 
             if (autoRunMigrations)
-                workflowSettingsOptions.Services.AddStartupTask<RunMigrations>();
+                secretsOptions.Services.AddStartupTask<RunMigrations>();
 
-            workflowSettingsOptions.UseWorkflowSettingsStore(sp => sp.GetRequiredService<EntityFrameworkSecretsStore>());
+            secretsOptions.UseSecretsStore(sp => sp.GetRequiredService<EntityFrameworkSecretsStore>());
 
-            return workflowSettingsOptions;
+            return secretsOptions;
         }
     }
 }
