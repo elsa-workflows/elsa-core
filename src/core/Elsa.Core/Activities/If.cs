@@ -20,7 +20,7 @@ public class If : Activity
     /// <summary>
     /// The condition to evaluate.
     /// </summary>
-    [Input] public Input<bool> Condition { get; set; } = new(new Literal<bool>(false));
+    [Input(UIHint = "single-line")] public Input<bool> Condition { get; set; } = new(new Literal<bool>(false));
     
     /// <summary>
     /// The activity to execute when the condition evaluates to true.
