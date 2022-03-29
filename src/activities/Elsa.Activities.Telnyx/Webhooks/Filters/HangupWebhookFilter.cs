@@ -17,7 +17,7 @@ namespace Elsa.Activities.Telnyx.Webhooks.Filters
             var hangupPayload = (CallHangupPayload) payload;
             var attribute = payload.GetType().GetCustomAttribute<WebhookAttribute>()!;
 
-            if (hangupPayload.HangupCause != "originator_cancel")
+            if(hangupPayload.HangupSource != "caller" || hangupPayload.HangupCause != "normal_clearing")
                 return attribute.ActivityType;
 
             return "OriginatorCallHangup";
