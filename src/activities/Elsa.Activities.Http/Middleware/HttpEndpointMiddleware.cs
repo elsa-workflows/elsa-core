@@ -110,15 +110,7 @@ namespace Elsa.Activities.Http.Middleware
             {
                 var targetType = await activityWrapper.EvaluatePropertyValueAsync(x => x.TargetType, cancellationToken);
 
-                try
-                {
-                    inputModel = inputModel with
-                    {
-                        RawBody = await request.ReadContentAsStringAsync(cancellationToken),
-                        Body = await contentParser.ParseAsync(request, targetType, cancellationToken)
-                    };
-                }
-                catch (JsonReaderException e)
+                async Task WriteBadRequestResponseAsync(Exception e)
                 {
                     httpContext.Response.ContentType = MediaTypeNames.Application.Json;
                     httpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
@@ -127,6 +119,24 @@ namespace Elsa.Activities.Http.Middleware
                         error = "Could not parse content",
                         message = e.Message
                     }), cancellationToken);
+                }
+                
+                try
+                {
+                    inputModel = inputModel with
+                    {
+                        RawBody = await request.ReadContentAsStringAsync(cancellationToken),
+                        Body = await contentParser.ParseAsync(request, targetType, cancellationToken)
+                    };
+                }
+                catch (JsonSerializationException e)
+                {
+                    await WriteBadRequestResponseAsync(e);
+                    return;
+                }
+                catch (JsonReaderException e)
+                {
+                    await WriteBadRequestResponseAsync(e);
                     return;
                 }
             }
