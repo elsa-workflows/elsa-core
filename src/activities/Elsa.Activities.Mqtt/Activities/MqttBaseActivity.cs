@@ -26,6 +26,7 @@ namespace Elsa.Activities.Mqtt.Activities
             Hint = "MQTT broker port",
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid },
             Order = 2,
+            DefaultValue = 1883,
             Category = PropertyCategories.Configuration)]
         public int Port { get; set; } = default!;
 

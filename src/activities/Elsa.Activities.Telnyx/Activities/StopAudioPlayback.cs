@@ -18,9 +18,9 @@ namespace Elsa.Activities.Telnyx.Activities
 {
     [Action(
         Category = Constants.Category,
-        Description = "Play an audio file on the call.",
+        Description = "Stop audio playback.",
         Outcomes = new[] { TelnyxOutcomeNames.CallPlaybackEnding, TelnyxOutcomeNames.CallIsNoLongerActive, TelnyxOutcomeNames.CallPlaybackEnded },
-        DisplayName = "Play Audio"
+        DisplayName = "Stop Audio Playback"
     )]
     public class StopAudioPlayback : Activity
     {
