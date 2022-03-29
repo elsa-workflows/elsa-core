@@ -26,6 +26,7 @@ export const EventTypes = {
   ShowWorkflowSettings: 'show-workflow-settings',
   ActivityPicked: 'activity-picked',
   SecretPicked: 'secret-picked',
+  SecretUpdated: 'secret-updated',
   UpdateActivity: 'update-activity',
   UpdateSecret: 'update-secret',
   UpdateWorkflowSettings: 'update-workflow-settings',

@@ -1,8 +1,8 @@
 import { Component, h, Host, State } from "@stencil/core";
-import { ActivityDescriptorDisplayContext, eventBus, EventTypes, ActivityDescriptor, ActivityTraits } from "../../..";
-import { ActivityIcon } from "../../../components/icons/activity-icon";
+import { eventBus, EventTypes } from "../../..";
+import { SecretIcon } from "../../../components/icons/secret-icon";
 import state from "../../../utils/store";
-import { Secret } from "../models/secret.model";
+import { Secret, SecretDescriptor } from "../models/secret.model";
 import { Ampq } from "../models/secrets/ampq.secret";
 
 @Component({
@@ -15,7 +15,7 @@ export class ElasSecretsPickerModal {
   @State() searchText: string;
   dialog: HTMLElsaModalDialogElement;
   categories: Array<string> = [];
-  filteredActivityDescriptorDisplayContexts: Array<any> = [];
+  filteredSecretsDescriptorDisplayContexts: Array<any> = [];
 
   connectedCallback() {
     eventBus.on(EventTypes.ShowSecretsPicker, this.onShowSecretsPicker);
@@ -34,10 +34,10 @@ export class ElasSecretsPickerModal {
     state.secretsDescriptors = secretsDescriptors;
     this.categories = ['All', ...secretsDescriptors.map(x => x.category).distinct().sort()];
     const searchText = this.searchText ? this.searchText.toLowerCase() : '';
-    let filteredActivityDescriptors = secretsDescriptors;
+    let filteredSecretsDescriptors = secretsDescriptors;
     
     if (searchText.length > 0) {
-      filteredActivityDescriptors = filteredActivityDescriptors.filter(x => {
+      filteredSecretsDescriptors = filteredSecretsDescriptors.filter(x => {
         const category = x.category || '';
         const description = x.description || '';
         const displayName = x.displayName || '';
@@ -50,20 +50,16 @@ export class ElasSecretsPickerModal {
       });
     }
     else {
-      filteredActivityDescriptors = filteredActivityDescriptors.filter(x => (x.traits & this.selectedTrait) == x.traits)
-      filteredActivityDescriptors = !this.selectedCategory || this.selectedCategory == 'All' ? filteredActivityDescriptors : filteredActivityDescriptors.filter(x => x.category == this.selectedCategory);
+      filteredSecretsDescriptors = !this.selectedCategory || this.selectedCategory == 'All' ? filteredSecretsDescriptors : filteredSecretsDescriptors.filter(x => x.category == this.selectedCategory);
     }
 
-    this.filteredActivityDescriptorDisplayContexts = filteredActivityDescriptors.map(x => {
-      const color = (x.traits &= ActivityTraits.Trigger) == ActivityTraits.Trigger ? 'rose' : (x.traits &= ActivityTraits.Job) == ActivityTraits.Job ? 'yellow' : 'sky';
+    this.filteredSecretsDescriptorDisplayContexts = filteredSecretsDescriptors.map(x => {
+      
       return {
-        activityDescriptor: x,
-        activityIcon: <ActivityIcon color={color}/>
+        secretDescriptor: x,
+        secretIcon: <SecretIcon color={'rose'}/>
       };
     });
-
-    for (const context of this.filteredActivityDescriptorDisplayContexts)
-      eventBus.emit(EventTypes.ActivityDescriptorDisplaying, this, context);
   }
 
   selectTrait(trait: number) {
@@ -84,7 +80,7 @@ export class ElasSecretsPickerModal {
     this.selectCategory(category);
   }
 
-  onSearchTextChange(e: TextEvent) {
+  onSearchTextChange(e) {
     this.searchText = (e.target as HTMLInputElement).value;
   }
 
@@ -92,16 +88,16 @@ export class ElasSecretsPickerModal {
     await this.dialog.hide(true);
   }
 
-  async onSecretClick(e: Event, activityDescriptor: ActivityDescriptor) {
+  async onSecretClick(e: Event, secretDescriptor: SecretDescriptor) {
     e.preventDefault();
-    eventBus.emit(EventTypes.SecretPicked, this, activityDescriptor);
+    eventBus.emit(EventTypes.SecretPicked, this, secretDescriptor);
     await this.dialog.hide(false);
   }
 
   render() {
     const selectedCategoryClass = 'elsa-bg-gray-100 elsa-text-gray-900 elsa-flex';
     const defaultCategoryClass = 'elsa-text-gray-600 hover:elsa-bg-gray-50 hover:elsa-text-gray-900';
-    const filteredDisplayContexts = this.filteredActivityDescriptorDisplayContexts;
+    const filteredDisplayContexts = this.filteredSecretsDescriptorDisplayContexts;
     const categories = this.categories;
 
     return (
@@ -133,7 +129,7 @@ export class ElasSecretsPickerModal {
                         <line x1="21" y1="21" x2="15" y2="15"/>
                       </svg>
                     </div>
-                    <input type="text" value={this.searchText} onInput={e => this.onSearchTextChange(e as TextEvent)}
+                    <input type="text" value={this.searchText} onInput={e => this.onSearchTextChange(e)}
                            class="form-input elsa-block elsa-w-full elsa-pl-10 sm:elsa-text-sm sm:elsa-leading-5 focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-rounded-md elsa-border-gray-300" 
                            placeholder="Search secrets"/>
                   </div>
@@ -142,7 +138,7 @@ export class ElasSecretsPickerModal {
                 <div class="elsa-max-w-4xl elsa-mx-auto elsa-p-0">
 
                   {categories.map(category => {
-                    const displayContexts = filteredDisplayContexts.filter(x => x.activityDescriptor.category == category);
+                    const displayContexts = filteredDisplayContexts.filter(x => x.secretDescriptor.category == category);
 
                     if (displayContexts.length == 0)
                       return undefined;
@@ -152,21 +148,21 @@ export class ElasSecretsPickerModal {
                         <h2 class="elsa-my-4 elsa-text-lg elsa-leading-6 elsa-font-medium">{category}</h2>
                         <div class="elsa-divide-y elsa-divide-gray-200 sm:elsa-divide-y-0 sm:elsa-grid sm:elsa-grid-cols-2 sm:elsa-gap-px">
                           {displayContexts.map(displayContext => (
-                            <a href="#" onClick={e => this.onSecretClick(e, displayContext.activityDescriptor)} class="elsa-relative elsa-rounded elsa-group elsa-p-6 focus-within:elsa-ring-2 focus-within:elsa-ring-inset focus-within:elsa-ring-blue-500">
+                            <a href="#" onClick={e => this.onSecretClick(e, displayContext.secretDescriptor)} class="elsa-relative elsa-rounded elsa-group elsa-p-6 focus-within:elsa-ring-2 focus-within:elsa-ring-inset focus-within:elsa-ring-blue-500">
                               <div class="elsa-flex elsa-space-x-10">
                                 <div class="elsa-flex elsa-flex-0 elsa-items-center">
-                                  <div innerHTML={displayContext.activityIcon}>
+                                  <div innerHTML={displayContext.secretIcon}>
                                   </div>
                                 </div>
                                 <div class="elsa-flex-1 elsa-mt-2">
                                   <h3 class="elsa-text-lg elsa-font-medium">
                                     <a href="#" class="focus:elsa-outline-none">
                                       <span class="elsa-absolute elsa-inset-0" aria-hidden="true"/>
-                                      {displayContext.activityDescriptor.displayName}
+                                      {displayContext.secretDescriptor.displayName}
                                     </a>
                                   </h3>
                                   <p class="elsa-mt-2 elsa-text-sm elsa-text-gray-500">
-                                    {displayContext.activityDescriptor.description}
+                                    {displayContext.secretDescriptor.description}
                                   </p>
                                 </div>
                               </div>

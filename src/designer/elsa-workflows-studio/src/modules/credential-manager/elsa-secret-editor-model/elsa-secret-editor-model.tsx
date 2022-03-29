@@ -2,11 +2,16 @@ import { Component, h, Host, Prop, State } from "@stencil/core";
 import { i18n } from "i18next";
 import { resources } from "../../../components/controls/elsa-pager/localizations";
 import { loadTranslations } from "../../../components/i18n/i18n-loader";
-import { ActivityEditorRenderProps, TabModel, ActivityEditorAppearingEventArgs, ActivityEditorDisappearingEventArgs } from "../../../components/screens/workflow-definition-editor/elsa-activity-editor-modal/elsa-activity-editor-modal";
-import { WorkflowStorageDescriptor, ActivityModel, ActivityDescriptor, EventTypes, ActivityPropertyDescriptor } from "../../../models";
+import { EventTypes, } from "../../../models";
 import { eventBus, propertyDisplayManager } from "../../../services";
-import { FormContext, SelectOption, selectField, section, checkBox, textInput, textArea } from "../../../utils/forms";
+import { FormContext, textInput } from "../../../utils/forms";
 import state from "../../../utils/store";
+import { SecretDescriptor, SecretEditorRenderProps, SecretModel, SecretPropertyDescriptor } from "../models/secret.model";
+
+interface TabModel {
+  tabName: string;
+  renderContent: () => any;
+}
 
 @Component({
     tag: 'elsa-secert-editor-modal',
@@ -14,24 +19,21 @@ import state from "../../../utils/store";
 })
 export class ElsaSecretEditorModel {
   @Prop() culture: string;
-  @State() workflowStorageDescriptors: Array<WorkflowStorageDescriptor> = [];
-  @State() activityModel: ActivityModel;
-  @State() activityDescriptor: ActivityDescriptor;
-  @State() renderProps: ActivityEditorRenderProps = {};
+  @State() secretModel: SecretModel;
+  @State() secretDescriptor: SecretDescriptor;
+  @State() renderProps: SecretEditorRenderProps = {};
   i18next: i18n;
   dialog: HTMLElsaModalDialogElement;
   formContext: FormContext;
 
-  // Force a new key every time we show the editor to make sure Stencil creates new components.
-  // This prevents the issue where the designer has e.g. one activity where the user edits the properties, cancels out, then opens the editor again, seeing the entered value still there.
   timestamp: Date = new Date();
 
   connectedCallback() {
-    eventBus.on(EventTypes.SecretsEditor.Show, this.onShowActivityEditor);
+    eventBus.on(EventTypes.SecretsEditor.Show, this.onShowSecretEditor);
   }
 
   disconnectedCallback() {
-    eventBus.detach(EventTypes.SecretsEditor.Show, this.onShowActivityEditor);
+    eventBus.detach(EventTypes.SecretsEditor.Show, this.onShowSecretEditor);
   }
 
   async componentWillLoad() {
@@ -40,22 +42,21 @@ export class ElsaSecretEditorModel {
 
   t = (key: string) => this.i18next.t(key);
 
-  updateActivity(formData: FormData) {
-    const activity = this.activityModel;
-    const activityDescriptor = this.activityDescriptor;
-    const inputProperties: Array<ActivityPropertyDescriptor> = activityDescriptor.inputProperties;
+  updateSecret(formData: FormData) {
+    const secret = this.secretModel;
+    const secretDescriptor = this.secretDescriptor;
+    const inputProperties: Array<SecretPropertyDescriptor> = secretDescriptor.inputProperties;
 
     for (const property of inputProperties)
-      propertyDisplayManager.update(activity, property, formData);
+      propertyDisplayManager.update(secret, property, formData);
   }
 
   async componentWillRender() {
-    const activityDescriptor: ActivityDescriptor = this.activityDescriptor || {
+    const secretDescriptor: SecretDescriptor = this.secretDescriptor || {
       displayName: '',
       type: '',
       outcomes: [],
       category: '',
-      traits: 0,
       browsable: false,
       inputProperties: [],
       outputProperties: [],
@@ -63,15 +64,13 @@ export class ElsaSecretEditorModel {
       customAttributes: {}
     };
 
-    const propertyCategories = activityDescriptor.inputProperties.filter(x => x.category).map(x => x.category).distinct();
-    const defaultProperties = activityDescriptor.inputProperties.filter(x => !x.category || x.category.length == 0);
+    const propertyCategories = secretDescriptor.inputProperties.filter(x => x.category).map(x => x.category).distinct();
+    const defaultProperties = secretDescriptor.inputProperties.filter(x => !x.category || x.category.length == 0);
 
-    const activityModel: ActivityModel = this.activityModel || {
+    const secretModel: SecretModel = this.secretModel || {
       type: '',
-      activityId: '',
-      outcomes: [],
+      id: '',
       properties: [],
-      propertyStorageProviders: {}
     };
 
     const t = this.t;
@@ -80,14 +79,14 @@ export class ElsaSecretEditorModel {
     if (defaultProperties.length > 0) {
       tabs.push({
         tabName: 'General',
-        renderContent: () => this.renderPropertiesTab(activityModel)
+        renderContent: () => this.renderPropertiesTab(secretModel)
       });
     }
 
     for (const category of propertyCategories) {
       const categoryTab: TabModel = {
         tabName: category,
-        renderContent: () => this.renderCategoryTab(activityModel, activityDescriptor, category)
+        renderContent: () => this.renderCategoryTab(secretModel, secretDescriptor, category)
       };
 
       tabs.push(categoryTab);
@@ -95,20 +94,12 @@ export class ElsaSecretEditorModel {
 
     tabs.push({
       tabName: 'Common',
-      renderContent: () => this.renderCommonTab(activityModel)
+      renderContent: () => this.renderCommonTab(secretModel)
     });
 
-    // tabs.push({
-    //   tabName: t('Tabs.Storage.Name'),
-    //   renderContent: () => this.renderStorageTab(activityModel, activityDescriptor)
-    // });
-
-    console.log('activityDescriptor', activityDescriptor);
-    console.log('tabs', tabs);
-
     this.renderProps = {
-      activityDescriptor,
-      activityModel,
+      secretDescriptor: secretDescriptor,
+      secretModel,
       propertyCategories,
       defaultProperties,
       tabs,
@@ -135,10 +126,11 @@ export class ElsaSecretEditorModel {
     e.preventDefault();
     const form: any = e.target;
     const formData = new FormData(form);
-    this.updateActivity(formData);
-    console.log('this.activityModel', this.activityModel);
-    await eventBus.emit(EventTypes.UpdateSecret, this, this.activityModel);
+    this.updateSecret(formData);
+    await eventBus.emit(EventTypes.UpdateSecret, this, this.secretModel);
     await this.hide(true);
+
+    await eventBus.emit(EventTypes.SecretUpdated, this, this.secretModel);
   };
 
   onTabClick = (e: Event, tab: TabModel) => {
@@ -146,14 +138,11 @@ export class ElsaSecretEditorModel {
     this.renderProps = {...this.renderProps, selectedTabName: tab.tabName};
   };
 
-  onShowActivityEditor = async (activity: ActivityModel, animate: boolean) => {
-    this.activityModel = JSON.parse(JSON.stringify(activity));
-    console.log('this.activityModel', this.activityModel)
-    this.activityDescriptor = state.secretsDescriptors.find(x => x.type == activity.type);
-    this.workflowStorageDescriptors = state.workflowStorageDescriptors;
-    this.formContext = new FormContext(this.activityModel, newValue => this.activityModel = newValue);
+  onShowSecretEditor = async (secret: SecretModel, animate: boolean) => {
+    this.secretModel = JSON.parse(JSON.stringify(secret));
+    this.secretDescriptor = state.secretsDescriptors.find(x => x.type == secret.type);
+    this.formContext = new FormContext(this.secretModel, newValue => this.secretModel = newValue);
 
-    console.log('this.formContext', this.formContext)
     this.timestamp = new Date();
     this.renderProps = {};
     await this.show(animate);
@@ -168,27 +157,9 @@ export class ElsaSecretEditorModel {
     }
   }
 
-  onDialogShown = async () => {
-    const args: ActivityEditorAppearingEventArgs = {
-      activityModel: this.activityModel,
-      activityDescriptor: this.activityDescriptor
-    };
-
-    await eventBus.emit(EventTypes.SecretsEditor.Appearing, this, args);
-  };
-
-  onDialogHidden = async () => {
-    const args: ActivityEditorDisappearingEventArgs = {
-      activityModel: this.activityModel,
-      activityDescriptor: this.activityDescriptor,
-    };
-
-    await eventBus.emit(EventTypes.SecretsEditor.Disappearing, this, args);
-  };
-
   render() {
     const renderProps = this.renderProps;
-    const activityDescriptor: ActivityDescriptor = renderProps.activityDescriptor;
+    const secretDescriptor: SecretDescriptor = renderProps.secretDescriptor;
     const tabs = renderProps.tabs;
     const selectedTabName = renderProps.selectedTabName;
     const inactiveClass = 'elsa-border-transparent elsa-text-gray-500 hover:elsa-text-gray-700 hover:elsa-border-gray-300';
@@ -197,7 +168,7 @@ export class ElsaSecretEditorModel {
 
     return (
       <Host class="elsa-block">
-        <elsa-modal-dialog ref={el => this.dialog = el} onShown={this.onDialogShown} onHidden={this.onDialogHidden}>
+        <elsa-modal-dialog ref={el => this.dialog = el}>
           <div slot="content" class="elsa-py-8 elsa-pb-0">
             <form onSubmit={e => this.onSubmit(e)} key={this.timestamp.getTime().toString()} onKeyDown={this.onKeyDown}
                   class='activity-editor-form'>
@@ -206,10 +177,10 @@ export class ElsaSecretEditorModel {
                   <div>
                     <div>
                       <h3 class="elsa-text-lg elsa-leading-6 elsa-font-medium elsa-text-gray-900">
-                        {activityDescriptor.type}
+                        {secretDescriptor.type}
                       </h3>
                       <p class="elsa-mt-1 elsa-text-sm elsa-text-gray-500">
-                        {activityDescriptor.description}
+                        {secretDescriptor.description}
                       </p>
                     </div>
 
@@ -262,86 +233,49 @@ export class ElsaSecretEditorModel {
       ));
   }
 
-  // renderStorageTab(activityModel: ActivityModel, activityDescriptor: ActivityDescriptor) {
-  //   const formContext = this.formContext;
-  //   const t = this.t;
-  //   let storageDescriptorOptions: Array<SelectOption> = this.workflowStorageDescriptors.map(x => ({
-  //     value: x.name,
-  //     text: x.displayName
-  //   }));
-  //   let outputProperties = activityDescriptor.outputProperties.filter(x => !x.disableWorkflowProviderSelection);
-  //   let inputProperties = activityDescriptor.inputProperties.filter(x => !x.disableWorkflowProviderSelection);
-
-  //   storageDescriptorOptions = [{value: null, text: 'Default'}, ...storageDescriptorOptions];
-
-  //   const renderPropertyStorageSelectField = function (propertyDescriptor: ActivityPropertyDescriptor) {
-  //     const propertyName = propertyDescriptor.name;
-  //     const fieldName = `propertyStorageProviders.${propertyName}`;
-  //     return selectField(formContext, fieldName, propertyName, activityModel.propertyStorageProviders[propertyName], storageDescriptorOptions, null, fieldName);
-  //   }
-
-  //   return (
-  //     <div class="elsa-space-y-8 elsa-w-full">
-  //       {section('Workflow Context')}
-  //       {checkBox(formContext, 'loadWorkflowContext', 'Load Workflow Context', activityModel.loadWorkflowContext, 'When enabled, this will load the workflow context into memory before executing this activity.', 'loadWorkflowContext')}
-  //       {checkBox(formContext, 'saveWorkflowContext', 'Save Workflow Context', activityModel.saveWorkflowContext, 'When enabled, this will save the workflow context back into storage after executing this activity.', 'saveWorkflowContext')}
-
-  //       {section('Workflow Instance')}
-  //       {checkBox(formContext, 'persistWorkflow', 'Save Workflow Instance', activityModel.persistWorkflow, 'When enabled, this will save the workflow instance back into storage right after executing this activity.', 'persistWorkflow')}
-
-  //       {Object.keys(outputProperties).length > 0 ? (
-  //         [section('Activity Output', 'Configure the desired storage for each output property of this activity.'), outputProperties.map(renderPropertyStorageSelectField)]
-  //       ) : undefined}
-
-  //       {Object.keys(inputProperties).length > 0 ? (
-  //         [section('Activity Input', 'Configure the desired storage for each input property of this activity.'), inputProperties.map(renderPropertyStorageSelectField)]
-  //       ) : undefined}
-  //     </div>
-  //   );
-  // }
-
-  renderCommonTab(activityModel: ActivityModel) {
+  renderCommonTab(secretModel: SecretModel) {
     const formContext = this.formContext;
     const t = this.t;
 
     return (
       <div class="elsa-space-y-8 elsa-w-full">
-        {textInput(formContext, 'name', 'Name', activityModel.name, 'Secret\'s name', 'activityName')}
-        {textInput(formContext, 'type', 'Type', activityModel.displayName, 'Secret\'s type', 'activityDisplayName')}
+        {textInput(formContext, 'name', 'Name', secretModel.name, 'Secret\'s name', 'secretName')}
+        {textInput(formContext, 'type', 'Type', secretModel.displayName, 'Secret\'s type', 'secretDisplayName')}
       </div>
     );
   }
 
-  renderPropertiesTab(activityModel: ActivityModel) {
-    const propertyDescriptors: Array<ActivityPropertyDescriptor> = this.renderProps.defaultProperties;
+  renderPropertiesTab(secretModel: SecretModel) {
+    const propertyDescriptors: Array<SecretPropertyDescriptor> = this.renderProps.defaultProperties;
 
     if (propertyDescriptors.length == 0)
       return undefined;
 
-    const key = `activity-settings:${activityModel.activityId}`;
+    const key = `secret-settings:${secretModel.id}`;
     const t = this.t;
 
     return (
       <div key={key} class={`elsa-grid elsa-grid-cols-1 elsa-gap-y-6 elsa-gap-x-4 sm:elsa-grid-cols-6`}>
-        {propertyDescriptors.map(property => this.renderPropertyEditor(activityModel, property))}
+        {propertyDescriptors.map(property => this.renderPropertyEditor(secretModel, property))}
       </div>
     );
   }
 
-  renderCategoryTab(activityModel: ActivityModel, activityDescriptor: ActivityDescriptor, category: string) {
-    const propertyDescriptors: Array<ActivityPropertyDescriptor> = activityDescriptor.inputProperties;
+  renderCategoryTab(secretModel: SecretModel, secretDescriptor: SecretDescriptor, category: string) {
+    const propertyDescriptors: Array<SecretPropertyDescriptor> = secretDescriptor.inputProperties;
     const descriptors = propertyDescriptors.filter(x => x.category == category);
-    const key = `activity-settings:${activityModel.activityId}:${category}`;
+    const key = `secret-settings:${secretModel.id}:${category}`;
 
     return <div key={key} class={`elsa-grid elsa-grid-cols-1 elsa-gap-y-6 elsa-gap-x-4 sm:elsa-grid-cols-6`}>
-      {descriptors.map(property => this.renderPropertyEditor(activityModel, property))}
+      {descriptors.map(property => this.renderPropertyEditor(secretModel, property))}
     </div>;
   }
 
-  renderPropertyEditor(activity: ActivityModel, property: ActivityPropertyDescriptor) {
-    const key = `activity-property-input:${activity.activityId}:${property.name}`;
-    const display = propertyDisplayManager.display(activity, property);
+  renderPropertyEditor(secret: SecretModel, property: SecretPropertyDescriptor) {
+    const key = `secret-property-input:${secret.id}:${property.name}`;
+    const display = propertyDisplayManager.display(secret, property);
     const id = `${property.name}Control`;
+
     return <elsa-control key={key} id={id} class="sm:elsa-col-span-6" content={display}/>;
   }
 

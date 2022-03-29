@@ -207,6 +207,5 @@ export const Ampq: Secret = {
       uiHint: "single-line",
     }
   ],
-  traits: 1,
   type: "AMPQ"
 }

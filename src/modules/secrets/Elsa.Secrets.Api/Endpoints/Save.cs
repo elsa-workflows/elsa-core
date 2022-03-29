@@ -25,16 +25,19 @@ namespace Elsa.Secrets.Api.Endpoints
         {
             var model = new Secret
             {
+                Id = request.SecretId,
                 DisplayName = request.DisplayName,
                 Name = request.Name,
                 Type = request.Type,   
                 PropertiesJson = JsonConvert.SerializeObject(request.Properties)
             };
 
-            await _secretsStore.SaveAsync(model);
+            if (model.Id == null)
+                await _secretsStore.SaveAsync(model);
+            else
+                await _secretsStore.UpdateAsync(model);
 
             return Ok(model);
-
         }
     }
 }

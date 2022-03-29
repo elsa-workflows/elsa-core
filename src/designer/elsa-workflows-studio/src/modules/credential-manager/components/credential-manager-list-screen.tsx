@@ -1,13 +1,10 @@
 import { Component, h, Prop, State } from "@stencil/core";
 import { RouterHistory } from "@stencil/router";
-import collection from "lodash/collection";
-import { ActivityModel, eventBus, EventTypes, PagedList } from "../../..";
+import {  eventBus, EventTypes } from "../../..";
 import { WebhookDefinitionSummary } from "../../elsa-webhooks/models";
 import Tunnel from "../../../data/dashboard";
-import {v4 as uuid} from 'uuid';
 import { createElsaSecretsClient, ElsaSecretsClient } from "../services/credantial-manager.client";
-import { Secret } from "../models/secret.model";
-import { createElsaWebhooksClient } from "../../elsa-webhooks/services/elsa-client";
+import { SecretDescriptor, SecretModel } from "../models/secret.model";
 
 @Component({
     tag: 'credential-manager-list-screen',
@@ -18,7 +15,7 @@ export class CredentialManagerListScreen {
     @Prop() serverUrl: string;
     @Prop() basePath: string;
     @Prop() culture: string;
-    @State() webhookDefinitions: Array<ActivityModel> = []
+    @State() secrets: Array<SecretModel> = []
   
     confirmDialog: HTMLElsaConfirmDialogElement;
     client: ElsaSecretsClient;
@@ -26,48 +23,68 @@ export class CredentialManagerListScreen {
     async componentWillLoad() {
       await this.loadSecrets();
 
-      eventBus.on(EventTypes.SecretPicked, this.onActivityPicked);
+      eventBus.on(EventTypes.SecretPicked, this.onSecretPicked);
       eventBus.on(EventTypes.UpdateSecret, this.onUpdateSecret);
+      eventBus.on(EventTypes.SecretUpdated, () => this.loadSecrets());
     }
 
-    async onUpdateSecret(secretModel: ActivityModel) {
-      console.log("update secret", secretModel);
-      const client = await createElsaSecretsClient('https://localhost:11000');
-      client.secretsApi.save(secretModel)
+    async onUpdateSecret(secretModel: SecretModel) {
+      const client = await createElsaSecretsClient(this.serverUrl);
+      await client.secretsApi.save(secretModel)
+
+      this.secrets = await client.secretsApi.list();
     }
 
-    onActivityPicked = async args => {
-      const activityDescriptor = args as any;
-      console.log('args in list', args);
-      const activityModel = this.newActivity(activityDescriptor);
-      console.log('activityModel after map ', activityModel);
+    onSecretPicked = async args => {
+      const secretDescriptor = args as any;
+      const secretModel = this.newSecret(secretDescriptor);
 
-     // this.addingSecret = true;
-      await this.showActivityEditorInternal(activityModel, false);
+      await this.showSecretEditorInternal(secretModel, false);
     };
 
-    async showActivityEditorInternal(activity: any, animate: boolean) {
-      await eventBus.emit(EventTypes.SecretsEditor.Show, this, activity, animate);
+    async onSecretEdit(e, secret) {
+      const properties = JSON.parse(secret.propertiesJson);     
+      const secretModel: SecretModel = {
+        id: secret.id,
+        displayName: secret.displayName,
+        name: secret.name,
+        type: secret.type,
+        properties: this.mapProperties(properties)
+      };
+
+      await this.showSecretEditorInternal(secretModel, true);
     }
 
-    newActivity(activityDescriptor): any {
-      const activity: any = {
-        activityId: uuid(),
-        type: activityDescriptor.type,
-        outcomes: activityDescriptor.outcomes,
-        displayName: activityDescriptor.displayName,
+    mapProperties(properties) {
+      return properties.map(prop => {
+        return {
+          expressions: {
+            Literal: prop.Expressions.Literal
+          },
+          name: prop.Name
+        }
+      });
+    }
+
+    async showSecretEditorInternal(secret: SecretModel, animate: boolean) {
+      await eventBus.emit(EventTypes.SecretsEditor.Show, this, secret, animate);
+    }
+
+    newSecret(secretDescriptor: SecretDescriptor): any {
+      const secret: SecretModel = {
+        type: secretDescriptor.type,
+        displayName: secretDescriptor.displayName,
         properties: [],
-        propertyStorageProviders: {}
       };
   
-      for (const property of activityDescriptor.inputProperties) {
-        activity.properties[property.name] = {
+      for (const property of secretDescriptor.inputProperties) {
+        secret.properties[property.name] = {
           syntax: '',
           expression: '',
         };
       }
-  
-      return activity;
+
+      return secret;
     }
   
     async onDeleteClick(e: Event, webhookDefinition: WebhookDefinitionSummary) {
@@ -84,14 +101,11 @@ export class CredentialManagerListScreen {
     async loadSecrets() {
       const elsaClient = await createElsaSecretsClient(this.serverUrl);
 
-      this.webhookDefinitions = await elsaClient.secretsApi.list();
-      console.log(this.webhookDefinitions);
+      this.secrets = await elsaClient.secretsApi.list();
     }
   
     render() {
-      const webhookDefinitions = this.webhookDefinitions;
-      const list = [];
-      const basePath = this.basePath;
+      const secrets = this.secrets;
   
       return (
         <div>
@@ -103,29 +117,12 @@ export class CredentialManagerListScreen {
                 <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
                   Type
                 </th>
-                <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
-                   
-                </th>
-                <th class="elsa-px-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-left elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider">
-                   
-                </th>
                 <th class="elsa-pr-6 elsa-py-3 elsa-border-b elsa-border-gray-200 elsa-bg-gray-50 elsa-text-right elsa-text-xs elsa-leading-4 elsa-font-medium elsa-text-gray-500 elsa-uppercase elsa-tracking-wider"/>
               </tr>
               </thead>
               <tbody class="elsa-bg-white elsa-divide-y elsa-divide-gray-100">
-              {webhookDefinitions?.map(item => {
-                console.log(item)
-                const webhookDefinition: WebhookDefinitionSummary = item;
-                let webhookDisplayName = webhookDefinition.name;
-  
-                if (!webhookDisplayName || webhookDisplayName.trim().length == 0)
-                webhookDisplayName = webhookDefinition.name;
-  
-                if (!webhookDisplayName || webhookDisplayName.trim().length == 0)
-                webhookDisplayName = 'Untitled';
-  
-                const editUrl = `${basePath}/webhook-definitions/${webhookDefinition.id}`;
-  
+              {secrets?.map(item => {
+        
                 const editIcon = (
                   <svg class="elsa-h-5 elsa-w-5 elsa-text-gray-500" width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -148,32 +145,20 @@ export class CredentialManagerListScreen {
                   <tr>
                     <td class="elsa-px-6 elsa-py-3 elsa-whitespace-no-wrap elsa-text-sm elsa-leading-5 elsa-font-medium elsa-text-gray-900">
                       <div class="elsa-flex elsa-items-center elsa-space-x-3 lg:elsa-pl-2">
-                        <stencil-route-link url={editUrl} anchorClass="elsa-truncate hover:elsa-text-gray-600"><span>{webhookDisplayName}</span></stencil-route-link>
+                        {item.name}
                       </div>
                     </td>
   
                     <td class="elsa-px-6 elsa-py-3 elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-font-medium">
                       <div class="elsa-flex elsa-items-center elsa-space-x-3 lg:elsa-pl-2">
-                        {webhookDefinition.path}
-                      </div>
-                    </td>
-  
-                    <td class="elsa-px-6 elsa-py-3 elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-font-medium">
-                      <div class="elsa-flex elsa-items-center elsa-space-x-3 lg:elsa-pl-2">
-                        {webhookDefinition.payloadTypeName}
-                      </div>
-                    </td>
-  
-                    <td class="elsa-px-6 elsa-py-3 elsa-text-sm elsa-leading-5 elsa-text-gray-500 elsa-font-medium">
-                      <div class="elsa-flex elsa-items-center elsa-space-x-3 lg:elsa-pl-2">
-                        {true == webhookDefinition.isEnabled ? 'Yes' : 'No'}
+                        {item.type}
                       </div>
                     </td>
   
                     <td class="elsa-pr-6">
                       <elsa-context-menu history={this.history} menuItems={[
-                        {text: 'Edit', anchorUrl: editUrl, icon: editIcon},
-                        {text: 'Delete', clickHandler: e => this.onDeleteClick(e, webhookDefinition), icon: deleteIcon}
+                        {text: 'Edit', clickHandler: e => this.onSecretEdit(e, item), icon: editIcon},
+                        {text: 'Delete', clickHandler: e => this.onDeleteClick(e, item), icon: deleteIcon}
                       ]}/>
                     </td>
                   </tr>

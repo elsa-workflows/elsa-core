@@ -1,9 +1,8 @@
 import axios, {AxiosInstance, AxiosRequestConfig} from "axios";
 import {Service} from 'axios-middleware';
-import * as collection from 'lodash/collection';
 import {eventBus} from '../../../services/event-bus';
-import {ActivityModel, EventTypes, PagedList} from "../../../models";
-import { Secret } from "../models/secret.model";
+import { EventTypes } from "../../../models";
+import { Secret, SecretModel } from "../models/secret.model";
 
 
 let _httpClient: AxiosInstance = null;
@@ -38,7 +37,7 @@ export const createElsaSecretsClient = async function (serverUrl: string): Promi
   _elsaSecretsClient = {
     secretsApi: {
       list: async () => {
-        const response = await httpClient.get<Array<ActivityModel>>(`v1/secrets`);
+        const response = await httpClient.get<Array<SecretModel>>(`v1/secrets`);
         return response.data;
       },
       save: async request => {
@@ -60,16 +59,9 @@ export interface ElsaSecretsClient {
 
 export interface SecretsApi {
 
-  list(): Promise<Array<ActivityModel>>;
+  list(): Promise<Array<SecretModel>>;
 
-  save(request: ActivityModel): Promise<Secret>;
+  save(request: SecretModel): Promise<Secret>;
 
   delete(secretId: string): Promise<void>;
-}
-
-export interface SaveSecretsRequest {
-  id?: string;
-  workflowBlueprintId?: string;
-  key?: string;
-  value?: string;
 }
