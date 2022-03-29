@@ -4,6 +4,7 @@ import { SecretIcon } from "../../../components/icons/secret-icon";
 import state from "../../../utils/store";
 import { Secret, SecretDescriptor } from "../models/secret.model";
 import { Ampq } from "../models/secrets/ampq.secret";
+import { PostgreSql } from "../models/secrets/postgre-sql.secret";
 
 @Component({
   tag: 'elsa-secrets-picker-modal',
@@ -30,7 +31,7 @@ export class ElasSecretsPickerModal {
   };
 
   componentWillRender() {
-    const secretsDescriptors: Array<Secret> = [Ampq];
+    const secretsDescriptors: Array<Secret> = [Ampq, PostgreSql];
     state.secretsDescriptors = secretsDescriptors;
     this.categories = ['All', ...secretsDescriptors.map(x => x.category).distinct().sort()];
     const searchText = this.searchText ? this.searchText.toLowerCase() : '';

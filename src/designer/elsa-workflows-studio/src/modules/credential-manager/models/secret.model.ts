@@ -6,8 +6,6 @@ export interface Secret {
   description: string;
   displayName: string;
   inputProperties: SecretProperties[]
-  outcomes: any[];
-  outputProperties: SecretProperties[]
   properties: SecretProperties[];
   type: string;
 }
@@ -27,19 +25,18 @@ export interface SecretDefinitionProperty {
   value?: any;
 }
 
-
 export interface SecretDescriptor {
   type: string;
   displayName: string;
   description?: string;
   category: string;
-  //traits: ActivityTraits;
   outcomes: Array<string>;
   browsable: boolean;
   inputProperties: Array<SecretPropertyDescriptor>;
   outputProperties: Array<SecretPropertyDescriptor>;
   customAttributes: any;
 }
+
 export interface SecretPropertyDescriptor {
   name: string;
   uiHint: string;
@@ -71,16 +68,8 @@ export interface SecretProperties {
   uiHint?: string;
 }
 
-export interface TabModel {
-  tabName: string;
-  renderContent: () => any;
-}
-
 export interface SecretEditorRenderProps {
   secretDescriptor?: SecretDescriptor;
   secretModel?: SecretModel;
-  propertyCategories?: Array<string>;
   defaultProperties?: Array<SecretPropertyDescriptor>;
-  tabs?: Array<TabModel>;
-  selectedTabName?: string;
 }
