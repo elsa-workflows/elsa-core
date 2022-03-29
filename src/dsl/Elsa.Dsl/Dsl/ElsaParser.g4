@@ -94,24 +94,25 @@ elseStat
     ;
 
 expr
-    :   funcCall                         #functionExpr
-    |   object                           #objectExpr
-    |   newObject                        #newObjectExpr
-    |   expr '++'                        #incrementExpr
-    |   expr '--'                        #decrementExpr
-    |   '-' expr                         #negateExpr
-    |   '!' expr                         #notExpr
-    |   expr '*' expr                    #multiplyExpr
-    |   expr '+' expr                    #addExpr
-    |   expr '-' expr                    #subtractExpr
-    |   expr ('==' | '>' | '<') expr     #compareExpr
-    |   INTEGER_VAL                      #integerValueExpr
-    |   STRING_VAL                       #stringValueExpr
-    |   BACKTICKSTRING_VAL               #backTickStringValueExpr
-    |   '(' exprList? ')'                #parenthesesExpr
-    |   '[' exprList? ']'                #bracketsExpr
-    |   methodCall                       #methodCallExpr
-    |   ID                               #variableExpr
+    :   funcCall                                                #functionExpr
+    |   expressionMarker                                        #expressionMarkerExpr
+    |   object                                                  #objectExpr
+    |   newObject                                               #newObjectExpr
+    |   expr '++'                                               #incrementExpr
+    |   expr '--'                                               #decrementExpr
+    |   '-' expr                                                #negateExpr
+    |   '!' expr                                                #notExpr
+    |   expr '*' expr                                           #multiplyExpr
+    |   expr '+' expr                                           #addExpr
+    |   expr '-' expr                                           #subtractExpr
+    |   expr ('==' | '>' | '<' | '!=' | '>=' | '<=') expr       #compareExpr
+    |   INTEGER_VAL                                             #integerValueExpr
+    |   STRING_VAL                                              #stringValueExpr
+    |   BACKTICKSTRING_VAL                                      #backTickStringValueExpr
+    |   '(' exprList? ')'                                       #parenthesesExpr
+    |   '[' exprList? ']'                                       #bracketsExpr
+    |   methodCall                                              #methodCallExpr
+    |   ID                                                      #variableExpr
     ;
     
 exprList

@@ -50,8 +50,8 @@ public partial class WorkflowDefinitionBuilderInterpreter
                 return (Input)Activator.CreateInstance(inputType, propertyValue)!;
         }
 
-        var convertedValue = propertyValue.ConvertTo(underlyingType);
-
-        return (Input)Activator.CreateInstance(inputType, convertedValue)!;
+        return propertyValue is ExternalExpressionReference externalExpressionReference 
+            ? (Input)Activator.CreateInstance(inputType, externalExpressionReference.Expression, externalExpressionReference.Reference)! 
+            : (Input)Activator.CreateInstance(inputType, propertyValue.ConvertTo(underlyingType))!;
     }
 }

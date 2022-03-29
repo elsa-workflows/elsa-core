@@ -24,6 +24,10 @@
 
     <ItemGroup>
         <None Remove="Sample1.elsa" />
+        <EmbeddedResource Include="Demo1.elsa" />
+        <EmbeddedResource Include="Demo2.elsa" />
+        <EmbeddedResource Include="Demo3.elsa" />
+        <EmbeddedResource Include="Demo4.elsa" />
         <EmbeddedResource Include="Sample1.elsa" />
     </ItemGroup>
 

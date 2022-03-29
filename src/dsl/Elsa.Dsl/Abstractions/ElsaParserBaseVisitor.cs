@@ -479,6 +479,17 @@ public partial class ElsaParserBaseVisitor<Result> : AbstractParseTreeVisitor<Re
 	/// <return>The visitor result.</return>
 	public virtual Result VisitAddExpr([NotNull] ElsaParser.AddExprContext context) { return VisitChildren(context); }
 	/// <summary>
+	/// Visit a parse tree produced by the <c>expressionMarkerExpr</c>
+	/// labeled alternative in <see cref="ElsaParser.expr"/>.
+	/// <para>
+	/// The default implementation returns the result of calling <see cref="AbstractParseTreeVisitor{Result}.VisitChildren(IRuleNode)"/>
+	/// on <paramref name="context"/>.
+	/// </para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	public virtual Result VisitExpressionMarkerExpr([NotNull] ElsaParser.ExpressionMarkerExprContext context) { return VisitChildren(context); }
+	/// <summary>
 	/// Visit a parse tree produced by the <c>backTickStringValueExpr</c>
 	/// labeled alternative in <see cref="ElsaParser.expr"/>.
 	/// <para>

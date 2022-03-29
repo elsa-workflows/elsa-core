@@ -16,6 +16,7 @@ public partial class WorkflowDefinitionBuilderInterpreter
         var expressionReference = new JavaScriptExpressionReference(expression);
         var externalReference = new ExternalExpressionReference(expression, expressionReference);
         _expressionValue.Put(context, externalReference);
+        _expressionValue.Put(context.Parent, externalReference);
 
         return DefaultResult;
     }

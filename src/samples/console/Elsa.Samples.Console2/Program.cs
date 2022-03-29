@@ -21,6 +21,7 @@ var typeSystem = serviceProvider.GetRequiredService<ITypeSystem>();
 var dslEngine = serviceProvider.GetRequiredService<IDslEngine>();
 var functionActivityRegistry = serviceProvider.GetRequiredService<IFunctionActivityRegistry>();
 
+// Map .NET types to Elsa DSL. Optionally using an alias. 
 typeSystem.Register<int>("int");
 typeSystem.Register<float>("float");
 typeSystem.Register<string>("string");
@@ -31,15 +32,21 @@ typeSystem.Register<WriteLine>();
 typeSystem.Register<HttpEndpoint>();
 typeSystem.Register<Timer>();
 
+// Map functions to activities.
 functionActivityRegistry.RegisterFunction("print", nameof(WriteLine), new[] { nameof(WriteLine.Text) });
 functionActivityRegistry.RegisterFunction("read", nameof(ReadLine), new[] { nameof(ReadLine.Result) });
 
 var assembly = Assembly.GetExecutingAssembly();
-var resource = assembly.GetManifestResourceStream("Elsa.Samples.Console2.Sample1.elsa");
 
+// Read text file containing Elsa DSL.
+var scriptName = "Demo2";
+var resource = assembly.GetManifestResourceStream($"Elsa.Samples.Console2.{scriptName}.elsa");
 var script = await new StreamReader(resource!).ReadToEndAsync();
+
+// Evaluate the DSL. The result will be an executable workflow definition. 
 var workflowDefinition = dslEngine.Parse(script);
 
+// Run the workflow.
 var workflowEngine = serviceProvider.GetRequiredService<IWorkflowRunner>();
 await workflowEngine.RunAsync(workflowDefinition);
 

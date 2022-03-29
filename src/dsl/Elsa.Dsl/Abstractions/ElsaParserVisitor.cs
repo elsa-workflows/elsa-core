@@ -308,6 +308,13 @@ public interface IElsaParserVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitAddExpr([NotNull] ElsaParser.AddExprContext context);
 	/// <summary>
+	/// Visit a parse tree produced by the <c>expressionMarkerExpr</c>
+	/// labeled alternative in <see cref="ElsaParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitExpressionMarkerExpr([NotNull] ElsaParser.ExpressionMarkerExprContext context);
+	/// <summary>
 	/// Visit a parse tree produced by the <c>backTickStringValueExpr</c>
 	/// labeled alternative in <see cref="ElsaParser.expr"/>.
 	/// </summary>
