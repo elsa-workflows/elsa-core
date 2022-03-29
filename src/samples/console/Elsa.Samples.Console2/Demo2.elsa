@@ -1,14 +1,1 @@
-//let name: Variable;
-let readLine1 = ReadLine;
-
-Sequence {
-    Activities: [ 
-        WriteLine { Text: "Please Enter your name" },
-        Sequence {
-            Activities: [
-                readLine1,
-                WriteLine { Text: js => `Hello ${readline1}` }
-            ]
-        }  
-   ]
-};
+print("Hello World");
