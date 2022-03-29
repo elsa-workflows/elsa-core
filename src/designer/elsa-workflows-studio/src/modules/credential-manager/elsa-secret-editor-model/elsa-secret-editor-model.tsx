@@ -8,11 +8,6 @@ import { FormContext, textInput } from "../../../utils/forms";
 import state from "../../../utils/store";
 import { SecretDescriptor, SecretEditorRenderProps, SecretModel, SecretPropertyDescriptor } from "../models/secret.model";
 
-interface TabModel {
-  tabName: string;
-  renderContent: () => any;
-}
-
 @Component({
     tag: 'elsa-secert-editor-modal',
     shadow: false
@@ -64,7 +59,6 @@ export class ElsaSecretEditorModel {
       customAttributes: {}
     };
 
-    const propertyCategories = secretDescriptor.inputProperties.filter(x => x.category).map(x => x.category).distinct();
     const defaultProperties = secretDescriptor.inputProperties.filter(x => !x.category || x.category.length == 0);
 
     const secretModel: SecretModel = this.secretModel || {
@@ -74,48 +68,12 @@ export class ElsaSecretEditorModel {
     };
 
     const t = this.t;
-    let tabs: Array<TabModel> = [];
-
-    if (defaultProperties.length > 0) {
-      tabs.push({
-        tabName: 'General',
-        renderContent: () => this.renderPropertiesTab(secretModel)
-      });
-    }
-
-    for (const category of propertyCategories) {
-      const categoryTab: TabModel = {
-        tabName: category,
-        renderContent: () => this.renderCategoryTab(secretModel, secretDescriptor, category)
-      };
-
-      tabs.push(categoryTab);
-    }
-
-    tabs.push({
-      tabName: 'Common',
-      renderContent: () => this.renderCommonTab(secretModel)
-    });
 
     this.renderProps = {
       secretDescriptor: secretDescriptor,
       secretModel,
-      propertyCategories,
       defaultProperties,
-      tabs,
-      selectedTabName: this.renderProps.selectedTabName
     };
-
-    await eventBus.emit(EventTypes.SecretsEditor.Rendering, this, this.renderProps);
-
-    let selectedTabName = this.renderProps.selectedTabName
-    tabs = this.renderProps.tabs;
-
-    if (!selectedTabName)
-      this.renderProps.selectedTabName = tabs[0].tabName;
-
-    if (tabs.findIndex(x => x.tabName === selectedTabName) < 0)
-      this.renderProps.selectedTabName = selectedTabName = tabs[0].tabName;
   }
 
   async onCancelClick() {
@@ -131,11 +89,6 @@ export class ElsaSecretEditorModel {
     await this.hide(true);
 
     await eventBus.emit(EventTypes.SecretUpdated, this, this.secretModel);
-  };
-
-  onTabClick = (e: Event, tab: TabModel) => {
-    e.preventDefault();
-    this.renderProps = {...this.renderProps, selectedTabName: tab.tabName};
   };
 
   onShowSecretEditor = async (secret: SecretModel, animate: boolean) => {
@@ -160,10 +113,7 @@ export class ElsaSecretEditorModel {
   render() {
     const renderProps = this.renderProps;
     const secretDescriptor: SecretDescriptor = renderProps.secretDescriptor;
-    const tabs = renderProps.tabs;
-    const selectedTabName = renderProps.selectedTabName;
-    const inactiveClass = 'elsa-border-transparent elsa-text-gray-500 hover:elsa-text-gray-700 hover:elsa-border-gray-300';
-    const selectedClass = 'elsa-border-blue-500 elsa-text-blue-600';
+    const secretModel = this.secretModel;
     const t = this.t;
 
     return (
@@ -184,19 +134,9 @@ export class ElsaSecretEditorModel {
                       </p>
                     </div>
 
-                    <div class="elsa-border-b elsa-border-gray-200">
-                      <nav class="-elsa-mb-px elsa-flex elsa-space-x-8" aria-label="Tabs">
-                        {tabs.map(tab => {
-                          const isSelected = tab.tabName === selectedTabName;
-                          const cssClass = isSelected ? selectedClass : inactiveClass;
-                          return <a href="#" onClick={e => this.onTabClick(e, tab)}
-                                    class={`${cssClass} elsa-whitespace-nowrap elsa-py-4 elsa-px-1 elsa-border-b-2 elsa-font-medium elsa-text-sm`}>{tab.tabName}</a>;
-                        })}
-                      </nav>
-                    </div>
-
                     <div class="elsa-mt-8">
-                      {this.renderTabs(tabs)}
+                      {this.renderProperties(secretModel)}
+                     
                     </div>
                   </div>
 
@@ -224,29 +164,9 @@ export class ElsaSecretEditorModel {
     );
   }
 
-  renderTabs(tabs: Array<TabModel>) {
-    return tabs.map(x =>
-      (
-        <div class={`flex ${this.getHiddenClass(x.tabName)}`}>
-          <elsa-control content={x.renderContent()}/>
-        </div>
-      ));
-  }
-
-  renderCommonTab(secretModel: SecretModel) {
-    const formContext = this.formContext;
-    const t = this.t;
-
-    return (
-      <div class="elsa-space-y-8 elsa-w-full">
-        {textInput(formContext, 'name', 'Name', secretModel.name, 'Secret\'s name', 'secretName')}
-        {textInput(formContext, 'type', 'Type', secretModel.displayName, 'Secret\'s type', 'secretDisplayName')}
-      </div>
-    );
-  }
-
-  renderPropertiesTab(secretModel: SecretModel) {
+  renderProperties(secretModel: SecretModel) {
     const propertyDescriptors: Array<SecretPropertyDescriptor> = this.renderProps.defaultProperties;
+    const formContext = this.formContext;
 
     if (propertyDescriptors.length == 0)
       return undefined;
@@ -255,20 +175,18 @@ export class ElsaSecretEditorModel {
     const t = this.t;
 
     return (
-      <div key={key} class={`elsa-grid elsa-grid-cols-1 elsa-gap-y-6 elsa-gap-x-4 sm:elsa-grid-cols-6`}>
-        {propertyDescriptors.map(property => this.renderPropertyEditor(secretModel, property))}
+      <div>
+        <div class="elsa-w-full">
+          {textInput(formContext, 'name', 'Name', secretModel.name, 'Secret\'s name', 'secretName')}
+          {textInput(formContext, 'type', 'Type', secretModel.displayName, 'Secret\'s type', 'secretDisplayName')}
+        </div>
+        <div class="elsa-mt-6">
+          <div key={key} class={`elsa-grid elsa-grid-cols-1 elsa-gap-y-6 elsa-gap-x-4 sm:elsa-grid-cols-6`}>
+            {propertyDescriptors.map(property => this.renderPropertyEditor(secretModel, property))}
+          </div>
+        </div>
       </div>
     );
-  }
-
-  renderCategoryTab(secretModel: SecretModel, secretDescriptor: SecretDescriptor, category: string) {
-    const propertyDescriptors: Array<SecretPropertyDescriptor> = secretDescriptor.inputProperties;
-    const descriptors = propertyDescriptors.filter(x => x.category == category);
-    const key = `secret-settings:${secretModel.id}:${category}`;
-
-    return <div key={key} class={`elsa-grid elsa-grid-cols-1 elsa-gap-y-6 elsa-gap-x-4 sm:elsa-grid-cols-6`}>
-      {descriptors.map(property => this.renderPropertyEditor(secretModel, property))}
-    </div>;
   }
 
   renderPropertyEditor(secret: SecretModel, property: SecretPropertyDescriptor) {
@@ -277,9 +195,5 @@ export class ElsaSecretEditorModel {
     const id = `${property.name}Control`;
 
     return <elsa-control key={key} id={id} class="sm:elsa-col-span-6" content={display}/>;
-  }
-
-  getHiddenClass(tab: string) {
-    return this.renderProps.selectedTabName == tab ? '' : 'hidden';
   }
 }
