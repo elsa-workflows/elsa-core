@@ -1,3 +1,5 @@
+using Elsa.Activities.Sql.Activities;
+using Elsa.Design;
 using Elsa.Models;
 using Elsa.Providers.Workflows;
 using Elsa.Retention.Extensions;
@@ -79,6 +81,9 @@ namespace Elsa.Samples.Server.Host
                 typeof(WorkflowSettings.Persistence.YesSql.PostgreSqlStartup),
                 typeof(Secrets.Persistence.EntityFramework.Sqlite.Startup)
             };
+
+            services
+                .AddScoped<IRuntimeSelectListProvider, ExecuteSqlCommand>();
 
             services
                 .AddElsa(elsa => elsa

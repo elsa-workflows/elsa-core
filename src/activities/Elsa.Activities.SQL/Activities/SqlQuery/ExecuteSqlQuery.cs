@@ -7,6 +7,13 @@ using Elsa.Expressions;
 using Elsa.Activities.Sql.Factory;
 using System.Data;
 using Elsa.Activities.Sql.Models;
+using Elsa.Secrets.Manager;
+using Elsa.Activities.Sql.Services;
+using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Linq;
+using Elsa.Metadata;
 
 namespace Elsa.Activities.Sql.Activities
 {
@@ -19,7 +26,7 @@ namespace Elsa.Activities.Sql.Activities
         Description = "Execute given SQL query and returned execution result",
         Outcomes = new[] { OutcomeNames.Done }
     )]
-    public class ExecuteSqlQuery : Activity
+    public class ExecuteSqlQuery : Activity, IActivityPropertyOptionsProvider, IRuntimeSelectListProvider
     {
         /// <summary>
         /// Allowed databases to run SQL
@@ -27,7 +34,7 @@ namespace Elsa.Activities.Sql.Activities
         [ActivityInput(
             UIHint = ActivityInputUIHints.Dropdown,
             Hint = "Allowed databases to run SQL.",
-            Options = new[] { "MSSQL Server", "PostgreSql" },
+            Options = new[] { "MSSQLServer", "PostgreSql" },
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? Database { get; set; }
@@ -42,29 +49,45 @@ namespace Elsa.Activities.Sql.Activities
         )]
         public string Query { get; set; } = default!;
 
-        /// <summary>
-        /// Connection string to run SQL
-        /// </summary>
         [ActivityInput(
-            Hint = "Connection string to run SQL",
-            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
-        )]
-        public string ConnectionString { get; set; } = default!;
+              UIHint = ActivityInputUIHints.Dropdown,
+              Label = "Credentials string",
+              Hint = "Secret stored in credential manager",
+              OptionsProvider = typeof(ExecuteSqlQuery),
+              SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
+           )]
+        public string? CredentialString { get; set; }
 
         [ActivityOutput] public DataSet? Output { get; set; }
 
         private readonly ISqlClientFactory _sqlClientFactory;
+        private readonly ISecretsProvider _secretsProvider;
 
-        public ExecuteSqlQuery(ISqlClientFactory sqlClientFactory) 
+        public ExecuteSqlQuery(ISqlClientFactory sqlClientFactory, ISecretsProvider secretsProvider) 
         {
             _sqlClientFactory = sqlClientFactory;
+            _secretsProvider = secretsProvider;
+        }
+
+        public object GetOptions(PropertyInfo property) => new RuntimeSelectListProviderSettings(GetType());
+
+        public async ValueTask<SelectList> GetSelectListAsync(object? context = default, CancellationToken cancellationToken = default)
+        {
+            var secretsPostgre = await _secretsProvider.GetSecrets("PostgreSql");
+            var secretsMssql = await _secretsProvider.GetSecrets("MSSQLServer");
+
+            var items = secretsMssql.Select(x => new SelectListItem(x)).ToList();
+            items.AddRange(secretsPostgre.Select(x => new SelectListItem(x)).ToList());
+            var list = new SelectList { Items = items };
+
+            return list;
         }
 
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => ExecuteQuery();
 
         private IActivityExecutionResult ExecuteQuery()
         {
-            var sqlServerClient = _sqlClientFactory.CreateClient(new CreateSqlClientModel(Database, ConnectionString));
+            var sqlServerClient = _sqlClientFactory.CreateClient(new CreateSqlClientModel(Database, CredentialString));
             Output = sqlServerClient.ExecuteQuery(Query);
 
             return Done();
