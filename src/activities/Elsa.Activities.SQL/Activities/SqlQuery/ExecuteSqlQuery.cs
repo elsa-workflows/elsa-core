@@ -34,7 +34,7 @@ namespace Elsa.Activities.Sql.Activities
         [ActivityInput(
             UIHint = ActivityInputUIHints.Dropdown,
             Hint = "Allowed databases to run SQL.",
-            Options = new[] { "MSSQLServer", "PostgreSql" },
+            Options = new[] { "", "MSSQLServer", "PostgreSql" },
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? Database { get; set; }
@@ -78,6 +78,8 @@ namespace Elsa.Activities.Sql.Activities
 
             var items = secretsMssql.Select(x => new SelectListItem(x)).ToList();
             items.AddRange(secretsPostgre.Select(x => new SelectListItem(x)).ToList());
+            items.Insert(0, new SelectListItem("", "empty"));
+
             var list = new SelectList { Items = items };
 
             return list;
