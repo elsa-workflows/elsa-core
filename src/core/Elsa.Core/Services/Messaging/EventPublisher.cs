@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Rebus.Bus;
 using Rebus.Exceptions;
 
 namespace Elsa.Services.Messaging
@@ -20,18 +21,26 @@ namespace Elsa.Services.Messaging
 
         public async Task PublishAsync(object message, IDictionary<string, string>? headers = default, CancellationToken cancellationToken = default)
         {
-            // Attempt to prevent: Could not 'GetOrAdd' item with key 'new-azure-service-bus-transport' error.
+            var bus = await GetBusAsync(message, cancellationToken);
             await _semaphore.WaitAsync(cancellationToken);
             
+            // Attempt to prevent: Could not 'GetOrAdd' item with key 'new-azure-service-bus-transport' error.
             try
             {
-                var bus = await _serviceBusFactory.GetServiceBusAsync(message.GetType(), cancellationToken: cancellationToken);
                 await bus.Publish(message, headers);
+            }
+            catch (RebusApplicationException e)
+            {
+                await _serviceBusFactory.DisposeServiceBusAsync(bus, cancellationToken);
+                bus = await GetBusAsync(message, cancellationToken);
+                await bus.Send(message, headers);
             }
             finally
             {
                 _semaphore.Release();
             }
         }
+        
+        private Task<IBus> GetBusAsync(object message, CancellationToken cancellationToken) => _serviceBusFactory.GetServiceBusAsync(message.GetType(), cancellationToken: cancellationToken);
     }
 }

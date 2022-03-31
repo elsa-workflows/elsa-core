@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using NodaTime;
 using Rebus.Bus;
+using Rebus.Exceptions;
 
 namespace Elsa.Services.Messaging
 {
@@ -19,12 +20,17 @@ namespace Elsa.Services.Messaging
         public async Task SendAsync(object message, string? queueName = default, IDictionary<string, string>? headers = default, CancellationToken cancellationToken = default)
         {
             var bus = await GetBusAsync(message, queueName, cancellationToken);
-
-            // Attempt to prevent: Could not 'GetOrAdd' item with key 'new-azure-service-bus-transport' error.
             await _semaphore.WaitAsync(cancellationToken);
-
+            
+            // Attempt to prevent: Could not 'GetOrAdd' item with key 'new-azure-service-bus-transport' error.
             try
             {
+                await bus.Send(message, headers);
+            }
+            catch (RebusApplicationException e)
+            {
+                await _serviceBusFactory.DisposeServiceBusAsync(bus, cancellationToken);
+                bus = await GetBusAsync(message, queueName, cancellationToken);
                 await bus.Send(message, headers);
             }
             finally
