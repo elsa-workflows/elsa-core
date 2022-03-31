@@ -16,6 +16,8 @@ using Elsa.Persistence;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Open.Linq.AsyncExtensions;
@@ -37,6 +39,7 @@ namespace Elsa.Activities.Http.Middleware
             IWorkflowInstanceStore workflowInstanceStore,
             IWorkflowRegistry workflowRegistry,
             IWorkflowBlueprintReflector workflowBlueprintReflector,
+            IRouteMatcher routeMatcher,
             IEnumerable<IHttpRequestBodyParser> contentParsers)
         {
             var basePath = options.Value.BasePath;
@@ -54,8 +57,28 @@ namespace Elsa.Activities.Http.Middleware
 
             request.TryGetCorrelationId(out var correlationId);
 
+            // Try to match inbound path.
+            var routeTable = await GetRouteTableAsync(httpContext, cancellationToken);
+            
+            var matchingRouteQuery =
+                from route in routeTable
+                let routeValues = routeMatcher.Match(route.Template, path, request.Query)
+                where routeValues != null && (route.Method == null || string.Equals(route.Method, method, StringComparison.OrdinalIgnoreCase))
+                select new { route, routeValues };
+
+            var matchingRoute = matchingRouteQuery.FirstOrDefault();
+            var routeTemplate = matchingRoute?.route.Template ?? path;
+
+            if (matchingRoute != null)
+            {
+                var routeData = httpContext.GetRouteData();
+
+                foreach (var routeValue in matchingRoute.routeValues!) 
+                    routeData.Values[routeValue.Key] = routeValue.Value;
+            }
+
             const string activityType = nameof(HttpEndpoint);
-            var bookmark = new HttpEndpointBookmark(path, method);
+            var bookmark = new HttpEndpointBookmark(routeTemplate, method);
             var collectWorkflowsContext = new WorkflowsQuery(activityType, bookmark, correlationId, default, default, TenantId);
             var pendingWorkflows = await workflowLaunchpad.FindWorkflowsAsync(collectWorkflowsContext, cancellationToken).ToList();
 
@@ -120,7 +143,7 @@ namespace Elsa.Activities.Http.Middleware
                         message = e.Message
                     }), cancellationToken);
                 }
-                
+
                 try
                 {
                     inputModel = inputModel with
@@ -165,6 +188,25 @@ namespace Elsa.Activities.Http.Middleware
                     await faultHandler.HandleAsync(new HttpEndpointFaultedWorkflowContext(httpContext, pendingWorkflowInstance, result.Exception, cancellationToken));
                 }
             }
+        }
+
+        // TODO: Move this to a service.
+        // TODO: Build route table in response to trigger indexing complete events.
+        // TODO: Build route table in response to bookmark indexing complete events.
+        private async Task<ICollection<HttpEndpointRoute>> GetRouteTableAsync(HttpContext httpContext, CancellationToken cancellationToken)
+        {
+            var triggerStore = httpContext.RequestServices.GetRequiredService<ITriggerFinder>();
+            var triggers = await triggerStore.FindTriggersByTypeAsync<HttpEndpointBookmark>(cancellationToken: cancellationToken);
+            var serializer = httpContext.RequestServices.GetRequiredService<IBookmarkSerializer>();
+            var routes = new List<HttpEndpointRoute>();
+
+            foreach (var trigger in triggers)
+            {
+                var (path, method) = serializer.Deserialize<HttpEndpointBookmark>(trigger.Model);
+                routes.Add(new HttpEndpointRoute(path, method));
+            }
+
+            return routes;
         }
 
         private async Task<bool> AuthorizeAsync(
@@ -226,4 +268,6 @@ namespace Elsa.Activities.Http.Middleware
             ? httpContext.Request.Path.StartsWithSegments(basePath.Value, out _, out var remainingPath) ? remainingPath.Value.ToLowerInvariant() : null
             : httpContext.Request.Path.Value.ToLowerInvariant();
     }
+
+    internal record HttpEndpointRoute(string Template, string? Method);
 }
