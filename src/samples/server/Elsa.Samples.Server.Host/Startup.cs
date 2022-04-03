@@ -89,7 +89,7 @@ namespace Elsa.Samples.Server.Host
                     // Optionally opt-out of indexing workflows stored in the database.
                     // These will be indexed when published/unpublished/deleted, so no need to do it during startup.
                     // Unless you have existing workflow definitions in the DB for which no triggers have yet been created.
-                    .ExcludeWorkflowProviderFromStartupIndexing<DatabaseWorkflowProvider>()
+                    //.ExcludeWorkflowProviderFromStartupIndexing<DatabaseWorkflowProvider>()
                 )
                 .AddRetentionServices(options =>
                 {

@@ -11,7 +11,7 @@ using Elsa.Services.Models;
 using NJsonSchema;
 using NJsonSchema.CodeGeneration.TypeScript;
 
-namespace Elsa.Activities.Http.Scripting.JavaScript
+namespace Elsa.Activities.Http.JavaScript
 {
     public class HttpEndpointTypeDefinitionRenderer : DefaultActivityTypeDefinitionRenderer
     {

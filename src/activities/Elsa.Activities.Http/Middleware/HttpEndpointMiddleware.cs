@@ -59,16 +59,16 @@ namespace Elsa.Activities.Http.Middleware
             request.TryGetCorrelationId(out var correlationId);
 
             // Try to match inbound path.
-            var routeTable = await GetRouteTableAsync(httpContext, cancellationToken);
+            var routeTable = httpContext.RequestServices.GetRequiredService<IRouteTable>();
             
             var matchingRouteQuery =
                 from route in routeTable
-                let routeValues = routeMatcher.Match(route.Template, path, request.Query)
-                where routeValues != null && (route.Method == null || string.Equals(route.Method, method, StringComparison.OrdinalIgnoreCase))
+                let routeValues = routeMatcher.Match(route, path, request.Query)
+                where routeValues != null
                 select new { route, routeValues };
 
             var matchingRoute = matchingRouteQuery.FirstOrDefault();
-            var routeTemplate = matchingRoute?.route.Template ?? path;
+            var routeTemplate = matchingRoute?.route ?? path;
             var routeData = httpContext.GetRouteData();
             
             if (matchingRoute != null)
@@ -77,6 +77,7 @@ namespace Elsa.Activities.Http.Middleware
                     routeData.Values[routeValue.Key] = routeValue.Value;
             }
 
+            // Create a workflow query using the selected route and HTTP method of the request.
             const string activityType = nameof(HttpEndpoint);
             var bookmark = new HttpEndpointBookmark(routeTemplate, method);
             var collectWorkflowsContext = new WorkflowsQuery(activityType, bookmark, correlationId, default, default, TenantId);
@@ -190,26 +191,7 @@ namespace Elsa.Activities.Http.Middleware
                 }
             }
         }
-
-        // TODO: Move this to a service.
-        // TODO: Build route table in response to trigger indexing complete events.
-        // TODO: Build route table in response to bookmark indexing complete events.
-        private async Task<ICollection<HttpEndpointRoute>> GetRouteTableAsync(HttpContext httpContext, CancellationToken cancellationToken)
-        {
-            var triggerStore = httpContext.RequestServices.GetRequiredService<ITriggerFinder>();
-            var triggers = await triggerStore.FindTriggersByTypeAsync<HttpEndpointBookmark>(cancellationToken: cancellationToken);
-            var serializer = httpContext.RequestServices.GetRequiredService<IBookmarkSerializer>();
-            var routes = new List<HttpEndpointRoute>();
-
-            foreach (var trigger in triggers)
-            {
-                var (path, method) = serializer.Deserialize<HttpEndpointBookmark>(trigger.Model);
-                routes.Add(new HttpEndpointRoute(path, method));
-            }
-
-            return routes;
-        }
-
+        
         private async Task<bool> AuthorizeAsync(
             HttpContext httpContext,
             HttpActivityOptions options,
