@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Routing;
 namespace Elsa.Activities.Http.Contracts;
 
 /// <summary>
-/// Matches a a given request path against the specified route template.
+/// Matches a given request path against the specified route template.
 /// </summary>
 public interface IRouteMatcher
 {
