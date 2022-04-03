@@ -62,7 +62,7 @@ namespace Elsa.Activities.Http.Middleware
             
             var matchingRouteQuery =
                 from route in routeTable
-                let routeValues = routeMatcher.Match(route, path, request.Query)
+                let routeValues = routeMatcher.Match(route, path)
                 where routeValues != null
                 select new { route, routeValues };
 
