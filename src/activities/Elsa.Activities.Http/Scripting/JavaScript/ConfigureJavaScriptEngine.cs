@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Contracts;
 using Elsa.Activities.Http.Extensions;
-using Elsa.Activities.Http.Services;
 using Elsa.Scripting.JavaScript.Events;
 using Elsa.Scripting.JavaScript.Messages;
 using Elsa.Services;
@@ -11,22 +10,19 @@ using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 
-namespace Elsa.Activities.Http.JavaScript
+namespace Elsa.Activities.Http.Scripting.JavaScript
 {
     public class ConfigureJavaScriptEngine : INotificationHandler<EvaluatingJavaScriptExpression>, INotificationHandler<RenderingTypeScriptDefinitions>
     {
         private readonly IAbsoluteUrlProvider _absoluteUrlProvider;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly IActivityTypeService _activityTypeService;
 
         public ConfigureJavaScriptEngine(
             IAbsoluteUrlProvider absoluteUrlProvider,
-            IHttpContextAccessor httpContextAccessor,
-            IActivityTypeService activityTypeService)
+            IHttpContextAccessor httpContextAccessor)
         {
             _absoluteUrlProvider = absoluteUrlProvider;
             _httpContextAccessor = httpContextAccessor;
-            _activityTypeService = activityTypeService;
         }
 
         public Task Handle(EvaluatingJavaScriptExpression notification, CancellationToken cancellationToken)

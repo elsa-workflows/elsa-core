@@ -4,7 +4,7 @@ using System.Linq;
 using Elsa.Activities.Http.Models;
 using Elsa.Scripting.JavaScript.Services;
 
-namespace Elsa.Activities.Http.JavaScript
+namespace Elsa.Activities.Http.Scripting.JavaScript
 {
     public class HttpTypeDefinitionProvider : TypeDefinitionProvider
     {

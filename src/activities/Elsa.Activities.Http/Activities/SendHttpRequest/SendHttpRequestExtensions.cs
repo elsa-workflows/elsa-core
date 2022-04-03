@@ -5,7 +5,8 @@ using Elsa.Activities.Http.Models;
 using Elsa.Builders;
 using Elsa.Services.Models;
 
-namespace Elsa.Activities.Http.Activities.SendHttpRequest
+// ReSharper disable once CheckNamespace
+namespace Elsa.Activities.Http
 {
     public static class SendHttpRequestExtensions
     {

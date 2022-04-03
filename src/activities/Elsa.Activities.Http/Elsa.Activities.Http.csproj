@@ -41,5 +41,8 @@
         <PackageReference Include="NJsonSchema.CodeGeneration.TypeScript" Version="10.5.2" />
         <PackageReference Include="Open.Linq.AsyncExtensions" Version="1.2.0" />
     </ItemGroup>
+    <ItemGroup>
+      <Folder Include="Scripting" />
+    </ItemGroup>
 
 </Project>

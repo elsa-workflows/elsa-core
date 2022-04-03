@@ -1,4 +1,4 @@
-﻿namespace Elsa.Activities.Http.Liquid
+﻿namespace Elsa.Activities.Http.Scripting.Liquid
 {
     /// <summary>
     /// This is a placeholder class that allows modules to extend the `HttpRequest` property in the current Liquid scope
