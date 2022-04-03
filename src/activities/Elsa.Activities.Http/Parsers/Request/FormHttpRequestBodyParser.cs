@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.Http.Contracts;
 using Elsa.Activities.Http.Services;
 using Microsoft.AspNetCore.Http;
 

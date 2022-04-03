@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 
-namespace Elsa.Activities.Http.Services;
+namespace Elsa.Activities.Http.Contracts;
 
 /// <summary>
 /// Matches a a given request path against the specified route template.

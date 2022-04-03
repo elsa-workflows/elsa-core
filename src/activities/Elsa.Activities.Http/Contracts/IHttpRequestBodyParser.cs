@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 
-namespace Elsa.Activities.Http.Services
+namespace Elsa.Activities.Http.Contracts
 {
     public interface IHttpRequestBodyParser
     {

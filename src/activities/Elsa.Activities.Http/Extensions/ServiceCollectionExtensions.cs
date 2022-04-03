@@ -2,6 +2,7 @@ using System;
 using Elsa;
 using Elsa.Activities.Http;
 using Elsa.Activities.Http.Bookmarks;
+using Elsa.Activities.Http.Contracts;
 using Elsa.Activities.Http.JavaScript;
 using Elsa.Activities.Http.Liquid;
 using Elsa.Activities.Http.Options;

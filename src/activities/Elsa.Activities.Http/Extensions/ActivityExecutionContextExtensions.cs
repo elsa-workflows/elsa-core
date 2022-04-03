@@ -1,4 +1,5 @@
-﻿using Elsa.Activities.Http.Services;
+﻿using Elsa.Activities.Http.Contracts;
+using Elsa.Activities.Http.Services;
 using Elsa.Activities.Signaling.Extensions;
 using Elsa.Services.Models;
 

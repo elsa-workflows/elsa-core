@@ -1,6 +1,6 @@
 using System;
 
-namespace Elsa.Activities.Http.Services
+namespace Elsa.Activities.Http.Contracts
 {
     public interface IAbsoluteUrlProvider
     {
