@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 
 namespace Elsa.Activities.Http.Contracts;
@@ -9,7 +8,7 @@ namespace Elsa.Activities.Http.Contracts;
 public interface IRouteMatcher
 {
     /// <summary>
-    /// Matches a a given request path against the specified route template.
+    /// Matches a given request path against the specified route template.
     /// </summary>
-    RouteValueDictionary? Match(string routeTemplate, string requestPath, IQueryCollection query);
+    RouteValueDictionary? Match(string routeTemplate, string requestPath);
 }
