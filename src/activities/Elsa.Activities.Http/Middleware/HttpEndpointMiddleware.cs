@@ -59,7 +59,7 @@ namespace Elsa.Activities.Http.Middleware
 
             // Try to match inbound path.
             var routeTable = httpContext.RequestServices.GetRequiredService<IRouteTable>();
-            
+
             var matchingRouteQuery =
                 from route in routeTable
                 let routeValues = routeMatcher.Match(route, path)
@@ -69,10 +69,10 @@ namespace Elsa.Activities.Http.Middleware
             var matchingRoute = matchingRouteQuery.FirstOrDefault();
             var routeTemplate = matchingRoute?.route ?? path;
             var routeData = httpContext.GetRouteData();
-            
+
             if (matchingRoute != null)
             {
-                foreach (var routeValue in matchingRoute.routeValues!) 
+                foreach (var routeValue in matchingRoute.routeValues!)
                     routeData.Values[routeValue.Key] = routeValue.Value;
             }
 
@@ -190,7 +190,7 @@ namespace Elsa.Activities.Http.Middleware
                 }
             }
         }
-        
+
         private async Task<bool> AuthorizeAsync(
             HttpContext httpContext,
             HttpActivityOptions options,
