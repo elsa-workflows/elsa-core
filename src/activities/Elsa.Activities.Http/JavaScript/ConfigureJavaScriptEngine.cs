@@ -8,6 +8,7 @@ using Elsa.Scripting.JavaScript.Messages;
 using Elsa.Services;
 using MediatR;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
 
 namespace Elsa.Activities.Http.JavaScript
 {
@@ -48,6 +49,10 @@ namespace Elsa.Activities.Http.JavaScript
                 "getRemoteIPAddress",
                 (Func<string>)(() => _httpContextAccessor.HttpContext!.Connection.RemoteIpAddress.ToString())
             );
+            engine.SetValue(
+                "getRouteValue",
+                (Func<string, object>)(key => _httpContextAccessor.HttpContext!.GetRouteValue(key))
+            );
 
             return Task.CompletedTask;
         }
@@ -60,7 +65,8 @@ namespace Elsa.Activities.Http.JavaScript
             output.AppendLine("declare function absoluteUrl(url: string): string;");
             output.AppendLine("declare function signalUrl(signal: string): string;");
             output.AppendLine("declare function getRemoteIPAddress(): string;");
-   
+            output.AppendLine("declare function getRouteValue(name: string): any;");
+
             return Task.CompletedTask;
         }
     }

@@ -68,11 +68,10 @@ namespace Elsa.Activities.Http.Middleware
 
             var matchingRoute = matchingRouteQuery.FirstOrDefault();
             var routeTemplate = matchingRoute?.route.Template ?? path;
-
+            var routeData = httpContext.GetRouteData();
+            
             if (matchingRoute != null)
             {
-                var routeData = httpContext.GetRouteData();
-
                 foreach (var routeValue in matchingRoute.routeValues!) 
                     routeData.Values[routeValue.Key] = routeValue.Value;
             }
@@ -126,6 +125,7 @@ namespace Elsa.Activities.Http.Middleware
                 request.Path.ToString(),
                 request.Method,
                 request.Query.ToDictionary(x => x.Key, x => x.Value.ToString()),
+                routeData.Values,
                 request.Headers.ToDictionary(x => x.Key, x => x.Value.ToString())
             );
 
