@@ -11,7 +11,6 @@ using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.Options;
 using Elsa.Activities.Http.Parsers.Request;
-using Elsa.Activities.Http.Services;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services;

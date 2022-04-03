@@ -4,7 +4,6 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Contracts;
-using Elsa.Activities.Http.Services;
 
 namespace Elsa.Activities.Http.Parsers.Response
 {

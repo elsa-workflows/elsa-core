@@ -5,7 +5,6 @@ using Elsa.Activities.Http.Contracts;
 using Elsa.Activities.Http.Extensions;
 using Elsa.Scripting.JavaScript.Events;
 using Elsa.Scripting.JavaScript.Messages;
-using Elsa.Services;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;

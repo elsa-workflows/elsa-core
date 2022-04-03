@@ -4,7 +4,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Contracts;
 using Elsa.Activities.Http.Extensions;
-using Elsa.Activities.Http.Services;
 using Elsa.Serialization;
 using Microsoft.AspNetCore.Http;
 

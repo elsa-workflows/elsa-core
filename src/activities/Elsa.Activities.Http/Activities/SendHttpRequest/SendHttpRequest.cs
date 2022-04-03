@@ -8,7 +8,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Contracts;
 using Elsa.Activities.Http.Models;
-using Elsa.Activities.Http.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;

@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Contracts;
 using Elsa.Activities.Http.Extensions;
-using Elsa.Activities.Http.Services;
 using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Activities.Http.Parsers.Request

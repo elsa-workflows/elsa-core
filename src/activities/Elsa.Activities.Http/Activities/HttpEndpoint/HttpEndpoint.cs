@@ -10,7 +10,6 @@ using Elsa.Expressions;
 using Elsa.Metadata;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Microsoft.AspNetCore.Http;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Http
