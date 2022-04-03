@@ -1,30 +1,27 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.Http.Contracts;
 using Elsa.Activities.Http.Extensions;
-using Elsa.Activities.Http.Services;
 using Elsa.Scripting.JavaScript.Events;
 using Elsa.Scripting.JavaScript.Messages;
-using Elsa.Services;
 using MediatR;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
 
-namespace Elsa.Activities.Http.JavaScript
+namespace Elsa.Activities.Http.Scripting.JavaScript
 {
     public class ConfigureJavaScriptEngine : INotificationHandler<EvaluatingJavaScriptExpression>, INotificationHandler<RenderingTypeScriptDefinitions>
     {
         private readonly IAbsoluteUrlProvider _absoluteUrlProvider;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly IActivityTypeService _activityTypeService;
 
         public ConfigureJavaScriptEngine(
             IAbsoluteUrlProvider absoluteUrlProvider,
-            IHttpContextAccessor httpContextAccessor,
-            IActivityTypeService activityTypeService)
+            IHttpContextAccessor httpContextAccessor)
         {
             _absoluteUrlProvider = absoluteUrlProvider;
             _httpContextAccessor = httpContextAccessor;
-            _activityTypeService = activityTypeService;
         }
 
         public Task Handle(EvaluatingJavaScriptExpression notification, CancellationToken cancellationToken)
@@ -48,6 +45,10 @@ namespace Elsa.Activities.Http.JavaScript
                 "getRemoteIPAddress",
                 (Func<string>)(() => _httpContextAccessor.HttpContext!.Connection.RemoteIpAddress.ToString())
             );
+            engine.SetValue(
+                "getRouteValue",
+                (Func<string, object>)(key => _httpContextAccessor.HttpContext!.GetRouteValue(key))
+            );
 
             return Task.CompletedTask;
         }
@@ -60,7 +61,8 @@ namespace Elsa.Activities.Http.JavaScript
             output.AppendLine("declare function absoluteUrl(url: string): string;");
             output.AppendLine("declare function signalUrl(signal: string): string;");
             output.AppendLine("declare function getRemoteIPAddress(): string;");
-   
+            output.AppendLine("declare function getRouteValue(name: string): any;");
+
             return Task.CompletedTask;
         }
     }

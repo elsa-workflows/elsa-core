@@ -1,4 +1,5 @@
 using System;
+using Elsa.Activities.Http.Contracts;
 using Elsa.Activities.Http.Options;
 using Microsoft.Extensions.Options;
 

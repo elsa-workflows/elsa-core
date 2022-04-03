@@ -2,7 +2,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Elsa.Activities.Http.Services
+namespace Elsa.Activities.Http.Contracts
 {
     public interface IHttpResponseContentReader
     {

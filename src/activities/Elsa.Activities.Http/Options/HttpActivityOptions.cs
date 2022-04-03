@@ -1,4 +1,5 @@
 using System;
+using Elsa.Activities.Http.Contracts;
 using Elsa.Activities.Http.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;

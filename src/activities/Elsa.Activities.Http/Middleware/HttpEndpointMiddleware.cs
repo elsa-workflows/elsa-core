@@ -6,16 +6,18 @@ using System.Net.Mime;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Bookmarks;
+using Elsa.Activities.Http.Contracts;
 using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.Options;
 using Elsa.Activities.Http.Parsers.Request;
-using Elsa.Activities.Http.Services;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Open.Linq.AsyncExtensions;
@@ -37,6 +39,7 @@ namespace Elsa.Activities.Http.Middleware
             IWorkflowInstanceStore workflowInstanceStore,
             IWorkflowRegistry workflowRegistry,
             IWorkflowBlueprintReflector workflowBlueprintReflector,
+            IRouteMatcher routeMatcher,
             IEnumerable<IHttpRequestBodyParser> contentParsers)
         {
             var basePath = options.Value.BasePath;
@@ -54,8 +57,28 @@ namespace Elsa.Activities.Http.Middleware
 
             request.TryGetCorrelationId(out var correlationId);
 
+            // Try to match inbound path.
+            var routeTable = httpContext.RequestServices.GetRequiredService<IRouteTable>();
+
+            var matchingRouteQuery =
+                from route in routeTable
+                let routeValues = routeMatcher.Match(route, path)
+                where routeValues != null
+                select new { route, routeValues };
+
+            var matchingRoute = matchingRouteQuery.FirstOrDefault();
+            var routeTemplate = matchingRoute?.route ?? path;
+            var routeData = httpContext.GetRouteData();
+
+            if (matchingRoute != null)
+            {
+                foreach (var routeValue in matchingRoute.routeValues!)
+                    routeData.Values[routeValue.Key] = routeValue.Value;
+            }
+
+            // Create a workflow query using the selected route and HTTP method of the request.
             const string activityType = nameof(HttpEndpoint);
-            var bookmark = new HttpEndpointBookmark(path, method);
+            var bookmark = new HttpEndpointBookmark(routeTemplate, method);
             var collectWorkflowsContext = new WorkflowsQuery(activityType, bookmark, correlationId, default, default, TenantId);
             var pendingWorkflows = await workflowLaunchpad.FindWorkflowsAsync(collectWorkflowsContext, cancellationToken).ToList();
 
@@ -103,6 +126,7 @@ namespace Elsa.Activities.Http.Middleware
                 request.Path.ToString(),
                 request.Method,
                 request.Query.ToDictionary(x => x.Key, x => x.Value.ToString()),
+                routeData.Values,
                 request.Headers.ToDictionary(x => x.Key, x => x.Value.ToString())
             );
 
@@ -120,7 +144,7 @@ namespace Elsa.Activities.Http.Middleware
                         message = e.Message
                     }), cancellationToken);
                 }
-                
+
                 try
                 {
                     inputModel = inputModel with

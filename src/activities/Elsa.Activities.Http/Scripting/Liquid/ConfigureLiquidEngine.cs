@@ -9,7 +9,7 @@ using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 
-namespace Elsa.Activities.Http.Liquid
+namespace Elsa.Activities.Http.Scripting.Liquid
 {
     public class ConfigureLiquidEngine : INotificationHandler<EvaluatingLiquidExpression>
     {

@@ -10,7 +10,6 @@ using Elsa.Expressions;
 using Elsa.Metadata;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Microsoft.AspNetCore.Http;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Http
@@ -27,7 +26,7 @@ namespace Elsa.Activities.Http
         /// The path that triggers this activity. 
         /// </summary>
         [ActivityInput(Hint = "The relative path that triggers this activity.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
-        public PathString Path { get; set; }
+        public string Path { get; set; }
 
         /// <summary>
         /// The HTTP methods that triggers this activity.

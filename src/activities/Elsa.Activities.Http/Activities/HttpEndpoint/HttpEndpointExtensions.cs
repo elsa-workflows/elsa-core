@@ -3,18 +3,17 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Elsa.Builders;
 using Elsa.Services.Models;
-using Microsoft.AspNetCore.Http;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Http
 {
     public static class HttpEndpointExtensions
     {
-        public static ISetupActivity<HttpEndpoint> WithPath(this ISetupActivity<HttpEndpoint> activity, Func<ActivityExecutionContext, ValueTask<PathString>> path) => activity.Set(x => x.Path, path);
-        public static ISetupActivity<HttpEndpoint> WithPath(this ISetupActivity<HttpEndpoint> activity, Func<ValueTask<PathString>> path) => activity.Set(x => x.Path, path);
-        public static ISetupActivity<HttpEndpoint> WithPath(this ISetupActivity<HttpEndpoint> activity, Func<ActivityExecutionContext, PathString> path) => activity.Set(x => x.Path, path);
-        public static ISetupActivity<HttpEndpoint> WithPath(this ISetupActivity<HttpEndpoint> activity, Func<PathString> path) => activity.Set(x => x.Path, path);
-        public static ISetupActivity<HttpEndpoint> WithPath(this ISetupActivity<HttpEndpoint> activity, PathString path) => activity.Set(x => x.Path, path);
+        public static ISetupActivity<HttpEndpoint> WithPath(this ISetupActivity<HttpEndpoint> activity, Func<ActivityExecutionContext, ValueTask<string>> path) => activity.Set(x => x.Path, path);
+        public static ISetupActivity<HttpEndpoint> WithPath(this ISetupActivity<HttpEndpoint> activity, Func<ValueTask<string>> path) => activity.Set(x => x.Path, path);
+        public static ISetupActivity<HttpEndpoint> WithPath(this ISetupActivity<HttpEndpoint> activity, Func<ActivityExecutionContext, string> path) => activity.Set(x => x.Path, path);
+        public static ISetupActivity<HttpEndpoint> WithPath(this ISetupActivity<HttpEndpoint> activity, Func<string> path) => activity.Set(x => x.Path, path);
+        public static ISetupActivity<HttpEndpoint> WithPath(this ISetupActivity<HttpEndpoint> activity, string path) => activity.Set(x => x.Path, path);
 
         public static ISetupActivity<HttpEndpoint> WithMethods(this ISetupActivity<HttpEndpoint> activity, Func<ActivityExecutionContext, ValueTask<IEnumerable<string>>> value) =>
             activity.Set(x => x.Methods, async context => new HashSet<string>(await value(context)));

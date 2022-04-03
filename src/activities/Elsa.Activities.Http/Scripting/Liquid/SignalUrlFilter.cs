@@ -5,7 +5,7 @@ using Elsa.Services.Models;
 using Fluid;
 using Fluid.Values;
 
-namespace Elsa.Activities.Http.Liquid
+namespace Elsa.Activities.Http.Scripting.Liquid
 {
     public class SignalUrlFilter : ILiquidFilter
     {
