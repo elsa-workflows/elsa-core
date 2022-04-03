@@ -250,6 +250,4 @@ namespace Elsa.Activities.Http.Middleware
             ? httpContext.Request.Path.StartsWithSegments(basePath.Value, out _, out var remainingPath) ? remainingPath.Value.ToLowerInvariant() : null
             : httpContext.Request.Path.Value.ToLowerInvariant();
     }
-
-    internal record HttpEndpointRoute(string Template, string? Method);
 }
