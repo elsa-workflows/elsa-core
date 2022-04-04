@@ -16,7 +16,7 @@ public class HttpEndpoint : Trigger<HttpRequestModel>
     [Input] public Input<string> Path { get; set; } = default!;
 
     [Input(
-        Options = new[] { "GET", "POST", "PUT" },
+        Options = new[] { "GET", "POST", "PUT", "HEAD", "DELETE" },
         UIHint = InputUIHints.CheckList
     )]
     public Input<ICollection<string>> SupportedMethods { get; set; } = new(new[] { HttpMethod.Get.Method });
