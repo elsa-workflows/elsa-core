@@ -15,12 +15,14 @@ namespace Elsa.Runtime.WorkflowProviders;
 public class ConfigurationWorkflowProvider : IWorkflowProvider
 {
     private readonly IIdentityGraphService _identityGraphService;
+    private readonly IServiceProvider _serviceProvider;
     private readonly WorkflowRuntimeOptions _options;
     private readonly ICollection<Workflow> _workflows;
 
-    public ConfigurationWorkflowProvider(IOptions<WorkflowRuntimeOptions> options, IIdentityGraphService identityGraphService)
+    public ConfigurationWorkflowProvider(IOptions<WorkflowRuntimeOptions> options, IIdentityGraphService identityGraphService, IServiceProvider serviceProvider)
     {
         _identityGraphService = identityGraphService;
+        _serviceProvider = serviceProvider;
         _options = options.Value;
         _workflows = CreateWorkflowDefinitions().ToList();
     }
@@ -41,11 +43,12 @@ public class ConfigurationWorkflowProvider : IWorkflowProvider
 
     private IEnumerable<Workflow> CreateWorkflowDefinitions() => _options.Workflows.Values.Select(BuildWorkflowDefinition).ToList();
 
-    private Workflow BuildWorkflowDefinition(IWorkflow workflowDeclaration)
+    private Workflow BuildWorkflowDefinition(Func<IServiceProvider, IWorkflow> workflowFactory)
     {
         var builder = new WorkflowDefinitionBuilder();
-        builder.WithDefinitionId(workflowDeclaration.GetType().Name);
-        workflowDeclaration.Build(builder);
+        builder.WithDefinitionId(workflowFactory.GetType().Name);
+        var definition = workflowFactory(_serviceProvider);
+        definition.Build(builder);
 
         var workflow = builder.BuildWorkflow();
         _identityGraphService.AssignIdentities(workflow);

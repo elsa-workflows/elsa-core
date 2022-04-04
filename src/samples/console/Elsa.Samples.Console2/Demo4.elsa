@@ -7,7 +7,7 @@ variable age = ReadLine; // Could also use the mapped function called `read()`.
 // The `if` keyword is mapped to the If activity. The condition requires a JavaScript expression.
 if age >= 18 then
 {
-    print("Enjoy your driver's license!");
+    print("Enjoy your driver's license!"); 
     print("But be careful!");
 }
 else

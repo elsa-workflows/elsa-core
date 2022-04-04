@@ -4,7 +4,6 @@ using Elsa.Extensions;
 using Elsa.Jobs.Extensions;
 using Elsa.Management.Contracts;
 using Elsa.Management.Extensions;
-using Elsa.Mediator.Extensions;
 using Elsa.Modules.Activities.Activities.Console;
 using Elsa.Modules.Activities.Activities.Workflows;
 using Elsa.Modules.AzureServiceBus.Activities;
@@ -51,22 +50,22 @@ services
     .ConfigureWorkflowRuntime(options =>
     {
         // Register workflows.
-        options.Workflows.Add(nameof(HelloWorldWorkflow), new HelloWorldWorkflow());
-        options.Workflows.Add(nameof(HeartbeatWorkflow), new HeartbeatWorkflow());
-        options.Workflows.Add(nameof(HttpWorkflow), new HttpWorkflow());
-        options.Workflows.Add(nameof(ForkedHttpWorkflow), new ForkedHttpWorkflow());
-        options.Workflows.Add(nameof(CompositeActivitiesWorkflow), new CompositeActivitiesWorkflow());
-        options.Workflows.Add(nameof(SendMessageWorkflow), new SendMessageWorkflow());
-        options.Workflows.Add(nameof(ReceiveMessageWorkflow), new ReceiveMessageWorkflow());
-        options.Workflows.Add(nameof(RunJavaScriptWorkflow), new RunJavaScriptWorkflow());
-        options.Workflows.Add(nameof(WorkflowContextsWorkflow), new WorkflowContextsWorkflow());
-        options.Workflows.Add(nameof(SubmitJobWorkflow), new SubmitJobWorkflow());
+        options.Workflows.Add<HelloWorldWorkflow>();
+        options.Workflows.Add<HeartbeatWorkflow>();
+        options.Workflows.Add<HttpWorkflow>();
+        options.Workflows.Add<ForkedHttpWorkflow>();
+        options.Workflows.Add<CompositeActivitiesWorkflow>();
+        options.Workflows.Add<SendMessageWorkflow>();
+        options.Workflows.Add<ReceiveMessageWorkflow>();
+        options.Workflows.Add<RunJavaScriptWorkflow>();
+        options.Workflows.Add<WorkflowContextsWorkflow>();
+        options.Workflows.Add<SubmitJobWorkflow>();
     });
 
 // Testing only: allow client app to connect from anywhere.
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
 
-// Register available activities.
+// Register activities available from the designer.
 services
     .AddActivity<WriteLine>()
     .AddActivity<WriteLines>()

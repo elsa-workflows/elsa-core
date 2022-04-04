@@ -39,7 +39,7 @@ functionActivityRegistry.RegisterFunction("read", nameof(ReadLine), new[] { name
 var assembly = Assembly.GetExecutingAssembly();
 
 // Read text file containing Elsa DSL.
-var scriptName = "Demo3b";
+var scriptName = "Demo4";
 var resource = assembly.GetManifestResourceStream($"Elsa.Samples.Console2.{scriptName}.elsa");
 var script = await new StreamReader(resource!).ReadToEndAsync();
 

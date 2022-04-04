@@ -7,5 +7,5 @@ public class WorkflowRuntimeOptions
     /// <summary>
     /// A list of workflow builders configured at application startup.
     /// </summary>
-    public IDictionary<string, IWorkflow> Workflows { get; set; } = new Dictionary<string, IWorkflow>();
+    public IDictionary<string, Func<IServiceProvider, IWorkflow>> Workflows { get; set; } = new Dictionary<string, Func<IServiceProvider, IWorkflow>>();
 }

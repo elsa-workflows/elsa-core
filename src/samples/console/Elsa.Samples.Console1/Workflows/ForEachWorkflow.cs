@@ -12,7 +12,7 @@ public static class ForEachWorkflow
     {
         var items = new[] { "C#", "Rust", "Go" };
         var currentItem = new Variable<string>();
-            
+
         return new Sequence
         {
             Activities =

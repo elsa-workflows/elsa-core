@@ -20,7 +20,7 @@ builder.Services
     .IndexWorkflowTriggers()
     .AddHttpActivityServices()
     .AddProtoActorWorkflowHost()
-    .ConfigureWorkflowRuntime(options => { options.Workflows.Add("HelloWorldWorkflow", new HelloWorldWorkflow()); });
+    .ConfigureWorkflowRuntime(options => { options.Workflows.Add<HelloWorldWorkflow>(); });
 
 // Configure middleware pipeline.
 var app = builder.Build();
