@@ -152,7 +152,14 @@ export class ElsaWorkflowInstanceJournal {
     const selectedRecordId = this.selectedRecordId;
 
     const renderRecord = (record: WorkflowExecutionLogRecord, index: number) => {
-      const prevItem = allItems[allItems.indexOf(items[index]) - 1];
+      var prevItemReverseIndex = allItems
+        .slice(0, allItems.indexOf(items[index]))
+        .reverse()
+        .findIndex((e)=>{
+          return (e.activityId == record.activityId);
+        });
+
+      const prevItem = allItems[allItems.indexOf(items[index]) - (prevItemReverseIndex+1)];
       const currentTimestamp = moment(record.timestamp);
       const prevTimestamp = moment(prevItem.timestamp);
       const deltaTime = moment.duration(currentTimestamp.diff(prevTimestamp));
