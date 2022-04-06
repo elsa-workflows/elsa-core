@@ -20,5 +20,6 @@ namespace Elsa.Client.Models
         [DataMember(Order = 12)] public bool Publish { get; set; }
         [DataMember(Order = 13)] public ICollection<ActivityDefinition> Activities { get; set; } = new List<ActivityDefinition>();
         [DataMember(Order = 14)] public ICollection<ConnectionDefinition> Connections { get; set; } = new List<ConnectionDefinition>();
+        [DataMember(Order = 15)] public string? CustomAttributes { get; set; }
     }
 }
