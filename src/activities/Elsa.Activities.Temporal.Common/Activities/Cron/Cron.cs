@@ -34,7 +34,7 @@ namespace Elsa.Activities.Temporal
             _crontabParser = crontabParser;
         }
 
-        [ActivityInput(Hint = "Specify a CRON expression.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        [ActivityInput(UIHint = "cron-expression", Hint = "Specify a CRON expression.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public string CronExpression { get; set; } = "* * * * *";
 
         public Instant? ExecuteAt

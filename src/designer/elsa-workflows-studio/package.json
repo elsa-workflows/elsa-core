@@ -37,6 +37,7 @@
     "ajv": "^8.10.0",
     "axios": "^0.26.1",
     "axios-middleware": "^0.3.1",
+    "cronstrue": "^1.125.0",
     "d3": "^7.3.0",
     "dagre-d3": "^0.6.4",
     "el-transition": "^0.0.7",
