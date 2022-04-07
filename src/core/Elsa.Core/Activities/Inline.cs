@@ -53,31 +53,28 @@ public class Inline<T> : Activity<T>
 {
     private readonly Func<ActivityExecutionContext, ValueTask<T>> _activity;
 
-    public Inline(Func<ActivityExecutionContext, ValueTask<T>> activity, RegisterLocationReference? captureTarget = default)
+    public Inline(Func<ActivityExecutionContext, ValueTask<T>> activity, RegisterLocationReference? outputTarget = default) : base(outputTarget)
     {
         _activity = activity;
-
-        if (captureTarget != null)
-            this.CaptureOutput(captureTarget);
     }
 
-    public Inline(Func<ValueTask<T>> activity, RegisterLocationReference? captureTarget = default) : this(_ => activity(), captureTarget)
+    public Inline(Func<ValueTask<T>> activity, RegisterLocationReference? outputTarget = default) : this(_ => activity(), outputTarget)
     {
     }
 
-    public Inline(Func<ActivityExecutionContext, T> activity, RegisterLocationReference? captureTarget = default) : this(c =>
+    public Inline(Func<ActivityExecutionContext, T> activity, RegisterLocationReference? outputTarget = default) : this(c =>
     {
         var result = activity(c);
         return new ValueTask<T>(result);
-    }, captureTarget)
+    }, outputTarget)
     {
     }
 
-    public Inline(Func<T> activity, RegisterLocationReference? captureTarget = default) : this(c =>
+    public Inline(Func<T> activity, RegisterLocationReference? outputTarget = default) : this(c =>
     {
         var result = activity();
         return new ValueTask<T>(result);
-    }, captureTarget)
+    }, outputTarget)
     {
     }
 
