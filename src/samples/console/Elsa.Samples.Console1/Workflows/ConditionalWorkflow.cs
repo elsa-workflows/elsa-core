@@ -17,7 +17,7 @@ public static class ConditionalWorkflow
             Activities =
             {
                 new WriteLine("What's your age?"),
-                new ReadLine(age, s => int.Parse((string)s!)),
+                new ReadLine(age),
                 new If
                 {
                     Condition = new Input<bool>(context => age.Get(context) >= 16),

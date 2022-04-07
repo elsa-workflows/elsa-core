@@ -1,12 +1,14 @@
-﻿using Elsa.Attributes;
+﻿using System.Text.Json.Serialization;
+using Elsa.Attributes;
 using Elsa.Models;
 using Elsa.Scripting.JavaScript.Contracts;
 
 namespace Elsa.Modules.JavaScript.Activities;
 
 [Activity("Elsa.Scripting.RunJavaScript", "Executes JavaScript code", "Scripting")]
-public class RunJavaScript : Activity
+public class RunJavaScript : Activity<object?>
 {
+    [JsonConstructor]
     public RunJavaScript()
     {
     }
@@ -17,7 +19,6 @@ public class RunJavaScript : Activity
     }
     
     public Input<string> Script { get; set; } = new("");
-    public Output<object?>? Result { get; set; }
 
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {

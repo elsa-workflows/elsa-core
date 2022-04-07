@@ -50,7 +50,7 @@ class Program
         var workflow13 = new Func<IActivity>(BlockingParallelForEachWorkflow.Create);
         var workflow14 = new Func<IActivity>(FlowchartWorkflow.Create);
 
-        var workflowFactory = workflow10;
+        var workflowFactory = workflow3;
         var workflowGraph = workflowFactory();
         var workflow = Workflow.FromActivity(workflowGraph);
 

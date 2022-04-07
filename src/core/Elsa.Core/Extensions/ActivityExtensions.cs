@@ -37,7 +37,7 @@ public static class ActivityExtensions
     /// <summary>
     /// Creates an input from the activity's result.
     /// </summary>
-    public static Input<T?> CreateInput<T>(this Activity<T> activity) => activity.Result.CreateInput();
+    public static Input<T?> CreateInput<T>(this Activity<T> activity) => activity.Result.CreateInput<T?>();
 
     public static IEnumerable<Variable> GetVariables(this IActivity activity)
     {

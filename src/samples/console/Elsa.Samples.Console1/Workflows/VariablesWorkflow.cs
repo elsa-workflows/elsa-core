@@ -18,10 +18,7 @@ public static class VariablesWorkflow
             Activities =
             {
                 new WriteLine(context => greeting.Get(context)),
-                new ReadLine
-                {
-                    Result = new Output<string?>(name)
-                },
+                new ReadLine(name),
                 new WriteLine(new DelegateReference(context => $"Nice to meet you, {name.Get(context)}!")),
             }
         };

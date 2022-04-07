@@ -18,10 +18,7 @@ public class RunJavaScriptWorkflow : IWorkflow
             Variables = { scriptResult },
             Activities =
             {
-                new RunJavaScript("1 + 1")
-                {
-                    Result = new Output<object?>(scriptResult)
-                },
+                new RunJavaScript("1 + 1").CaptureOutput(scriptResult),
                 new WriteLine(context => $"Result: {scriptResult.Get(context)}")
             }
         });

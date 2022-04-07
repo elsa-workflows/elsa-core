@@ -11,7 +11,7 @@ public class CompositeActivitiesWorkflow : IWorkflow
 {
     public void Build(IWorkflowDefinitionBuilder workflow)
     {
-        var name = new Variable<string>();
+        var name = new Variable<string?>();
 
         workflow.WithRoot(new Sequence
         {

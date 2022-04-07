@@ -34,7 +34,7 @@ public class ExpressionExecutionContext
     public object Get(RegisterLocationReference locationReference) => GetLocation(locationReference).Value!;
     public T Get<T>(RegisterLocationReference locationReference) => (T)Get(locationReference);
     public T? Get<T>(Input<T>? input) => input != null ? (T?)GetLocation(input.LocationReference).Value : default;
-    public T? Get<T>(Output<T>? output) => output != null ? (T?)GetLocation(output.LocationReference).Value : default;
+    public T? Get<T>(Output output) => (T?)GetLocation(output.LocationReference).Value;
     public object? Get(Output? output) => output != null ? GetLocation(output.LocationReference).Value : default;
     public T? GetVariable<T>(string name) => (T?)GetVariable(name);
     public T? GetVariable<T>() => (T?)GetVariable(typeof(T).Name);
@@ -56,13 +56,12 @@ public class ExpressionExecutionContext
         location.Value = value;
     }
 
-    public void Set(Output? output, object? value)
+    public void Set(Output output, object? value)
     {
-        if (output?.LocationReference == null)
-            return;
-
-        var convertedValue = output.ValueConverter?.Invoke(value) ?? value;
-        Set(output.LocationReference, convertedValue);
+        //var convertedValue = output.ValueConverter?.Invoke(value) ?? value;
+        var convertedValue = value;
+        var targets = new[] { output.LocationReference }.Concat(output.Targets);
+        foreach (var target in targets) Set(target, convertedValue);
     }
 
     public T GetRequiredService<T>() where T : notnull => _serviceProvider.GetRequiredService<T>();

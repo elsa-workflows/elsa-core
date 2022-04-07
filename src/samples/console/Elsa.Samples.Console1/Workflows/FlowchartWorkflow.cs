@@ -13,7 +13,7 @@ public static class FlowchartWorkflow
         var age = new Variable<int>();
         var flowchart = new Flowchart();
         var step1 = new WriteLine("Please enter your age.");
-        var step2 = new ReadLine(age, x => int.Parse((string)x!));
+        var step2 = new ReadLine(age);
         var step3 = new If
         {
             Condition = new Input<bool>(context => age.Get(context) > 16),

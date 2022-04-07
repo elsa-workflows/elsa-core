@@ -17,13 +17,6 @@ public class OutputExpression : IExpression
     public Output? Output { get; set; }
 }
 
-public class OutputExpression<T> : OutputExpression
-{
-    public OutputExpression(Output<T>? output) : base(output)
-    {
-    }
-}
-
 public class OutputExpressionHandler : IExpressionHandler
 {
     public ValueTask<object?> EvaluateAsync(IExpression expression, Type returnType, ExpressionExecutionContext context)

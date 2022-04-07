@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Elsa.Contracts;
 using Elsa.Helpers;
 
@@ -42,18 +43,28 @@ public abstract class ActivityWithResult : Activity
     {
     }
 
-    public Output? Result { get; set; }
+    public Output Result { get; } = new();
 }
 
 public abstract class Activity<T> : ActivityWithResult
 {
-    protected Activity() : base()
+    protected Activity()
     {
     }
 
     protected Activity(string activityType) : base(activityType)
     {
     }
+}
 
-    public new Output<T?>? Result { get; set; }
+public static class ActivityWithResultExtensions
+{
+    public static T CaptureOutput<T>(this T activity, Expression<Func<T, Output>> propertyExpression, RegisterLocationReference locationReference) where T:IActivity
+    {
+        var output = activity.GetPropertyValue(propertyExpression)!;
+        output.Targets.Add(locationReference);
+        return activity;
+    }
+
+    public static T CaptureOutput<T>(this T activity, RegisterLocationReference locationReference) where T : ActivityWithResult => activity.CaptureOutput(x => x.Result, locationReference);
 }

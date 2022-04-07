@@ -150,8 +150,8 @@ public class ActivityExecutionContext
     }
 
     public void Set(RegisterLocationReference locationReference, object? value) => ExpressionExecutionContext.Set(locationReference, value);
-    public void Set(Output? output, object? value) => ExpressionExecutionContext.Set(output, value);
-    public void Set<T>(Output<T>? output, T value) => ExpressionExecutionContext.Set(output, value);
+    public void Set(Output output, object? value) => ExpressionExecutionContext.Set(output, value);
+    public void Set<T>(Output output, T value) => ExpressionExecutionContext.Set(output, value);
 
     public async Task<T?> EvaluateAsync<T>(Input<T> input)
     {

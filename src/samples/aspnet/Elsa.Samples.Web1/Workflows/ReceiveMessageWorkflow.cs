@@ -11,20 +11,19 @@ public class ReceiveMessageWorkflow : IWorkflow
 {
     public void Build(IWorkflowDefinitionBuilder workflow)
     {
-        var receivedMessage = new Variable<string>();
+        var receivedMessageVariable = new Variable<string>();
 
         workflow.WithRoot(new Sequence
         {
-            Variables = { receivedMessage },
+            Variables = { receivedMessageVariable },
             Activities =
             {
                 new MessageReceived
                 {
                     CanStartWorkflow = true,
                     QueueOrTopic = new Input<string>("inbox"),
-                    Result = new Output<object?>(receivedMessage)
-                },
-                new WriteLine(context => $"Message received: {receivedMessage.Get(context)}")
+                }.CaptureOutput(receivedMessageVariable),
+                new WriteLine(context => $"Message received: {receivedMessageVariable.Get(context)}")
             }
         });
     }

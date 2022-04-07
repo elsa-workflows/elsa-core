@@ -46,7 +46,7 @@ public class MessageReceived : Trigger<object>
     /// <summary>
     /// The received transport message.
     /// </summary>
-    public Output<ReceivedServiceBusMessageModel>? ReceivedMessage { get; set; }
+    public Output<ReceivedServiceBusMessageModel> ReceivedMessage { get; } = new();
 
     /// <summary>
     /// The formatter to use to parse the message. 

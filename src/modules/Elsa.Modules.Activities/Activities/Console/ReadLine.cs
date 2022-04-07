@@ -10,7 +10,7 @@ public class ReadLine : Activity<string>
     {
     }
 
-    public ReadLine(Variable variable, Func<object?, object?>? valueConverter = default) => Result = new Output<string?>(variable, valueConverter);
+    public ReadLine(RegisterLocationReference captureTarget) => this.CaptureOutput(captureTarget);
 
     protected override void Execute(ActivityExecutionContext context)
     {

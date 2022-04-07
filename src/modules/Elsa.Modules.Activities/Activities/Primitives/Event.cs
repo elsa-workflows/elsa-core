@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Elsa.Attributes;
 using Elsa.Contracts;
 using Elsa.Models;
@@ -5,8 +6,9 @@ using Elsa.Models;
 namespace Elsa.Modules.Activities.Activities.Primitives;
 
 [Activity("Elsa", "Primitives", "Wait for an event to be triggered.")]
-public class Event : Activity
+public class Event : Activity<object?>
 {
+    [JsonConstructor]
     public Event()
     {
     }
@@ -29,7 +31,6 @@ public class Event : Activity
     public Event(Input<string> eventName) => EventName = eventName;
 
     [Input] public Input<string> EventName { get; set; } = default!;
-    [Output] public Output<object?>? Payload { get; set; }
 
     protected override void Execute(ActivityExecutionContext context)
     {
