@@ -11,9 +11,9 @@ public abstract class Trigger : Activity, ITrigger
     protected Trigger(string activityType) : base(activityType)
     {
     }
-    
+
     ValueTask<IEnumerable<object>> ITrigger.GetTriggerDataAsync(TriggerIndexingContext context) => GetTriggerDataAsync(context);
-    
+
     /// <summary>
     /// Override this method to return trigger data.  
     /// </summary>
@@ -26,8 +26,8 @@ public abstract class Trigger : Activity, ITrigger
     /// <summary>
     /// Override this method to return trigger data.
     /// </summary>
-    protected virtual IEnumerable<object> GetTriggerData(TriggerIndexingContext context) => new[]{ GetTriggerDatum(context) };
-    
+    protected virtual IEnumerable<object> GetTriggerData(TriggerIndexingContext context) => new[] { GetTriggerDatum(context) };
+
     /// <summary>
     /// Override this method to return a trigger datum.
     /// </summary>
@@ -43,9 +43,13 @@ public abstract class Trigger<T> : Activity<T>, ITrigger
     protected Trigger(string activityType) : base(activityType)
     {
     }
-    
+
+    protected Trigger(RegisterLocationReference? outputTarget) : base(outputTarget)
+    {
+    }
+
     ValueTask<IEnumerable<object>> ITrigger.GetTriggerDataAsync(TriggerIndexingContext context) => GetTriggerDataAsync(context);
-    
+
     /// <summary>
     /// Override this method to return trigger data.  
     /// </summary>
@@ -58,8 +62,8 @@ public abstract class Trigger<T> : Activity<T>, ITrigger
     /// <summary>
     /// Override this method to return trigger data.
     /// </summary>
-    protected virtual IEnumerable<object> GetTriggerData(TriggerIndexingContext context) => new[]{ GetTriggerDatum(context) };
-    
+    protected virtual IEnumerable<object> GetTriggerData(TriggerIndexingContext context) => new[] { GetTriggerDatum(context) };
+
     /// <summary>
     /// Override this method to return a trigger datum.
     /// </summary>
