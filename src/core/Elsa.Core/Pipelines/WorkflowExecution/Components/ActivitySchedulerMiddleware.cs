@@ -5,6 +5,9 @@ namespace Elsa.Pipelines.WorkflowExecution.Components;
 
 public static class UseActivitySchedulerMiddlewareExtensions
 {
+    /// <summary>
+    /// Installs middleware that executes scheduled work items (activities). 
+    /// </summary>
     public static IWorkflowExecutionBuilder UseActivityScheduler(this IWorkflowExecutionBuilder builder) => builder.UseMiddleware<ActivitySchedulerMiddleware>();
 }
 
