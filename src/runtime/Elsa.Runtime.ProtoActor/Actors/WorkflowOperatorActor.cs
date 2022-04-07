@@ -95,7 +95,7 @@ public class WorkflowOperatorActor : IActor
         return response;
     }
 
-    private async Task<ExecuteWorkflowResult> ExecuteAsync(Workflow workflow, WorkflowState workflowState, Bookmark? bookmarkMessage, IReadOnlyDictionary<string, object?>? input, CancellationToken cancellationToken)
+    private async Task<ExecuteWorkflowResult> ExecuteAsync(Workflow workflow, WorkflowState workflowState, Bookmark? bookmarkMessage, IDictionary<string, object>? input, CancellationToken cancellationToken)
     {
         if (bookmarkMessage == null)
             return await _workflowRunner.RunAsync(workflow, workflowState, input, cancellationToken);

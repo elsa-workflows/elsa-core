@@ -9,7 +9,7 @@ public class ExpressionExecutionContext
     public ExpressionExecutionContext(IServiceProvider serviceProvider,
         Register register,
         Workflow workflow,
-        IReadOnlyDictionary<string, object> input,
+        IDictionary<string, object> input,
         IDictionary<object, object?> transientProperties,
         ExpressionExecutionContext? parentContext,
         CancellationToken cancellationToken)
@@ -25,7 +25,7 @@ public class ExpressionExecutionContext
 
     public Register Register { get; }
     public Workflow Workflow { get; }
-    public IReadOnlyDictionary<string, object> Input { get; }
+    public IDictionary<string, object> Input { get; }
     public IDictionary<object, object?> TransientProperties { get; }
     public ExpressionExecutionContext? ParentContext { get; set; }
     public CancellationToken CancellationToken { get; }
@@ -35,7 +35,7 @@ public class ExpressionExecutionContext
     public T Get<T>(RegisterLocationReference locationReference) => (T)Get(locationReference);
     public T? Get<T>(Input<T>? input) => input != null ? (T?)GetLocation(input.LocationReference).Value : default;
     public T? Get<T>(Output output) => (T?)GetLocation(output.LocationReference).Value;
-    public object? Get(Output? output) => output != null ? GetLocation(output.LocationReference).Value : default;
+    public object? Get(Output output) => GetLocation(output.LocationReference).Value;
     public T? GetVariable<T>(string name) => (T?)GetVariable(name);
     public T? GetVariable<T>() => (T?)GetVariable(typeof(T).Name);
     public object? GetVariable(string name) => new Variable(name).Get(this);

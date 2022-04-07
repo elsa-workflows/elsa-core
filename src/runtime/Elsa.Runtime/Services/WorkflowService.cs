@@ -18,25 +18,25 @@ public class WorkflowService : IWorkflowService
         _stimulusInterpreter = stimulusInterpreter;
     }
 
-    public async Task<ExecuteWorkflowResult> ExecuteWorkflowAsync(string definitionId, VersionOptions versionOptions, IReadOnlyDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
+    public async Task<ExecuteWorkflowResult> ExecuteWorkflowAsync(string definitionId, VersionOptions versionOptions, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
     {
         var executeRequest = new ExecuteWorkflowDefinitionRequest(definitionId, versionOptions, input);
         return await _workflowInvoker.ExecuteAsync(executeRequest, cancellationToken);
     }
 
-    public async Task<ExecuteWorkflowResult> ExecuteWorkflowAsync(string instanceId, Bookmark bookmark, IReadOnlyDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
+    public async Task<ExecuteWorkflowResult> ExecuteWorkflowAsync(string instanceId, Bookmark bookmark, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
     {
         var request = new ExecuteWorkflowInstanceRequest(instanceId, bookmark, input);
         return await _workflowInvoker.ExecuteAsync(request, cancellationToken);
     }
 
-    public async Task<DispatchWorkflowResult> DispatchWorkflowAsync(string definitionId, VersionOptions versionOptions, IReadOnlyDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
+    public async Task<DispatchWorkflowResult> DispatchWorkflowAsync(string definitionId, VersionOptions versionOptions, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
     {
         var executeRequest = new DispatchWorkflowDefinitionRequest(definitionId, versionOptions, input);
         return await _workflowInvoker.DispatchAsync(executeRequest, cancellationToken);
     }
 
-    public async Task<DispatchWorkflowResult> DispatchWorkflowAsync(string instanceId, Bookmark bookmark, IReadOnlyDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
+    public async Task<DispatchWorkflowResult> DispatchWorkflowAsync(string instanceId, Bookmark bookmark, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
     {
         var request = new DispatchWorkflowInstanceRequest(instanceId, bookmark, input);
         return await _workflowInvoker.DispatchAsync(request, cancellationToken);

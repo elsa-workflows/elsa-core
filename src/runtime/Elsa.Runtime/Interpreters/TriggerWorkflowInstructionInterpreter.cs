@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Elsa.Runtime.Interpreters;
 
-public record TriggerWorkflowInstruction(WorkflowTrigger WorkflowTrigger, IReadOnlyDictionary<string, object>? Input) : IWorkflowInstruction;
+public record TriggerWorkflowInstruction(WorkflowTrigger WorkflowTrigger, IDictionary<string, object>? Input) : IWorkflowInstruction;
 
 public class TriggerWorkflowInstructionInterpreter : WorkflowInstructionInterpreter<TriggerWorkflowInstruction>
 {

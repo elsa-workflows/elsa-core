@@ -60,7 +60,7 @@ public class ActivityExecutionContext
     /// <summary>
     /// A dictionary of received inputs.
     /// </summary>
-    public IReadOnlyDictionary<string, object> Input => WorkflowExecutionContext.Input;
+    public IDictionary<string, object> Input => WorkflowExecutionContext.Input;
 
     /// <summary>
     /// Journal data will be added to the workflow execution log for the "Executed" event.  

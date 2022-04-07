@@ -27,7 +27,7 @@ public class DispatchWorkflow : Activity
         }
 
         var workflowService = context.GetRequiredService<IWorkflowService>();
-        var input = context.Get(Input)?.ToReadOnlyDictionary();
+        var input = context.Get(Input);
         await workflowService.DispatchWorkflowAsync(workflowDefinitionId, VersionOptions.Published, input, context.CancellationToken);
     }
 }

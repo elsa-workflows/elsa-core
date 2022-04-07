@@ -20,7 +20,7 @@ public class WorkflowExecutionContext
         ActivityNode graph,
         IActivityScheduler scheduler,
         Bookmark? bookmark,
-        IReadOnlyDictionary<string, object>? input,
+        IDictionary<string, object>? input,
         ExecuteActivityDelegate? executeDelegate,
         CancellationToken cancellationToken)
     {
@@ -48,7 +48,7 @@ public class WorkflowExecutionContext
     public IDictionary<IActivity, ActivityNode> NodeActivityLookup { get; }
     public IActivityScheduler Scheduler { get; }
     public Bookmark? Bookmark { get; }
-    public IReadOnlyDictionary<string, object> Input { get; }
+    public IDictionary<string, object> Input { get; }
 
     /// <summary>
     /// A dictionary that can be used by application code and activities to store information. Values need to be serializable, since this dictionary will be persisted alongside the workflow instance. 
