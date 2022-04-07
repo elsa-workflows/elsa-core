@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Text.Json.Serialization;
 using Elsa.Attributes;
 using Elsa.Management.Models;
 using Elsa.Models;
@@ -12,6 +13,15 @@ namespace Elsa.Modules.Http;
 public class HttpEndpoint : Trigger<HttpRequestModel>
 {
     public const string InputKey = "HttpRequest";
+
+    [JsonConstructor]
+    public HttpEndpoint()
+    {
+    }
+
+    public HttpEndpoint(RegisterLocationReference outputTarget) : base(outputTarget)
+    {
+    }
 
     [Input] public Input<string> Path { get; set; } = default!;
 
