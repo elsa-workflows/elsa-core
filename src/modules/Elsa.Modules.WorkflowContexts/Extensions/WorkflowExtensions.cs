@@ -21,7 +21,7 @@ public static class WorkflowExtensions
     /// </summary>
     public static IWorkflowDefinitionBuilder AddWorkflowContext(this IWorkflowDefinitionBuilder workflow, WorkflowContext workflowContext)
     {
-        var providerTypes = workflow.ApplicationProperties!.GetOrAdd("Elsa:WorkflowContexts", () => new List<WorkflowContext>());
+        var providerTypes = workflow.ApplicationProperties!.GetOrAdd("Elsa:WorkflowContexts", () => new List<WorkflowContext>())!;
 
         providerTypes.Add(workflowContext);
         return workflow;

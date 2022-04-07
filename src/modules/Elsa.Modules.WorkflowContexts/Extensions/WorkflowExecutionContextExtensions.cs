@@ -14,13 +14,13 @@ public static class WorkflowExecutionContextExtensions
 
     private static void SetWorkflowContext(this IDictionary<object, object?> transientProperties, WorkflowContext workflowContext, object? value)
     {
-        var contextDictionary = transientProperties.GetOrAdd("WorkflowContexts", () => new Dictionary<Type, object?>())!;
-        contextDictionary[workflowContext.ProviderType] = value;
+        var contextDictionary = transientProperties.GetOrAdd("WorkflowContexts", () => new Dictionary<WorkflowContext, object?>())!;
+        contextDictionary[workflowContext] = value;
     }
 
     private static object? GetWorkflowContext(this IDictionary<object, object?> transientProperties, WorkflowContext workflowContext)
     {
-        var contextDictionary = transientProperties.GetOrAdd("WorkflowContexts", () => new Dictionary<Type, object?>())!;
-        return contextDictionary[workflowContext.ProviderType];
+        var contextDictionary = transientProperties.GetOrAdd("WorkflowContexts", () => new Dictionary<WorkflowContext, object?>())!;
+        return contextDictionary[workflowContext];
     }
 }
