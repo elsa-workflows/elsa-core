@@ -22,7 +22,7 @@ public class ReceiveMessageWorkflow : IWorkflow
                 {
                     CanStartWorkflow = true,
                     QueueOrTopic = new Input<string>("inbox"),
-                    ReceivedMessageBody = new Output<object>(receivedMessage)
+                    Result = new Output<object?>(receivedMessage)
                 },
                 new WriteLine(context => $"Message received: {receivedMessage.Get(context)}")
             }

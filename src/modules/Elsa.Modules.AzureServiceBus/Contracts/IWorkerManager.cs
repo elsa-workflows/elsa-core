@@ -30,6 +30,11 @@ public interface IWorkerManager
     Task StopWorkerAsync(string queueOrTopic, string? subscription, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Ensures that at least one worker exists for the specified queue/topic and subscription.
+    /// </summary>
+    Task EnsureWorkerAsync(string queueOrTopic, string? subscription, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Removes the specified worker.
     /// </summary>
     Task RemoveWorkerAsync(Worker worker);

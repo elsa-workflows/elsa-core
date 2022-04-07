@@ -7,6 +7,7 @@ using Elsa.Helpers;
 using Elsa.Mediator.Contracts;
 using Elsa.Models;
 using Elsa.Persistence.Commands;
+using Elsa.Persistence.Comparers;
 using Elsa.Persistence.Entities;
 using Elsa.Persistence.Requests;
 using Elsa.Runtime.Contracts;
@@ -95,12 +96,12 @@ public class TriggerIndexer : ITriggerIndexer
             : new List<WorkflowTrigger>(0);
 
         // Diff triggers.
-        var diff = Diff.For(currentTriggers, newTriggers);
+        var diff = Diff.For(currentTriggers, newTriggers, new WorkflowTriggerHashEqualityComparer());
 
         // Replace triggers for the specified workflow.
         await _commandSender.ExecuteAsync(new ReplaceWorkflowTriggers(workflow, diff.Removed, diff.Added), cancellationToken);
 
-        var indexedWorkflow = new IndexedWorkflowTriggers(workflow, diff.Added, diff.Removed);
+        var indexedWorkflow = new IndexedWorkflowTriggers(workflow, diff.Added, diff.Removed, diff.Unchanged);
 
         // Publish event.
         await _eventPublisher.PublishAsync(new WorkflowTriggersIndexed(indexedWorkflow), cancellationToken);

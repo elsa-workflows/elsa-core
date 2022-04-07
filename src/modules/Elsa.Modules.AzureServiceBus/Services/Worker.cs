@@ -73,7 +73,8 @@ public class Worker : IAsyncDisposable
         var payload = new MessageReceivedTriggerPayload(QueueOrTopic, Subscription);
         var hash = _hasher.Hash(payload);
         var messageModel = CreateMessageModel(message);
-        var stimulus = Stimulus.Standard(BookmarkName, hash, new { ReceivedMessage = messageModel });
+        var input = new Dictionary<string, object>() { [MessageReceived.InputKey] = messageModel };
+        var stimulus = Stimulus.Standard(BookmarkName, hash, input);
         var executionResults = (await _workflowService.ExecuteStimulusAsync(stimulus, cancellationToken)).ToList();
 
         _logger.LogInformation("Triggered {WorkflowCount} workflows", executionResults.Count);

@@ -30,9 +30,11 @@ public class UpdateWorkers : INotificationHandler<WorkflowTriggersIndexed>, INot
     {
         var added = notification.IndexedWorkflowTriggers.AddedTriggers.Filter<MessageReceived>().Select(x => DeserializePayload(x.Data!));
         var removed = notification.IndexedWorkflowTriggers.RemovedTriggers.Filter<MessageReceived>().Select(x => DeserializePayload(x.Data!));
+        var unchanged = notification.IndexedWorkflowTriggers.UnchangedTriggers.Filter<MessageReceived>().Select(x => DeserializePayload(x.Data!));
 
         await StopWorkersAsync(removed, cancellationToken);
         await StartWorkersAsync(added, cancellationToken);
+        await EnsureWorkersAsync(unchanged, cancellationToken);
     }
 
     /// <summary>
@@ -64,5 +66,10 @@ public class UpdateWorkers : INotificationHandler<WorkflowTriggersIndexed>, INot
     private async Task StopWorkersAsync(IEnumerable<MessageReceivedTriggerPayload> payloads, CancellationToken cancellationToken)
     {
         foreach (var payload in payloads) await _workerManager.StopWorkerAsync(payload.QueueOrTopic, payload.Subscription, cancellationToken);
+    }
+    
+    private async Task EnsureWorkersAsync(IEnumerable<MessageReceivedTriggerPayload> payloads, CancellationToken cancellationToken)
+    {
+        foreach (var payload in payloads) await _workerManager.EnsureWorkerAsync(payload.QueueOrTopic, payload.Subscription, cancellationToken);
     }
 }

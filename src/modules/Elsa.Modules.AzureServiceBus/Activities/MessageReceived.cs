@@ -7,9 +7,9 @@ using Elsa.Modules.AzureServiceBus.Models;
 namespace Elsa.Modules.AzureServiceBus.Activities;
 
 [Activity("Elsa.AzureServiceBus.MessageReceived", "Executes when a message is received from the configured queue or topic and subscription", "Azure Service Bus")]
-public class MessageReceived : Trigger
+public class MessageReceived : Trigger<object>
 {
-    internal const string MessageReceivedInputKey = "ReceivedMessage";
+    internal const string InputKey = "ReceivedMessage";
 
     [JsonConstructor]
     public MessageReceived()
@@ -49,32 +49,40 @@ public class MessageReceived : Trigger
     public Output<ReceivedServiceBusMessageModel>? ReceivedMessage { get; set; }
 
     /// <summary>
-    /// The parsed body of the received message. 
-    /// </summary>
-    public Output<object>? ReceivedMessageBody { get; set; }
-
-    /// <summary>
     /// The formatter to use to parse the message. 
     /// </summary>
     public IFormatter? Formatter { get; set; }
 
     protected override object GetTriggerDatum(TriggerIndexingContext context) => GetBookmarkData(context.ExpressionExecutionContext);
 
-    protected override void Execute(ActivityExecutionContext context)
+    protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        var bookmarkData = GetBookmarkData(context.ExpressionExecutionContext);
-        context.CreateBookmark(bookmarkData, Resume);
+        // If we did not receive external input, it means we are just now encountering this activity.
+        if (!context.TryGetInput<ReceivedServiceBusMessageModel>(InputKey, out var receivedMessage))
+        {
+            // Create bookmarks for when we receive the expected HTTP request.
+            context.CreateBookmark(GetBookmarkData(context.ExpressionExecutionContext), Resume);
+            return;
+        }
+
+        // Provide the received message as output.
+        await SetResultAsync(receivedMessage, context);
     }
 
     private async ValueTask Resume(ActivityExecutionContext context)
     {
-        var receivedMessage = (ReceivedServiceBusMessageModel)context.WorkflowExecutionContext.Input[MessageReceivedInputKey]!;
+        var receivedMessage = context.GetInput<ReceivedServiceBusMessageModel>(InputKey);
+        await SetResultAsync(receivedMessage, context);
+    }
+
+    private async Task SetResultAsync(ReceivedServiceBusMessageModel receivedMessage, ActivityExecutionContext context)
+    {
         var bodyAsString = new BinaryData(receivedMessage.Body).ToString();
         var targetType = context.Get(ExpectedMessageType);
         var body = Formatter == null ? bodyAsString : await Formatter.FromStringAsync(bodyAsString, targetType, context.CancellationToken);
 
         context.Set(ReceivedMessage, receivedMessage);
-        context.Set(ReceivedMessageBody, body);
+        context.Set(Result, body);
     }
 
     private object GetBookmarkData(ExpressionExecutionContext context)

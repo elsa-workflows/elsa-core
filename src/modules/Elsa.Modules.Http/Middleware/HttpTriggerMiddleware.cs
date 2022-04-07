@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Mime;
 using System.Text.Json;
@@ -33,7 +34,7 @@ public class HttpTriggerMiddleware
         var hash = _hasher.Hash(new HttpBookmarkData(path, method));
         var activityTypeName = TypeNameHelper.GenerateTypeName<HttpEndpoint>();
         var requestModel = new HttpRequestModel(new Uri(request.GetEncodedUrl()));
-        var input = new { HttpRequest = requestModel };
+        var input = new Dictionary<string, object>() { [HttpEndpoint.InputKey] = requestModel };
         var stimulus = Stimulus.Standard(activityTypeName, hash, input);
         var executionResults = (await workflowService.ExecuteStimulusAsync(stimulus, abortToken)).ToList();
 

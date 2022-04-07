@@ -26,11 +26,7 @@ public class WorkerManager : IWorkerManager, IAsyncDisposable
             return;
         }
 
-        subscription ??= "";
-        worker = ActivatorUtilities.CreateInstance<Worker>(_serviceProvider, queueOrTopic, subscription!);
-
-        _workers.Add(worker);
-        await worker.StartAsync(cancellationToken);
+        await CreateAndAddWorkerAsync(queueOrTopic, subscription, cancellationToken);
     }
 
     public async Task StopWorkerAsync(string queueOrTopic, string? subscription, CancellationToken cancellationToken = default)
@@ -44,6 +40,13 @@ public class WorkerManager : IWorkerManager, IAsyncDisposable
 
         if (worker.RefCount == 0) await RemoveWorkerAsync(worker);
     }
+    
+    public async Task EnsureWorkerAsync(string queueOrTopic, string? subscription, CancellationToken cancellationToken = default)
+    {
+        var worker = FindWorkerFor(queueOrTopic, subscription);
+        if (worker != null) return;
+        await CreateAndAddWorkerAsync(queueOrTopic, subscription, cancellationToken);
+    }
 
     public async Task RemoveWorkerAsync(Worker worker)
     {
@@ -54,5 +57,14 @@ public class WorkerManager : IWorkerManager, IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         foreach (var worker in Workers) await worker.DisposeAsync();
+    }
+    
+    private async Task CreateAndAddWorkerAsync(string queueOrTopic, string? subscription, CancellationToken cancellationToken = default)
+    {
+        subscription ??= "";
+        var worker = ActivatorUtilities.CreateInstance<Worker>(_serviceProvider, queueOrTopic, subscription!);
+        
+        _workers.Add(worker);
+        await worker.StartAsync(cancellationToken);
     }
 }

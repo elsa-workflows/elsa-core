@@ -46,10 +46,11 @@ public class ConfigurationWorkflowProvider : IWorkflowProvider
     private Workflow BuildWorkflowDefinition(Func<IServiceProvider, IWorkflow> workflowFactory)
     {
         var builder = new WorkflowDefinitionBuilder();
-        builder.WithDefinitionId(workflowFactory.GetType().Name);
         var definition = workflowFactory(_serviceProvider);
+        
+        builder.WithDefinitionId(definition.GetType().Name);
         definition.Build(builder);
-
+        
         var workflow = builder.BuildWorkflow();
         _identityGraphService.AssignIdentities(workflow);
 

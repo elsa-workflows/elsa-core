@@ -19,11 +19,11 @@ public class Diff<T>
 
 public static class Diff
 {
-    public static Diff<T> For<T>(ICollection<T> firstSet, ICollection<T> secondSet)
+    public static Diff<T> For<T>(ICollection<T> firstSet, ICollection<T> secondSet, IEqualityComparer<T>? comparer = default)
     {
-        var removed = firstSet.Except(secondSet).ToList();
-        var added = secondSet.Except(firstSet).ToList();
-        var unchanged = firstSet.Intersect(secondSet).ToList();
+        var removed = firstSet.Except(secondSet, comparer).ToList();
+        var added = secondSet.Except(firstSet, comparer).ToList();
+        var unchanged = firstSet.Intersect(secondSet, comparer).ToList();
 
         return new Diff<T>(added, removed, unchanged);
     }
