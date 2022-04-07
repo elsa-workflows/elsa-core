@@ -6,7 +6,7 @@ using Elsa.Models;
 namespace Elsa.Activities;
 
 [Activity("Elsa", "Control Flow", "Evaluate a Boolean condition to determine which path to execute next.")]
-public class If : Activity
+public class If : Activity<bool>
 {
     [JsonConstructor]
     public If()
@@ -39,6 +39,8 @@ public class If : Activity
 
         if (nextNode != null)
             context.PostActivity(nextNode, OnChildCompletedAsync);
+        
+        context.Set(Result, result);
     }
 
     private ValueTask OnChildCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext) => ValueTask.CompletedTask;
