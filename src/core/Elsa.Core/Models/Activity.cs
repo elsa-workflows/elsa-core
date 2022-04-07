@@ -43,6 +43,11 @@ public abstract class ActivityWithResult : Activity
     {
     }
 
+    protected ActivityWithResult(RegisterLocationReference? outputTarget)
+    {
+        if (outputTarget != null) this.CaptureOutput(outputTarget);
+    }
+
     public Output Result { get; } = new();
 }
 
@@ -53,6 +58,10 @@ public abstract class Activity<T> : ActivityWithResult
     }
 
     protected Activity(string activityType) : base(activityType)
+    {
+    }
+
+    protected Activity(RegisterLocationReference? outputTarget) : base(outputTarget)
     {
     }
 }
