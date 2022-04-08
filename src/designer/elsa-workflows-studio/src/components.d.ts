@@ -49,6 +49,11 @@ export namespace Components {
     interface ElsaCopyButton {
         "value": string;
     }
+    interface ElsaCronExpressionProperty {
+        "activityModel": ActivityModel;
+        "propertyDescriptor": ActivityPropertyDescriptor;
+        "propertyModel": ActivityDefinitionProperty;
+    }
     interface ElsaDesignerPanel {
         "culture": string;
     }
@@ -415,6 +420,12 @@ declare global {
         prototype: HTMLElsaCopyButtonElement;
         new (): HTMLElsaCopyButtonElement;
     };
+    interface HTMLElsaCronExpressionPropertyElement extends Components.ElsaCronExpressionProperty, HTMLStencilElement {
+    }
+    var HTMLElsaCronExpressionPropertyElement: {
+        prototype: HTMLElsaCronExpressionPropertyElement;
+        new (): HTMLElsaCronExpressionPropertyElement;
+    };
     interface HTMLElsaDesignerPanelElement extends Components.ElsaDesignerPanel, HTMLStencilElement {
     }
     var HTMLElsaDesignerPanelElement: {
@@ -742,6 +753,7 @@ declare global {
         "elsa-context-menu": HTMLElsaContextMenuElement;
         "elsa-control": HTMLElsaControlElement;
         "elsa-copy-button": HTMLElsaCopyButtonElement;
+        "elsa-cron-expression-property": HTMLElsaCronExpressionPropertyElement;
         "elsa-designer-panel": HTMLElsaDesignerPanelElement;
         "elsa-designer-tree": HTMLElsaDesignerTreeElement;
         "elsa-dictionary-property": HTMLElsaDictionaryPropertyElement;
@@ -826,6 +838,11 @@ declare namespace LocalJSX {
     }
     interface ElsaCopyButton {
         "value"?: string;
+    }
+    interface ElsaCronExpressionProperty {
+        "activityModel"?: ActivityModel;
+        "propertyDescriptor"?: ActivityPropertyDescriptor;
+        "propertyModel"?: ActivityDefinitionProperty;
     }
     interface ElsaDesignerPanel {
         "culture"?: string;
@@ -1155,6 +1172,7 @@ declare namespace LocalJSX {
         "elsa-context-menu": ElsaContextMenu;
         "elsa-control": ElsaControl;
         "elsa-copy-button": ElsaCopyButton;
+        "elsa-cron-expression-property": ElsaCronExpressionProperty;
         "elsa-designer-panel": ElsaDesignerPanel;
         "elsa-designer-tree": ElsaDesignerTree;
         "elsa-dictionary-property": ElsaDictionaryProperty;
@@ -1222,6 +1240,7 @@ declare module "@stencil/core" {
             "elsa-context-menu": LocalJSX.ElsaContextMenu & JSXBase.HTMLAttributes<HTMLElsaContextMenuElement>;
             "elsa-control": LocalJSX.ElsaControl & JSXBase.HTMLAttributes<HTMLElsaControlElement>;
             "elsa-copy-button": LocalJSX.ElsaCopyButton & JSXBase.HTMLAttributes<HTMLElsaCopyButtonElement>;
+            "elsa-cron-expression-property": LocalJSX.ElsaCronExpressionProperty & JSXBase.HTMLAttributes<HTMLElsaCronExpressionPropertyElement>;
             "elsa-designer-panel": LocalJSX.ElsaDesignerPanel & JSXBase.HTMLAttributes<HTMLElsaDesignerPanelElement>;
             "elsa-designer-tree": LocalJSX.ElsaDesignerTree & JSXBase.HTMLAttributes<HTMLElsaDesignerTreeElement>;
             "elsa-dictionary-property": LocalJSX.ElsaDictionaryProperty & JSXBase.HTMLAttributes<HTMLElsaDictionaryPropertyElement>;
