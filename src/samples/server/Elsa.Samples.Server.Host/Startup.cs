@@ -1,3 +1,4 @@
+using Elsa.Activities.Http.OpenApi;
 using Elsa.Models;
 using Elsa.Providers.Workflows;
 using Elsa.Rebus.RabbitMq;
@@ -115,7 +116,7 @@ namespace Elsa.Samples.Server.Host
             services
                 .AddNotificationHandlersFrom<Startup>()
                 .AddElsaApiEndpoints()
-                .AddElsaSwagger();
+                .AddElsaSwagger(options => options.DocumentFilter<HttpEndpointDocumentFilter>());
 
             // Allow arbitrary client browser apps to access the API for demo purposes only.
             // In a production environment, make sure to allow only origins you trust.
