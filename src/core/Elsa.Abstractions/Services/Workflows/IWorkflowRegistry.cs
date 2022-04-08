@@ -37,6 +37,11 @@ namespace Elsa.Services
         Task<IEnumerable<IWorkflowBlueprint>> FindManyByTagAsync(string tag, VersionOptions versionOptions, string? tenantId = default, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Returns a list of <see cref="WorkflowBlueprint"/> objects for the specified set of workflow definition IDs.
+        /// </summary>
+        Task<IEnumerable<IWorkflowBlueprint>> FindManyByDefinitionIds(IEnumerable<string> definitionIds, VersionOptions versionOptions, CancellationToken cancellationToken);
+
+        /// <summary>
         /// Returns a list of <see cref="WorkflowBlueprint"/> objects for the specified set of workflow definition version IDs.
         /// </summary>
         Task<IEnumerable<IWorkflowBlueprint>> FindManyByDefinitionVersionIds(IEnumerable<string> definitionVersionIds, CancellationToken cancellationToken = default);
