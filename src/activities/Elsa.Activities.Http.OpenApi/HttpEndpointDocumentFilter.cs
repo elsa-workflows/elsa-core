@@ -11,6 +11,9 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace Elsa.Activities.Http.OpenApi;
 
+/// <summary>
+/// Adds additional <see cref="OpenApiPathItem"/>s to the <see cref="OpenApiDocument"/> based on available <see cref="HttpEndpoint"/> activities used as starting points found in workflows.
+/// </summary>
 public class HttpEndpointDocumentFilter : IDocumentFilter
 {
     private readonly IServiceScopeFactory _scopeFactory;
