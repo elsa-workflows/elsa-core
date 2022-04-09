@@ -1,5 +1,11 @@
 using System.ComponentModel;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using Dahomey.Json;
+using Dahomey.Json.Serialization.Conventions;
 using Elsa.Exceptions;
+using DahomeyJsonObject = System.Text.Json.JsonObject;
+using DahomeyJsonNode = System.Text.Json.JsonNode;
 
 namespace Elsa.Helpers;
 
@@ -11,17 +17,34 @@ public static class ObjectConverter
     {
         if (value == null)
             return default!;
-            
+
         var sourceType = value.GetType();
 
         if (sourceType == targetType)
             return value;
 
+        var options = new JsonSerializerOptions();
+        options.SetupExtensions().SetReferenceHandling(ReferenceHandling.Preserve);
+        var registry = options.GetDiscriminatorConventionRegistry();
+        registry.ClearConventions();
+        registry.RegisterConvention(new DefaultDiscriminatorConvention<string>(options, "_type"));
+
+        options.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+        options.ReferenceHandler = ReferenceHandler.Preserve;
+        options.PropertyNameCaseInsensitive = true;
+        options.Converters.Add(new JsonStringEnumConverter());
+        
+        if (value is DahomeyJsonNode { ValueKind: JsonValueKind.Object } dahomyJsonObject)
+            return ToObject(dahomyJsonObject, targetType, options);
+        
+        if (value is JsonElement { ValueKind: JsonValueKind.Object } jsonObject)
+            return jsonObject.Deserialize(targetType, options);
+
         var underlyingTargetType = Nullable.GetUnderlyingType(targetType) ?? targetType;
-            
+
         if (targetType == typeof(object))
             return value;
-            
+
         if (underlyingTargetType.IsInstanceOfType(value))
             return value;
 
@@ -29,7 +52,7 @@ public static class ObjectConverter
 
         if (underlyingSourceType == underlyingTargetType)
             return value;
-            
+
         var targetTypeConverter = TypeDescriptor.GetConverter(underlyingTargetType);
 
         if (targetTypeConverter.CanConvertFrom(underlyingSourceType))
@@ -54,5 +77,11 @@ public static class ObjectConverter
         {
             throw new TypeConversionException($"Failed to convert an object of type {sourceType} to {underlyingTargetType}", value, underlyingTargetType, e);
         }
+    }
+
+    private static object? ToObject(this DahomeyJsonNode node, Type type, JsonSerializerOptions? options = null)
+    {
+        using var arrayBufferWriter = new Dahomey.Json.Util.ArrayBufferWriter<byte>();
+        return JsonSerializer.Deserialize(node.ToString(), type, options);
     }
 }

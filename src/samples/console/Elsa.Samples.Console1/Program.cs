@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Contracts;
 using Elsa.Extensions;
-using Elsa.Mediator.Extensions;
 using Elsa.Models;
 using Elsa.Persistence.InMemory.Extensions;
 using Elsa.Pipelines.ActivityExecution.Components;

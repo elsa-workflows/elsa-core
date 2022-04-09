@@ -1,5 +1,4 @@
 using Elsa.Contracts;
-using Elsa.Management.Contracts;
 using Elsa.Modules.Activities.Configurators;
 using Elsa.Modules.Activities.Resolvers;
 using Microsoft.Extensions.DependencyInjection;

@@ -7,6 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="Dahomey.Json" Version="1.12.2" />
         <PackageReference Include="Humanizer.Core" Version="2.14.1" />
         <PackageReference Include="System.Linq.Async" Version="6.0.1" />
         <PackageReference Include="System.Text.Json" Version="6.0.2" />

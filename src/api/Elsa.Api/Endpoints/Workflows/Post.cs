@@ -3,8 +3,8 @@ using System.Threading.Tasks;
 using Elsa.Activities;
 using Elsa.Contracts;
 using Elsa.Management.Contracts;
-using Elsa.Management.Serialization;
 using Elsa.Persistence.Mappers;
+using Elsa.Serialization;
 using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Api.Endpoints.Workflows;

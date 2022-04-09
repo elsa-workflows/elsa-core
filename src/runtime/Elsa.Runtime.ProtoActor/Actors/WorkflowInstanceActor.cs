@@ -48,7 +48,10 @@ public class WorkflowInstanceActor : IActor
     private PID GetWorkflowOperatorPid(IContext context, string workflowInstanceId)
     {
         var actorName = $"workflow-operator:{workflowInstanceId}";
-        var pid = context.System.ProcessRegistry.SearchByName(actorName).FirstOrDefault();
+        var pid = context.System.ProcessRegistry.Find(x =>
+        {
+            return x == actorName;
+        }).FirstOrDefault();
             
         if (pid != null) 
             return pid;

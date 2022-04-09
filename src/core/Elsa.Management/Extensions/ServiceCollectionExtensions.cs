@@ -4,6 +4,7 @@ using Elsa.Management.Options;
 using Elsa.Management.Providers;
 using Elsa.Management.Serialization;
 using Elsa.Management.Services;
+using Elsa.Serialization;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Management.Extensions;
@@ -26,6 +27,7 @@ public static class ServiceCollectionExtensions
             .AddSingleton<IExpressionSyntaxRegistry, ExpressionSyntaxRegistry>()
             .AddSingleton<IExpressionSyntaxProvider, DefaultExpressionSyntaxProvider>()
             .AddSingleton<IExpressionSyntaxRegistryPopulator, ExpressionSyntaxRegistryPopulator>()
+            .AddSingleton<ISerializationOptionsConfigurator, SerializationOptionsConfigurator>()
             .AddSingleton<WorkflowSerializerOptionsProvider>();
     }
     

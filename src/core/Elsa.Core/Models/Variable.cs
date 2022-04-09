@@ -20,7 +20,7 @@ public class Variable : RegisterLocationReference
     }
 
     public string? Name { get; set; }
-    public object? DefaultValue { get; }
+    public object? DefaultValue { get; set; }
     public override RegisterLocation Declare() => new(DefaultValue);
 }
 

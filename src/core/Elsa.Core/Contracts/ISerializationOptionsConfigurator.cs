@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace Elsa.Management.Contracts;
+namespace Elsa.Contracts;
 
 public interface ISerializationOptionsConfigurator
 {

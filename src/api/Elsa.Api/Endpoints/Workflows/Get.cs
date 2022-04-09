@@ -1,9 +1,9 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Management.Serialization;
 using Elsa.Mediator.Contracts;
 using Elsa.Persistence.Models;
 using Elsa.Persistence.Requests;
+using Elsa.Serialization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
