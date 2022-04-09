@@ -1,8 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Management.Contracts;
+using Elsa.Contracts;
 
-namespace Elsa.Management.Serialization.Converters;
+namespace Elsa.Serialization.Converters;
 
 /// <summary>
 /// Serializes <see cref="Type"/> objects to a simple alias representing said type.

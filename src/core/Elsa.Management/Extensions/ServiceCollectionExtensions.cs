@@ -23,7 +23,6 @@ public static class ServiceCollectionExtensions
             .AddSingleton<IPropertyOptionsResolver, PropertyOptionsResolver>()
             .AddSingleton<IActivityProvider, TypedActivityProvider>()
             .AddSingleton<IActivityFactory, ActivityFactory>()
-            .AddSingleton<IWellKnownTypeRegistry, WellKnownTypeRegistry>()
             .AddSingleton<IExpressionSyntaxRegistry, ExpressionSyntaxRegistry>()
             .AddSingleton<IExpressionSyntaxProvider, DefaultExpressionSyntaxProvider>()
             .AddSingleton<IExpressionSyntaxRegistryPopulator, ExpressionSyntaxRegistryPopulator>()

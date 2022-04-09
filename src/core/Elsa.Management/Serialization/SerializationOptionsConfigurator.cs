@@ -16,7 +16,6 @@ public class SerializationOptionsConfigurator : ISerializationOptionsConfigurato
 
     public void Configure(JsonSerializerOptions options)
     {
-        options.Converters.Add(Create<TypeJsonConverter>());
         options.Converters.Add(Create<ActivityJsonConverterFactory>());
         options.Converters.Add(Create<ExpressionJsonConverterFactory>());
     }

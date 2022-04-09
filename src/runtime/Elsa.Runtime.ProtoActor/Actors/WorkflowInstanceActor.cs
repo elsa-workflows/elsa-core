@@ -47,15 +47,11 @@ public class WorkflowInstanceActor : IActor
 
     private PID GetWorkflowOperatorPid(IContext context, string workflowInstanceId)
     {
-        var actorName = $"workflow-operator:{workflowInstanceId}";
-        var pid = context.System.ProcessRegistry.Find(x =>
-        {
-            return x == actorName;
-        }).FirstOrDefault();
+        var pid = context.System.ProcessRegistry.Find($"partition-activator/workflow-instance:{workflowInstanceId}").FirstOrDefault();
             
         if (pid != null) 
             return pid;
-            
+        
         var props = context.System.DI().PropsFor<WorkflowOperatorActor>();
         pid = context.SpawnNamed(props, workflowInstanceId);
 

@@ -1,4 +1,6 @@
-namespace Elsa.Management.Contracts;
+using Elsa.Contracts;
+
+namespace Elsa.Serialization;
 
 public class WellKnownTypeRegistry : IWellKnownTypeRegistry
 {

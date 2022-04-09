@@ -5,6 +5,7 @@ using Dahomey.Json;
 using Dahomey.Json.Attributes;
 using Dahomey.Json.Serialization.Conventions;
 using Elsa.Contracts;
+using Elsa.Serialization.Converters;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Serialization;
@@ -32,6 +33,7 @@ public class WorkflowSerializerOptionsProvider
         };
         
         options.Converters.Add(Create<JsonStringEnumConverter>());
+        options.Converters.Add(Create<TypeJsonConverter>());
         options.Converters.Add(JsonMetadataServices.TimeSpanConverter);
         
         // Dahomey.

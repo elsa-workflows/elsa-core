@@ -9,6 +9,7 @@ using Elsa.Pipelines.ActivityExecution;
 using Elsa.Pipelines.WorkflowExecution;
 using Elsa.Runtime.Contracts;
 using Elsa.Runtime.Extensions;
+using Elsa.Serialization;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -39,6 +40,7 @@ public static class ServiceCollectionExtensions
             .AddSingleton<IIdentityGenerator, IdentityGenerator>()
             .AddSingleton<ISystemClock, SystemClock>()
             .AddSingleton<IBookmarkDataSerializer, BookmarkDataSerializer>()
+            .AddSingleton<IWellKnownTypeRegistry, WellKnownTypeRegistry>()
 
             // Expressions.
             .AddSingleton<IExpressionEvaluator, ExpressionEvaluator>()
