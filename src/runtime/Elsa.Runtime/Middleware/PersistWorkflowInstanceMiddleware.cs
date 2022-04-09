@@ -9,6 +9,7 @@ using Elsa.Pipelines.WorkflowExecution;
 using Elsa.Pipelines.WorkflowExecution.Components;
 using Elsa.Runtime.Contracts;
 using Elsa.Runtime.Models;
+using Elsa.Runtime.Notifications;
 
 namespace Elsa.Runtime.Middleware;
 

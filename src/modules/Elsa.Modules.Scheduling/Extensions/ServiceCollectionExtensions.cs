@@ -8,7 +8,7 @@ namespace Elsa.Modules.Scheduling.Extensions;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddJobServices(this IServiceCollection services)
+    public static IServiceCollection AddSchedulingServices(this IServiceCollection services)
     {
         services
             .AddSingleton<IWorkflowTriggerScheduler, WorkflowTriggerScheduler>()

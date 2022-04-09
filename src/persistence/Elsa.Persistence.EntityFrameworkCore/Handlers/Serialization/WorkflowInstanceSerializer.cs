@@ -23,6 +23,9 @@ public class WorkflowInstanceSerializer : IEntitySerializer<WorkflowInstance>
         var json = JsonSerializer.Serialize(data, options);
 
         dbContext.Entry(entity).Property("Data").CurrentValue = json;
+        
+        // Test:
+        data = JsonSerializer.Deserialize<WorkflowInstanceState>(json, options)!;
     }
 
     public void Deserialize(ElsaDbContext dbContext, WorkflowInstance entity)
