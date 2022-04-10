@@ -1,5 +1,6 @@
 using Elsa.Models;
 using Elsa.Persistence.Models;
+using Elsa.Runtime.Models;
 
 namespace Elsa.Runtime.Contracts;
 
@@ -8,10 +9,10 @@ namespace Elsa.Runtime.Contracts;
 /// </summary>
 public interface IWorkflowService
 {
-    Task<ExecuteWorkflowResult> ExecuteWorkflowAsync(string definitionId, VersionOptions versionOptions, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default);
-    Task<ExecuteWorkflowResult> ExecuteWorkflowAsync(string instanceId, Bookmark bookmark, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default);
-    Task<DispatchWorkflowResult> DispatchWorkflowAsync(string definitionId, VersionOptions versionOptions, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default);
-    Task<DispatchWorkflowResult> DispatchWorkflowAsync(string instanceId, Bookmark bookmark, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default);
+    Task<InvokeWorkflowResult> ExecuteWorkflowAsync(string definitionId, VersionOptions versionOptions, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default);
+    Task<InvokeWorkflowResult> ExecuteWorkflowAsync(string instanceId, Bookmark bookmark, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default);
+    Task<DispatchWorkflowDefinitionResponse> DispatchWorkflowAsync(string definitionId, VersionOptions versionOptions, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default);
+    Task<DispatchWorkflowInstanceResponse> DispatchWorkflowAsync(string instanceId, Bookmark bookmark, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default);
     Task<IEnumerable<ExecuteWorkflowInstructionResult>> ExecuteStimulusAsync(IStimulus stimulus, CancellationToken cancellationToken);
     Task<IEnumerable<DispatchWorkflowInstructionResult>> DispatchStimulusAsync(IStimulus stimulus, CancellationToken cancellationToken);
         

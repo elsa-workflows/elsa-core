@@ -3,10 +3,18 @@ using Elsa.Runtime.Models;
 
 namespace Elsa.Runtime.Contracts;
 
+/// <summary>
+/// Invokes a workflow using a configured runtime (e.g. ProtoActor).
+/// </summary>
 public interface IWorkflowInvoker
 {
-    Task<ExecuteWorkflowResult> ExecuteAsync(ExecuteWorkflowDefinitionRequest request, CancellationToken cancellationToken = default);
-    Task<ExecuteWorkflowResult> ExecuteAsync(ExecuteWorkflowInstanceRequest request, CancellationToken cancellationToken = default);
-    Task<DispatchWorkflowResult> DispatchAsync(DispatchWorkflowDefinitionRequest request, CancellationToken cancellationToken = default);
-    Task<DispatchWorkflowResult> DispatchAsync(DispatchWorkflowInstanceRequest request, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Creates a workflow instance of the specified workflow definition and then invokes the workflow instance.
+    /// </summary>
+    Task<InvokeWorkflowResult> InvokeAsync(InvokeWorkflowDefinitionRequest request, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Invokes the specified workflow instance.
+    /// </summary>
+    Task<InvokeWorkflowResult> InvokeAsync(InvokeWorkflowInstanceRequest request, CancellationToken cancellationToken = default);
 }

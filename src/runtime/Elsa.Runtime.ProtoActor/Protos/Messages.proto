@@ -1,41 +1,31 @@
 syntax = "proto3";
 import "google/protobuf/wrappers.proto";
 package Elsa.Runtime.ProtoActor.Messages;
-option csharp_namespace = "Elsa.Runtime.ProtoActor.Messages";
+option csharp_namespace = "Elsa.Runtime.Protos";
 
 // Empty response type.
 message Unit {}
 
-message ExecuteWorkflowDefinition {
+message ExecuteWorkflowDefinitionRequest {
   string id = 1;
   string versionOptions = 2;
   optional Input input = 3;
 }
 
-message DispatchWorkflowDefinition {
-  string id = 1;
-  string versionOptions = 2;
-  optional Input input = 3;
-}
-
-message ExecuteWorkflowInstance {
-  string id = 1;
-  optional Bookmark bookmark = 2;
-  optional Input input = 3;
-}
-
-message DispatchWorkflowInstance {
-  string id = 1;
-  optional Bookmark bookmark = 2;
-  optional Input input = 3;
-}
-
-message ExecuteWorkflowResponse {
+message ExecuteWorkflowDefinitionResponse {
   Json workflowState = 1;
   repeated Bookmark bookmarks = 2;
 }
 
-message DispatchWorkflowResponse {
+message ExecuteWorkflowInstanceRequest {
+  string id = 1;
+  optional Bookmark bookmark = 2;
+  optional Input input = 3;
+}
+
+message ExecuteWorkflowInstanceResponse {
+  Json workflowState = 1;
+  repeated Bookmark bookmarks = 2;
 }
 
 message HandleStimulusRequest {

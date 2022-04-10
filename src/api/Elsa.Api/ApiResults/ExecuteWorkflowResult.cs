@@ -19,8 +19,8 @@ public class ExecuteWorkflowResult : IResult
         var response = httpContext.Response;
         var workflowInvoker = httpContext.RequestServices.GetRequiredService<IWorkflowInvoker>();
         var definitionId = Workflow.Identity.DefinitionId;
-        var executeRequest = new ExecuteWorkflowDefinitionRequest(definitionId, VersionOptions.Published);
-        var result = await workflowInvoker.ExecuteAsync(executeRequest, CancellationToken.None);
+        var executeRequest = new InvokeWorkflowDefinitionRequest(definitionId, VersionOptions.Published);
+        var result = await workflowInvoker.InvokeAsync(executeRequest, CancellationToken.None);
 
         if (!response.HasStarted)
             await response.WriteAsJsonAsync(result, httpContext.RequestAborted);

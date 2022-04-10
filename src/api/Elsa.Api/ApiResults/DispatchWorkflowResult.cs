@@ -17,9 +17,9 @@ public class DispatchWorkflowResult : IResult
     public async Task ExecuteAsync(HttpContext httpContext)
     {
         var response = httpContext.Response;
-        var workflowInvoker = httpContext.RequestServices.GetRequiredService<IWorkflowInvoker>();
+        var workflowDispatcher = httpContext.RequestServices.GetRequiredService<IWorkflowDispatcher>();
         var definitionId = Workflow.Identity.DefinitionId;
-        var result = await workflowInvoker.DispatchAsync(new DispatchWorkflowDefinitionRequest(definitionId, VersionOptions.Published));
+        var result = await workflowDispatcher.DispatchAsync(new DispatchWorkflowDefinitionRequest(definitionId, VersionOptions.Published));
 
         response.StatusCode = (int)HttpStatusCode.OK;
         await response.WriteAsJsonAsync(result, httpContext.RequestAborted);

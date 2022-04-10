@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
-using Elsa.Runtime.ProtoActor.Messages;
+using Elsa.Runtime.Protos;
 
 namespace Elsa.Runtime.ProtoActor.Extensions;
 

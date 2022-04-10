@@ -30,7 +30,7 @@ public class WorkflowRunner : IWorkflowRunner
         _schedulerFactory = schedulerFactory;
     }
 
-    public async Task<ExecuteWorkflowResult> RunAsync(Workflow workflow, IDictionary<string, object>? input, CancellationToken cancellationToken = default)
+    public async Task<InvokeWorkflowResult> RunAsync(Workflow workflow, IDictionary<string, object>? input, CancellationToken cancellationToken = default)
     {
         // Create a child scope.
         using var scope = _serviceScopeFactory.CreateScope();
@@ -44,7 +44,7 @@ public class WorkflowRunner : IWorkflowRunner
         return await RunAsync(workflowExecutionContext);
     }
 
-    public async Task<ExecuteWorkflowResult> RunAsync(Workflow workflow, WorkflowState workflowState, IDictionary<string, object>? input, CancellationToken cancellationToken = default)
+    public async Task<InvokeWorkflowResult> RunAsync(Workflow workflow, WorkflowState workflowState, IDictionary<string, object>? input, CancellationToken cancellationToken = default)
     {
         // Create a child scope.
         using var scope = _serviceScopeFactory.CreateScope();
@@ -58,7 +58,7 @@ public class WorkflowRunner : IWorkflowRunner
         return await RunAsync(workflowExecutionContext);
     }
 
-    public async Task<ExecuteWorkflowResult> RunAsync(Workflow workflow, WorkflowState workflowState, Bookmark? bookmark, IDictionary<string, object>? input, CancellationToken cancellationToken = default)
+    public async Task<InvokeWorkflowResult> RunAsync(Workflow workflow, WorkflowState workflowState, Bookmark? bookmark, IDictionary<string, object>? input, CancellationToken cancellationToken = default)
     {
         // Create a child scope.
         using var scope = _serviceScopeFactory.CreateScope();
@@ -72,7 +72,7 @@ public class WorkflowRunner : IWorkflowRunner
         return await RunAsync(workflowExecutionContext);
     }
 
-    public async Task<ExecuteWorkflowResult> RunAsync(WorkflowExecutionContext workflowExecutionContext)
+    public async Task<InvokeWorkflowResult> RunAsync(WorkflowExecutionContext workflowExecutionContext)
     {
         // Execute the activity execution pipeline.
         await _pipeline.ExecuteAsync(workflowExecutionContext);
@@ -81,7 +81,7 @@ public class WorkflowRunner : IWorkflowRunner
         var workflowState = _workflowStateSerializer.ReadState(workflowExecutionContext);
 
         // Return workflow execution result containing state + bookmarks.
-        return new ExecuteWorkflowResult(workflowState, workflowExecutionContext.Bookmarks);
+        return new InvokeWorkflowResult(workflowState, workflowExecutionContext.Bookmarks);
     }
 
     private WorkflowExecutionContext CreateWorkflowExecutionContext(

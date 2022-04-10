@@ -7,8 +7,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\core\Elsa.Jobs.Abstractions\Elsa.Jobs.Abstractions.csproj" />
+      <ProjectReference Include="..\..\core\Elsa.ServiceBus.Abstractions\Elsa.ServiceBus.Abstractions.csproj" />
       <ProjectReference Include="..\..\runtime\Elsa.Runtime\Elsa.Runtime.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="MassTransit" Version="8.0.1" />
+      <PackageReference Include="MassTransit.Extensions.DependencyInjection" Version="7.3.1" />
     </ItemGroup>
 
 </Project>

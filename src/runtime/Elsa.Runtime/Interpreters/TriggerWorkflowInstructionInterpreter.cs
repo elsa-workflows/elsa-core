@@ -13,12 +13,18 @@ public record TriggerWorkflowInstruction(WorkflowTrigger WorkflowTrigger, IDicti
 public class TriggerWorkflowInstructionInterpreter : WorkflowInstructionInterpreter<TriggerWorkflowInstruction>
 {
     private readonly IWorkflowInvoker _workflowInvoker;
+    private readonly IWorkflowDispatcher _workflowDispatcher;
     private readonly IWorkflowRegistry _workflowRegistry;
     private readonly ILogger _logger;
 
-    public TriggerWorkflowInstructionInterpreter(IWorkflowInvoker workflowInvoker, IWorkflowRegistry workflowRegistry, ILogger<TriggerWorkflowInstructionInterpreter> logger)
+    public TriggerWorkflowInstructionInterpreter(
+        IWorkflowInvoker workflowInvoker,
+        IWorkflowDispatcher workflowDispatcher,
+        IWorkflowRegistry workflowRegistry, 
+        ILogger<TriggerWorkflowInstructionInterpreter> logger)
     {
         _workflowInvoker = workflowInvoker;
+        _workflowDispatcher = workflowDispatcher;
         _workflowRegistry = workflowRegistry;
         _logger = logger;
     }
@@ -35,8 +41,8 @@ public class TriggerWorkflowInstructionInterpreter : WorkflowInstructionInterpre
             return null;
 
         // Execute workflow.
-        var executeRequest = new ExecuteWorkflowDefinitionRequest(workflowId, VersionOptions.Published, instruction.Input);
-        var workflowExecutionResult = await _workflowInvoker.ExecuteAsync(executeRequest, cancellationToken);
+        var executeRequest = new InvokeWorkflowDefinitionRequest(workflowId, VersionOptions.Published, instruction.Input);
+        var workflowExecutionResult = await _workflowInvoker.InvokeAsync(executeRequest, cancellationToken);
 
         return new ExecuteWorkflowInstructionResult(workflow, workflowExecutionResult);
     }
@@ -54,7 +60,7 @@ public class TriggerWorkflowInstructionInterpreter : WorkflowInstructionInterpre
 
         // Execute workflow.
         var dispatchRequest = new DispatchWorkflowDefinitionRequest(definitionId, VersionOptions.Published, instruction.Input);
-        await _workflowInvoker.DispatchAsync(dispatchRequest, cancellationToken);
+        await _workflowDispatcher.DispatchAsync(dispatchRequest, cancellationToken);
 
         return new DispatchWorkflowInstructionResult();
     }

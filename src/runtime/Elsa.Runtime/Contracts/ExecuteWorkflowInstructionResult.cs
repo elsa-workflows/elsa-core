@@ -2,4 +2,4 @@ using Elsa.Models;
 
 namespace Elsa.Runtime.Contracts;
 
-public record ExecuteWorkflowInstructionResult(Workflow Workflow, ExecuteWorkflowResult ExecuteWorkflowResult);
+public record ExecuteWorkflowInstructionResult(Workflow Workflow, InvokeWorkflowResult InvokeWorkflowResult);

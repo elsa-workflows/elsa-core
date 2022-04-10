@@ -1,8 +1,12 @@
 using System;
+using Elsa.Helpers;
+using Elsa.Persistence.Models;
 using Elsa.Runtime.Contracts;
-using Elsa.Runtime.ProtoActor.Actors;
+using Elsa.Runtime.Extensions;
+using Elsa.Runtime.ProtoActor.Grains;
 using Elsa.Runtime.ProtoActor.HostedServices;
 using Elsa.Runtime.ProtoActor.Services;
+using Elsa.Runtime.Protos;
 using Microsoft.Extensions.DependencyInjection;
 using Proto;
 using Proto.Cluster;
@@ -20,12 +24,13 @@ public static class ServiceCollectionExtensions
     {
         var systemConfig = GetSystemConfig();
 
+        // Actor System.
         services.AddSingleton(sp =>
         {
             var system = new ActorSystem(systemConfig).WithServiceProvider(sp);
             var remoteConfig = GetRemoteConfig();
             var clusterConfig = GetClusterConfig(system, "my-cluster");
-            
+
             system
                 .WithRemote(remoteConfig)
                 .WithCluster(clusterConfig);
@@ -33,37 +38,43 @@ public static class ServiceCollectionExtensions
             return system;
         });
 
+        // Cluster.
         services.AddSingleton(sp => sp.GetRequiredService<ActorSystem>().Cluster());
 
-        return services
-            .AddHostedService<WorkflowServerHost>()
-            .AddSingleton<IWorkflowInvoker, ProtoActorWorkflowInvoker>()
-            .AddTransient<WorkflowDefinitionActor>()
-            .AddTransient<WorkflowInstanceActor>()
-            .AddTransient<WorkflowOperatorActor>();
-    }
-        
-    private static ActorSystemConfig GetSystemConfig() =>
+        // Actors.
+        services
+            .AddSingleton(sp => new WorkflowDefinitionGrainActor((context, _) => ActivatorUtilities.CreateInstance<WorkflowDefinitionGrain>(sp, context)))
+            .AddSingleton(sp => new WorkflowInstanceGrainActor((context, _) => ActivatorUtilities.CreateInstance<WorkflowInstanceGrain>(sp, context)));
 
+        // Client factory.
+        services.AddSingleton<GrainClientFactory>();
+
+        // Configure runtime with ProtoActor workflow invoker.
+        services.ConfigureWorkflowRuntime(options => options.WorkflowInvokerFactory = sp => ActivatorUtilities.CreateInstance<ProtoActorWorkflowInvoker>(sp));
+
+        return services
+            .AddHostedService<WorkflowServerHost>();
+    }
+
+    private static ActorSystemConfig GetSystemConfig() =>
         ActorSystemConfig
             .Setup()
             .WithDeadLetterThrottleCount(3)
             .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(10000))
             .WithDeveloperSupervisionLogging(true)
             .WithDeadLetterRequestLogging(true);
-        
+
     private static GrpcCoreRemoteConfig GetRemoteConfig() => GrpcCoreRemoteConfig
         .BindToLocalhost()
-        .WithProtoMessages(Messages.MessagesReflection.Descriptor)
-    ;
-        
+        .WithProtoMessages(Protos.MessagesReflection.Descriptor);
+
     private static ClusterConfig GetClusterConfig(ActorSystem system, string clusterName)
     {
         //var clusterProvider = new ConsulProvider(new ConsulProviderConfig{});
         var clusterProvider = new TestProvider(new TestProviderOptions(), new InMemAgent());
-            
-        var workflowDefinitionProps = system.DI().PropsFor<WorkflowDefinitionActor>();
-        var workflowInstanceProps = system.DI().PropsFor<WorkflowInstanceActor>();
+
+        var workflowDefinitionProps = system.DI().PropsFor<WorkflowDefinitionGrainActor>();
+        var workflowInstanceProps = system.DI().PropsFor<WorkflowInstanceGrainActor>();
 
         var clusterConfig =
                 ClusterConfig
@@ -73,12 +84,12 @@ public static class ServiceCollectionExtensions
                     .WithActorRequestTimeout(TimeSpan.FromHours(1))
                     .WithActorActivationTimeout(TimeSpan.FromHours(1))
                     .WithActorSpawnTimeout(TimeSpan.FromHours(1))
-                    .WithClusterKind(GrainKinds.WorkflowDefinition, workflowDefinitionProps)
-                    .WithClusterKind(GrainKinds.WorkflowInstance, workflowInstanceProps)
+                    .WithClusterKind(WorkflowDefinitionGrainActor.Kind, workflowDefinitionProps)
+                    .WithClusterKind(WorkflowInstanceGrainActor.Kind, workflowInstanceProps)
             ;
         return clusterConfig;
     }
-        
+
     // private static IIdentityStorage GetIdentityLookup(string clusterName) =>
     //     new RedisIdentityStorage(clusterName, ConnectionMultiplexer
     //         .Connect("localhost:6379" /* use proper config */)

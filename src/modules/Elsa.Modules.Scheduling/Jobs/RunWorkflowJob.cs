@@ -25,7 +25,7 @@ public class RunWorkflowJob : Job
     protected override async ValueTask ExecuteAsync(JobExecutionContext context)
     {
         var request = new DispatchWorkflowDefinitionRequest(WorkflowId, VersionOptions.Published);
-        var workflowInvoker = context.GetRequiredService<IWorkflowInvoker>();
-        await workflowInvoker.DispatchAsync(request, context.CancellationToken);
+        var workflowDispatcher = context.GetRequiredService<IWorkflowDispatcher>();
+        await workflowDispatcher.DispatchAsync(request, context.CancellationToken);
     }
 }

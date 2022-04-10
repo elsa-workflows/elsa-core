@@ -8,38 +8,44 @@ namespace Elsa.Runtime.Services;
 public class WorkflowService : IWorkflowService
 {
     private readonly IWorkflowInvoker _workflowInvoker;
+    private readonly IWorkflowDispatcher _workflowDispatcher;
     private readonly IWorkflowInstructionExecutor _workflowInstructionExecutor;
     private readonly IStimulusInterpreter _stimulusInterpreter;
 
-    public WorkflowService(IWorkflowInvoker workflowInvoker, IWorkflowInstructionExecutor workflowInstructionExecutor, IStimulusInterpreter stimulusInterpreter)
+    public WorkflowService(
+        IWorkflowInvoker workflowInvoker,
+        IWorkflowDispatcher workflowDispatcher,
+        IWorkflowInstructionExecutor workflowInstructionExecutor, 
+        IStimulusInterpreter stimulusInterpreter)
     {
         _workflowInvoker = workflowInvoker;
+        _workflowDispatcher = workflowDispatcher;
         _workflowInstructionExecutor = workflowInstructionExecutor;
         _stimulusInterpreter = stimulusInterpreter;
     }
 
-    public async Task<ExecuteWorkflowResult> ExecuteWorkflowAsync(string definitionId, VersionOptions versionOptions, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
+    public async Task<InvokeWorkflowResult> ExecuteWorkflowAsync(string definitionId, VersionOptions versionOptions, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
     {
-        var executeRequest = new ExecuteWorkflowDefinitionRequest(definitionId, versionOptions, input);
-        return await _workflowInvoker.ExecuteAsync(executeRequest, cancellationToken);
+        var executeRequest = new InvokeWorkflowDefinitionRequest(definitionId, versionOptions, input);
+        return await _workflowInvoker.InvokeAsync(executeRequest, cancellationToken);
     }
 
-    public async Task<ExecuteWorkflowResult> ExecuteWorkflowAsync(string instanceId, Bookmark bookmark, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
+    public async Task<InvokeWorkflowResult> ExecuteWorkflowAsync(string instanceId, Bookmark bookmark, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
     {
-        var request = new ExecuteWorkflowInstanceRequest(instanceId, bookmark, input);
-        return await _workflowInvoker.ExecuteAsync(request, cancellationToken);
+        var request = new InvokeWorkflowInstanceRequest(instanceId, bookmark, input);
+        return await _workflowInvoker.InvokeAsync(request, cancellationToken);
     }
 
-    public async Task<DispatchWorkflowResult> DispatchWorkflowAsync(string definitionId, VersionOptions versionOptions, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
+    public async Task<DispatchWorkflowDefinitionResponse> DispatchWorkflowAsync(string definitionId, VersionOptions versionOptions, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
     {
         var executeRequest = new DispatchWorkflowDefinitionRequest(definitionId, versionOptions, input);
-        return await _workflowInvoker.DispatchAsync(executeRequest, cancellationToken);
+        return await _workflowDispatcher.DispatchAsync(executeRequest, cancellationToken);
     }
 
-    public async Task<DispatchWorkflowResult> DispatchWorkflowAsync(string instanceId, Bookmark bookmark, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
+    public async Task<DispatchWorkflowInstanceResponse> DispatchWorkflowAsync(string instanceId, Bookmark bookmark, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
     {
         var request = new DispatchWorkflowInstanceRequest(instanceId, bookmark, input);
-        return await _workflowInvoker.DispatchAsync(request, cancellationToken);
+        return await _workflowDispatcher.DispatchAsync(request, cancellationToken);
     }
 
     public async Task<IEnumerable<ExecuteWorkflowInstructionResult>> ExecuteStimulusAsync(IStimulus stimulus, CancellationToken cancellationToken = default)

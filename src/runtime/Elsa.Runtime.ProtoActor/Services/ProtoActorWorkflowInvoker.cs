@@ -1,110 +1,85 @@
+using System;
 using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
-using Elsa.Persistence.Models;
 using Elsa.Runtime.Contracts;
 using Elsa.Runtime.Models;
 using Elsa.Runtime.ProtoActor.Extensions;
-using Elsa.Runtime.ProtoActor.Messages;
+using Elsa.Runtime.Protos;
 using Elsa.State;
+using Proto;
 using Proto.Cluster;
+using Bookmark = Elsa.Models.Bookmark;
+using ProtoBookmark = Elsa.Runtime.Protos.Bookmark;
 
 namespace Elsa.Runtime.ProtoActor.Services;
-
-using Bookmark = Elsa.Models.Bookmark;
-using BookmarkMessage = Messages.Bookmark;
 
 public class ProtoActorWorkflowInvoker : IWorkflowInvoker
 {
     private readonly Cluster _cluster;
+    private readonly GrainClientFactory _grainClientFactory;
 
-    public ProtoActorWorkflowInvoker(Cluster cluster)
+    public ProtoActorWorkflowInvoker(Cluster cluster, GrainClientFactory grainClientFactory)
     {
         _cluster = cluster;
+        _grainClientFactory = grainClientFactory;
     }
 
-    public async Task<ExecuteWorkflowResult> ExecuteAsync(ExecuteWorkflowDefinitionRequest request, CancellationToken cancellationToken = default)
+    public async Task<InvokeWorkflowResult> InvokeAsync(InvokeWorkflowDefinitionRequest request, CancellationToken cancellationToken = default)
     {
         var (definitionId, versionOptions, input) = request;
-        var name = GetActorName(definitionId, versionOptions);
-
-        var message = new ExecuteWorkflowDefinition
+        
+        var message = new ExecuteWorkflowDefinitionRequest
         {
             Id = definitionId,
             VersionOptions = versionOptions.ToString(),
             Input = input!?.Serialize()
         };
 
-        var response = await _cluster.RequestAsync<ExecuteWorkflowResponse>(name, GrainKinds.WorkflowDefinition, message, cancellationToken);
+        var client = _grainClientFactory.CreateWorkflowDefinitionGrainClient(definitionId, versionOptions);
+        var response = await client.Execute(message, CancellationTokens.FromSeconds(100));
+
+        if (response == null)
+            throw new TimeoutException("Did not receive a response from the WorkflowDefinition actor within the configured amount of time.");
+        
         var workflowState = JsonSerializer.Deserialize<WorkflowState>(response.WorkflowState.Text)!;
         var bookmarks = response.Bookmarks.Select(MapBookmark).ToList();
 
-        return new ExecuteWorkflowResult(workflowState, bookmarks);
+        return new InvokeWorkflowResult(workflowState, bookmarks);
     }
 
-    public async Task<ExecuteWorkflowResult> ExecuteAsync(ExecuteWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
+    public async Task<InvokeWorkflowResult> InvokeAsync(InvokeWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
         var (instanceId, bookmark, input) = request;
-        var name = GetActorName(instanceId);
         var bookmarkMessage = MapBookmark(bookmark);
 
-        var message = new ExecuteWorkflowInstance
-        {
-            Id = instanceId,
-            Bookmark = bookmarkMessage,
-            Input = input?.Serialize()
-        };
-
-        var response = await _cluster.RequestAsync<ExecuteWorkflowResponse>(name, GrainKinds.WorkflowInstance, message, cancellationToken);
-        var workflowState = JsonSerializer.Deserialize<WorkflowState>(response.WorkflowState.Text)!;
-        var bookmarks = response.Bookmarks.Select(MapBookmark).ToList();
-
-        return new ExecuteWorkflowResult(workflowState, bookmarks);
-    }
-
-    public async Task<DispatchWorkflowResult> DispatchAsync(DispatchWorkflowDefinitionRequest request, CancellationToken cancellationToken = default)
-    {
-        var (definitionId, versionOptions, input) = request;
-        var name = GetActorName(definitionId, versionOptions);
-
-        var message = new DispatchWorkflowDefinition
-        {
-            Id = definitionId,
-            VersionOptions = versionOptions.ToString(),
-            Input = input!?.Serialize()
-        };
-
-        await _cluster.RequestAsync<Unit>(name, GrainKinds.WorkflowDefinition, message, cancellationToken);
-
-        return new DispatchWorkflowResult();
-    }
-
-    public async Task<DispatchWorkflowResult> DispatchAsync(DispatchWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
-    {
-        var (instanceId, bookmark, input) = request;
-        var name = GetActorName(instanceId);
-        var bookmarkMessage = MapBookmark(bookmark);
-
-        var message = new DispatchWorkflowInstance
+        var message = new ExecuteWorkflowInstanceRequest
         {
             Id = instanceId,
             Bookmark = bookmarkMessage,
             Input = input!?.Serialize()
         };
 
-        await _cluster.RequestAsync<Unit>(name, GrainKinds.WorkflowInstance, message, cancellationToken);
+        var client = _grainClientFactory.CreateWorkflowInstanceGrainClient(instanceId);
+        var response = await client.Execute(message, cancellationToken);
+        
+        if (response == null)
+            throw new TimeoutException("Did not receive a response from the WorkflowInstance actor within the configured amount of time.");
+        
+        var workflowState = JsonSerializer.Deserialize<WorkflowState>(response.WorkflowState.Text)!;
+        var bookmarks = response.Bookmarks.Select(MapBookmark).ToList();
 
-        return new DispatchWorkflowResult();
+        return new InvokeWorkflowResult(workflowState, bookmarks);
     }
-
-    private BookmarkMessage? MapBookmark(Bookmark? bookmark)
+    
+    private ProtoBookmark? MapBookmark(Bookmark? bookmark)
     {
         if (bookmark == null)
             return null;
 
-        return new BookmarkMessage
+        return new ProtoBookmark
         {
             Id = bookmark.Id,
             Name = bookmark.Name,
@@ -116,19 +91,16 @@ public class ProtoActorWorkflowInvoker : IWorkflowInvoker
         };
     }
 
-    private Bookmark MapBookmark(BookmarkMessage bookmarkMessage)
+    private Bookmark MapBookmark(ProtoBookmark protoBookmark)
     {
         return new Bookmark(
-            bookmarkMessage.Id,
-            bookmarkMessage.Name,
-            bookmarkMessage.Hash,
-            bookmarkMessage.Payload,
-            bookmarkMessage.ActivityId,
-            bookmarkMessage.ActivityInstanceId,
-            bookmarkMessage.CallbackMethodName
+            protoBookmark.Id,
+            protoBookmark.Name,
+            protoBookmark.Hash,
+            protoBookmark.Payload,
+            protoBookmark.ActivityId,
+            protoBookmark.ActivityInstanceId,
+            protoBookmark.CallbackMethodName
         );
     }
-
-    private static string GetActorName(string definitionId, VersionOptions versionOptions) => $"workflow-definition:{definitionId}:{versionOptions.ToString()}";
-    private static string GetActorName(string instanceId) => $"workflow-instance:{instanceId}";
 }

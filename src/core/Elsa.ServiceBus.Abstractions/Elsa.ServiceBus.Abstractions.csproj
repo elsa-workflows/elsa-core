@@ -7,11 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Hangfire" Version="1.7.28" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <ProjectReference Include="..\..\core\Elsa.Jobs.Abstractions\Elsa.Jobs.Abstractions.csproj" />
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
     </ItemGroup>
 
 </Project>

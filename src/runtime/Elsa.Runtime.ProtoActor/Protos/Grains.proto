@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+option csharp_namespace = "Elsa.Runtime.Protos";
+
+import "google/protobuf/empty.proto";
+import "Messages.proto";
+
+service WorkflowDefinitionGrain {
+  rpc Execute (ExecuteWorkflowDefinitionRequest) returns (ExecuteWorkflowDefinitionResponse);
+}
+
+service WorkflowInstanceGrain {
+  rpc Execute (ExecuteWorkflowInstanceRequest) returns (ExecuteWorkflowInstanceResponse);
+}

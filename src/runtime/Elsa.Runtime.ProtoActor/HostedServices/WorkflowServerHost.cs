@@ -6,17 +6,13 @@ using Proto.Cluster;
 
 namespace Elsa.Runtime.ProtoActor.HostedServices;
 
-public class WorkflowServerHost : BackgroundService
+/// <summary>
+/// Starts the current member in the cluster.
+/// </summary>
+public class WorkflowServerHost : IHostedService
 {
     private readonly ActorSystem _actorSystem;
-
-    public WorkflowServerHost(ActorSystem actorSystem)
-    {
-        _actorSystem = actorSystem;
-    }
-        
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        await _actorSystem.Cluster().StartMemberAsync();
-    }
+    public WorkflowServerHost(ActorSystem actorSystem) => _actorSystem = actorSystem;
+    public async Task StartAsync(CancellationToken cancellationToken) => await _actorSystem.Cluster().StartMemberAsync();
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

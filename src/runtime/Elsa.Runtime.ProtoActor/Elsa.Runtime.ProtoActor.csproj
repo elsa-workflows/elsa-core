@@ -18,6 +18,7 @@
     <ItemGroup Label="ProtoActor">
         <PackageReference Include="Proto.Actor" Version="0.29.0" />
         <PackageReference Include="Proto.Cluster" Version="0.29.0" />
+        <PackageReference Include="Proto.Cluster.CodeGen" Version="0.29.0" />
         <PackageReference Include="Proto.Cluster.Consul" Version="0.29.0" />
         <PackageReference Include="Proto.Cluster.Identity.Redis" Version="0.29.0" />
         <PackageReference Include="Proto.Cluster.TestProvider" Version="0.29.0" />
@@ -37,12 +38,16 @@
         <ProjectReference Include="..\Elsa.Runtime\Elsa.Runtime.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-        <Protobuf Include="messages.proto" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <Folder Include="Contracts" />
+    <ItemGroup Label="Protos">
+        <Protobuf Include="Protos\Messages.proto">
+            <GrpcServices>Both</GrpcServices>
+            <Access>Public</Access>
+            <ProtoCompile>True</ProtoCompile>
+            <CompileOutputs>True</CompileOutputs>
+            <OutputDir>obj\Debug\net6.0\</OutputDir>
+            <Generator>MSBuild:Compile</Generator>
+        </Protobuf>
+        <ProtoGrain Include="Protos\Grains.proto" AdditionalImportDirs="Protos" />
     </ItemGroup>
 
 </Project>

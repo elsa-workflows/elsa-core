@@ -53,7 +53,7 @@ public class HttpTriggerMiddleware
 
             var model = new
             {
-                workflowInstanceIds = executionResults.Select(x => x.ExecuteWorkflowResult.WorkflowState.Id).ToArray()
+                workflowInstanceIds = executionResults.Select(x => x.InvokeWorkflowResult.WorkflowState.Id).ToArray()
             };
 
             var json = JsonSerializer.Serialize(model);
