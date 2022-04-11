@@ -69,7 +69,7 @@ public class IdentityGraphService : IIdentityGraphService
     {
         if (!string.IsNullOrWhiteSpace(activityNode.NodeId))
             return activityNode.NodeId;
-
+        
         var fullTypeName = activityNode.Activity.TypeName;
         var shortTypeName = fullTypeName.Split('.').Last();
         var index = GetNextIndexFor(shortTypeName, identityCounters);

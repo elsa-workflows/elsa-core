@@ -25,9 +25,9 @@ public class DispatchedWorkflowDefinitionWorker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        await foreach (var (definitionId, versionOptions, input) in _channelReader.ReadAllAsync(cancellationToken))
+        await foreach (var (definitionId, versionOptions, input, correlationId) in _channelReader.ReadAllAsync(cancellationToken))
         {
-            var request = new InvokeWorkflowDefinitionRequest(definitionId, versionOptions, input);
+            var request = new InvokeWorkflowDefinitionRequest(definitionId, versionOptions, input, correlationId);
 
             try
             {

@@ -1,13 +1,16 @@
+using System.Text.Json;
 using Elsa.Contracts;
 using Elsa.Models;
 using Microsoft.Extensions.Logging;
 using Delegate = System.Delegate;
+using JsonNode = System.Text.Json.Nodes.JsonNode;
+using JsonObject = System.Text.Json.Nodes.JsonObject;
 
 namespace Elsa.Pipelines.ActivityExecution.Components;
 
 public static class InvokeDriversMiddlewareExtensions
 {
-    public static IActivityExecutionBuilder UseActivityDrivers(this IActivityExecutionBuilder builder) => builder.UseMiddleware<ActivityInvokerMiddleware>();
+    public static IActivityExecutionBuilder UseDefaultActivityInvoker(this IActivityExecutionBuilder builder) => builder.UseMiddleware<ActivityInvokerMiddleware>();
 }
 
 public class ActivityInvokerMiddleware : IActivityExecutionMiddleware
@@ -41,7 +44,8 @@ public class ActivityInvokerMiddleware : IActivityExecutionMiddleware
         await executeDelegate(context);
 
         // Record executed event.
-        LogExecutionRecord(context, WorkflowExecutionLogEventNames.Executed);
+        var payload = context.JournalData.Any() ? context.JournalData : default;
+        LogExecutionRecord(context, WorkflowExecutionLogEventNames.Executed, payload: payload);
 
         // Reset execute delegate.
         workflowExecution.ExecuteDelegate = null;

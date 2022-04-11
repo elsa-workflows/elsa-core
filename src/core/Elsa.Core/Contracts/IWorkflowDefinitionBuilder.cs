@@ -13,6 +13,7 @@ public interface IWorkflowDefinitionBuilder
     IWorkflowDefinitionBuilder WithVersion(int version);
     IWorkflowDefinitionBuilder WithRoot(IActivity root);
     IWorkflowDefinitionBuilder WithVariable(Variable variable);
+    IWorkflowDefinitionBuilder WithVariables(params Variable[] variables);
     IWorkflowDefinitionBuilder WithApplicationProperty(string name, object value);
     Workflow BuildWorkflow();
 }

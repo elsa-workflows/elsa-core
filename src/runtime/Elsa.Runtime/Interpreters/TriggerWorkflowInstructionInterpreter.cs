@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Elsa.Runtime.Interpreters;
 
-public record TriggerWorkflowInstruction(WorkflowTrigger WorkflowTrigger, IDictionary<string, object>? Input) : IWorkflowInstruction;
+public record TriggerWorkflowInstruction(WorkflowTrigger WorkflowTrigger, IDictionary<string, object>? Input, string? CorrelationId) : IWorkflowInstruction;
 
 public class TriggerWorkflowInstructionInterpreter : WorkflowInstructionInterpreter<TriggerWorkflowInstruction>
 {
@@ -41,7 +41,7 @@ public class TriggerWorkflowInstructionInterpreter : WorkflowInstructionInterpre
             return null;
 
         // Execute workflow.
-        var executeRequest = new InvokeWorkflowDefinitionRequest(workflowId, VersionOptions.Published, instruction.Input);
+        var executeRequest = new InvokeWorkflowDefinitionRequest(workflowId, VersionOptions.Published, instruction.Input, instruction.CorrelationId);
         var workflowExecutionResult = await _workflowInvoker.InvokeAsync(executeRequest, cancellationToken);
 
         return new ExecuteWorkflowInstructionResult(workflow, workflowExecutionResult);
@@ -59,7 +59,7 @@ public class TriggerWorkflowInstructionInterpreter : WorkflowInstructionInterpre
             return null;
 
         // Execute workflow.
-        var dispatchRequest = new DispatchWorkflowDefinitionRequest(definitionId, VersionOptions.Published, instruction.Input);
+        var dispatchRequest = new DispatchWorkflowDefinitionRequest(definitionId, VersionOptions.Published, instruction.Input, instruction.CorrelationId);
         await _workflowDispatcher.DispatchAsync(dispatchRequest, cancellationToken);
 
         return new DispatchWorkflowInstructionResult();

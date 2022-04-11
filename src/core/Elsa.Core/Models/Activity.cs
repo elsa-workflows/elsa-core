@@ -21,11 +21,6 @@ public abstract class Activity : IActivity
         return ValueTask.CompletedTask;
     }
 
-    public ValueTask<IEnumerable<object>> GetBookmarkPayloadsAsync(TriggerIndexingContext context, CancellationToken cancellationToken = default)
-    {
-        throw new NotImplementedException();
-    }
-
     protected virtual void Execute(ActivityExecutionContext context)
     {
     }

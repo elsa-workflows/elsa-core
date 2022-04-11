@@ -19,7 +19,8 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
     {
         var state = new WorkflowState
         {
-            Id = workflowExecutionContext.Id
+            Id = workflowExecutionContext.Id,
+            CorrelationId = workflowExecutionContext.CorrelationId
         };
 
         //GetOutput(state, workflowExecutionContext);
@@ -33,6 +34,7 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
     public void WriteState(WorkflowExecutionContext workflowExecutionContext, WorkflowState state)
     {
         workflowExecutionContext.Id = state.Id;
+        workflowExecutionContext.CorrelationId = state.CorrelationId;
         //SetOutput(state, workflowExecutionContext);
         SetProperties(state, workflowExecutionContext);
         SetActivityExecutionContexts(state, workflowExecutionContext);

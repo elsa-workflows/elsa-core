@@ -26,18 +26,18 @@ public class Variable : RegisterLocationReference
 
 public class Variable<T> : Variable
 {
-    public Variable() : base(default(T))
+    public Variable() : base(typeof(T).Name, default(T))
     {
     }
 
-    public Variable(T value) : base(value ?? default)
+    public Variable(T value) : base(typeof(T).Name, value ?? default)
     {
     }
-    
+
     public Variable(string name, T value = default!) : base(name, value ?? default)
     {
     }
-        
+
     public new T? Get(ActivityExecutionContext context) => base.Get(context).ConvertTo<T?>();
     public new T? Get(ExpressionExecutionContext context) => base.Get(context).ConvertTo<T?>();
 }

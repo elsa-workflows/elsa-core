@@ -1,24 +1,25 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Elsa.Persistence.Entities;
 using Elsa.Persistence.EntityFrameworkCore.Contracts;
 using Elsa.Serialization;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Handlers.Serialization;
 
 public class WorkflowExecutionLogRecordSerializer : IEntitySerializer<WorkflowExecutionLogRecord>
 {
-    private readonly WorkflowSerializerOptionsProvider _workflowSerializerOptionsProvider;
+    private readonly JsonSerializerOptions _options;
 
-    public WorkflowExecutionLogRecordSerializer(WorkflowSerializerOptionsProvider workflowSerializerOptionsProvider)
+    public WorkflowExecutionLogRecordSerializer()
     {
-        _workflowSerializerOptionsProvider = workflowSerializerOptionsProvider;
+        _options = new JsonSerializerOptions();
+        _options.Converters.Add(new JsonStringEnumConverter());
     }
 
     public void Serialize(ElsaDbContext dbContext, WorkflowExecutionLogRecord entity)
     {
-        var options = _workflowSerializerOptionsProvider.CreatePersistenceOptions();
-        var json = entity.Payload != null ? JsonSerializer.Serialize(entity.Payload, options) : default!;
-
+        var json = entity.Payload != null ? JsonSerializer.Serialize(entity.Payload, _options) : default!;
         dbContext.Entry(entity).Property("PayloadData").CurrentValue = json;
     }
 
@@ -26,10 +27,6 @@ public class WorkflowExecutionLogRecordSerializer : IEntitySerializer<WorkflowEx
     {
         var json = (string?)dbContext.Entry(entity).Property("PayloadData").CurrentValue;
 
-        if (!string.IsNullOrWhiteSpace(json))
-        {
-            var options = _workflowSerializerOptionsProvider.CreatePersistenceOptions();
-            entity.Payload = JsonSerializer.Deserialize<object>(json, options)!;
-        }
+        if (!string.IsNullOrWhiteSpace(json)) entity.Payload = JsonSerializer.Deserialize<object>(json, _options)!;
     }
 }

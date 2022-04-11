@@ -29,13 +29,14 @@ public class ProtoActorWorkflowInvoker : IWorkflowInvoker
 
     public async Task<InvokeWorkflowResult> InvokeAsync(InvokeWorkflowDefinitionRequest request, CancellationToken cancellationToken = default)
     {
-        var (definitionId, versionOptions, input) = request;
+        var (definitionId, versionOptions, input, correlationId) = request;
         
         var message = new ExecuteWorkflowDefinitionRequest
         {
             Id = definitionId,
             VersionOptions = versionOptions.ToString(),
-            Input = input!?.Serialize()
+            Input = input!?.Serialize(),
+            CorrelationId = correlationId ?? ""
         };
 
         var client = _grainClientFactory.CreateWorkflowDefinitionGrainClient(definitionId, versionOptions);
@@ -52,18 +53,19 @@ public class ProtoActorWorkflowInvoker : IWorkflowInvoker
 
     public async Task<InvokeWorkflowResult> InvokeAsync(InvokeWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
-        var (instanceId, bookmark, input) = request;
+        var (instanceId, bookmark, input, correlationId) = request;
         var bookmarkMessage = MapBookmark(bookmark);
 
         var message = new ExecuteWorkflowInstanceRequest
         {
             Id = instanceId,
             Bookmark = bookmarkMessage,
-            Input = input!?.Serialize()
+            Input = input!?.Serialize(),
+            CorrelationId = correlationId ?? ""
         };
 
         var client = _grainClientFactory.CreateWorkflowInstanceGrainClient(instanceId);
-        var response = await client.Execute(message, cancellationToken);
+        var response = await client.Execute(message, CancellationTokens.FromSeconds(600));
         
         if (response == null)
             throw new TimeoutException("Did not receive a response from the WorkflowInstance actor within the configured amount of time.");

@@ -11,12 +11,12 @@ namespace Elsa.Modules.WorkflowContexts.Middleware;
 /// <summary>
 /// Middleware that loads & save workflow context into the currently executing workflow using installed workflow context providers. 
 /// </summary>
-public class WorkflowContextMiddleware : WorkflowExecutionMiddleware
+public class WorkflowContextWorkflowExecutionMiddleware : WorkflowExecutionMiddleware
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly IServiceScopeFactory _serviceScopeFactory;
 
-    public WorkflowContextMiddleware(WorkflowMiddlewareDelegate next, IServiceProvider serviceProvider, IServiceScopeFactory serviceScopeFactory) : base(next)
+    public WorkflowContextWorkflowExecutionMiddleware(WorkflowMiddlewareDelegate next, IServiceProvider serviceProvider, IServiceScopeFactory serviceScopeFactory) : base(next)
     {
         _serviceProvider = serviceProvider;
         _serviceScopeFactory = serviceScopeFactory;

@@ -70,11 +70,12 @@ public static class ServiceCollectionExtensions
     private static ChannelReader<T> CreateChannelReader<T>(IServiceProvider serviceProvider) => serviceProvider.GetRequiredService<Channel<T>>().Reader;
     private static ChannelWriter<T> CreateChannelWriter<T>(IServiceProvider serviceProvider) => serviceProvider.GetRequiredService<Channel<T>>().Writer;
 
-    private static IServiceCollection AddDefaultExpressionHandlers(this IServiceCollection services) =>
+    public static IServiceCollection AddDefaultExpressionHandlers(this IServiceCollection services) =>
         services
             .AddExpressionHandler<LiteralExpressionHandler, LiteralExpression>()
             .AddExpressionHandler<DelegateExpressionHandler, DelegateExpression>()
             .AddExpressionHandler<VariableExpressionHandler, VariableExpression>()
+            .AddExpressionHandler<OutputExpressionHandler, OutputExpression>()
             .AddExpressionHandler<ElsaExpressionHandler, ElsaExpression>();
 
     public static IServiceCollection AddWorkflowProvider<T>(this IServiceCollection services) where T : class, IWorkflowProvider => services.AddSingleton<IWorkflowProvider, T>();

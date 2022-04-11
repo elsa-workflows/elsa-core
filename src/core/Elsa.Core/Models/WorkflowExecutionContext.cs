@@ -16,6 +16,8 @@ public class WorkflowExecutionContext
 
     public WorkflowExecutionContext(
         IServiceProvider serviceProvider,
+        string id,
+        string correlationId,
         Workflow workflow,
         ActivityNode graph,
         IActivityScheduler scheduler,
@@ -27,7 +29,8 @@ public class WorkflowExecutionContext
         _serviceProvider = serviceProvider;
         Workflow = workflow;
         Graph = graph;
-        Id = Guid.NewGuid().ToString("N");
+        Id = id;
+        CorrelationId = correlationId;
         _nodes = graph.Flatten().Distinct().ToList();
         Scheduler = scheduler;
         Bookmark = bookmark;
@@ -43,6 +46,7 @@ public class WorkflowExecutionContext
     public ActivityNode Graph { get; }
     public Register Register { get; }
     public string Id { get; set; }
+    public string CorrelationId { get; set; }
     public IReadOnlyCollection<ActivityNode> Nodes => new ReadOnlyCollection<ActivityNode>(_nodes);
     public IDictionary<string, ActivityNode> NodeIdLookup { get; }
     public IDictionary<IActivity, ActivityNode> NodeActivityLookup { get; }

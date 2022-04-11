@@ -59,6 +59,8 @@ public static class ServiceCollectionExtensions
     private static ActorSystemConfig GetSystemConfig() =>
         ActorSystemConfig
             .Setup()
+            .WithDeveloperSupervisionLogging(true)
+            .WithDeveloperReceiveLogging(TimeSpan.FromHours(1))
             .WithDeadLetterThrottleCount(3)
             .WithDeadLetterThrottleInterval(TimeSpan.FromSeconds(10000))
             .WithDeveloperSupervisionLogging(true)

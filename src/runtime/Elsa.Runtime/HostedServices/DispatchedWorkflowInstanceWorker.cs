@@ -24,9 +24,9 @@ public class DispatchedWorkflowInstanceWorker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        await foreach (var (instanceId, bookmark, input) in _channelReader.ReadAllAsync(cancellationToken))
+        await foreach (var (instanceId, bookmark, input, correlationId) in _channelReader.ReadAllAsync(cancellationToken))
         {
-            var request = new InvokeWorkflowInstanceRequest(instanceId, bookmark, input);
+            var request = new InvokeWorkflowInstanceRequest(instanceId, bookmark, input, correlationId);
 
             try
             {

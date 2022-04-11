@@ -44,6 +44,12 @@ public class WorkflowDefinitionBuilder : IWorkflowDefinitionBuilder
         return this;
     }
 
+    public IWorkflowDefinitionBuilder WithVariables(params Variable[] variables)
+    {
+        foreach (var variable in variables) Variables.Add(variable);
+        return this;
+    }
+
     public IWorkflowDefinitionBuilder WithMetadata(string name, object value)
     {
         Metadata[name] = value;

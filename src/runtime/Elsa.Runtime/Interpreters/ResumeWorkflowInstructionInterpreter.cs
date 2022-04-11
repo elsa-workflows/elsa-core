@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Elsa.Runtime.Interpreters;
 
-public record ResumeWorkflowInstruction(WorkflowBookmark WorkflowBookmark, IDictionary<string, object>? Input) : IWorkflowInstruction;
+public record ResumeWorkflowInstruction(WorkflowBookmark WorkflowBookmark, IDictionary<string, object>? Input, string? CorrelationId) : IWorkflowInstruction;
 
 public class ResumeWorkflowInstructionInterpreter : WorkflowInstructionInterpreter<ResumeWorkflowInstruction>
 {

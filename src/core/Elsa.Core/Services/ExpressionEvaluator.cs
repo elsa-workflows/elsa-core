@@ -20,8 +20,7 @@ public class ExpressionEvaluator : IExpressionEvaluator
 
         if (handler != null)
             return await handler.EvaluateAsync(input, returnType, context);
-
-        var expressionType = input.GetType().GetGenericTypeDefinition();
-        throw new InvalidOperationException($"Could not find handler for expression type {expressionType}");
+        
+        throw new InvalidOperationException($"Could not find handler for expression type {input.GetType().FullName}");
     }
 }

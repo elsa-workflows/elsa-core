@@ -25,7 +25,7 @@ class Program
             // Configure activity execution pipeline.
             .ConfigureDefaultActivityExecutionPipeline(pipeline => pipeline
                 .UseLogging()
-                .UseActivityDrivers()
+                .UseDefaultActivityInvoker()
             )
 
             // Configure workflow engine execution pipeline.
@@ -49,7 +49,7 @@ class Program
         var workflow13 = new Func<IActivity>(BlockingParallelForEachWorkflow.Create);
         var workflow14 = new Func<IActivity>(FlowchartWorkflow.Create);
 
-        var workflowFactory = workflow3;
+        var workflowFactory = workflow1;
         var workflowGraph = workflowFactory();
         var workflow = Workflow.FromActivity(workflowGraph);
 

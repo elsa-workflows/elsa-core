@@ -25,6 +25,7 @@ public class Delay : Activity
         var resumeAt = clock.UtcNow.Add(timeSpan);
         var payload = new DelayPayload(resumeAt);
 
+        context.JournalData.Add("ResumeAt", resumeAt);
         context.CreateBookmark(payload);
     }
 

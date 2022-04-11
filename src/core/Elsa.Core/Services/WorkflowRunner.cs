@@ -13,6 +13,7 @@ public class WorkflowRunner : IWorkflowRunner
     private readonly IWorkflowStateSerializer _workflowStateSerializer;
     private readonly IIdentityGraphService _identityGraphService;
     private readonly IActivitySchedulerFactory _schedulerFactory;
+    private readonly IIdentityGenerator _identityGenerator;
 
     public WorkflowRunner(
         IServiceScopeFactory serviceScopeFactory,
@@ -20,7 +21,8 @@ public class WorkflowRunner : IWorkflowRunner
         IWorkflowExecutionPipeline pipeline,
         IWorkflowStateSerializer workflowStateSerializer,
         IIdentityGraphService identityGraphService,
-        IActivitySchedulerFactory schedulerFactory)
+        IActivitySchedulerFactory schedulerFactory,
+        IIdentityGenerator identityGenerator)
     {
         _serviceScopeFactory = serviceScopeFactory;
         _activityWalker = activityWalker;
@@ -28,6 +30,7 @@ public class WorkflowRunner : IWorkflowRunner
         _workflowStateSerializer = workflowStateSerializer;
         _identityGraphService = identityGraphService;
         _schedulerFactory = schedulerFactory;
+        _identityGenerator = identityGenerator;
     }
 
     public async Task<InvokeWorkflowResult> RunAsync(Workflow workflow, IDictionary<string, object>? input, CancellationToken cancellationToken = default)
@@ -105,14 +108,12 @@ public class WorkflowRunner : IWorkflowRunner
         var scheduler = _schedulerFactory.CreateScheduler();
 
         // Setup a workflow execution context.
-        var workflowExecutionContext = new WorkflowExecutionContext(serviceProvider, workflow, graph, scheduler, bookmark, input, executeActivityDelegate, cancellationToken);
+        var id = workflowState?.Id ?? _identityGenerator.GenerateId();
+        var correlationId = workflowState?.CorrelationId ?? _identityGenerator.GenerateId();
+        var workflowExecutionContext = new WorkflowExecutionContext(serviceProvider, id, correlationId, workflow, graph, scheduler, bookmark, input, executeActivityDelegate, cancellationToken);
 
         // Restore workflow execution context from state, if provided.
-        if (workflowState != null)
-        {
-            var workflowStateService = serviceProvider.GetRequiredService<IWorkflowStateSerializer>();
-            workflowStateService.WriteState(workflowExecutionContext, workflowState);
-        }
+        if (workflowState != null) _workflowStateSerializer.WriteState(workflowExecutionContext, workflowState);
 
         return workflowExecutionContext;
     }

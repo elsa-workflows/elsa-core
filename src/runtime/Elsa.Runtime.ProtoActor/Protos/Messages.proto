@@ -10,6 +10,7 @@ message ExecuteWorkflowDefinitionRequest {
   string id = 1;
   string versionOptions = 2;
   optional Input input = 3;
+  optional string CorrelationId = 4;
 }
 
 message ExecuteWorkflowDefinitionResponse {
@@ -21,6 +22,7 @@ message ExecuteWorkflowInstanceRequest {
   string id = 1;
   optional Bookmark bookmark = 2;
   optional Input input = 3;
+  optional string CorrelationId = 4;
 }
 
 message ExecuteWorkflowInstanceResponse {

@@ -15,16 +15,18 @@ public class RunWorkflowJob : Job
     {
     }
 
-    public RunWorkflowJob(string workflowId)
+    public RunWorkflowJob(string workflowId, string? correlationId = default)
     {
         WorkflowId = workflowId;
+        CorrelationId = correlationId;
     }
 
     public string WorkflowId { get; set; } = default!;
+    public string? CorrelationId { get; set; }
 
     protected override async ValueTask ExecuteAsync(JobExecutionContext context)
     {
-        var request = new DispatchWorkflowDefinitionRequest(WorkflowId, VersionOptions.Published);
+        var request = new DispatchWorkflowDefinitionRequest(WorkflowId, VersionOptions.Published, CorrelationId: CorrelationId);
         var workflowDispatcher = context.GetRequiredService<IWorkflowDispatcher>();
         await workflowDispatcher.DispatchAsync(request, context.CancellationToken);
     }
