@@ -3,8 +3,6 @@ using System.Threading.Tasks;
 using Elsa.Contracts;
 using Elsa.Models;
 using Elsa.Modules.Activities.Activities.Console;
-using Elsa.Modules.Activities.Contracts;
-using Elsa.Modules.Activities.Providers;
 using Elsa.Testing.Shared;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -19,11 +17,10 @@ public class HelloWorldWorkflowTests
 
     public HelloWorldWorkflowTests(ITestOutputHelper testOutputHelper)
     {
-        var combinedTextWriter = new CombinedTextWriter(_capturingTextWriter, new XunitConsoleTextWriter(testOutputHelper));
-        var services = TestContainerBuilder.Build(testOutputHelper, x => x.AddSingleton<IStandardOutStreamProvider>(new StandardOutStreamProvider(combinedTextWriter)));
+        var services = new TestContainerBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
         _workflowRunner = services.GetRequiredService<IWorkflowRunner>();
     }
-    
+
     [Fact(DisplayName = "Run a simple workflow")]
     public async Task Test1()
     {

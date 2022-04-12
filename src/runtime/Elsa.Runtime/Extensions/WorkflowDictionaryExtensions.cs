@@ -1,3 +1,4 @@
+using Elsa.Contracts;
 using Elsa.Runtime.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 

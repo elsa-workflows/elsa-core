@@ -11,20 +11,34 @@ namespace Elsa.Testing.Shared;
 
 public class TestContainerBuilder
 {
-    public static IServiceProvider Build(ITestOutputHelper testOutputHelper, Action<IServiceCollection>? configureServices = default)
-    {
-        var services = new ServiceCollection();
+    private readonly ITestOutputHelper _testOutputHelper;
+    private readonly ServiceCollection _services;
 
-        services
+    public TestContainerBuilder(ITestOutputHelper testOutputHelper)
+    {
+        _testOutputHelper = testOutputHelper;
+        _services = new ServiceCollection();
+
+        _services
             .AddElsa()
             .AddInMemoryPersistence()
+            .AddSingleton(testOutputHelper)
+            .AddSingleton<IStandardOutStreamProvider>(new StandardOutStreamProvider(new XunitConsoleTextWriter(testOutputHelper)))
             .AddLogging(logging => logging.AddProvider(new XunitLoggerProvider(testOutputHelper)).SetMinimumLevel(LogLevel.Debug));
+    }
 
-        services.AddSingleton(testOutputHelper);
-        services.AddSingleton<IStandardOutStreamProvider>(new StandardOutStreamProvider(new XunitConsoleTextWriter(testOutputHelper)));
-        
-        configureServices?.Invoke(services);
+    public IServiceProvider Build() => _services.BuildServiceProvider();
 
-        return services.BuildServiceProvider();
+    public TestContainerBuilder Configure(Action<IServiceCollection> configure)
+    {
+        configure(_services);
+        return this;
+    }
+
+    public TestContainerBuilder WithCapturingTextWriter(CapturingTextWriter capturingTextWriter)
+    {
+        var combinedTextWriter = new CombinedTextWriter(capturingTextWriter, new XunitConsoleTextWriter(_testOutputHelper));
+        _services.AddSingleton<IStandardOutStreamProvider>(new StandardOutStreamProvider(combinedTextWriter));
+        return this;
     }
 }

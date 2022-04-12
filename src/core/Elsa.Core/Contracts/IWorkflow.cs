@@ -1,6 +1,4 @@
-using Elsa.Contracts;
-
-namespace Elsa.Runtime.Contracts;
+namespace Elsa.Contracts;
 
 public interface IWorkflow
 {

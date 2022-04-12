@@ -72,4 +72,11 @@ public class WorkflowDefinitionBuilder : IWorkflowDefinitionBuilder
         var metadata = new WorkflowMetadata();
         return new Workflow(identity, publication, metadata, root, Variables, Metadata, ApplicationProperties);
     }
+
+    public Workflow BuildWorkflow(IWorkflow workflowDefinition)
+    {
+        WithDefinitionId(workflowDefinition.GetType().Name);
+        workflowDefinition.Build(this);
+        return BuildWorkflow();
+    }
 }
