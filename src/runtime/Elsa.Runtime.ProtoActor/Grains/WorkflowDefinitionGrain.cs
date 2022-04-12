@@ -51,7 +51,7 @@ public class WorkflowDefinitionGrain : WorkflowDefinitionGrainBase
         };
 
         var workflowInstanceGrainClient = Context.GetWorkflowInstanceGrain(workflowInstance.Id);
-        var workflowInstanceResponse = await workflowInstanceGrainClient.Execute(executeWorkflowInstanceMessage, cancellationToken);
+        var workflowInstanceResponse = await workflowInstanceGrainClient.Execute(executeWorkflowInstanceMessage, CancellationTokens.FromSeconds(1000));
 
         if (workflowInstanceResponse == null)
             throw new TimeoutException("Did not receive a response from the WorkflowInstance actor within the configured amount of time.");
