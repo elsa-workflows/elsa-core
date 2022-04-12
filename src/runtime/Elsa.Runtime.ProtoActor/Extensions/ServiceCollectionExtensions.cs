@@ -8,6 +8,7 @@ using Elsa.Runtime.ProtoActor.HostedServices;
 using Elsa.Runtime.ProtoActor.Services;
 using Elsa.Runtime.Protos;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Proto;
 using Proto.Cluster;
 using Proto.Cluster.Partition;
@@ -23,6 +24,9 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddProtoActorWorkflowHost(this IServiceCollection services)
     {
         var systemConfig = GetSystemConfig();
+
+        // Logging.
+        Log.SetLoggerFactory(LoggerFactory.Create(l => l.AddConsole().SetMinimumLevel(LogLevel.Warning)));
 
         // Actor System.
         services.AddSingleton(sp =>
