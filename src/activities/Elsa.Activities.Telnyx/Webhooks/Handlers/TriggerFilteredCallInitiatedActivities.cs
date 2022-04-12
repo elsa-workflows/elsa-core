@@ -29,6 +29,9 @@ namespace Elsa.Activities.Telnyx.Webhooks.Handlers
             
             if (webhook.Data.Payload is not CallInitiatedPayload payload)
                 return;
+
+            if (payload.Direction != "incoming")
+                return;
             
             var correlationId = GetCorrelationId(payload);
             var toBookmark = new FilteredCallInitiatedToBookmark(payload.To);
