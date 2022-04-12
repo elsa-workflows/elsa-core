@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="xunit.abstractions" Version="2.0.3" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\src\core\Elsa\Elsa.csproj" />
+      <ProjectReference Include="..\..\src\modules\Elsa.Modules.Activities\Elsa.Modules.Activities.csproj" />
+    </ItemGroup>
+
+</Project>

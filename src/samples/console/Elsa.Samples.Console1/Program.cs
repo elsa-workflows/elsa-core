@@ -48,13 +48,14 @@ class Program
         var workflow12 = new Func<IActivity>(ParallelForEachWorkflow.Create);
         var workflow13 = new Func<IActivity>(BlockingParallelForEachWorkflow.Create);
         var workflow14 = new Func<IActivity>(FlowchartWorkflow.Create);
+        var workflow15 = new Func<IActivity>(BreakForWorkflow.Create);
 
-        var workflowFactory = workflow1;
+        var workflowFactory = workflow15;
         var workflowGraph = workflowFactory();
         var workflow = Workflow.FromActivity(workflowGraph);
 
-        var workflowEngine = serviceProvider.GetRequiredService<IWorkflowRunner>();
-        var workflowExecutionResult = await workflowEngine.RunAsync(workflow);
+        var workflowRunner = serviceProvider.GetRequiredService<IWorkflowRunner>();
+        var workflowExecutionResult = await workflowRunner.RunAsync(workflow);
         var workflowState = workflowExecutionResult.WorkflowState;
         var bookmarks = new List<Bookmark>(workflowExecutionResult.Bookmarks);
 
@@ -75,7 +76,7 @@ class Program
 
                 Console.ReadLine();
 
-                var resumeResult = await workflowEngine.RunAsync(workflow, workflowState, bookmark);
+                var resumeResult = await workflowRunner.RunAsync(workflow, workflowState, bookmark);
                 workflowState = resumeResult.WorkflowState;
                 bookmarks = resumeResult.Bookmarks.ToList();
             }

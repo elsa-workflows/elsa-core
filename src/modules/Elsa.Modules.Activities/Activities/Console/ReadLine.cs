@@ -1,5 +1,6 @@
 using Elsa.Attributes;
 using Elsa.Models;
+using Elsa.Modules.Activities.Contracts;
 
 namespace Elsa.Modules.Activities.Activities.Console;
 
@@ -14,7 +15,9 @@ public class ReadLine : Activity<string>
 
     protected override void Execute(ActivityExecutionContext context)
     {
-        var text = System.Console.ReadLine();
+        var provider = context.GetRequiredService<IStandardInStreamProvider>();
+        var reader = provider.GetTextReader();
+        var text = reader.ReadLine();
         context.Set(Result, text);
     }
 }

@@ -1,5 +1,7 @@
 using Elsa.Contracts;
 using Elsa.Modules.Activities.Configurators;
+using Elsa.Modules.Activities.Contracts;
+using Elsa.Modules.Activities.Providers;
 using Elsa.Modules.Activities.Resolvers;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -14,6 +16,9 @@ public static class ServiceCollectionExtensions
     {
         return services
             .AddSingleton<IActivityNodeResolver, SwitchActivityNodeResolver>()
-            .AddSingleton<ISerializationOptionsConfigurator, CustomSerializationOptionConfigurator>();
+            .AddSingleton<ISerializationOptionsConfigurator, CustomSerializationOptionConfigurator>()
+            .AddSingleton<IStandardInStreamProvider>(new StandardInStreamProvider(Console.In))
+            .AddSingleton<IStandardOutStreamProvider>(new StandardOutStreamProvider(Console.Out))
+            ;
     }
 }
