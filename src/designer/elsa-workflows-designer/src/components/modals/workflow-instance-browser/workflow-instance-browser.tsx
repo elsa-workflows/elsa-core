@@ -242,20 +242,15 @@ export class WorkflowInstanceBrowser {
   };
 
   private async onDeleteClick(e: MouseEvent, workflowInstance: WorkflowInstanceSummary) {
-
-    const elsaClient = this.elsaClient;
-
-    await elsaClient.workflowInstances.delete(workflowInstance);
-    await this.loadWorkflowInstances();
-
     // const result = await this.confirmDialog.show(t('DeleteConfirmationModel.Title'), t('DeleteConfirmationModel.Message'));
     //
     // if (!result)
     //   return;
     //
-    // const elsaClient = await this.createClient();
-    // await elsaClient.workflowDefinitionsApi.delete(workflowDefinition.definitionId);
-    // await this.loadWorkflowDefinitions();
+    const elsaClient = this.elsaClient;
+
+    await elsaClient.workflowInstances.delete(workflowInstance);
+    await this.loadWorkflowInstances();
   }
 
   private onWorkflowInstanceClick = async (e: MouseEvent, workflowInstance: WorkflowInstanceSummary) => {

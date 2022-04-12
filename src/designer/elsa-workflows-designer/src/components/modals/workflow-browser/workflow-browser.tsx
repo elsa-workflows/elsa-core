@@ -1,7 +1,7 @@
 import {Component, Event, EventEmitter, h, Host, Method, Prop, State, Watch} from '@stencil/core';
-import {DefaultActions, PagedList, VersionOptions, WorkflowSummary} from "../../../models";
+import {DefaultActions, PagedList, VersionOptions, Workflow, WorkflowSummary} from "../../../models";
 import {Container} from "typedi";
-import {ElsaApiClientProvider, ElsaClient} from "../../../services";
+import {ElsaApiClientProvider, ElsaClient, SaveWorkflowRequest} from "../../../services";
 import {DeleteIcon, EditIcon, PublishIcon, UnPublishIcon} from "../../icons/tooling";
 
 @Component({
@@ -33,30 +33,26 @@ export class WorkflowBrowser {
   }
 
   private async onPublishClick(e: MouseEvent, workflowDefinition: WorkflowSummary) {
-    // const elsaClient = await this.createClient();
-    // await elsaClient.workflowDefinitionsApi.publish(workflowDefinition.definitionId);
-    // await this.loadWorkflowDefinitions();
+    const elsaClient = this.elsaClient;
+    await elsaClient.workflows.publish(workflowDefinition);
+    await this.loadWorkflowDefinitions();
   }
 
   private async onUnPublishClick(e: MouseEvent, workflowDefinition: WorkflowSummary) {
-    // const elsaClient = await this.createClient();
-    // await elsaClient.workflowDefinitionsApi.retract(workflowDefinition.definitionId);
-    // await this.loadWorkflowDefinitions();
+    const elsaClient = this.elsaClient;
+    await elsaClient.workflows.retract(workflowDefinition);
+    await this.loadWorkflowDefinitions();
   }
 
   private async onDeleteClick(e: MouseEvent, workflowDefinition: WorkflowSummary) {
-    const elsaClient = this.elsaClient;
-    await elsaClient.workflows.delete(workflowDefinition);
-    await this.loadWorkflowDefinitions();
-
     // const result = await this.confirmDialog.show(t('DeleteConfirmationModel.Title'), t('DeleteConfirmationModel.Message'));
     //
     // if (!result)
     //   return;
-    //
-    // const elsaClient = await this.createClient();
-    // await elsaClient.workflowDefinitionsApi.delete(workflowDefinition.definitionId);
-    // await this.loadWorkflowDefinitions();
+
+    const elsaClient = this.elsaClient;
+    await elsaClient.workflows.delete(workflowDefinition);
+    await this.loadWorkflowDefinitions();
   }
 
   private onWorkflowDefinitionClick = async (e: MouseEvent, workflowDefinition: WorkflowSummary) => {
@@ -153,3 +149,4 @@ export class WorkflowBrowser {
     );
   }
 }
+

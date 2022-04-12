@@ -56,6 +56,14 @@ export async function createElsaClient(serverUrl: string): Promise<ElsaClient> {
       }
     },
     workflows: {
+      async publish(request: PublishWorkflowRequest) : Promise<Workflow>{
+        const response = await httpClient.post<Workflow>(`api/workflows/${request.definitionId}/publish`);
+        return response.data;
+      },
+      async retract(request: RetractWorkflowRequest) : Promise<Workflow>{
+        const response = await httpClient.post<Workflow>(`api/workflows/${request.definitionId}/retract`);
+        return response.data;
+      },
       async delete(request: DeleteWorkflowRequest) : Promise<Workflow>{
         const response = await httpClient.delete<Workflow>(`api/workflows/${request.definitionId}`);
         return response.data;
@@ -161,6 +169,10 @@ export interface WorkflowsApi {
   getMany(request: GetManyWorkflowsRequest): Promise<Array<WorkflowSummary>>;
 
   delete(request: DeleteWorkflowRequest): Promise<Workflow>;
+
+  retract(request: RetractWorkflowRequest): Promise<Workflow>;
+
+  publish(request: PublishWorkflowRequest): Promise<Workflow>;
 }
 
 export interface WorkflowInstancesApi {
@@ -191,6 +203,14 @@ export interface SaveWorkflowRequest {
 }
 
 export interface DeleteWorkflowRequest {
+  definitionId: string;
+}
+
+export interface RetractWorkflowRequest {
+  definitionId: string;
+}
+
+export interface PublishWorkflowRequest {
   definitionId: string;
 }
 
