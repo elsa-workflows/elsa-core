@@ -36,7 +36,7 @@ namespace Elsa.Activities.Telnyx.Webhooks.Handlers
             var correlationId = GetCorrelationId(payload);
             var toBookmark = new FilteredCallInitiatedToBookmark(payload.To);
             var toQuery = new WorkflowsQuery(nameof(FilteredCallInitiated), toBookmark, correlationId);
-            var fromBookmark = new FilteredCallInitiatedToBookmark(payload.From);
+            var fromBookmark = new FilteredCallInitiatedFromBookmark(payload.From);
             var fromQuery = new WorkflowsQuery(nameof(FilteredCallInitiated), fromBookmark, correlationId);
 
             await _workflowLaunchpad.CollectAndDispatchWorkflowsAsync(toQuery, new WorkflowInput(webhook), cancellationToken);
