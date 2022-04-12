@@ -70,21 +70,6 @@ public class WorkflowInstanceGrain : WorkflowInstanceGrainBase
         return response;
     }
 
-    // public override async Task Dispatch(DispatchWorkflowInstanceRequest request)
-    // {
-    //     var workflowInstanceId = request.Id;
-    //     //var pid = GetWorkflowOperatorPid(Context, workflowInstanceId);
-    //
-    //     var executeWorkflowInstanceMessage = new ExecuteWorkflowInstanceRequest
-    //     {
-    //         Id = workflowInstanceId,
-    //         Bookmark = request.Bookmark,
-    //         Input = request.Input
-    //     };
-
-        //Context.Send(pid, executeWorkflowInstanceMessage);
-    //}
-
     private ExecuteWorkflowInstanceResponse MapResult(InvokeWorkflowResult result)
     {
         var bookmarks = result.Bookmarks.Select(x => new Bookmark
