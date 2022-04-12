@@ -36,18 +36,19 @@ public class WorkflowSerializerOptionsProvider
         options.Converters.Add(Create<TypeJsonConverter>());
         options.Converters.Add(JsonMetadataServices.TimeSpanConverter);
         
-        // Dahomey.
-        options.SetupExtensions();
-        options.SetReferenceHandling(referenceHandling);
-        
-        // Setup polymorphic serialization.
-        var registry = options.GetDiscriminatorConventionRegistry();
-        registry.RegisterConvention(new DefaultDiscriminatorConvention<string>(options));
-        registry.DiscriminatorPolicy = DiscriminatorPolicy.Auto;
-
         // Give external packages a chance to further configure the serializer options. E.g. to add additional converters.
         foreach (var configurator in _configurators) configurator.Configure(options);
+        
+        // Dahomey.
+        // options.SetupExtensions();
+        // options.SetReferenceHandling(referenceHandling);
+        //
+        // // Setup polymorphic serialization.
+        // var registry = options.GetDiscriminatorConventionRegistry();
+        // registry.RegisterConvention(new DefaultDiscriminatorConvention<string>(options));
+        // registry.DiscriminatorPolicy = DiscriminatorPolicy.Auto;
 
+        
         return options;
     }
 

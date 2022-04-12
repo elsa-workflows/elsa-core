@@ -10,10 +10,10 @@ public class SerializationOptionsConfigurator : ISerializationOptionsConfigurato
 {
     public void Configure(JsonSerializerOptions options)
     {
-        options.GetObjectMappingRegistry().Register<Order>(objectMapping => objectMapping
-             .AutoMap()
-             .SetDiscriminator("Order")
-             .SetDiscriminatorPolicy(DiscriminatorPolicy.Always)
-             .AddDiscriminatorMapping());
+        // options.GetObjectMappingRegistry().Register<Order>(objectMapping => objectMapping
+        //      .AutoMap()
+        //      .SetDiscriminator("Order")
+        //      .SetDiscriminatorPolicy(DiscriminatorPolicy.Always)
+        //      .AddDiscriminatorMapping());
     }
 }
