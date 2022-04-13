@@ -16,7 +16,7 @@ namespace Elsa.Activities.Workflows
         public static ISetupActivity<RunWorkflow> WithWorkflow(this ISetupActivity<RunWorkflow> activity, Func<string> value) => activity.Set(x => x.WorkflowDefinitionId, value);
         public static ISetupActivity<RunWorkflow> WithWorkflow(this ISetupActivity<RunWorkflow> activity, string value) => activity.Set(x => x.WorkflowDefinitionId, value);
 
-        public static ISetupActivity<RunWorkflow> WithWorkflow<T>(this ISetupActivity<RunWorkflow> activity) =>
+        public static ISetupActivity<RunWorkflow> WithWorkflow<T>(this ISetupActivity<RunWorkflow> activity) where T : IWorkflow =>
             activity.WithWorkflow(
                 async context =>
                 {
