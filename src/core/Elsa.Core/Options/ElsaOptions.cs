@@ -18,7 +18,7 @@ using Rebus.Transport.InMem;
 
 namespace Elsa.Options
 {
-    public record MessageTypeConfig(Type MessageType, string? QueueName);
+    public record MessageTypeConfig(Type MessageType, string QueueName);
 
     public class ElsaOptions
     {
