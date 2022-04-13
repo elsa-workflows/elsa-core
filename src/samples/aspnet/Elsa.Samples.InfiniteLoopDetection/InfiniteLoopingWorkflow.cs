@@ -1,4 +1,5 @@
-﻿using Elsa.Activities.Console;
+﻿using Elsa.Activities.Primitives;
+using Elsa.Activities.Console;
 using Elsa.Activities.ControlFlow;
 using Elsa.Builders;
 
@@ -12,7 +13,7 @@ namespace Elsa.Samples.InfiniteLoopDetection
         public void Build(IWorkflowBuilder builder)
         {
             builder
-                .SetVariable("Count", 0)
+                .SetVariable(name: "Count", 0)
                 .While(true, iteration => iteration.WriteLine(context =>
                 {
                     var count = context.SetVariable<int>("Count", x => x + 1);
