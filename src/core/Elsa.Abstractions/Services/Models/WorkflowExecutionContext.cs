@@ -205,6 +205,10 @@ namespace Elsa.Services.Models
         public async Task<object?> GetNamedActivityPropertyAsync(string activityName, string propertyName, CancellationToken cancellationToken = default)
         {
             var activityBlueprint = GetActivityBlueprintByName(activityName)!;
+
+            if (activityBlueprint == null)
+                throw new Exception($"No activity found with name {activityName}");
+            
             return await GetActivityPropertyAsync(activityBlueprint, propertyName, cancellationToken);
         }
 
