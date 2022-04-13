@@ -158,7 +158,13 @@ namespace Elsa.Services.Workflows
         private async Task<RunWorkflowResult> BeginWorkflow(WorkflowExecutionContext workflowExecutionContext, IActivityBlueprint? activity, CancellationToken cancellationToken)
         {
             if (activity == null)
-                activity = _startingActivitiesProvider.GetStartActivities(workflowExecutionContext.WorkflowBlueprint).FirstOrDefault() ?? workflowExecutionContext.WorkflowBlueprint.Activities.First();
+                activity = _startingActivitiesProvider.GetStartActivities(workflowExecutionContext.WorkflowBlueprint).FirstOrDefault() ?? workflowExecutionContext.WorkflowBlueprint.Activities.FirstOrDefault();
+
+            if (activity == null)
+            {
+                _logger.LogWarning("Workflow {WorkflowDefinitionId} has no activities", workflowExecutionContext.WorkflowBlueprint.Id);
+                return new RunWorkflowResult(workflowExecutionContext.WorkflowInstance, null, null, false);
+            }
 
             try
             {
@@ -293,8 +299,7 @@ namespace Elsa.Services.Workflows
 
                     if (resuming)
                         await _mediator.Publish(new ActivityResuming(activityExecutionContext, activity), cancellationToken);
-
-
+                    
                     await CheckIfCompositeEventAsync(isComposite
                         , !CompositeScheduledValue
                         , new ActivityExecuting(activityExecutionContext, activity)
@@ -305,8 +310,7 @@ namespace Elsa.Services.Workflows
 
                     if (result == null)
                         return;
-
-
+                    
                     await CheckIfCompositeEventAsync(isComposite
                         , CompositeScheduledValue
                         , new ActivityExecuted(activityExecutionContext, activity)
