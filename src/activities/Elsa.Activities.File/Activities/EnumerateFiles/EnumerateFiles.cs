@@ -5,6 +5,7 @@ using Elsa.Services.Models;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
+using System.Linq;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.File
@@ -36,7 +37,10 @@ namespace Elsa.Activities.File
         protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
         {
             if (string.IsNullOrWhiteSpace(Pattern))
-                return Done(Directory.EnumerateFiles(Path!));
+            {
+                Files = Directory.EnumerateFiles(Path).ToList();
+                return Done(Files);
+            }
 
             var options = new EnumerationOptions()
             {
@@ -45,8 +49,8 @@ namespace Elsa.Activities.File
                 RecurseSubdirectories = SubDirectories
             };
             
-            Files = Directory.EnumerateFiles(Path, Pattern, options);
-            return Done();
+            Files = Directory.EnumerateFiles(Path, Pattern, options).ToList();
+            return Done(Files);
         }
     }
 }
