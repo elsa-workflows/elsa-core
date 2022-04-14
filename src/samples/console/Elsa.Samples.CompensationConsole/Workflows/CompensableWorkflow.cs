@@ -1,4 +1,5 @@
 using Elsa.Activities.Compensation;
+using Elsa.Activities.Primitives;
 using Elsa.Builders;
 using Elsa.Samples.CompensationConsole.Activities;
 
@@ -18,10 +19,17 @@ public class CompensableWorkflow : IWorkflow
                 compensable.When(OutcomeNames.Body)
                     .Then<ChargeCreditCard>()
                     .Then<ReserveFlight>();
-                compensable.When(OutcomeNames.Compensate).Then<CancelFlight>();
-                compensable.When(OutcomeNames.Confirm).Then<ConfirmFlight>();
+                
+                compensable.When(OutcomeNames.Compensate)
+                    .Then<CancelFlight>()
+                    .Then<CancelCreditCardCharges>();
+                
+                compensable.When(OutcomeNames.Confirm)
+                    .Then<ConfirmFlight>();
+                
             }).WithName("Compensable1")
             .Then<ManagerApproval>()
+            .Then<Fault>(a => a.WithMessage("Critical system error!"))
             .Then<PurchaseFlight>()
             .Then<TakeFlight>()
             .Then<Confirm>(a => a.WithCompensableActivityName("Compensable1"));
