@@ -1,4 +1,5 @@
 using Elsa.Activities.Compensation.Compensable;
+using Elsa.Activities.Compensation.Compensate;
 using Elsa.Builders;
 using Elsa.Samples.CompensationConsole.Activities;
 
@@ -16,8 +17,16 @@ public class CompensableWorkflow : IWorkflow
             {
                 compensable.When(OutcomeNames.Body).Then<ReserveFlight>();
                 compensable.When(OutcomeNames.Compensate).Then<CancelFlight>();
-            })
-            .Then(() => throw new Exception("Catastrophic failure!"))
+            }).WithName("Compensable1")
+            
+            // Throw an exception to trigger compensation: 
+            //.Then(() => throw new Exception("Catastrophic failure!"))
+            
+            // Or target a specific compensable activity to trigger compensation
+            .Then<Compensate>(a => a
+                .WithCompensableActivityName("Compensable1")
+                .WithMessage("I changed my mind!"))
+            
             .Then<ManagerApproval>()
             .Then<PurchaseFlight>();
     }
