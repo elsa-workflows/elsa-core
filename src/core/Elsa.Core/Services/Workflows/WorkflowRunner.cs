@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.Compensation.Compensable;
 using Elsa.ActivityResults;
 using Elsa.Events;
 using Elsa.Models;
@@ -309,9 +308,6 @@ namespace Elsa.Services.Workflows
 
                     var result = await TryExecuteActivityAsync(activityOperation, activityExecutionContext, activity, cancellationToken);
 
-                    if (result == null)
-                        return;
-
                     await CheckIfCompositeEventAsync(isComposite
                         , compositeScheduledValue
                         , new ActivityExecuted(activityExecutionContext, activity)
@@ -320,13 +316,18 @@ namespace Elsa.Services.Workflows
 
                     await _mediator.Publish(new ActivityExecutionResultExecuting(result, activityExecutionContext), cancellationToken);
                     await result.ExecuteAsync(activityExecutionContext, cancellationToken);
+
                     workflowExecutionContext.CompletePass();
                     workflowInstance.LastExecutedActivityId = currentActivityId;
+                    
                     await CheckIfCompositeEventAsync(isComposite
                         , compositeScheduledValue
                         , new ActivityExecutionResultExecuted(result, activityExecutionContext)
                         , _mediator
                         , cancellationToken);
+
+                    if (workflowInstance.WorkflowStatus == WorkflowStatus.Faulted) 
+                        await _mediator.Publish(new WorkflowFaulting(activityExecutionContext, activity), cancellationToken);
 
                     await _mediator.Publish(new WorkflowExecutionPassCompleted(workflowExecutionContext, activityExecutionContext), cancellationToken);
 
@@ -366,7 +367,7 @@ namespace Elsa.Services.Workflows
                 await mediator.Publish(notification, cancellationToken);
         }
 
-        private async ValueTask<IActivityExecutionResult?> TryExecuteActivityAsync(
+        private async ValueTask<IActivityExecutionResult> TryExecuteActivityAsync(
             ActivityOperation activityOperation,
             ActivityExecutionContext activityExecutionContext,
             IActivity activity,
@@ -382,7 +383,7 @@ namespace Elsa.Services.Workflows
                 
                 await _mediator.Publish(new ActivityFaulted(e, activityExecutionContext, activity), cancellationToken);
 
-                return new CompensateResult(e.Message, e);
+                return new FaultResult(e);
             }
         }
     }

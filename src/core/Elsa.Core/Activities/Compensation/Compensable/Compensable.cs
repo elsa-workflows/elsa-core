@@ -3,7 +3,8 @@ using Elsa.Attributes;
 using Elsa.Services;
 using Elsa.Services.Models;
 
-namespace Elsa.Activities.Compensation.Compensable;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Activities.Compensation;
 
 [Activity(Category = "Compensation", Description = "Allow work that executed after this activity to be undone.", Outcomes = new[]{ OutcomeNames.Body, OutcomeNames.Compensate, OutcomeNames.Cancel, OutcomeNames.Confirm, OutcomeNames.Done })]
 public class Compensable : Activity
@@ -26,11 +27,28 @@ public class Compensable : Activity
         set => SetState(value);
     }
     
+    public bool Cancelling
+    {
+        get => GetState<bool>();
+        set => SetState(value);
+    }
+    
     protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
     {
         if (Compensating)
         {
-            EnteredScope = false;
+            if (EnteredScope)
+            {
+                if(!Cancelling)
+                {
+                    Cancelling = true;
+                    return Outcome(OutcomeNames.Cancel);
+                }
+
+                // This activity is done.
+                return Noop();
+            }
+
             return Outcome(OutcomeNames.Compensate);
         }
         
@@ -44,7 +62,6 @@ public class Compensable : Activity
             else
             {
                 EnteredScope = false;
-                context.JournalData.Add("Unwinding", true);
                 return Done();
             }
         }

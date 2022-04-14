@@ -5,7 +5,8 @@ using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
 
-namespace Elsa.Activities.Compensation.Compensate;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Activities.Compensation;
 
 [Activity(Category = "Compensation", Description = "Invoke a specific compensable activity.", Outcomes = new[] { OutcomeNames.Done })]
 public class Compensate : Activity

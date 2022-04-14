@@ -53,6 +53,11 @@ namespace Elsa.Services.Models
         /// </summary>
         public Variables TransientState { get; set; } = new();
 
+        /// <summary>
+        /// The current exception, if any.
+        /// </summary>
+        public Exception? Exception { get; private set; }
+
         public void ScheduleActivities(IEnumerable<string> activityIds, object? input = null)
         {
             foreach (var activityId in activityIds)
@@ -183,6 +188,7 @@ namespace Elsa.Services.Models
             WorkflowInstance.WorkflowStatus = WorkflowStatus.Faulted;
             WorkflowInstance.FaultedAt = clock.GetCurrentInstant();
             WorkflowInstance.Fault = new WorkflowFault(SimpleException.FromException(exception), message, activityId, activityInput, resuming);
+            Exception = exception;
         }
 
         public void Cancel(Exception? exception, string message, string? activityId, object? activityInput, bool resuming)

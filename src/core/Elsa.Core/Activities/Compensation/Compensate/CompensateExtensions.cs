@@ -3,7 +3,8 @@ using System.Threading.Tasks;
 using Elsa.Builders;
 using Elsa.Services.Models;
 
-namespace Elsa.Activities.Compensation.Compensate;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Activities.Compensation;
 
 public static class CompensateExtensions
 {
