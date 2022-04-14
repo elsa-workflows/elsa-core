@@ -2,6 +2,7 @@ using Elsa.Options;
 using Elsa.Secrets.Manager;
 using Elsa.Secrets.Persistence;
 using Elsa.Secrets.Persistence.Decorators;
+using Elsa.Secrets.Providers;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -17,6 +18,7 @@ namespace Elsa.Secrets.Extentions
         {
             elsaOptions.Services
                 .AddScoped<ISecretsManager, SecretsManager>()
+                .AddScoped<ISecretsProvider, SecretsProvider>()
                 .Decorate<ISecretsStore, InitializingSecretsStore>()
                 .Decorate<ISecretsStore, EventPublishingSecretsStore>();
 

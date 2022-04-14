@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.Services;
@@ -13,6 +14,7 @@ using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Expressions;
 using Elsa.Metadata;
+using Elsa.Secrets.Providers;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
@@ -32,13 +34,16 @@ namespace Elsa.Activities.Http
     {
         private readonly HttpClient _httpClient;
         private readonly IEnumerable<IHttpResponseContentReader> _parsers;
+        private readonly ISecretsProvider _secretsProvider;
 
         public SendHttpRequest(
             IHttpClientFactory httpClientFactory,
-            IEnumerable<IHttpResponseContentReader> parsers)
+            IEnumerable<IHttpResponseContentReader> parsers,
+            ISecretsProvider secretsProvider)
         {
             _httpClient = httpClientFactory.CreateClient(nameof(SendHttpRequest));
             _parsers = parsers;
+            _secretsProvider = secretsProvider;
         }
 
         /// <summary>
@@ -75,8 +80,18 @@ namespace Elsa.Activities.Http
         )]
         public string? ContentType { get; set; }
 
-        [ActivityInput(Hint = "The Authorization header value to send.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }, Category = PropertyCategories.Advanced)]
+        //[ActivityInput(Hint = "The Authorization header value to send.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }, Category = PropertyCategories.Advanced)]
+        //public string? Authorization { get; set; }
+        [ActivityInput(
+          UIHint = ActivityInputUIHints.Dropdown,
+          Label = "Authorization",
+          Hint = "Secret stored in credential manager",
+          Category = PropertyCategories.Advanced,
+          OptionsProvider = typeof(SendHttpRequest),
+          SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
+       )]
         public string? Authorization { get; set; }
+
 
         /// <summary>
         /// The headers to send along with the request.
@@ -100,7 +115,7 @@ namespace Elsa.Activities.Http
             OptionsProvider = typeof(SendHttpRequest)
         )]
         public string? ResponseContentParserName { get; set; }
-        
+
         [ActivityInput(
             Label = "Response Content .NET Type",
             Hint = "The assembly-qualified .NET type name to deserialize the received content into.",
@@ -209,14 +224,31 @@ namespace Elsa.Activities.Http
         }
         
         object? IActivityPropertyOptionsProvider.GetOptions(PropertyInfo property)
-        {
-            if (property.Name != nameof(ResponseContentParserName))
-                return null;
-            
-            var items =  _parsers.Select(x => new SelectListItem(x.Name, x.Name)).ToList();
-            
-            items.Insert(0, new SelectListItem("Auto Select", ""));
-            return items;
+        { 
+            switch (property.Name)
+            {
+                case nameof(ResponseContentParserName):
+                {
+
+                    var items = _parsers.Select(x => new SelectListItem(x.Name, x.Name)).ToList();
+
+                    items.Insert(0, new SelectListItem("Auto Select", ""));
+                    return items;
+                }
+                case nameof(Authorization):
+                {
+                    var secretsAuth = _secretsProvider.GetSecrets("Authorization", ":").Result;
+
+                    var items = secretsAuth.Select(x => new SelectListItem(x)).ToList();
+                    items.Insert(0, new SelectListItem("", "empty"));
+
+                    var list = new SelectList { Items = items };
+
+                    return list;
+                }
+                case nameof(ResponseContentTargetType): return null;
+                default: throw new ArgumentException($"Unsupported property: {property.Name}");
+            }
         }
 
         private static bool GetMethodSupportsBody(string method)

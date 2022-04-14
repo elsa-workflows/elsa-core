@@ -1,7 +1,7 @@
 using Elsa.Activities.Sql.Factory;
-using Elsa.Activities.Sql.Services;
 using Elsa.Options;
 using Elsa.Secrets.Manager;
+using Elsa.Secrets.Providers;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Activities.Sql.Extensions
@@ -12,8 +12,8 @@ namespace Elsa.Activities.Sql.Extensions
         {
             elsa.Services
                 .AddSingleton<ISqlClientFactory, SqlClientFactory>()
-                .AddScoped<ISecretsProvider, SecretsProvider>()
-                .AddScoped<ISecretsManager, SecretsManager>();
+                .AddScoped<ISecretsManager, SecretsManager>()
+                .AddScoped<ISecretsProvider, SecretsProvider>();
             elsa.AddActivity<Activities.ExecuteSqlQuery>();
             elsa.AddActivity<Activities.ExecuteSqlCommand>();
 

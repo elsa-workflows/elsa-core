@@ -8,12 +8,12 @@ using Elsa.Activities.Sql.Factory;
 using System.Data;
 using Elsa.Activities.Sql.Models;
 using Elsa.Secrets.Manager;
-using Elsa.Activities.Sql.Services;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
 using Elsa.Metadata;
+using Elsa.Secrets.Providers;
 
 namespace Elsa.Activities.Sql.Activities
 {
@@ -73,8 +73,8 @@ namespace Elsa.Activities.Sql.Activities
 
         public async ValueTask<SelectList> GetSelectListAsync(object? context = default, CancellationToken cancellationToken = default)
         {
-            var secretsPostgre = await _secretsProvider.GetSecrets("PostgreSql");
-            var secretsMssql = await _secretsProvider.GetSecrets("MSSQLServer");
+            var secretsPostgre = await _secretsProvider.GetSecrets("PostgreSql", ":");
+            var secretsMssql = await _secretsProvider.GetSecrets("MSSQLServer", ":");
 
             var items = secretsMssql.Select(x => new SelectListItem(x)).ToList();
             items.AddRange(secretsPostgre.Select(x => new SelectListItem(x)).ToList());
