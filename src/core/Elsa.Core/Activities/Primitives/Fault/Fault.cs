@@ -19,7 +19,7 @@ public class Fault : Activity
     protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
     {
         var message = Message ?? "Custom fault";
-        
+        context.JournalData.Add("Error", message);
         return new FaultResult(message);
     }
 }
