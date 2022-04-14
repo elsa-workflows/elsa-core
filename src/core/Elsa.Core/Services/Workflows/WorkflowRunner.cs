@@ -289,7 +289,7 @@ namespace Elsa.Services.Workflows
                     using var executionScope = AmbientActivityExecutionContext.EnterScope(activityExecutionContext);
                     await _mediator.Publish(new ActivityActivating(activityExecutionContext), cancellationToken);
                     var activity = await activityType.ActivateAsync(activityExecutionContext);
-                    var CompositeScheduledValue = isComposite && (activity is CompositeActivity comp) && comp.IsScheduled;
+                    var compositeScheduledValue = isComposite && (activity is CompositeActivity { IsScheduled: true });
 
                     if (!burstStarted)
                     {
@@ -301,7 +301,7 @@ namespace Elsa.Services.Workflows
                         await _mediator.Publish(new ActivityResuming(activityExecutionContext, activity), cancellationToken);
                     
                     await CheckIfCompositeEventAsync(isComposite
-                        , !CompositeScheduledValue
+                        , !compositeScheduledValue
                         , new ActivityExecuting(activityExecutionContext, activity)
                         , _mediator
                         , cancellationToken);
@@ -312,7 +312,7 @@ namespace Elsa.Services.Workflows
                         return;
                     
                     await CheckIfCompositeEventAsync(isComposite
-                        , CompositeScheduledValue
+                        , compositeScheduledValue
                         , new ActivityExecuted(activityExecutionContext, activity)
                         , _mediator
                         , cancellationToken);
@@ -322,7 +322,7 @@ namespace Elsa.Services.Workflows
                     workflowExecutionContext.CompletePass();
                     workflowInstance.LastExecutedActivityId = currentActivityId;
                     await CheckIfCompositeEventAsync(isComposite
-                        , CompositeScheduledValue
+                        , compositeScheduledValue
                         , new ActivityExecutionResultExecuted(result, activityExecutionContext)
                         , _mediator
                         , cancellationToken);
