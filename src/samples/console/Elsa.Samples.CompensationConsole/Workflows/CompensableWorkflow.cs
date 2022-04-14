@@ -1,12 +1,12 @@
 using Elsa.Activities.Compensation;
-using Elsa.Activities.Primitives;
 using Elsa.Builders;
 using Elsa.Samples.CompensationConsole.Activities;
 
 namespace Elsa.Samples.CompensationConsole.Workflows;
 
 /// <summary>
-/// A simple workflow that compensates for errors occuring during workflow execution. 
+/// A simple workflow that compensates for errors occuring during workflow execution.
+/// Inspiration taken from https://docs.microsoft.com/en-us/previous-versions/dotnet/netframework-4.0/dd489432(v=vs.100).
 /// </summary>
 public class CompensableWorkflow : IWorkflow
 {
@@ -17,21 +17,13 @@ public class CompensableWorkflow : IWorkflow
             {
                 compensable.When(OutcomeNames.Body)
                     .Then<ChargeCreditCard>()
-                    .Then<Fault>(a => a.WithMessage("System error!"))
                     .Then<ReserveFlight>();
-                compensable.When(OutcomeNames.Cancel).Then<CancelCreditCardCharges>();
                 compensable.When(OutcomeNames.Compensate).Then<CancelFlight>();
+                compensable.When(OutcomeNames.Confirm).Then<ConfirmFlight>();
             }).WithName("Compensable1")
-            
-            // Throw an exception to trigger compensation: 
-            //.Then(() => throw new Exception("Catastrophic failure!"))
-            
-            // Or target a specific compensable activity to trigger compensation
-            .Then<Compensate>(a => a
-                .WithCompensableActivityName("Compensable1")
-                .WithMessage("I changed my mind!"))
-            
             .Then<ManagerApproval>()
-            .Then<PurchaseFlight>();
+            .Then<PurchaseFlight>()
+            .Then<TakeFlight>()
+            .Then<Confirm>(a => a.WithCompensableActivityName("Compensable1"));
     }
 }

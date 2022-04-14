@@ -63,4 +63,20 @@ public class CompensationService : ICompensationService
         activityExecutionContext.WorkflowInstance.SetMetadata("Compensated", true);
         activityExecutionContext.WorkflowExecutionContext.Cancel(exception, message, faultingActivityId, activityExecutionContext.Input, activityExecutionContext.Resuming);
     }
+
+    public void Confirm(ActivityExecutionContext activityExecutionContext, string compensableActivityId)
+    {
+        var compensableActivity = activityExecutionContext.WorkflowExecutionContext.WorkflowBlueprint.GetActivity(compensableActivityId);
+
+        if (compensableActivity == null)
+            throw new WorkflowException($"No activity with ID {compensableActivityId} could be found");
+
+        var activityData = activityExecutionContext.WorkflowInstance.ActivityData[compensableActivity.Id];
+
+        // Prepare the state of the compensable activity.
+        activityData[nameof(Compensable.Confirming)] = true;
+
+        // Schedule the compensable activity.
+        activityExecutionContext.WorkflowExecutionContext.ScheduleActivity(compensableActivity.Id);
+    }
 }

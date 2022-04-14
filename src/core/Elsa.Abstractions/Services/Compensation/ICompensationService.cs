@@ -14,4 +14,9 @@ public interface ICompensationService
     /// Invokes the specified compensation activity.
     /// </summary>
     void Compensate(ActivityExecutionContext activityExecutionContext, string compensableActivityId, Exception? exception = default, string? message = default);
+    
+    /// <summary>
+    /// Confirms the specified compensation activity.
+    /// </summary>
+    void Confirm(ActivityExecutionContext activityExecutionContext, string compensableActivityId);
 }

@@ -11,7 +11,7 @@ namespace Elsa.Activities.Primitives;
 public class Fault : Activity
 {
     /// <summary>
-    /// Optional. The message to store as the reason for compensation.
+    /// Optional. The message to store as the reason for faulting.
     /// </summary>
     [ActivityInput(Hint = "Optional. The message to store as the reason for the fault.", SupportedSyntaxes = new[] { SyntaxNames.Liquid, SyntaxNames.JavaScript })]
     public string? Message { get; set; }
