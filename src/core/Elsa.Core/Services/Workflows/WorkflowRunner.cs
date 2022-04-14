@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.Compensation.Compensable;
 using Elsa.ActivityResults;
 using Elsa.Events;
 using Elsa.Models;
@@ -182,10 +183,10 @@ namespace Elsa.Services.Workflows
             {
                 _logger.LogWarning(e, "Failed to run workflow {WorkflowInstanceId}", workflowExecutionContext.WorkflowInstance.Id);
                 workflowExecutionContext.Fault(e, activity?.Id, null, false);
-                
-                if(activity != null)
+
+                if (activity != null)
                     workflowExecutionContext.AddEntry(activity, "Faulted", null, SimpleException.FromException(e));
-                
+
                 return new RunWorkflowResult(workflowExecutionContext.WorkflowInstance, activity?.Id, e, false);
             }
         }
@@ -280,8 +281,8 @@ namespace Elsa.Services.Workflows
                 var output = outputReference != null ? await _workflowStorageService.LoadAsync(outputReference.ProviderName, new WorkflowStorageContext(workflowInstance, outputReference.ActivityId), "Output", cancellationToken) : null;
                 var input = !burstStarted ? workflowExecutionContext.Input : scheduledActivity.Input ?? output;
                 var activityExecutionContext = new ActivityExecutionContext(scope, workflowExecutionContext, activityBlueprint, input, resuming, cancellationToken);
-                var isComposite = activityBlueprint is CompositeActivityBlueprint; 
-                
+                var isComposite = activityBlueprint is CompositeActivityBlueprint;
+
                 try
                 {
                     var runtimeActivityInstance = await activityExecutionContext.ActivateActivityAsync(cancellationToken);
@@ -299,18 +300,18 @@ namespace Elsa.Services.Workflows
 
                     if (resuming)
                         await _mediator.Publish(new ActivityResuming(activityExecutionContext, activity), cancellationToken);
-                    
+
                     await CheckIfCompositeEventAsync(isComposite
                         , !compositeScheduledValue
                         , new ActivityExecuting(activityExecutionContext, activity)
                         , _mediator
                         , cancellationToken);
-                    
+
                     var result = await TryExecuteActivityAsync(activityOperation, activityExecutionContext, activity, cancellationToken);
 
                     if (result == null)
                         return;
-                    
+
                     await CheckIfCompositeEventAsync(isComposite
                         , compositeScheduledValue
                         , new ActivityExecuted(activityExecutionContext, activity)
@@ -326,7 +327,7 @@ namespace Elsa.Services.Workflows
                         , new ActivityExecutionResultExecuted(result, activityExecutionContext)
                         , _mediator
                         , cancellationToken);
-                    
+
                     await _mediator.Publish(new WorkflowExecutionPassCompleted(workflowExecutionContext, activityExecutionContext), cancellationToken);
 
                     if (!workflowExecutionContext.HasScheduledActivities)
@@ -354,9 +355,9 @@ namespace Elsa.Services.Workflows
         // but create an activity before and after
         // so we have to get only the begin event of first activity
         // and end event of last activity.
-        private async Task CheckIfCompositeEventAsync(bool isComposite, bool scheduleValue, INotification notification,IMediator mediator,  CancellationToken cancellationToken)
+        private async Task CheckIfCompositeEventAsync(bool isComposite, bool scheduleValue, INotification notification, IMediator mediator, CancellationToken cancellationToken)
         {
-            if(isComposite)
+            if (isComposite)
             {
                 if (scheduleValue)
                     await mediator.Publish(notification, cancellationToken);
@@ -378,11 +379,11 @@ namespace Elsa.Services.Workflows
             catch (Exception e)
             {
                 _logger.LogWarning(e, "Failed to run activity {ActivityId} of workflow {WorkflowInstanceId}", activity.Id, activityExecutionContext.WorkflowInstance.Id);
-                activityExecutionContext.Fault(e);
+                
                 await _mediator.Publish(new ActivityFaulted(e, activityExecutionContext, activity), cancellationToken);
-            }
 
-            return null;
+                return new CompensateResult(e.Message, e);
+            }
         }
     }
 }
