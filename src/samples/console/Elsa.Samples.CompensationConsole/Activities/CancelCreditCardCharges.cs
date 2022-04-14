@@ -7,7 +7,7 @@ public class CancelCreditCardCharges : Activity
 {
     protected override IActivityExecutionResult OnExecute()
     {
-        Console.WriteLine("Cancel credit card charges");
+        Console.WriteLine("Cancelling credit card charges");
         return Done();
     }
 }
