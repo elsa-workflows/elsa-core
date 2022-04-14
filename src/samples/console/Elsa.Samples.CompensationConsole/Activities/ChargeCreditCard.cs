@@ -7,7 +7,7 @@ public class ChargeCreditCard : Activity
 {
     protected override IActivityExecutionResult OnExecute()
     {
-        Console.WriteLine("Charge credit card for flight");
+        Console.WriteLine("Charging credit card for flight");
         return Done();
     }
 }
