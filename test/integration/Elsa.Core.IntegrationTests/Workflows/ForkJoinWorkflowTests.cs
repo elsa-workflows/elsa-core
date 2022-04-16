@@ -6,6 +6,7 @@ using Elsa.Activities.Signaling.Models;
 using Elsa.Models;
 using Elsa.Persistence.Specifications.WorkflowExecutionLogRecords;
 using Elsa.Services.Models;
+using Elsa.Services.WorkflowStorage;
 using Elsa.Testing.Shared.Unit;
 using Xunit;
 using Xunit.Abstractions;
@@ -97,7 +98,8 @@ namespace Elsa.Core.IntegrationTests.Workflows
             var receiveSignal = receiveSignalActivities.Single(activity => workflowBlueprintWrapper.GetActivity<SignalReceived>(activity.ActivityBlueprint.Id)!.EvaluatePropertyValueAsync(x => x.Signal).GetAwaiter().GetResult() == signal);
             
             var triggeredSignal = new Signal(signal);
-            var result = await WorkflowRunner.RunWorkflowAsync(workflowBlueprint, workflowInstance, receiveSignal.ActivityBlueprint.Id, new WorkflowInput(triggeredSignal));
+            await WorkflowStorageService.UpdateInputAsync(workflowInstance, new WorkflowInput(triggeredSignal));
+            var result = await WorkflowRunner.RunWorkflowAsync(workflowBlueprint, workflowInstance, receiveSignal.ActivityBlueprint.Id);
             return result.WorkflowInstance!;
         }
     }

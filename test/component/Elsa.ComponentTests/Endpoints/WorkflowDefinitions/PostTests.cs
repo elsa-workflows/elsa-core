@@ -7,6 +7,7 @@ using AutoFixture;
 using Elsa.Activities.Console;
 using Elsa.ComponentTests.Helpers;
 using Elsa.Models;
+using Elsa.Server.Api.Endpoints.WorkflowDefinitions;
 using Elsa.Testing.Shared.AutoFixture;
 using Elsa.Testing.Shared.Helpers;
 using Xunit;
@@ -37,7 +38,7 @@ namespace Elsa.ComponentTests.Endpoints.WorkflowDefinitions
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         }
 
-        private WorkflowDefinition CreateWorkflowDefinitionRequest()
+        private Save.SaveWorkflowDefinitionRequest CreateWorkflowDefinitionRequest()
         {
             var writeLine = new ActivityDefinition
             {
@@ -53,9 +54,11 @@ namespace Elsa.ComponentTests.Endpoints.WorkflowDefinitions
             var activities = new[] { writeLine, readLine };
             var connections = new[] { new ConnectionDefinition(writeLine.ActivityId, readLine.ActivityId, OutcomeNames.Done) };
 
-            return _fixture.Build<WorkflowDefinition>()
+            return _fixture.Build<Save.SaveWorkflowDefinitionRequest>()
                 .With(x => x.Activities, activities)
                 .With(x => x.Connections, connections)
+                .With(x => x.Variables, default(string))
+                .With(x => x.CustomAttributes, default(string))
                 .Create();
         }
 
