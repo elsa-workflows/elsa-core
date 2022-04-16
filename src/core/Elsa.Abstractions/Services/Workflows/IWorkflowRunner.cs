@@ -11,7 +11,6 @@ namespace Elsa.Services
             IWorkflowBlueprint workflowDefinition,
             WorkflowInstance workflowInstance,
             string? activityId = default,
-            WorkflowInput? input = default,
             CancellationToken cancellationToken = default);
     }
 }

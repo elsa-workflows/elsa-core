@@ -89,7 +89,7 @@ namespace Elsa.Activities.Http.Middleware
                 return;
 
             var pendingWorkflow = pendingWorkflows.Single();
-            var pendingWorkflowInstance = await workflowInstanceStore.FindByIdAsync(pendingWorkflow.WorkflowInstanceId, cancellationToken);
+            var pendingWorkflowInstance = pendingWorkflow.WorkflowInstance ?? await workflowInstanceStore.FindByIdAsync(pendingWorkflow.WorkflowInstanceId, cancellationToken);
 
             if (pendingWorkflowInstance is null)
             {

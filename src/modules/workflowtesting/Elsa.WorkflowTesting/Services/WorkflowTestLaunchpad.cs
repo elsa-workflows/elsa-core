@@ -7,6 +7,7 @@ using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
 using Elsa.Services;
 using Elsa.Services.Models;
+using Elsa.Services.WorkflowStorage;
 
 namespace Elsa.WorkflowTesting.Services
 {
@@ -15,17 +16,20 @@ namespace Elsa.WorkflowTesting.Services
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
         private readonly IWorkflowFactory _workflowFactory;
+        private readonly IWorkflowStorageService _workflowStorageService;
         private readonly IWorkflowRunner _workflowRunner;
 
         public WorkflowTestLaunchpad(
             IWorkflowRegistry workflowRegistry,
             IWorkflowInstanceStore workflowInstanceStore,
             IWorkflowFactory workflowFactory,
+            IWorkflowStorageService workflowStorageService,
             IWorkflowRunner workflowRunner)
         {
             _workflowRegistry = workflowRegistry;
             _workflowInstanceStore = workflowInstanceStore;
             _workflowFactory = workflowFactory;
+            _workflowStorageService = workflowStorageService;
             _workflowRunner = workflowRunner;
         }
 
@@ -49,21 +53,19 @@ namespace Elsa.WorkflowTesting.Services
                 return null;
 
             var startActivity = workflowBlueprint.Activities.First(x => x.Id == activityId);
-
-            var startableWorkflowDefinition = new StartableWorkflowDefinition(workflowBlueprint, startActivity.Id);
-
-            var workflow = await InstantiateStartableWorkflow(startableWorkflowDefinition, cancellationToken);
-
             var previousActivityData = GetActivityDataFromLastWorkflowInstance(lastWorkflowInstance, workflowBlueprint, activityId);
 
-            MergeActivityDataIntoInstance(workflow.WorkflowInstance, previousActivityData);
+            // If previousActivityOutput has any items, then the first one is from activity closest to the starting one.  
+            var previousActivityOutput = previousActivityData.Count == 0 ? null : previousActivityData.First().Value?.GetItem("Output");
+            var input = new WorkflowInput(previousActivityOutput);
 
+            var startableWorkflowDefinition = new StartableWorkflowDefinition(workflowBlueprint, startActivity.Id);
+            var workflow = await InstantiateStartableWorkflow(startableWorkflowDefinition, input, cancellationToken);
+            MergeActivityDataIntoInstance(workflow.WorkflowInstance, previousActivityData);
             SetMetadata(workflow.WorkflowInstance, signalRConnectionId);
 
-            //if previousActivityOutput has any items, then the first one is from activity closest to the starting one  
-            var previousActivityOutput = previousActivityData.Count == 0 ? null : previousActivityData.First().Value?.GetItem("Output");
 
-            return await ExecuteStartableWorkflowAsync(workflow, new WorkflowInput(previousActivityOutput), cancellationToken);
+            return await ExecuteStartableWorkflowAsync(workflow, cancellationToken);
         }
 
         private void SetMetadata(WorkflowInstance workflowInstance, string signalRConnectionId)
@@ -75,9 +77,7 @@ namespace Elsa.WorkflowTesting.Services
         private void MergeActivityDataIntoInstance(WorkflowInstance workflowInstance, IDictionary<string, IDictionary<string, object?>> activityData)
         {
             foreach (var (key, value) in activityData)
-            {
                 workflowInstance.ActivityData[key] = value;
-            }
         }
 
         private IDictionary<string, IDictionary<string, object?>> GetActivityDataFromLastWorkflowInstance(WorkflowInstance lastWorkflowInstance, IWorkflowBlueprint workflowBlueprint, string startingActivityId)
@@ -89,7 +89,7 @@ namespace Elsa.WorkflowTesting.Services
                 if (sourceActivityId == null)
                     return activityDataAccumulator;
 
-                activityDataAccumulator.Add(sourceActivityId, lastWorkflowInstance.ActivityData.GetItem(sourceActivityId));
+                activityDataAccumulator.Add(sourceActivityId, lastWorkflowInstance.ActivityData.GetItem(sourceActivityId)!);
 
                 return CollectSourceActivityData(sourceActivityId, activityDataAccumulator);
             }
@@ -97,7 +97,7 @@ namespace Elsa.WorkflowTesting.Services
             return CollectSourceActivityData(startingActivityId, new Dictionary<string, IDictionary<string, object?>>());
         }
 
-        private async Task<StartableWorkflow> InstantiateStartableWorkflow(StartableWorkflowDefinition startableWorkflowDefinition, CancellationToken cancellationToken)
+        private async Task<StartableWorkflow> InstantiateStartableWorkflow(StartableWorkflowDefinition startableWorkflowDefinition, WorkflowInput workflowInput, CancellationToken cancellationToken)
         {
             var workflowInstance = await _workflowFactory.InstantiateAsync(
                 startableWorkflowDefinition.WorkflowBlueprint,
@@ -105,11 +105,12 @@ namespace Elsa.WorkflowTesting.Services
                 startableWorkflowDefinition.ContextId,
                 cancellationToken: cancellationToken);
 
+            await _workflowStorageService.UpdateInputAsync(workflowInstance, workflowInput, cancellationToken);
             await _workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
             return new StartableWorkflow(startableWorkflowDefinition.WorkflowBlueprint, workflowInstance, startableWorkflowDefinition.ActivityId);
         }
 
-        private async Task<RunWorkflowResult> ExecuteStartableWorkflowAsync(StartableWorkflow startableWorkflow, WorkflowInput? input, CancellationToken cancellationToken = default) =>
-            await _workflowRunner.RunWorkflowAsync(startableWorkflow.WorkflowBlueprint, startableWorkflow.WorkflowInstance, startableWorkflow.ActivityId, input, cancellationToken);
+        private async Task<RunWorkflowResult> ExecuteStartableWorkflowAsync(StartableWorkflow startableWorkflow, CancellationToken cancellationToken = default) =>
+            await _workflowRunner.RunWorkflowAsync(startableWorkflow.WorkflowBlueprint, startableWorkflow.WorkflowInstance, startableWorkflow.ActivityId, cancellationToken);
     }
 }

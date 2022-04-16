@@ -6,6 +6,7 @@ using Elsa.Builders;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services.Models;
+using Elsa.Services.WorkflowStorage;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Services.Workflows
@@ -17,6 +18,7 @@ namespace Elsa.Services.Workflows
         private readonly Func<IWorkflowBuilder> _workflowBuilderFactory;
         private readonly IWorkflowRunner _workflowRunner;
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
+        private readonly IWorkflowStorageService _workflowStorageService;
         private readonly IWorkflowRegistry _workflowRegistry;
 
         public WorkflowStarter(
@@ -25,6 +27,7 @@ namespace Elsa.Services.Workflows
             Func<IWorkflowBuilder> workflowBuilderFactory,
             IWorkflowRunner workflowRunner,
             IWorkflowInstanceStore workflowInstanceStore,
+            IWorkflowStorageService workflowStorageService,
             IWorkflowRegistry workflowRegistry)
         {
             _triggerFinder = triggerFinder;
@@ -32,6 +35,7 @@ namespace Elsa.Services.Workflows
             _workflowBuilderFactory = workflowBuilderFactory;
             _workflowRunner = workflowRunner;
             _workflowInstanceStore = workflowInstanceStore;
+            _workflowStorageService = workflowStorageService;
             _workflowRegistry = workflowRegistry;
         }
 
@@ -104,8 +108,9 @@ namespace Elsa.Services.Workflows
                 tenantId,
                 cancellationToken);
 
+            await _workflowStorageService.UpdateInputAsync(workflowInstance, input, cancellationToken);
             await _workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
-            return await _workflowRunner.RunWorkflowAsync(workflowBlueprint, workflowInstance, activityId, input, cancellationToken);
+            return await _workflowRunner.RunWorkflowAsync(workflowBlueprint, workflowInstance, activityId, cancellationToken);
         }
 
         public async Task<RunWorkflowResult> BuildAndStartWorkflowAsync<T>(

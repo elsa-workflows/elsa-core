@@ -49,22 +49,23 @@ namespace Elsa.Services.Workflows
             IWorkflowBlueprint workflowBlueprint,
             WorkflowInstance workflowInstance,
             string? activityId = default,
-            WorkflowInput? input = default,
+            //WorkflowInput? workflowInput = default,
             CancellationToken cancellationToken = default)
         {
             using var loggingScope = _logger.BeginScope(new Dictionary<string, object> { ["WorkflowInstanceId"] = workflowInstance.Id });
             using var workflowExecutionScope = _serviceScopeFactory.CreateScope();
 
-            if (input?.Input != null)
-            {
-                var workflowStorageContext = new WorkflowStorageContext(workflowInstance, workflowBlueprint.Id);
-                var inputStorageProvider = _workflowStorageService.GetProviderByNameOrDefault(input.StorageProviderName);
-                await inputStorageProvider.SaveAsync(workflowStorageContext, nameof(WorkflowInstance.Input), input.Input, cancellationToken);
-                workflowInstance.Input = new WorkflowInputReference(inputStorageProvider.Name);
-                await _mediator.Publish(new WorkflowInputUpdated(workflowInstance), cancellationToken);
-            }
+            // var input = workflowInput?.Input ?? await _workflowStorageService.LoadAsync(workflowInstance, cancellationToken);
+            //
+            // // If input provided, update the workflow instance with this input.
+            // if (input != null)
+            //     workflowInstance.Input = await _workflowStorageService.SaveAsync(workflowInput!, workflowInstance, cancellationToken);
+            // // If no input was provided, load the input associated with the workflow instance (if any).
+            // else
+                
+            var input = await _workflowStorageService.LoadAsync(workflowInstance, cancellationToken);
 
-            var workflowExecutionContext = new WorkflowExecutionContext(workflowExecutionScope.ServiceProvider, workflowBlueprint, workflowInstance, input?.Input);
+            var workflowExecutionContext = new WorkflowExecutionContext(workflowExecutionScope.ServiceProvider, workflowBlueprint, workflowInstance, input);
             var result = await RunWorkflowInternalAsync(workflowExecutionContext, activityId, cancellationToken);
             await workflowExecutionContext.WorkflowExecutionLog.FlushAsync(cancellationToken);
             return result;

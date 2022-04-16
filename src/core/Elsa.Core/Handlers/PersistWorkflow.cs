@@ -12,7 +12,6 @@ namespace Elsa.Handlers
         INotificationHandler<WorkflowFaulted>,
         INotificationHandler<WorkflowExecutionPassCompleted>,
         INotificationHandler<WorkflowExecutionFinished>,
-        INotificationHandler<WorkflowInputUpdated>,
         INotificationHandler<WorkflowStatusChanged>
     {
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
@@ -47,7 +46,6 @@ namespace Elsa.Handlers
             }
         }
         
-        public async Task Handle(WorkflowInputUpdated notification, CancellationToken cancellationToken) => await SaveWorkflowAsync(notification.WorkflowInstance, cancellationToken);
         public async Task Handle(WorkflowFaulted notification, CancellationToken cancellationToken) => await SaveWorkflowAsync(notification.WorkflowExecutionContext.WorkflowInstance, cancellationToken);
         public async Task Handle(WorkflowStatusChanged notification, CancellationToken cancellationToken) => await SaveWorkflowAsync(notification.WorkflowInstance, cancellationToken); 
 
