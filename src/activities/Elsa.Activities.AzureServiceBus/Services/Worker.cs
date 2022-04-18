@@ -48,7 +48,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
                 MaxConcurrentCalls = options.Value.MaxConcurrentCalls
             };
 
-            _processor = subscription == null ? serviceBusClient.CreateProcessor(queueOrTopic, processorOptions) : serviceBusClient.CreateProcessor(queueOrTopic, subscription, processorOptions);
+            _processor = string.IsNullOrEmpty(subscription) ? serviceBusClient.CreateProcessor(queueOrTopic, processorOptions) : serviceBusClient.CreateProcessor(queueOrTopic, subscription, processorOptions);
             _processor.ProcessMessageAsync += OnMessageReceivedAsync;
             _processor.ProcessErrorAsync += OnErrorAsync;
         }
