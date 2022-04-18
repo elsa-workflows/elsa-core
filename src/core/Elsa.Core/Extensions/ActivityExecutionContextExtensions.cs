@@ -1,11 +1,12 @@
 using Elsa.Contracts;
 using Elsa.Models;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa;
 
 public static class ActivityExecutionContextExtensions
 {
-    public static bool TryGetInput<T>(this ActivityExecutionContext context, string key, out T value) => context.Input.TryGetValue(key, out value!);
+    public static bool TryGetInput<T>(this ActivityExecutionContext context, string key, out T value) => context.Input!.TryGetValue(key, out value!);
     public static T GetInput<T>(this ActivityExecutionContext context) => context.GetInput<T>(typeof(T).Name);
     public static T GetInput<T>(this ActivityExecutionContext context, string key) => (T)context.Input[key];
 
@@ -24,4 +25,6 @@ public static class ActivityExecutionContextExtensions
 
     public static Variable SetVariable(this ActivityExecutionContext context, string name, object? value) => context.ExpressionExecutionContext.SetVariable(name, value);
     public static T? GetVariable<T>(this ActivityExecutionContext context, string name) => context.ExpressionExecutionContext.GetVariable<T?>(name);
+
+    public static ILogger GetLogger(this ActivityExecutionContext context) => (ILogger)context.GetRequiredService(typeof(ILogger<>).MakeGenericType(context.Activity.GetType()));
 }

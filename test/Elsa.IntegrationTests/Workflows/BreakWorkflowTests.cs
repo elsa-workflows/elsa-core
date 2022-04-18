@@ -13,50 +13,57 @@ using Xunit.Abstractions;
 
 namespace Elsa.IntegrationTests.Workflows;
 
-public class ForEachWorkflowTests
+public class BreakWorkflowTests
 {
     private readonly IWorkflowRunner _workflowRunner;
     private readonly CapturingTextWriter _capturingTextWriter = new();
+    private readonly Workflow _workflow;
 
-    public ForEachWorkflowTests(ITestOutputHelper testOutputHelper)
+    public BreakWorkflowTests(ITestOutputHelper testOutputHelper)
     {
         var services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
         _workflowRunner = services.GetRequiredService<IWorkflowRunner>();
+        _workflow = new WorkflowDefinitionBuilder().BuildWorkflow(new BreakForEachWorkflow());
     }
 
-    [Fact(DisplayName = "ForEach outputs each iteration")]
+    [Fact(DisplayName = "Break exists out of ForEach")]
     public async Task Test1()
     {
-        var items = new[] { "C#", "Rust", "Go"};
-        var workflow = new WorkflowDefinitionBuilder().BuildWorkflow(new ForEachWorkflow(items));
-        await _workflowRunner.RunAsync(workflow);
+        await _workflowRunner.RunAsync(_workflow);
         var lines = _capturingTextWriter.Lines.ToList();
-        Assert.Equal(items, lines);
+        Assert.Equal(new[] { "Start", "C#", "Test", "End" }, lines);
     }
 
-    private class ForEachWorkflow : IWorkflow
+    private class BreakForEachWorkflow : IWorkflow
     {
-        private readonly ICollection<string> _items;
-
-        public ForEachWorkflow(ICollection<string> items)
-        {
-            _items = items;
-        }
-        
         public void Build(IWorkflowDefinitionBuilder workflow)
         {
+            var items = new[] { "C#", "Rust", "Go" };
             var currentItem = new Variable<string>();
 
             workflow.WithRoot(new Sequence
             {
                 Activities =
                 {
+                    new WriteLine("Start"),
                     new ForEach<string>
                     {
-                        Items = new Input<ICollection<string>>(_items),
+                        Items = new Input<ICollection<string>>(items),
                         CurrentValue = currentItem,
-                        Body = new WriteLine(context => currentItem.Get(context))
+                        Body = new Sequence
+                        {
+                            Activities =
+                            {
+                                new WriteLine(currentItem),
+                                new If(context => currentItem.Get(context) == "Rust")
+                                {
+                                    Then = new Break()
+                                },
+                                new WriteLine("Test")
+                            }
+                        }
                     },
+                    new WriteLine("End"),
                 }
             });
         }

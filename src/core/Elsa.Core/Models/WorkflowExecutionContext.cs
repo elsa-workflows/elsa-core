@@ -77,6 +77,7 @@ public class WorkflowExecutionContext
     public ICollection<WorkflowExecutionLogEntry> ExecutionLog { get; } = new List<WorkflowExecutionLogEntry>();
 
     public T GetRequiredService<T>() where T : notnull => _serviceProvider.GetRequiredService<T>();
+    public object GetRequiredService(Type serviceType) => _serviceProvider.GetRequiredService(serviceType);
 
     public void Schedule(IActivity activity, ActivityExecutionContext owner, ActivityCompletionCallback? completionCallback = default, IEnumerable<RegisterLocationReference>? locationReferences = default, object? tag = default)
     {

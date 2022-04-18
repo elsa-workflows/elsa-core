@@ -17,7 +17,7 @@ public class HelloWorldWorkflowTests
 
     public HelloWorldWorkflowTests(ITestOutputHelper testOutputHelper)
     {
-        var services = new TestContainerBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
+        var services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
         _workflowRunner = services.GetRequiredService<IWorkflowRunner>();
     }
 

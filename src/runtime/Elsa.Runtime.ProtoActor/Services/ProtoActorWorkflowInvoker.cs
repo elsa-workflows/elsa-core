@@ -40,7 +40,7 @@ public class ProtoActorWorkflowInvoker : IWorkflowInvoker
         };
 
         var client = _grainClientFactory.CreateWorkflowDefinitionGrainClient(definitionId, versionOptions);
-        var response = await client.Execute(message, CancellationTokens.FromSeconds(1000));
+        var response = await client.Execute(message, CancellationTokens.FromSeconds(10000));
 
         if (response == null)
             throw new TimeoutException("Did not receive a response from the WorkflowDefinition actor within the configured amount of time.");

@@ -135,6 +135,7 @@ public class ActivityExecutionContext
     }
 
     public T GetRequiredService<T>() where T : notnull => WorkflowExecutionContext.GetRequiredService<T>();
+    public object GetRequiredService(Type serviceType) => WorkflowExecutionContext.GetRequiredService(serviceType);
     public T? Get<T>(Input<T>? input) => input == null ? default : Get<T>(input.LocationReference);
 
     public object? Get(RegisterLocationReference locationReference)
@@ -161,11 +162,29 @@ public class ActivityExecutionContext
         locationReference.Set(this, value);
         return value;
     }
+    
+    /// <summary>
+    /// Stops further execution of the workflow.
+    /// </summary>
+    public void PreventContinuation() => Continue = false;
 
+    /// <summary>
+    /// Returns a flattened list of the current context's ancestors.
+    /// </summary>
+    /// <returns></returns>
+    public IEnumerable<ActivityExecutionContext> GetAncestorActivityExecutionContexts()
+    {
+        var current = ParentActivityExecutionContext;
+
+        while (current != null)
+        {
+            yield return current;
+            current = current.ParentActivityExecutionContext;
+        }
+    }
+    
     private RegisterLocation? GetLocation(RegisterLocationReference locationReference) =>
         ExpressionExecutionContext.Register.TryGetLocation(locationReference.Id, out var location)
             ? location
             : ParentActivityExecutionContext?.GetLocation(locationReference);
-
-    public void PreventContinuation() => Continue = false;
 }

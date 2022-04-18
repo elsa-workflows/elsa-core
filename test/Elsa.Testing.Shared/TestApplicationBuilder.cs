@@ -9,12 +9,12 @@ using Xunit.Abstractions;
 
 namespace Elsa.Testing.Shared;
 
-public class TestContainerBuilder
+public class TestApplicationBuilder
 {
     private readonly ITestOutputHelper _testOutputHelper;
     private readonly ServiceCollection _services;
 
-    public TestContainerBuilder(ITestOutputHelper testOutputHelper)
+    public TestApplicationBuilder(ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
         _services = new ServiceCollection();
@@ -29,13 +29,13 @@ public class TestContainerBuilder
 
     public IServiceProvider Build() => _services.BuildServiceProvider();
 
-    public TestContainerBuilder Configure(Action<IServiceCollection> configure)
+    public TestApplicationBuilder Configure(Action<IServiceCollection> configure)
     {
         configure(_services);
         return this;
     }
 
-    public TestContainerBuilder WithCapturingTextWriter(CapturingTextWriter capturingTextWriter)
+    public TestApplicationBuilder WithCapturingTextWriter(CapturingTextWriter capturingTextWriter)
     {
         var combinedTextWriter = new CombinedTextWriter(capturingTextWriter, new XunitConsoleTextWriter(_testOutputHelper));
         _services.AddSingleton<IStandardOutStreamProvider>(new StandardOutStreamProvider(combinedTextWriter));
