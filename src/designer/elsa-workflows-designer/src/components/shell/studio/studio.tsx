@@ -1,7 +1,13 @@
-import {Component, Element, h, Listen, Prop, Watch} from '@stencil/core';
+import {Component, Element, EventEmitter, h, Listen, Prop, Watch} from '@stencil/core';
 import 'reflect-metadata';
 import {Container} from 'typedi';
-import {ElsaApiClientProvider, ElsaClient, SaveWorkflowRequest, ServerSettings} from '../../../services';
+import {
+  ElsaApiClientProvider,
+  ElsaClient,
+  RetractWorkflowRequest,
+  SaveWorkflowRequest,
+  ServerSettings
+} from '../../../services';
 import {ActivityDescriptor, VersionOptions, Workflow, WorkflowInstanceSummary, WorkflowSummary} from '../../../models';
 import {WorkflowUpdatedArgs} from '../../designer/workflow-editor/workflow-editor';
 import {PublishClickedArgs} from "../../toolbar/workflow-publish-button/workflow-publish-button";
@@ -81,6 +87,33 @@ export class Studio {
     e.detail.complete();
   }
 
+  @Listen('unPublishClicked')
+  private async handleUnPublishClicked(e: Event) {
+    const workflowEditorElement = this.workflowEditorElement;
+
+    if (!workflowEditorElement)
+      return;
+
+    const workflow = await workflowEditorElement.getWorkflow();
+    await this.retractWorkflow(workflow);
+  }
+
+  @Listen('newClicked')
+  private async handleNewClick(e: EventEmitter) {
+    const workflowEditorElement = this.workflowEditorElement;
+
+    if (!workflowEditorElement)
+      return;
+
+    const request: SaveWorkflowRequest = {
+      definitionId: "",
+      publish: false
+    };
+
+    const updatedWorkflow = await this.elsaClient.workflows.post(request);
+    await this.workflowEditorElement.importWorkflowMetadata(updatedWorkflow);
+  }
+
   public async componentWillLoad() {
     this.handleServerUrl(this.serverUrl);
 
@@ -109,6 +142,16 @@ export class Studio {
     };
 
     const updatedWorkflow = await this.elsaClient.workflows.post(request);
+    await this.workflowEditorElement.importWorkflowMetadata(updatedWorkflow);
+    return updatedWorkflow;
+  }
+
+  private retractWorkflow = async (workflow: Workflow): Promise<Workflow> => {
+    const request: RetractWorkflowRequest = {
+      definitionId: workflow.identity.definitionId
+    };
+
+    const updatedWorkflow = await this.elsaClient.workflows.retract(request);
     await this.workflowEditorElement.importWorkflowMetadata(updatedWorkflow);
     return updatedWorkflow;
   }
