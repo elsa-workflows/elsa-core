@@ -1,4 +1,6 @@
 using System.Collections.ObjectModel;
+using System.Reflection;
+using Elsa.Activities;
 using Elsa.Contracts;
 
 namespace Elsa.Models;
@@ -167,6 +169,27 @@ public class ActivityExecutionContext
     /// Stops further execution of the workflow.
     /// </summary>
     public void PreventContinuation() => Continue = false;
+    
+    /// <summary>
+    /// Send a signal up the current branch.
+    /// </summary>
+    public async ValueTask SignalAsync(object signal)
+    {
+        var ancestorContexts = GetAncestorActivityExecutionContexts();
+        
+        foreach (var ancestorContext in ancestorContexts)
+        {
+            var signalContext = new SignalContext(ancestorContext, this, CancellationToken);
+
+            if (ancestorContext.Activity is not ISignalHandler handler) 
+                continue;
+            
+            await handler.HandleSignalAsync(signal, signalContext);
+
+            if (signalContext.StopPropagationRequested)
+                return;
+        }
+    }
 
     /// <summary>
     /// Returns a flattened list of the current context's ancestors.
@@ -182,7 +205,7 @@ public class ActivityExecutionContext
             current = current.ParentActivityExecutionContext;
         }
     }
-    
+
     private RegisterLocation? GetLocation(RegisterLocationReference locationReference) =>
         ExpressionExecutionContext.Register.TryGetLocation(locationReference.Id, out var location)
             ? location

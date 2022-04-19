@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using Elsa.Attributes;
 using Elsa.Contracts;
 using Elsa.Models;
+using Elsa.Signals;
 
 namespace Elsa.Activities;
 
@@ -9,7 +10,12 @@ namespace Elsa.Activities;
 public class ForEach : Activity
 {
     private const string CurrentIndexProperty = "CurrentIndex";
-    
+
+    public ForEach()
+    {
+        OnSignalReceived<BreakSignal>(OnBreak);
+    }
+
     /// <summary>
     /// The set of values to iterate.
     /// </summary>
@@ -57,6 +63,11 @@ public class ForEach : Activity
         HandleIteration(context);
         return ValueTask.CompletedTask;
     }
+    
+    private void OnBreak(BreakSignal signal, SignalContext context)
+    {
+        context.StopPropagation();
+    }
 }
 
 public class ForEach<T> : ForEach
@@ -66,7 +77,7 @@ public class ForEach<T> : ForEach
     {
     }
 
-    public ForEach(Input<ICollection<T>> items)
+    public ForEach(Input<ICollection<T>> items) : this()
     {
         Items = items;
     }

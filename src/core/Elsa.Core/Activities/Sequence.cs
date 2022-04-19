@@ -2,6 +2,7 @@ using System.ComponentModel;
 using Elsa.Attributes;
 using Elsa.Contracts;
 using Elsa.Models;
+using Elsa.Signals;
 
 namespace Elsa.Activities;
 
@@ -23,27 +24,29 @@ public class Sequence : Container
     {
     }
 
-    protected override void ScheduleChildren(ActivityExecutionContext context)
+    protected override async ValueTask ScheduleChildrenAsync(ActivityExecutionContext context)
     {
-        HandleItem(context);
+        await HandleItemAsync(context);
     }
 
-    private void HandleItem(ActivityExecutionContext context)
+    private async ValueTask HandleItemAsync(ActivityExecutionContext context)
     {
         var currentIndex = context.GetProperty<int>(CurrentIndexProperty);
         var childActivities = Activities.ToList();
             
         if (currentIndex >= childActivities.Count)
+        {
+            await context.SignalAsync(new ActivityCompleted());
             return;
+        }
             
         var nextActivity = childActivities.ElementAt(currentIndex);
         context.PostActivity(nextActivity, OnChildCompleted);
         context.UpdateProperty<int>(CurrentIndexProperty, x => x + 1);
     }
 
-    private ValueTask OnChildCompleted(ActivityExecutionContext context, ActivityExecutionContext childContext)
+    private async ValueTask OnChildCompleted(ActivityExecutionContext context, ActivityExecutionContext childContext)
     {
-        HandleItem(context);
-        return ValueTask.CompletedTask;
+        await HandleItemAsync(context);
     }
 }

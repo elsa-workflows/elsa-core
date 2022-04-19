@@ -1,6 +1,8 @@
+using System.Text.Json.Serialization;
 using Elsa.Attributes;
 using Elsa.Contracts;
 using Elsa.Models;
+using Elsa.Signals;
 
 namespace Elsa.Activities;
 
@@ -15,11 +17,13 @@ public enum ForOperator
 [Activity("Elsa", "Control Flow", "Iterate over a sequence of steps between a start and an end number.")]
 public class For : Activity
 {
+    [JsonConstructor]
     public For()
     {
+        OnSignalReceived<BreakSignal>(OnBreak);
     }
 
-    public For(int start, int end, ForOperator forOperator = ForOperator.LessThanOrEqual)
+    public For(int start, int end, ForOperator forOperator = ForOperator.LessThanOrEqual) : this()
     {
         Start = new Input<int>(start);
         End = new Input<int>(end);
@@ -78,5 +82,10 @@ public class For : Activity
     {
         HandleIteration(ownerActivityExecutionContext);
         return ValueTask.CompletedTask;
+    }
+    
+    private void OnBreak(BreakSignal signal, SignalContext context)
+    {
+        context.StopPropagation();
     }
 }
