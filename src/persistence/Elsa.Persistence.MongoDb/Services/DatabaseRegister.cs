@@ -60,11 +60,16 @@ namespace Elsa.Persistence.MongoDb.Services
 
         private static void RegisterSerializers()
         {
-            BsonSerializer.RegisterSerializer(VariablesSerializer.Instance);
-            BsonSerializer.RegisterSerializer(JObjectSerializer.Instance);
-            BsonSerializer.RegisterSerializer(ObjectSerializer.Instance);
-            BsonSerializer.RegisterSerializer(TypeSerializer.Instance);
-            BsonSerializer.RegisterSerializer(new InstantSerializer());
+            if (BsonSerializer.LookupSerializer<VariablesSerializer>() == null)
+                BsonSerializer.RegisterSerializer(VariablesSerializer.Instance);
+            if (BsonSerializer.LookupSerializer<JObjectSerializer>() == null)
+                BsonSerializer.RegisterSerializer(JObjectSerializer.Instance);
+            if (BsonSerializer.LookupSerializer<ObjectSerializer>() == null)
+                BsonSerializer.RegisterSerializer(ObjectSerializer.Instance);
+            if (BsonSerializer.LookupSerializer<TypeSerializer>() == null)
+                BsonSerializer.RegisterSerializer(TypeSerializer.Instance);
+            if (BsonSerializer.LookupSerializer<InstantSerializer>() == null)
+                BsonSerializer.RegisterSerializer(new InstantSerializer());
         }
     }
 }
