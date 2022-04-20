@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 using Elsa.Activities;
 using Elsa.Attributes;
 using Elsa.Models;
-using Elsa.Modules.Activities.Activities.Console;
+using Elsa.Modules.Activities.Console;
 
 namespace Elsa.Samples.Web1.Activities;
 

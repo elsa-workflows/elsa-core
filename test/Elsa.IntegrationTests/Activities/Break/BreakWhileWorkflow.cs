@@ -1,7 +1,7 @@
 using Elsa.Activities;
 using Elsa.Contracts;
 using Elsa.Models;
-using Elsa.Modules.Activities.Activities.Console;
+using Elsa.Modules.Activities.Console;
 
 namespace Elsa.IntegrationTests.Activities;
 

@@ -1,8 +1,7 @@
 using Elsa.Activities;
 using Elsa.Contracts;
-using Elsa.Modules.Activities.Activities.Console;
+using Elsa.Modules.Activities.Console;
 using Elsa.Modules.Scheduling.Activities;
-using Elsa.Runtime.Contracts;
 
 namespace Elsa.Samples.Web1.Workflows;
 

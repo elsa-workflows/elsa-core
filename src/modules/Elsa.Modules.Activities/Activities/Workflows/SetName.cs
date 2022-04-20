@@ -3,7 +3,7 @@ using Elsa.Attributes;
 using Elsa.Models;
 using Elsa.Runtime.Middleware;
 
-namespace Elsa.Modules.Activities.Activities.Workflows;
+namespace Elsa.Modules.Activities.Workflows;
 
 /// <summary>
 /// Sets a transient property on the workflow execution context the specified name value.

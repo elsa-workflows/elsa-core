@@ -6,8 +6,7 @@ using Elsa.Contracts;
 using Elsa.Jobs.Abstractions;
 using Elsa.Jobs.Contracts;
 using Elsa.Jobs.Models;
-using Elsa.Modules.Activities.Activities.Console;
-using Elsa.Runtime.Contracts;
+using Elsa.Modules.Activities.Console;
 
 namespace Elsa.Samples.Web1.Workflows;
 

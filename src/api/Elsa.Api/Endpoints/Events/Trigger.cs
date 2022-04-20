@@ -1,6 +1,6 @@
 using Elsa.Api.ApiResults;
 using Elsa.Contracts;
-using Elsa.Modules.Activities.Activities.Primitives;
+using Elsa.Modules.Activities.Primitives;
 using Elsa.Runtime.Models;
 using Microsoft.AspNetCore.Http;
 

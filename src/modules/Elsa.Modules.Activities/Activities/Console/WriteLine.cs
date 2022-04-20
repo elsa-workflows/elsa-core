@@ -3,7 +3,7 @@ using Elsa.Attributes;
 using Elsa.Models;
 using Elsa.Modules.Activities.Contracts;
 
-namespace Elsa.Modules.Activities.Activities.Console;
+namespace Elsa.Modules.Activities.Console;
 
 [Activity("Elsa", "Console", "Write a line of text to the console.")]
 public class WriteLine : Activity

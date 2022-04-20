@@ -1,8 +1,5 @@
 using System.Text.Json;
-using Dahomey.Json;
-using Dahomey.Json.Attributes;
 using Elsa.Contracts;
-using Elsa.Samples.Web1.Models;
 
 namespace Elsa.Samples.Web1.Serialization;
 

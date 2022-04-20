@@ -1,4 +1,3 @@
-using Elsa.Models;
 using Elsa.Runtime.Models;
 
 namespace Elsa.Runtime.Contracts;

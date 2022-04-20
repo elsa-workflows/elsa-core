@@ -1,6 +1,5 @@
 using Elsa.ActivityNodeResolvers;
 using Elsa.Contracts;
-using Elsa.Expressions;
 using Elsa.Mediator.Extensions;
 using Elsa.Modules.Activities.Extensions;
 using Elsa.Options;

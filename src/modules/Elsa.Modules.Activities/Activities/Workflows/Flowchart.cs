@@ -3,7 +3,7 @@ using Elsa.Contracts;
 using Elsa.Models;
 using Container = Elsa.Activities.Container;
 
-namespace Elsa.Modules.Activities.Activities.Workflows;
+namespace Elsa.Modules.Activities.Workflows;
 
 public record Connection(IActivity Source, IActivity Target, string? SourcePort, string TargetPort);
 

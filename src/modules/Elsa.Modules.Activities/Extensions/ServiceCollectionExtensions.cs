@@ -17,8 +17,8 @@ public static class ServiceCollectionExtensions
         return services
             .AddSingleton<IActivityNodeResolver, SwitchActivityNodeResolver>()
             .AddSingleton<ISerializationOptionsConfigurator, CustomSerializationOptionConfigurator>()
-            .AddSingleton<IStandardInStreamProvider>(new StandardInStreamProvider(Console.In))
-            .AddSingleton<IStandardOutStreamProvider>(new StandardOutStreamProvider(Console.Out))
+            .AddSingleton<IStandardInStreamProvider>(new StandardInStreamProvider(System.Console.In))
+            .AddSingleton<IStandardOutStreamProvider>(new StandardOutStreamProvider(System.Console.Out))
             ;
     }
 }

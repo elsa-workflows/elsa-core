@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Contracts;
-using Elsa.Modules.Activities.Activities.Workflows;
+using Elsa.Modules.Activities.Workflows;
 
 namespace Elsa.Modules.Activities.Converters;
 

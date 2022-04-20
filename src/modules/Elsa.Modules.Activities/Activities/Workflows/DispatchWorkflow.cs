@@ -4,7 +4,7 @@ using Elsa.Persistence.Models;
 using Elsa.Runtime.Contracts;
 using Microsoft.Extensions.Logging;
 
-namespace Elsa.Modules.Activities.Activities.Workflows;
+namespace Elsa.Modules.Activities.Workflows;
 
 /// <summary>
 /// Creates a new workflow instance of the specified workflow and dispatches it for execution.

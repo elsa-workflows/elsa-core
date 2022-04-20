@@ -1,7 +1,4 @@
 using System;
-using Elsa.Helpers;
-using Elsa.Persistence.Models;
-using Elsa.Runtime.Contracts;
 using Elsa.Runtime.Extensions;
 using Elsa.Runtime.ProtoActor.Grains;
 using Elsa.Runtime.ProtoActor.HostedServices;

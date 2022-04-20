@@ -1,7 +1,6 @@
 using Elsa.Contracts;
 using Elsa.Models;
 using Elsa.Modules.AzureServiceBus.Activities;
-using Elsa.Runtime.Contracts;
 
 namespace Elsa.Samples.Web1.Workflows;
 

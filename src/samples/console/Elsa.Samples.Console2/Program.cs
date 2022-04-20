@@ -8,7 +8,7 @@ using Elsa.Dsl.Contracts;
 using Elsa.Dsl.Extensions;
 using Elsa.Extensions;
 using Elsa.Models;
-using Elsa.Modules.Activities.Activities.Console;
+using Elsa.Modules.Activities.Console;
 using Elsa.Modules.Http;
 using Elsa.Modules.Scheduling.Activities;
 using Elsa.Persistence.InMemory.Extensions;
