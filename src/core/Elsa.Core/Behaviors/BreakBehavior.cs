@@ -21,6 +21,9 @@ public class BreakBehavior : Behavior
 
         // Remove child activity execution contexts.
         context.ActivityExecutionContext.RemoveChildren();
+        
+        // Remove bookmarks.
+        // TODO: Cleanup bookmarks in child branches.
 
         // Mark this activity as completed.
         await context.ActivityExecutionContext.CompleteActivityAsync();
