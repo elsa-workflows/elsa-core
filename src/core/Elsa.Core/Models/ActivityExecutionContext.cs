@@ -102,7 +102,7 @@ public class ActivityExecutionContext
     public void AddBookmark(Bookmark bookmark) => _bookmarks.Add(bookmark);
 
     public Bookmark CreateBookmark(ExecuteActivityDelegate callback) => CreateBookmark(default, callback);
-    
+
     public Bookmark CreateBookmark(object? bookmarkDatum = default, ExecuteActivityDelegate? callback = default)
     {
         var hasher = GetRequiredService<IHasher>();
@@ -163,33 +163,33 @@ public class ActivityExecutionContext
         locationReference.Set(this, value);
         return value;
     }
-    
+
     /// <summary>
     /// Stops further execution of the workflow.
     /// </summary>
     public void PreventContinuation() => Continue = false;
-    
+
     /// <summary>
     /// Send a signal up the current branch.
     /// </summary>
     public async ValueTask SignalAsync(object signal)
     {
         var ancestorContexts = GetAncestors();
-        
+
         foreach (var ancestorContext in ancestorContexts)
         {
             var signalContext = new SignalContext(ancestorContext, this, CancellationToken);
 
-            if (ancestorContext.Activity is not ISignalHandler handler) 
+            if (ancestorContext.Activity is not ISignalHandler handler)
                 continue;
-            
+
             await handler.HandleSignalAsync(signal, signalContext);
 
             if (signalContext.StopPropagationRequested)
                 return;
         }
     }
-    
+
     /// <summary>
     /// Complete the current activity. This should only be called by activities that explicitly suppress automatic-completion.
     /// </summary>
@@ -197,7 +197,7 @@ public class ActivityExecutionContext
     {
         // Send a signal.
         await SignalAsync(new ActivityCompleted());
-        
+
         // Remove the context.
         WorkflowExecutionContext.ActivityExecutionContexts.Remove(this);
     }
@@ -216,7 +216,7 @@ public class ActivityExecutionContext
             current = current.ParentActivityExecutionContext;
         }
     }
-    
+
     /// <summary>
     /// Returns a flattened list of the current context's immediate children.
     /// </summary>
@@ -232,10 +232,7 @@ public class ActivityExecutionContext
     public void RemoveChildren()
     {
         // Detach child activity execution contexts.
-        var children = GetChildren().ToList();
-        
-        foreach (var childContext in children) 
-            WorkflowExecutionContext.ActivityExecutionContexts.Remove(childContext);
+        WorkflowExecutionContext.RemoveActivityExecutionContexts(GetChildren());
     }
 
     private RegisterLocation? GetLocation(RegisterLocationReference locationReference) =>
