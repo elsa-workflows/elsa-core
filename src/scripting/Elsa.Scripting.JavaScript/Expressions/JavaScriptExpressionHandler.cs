@@ -16,8 +16,6 @@ public class JavaScriptExpressionHandler : IExpressionHandler
     public async ValueTask<object?> EvaluateAsync(IExpression expression, Type returnType, ExpressionExecutionContext context)
     {
         var javaScriptExpression = (JavaScriptExpression)expression;
-            
-        // TODO: evaluate expression.
         return await _javaScriptEvaluator.EvaluateAsync(javaScriptExpression.Value, returnType, context);
     }
 }
