@@ -108,10 +108,10 @@ public class WorkflowExecutionContext
     }
 
     public void RemoveCompletionCallback(ActivityCompletionCallbackEntry entry) => _completionCallbackEntries.Remove(entry);
-    
+
     public void RemoveCompletionCallbacks(IEnumerable<ActivityCompletionCallbackEntry> entries)
     {
-        foreach (var entry in entries.ToList()) 
+        foreach (var entry in entries.ToList())
             _completionCallbackEntries.Remove(entry);
     }
 
@@ -176,5 +176,14 @@ public class WorkflowExecutionContext
         var variable = Workflow.Variables.FirstOrDefault(x => x.Name == name) ?? new Variable(name, value);
         variable.Set(Register, value);
         return variable;
+    }
+
+    public void RemoveActivityExecutionContexts(IEnumerable<ActivityExecutionContext> contexts)
+    {
+        // Copy each item into a new list to avoid changing the source enumerable while removing elements from it.
+        var list = contexts.ToList(); 
+        
+        // Remove each context.
+        foreach (var context in list) ActivityExecutionContexts.Remove(context);
     }
 }
