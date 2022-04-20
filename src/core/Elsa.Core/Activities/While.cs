@@ -19,6 +19,7 @@ public class While : Activity
     {
         Body = body!;
         Behaviors.Add<BreakBehavior>();
+        Behaviors.Remove<AutoCompleteBehavior>();
     }
 
     public While(Input<bool> condition, IActivity? body = default) : this(body)
@@ -44,8 +45,6 @@ public class While : Activity
 
     [Input] public Input<bool> Condition { get; set; } = new(false);
     [Outbound] public IActivity Body { get; set; }
-
-    protected override bool CompleteImplicitly => false;
 
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {

@@ -14,6 +14,7 @@ public class ForEach : Activity
     public ForEach()
     {
         Behaviors.Add<BreakBehavior>();
+        Behaviors.Remove<AutoCompleteBehavior>();
     }
 
     /// <summary>
@@ -30,8 +31,6 @@ public class ForEach : Activity
     /// The current value being iterated.
     /// </summary>
     public Variable CurrentValue { get; set; } = new();
-
-    protected override bool CompleteImplicitly => false;
 
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {

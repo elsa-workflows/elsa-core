@@ -21,6 +21,7 @@ public class For : Activity
     public For()
     {
         Behaviors.Add<BreakBehavior>();
+        Behaviors.Remove<AutoCompleteBehavior>();
     }
 
     public For(int start, int end, ForOperator forOperator = ForOperator.LessThanOrEqual) : this()
@@ -36,8 +37,6 @@ public class For : Activity
     public Input<ForOperator> Operator { get; set; } = new(ForOperator.LessThanOrEqual);
     [Outbound] public IActivity? Body { get; set; }
     public Variable<int?> CurrentValue { get; set; } = new();
-
-    protected override bool CompleteImplicitly { get; } = false;
 
     protected override void Execute(ActivityExecutionContext context)
     {

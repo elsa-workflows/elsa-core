@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using Elsa.Attributes;
+using Elsa.Behaviors;
 using Elsa.Contracts;
 using Elsa.Models;
 
@@ -12,6 +13,7 @@ public abstract class Container : Activity, IContainer
 {
     protected Container()
     {
+        Behaviors.Remove<AutoCompleteBehavior>();
     }
 
     protected Container(params IActivity[] activities) : this()

@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Elsa.Attributes;
+using Elsa.Behaviors;
 using Elsa.Contracts;
 using Elsa.Models;
 
@@ -11,28 +12,41 @@ public class If : Activity<bool>
     [JsonConstructor]
     public If()
     {
+        Behaviors.Remove<AutoCompleteBehavior>();
     }
 
-    public If(Input<bool> condition) => Condition = condition;
-    public If(Func<ExpressionExecutionContext, bool> condition) => Condition = new Input<bool>(condition);
-    public If(Func<bool> condition) => Condition = new Input<bool>(condition);
+    public If(Input<bool> condition) : this()
+    {
+        Condition = condition;
+    }
+
+    public If(Func<ExpressionExecutionContext, bool> condition) : this()
+    {
+        Condition = new Input<bool>(condition);
+    }
+
+    public If(Func<bool> condition) : this()
+    {
+        Condition = new Input<bool>(condition);
+    }
 
     /// <summary>
     /// The condition to evaluate.
     /// </summary>
-    [Input(UIHint = "single-line")] public Input<bool> Condition { get; set; } = new(new Literal<bool>(false));
-    
+    [Input(UIHint = "single-line")]
+    public Input<bool> Condition { get; set; } = new(new Literal<bool>(false));
+
     /// <summary>
     /// The activity to execute when the condition evaluates to true.
     /// </summary>
-    [Outbound] public IActivity? Then { get; set; }
-    
+    [Outbound]
+    public IActivity? Then { get; set; }
+
     /// <summary>
     /// The activity to execute when the condition evaluates to false.
     /// </summary>
-    [Outbound] public IActivity? Else { get; set; }
-
-    protected override bool CompleteImplicitly => false;
+    [Outbound]
+    public IActivity? Else { get; set; }
 
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {

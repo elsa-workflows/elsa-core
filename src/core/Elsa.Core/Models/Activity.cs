@@ -13,6 +13,7 @@ public abstract class Activity : IActivity, ISignalHandler
     {
         TypeName = TypeNameHelper.GenerateTypeName(GetType());
         Behaviors.Add<ScheduledChildCallbackBehavior>();
+        Behaviors.Add<AutoCompleteBehavior>();
     }
 
     protected Activity(string activityType) : this()
@@ -26,20 +27,16 @@ public abstract class Activity : IActivity, ISignalHandler
     public IDictionary<string, object> ApplicationProperties { get; set; } = new Dictionary<string, object>();
     public IDictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
     
+    /// <summary>
+    /// A collection of reusable behaviors to add to this activity.
+    /// </summary>
     public ICollection<IBehavior> Behaviors { get; } = new List<IBehavior>();
     
-    /// <summary>
-    /// A value indicating whether this activity should complete automatically.
-    /// Default is true.
-    /// </summary>
-    protected virtual bool CompleteImplicitly => true;
 
-    protected virtual async ValueTask ExecuteAsync(ActivityExecutionContext context)
+    protected virtual ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         Execute(context);
-        
-        if(CompleteImplicitly)
-            await CompleteAsync(context);
+        return ValueTask.CompletedTask;
     }
 
     protected virtual ValueTask OnSignalReceivedAsync(object signal, SignalContext context)
