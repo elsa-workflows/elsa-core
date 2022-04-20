@@ -11,15 +11,15 @@ public class BreakBehavior : IBehavior
 {
     public async ValueTask HandleSignalAsync(object signal, SignalContext context)
     {
-        if (signal is not BreakSignal breakSignal)
+        if (signal is not BreakSignal)
             return;
 
-        await OnBreakAsync(breakSignal, context);
+        await OnBreakAsync(context);
     }
 
     public ValueTask ExecuteAsync(ActivityExecutionContext context) => ValueTask.CompletedTask;
 
-    private async ValueTask OnBreakAsync(BreakSignal signal, SignalContext context)
+    private async ValueTask OnBreakAsync(SignalContext context)
     {
         // Prevent bubbling.
         context.StopPropagation();

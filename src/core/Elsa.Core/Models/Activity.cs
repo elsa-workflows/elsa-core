@@ -1,7 +1,7 @@
 using System.Linq.Expressions;
+using Elsa.Behaviors;
 using Elsa.Contracts;
 using Elsa.Helpers;
-using Elsa.Signals;
 
 namespace Elsa.Models;
 
@@ -12,7 +12,7 @@ public abstract class Activity : IActivity, ISignalHandler
     protected Activity()
     {
         TypeName = TypeNameHelper.GenerateTypeName(GetType());
-        OnSignalReceived<ActivityCompleted>(OnChildActivityCompletedAsync);
+        Behaviors.Add<ScheduledChildCallbackBehavior>();
     }
 
     protected Activity(string activityType) : this()
@@ -76,19 +76,6 @@ public abstract class Activity : IActivity, ISignalHandler
         });
     }
     
-    protected virtual async ValueTask OnChildActivityCompletedAsync(ActivityCompleted signal, SignalContext context)
-    {
-        var activityExecutionContext = context.ActivityExecutionContext;
-        var childActivityExecutionContext = context.SourceActivityExecutionContext;
-        var childActivity = childActivityExecutionContext.Activity;
-        var callbackEntry = activityExecutionContext.WorkflowExecutionContext.PopCompletionCallback(activityExecutionContext, childActivity);
-
-        if (callbackEntry == null)
-            return;
-
-        await callbackEntry(activityExecutionContext, childActivityExecutionContext);
-    }
-
     async ValueTask IActivity.ExecuteAsync(ActivityExecutionContext context)
     {
         await ExecuteAsync(context);
