@@ -36,6 +36,9 @@ public abstract class Container : Activity, IContainer
 
         // Schedule children.
         await ScheduleChildrenAsync(context);
+        
+        // Because we override ExecuteAsync, this activity will not automatically complete.
+        // Instead, it's up to the derived classes to explicitly complete this activity.
     }
 
     protected virtual async ValueTask OnChildActivityCompletedAsync(ActivityCompleted signal, SignalContext context)

@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Reflection;
 using Elsa.Activities;
 using Elsa.Contracts;
+using Elsa.Signals;
 
 namespace Elsa.Models;
 
@@ -189,6 +190,14 @@ public class ActivityExecutionContext
             if (signalContext.StopPropagationRequested)
                 return;
         }
+    }
+    
+    /// <summary>
+    /// Explicitly complete the current activity. This should only be called by activities that explicitly suppress automatic-completion.
+    /// </summary>
+    public async ValueTask CompleteActivityAsync()
+    {
+        await SignalAsync(new ActivityCompleted());
     }
 
     /// <summary>

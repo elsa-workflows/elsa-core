@@ -20,13 +20,7 @@ public abstract class Activity : ISignalHandler
     protected virtual async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         Execute(context);
-        await OnExecutedAsync(context);
-    }
-
-    protected virtual async ValueTask OnExecutedAsync(ActivityExecutionContext context)
-    {
-        // By default, signal that the activity is completed.
-        await context.SignalAsync(new ActivityCompleted());
+        await CompleteAsync(context);
     }
 
     protected virtual ValueTask OnSignalReceivedAsync(object signal, SignalContext context)
@@ -43,9 +37,17 @@ public abstract class Activity : ISignalHandler
     {
     }
 
+    /// <summary>
+    /// Notify the sytem that this activity completed.
+    /// </summary>
+    protected async ValueTask CompleteAsync(ActivityExecutionContext context)
+    {
+        await context.CompleteActivityAsync();
+    }
+
     protected void OnSignalReceived(Type signalType, Func<object, SignalContext, ValueTask> handler) => _signalHandlers.Add(new SignalHandlerRegistration(signalType, handler));
     protected void OnSignalReceived<T>(Func<T, SignalContext, ValueTask> handler) => OnSignalReceived(typeof(T), (signal, context) => handler((T)signal, context));
-    
+
     protected void OnSignalReceived<T>(Action<T, SignalContext> handler)
     {
         OnSignalReceived<T>((signal, context) =>
@@ -55,8 +57,11 @@ public abstract class Activity : ISignalHandler
         });
     }
 
-    ValueTask IActivity.ExecuteAsync(ActivityExecutionContext context) => ExecuteAsync(context);
-    
+    async ValueTask IActivity.ExecuteAsync(ActivityExecutionContext context)
+    {
+        await ExecuteAsync(context);
+    }
+
     async ValueTask ISignalHandler.HandleSignalAsync(object signal, SignalContext context)
     {
         // Give derived activity a chance to do something with the signal.

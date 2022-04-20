@@ -2,7 +2,6 @@ using System.ComponentModel;
 using Elsa.Attributes;
 using Elsa.Contracts;
 using Elsa.Models;
-using Elsa.Signals;
 
 namespace Elsa.Activities;
 
@@ -36,7 +35,7 @@ public class Sequence : Container
             
         if (currentIndex >= childActivities.Count)
         {
-            await context.SignalAsync(new ActivityCompleted());
+            await context.CompleteActivityAsync();
             return;
         }
             

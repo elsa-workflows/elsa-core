@@ -55,7 +55,11 @@ public class ForEachWorkflowTests
                     {
                         Items = new Input<ICollection<string>>(_items),
                         CurrentValue = currentItem,
-                        Body = new WriteLine(context => currentItem.Get(context))
+                        Body = new If(() => true)
+                        {
+                            Then = new Break(),
+                            Else = new WriteLine()
+                        }
                     },
                 }
             });
