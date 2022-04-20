@@ -9,6 +9,7 @@ public record ActivityCompletionCallbackEntry(ActivityExecutionContext Owner, IA
 public class WorkflowExecutionContext
 {
     private static ValueTask Noop(ActivityExecutionContext context) => new();
+    private static ValueTask Complete(ActivityExecutionContext context) => context.CompleteActivityAsync();
     private readonly IServiceProvider _serviceProvider;
     private readonly IList<ActivityNode> _nodes;
     private readonly IList<ActivityCompletionCallbackEntry> _completionCallbackEntries = new List<ActivityCompletionCallbackEntry>();
@@ -155,7 +156,7 @@ public class WorkflowExecutionContext
         Scheduler.Push(workItem);
 
         // If no resumption point was specified, use Noop to prevent the regular "ExecuteAsync" method to be invoked.
-        ExecuteDelegate = bookmark.CallbackMethodName != null ? bookmarkedActivity.GetResumeActivityDelegate(bookmark.CallbackMethodName) : Noop;
+        ExecuteDelegate = bookmark.CallbackMethodName != null ? bookmarkedActivity.GetResumeActivityDelegate(bookmark.CallbackMethodName) : Complete;
     }
 
     public T? GetVariable<T>(string name) => (T?)GetVariable(name);
