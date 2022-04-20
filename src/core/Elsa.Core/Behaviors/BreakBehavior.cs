@@ -20,10 +20,14 @@ public class BreakBehavior : Behavior
         context.StopPropagation();
 
         // Remove child activity execution contexts.
-        context.ActivityExecutionContext.RemoveChildren();
+        var childActivityExecutionContexts = context.ActivityExecutionContext.GetChildren().ToList();
+        context.ActivityExecutionContext.WorkflowExecutionContext.RemoveActivityExecutionContexts(childActivityExecutionContexts);
         
         // Remove bookmarks.
-        // TODO: Cleanup bookmarks in child branches.
+        // foreach (var childActivityExecutionContext in childActivityExecutionContexts)
+        // {
+        //     childActivityExecutionContext.Bookmarks
+        // }
 
         // Mark this activity as completed.
         await context.ActivityExecutionContext.CompleteActivityAsync();
