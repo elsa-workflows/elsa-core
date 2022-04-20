@@ -2,6 +2,7 @@ using System.ComponentModel;
 using Elsa.Attributes;
 using Elsa.Contracts;
 using Elsa.Models;
+using Elsa.Signals;
 
 namespace Elsa.Activities;
 
@@ -13,6 +14,7 @@ public class Sequence : Container
         
     public Sequence()
     {
+        OnSignalReceived<BreakSignal>(OnBreak);
     }
 
     public Sequence(params IActivity[] activities) : base(activities)
@@ -47,5 +49,11 @@ public class Sequence : Container
     private async ValueTask OnChildCompleted(ActivityExecutionContext context, ActivityExecutionContext childContext)
     {
         await HandleItemAsync(context);
+    }
+    
+    private void OnBreak(BreakSignal signal, SignalContext context)
+    {
+        // Clear any scheduled child completion callbacks, since we no longer want to schedule any sibling. 
+        context.ActivityExecutionContext.ClearCompletionCallbacks();
     }
 }

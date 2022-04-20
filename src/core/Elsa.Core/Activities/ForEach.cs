@@ -13,7 +13,7 @@ public class ForEach : Activity
 
     public ForEach()
     {
-        OnSignalReceived<BreakSignal>(OnBreak);
+        OnSignalReceived<BreakSignal>(OnBreakAsync);
     }
 
     /// <summary>
@@ -68,9 +68,16 @@ public class ForEach : Activity
         await HandleIteration(context);
     }
     
-    private void OnBreak(BreakSignal signal, SignalContext context)
+    private async ValueTask OnBreakAsync(BreakSignal signal, SignalContext context)
     {
+        // Prevent bubbling.
         context.StopPropagation();
+
+        // Remove child activity execution contexts.
+        context.ActivityExecutionContext.RemoveChildren();
+
+        // Mark this activity as completed.
+        await context.ActivityExecutionContext.CompleteActivityAsync();
     }
 }
 

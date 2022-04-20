@@ -76,15 +76,14 @@ public abstract class Activity : ISignalHandler
     protected virtual async ValueTask OnChildActivityCompletedAsync(ActivityCompleted signal, SignalContext context)
     {
         var activityExecutionContext = context.ActivityExecutionContext;
-        var ownerActivity = activityExecutionContext.Activity;
         var childActivityExecutionContext = context.SourceActivityExecutionContext;
         var childActivity = childActivityExecutionContext.Activity;
-        var callbackEntry = activityExecutionContext.WorkflowExecutionContext.CompletionCallbacks.FirstOrDefault(x => x.Owner.Activity == ownerActivity && x.Child == childActivity);
+        var callbackEntry = activityExecutionContext.WorkflowExecutionContext.PopCompletionCallback(activityExecutionContext, childActivity);
 
         if (callbackEntry == null)
             return;
 
-        await callbackEntry.CompletionCallback(activityExecutionContext, childActivityExecutionContext);
+        await callbackEntry(activityExecutionContext, childActivityExecutionContext);
     }
 
     async ValueTask IActivity.ExecuteAsync(ActivityExecutionContext context)

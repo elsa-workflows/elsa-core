@@ -174,7 +174,7 @@ public class ActivityExecutionContext
     /// </summary>
     public async ValueTask SignalAsync(object signal)
     {
-        var ancestorContexts = GetAncestorActivityExecutionContexts();
+        var ancestorContexts = GetAncestors();
         
         foreach (var ancestorContext in ancestorContexts)
         {
@@ -191,18 +191,22 @@ public class ActivityExecutionContext
     }
     
     /// <summary>
-    /// Explicitly complete the current activity. This should only be called by activities that explicitly suppress automatic-completion.
+    /// Complete the current activity. This should only be called by activities that explicitly suppress automatic-completion.
     /// </summary>
     public async ValueTask CompleteActivityAsync()
     {
+        // Send a signal.
         await SignalAsync(new ActivityCompleted());
+        
+        // Remove the context.
+        WorkflowExecutionContext.ActivityExecutionContexts.Remove(this);
     }
 
     /// <summary>
     /// Returns a flattened list of the current context's ancestors.
     /// </summary>
     /// <returns></returns>
-    public IEnumerable<ActivityExecutionContext> GetAncestorActivityExecutionContexts()
+    public IEnumerable<ActivityExecutionContext> GetAncestors()
     {
         var current = ParentActivityExecutionContext;
 
@@ -212,9 +216,36 @@ public class ActivityExecutionContext
             current = current.ParentActivityExecutionContext;
         }
     }
+    
+    /// <summary>
+    /// Returns a flattened list of the current context's immediate children.
+    /// </summary>
+    /// <returns></returns>
+    public IEnumerable<ActivityExecutionContext> GetChildren()
+    {
+        return WorkflowExecutionContext.ActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == this);
+    }
+
+    /// <summary>
+    /// Removes all child <see cref="ActivityExecutionContext"/> objects.
+    /// </summary>
+    public void RemoveChildren()
+    {
+        // Detach child activity execution contexts.
+        var children = GetChildren().ToList();
+        
+        foreach (var childContext in children) 
+            WorkflowExecutionContext.ActivityExecutionContexts.Remove(childContext);
+    }
 
     private RegisterLocation? GetLocation(RegisterLocationReference locationReference) =>
         ExpressionExecutionContext.Register.TryGetLocation(locationReference.Id, out var location)
             ? location
             : ParentActivityExecutionContext?.GetLocation(locationReference);
+
+    public void ClearCompletionCallbacks()
+    {
+        var entriesToRemove = WorkflowExecutionContext.CompletionCallbacks.Where(x => x.Owner == this);
+        WorkflowExecutionContext.RemoveCompletionCallbacks(entriesToRemove);
+    }
 }

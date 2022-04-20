@@ -31,17 +31,27 @@ public class If : Activity<bool>
     /// The activity to execute when the condition evaluates to false.
     /// </summary>
     [Outbound] public IActivity? Else { get; set; }
-        
-    protected override void Execute(ActivityExecutionContext context)
+
+    protected override bool CompleteImplicitly => false;
+
+    protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var result = context.Get(Condition);
         var nextNode = result ? Then : Else;
 
         if (nextNode != null)
+        {
             context.ScheduleActivity(nextNode, OnChildCompletedAsync);
-        
-        context.Set(Result, result);
+        }
+        else
+        {
+            context.Set(Result, result);
+            await context.CompleteActivityAsync();
+        }
     }
 
-    private ValueTask OnChildCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext) => ValueTask.CompletedTask;
+    private async ValueTask OnChildCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext)
+    {
+        await context.CompleteActivityAsync();
+    }
 }

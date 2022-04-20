@@ -107,6 +107,12 @@ public class WorkflowExecutionContext
     }
 
     public void RemoveCompletionCallback(ActivityCompletionCallbackEntry entry) => _completionCallbackEntries.Remove(entry);
+    
+    public void RemoveCompletionCallbacks(IEnumerable<ActivityCompletionCallbackEntry> entries)
+    {
+        foreach (var entry in entries.ToList()) 
+            _completionCallbackEntries.Remove(entry);
+    }
 
     public ActivityNode FindActivityNodeById(string nodeId) => NodeIdLookup[nodeId];
     public ActivityNode FindNodeByActivity(IActivity activity) => NodeActivityLookup[activity];
