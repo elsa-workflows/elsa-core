@@ -8,19 +8,35 @@ namespace Elsa.Models;
 public abstract class Activity : ISignalHandler
 {
     private readonly ICollection<SignalHandlerRegistration> _signalHandlers = new List<SignalHandlerRegistration>();
-    protected Activity() => TypeName = TypeNameHelper.GenerateTypeName(GetType());
-    protected Activity(string activityType) => TypeName = activityType;
+    protected Activity()
+    {
+        TypeName = TypeNameHelper.GenerateTypeName(GetType());
+        OnSignalReceived<ActivityCompleted>(OnChildActivityCompletedAsync);
+    }
+
+    protected Activity(string activityType) : this()
+    {
+        TypeName = activityType;
+    }
 
     public string Id { get; set; } = default!;
     public string TypeName { get; set; }
     public bool CanStartWorkflow { get; set; }
     public IDictionary<string, object> ApplicationProperties { get; set; } = new Dictionary<string, object>();
     public IDictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
+    
+    /// <summary>
+    /// A value indicating whether this activity should complete automatically.
+    /// Default is true.
+    /// </summary>
+    protected virtual bool CompleteImplicitly => true;
 
     protected virtual async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         Execute(context);
-        await CompleteAsync(context);
+        
+        if(CompleteImplicitly)
+            await CompleteAsync(context);
     }
 
     protected virtual ValueTask OnSignalReceivedAsync(object signal, SignalContext context)
@@ -55,6 +71,20 @@ public abstract class Activity : ISignalHandler
             handler(signal, context);
             return ValueTask.CompletedTask;
         });
+    }
+    
+    protected virtual async ValueTask OnChildActivityCompletedAsync(ActivityCompleted signal, SignalContext context)
+    {
+        var activityExecutionContext = context.ActivityExecutionContext;
+        var ownerActivity = activityExecutionContext.Activity;
+        var childActivityExecutionContext = context.SourceActivityExecutionContext;
+        var childActivity = childActivityExecutionContext.Activity;
+        var callbackEntry = activityExecutionContext.WorkflowExecutionContext.CompletionCallbacks.FirstOrDefault(x => x.Owner.Activity == ownerActivity && x.Child == childActivity);
+
+        if (callbackEntry == null)
+            return;
+
+        await callbackEntry.CompletionCallback(activityExecutionContext, childActivityExecutionContext);
     }
 
     async ValueTask IActivity.ExecuteAsync(ActivityExecutionContext context)

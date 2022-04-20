@@ -13,7 +13,6 @@ public abstract class Container : Activity, IContainer
 {
     protected Container()
     {
-        OnSignalReceived<ActivityCompleted>(OnChildActivityCompletedAsync);
     }
 
     protected Container(params IActivity[] activities) : this()
@@ -36,23 +35,6 @@ public abstract class Container : Activity, IContainer
 
         // Schedule children.
         await ScheduleChildrenAsync(context);
-        
-        // Because we override ExecuteAsync, this activity will not automatically complete.
-        // Instead, it's up to the derived classes to explicitly complete this activity.
-    }
-
-    protected virtual async ValueTask OnChildActivityCompletedAsync(ActivityCompleted signal, SignalContext context)
-    {
-        var activityExecutionContext = context.ActivityExecutionContext;
-        var ownerActivity = activityExecutionContext.Activity;
-        var childActivityExecutionContext = context.SourceActivityExecutionContext;
-        var childActivity = childActivityExecutionContext.Activity;
-        var callbackEntry = activityExecutionContext.WorkflowExecutionContext.CompletionCallbacks.FirstOrDefault(x => x.Owner.Activity == ownerActivity && x.Child == childActivity);
-
-        if (callbackEntry == null)
-            return;
-
-        await callbackEntry.CompletionCallback(activityExecutionContext, childActivityExecutionContext);
     }
 
     protected virtual ValueTask ScheduleChildrenAsync(ActivityExecutionContext context)

@@ -31,37 +31,41 @@ public class ForEach : Activity
     /// </summary>
     public Variable CurrentValue { get; set; } = new();
 
-    protected override void Execute(ActivityExecutionContext context)
+    protected override bool CompleteImplicitly => false;
+
+    protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         // Declare looping variable.
         context.ExpressionExecutionContext.Register.Declare(CurrentValue);
 
         // Execute first iteration.
-        HandleIteration(context);
+        await HandleIteration(context);
     }
 
-    private void HandleIteration(ActivityExecutionContext context)
+    private async Task HandleIteration(ActivityExecutionContext context)
     {
         var currentIndex = context.GetProperty<int>(CurrentIndexProperty);
         var items = context.Get(Items)!.ToList();
 
         if (currentIndex >= items.Count)
+        {
+            await context.CompleteActivityAsync();
             return;
+        }
 
         var currentItem = items[currentIndex];
         CurrentValue.Set(context, currentItem);
 
         if (Body != null)
-            context.PostActivity(Body, OnChildCompleted);
+            context.ScheduleActivity(Body, OnChildCompleted);
 
         // Increment index.
         context.UpdateProperty<int>(CurrentIndexProperty, x => x + 1);
     }
 
-    private ValueTask OnChildCompleted(ActivityExecutionContext context, ActivityExecutionContext childContext)
+    private async ValueTask OnChildCompleted(ActivityExecutionContext context, ActivityExecutionContext childContext)
     {
-        HandleIteration(context);
-        return ValueTask.CompletedTask;
+        await HandleIteration(context);
     }
     
     private void OnBreak(BreakSignal signal, SignalContext context)
