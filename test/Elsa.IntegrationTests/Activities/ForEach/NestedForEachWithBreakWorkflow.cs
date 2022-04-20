@@ -3,7 +3,7 @@ using Elsa.Contracts;
 using Elsa.Models;
 using Elsa.Modules.Activities.Activities.Console;
 
-namespace Elsa.IntegrationTests;
+namespace Elsa.IntegrationTests.Activities;
 
 class NestedForEachWithBreakWorkflow : IWorkflow
 {

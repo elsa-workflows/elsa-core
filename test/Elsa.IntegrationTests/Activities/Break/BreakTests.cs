@@ -2,13 +2,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Builders;
 using Elsa.Contracts;
-using Elsa.IntegrationTests.Workflows;
 using Elsa.Testing.Shared;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Elsa.IntegrationTests;
+namespace Elsa.IntegrationTests.Activities;
 
 public class BreakWorkflowTests
 {

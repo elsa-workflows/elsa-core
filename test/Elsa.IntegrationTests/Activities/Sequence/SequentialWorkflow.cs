@@ -2,7 +2,7 @@ using Elsa.Activities;
 using Elsa.Contracts;
 using Elsa.Modules.Activities.Activities.Console;
 
-namespace Elsa.IntegrationTests.Workflows;
+namespace Elsa.IntegrationTests.Activities;
 
 class SequentialWorkflow : IWorkflow
 {
