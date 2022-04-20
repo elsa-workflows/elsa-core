@@ -1,23 +1,21 @@
 using System.Linq;
 using System.Threading.Tasks;
-using Elsa.Activities;
 using Elsa.Builders;
 using Elsa.Contracts;
-using Elsa.Models;
-using Elsa.Modules.Activities.Activities.Console;
+using Elsa.IntegrationTests.Workflows;
 using Elsa.Testing.Shared;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Elsa.IntegrationTests.Workflows;
+namespace Elsa.IntegrationTests;
 
-public class SequentialWorkflowTests
+public class SequenceTests
 {
     private readonly IWorkflowRunner _workflowRunner;
     private readonly CapturingTextWriter _capturingTextWriter = new();
 
-    public SequentialWorkflowTests(ITestOutputHelper testOutputHelper)
+    public SequenceTests(ITestOutputHelper testOutputHelper)
     {
         var services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
         _workflowRunner = services.GetRequiredService<IWorkflowRunner>();
@@ -41,43 +39,5 @@ public class SequentialWorkflowTests
         Assert.Equal(new[] { "Start", "Line 1", "Line 2", "Line 3", "End" }, lines);
     }
     
-    private class SequentialWorkflow : IWorkflow
-    {
-        public void Build(IWorkflowDefinitionBuilder workflow)
-        {
-            workflow.WithRoot(new Sequence
-            {
-                Activities =
-                {
-                    new WriteLine("Line 1"),
-                    new WriteLine("Line 2"),
-                    new WriteLine("Line 3")
-                }
-            });
-        }
-    }
 
-    private class NestedSequentialWorkflow : IWorkflow
-    {
-        public void Build(IWorkflowDefinitionBuilder workflow)
-        {
-            workflow.WithRoot(new Sequence
-            {
-                Activities =
-                {
-                    new WriteLine("Start"),
-                    new Sequence
-                    {
-                        Activities =
-                        {
-                            new WriteLine("Line 1"),
-                            new WriteLine("Line 2"),
-                            new WriteLine("Line 3")
-                        }
-                    },
-                    new WriteLine("End"),
-                }
-            });
-        }
-    }
 }
