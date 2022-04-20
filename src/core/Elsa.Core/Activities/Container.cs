@@ -2,7 +2,6 @@ using System.Collections.ObjectModel;
 using Elsa.Attributes;
 using Elsa.Contracts;
 using Elsa.Models;
-using Elsa.Signals;
 
 namespace Elsa.Activities;
 

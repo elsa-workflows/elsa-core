@@ -2,8 +2,6 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Dahomey.Json;
-using Dahomey.Json.Attributes;
-using Dahomey.Json.Serialization.Conventions;
 using Elsa.Contracts;
 using Elsa.Serialization.Converters;
 using Microsoft.Extensions.DependencyInjection;
