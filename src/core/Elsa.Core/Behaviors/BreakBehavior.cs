@@ -7,19 +7,14 @@ namespace Elsa.Behaviors;
 /// <summary>
 /// Implements a "break" behavior that handles the <see cref="BreakSignal"/> signal.
 /// </summary>
-public class BreakBehavior : IBehavior
+public class BreakBehavior : Behavior
 {
-    public async ValueTask HandleSignalAsync(object signal, SignalContext context)
+    public BreakBehavior()
     {
-        if (signal is not BreakSignal)
-            return;
-
-        await OnBreakAsync(context);
+        OnSignalReceived<BreakSignal>(OnBreakAsync);
     }
 
-    public ValueTask ExecuteAsync(ActivityExecutionContext context) => ValueTask.CompletedTask;
-
-    private async ValueTask OnBreakAsync(SignalContext context)
+    private async ValueTask OnBreakAsync(BreakSignal signal, SignalContext context)
     {
         // Prevent bubbling.
         context.StopPropagation();

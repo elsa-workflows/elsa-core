@@ -7,19 +7,14 @@ namespace Elsa.Behaviors;
 /// <summary>
 /// Implements a "break" behavior that handles the <see cref="BreakSignal"/> signal.
 /// </summary>
-public class ScheduledChildCallbackBehavior : IBehavior
+public class ScheduledChildCallbackBehavior : Behavior
 {
-    public async ValueTask HandleSignalAsync(object signal, SignalContext context)
+    public ScheduledChildCallbackBehavior()
     {
-        if (signal is not ActivityCompleted)
-            return;
-
-        await OnChildActivityCompletedAsync(context);
+        OnSignalReceived<ActivityCompleted>(OnChildActivityCompletedAsync);
     }
 
-    public ValueTask ExecuteAsync(ActivityExecutionContext context) => ValueTask.CompletedTask;
-
-    private async ValueTask OnChildActivityCompletedAsync(SignalContext context)
+    private async ValueTask OnChildActivityCompletedAsync(ActivityCompleted signal, SignalContext context)
     {
         var activityExecutionContext = context.ActivityExecutionContext;
         var childActivityExecutionContext = context.SourceActivityExecutionContext;
