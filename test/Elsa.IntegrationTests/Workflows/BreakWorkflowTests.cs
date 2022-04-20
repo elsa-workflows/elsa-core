@@ -32,7 +32,7 @@ public class BreakWorkflowTests
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(new[] { "Start", "C#", "Test", "End" }, lines);
     }
-    
+
     [Fact(DisplayName = "Break exits out of immediate ForEach only")]
     public async Task Test2()
     {
@@ -40,6 +40,24 @@ public class BreakWorkflowTests
         await _workflowRunner.RunAsync(workflow);
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(new[] { "C#", "Classes", "Rust", "Classes", "Go", "Classes" }, lines);
+    }
+
+    [Fact(DisplayName = "Break exits out of For")]
+    public async Task Test3()
+    {
+        var workflow = new WorkflowDefinitionBuilder().BuildWorkflow(new BreakForWorkflow());
+        await _workflowRunner.RunAsync(workflow);
+        var lines = _capturingTextWriter.Lines.ToList();
+        Assert.Equal(new[] { "Start", "0", "1", "End" }, lines);
+    }
+    
+    [Fact(DisplayName = "Break exits out of While")]
+    public async Task Test4()
+    {
+        var workflow = new WorkflowDefinitionBuilder().BuildWorkflow(new BreakWhileWorkflow());
+        await _workflowRunner.RunAsync(workflow);
+        var lines = _capturingTextWriter.Lines.ToList();
+        Assert.Equal(new[] { "Start", "1", "2", "End" }, lines);
     }
 
     private class BreakForEachWorkflow : IWorkflow
@@ -107,9 +125,75 @@ public class BreakWorkflowTests
                                     },
                                     new WriteLine(currentInnerItem)
                                 }
-                            } 
+                            }
                         }
                     }
+                }
+            });
+        }
+    }
+
+    private class BreakForWorkflow : IWorkflow
+    {
+        public void Build(IWorkflowDefinitionBuilder workflow)
+        {
+            var currentValue = new Variable<int?>();
+
+            workflow.WithRoot(new Sequence
+            {
+                Activities =
+                {
+                    new WriteLine("Start"),
+                    new For(0, 3)
+                    {
+                        CurrentValue = currentValue,
+                        Body = new Sequence
+                        {
+                            Activities =
+                            {
+                                new If(context => currentValue.Get(context) == 2)
+                                {
+                                    Then = new Break()
+                                },
+                                new WriteLine(context => currentValue.Get(context).ToString()),
+                            }
+                        }
+                    },
+                    new WriteLine("End"),
+                }
+            });
+        }
+    }
+
+    private class BreakWhileWorkflow : IWorkflow
+    {
+        public void Build(IWorkflowDefinitionBuilder workflow)
+        {
+            var currentValue = new Variable<int?>(0);
+
+            workflow.WithRoot(new Sequence
+            {
+                Variables = { currentValue },
+                Activities =
+                {
+                    new WriteLine("Start"),
+                    While.True(new Sequence
+                    {
+                        Activities =
+                        {
+                            new SetVariable
+                            {
+                                Variable = currentValue,
+                                Value = new Input<object?>(context => currentValue.Get(context) + 1)
+                            },
+                            new If(context => currentValue.Get(context) == 3)
+                            {
+                                Then = new Break()
+                            },
+                            new WriteLine(context => currentValue.Get(context).ToString()),
+                        }
+                    }),
+                    new WriteLine("End"),
                 }
             });
         }
