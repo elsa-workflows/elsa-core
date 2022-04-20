@@ -5,9 +5,10 @@ using Elsa.Signals;
 
 namespace Elsa.Models;
 
-public abstract class Activity : ISignalHandler
+public abstract class Activity : IActivity, ISignalHandler
 {
     private readonly ICollection<SignalHandlerRegistration> _signalHandlers = new List<SignalHandlerRegistration>();
+    
     protected Activity()
     {
         TypeName = TypeNameHelper.GenerateTypeName(GetType());
@@ -24,6 +25,8 @@ public abstract class Activity : ISignalHandler
     public bool CanStartWorkflow { get; set; }
     public IDictionary<string, object> ApplicationProperties { get; set; } = new Dictionary<string, object>();
     public IDictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
+    
+    public ICollection<IBehavior> Behaviors { get; } = new List<IBehavior>();
     
     /// <summary>
     /// A value indicating whether this activity should complete automatically.
@@ -89,6 +92,9 @@ public abstract class Activity : ISignalHandler
     async ValueTask IActivity.ExecuteAsync(ActivityExecutionContext context)
     {
         await ExecuteAsync(context);
+        
+        // Invoke behaviors.
+        foreach (var behavior in Behaviors) await behavior.ExecuteAsync(context);
     }
 
     async ValueTask ISignalHandler.HandleSignalAsync(object signal, SignalContext context)
@@ -102,6 +108,9 @@ public abstract class Activity : ISignalHandler
 
         foreach (var registration in handlers)
             await registration.Handler(signal, context);
+        
+        // Invoke behaviors.
+        foreach (var behavior in Behaviors) await behavior.HandleSignalAsync(signal, context);
     }
 }
 

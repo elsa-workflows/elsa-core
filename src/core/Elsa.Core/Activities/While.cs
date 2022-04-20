@@ -1,8 +1,8 @@
 using System.Text.Json.Serialization;
 using Elsa.Attributes;
+using Elsa.Behaviors;
 using Elsa.Contracts;
 using Elsa.Models;
-using Elsa.Signals;
 
 namespace Elsa.Activities;
 
@@ -18,8 +18,7 @@ public class While : Activity
     public While(IActivity? body = default)
     {
         Body = body!;
-        
-        OnSignalReceived<BreakSignal>(OnBreakAsync);
+        Behaviors.Add<BreakBehavior>();
     }
 
     public While(Input<bool> condition, IActivity? body = default) : this(body)
@@ -66,17 +65,5 @@ public class While : Activity
             context.ScheduleActivity(Body, OnBodyCompleted);
         else
             await context.CompleteActivityAsync();
-    }
-    
-    private async ValueTask OnBreakAsync(BreakSignal signal, SignalContext context)
-    {
-        // Prevent bubbling.
-        context.StopPropagation();
-
-        // Remove child activity execution contexts.
-        context.ActivityExecutionContext.RemoveChildren();
-
-        // Mark this activity as completed.
-        await context.ActivityExecutionContext.CompleteActivityAsync();
     }
 }

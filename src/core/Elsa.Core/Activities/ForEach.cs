@@ -1,8 +1,8 @@
 using System.Text.Json.Serialization;
 using Elsa.Attributes;
+using Elsa.Behaviors;
 using Elsa.Contracts;
 using Elsa.Models;
-using Elsa.Signals;
 
 namespace Elsa.Activities;
 
@@ -13,7 +13,7 @@ public class ForEach : Activity
 
     public ForEach()
     {
-        OnSignalReceived<BreakSignal>(OnBreakAsync);
+        Behaviors.Add<BreakBehavior>();
     }
 
     /// <summary>
@@ -66,18 +66,6 @@ public class ForEach : Activity
     private async ValueTask OnChildCompleted(ActivityExecutionContext context, ActivityExecutionContext childContext)
     {
         await HandleIteration(context);
-    }
-    
-    private async ValueTask OnBreakAsync(BreakSignal signal, SignalContext context)
-    {
-        // Prevent bubbling.
-        context.StopPropagation();
-
-        // Remove child activity execution contexts.
-        context.ActivityExecutionContext.RemoveChildren();
-
-        // Mark this activity as completed.
-        await context.ActivityExecutionContext.CompleteActivityAsync();
     }
 }
 

@@ -1,8 +1,8 @@
 using System.Text.Json.Serialization;
 using Elsa.Attributes;
+using Elsa.Behaviors;
 using Elsa.Contracts;
 using Elsa.Models;
-using Elsa.Signals;
 
 namespace Elsa.Activities;
 
@@ -20,7 +20,7 @@ public class For : Activity
     [JsonConstructor]
     public For()
     {
-        OnSignalReceived<BreakSignal>(OnBreakAsync);
+        Behaviors.Add<BreakBehavior>();
     }
 
     public For(int start, int end, ForOperator forOperator = ForOperator.LessThanOrEqual) : this()
@@ -84,17 +84,5 @@ public class For : Activity
     {
         HandleIteration(ownerActivityExecutionContext);
         return ValueTask.CompletedTask;
-    }
-    
-    private async ValueTask OnBreakAsync(BreakSignal signal, SignalContext context)
-    {
-        // Prevent bubbling.
-        context.StopPropagation();
-
-        // Remove child activity execution contexts.
-        context.ActivityExecutionContext.RemoveChildren();
-
-        // Mark this activity as completed.
-        await context.ActivityExecutionContext.CompleteActivityAsync();
     }
 }

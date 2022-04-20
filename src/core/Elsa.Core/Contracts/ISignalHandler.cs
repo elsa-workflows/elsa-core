@@ -2,7 +2,7 @@ using Elsa.Models;
 
 namespace Elsa.Contracts;
 
-public interface ISignalHandler : IActivity
+public interface ISignalHandler
 {
     ValueTask HandleSignalAsync(object signal, SignalContext context);
 }
