@@ -70,7 +70,7 @@ public class ActivityExecutionContext
     /// </summary>
     public IDictionary<string, object?> JournalData { get; private set; } = new Dictionary<string, object?>();
 
-    public void PostActivity(IActivity? activity, ActivityCompletionCallback? completionCallback = default, IEnumerable<RegisterLocationReference>? locationReferences = default, object? tag = default)
+    public void ScheduleActivity(IActivity? activity, ActivityCompletionCallback? completionCallback = default, IEnumerable<RegisterLocationReference>? locationReferences = default, object? tag = default)
     {
         if (activity == null)
             return;
@@ -78,7 +78,7 @@ public class ActivityExecutionContext
         WorkflowExecutionContext.Schedule(activity, this, completionCallback, locationReferences, tag);
     }
 
-    public void PostActivity(IActivity? activity, ActivityExecutionContext owner, ActivityCompletionCallback? completionCallback = default, IEnumerable<RegisterLocationReference>? locationReferences = default, object? tag = default)
+    public void ScheduleActivity(IActivity? activity, ActivityExecutionContext owner, ActivityCompletionCallback? completionCallback = default, IEnumerable<RegisterLocationReference>? locationReferences = default, object? tag = default)
     {
         if (activity == null)
             return;
@@ -91,7 +91,7 @@ public class ActivityExecutionContext
     public void PostActivities(IEnumerable<IActivity?> activities, ActivityCompletionCallback? completionCallback = default)
     {
         foreach (var activity in activities)
-            PostActivity(activity, completionCallback);
+            ScheduleActivity(activity, completionCallback);
     }
 
     public void CreateBookmarks(IEnumerable<object> bookmarkData, ExecuteActivityDelegate? callback = default)

@@ -18,7 +18,7 @@ public class Flowchart : Container
         if (Start == null!)
             return;
 
-        context.PostActivity(Start, OnChildCompleted);
+        context.ScheduleActivity(Start, OnChildCompleted);
     }
 
     private ValueTask OnChildCompleted(ActivityExecutionContext context, ActivityExecutionContext childContext)

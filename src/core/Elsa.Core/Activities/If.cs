@@ -38,7 +38,7 @@ public class If : Activity<bool>
         var nextNode = result ? Then : Else;
 
         if (nextNode != null)
-            context.PostActivity(nextNode, OnChildCompletedAsync);
+            context.ScheduleActivity(nextNode, OnChildCompletedAsync);
         
         context.Set(Result, result);
     }

@@ -40,7 +40,7 @@ public class Sequence : Container
         }
             
         var nextActivity = childActivities.ElementAt(currentIndex);
-        context.PostActivity(nextActivity, OnChildCompleted);
+        context.ScheduleActivity(nextActivity, OnChildCompleted);
         context.UpdateProperty<int>(CurrentIndexProperty, x => x + 1);
     }
 
