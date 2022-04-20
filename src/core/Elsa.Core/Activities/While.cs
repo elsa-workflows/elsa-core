@@ -19,7 +19,7 @@ public class While : Activity
     {
         Body = body!;
         
-        OnSignalReceived<BreakSignal>(OnBreak);
+        OnSignalReceived<BreakSignal>(OnBreakAsync);
     }
 
     public While(Input<bool> condition, IActivity? body = default) : this(body)
@@ -46,24 +46,37 @@ public class While : Activity
     [Input] public Input<bool> Condition { get; set; } = new(false);
     [Outbound] public IActivity Body { get; set; }
 
-    protected override void Execute(ActivityExecutionContext context)
+    protected override bool CompleteImplicitly => false;
+
+    protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
+    {
+        await HandleIterationAsync(context);
+    }
+
+    private async ValueTask OnBodyCompleted(ActivityExecutionContext context, ActivityExecutionContext childContext)
+    {
+        await HandleIterationAsync(context);
+    }
+
+    private async ValueTask HandleIterationAsync(ActivityExecutionContext context)
     {
         var loop = context.Get(Condition);
 
         if (loop)
             context.ScheduleActivity(Body, OnBodyCompleted);
-    }
-
-    private async ValueTask OnBodyCompleted(ActivityExecutionContext context, ActivityExecutionContext childContext)
-    {
-        var loop = await context.EvaluateAsync(Condition);
-
-        if (loop)
-            context.ScheduleActivity(Body, OnBodyCompleted);
+        else
+            await context.CompleteActivityAsync();
     }
     
-    private void OnBreak(BreakSignal signal, SignalContext context)
+    private async ValueTask OnBreakAsync(BreakSignal signal, SignalContext context)
     {
+        // Prevent bubbling.
         context.StopPropagation();
+
+        // Remove child activity execution contexts.
+        context.ActivityExecutionContext.RemoveChildren();
+
+        // Mark this activity as completed.
+        await context.ActivityExecutionContext.CompleteActivityAsync();
     }
 }
