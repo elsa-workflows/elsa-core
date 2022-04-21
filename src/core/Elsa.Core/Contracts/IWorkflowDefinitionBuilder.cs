@@ -16,4 +16,5 @@ public interface IWorkflowDefinitionBuilder
     IWorkflowDefinitionBuilder WithVariables(params Variable[] variables);
     IWorkflowDefinitionBuilder WithApplicationProperty(string name, object value);
     Workflow BuildWorkflow();
+    Workflow BuildWorkflow(IWorkflow workflowDefinition);
 }
