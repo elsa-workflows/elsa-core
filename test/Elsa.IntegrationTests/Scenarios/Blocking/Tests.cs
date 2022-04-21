@@ -7,45 +7,42 @@ using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Elsa.IntegrationTests.Activities;
+namespace Elsa.IntegrationTests.Scenarios.Blocking;
 
-public class ForkTests
+public class Tests
 {
     private readonly IWorkflowRunner _workflowRunner;
     private readonly CapturingTextWriter _capturingTextWriter = new();
 
-    public ForkTests(ITestOutputHelper testOutputHelper)
+    public Tests(ITestOutputHelper testOutputHelper)
     {
         var services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
         _workflowRunner = services.GetRequiredService<IWorkflowRunner>();
     }
 
-    [Fact(DisplayName = "Each branch executes")]
+    [Fact(DisplayName = "Subsequent activity does not get scheduled when previous activity created a bookmark")]
     public async Task Test1()
     {
-        var workflow = new WorkflowDefinitionBuilder().BuildWorkflow<BasicForkWorkflow>();
+        var workflow = new WorkflowDefinitionBuilder().BuildWorkflow<BlockingSequentialWorkflow>();
         await _workflowRunner.RunAsync(workflow);
         var lines = _capturingTextWriter.Lines.ToList();
-        Assert.Equal(new[]{ "Branch 1", "Branch 2", "Branch 3" }, lines);
+        Assert.Equal(new[] { "Line 1" }, lines);
     }
     
-    [Fact(DisplayName = "Wait Any causes workflow to continue")]
+    [Fact(DisplayName = "Subsequent activities are scheduled when resuming workflow using bookmark")]
     public async Task Test2()
     {
-        var workflow = new WorkflowDefinitionBuilder().BuildWorkflow<JoinAnyForkWorkflow>();
+        var workflow = new WorkflowDefinitionBuilder().BuildWorkflow<BlockingSequentialWorkflow>();
         
-        // First run.
+        // Start workflow.
         var result = await _workflowRunner.RunAsync(workflow);
-        
-        // Collect one of the bookmarks to resume the workflow.
-        var bookmark = result.Bookmarks.FirstOrDefault(x => x.ActivityId == "Event2");
-        Assert.NotNull(bookmark);
-        
-        // Resume the workflow.
+        var bookmark = result.Bookmarks.FirstOrDefault(x => x.ActivityId == "Resume");
+
+        // Resume workflow.
         await _workflowRunner.RunAsync(workflow, result.WorkflowState, bookmark);
         
-        // Verify output.
+        // Verify expected output.
         var lines = _capturingTextWriter.Lines.ToList();
-        Assert.Equal(new[]{ "Start", "Branch 2", "End" }, lines);
+        Assert.Equal(new[] { "Line 1", "Line 2", "Line 3" }, lines);
     }
 }
