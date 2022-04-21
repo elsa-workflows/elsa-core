@@ -27,7 +27,7 @@ var app = builder.Build();
 
 // Configure workflow engine execution pipeline.
 app.Services.ConfigureDefaultWorkflowExecutionPipeline(pipeline => pipeline.UsePersistence()
-    .UseActivityScheduler()
+    .UseStackBasedActivityScheduler()
 );
 
 if (app.Environment.IsDevelopment())

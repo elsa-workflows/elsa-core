@@ -31,7 +31,7 @@ class Program
             // Configure workflow engine execution pipeline.
             .ConfigureDefaultWorkflowExecutionPipeline(pipeline => pipeline
                 .UsePersistence()
-                .UseActivityScheduler()
+                .UseStackBasedActivityScheduler()
             );
 
         var workflow1 = new Func<IActivity>(HelloWorldWorkflow.Create);

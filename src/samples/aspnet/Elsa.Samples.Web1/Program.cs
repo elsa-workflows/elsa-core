@@ -123,7 +123,7 @@ serviceProvider.ConfigureDefaultWorkflowExecutionPipeline(pipeline =>
         .UseWorkflowExecutionLogPersistence()
         .UsePersistence()
         .UseWorkflowContexts()
-        .UseActivityScheduler()
+        .UseStackBasedActivityScheduler()
 );
 
 if (app.Environment.IsDevelopment())
