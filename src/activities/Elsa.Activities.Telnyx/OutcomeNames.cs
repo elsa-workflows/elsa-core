@@ -20,7 +20,6 @@
         public const string FinishedSpeaking = "Finished Speaking";
         public const string FinishedRecording = "Finished Recording";
         public const string CallPlaybackStarted = "Playback Started";
-        public const string CallPlaybackEnding = "Playback Ending";
         public const string CallPlaybackEnded = "Playback Ended";
         public const string PlaybackRequested = "Playback Requested";
     }
