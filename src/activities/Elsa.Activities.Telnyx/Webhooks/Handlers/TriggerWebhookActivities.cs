@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.Telnyx.Extensions;
 using Elsa.Activities.Telnyx.Models;
 using Elsa.Activities.Telnyx.Providers.Bookmarks;
 using Elsa.Activities.Telnyx.Webhooks.Events;
@@ -41,25 +42,11 @@ namespace Elsa.Activities.Telnyx.Webhooks.Handlers
                 return;
             }
 
-            var correlationId = GetCorrelationId(payload);
+            var correlationId = payload.GetCorrelationId();
             var bookmark = new NotificationBookmark(eventType);
             var context = new WorkflowsQuery(activityType, bookmark, correlationId);
 
             await _workflowLaunchpad.CollectAndDispatchWorkflowsAsync(context, new WorkflowInput(webhook), cancellationToken);
-        }
-        
-        private string GetCorrelationId(Payload payload)
-        {
-            if (!string.IsNullOrWhiteSpace(payload.ClientState))
-            {
-                var clientStatePayload = ClientStatePayload.FromBase64(payload.ClientState);
-                return clientStatePayload.CorrelationId;
-            }
-
-            if (payload is CallPayload callPayload)
-                return callPayload.CallSessionId;
-
-            throw new NotSupportedException($"The received payload type {payload.GetType().Name} is not supported yet.");
         }
     }
 }
