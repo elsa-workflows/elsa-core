@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Telnyx.Extensions;
@@ -13,6 +14,7 @@ using Elsa.Services;
 using Elsa.Services.Models;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Activities.Telnyx.Webhooks.Handlers
 {
@@ -46,7 +48,9 @@ namespace Elsa.Activities.Telnyx.Webhooks.Handlers
             var bookmark = new NotificationBookmark(eventType);
             var context = new WorkflowsQuery(activityType, bookmark, correlationId);
 
-            await _workflowLaunchpad.CollectAndDispatchWorkflowsAsync(context, new WorkflowInput(webhook), cancellationToken);
+            _logger.LogDebug("Finding workflows with correlation {CorrelationId}", correlationId);
+            var results = await _workflowLaunchpad.CollectAndDispatchWorkflowsAsync(context, new WorkflowInput(webhook), cancellationToken).ToList();
+            _logger.LogDebug("Found and dispatched {WorkflowInstanceCount} workflows: {WorkflowInstances}", results.Count, results.Select(x => x.WorkflowInstanceId).ToList());
         }
     }
 }
