@@ -1,13 +1,8 @@
-﻿using System;
-using System.Linq;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Telnyx.Extensions;
-using Elsa.Activities.Telnyx.Models;
 using Elsa.Activities.Telnyx.Providers.Bookmarks;
 using Elsa.Activities.Telnyx.Webhooks.Events;
-using Elsa.Activities.Telnyx.Webhooks.Payloads.Abstract;
-using Elsa.Activities.Telnyx.Webhooks.Payloads.Call;
 using Elsa.Activities.Telnyx.Webhooks.Services;
 using Elsa.Models;
 using Elsa.Services;
@@ -47,10 +42,7 @@ namespace Elsa.Activities.Telnyx.Webhooks.Handlers
             var correlationId = payload.GetCorrelationId();
             var bookmark = new NotificationBookmark(eventType);
             var context = new WorkflowsQuery(activityType, bookmark, correlationId);
-
-            _logger.LogDebug("Finding workflows with correlation {CorrelationId}", correlationId);
-            var results = await _workflowLaunchpad.CollectAndDispatchWorkflowsAsync(context, new WorkflowInput(webhook), cancellationToken).ToList();
-            _logger.LogDebug("Found and dispatched {WorkflowInstanceCount} workflows: {WorkflowInstances}", results.Count, results.Select(x => x.WorkflowInstanceId).ToList());
+            await _workflowLaunchpad.CollectAndDispatchWorkflowsAsync(context, new WorkflowInput(webhook), cancellationToken).ToList();
         }
     }
 }
