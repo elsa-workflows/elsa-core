@@ -83,7 +83,8 @@ public static class ServiceCollectionExtensions
                 ClusterConfig
                     // .Setup("MyCluster", clusterProvider, new IdentityStorageLookup(GetIdentityLookup(clusterName)))
                     .Setup(clusterName, clusterProvider, new PartitionIdentityLookup())
-                    .WithTimeout(TimeSpan.FromHours(1))
+                    .WithHeartbeatExpiration(TimeSpan.FromDays(1))
+                    //.WithTimeout(TimeSpan.FromHours(1))
                     .WithActorRequestTimeout(TimeSpan.FromHours(1))
                     .WithActorActivationTimeout(TimeSpan.FromHours(1))
                     .WithActorSpawnTimeout(TimeSpan.FromHours(1))
