@@ -76,4 +76,10 @@ public class InputAttribute : Attribute
     /// A value indicating whether this property should be visible.
     /// </summary>
     public bool IsBrowsable { get; set; } = true;
+
+    /// <summary>
+    /// True if the activity invoker should evaluate the expression, false otherwise.
+    /// When set to false, it is up to the activity itself to evaluate its input before using it. 
+    /// </summary>
+    public bool AutoEvaluate { get; set; } = true;
 }

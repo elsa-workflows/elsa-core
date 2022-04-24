@@ -26,7 +26,7 @@ public class Fork : Activity
     [Outbound]
     public ICollection<IActivity> Branches { get; set; } = new List<IActivity>();
 
-    protected override void Execute(ActivityExecutionContext context) => context.PostActivities(Branches.Reverse(), CompleteChildAsync);
+    protected override void Execute(ActivityExecutionContext context) => context.ScheduleActivities(Branches.Reverse(), CompleteChildAsync);
 
     private async ValueTask CompleteChildAsync(ActivityExecutionContext context, ActivityExecutionContext childContext)
     {

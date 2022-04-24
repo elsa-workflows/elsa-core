@@ -28,7 +28,7 @@ public class ActivityInvokerMiddleware : IActivityExecutionMiddleware
         var workflowExecution = context.WorkflowExecutionContext;
 
         // Evaluate input properties.
-        await EvaluateInputPropertiesAsync(context);
+        await context.EvaluateInputPropertiesAsync();
         var activity = context.Activity;
 
         // Execute activity.
@@ -62,20 +62,4 @@ public class ActivityInvokerMiddleware : IActivityExecutionMiddleware
     }
 
     private void LogExecutionRecord(ActivityExecutionContext context, string eventName, string? message = default, string? source = default, object? payload = default) => context.AddExecutionLogEntry(eventName, message, source, payload);
-
-    private async Task EvaluateInputPropertiesAsync(ActivityExecutionContext context)
-    {
-        var activity = context.Activity;
-        var inputs = activity.GetInputs();
-        var assignedInputs = inputs.Where(x => x.LocationReference != null!).ToList();
-        var evaluator = context.GetRequiredService<IExpressionEvaluator>();
-        var expressionExecutionContext = context.ExpressionExecutionContext;
-
-        foreach (var input in assignedInputs)
-        {
-            var locationReference = input.LocationReference;
-            var value = await evaluator.EvaluateAsync(input, expressionExecutionContext);
-            locationReference.Set(context, value);
-        }
-    }
 }

@@ -21,24 +21,14 @@ public class ComplexIfWorkflow : IWorkflow
             Activities =
             {
                 new WriteLine("Start"),
-                new If(_condition)
+                new If
                 {
-                    Then = new Sequence
-                    {
-                        Activities =
-                        {
-                            new WriteLine("Executing"),
-                            new WriteLine("True!"),
-                        }
-                    },
-                    Else = new Sequence
-                    {
-                        Activities =
-                        {
-                            new WriteLine("Executing"),
-                            new WriteLine("False!"),
-                        }
-                    }
+                    Then = new WriteLine(""),
+                    Else = new Sequence(
+                        
+                        new WriteLine("Executing"),
+                        new WriteLine("False!")
+                    )
                 },
                 new WriteLine("End")
             }

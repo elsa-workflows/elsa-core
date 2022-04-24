@@ -19,6 +19,16 @@ public static class ActivityExtensions
 
         return query.Select(x => x!).ToList();
     }
+    
+    public static Input? GetInput(this IActivity activity, string inputName)
+    {
+        var inputProp = activity.GetType().GetProperties().FirstOrDefault(x => typeof(Input).IsAssignableFrom(x.PropertyType) && x.Name == inputName);
+
+        if (inputProp == null)
+            return null;
+
+        return (Input?)inputProp.GetValue(activity);
+    }
         
     public static IEnumerable<Output> GetOutputs(this IActivity activity)
     {

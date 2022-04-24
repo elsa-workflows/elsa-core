@@ -84,12 +84,46 @@ public class ActivityExecutionContext
         WorkflowExecutionContext.Schedule(activity, owner, completionCallback, locationReferences, tag);
     }
 
-    public void PostActivities(params IActivity?[] activities) => PostActivities((IEnumerable<IActivity?>)activities);
+    public void ScheduleActivities(params IActivity?[] activities) => ScheduleActivities((IEnumerable<IActivity?>)activities);
 
-    public void PostActivities(IEnumerable<IActivity?> activities, ActivityCompletionCallback? completionCallback = default)
+    public void ScheduleActivities(IEnumerable<IActivity?> activities, ActivityCompletionCallback? completionCallback = default)
     {
         foreach (var activity in activities)
             ScheduleActivity(activity, completionCallback);
+    }
+    
+    /// <summary>
+    /// Send a signal up the current branch.
+    /// </summary>
+    public async ValueTask SignalAsync(object signal)
+    {
+        var ancestorContexts = GetAncestors();
+
+        foreach (var ancestorContext in ancestorContexts)
+        {
+            var signalContext = new SignalContext(ancestorContext, this, CancellationToken);
+
+            if (ancestorContext.Activity is not ISignalHandler handler)
+                continue;
+
+            
+            await handler.HandleSignalAsync(signal, signalContext);
+
+            if (signalContext.StopPropagationRequested)
+                return;
+        }
+    }
+
+    /// <summary>
+    /// Complete the current activity. This should only be called by activities that explicitly suppress automatic-completion.
+    /// </summary>
+    public async ValueTask CompleteActivityAsync()
+    {
+        // Send a signal.
+        await SignalAsync(new ActivityCompleted());
+
+        // Remove the context.
+        WorkflowExecutionContext.ActivityExecutionContexts.Remove(this);
     }
 
     public void CreateBookmarks(IEnumerable<object> bookmarkData, ExecuteActivityDelegate? callback = default)
@@ -168,39 +202,6 @@ public class ActivityExecutionContext
     /// Stops further execution of the workflow.
     /// </summary>
     public void PreventContinuation() => Continue = false;
-
-    /// <summary>
-    /// Send a signal up the current branch.
-    /// </summary>
-    public async ValueTask SignalAsync(object signal)
-    {
-        var ancestorContexts = GetAncestors();
-
-        foreach (var ancestorContext in ancestorContexts)
-        {
-            var signalContext = new SignalContext(ancestorContext, this, CancellationToken);
-
-            if (ancestorContext.Activity is not ISignalHandler handler)
-                continue;
-
-            await handler.HandleSignalAsync(signal, signalContext);
-
-            if (signalContext.StopPropagationRequested)
-                return;
-        }
-    }
-
-    /// <summary>
-    /// Complete the current activity. This should only be called by activities that explicitly suppress automatic-completion.
-    /// </summary>
-    public async ValueTask CompleteActivityAsync()
-    {
-        // Send a signal.
-        await SignalAsync(new ActivityCompleted());
-
-        // Remove the context.
-        WorkflowExecutionContext.ActivityExecutionContexts.Remove(this);
-    }
 
     /// <summary>
     /// Returns a flattened list of the current context's ancestors.

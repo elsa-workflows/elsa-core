@@ -43,7 +43,7 @@ public class While : Activity
     {
     }
 
-    [Input] public Input<bool> Condition { get; set; } = new(false);
+    [Input(AutoEvaluate = false)] public Input<bool> Condition { get; set; } = new(false);
     [Outbound] public IActivity Body { get; set; }
 
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
@@ -58,7 +58,8 @@ public class While : Activity
 
     private async ValueTask HandleIterationAsync(ActivityExecutionContext context)
     {
-        var loop = context.Get(Condition);
+        var loop = await context.EvaluateInputPropertyAsync<While, bool>(x => x.Condition);
+        //var loop = context.Get(Condition);
 
         if (loop)
             context.ScheduleActivity(Body, OnBodyCompleted);

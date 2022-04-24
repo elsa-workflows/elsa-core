@@ -35,6 +35,6 @@ public class Flowchart : Container
         var outboundConnections = Connections.Where(x => x.Source == parent).ToList();
         var children = outboundConnections.Select(x => x.Target).ToList();
 
-        context.PostActivities(children, OnChildCompleted);
+        context.ScheduleActivities(children, OnChildCompleted);
     }
 }
