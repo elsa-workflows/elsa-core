@@ -25,7 +25,7 @@ public interface IActivity
     /// <summary>
     /// Can contain application-specific information about this activity.
     /// </summary>
-    IDictionary<string, object?> ApplicationProperties { get; set; }
+    IDictionary<string, object> ApplicationProperties { get; set; }
     
     /// <summary>
     /// Invoked when the activity executes.
