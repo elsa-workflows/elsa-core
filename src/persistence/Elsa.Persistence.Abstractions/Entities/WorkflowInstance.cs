@@ -1,3 +1,4 @@
+using Elsa.Models;
 using Elsa.Persistence.Models;
 using Elsa.State;
 

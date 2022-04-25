@@ -8,8 +8,8 @@ public record ActivityCompletionCallbackEntry(ActivityExecutionContext Owner, IA
 
 public class WorkflowExecutionContext
 {
-    private static ValueTask Noop(ActivityExecutionContext context) => new();
-    private static ValueTask Complete(ActivityExecutionContext context) => context.CompleteActivityAsync();
+    internal static ValueTask Noop(ActivityExecutionContext context) => new();
+    internal static ValueTask Complete(ActivityExecutionContext context) => context.CompleteActivityAsync();
     private readonly IServiceProvider _serviceProvider;
     private readonly IList<ActivityNode> _nodes;
     private readonly IList<ActivityCompletionCallbackEntry> _completionCallbackEntries = new List<ActivityCompletionCallbackEntry>();
@@ -30,6 +30,7 @@ public class WorkflowExecutionContext
         _serviceProvider = serviceProvider;
         Workflow = workflow;
         Graph = graph;
+        WorkflowStatus = WorkflowStatus.Idle;
         Id = id;
         CorrelationId = correlationId;
         _nodes = graph.Flatten().Distinct().ToList();
@@ -45,6 +46,7 @@ public class WorkflowExecutionContext
 
     public Workflow Workflow { get; }
     public ActivityNode Graph { get; }
+    public WorkflowStatus WorkflowStatus { get; private set; }
     public Register Register { get; }
     public string Id { get; set; }
     public string CorrelationId { get; set; }
@@ -79,16 +81,6 @@ public class WorkflowExecutionContext
 
     public T GetRequiredService<T>() where T : notnull => _serviceProvider.GetRequiredService<T>();
     public object GetRequiredService(Type serviceType) => _serviceProvider.GetRequiredService(serviceType);
-
-    public void Schedule(IActivity activity, ActivityExecutionContext owner, ActivityCompletionCallback? completionCallback = default, IEnumerable<RegisterLocationReference>? locationReferences = default, object? tag = default)
-    {
-        var activityInvoker = GetRequiredService<IActivityInvoker>();
-        var workItem = new ActivityWorkItem(activity.Id, async () => await activityInvoker.InvokeAsync(this, activity, owner, locationReferences), tag);
-        Scheduler.Push(workItem);
-
-        if (completionCallback != null)
-            AddCompletionCallback(owner, activity, completionCallback);
-    }
 
     public void AddCompletionCallback(ActivityExecutionContext owner, IActivity child, ActivityCompletionCallback completionCallback)
     {
@@ -136,54 +128,49 @@ public class WorkflowExecutionContext
         foreach (var bookmark in bookmarks)
             _bookmarks.Remove(bookmark);
     }
-
-    public void ScheduleRoot()
+    
+    /// <summary>
+    /// Clears all bookmarks from all <see cref="ActivityExecutionContexts"/>.
+    /// </summary>
+    public void ClearBookmarks()
     {
-        var activityInvoker = GetRequiredService<IActivityInvoker>();
-        var workItem = new ActivityWorkItem(Workflow.Root.Id, async () => await activityInvoker.InvokeAsync(this, Workflow.Root));
-        Scheduler.Push(workItem);
+        _bookmarks.Clear();
+        foreach (var activityExecutionContext in ActivityExecutionContexts) activityExecutionContext.ClearBookmarks();
     }
 
-    public void ScheduleBookmark(Bookmark bookmark)
+    public void TransitionTo(WorkflowStatus status)
     {
-        // Construct bookmark.
-        var bookmarkedActivityContext = ActivityExecutionContexts.First(x => x.Id == bookmark.ActivityInstanceId);
-        var bookmarkedActivity = bookmarkedActivityContext.Activity;
+        if (!ValidateStatusTransition(WorkflowStatus, status))
+            throw new Exception($"Cannot transition from {WorkflowStatus} to {status}");
 
-        // Schedule the activity to resume.
-        var activityInvoker = GetRequiredService<IActivityInvoker>();
-        var workItem = new ActivityWorkItem(bookmarkedActivity.Id, async () => await activityInvoker.InvokeAsync(bookmarkedActivityContext));
-        Scheduler.Push(workItem);
-
-        // If no resumption point was specified, use Noop to prevent the regular "ExecuteAsync" method to be invoked.
-        ExecuteDelegate = bookmark.CallbackMethodName != null ? bookmarkedActivity.GetResumeActivityDelegate(bookmark.CallbackMethodName) : Complete;
+        WorkflowStatus = status;
     }
 
-    public T? GetVariable<T>(string name) => (T?)GetVariable(name);
-    public T? GetVariable<T>() => (T?)GetVariable(typeof(T).Name);
-
-    public object? GetVariable(string name)
+    private bool ValidateStatusTransition(WorkflowStatus current, WorkflowStatus target)
     {
-        var variable = Workflow.Variables.FirstOrDefault(x => x.Name == name);
-        return variable?.Get(Register);
-    }
+        switch (target)
+        {
+            case WorkflowStatus.Running:
+                if (current != WorkflowStatus.Idle)
+                    return false;
+                break;
+            case WorkflowStatus.Cancelled:
+                if (current != WorkflowStatus.Idle && current != WorkflowStatus.Running)
+                    return false;
+                break;
+            case WorkflowStatus.Faulted:
+                if (current != WorkflowStatus.Idle && current != WorkflowStatus.Running)
+                    return false;
+                break;
+            case WorkflowStatus.Finished:
+                if (current != WorkflowStatus.Idle && current != WorkflowStatus.Running)
+                    return false;
+                break;
+            case WorkflowStatus.Idle:
+                return false;
+            
+        }
 
-    public Variable SetVariable<T>(T? value) => SetVariable(typeof(T).Name, value);
-    public Variable SetVariable<T>(string name, T? value) => SetVariable(name, (object?)value);
-
-    public Variable SetVariable(string name, object? value)
-    {
-        var variable = Workflow.Variables.FirstOrDefault(x => x.Name == name) ?? new Variable(name, value);
-        variable.Set(Register, value);
-        return variable;
-    }
-
-    public void RemoveActivityExecutionContexts(IEnumerable<ActivityExecutionContext> contexts)
-    {
-        // Copy each item into a new list to avoid changing the source enumerable while removing elements from it.
-        var list = contexts.ToList(); 
-        
-        // Remove each context.
-        foreach (var context in list) ActivityExecutionContexts.Remove(context);
+        return true;
     }
 }

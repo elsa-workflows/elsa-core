@@ -77,6 +77,9 @@ public class WorkflowRunner : IWorkflowRunner
 
     public async Task<InvokeWorkflowResult> RunAsync(WorkflowExecutionContext workflowExecutionContext)
     {
+        // Transition into the Running state.
+        workflowExecutionContext.TransitionTo(WorkflowStatus.Running);
+        
         // Execute the activity execution pipeline.
         await _pipeline.ExecuteAsync(workflowExecutionContext);
 

@@ -6,5 +6,10 @@ namespace Elsa.Activities;
 [Activity("Elsa", "Control Flow", "Mark the workflow as Finished")]
 public class Finish : Activity
 {
-    // TODO.
+    protected override void Execute(ActivityExecutionContext context)
+    {
+        context.ClearCompletionCallbacks();
+        context.WorkflowExecutionContext.ClearBookmarks();
+        context.WorkflowExecutionContext.TransitionTo(WorkflowStatus.Finished);
+    }
 }

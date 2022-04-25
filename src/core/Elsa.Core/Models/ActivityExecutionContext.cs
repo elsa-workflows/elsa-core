@@ -157,6 +157,8 @@ public class ActivityExecutionContext
         AddBookmark(bookmark);
         return bookmark;
     }
+    
+    public void ClearBookmarks() => _bookmarks.Clear();
 
     public T? GetProperty<T>(string key) => ApplicationProperties!.TryGetValue<T?>(key, out var value) ? value : default;
     public void SetProperty<T>(string key, T value) where T : notnull => ApplicationProperties[key] = value;
