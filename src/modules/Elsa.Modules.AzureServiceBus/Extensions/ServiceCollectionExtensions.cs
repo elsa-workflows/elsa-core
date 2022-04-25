@@ -1,9 +1,9 @@
 ﻿using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
 using Elsa.Mediator.Extensions;
-using Elsa.Modules.AzureServiceBus.Contracts;
 using Elsa.Modules.AzureServiceBus.Handlers;
 using Elsa.Modules.AzureServiceBus.HostedServices;
+using Elsa.Modules.AzureServiceBus.Implementations;
 using Elsa.Modules.AzureServiceBus.Options;
 using Elsa.Modules.AzureServiceBus.Providers;
 using Elsa.Modules.AzureServiceBus.Services;

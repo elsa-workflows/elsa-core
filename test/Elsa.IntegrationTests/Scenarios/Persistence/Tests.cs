@@ -1,11 +1,11 @@
 using System.Threading.Tasks;
 using Elsa.Builders;
-using Elsa.Contracts;
 using Elsa.Extensions;
 using Elsa.Persistence.Entities;
-using Elsa.Persistence.InMemory.Services;
+using Elsa.Persistence.InMemory.Implementations;
 using Elsa.Pipelines.WorkflowExecution.Components;
 using Elsa.Runtime.Extensions;
+using Elsa.Services;
 using Elsa.Testing.Shared;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;

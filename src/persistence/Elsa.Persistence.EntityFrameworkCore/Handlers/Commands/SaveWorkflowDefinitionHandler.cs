@@ -1,7 +1,8 @@
-using Elsa.Mediator.Contracts;
+using Elsa.Mediator.Models;
+using Elsa.Mediator.Services;
 using Elsa.Persistence.Commands;
 using Elsa.Persistence.Entities;
-using Elsa.Persistence.EntityFrameworkCore.Contracts;
+using Elsa.Persistence.EntityFrameworkCore.Services;
 using Elsa.Persistence.Mappers;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Handlers.Commands;

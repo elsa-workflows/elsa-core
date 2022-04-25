@@ -1,5 +1,5 @@
 using Elsa.Models;
-using Elsa.Modules.WorkflowContexts.Contracts;
+using Elsa.Modules.WorkflowContexts.Services;
 
 namespace Elsa.Modules.WorkflowContexts.Models;
 

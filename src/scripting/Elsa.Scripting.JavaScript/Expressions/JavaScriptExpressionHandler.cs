@@ -1,6 +1,6 @@
-using Elsa.Contracts;
 using Elsa.Models;
-using Elsa.Scripting.JavaScript.Contracts;
+using Elsa.Scripting.JavaScript.Services;
+using Elsa.Services;
 
 namespace Elsa.Scripting.JavaScript.Expressions;
 

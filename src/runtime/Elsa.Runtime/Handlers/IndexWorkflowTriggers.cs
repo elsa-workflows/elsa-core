@@ -1,6 +1,6 @@
 using Elsa.Management.Notifications;
-using Elsa.Mediator.Contracts;
-using Elsa.Runtime.Contracts;
+using Elsa.Mediator.Services;
+using Elsa.Runtime.Services;
 
 namespace Elsa.Runtime.Handlers;
 

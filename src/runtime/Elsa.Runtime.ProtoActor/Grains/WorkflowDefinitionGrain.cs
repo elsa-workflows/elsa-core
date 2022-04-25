@@ -1,13 +1,13 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Contracts;
-using Elsa.Mediator.Contracts;
+using Elsa.Mediator.Services;
 using Elsa.Persistence.Commands;
 using Elsa.Persistence.Entities;
 using Elsa.Persistence.Models;
-using Elsa.Runtime.Contracts;
 using Elsa.Runtime.Protos;
+using Elsa.Runtime.Services;
+using Elsa.Services;
 using Elsa.State;
 using Proto;
 

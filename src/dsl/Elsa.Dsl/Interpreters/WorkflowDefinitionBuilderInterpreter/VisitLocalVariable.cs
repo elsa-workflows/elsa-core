@@ -1,5 +1,5 @@
-﻿using Elsa.Contracts;
-using Elsa.Dsl.Models;
+﻿using Elsa.Dsl.Models;
+using Elsa.Services;
 
 namespace Elsa.Dsl.Interpreters;
 

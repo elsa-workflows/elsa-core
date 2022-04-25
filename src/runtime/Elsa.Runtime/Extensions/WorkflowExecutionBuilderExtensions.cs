@@ -1,7 +1,7 @@
-using Elsa.Contracts;
 using Elsa.Pipelines.WorkflowExecution;
 using Elsa.Runtime.Middleware;
 using Elsa.Runtime.Notifications;
+using Elsa.Services;
 
 namespace Elsa.Runtime.Extensions;
 

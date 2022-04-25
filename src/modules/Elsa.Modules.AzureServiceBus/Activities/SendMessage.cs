@@ -1,7 +1,7 @@
 using Azure.Messaging.ServiceBus;
 using Elsa.Attributes;
-using Elsa.Formatting.Contracts;
 using Elsa.Formatting.Formatters;
+using Elsa.Formatting.Services;
 using Elsa.Models;
 using Microsoft.Extensions.Logging;
 

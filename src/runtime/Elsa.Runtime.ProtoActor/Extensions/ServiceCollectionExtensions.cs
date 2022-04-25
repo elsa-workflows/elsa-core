@@ -2,7 +2,7 @@ using System;
 using Elsa.Runtime.Extensions;
 using Elsa.Runtime.ProtoActor.Grains;
 using Elsa.Runtime.ProtoActor.HostedServices;
-using Elsa.Runtime.ProtoActor.Services;
+using Elsa.Runtime.ProtoActor.Implementations;
 using Elsa.Runtime.Protos;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

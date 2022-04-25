@@ -16,8 +16,4 @@
       <ProjectReference Include="..\Elsa.Modules.Scheduling\Elsa.Modules.Scheduling.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Contracts" />
-    </ItemGroup>
-
 </Project>

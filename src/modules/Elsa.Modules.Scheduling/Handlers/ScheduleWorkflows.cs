@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Mediator.Contracts;
-using Elsa.Modules.Scheduling.Contracts;
+using Elsa.Mediator.Services;
+using Elsa.Modules.Scheduling.Services;
 using Elsa.Runtime.Models;
 using Elsa.Runtime.Notifications;
 

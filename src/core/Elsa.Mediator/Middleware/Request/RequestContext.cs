@@ -1,4 +1,4 @@
-using Elsa.Mediator.Contracts;
+using Elsa.Mediator.Services;
 
 namespace Elsa.Mediator.Middleware.Request;
 

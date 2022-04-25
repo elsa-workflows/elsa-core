@@ -1,15 +1,15 @@
-using Elsa.Contracts;
 using Elsa.Helpers;
-using Elsa.Mediator.Contracts;
+using Elsa.Mediator.Services;
 using Elsa.Models;
 using Elsa.Persistence.Commands;
 using Elsa.Persistence.Entities;
 using Elsa.Persistence.Requests;
 using Elsa.Pipelines.WorkflowExecution;
 using Elsa.Pipelines.WorkflowExecution.Components;
-using Elsa.Runtime.Contracts;
 using Elsa.Runtime.Models;
 using Elsa.Runtime.Notifications;
+using Elsa.Runtime.Services;
+using Elsa.Services;
 
 namespace Elsa.Runtime.Middleware;
 

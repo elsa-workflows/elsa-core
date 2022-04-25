@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using Elsa.Attributes;
-using Elsa.Contracts;
 using Elsa.Models;
+using Elsa.Services;
 using Elsa.Signals;
 
 namespace Elsa.Activities;

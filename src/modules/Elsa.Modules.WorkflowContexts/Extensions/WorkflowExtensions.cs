@@ -1,6 +1,6 @@
-using Elsa.Contracts;
-using Elsa.Modules.WorkflowContexts.Contracts;
 using Elsa.Modules.WorkflowContexts.Models;
+using Elsa.Modules.WorkflowContexts.Services;
+using Elsa.Services;
 
 namespace Elsa.Modules.WorkflowContexts.Extensions;
 

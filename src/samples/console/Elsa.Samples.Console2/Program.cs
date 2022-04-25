@@ -2,10 +2,9 @@
 using System.IO;
 using System.Reflection;
 using Elsa.Activities;
-using Elsa.Contracts;
 using Elsa.Dsl.Abstractions;
-using Elsa.Dsl.Contracts;
 using Elsa.Dsl.Extensions;
+using Elsa.Dsl.Services;
 using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Modules.Activities.Console;
@@ -13,6 +12,7 @@ using Elsa.Modules.Http;
 using Elsa.Modules.Scheduling.Activities;
 using Elsa.Persistence.InMemory.Extensions;
 using Elsa.Scripting.JavaScript.Extensions;
+using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 

@@ -2,8 +2,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Persistence.Models;
-using Elsa.Runtime.Contracts;
 using Elsa.Runtime.Models;
+using Elsa.Runtime.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 

@@ -1,4 +1,5 @@
-using Elsa.Runtime.Contracts;
+using Elsa.Runtime.Models;
+using Elsa.Runtime.Services;
 
 namespace Elsa.Runtime.Abstractions;
 

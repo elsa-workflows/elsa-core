@@ -1,6 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Mediator.Contracts;
+using Elsa.Mediator.Services;
 using Elsa.Persistence.Models;
 using Elsa.Persistence.Requests;
 using Elsa.Serialization;

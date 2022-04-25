@@ -1,4 +1,4 @@
-using Elsa.Modules.AzureServiceBus.Contracts;
+using Elsa.Modules.AzureServiceBus.Services;
 using Microsoft.Extensions.Hosting;
 
 namespace Elsa.Modules.AzureServiceBus.HostedServices;

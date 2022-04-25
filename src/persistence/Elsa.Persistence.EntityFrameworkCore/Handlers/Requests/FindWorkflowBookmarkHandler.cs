@@ -1,6 +1,6 @@
-using Elsa.Mediator.Contracts;
+using Elsa.Mediator.Services;
 using Elsa.Persistence.Entities;
-using Elsa.Persistence.EntityFrameworkCore.Contracts;
+using Elsa.Persistence.EntityFrameworkCore.Services;
 using Elsa.Persistence.Requests;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Handlers.Requests;

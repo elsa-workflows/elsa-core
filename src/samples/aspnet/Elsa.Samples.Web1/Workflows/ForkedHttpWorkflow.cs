@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using System.Net;
 using Elsa.Activities;
-using Elsa.Contracts;
 using Elsa.Models;
 using Elsa.Modules.Activities.Console;
 using Elsa.Modules.Http;
+using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Samples.Web1.Workflows;

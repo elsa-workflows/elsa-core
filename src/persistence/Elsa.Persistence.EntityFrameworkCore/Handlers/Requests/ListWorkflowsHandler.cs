@@ -1,7 +1,7 @@
-using Elsa.Mediator.Contracts;
+using Elsa.Mediator.Services;
 using Elsa.Models;
 using Elsa.Persistence.Entities;
-using Elsa.Persistence.EntityFrameworkCore.Contracts;
+using Elsa.Persistence.EntityFrameworkCore.Services;
 using Elsa.Persistence.Extensions;
 using Elsa.Persistence.Mappers;
 using Elsa.Persistence.Requests;

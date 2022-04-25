@@ -1,4 +1,4 @@
-using Elsa.Runtime.Contracts;
+using Elsa.Runtime.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 

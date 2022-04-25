@@ -1,6 +1,6 @@
-using Elsa.Management.Contracts;
-using Elsa.Scripting.JavaScript.Contracts;
+using Elsa.Management.Services;
 using Elsa.Scripting.JavaScript.Expressions;
+using Elsa.Scripting.JavaScript.Implementations;
 using Elsa.Scripting.JavaScript.Providers;
 using Elsa.Scripting.JavaScript.Services;
 using Microsoft.Extensions.DependencyInjection;

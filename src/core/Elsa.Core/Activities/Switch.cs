@@ -1,8 +1,8 @@
 using System.Text.Json.Serialization;
 using Elsa.Attributes;
-using Elsa.Contracts;
 using Elsa.Expressions;
 using Elsa.Models;
+using Elsa.Services;
 
 namespace Elsa.Activities;
 

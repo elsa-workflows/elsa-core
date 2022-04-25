@@ -1,5 +1,5 @@
-using Elsa.Contracts;
 using Elsa.Models;
+using Elsa.Services;
 using Elsa.Signals;
 
 namespace Elsa.Behaviors;

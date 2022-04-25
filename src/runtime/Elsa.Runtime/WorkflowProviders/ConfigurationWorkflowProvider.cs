@@ -1,10 +1,10 @@
 using Elsa.Builders;
-using Elsa.Contracts;
 using Elsa.Models;
 using Elsa.Persistence.Extensions;
 using Elsa.Persistence.Models;
-using Elsa.Runtime.Contracts;
 using Elsa.Runtime.Options;
+using Elsa.Runtime.Services;
+using Elsa.Services;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Runtime.WorkflowProviders;

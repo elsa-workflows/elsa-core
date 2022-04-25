@@ -1,7 +1,7 @@
 using System;
 using Elsa.Activities;
-using Elsa.Contracts;
 using Elsa.Modules.Activities.Console;
+using Elsa.Services;
 
 namespace Elsa.IntegrationTests.Activities;
 
@@ -21,9 +21,13 @@ public class ComplexIfWorkflow : IWorkflow
             Activities =
             {
                 new WriteLine("Start"),
-                new If
+                new If(_condition)
                 {
-                    Then = new WriteLine(""),
+                    Then = new Sequence(
+                        
+                        new WriteLine("Executing"),
+                        new WriteLine("True!")
+                    ),
                     Else = new Sequence(
                         
                         new WriteLine("Executing"),

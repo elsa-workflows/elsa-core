@@ -1,4 +1,4 @@
-using Elsa.Management.Contracts;
+using Elsa.Management.Services;
 using Microsoft.Extensions.Hosting;
 
 namespace Elsa.Runtime.HostedServices;

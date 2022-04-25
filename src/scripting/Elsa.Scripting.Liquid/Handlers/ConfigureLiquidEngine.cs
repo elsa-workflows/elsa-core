@@ -1,5 +1,5 @@
 using System.Dynamic;
-using Elsa.Mediator.Contracts;
+using Elsa.Mediator.Services;
 using Elsa.Models;
 using Elsa.Scripting.Liquid.Helpers;
 using Elsa.Scripting.Liquid.Notifications;

@@ -1,8 +1,8 @@
-using Elsa.Contracts;
 using Elsa.Modules.Activities.Configurators;
-using Elsa.Modules.Activities.Contracts;
 using Elsa.Modules.Activities.Providers;
 using Elsa.Modules.Activities.Resolvers;
+using Elsa.Modules.Activities.Services;
+using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Modules.Activities.Extensions;

@@ -1,9 +1,9 @@
 using Elsa.Mediator.Extensions;
 using Elsa.Persistence.Entities;
-using Elsa.Persistence.EntityFrameworkCore.Contracts;
 using Elsa.Persistence.EntityFrameworkCore.Handlers.Commands;
 using Elsa.Persistence.EntityFrameworkCore.Handlers.Serialization;
 using Elsa.Persistence.EntityFrameworkCore.HostedServices;
+using Elsa.Persistence.EntityFrameworkCore.Implementations;
 using Elsa.Persistence.EntityFrameworkCore.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;

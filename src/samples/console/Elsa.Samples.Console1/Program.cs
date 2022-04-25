@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Elsa.Contracts;
 using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Persistence.InMemory.Extensions;
@@ -10,6 +9,7 @@ using Elsa.Pipelines.ActivityExecution.Components;
 using Elsa.Pipelines.WorkflowExecution.Components;
 using Elsa.Runtime.Extensions;
 using Elsa.Samples.Console1.Workflows;
+using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 

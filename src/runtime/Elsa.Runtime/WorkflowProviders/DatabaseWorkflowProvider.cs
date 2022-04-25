@@ -1,10 +1,10 @@
 using System.Runtime.CompilerServices;
-using Elsa.Mediator.Contracts;
+using Elsa.Mediator.Services;
 using Elsa.Models;
 using Elsa.Persistence.Models;
 using Elsa.Persistence.Requests;
 using Elsa.Runtime.Attributes;
-using Elsa.Runtime.Contracts;
+using Elsa.Runtime.Services;
 
 namespace Elsa.Runtime.WorkflowProviders;
 

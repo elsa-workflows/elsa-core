@@ -1,7 +1,7 @@
 using Elsa.Mediator.Extensions;
 using Elsa.Persistence.Entities;
 using Elsa.Persistence.InMemory.Handlers.Commands;
-using Elsa.Persistence.InMemory.Services;
+using Elsa.Persistence.InMemory.Implementations;
 using Microsoft.Extensions.DependencyInjection;
 
 #pragma warning disable CS8631

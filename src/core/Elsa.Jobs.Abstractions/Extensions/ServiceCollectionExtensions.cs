@@ -1,4 +1,4 @@
-using Elsa.Jobs.Contracts;
+using Elsa.Jobs.Implementations;
 using Elsa.Jobs.Services;
 using Microsoft.Extensions.DependencyInjection;
 

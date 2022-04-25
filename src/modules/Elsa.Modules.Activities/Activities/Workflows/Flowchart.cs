@@ -1,6 +1,6 @@
 using Elsa.Attributes;
-using Elsa.Contracts;
 using Elsa.Models;
+using Elsa.Services;
 using Container = Elsa.Activities.Container;
 
 namespace Elsa.Modules.Activities.Workflows;

@@ -1,7 +1,7 @@
 using Elsa.Attributes;
 using Elsa.Models;
 using Elsa.Persistence.Models;
-using Elsa.Runtime.Contracts;
+using Elsa.Runtime.Services;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Modules.Activities.Workflows;

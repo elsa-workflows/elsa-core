@@ -2,10 +2,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Mediator.Contracts;
+using Elsa.Mediator.Services;
 using Elsa.Persistence.Entities;
 using Elsa.Persistence.Extensions;
-using Elsa.Persistence.InMemory.Services;
+using Elsa.Persistence.InMemory.Implementations;
 using Elsa.Persistence.Models;
 using Elsa.Persistence.Requests;
 

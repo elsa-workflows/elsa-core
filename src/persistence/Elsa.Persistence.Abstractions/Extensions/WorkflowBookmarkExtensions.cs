@@ -1,6 +1,6 @@
-using Elsa.Contracts;
 using Elsa.Helpers;
 using Elsa.Persistence.Entities;
+using Elsa.Services;
 
 namespace Elsa.Persistence.Extensions;
 

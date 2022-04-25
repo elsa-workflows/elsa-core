@@ -2,11 +2,11 @@ using System;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Elsa.Activities;
-using Elsa.Contracts;
 using Elsa.Jobs.Abstractions;
-using Elsa.Jobs.Contracts;
 using Elsa.Jobs.Models;
+using Elsa.Jobs.Services;
 using Elsa.Modules.Activities.Console;
+using Elsa.Services;
 
 namespace Elsa.Samples.Web1.Workflows;
 

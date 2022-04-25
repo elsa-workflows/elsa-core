@@ -1,5 +1,5 @@
 using System.Collections.ObjectModel;
-using Elsa.Contracts;
+using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Models;

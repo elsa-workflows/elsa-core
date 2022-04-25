@@ -1,7 +1,7 @@
 ﻿using System.Text.Json.Serialization;
 using Elsa.Attributes;
 using Elsa.Models;
-using Elsa.Scripting.JavaScript.Contracts;
+using Elsa.Scripting.JavaScript.Services;
 
 namespace Elsa.Modules.JavaScript.Activities;
 

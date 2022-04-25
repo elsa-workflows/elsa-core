@@ -1,4 +1,4 @@
-using Elsa.Jobs.Contracts;
+using Elsa.Jobs.Services;
 
 namespace Elsa.Jobs.Schedules;
 

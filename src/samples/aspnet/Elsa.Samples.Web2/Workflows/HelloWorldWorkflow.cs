@@ -1,5 +1,5 @@
-using Elsa.Contracts;
 using Elsa.Modules.Activities.Console;
+using Elsa.Services;
 
 namespace Elsa.Samples.Web2.Workflows;
 

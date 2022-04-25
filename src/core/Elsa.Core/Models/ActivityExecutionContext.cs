@@ -1,5 +1,5 @@
 using System.Collections.ObjectModel;
-using Elsa.Contracts;
+using Elsa.Services;
 using Elsa.Signals;
 
 namespace Elsa.Models;

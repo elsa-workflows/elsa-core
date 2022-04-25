@@ -1,7 +1,7 @@
-using Elsa.Jobs.Contracts;
-using Elsa.Modules.Quartz.Services;
+using Elsa.Jobs.Services;
+using Elsa.Modules.Quartz.Implementations;
 using Quartz;
-using IJob = Elsa.Jobs.Contracts.IJob;
+using IJob = Elsa.Jobs.Services.IJob;
 using IQuartzJob = Quartz.IJob;
 
 namespace Elsa.Modules.Quartz.Jobs;

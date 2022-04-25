@@ -1,7 +1,7 @@
 using System;
 using Elsa.Extensions;
-using Elsa.Modules.Activities.Contracts;
 using Elsa.Modules.Activities.Providers;
+using Elsa.Modules.Activities.Services;
 using Elsa.Persistence.InMemory.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

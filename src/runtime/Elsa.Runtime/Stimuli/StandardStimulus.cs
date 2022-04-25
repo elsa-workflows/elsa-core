@@ -1,4 +1,4 @@
-using Elsa.Runtime.Contracts;
+using Elsa.Runtime.Services;
 
 namespace Elsa.Runtime.Stimuli;
 

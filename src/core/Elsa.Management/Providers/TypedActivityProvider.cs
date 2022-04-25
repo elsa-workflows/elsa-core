@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
-using Elsa.Management.Contracts;
 using Elsa.Management.Models;
 using Elsa.Management.Options;
+using Elsa.Management.Services;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Management.Providers;

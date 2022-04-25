@@ -1,6 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Formatting.Contracts;
+using Elsa.Formatting.Services;
 
 namespace Elsa.Formatting.Formatters;
 

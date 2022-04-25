@@ -1,5 +1,5 @@
 using Elsa.Dsl.Abstractions;
-using Elsa.Dsl.Contracts;
+using Elsa.Dsl.Implementations;
 using Elsa.Dsl.Services;
 using Microsoft.Extensions.DependencyInjection;
 

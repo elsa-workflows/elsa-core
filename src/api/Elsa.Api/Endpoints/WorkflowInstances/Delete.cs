@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Management.Contracts;
-using Elsa.Mediator.Contracts;
+using Elsa.Management.Services;
+using Elsa.Mediator.Services;
 using Elsa.Persistence.Requests;
 using Microsoft.AspNetCore.Http;
 

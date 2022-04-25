@@ -1,7 +1,7 @@
 using System;
-using Elsa.Contracts;
 using Elsa.Dsl.Abstractions;
 using Elsa.Models;
+using Elsa.Services;
 
 namespace Elsa.Dsl.Extensions;
 

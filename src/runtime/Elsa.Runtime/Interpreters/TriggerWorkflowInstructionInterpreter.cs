@@ -2,8 +2,8 @@ using Elsa.Models;
 using Elsa.Persistence.Entities;
 using Elsa.Persistence.Models;
 using Elsa.Runtime.Abstractions;
-using Elsa.Runtime.Contracts;
 using Elsa.Runtime.Models;
+using Elsa.Runtime.Services;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Runtime.Interpreters;

@@ -1,8 +1,8 @@
 using System.Threading.Channels;
 using Elsa.Expressions;
 using Elsa.Mediator.Extensions;
-using Elsa.Runtime.Contracts;
 using Elsa.Runtime.HostedServices;
+using Elsa.Runtime.Implementations;
 using Elsa.Runtime.Interpreters;
 using Elsa.Runtime.Models;
 using Elsa.Runtime.Options;

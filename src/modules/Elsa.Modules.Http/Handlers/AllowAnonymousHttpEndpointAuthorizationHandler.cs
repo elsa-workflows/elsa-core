@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
-using Elsa.Modules.Http.Contracts;
 using Elsa.Modules.Http.Models;
+using Elsa.Modules.Http.Services;
 
 namespace Elsa.Modules.Http.Handlers
 {

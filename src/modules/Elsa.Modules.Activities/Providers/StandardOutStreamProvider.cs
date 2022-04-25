@@ -1,4 +1,4 @@
-using Elsa.Modules.Activities.Contracts;
+using Elsa.Modules.Activities.Services;
 
 namespace Elsa.Modules.Activities.Providers;
 

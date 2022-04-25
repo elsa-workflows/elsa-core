@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using Elsa.Activities;
-using Elsa.Contracts;
 using Elsa.Models;
 using Elsa.Modules.Activities.Console;
+using Elsa.Services;
 
 namespace Elsa.IntegrationTests.Activities;
 

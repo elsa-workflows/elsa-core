@@ -2,9 +2,9 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Mediator.Contracts;
+using Elsa.Mediator.Services;
 using Elsa.Modules.Scheduling.Activities;
-using Elsa.Modules.Scheduling.Contracts;
+using Elsa.Modules.Scheduling.Services;
 using Elsa.Persistence.Requests;
 using Microsoft.Extensions.Hosting;
 

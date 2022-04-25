@@ -1,4 +1,4 @@
-using Elsa.Mediator.Contracts;
+using Elsa.Mediator.Services;
 using Elsa.Persistence.Entities;
 using Elsa.Persistence.Models;
 

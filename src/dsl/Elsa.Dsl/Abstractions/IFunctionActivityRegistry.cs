@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Elsa.Contracts;
+using Elsa.Services;
 
 namespace Elsa.Dsl.Abstractions;
 

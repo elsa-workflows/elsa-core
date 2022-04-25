@@ -1,8 +1,8 @@
-using Elsa.Mediator.Contracts;
+using Elsa.Mediator.Services;
 using Elsa.Persistence.Requests;
 using Elsa.Runtime.Abstractions;
-using Elsa.Runtime.Contracts;
 using Elsa.Runtime.Interpreters;
+using Elsa.Runtime.Services;
 
 namespace Elsa.Runtime.Stimuli.Handlers;
 

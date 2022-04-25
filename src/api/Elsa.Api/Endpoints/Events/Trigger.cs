@@ -1,7 +1,7 @@
 using Elsa.Api.ApiResults;
-using Elsa.Contracts;
 using Elsa.Modules.Activities.Primitives;
 using Elsa.Runtime.Models;
+using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Api.Endpoints.Events;

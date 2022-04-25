@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
-using Elsa.Jobs.Contracts;
 using Elsa.Jobs.Models;
+using Elsa.Jobs.Services;
 
 namespace Elsa.Jobs.Abstractions;
 

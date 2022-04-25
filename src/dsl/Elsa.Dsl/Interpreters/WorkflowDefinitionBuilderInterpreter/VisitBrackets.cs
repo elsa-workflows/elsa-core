@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using Elsa.Contracts;
 using Elsa.Dsl.Extensions;
+using Elsa.Services;
 
 namespace Elsa.Dsl.Interpreters;
 

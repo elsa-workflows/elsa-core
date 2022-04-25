@@ -1,6 +1,6 @@
 ﻿using System.Linq;
 using Elsa.Activities;
-using Elsa.Contracts;
+using Elsa.Services;
 
 namespace Elsa.Dsl.Interpreters;
 

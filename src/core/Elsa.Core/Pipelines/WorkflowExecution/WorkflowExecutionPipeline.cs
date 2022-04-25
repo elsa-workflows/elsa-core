@@ -1,6 +1,6 @@
-using Elsa.Contracts;
 using Elsa.Models;
 using Elsa.Pipelines.WorkflowExecution.Components;
+using Elsa.Services;
 
 namespace Elsa.Pipelines.WorkflowExecution;
 

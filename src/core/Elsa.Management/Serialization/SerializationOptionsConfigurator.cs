@@ -1,6 +1,6 @@
 using System.Text.Json;
-using Elsa.Contracts;
 using Elsa.Management.Serialization.Converters;
+using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Management.Serialization;

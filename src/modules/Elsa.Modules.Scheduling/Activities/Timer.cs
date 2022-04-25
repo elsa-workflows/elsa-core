@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using Elsa.Attributes;
-using Elsa.Contracts;
 using Elsa.Models;
+using Elsa.Services;
 
 namespace Elsa.Modules.Scheduling.Activities;
 

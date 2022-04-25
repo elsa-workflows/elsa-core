@@ -1,7 +1,7 @@
-using Elsa.Contracts;
 using Elsa.Helpers;
-using Elsa.Mediator.Contracts;
+using Elsa.Mediator.Services;
 using Elsa.Persistence.Entities;
+using Elsa.Services;
 
 namespace Elsa.Persistence.Requests;
 

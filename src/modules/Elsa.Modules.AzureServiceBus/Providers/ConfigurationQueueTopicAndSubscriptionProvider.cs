@@ -1,6 +1,6 @@
-using Elsa.Modules.AzureServiceBus.Contracts;
 using Elsa.Modules.AzureServiceBus.Models;
 using Elsa.Modules.AzureServiceBus.Options;
+using Elsa.Modules.AzureServiceBus.Services;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Modules.AzureServiceBus.Providers;

@@ -1,7 +1,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Builders;
-using Elsa.Contracts;
+using Elsa.Services;
 using Elsa.Testing.Shared;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;

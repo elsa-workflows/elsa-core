@@ -1,8 +1,8 @@
 using Elsa.Activities;
-using Elsa.Contracts;
 using Elsa.Models;
 using Elsa.Modules.Activities.Console;
 using Elsa.Samples.Web1.Activities;
+using Elsa.Services;
 
 namespace Elsa.Samples.Web1.Workflows;
 

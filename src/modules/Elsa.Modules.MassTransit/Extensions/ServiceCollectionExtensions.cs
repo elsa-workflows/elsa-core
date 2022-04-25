@@ -1,5 +1,5 @@
-using Elsa.Modules.MassTransit.Services;
-using Elsa.Runtime.Contracts;
+using Elsa.Modules.MassTransit.Implementations;
+using Elsa.Runtime.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Modules.MassTransit.Extensions;

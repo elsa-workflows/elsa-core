@@ -1,5 +1,5 @@
 using Elsa.Activities;
-using Elsa.Contracts;
+using Elsa.Services;
 
 namespace Elsa.Modules.Activities.Resolvers;
 

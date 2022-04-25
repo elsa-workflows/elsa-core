@@ -1,7 +1,7 @@
-using Elsa.Contracts;
-using Elsa.Management.Contracts;
 using Elsa.Management.Models;
+using Elsa.Management.Services;
 using Elsa.Scripting.JavaScript.Expressions;
+using Elsa.Services;
 
 namespace Elsa.Scripting.JavaScript.Providers;
 

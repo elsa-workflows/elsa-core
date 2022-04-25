@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Elsa.Attributes;
-using Elsa.Contracts;
 using Elsa.Models;
+using Elsa.Services;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Modules.Scheduling.Activities;

@@ -1,6 +1,6 @@
 using System.Diagnostics;
-using Elsa.Contracts;
 using Elsa.Models;
+using Elsa.Services;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Pipelines.ActivityExecution.Components;

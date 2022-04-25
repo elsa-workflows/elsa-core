@@ -1,9 +1,10 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Mediator.Contracts;
+using Elsa.Mediator.Models;
+using Elsa.Mediator.Services;
 using Elsa.Persistence.Commands;
 using Elsa.Persistence.Entities;
-using Elsa.Persistence.InMemory.Services;
+using Elsa.Persistence.InMemory.Implementations;
 using Elsa.Persistence.Mappers;
 
 namespace Elsa.Persistence.InMemory.Handlers.Commands;

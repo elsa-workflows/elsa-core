@@ -4,11 +4,11 @@ using System.Linq;
 using System.Net.Mime;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Elsa.Contracts;
 using Elsa.Helpers;
 using Elsa.Modules.Http.Models;
-using Elsa.Runtime.Contracts;
 using Elsa.Runtime.Models;
+using Elsa.Runtime.Services;
+using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 

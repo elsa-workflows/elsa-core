@@ -1,6 +1,6 @@
 using System;
-using Elsa.Modules.Http.Contracts;
 using Elsa.Modules.Http.Handlers;
+using Elsa.Modules.Http.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 

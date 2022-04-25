@@ -1,6 +1,6 @@
 using System.Threading.Channels;
-using Elsa.Runtime.Contracts;
 using Elsa.Runtime.Models;
+using Elsa.Runtime.Services;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 

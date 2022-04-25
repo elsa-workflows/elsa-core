@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using Elsa.Attributes;
 using Elsa.Models;
-using Elsa.Modules.Activities.Contracts;
+using Elsa.Modules.Activities.Services;
 
 namespace Elsa.Modules.Activities.Console;
 
