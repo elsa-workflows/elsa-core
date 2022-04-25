@@ -55,9 +55,6 @@ public class ActivityInvokerMiddleware : IActivityExecutionMiddleware
         {
             // Store bookmarks.
             workflowExecution.RegisterBookmarks(context.Bookmarks);
-
-            // Block current path of execution.
-            return;
         }
     }
 

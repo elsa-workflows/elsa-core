@@ -1,3 +1,4 @@
+using Elsa.Models;
 using Elsa.Persistence.Entities;
 
 namespace Elsa.Persistence.Models;
@@ -7,8 +8,9 @@ public record WorkflowInstanceSummary(
     string DefinitionId,
     string DefinitionVersionId,
     int Version,
-    WorkflowStatus WorkflowStatus,
-    string CorrelationId,
+    WorkflowStatus Status,
+    WorkflowSubStatus SubStatus,
+    string? CorrelationId,
     string? Name,
     DateTimeOffset CreatedAt,
     DateTimeOffset? LastExecutedAt,
@@ -21,7 +23,8 @@ public record WorkflowInstanceSummary(
         workflowInstance.DefinitionId,
         workflowInstance.DefinitionVersionId,
         workflowInstance.Version,
-        workflowInstance.WorkflowStatus,
+        workflowInstance.Status,
+        workflowInstance.SubStatus,
         workflowInstance.CorrelationId,
         workflowInstance.Name,
         workflowInstance.CreatedAt,

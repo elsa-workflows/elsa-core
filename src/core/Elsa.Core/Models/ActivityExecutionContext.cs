@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using Elsa.Services;
-using Elsa.Signals;
 
 namespace Elsa.Models;
 
@@ -91,40 +90,6 @@ public class ActivityExecutionContext
         foreach (var activity in activities)
             ScheduleActivity(activity, completionCallback);
     }
-    
-    /// <summary>
-    /// Send a signal up the current branch.
-    /// </summary>
-    public async ValueTask SignalAsync(object signal)
-    {
-        var ancestorContexts = GetAncestors();
-
-        foreach (var ancestorContext in ancestorContexts)
-        {
-            var signalContext = new SignalContext(ancestorContext, this, CancellationToken);
-
-            if (ancestorContext.Activity is not ISignalHandler handler)
-                continue;
-
-            
-            await handler.HandleSignalAsync(signal, signalContext);
-
-            if (signalContext.StopPropagationRequested)
-                return;
-        }
-    }
-
-    /// <summary>
-    /// Complete the current activity. This should only be called by activities that explicitly suppress automatic-completion.
-    /// </summary>
-    public async ValueTask CompleteActivityAsync()
-    {
-        // Send a signal.
-        await SignalAsync(new ActivityCompleted());
-
-        // Remove the context.
-        WorkflowExecutionContext.ActivityExecutionContexts.Remove(this);
-    }
 
     public void CreateBookmarks(IEnumerable<object> bookmarkData, ExecuteActivityDelegate? callback = default)
     {
@@ -157,6 +122,8 @@ public class ActivityExecutionContext
         AddBookmark(bookmark);
         return bookmark;
     }
+    
+    public void ClearBookmarks() => _bookmarks.Clear();
 
     public T? GetProperty<T>(string key) => ApplicationProperties!.TryGetValue<T?>(key, out var value) ? value : default;
     public void SetProperty<T>(string key, T value) where T : notnull => ApplicationProperties[key] = value;
@@ -189,61 +156,22 @@ public class ActivityExecutionContext
     public void Set(Output output, object? value) => ExpressionExecutionContext.Set(output, value);
     public void Set<T>(Output output, T value) => ExpressionExecutionContext.Set(output, value);
 
-    public async Task<T?> EvaluateAsync<T>(Input<T> input)
-    {
-        var evaluator = GetRequiredService<IExpressionEvaluator>();
-        var locationReference = input.LocationReference;
-        var value = await evaluator.EvaluateAsync(input, ExpressionExecutionContext);
-        locationReference.Set(this, value);
-        return value;
-    }
-
     /// <summary>
     /// Stops further execution of the workflow.
     /// </summary>
     public void PreventContinuation() => Continue = false;
 
     /// <summary>
-    /// Returns a flattened list of the current context's ancestors.
+    /// Removes all completion callbacks for the current activity.
     /// </summary>
-    /// <returns></returns>
-    public IEnumerable<ActivityExecutionContext> GetAncestors()
-    {
-        var current = ParentActivityExecutionContext;
-
-        while (current != null)
-        {
-            yield return current;
-            current = current.ParentActivityExecutionContext;
-        }
-    }
-
-    /// <summary>
-    /// Returns a flattened list of the current context's immediate children.
-    /// </summary>
-    /// <returns></returns>
-    public IEnumerable<ActivityExecutionContext> GetChildren()
-    {
-        return WorkflowExecutionContext.ActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == this);
-    }
-
-    /// <summary>
-    /// Removes all child <see cref="ActivityExecutionContext"/> objects.
-    /// </summary>
-    public void RemoveChildren()
-    {
-        // Detach child activity execution contexts.
-        WorkflowExecutionContext.RemoveActivityExecutionContexts(GetChildren());
-    }
-
-    private RegisterLocation? GetLocation(RegisterLocationReference locationReference) =>
-        ExpressionExecutionContext.Register.TryGetLocation(locationReference.Id, out var location)
-            ? location
-            : ParentActivityExecutionContext?.GetLocation(locationReference);
-
     public void ClearCompletionCallbacks()
     {
         var entriesToRemove = WorkflowExecutionContext.CompletionCallbacks.Where(x => x.Owner == this);
         WorkflowExecutionContext.RemoveCompletionCallbacks(entriesToRemove);
     }
+    
+    private RegisterLocation? GetLocation(RegisterLocationReference locationReference) =>
+        ExpressionExecutionContext.Register.TryGetLocation(locationReference.Id, out var location)
+            ? location
+            : ParentActivityExecutionContext?.GetLocation(locationReference);
 }

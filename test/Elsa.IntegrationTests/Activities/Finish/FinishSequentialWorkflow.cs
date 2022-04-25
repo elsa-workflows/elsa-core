@@ -1,0 +1,21 @@
+using Elsa.Activities;
+using Elsa.Modules.Activities.Console;
+using Elsa.Services;
+
+namespace Elsa.IntegrationTests.Activities;
+
+public class FinishSequentialWorkflow : IWorkflow
+{
+    public void Build(IWorkflowDefinitionBuilder workflow)
+    {
+        workflow.WithRoot(new Sequence
+        {
+            Activities =
+            {
+                new WriteLine("Line 1"),
+                new Finish(),
+                new WriteLine("Line 2")
+            }
+        });
+    }
+}

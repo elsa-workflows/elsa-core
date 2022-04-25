@@ -8,8 +8,8 @@ public record ActivityCompletionCallbackEntry(ActivityExecutionContext Owner, IA
 
 public class WorkflowExecutionContext
 {
-    private static ValueTask Noop(ActivityExecutionContext context) => new();
-    private static ValueTask Complete(ActivityExecutionContext context) => context.CompleteActivityAsync();
+    internal static ValueTask Noop(ActivityExecutionContext context) => new();
+    internal static ValueTask Complete(ActivityExecutionContext context) => context.CompleteActivityAsync();
     private readonly IServiceProvider _serviceProvider;
     private readonly IList<ActivityNode> _nodes;
     private readonly IList<ActivityCompletionCallbackEntry> _completionCallbackEntries = new List<ActivityCompletionCallbackEntry>();
@@ -30,6 +30,7 @@ public class WorkflowExecutionContext
         _serviceProvider = serviceProvider;
         Workflow = workflow;
         Graph = graph;
+        SubStatus = WorkflowSubStatus.Executing;
         Id = id;
         CorrelationId = correlationId;
         _nodes = graph.Flatten().Distinct().ToList();
@@ -45,9 +46,11 @@ public class WorkflowExecutionContext
 
     public Workflow Workflow { get; }
     public ActivityNode Graph { get; }
+    public WorkflowStatus Status => GetMainStatus(SubStatus);
+    public WorkflowSubStatus SubStatus { get; internal set; }
     public Register Register { get; }
     public string Id { get; set; }
-    public string CorrelationId { get; set; }
+    public string? CorrelationId { get; set; }
     public IReadOnlyCollection<ActivityNode> Nodes => new ReadOnlyCollection<ActivityNode>(_nodes);
     public IDictionary<string, ActivityNode> NodeIdLookup { get; }
     public IDictionary<IActivity, ActivityNode> NodeActivityLookup { get; }
@@ -79,16 +82,6 @@ public class WorkflowExecutionContext
 
     public T GetRequiredService<T>() where T : notnull => _serviceProvider.GetRequiredService<T>();
     public object GetRequiredService(Type serviceType) => _serviceProvider.GetRequiredService(serviceType);
-
-    public void Schedule(IActivity activity, ActivityExecutionContext owner, ActivityCompletionCallback? completionCallback = default, IEnumerable<RegisterLocationReference>? locationReferences = default, object? tag = default)
-    {
-        var activityInvoker = GetRequiredService<IActivityInvoker>();
-        var workItem = new ActivityWorkItem(activity.Id, async () => await activityInvoker.InvokeAsync(this, activity, owner, locationReferences), tag);
-        Scheduler.Push(workItem);
-
-        if (completionCallback != null)
-            AddCompletionCallback(owner, activity, completionCallback);
-    }
 
     public void AddCompletionCallback(ActivityExecutionContext owner, IActivity child, ActivityCompletionCallback completionCallback)
     {
@@ -136,54 +129,40 @@ public class WorkflowExecutionContext
         foreach (var bookmark in bookmarks)
             _bookmarks.Remove(bookmark);
     }
-
-    public void ScheduleRoot()
+    
+    /// <summary>
+    /// Clears all bookmarks from all <see cref="ActivityExecutionContexts"/>.
+    /// </summary>
+    public void ClearBookmarks()
     {
-        var activityInvoker = GetRequiredService<IActivityInvoker>();
-        var workItem = new ActivityWorkItem(Workflow.Root.Id, async () => await activityInvoker.InvokeAsync(this, Workflow.Root));
-        Scheduler.Push(workItem);
+        _bookmarks.Clear();
+        foreach (var activityExecutionContext in ActivityExecutionContexts) activityExecutionContext.ClearBookmarks();
     }
 
-    public void ScheduleBookmark(Bookmark bookmark)
+    public void TransitionTo(WorkflowSubStatus subStatus)
     {
-        // Construct bookmark.
-        var bookmarkedActivityContext = ActivityExecutionContexts.First(x => x.Id == bookmark.ActivityInstanceId);
-        var bookmarkedActivity = bookmarkedActivityContext.Activity;
-
-        // Schedule the activity to resume.
-        var activityInvoker = GetRequiredService<IActivityInvoker>();
-        var workItem = new ActivityWorkItem(bookmarkedActivity.Id, async () => await activityInvoker.InvokeAsync(bookmarkedActivityContext));
-        Scheduler.Push(workItem);
-
-        // If no resumption point was specified, use Noop to prevent the regular "ExecuteAsync" method to be invoked.
-        ExecuteDelegate = bookmark.CallbackMethodName != null ? bookmarkedActivity.GetResumeActivityDelegate(bookmark.CallbackMethodName) : Complete;
-    }
-
-    public T? GetVariable<T>(string name) => (T?)GetVariable(name);
-    public T? GetVariable<T>() => (T?)GetVariable(typeof(T).Name);
-
-    public object? GetVariable(string name)
-    {
-        var variable = Workflow.Variables.FirstOrDefault(x => x.Name == name);
-        return variable?.Get(Register);
-    }
-
-    public Variable SetVariable<T>(T? value) => SetVariable(typeof(T).Name, value);
-    public Variable SetVariable<T>(string name, T? value) => SetVariable(name, (object?)value);
-
-    public Variable SetVariable(string name, object? value)
-    {
-        var variable = Workflow.Variables.FirstOrDefault(x => x.Name == name) ?? new Variable(name, value);
-        variable.Set(Register, value);
-        return variable;
-    }
-
-    public void RemoveActivityExecutionContexts(IEnumerable<ActivityExecutionContext> contexts)
-    {
-        // Copy each item into a new list to avoid changing the source enumerable while removing elements from it.
-        var list = contexts.ToList(); 
+        var targetStatus = GetMainStatus(subStatus);
         
-        // Remove each context.
-        foreach (var context in list) ActivityExecutionContexts.Remove(context);
+        if (!ValidateStatusTransition(SubStatus, subStatus))
+            throw new Exception($"Cannot transition from {Status} to {targetStatus}");
+
+        SubStatus = subStatus;
+    }
+
+    private WorkflowStatus GetMainStatus(WorkflowSubStatus subStatus) =>
+        subStatus switch
+        {
+            WorkflowSubStatus.Cancelled => WorkflowStatus.Finished,
+            WorkflowSubStatus.Executing => WorkflowStatus.Running,
+            WorkflowSubStatus.Faulted => WorkflowStatus.Finished,
+            WorkflowSubStatus.Finished => WorkflowStatus.Finished,
+            WorkflowSubStatus.Suspended => WorkflowStatus.Running,
+            _ => throw new ArgumentOutOfRangeException(nameof(subStatus), subStatus, null)
+        };
+
+    private bool ValidateStatusTransition(WorkflowSubStatus currentSubStatus, WorkflowSubStatus target)
+    {
+        var currentMainStatus = GetMainStatus(currentSubStatus);
+        return currentMainStatus != WorkflowStatus.Finished;
     }
 }

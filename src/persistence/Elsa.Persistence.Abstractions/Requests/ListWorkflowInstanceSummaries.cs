@@ -1,4 +1,5 @@
 using Elsa.Mediator.Services;
+using Elsa.Models;
 using Elsa.Persistence.Entities;
 using Elsa.Persistence.Models;
 
@@ -10,6 +11,7 @@ public record ListWorkflowInstanceSummaries(
     int? Version = default,
     string? CorrelationId = default,
     WorkflowStatus? WorkflowStatus = default,
+    WorkflowSubStatus? WorkflowSubStatus = default,
     OrderBy OrderBy = OrderBy.Created,
     OrderDirection OrderDirection = OrderDirection.Ascending,
     int Skip = 0,

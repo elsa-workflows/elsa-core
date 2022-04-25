@@ -26,7 +26,7 @@ public class ExpressionHandlerRegistry : IExpressionHandlerRegistry
         if (expressionType.IsConstructedGenericType)
             expressionType = expressionType.BaseType;
 
-        if (!Dictionary.TryGetValue(expressionType, out var handlerType))
+        if (!Dictionary.TryGetValue(expressionType!, out var handlerType))
             return null;
 
         return (IExpressionHandler)ActivatorUtilities.GetServiceOrCreateInstance(_serviceProvider, handlerType);

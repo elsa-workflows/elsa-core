@@ -22,7 +22,7 @@ public class OutputExpressionHandler : IExpressionHandler
     public ValueTask<object?> EvaluateAsync(IExpression expression, Type returnType, ExpressionExecutionContext context)
     {
         var outputExpression = (OutputExpression)expression;
-        var output = outputExpression.Output;
+        var output = outputExpression.Output!;
         var value = context.Get(output);
         return ValueTask.FromResult(value);
     }

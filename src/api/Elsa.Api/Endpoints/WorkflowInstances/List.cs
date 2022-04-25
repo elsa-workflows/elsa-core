@@ -1,6 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Mediator.Services;
+using Elsa.Models;
 using Elsa.Persistence.Entities;
 using Elsa.Persistence.Requests;
 using Elsa.Serialization;
@@ -22,13 +23,26 @@ public static partial class WorkflowInstances
         [FromQuery] string? correlationId,
         [FromQuery] int? version,
         [FromQuery] WorkflowStatus? workflowStatus,
+        [FromQuery] WorkflowSubStatus? workflowSubStatus,
         [FromQuery] OrderBy? orderBy,
         [FromQuery] OrderDirection? orderDirection)
     {
         var serializerOptions = serializerOptionsProvider.CreateApiOptions();
         var skip = page * pageSize;
         var take = pageSize;
-        var request = new ListWorkflowInstanceSummaries(searchTerm, definitionId, version, correlationId, workflowStatus, orderBy ?? OrderBy.Created, orderDirection ?? OrderDirection.Ascending, skip ?? 0, take ?? 50);
+
+        var request = new ListWorkflowInstanceSummaries(
+            searchTerm,
+            definitionId,
+            version,
+            correlationId,
+            workflowStatus,
+            workflowSubStatus,
+            orderBy ?? OrderBy.Created,
+            orderDirection ?? OrderDirection.Ascending,
+            skip ?? 0,
+            take ?? 50);
+
         var summaries = await requestSender.RequestAsync(request, cancellationToken);
 
         return Results.Json(summaries, serializerOptions, statusCode: StatusCodes.Status200OK);
