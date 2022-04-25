@@ -11,6 +11,7 @@ public record ListWorkflowInstanceSummaries(
     int? Version = default,
     string? CorrelationId = default,
     WorkflowStatus? WorkflowStatus = default,
+    WorkflowSubStatus? WorkflowSubStatus = default,
     OrderBy OrderBy = OrderBy.Created,
     OrderDirection OrderDirection = OrderDirection.Ascending,
     int Skip = 0,

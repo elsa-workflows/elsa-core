@@ -82,10 +82,14 @@ public class WorkflowDefinitionGrain : WorkflowDefinitionGrainBase
             DefinitionVersionId = workflow.Identity.Id,
             CorrelationId =  correlationId,
             CreatedAt = _systemClock.UtcNow,
-            WorkflowStatus = WorkflowStatus.Idle,
+            Status = WorkflowStatus.Running,
+            SubStatus = WorkflowSubStatus.Executing,
             WorkflowState = new WorkflowState
             {
-                Id = workflowInstanceId
+                Id = workflowInstanceId,
+                Status = WorkflowStatus.Running,
+                SubStatus = WorkflowSubStatus.Executing,
+                CorrelationId = correlationId
             }
         };
 

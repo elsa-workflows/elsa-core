@@ -30,7 +30,7 @@ public class WorkflowExecutionContext
         _serviceProvider = serviceProvider;
         Workflow = workflow;
         Graph = graph;
-        WorkflowStatus = WorkflowStatus.Idle;
+        SubStatus = WorkflowSubStatus.Executing;
         Id = id;
         CorrelationId = correlationId;
         _nodes = graph.Flatten().Distinct().ToList();
@@ -46,7 +46,8 @@ public class WorkflowExecutionContext
 
     public Workflow Workflow { get; }
     public ActivityNode Graph { get; }
-    public WorkflowStatus WorkflowStatus { get; private set; }
+    public WorkflowStatus Status => GetMainStatus(SubStatus);
+    public WorkflowSubStatus SubStatus { get; private set; }
     public Register Register { get; }
     public string Id { get; set; }
     public string CorrelationId { get; set; }
@@ -138,39 +139,30 @@ public class WorkflowExecutionContext
         foreach (var activityExecutionContext in ActivityExecutionContexts) activityExecutionContext.ClearBookmarks();
     }
 
-    public void TransitionTo(WorkflowStatus status)
+    public void TransitionTo(WorkflowSubStatus subStatus)
     {
-        if (!ValidateStatusTransition(WorkflowStatus, status))
-            throw new Exception($"Cannot transition from {WorkflowStatus} to {status}");
+        var targetStatus = GetMainStatus(subStatus);
+        
+        if (!ValidateStatusTransition(SubStatus, subStatus))
+            throw new Exception($"Cannot transition from {Status} to {targetStatus}");
 
-        WorkflowStatus = status;
+        SubStatus = subStatus;
     }
 
-    private bool ValidateStatusTransition(WorkflowStatus current, WorkflowStatus target)
-    {
-        switch (target)
+    private WorkflowStatus GetMainStatus(WorkflowSubStatus subStatus) =>
+        subStatus switch
         {
-            case WorkflowStatus.Running:
-                if (current != WorkflowStatus.Idle)
-                    return false;
-                break;
-            case WorkflowStatus.Cancelled:
-                if (current != WorkflowStatus.Idle && current != WorkflowStatus.Running)
-                    return false;
-                break;
-            case WorkflowStatus.Faulted:
-                if (current != WorkflowStatus.Idle && current != WorkflowStatus.Running)
-                    return false;
-                break;
-            case WorkflowStatus.Finished:
-                if (current != WorkflowStatus.Idle && current != WorkflowStatus.Running)
-                    return false;
-                break;
-            case WorkflowStatus.Idle:
-                return false;
-            
-        }
+            WorkflowSubStatus.Cancelled => WorkflowStatus.Finished,
+            WorkflowSubStatus.Executing => WorkflowStatus.Running,
+            WorkflowSubStatus.Faulted => WorkflowStatus.Finished,
+            WorkflowSubStatus.Finished => WorkflowStatus.Finished,
+            WorkflowSubStatus.Suspended => WorkflowStatus.Running,
+            _ => throw new ArgumentOutOfRangeException(nameof(subStatus), subStatus, null)
+        };
 
-        return true;
+    private bool ValidateStatusTransition(WorkflowSubStatus currentSubStatus, WorkflowSubStatus target)
+    {
+        var currentMainStatus = GetMainStatus(currentSubStatus);
+        return currentMainStatus != WorkflowStatus.Finished;
     }
 }

@@ -10,6 +10,6 @@ public class Finish : Activity
     {
         context.ClearCompletionCallbacks();
         context.WorkflowExecutionContext.ClearBookmarks();
-        context.WorkflowExecutionContext.TransitionTo(WorkflowStatus.Finished);
+        context.WorkflowExecutionContext.TransitionTo(WorkflowSubStatus.Finished);
     }
 }

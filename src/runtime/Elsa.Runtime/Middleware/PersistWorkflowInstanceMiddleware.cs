@@ -68,7 +68,8 @@ public class PersistWorkflowInstanceMiddleware : WorkflowExecutionMiddleware
             Version = version,
             DefinitionVersionId = definitionVersionId,
             CreatedAt = _clock.UtcNow,
-            WorkflowStatus = WorkflowStatus.Running,
+            Status = WorkflowStatus.Running,
+            SubStatus = WorkflowSubStatus.Executing,
             CorrelationId = _identityGenerator.GenerateId(),
             WorkflowState = _workflowStateSerializer.ReadState(context),
             Name = workflowInstanceName
@@ -98,6 +99,10 @@ public class PersistWorkflowInstanceMiddleware : WorkflowExecutionMiddleware
         // Update workflow instance.
         var workflowState = _workflowStateSerializer.ReadState(context);
         workflowInstance.WorkflowState = workflowState;
+        workflowInstance.Status = workflowState.Status;
+        workflowInstance.SubStatus = workflowState.SubStatus;
+        workflowInstance.CorrelationId = workflowState.CorrelationId;
+        workflowInstance.LastExecutedAt = _clock.UtcNow;
 
         // Get the workflow instance name, if any (could be provided by previously executed middleware). 
         if (context.TransientProperties.TryGetValue(WorkflowInstanceNameKey, out name))

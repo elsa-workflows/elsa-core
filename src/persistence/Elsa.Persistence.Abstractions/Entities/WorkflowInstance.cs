@@ -10,8 +10,10 @@ public class WorkflowInstance : Entity
     public string DefinitionVersionId { get; init; } = default!;
     public int Version { get; init; }
     public WorkflowState WorkflowState { get; set; } = default!;
-    public WorkflowStatus WorkflowStatus { get; set; }
-    public string CorrelationId { get; init; } = default!;
+    public WorkflowStatus Status { get; set; }
+    
+    public WorkflowSubStatus SubStatus { get; set; }
+    public string? CorrelationId { get; set; }
     public string? Name { get; set; }
     public WorkflowFault? Fault { get; set; }
     public DateTimeOffset CreatedAt { get; set; }

@@ -15,7 +15,7 @@ public class ListWorkflowInstanceSummariesHandler : IRequestHandler<ListWorkflow
     {
         var dbContext = await _store.CreateDbContextAsync(cancellationToken);
         var query = dbContext.WorkflowInstances.AsQueryable();
-        var (searchTerm, definitionId, version, correlationId, workflowStatus, orderBy, orderDirection, skip, take) = request;
+        var (searchTerm, definitionId, version, correlationId, workflowStatus, workflowSubStatus, orderBy, orderDirection, skip, take) = request;
 
         if (!string.IsNullOrWhiteSpace(definitionId))
             query = query.Where(x => x.DefinitionId == definitionId);
@@ -27,7 +27,10 @@ public class ListWorkflowInstanceSummariesHandler : IRequestHandler<ListWorkflow
             query = query.Where(x => x.CorrelationId == correlationId);
 
         if (workflowStatus != null)
-            query = query.Where(x => x.WorkflowStatus == workflowStatus);
+            query = query.Where(x => x.Status == workflowStatus);
+        
+        if (workflowSubStatus != null)
+            query = query.Where(x => x.SubStatus == workflowSubStatus);
 
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
