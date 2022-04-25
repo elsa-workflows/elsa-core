@@ -11,4 +11,5 @@ public class ActivityScheduler : IActivityScheduler
     public void Push(ActivityWorkItem activity) => _stack.Push(activity);
     public ActivityWorkItem Pop() => _stack.Pop();
     public IEnumerable<ActivityWorkItem> List() => _stack.ToList();
+    public void Clear() => _stack.Clear();
 }

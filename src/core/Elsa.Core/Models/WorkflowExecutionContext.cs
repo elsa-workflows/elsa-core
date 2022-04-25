@@ -47,10 +47,10 @@ public class WorkflowExecutionContext
     public Workflow Workflow { get; }
     public ActivityNode Graph { get; }
     public WorkflowStatus Status => GetMainStatus(SubStatus);
-    public WorkflowSubStatus SubStatus { get; private set; }
+    public WorkflowSubStatus SubStatus { get; internal set; }
     public Register Register { get; }
     public string Id { get; set; }
-    public string CorrelationId { get; set; }
+    public string? CorrelationId { get; set; }
     public IReadOnlyCollection<ActivityNode> Nodes => new ReadOnlyCollection<ActivityNode>(_nodes);
     public IDictionary<string, ActivityNode> NodeIdLookup { get; }
     public IDictionary<IActivity, ActivityNode> NodeActivityLookup { get; }

@@ -1,0 +1,36 @@
+using Elsa.Activities;
+using Elsa.Modules.Activities.Console;
+using Elsa.Modules.Activities.Primitives;
+using Elsa.Services;
+
+namespace Elsa.IntegrationTests.Activities;
+
+public class FinishForkedWorkflow : IWorkflow
+{
+    public void Build(IWorkflowDefinitionBuilder workflow)
+    {
+        workflow.WithRoot(new Fork
+        {
+            JoinMode = JoinMode.WaitAll,
+            Branches =
+            {
+                new Sequence
+                {
+                    Activities =
+                    {
+                        new WriteLine("Branch 1"),
+                        new Event("Event 1")
+                    }
+                },
+                new Sequence
+                {
+                    Activities =
+                    {
+                        new WriteLine("Branch 2"),
+                        new Finish()
+                    }
+                }
+            }
+        });
+    }
+}

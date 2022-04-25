@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using Elsa.Models;
 using Elsa.Services;
+using Elsa.Signals;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa;
@@ -75,6 +76,79 @@ public static class ActivityExecutionContextExtensions
         locationReference.Set(context, value);
 
         return input;
+    }
+    
+    public static async Task<T?> EvaluateAsync<T>(this ActivityExecutionContext context, Input<T> input)
+    {
+        var evaluator = context.GetRequiredService<IExpressionEvaluator>();
+        var locationReference = input.LocationReference;
+        var value = await evaluator.EvaluateAsync(input, context.ExpressionExecutionContext);
+        locationReference.Set(context, value);
+        return value;
+    }
+    
+    /// <summary>
+    /// Returns a flattened list of the current context's ancestors.
+    /// </summary>
+    /// <returns></returns>
+    public static IEnumerable<ActivityExecutionContext> GetAncestors(this ActivityExecutionContext context)
+    {
+        var current = context.ParentActivityExecutionContext;
+
+        while (current != null)
+        {
+            yield return current;
+            current = current.ParentActivityExecutionContext;
+        }
+    }
+
+    /// <summary>
+    /// Returns a flattened list of the current context's immediate children.
+    /// </summary>
+    /// <returns></returns>
+    public static IEnumerable<ActivityExecutionContext> GetChildren(this ActivityExecutionContext context) => 
+        context.WorkflowExecutionContext.ActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context);
+
+    /// <summary>
+    /// Removes all child <see cref="ActivityExecutionContext"/> objects.
+    /// </summary>
+    public static void RemoveChildren(this ActivityExecutionContext context)
+    {
+        // Detach child activity execution contexts.
+        context.WorkflowExecutionContext.RemoveActivityExecutionContexts(context.GetChildren());
+    }
+    
+    /// <summary>
+    /// Send a signal up the current branch.
+    /// </summary>
+    public static async ValueTask SignalAsync(this ActivityExecutionContext context, object signal)
+    {
+        var ancestorContexts = context.GetAncestors();
+
+        foreach (var ancestorContext in ancestorContexts)
+        {
+            var signalContext = new SignalContext(ancestorContext, context, context.CancellationToken);
+
+            if (ancestorContext.Activity is not ISignalHandler handler)
+                continue;
+            
+            await handler.HandleSignalAsync(signal, signalContext);
+
+            if (signalContext.StopPropagationRequested)
+                return;
+        }
+    }
+
+    /// <summary>
+    /// Complete the current activity. This should only be called by activities that explicitly suppress automatic-completion.
+    /// </summary>
+    public static async ValueTask CompleteActivityAsync(this ActivityExecutionContext context)
+    {
+        // Send a signal.
+        await context.SignalAsync(new ActivityCompleted());
+
+        // Remove the context.
+        context.WorkflowExecutionContext.ActivityExecutionContexts.Remove(context);
     }
 
     public static ILogger GetLogger(this ActivityExecutionContext context) => (ILogger)context.GetRequiredService(typeof(ILogger<>).MakeGenericType(context.Activity.GetType()));
