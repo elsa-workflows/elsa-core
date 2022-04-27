@@ -1,6 +1,7 @@
 using Elsa.Attributes;
 using Elsa.Models;
 using Elsa.Services;
+using Elsa.Signals;
 using Container = Elsa.Activities.Container;
 
 namespace Elsa.Modules.Activities.Workflows;
@@ -10,6 +11,11 @@ public record Connection(IActivity Source, IActivity Target, string? SourcePort,
 [Activity("Elsa", "Workflows", "A flowchart is a collection of activities and connections between them.")]
 public class Flowchart : Container
 {
+    public Flowchart()
+    {
+        OnSignalReceived<ActivityCompleted>(OnDescendantCompleted);
+    }
+
     [Node] public IActivity? Start { get; set; }
     public ICollection<Connection> Connections { get; set; } = new List<Connection>();
 
@@ -18,13 +24,12 @@ public class Flowchart : Container
         if (Start == null!)
             return;
 
-        context.ScheduleActivity(Start, OnChildCompleted);
+        context.ScheduleActivity(Start);
     }
-
-    private ValueTask OnChildCompleted(ActivityExecutionContext context, ActivityExecutionContext childContext)
+    
+    private void OnDescendantCompleted(ActivityCompleted signal, SignalContext context)
     {
-        ScheduleChildren(context, childContext.Activity);
-        return ValueTask.CompletedTask;
+        ScheduleChildren(context.ActivityExecutionContext, context.SourceActivityExecutionContext.Activity);
     }
 
     private void ScheduleChildren(ActivityExecutionContext context, IActivity parent)
@@ -35,6 +40,6 @@ public class Flowchart : Container
         var outboundConnections = Connections.Where(x => x.Source == parent).ToList();
         var children = outboundConnections.Select(x => x.Target).ToList();
 
-        context.ScheduleActivities(children, OnChildCompleted);
+        context.ScheduleActivities(children);
     }
 }
