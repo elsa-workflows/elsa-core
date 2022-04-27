@@ -11,13 +11,13 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
 {
     [DbContext(typeof(ElsaDbContext))]
-    [Migration("20220309231832_Initial")]
+    [Migration("20220427095656_Initial")]
     partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "6.0.1");
+            modelBuilder.HasAnnotation("ProductVersion", "6.0.3");
 
             modelBuilder.Entity("Elsa.Persistence.Entities.WorkflowBookmark", b =>
                 {
@@ -192,7 +192,6 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("CorrelationId")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset>("CreatedAt")
@@ -221,10 +220,13 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
                     b.Property<string>("Name")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("Version")
+                    b.Property<int>("Status")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("WorkflowStatus")
+                    b.Property<int>("SubStatus")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Version")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
@@ -250,14 +252,23 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
                     b.HasIndex("Name")
                         .HasDatabaseName("IX_WorkflowInstance_Name");
 
-                    b.HasIndex("WorkflowStatus")
-                        .HasDatabaseName("IX_WorkflowInstance_WorkflowStatus");
+                    b.HasIndex("Status")
+                        .HasDatabaseName("IX_WorkflowInstance_Status");
 
-                    b.HasIndex("WorkflowStatus", "DefinitionId")
-                        .HasDatabaseName("IX_WorkflowInstance_WorkflowStatus_DefinitionId");
+                    b.HasIndex("SubStatus")
+                        .HasDatabaseName("IX_WorkflowInstance_SubStatus");
 
-                    b.HasIndex("WorkflowStatus", "DefinitionId", "Version")
-                        .HasDatabaseName("IX_WorkflowInstance_WorkflowStatus_DefinitionId_Version");
+                    b.HasIndex("Status", "DefinitionId")
+                        .HasDatabaseName("IX_WorkflowInstance_Status_DefinitionId");
+
+                    b.HasIndex("Status", "SubStatus")
+                        .HasDatabaseName("IX_WorkflowInstance_Status_SubStatus");
+
+                    b.HasIndex("SubStatus", "DefinitionId")
+                        .HasDatabaseName("IX_WorkflowInstance_SubStatus_DefinitionId");
+
+                    b.HasIndex("Status", "SubStatus", "DefinitionId", "Version")
+                        .HasDatabaseName("IX_WorkflowInstance_Status_SubStatus_DefinitionId_Version");
 
                     b.ToTable("WorkflowInstances");
                 });
