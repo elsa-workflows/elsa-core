@@ -8,7 +8,7 @@ public static class WorkflowTriggerExtensions
 {
     public static IEnumerable<WorkflowTrigger> Filter<T>(this IEnumerable<WorkflowTrigger> triggers) where T : ITrigger
     {
-        var triggerName = TypeNameHelper.GenerateTypeName<T>();
+        var triggerName = ActivityTypeNameHelper.GenerateTypeName<T>();
         return triggers.Where(x => x.Name == triggerName);
     }
 }

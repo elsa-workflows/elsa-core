@@ -8,7 +8,7 @@ public static class WorkflowBookmarkExtensions
 {
     public static IEnumerable<WorkflowBookmark> Filter<T>(this IEnumerable<WorkflowBookmark> bookmarks) where T : IActivity
     {
-        var bookmarkName = TypeNameHelper.GenerateTypeName<T>();
+        var bookmarkName = ActivityTypeNameHelper.GenerateTypeName<T>();
         return bookmarks.Where(x => x.Name == bookmarkName);
     }
 }
