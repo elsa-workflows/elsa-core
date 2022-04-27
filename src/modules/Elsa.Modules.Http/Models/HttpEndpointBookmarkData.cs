@@ -1,11 +1,11 @@
 namespace Elsa.Modules.Http.Models;
 
-public record HttpBookmarkData
+public record HttpEndpointBookmarkData
 {
     private readonly string _path = default!;
     private readonly string _method = default!;
 
-    public HttpBookmarkData(string path, string method)
+    public HttpEndpointBookmarkData(string path, string method)
     {
         Path = path;
         Method = method;
