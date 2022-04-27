@@ -1,4 +1,4 @@
-export const HttpTriggerIcon: () => string = () =>
+export const HttpEndpointIcon: () => string = () =>
   `<svg class="h-6 w-6 text-white" width="24" height="24" viewBox="0 0 24 24"
        stroke-width="2"
        stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
