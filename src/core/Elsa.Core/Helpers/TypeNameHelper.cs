@@ -1,12 +1,20 @@
+using System.Reflection;
+using Elsa.Attributes;
+
 namespace Elsa.Helpers;
 
 public static class TypeNameHelper
 {
-    public static string? GenerateNamespace(Type activityType) => activityType.Namespace;
+    public static string? GenerateNamespace(Type activityType)
+    {
+        var activityAttr = activityType.GetCustomAttribute<ActivityAttribute>();
+        return activityAttr?.Namespace ?? activityType.Namespace;
+    }
 
     public static string GenerateTypeName(Type type, string? ns)
     {
-        var typeName = type.Name;
+        var activityAttr = type.GetCustomAttribute<ActivityAttribute>();
+        var typeName = activityAttr?.TypeName ?? type.Name;
         return ns != null ? $"{ns}.{typeName}" : typeName;
     }
 
