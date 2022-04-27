@@ -6,6 +6,7 @@ export interface Activity {
   id: string;
   typeName: string;
   metadata: any;
+  canStartWorkflow?: boolean;
   applicationProperties: any;
 
   [name: string]: any;

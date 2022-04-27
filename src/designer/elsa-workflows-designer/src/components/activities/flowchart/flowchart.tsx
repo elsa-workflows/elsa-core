@@ -19,6 +19,7 @@ import {ConnectionCreatedEventArgs, FlowchartEvents} from "./events";
 import {TransposeHandlerRegistry} from "./transpose-handler-registry";
 import PositionEventArgs = NodeView.PositionEventArgs;
 import FromJSONData = Model.FromJSONData;
+import {ContextMenuAnchorPoint, MenuItem} from "../../shared/context-menu/models";
 
 @Component({
   tag: 'elsa-flowchart',
@@ -29,6 +30,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
   private readonly nodeFactory: NodeFactory;
   private rootId: string = uuid();
   private silent: boolean = false; // Whether to emit events or not.
+  private activityContextMenu: HTMLElsaContextMenuElement;
 
   constructor() {
     this.eventBus = Container.get(EventBus);
@@ -99,12 +101,22 @@ export class FlowchartComponent implements ContainerActivityComponent {
   }
 
   public render() {
+
     return (
-      <div
-        class="absolute left-0 top-0 right-0 bottom-0"
-        ref={el => this.container = el}/>
+      <div class="relative">
+        <div
+          class="absolute left-0 top-0 right-0 bottom-0"
+          ref={el => this.container = el}>
+        </div>
+        <elsa-context-menu ref={el => this.activityContextMenu = el}
+                           hideButton={true}
+                           anchorPoint={ContextMenuAnchorPoint.TopLeft}
+                           class="absolute"/>
+      </div>
     );
   }
+
+  private onEditMenuClicked: (e: MouseEvent) => void;
 
   public disableEvents = () => this.silent = true;
 
@@ -135,6 +147,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
 
     graph.on('blank:click', this.onGraphClick);
     graph.on('node:click', this.onNodeClick);
+    graph.on('node:contextmenu', this.onNodeContextMenu);
     graph.on('edge:connected', this.onEdgeConnected);
     graph.on('node:moved', this.onNodeMoved);
 
@@ -175,12 +188,21 @@ export class FlowchartComponent implements ContainerActivityComponent {
       }
     }
 
+    debugger;
+    let rootActivity = activities.find(activity => {
+      const hasInboundConnections = connections.find(c => c.target == activity.id) != null;
+      return !hasInboundConnections;
+    });
+
+    if (!rootActivity)
+      rootActivity = first(activities);
+
     return {
       typeName: 'Elsa.Flowchart',
       activities: remainingActivities,
       connections: remainingConnections,
       id: this.rootId,
-      start: first(activities)?.id,
+      start: rootActivity?.id,
       metadata: {},
       applicationProperties: {},
       variables: []
@@ -332,6 +354,33 @@ export class FlowchartComponent implements ContainerActivityComponent {
 
     this.activitySelected.emit(args);
   };
+
+  private onNodeContextMenu = async (e: PositionEventArgs<JQuery.ContextMenuEvent>) => {
+    const activity = e.node.data as Activity;
+    const canStartWorkflow = activity.canStartWorkflow;
+
+    const menuItems: Array<MenuItem> = [{
+      text: 'Startable',
+      clickHandler: () => {
+        activity.canStartWorkflow = !activity.canStartWorkflow;
+        this.onGraphChanged();
+      },
+      isToggle: true,
+      checked: canStartWorkflow,
+    }, {
+      text: 'Edit',
+      clickHandler: this.onEditMenuClicked
+    }, {
+      text: 'Delete',
+      clickHandler: this.onEditMenuClicked
+    }];
+
+    this.activityContextMenu.menuItems = menuItems;
+    this.activityContextMenu.style.top = `${e.y}px`;
+    this.activityContextMenu.style.left = `${e.x}px`;
+
+    await this.activityContextMenu.open();
+  }
 
   private onNodeMoved = (e: PositionEventArgs<JQuery.ClickEvent>) => {
     const {node, x, y} = e;

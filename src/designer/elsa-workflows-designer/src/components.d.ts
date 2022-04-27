@@ -10,7 +10,7 @@ import { ActivityUpdatedArgs, DeleteActivityRequestedArgs } from "./components/d
 import { ContainerActivityComponent } from "./components/activities/container-activity-component";
 import { AddActivityArgs } from "./components/designer/canvas/canvas";
 import { ActivityInputContext } from "./services/node-input-driver";
-import { MenuItem } from "./components/shared/context-menu/models";
+import { ContextMenuAnchorPoint, MenuItem } from "./components/shared/context-menu/models";
 import { DropdownButtonItem, DropdownButtonOrigin } from "./components/shared/dropdown-button/models";
 import { Graph } from "@antv/x6";
 import { AddActivityArgs as AddActivityArgs1 } from "./components/designer/canvas/canvas";
@@ -44,7 +44,11 @@ export namespace Components {
         "inputContext": ActivityInputContext;
     }
     interface ElsaContextMenu {
+        "anchorPoint": ContextMenuAnchorPoint;
+        "close": () => Promise<void>;
+        "hideButton": boolean;
         "menuItems": Array<MenuItem>;
+        "open": () => Promise<void>;
     }
     interface ElsaDropdownButton {
         "icon"?: any;
@@ -429,6 +433,8 @@ declare namespace LocalJSX {
         "inputContext"?: ActivityInputContext;
     }
     interface ElsaContextMenu {
+        "anchorPoint"?: ContextMenuAnchorPoint;
+        "hideButton"?: boolean;
         "menuItems"?: Array<MenuItem>;
     }
     interface ElsaDropdownButton {
