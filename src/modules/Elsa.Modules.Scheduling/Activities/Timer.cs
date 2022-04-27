@@ -29,12 +29,12 @@ public class Timer : EventGenerator
     
     [Input] public Input<TimeSpan> Interval { get; set; } = default!;
 
-    protected override IEnumerable<object> GetTriggerData(TriggerIndexingContext context)
+    protected override object GetTriggerDatum(TriggerIndexingContext context)
     {
         var interval = context.ExpressionExecutionContext.Get(Interval);
         var clock = context.ExpressionExecutionContext.GetRequiredService<ISystemClock>();
         var executeAt = clock.UtcNow.Add(interval);
-        yield return new TimerPayload(executeAt, interval);
+        return new TimerPayload(executeAt, interval);
     }
 
     public static Timer FromTimeSpan(TimeSpan value) => new(value);
