@@ -92,6 +92,7 @@ services
     .AddActivity<ForEach>()
     .AddActivity<Switch>()
     .AddActivity<SendMessage>()
+    .AddActivity<MessageReceived>()
     .AddActivity<RunJavaScript>()
     ;
 
