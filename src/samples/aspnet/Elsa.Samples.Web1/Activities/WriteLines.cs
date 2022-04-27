@@ -10,8 +10,7 @@ using Elsa.Models;
 
 namespace Elsa.Samples.Web1.Activities;
 
-[Activity("Samples.WriteLines")]
-[Category("Samples")]
+[Activity("Samples")]
 public class WriteLines : Activity, IActivityPropertyOptionsProvider
 {
     public WriteLines()
