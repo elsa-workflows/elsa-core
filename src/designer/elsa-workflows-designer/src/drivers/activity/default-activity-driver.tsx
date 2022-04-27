@@ -19,7 +19,7 @@ export class DefaultActivityDriver implements ActivityDriver {
     const text = activityDescriptor?.displayName;
     const isTrigger = (activityDescriptor?.traits & ActivityTraits.Trigger) == ActivityTraits.Trigger;
     const borderColor = isTrigger ? 'border-green-600' : 'border-blue-600';
-    const backgroundColor = isTrigger ? 'bg-green-400' : 'bg-blue-400';
+    const backgroundColor = 'bg-white'; // isTrigger ? 'bg-green-400' : 'bg-blue-400';
     const iconBackgroundColor = isTrigger ? 'bg-green-500' : 'bg-blue-500';
     const icon = iconRegistry.has(activityType) ? iconRegistry.get(activityType) : null;
 
@@ -31,8 +31,8 @@ export class DefaultActivityDriver implements ActivityDriver {
                 ${this.renderIcon(icon)}
                 </div>
                 <div class="flex items-center">
-                  <div class="px-4 py-1">
-                    ${text}
+                  <div class="px-4 py-4">
+                    <span class="text-gray-700">${text}</span>
                   </div>
                 </div>
               </div>
@@ -42,11 +42,12 @@ export class DefaultActivityDriver implements ActivityDriver {
   }
 
   private renderIcon = (icon?: ActivityIcon): string => {
-    if (!icon)
-      return '';
+
+    if(!icon)
+      return ''; //return '<div class="px-1 py-1"><span></span></div>';
 
     return (
-      `<div class="px-2 py-1">
+      `<div class="px-4 py-1">
         ${icon()}
       </div>`
     );
