@@ -81,6 +81,7 @@ services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader()
 
 // Register activities available from the designer.
 services
+    .AddActivity<Sequence>()
     .AddActivity<WriteLine>()
     .AddActivity<WriteLines>()
     .AddActivity<ReadLine>()
