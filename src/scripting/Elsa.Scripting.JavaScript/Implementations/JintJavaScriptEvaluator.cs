@@ -1,5 +1,6 @@
 ﻿using Elsa.Mediator.Services;
 using Elsa.Models;
+using Elsa.Scripting.JavaScript.Extensions;
 using Elsa.Scripting.JavaScript.Notifications;
 using Elsa.Scripting.JavaScript.Options;
 using Elsa.Scripting.JavaScript.Services;
@@ -43,10 +44,13 @@ namespace Elsa.Scripting.JavaScript.Implementations
             
             // Add workflow variables.
             var variables = GetVariables(context);
-            foreach (var variable in variables)
-            {
+            
+            foreach (var variable in variables) 
                 engine.SetValue(variable.Key, variable.Value.Value);
-            }
+
+            // Add common .NET types.
+            engine.RegisterType<DateTime>();
+            engine.RegisterType<TimeSpan>();
 
             // Allow listeners invoked by the mediator to configure the engine.
             await _mediator.PublishAsync(new EvaluatingJavaScript(engine, context), cancellationToken);
