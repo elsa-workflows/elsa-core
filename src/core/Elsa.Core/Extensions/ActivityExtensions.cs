@@ -30,16 +30,15 @@ public static class ActivityExtensions
         return (Input?)inputProp.GetValue(activity);
     }
         
-    public static IEnumerable<Output> GetOutputs(this IActivity activity)
+    public static IEnumerable<NamedOutput> GetOutputs(this IActivity activity)
     {
         var outputProps = activity.GetType().GetProperties().Where(x => typeof(Output).IsAssignableFrom(x.PropertyType)).ToList();
 
         var query =
             from outputProp in outputProps
-            select (Output?)outputProp.GetValue(activity)
-            into output
+            let output = (Output?)outputProp.GetValue(activity)
             where output != null
-            select output;
+            select new NamedOutput(outputProp.Name, output);
 
         return query.Select(x => x!).ToList();
     }

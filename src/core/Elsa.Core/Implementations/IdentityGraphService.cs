@@ -47,11 +47,11 @@ public class IdentityGraphService : IIdentityGraphService
 
         seed = 0;
         var outputs = activity.GetOutputs();
-        var assignedOutputs = outputs.Where(x => x.LocationReference != null! && x.LocationReference.Id == null!).ToList();
+        var assignedOutputs = outputs.Where(x => x.Value.LocationReference != null! && x.Value.LocationReference.Id == null!).ToList();
 
         foreach (var output in assignedOutputs)
         {
-            var locationReference = output.LocationReference;
+            var locationReference = output.Value.LocationReference;
             locationReference.Id = $"{activity.Id}:output-{++seed}";
         }
     }

@@ -130,7 +130,7 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
         {
             var cancellationToken = workflowExecutionContext.CancellationToken;
             var activity = workflowExecutionContext.FindActivityById(activityExecutionContextState.ScheduledActivityId);
-            var register = new Register(activityExecutionContextState.Register.Locations);
+            var register = workflowExecutionContext.Register;
             var workflow = workflowExecutionContext.Workflow;
             var expressionInput = workflowExecutionContext.Input;
             var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, register, workflow, expressionInput, workflowExecutionContext.TransientProperties, default, cancellationToken);

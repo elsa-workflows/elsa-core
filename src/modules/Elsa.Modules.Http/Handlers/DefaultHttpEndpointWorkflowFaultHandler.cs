@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Modules.Http.Handlers;
 
+// ReSharper disable once ClassWithVirtualMembersNeverInherited.Global
 public class DefaultHttpEndpointWorkflowFaultHandler : IHttpEndpointWorkflowFaultHandler
 {
     public virtual async ValueTask HandleAsync(HttpEndpointFaultedWorkflowContext context)

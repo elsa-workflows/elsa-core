@@ -6,7 +6,8 @@ public class ExpressionExecutionContext
 {
     private readonly IServiceProvider _serviceProvider;
 
-    public ExpressionExecutionContext(IServiceProvider serviceProvider,
+    public ExpressionExecutionContext(
+        IServiceProvider serviceProvider,
         Register register,
         Workflow workflow,
         IDictionary<string, object> input,
@@ -23,7 +24,11 @@ public class ExpressionExecutionContext
         CancellationToken = cancellationToken;
     }
 
+    /// <summary>
+    /// A register of computer memory. 
+    /// </summary>
     public Register Register { get; }
+    
     public Workflow Workflow { get; }
     public IDictionary<string, object> Input { get; }
     public IDictionary<object, object?> TransientProperties { get; }

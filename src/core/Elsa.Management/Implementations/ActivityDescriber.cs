@@ -28,13 +28,13 @@ public class ActivityDescriber : IActivityDescriber
     public ValueTask<ActivityDescriptor> DescribeActivityAsync(Type activityType, CancellationToken cancellationToken = default)
     {
         var activityAttr = activityType.GetCustomAttribute<ActivityAttribute>();
-        var ns = activityAttr?.Namespace ?? TypeNameHelper.GenerateNamespace(activityType);
+        var ns = activityAttr?.Namespace ?? ActivityTypeNameHelper.GenerateNamespace(activityType);
         var typeName = activityAttr?.TypeName ?? activityType.Name;
         var fullTypeName = $"{ns}.{typeName}";
         var displayNameAttr = activityType.GetCustomAttribute<DisplayNameAttribute>();
         var displayName = displayNameAttr?.DisplayName ?? activityAttr?.DisplayName ?? typeName.Humanize(LetterCasing.Title);
         var categoryAttr = activityType.GetCustomAttribute<CategoryAttribute>();
-        var category = categoryAttr?.Category ?? activityAttr?.Category ?? TypeNameHelper.GetCategoryFromNamespace(ns) ?? "Miscellaneous";
+        var category = categoryAttr?.Category ?? activityAttr?.Category ?? ActivityTypeNameHelper.GetCategoryFromNamespace(ns) ?? "Miscellaneous";
         var descriptionAttr = activityType.GetCustomAttribute<DescriptionAttribute>();
         var description = descriptionAttr?.Description ?? activityAttr?.Description;
 

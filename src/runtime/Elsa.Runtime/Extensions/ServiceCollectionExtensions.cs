@@ -75,6 +75,7 @@ public static class ServiceCollectionExtensions
             .AddExpressionHandler<LiteralExpressionHandler, LiteralExpression>()
             .AddExpressionHandler<DelegateExpressionHandler, DelegateExpression>()
             .AddExpressionHandler<VariableExpressionHandler, VariableExpression>()
+            .AddExpressionHandler<JsonExpressionHandler, JsonExpression>()
             .AddExpressionHandler<OutputExpressionHandler, OutputExpression>()
             .AddExpressionHandler<ElsaExpressionHandler, ElsaExpression>();
 

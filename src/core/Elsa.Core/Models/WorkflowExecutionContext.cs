@@ -129,7 +129,7 @@ public class WorkflowExecutionContext
         foreach (var bookmark in bookmarks)
             _bookmarks.Remove(bookmark);
     }
-    
+
     /// <summary>
     /// Clears all bookmarks from all <see cref="ActivityExecutionContexts"/>.
     /// </summary>
@@ -142,7 +142,7 @@ public class WorkflowExecutionContext
     public void TransitionTo(WorkflowSubStatus subStatus)
     {
         var targetStatus = GetMainStatus(subStatus);
-        
+
         if (!ValidateStatusTransition(SubStatus, subStatus))
             throw new Exception($"Cannot transition from {Status} to {targetStatus}");
 
@@ -165,4 +165,6 @@ public class WorkflowExecutionContext
         var currentMainStatus = GetMainStatus(currentSubStatus);
         return currentMainStatus != WorkflowStatus.Finished;
     }
+    
+    private IEnumerable<Register> GetMergedRegistersView() => new[] { Register }.Concat(ActivityExecutionContexts.Select(x => x.ExpressionExecutionContext.Register)).ToList();
 }

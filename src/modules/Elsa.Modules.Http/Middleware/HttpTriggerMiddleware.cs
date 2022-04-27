@@ -35,8 +35,8 @@ public class HttpTriggerMiddleware
         var request = httpContext.Request;
         var method = request.Method!.ToLowerInvariant();
         var abortToken = httpContext.RequestAborted;
-        var hash = _hasher.Hash(new HttpBookmarkData(path, method));
-        var activityTypeName = TypeNameHelper.GenerateTypeName<HttpEndpoint>();
+        var hash = _hasher.Hash(new HttpEndpointBookmarkData(path, method));
+        var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
         var routeData = GetRouteData(httpContext, routeMatcher, path);
 
         var requestModel = new HttpRequestModel(
