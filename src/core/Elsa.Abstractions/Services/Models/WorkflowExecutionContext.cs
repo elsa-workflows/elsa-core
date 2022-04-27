@@ -74,6 +74,7 @@ namespace Elsa.Services.Models
         public void ScheduleActivity(ScheduledActivity activity) => WorkflowInstance.ScheduledActivities.Push(activity);
         public ScheduledActivity PopScheduledActivity() => WorkflowInstance.ScheduledActivities.Pop();
         public ScheduledActivity PeekScheduledActivity() => WorkflowInstance.ScheduledActivities.Peek();
+        public void ClearScheduledActivities() => WorkflowInstance.ScheduledActivities.Clear();
 
         public string CorrelationId
         {
