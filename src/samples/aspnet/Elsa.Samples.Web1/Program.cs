@@ -20,6 +20,8 @@ using Elsa.Modules.Scheduling.Extensions;
 using Elsa.Modules.WorkflowContexts.Extensions;
 using Elsa.Persistence.EntityFrameworkCore.Extensions;
 using Elsa.Persistence.EntityFrameworkCore.Sqlite;
+using Elsa.Pipelines.ActivityExecution;
+using Elsa.Pipelines.ActivityExecution.Components;
 using Elsa.Pipelines.WorkflowExecution.Components;
 using Elsa.Runtime.Extensions;
 using Elsa.Runtime.ProtoActor.Extensions;
@@ -70,6 +72,8 @@ services
         options.Workflows.Add<SubmitJobWorkflow>();
         options.Workflows.Add<DelayWorkflow>();
         options.Workflows.Add<OrderProcessingWorkflow>();
+        options.Workflows.Add<StartAtTriggerWorkflow>();
+        options.Workflows.Add<StartAtBookmarkWorkflow>();
     });
 
 // Testing only: allow client app to connect from anywhere.

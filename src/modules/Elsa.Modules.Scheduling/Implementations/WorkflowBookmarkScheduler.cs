@@ -29,9 +29,13 @@ public class WorkflowBookmarkScheduler : IWorkflowBookmarkScheduler
 
         // Select all Delay bookmarks.
         var delayBookmarks = bookmarkList.Filter<Delay>().ToList();
+        
+        // Select all StartAt bookmarks.
+        var startAtBookmarks = bookmarkList.Filter<StartAt>().ToList();
+        
         var groupKeys = new[] { RootGroupKey, workflowInstanceId };
 
-        // Schedule a trigger for each bookmark.
+        // Schedule a trigger for each Delay bookmark.
         foreach (var bookmark in delayBookmarks)
         {
             var payload = JsonSerializer.Deserialize<DelayPayload>(bookmark.Data!)!;
@@ -40,16 +44,26 @@ public class WorkflowBookmarkScheduler : IWorkflowBookmarkScheduler
             var schedule = new SpecificInstantSchedule(resumeAt);
             await _jobScheduler.ScheduleAsync(job, bookmark.Id, schedule, groupKeys, cancellationToken);
         }
+        
+        // Schedule a trigger for each StartAt bookmark.
+        foreach (var bookmark in startAtBookmarks)
+        {
+            var payload = JsonSerializer.Deserialize<StartAtPayload>(bookmark.Data!)!;
+            var executeAt = payload.ExecuteAt;
+            var job = new ResumeWorkflowJob(workflowInstanceId, bookmark.ToBookmark());
+            var schedule = new SpecificInstantSchedule(executeAt);
+            await _jobScheduler.ScheduleAsync(job, bookmark.Id, schedule, groupKeys, cancellationToken);
+        }
     }
 
     public async Task UnscheduleBookmarksAsync(string workflowInstanceId, IEnumerable<WorkflowBookmark> bookmarks, CancellationToken cancellationToken = default)
     {
         var bookmarkList = bookmarks.ToList();
         var delayBookmarks = bookmarkList.Filter<Delay>().ToList();
+        var startAtBookmarks = bookmarkList.Filter<StartAt>().ToList();
+        var bookmarksToUnSchedule = delayBookmarks.Concat(startAtBookmarks).ToList();
 
-        foreach (var bookmark in delayBookmarks)
-        {
+        foreach (var bookmark in bookmarksToUnSchedule) 
             await _jobScheduler.UnscheduleAsync(bookmark.Id, cancellationToken);
-        }
     }
 }

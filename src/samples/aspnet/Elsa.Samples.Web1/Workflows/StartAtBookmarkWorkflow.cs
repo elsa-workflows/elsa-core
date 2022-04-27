@@ -1,0 +1,29 @@
+using Elsa.Activities;
+using Elsa.Modules.Activities.Console;
+using Elsa.Modules.Scheduling.Activities;
+using Elsa.Services;
+
+namespace Elsa.Samples.Web1.Workflows;
+
+public class StartAtBookmarkWorkflow : IWorkflow
+{
+    private readonly ISystemClock _systemClock;
+
+    public StartAtBookmarkWorkflow(ISystemClock systemClock)
+    {
+        _systemClock = systemClock;
+    }
+
+    public void Build(IWorkflowDefinitionBuilder workflow)
+    {
+        workflow.WithRoot(new Sequence
+        {
+            Activities =
+            {
+                new WriteLine("Waiting for 5 seconds..."),
+                new StartAt(() => _systemClock.UtcNow.AddSeconds(5)),
+                new WriteLine(() => $"Executed at {_systemClock.UtcNow}")
+            }
+        });
+    }
+}

@@ -27,26 +27,45 @@ public class WorkflowTriggerScheduler : IWorkflowTriggerScheduler
 
     public async Task ScheduleTriggersAsync(IEnumerable<WorkflowTrigger> triggers, CancellationToken cancellationToken = default)
     {
-        // Select all Timer triggers.
-        var timerTriggers = triggers.Filter<Timer>().ToList();
+        var triggerList = triggers.ToList();
 
-        // Schedule each trigger.
+        // Select all Timer triggers.
+        var timerTriggers = triggerList.Filter<Timer>().ToList();
+        var startAtTriggers = triggerList.Filter<StartAt>().ToList();
+
+        // Schedule each Timer trigger.
         foreach (var trigger in timerTriggers)
         {
-            // Schedule trigger.
             var (dateTime, timeSpan) = JsonSerializer.Deserialize<TimerPayload>(trigger.Data!)!;
             var groupKeys = new[] { RootGroupKey, trigger.WorkflowDefinitionId };
             await _jobScheduler.ScheduleAsync(new RunWorkflowJob(trigger.WorkflowDefinitionId), trigger.WorkflowDefinitionId, new RecurringSchedule(dateTime, timeSpan), groupKeys, cancellationToken);
+        }
+
+        // Schedule each StartAt trigger.
+        foreach (var trigger in startAtTriggers)
+        {
+            var executeAt = JsonSerializer.Deserialize<StartAtPayload>(trigger.Data!)!.ExecuteAt;
+            var groupKeys = new[] { RootGroupKey, trigger.WorkflowDefinitionId };
+            await _jobScheduler.ScheduleAsync(new RunWorkflowJob(trigger.WorkflowDefinitionId), trigger.WorkflowDefinitionId, new SpecificInstantSchedule(executeAt), groupKeys, cancellationToken);
         }
     }
 
     public async Task UnscheduleTriggersAsync(IEnumerable<WorkflowTrigger> triggers, CancellationToken cancellationToken = default)
     {
+        var triggerList = triggers.ToList();
+
         // Select all Timer triggers.
-        var timerTriggers = triggers.Filter<Timer>().ToList();
+        var timerTriggers = triggerList.Filter<Timer>().ToList();
+
+        // Select all StartAt triggers.
+        var startAtTriggers = triggerList.Filter<Timer>().ToList();
 
         // Unschedule all triggers for the distinct set of affected workflows.
-        var workflowDefinitionIds = timerTriggers.Select(x => x.WorkflowDefinitionId).Distinct().ToList();
+        var workflowDefinitionIds = timerTriggers
+            .Select(x => x.WorkflowDefinitionId)
+            .Concat(startAtTriggers.Select(x => x.WorkflowDefinitionId))
+            .Distinct()
+            .ToList();
 
         foreach (var workflowDefinitionId in workflowDefinitionIds)
         {
