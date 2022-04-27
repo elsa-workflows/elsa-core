@@ -1,5 +1,13 @@
 using System;
+using System.Collections.Generic;
 
 namespace Elsa.Modules.Http.Models;
 
-public record HttpRequestModel(Uri RequestUri);
+public record HttpRequestModel(
+    Uri RequestUri,
+    string Path,
+    string Method,
+    IDictionary<string, string> QueryString,
+    IDictionary<string, object> RouteValues,
+    IDictionary<string, string> Headers
+);
