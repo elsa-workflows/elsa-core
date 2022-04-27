@@ -18,7 +18,7 @@ export class DefaultActivityDriver implements ActivityDriver {
     const activityType = activityDescriptor.activityType;
     const text = activityDescriptor?.displayName;
     const isTrigger = (activityDescriptor?.traits & ActivityTraits.Trigger) == ActivityTraits.Trigger;
-    const borderColor = isTrigger ? 'border-green-600' : 'border-blue-600';
+    const borderColor = 'border-gray-300'; //isTrigger ? 'border-green-600' : 'border-blue-600';
     const backgroundColor = 'bg-white'; // isTrigger ? 'bg-green-400' : 'bg-blue-400';
     const iconBackgroundColor = isTrigger ? 'bg-green-500' : 'bg-blue-500';
     const icon = iconRegistry.has(activityType) ? iconRegistry.get(activityType) : null;
