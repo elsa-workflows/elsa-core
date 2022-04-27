@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Elsa.Modules.AzureServiceBus.Activities;
 
-[Activity("Elsa.AzureServiceBus.Send", "Send a message to a queue or topic", "Azure Service Bus")]
+[Activity("Elsa.AzureServiceBus.Send", "Azure Service Bus", "Send a message to a queue or topic")]
 public class SendMessage : Activity
 {
     public Input<object> MessageBody { get; set; } = default!;
@@ -33,7 +33,7 @@ public class SendMessage : Activity
             ContentType = context.Get(ContentType),
             Subject = context.Get(Subject),
             CorrelationId = context.Get(CorrelationId)
-            
+
             // TODO: Maybe expose additional members.
         };
 

@@ -5,7 +5,7 @@ using Elsa.Scripting.JavaScript.Services;
 
 namespace Elsa.Modules.JavaScript.Activities;
 
-[Activity("Elsa.Scripting.RunJavaScript", "Executes JavaScript code", "Scripting")]
+[Activity("Elsa.Scripting.RunJavaScript", "Scripting", "Executes JavaScript code")]
 public class RunJavaScript : Activity<object?>
 {
     [JsonConstructor]
