@@ -1,5 +1,7 @@
 using Elsa.Management.Services;
+using Elsa.Mediator.Extensions;
 using Elsa.Scripting.JavaScript.Expressions;
+using Elsa.Scripting.JavaScript.Handlers;
 using Elsa.Scripting.JavaScript.Implementations;
 using Elsa.Scripting.JavaScript.Providers;
 using Elsa.Scripting.JavaScript.Services;
@@ -14,6 +16,7 @@ public static class ServiceCollectionExtensions
         return services
             .AddSingleton<IExpressionSyntaxProvider, JavaScriptExpressionSyntaxProvider>()
             .AddSingleton<IJavaScriptEvaluator, JintJavaScriptEvaluator>()
+            .AddNotificationHandlersFrom<ConfigureJavaScriptEngineWithActivityOutput>()
             .AddExpressionHandler<JavaScriptExpressionHandler, JavaScriptExpression>();
     }
 }
