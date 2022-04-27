@@ -11,11 +11,11 @@ export class ActivityIconRegistry {
   private iconMap: Map<ActivityType, ActivityIcon> = new Map<ActivityType, ActivityIcon>();
 
   constructor() {
-    this.add('Console.WriteLine', Icons.WriteLineIcon);
-    this.add('Console.ReadLine', Icons.ReadLineIcon);
-    this.add('ControlFlow.If', Icons.IfIcon);
-    this.add('Workflows.Flowchart', Icons.FlowchartIcon);
-    this.add('Http.HttpTrigger', Icons.HttpTriggerIcon);
+    this.add('Elsa.WriteLine', Icons.WriteLineIcon);
+    this.add('Elsa.ReadLine', Icons.ReadLineIcon);
+    this.add('Elsa.If', Icons.IfIcon);
+    this.add('Elsa.Flowchart', Icons.FlowchartIcon);
+    this.add('Elsa.HttpEndpoint', Icons.HttpEndpointIcon);
   }
 
   public add(activityType: ActivityType, icon: ActivityIcon) {
