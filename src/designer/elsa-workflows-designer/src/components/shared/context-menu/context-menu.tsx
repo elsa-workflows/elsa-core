@@ -48,7 +48,6 @@ export class ContextMenu {
   }
 
   private async onMenuItemClick(e: MouseEvent, menuItem: MenuItem) {
-    debugger;
     e.preventDefault();
 
     if (!!menuItem.clickHandler)
@@ -77,7 +76,6 @@ export class ContextMenu {
   };
 
   render() {
-
     const anchorPointClass = this.getAnchorPointClass();
     const menuItems = this.menuItems;
     const hasAnyIcons = menuItems.find(x => !!x.icon) != null;

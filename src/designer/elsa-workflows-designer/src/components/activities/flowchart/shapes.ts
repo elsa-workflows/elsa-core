@@ -12,7 +12,7 @@ export class ActivityNode extends Shape.HTML {
     this.store.set('text', value);
   }
 
-  get activity() {
+  get activity(): Activity {
     return this.store.get<Activity>('activity');
   }
 
@@ -20,7 +20,7 @@ export class ActivityNode extends Shape.HTML {
     this.store.set('activity', value);
   }
 
-  get activityDescriptor() {
+  get activityDescriptor(): ActivityDescriptor {
     return this.store.get<ActivityDescriptor>('activityDescriptor');
   }
 
@@ -37,6 +37,7 @@ export class ActivityNode extends Shape.HTML {
     const self = this;
     super.setup();
     this.on('change:text', this.updateSize, this);
+    this.on('change:activity', this.updateSize, this);
 
     this.html = {
       render() {
@@ -45,7 +46,7 @@ export class ActivityNode extends Shape.HTML {
 
       },
       shouldComponentUpdate(node: Cell) {
-        return node.hasChanged('text');
+        return node.hasChanged('text') || node.hasChanged('activity');
       },
     };
   }

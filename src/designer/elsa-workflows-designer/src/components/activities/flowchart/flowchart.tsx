@@ -5,6 +5,7 @@ import {v4 as uuid} from 'uuid';
 import {first} from 'lodash';
 import './shapes';
 import './ports';
+import {ActivityNode as ActivityNodeShape} from './shapes';
 import {ContainerActivityComponent} from '../container-activity-component';
 import {AddActivityArgs} from '../../designer/canvas/canvas';
 import {Activity, ActivityDescriptor, ActivitySelectedArgs, ContainerSelectedArgs, GraphUpdatedArgs} from '../../../models';
@@ -188,7 +189,6 @@ export class FlowchartComponent implements ContainerActivityComponent {
       }
     }
 
-    debugger;
     let rootActivity = activities.find(activity => {
       const hasInboundConnections = connections.find(c => c.target == activity.id) != null;
       return !hasInboundConnections;
@@ -356,6 +356,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
   };
 
   private onNodeContextMenu = async (e: PositionEventArgs<JQuery.ContextMenuEvent>) => {
+    const node = e.node as ActivityNodeShape;
     const activity = e.node.data as Activity;
     const canStartWorkflow = activity.canStartWorkflow;
 
@@ -363,6 +364,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
       text: 'Startable',
       clickHandler: () => {
         activity.canStartWorkflow = !activity.canStartWorkflow;
+        node.activity = {...activity};
         this.onGraphChanged();
       },
       isToggle: true,
