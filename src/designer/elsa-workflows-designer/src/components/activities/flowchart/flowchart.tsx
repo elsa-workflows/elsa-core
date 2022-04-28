@@ -20,7 +20,7 @@ import {ConnectionCreatedEventArgs, FlowchartEvents} from "./events";
 import {TransposeHandlerRegistry} from "./transpose-handler-registry";
 import PositionEventArgs = NodeView.PositionEventArgs;
 import FromJSONData = Model.FromJSONData;
-import {ContextMenuAnchorPoint, MenuItem} from "../../shared/context-menu/models";
+import {ContextMenuAnchorPoint, MenuItem, MenuItemGroup} from "../../shared/context-menu/models";
 
 @Component({
   tag: 'elsa-flowchart',
@@ -116,8 +116,6 @@ export class FlowchartComponent implements ContainerActivityComponent {
       </div>
     );
   }
-
-  private onEditMenuClicked: (e: MouseEvent) => void;
 
   public disableEvents = () => this.silent = true;
 
@@ -358,26 +356,33 @@ export class FlowchartComponent implements ContainerActivityComponent {
   private onNodeContextMenu = async (e: PositionEventArgs<JQuery.ContextMenuEvent>) => {
     const node = e.node as ActivityNodeShape;
     const activity = e.node.data as Activity;
-    const canStartWorkflow = activity.canStartWorkflow;
 
-    const menuItems: Array<MenuItem> = [{
-      text: 'Startable',
-      clickHandler: () => {
-        activity.canStartWorkflow = !activity.canStartWorkflow;
-        node.activity = {...activity};
-        this.onGraphChanged();
-      },
-      isToggle: true,
-      checked: canStartWorkflow,
-    }, {
-      text: 'Edit',
-      clickHandler: this.onEditMenuClicked
-    }, {
-      text: 'Delete',
-      clickHandler: this.onEditMenuClicked
-    }];
+    const menuItemGroups: Array<MenuItemGroup> = [
+      {
+        menuItems: [{
+          text: 'Startable',
+          clickHandler: () => this.onToggleCanStartWorkflowClicked(node),
+          isToggle: true,
+          checked: activity.canStartWorkflow,
+        }]
+      }, {
+        menuItems: [
+          {
+            text: 'Cut',
+            clickHandler: () => this.onCutActivityClicked(node)
+          },
+          {
+            text: 'Copy',
+            clickHandler: () => this.onCopyActivityClicked(node)
+          }]
+      }, {
+        menuItems: [{
+          text: 'Delete',
+          clickHandler: () => this.onDeleteActivityClicked(node)
+        }]
+      }];
 
-    this.activityContextMenu.menuItems = menuItems;
+    this.activityContextMenu.menuItemGroups = menuItemGroups;
     this.activityContextMenu.style.top = `${e.y}px`;
     this.activityContextMenu.style.left = `${e.x}px`;
 
@@ -435,6 +440,42 @@ export class FlowchartComponent implements ContainerActivityComponent {
       return;
     this.graphUpdated.emit({exportGraph: this.exportRootInternal});
   }
+
+  private onToggleCanStartWorkflowClicked = (node: ActivityNodeShape) => {
+    const activity = node.data as Activity;
+    activity.canStartWorkflow = !activity.canStartWorkflow;
+    node.activity = {...activity};
+    this.onGraphChanged().then(_ => {
+    });
+  };
+
+  private onDeleteActivityClicked = (node: ActivityNodeShape) => {
+    let cells = this.graph.getSelectedCells();
+
+    if (cells.length == 0)
+      cells = [node];
+
+    this.graph.removeCells(cells);
+  };
+
+  private onCopyActivityClicked = (node: ActivityNodeShape) => {
+    let cells = this.graph.getSelectedCells();
+
+    if (cells.length == 0)
+      cells = [node];
+
+    this.graph.copy(cells);
+  };
+
+  private onCutActivityClicked = (node: ActivityNodeShape) => {
+    let cells = this.graph.getSelectedCells();
+
+    if (cells.length == 0)
+      cells = [node];
+
+    this.graph.cut(cells);
+  };
 }
 
-WorkflowEditorTunnel.injectProps(FlowchartComponent, ['activityDescriptors']);
+WorkflowEditorTunnel
+  .injectProps(FlowchartComponent, ['activityDescriptors']);

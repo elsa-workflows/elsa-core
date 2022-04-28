@@ -10,14 +10,14 @@ export interface ActivityDescriptor {
   displayName: string;
   category: string;
   inputProperties: Array<InputDescriptor>
-  traits: ActivityTraits;
+  kind: ActivityKind;
   inPorts: Array<Port>;
   outPorts: Array<Port>;
 }
 
-export enum ActivityTraits {
-  Action = 1,
-  Trigger = 2
+export enum ActivityKind {
+  Action = 'Action',
+  Trigger = 'Trigger'
 }
 
 export interface PropertyDescriptor {

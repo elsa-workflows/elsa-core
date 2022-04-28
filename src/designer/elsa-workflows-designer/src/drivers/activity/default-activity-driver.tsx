@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import {h} from "@stencil/core";
 import {Container, Service} from "typedi";
-import {ActivityTraits} from '../../models';
+import {ActivityKind} from '../../models';
 import {ActivityDisplayContext, ActivityDriver, ActivityIcon, ActivityIconRegistry} from '../../services';
 
 @Service()
@@ -19,7 +19,7 @@ export class DefaultActivityDriver implements ActivityDriver {
     const activity = context.activity;
     const canStartWorkflow = activity?.canStartWorkflow;
     const text = activityDescriptor?.displayName;
-    const isTrigger = (activityDescriptor?.traits & ActivityTraits.Trigger) == ActivityTraits.Trigger;
+    const isTrigger = activityDescriptor?.kind == ActivityKind.Trigger;
     const borderColor = canStartWorkflow ? isTrigger ? 'border-green-600' : 'border-blue-600' : 'border-gray-300';
     const backgroundColor = canStartWorkflow ? isTrigger ? 'bg-green-400' : 'bg-blue-400' : 'bg-white';
     const textColor = canStartWorkflow ? 'text-white' : 'text-gray-700';

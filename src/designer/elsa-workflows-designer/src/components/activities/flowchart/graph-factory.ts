@@ -168,14 +168,14 @@ export function createGraph(
 
   graph.bindKey(['meta+v', 'ctrl+v'], async () => {
     if (!graph.isClipboardEmpty()) {
-      debugger;
+
       disableEvents();
       const cells = graph.paste({offset: 32});
-      debugger;
+
       for (const cell of cells) {
         cell.data.id = uuid();
       }
-      debugger;
+
       await enableEvents(true);
       graph.cleanSelection();
       graph.select(cells);

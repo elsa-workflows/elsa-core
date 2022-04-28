@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import {h} from "@stencil/core";
 import {Container, Service} from "typedi";
-import {ActivityTraits} from '../../models';
+import {ActivityKind} from '../../models';
 import {ActivityDisplayContext, ActivityDriver, ActivityIcon, ActivityIconRegistry} from '../../services';
 
 @Service()

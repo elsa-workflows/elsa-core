@@ -14,7 +14,7 @@ public class ActivityDescriptor
     public ICollection<OutputDescriptor> OutputProperties { get; init; } = new List<OutputDescriptor>();
 
     [JsonIgnore] public Func<ActivityConstructorContext, IActivity> Constructor { get; init; } = default!;
-    public ActivityTraits Traits { get; set; } = ActivityTraits.Action;
+    public ActivityKind Kind { get; set; } = ActivityKind.Action;
     public ICollection<Port> InPorts { get; init; } = new List<Port>();
     public ICollection<Port> OutPorts { get; init; } = new List<Port>();
 }

@@ -7,6 +7,9 @@
   checked?: boolean;
 }
 
+export interface MenuItemGroup {
+  menuItems: Array<MenuItem>
+}
 
 export enum ContextMenuAnchorPoint {
   TopLeft,
