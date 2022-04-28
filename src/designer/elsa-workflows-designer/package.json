@@ -23,7 +23,7 @@
     "generate": "stencil generate"
   },
   "dependencies": {
-    "@antv/x6": "^1.30.0",
+    "@antv/x6": "^1.31.4",
     "@stencil/core": "^2.13.0",
     "@stencil/state-tunnel": "^1.0.1",
     "@stencil/store": "^1.5.0",
