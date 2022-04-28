@@ -36,7 +36,7 @@ public static class ServiceCollectionExtensions
             .AddSingleton<IActivitySchedulerFactory, ActivitySchedulerFactory>()
             .AddSingleton<IActivityNodeResolver, OutboundActivityNodeResolver>()
             .AddSingleton<IHasher, Hasher>()
-            .AddSingleton<IIdentityGenerator, IdentityGenerator>()
+            .AddSingleton<IIdentityGenerator, RandomIdentityGenerator>()
             .AddSingleton<ISystemClock, SystemClock>()
             .AddSingleton<IBookmarkDataSerializer, BookmarkDataSerializer>()
             .AddSingleton<IWellKnownTypeRegistry, WellKnownTypeRegistry>()

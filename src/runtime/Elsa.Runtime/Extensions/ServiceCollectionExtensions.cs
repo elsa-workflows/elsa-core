@@ -27,6 +27,7 @@ public static class ServiceCollectionExtensions
                 .AddSingleton<IWorkflowInstructionExecutor, WorkflowInstructionExecutor>()
                 .AddSingleton<ITriggerIndexer, TriggerIndexer>()
                 .AddSingleton<IBookmarkManager, BookmarkManager>()
+                .AddSingleton<IWorkflowInstanceFactory, WorkflowInstanceFactory>()
                 .AddSingleton(sp => sp.GetRequiredService<IOptions<WorkflowRuntimeOptions>>().Value.WorkflowInvokerFactory(sp))
                 .AddSingleton(sp => sp.GetRequiredService<IOptions<WorkflowRuntimeOptions>>().Value.WorkflowDispatcherFactory(sp))
 

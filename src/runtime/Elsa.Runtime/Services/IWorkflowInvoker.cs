@@ -1,5 +1,7 @@
 using Elsa.Models;
+using Elsa.Persistence.Entities;
 using Elsa.Runtime.Models;
+using Elsa.State;
 
 namespace Elsa.Runtime.Services;
 
@@ -17,4 +19,14 @@ public interface IWorkflowInvoker
     /// Invokes the specified workflow instance.
     /// </summary>
     Task<InvokeWorkflowResult> InvokeAsync(InvokeWorkflowInstanceRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Invokes the specified workflow instance.
+    /// </summary>
+    Task<InvokeWorkflowResult> InvokeAsync(WorkflowInstance workflowInstance, Bookmark? bookmark = default, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Invokes the specified workflow.
+    /// </summary>
+    Task<InvokeWorkflowResult> InvokeAsync(Workflow workflow, WorkflowState workflowState, Bookmark? bookmark = default, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default);
 }

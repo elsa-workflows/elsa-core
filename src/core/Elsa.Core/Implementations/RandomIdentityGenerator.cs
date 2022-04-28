@@ -2,7 +2,7 @@ using Elsa.Services;
 
 namespace Elsa.Implementations;
 
-public class IdentityGenerator : IIdentityGenerator
+public class RandomIdentityGenerator : IIdentityGenerator
 {
     public string GenerateId() => Guid.NewGuid().ToString("N");
 }

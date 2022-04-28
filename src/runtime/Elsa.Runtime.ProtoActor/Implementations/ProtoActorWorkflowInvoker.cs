@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
+using Elsa.Persistence.Entities;
 using Elsa.Runtime.Models;
 using Elsa.Runtime.ProtoActor.Extensions;
 using Elsa.Runtime.Protos;
@@ -58,14 +60,14 @@ public class ProtoActorWorkflowInvoker : IWorkflowInvoker
 
         var message = new ExecuteWorkflowInstanceRequest
         {
-            Id = instanceId,
+            InstanceId = instanceId,
             Bookmark = bookmarkMessage,
             Input = input!?.Serialize(),
             CorrelationId = correlationId ?? ""
         };
 
         var client = _grainClientFactory.CreateWorkflowInstanceGrainClient(instanceId);
-        var response = await client.Execute(message, CancellationTokens.FromSeconds(600));
+        var response = await client.ExecuteExistingInstance(message, CancellationTokens.FromSeconds(600));
         
         if (response == null)
             throw new TimeoutException("Did not receive a response from the WorkflowInstance actor within the configured amount of time.");
@@ -75,7 +77,36 @@ public class ProtoActorWorkflowInvoker : IWorkflowInvoker
 
         return new InvokeWorkflowResult(workflowState, bookmarks);
     }
-    
+
+    public Task<InvokeWorkflowResult> InvokeAsync(WorkflowInstance workflowInstance, Bookmark? bookmark = default, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task<InvokeWorkflowResult> InvokeAsync(Workflow workflow, WorkflowState workflowState, Bookmark? bookmark = default, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
+    {
+        var bookmarkMessage = MapBookmark(bookmark);
+
+        var message = new ExecuteWorkflowInstanceIdRequest
+        {
+            //Id = instanceId,
+            Bookmark = bookmarkMessage,
+            Input = input!?.Serialize(),
+            //CorrelationId = correlationId ?? ""
+        };
+
+        var client = _grainClientFactory.CreateWorkflowInstanceGrainClient("");
+        var response = await client.ExecuteById(message, CancellationTokens.FromSeconds(600));
+        
+        if (response == null)
+            throw new TimeoutException("Did not receive a response from the WorkflowInstance actor within the configured amount of time.");
+        
+        
+        var bookmarks = response.Bookmarks.Select(MapBookmark).ToList();
+
+        return new InvokeWorkflowResult(workflowState, bookmarks);
+    }
+
     private ProtoBookmark? MapBookmark(Bookmark? bookmark)
     {
         if (bookmark == null)

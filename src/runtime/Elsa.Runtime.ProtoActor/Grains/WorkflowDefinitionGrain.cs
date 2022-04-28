@@ -2,14 +2,10 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Mediator.Services;
-using Elsa.Models;
 using Elsa.Persistence.Commands;
 using Elsa.Persistence.Entities;
-using Elsa.Persistence.Models;
 using Elsa.Runtime.Protos;
 using Elsa.Runtime.Services;
-using Elsa.Services;
-using Elsa.State;
 using Proto;
 
 namespace Elsa.Runtime.ProtoActor.Grains;
@@ -19,22 +15,16 @@ namespace Elsa.Runtime.ProtoActor.Grains;
 /// </summary>
 public class WorkflowDefinitionGrain : WorkflowDefinitionGrainBase
 {
-    private readonly IWorkflowRegistry _workflowRegistry;
     private readonly ICommandSender _commandSender;
-    private readonly IIdentityGenerator _identityGenerator;
-    private readonly ISystemClock _systemClock;
+    private readonly IWorkflowInstanceFactory _workflowInstanceFactory;
 
     public WorkflowDefinitionGrain(
-        IWorkflowRegistry workflowRegistry,
         ICommandSender commandSender,
-        IIdentityGenerator identityGenerator,
-        ISystemClock systemClock,
+        IWorkflowInstanceFactory workflowInstanceFactory,
         IContext context) : base(context)
     {
-        _workflowRegistry = workflowRegistry;
         _commandSender = commandSender;
-        _identityGenerator = identityGenerator;
-        _systemClock = systemClock;
+        _workflowInstanceFactory = workflowInstanceFactory;
     }
 
     public override async Task<ExecuteWorkflowDefinitionResponse> Execute(ExecuteWorkflowDefinitionRequest request)
@@ -44,7 +34,7 @@ public class WorkflowDefinitionGrain : WorkflowDefinitionGrainBase
         var cancellationToken = Context.CancellationToken;
         var workflowInstance = await CreateWorkflowInstanceAsync(workflowDefinitionId, correlationId, cancellationToken);
 
-        var executeWorkflowInstanceMessage = new ExecuteWorkflowInstanceRequest
+        var executeWorkflowInstanceMessage = new ExecuteWorkflowInstanceIdRequest
         {
             Id = workflowInstance.Id,
             Input = request.Input,
@@ -52,7 +42,7 @@ public class WorkflowDefinitionGrain : WorkflowDefinitionGrainBase
         };
 
         var workflowInstanceGrainClient = Context.GetWorkflowInstanceGrain(workflowInstance.Id);
-        var workflowInstanceResponse = await workflowInstanceGrainClient.Execute(executeWorkflowInstanceMessage, CancellationTokens.FromSeconds(1000));
+        var workflowInstanceResponse = await workflowInstanceGrainClient.ExecuteById(executeWorkflowInstanceMessage, CancellationTokens.FromSeconds(1000));
 
         if (workflowInstanceResponse == null)
             throw new TimeoutException("Did not receive a response from the WorkflowInstance actor within the configured amount of time.");
@@ -68,31 +58,7 @@ public class WorkflowDefinitionGrain : WorkflowDefinitionGrainBase
 
     private async Task<WorkflowInstance> CreateWorkflowInstanceAsync(string workflowDefinitionId, string? correlationId, CancellationToken cancellationToken)
     {
-        var workflow = (await _workflowRegistry.FindByIdAsync(workflowDefinitionId, VersionOptions.Published, cancellationToken))!;
-        var workflowInstanceId = _identityGenerator.GenerateId();
-
-        if (string.IsNullOrWhiteSpace(correlationId))
-            correlationId = _identityGenerator.GenerateId();
-        
-        var workflowInstance = new WorkflowInstance
-        {
-            Id = workflowInstanceId,
-            Version = workflow.Identity.Version,
-            DefinitionId = workflowDefinitionId,
-            DefinitionVersionId = workflow.Identity.Id,
-            CorrelationId =  correlationId,
-            CreatedAt = _systemClock.UtcNow,
-            Status = WorkflowStatus.Running,
-            SubStatus = WorkflowSubStatus.Executing,
-            WorkflowState = new WorkflowState
-            {
-                Id = workflowInstanceId,
-                Status = WorkflowStatus.Running,
-                SubStatus = WorkflowSubStatus.Executing,
-                CorrelationId = correlationId
-            }
-        };
-
+        var workflowInstance = await _workflowInstanceFactory.CreateAsync(workflowDefinitionId, correlationId, cancellationToken);
         await _commandSender.ExecuteAsync(new SaveWorkflowInstance(workflowInstance), cancellationToken);
         return workflowInstance;
     }

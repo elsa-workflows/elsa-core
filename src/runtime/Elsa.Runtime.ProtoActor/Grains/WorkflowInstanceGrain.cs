@@ -46,7 +46,7 @@ public class WorkflowInstanceGrain : WorkflowInstanceGrainBase
         _workflowSerializerOptionsProvider = workflowSerializerOptionsProvider;
     }
 
-    public override async Task<ExecuteWorkflowInstanceResponse> Execute(ExecuteWorkflowInstanceRequest request)
+    public override async Task<ExecuteWorkflowInstanceResponse> ExecuteById(ExecuteWorkflowInstanceIdRequest request)
     {
         var workflowInstanceId = request.Id;
         var cancellationToken = Context.CancellationToken;
@@ -68,6 +68,12 @@ public class WorkflowInstanceGrain : WorkflowInstanceGrainBase
         var response = MapResult(executionResult);
 
         return response;
+    }
+
+    public override async Task<ExecuteWorkflowInstanceResponse> Execute(ExecuteWorkflowInstanceRequest request)
+    {
+        var workflowState = JsonSerializer.Deserialize<WorkflowState>(request.WorkflowState, _workflowSerializerOptionsProvider.CreatePersistenceOptions());
+        var workflow = await _workflowRegistry.FindByIdAsync(request., VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken);
     }
 
     private ExecuteWorkflowInstanceResponse MapResult(InvokeWorkflowResult result)
