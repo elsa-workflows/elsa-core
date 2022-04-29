@@ -1,5 +1,6 @@
 using Elsa.Jobs.Services;
 using Hangfire;
+using Hangfire.MemoryStorage;
 using Hangfire.SqlServer;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
@@ -39,6 +40,10 @@ public class HangfireJobQueueProvider : IJobQueueProvider
                 {
                     var storageOptions = SqlServerStorageOptions ?? new SqlServerStorageOptions();
                     configuration.UseSqlServerStorage(SqlServerConnectionString, storageOptions);
+                }
+                else
+                {
+                    configuration.UseMemoryStorage();
                 }
             });
 

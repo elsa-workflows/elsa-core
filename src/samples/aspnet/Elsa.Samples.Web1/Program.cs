@@ -53,7 +53,7 @@ services
     .AddProtoActorWorkflowHost()
     .IndexWorkflowTriggers()
     .AddElsaManagement()
-    .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider(sqlServerConnectionString))
+    .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider(true))
     .AddSchedulingServices()
     .AddHttpActivityServices()
     .AddAzureServiceBusServices(options => configuration.GetSection("AzureServiceBus").Bind(options))
