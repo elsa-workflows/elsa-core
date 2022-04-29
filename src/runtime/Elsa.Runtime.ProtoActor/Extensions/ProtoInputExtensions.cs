@@ -7,9 +7,9 @@ namespace Elsa.Runtime.ProtoActor.Extensions;
 
 public static class ProtoInputExtensions
 {
-    public static IDictionary<string, object?> Deserialize(this Input input) => input.Data.ToDictionary(x => x.Key, x => JsonSerializer.Deserialize<object>(x.Value.Text));
+    public static IDictionary<string, object> Deserialize(this Input input) => input.Data.ToDictionary(x => x.Key, x => JsonSerializer.Deserialize<object>(x.Value.Text)!);
 
-    public static Input Serialize(this IDictionary<string, object?> input)
+    public static Input Serialize(this IDictionary<string, object> input)
     {
         var result = new Input();
         var data = result.Data;

@@ -5,7 +5,7 @@ using Elsa.Services;
 
 namespace Elsa.IntegrationTests.Scenarios.Persistence;
 
-class BlockingSequentialWorkflow : IWorkflow
+class SequentialWorkflow : IWorkflow
 {
     public void Build(IWorkflowDefinitionBuilder workflow)
     {
@@ -14,7 +14,6 @@ class BlockingSequentialWorkflow : IWorkflow
             Activities =
             {
                 new WriteLine("Line 1"),
-                new Event("Resume"){ Id = "Resume"},
                 new WriteLine("Line 2"),
                 new WriteLine("Line 3")
             }

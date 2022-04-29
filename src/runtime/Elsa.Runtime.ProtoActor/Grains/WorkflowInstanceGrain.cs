@@ -29,6 +29,7 @@ public class WorkflowInstanceGrain : WorkflowInstanceGrainBase
     private readonly IWorkflowRegistry _workflowRegistry;
     private readonly GrainClientFactory _grainClientFactory;
     private readonly IWorkflowRunner _workflowRunner;
+    private readonly IWorkflowInstanceFactory _workflowInstanceFactory;
     private readonly WorkflowSerializerOptionsProvider _workflowSerializerOptionsProvider;
 
     public WorkflowInstanceGrain(
@@ -36,6 +37,7 @@ public class WorkflowInstanceGrain : WorkflowInstanceGrainBase
         IWorkflowRegistry workflowRegistry, 
         GrainClientFactory grainClientFactory,
         IWorkflowRunner workflowRunner,
+        IWorkflowInstanceFactory workflowInstanceFactory,
         WorkflowSerializerOptionsProvider workflowSerializerOptionsProvider, 
         IContext context) : base(context)
     {
@@ -43,12 +45,13 @@ public class WorkflowInstanceGrain : WorkflowInstanceGrainBase
         _workflowRegistry = workflowRegistry;
         _grainClientFactory = grainClientFactory;
         _workflowRunner = workflowRunner;
+        _workflowInstanceFactory = workflowInstanceFactory;
         _workflowSerializerOptionsProvider = workflowSerializerOptionsProvider;
     }
 
-    public override async Task<ExecuteWorkflowInstanceResponse> ExecuteById(ExecuteWorkflowInstanceIdRequest request)
+    public override async Task<ExecuteWorkflowInstanceResponse> ExecuteExistingInstance(ExecuteExistingWorkflowInstanceRequest request)
     {
-        var workflowInstanceId = request.Id;
+        var workflowInstanceId = request.InstanceId;
         var cancellationToken = Context.CancellationToken;
         var workflowInstance = await _requestSender.RequestAsync(new FindWorkflowInstance(workflowInstanceId), cancellationToken);
 
@@ -70,10 +73,41 @@ public class WorkflowInstanceGrain : WorkflowInstanceGrainBase
         return response;
     }
 
-    public override async Task<ExecuteWorkflowInstanceResponse> Execute(ExecuteWorkflowInstanceRequest request)
+    public override async Task<ExecuteWorkflowInstanceResponse> ExecuteNewInstance(ExecuteNewWorkflowInstanceRequest request)
     {
-        var workflowState = JsonSerializer.Deserialize<WorkflowState>(request.WorkflowState, _workflowSerializerOptionsProvider.CreatePersistenceOptions());
-        var workflow = await _workflowRegistry.FindByIdAsync(request., VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken);
+        var cancellationToken = Context.CancellationToken;
+        var versionOptions = VersionOptions.FromString(request.VersionOptions);
+        var workflowDefinitionId = request.DefinitionId;
+        var workflowInstance = await _workflowInstanceFactory.CreateAsync(workflowDefinitionId, versionOptions, request.CorrelationId, cancellationToken);
+        var workflow = await _workflowRegistry.FindByIdAsync(workflowDefinitionId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken);
+
+        if (workflow == null)
+            throw new Exception($"No workflow definition found with ID {workflowDefinitionId}");
+
+        var workflowState = workflowInstance.WorkflowState;
+        var bookmarkMessage = request.Bookmark;
+        var input = request.Input?.Deserialize();
+        var executionResult = await ExecuteAsync(workflow, workflowState, bookmarkMessage, input!, cancellationToken);
+        var response = MapResult(executionResult);
+
+        return response;
+    }
+
+    public override async Task<ExecuteWorkflowInstanceResponse> Execute(ExecuteWorkflowRequest request)
+    {
+        var cancellationToken = Context.CancellationToken;
+        var workflowState = JsonSerializer.Deserialize<WorkflowState>(request.WorkflowState, _workflowSerializerOptionsProvider.CreatePersistenceOptions())!;
+        var versionOptions = VersionOptions.FromString(request.VersionOptions);
+        var workflowDefinitionId = request.DefinitionId;
+        var bookmark = request.Bookmark;
+        var input = request.Input?.Deserialize();
+        var workflow = await _workflowRegistry.FindByIdAsync(workflowDefinitionId, versionOptions, cancellationToken);
+        
+        if (workflow == null)
+            throw new Exception($"No workflow definition found with ID {workflowDefinitionId}");
+
+        var result = await ExecuteAsync(workflow, workflowState, bookmark, input, cancellationToken);
+        return MapResult(result);
     }
 
     private ExecuteWorkflowInstanceResponse MapResult(InvokeWorkflowResult result)

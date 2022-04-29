@@ -39,7 +39,6 @@ message ExecuteWorkflowRequest {
   string workflowState = 3;
   optional Bookmark bookmark = 4;
   optional Input input = 5;
-  optional string CorrelationId = 6;
 }
 
 message ExecuteWorkflowInstanceResponse {
