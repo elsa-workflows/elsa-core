@@ -15,15 +15,11 @@ using Elsa.Modules.Quartz.Implementations;
 using Elsa.Modules.Scheduling.Activities;
 using Elsa.Modules.Scheduling.Extensions;
 using Elsa.Persistence.InMemory.Extensions;
-using Elsa.Pipelines.WorkflowExecution.Components;
 using Elsa.Runtime.Extensions;
 using Elsa.Runtime.ProtoActor.Extensions;
 using Elsa.Scripting.JavaScript.Extensions;
 using Elsa.Scripting.Liquid.Extensions;
 using Elsa.Services;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -39,9 +35,6 @@ services
     .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider())
     .AddSchedulingServices();
 
-// Testing only: allow client app to connect from anywhere.
-services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
-
 // Register activities available from the designer.
 services
     .AddActivity<Sequence>()
@@ -51,7 +44,7 @@ services
     .AddActivity<HttpEndpoint>()
     .AddActivity<Flowchart>()
     .AddActivity<Delay>()
-    .AddActivity<Timer>()
+    .AddActivity<Elsa.Modules.Scheduling.Activities.Timer>()
     .AddActivity<ForEach>()
     .AddActivity<Switch>()
     .AddActivity<RunJavaScript>()
@@ -66,39 +59,26 @@ services
 services.AddSingleton<ISerializationOptionsConfigurator, CustomSerializationOptionConfigurator>();
 services.AddSingleton<ISerializationOptionsConfigurator, SerializationOptionsConfigurator>();
 
+// Razor Pages.
+services.AddRazorPages();
+
 // Configure middleware pipeline.
 var app = builder.Build();
 
-var serviceProvider = app.Services;
+// Configure the HTTP request pipeline.
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Error");
+    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+    app.UseHsts();
+}
 
-// Add type aliases for prettier JSON serialization.
-var wellKnownTypeRegistry = serviceProvider.GetRequiredService<IWellKnownTypeRegistry>();
-wellKnownTypeRegistry.RegisterType<int>("int");
-wellKnownTypeRegistry.RegisterType<float>("float");
-wellKnownTypeRegistry.RegisterType<bool>("boolean");
-wellKnownTypeRegistry.RegisterType<string>("string");
-
-// Configure workflow engine execution pipeline.
-serviceProvider.ConfigureDefaultWorkflowExecutionPipeline(pipeline =>
-    pipeline
-        .UseWorkflowExecutionEvents()
-        .UseWorkflowExecutionLogPersistence()
-        .UsePersistence()
-        .UseStackBasedActivityScheduler()
-);
-
-if (app.Environment.IsDevelopment())
-    app.UseDeveloperExceptionPage();
-
-// CORS.
-app.UseCors();
-
-// Map Elsa API endpoints.
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+app.UseRouting();
+app.UseAuthorization();
 app.MapElsaApiEndpoints();
-
-// Register Elsa HTTP activity middleware.
 app.UseHttpActivities();
+app.MapRazorPages();
 
-
-// Run.
 app.Run();

@@ -1,7 +1,7 @@
 {
-  "name": "elsa-workflows-designer",
+  "name": "@elsa-workflows/elsa-workflows-designer",
   "version": "3.0.0",
-  "description": "Stencil Component Starter",
+  "description": "A workflow designer for Elsa 3",
   "main": "dist/index.cjs.js",
   "module": "dist/custom-elements/index.js",
   "es2015": "dist/esm/index.mjs",
@@ -15,6 +15,8 @@
     "loader/"
   ],
   "scripts": {
+    "push": "npm publish --access public",
+    "push.preview": "npm publish --access public --tag preview",
     "build": "stencil build",
     "build.dev": "stencil build --dev",
     "start": "stencil build --dev --watch --serve",
@@ -27,14 +29,14 @@
     "@stencil/core": "^2.13.0",
     "@stencil/state-tunnel": "^1.0.1",
     "@stencil/store": "^1.5.0",
-    "axios": "^0.25.0",
+    "axios": "^0.27.2",
     "axios-middleware": "^0.3.1",
     "reflect-metadata": "^0.1.13",
     "typedi": "^0.10.0",
     "lodash": "^4.17.21",
     "uuid": "^8.3.2",
     "el-transition": "^0.0.7",
-    "moment": "^2.29.1"
+    "moment": "^2.29.3"
   },
   "peerDependencies": {
     "monaco-editor": ""
@@ -43,13 +45,13 @@
     "@fullhuman/postcss-purgecss": "^4.1.3",
     "@stencil/postcss": "^2.1.0",
     "@stencil/sass": "^1.5.2",
-    "@tailwindcss/forms": "^0.4.0",
-    "@tailwindcss/typography": "^0.5.1",
-    "@types/jquery": "^3.5.13",
+    "@tailwindcss/forms": "^0.5.0",
+    "@tailwindcss/typography": "^0.5.2",
+    "@types/jquery": "^3.5.14",
     "@types/jquery-mousewheel": "^3.1.9",
-    "autoprefixer": "^10.4.2",
-    "postcss": "^8.4.6",
-    "tailwindcss": "^3.0.18"
+    "autoprefixer": "^10.4.5",
+    "postcss": "^8.4.12",
+    "tailwindcss": "^3.0.24"
   },
   "license": "MIT"
 }
