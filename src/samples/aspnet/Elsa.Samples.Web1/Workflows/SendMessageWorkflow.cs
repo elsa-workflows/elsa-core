@@ -4,9 +4,9 @@ using Elsa.Services;
 
 namespace Elsa.Samples.Web1.Workflows;
 
-public class SendMessageWorkflow : IWorkflow
+public class SendMessageWorkflow : WorkflowBase
 {
-    public void Build(IWorkflowDefinitionBuilder workflow)
+    protected override void Build(IWorkflowDefinitionBuilder workflow)
     {
         workflow.WithRoot(new SendMessage
         {

@@ -1,5 +1,3 @@
-using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Elsa.Helpers;
@@ -24,8 +22,8 @@ namespace Elsa.Runtime.Implementations;
 /// </summary>
 public class TriggerIndexer : ITriggerIndexer
 {
-    private readonly IWorkflowRegistry _workflowRegistry;
     private readonly IActivityWalker _activityWalker;
+    private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IExpressionEvaluator _expressionEvaluator;
     private readonly IIdentityGenerator _identityGenerator;
     private readonly IRequestSender _requestSender;
@@ -36,8 +34,8 @@ public class TriggerIndexer : ITriggerIndexer
     private readonly ILogger _logger;
 
     public TriggerIndexer(
-        IWorkflowRegistry workflowRegistry,
         IActivityWalker activityWalker,
+        IWorkflowDefinitionService workflowDefinitionService,
         IExpressionEvaluator expressionEvaluator,
         IIdentityGenerator identityGenerator,
         IRequestSender requestSender,
@@ -47,7 +45,6 @@ public class TriggerIndexer : ITriggerIndexer
         IHasher hasher,
         ILogger<TriggerIndexer> logger)
     {
-        _workflowRegistry = workflowRegistry;
         _activityWalker = activityWalker;
         _expressionEvaluator = expressionEvaluator;
         _identityGenerator = identityGenerator;
@@ -57,32 +54,13 @@ public class TriggerIndexer : ITriggerIndexer
         _serviceProvider = serviceProvider;
         _hasher = hasher;
         _logger = logger;
+        _workflowDefinitionService = workflowDefinitionService;
     }
 
-    public async Task<ICollection<IndexedWorkflowTriggers>> IndexTriggersAsync(CancellationToken cancellationToken = default)
+    public async Task<IndexedWorkflowTriggers> IndexTriggersAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
     {
-        var stopwatch = new Stopwatch();
-
-        _logger.LogInformation("Indexing workflow triggers");
-        stopwatch.Start();
-
-        // Only stream workflows from providers that are not "dynamic" (such as DatabaseWorkflowProvider).
-        var workflows = _workflowRegistry.StreamAllAsync(WorkflowRegistry.SkipDynamicProviders, cancellationToken);
-
-        // Index each workflow.
-        var indexedWorkflows = new Collection<IndexedWorkflowTriggers>();
-        await foreach (var workflow in workflows.WithCancellation(cancellationToken))
-        {
-            var indexedWorkflow = await IndexTriggersAsync(workflow, cancellationToken);
-            indexedWorkflows.Add(indexedWorkflow);
-        }
-
-        // Publish event.
-        await _eventPublisher.PublishAsync(new WorkflowIndexingCompleted(indexedWorkflows), cancellationToken);
-
-        stopwatch.Stop();
-        _logger.LogInformation("Finished indexing workflow triggers in {ElapsedTime}", stopwatch.Elapsed);
-        return indexedWorkflows;
+        var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(definition, cancellationToken);
+        return await IndexTriggersAsync(workflow, cancellationToken);
     }
 
     public async Task<IndexedWorkflowTriggers> IndexTriggersAsync(Workflow workflow, CancellationToken cancellationToken = default)

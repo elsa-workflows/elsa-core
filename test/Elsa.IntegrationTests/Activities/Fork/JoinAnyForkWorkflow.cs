@@ -5,9 +5,9 @@ using Elsa.Services;
 
 namespace Elsa.IntegrationTests.Activities;
 
-public class JoinAnyForkWorkflow : IWorkflow
+public class JoinAnyForkWorkflow : WorkflowBase
 {
-    public void Build(IWorkflowDefinitionBuilder workflow)
+    protected override void Build(IWorkflowDefinitionBuilder workflow)
     {
         workflow.WithRoot(new Sequence
         {

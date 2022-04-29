@@ -1,8 +1,9 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Management.Services;
+using Elsa.Mediator.Services;
 using Elsa.Persistence.Models;
-using Elsa.Runtime.Services;
+using Elsa.Persistence.Requests;
 using Elsa.Serialization;
 using Microsoft.AspNetCore.Http;
 
@@ -10,26 +11,27 @@ namespace Elsa.Api.Endpoints.Workflows;
 
 public static partial class Workflows
 {
-    public static async Task<IResult> PublishAsync(string definitionId, WorkflowSerializerOptionsProvider serializerOptionsProvider, IWorkflowRegistry workflowRegistry,
-        IWorkflowPublisher workflowPublisher, CancellationToken cancellationToken)
+    public static async Task<IResult> PublishAsync(
+        string definitionId,
+        WorkflowSerializerOptionsProvider serializerOptionsProvider,
+        IRequestSender requestSender,
+        IWorkflowPublisher workflowPublisher,
+        CancellationToken cancellationToken)
     {
-        var workflow = await workflowRegistry.FindByIdAsync(definitionId, VersionOptions.Latest, cancellationToken);
-        if (workflow == null)
-        {
+        var definition = await requestSender.RequestAsync(new FindWorkflowDefinitionByDefinitionId(definitionId, VersionOptions.Latest), cancellationToken);
+        
+        if (definition == null)
             return Results.NotFound();
-        }
 
-        if (workflow.Publication.IsPublished)
-        {
+        if (definition.IsPublished)
             return Results.BadRequest(new
             {
                 Message = $"Workflow with id {definitionId} is already published"
             });
-        }
 
-        await workflowPublisher.PublishAsync(workflow, cancellationToken);
+        await workflowPublisher.PublishAsync(definition, cancellationToken);
         var serializerOptions = serializerOptionsProvider.CreateApiOptions();
-  
-        return Results.Json(workflow, serializerOptions, statusCode: StatusCodes.Status202Accepted);
+
+        return Results.Json(definition, serializerOptions, statusCode: StatusCodes.Status202Accepted);
     }
 }

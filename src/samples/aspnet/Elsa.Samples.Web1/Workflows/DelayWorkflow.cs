@@ -5,9 +5,9 @@ using Elsa.Services;
 
 namespace Elsa.Samples.Web1.Workflows;
 
-public class DelayWorkflow : IWorkflow
+public class DelayWorkflow : WorkflowBase
 {
-    public void Build(IWorkflowDefinitionBuilder workflow)
+    protected override void Build(IWorkflowDefinitionBuilder workflow)
     {
         workflow.WithRoot(new Sequence
         {

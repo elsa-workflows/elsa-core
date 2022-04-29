@@ -5,9 +5,9 @@ using Elsa.Services;
 
 namespace Elsa.IntegrationTests.Activities;
 
-class BreakForWorkflow : IWorkflow
+class BreakForWorkflow : WorkflowBase
 {
-    public void Build(IWorkflowDefinitionBuilder workflow)
+    protected override void Build(IWorkflowDefinitionBuilder workflow)
     {
         var currentValue = new Variable<int?>();
 

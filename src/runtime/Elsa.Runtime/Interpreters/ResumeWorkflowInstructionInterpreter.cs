@@ -44,7 +44,7 @@ public class ResumeWorkflowInstructionInterpreter : WorkflowInstructionInterpret
             return null;
         }
 
-        var workflow = await _workflowRegistry.FindByIdAsync(workflowDefinitionId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken);
+        var workflow = await _workflowRegistry.FindByDefinitionIdAsync(workflowDefinitionId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken);
 
         if (workflow == null)
         {

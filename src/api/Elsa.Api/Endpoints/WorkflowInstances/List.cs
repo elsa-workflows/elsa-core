@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Elsa.Mediator.Services;
 using Elsa.Models;
 using Elsa.Persistence.Entities;
+using Elsa.Persistence.Models;
 using Elsa.Persistence.Requests;
 using Elsa.Serialization;
 using Microsoft.AspNetCore.Http;
@@ -28,8 +29,7 @@ public static partial class WorkflowInstances
         [FromQuery] OrderDirection? orderDirection)
     {
         var serializerOptions = serializerOptionsProvider.CreateApiOptions();
-        var skip = page * pageSize;
-        var take = pageSize;
+        var pageArgs = new PageArgs(page, pageSize);
 
         var request = new ListWorkflowInstanceSummaries(
             searchTerm,
@@ -38,10 +38,9 @@ public static partial class WorkflowInstances
             correlationId,
             workflowStatus,
             workflowSubStatus,
+            pageArgs,
             orderBy ?? OrderBy.Created,
-            orderDirection ?? OrderDirection.Ascending,
-            skip ?? 0,
-            take ?? 50);
+            orderDirection ?? OrderDirection.Ascending);
 
         var summaries = await requestSender.RequestAsync(request, cancellationToken);
 

@@ -9,9 +9,9 @@ using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Samples.Web1.Workflows;
 
-public class ForkedHttpWorkflow : IWorkflow
+public class ForkedHttpWorkflow : WorkflowBase
 {
-    public void Build(IWorkflowDefinitionBuilder workflow)
+    protected override void Build(IWorkflowDefinitionBuilder workflow)
     {
         // Setup workflow graph.
         workflow.WithRoot(new Sequence

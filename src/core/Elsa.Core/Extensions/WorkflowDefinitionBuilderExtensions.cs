@@ -5,5 +5,5 @@ namespace Elsa;
 
 public static class WorkflowDefinitionBuilderExtensions
 {
-    public static Workflow BuildWorkflow<T>(this IWorkflowDefinitionBuilder builder) where T : IWorkflow => builder.BuildWorkflow(Activator.CreateInstance<T>());
+    public static Task<Workflow> BuildWorkflowAsync<T>(this IWorkflowDefinitionBuilder builder, CancellationToken cancellationToken = default) where T : IWorkflow => builder.BuildWorkflowAsync(Activator.CreateInstance<T>(), cancellationToken);
 }

@@ -25,7 +25,7 @@ public class WorkflowInstanceFactory : IWorkflowInstanceFactory
 
     public async Task<WorkflowInstance> CreateAsync(string workflowDefinitionId, VersionOptions versionOptions, string? correlationId, CancellationToken cancellationToken = default)
     {
-        var workflow = (await _workflowRegistry.FindByIdAsync(workflowDefinitionId, versionOptions, cancellationToken))!;
+        var workflow = (await _workflowRegistry.FindByDefinitionIdAsync(workflowDefinitionId, versionOptions, cancellationToken))!;
         return Create(workflow, correlationId);
     }
 

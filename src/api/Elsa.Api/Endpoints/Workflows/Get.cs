@@ -20,7 +20,7 @@ public static partial class Workflows
     {
         var serializerOptions = serializerOptionsProvider.CreateApiOptions();
         var parsedVersionOptions = versionOptions != null ? VersionOptions.FromString(versionOptions) : VersionOptions.Latest;
-        var workflow = await requestSender.RequestAsync(new FindWorkflowByDefinitionId(definitionId, parsedVersionOptions), cancellationToken);
+        var workflow = await requestSender.RequestAsync(new FindWorkflowDefinitionByDefinitionId(definitionId, parsedVersionOptions), cancellationToken);
         return workflow == null ? Results.NotFound() : Results.Json(workflow, serializerOptions, statusCode: StatusCodes.Status200OK);
     }
 }

@@ -5,9 +5,9 @@ using Elsa.Services;
 
 namespace Elsa.IntegrationTests.Scenarios.Blocking;
 
-class BlockingSequentialWorkflow : IWorkflow
+class BlockingSequentialWorkflow : WorkflowBase
 {
-    public void Build(IWorkflowDefinitionBuilder workflow)
+    protected override void Build(IWorkflowDefinitionBuilder workflow)
     {
         workflow.WithRoot(new Sequence
         {

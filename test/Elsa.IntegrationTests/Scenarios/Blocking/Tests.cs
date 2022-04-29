@@ -23,7 +23,7 @@ public class Tests
     [Fact(DisplayName = "Subsequent activity does not get scheduled when previous activity created a bookmark")]
     public async Task Test1()
     {
-        var workflow = new WorkflowDefinitionBuilder().BuildWorkflow<BlockingSequentialWorkflow>();
+        var workflow = await new WorkflowDefinitionBuilder().BuildWorkflowAsync<BlockingSequentialWorkflow>();
         await _workflowRunner.RunAsync(workflow);
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(new[] { "Line 1" }, lines);
@@ -32,7 +32,7 @@ public class Tests
     [Fact(DisplayName = "Subsequent activities are scheduled when resuming workflow using bookmark")]
     public async Task Test2()
     {
-        var workflow = new WorkflowDefinitionBuilder().BuildWorkflow<BlockingSequentialWorkflow>();
+        var workflow = await new WorkflowDefinitionBuilder().BuildWorkflowAsync<BlockingSequentialWorkflow>();
         
         // Start workflow.
         var result = await _workflowRunner.RunAsync(workflow);

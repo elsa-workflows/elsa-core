@@ -32,7 +32,6 @@ var services = builder.Services;
 services
     .AddElsa()
     .AddInMemoryPersistence()
-    .IndexWorkflowTriggers()
     .AddHttpActivityServices()
     .AddProtoActorWorkflowHost()
     .AddElsaManagement()

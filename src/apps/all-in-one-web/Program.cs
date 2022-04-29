@@ -15,7 +15,6 @@ using Elsa.Modules.Quartz.Implementations;
 using Elsa.Modules.Scheduling.Activities;
 using Elsa.Modules.Scheduling.Extensions;
 using Elsa.Persistence.InMemory.Extensions;
-using Elsa.Runtime.Extensions;
 using Elsa.Runtime.ProtoActor.Extensions;
 using Elsa.Scripting.JavaScript.Extensions;
 using Elsa.Scripting.Liquid.Extensions;
@@ -28,7 +27,6 @@ var services = builder.Services;
 services
     .AddElsa()
     .AddInMemoryPersistence()
-    .IndexWorkflowTriggers()
     .AddHttpActivityServices()
     .AddProtoActorWorkflowHost()
     .AddElsaManagement()

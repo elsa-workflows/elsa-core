@@ -10,9 +10,9 @@ namespace Elsa.Samples.Web1.Workflows;
 
 using HttpMethods = Microsoft.AspNetCore.Http.HttpMethods;
 
-public class HttpWorkflow : IWorkflow
+public class HttpWorkflow : WorkflowBase
 {
-    public void Build(IWorkflowDefinitionBuilder workflow)
+    protected override void Build(IWorkflowDefinitionBuilder workflow)
     {
         // Setup the workflow.
         workflow

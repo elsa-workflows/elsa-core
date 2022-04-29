@@ -68,7 +68,7 @@ public class TriggerWorkflowInstructionInterpreter : WorkflowInstructionInterpre
     private async Task<Workflow?> FindWorkflowAsync(string id, CancellationToken cancellationToken)
     {
         // Get workflow to execute.
-        var workflow = await _workflowRegistry.FindByIdAsync(id, VersionOptions.Published, cancellationToken);
+        var workflow = await _workflowRegistry.FindByDefinitionIdAsync(id, VersionOptions.Published, cancellationToken);
 
         if (workflow != null)
             return workflow;

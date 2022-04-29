@@ -28,6 +28,7 @@ public static class ServiceCollectionExtensions
                 .AddSingleton<ITriggerIndexer, TriggerIndexer>()
                 .AddSingleton<IBookmarkManager, BookmarkManager>()
                 .AddSingleton<IWorkflowInstanceFactory, WorkflowInstanceFactory>()
+                .AddSingleton<IWorkflowDefinitionService, WorkflowDefinitionService>()
                 .AddSingleton(sp => sp.GetRequiredService<IOptions<WorkflowRuntimeOptions>>().Value.WorkflowInvokerFactory(sp))
                 .AddSingleton(sp => sp.GetRequiredService<IOptions<WorkflowRuntimeOptions>>().Value.WorkflowDispatcherFactory(sp))
 
@@ -39,9 +40,8 @@ public static class ServiceCollectionExtensions
                 .AddInstructionInterpreter<TriggerWorkflowInstructionInterpreter>()
                 .AddInstructionInterpreter<ResumeWorkflowInstructionInterpreter>()
 
-                // Workflow providers.
-                .AddWorkflowProvider<ConfigurationWorkflowProvider>()
-                .AddWorkflowProvider<DatabaseWorkflowProvider>()
+                // Workflow definition providers.
+                .AddWorkflowDefinitionProvider<ClrWorkflowDefinitionProvider>()
 
                 // Workflow engine.
                 .AddSingleton<IWorkflowService, WorkflowService>()
@@ -54,6 +54,7 @@ public static class ServiceCollectionExtensions
                 .AddHostedService<RegisterExpressionSyntaxDescriptors>()
                 .AddHostedService<DispatchedWorkflowDefinitionWorker>()
                 .AddHostedService<DispatchedWorkflowInstanceWorker>()
+                .AddHostedService<PopulateWorkflowDefinitionStore>()
 
                 // Channels for dispatching workflows in-memory.
                 .CreateChannel<DispatchWorkflowDefinitionRequest>()
@@ -80,9 +81,8 @@ public static class ServiceCollectionExtensions
             .AddExpressionHandler<OutputExpressionHandler, OutputExpression>()
             .AddExpressionHandler<ElsaExpressionHandler, ElsaExpression>();
 
-    public static IServiceCollection AddWorkflowProvider<T>(this IServiceCollection services) where T : class, IWorkflowProvider => services.AddSingleton<IWorkflowProvider, T>();
+    public static IServiceCollection AddWorkflowDefinitionProvider<T>(this IServiceCollection services) where T : class, IWorkflowDefinitionProvider => services.AddSingleton<IWorkflowDefinitionProvider, T>();
     public static IServiceCollection AddStimulusHandler<T>(this IServiceCollection services) where T : class, IStimulusHandler => services.AddSingleton<IStimulusHandler, T>();
     public static IServiceCollection AddInstructionInterpreter<T>(this IServiceCollection services) where T : class, IWorkflowInstructionInterpreter => services.AddSingleton<IWorkflowInstructionInterpreter, T>();
     public static IServiceCollection ConfigureWorkflowRuntime(this IServiceCollection services, Action<WorkflowRuntimeOptions> configure) => services.Configure(configure);
-    public static IServiceCollection IndexWorkflowTriggers(this IServiceCollection services) => services.AddHostedService<IndexWorkflowTriggers>();
 }

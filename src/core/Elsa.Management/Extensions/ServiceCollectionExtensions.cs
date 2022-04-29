@@ -1,4 +1,5 @@
 using Elsa.Management.Implementations;
+using Elsa.Management.Materializers;
 using Elsa.Management.Options;
 using Elsa.Management.Providers;
 using Elsa.Management.Serialization;
@@ -27,6 +28,8 @@ public static class ServiceCollectionExtensions
             .AddSingleton<IExpressionSyntaxProvider, DefaultExpressionSyntaxProvider>()
             .AddSingleton<IExpressionSyntaxRegistryPopulator, ExpressionSyntaxRegistryPopulator>()
             .AddSingleton<ISerializationOptionsConfigurator, SerializationOptionsConfigurator>()
+            .AddSingleton<IWorkflowMaterializer, ClrWorkflowMaterializer>()
+            .AddSingleton<IWorkflowMaterializer, JsonWorkflowMaterializer>()
             .AddSingleton<WorkflowSerializerOptionsProvider>();
     }
     

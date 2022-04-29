@@ -23,14 +23,21 @@ public class WorkflowDefinition : Entity
     /// The name of the workflow materializer to interpret the <see cref="StringData"/> or <see cref="BinaryData"/>.
     /// </summary>
     public string MaterializerName { get; set; } = default!;
+
+    /// <summary>
+    /// Provider-specific data.
+    /// </summary>
+    public string? MaterializerContext { get; set; }
     
     /// <summary>
     /// A textual representation of the workflow. The data is to be interpreted by the configured materializer.
     /// </summary>
-    public string? StringData { get; set; } = default!;
+    public string? StringData { get; set; }
     
     /// <summary>
     /// A binary representation of the workflow. The data is to be interpreted by the configured materializer.
     /// </summary>
-    public byte[] BinaryData { get; set; } = default!;
+    public byte[]? BinaryData { get; set; }
+    
+    public WorkflowDefinition ShallowClone() => (WorkflowDefinition)MemberwiseClone();
 }

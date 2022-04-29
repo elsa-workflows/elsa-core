@@ -6,7 +6,7 @@ using Elsa.Services;
 
 namespace Elsa.Samples.Web1.Workflows;
 
-public class StartAtTriggerWorkflow : IWorkflow
+public class StartAtTriggerWorkflow : WorkflowBase
 {
     private readonly ISystemClock _systemClock;
     private readonly DateTimeOffset _executeAt;
@@ -17,7 +17,7 @@ public class StartAtTriggerWorkflow : IWorkflow
         _executeAt = systemClock.UtcNow.AddSeconds(10);
     }
 
-    public void Build(IWorkflowDefinitionBuilder workflow)
+    protected override void Build(IWorkflowDefinitionBuilder workflow)
     {
         workflow.WithRoot(new Sequence
         {
