@@ -53,10 +53,10 @@ services
     .AddProtoActorWorkflowHost()
     .IndexWorkflowTriggers()
     .AddElsaManagement()
-    .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider(sqlServerConnectionString))
+    .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider())
     .AddSchedulingServices()
     .AddHttpActivityServices()
-    .AddAzureServiceBusServices(options => configuration.GetSection("AzureServiceBus").Bind(options))
+    //.AddAzureServiceBusServices(options => configuration.GetSection("AzureServiceBus").Bind(options))
     .ConfigureWorkflowRuntime(options =>
     {
         // Register workflows.
@@ -92,8 +92,8 @@ services
     .AddActivity<Timer>()
     .AddActivity<ForEach>()
     .AddActivity<Switch>()
-    .AddActivity<SendMessage>()
-    .AddActivity<MessageReceived>()
+    //.AddActivity<SendMessage>()
+    //.AddActivity<MessageReceived>()
     .AddActivity<RunJavaScript>()
     ;
 
@@ -116,11 +116,6 @@ wellKnownTypeRegistry.RegisterType<int>("int");
 wellKnownTypeRegistry.RegisterType<float>("float");
 wellKnownTypeRegistry.RegisterType<bool>("boolean");
 wellKnownTypeRegistry.RegisterType<string>("string");
-
-var order = new Order("order-1", 1, "customer-1", new[] { new OrderItem("product-i1", 2) });
-var serializationOptions = serviceProvider.GetRequiredService<WorkflowSerializerOptionsProvider>().CreatePersistenceOptions();
-var json = JsonSerializer.Serialize(order, serializationOptions);
-Console.WriteLine(json);
 
 // Configure workflow engine execution pipeline.
 serviceProvider.ConfigureDefaultWorkflowExecutionPipeline(pipeline =>
