@@ -2,9 +2,9 @@ using Elsa.Persistence.Entities;
 
 namespace Elsa.Persistence.Models;
 
-public record WorkflowSummary(string Id, string DefinitionId, string? Name, int Version, bool IsLatest, bool IsPublished, DateTimeOffset CreatedAt)
+public record WorkflowDefinitionSummary(string Id, string DefinitionId, string? Name, int Version, bool IsLatest, bool IsPublished, DateTimeOffset CreatedAt)
 {
-    public static WorkflowSummary FromDefinition(WorkflowDefinition workflowDefinition) => new(
+    public static WorkflowDefinitionSummary FromDefinition(WorkflowDefinition workflowDefinition) => new(
         workflowDefinition.Id,
         workflowDefinition.DefinitionId,
         workflowDefinition.Name,

@@ -1,34 +1,31 @@
 using Elsa.Mediator.Services;
-using Elsa.Models;
 using Elsa.Persistence.Entities;
 using Elsa.Persistence.EntityFrameworkCore.Services;
 using Elsa.Persistence.Extensions;
-using Elsa.Persistence.Mappers;
+using Elsa.Persistence.Models;
 using Elsa.Persistence.Requests;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Handlers.Requests;
 
-public class ListWorkflowsHandler : IRequestHandler<ListWorkflows, IEnumerable<Workflow>>
+public class ListWorkflowsHandler : IRequestHandler<ListWorkflowDefinitions, Page<WorkflowDefinition>>
 {
     private readonly IStore<WorkflowDefinition> _store;
-    private readonly WorkflowDefinitionMapper _mapper;
 
-    public ListWorkflowsHandler(IStore<WorkflowDefinition> store, WorkflowDefinitionMapper mapper)
+    public ListWorkflowsHandler(IStore<WorkflowDefinition> store)
     {
         _store = store;
-        _mapper = mapper;
     }
 
-    public async Task<IEnumerable<Workflow>> HandleAsync(ListWorkflows request, CancellationToken cancellationToken)
+    public async Task<Page<WorkflowDefinition>> HandleAsync(ListWorkflowDefinitions request, CancellationToken cancellationToken)
     {
-        var definitions = await _store.QueryAsync(query =>
-        {
-            if (request.VersionOptions != null)
-                query = query.WithVersion(request.VersionOptions.Value);
+        await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
+        var set = dbContext.WorkflowDefinitions;
+        var query = set.AsQueryable();
+        
+        if (request.VersionOptions != null)
+            query = query.WithVersion(request.VersionOptions.Value);
 
-            return query.Skip(request.Skip).Take(request.Take);
-        }, cancellationToken);
-
-        return definitions.Select(x => _mapper.Map(x)!).ToList();
+        query = query.OrderBy(x => x.Name);
+        return await query.PaginateAsync(request.PageArgs);
     }
 }

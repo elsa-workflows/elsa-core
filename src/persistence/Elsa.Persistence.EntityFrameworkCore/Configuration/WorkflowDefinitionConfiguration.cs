@@ -8,7 +8,6 @@ namespace Elsa.Persistence.EntityFrameworkCore.Configuration
     {
         public void Configure(EntityTypeBuilder<WorkflowDefinition> builder)
         {
-            builder.Ignore(x => x.Root);
             builder.Ignore(x => x.Variables);
             builder.Ignore(x => x.Metadata);
             builder.Ignore(x => x.ApplicationProperties);

@@ -12,29 +12,20 @@ using Elsa.Persistence.Requests;
 
 namespace Elsa.Persistence.InMemory.Handlers.Requests;
 
-public class ListWorkflowSummariesHandler : IRequestHandler<ListWorkflowSummaries, PagedList<WorkflowSummary>>
+public class ListWorkflowSummariesHandler : IRequestHandler<ListWorkflowDefinitionSummaries, Page<WorkflowDefinitionSummary>>
 {
     private readonly InMemoryStore<WorkflowDefinition> _store;
     public ListWorkflowSummariesHandler(InMemoryStore<WorkflowDefinition> store) => _store = store;
 
-    public Task<PagedList<WorkflowSummary>> HandleAsync(ListWorkflowSummaries request, CancellationToken cancellationToken)
+    public Task<Page<WorkflowDefinitionSummary>> HandleAsync(ListWorkflowDefinitionSummaries request, CancellationToken cancellationToken)
     {
-        var query = _store.List();
+        var query = _store.List().AsQueryable();
 
         if (request.VersionOptions != null)
             query = query.WithVersion(request.VersionOptions.Value);
-
-        var totalCount = query.Count();
         
-        if (request.Skip != null)
-            query = query.Skip(request.Skip.Value);
+        var pageArgs = request.PageArgs;
 
-        if (request.Take != null)
-            query = query.Take(request.Take.Value);
-        
-        var entities = query.ToList();
-        var summaries = entities.Select(WorkflowSummary.FromDefinition).ToList();
-        var pagedList = new PagedList<WorkflowSummary>(summaries, request.Take ?? totalCount, totalCount);
-        return Task.FromResult(pagedList);
+        return query.PaginateAsync(x => WorkflowDefinitionSummary.FromDefinition(x), pageArgs);
     }
 }

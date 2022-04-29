@@ -1,21 +1,22 @@
 using Elsa.Mediator.Services;
 using Elsa.Persistence.Entities;
 using Elsa.Persistence.EntityFrameworkCore.Services;
+using Elsa.Persistence.Extensions;
 using Elsa.Persistence.Models;
 using Elsa.Persistence.Requests;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Handlers.Requests;
 
-public class ListWorkflowInstanceSummariesHandler : IRequestHandler<ListWorkflowInstanceSummaries, PagedList<WorkflowInstanceSummary>>
+public class ListWorkflowInstanceSummariesHandler : IRequestHandler<ListWorkflowInstanceSummaries, Page<WorkflowInstanceSummary>>
 {
     private readonly IStore<WorkflowInstance> _store;
     public ListWorkflowInstanceSummariesHandler(IStore<WorkflowInstance> store) => _store = store;
 
-    public async Task<PagedList<WorkflowInstanceSummary>> HandleAsync(ListWorkflowInstanceSummaries request, CancellationToken cancellationToken)
+    public async Task<Page<WorkflowInstanceSummary>> HandleAsync(ListWorkflowInstanceSummaries request, CancellationToken cancellationToken)
     {
         var dbContext = await _store.CreateDbContextAsync(cancellationToken);
         var query = dbContext.WorkflowInstances.AsQueryable();
-        var (searchTerm, definitionId, version, correlationId, workflowStatus, workflowSubStatus, orderBy, orderDirection, skip, take) = request;
+        var (searchTerm, definitionId, version, correlationId, workflowStatus, workflowSubStatus, pageArgs, orderBy, orderDirection) = request;
 
         if (!string.IsNullOrWhiteSpace(definitionId))
             query = query.Where(x => x.DefinitionId == definitionId);
@@ -28,7 +29,7 @@ public class ListWorkflowInstanceSummariesHandler : IRequestHandler<ListWorkflow
 
         if (workflowStatus != null)
             query = query.Where(x => x.Status == workflowStatus);
-        
+
         if (workflowSubStatus != null)
             query = query.Where(x => x.SubStatus == workflowSubStatus);
 
@@ -51,9 +52,6 @@ public class ListWorkflowInstanceSummariesHandler : IRequestHandler<ListWorkflow
             _ => query
         };
 
-        var totalCount = query.Count();
-        var entities = query.Skip(skip).Take(take).ToList();
-        var summaries = entities.Select(WorkflowInstanceSummary.FromInstance).ToList();
-        return new PagedList<WorkflowInstanceSummary>(summaries, take, totalCount);
+        return await query.PaginateAsync(x => WorkflowInstanceSummary.FromInstance(x), pageArgs);
     }
 }

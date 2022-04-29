@@ -60,7 +60,7 @@ namespace Elsa.Management.Implementations
             foreach (var publishedAndOrLatestWorkflow in publishedAndOrLatestWorkflows)
             {
                 publishedAndOrLatestWorkflow.Publication = WorkflowPublication.Draft;
-                await _mediator.ExecuteAsync(new SaveWorkflow(publishedAndOrLatestWorkflow), cancellationToken);
+                await _mediator.ExecuteAsync(new SaveWorkflowDefinition(publishedAndOrLatestWorkflow), cancellationToken);
             }
 
             workflow = workflow.Publication.IsPublished ? workflow.IncrementVersion() : workflow.WithPublished();
@@ -69,7 +69,7 @@ namespace Elsa.Management.Implementations
             workflow = Initialize(workflow);
 
             await _mediator.PublishAsync(new WorkflowPublishing(workflow), cancellationToken);
-            await _mediator.ExecuteAsync(new SaveWorkflow(workflow), cancellationToken);
+            await _mediator.ExecuteAsync(new SaveWorkflowDefinition(workflow), cancellationToken);
             await _mediator.PublishAsync(new WorkflowPublished(workflow), cancellationToken);
             return workflow;
         }
@@ -93,7 +93,7 @@ namespace Elsa.Management.Implementations
             workflow = Initialize(workflow);
 
             await _mediator.PublishAsync(new WorkflowRetracting(workflow), cancellationToken);
-            await _mediator.ExecuteAsync(new SaveWorkflow(workflow), cancellationToken);
+            await _mediator.ExecuteAsync(new SaveWorkflowDefinition(workflow), cancellationToken);
             await _mediator.PublishAsync(new WorkflowRetracted(workflow), cancellationToken);
             return workflow;
         }
@@ -129,13 +129,13 @@ namespace Elsa.Management.Implementations
             if (latestVersion?.Publication is { IsPublished: true, IsLatest: true })
             {
                 latestVersion = latestVersion.WithLatest(false);
-                await _mediator.ExecuteAsync(new SaveWorkflow(latestVersion), cancellationToken);
+                await _mediator.ExecuteAsync(new SaveWorkflowDefinition(latestVersion), cancellationToken);
             }
 
             draft.Publication = WorkflowPublication.LatestDraft;
             draft = Initialize(draft);
 
-            await _mediator.ExecuteAsync(new SaveWorkflow(draft), cancellationToken);
+            await _mediator.ExecuteAsync(new SaveWorkflowDefinition(draft), cancellationToken);
             return draft;
         }
 

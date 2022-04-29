@@ -32,7 +32,7 @@ public class DatabaseWorkflowProvider : IWorkflowProvider
 
         while (true)
         {
-            var workflows = (await _requestSender.RequestAsync(new ListWorkflows(VersionOptions.Published, skip, take), cancellationToken)).ToList();
+            var workflows = (await _requestSender.RequestAsync(new ListWorkflowDefinitions(VersionOptions.Published, skip, take), cancellationToken)).ToList();
 
             if (!workflows.Any())
                 yield break;
