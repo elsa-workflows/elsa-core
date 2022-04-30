@@ -6,7 +6,7 @@ using Elsa.Services;
 
 namespace Elsa.IntegrationTests.Activities;
 
-class ForEachWorkflow : IWorkflow
+class ForEachWorkflow : WorkflowBase
 {
     private readonly ICollection<string> _items;
 
@@ -15,7 +15,7 @@ class ForEachWorkflow : IWorkflow
         _items = items;
     }
         
-    public void Build(IWorkflowDefinitionBuilder workflow)
+    protected override void Build(IWorkflowDefinitionBuilder workflow)
     {
         var currentItem = new Variable<string>();
 

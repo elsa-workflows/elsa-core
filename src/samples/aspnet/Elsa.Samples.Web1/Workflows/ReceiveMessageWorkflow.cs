@@ -6,9 +6,9 @@ using Elsa.Services;
 
 namespace Elsa.Samples.Web1.Workflows;
 
-public class ReceiveMessageWorkflow : IWorkflow
+public class ReceiveMessageWorkflow : WorkflowBase
 {
-    public void Build(IWorkflowDefinitionBuilder workflow)
+    protected override void Build(IWorkflowDefinitionBuilder workflow)
     {
         var receivedMessageVariable = new Variable<string>();
 

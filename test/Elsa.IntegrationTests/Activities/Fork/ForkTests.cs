@@ -23,7 +23,7 @@ public class ForkTests
     [Fact(DisplayName = "Each branch executes")]
     public async Task Test1()
     {
-        var workflow = new WorkflowDefinitionBuilder().BuildWorkflow<BasicForkWorkflow>();
+        var workflow = await new WorkflowDefinitionBuilder().BuildWorkflowAsync<BasicForkWorkflow>();
         await _workflowRunner.RunAsync(workflow);
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(new[]{ "Branch 1", "Branch 2", "Branch 3" }, lines);
@@ -32,7 +32,7 @@ public class ForkTests
     [Fact(DisplayName = "Wait Any causes workflow to continue")]
     public async Task Test2()
     {
-        var workflow = new WorkflowDefinitionBuilder().BuildWorkflow<JoinAnyForkWorkflow>();
+        var workflow = await new WorkflowDefinitionBuilder().BuildWorkflowAsync<JoinAnyForkWorkflow>();
         
         // First run.
         var result = await _workflowRunner.RunAsync(workflow);

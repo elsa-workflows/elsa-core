@@ -12,13 +12,13 @@ using Proto.Cluster.Partition;
 using Proto.Cluster.Testing;
 using Proto.DependencyInjection;
 using Proto.Remote;
-using Proto.Remote.GrpcCore;
+using Proto.Remote.GrpcNet;
 
 namespace Elsa.Runtime.ProtoActor.Extensions;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddProtoActorWorkflowHost(this IServiceCollection services)
+    public static IServiceCollection AddProtoActorRuntime(this IServiceCollection services)
     {
         var systemConfig = GetSystemConfig();
 
@@ -67,9 +67,9 @@ public static class ServiceCollectionExtensions
             .WithDeveloperSupervisionLogging(true)
             .WithDeadLetterRequestLogging(true);
 
-    private static GrpcCoreRemoteConfig GetRemoteConfig() => GrpcCoreRemoteConfig
+    private static GrpcNetRemoteConfig GetRemoteConfig() => Proto.Remote.GrpcNet.GrpcNetRemoteConfig
         .BindToLocalhost()
-        .WithProtoMessages(Protos.MessagesReflection.Descriptor);
+        .WithProtoMessages(MessagesReflection.Descriptor);
 
     private static ClusterConfig GetClusterConfig(ActorSystem system, string clusterName)
     {

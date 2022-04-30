@@ -1,37 +1,31 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Mediator.Services;
-using Elsa.Models;
 using Elsa.Persistence.Entities;
 using Elsa.Persistence.Extensions;
 using Elsa.Persistence.InMemory.Implementations;
-using Elsa.Persistence.Mappers;
 using Elsa.Persistence.Requests;
 
 namespace Elsa.Persistence.InMemory.Handlers.Requests;
 
-public class FindWorkflowHandler : IRequestHandler<FindWorkflowByDefinitionId, Workflow?>, IRequestHandler<FindWorkflowByName, Workflow?>
+public class FindWorkflowHandler : IRequestHandler<FindWorkflowDefinitionByDefinitionId, WorkflowDefinition?>, IRequestHandler<FindWorkflowDefinitionByName, WorkflowDefinition?>
 {
     private readonly InMemoryStore<WorkflowDefinition> _store;
-    private readonly WorkflowDefinitionMapper _mapper;
 
-    public FindWorkflowHandler(InMemoryStore<WorkflowDefinition> store, WorkflowDefinitionMapper mapper)
+    public FindWorkflowHandler(InMemoryStore<WorkflowDefinition> store)
     {
         _store = store;
-        _mapper = mapper;
     }
 
-    public Task<Workflow?> HandleAsync(FindWorkflowByDefinitionId request, CancellationToken cancellationToken)
+    public Task<WorkflowDefinition?> HandleAsync(FindWorkflowDefinitionByDefinitionId request, CancellationToken cancellationToken)
     {
         var definition = _store.Find(x => x.DefinitionId == request.DefinitionId && x.WithVersion(request.VersionOptions));
-        var workflow = _mapper.Map(definition);
-        return Task.FromResult(workflow);
+        return Task.FromResult(definition);
     }
 
-    public Task<Workflow?> HandleAsync(FindWorkflowByName request, CancellationToken cancellationToken)
+    public Task<WorkflowDefinition?> HandleAsync(FindWorkflowDefinitionByName request, CancellationToken cancellationToken)
     {
         var definition = _store.Find(x => x.Name == request.Name && x.WithVersion(request.VersionOptions));
-        var workflow = _mapper.Map(definition);
-        return Task.FromResult(workflow);
+        return Task.FromResult(definition);
     }
 }

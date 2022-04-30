@@ -19,8 +19,9 @@ public class DefaultExpressionSyntaxProvider : IExpressionSyntaxProvider
     {
         var literal = CreateLiteralDescriptor();
         var json = CreateJsonDescriptor();
+        var @delegate = CreateDelegateDescriptor();
 
-        return ValueTask.FromResult<IEnumerable<ExpressionSyntaxDescriptor>>(new[] { literal, json });
+        return ValueTask.FromResult<IEnumerable<ExpressionSyntaxDescriptor>>(new[] { literal, json, @delegate });
     }
 
     private ExpressionSyntaxDescriptor CreateLiteralDescriptor() => CreateDescriptor<LiteralExpression>(
@@ -34,6 +35,12 @@ public class DefaultExpressionSyntaxProvider : IExpressionSyntaxProvider
         CreateJsonExpression,
         context => new JsonObject(context.GetExpression<JsonExpression>().Value),
         expression => expression.Value);
+
+    private ExpressionSyntaxDescriptor CreateDelegateDescriptor() => CreateDescriptor<DelegateExpression>(
+        "Delegate",
+        CreateJsonExpression,
+        context => new DelegateReference(),
+        expression => expression.DelegateReference.Delegate?.ToString());
 
     private ExpressionSyntaxDescriptor CreateDescriptor<TExpression>(
         string syntax,

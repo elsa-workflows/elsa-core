@@ -32,9 +32,8 @@ var services = builder.Services;
 services
     .AddElsa()
     .AddInMemoryPersistence()
-    .IndexWorkflowTriggers()
     .AddHttpActivityServices()
-    .AddProtoActorWorkflowHost()
+    .AddProtoActorRuntime()
     .AddElsaManagement()
     .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider())
     .AddSchedulingServices();

@@ -36,7 +36,7 @@ public static class ServiceCollectionExtensions
             .AddSingleton<IActivitySchedulerFactory, ActivitySchedulerFactory>()
             .AddSingleton<IActivityNodeResolver, OutboundActivityNodeResolver>()
             .AddSingleton<IHasher, Hasher>()
-            .AddSingleton<IIdentityGenerator, IdentityGenerator>()
+            .AddSingleton<IIdentityGenerator, RandomIdentityGenerator>()
             .AddSingleton<ISystemClock, SystemClock>()
             .AddSingleton<IBookmarkDataSerializer, BookmarkDataSerializer>()
             .AddSingleton<IWellKnownTypeRegistry, WellKnownTypeRegistry>()
@@ -62,7 +62,7 @@ public static class ServiceCollectionExtensions
             .AddLogging();
     }
 
-    public static IServiceCollection AddWorkflowProvider<T>(this IServiceCollection services) where T : class, IWorkflowProvider => services.AddSingleton<IWorkflowProvider, T>();
+    public static IServiceCollection AddWorkflowProvider<T>(this IServiceCollection services) where T : class, IWorkflowDefinitionProvider => services.AddSingleton<IWorkflowDefinitionProvider, T>();
     public static IServiceCollection AddStimulusHandler<T>(this IServiceCollection services) where T : class, IStimulusHandler => services.AddSingleton<IStimulusHandler, T>();
     public static IServiceCollection AddInstructionInterpreter<T>(this IServiceCollection services) where T : class, IWorkflowInstructionInterpreter => services.AddSingleton<IWorkflowInstructionInterpreter, T>();
 }

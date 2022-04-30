@@ -6,9 +6,9 @@ using Elsa.Services;
 
 namespace Elsa.IntegrationTests.Scenarios.BlockingAndBreaking;
 
-public class BreakWhileBlockForkWorkflow : IWorkflow
+public class BreakWhileBlockForkWorkflow : WorkflowBase
 {
-    public void Build(IWorkflowDefinitionBuilder workflow)
+    protected override void Build(IWorkflowDefinitionBuilder workflow)
     {
         var currentValue = new Variable<int?>(0);
 

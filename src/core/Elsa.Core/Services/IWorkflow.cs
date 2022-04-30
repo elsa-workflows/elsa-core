@@ -2,5 +2,5 @@ namespace Elsa.Services;
 
 public interface IWorkflow
 {
-    void Build(IWorkflowDefinitionBuilder workflow);
+    ValueTask BuildAsync(IWorkflowDefinitionBuilder builder, CancellationToken cancellationToken = default);
 }

@@ -20,10 +20,9 @@ public static partial class Workflows
         [FromQuery] int? pageSize)
     {
         var serializerOptions = serializerOptionsProvider.CreateApiOptions();
-        var skip = page * pageSize;
-        var take = pageSize;
+        var pageArgs = new PageArgs(page, pageSize);
         var parsedVersionOptions = versionOptions != null ? VersionOptions.FromString(versionOptions) : default;
-        var workflowSummaries = await requestSender.RequestAsync(new ListWorkflowSummaries(parsedVersionOptions, skip, take), cancellationToken);
+        var workflowSummaries = await requestSender.RequestAsync(new ListWorkflowDefinitionSummaries(parsedVersionOptions, pageArgs), cancellationToken);
 
         return Results.Json(workflowSummaries, serializerOptions, statusCode: StatusCodes.Status200OK);
     }

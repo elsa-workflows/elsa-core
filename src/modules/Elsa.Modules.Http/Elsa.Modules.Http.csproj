@@ -8,7 +8,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
-        <ProjectReference Include="..\..\runtime\Elsa.Runtime\Elsa.Runtime.csproj" />
+        <ProjectReference Include="..\..\core\Elsa.Runtime\Elsa.Runtime.csproj" />
         <ProjectReference Include="..\..\scripting\Elsa.Scripting.JavaScript\Elsa.Scripting.JavaScript.csproj" />
     </ItemGroup>
 

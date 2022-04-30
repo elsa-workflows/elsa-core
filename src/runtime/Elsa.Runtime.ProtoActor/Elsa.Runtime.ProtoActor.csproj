@@ -35,7 +35,7 @@
     <!--    </ItemGroup>-->
 
     <ItemGroup>
-        <ProjectReference Include="..\Elsa.Runtime\Elsa.Runtime.csproj" />
+        <ProjectReference Include="..\..\core\Elsa.Runtime\Elsa.Runtime.csproj" />
     </ItemGroup>
 
     <ItemGroup Label="Protos">

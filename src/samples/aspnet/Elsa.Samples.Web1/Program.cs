@@ -1,5 +1,3 @@
-using System;
-using System.Text.Json;
 using Elsa.Activities;
 using Elsa.Api.Extensions;
 using Elsa.Extensions;
@@ -8,8 +6,6 @@ using Elsa.Management.Extensions;
 using Elsa.Modules.Activities.Configurators;
 using Elsa.Modules.Activities.Console;
 using Elsa.Modules.Activities.Workflows;
-using Elsa.Modules.AzureServiceBus.Activities;
-using Elsa.Modules.AzureServiceBus.Extensions;
 using Elsa.Modules.Hangfire.Implementations;
 using Elsa.Modules.Http;
 using Elsa.Modules.Http.Extensions;
@@ -20,18 +16,14 @@ using Elsa.Modules.Scheduling.Extensions;
 using Elsa.Modules.WorkflowContexts.Extensions;
 using Elsa.Persistence.EntityFrameworkCore.Extensions;
 using Elsa.Persistence.EntityFrameworkCore.Sqlite;
-using Elsa.Pipelines.ActivityExecution;
-using Elsa.Pipelines.ActivityExecution.Components;
 using Elsa.Pipelines.WorkflowExecution.Components;
 using Elsa.Runtime.Extensions;
 using Elsa.Runtime.ProtoActor.Extensions;
 using Elsa.Samples.Web1.Activities;
-using Elsa.Samples.Web1.Models;
 using Elsa.Samples.Web1.Serialization;
 using Elsa.Samples.Web1.Workflows;
 using Elsa.Scripting.JavaScript.Extensions;
 using Elsa.Scripting.Liquid.Extensions;
-using Elsa.Serialization;
 using Elsa.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
@@ -48,10 +40,9 @@ var sqlServerConnectionString = configuration.GetConnectionString("SqlServer");
 
 // Add services.
 services
-    .AddElsa()
     .AddEntityFrameworkCorePersistence((_, ef) => ef.UseSqlite())
-    .AddProtoActorWorkflowHost()
-    .IndexWorkflowTriggers()
+    .AddElsa()
+    //.AddProtoActorWorkflowHost()
     .AddElsaManagement()
     .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider())
     .AddSchedulingServices()

@@ -23,7 +23,7 @@ public class Tests
     [Fact(DisplayName = "While loop blocks when bookmark is created")]
     public async Task Test1()
     {
-        var workflow = new WorkflowDefinitionBuilder().BuildWorkflow<BreakWhileBlockForkWorkflow>();
+        var workflow = await new WorkflowDefinitionBuilder().BuildWorkflowAsync<BreakWhileBlockForkWorkflow>();
         
         // Start workflow.
         var result1 = await _workflowRunner.RunAsync(workflow);

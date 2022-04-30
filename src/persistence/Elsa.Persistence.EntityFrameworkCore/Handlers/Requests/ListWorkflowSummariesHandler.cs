@@ -8,12 +8,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Handlers.Requests;
 
-public class ListWorkflowSummariesHandler : IRequestHandler<ListWorkflowSummaries, PagedList<WorkflowSummary>>
+public class ListWorkflowSummariesHandler : IRequestHandler<ListWorkflowDefinitionSummaries, Page<WorkflowDefinitionSummary>>
 {
     private readonly IStore<WorkflowDefinition> _store;
     public ListWorkflowSummariesHandler(IStore<WorkflowDefinition> store) => _store = store;
 
-    public async Task<PagedList<WorkflowSummary>> HandleAsync(ListWorkflowSummaries request, CancellationToken cancellationToken)
+    public async Task<Page<WorkflowDefinitionSummary>> HandleAsync(ListWorkflowDefinitionSummaries request, CancellationToken cancellationToken)
     {
         await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
         var set = dbContext.WorkflowDefinitions;
@@ -22,15 +22,8 @@ public class ListWorkflowSummariesHandler : IRequestHandler<ListWorkflowSummarie
         if (request.VersionOptions != null)
             query = query.WithVersion(request.VersionOptions.Value);
 
-        var totalCount = await query.CountAsync(cancellationToken);
+        query = query.OrderBy(x => x.Name);
 
-        if (request.Skip != null)
-            query = query.Skip(request.Skip.Value);
-
-        if (request.Take != null)
-            query = query.Take(request.Take.Value);
-
-        var summaries = query.OrderBy(x => x.Name).Select(x => WorkflowSummary.FromDefinition(x)).ToList();
-        return new PagedList<WorkflowSummary>(summaries, request.Take ?? totalCount, totalCount);
+        return await query.PaginateAsync(x => WorkflowDefinitionSummary.FromDefinition(x), request.PageArgs);
     }
 }

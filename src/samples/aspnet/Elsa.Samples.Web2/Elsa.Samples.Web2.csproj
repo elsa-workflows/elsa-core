@@ -15,7 +15,6 @@
         <ProjectReference Include="..\..\..\modules\Elsa.Modules.Quartz\Elsa.Modules.Quartz.csproj" />
         <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.InMemory\Elsa.Persistence.InMemory.csproj" />
         <ProjectReference Include="..\..\..\runtime\Elsa.Runtime.ProtoActor\Elsa.Runtime.ProtoActor.csproj" />
-        <ProjectReference Include="..\..\..\runtime\Elsa.Runtime\Elsa.Runtime.csproj" />
         <ProjectReference Include="..\..\..\scripting\Elsa.Scripting.Liquid\Elsa.Scripting.Liquid.csproj" />
     </ItemGroup>
 

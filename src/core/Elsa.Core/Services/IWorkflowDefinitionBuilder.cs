@@ -16,5 +16,5 @@ public interface IWorkflowDefinitionBuilder
     IWorkflowDefinitionBuilder WithVariables(params Variable[] variables);
     IWorkflowDefinitionBuilder WithApplicationProperty(string name, object value);
     Workflow BuildWorkflow();
-    Workflow BuildWorkflow(IWorkflow workflowDefinition);
+    Task<Workflow> BuildWorkflowAsync(IWorkflow workflowDefinition, CancellationToken cancellationToken = default);
 }

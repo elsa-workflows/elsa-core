@@ -5,7 +5,7 @@ using Elsa.Services;
 
 namespace Elsa.IntegrationTests.Activities;
 
-public class IfThenWorkflow : IWorkflow
+public class IfThenWorkflow : WorkflowBase
 {
     private readonly Func<bool> _condition;
 
@@ -14,7 +14,7 @@ public class IfThenWorkflow : IWorkflow
         _condition = condition;
     }
         
-    public void Build(IWorkflowDefinitionBuilder workflow)
+    protected override void Build(IWorkflowDefinitionBuilder workflow)
     {
         workflow.WithRoot(new If(_condition)
         {

@@ -5,7 +5,7 @@ using Elsa.Services;
 
 namespace Elsa.Samples.Web1.Workflows;
 
-public class StartAtBookmarkWorkflow : IWorkflow
+public class StartAtBookmarkWorkflow : WorkflowBase
 {
     private readonly ISystemClock _systemClock;
 
@@ -14,7 +14,7 @@ public class StartAtBookmarkWorkflow : IWorkflow
         _systemClock = systemClock;
     }
 
-    public void Build(IWorkflowDefinitionBuilder workflow)
+    protected override void Build(IWorkflowDefinitionBuilder workflow)
     {
         workflow.WithRoot(new Sequence
         {

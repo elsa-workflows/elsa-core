@@ -12,8 +12,7 @@ public record ListWorkflowInstanceSummaries(
     string? CorrelationId = default,
     WorkflowStatus? WorkflowStatus = default,
     WorkflowSubStatus? WorkflowSubStatus = default,
+    PageArgs? PageArgs = default,
     OrderBy OrderBy = OrderBy.Created,
-    OrderDirection OrderDirection = OrderDirection.Ascending,
-    int Skip = 0,
-    int Take = 50
-) : IRequest<PagedList<WorkflowInstanceSummary>>;
+    OrderDirection OrderDirection = OrderDirection.Ascending
+) : IRequest<Page<WorkflowInstanceSummary>>;

@@ -10,5 +10,7 @@ service WorkflowDefinitionGrain {
 }
 
 service WorkflowInstanceGrain {
-  rpc Execute (ExecuteWorkflowInstanceRequest) returns (ExecuteWorkflowInstanceResponse);
+  rpc ExecuteExistingInstance (ExecuteExistingWorkflowInstanceRequest) returns (ExecuteWorkflowInstanceResponse);
+  rpc ExecuteNewInstance (ExecuteNewWorkflowInstanceRequest) returns (ExecuteWorkflowInstanceResponse);
+  rpc Execute (ExecuteWorkflowRequest) returns (ExecuteWorkflowInstanceResponse);
 }

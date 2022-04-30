@@ -12,15 +12,15 @@ using Elsa.Persistence.Requests;
 
 namespace Elsa.Persistence.InMemory.Handlers.Requests;
 
-public class ListWorkflowInstanceSummariesHandler : IRequestHandler<ListWorkflowInstanceSummaries, PagedList<WorkflowInstanceSummary>>
+public class ListWorkflowInstanceSummariesHandler : IRequestHandler<ListWorkflowInstanceSummaries, Page<WorkflowInstanceSummary>>
 {
     private readonly InMemoryStore<WorkflowInstance> _store;
     public ListWorkflowInstanceSummariesHandler(InMemoryStore<WorkflowInstance> store) => _store = store;
 
-    public Task<PagedList<WorkflowInstanceSummary>> HandleAsync(ListWorkflowInstanceSummaries request, CancellationToken cancellationToken)
+    public Task<Page<WorkflowInstanceSummary>> HandleAsync(ListWorkflowInstanceSummaries request, CancellationToken cancellationToken)
     {
         var query = _store.List();
-        var (searchTerm, definitionId, version, correlationId, workflowStatus, workflowSubStatus, orderBy, orderDirection, skip, take) = request;
+        var (searchTerm, definitionId, version, correlationId, workflowStatus, workflowSubStatus, pageArgs, orderBy, orderDirection) = request;
 
         if (!string.IsNullOrWhiteSpace(definitionId))
             query = query.Where(x => x.DefinitionId == definitionId);
@@ -59,9 +59,13 @@ public class ListWorkflowInstanceSummariesHandler : IRequestHandler<ListWorkflow
         };
 
         var totalCount = query.Count();
-        var entities = query.Skip(skip).Take(take).ToList();
+
+        if (pageArgs?.Offset != null) query = query.Skip(pageArgs.Offset.Value);
+        if (pageArgs?.Limit != null) query = query.Take(pageArgs.Limit.Value);
+        
+        var entities = query.ToList();
         var summaries = entities.Select(WorkflowInstanceSummary.FromInstance).ToList();
-        var pagedList = new PagedList<WorkflowInstanceSummary>(summaries, take, totalCount);
+        var pagedList = Page.Of(summaries, totalCount);
         return Task.FromResult(pagedList);
     }
 }

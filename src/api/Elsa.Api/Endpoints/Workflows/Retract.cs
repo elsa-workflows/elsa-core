@@ -1,7 +1,9 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Management.Services;
+using Elsa.Mediator.Services;
 using Elsa.Persistence.Models;
+using Elsa.Persistence.Requests;
 using Elsa.Runtime.Services;
 using Elsa.Serialization;
 using Microsoft.AspNetCore.Http;
@@ -10,17 +12,22 @@ namespace Elsa.Api.Endpoints.Workflows;
 
 public static partial class Workflows
 {
-    public static async Task<IResult> RetractAsync(string definitionId, WorkflowSerializerOptionsProvider serializerOptionsProvider, IWorkflowRegistry workflowRegistry,
-        IWorkflowPublisher workflowPublisher, CancellationToken cancellationToken)
+    public static async Task<IResult> RetractAsync(
+        string definitionId, 
+        WorkflowSerializerOptionsProvider serializerOptionsProvider, 
+        IRequestSender requestSender,
+        IWorkflowPublisher workflowPublisher,
+        IWorkflowDefinitionService workflowDefinitionService,
+        CancellationToken cancellationToken)
     {
-        var workflow = await workflowRegistry.FindByIdAsync(definitionId, VersionOptions.LatestOrPublished, cancellationToken);
-        if (workflow == null)
-        {
+        var definition = await requestSender.RequestAsync(new FindWorkflowDefinitionByDefinitionId(definitionId, VersionOptions.LatestOrPublished), cancellationToken);
+        
+        if (definition == null)
             return Results.NotFound();
-        }
 
-        await workflowPublisher.RetractAsync(workflow, cancellationToken);
+        await workflowPublisher.RetractAsync(definition, cancellationToken);
         var serializerOptions = serializerOptionsProvider.CreateApiOptions();
+        var workflow = await workflowDefinitionService.MaterializeWorkflowAsync(definition, cancellationToken);
   
         return Results.Json(workflow, serializerOptions, statusCode: StatusCodes.Status202Accepted);
     }

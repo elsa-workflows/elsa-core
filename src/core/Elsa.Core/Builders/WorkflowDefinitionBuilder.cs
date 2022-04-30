@@ -73,10 +73,10 @@ public class WorkflowDefinitionBuilder : IWorkflowDefinitionBuilder
         return new Workflow(identity, publication, metadata, root, Variables, Metadata, ApplicationProperties);
     }
 
-    public Workflow BuildWorkflow(IWorkflow workflowDefinition)
+    public async Task<Workflow> BuildWorkflowAsync(IWorkflow workflowDefinition, CancellationToken cancellationToken = default)
     {
         WithDefinitionId(workflowDefinition.GetType().Name);
-        workflowDefinition.Build(this);
+        await workflowDefinition.BuildAsync(this, cancellationToken);
         return BuildWorkflow();
     }
 }

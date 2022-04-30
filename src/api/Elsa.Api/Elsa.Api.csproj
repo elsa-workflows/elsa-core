@@ -7,13 +7,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+        <FrameworkReference Include="Microsoft.AspNetCore.App"/>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\core\Elsa.Management\Elsa.Management.csproj" />
-      <ProjectReference Include="..\..\modules\Elsa.Modules.Activities\Elsa.Modules.Activities.csproj" />
-      <ProjectReference Include="..\..\runtime\Elsa.Runtime\Elsa.Runtime.csproj" />
+        <ProjectReference Include="..\..\core\Elsa.Management\Elsa.Management.csproj"/>
+        <ProjectReference Include="..\..\core\Elsa.Runtime\Elsa.Runtime.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Modules.Activities\Elsa.Modules.Activities.csproj"/>
     </ItemGroup>
 
 </Project>

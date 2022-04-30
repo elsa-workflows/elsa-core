@@ -20,9 +20,9 @@ public class WorkflowSerializerOptionsProvider
     }
 
     public JsonSerializerOptions CreateApiOptions() => CreateDefaultOptions(ReferenceHandling.Ignore);
-    public JsonSerializerOptions CreatePersistenceOptions() => CreateDefaultOptions(ReferenceHandling.Preserve);
+    public JsonSerializerOptions CreatePersistenceOptions() => CreateDefaultOptions();
 
-    public JsonSerializerOptions CreateDefaultOptions(ReferenceHandling referenceHandling)
+    public JsonSerializerOptions CreateDefaultOptions(ReferenceHandling referenceHandling = ReferenceHandling.Preserve)
     {
         var options = new JsonSerializerOptions
         {
