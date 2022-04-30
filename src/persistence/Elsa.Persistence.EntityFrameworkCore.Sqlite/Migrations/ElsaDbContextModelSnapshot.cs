@@ -83,8 +83,11 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("TEXT");
+                    b.Property<byte[]>("BinaryData")
+                        .HasColumnType("BLOB");
+
+                    b.Property<long>("CreatedAt")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Data")
                         .HasColumnType("TEXT");
@@ -102,7 +105,17 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
                     b.Property<bool>("IsPublished")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("MaterializerContext")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("MaterializerName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Name")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("StringData")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("Version")
@@ -154,8 +167,8 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
                     b.Property<string>("Source")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTimeOffset>("Timestamp")
-                        .HasColumnType("TEXT");
+                    b.Property<long>("Timestamp")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
@@ -186,14 +199,14 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTimeOffset?>("CancelledAt")
-                        .HasColumnType("TEXT");
+                    b.Property<long?>("CancelledAt")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("CorrelationId")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("TEXT");
+                    b.Property<long>("CreatedAt")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Data")
                         .HasColumnType("TEXT");
@@ -206,14 +219,14 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTimeOffset?>("FaultedAt")
-                        .HasColumnType("TEXT");
+                    b.Property<long?>("FaultedAt")
+                        .HasColumnType("INTEGER");
 
-                    b.Property<DateTimeOffset?>("FinishedAt")
-                        .HasColumnType("TEXT");
+                    b.Property<long?>("FinishedAt")
+                        .HasColumnType("INTEGER");
 
-                    b.Property<DateTimeOffset?>("LastExecutedAt")
-                        .HasColumnType("TEXT");
+                    b.Property<long?>("LastExecutedAt")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")
                         .HasColumnType("TEXT");
