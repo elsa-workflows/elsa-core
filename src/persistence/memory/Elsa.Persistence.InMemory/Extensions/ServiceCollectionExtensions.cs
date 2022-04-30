@@ -14,7 +14,6 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddInMemoryPersistence(this IServiceCollection services)
     {
         return services
-                .AddInMemoryHandlers()
                 .AddSingleton<InMemoryStore<WorkflowDefinition>>()
                 .AddSingleton<InMemoryStore<WorkflowInstance>>()
                 .AddSingleton<InMemoryStore<WorkflowBookmark>>()
@@ -22,8 +21,7 @@ public static class ServiceCollectionExtensions
                 .AddSingleton<InMemoryStore<WorkflowExecutionLogRecord>>()
                 .AddSingleton<IWorkflowInstanceStore, InMemoryWorkflowInstanceStore>()
                 .AddSingleton<IWorkflowDefinitionStore, InMemoryWorkflowDefinitionStore>()
+                .AddSingleton<IWorkflowTriggerStore, InMemoryWorkflowTriggerStore>()
             ;
     }
-
-    public static IServiceCollection AddInMemoryHandlers(this IServiceCollection services) => services.AddHandlersFrom<SaveWorkflowDefinitionHandler>();
 }

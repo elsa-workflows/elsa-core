@@ -3,14 +3,14 @@ using System.Text.Json;
 using Elsa.Helpers;
 using Elsa.Mediator.Services;
 using Elsa.Models;
-using Elsa.Persistence.Commands;
 using Elsa.Persistence.Comparers;
 using Elsa.Persistence.Entities;
-using Elsa.Persistence.Requests;
+using Elsa.Persistence.Services;
 using Elsa.Runtime.Models;
 using Elsa.Runtime.Services;
 using Elsa.Services;
 using Microsoft.Extensions.Logging;
+using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Runtime.Implementations;
 
@@ -26,8 +26,7 @@ public class TriggerIndexer : ITriggerIndexer
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IExpressionEvaluator _expressionEvaluator;
     private readonly IIdentityGenerator _identityGenerator;
-    private readonly IRequestSender _requestSender;
-    private readonly ICommandSender _commandSender;
+    private readonly IWorkflowTriggerStore _workflowTriggerStore;
     private readonly IEventPublisher _eventPublisher;
     private readonly IServiceProvider _serviceProvider;
     private readonly IHasher _hasher;
@@ -38,8 +37,7 @@ public class TriggerIndexer : ITriggerIndexer
         IWorkflowDefinitionService workflowDefinitionService,
         IExpressionEvaluator expressionEvaluator,
         IIdentityGenerator identityGenerator,
-        IRequestSender requestSender,
-        ICommandSender commandSender,
+        IWorkflowTriggerStore workflowTriggerStore,
         IEventPublisher eventPublisher,
         IServiceProvider serviceProvider,
         IHasher hasher,
@@ -48,8 +46,7 @@ public class TriggerIndexer : ITriggerIndexer
         _activityWalker = activityWalker;
         _expressionEvaluator = expressionEvaluator;
         _identityGenerator = identityGenerator;
-        _requestSender = requestSender;
-        _commandSender = commandSender;
+        _workflowTriggerStore = workflowTriggerStore;
         _eventPublisher = eventPublisher;
         _serviceProvider = serviceProvider;
         _hasher = hasher;
@@ -66,7 +63,7 @@ public class TriggerIndexer : ITriggerIndexer
     public async Task<IndexedWorkflowTriggers> IndexTriggersAsync(Workflow workflow, CancellationToken cancellationToken = default)
     {
         // Get current triggers
-        var currentTriggers = await GetCurrentTriggersAsync(workflow.Identity.DefinitionId, cancellationToken);
+        var currentTriggers = await GetCurrentTriggersAsync(workflow.Identity.DefinitionId, cancellationToken).ToList();
 
         // Collect new triggers **if workflow is published**.
         var newTriggers = workflow.Publication.IsPublished
@@ -77,7 +74,7 @@ public class TriggerIndexer : ITriggerIndexer
         var diff = Diff.For(currentTriggers, newTriggers, new WorkflowTriggerHashEqualityComparer());
 
         // Replace triggers for the specified workflow.
-        await _commandSender.ExecuteAsync(new ReplaceWorkflowTriggers(workflow, diff.Removed, diff.Added), cancellationToken);
+        await _workflowTriggerStore.ReplaceAsync(diff.Removed, diff.Added, cancellationToken);
 
         var indexedWorkflow = new IndexedWorkflowTriggers(workflow, diff.Added, diff.Removed, diff.Unchanged);
 
@@ -86,8 +83,8 @@ public class TriggerIndexer : ITriggerIndexer
         return indexedWorkflow;
     }
 
-    private async Task<ICollection<WorkflowTrigger>> GetCurrentTriggersAsync(string workflowDefinitionId, CancellationToken cancellationToken) =>
-        await _requestSender.RequestAsync(new FindWorkflowTriggersByWorkflowDefinition(workflowDefinitionId), cancellationToken);
+    private async Task<IEnumerable<WorkflowTrigger>> GetCurrentTriggersAsync(string workflowDefinitionId, CancellationToken cancellationToken) =>
+        await _workflowTriggerStore.FindManyByWorkflowDefinitionIdAsync(workflowDefinitionId, cancellationToken);
 
     private async IAsyncEnumerable<WorkflowTrigger> GetTriggersAsync(Workflow workflow, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
