@@ -30,8 +30,9 @@ public class DefaultWorkflowInvoker : IWorkflowInvoker
 
     public async Task<InvokeWorkflowResult> InvokeAsync(InvokeWorkflowDefinitionRequest request, CancellationToken cancellationToken = default)
     {
-        var workflowInstance = await _workflowInstanceFactory.CreateAsync(request.DefinitionId, request.VersionOptions, request.CorrelationId, cancellationToken);
-        return await InvokeAsync(workflowInstance!, input: request.Input, cancellationToken: cancellationToken);
+        var workflow = await GetWorkflowAsync(request.DefinitionId, request.VersionOptions, cancellationToken);
+        var input = request.Input;
+        return await _workflowRunner.RunAsync(workflow, input, cancellationToken);
     }
 
     public async Task<InvokeWorkflowResult> InvokeAsync(InvokeWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
@@ -54,5 +55,15 @@ public class DefaultWorkflowInvoker : IWorkflowInvoker
     public async Task<InvokeWorkflowResult> InvokeAsync(Workflow workflow, WorkflowState workflowState, Bookmark? bookmark = default, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
     {
         return await _workflowRunner.RunAsync(workflow, workflowState, bookmark, input, cancellationToken);
+    }
+    
+    private async Task<Workflow> GetWorkflowAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
+    {
+        var workflow = await _workflowRegistry.FindByDefinitionIdAsync(definitionId, versionOptions, cancellationToken);
+
+        if (workflow == null)
+            throw new Exception($"Workflow instance references a workflow that does not exist");
+
+        return workflow;
     }
 }

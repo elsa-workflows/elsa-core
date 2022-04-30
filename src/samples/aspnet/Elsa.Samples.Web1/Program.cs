@@ -42,7 +42,7 @@ var sqlServerConnectionString = configuration.GetConnectionString("SqlServer");
 services
     .AddEntityFrameworkCorePersistence((_, ef) => ef.UseSqlite())
     .AddElsa()
-    .AddProtoActorWorkflowHost()
+    //.AddProtoActorWorkflowHost()
     .AddElsaManagement()
     .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider())
     .AddSchedulingServices()

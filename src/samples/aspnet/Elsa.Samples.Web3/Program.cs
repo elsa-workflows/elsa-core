@@ -28,7 +28,7 @@ services
     .AddElsa()
     .AddInMemoryPersistence()
     .AddHttpActivityServices()
-    .AddProtoActorWorkflowHost()
+    .AddProtoActorRuntime()
     .AddElsaManagement()
     .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider())
     .AddSchedulingServices();

@@ -18,7 +18,7 @@ namespace Elsa.Runtime.ProtoActor.Extensions;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddProtoActorWorkflowHost(this IServiceCollection services)
+    public static IServiceCollection AddProtoActorRuntime(this IServiceCollection services)
     {
         var systemConfig = GetSystemConfig();
 
