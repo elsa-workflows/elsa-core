@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Threading.Tasks;
 using Elsa.Management.Services;
 using Elsa.Models;
 using Elsa.Persistence.Entities;
