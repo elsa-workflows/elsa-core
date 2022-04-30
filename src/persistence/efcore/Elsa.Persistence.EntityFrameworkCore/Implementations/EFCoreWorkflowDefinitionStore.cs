@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using Elsa.Persistence.Entities;
+using Elsa.Persistence.EntityFrameworkCore.Services;
 using Elsa.Persistence.Extensions;
 using Elsa.Persistence.Models;
 using Elsa.Persistence.Services;
@@ -8,16 +9,16 @@ namespace Elsa.Persistence.EntityFrameworkCore.Implementations;
 
 public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
 {
-    private readonly EFCoreStore<WorkflowDefinition> _store;
-    private readonly EFCoreStore<WorkflowInstance> _instanceStore;
-    private readonly EFCoreStore<WorkflowTrigger> _triggerStore;
-    private readonly EFCoreStore<WorkflowBookmark> _bookmarkStore;
+    private readonly IStore<WorkflowDefinition> _store;
+    private readonly IStore<WorkflowInstance> _instanceStore;
+    private readonly IStore<WorkflowTrigger> _triggerStore;
+    private readonly IStore<WorkflowBookmark> _bookmarkStore;
 
     public EFCoreWorkflowDefinitionStore(
-        EFCoreStore<WorkflowDefinition> store,
-        EFCoreStore<WorkflowInstance> instanceStore,
-        EFCoreStore<WorkflowTrigger> triggerStore,
-        EFCoreStore<WorkflowBookmark> bookmarkStore)
+        IStore<WorkflowDefinition> store,
+        IStore<WorkflowInstance> instanceStore,
+        IStore<WorkflowTrigger> triggerStore,
+        IStore<WorkflowBookmark> bookmarkStore)
     {
         _store = store;
         _instanceStore = instanceStore;
