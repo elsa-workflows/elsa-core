@@ -2,6 +2,7 @@ namespace Elsa.Persistence.Entities
 {
     public class WorkflowExecutionLogRecord : Entity
     {
+        public string WorkflowDefinitionId { get; set; } = default!;
         public string WorkflowInstanceId { get; set; } = default!;
         public string ActivityId { get; set; } = default!;
         public string ActivityType { get; set; } = default!;

@@ -1,16 +1,15 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Mediator.Services;
-using Elsa.Persistence.Commands;
+using Elsa.Persistence.Services;
 using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Api.Endpoints.Workflows;
 
 public static partial class Workflows
 {
-    public static async Task<IResult> DeleteAsync(string definitionId, ICommandSender commandSender, CancellationToken cancellationToken)
+    public static async Task<IResult> DeleteAsync(string definitionId, IWorkflowDefinitionStore workflowDefinitionStore, CancellationToken cancellationToken)
     {
-        var result = await commandSender.ExecuteAsync(new DeleteWorkflowDefinition(definitionId), cancellationToken);
-        return !result ? Results.NotFound() : Results.NoContent();
+        var result = await workflowDefinitionStore.DeleteByDefinitionIdAsync(definitionId, cancellationToken);
+        return result == 0 ? Results.NotFound() : Results.NoContent();
     }
 }

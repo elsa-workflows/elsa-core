@@ -1,8 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Mediator.Services;
 using Elsa.Persistence.Models;
-using Elsa.Persistence.Requests;
 using Elsa.Persistence.Services;
 using Elsa.Serialization;
 using Microsoft.AspNetCore.Http;

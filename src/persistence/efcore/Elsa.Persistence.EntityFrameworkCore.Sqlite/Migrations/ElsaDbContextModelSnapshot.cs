@@ -171,6 +171,10 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("WorkflowDefinitionId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -188,6 +192,9 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
 
                     b.HasIndex("Timestamp")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_Timestamp");
+
+                    b.HasIndex("WorkflowDefinitionId")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_WorkflowDefinitionId");
 
                     b.HasIndex("WorkflowInstanceId")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_WorkflowInstanceId");

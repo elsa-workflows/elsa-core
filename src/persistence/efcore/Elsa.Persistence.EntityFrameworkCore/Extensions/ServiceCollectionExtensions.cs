@@ -1,7 +1,5 @@
-using Elsa.Mediator.Extensions;
 using Elsa.Persistence.Entities;
-using Elsa.Persistence.EntityFrameworkCore.Handlers.Commands;
-using Elsa.Persistence.EntityFrameworkCore.Handlers.Serialization;
+using Elsa.Persistence.EntityFrameworkCore.Handlers;
 using Elsa.Persistence.EntityFrameworkCore.HostedServices;
 using Elsa.Persistence.EntityFrameworkCore.Implementations;
 using Elsa.Persistence.EntityFrameworkCore.Services;
@@ -22,7 +20,6 @@ public static class ServiceCollectionExtensions
         services.AddElsaDbContextFactory(configure, useContextPooling);
 
         services
-            .AddEFCoreHandlers()
             .AddSingleton<IStore<WorkflowDefinition>, EFCoreStore<WorkflowDefinition>>()
             .AddSingleton<IStore<WorkflowInstance>, EFCoreStore<WorkflowInstance>>()
             .AddSingleton<IStore<WorkflowBookmark>, EFCoreStore<WorkflowBookmark>>()
@@ -31,6 +28,8 @@ public static class ServiceCollectionExtensions
             .AddSingleton<IWorkflowInstanceStore, EFCoreWorkflowInstanceStore>()
             .AddSingleton<IWorkflowDefinitionStore, EFCoreWorkflowDefinitionStore>()
             .AddSingleton<IWorkflowTriggerStore, EFCoreWorkflowTriggerStore>()
+            .AddSingleton<IWorkflowBookmarkStore, EFCoreWorkflowBookmarkStore>()
+            .AddSingleton<IWorkflowExecutionLogStore, EFCoreWorkflowExecutionLogStore>()
             .AddSingleton<IEntitySerializer<WorkflowDefinition>, WorkflowDefinitionSerializer>()
             .AddSingleton<IEntitySerializer<WorkflowInstance>, WorkflowInstanceSerializer>()
             .AddSingleton<IEntitySerializer<WorkflowExecutionLogRecord>, WorkflowExecutionLogRecordSerializer>()
@@ -41,8 +40,6 @@ public static class ServiceCollectionExtensions
 
         return services;
     }
-
-    private static IServiceCollection AddEFCoreHandlers(this IServiceCollection services) => services.AddHandlersFrom<SaveWorkflowDefinitionHandler>();
 
     private static IServiceCollection AddElsaDbContextFactory(this IServiceCollection services,
         Action<IServiceProvider, DbContextOptionsBuilder> configure,

@@ -9,32 +9,45 @@ namespace Elsa.Persistence.EntityFrameworkCore.Implementations;
 public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
 {
     private readonly IStore<WorkflowInstance> _store;
+    private readonly IStore<WorkflowBookmark> _bookmarkStore;
+    private readonly IStore<WorkflowExecutionLogRecord> _executionLogRecordStore;
 
-    public EFCoreWorkflowInstanceStore(IStore<WorkflowInstance> store)
+    public EFCoreWorkflowInstanceStore(
+        IStore<WorkflowInstance> store,
+        IStore<WorkflowBookmark> bookmarkStore,
+        IStore<WorkflowExecutionLogRecord> executionLogRecordStore)
     {
         _store = store;
+        _bookmarkStore = bookmarkStore;
+        _executionLogRecordStore = executionLogRecordStore;
     }
-    
-    public async Task<WorkflowInstance?> FindByIdAsync(string id, CancellationToken cancellationToken = default) => 
+
+    public async Task<WorkflowInstance?> FindByIdAsync(string id, CancellationToken cancellationToken = default) =>
         await _store.FindAsync(x => x.Id == id, cancellationToken);
 
-    public async Task SaveAsync(WorkflowInstance record, CancellationToken cancellationToken = default) => 
+    public async Task SaveAsync(WorkflowInstance record, CancellationToken cancellationToken = default) =>
         await _store.SaveAsync(record, cancellationToken);
 
-    public async Task SaveManyAsync(IEnumerable<WorkflowInstance> records, CancellationToken cancellationToken = default) => 
+    public async Task SaveManyAsync(IEnumerable<WorkflowInstance> records, CancellationToken cancellationToken = default) =>
         await _store.SaveManyAsync(records, cancellationToken);
 
-    public async Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default) => 
+    public async Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default) =>
         await _store.DeleteWhereAsync(x => x.Id == id, cancellationToken) > 0;
 
     public async Task<int> DeleteManyAsync(IEnumerable<string> ids, CancellationToken cancellationToken = default)
     {
         var idList = ids.ToList();
+        await _bookmarkStore.DeleteWhereAsync(x => idList.Contains(x.WorkflowDefinitionId), cancellationToken);
+        await _executionLogRecordStore.DeleteWhereAsync(x => idList.Contains(x.WorkflowDefinitionId), cancellationToken);
         return await _store.DeleteWhereAsync(x => idList.Contains(x.Id), cancellationToken);
     }
 
-    public async Task DeleteManyByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default) => 
+    public async Task DeleteManyByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default)
+    {
+        await _bookmarkStore.DeleteWhereAsync(x => x.WorkflowDefinitionId == definitionId, cancellationToken);
+        await _executionLogRecordStore.DeleteWhereAsync(x => x.WorkflowDefinitionId == definitionId, cancellationToken);
         await _store.DeleteWhereAsync(x => x.DefinitionId == definitionId, cancellationToken);
+    }
 
     public async Task<Page<WorkflowInstanceSummary>> FindManyAsync(FindWorkflowInstancesArgs args, CancellationToken cancellationToken = default)
     {

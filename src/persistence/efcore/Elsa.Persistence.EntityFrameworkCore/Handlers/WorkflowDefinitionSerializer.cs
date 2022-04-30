@@ -3,9 +3,8 @@ using Elsa.Models;
 using Elsa.Persistence.Entities;
 using Elsa.Persistence.EntityFrameworkCore.Services;
 using Elsa.Serialization;
-using Elsa.Services;
 
-namespace Elsa.Persistence.EntityFrameworkCore.Handlers.Serialization;
+namespace Elsa.Persistence.EntityFrameworkCore.Handlers;
 
 public class WorkflowDefinitionSerializer : IEntitySerializer<WorkflowDefinition>
 {

@@ -1,5 +1,4 @@
 using Elsa.Mediator.Services;
-using Elsa.Models;
 using Elsa.Scripting.JavaScript.Notifications;
 using Elsa.Services;
 

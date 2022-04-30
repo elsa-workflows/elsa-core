@@ -5,7 +5,7 @@ using Elsa.Persistence.Models;
 using Elsa.Serialization;
 using Elsa.State;
 
-namespace Elsa.Persistence.EntityFrameworkCore.Handlers.Serialization;
+namespace Elsa.Persistence.EntityFrameworkCore.Handlers;
 
 public class WorkflowInstanceSerializer : IEntitySerializer<WorkflowInstance>
 {

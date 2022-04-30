@@ -1,6 +1,4 @@
-using Elsa.Mediator.Extensions;
 using Elsa.Persistence.Entities;
-using Elsa.Persistence.InMemory.Handlers.Commands;
 using Elsa.Persistence.InMemory.Implementations;
 using Elsa.Persistence.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,6 +20,8 @@ public static class ServiceCollectionExtensions
                 .AddSingleton<IWorkflowInstanceStore, InMemoryWorkflowInstanceStore>()
                 .AddSingleton<IWorkflowDefinitionStore, InMemoryWorkflowDefinitionStore>()
                 .AddSingleton<IWorkflowTriggerStore, InMemoryWorkflowTriggerStore>()
+                .AddSingleton<IWorkflowBookmarkStore, InMemoryWorkflowBookmarkStore>()
+                .AddSingleton<IWorkflowExecutionLogStore, InMemoryWorkflowExecutionLogStore>()
             ;
     }
 }

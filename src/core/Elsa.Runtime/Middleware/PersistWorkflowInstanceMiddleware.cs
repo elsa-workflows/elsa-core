@@ -1,9 +1,7 @@
 using Elsa.Helpers;
 using Elsa.Mediator.Services;
 using Elsa.Models;
-using Elsa.Persistence.Commands;
 using Elsa.Persistence.Entities;
-using Elsa.Persistence.Requests;
 using Elsa.Persistence.Services;
 using Elsa.Pipelines.WorkflowExecution;
 using Elsa.Pipelines.WorkflowExecution.Components;
@@ -23,6 +21,7 @@ public class PersistWorkflowInstanceMiddleware : WorkflowExecutionMiddleware
     public static readonly object WorkflowInstanceNameKey = new();
 
     private readonly IWorkflowInstanceStore _workflowInstanceStore;
+    private readonly IWorkflowBookmarkStore _bookmarkStore;
     private readonly IRequestSender _requestSender;
     private readonly IEventPublisher _eventPublisher;
     private readonly IWorkflowStateSerializer _workflowStateSerializer;
@@ -33,6 +32,7 @@ public class PersistWorkflowInstanceMiddleware : WorkflowExecutionMiddleware
     public PersistWorkflowInstanceMiddleware(
         WorkflowMiddlewareDelegate next,
         IWorkflowInstanceStore workflowInstanceStore,
+        IWorkflowBookmarkStore bookmarkStore,
         IRequestSender requestSender,
         IEventPublisher eventPublisher,
         IBookmarkManager bookmarkManager,
@@ -41,6 +41,7 @@ public class PersistWorkflowInstanceMiddleware : WorkflowExecutionMiddleware
         ISystemClock clock) : base(next)
     {
         _workflowInstanceStore = workflowInstanceStore;
+        _bookmarkStore = bookmarkStore;
         _requestSender = requestSender;
         _eventPublisher = eventPublisher;
         _bookmarkManager = bookmarkManager;
@@ -81,7 +82,7 @@ public class PersistWorkflowInstanceMiddleware : WorkflowExecutionMiddleware
         context.TransientProperties[WorkflowInstanceKey] = workflowInstance;
 
         // Get a copy of current bookmarks.
-        var existingBookmarks = await _requestSender.RequestAsync(new FindWorkflowBookmarks(workflowInstance.Id), cancellationToken);
+        var existingBookmarks = await _bookmarkStore.FindManyByWorkflowInstanceIdAsync(workflowInstance.Id, cancellationToken);
         var bookmarksSnapshot = existingBookmarks.Select(x => x.ToBookmark()).ToList();
         var bookmarks = bookmarksSnapshot.ToList();
 

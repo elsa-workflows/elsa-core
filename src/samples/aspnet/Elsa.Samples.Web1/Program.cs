@@ -18,7 +18,6 @@ using Elsa.Persistence.EntityFrameworkCore.Extensions;
 using Elsa.Persistence.EntityFrameworkCore.Sqlite;
 using Elsa.Pipelines.WorkflowExecution.Components;
 using Elsa.Runtime.Extensions;
-using Elsa.Runtime.ProtoActor.Extensions;
 using Elsa.Samples.Web1.Activities;
 using Elsa.Samples.Web1.Serialization;
 using Elsa.Samples.Web1.Workflows;

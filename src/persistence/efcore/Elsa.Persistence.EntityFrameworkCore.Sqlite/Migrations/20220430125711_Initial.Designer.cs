@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
 {
     [DbContext(typeof(ElsaDbContext))]
-    [Migration("20220430085059_Initial")]
+    [Migration("20220430125711_Initial")]
     partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -173,6 +173,10 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("WorkflowDefinitionId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -190,6 +194,9 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
 
                     b.HasIndex("Timestamp")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_Timestamp");
+
+                    b.HasIndex("WorkflowDefinitionId")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_WorkflowDefinitionId");
 
                     b.HasIndex("WorkflowInstanceId")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_WorkflowInstanceId");

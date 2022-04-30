@@ -1,9 +1,6 @@
-using Elsa.Mediator.Services;
 using Elsa.Models;
-using Elsa.Persistence.Commands;
 using Elsa.Persistence.Entities;
 using Elsa.Persistence.Models;
-using Elsa.Persistence.Requests;
 using Elsa.Persistence.Services;
 using Elsa.Runtime.Services;
 using Microsoft.Extensions.Hosting;
@@ -19,19 +16,15 @@ public class PopulateWorkflowDefinitionStore : IHostedService
     private readonly IEnumerable<IWorkflowDefinitionProvider> _workflowDefinitionProviders;
     private readonly ITriggerIndexer _triggerIndexer;
     private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
-    private readonly ICommandSender _commandSender;
 
     public PopulateWorkflowDefinitionStore(
         IEnumerable<IWorkflowDefinitionProvider> workflowDefinitionProviders,
         ITriggerIndexer triggerIndexer,
-        IWorkflowDefinitionStore workflowDefinitionStore,
-        IRequestSender requestSender,
-        ICommandSender commandSender)
+        IWorkflowDefinitionStore workflowDefinitionStore)
     {
         _workflowDefinitionProviders = workflowDefinitionProviders;
         _triggerIndexer = triggerIndexer;
         _workflowDefinitionStore = workflowDefinitionStore;
-        _commandSender = commandSender;
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -73,7 +66,7 @@ public class PopulateWorkflowDefinitionStore : IHostedService
             existingDefinition.MaterializerName = definition.MaterializerName;
         }
 
-        await _commandSender.ExecuteAsync(new SaveWorkflowDefinition(existingDefinition), cancellationToken);
+        await _workflowDefinitionStore.SaveAsync(existingDefinition, cancellationToken);
     }
 
     private async Task IndexTriggersAsync(Workflow workflow, CancellationToken cancellationToken) => await _triggerIndexer.IndexTriggersAsync(workflow, cancellationToken);

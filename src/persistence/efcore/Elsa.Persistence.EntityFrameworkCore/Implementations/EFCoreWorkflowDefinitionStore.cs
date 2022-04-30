@@ -13,17 +13,20 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
     private readonly IStore<WorkflowInstance> _instanceStore;
     private readonly IStore<WorkflowTrigger> _triggerStore;
     private readonly IStore<WorkflowBookmark> _bookmarkStore;
+    private readonly IStore<WorkflowExecutionLogRecord> _executionLogRecordStore;
 
     public EFCoreWorkflowDefinitionStore(
         IStore<WorkflowDefinition> store,
         IStore<WorkflowInstance> instanceStore,
         IStore<WorkflowTrigger> triggerStore,
-        IStore<WorkflowBookmark> bookmarkStore)
+        IStore<WorkflowBookmark> bookmarkStore, 
+        IStore<WorkflowExecutionLogRecord> executionLogRecordStore)
     {
         _store = store;
         _instanceStore = instanceStore;
         _triggerStore = triggerStore;
         _bookmarkStore = bookmarkStore;
+        _executionLogRecordStore = executionLogRecordStore;
     }
 
     public async Task<WorkflowDefinition?> FindByDefinitionIdAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
@@ -63,6 +66,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
     public async Task<int> DeleteByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default)
     {
         await _triggerStore.DeleteWhereAsync(x => x.WorkflowDefinitionId == definitionId, cancellationToken);
+        await _executionLogRecordStore.DeleteWhereAsync(x => x.WorkflowDefinitionId == definitionId, cancellationToken);
         await _instanceStore.DeleteWhereAsync(x => x.DefinitionId == definitionId, cancellationToken);
         await _bookmarkStore.DeleteWhereAsync(x => x.WorkflowDefinitionId == definitionId, cancellationToken);
         return await _store.DeleteWhereAsync(x => x.DefinitionId == definitionId, cancellationToken);
@@ -72,6 +76,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
     {
         var definitionIdList = definitionIds.ToList();
         await _triggerStore.DeleteWhereAsync(x => definitionIdList.Contains(x.WorkflowDefinitionId), cancellationToken);
+        await _executionLogRecordStore.DeleteWhereAsync(x => definitionIdList.Contains(x.WorkflowDefinitionId), cancellationToken);
         await _instanceStore.DeleteWhereAsync(x => definitionIdList.Contains(x.DefinitionId), cancellationToken);
         await _bookmarkStore.DeleteWhereAsync(x => definitionIdList.Contains(x.WorkflowDefinitionId), cancellationToken);
         return await _store.DeleteWhereAsync(x => definitionIdList.Contains(x.DefinitionId), cancellationToken);

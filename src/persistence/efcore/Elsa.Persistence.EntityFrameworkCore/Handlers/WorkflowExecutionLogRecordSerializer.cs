@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 using Elsa.Persistence.Entities;
 using Elsa.Persistence.EntityFrameworkCore.Services;
 
-namespace Elsa.Persistence.EntityFrameworkCore.Handlers.Serialization;
+namespace Elsa.Persistence.EntityFrameworkCore.Handlers;
 
 public class WorkflowExecutionLogRecordSerializer : IEntitySerializer<WorkflowExecutionLogRecord>
 {

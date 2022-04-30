@@ -1,7 +1,6 @@
-using Elsa.Mediator.Services;
 using Elsa.Models;
-using Elsa.Persistence.Commands;
 using Elsa.Persistence.Entities;
+using Elsa.Persistence.Services;
 using Elsa.Pipelines.WorkflowExecution;
 using Elsa.Pipelines.WorkflowExecution.Components;
 using Elsa.Services;
@@ -13,12 +12,12 @@ namespace Elsa.Runtime.Middleware;
 /// </summary>
 public class PersistWorkflowExecutionLogMiddleware : WorkflowExecutionMiddleware
 {
-    private readonly ICommandSender _commandSender;
+    private readonly IWorkflowExecutionLogStore _workflowExecutionLogStore;
     private readonly IIdentityGenerator _identityGenerator;
 
-    public PersistWorkflowExecutionLogMiddleware(WorkflowMiddlewareDelegate next, ICommandSender commandSender, IIdentityGenerator identityGenerator) : base(next)
+    public PersistWorkflowExecutionLogMiddleware(WorkflowMiddlewareDelegate next, IWorkflowExecutionLogStore workflowExecutionLogStore, IIdentityGenerator identityGenerator) : base(next)
     {
-        _commandSender = commandSender;
+        _workflowExecutionLogStore = workflowExecutionLogStore;
         _identityGenerator = identityGenerator;
     }
 
@@ -35,12 +34,13 @@ public class PersistWorkflowExecutionLogMiddleware : WorkflowExecutionMiddleware
             ActivityType = x.ActivityType,
             Message = x.Message,
             EventName = x.EventName,
+            WorkflowDefinitionId = context.Workflow.Identity.DefinitionId,
             WorkflowInstanceId = context.Id,
             Source = x.Source,
             Payload = x.Payload,
             Timestamp = x.Timestamp
         }).ToList();
 
-        await _commandSender.ExecuteAsync(new SaveWorkflowExecutionLog(entries), context.CancellationToken);
+        await _workflowExecutionLogStore.SaveManyAsync(entries, context.CancellationToken);
     }
 }
