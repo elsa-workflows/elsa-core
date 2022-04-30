@@ -14,8 +14,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\core\Elsa.Management\Elsa.Management.csproj" />
-      <ProjectReference Include="..\Elsa.Persistence.Abstractions\Elsa.Persistence.Abstractions.csproj" />
+      <ProjectReference Include="..\..\..\core\Elsa.Persistence.Abstractions\Elsa.Persistence.Abstractions.csproj" />
+      <ProjectReference Include="..\..\..\core\Elsa.Management\Elsa.Management.csproj" />
     </ItemGroup>
 
 </Project>

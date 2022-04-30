@@ -19,7 +19,7 @@
         <ProjectReference Include="..\..\core\Elsa.Formatting\Elsa.Formatting.csproj"/>
         <ProjectReference Include="..\..\core\Elsa.Mediator\Elsa.Mediator.csproj"/>
         <ProjectReference Include="..\..\core\Elsa.Runtime\Elsa.Runtime.csproj"/>
-        <ProjectReference Include="..\..\persistence\Elsa.Persistence.Abstractions\Elsa.Persistence.Abstractions.csproj"/>
+        <ProjectReference Include="..\..\core\Elsa.Persistence.Abstractions\Elsa.Persistence.Abstractions.csproj"/>
     </ItemGroup>
 
 </Project>
