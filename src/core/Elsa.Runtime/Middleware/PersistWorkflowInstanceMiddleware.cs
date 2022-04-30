@@ -56,6 +56,7 @@ public class PersistWorkflowInstanceMiddleware : WorkflowExecutionMiddleware
         var (definitionId, version, definitionVersionId) = workflow.Identity;
         var existingWorkflowInstance = await _workflowInstanceStore.FindByIdAsync(context.Id, cancellationToken);
         var workflowInstanceName = default(string?);
+        var now = _clock.UtcNow;
 
         // Get the workflow instance name, if any (could be provided by previously executed middleware). 
         if (context.TransientProperties.TryGetValue(WorkflowInstanceNameKey, out var name))
@@ -68,7 +69,7 @@ public class PersistWorkflowInstanceMiddleware : WorkflowExecutionMiddleware
             DefinitionId = definitionId,
             Version = version,
             DefinitionVersionId = definitionVersionId,
-            CreatedAt = _clock.UtcNow,
+            CreatedAt = now,
             Status = WorkflowStatus.Running,
             SubStatus = WorkflowSubStatus.Executing,
             CorrelationId = _identityGenerator.GenerateId(),
@@ -103,7 +104,24 @@ public class PersistWorkflowInstanceMiddleware : WorkflowExecutionMiddleware
         workflowInstance.Status = workflowState.Status;
         workflowInstance.SubStatus = workflowState.SubStatus;
         workflowInstance.CorrelationId = workflowState.CorrelationId;
-        workflowInstance.LastExecutedAt = _clock.UtcNow;
+        workflowInstance.LastExecutedAt = now;
+
+        // Update timestamps.
+        if (workflowInstance.Status == WorkflowStatus.Finished)
+        {
+            switch (workflowInstance.SubStatus)
+            {
+                case WorkflowSubStatus.Cancelled:
+                    workflowInstance.CancelledAt = now;
+                    break;
+                case WorkflowSubStatus.Faulted:
+                    workflowInstance.FaultedAt = now;
+                    break;
+                case WorkflowSubStatus.Finished:
+                    workflowInstance.FinishedAt = now;
+                    break;
+            }
+        }
 
         // Get the workflow instance name, if any (could be provided by previously executed middleware). 
         if (context.TransientProperties.TryGetValue(WorkflowInstanceNameKey, out name))
