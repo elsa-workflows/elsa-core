@@ -21,6 +21,7 @@ public static class ServiceCollectionExtensions
                 .AddSingleton<InMemoryStore<WorkflowTrigger>>()
                 .AddSingleton<InMemoryStore<WorkflowExecutionLogRecord>>()
                 .AddSingleton<IWorkflowInstanceStore, InMemoryWorkflowInstanceStore>()
+                .AddSingleton<IWorkflowDefinitionStore, InMemoryWorkflowDefinitionStore>()
             ;
     }
 

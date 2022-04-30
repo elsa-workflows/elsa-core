@@ -3,30 +3,31 @@ using Elsa.Models;
 using Elsa.Persistence.Entities;
 using Elsa.Persistence.Models;
 using Elsa.Persistence.Requests;
+using Elsa.Persistence.Services;
 using Elsa.Runtime.Services;
 
 namespace Elsa.Runtime.Implementations;
 
 public class WorkflowRegistry : IWorkflowRegistry
 {
-    private readonly IRequestSender _requestSender;
+    private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
 
-    public WorkflowRegistry(IRequestSender requestSender, IWorkflowDefinitionService workflowDefinitionService)
+    public WorkflowRegistry(IWorkflowDefinitionStore workflowDefinitionStore, IWorkflowDefinitionService workflowDefinitionService)
     {
-        _requestSender = requestSender;
+        _workflowDefinitionStore = workflowDefinitionStore;
         _workflowDefinitionService = workflowDefinitionService;
     }
 
     public async Task<Workflow?> FindByDefinitionIdAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
     {
-        var definition = await _requestSender.RequestAsync(new FindWorkflowDefinitionByDefinitionId(definitionId, versionOptions), cancellationToken);
+        var definition = await _workflowDefinitionStore.FindByDefinitionIdAsync(definitionId, versionOptions, cancellationToken);
         return await MaterializeAsync(definition, cancellationToken);
     }
 
     public async Task<Workflow?> FindByNameAsync(string name, VersionOptions versionOptions, CancellationToken cancellationToken = default)
     {
-        var definition = await _requestSender.RequestAsync(new FindWorkflowDefinitionByName(name, versionOptions), cancellationToken);
+        var definition = await _workflowDefinitionStore.FindByNameAsync(name, versionOptions, cancellationToken);
         return await MaterializeAsync(definition, cancellationToken);
     }
 

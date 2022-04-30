@@ -4,6 +4,7 @@ using Elsa.Management.Services;
 using Elsa.Mediator.Services;
 using Elsa.Persistence.Models;
 using Elsa.Persistence.Requests;
+using Elsa.Persistence.Services;
 using Elsa.Runtime.Services;
 using Elsa.Serialization;
 using Microsoft.AspNetCore.Http;
@@ -15,12 +16,12 @@ public static partial class Workflows
     public static async Task<IResult> RetractAsync(
         string definitionId, 
         WorkflowSerializerOptionsProvider serializerOptionsProvider, 
-        IRequestSender requestSender,
+        IWorkflowDefinitionStore workflowDefinitionStore,
         IWorkflowPublisher workflowPublisher,
         IWorkflowDefinitionService workflowDefinitionService,
         CancellationToken cancellationToken)
     {
-        var definition = await requestSender.RequestAsync(new FindWorkflowDefinitionByDefinitionId(definitionId, VersionOptions.LatestOrPublished), cancellationToken);
+        var definition = await workflowDefinitionStore.FindByDefinitionIdAsync(definitionId, VersionOptions.LatestOrPublished, cancellationToken);
         
         if (definition == null)
             return Results.NotFound();

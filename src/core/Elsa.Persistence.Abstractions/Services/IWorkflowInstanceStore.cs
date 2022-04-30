@@ -26,4 +26,4 @@ public record FindWorkflowInstancesArgs(
     PageArgs? PageArgs = default,
     OrderBy OrderBy = OrderBy.Created,
     OrderDirection OrderDirection = OrderDirection.Ascending
-) : IRequest<Page<WorkflowInstanceSummary>>;
+);
