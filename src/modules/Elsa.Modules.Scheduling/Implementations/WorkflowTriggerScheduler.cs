@@ -46,7 +46,8 @@ public class WorkflowTriggerScheduler : IWorkflowTriggerScheduler
         {
             var executeAt = JsonSerializer.Deserialize<StartAtPayload>(trigger.Data!)!.ExecuteAt;
             var groupKeys = new[] { RootGroupKey, trigger.WorkflowDefinitionId };
-            await _jobScheduler.ScheduleAsync(new RunWorkflowJob(trigger.WorkflowDefinitionId), trigger.WorkflowDefinitionId, new SpecificInstantSchedule(executeAt), groupKeys, cancellationToken);
+            var input = new { ExecuteAt = executeAt }.ToDictionary();
+            await _jobScheduler.ScheduleAsync(new RunWorkflowJob(trigger.WorkflowDefinitionId, input), trigger.WorkflowDefinitionId, new SpecificInstantSchedule(executeAt), groupKeys, cancellationToken);
         }
     }
 

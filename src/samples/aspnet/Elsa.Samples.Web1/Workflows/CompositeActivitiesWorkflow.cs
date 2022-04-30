@@ -17,10 +17,7 @@ public class CompositeActivitiesWorkflow : WorkflowBase
             Variables = { name },
             Activities =
             {
-                new MyGreeterComposite
-                {
-                    Name = new Output<string?>(name)
-                },
+                new MyGreeterComposite().CaptureOutput(x => x.Name, name),
                 new WriteLine(context => $"Captured name: {name.Get(context)}")
             }
         });

@@ -67,7 +67,6 @@ public class ProtoActorWorkflowInvoker : IWorkflowInvoker
             InstanceId = instanceId,
             Bookmark = bookmarkMessage,
             Input = input!?.Serialize(),
-            CorrelationId = correlationId ?? ""
         };
 
         var client = _grainClientFactory.CreateWorkflowInstanceGrainClient(instanceId);
@@ -90,7 +89,6 @@ public class ProtoActorWorkflowInvoker : IWorkflowInvoker
         {
             Bookmark = bookmarkMessage,
             Input = input!?.Serialize(),
-            CorrelationId = workflowInstance.CorrelationId ?? "",
             InstanceId = workflowInstance.Id
         };
 

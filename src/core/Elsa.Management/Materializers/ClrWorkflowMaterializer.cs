@@ -34,9 +34,7 @@ public class ClrWorkflowMaterializer : IWorkflowMaterializer
         var workflowBuilderType = providerContext.WorkflowBuilderType;
         var workflowBuilder = (IWorkflow)ActivatorUtilities.GetServiceOrCreateInstance(_serviceProvider, workflowBuilderType);
         var workflowDefinitionBuilder = new WorkflowDefinitionBuilder();
-
-        await workflowBuilder.BuildAsync(workflowDefinitionBuilder, cancellationToken);
-        var workflow = workflowDefinitionBuilder.BuildWorkflow();
+        var workflow = await workflowDefinitionBuilder.BuildWorkflowAsync(workflowBuilder, cancellationToken);
 
         return workflow;
     }

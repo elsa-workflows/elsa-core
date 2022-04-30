@@ -33,9 +33,6 @@ public class WorkflowInstanceFactory : IWorkflowInstanceFactory
     {
         var workflowInstanceId = _identityGenerator.GenerateId();
 
-        if (string.IsNullOrWhiteSpace(correlationId))
-            correlationId = _identityGenerator.GenerateId();
-
         var workflowInstance = new WorkflowInstance
         {
             Id = workflowInstanceId,

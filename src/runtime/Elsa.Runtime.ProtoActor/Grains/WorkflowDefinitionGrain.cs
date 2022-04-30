@@ -1,11 +1,7 @@
 using System;
-using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Mediator.Services;
-using Elsa.Persistence.Commands;
-using Elsa.Persistence.Entities;
 using Elsa.Runtime.Protos;
-using Elsa.Runtime.Services;
+using Elsa.Services;
 using Proto;
 
 namespace Elsa.Runtime.ProtoActor.Grains;
@@ -15,34 +11,30 @@ namespace Elsa.Runtime.ProtoActor.Grains;
 /// </summary>
 public class WorkflowDefinitionGrain : WorkflowDefinitionGrainBase
 {
-    private readonly ICommandSender _commandSender;
-    private readonly IWorkflowInstanceFactory _workflowInstanceFactory;
+    private readonly IIdentityGenerator _identityGenerator;
 
-    public WorkflowDefinitionGrain(
-        ICommandSender commandSender,
-        IWorkflowInstanceFactory workflowInstanceFactory,
-        IContext context) : base(context)
+    public WorkflowDefinitionGrain(IIdentityGenerator identityGenerator, IContext context) : base(context)
     {
-        _commandSender = commandSender;
-        _workflowInstanceFactory = workflowInstanceFactory;
+        _identityGenerator = identityGenerator;
     }
 
     public override async Task<ExecuteWorkflowDefinitionResponse> Execute(ExecuteWorkflowDefinitionRequest request)
     {
-        var workflowDefinitionId = request.Id;
-        var correlationId = request.CorrelationId;
+        var definitionId = request.Id;
+        var correlationId = request.CorrelationId == "" ? default : request.CorrelationId;
         var cancellationToken = Context.CancellationToken;
-        var workflowInstance = await CreateWorkflowInstanceAsync(workflowDefinitionId, correlationId, cancellationToken);
+        var workflowInstanceId = _identityGenerator.GenerateId();
 
-        var executeWorkflowInstanceMessage = new ExecuteExistingWorkflowInstanceRequest
+        var executeWorkflowRequest = new ExecuteNewWorkflowInstanceRequest
         {
-            InstanceId = workflowInstance.Id,
-            Input = request.Input,
-            CorrelationId = correlationId
+            DefinitionId = definitionId,
+            VersionOptions = request.VersionOptions,
+            CorrelationId = correlationId ?? "",
+            Input = request.Input
         };
 
-        var workflowInstanceGrainClient = Context.GetWorkflowInstanceGrain(workflowInstance.Id);
-        var workflowInstanceResponse = await workflowInstanceGrainClient.ExecuteExistingInstance(executeWorkflowInstanceMessage, CancellationTokens.FromSeconds(1000));
+        var workflowInstanceGrainClient = Context.GetWorkflowInstanceGrain(workflowInstanceId);
+        var workflowInstanceResponse = await workflowInstanceGrainClient.ExecuteNewInstance(executeWorkflowRequest, cancellationToken);
 
         if (workflowInstanceResponse == null)
             throw new TimeoutException("Did not receive a response from the WorkflowInstance actor within the configured amount of time.");
@@ -54,12 +46,5 @@ public class WorkflowDefinitionGrain : WorkflowDefinitionGrainBase
 
         response.Bookmarks.AddRange(workflowInstanceResponse.Bookmarks);
         return response;
-    }
-
-    private async Task<WorkflowInstance> CreateWorkflowInstanceAsync(string workflowDefinitionId, string? correlationId, CancellationToken cancellationToken)
-    {
-        var workflowInstance = await _workflowInstanceFactory.CreateAsync(workflowDefinitionId, correlationId, cancellationToken);
-        await _commandSender.ExecuteAsync(new SaveWorkflowInstance(workflowInstance), cancellationToken);
-        return workflowInstance;
     }
 }

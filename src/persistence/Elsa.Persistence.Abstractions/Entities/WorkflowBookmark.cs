@@ -9,7 +9,7 @@ public class WorkflowBookmark : Entity
     public string? Data { get; set; }
     public string WorkflowDefinitionId { get; init; } = default!;
     public string WorkflowInstanceId { get; init; } = default!;
-    public string CorrelationId { get; init; } = default!;
+    public string? CorrelationId { get; init; }
     public string ActivityId { get; init; } = default!;
     public string ActivityInstanceId { get; init; } = default!;
     public string? CallbackMethodName { get; set; }

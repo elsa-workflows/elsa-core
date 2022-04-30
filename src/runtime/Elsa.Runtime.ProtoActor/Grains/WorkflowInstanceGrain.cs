@@ -33,12 +33,12 @@ public class WorkflowInstanceGrain : WorkflowInstanceGrainBase
     private readonly WorkflowSerializerOptionsProvider _workflowSerializerOptionsProvider;
 
     public WorkflowInstanceGrain(
-        IRequestSender requestSender, 
-        IWorkflowRegistry workflowRegistry, 
+        IRequestSender requestSender,
+        IWorkflowRegistry workflowRegistry,
         GrainClientFactory grainClientFactory,
         IWorkflowRunner workflowRunner,
         IWorkflowInstanceFactory workflowInstanceFactory,
-        WorkflowSerializerOptionsProvider workflowSerializerOptionsProvider, 
+        WorkflowSerializerOptionsProvider workflowSerializerOptionsProvider,
         IContext context) : base(context)
     {
         _requestSender = requestSender;
@@ -78,16 +78,16 @@ public class WorkflowInstanceGrain : WorkflowInstanceGrainBase
         var cancellationToken = Context.CancellationToken;
         var versionOptions = VersionOptions.FromString(request.VersionOptions);
         var workflowDefinitionId = request.DefinitionId;
-        var workflowInstance = await _workflowInstanceFactory.CreateAsync(workflowDefinitionId, versionOptions, request.CorrelationId, cancellationToken);
+        var correlationId = request.CorrelationId == "" ? default : request.CorrelationId;
+        var workflowInstance = await _workflowInstanceFactory.CreateAsync(workflowDefinitionId, versionOptions, correlationId, cancellationToken);
         var workflow = await _workflowRegistry.FindByDefinitionIdAsync(workflowDefinitionId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken);
 
         if (workflow == null)
             throw new Exception($"No workflow definition found with ID {workflowDefinitionId}");
 
         var workflowState = workflowInstance.WorkflowState;
-        var bookmarkMessage = request.Bookmark;
         var input = request.Input?.Deserialize();
-        var executionResult = await ExecuteAsync(workflow, workflowState, bookmarkMessage, input!, cancellationToken);
+        var executionResult = await ExecuteAsync(workflow, workflowState, input: input!, cancellationToken: cancellationToken);
         var response = MapResult(executionResult);
 
         return response;
@@ -102,7 +102,7 @@ public class WorkflowInstanceGrain : WorkflowInstanceGrainBase
         var bookmark = request.Bookmark;
         var input = request.Input?.Deserialize();
         var workflow = await _workflowRegistry.FindByDefinitionIdAsync(workflowDefinitionId, versionOptions, cancellationToken);
-        
+
         if (workflow == null)
             throw new Exception($"No workflow definition found with ID {workflowDefinitionId}");
 
@@ -138,7 +138,12 @@ public class WorkflowInstanceGrain : WorkflowInstanceGrainBase
         return response;
     }
 
-    private async Task<InvokeWorkflowResult> ExecuteAsync(Workflow workflow, WorkflowState workflowState, Bookmark? bookmarkMessage, IDictionary<string, object>? input, CancellationToken cancellationToken)
+    private async Task<InvokeWorkflowResult> ExecuteAsync(
+        Workflow workflow,
+        WorkflowState workflowState,
+        Bookmark? bookmarkMessage = default,
+        IDictionary<string, object>? input = default,
+        CancellationToken cancellationToken = default)
     {
         if (bookmarkMessage == null)
             return await _workflowRunner.RunAsync(workflow, workflowState, input, cancellationToken);

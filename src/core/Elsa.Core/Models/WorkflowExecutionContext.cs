@@ -18,7 +18,7 @@ public class WorkflowExecutionContext
     public WorkflowExecutionContext(
         IServiceProvider serviceProvider,
         string id,
-        string correlationId,
+        string? correlationId,
         Workflow workflow,
         ActivityNode graph,
         IActivityScheduler scheduler,

@@ -112,7 +112,7 @@ public class WorkflowRunner : IWorkflowRunner
 
         // Setup a workflow execution context.
         var id = workflowState?.Id ?? _identityGenerator.GenerateId();
-        var correlationId = workflowState?.CorrelationId ?? _identityGenerator.GenerateId();
+        var correlationId = workflowState?.CorrelationId;
         var workflowExecutionContext = new WorkflowExecutionContext(serviceProvider, id, correlationId, workflow, graph, scheduler, bookmark, input, executeActivityDelegate, cancellationToken);
 
         // Restore workflow execution context from state, if provided.

@@ -8,7 +8,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\core\Elsa.Jobs.Abstractions\Elsa.Jobs.Abstractions.csproj" />
-      <ProjectReference Include="..\..\runtime\Elsa.Runtime\Elsa.Runtime.csproj" />
+      <ProjectReference Include="..\..\core\Elsa.Runtime\Elsa.Runtime.csproj" />
     </ItemGroup>
 
 </Project>

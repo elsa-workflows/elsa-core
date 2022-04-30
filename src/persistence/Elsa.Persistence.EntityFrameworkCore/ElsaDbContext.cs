@@ -44,7 +44,7 @@ public class ElsaDbContext : DbContext
                     modelBuilder
                         .Entity(entityType.Name)
                         .Property(property.Name)
-                        .HasConversion(new DateTimeOffsetToBinaryConverter());
+                        .HasConversion(new DateTimeOffsetToStringConverter());
                 }
             }
         }

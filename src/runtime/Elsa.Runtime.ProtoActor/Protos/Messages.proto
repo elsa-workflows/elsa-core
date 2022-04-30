@@ -22,15 +22,13 @@ message ExecuteExistingWorkflowInstanceRequest {
   string instanceId = 1;
   optional Bookmark bookmark = 2;
   optional Input input = 3;
-  optional string CorrelationId = 4;
 }
 
 message ExecuteNewWorkflowInstanceRequest {
   string definitionId = 1;
   string versionOptions = 2;
-  optional Bookmark bookmark = 3;
-  optional Input input = 4;
-  optional string CorrelationId = 5;
+  optional Input input = 3;
+  optional string CorrelationId = 4;
 }
 
 message ExecuteWorkflowRequest {
