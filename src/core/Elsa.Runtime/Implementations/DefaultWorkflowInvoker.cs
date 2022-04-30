@@ -3,6 +3,7 @@ using Elsa.Models;
 using Elsa.Persistence.Entities;
 using Elsa.Persistence.Models;
 using Elsa.Persistence.Requests;
+using Elsa.Persistence.Services;
 using Elsa.Runtime.Models;
 using Elsa.Runtime.Services;
 using Elsa.Services;
@@ -15,15 +16,16 @@ namespace Elsa.Runtime.Implementations;
 /// </summary>
 public class DefaultWorkflowInvoker : IWorkflowInvoker
 {
-    private readonly IWorkflowInstanceFactory _workflowInstanceFactory;
-    private readonly IRequestSender _requestSender;
+    private readonly IWorkflowInstanceStore _workflowInstanceStore;
     private readonly IWorkflowRunner _workflowRunner;
     private readonly IWorkflowRegistry _workflowRegistry;
 
-    public DefaultWorkflowInvoker(IWorkflowInstanceFactory workflowInstanceFactory, IRequestSender requestSender, IWorkflowRunner workflowRunner, IWorkflowRegistry workflowRegistry)
+    public DefaultWorkflowInvoker(
+        IWorkflowInstanceStore workflowInstanceStore, 
+        IWorkflowRunner workflowRunner, 
+        IWorkflowRegistry workflowRegistry)
     {
-        _workflowInstanceFactory = workflowInstanceFactory;
-        _requestSender = requestSender;
+        _workflowInstanceStore = workflowInstanceStore;
         _workflowRunner = workflowRunner;
         _workflowRegistry = workflowRegistry;
     }
@@ -37,7 +39,7 @@ public class DefaultWorkflowInvoker : IWorkflowInvoker
 
     public async Task<InvokeWorkflowResult> InvokeAsync(InvokeWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
-        var workflowInstance = await _requestSender.RequestAsync(new FindWorkflowInstance(request.InstanceId), cancellationToken);
+        var workflowInstance = await _workflowInstanceStore.FindByIdAsync(request.InstanceId, cancellationToken);
         return await InvokeAsync(workflowInstance!, request.Bookmark, request.Input, cancellationToken);
     }
 

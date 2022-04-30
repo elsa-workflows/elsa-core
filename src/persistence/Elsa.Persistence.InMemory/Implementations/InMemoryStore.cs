@@ -20,7 +20,7 @@ public class InMemoryStore<TEntity> where TEntity : Entity
     public IEnumerable<TEntity> FindMany(Func<TEntity, bool> predicate) => Entities.Values.Where(predicate);
     public IEnumerable<TEntity> List() => Entities.Values;
 
-    public void Delete(string id) => Entities.Remove(id);
+    public bool Delete(string id) => Entities.Remove(id);
 
     public int DeleteWhere(Func<TEntity, bool> predicate)
     {

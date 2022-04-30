@@ -3,24 +3,24 @@ using System.Threading.Tasks;
 using Elsa.Management.Services;
 using Elsa.Mediator.Services;
 using Elsa.Persistence.Requests;
+using Elsa.Persistence.Services;
 using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Api.Endpoints.WorkflowInstances;
 
 public static partial class WorkflowInstances
 {
-    public static async Task<IResult> DeleteAsync(string id, IRequestSender requestSender,
-        IWorkflowInstancePublisher workflowInstancePublisher, CancellationToken cancellationToken)
+    public static async Task<IResult> DeleteAsync(
+        string id, 
+        IWorkflowInstanceStore workflowInstanceStore,
+        CancellationToken cancellationToken)
     {
-        var request = new FindWorkflowInstance(id);
-        var workflowInstance = await requestSender.RequestAsync(request, cancellationToken);
+        var workflowInstance = await workflowInstanceStore.FindByIdAsync(id, cancellationToken);
 
         if (workflowInstance == null)
-        {
             return Results.NotFound();
-        }
 
-        await workflowInstancePublisher.DeleteAsync(id, cancellationToken);
+        await workflowInstanceStore.DeleteAsync(id, cancellationToken);
         return Results.NoContent();
     }
 }

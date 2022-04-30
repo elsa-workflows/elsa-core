@@ -4,12 +4,10 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Mediator.Services;
 using Elsa.Models;
 using Elsa.Persistence.Models;
-using Elsa.Persistence.Requests;
+using Elsa.Persistence.Services;
 using Elsa.Runtime.ProtoActor.Extensions;
-using Elsa.Runtime.ProtoActor.Implementations;
 using Elsa.Runtime.Protos;
 using Elsa.Runtime.Services;
 using Elsa.Serialization;
@@ -25,25 +23,22 @@ namespace Elsa.Runtime.ProtoActor.Grains;
 /// </summary>
 public class WorkflowInstanceGrain : WorkflowInstanceGrainBase
 {
-    private readonly IRequestSender _requestSender;
+    private readonly IWorkflowInstanceStore _workflowInstanceStore;
     private readonly IWorkflowRegistry _workflowRegistry;
-    private readonly GrainClientFactory _grainClientFactory;
     private readonly IWorkflowRunner _workflowRunner;
     private readonly IWorkflowInstanceFactory _workflowInstanceFactory;
     private readonly WorkflowSerializerOptionsProvider _workflowSerializerOptionsProvider;
 
     public WorkflowInstanceGrain(
-        IRequestSender requestSender,
+        IWorkflowInstanceStore workflowInstanceStore,
         IWorkflowRegistry workflowRegistry,
-        GrainClientFactory grainClientFactory,
         IWorkflowRunner workflowRunner,
         IWorkflowInstanceFactory workflowInstanceFactory,
         WorkflowSerializerOptionsProvider workflowSerializerOptionsProvider,
         IContext context) : base(context)
     {
-        _requestSender = requestSender;
+        _workflowInstanceStore = workflowInstanceStore;
         _workflowRegistry = workflowRegistry;
-        _grainClientFactory = grainClientFactory;
         _workflowRunner = workflowRunner;
         _workflowInstanceFactory = workflowInstanceFactory;
         _workflowSerializerOptionsProvider = workflowSerializerOptionsProvider;
@@ -53,7 +48,7 @@ public class WorkflowInstanceGrain : WorkflowInstanceGrainBase
     {
         var workflowInstanceId = request.InstanceId;
         var cancellationToken = Context.CancellationToken;
-        var workflowInstance = await _requestSender.RequestAsync(new FindWorkflowInstance(workflowInstanceId), cancellationToken);
+        var workflowInstance = await _workflowInstanceStore.FindByIdAsync(workflowInstanceId, cancellationToken);
 
         if (workflowInstance == null)
             throw new Exception($"No workflow instance found with ID {workflowInstanceId}");

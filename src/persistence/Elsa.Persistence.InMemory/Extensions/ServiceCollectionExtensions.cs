@@ -2,6 +2,7 @@ using Elsa.Mediator.Extensions;
 using Elsa.Persistence.Entities;
 using Elsa.Persistence.InMemory.Handlers.Commands;
 using Elsa.Persistence.InMemory.Implementations;
+using Elsa.Persistence.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 #pragma warning disable CS8631
@@ -19,6 +20,7 @@ public static class ServiceCollectionExtensions
                 .AddSingleton<InMemoryStore<WorkflowBookmark>>()
                 .AddSingleton<InMemoryStore<WorkflowTrigger>>()
                 .AddSingleton<InMemoryStore<WorkflowExecutionLogRecord>>()
+                .AddSingleton<IWorkflowInstanceStore, InMemoryWorkflowInstanceStore>()
             ;
     }
 

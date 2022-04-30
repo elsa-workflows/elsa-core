@@ -3,6 +3,7 @@ using Elsa.Models;
 using Elsa.Persistence.Entities;
 using Elsa.Persistence.Models;
 using Elsa.Persistence.Requests;
+using Elsa.Persistence.Services;
 using Elsa.Runtime.Abstractions;
 using Elsa.Runtime.Models;
 using Elsa.Runtime.Services;
@@ -17,14 +18,18 @@ public class ResumeWorkflowInstructionInterpreter : WorkflowInstructionInterpret
 {
     private readonly IWorkflowRunner _workflowRunner;
     private readonly IWorkflowRegistry _workflowRegistry;
-    private readonly IRequestSender _mediator;
+    private readonly IWorkflowInstanceStore _workflowInstanceStore;
     private readonly ILogger _logger;
 
-    public ResumeWorkflowInstructionInterpreter(IWorkflowRunner workflowRunner, IWorkflowRegistry workflowRegistry, IRequestSender mediator, ILogger<ResumeWorkflowInstructionInterpreter> logger)
+    public ResumeWorkflowInstructionInterpreter(
+        IWorkflowRunner workflowRunner, 
+        IWorkflowRegistry workflowRegistry, 
+        IWorkflowInstanceStore workflowInstanceStore,
+        ILogger<ResumeWorkflowInstructionInterpreter> logger)
     {
         _workflowRunner = workflowRunner;
         _workflowRegistry = workflowRegistry;
-        _mediator = mediator;
+        _workflowInstanceStore = workflowInstanceStore;
         _logger = logger;
     }
 
@@ -33,7 +38,7 @@ public class ResumeWorkflowInstructionInterpreter : WorkflowInstructionInterpret
         var workflowBookmark = instruction.WorkflowBookmark;
         var workflowDefinitionId = workflowBookmark.WorkflowDefinitionId;
         var workflowInstanceId = workflowBookmark.WorkflowInstanceId;
-        var workflowInstance = await _mediator.RequestAsync(new FindWorkflowInstance(workflowInstanceId), cancellationToken);
+        var workflowInstance = await _workflowInstanceStore.FindByIdAsync(workflowInstanceId, cancellationToken);
 
         if (workflowInstance == null)
         {

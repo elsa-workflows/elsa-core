@@ -4,6 +4,7 @@ using Elsa.Models;
 using Elsa.Persistence.Commands;
 using Elsa.Persistence.Entities;
 using Elsa.Persistence.Requests;
+using Elsa.Persistence.Services;
 using Elsa.Pipelines.WorkflowExecution;
 using Elsa.Pipelines.WorkflowExecution.Components;
 using Elsa.Runtime.Models;
@@ -21,8 +22,8 @@ public class PersistWorkflowInstanceMiddleware : WorkflowExecutionMiddleware
     public static readonly object WorkflowInstanceKey = new();
     public static readonly object WorkflowInstanceNameKey = new();
 
+    private readonly IWorkflowInstanceStore _workflowInstanceStore;
     private readonly IRequestSender _requestSender;
-    private readonly ICommandSender _commandSender;
     private readonly IEventPublisher _eventPublisher;
     private readonly IWorkflowStateSerializer _workflowStateSerializer;
     private readonly IBookmarkManager _bookmarkManager;
@@ -31,16 +32,16 @@ public class PersistWorkflowInstanceMiddleware : WorkflowExecutionMiddleware
 
     public PersistWorkflowInstanceMiddleware(
         WorkflowMiddlewareDelegate next,
+        IWorkflowInstanceStore workflowInstanceStore,
         IRequestSender requestSender,
-        ICommandSender commandSender,
         IEventPublisher eventPublisher,
         IBookmarkManager bookmarkManager,
         IWorkflowStateSerializer workflowStateSerializer,
         IIdentityGenerator identityGenerator,
         ISystemClock clock) : base(next)
     {
+        _workflowInstanceStore = workflowInstanceStore;
         _requestSender = requestSender;
-        _commandSender = commandSender;
         _eventPublisher = eventPublisher;
         _bookmarkManager = bookmarkManager;
         _workflowStateSerializer = workflowStateSerializer;
@@ -53,7 +54,7 @@ public class PersistWorkflowInstanceMiddleware : WorkflowExecutionMiddleware
         var cancellationToken = context.CancellationToken;
         var workflow = context.Workflow;
         var (definitionId, version, definitionVersionId) = workflow.Identity;
-        var existingWorkflowInstance = await _requestSender.RequestAsync(new FindWorkflowInstance(context.Id), cancellationToken);
+        var existingWorkflowInstance = await _workflowInstanceStore.FindByIdAsync(context.Id, cancellationToken);
         var workflowInstanceName = default(string?);
 
         // Get the workflow instance name, if any (could be provided by previously executed middleware). 
@@ -91,7 +92,7 @@ public class PersistWorkflowInstanceMiddleware : WorkflowExecutionMiddleware
         context.RegisterBookmarks(bookmarks);
 
         // Persist workflow instance.
-        await _commandSender.ExecuteAsync(new SaveWorkflowInstance(workflowInstance), cancellationToken);
+        await _workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
 
         // Invoke next middleware.
         await Next(context);
@@ -109,7 +110,7 @@ public class PersistWorkflowInstanceMiddleware : WorkflowExecutionMiddleware
             workflowInstance.Name = (string?)name;
 
         // Persist updated workflow instance.
-        await _commandSender.ExecuteAsync(new SaveWorkflowInstance(workflowInstance), cancellationToken);
+        await _workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
 
         // Get a diff between bookmarks that were in the snapshot but no longer present in context.
         var diff = Diff.For(bookmarksSnapshot, context.Bookmarks.ToList());

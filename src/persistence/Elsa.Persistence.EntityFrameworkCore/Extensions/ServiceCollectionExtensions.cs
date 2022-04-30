@@ -5,6 +5,7 @@ using Elsa.Persistence.EntityFrameworkCore.Handlers.Serialization;
 using Elsa.Persistence.EntityFrameworkCore.HostedServices;
 using Elsa.Persistence.EntityFrameworkCore.Implementations;
 using Elsa.Persistence.EntityFrameworkCore.Services;
+using Elsa.Persistence.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -27,6 +28,7 @@ public static class ServiceCollectionExtensions
             .AddSingleton<IStore<WorkflowBookmark>, EFCoreStore<WorkflowBookmark>>()
             .AddSingleton<IStore<WorkflowTrigger>, EFCoreStore<WorkflowTrigger>>()
             .AddSingleton<IStore<WorkflowExecutionLogRecord>, EFCoreStore<WorkflowExecutionLogRecord>>()
+            .AddSingleton<IWorkflowInstanceStore, EFCoreWorkflowInstanceStore>()
             .AddSingleton<IEntitySerializer<WorkflowDefinition>, WorkflowDefinitionSerializer>()
             .AddSingleton<IEntitySerializer<WorkflowInstance>, WorkflowInstanceSerializer>()
             .AddSingleton<IEntitySerializer<WorkflowExecutionLogRecord>, WorkflowExecutionLogRecordSerializer>()

@@ -1,4 +1,3 @@
-using Elsa.Models;
 using Elsa.Persistence.Entities;
 
 namespace Elsa.Management.Services
@@ -12,7 +11,5 @@ namespace Elsa.Management.Services
         Task<WorkflowDefinition> RetractAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default);
         Task<WorkflowDefinition?> GetDraftAsync(string definitionId, CancellationToken cancellationToken = default);
         Task<WorkflowDefinition> SaveDraftAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default);
-        Task DeleteAsync(string definitionId, CancellationToken cancellationToken = default);
-        Task DeleteAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default);
     }
 }

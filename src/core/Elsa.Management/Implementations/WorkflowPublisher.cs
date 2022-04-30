@@ -148,14 +148,6 @@ namespace Elsa.Management.Implementations
             return draft;
         }
 
-        public async Task DeleteAsync(string definitionId, CancellationToken cancellationToken = default)
-        {
-            await _mediator.ExecuteAsync(new DeleteWorkflowInstances(definitionId), cancellationToken);
-            await _mediator.ExecuteAsync(new DeleteWorkflowDefinition(definitionId), cancellationToken);
-        }
-
-        public Task DeleteAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default) => DeleteAsync(definition.DefinitionId, cancellationToken);
-
         private WorkflowDefinition Initialize(WorkflowDefinition definition)
         {
             if (definition.Id == null!)

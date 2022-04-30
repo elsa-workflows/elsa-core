@@ -1,26 +1,63 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Mediator.Services;
 using Elsa.Persistence.Entities;
-using Elsa.Persistence.InMemory.Implementations;
 using Elsa.Persistence.Models;
-using Elsa.Persistence.Requests;
+using Elsa.Persistence.Services;
 
-// ReSharper disable PossibleMultipleEnumeration
+namespace Elsa.Persistence.InMemory.Implementations;
 
-namespace Elsa.Persistence.InMemory.Handlers.Requests;
-
-public class ListWorkflowInstanceSummariesHandler : IRequestHandler<ListWorkflowInstanceSummaries, Page<WorkflowInstanceSummary>>
+public class InMemoryWorkflowInstanceStore : IWorkflowInstanceStore
 {
     private readonly InMemoryStore<WorkflowInstance> _store;
-    public ListWorkflowInstanceSummariesHandler(InMemoryStore<WorkflowInstance> store) => _store = store;
 
-    public Task<Page<WorkflowInstanceSummary>> HandleAsync(ListWorkflowInstanceSummaries request, CancellationToken cancellationToken)
+    public InMemoryWorkflowInstanceStore(InMemoryStore<WorkflowInstance> store)
     {
-        var query = _store.List();
-        var (searchTerm, definitionId, version, correlationId, workflowStatus, workflowSubStatus, pageArgs, orderBy, orderDirection) = request;
+        _store = store;
+    }
+
+    public Task<WorkflowInstance?> FindByIdAsync(string id, CancellationToken cancellationToken = default)
+    {
+        var instance = _store.Find(x => x.Id == id);
+        return Task.FromResult(instance);
+    }
+
+    public Task SaveAsync(WorkflowInstance record, CancellationToken cancellationToken = default)
+    {
+        _store.Save(record);
+        return Task.CompletedTask;
+    }
+
+    public Task SaveManyAsync(IEnumerable<WorkflowInstance> records, CancellationToken cancellationToken = default)
+    {
+        _store.SaveMany(records);
+        return Task.CompletedTask;
+    }
+
+    public Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default)
+    {
+        var success = _store.Delete(id);
+        return Task.FromResult(success);
+    }
+
+    public Task<int> DeleteManyAsync(IEnumerable<string> ids, CancellationToken cancellationToken = default)
+    {
+        var count = _store.DeleteMany(ids);
+        return Task.FromResult(count);
+    }
+
+    public Task DeleteManyByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default)
+    {
+        _store.DeleteWhere(x => x.DefinitionId == definitionId);
+        return Task.CompletedTask;
+    }
+
+    public Task<Page<WorkflowInstanceSummary>> FindManyAsync(FindWorkflowInstancesArgs args, CancellationToken cancellationToken = default)
+    {
+        var query = _store.List().AsQueryable();
+        var (searchTerm, definitionId, version, correlationId, workflowStatus, workflowSubStatus, pageArgs, orderBy, orderDirection) = args;
 
         if (!string.IsNullOrWhiteSpace(definitionId))
             query = query.Where(x => x.DefinitionId == definitionId);
@@ -43,10 +80,10 @@ public class ListWorkflowInstanceSummariesHandler : IRequestHandler<ListWorkflow
 
             query =
                 from instance in query
-                where instance.Name?.Contains(searchTerm, comparison) == true
+                where instance.Name != null && instance.Name.Contains(searchTerm, comparison) == true
                       || instance.Id.Contains(searchTerm, comparison)
                       || instance.DefinitionId.Contains(searchTerm, comparison)
-                      || instance.CorrelationId.Contains(searchTerm, comparison)
+                      || instance.CorrelationId != null && instance.CorrelationId.Contains(searchTerm, comparison)
                 select instance;
         }
 
