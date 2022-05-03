@@ -10,9 +10,9 @@ namespace Elsa.Persistence.InMemory.Extensions;
 
 public static class ServiceCollectionExtensions
 {
-    public static PersistenceOptions UseInMemoryPersistence(this ElsaOptionsConfigurator configurator)
+    public static PersistenceOptions UseInMemoryProvider(this PersistenceOptions configurator)
     {
-        var services = configurator.Services;
+        var services = configurator.ElsaOptionsConfigurator.Services;
 
         services
             .AddSingleton<InMemoryStore<WorkflowDefinition>>()
@@ -27,12 +27,12 @@ public static class ServiceCollectionExtensions
             .AddSingleton<InMemoryWorkflowExecutionLogStore>()
             ;
 
-        return configurator.Configure<PersistenceOptions>()
+        return configurator.ElsaOptionsConfigurator.Configure(() => new PersistenceOptions(configurator.ElsaOptionsConfigurator), o => o
                 .WithWorkflowDefinitionStore(sp => sp.GetRequiredService<InMemoryWorkflowDefinitionStore>())
                 .WithWorkflowInstanceStore(sp => sp.GetRequiredService<InMemoryWorkflowInstanceStore>())
                 .WithWorkflowBookmarkStore(sp => sp.GetRequiredService<InMemoryWorkflowBookmarkStore>())
                 .WithWorkflowTriggerStore(sp => sp.GetRequiredService<InMemoryWorkflowTriggerStore>())
-                .WithWorkflowExecutionLogStore(sp => sp.GetRequiredService<InMemoryWorkflowExecutionLogStore>())
+                .WithWorkflowExecutionLogStore(sp => sp.GetRequiredService<InMemoryWorkflowExecutionLogStore>()))
             ;
     }
 }

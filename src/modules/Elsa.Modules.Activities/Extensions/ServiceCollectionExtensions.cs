@@ -8,7 +8,7 @@ public static class ServiceCollectionExtensions
     /// <summary>
     /// Registers required services for activities provided by this package.
     /// </summary>
-    public static ActivityOptions AddActivityServices(this ElsaOptionsConfigurator configurator)
+    public static ActivityOptions UseActivityServices(this ElsaOptionsConfigurator configurator)
     {
         return configurator.Configure<ActivityOptions>();
     }

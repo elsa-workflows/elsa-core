@@ -1,3 +1,4 @@
+using Elsa.Options;
 using Elsa.Persistence.Implementations;
 using Elsa.Persistence.Services;
 using Elsa.Services;
@@ -7,6 +8,13 @@ namespace Elsa.Persistence.Options;
 
 public class PersistenceOptions : IConfigurator
 {
+    public ElsaOptionsConfigurator ElsaOptionsConfigurator { get; }
+
+    public PersistenceOptions(ElsaOptionsConfigurator elsaOptionsConfigurator)
+    {
+        ElsaOptionsConfigurator = elsaOptionsConfigurator;
+    }
+    
     public Func<IServiceProvider, IWorkflowDefinitionStore> WorkflowDefinitionStore { get; set; } = _ => new NullWorkflowDefinitionStore();
     public Func<IServiceProvider, IWorkflowInstanceStore> WorkflowInstanceStore { get; set; } = _ => new NullWorkflowInstanceStore();
     public Func<IServiceProvider, IWorkflowBookmarkStore> WorkflowBookmarkStore { get; set; } = _ => new NullWorkflowBookmarkStore();

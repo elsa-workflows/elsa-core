@@ -19,11 +19,13 @@ public class ElsaOptionsConfigurator
 
     public IServiceCollection Services { get; }
 
-    public T Configure<T>(Action<T>? configure = default) where T : class, IConfigurator, new()
+    public T Configure<T>(Action<T>? configure = default) where T : class, IConfigurator, new() => Configure<T>(() => new T(), configure);
+
+    public T Configure<T>(Func<T> factory, Action<T>? configure = default) where T : class, IConfigurator
     {
         if (_configurators.FirstOrDefault(x => x is T) is not T configurator)
         {
-            configurator = new T();
+            configurator = factory();
             _configurators.Add(configurator);
         }
 

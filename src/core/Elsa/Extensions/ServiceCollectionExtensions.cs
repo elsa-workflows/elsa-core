@@ -3,6 +3,7 @@ using Elsa.Management.Extensions;
 using Elsa.Mediator.Extensions;
 using Elsa.Modules.Activities.Extensions;
 using Elsa.Options;
+using Elsa.Persistence.Extensions;
 using Elsa.Persistence.InMemory.Extensions;
 using Elsa.Runtime.Extensions;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,8 +19,8 @@ public static class ServiceCollectionExtensions
         return services
             .AddElsaCore(elsa =>
             {
-                elsa.UseInMemoryPersistence();
-                elsa.AddActivityServices();
+                elsa.UsePersistence(persistence => persistence.UseInMemoryProvider());
+                elsa.UseActivityServices();
                 elsa.AddElsaRuntime();
                 elsa.AddElsaManagement();
                 configure?.Invoke(elsa);

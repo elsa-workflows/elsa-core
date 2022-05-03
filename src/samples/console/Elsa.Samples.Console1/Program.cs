@@ -94,7 +94,8 @@ class Program
         var services = new ServiceCollection();
 
         services
-            .AddElsa(elsa => elsa.Configure<ActivityOptions>().WithStandardOutStreamProvider(sp => new CustomOutStreamProvider(Console.Out)))
+            .AddElsa(elsa => elsa.Configure<ActivityOptions>()
+                .WithStandardOutStreamProvider(sp => new CustomOutStreamProvider(Console.Out)))
             .AddLogging(logging => logging.AddConsole().SetMinimumLevel(LogLevel.Warning));
 
         return services.BuildServiceProvider();
