@@ -1,7 +1,7 @@
 using Elsa.Modules.Activities.Configurators;
 using Elsa.Modules.Activities.Providers;
-using Elsa.Modules.Activities.Resolvers;
 using Elsa.Modules.Activities.Services;
+using Elsa.Options;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -24,10 +24,9 @@ public class ActivityOptions : ConfiguratorBase
         return this;
     }
 
-    public override void ConfigureServices(IServiceCollection services)
+    public override void ConfigureServices(ElsaOptionsConfigurator configurator)
     {
-        services
-            .AddSingleton<IActivityNodeResolver, SwitchActivityNodeResolver>()
+        configurator.Services
             .AddSingleton<ISerializationOptionsConfigurator, CustomSerializationOptionConfigurator>()
             .AddSingleton(StandardInStreamProvider)
             .AddSingleton(StandardOutStreamProvider);

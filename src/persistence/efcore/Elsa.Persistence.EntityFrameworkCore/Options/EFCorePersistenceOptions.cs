@@ -1,3 +1,4 @@
+using Elsa.Options;
 using Elsa.Persistence.Entities;
 using Elsa.Persistence.EntityFrameworkCore.Handlers;
 using Elsa.Persistence.EntityFrameworkCore.HostedServices;
@@ -49,8 +50,10 @@ public class EFCorePersistenceOptions : IConfigurator
         return this;
     }
 
-    public void ConfigureServices(IServiceCollection services)
+    public void ConfigureServices(ElsaOptionsConfigurator configurator)
     {
+        var services = configurator.Services;
+        
         if (ContextPoolingIsEnabled)
             services.AddPooledDbContextFactory<ElsaDbContext>(DbContextOptionsBuilderAction);
         else
@@ -73,9 +76,9 @@ public class EFCorePersistenceOptions : IConfigurator
             ;
     }
 
-    public void ConfigureHostedServices(IServiceCollection services)
+    public void ConfigureHostedServices(ElsaOptionsConfigurator configurator)
     {
         if (AutoRunMigrationsIsEnabled)
-            PersistenceOptions.ElsaOptionsConfigurator.AddHostedService<RunMigrations>(-1); // Migrations need to run before other hosted services that depend on DB access.
+            configurator.AddHostedService<RunMigrations>(-1); // Migrations need to run before other hosted services that depend on DB access.
     }
 }

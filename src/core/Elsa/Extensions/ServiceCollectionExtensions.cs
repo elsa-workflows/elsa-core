@@ -19,9 +19,9 @@ public static class ServiceCollectionExtensions
         return services
             .AddElsaCore(elsa =>
             {
-                elsa.UsePersistence(persistence => persistence.UseInMemoryProvider());
-                elsa.UseActivityServices();
-                elsa.AddElsaRuntime();
+                elsa.ConfigurePersistence(persistence => persistence.UseInMemoryProvider());
+                elsa.ConfigureCoreActivityServices();
+                elsa.ConfigureElsaRuntime();
                 elsa.AddElsaManagement();
                 configure?.Invoke(elsa);
             });

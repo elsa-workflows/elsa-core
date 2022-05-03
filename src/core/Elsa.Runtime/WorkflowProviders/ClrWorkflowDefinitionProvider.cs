@@ -11,17 +11,17 @@ using Microsoft.Extensions.Options;
 namespace Elsa.Runtime.WorkflowProviders;
 
 /// <summary>
-/// Provides workflows to the system that are registered with <see cref="WorkflowRuntimeOptions"/>
+/// Provides workflows to the system that are registered with <see cref="ElsaRuntimeOptions"/>
 /// </summary>
 public class ClrWorkflowDefinitionProvider : IWorkflowDefinitionProvider
 {
     private readonly IIdentityGraphService _identityGraphService;
     private readonly WorkflowSerializerOptionsProvider _workflowSerializerOptionsProvider;
     private readonly IServiceProvider _serviceProvider;
-    private readonly WorkflowRuntimeOptions _options;
+    private readonly ElsaRuntimeOptions _options;
 
     public ClrWorkflowDefinitionProvider(
-        IOptions<WorkflowRuntimeOptions> options,
+        IOptions<ElsaRuntimeOptions> options,
         IIdentityGraphService identityGraphService,
         WorkflowSerializerOptionsProvider workflowSerializerOptionsProvider,
         IServiceProvider serviceProvider

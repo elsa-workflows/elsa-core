@@ -51,9 +51,9 @@ public class PersistenceOptions : ConfiguratorBase
         return this;
     }
 
-    public override void ConfigureServices(IServiceCollection services)
+    public override void ConfigureServices(ElsaOptionsConfigurator configurator)
     {
-        services
+        configurator.Services
             .AddSingleton(WorkflowDefinitionStore)
             .AddSingleton(WorkflowInstanceStore)
             .AddSingleton(WorkflowBookmarkStore)

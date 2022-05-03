@@ -51,8 +51,8 @@ public class ElsaOptionsConfigurator
 
         foreach (var configurator in _configurators)
         {
-            configurator.ConfigureServices(Services);
-            configurator.ConfigureHostedServices(Services);
+            configurator.ConfigureServices(this);
+            configurator.ConfigureHostedServices(this);
         }
 
         foreach (var hostedServiceDescriptor in _hostedServiceDescriptors.OrderBy(x => x.Order)) 
@@ -72,7 +72,6 @@ public class ElsaOptionsConfigurator
             .AddSingleton<IIdentityGraphService, IdentityGraphService>()
             .AddSingleton<IWorkflowStateSerializer, WorkflowStateSerializer>()
             .AddSingleton<IActivitySchedulerFactory, ActivitySchedulerFactory>()
-            .AddSingleton<IActivityNodeResolver, OutboundActivityNodeResolver>()
             .AddSingleton<IHasher, Hasher>()
             .AddSingleton<IIdentityGenerator, RandomIdentityGenerator>()
             .AddSingleton<ISystemClock, SystemClock>()
@@ -86,6 +85,10 @@ public class ElsaOptionsConfigurator
             // Pipelines.
             .AddSingleton<IActivityExecutionPipeline, ActivityExecutionPipeline>()
             .AddSingleton<IWorkflowExecutionPipeline, WorkflowExecutionPipeline>()
+            
+            // Built-in activity services.
+            .AddSingleton<IActivityNodeResolver, OutboundActivityNodeResolver>()
+            .AddSingleton<IActivityNodeResolver, SwitchActivityNodeResolver>()
 
             // Logging
             .AddLogging();
