@@ -1,7 +1,7 @@
-using Elsa.Modules.Activities.Configurators;
 using Elsa.Modules.Activities.Providers;
 using Elsa.Modules.Activities.Services;
 using Elsa.Options;
+using Elsa.Serialization;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -27,7 +27,6 @@ public class ActivityOptions : ConfiguratorBase
     public override void ConfigureServices(ElsaOptionsConfigurator configurator)
     {
         configurator.Services
-            .AddSingleton<ISerializationOptionsConfigurator, CustomSerializationOptionConfigurator>()
             .AddSingleton(StandardInStreamProvider)
             .AddSingleton(StandardOutStreamProvider);
     }

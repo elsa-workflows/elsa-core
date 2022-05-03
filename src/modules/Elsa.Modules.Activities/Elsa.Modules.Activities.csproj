@@ -11,4 +11,9 @@
       <ProjectReference Include="..\..\core\Elsa.Runtime\Elsa.Runtime.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Configurators" />
+      <Folder Include="Converters" />
+    </ItemGroup>
+
 </Project>

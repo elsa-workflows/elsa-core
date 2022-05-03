@@ -4,7 +4,6 @@ using Elsa.Extensions;
 using Elsa.Jobs.Extensions;
 using Elsa.Management.Extensions;
 using Elsa.Management.Serialization;
-using Elsa.Modules.Activities.Configurators;
 using Elsa.Modules.Activities.Console;
 using Elsa.Modules.Activities.Workflows;
 using Elsa.Modules.Hangfire.Implementations;
@@ -18,6 +17,7 @@ using Elsa.Persistence.InMemory.Extensions;
 using Elsa.Runtime.ProtoActor.Extensions;
 using Elsa.Scripting.JavaScript.Extensions;
 using Elsa.Scripting.Liquid.Extensions;
+using Elsa.Serialization;
 using Elsa.Services;
 
 var builder = WebApplication.CreateBuilder(args);

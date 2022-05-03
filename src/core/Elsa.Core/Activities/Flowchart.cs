@@ -2,9 +2,8 @@ using Elsa.Attributes;
 using Elsa.Models;
 using Elsa.Services;
 using Elsa.Signals;
-using Container = Elsa.Activities.Container;
 
-namespace Elsa.Modules.Activities.Workflows;
+namespace Elsa.Activities;
 
 public record Connection(IActivity Source, IActivity Target, string? SourcePort, string TargetPort);
 

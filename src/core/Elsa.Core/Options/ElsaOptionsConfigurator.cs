@@ -89,6 +89,7 @@ public class ElsaOptionsConfigurator
             // Built-in activity services.
             .AddSingleton<IActivityNodeResolver, OutboundActivityNodeResolver>()
             .AddSingleton<IActivityNodeResolver, SwitchActivityNodeResolver>()
+            .AddSingleton<ISerializationOptionsConfigurator, CustomSerializationOptionConfigurator>()
 
             // Logging
             .AddLogging();
