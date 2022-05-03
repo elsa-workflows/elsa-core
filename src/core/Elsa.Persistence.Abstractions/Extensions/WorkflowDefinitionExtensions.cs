@@ -75,6 +75,7 @@ public static class WorkflowDefinitionExtensions
             new WorkflowMetadata(definition.Name, definition.Description, definition.CreatedAt),
             root,
             definition.Variables,
+            definition.Tags,
             definition.Metadata,
             definition.ApplicationProperties);
     }

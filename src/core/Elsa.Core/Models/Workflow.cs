@@ -11,6 +11,7 @@ public class Workflow : Composite, ICloneable
         WorkflowMetadata workflowMetadata,
         IActivity root,
         ICollection<Variable> variables,
+        ICollection<string> tags,
         IDictionary<string, object> metadata,
         IDictionary<string, object> applicationProperties)
     {
@@ -18,6 +19,7 @@ public class Workflow : Composite, ICloneable
         Publication = publication;
         WorkflowMetadata = workflowMetadata;
         Variables = variables;
+        Tags = tags;
         Metadata = metadata;
         ApplicationProperties = applicationProperties;
         Root = root;
@@ -29,6 +31,7 @@ public class Workflow : Composite, ICloneable
         new WorkflowMetadata(),
         root,
         new List<Variable>(),
+        new List<string>(),
         new Dictionary<string, object>(),
         new Dictionary<string, object>());
 
@@ -46,6 +49,7 @@ public class Workflow : Composite, ICloneable
     public WorkflowPublication Publication { get; set; }
     public WorkflowMetadata WorkflowMetadata { get; set; }
     public ICollection<Variable> Variables { get; init; }
+    public ICollection<string> Tags { get; init; }
     public Workflow Clone() => (Workflow)((ICloneable)this).Clone();
     object ICloneable.Clone() => MemberwiseClone();
 }
