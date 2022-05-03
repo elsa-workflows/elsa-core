@@ -1,6 +1,7 @@
 using System.Threading.Channels;
 using Elsa.Expressions;
 using Elsa.Mediator.Extensions;
+using Elsa.Options;
 using Elsa.Runtime.HostedServices;
 using Elsa.Runtime.Implementations;
 using Elsa.Runtime.Interpreters;
@@ -16,8 +17,9 @@ namespace Elsa.Runtime.Extensions;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddElsaRuntime(this IServiceCollection services)
+    public static IServiceCollection AddElsaRuntime(this ElsaOptionsConfigurator configurator)
     {
+        var services = configurator.Services;
         services.AddOptions<WorkflowRuntimeOptions>();
 
         return services
@@ -71,15 +73,6 @@ public static class ServiceCollectionExtensions
     private static Channel<T> CreateChannel<T>() => Channel.CreateUnbounded<T>(new UnboundedChannelOptions());
     private static ChannelReader<T> CreateChannelReader<T>(IServiceProvider serviceProvider) => serviceProvider.GetRequiredService<Channel<T>>().Reader;
     private static ChannelWriter<T> CreateChannelWriter<T>(IServiceProvider serviceProvider) => serviceProvider.GetRequiredService<Channel<T>>().Writer;
-
-    public static IServiceCollection AddDefaultExpressionHandlers(this IServiceCollection services) =>
-        services
-            .AddExpressionHandler<LiteralExpressionHandler, LiteralExpression>()
-            .AddExpressionHandler<DelegateExpressionHandler, DelegateExpression>()
-            .AddExpressionHandler<VariableExpressionHandler, VariableExpression>()
-            .AddExpressionHandler<JsonExpressionHandler, JsonExpression>()
-            .AddExpressionHandler<OutputExpressionHandler, OutputExpression>()
-            .AddExpressionHandler<ElsaExpressionHandler, ElsaExpression>();
 
     public static IServiceCollection AddWorkflowDefinitionProvider<T>(this IServiceCollection services) where T : class, IWorkflowDefinitionProvider => services.AddSingleton<IWorkflowDefinitionProvider, T>();
     public static IServiceCollection AddStimulusHandler<T>(this IServiceCollection services) where T : class, IStimulusHandler => services.AddSingleton<IStimulusHandler, T>();

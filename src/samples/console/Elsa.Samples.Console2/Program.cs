@@ -58,7 +58,6 @@ IServiceProvider CreateServices()
         .AddElsa()
         .AddDsl()
         .AddLogging(logging => logging.AddConsole().SetMinimumLevel(LogLevel.Warning))
-        .AddInMemoryPersistence()
         .AddJavaScriptExpressions();
 
     return services.BuildServiceProvider();

@@ -26,10 +26,8 @@ var services = builder.Services;
 // Add services.
 services
     .AddElsa()
-    .AddInMemoryPersistence()
     .AddHttpActivityServices()
     .AddProtoActorRuntime()
-    .AddElsaManagement()
     .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider())
     .AddSchedulingServices();
 

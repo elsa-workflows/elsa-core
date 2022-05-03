@@ -39,10 +39,10 @@ var sqlServerConnectionString = configuration.GetConnectionString("SqlServer");
 
 // Add services.
 services
-    .AddEntityFrameworkCorePersistence((_, ef) => ef.UseSqlite())
+    .AutoRunMigrations()
     .AddElsa()
     //.AddProtoActorWorkflowHost()
-    .AddElsaManagement()
+    .AddEntityFrameworkCorePersistence((_, ef) => ef.UseSqlite())
     .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider())
     .AddSchedulingServices()
     .AddHttpActivityServices()

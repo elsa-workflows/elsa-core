@@ -4,6 +4,7 @@ using Elsa.Management.Options;
 using Elsa.Management.Providers;
 using Elsa.Management.Serialization;
 using Elsa.Management.Services;
+using Elsa.Options;
 using Elsa.Serialization;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,8 +13,10 @@ namespace Elsa.Management.Extensions;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddElsaManagement(this IServiceCollection services)
+    public static IServiceCollection AddElsaManagement(this ElsaOptionsConfigurator configurator)
     {
+        var services = configurator.Services;
+        
         return services
             .AddSingleton<IWorkflowPublisher, WorkflowPublisher>()
             .AddSingleton<IActivityDescriber, ActivityDescriber>()

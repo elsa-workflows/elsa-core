@@ -14,8 +14,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddEntityFrameworkCorePersistence(
         this IServiceCollection services,
         Action<IServiceProvider, DbContextOptionsBuilder> configure,
-        bool useContextPooling = true,
-        bool autoRunMigrations = true)
+        bool useContextPooling = true)
     {
         services.AddElsaDbContextFactory(configure, useContextPooling);
 
@@ -35,10 +34,12 @@ public static class ServiceCollectionExtensions
             .AddSingleton<IEntitySerializer<WorkflowExecutionLogRecord>, WorkflowExecutionLogRecordSerializer>()
             ;
 
-        if (autoRunMigrations)
-            services.AddHostedService<RunMigrations>();
-
         return services;
+    }
+
+    public static IServiceCollection AutoRunMigrations(this IServiceCollection services)
+    {
+        return services.AddHostedService<RunMigrations>();
     }
 
     private static IServiceCollection AddElsaDbContextFactory(this IServiceCollection services,

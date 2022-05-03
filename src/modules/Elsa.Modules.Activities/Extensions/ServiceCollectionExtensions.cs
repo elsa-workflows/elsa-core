@@ -1,9 +1,5 @@
-using Elsa.Modules.Activities.Configurators;
-using Elsa.Modules.Activities.Providers;
-using Elsa.Modules.Activities.Resolvers;
-using Elsa.Modules.Activities.Services;
-using Elsa.Services;
-using Microsoft.Extensions.DependencyInjection;
+using Elsa.Modules.Activities.Options;
+using Elsa.Options;
 
 namespace Elsa.Modules.Activities.Extensions;
 
@@ -12,13 +8,8 @@ public static class ServiceCollectionExtensions
     /// <summary>
     /// Registers required services for activities provided by this package.
     /// </summary>
-    public static IServiceCollection AddActivityServices(this IServiceCollection services)
+    public static ActivityOptions AddActivityServices(this ElsaOptionsConfigurator configurator)
     {
-        return services
-            .AddSingleton<IActivityNodeResolver, SwitchActivityNodeResolver>()
-            .AddSingleton<ISerializationOptionsConfigurator, CustomSerializationOptionConfigurator>()
-            .AddSingleton<IStandardInStreamProvider>(new StandardInStreamProvider(System.Console.In))
-            .AddSingleton<IStandardOutStreamProvider>(new StandardOutStreamProvider(System.Console.Out))
-            ;
+        return configurator.Configure<ActivityOptions>();
     }
 }
