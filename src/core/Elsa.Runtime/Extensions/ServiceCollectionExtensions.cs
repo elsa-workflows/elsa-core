@@ -22,6 +22,14 @@ public static class ServiceCollectionExtensions
         var services = configurator.Services;
         services.AddOptions<WorkflowRuntimeOptions>();
 
+        // Add ordered hosted services.
+        configurator
+            .AddHostedService<RegisterDescriptors>()
+            .AddHostedService<RegisterExpressionSyntaxDescriptors>()
+            .AddHostedService<DispatchedWorkflowDefinitionWorker>()
+            .AddHostedService<DispatchedWorkflowInstanceWorker>()
+            .AddHostedService<PopulateWorkflowDefinitionStore>();
+
         return services
                 // Core.
                 .AddSingleton<IWorkflowRegistry, WorkflowRegistry>()
@@ -50,13 +58,6 @@ public static class ServiceCollectionExtensions
 
                 // Domain event handlers.
                 .AddNotificationHandlersFrom(typeof(ServiceCollectionExtensions))
-
-                // Hosted Services.
-                .AddHostedService<RegisterDescriptors>()
-                .AddHostedService<RegisterExpressionSyntaxDescriptors>()
-                .AddHostedService<DispatchedWorkflowDefinitionWorker>()
-                .AddHostedService<DispatchedWorkflowInstanceWorker>()
-                .AddHostedService<PopulateWorkflowDefinitionStore>()
 
                 // Channels for dispatching workflows in-memory.
                 .CreateChannel<DispatchWorkflowDefinitionRequest>()

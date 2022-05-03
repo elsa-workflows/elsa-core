@@ -1,5 +1,6 @@
 using Elsa.Persistence.Entities;
 using Elsa.Persistence.EntityFrameworkCore.Handlers;
+using Elsa.Persistence.EntityFrameworkCore.HostedServices;
 using Elsa.Persistence.EntityFrameworkCore.Implementations;
 using Elsa.Persistence.EntityFrameworkCore.Services;
 using Elsa.Persistence.Options;
@@ -26,12 +27,19 @@ public class EFCorePersistenceOptions : IConfigurator
 
     public PersistenceOptions PersistenceOptions { get; }
     public bool ContextPoolingIsEnabled { get; set; }
+    public bool AutoRunMigrationsIsEnabled { get; set; } = true;
     public ServiceLifetime DbContextFactoryLifetime { get; set; } = ServiceLifetime.Singleton;
     public Action<IServiceProvider, DbContextOptionsBuilder> DbContextOptionsBuilderAction = (_, _) => { };
 
     public EFCorePersistenceOptions WithContextPooling(bool enabled = true)
     {
         ContextPoolingIsEnabled = enabled;
+        return this;
+    }
+    
+    public EFCorePersistenceOptions AutoRunMigrations(bool enabled = true)
+    {
+        AutoRunMigrationsIsEnabled = enabled;
         return this;
     }
 
@@ -63,5 +71,8 @@ public class EFCorePersistenceOptions : IConfigurator
             .AddSingleton<IEntitySerializer<WorkflowInstance>, WorkflowInstanceSerializer>()
             .AddSingleton<IEntitySerializer<WorkflowExecutionLogRecord>, WorkflowExecutionLogRecordSerializer>()
             ;
+
+        if (AutoRunMigrationsIsEnabled)
+            PersistenceOptions.ElsaOptionsConfigurator.AddHostedService<RunMigrations>(-1); // Migrations need to run before other hosted services that depend on DB access. 
     }
 }

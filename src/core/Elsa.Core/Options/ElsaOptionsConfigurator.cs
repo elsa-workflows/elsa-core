@@ -5,12 +5,17 @@ using Elsa.Pipelines.WorkflowExecution;
 using Elsa.Serialization;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 
 namespace Elsa.Options;
 
 public class ElsaOptionsConfigurator
 {
+    internal record HostedServiceDescriptor(int Order, Type HostedServiceType);
+
     private readonly ISet<IConfigurator> _configurators = new HashSet<IConfigurator>();
+    private readonly ICollection<HostedServiceDescriptor> _hostedServiceDescriptors = new List<HostedServiceDescriptor>();
 
     public ElsaOptionsConfigurator(IServiceCollection services)
     {
@@ -33,6 +38,12 @@ public class ElsaOptionsConfigurator
         return configurator;
     }
 
+    public ElsaOptionsConfigurator AddHostedService<T>(int priority = 0)
+    {
+        _hostedServiceDescriptors.Add(new HostedServiceDescriptor(priority, typeof(T)));
+        return this;
+    }
+
     internal void ConfigureServices()
     {
         AddElsaCore();
@@ -40,6 +51,9 @@ public class ElsaOptionsConfigurator
 
         foreach (var configurator in _configurators)
             configurator.ConfigureServices(Services);
+
+        foreach (var hostedServiceDescriptor in _hostedServiceDescriptors.OrderBy(x => x.Order)) 
+            Services.TryAddEnumerable(ServiceDescriptor.Singleton(typeof(IHostedService), hostedServiceDescriptor.HostedServiceType));
     }
 
     private IServiceCollection AddElsaCore()
