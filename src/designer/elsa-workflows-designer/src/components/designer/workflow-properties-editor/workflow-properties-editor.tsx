@@ -1,12 +1,12 @@
 import {Component, Event, EventEmitter, h, Method, Prop, State} from '@stencil/core';
 import WorkflowEditorTunnel from '../state';
-import {TabChangedArgs, TabDefinition, Workflow
+import {TabChangedArgs, TabDefinition, WorkflowDefinition
 } from '../../../models';
 import {FormEntry} from "../../shared/forms/form-entry";
 import {InfoList} from "../../shared/forms/info-list";
 
 export interface WorkflowPropsUpdatedArgs {
-  workflow: Workflow;
+  workflow: WorkflowDefinition;
 }
 
 @Component({
@@ -15,7 +15,7 @@ export interface WorkflowPropsUpdatedArgs {
 export class WorkflowPropertiesEditor {
   private slideOverPanel: HTMLElsaSlideOverPanelElement;
 
-  @Prop({mutable: true}) workflow?: Workflow;
+  @Prop({mutable: true}) workflow?: WorkflowDefinition;
   @Event() workflowPropsUpdated: EventEmitter<WorkflowPropsUpdatedArgs>;
   @State() private selectedTabIndex: number = 0;
 
@@ -53,7 +53,7 @@ export class WorkflowPropertiesEditor {
 
   private onSelectedTabIndexChanged = (e: CustomEvent<TabChangedArgs>) => this.selectedTabIndex = e.detail.selectedTabIndex;
 
-  private onPropertyEditorChanged = (apply: (w: Workflow) => void) => {
+  private onPropertyEditorChanged = (apply: (w: WorkflowDefinition) => void) => {
     const workflow = this.workflow;
     apply(workflow);
     return this.workflowPropsUpdated.emit({workflow});
@@ -61,25 +61,22 @@ export class WorkflowPropertiesEditor {
 
   private renderPropertiesTab = () => {
     const workflow = this.workflow;
-    const metadata = workflow.metadata;
-    const identity = workflow.identity;
-    const publication = workflow.publication;
 
     const workflowDetails = {
-      'Definition ID': identity.definitionId,
-      'Version ID': identity.id,
-      'Version': identity.version,
-      'Status': publication.isPublished ? 'Published' : 'Draft'
+      'Definition ID': workflow.definitionId,
+      'Version ID': workflow.id,
+      'Version': workflow.version,
+      'Status': workflow.isPublished ? 'Published' : 'Draft'
     };
 
     return <div>
       <FormEntry label="Name" fieldId="workflowName" hint="The name of the workflow.">
-        <input type="text" name="workflowName" id="workflowName" value={metadata.name} onChange={e => this.onPropertyEditorChanged(wf => wf.metadata.name = (e.target as HTMLInputElement).value)}/>
+        <input type="text" name="workflowName" id="workflowName" value={workflow.name} onChange={e => this.onPropertyEditorChanged(wf => wf.name = (e.target as HTMLInputElement).value)}/>
       </FormEntry>
       <FormEntry label="Description" fieldId="workflowDescription" hint="A brief description about the workflow.">
-        <textarea name="workflowDescription" id="workflowDescription" value={metadata.description} rows={6} onChange={e => this.onPropertyEditorChanged(wf => wf.metadata.description = (e.target as HTMLTextAreaElement).value)}/>
+        <textarea name="workflowDescription" id="workflowDescription" value={workflow.description} rows={6} onChange={e => this.onPropertyEditorChanged(wf => wf.description = (e.target as HTMLTextAreaElement).value)}/>
       </FormEntry>
-      <InfoList title="Workflow Information" dictionary={workflowDetails}/>
+      <InfoList title="WorkflowDefinition Information" dictionary={workflowDetails}/>
     </div>
   };
 

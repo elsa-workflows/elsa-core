@@ -5,9 +5,9 @@ using Elsa.Persistence.Models;
 using Elsa.Runtime.Services;
 using Microsoft.AspNetCore.Http;
 
-namespace Elsa.Api.Endpoints.Workflows;
+namespace Elsa.Api.Endpoints.WorkflowDefinitions;
 
-public static partial class Workflows
+public static partial class WorkflowDefinitions
 {
     public static async Task<IResult> DispatchAsync(string definitionId, IWorkflowRegistry workflowRegistry, HttpResponse response, string? correlationId = default, CancellationToken cancellationToken = default)
     {

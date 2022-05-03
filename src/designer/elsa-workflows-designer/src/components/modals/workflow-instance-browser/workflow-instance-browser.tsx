@@ -1,6 +1,6 @@
 import {Component, Event, EventEmitter, h, Host, Method, State} from '@stencil/core';
 import _ from 'lodash';
-import {DefaultActions, OrderBy, OrderDirection, PagedList, VersionOptions, WorkflowInstanceSummary, WorkflowStatus, WorkflowSummary} from "../../../models";
+import {DefaultActions, OrderBy, OrderDirection, PagedList, VersionOptions, WorkflowInstanceSummary, WorkflowStatus, WorkflowDefinitionSummary} from "../../../models";
 import {Container} from "typedi";
 import {ElsaApiClientProvider, ElsaClient, ListWorkflowInstancesRequest} from "../../../services";
 import {DeleteIcon, EditIcon} from "../../icons/tooling";
@@ -23,11 +23,11 @@ export class WorkflowInstanceBrowser {
   private elsaClient: ElsaClient;
   private modalDialog: HTMLElsaModalDialogElement;
   private selectAllCheckbox: HTMLInputElement;
-  private publishedOrLatestWorkflows: Array<WorkflowSummary> = [];
+  private publishedOrLatestWorkflows: Array<WorkflowDefinitionSummary> = [];
 
   @Event() public workflowInstanceSelected: EventEmitter<WorkflowInstanceSummary>;
   @State() private workflowInstances: PagedList<WorkflowInstanceSummary> = {items: [], totalCount: 0};
-  @State() private workflows: Array<WorkflowSummary> = [];
+  @State() private workflows: Array<WorkflowDefinitionSummary> = [];
   @State() private selectAllChecked: boolean;
   @State() private selectedWorkflowInstanceIds: Array<string> = [];
   @State() private searchTerm?: string;
@@ -117,7 +117,7 @@ export class WorkflowInstanceBrowser {
                 {workflowInstances.items.map(workflowInstance => {
                   const statusColor = getStatusColor(workflowInstance.workflowStatus);
                   const isSelected = this.selectedWorkflowInstanceIds.findIndex(x => x === workflowInstance.id) >= 0;
-                  const workflow: WorkflowSummary = publishedOrLatestWorkflows.find(x => x.definitionId == workflowInstance.definitionId);
+                  const workflow: WorkflowDefinitionSummary = publishedOrLatestWorkflows.find(x => x.definitionId == workflowInstance.definitionId);
                   const workflowName = !!workflow ? (workflow.name || 'Untitled') : '(Definition not found)';
 
                   return (
@@ -190,7 +190,7 @@ export class WorkflowInstanceBrowser {
   private loadWorkflows = async () => {
     const elsaClient = this.elsaClient;
     const versionOptions: VersionOptions = {allVersions: true};
-    const workflows = await elsaClient.workflows.list({versionOptions});
+    const workflows = await elsaClient.workflowDefinitions.list({versionOptions});
     this.publishedOrLatestWorkflows = this.selectLatestWorkflows(workflows.items);
   };
 
@@ -207,7 +207,7 @@ export class WorkflowInstanceBrowser {
     }
   }
 
-  private selectLatestWorkflows = (workflows: Array<WorkflowSummary>): Array<WorkflowSummary> => {
+  private selectLatestWorkflows = (workflows: Array<WorkflowDefinitionSummary>): Array<WorkflowDefinitionSummary> => {
     const groups = _.groupBy(workflows, 'definitionId');
     return _.map(groups, x => _.first(_.orderBy(x, 'version', 'desc')));
   }

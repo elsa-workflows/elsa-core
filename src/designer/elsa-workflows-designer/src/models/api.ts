@@ -47,11 +47,12 @@ export interface Port {
   displayName: string;
 }
 
-export interface WorkflowSummary {
+export interface WorkflowDefinitionSummary {
   id: string;
   definitionId: string;
   version: number;
   name?: string;
+  description?: string;
   isPublished: boolean;
   isLatest: boolean;
 }

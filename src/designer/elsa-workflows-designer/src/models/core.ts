@@ -30,10 +30,18 @@ export interface ActivityInput {
   expression: Expression;
 }
 
-export interface Workflow {
-  identity: WorkflowIdentity;
-  publication: WorkflowPublication;
-  metadata: WorkflowMetadata;
+export interface WorkflowDefinition {
+  id: string;
+  definitionId: string;
+  version: number;
+  isLatest: boolean;
+  isPublished: boolean;
+  name?: string;
+  description?: string;
+  createdAt?: Date;
+  variables?: Array<Variable>;
+  metadata?: Map<string, any>;
+  applicationProperties?: Map<string, any>;
   root: Activity;
 }
 

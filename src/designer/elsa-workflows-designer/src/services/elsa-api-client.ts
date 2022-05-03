@@ -14,7 +14,7 @@ import {
   SelectList,
   Trigger,
   VersionOptions,
-  Workflow, WorkflowInstance, WorkflowInstanceSummary, WorkflowStatus, WorkflowSummary
+  WorkflowDefinition, WorkflowInstance, WorkflowInstanceSummary, WorkflowStatus, WorkflowDefinitionSummary
 } from '../models';
 import 'reflect-metadata';
 import {ServerSettings} from './server-settings';
@@ -55,34 +55,34 @@ export async function createElsaClient(serverUrl: string): Promise<ElsaClient> {
         }
       }
     },
-    workflows: {
-      async publish(request: PublishWorkflowRequest) : Promise<Workflow>{
-        const response = await httpClient.post<Workflow>(`api/workflows/${request.definitionId}/publish`);
+    workflowDefinitions: {
+      async publish(request: PublishWorkflowDefinitionRequest) : Promise<WorkflowDefinition>{
+        const response = await httpClient.post<WorkflowDefinition>(`api/workflow-definitions/${request.definitionId}/publish`);
         return response.data;
       },
-      async retract(request: RetractWorkflowRequest) : Promise<Workflow>{
-        const response = await httpClient.post<Workflow>(`api/workflows/${request.definitionId}/retract`);
+      async retract(request: RetractWorkflowDefinitionRequest) : Promise<WorkflowDefinition>{
+        const response = await httpClient.post<WorkflowDefinition>(`api/workflow-definitions/${request.definitionId}/retract`);
         return response.data;
       },
-      async delete(request: DeleteWorkflowRequest) : Promise<Workflow>{
-        const response = await httpClient.delete<Workflow>(`api/workflows/${request.definitionId}`);
+      async delete(request: DeleteWorkflowDefinitionRequest) : Promise<WorkflowDefinition>{
+        const response = await httpClient.delete<WorkflowDefinition>(`api/workflow-definitions/${request.definitionId}`);
         return response.data;
       },
-      async post(request: SaveWorkflowRequest): Promise<Workflow> {
-        const response = await httpClient.post<Workflow>('api/workflows', request);
+      async post(request: SaveWorkflowDefinitionRequest): Promise<WorkflowDefinition> {
+        const response = await httpClient.post<WorkflowDefinition>('api/workflow-definitions', request);
         return response.data;
       },
-      async get(request: GetWorkflowRequest): Promise<Workflow> {
+      async get(request: GetWorkflowRequest): Promise<WorkflowDefinition> {
         const queryString = {};
 
         if (!!request.versionOptions)
           queryString['versionOptions'] = getVersionOptionsString(request.versionOptions);
 
         const queryStringText = serializeQueryString(queryString);
-        const response = await httpClient.get<Workflow>(`api/workflows/${request.definitionId}${queryStringText}`);
+        const response = await httpClient.get<WorkflowDefinition>(`api/workflow-definitions/${request.definitionId}${queryStringText}`);
         return response.data;
       },
-      async list(request: ListWorkflowsRequest): Promise<PagedList<WorkflowSummary>> {
+      async list(request: ListWorkflowDefinitionsRequest): Promise<PagedList<WorkflowDefinitionSummary>> {
         const queryString = {};
 
         if (!!request.versionOptions)
@@ -95,10 +95,10 @@ export async function createElsaClient(serverUrl: string): Promise<ElsaClient> {
           queryString['pageSize'] = request.pageSize;
 
         const queryStringText = serializeQueryString(queryString);
-        const response = await httpClient.get<PagedList<WorkflowSummary>>(`api/workflows${queryStringText}`);
+        const response = await httpClient.get<PagedList<WorkflowDefinitionSummary>>(`api/workflow-definitions${queryStringText}`);
         return response.data;
       },
-      async getMany(request: GetManyWorkflowsRequest): Promise<Array<WorkflowSummary>> {
+      async getMany(request: GetManyWorkflowsRequest): Promise<Array<WorkflowDefinitionSummary>> {
         const queryString = {};
 
         if (!!request.versionOptions)
@@ -107,7 +107,7 @@ export async function createElsaClient(serverUrl: string): Promise<ElsaClient> {
         queryString['definitionIds'] = request.definitionIds.join(',');
 
         const queryStringText = serializeQueryString(queryString);
-        const response = await httpClient.get<Array<WorkflowSummary>>(`api/workflows/set${queryStringText}`);
+        const response = await httpClient.get<Array<WorkflowDefinitionSummary>>(`api/workflow-definitions/set${queryStringText}`);
         return response.data;
       }
     },
@@ -146,7 +146,7 @@ export async function createElsaClient(serverUrl: string): Promise<ElsaClient> {
 
 export interface ElsaClient {
   descriptors: DescriptorsApi;
-  workflows: WorkflowsApi;
+  workflowDefinitions: WorkflowDefinitionsApi;
   workflowInstances: WorkflowInstancesApi;
   designer: DesignerApi;
 }
@@ -159,20 +159,20 @@ export interface ActivityDescriptorsApi {
   list(): Promise<Array<ActivityDescriptor>>;
 }
 
-export interface WorkflowsApi {
-  post(request: SaveWorkflowRequest): Promise<Workflow>;
+export interface WorkflowDefinitionsApi {
+  post(request: SaveWorkflowDefinitionRequest): Promise<WorkflowDefinition>;
 
-  get(request: GetWorkflowRequest): Promise<Workflow>;
+  get(request: GetWorkflowRequest): Promise<WorkflowDefinition>;
 
-  list(request: ListWorkflowsRequest): Promise<PagedList<WorkflowSummary>>;
+  list(request: ListWorkflowDefinitionsRequest): Promise<PagedList<WorkflowDefinitionSummary>>;
 
-  getMany(request: GetManyWorkflowsRequest): Promise<Array<WorkflowSummary>>;
+  getMany(request: GetManyWorkflowsRequest): Promise<Array<WorkflowDefinitionSummary>>;
 
-  delete(request: DeleteWorkflowRequest): Promise<Workflow>;
+  delete(request: DeleteWorkflowDefinitionRequest): Promise<WorkflowDefinition>;
 
-  retract(request: RetractWorkflowRequest): Promise<Workflow>;
+  retract(request: RetractWorkflowDefinitionRequest): Promise<WorkflowDefinition>;
 
-  publish(request: PublishWorkflowRequest): Promise<Workflow>;
+  publish(request: PublishWorkflowDefinitionRequest): Promise<WorkflowDefinition>;
 }
 
 export interface WorkflowInstancesApi {
@@ -194,7 +194,7 @@ export interface RuntimeSelectListApi {
   get(providerTypeName: string, context?: any): Promise<SelectList>
 }
 
-export interface SaveWorkflowRequest {
+export interface SaveWorkflowDefinitionRequest {
   definitionId: string;
   name?: string;
   description?: string;
@@ -202,15 +202,15 @@ export interface SaveWorkflowRequest {
   root?: Activity
 }
 
-export interface DeleteWorkflowRequest {
+export interface DeleteWorkflowDefinitionRequest {
   definitionId: string;
 }
 
-export interface RetractWorkflowRequest {
+export interface RetractWorkflowDefinitionRequest {
   definitionId: string;
 }
 
-export interface PublishWorkflowRequest {
+export interface PublishWorkflowDefinitionRequest {
   definitionId: string;
 }
 
@@ -219,7 +219,7 @@ export interface GetWorkflowRequest {
   versionOptions?: VersionOptions;
 }
 
-export interface ListWorkflowsRequest {
+export interface ListWorkflowDefinitionsRequest {
   page?: number;
   pageSize?: number;
   versionOptions?: VersionOptions;

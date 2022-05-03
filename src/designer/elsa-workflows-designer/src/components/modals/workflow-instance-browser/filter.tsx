@@ -1,7 +1,7 @@
 import {FunctionalComponent, h} from "@stencil/core";
 import {BulkActionsIcon, OrderByIcon, PageSizeIcon, WorkflowIcon, WorkflowStatusIcon} from "../../icons/tooling";
 import {DropdownButtonItem, DropdownButtonOrigin} from "../../shared/dropdown-button/models";
-import {OrderBy, WorkflowStatus, WorkflowSummary} from "../../../models";
+import {OrderBy, WorkflowStatus, WorkflowDefinitionSummary} from "../../../models";
 
 export interface FilterProps {
   pageSizeFilter: PageSizeFilterProps;
@@ -16,7 +16,7 @@ export interface PageSizeFilterProps {
 }
 
 export interface WorkflowFilterProps {
-  workflows: Array<WorkflowSummary>;
+  workflows: Array<WorkflowDefinitionSummary>;
   selectedWorkflowDefinitionId?: string;
   onChange: (definitionId: string) => void;
 }
@@ -92,7 +92,7 @@ const PageSizeFilter: FunctionalComponent<PageSizeFilterProps> = ({selectedPageS
 
 const WorkflowFilter: FunctionalComponent<WorkflowFilterProps> = ({workflows, selectedWorkflowDefinitionId, onChange}) => {
   const selectedWorkflow = workflows.find(x => x.definitionId == selectedWorkflowDefinitionId);
-  const getWorkflowName = (workflow?: WorkflowSummary) => workflow?.name?.length > 0 ? workflow.name : 'Untitled';
+  const getWorkflowName = (workflow?: WorkflowDefinitionSummary) => workflow?.name?.length > 0 ? workflow.name : 'Untitled';
   const selectedWorkflowText = !selectedWorkflowDefinitionId ? 'All workflows' : getWorkflowName(selectedWorkflow);
   let items: Array<DropdownButtonItem> = workflows.map(x => ({text: getWorkflowName(x), value: x.definitionId, isSelected: x.definitionId == selectedWorkflowDefinitionId}));
   const allItem: DropdownButtonItem = {text: 'All', value: null, isSelected: !selectedWorkflowDefinitionId};

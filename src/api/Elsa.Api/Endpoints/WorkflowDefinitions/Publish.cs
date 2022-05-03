@@ -6,9 +6,9 @@ using Elsa.Persistence.Services;
 using Elsa.Serialization;
 using Microsoft.AspNetCore.Http;
 
-namespace Elsa.Api.Endpoints.Workflows;
+namespace Elsa.Api.Endpoints.WorkflowDefinitions;
 
-public static partial class Workflows
+public static partial class WorkflowDefinitions
 {
     public static async Task<IResult> PublishAsync(
         string definitionId,

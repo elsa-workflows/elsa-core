@@ -3,9 +3,9 @@ using System.Threading.Tasks;
 using Elsa.Persistence.Services;
 using Microsoft.AspNetCore.Http;
 
-namespace Elsa.Api.Endpoints.Workflows;
+namespace Elsa.Api.Endpoints.WorkflowDefinitions;
 
-public static partial class Workflows
+public static partial class WorkflowDefinitions
 {
     public static async Task<IResult> DeleteAsync(string definitionId, IWorkflowDefinitionStore workflowDefinitionStore, CancellationToken cancellationToken)
     {

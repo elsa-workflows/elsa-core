@@ -6,9 +6,9 @@ using Elsa.Serialization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Elsa.Api.Endpoints.Workflows;
+namespace Elsa.Api.Endpoints.WorkflowDefinitions;
 
-public static partial class Workflows
+public static partial class WorkflowDefinitions
 {
     public static async Task<IResult> ListAsync(
         IWorkflowDefinitionStore workflowDefinitionStore,
@@ -21,8 +21,8 @@ public static partial class Workflows
         var serializerOptions = serializerOptionsProvider.CreateApiOptions();
         var pageArgs = new PageArgs(page, pageSize);
         var parsedVersionOptions = versionOptions != null ? VersionOptions.FromString(versionOptions) : default;
-        var workflowSummaries = await workflowDefinitionStore.ListSummariesAsync(parsedVersionOptions, pageArgs, cancellationToken);
+        var definitionSummaries = await workflowDefinitionStore.ListSummariesAsync(parsedVersionOptions, pageArgs, cancellationToken);
 
-        return Results.Json(workflowSummaries, serializerOptions, statusCode: StatusCodes.Status200OK);
+        return Results.Json(definitionSummaries, serializerOptions, statusCode: StatusCodes.Status200OK);
     }
 }

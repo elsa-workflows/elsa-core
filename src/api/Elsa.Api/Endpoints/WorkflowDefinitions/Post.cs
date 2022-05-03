@@ -8,11 +8,11 @@ using Elsa.Serialization;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 
-namespace Elsa.Api.Endpoints.Workflows;
+namespace Elsa.Api.Endpoints.WorkflowDefinitions;
 
-public static partial class Workflows
+public static partial class WorkflowDefinitions
 {
-    public record SaveWorkflowRequest(
+    public record SaveWorkflowDefinitionRequest(
         string? DefinitionId,
         string? Name,
         string? Description,
@@ -26,7 +26,7 @@ public static partial class Workflows
         CancellationToken cancellationToken)
     {
         var serializerOptions = serializerOptionsProvider.CreateApiOptions();
-        var model = (await httpContext.Request.ReadFromJsonAsync<SaveWorkflowRequest>(serializerOptions, cancellationToken))!;
+        var model = (await httpContext.Request.ReadFromJsonAsync<SaveWorkflowDefinitionRequest>(serializerOptions, cancellationToken))!;
         var definitionId = model.DefinitionId;
 
         // Get a workflow draft version.

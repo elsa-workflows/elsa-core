@@ -1,9 +1,9 @@
 ﻿import {createProviderConsumer} from "@stencil/state-tunnel";
 import {h} from "@stencil/core";
-import {ActivityDescriptor, Workflow} from "../../models";
+import {ActivityDescriptor, WorkflowDefinition} from "../../models";
 
 export interface WorkflowDesignerState {
-  workflow: Workflow;
+  workflow: WorkflowDefinition;
   activityDescriptors: Array<ActivityDescriptor>;
 }
 

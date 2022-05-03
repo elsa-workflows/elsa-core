@@ -1,10 +1,12 @@
 using System.Net;
 using System.Threading.Tasks;
+using Elsa.Attributes;
 using Elsa.Models;
 using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Modules.Http;
 
+[Activity("Elsa", "HTTP", "Write an HTTP response.")]
 public class WriteHttpResponse : Activity
 {
     public Input<HttpStatusCode> StatusCode { get; set; } = new(HttpStatusCode.OK);

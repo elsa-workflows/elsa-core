@@ -1,20 +1,20 @@
 import {Component, Event, EventEmitter, h, Host, Method, Prop, State, Watch} from '@stencil/core';
-import {DefaultActions, PagedList, VersionOptions, Workflow, WorkflowSummary} from "../../../models";
+import {DefaultActions, PagedList, VersionOptions, WorkflowDefinition, WorkflowDefinitionSummary} from "../../../models";
 import {Container} from "typedi";
-import {ElsaApiClientProvider, ElsaClient, SaveWorkflowRequest} from "../../../services";
+import {ElsaApiClientProvider, ElsaClient, SaveWorkflowDefinitionRequest} from "../../../services";
 import {DeleteIcon, EditIcon, PublishIcon, UnPublishIcon} from "../../icons/tooling";
 
 @Component({
-  tag: 'elsa-workflow-browser',
+  tag: 'elsa-workflow-definition-browser',
   shadow: false,
 })
-export class WorkflowBrowser {
+export class WorkflowDefinitionBrowser {
   private elsaClient: ElsaClient;
   private modalDialog: HTMLElsaModalDialogElement;
 
-  @Event() public workflowDefinitionSelected: EventEmitter<WorkflowSummary>;
-  @State() private workflowDefinitions: PagedList<WorkflowSummary> = {items: [], totalCount: 0};
-  @State() private publishedWorkflowDefinitions: Array<WorkflowSummary> = [];
+  @Event() public workflowDefinitionSelected: EventEmitter<WorkflowDefinitionSummary>;
+  @State() private workflowDefinitions: PagedList<WorkflowDefinitionSummary> = {items: [], totalCount: 0};
+  @State() private publishedWorkflowDefinitions: Array<WorkflowDefinitionSummary> = [];
 
   @Method()
   public async show() {
@@ -32,30 +32,31 @@ export class WorkflowBrowser {
     this.elsaClient = await elsaClientProvider.getClient();
   }
 
-  private async onPublishClick(e: MouseEvent, workflowDefinition: WorkflowSummary) {
+  private async onPublishClick(e: MouseEvent, workflowDefinition: WorkflowDefinitionSummary) {
     const elsaClient = this.elsaClient;
-    await elsaClient.workflows.publish(workflowDefinition);
+    await elsaClient.workflowDefinitions.publish(workflowDefinition);
     await this.loadWorkflowDefinitions();
   }
 
-  private async onUnPublishClick(e: MouseEvent, workflowDefinition: WorkflowSummary) {
+  private async onUnPublishClick(e: MouseEvent, workflowDefinition: WorkflowDefinitionSummary) {
     const elsaClient = this.elsaClient;
-    await elsaClient.workflows.retract(workflowDefinition);
+    await elsaClient.workflowDefinitions.retract(workflowDefinition);
     await this.loadWorkflowDefinitions();
   }
 
-  private async onDeleteClick(e: MouseEvent, workflowDefinition: WorkflowSummary) {
+  private async onDeleteClick(e: MouseEvent, workflowDefinition: WorkflowDefinitionSummary) {
+
     // const result = await this.confirmDialog.show(t('DeleteConfirmationModel.Title'), t('DeleteConfirmationModel.Message'));
     //
     // if (!result)
     //   return;
 
     const elsaClient = this.elsaClient;
-    await elsaClient.workflows.delete(workflowDefinition);
+    await elsaClient.workflowDefinitions.delete(workflowDefinition);
     await this.loadWorkflowDefinitions();
   }
 
-  private onWorkflowDefinitionClick = async (e: MouseEvent, workflowDefinition: WorkflowSummary) => {
+  private onWorkflowDefinitionClick = async (e: MouseEvent, workflowDefinition: WorkflowDefinitionSummary) => {
     e.preventDefault();
     this.workflowDefinitionSelected.emit(workflowDefinition);
     await this.hide();
@@ -67,9 +68,9 @@ export class WorkflowBrowser {
     const pageSize = 50;
     const latestVersionOptions: VersionOptions = {isLatest: true};
     const publishedVersionOptions: VersionOptions = {isPublished: true};
-    const latestWorkflowDefinitions = await elsaClient.workflows.list({page: page, pageSize: pageSize, versionOptions: {isLatest: true}});
+    const latestWorkflowDefinitions = await elsaClient.workflowDefinitions.list({page: page, pageSize: pageSize, versionOptions: {isLatest: true}});
     const unpublishedWorkflowDefinitionIds = latestWorkflowDefinitions.items.filter(x => !x.isPublished).map(x => x.definitionId);
-    this.publishedWorkflowDefinitions = await elsaClient.workflows.getMany({definitionIds: unpublishedWorkflowDefinitionIds, versionOptions: publishedVersionOptions});
+    this.publishedWorkflowDefinitions = await elsaClient.workflowDefinitions.getMany({definitionIds: unpublishedWorkflowDefinitionIds, versionOptions: publishedVersionOptions});
     this.workflowDefinitions = latestWorkflowDefinitions;
   }
 
@@ -101,7 +102,7 @@ export class WorkflowBrowser {
                 {workflowDefinitions.items.map(workflowDefinition => {
                   const latestVersionNumber = workflowDefinition.version;
                   const {isPublished} = workflowDefinition;
-                  const publishedVersion: WorkflowSummary = isPublished ? workflowDefinition : publishedWorkflowDefinitions.find(x => x.definitionId == workflowDefinition.definitionId);
+                  const publishedVersion: WorkflowDefinitionSummary = isPublished ? workflowDefinition : publishedWorkflowDefinitions.find(x => x.definitionId == workflowDefinition.definitionId);
                   const publishedVersionNumber = !!publishedVersion ? publishedVersion.version : '-';
                   let workflowDisplayName = workflowDefinition.name;
 

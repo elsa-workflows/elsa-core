@@ -15,7 +15,6 @@ using Elsa.Modules.Quartz.Implementations;
 using Elsa.Modules.Scheduling.Activities;
 using Elsa.Modules.Scheduling.Extensions;
 using Elsa.Persistence.InMemory.Extensions;
-using Elsa.Runtime.ProtoActor.Extensions;
 using Elsa.Scripting.JavaScript.Extensions;
 using Elsa.Scripting.Liquid.Extensions;
 using Elsa.Services;
@@ -28,7 +27,7 @@ services
     .AddElsa()
     .AddInMemoryPersistence()
     .AddHttpActivityServices()
-    .AddProtoActorRuntime()
+    //.AddProtoActorRuntime()
     .AddElsaManagement()
     .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider())
     .AddSchedulingServices();

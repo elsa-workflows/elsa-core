@@ -9,7 +9,7 @@ using Elsa.Modules.Http.Models;
 
 namespace Elsa.Modules.Http;
 
-[Activity("Elsa", "HTTP", "Waits for an inbound HTTP request that matches the specified path and methods")]
+[Activity("Elsa", "HTTP", "Wait for an inbound HTTP request that matches the specified path and methods.")]
 public class HttpEndpoint : Trigger<HttpRequestModel>
 {
     public const string InputKey = "HttpRequest";

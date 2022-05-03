@@ -1,7 +1,7 @@
 using Elsa.Api.Endpoints.ActivityDescriptors;
 using Elsa.Api.Endpoints.Events;
+using Elsa.Api.Endpoints.WorkflowDefinitions;
 using Elsa.Api.Endpoints.WorkflowInstances;
-using Elsa.Api.Endpoints.Workflows;
 using Microsoft.AspNetCore.Routing;
 
 namespace Elsa.Api.Extensions;

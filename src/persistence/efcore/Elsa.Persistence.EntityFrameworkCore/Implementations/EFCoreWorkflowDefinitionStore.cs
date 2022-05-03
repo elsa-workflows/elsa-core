@@ -1,8 +1,9 @@
 using System.Linq.Expressions;
 using Elsa.Persistence.Entities;
+using Elsa.Persistence.EntityFrameworkCore.Extensions;
 using Elsa.Persistence.EntityFrameworkCore.Services;
-using Elsa.Persistence.Extensions;
 using Elsa.Persistence.Models;
+using Elsa.Persistence.Extensions;
 using Elsa.Persistence.Services;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Implementations;
@@ -89,10 +90,10 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         var query = set.AsQueryable();
 
         if (versionOptions != null)
-            query = query.WithVersion(versionOptions.Value);
+            query = set.WithVersion(versionOptions.Value);
 
         query = query.OrderBy(x => x.Name);
-
-        return await query.PaginateAsync(x => WorkflowDefinitionSummary.FromDefinition(x), pageArgs);
+        
+        return await  Extensions.QueryableExtensions.PaginateAsync(query,x => WorkflowDefinitionSummary.FromDefinition(x), pageArgs);
     }
 }
