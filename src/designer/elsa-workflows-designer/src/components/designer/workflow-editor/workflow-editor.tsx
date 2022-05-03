@@ -45,7 +45,8 @@ export class WorkflowEditor {
   private deleteTrigger: (trigger: Trigger) => void;
   private readonly emitActivityChangedDebounced: (e: ActivityPropertyChangedEventArgs) => void;
   private readonly saveChangesDebounced: () => void;
-
+ 
+  @State()
   private workflow: Workflow = {
     root: null,
     identity: {id: uuid(), definitionId: uuid(), version: 1},
