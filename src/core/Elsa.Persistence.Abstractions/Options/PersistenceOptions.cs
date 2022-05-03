@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Persistence.Options;
 
-public class PersistenceOptions : IConfigurator
+public class PersistenceOptions : ConfiguratorBase
 {
     public ElsaOptionsConfigurator ElsaOptionsConfigurator { get; }
 
@@ -51,7 +51,7 @@ public class PersistenceOptions : IConfigurator
         return this;
     }
 
-    public void ConfigureServices(IServiceCollection services)
+    public override void ConfigureServices(IServiceCollection services)
     {
         services
             .AddSingleton(WorkflowDefinitionStore)

@@ -50,7 +50,10 @@ public class ElsaOptionsConfigurator
         AddDefaultExpressionHandlers();
 
         foreach (var configurator in _configurators)
+        {
             configurator.ConfigureServices(Services);
+            configurator.ConfigureHostedServices(Services);
+        }
 
         foreach (var hostedServiceDescriptor in _hostedServiceDescriptors.OrderBy(x => x.Order)) 
             Services.TryAddEnumerable(ServiceDescriptor.Singleton(typeof(IHostedService), hostedServiceDescriptor.HostedServiceType));

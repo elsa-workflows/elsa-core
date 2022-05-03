@@ -71,8 +71,11 @@ public class EFCorePersistenceOptions : IConfigurator
             .AddSingleton<IEntitySerializer<WorkflowInstance>, WorkflowInstanceSerializer>()
             .AddSingleton<IEntitySerializer<WorkflowExecutionLogRecord>, WorkflowExecutionLogRecordSerializer>()
             ;
+    }
 
+    public void ConfigureHostedServices(IServiceCollection services)
+    {
         if (AutoRunMigrationsIsEnabled)
-            PersistenceOptions.ElsaOptionsConfigurator.AddHostedService<RunMigrations>(-1); // Migrations need to run before other hosted services that depend on DB access. 
+            PersistenceOptions.ElsaOptionsConfigurator.AddHostedService<RunMigrations>(-1); // Migrations need to run before other hosted services that depend on DB access.
     }
 }
