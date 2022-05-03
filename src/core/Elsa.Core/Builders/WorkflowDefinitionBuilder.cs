@@ -11,6 +11,7 @@ public class WorkflowDefinitionBuilder : IWorkflowDefinitionBuilder
     public int Version { get; private set; } = 1;
     public IActivity? Root { get; private set; }
     public ICollection<Variable> Variables { get; set; } = new List<Variable>();
+    public ICollection<string> Tags { get; set; } = new List<string>();
     public IDictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
     public IDictionary<string, object> ApplicationProperties { get; set; } = new Dictionary<string, object>();
 
@@ -49,6 +50,12 @@ public class WorkflowDefinitionBuilder : IWorkflowDefinitionBuilder
         foreach (var variable in variables) Variables.Add(variable);
         return this;
     }
+    
+    public IWorkflowDefinitionBuilder WithTags(params string[] tags)
+    {
+        foreach (var tag in tags) Tags.Add(tag);
+        return this;
+    }
 
     public IWorkflowDefinitionBuilder WithMetadata(string name, object value)
     {
@@ -70,7 +77,7 @@ public class WorkflowDefinitionBuilder : IWorkflowDefinitionBuilder
         var identity = new WorkflowIdentity(definitionId, Version, id);
         var publication = WorkflowPublication.LatestAndPublished;
         var metadata = new WorkflowMetadata();
-        return new Workflow(identity, publication, metadata, root, Variables, Metadata, ApplicationProperties);
+        return new Workflow(identity, publication, metadata, root, Variables, Tags, Metadata, ApplicationProperties);
     }
 
     public async Task<Workflow> BuildWorkflowAsync(IWorkflow workflowDefinition, CancellationToken cancellationToken = default)
