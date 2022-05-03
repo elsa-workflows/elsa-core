@@ -46,6 +46,7 @@ export class WorkflowEditor {
   private readonly emitActivityChangedDebounced: (e: ActivityPropertyChangedEventArgs) => void;
   private readonly saveChangesDebounced: () => void;
 
+  @State()
   private workflowDefinition: WorkflowDefinition = {
     root: null,
     id: uuid(),
