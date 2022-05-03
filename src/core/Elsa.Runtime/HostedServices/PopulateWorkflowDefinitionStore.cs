@@ -59,7 +59,6 @@ public class PopulateWorkflowDefinitionStore : IHostedService
             existingDefinition.Name = definition.Name;
             existingDefinition.Metadata = definition.Metadata;
             existingDefinition.Variables = definition.Variables;
-            existingDefinition.Tags = definition.Tags;
             existingDefinition.ApplicationProperties = definition.ApplicationProperties;
             existingDefinition.BinaryData = definition.BinaryData;
             existingDefinition.StringData = definition.StringData;

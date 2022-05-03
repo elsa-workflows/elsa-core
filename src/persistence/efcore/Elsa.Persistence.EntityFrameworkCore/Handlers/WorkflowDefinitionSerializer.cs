@@ -20,7 +20,6 @@ public class WorkflowDefinitionSerializer : IEntitySerializer<WorkflowDefinition
         var data = new
         {
             entity.Variables,
-            entity.Tags,
             entity.Metadata,
             entity.ApplicationProperties
         };
@@ -33,7 +32,7 @@ public class WorkflowDefinitionSerializer : IEntitySerializer<WorkflowDefinition
 
     public void Deserialize(ElsaDbContext dbContext, WorkflowDefinition entity)
     {
-        var data = new WorkflowDefinitionState(entity.Variables, entity.Tags, entity.Metadata, entity.ApplicationProperties);
+        var data = new WorkflowDefinitionState(entity.Variables, entity.Metadata, entity.ApplicationProperties);
         var json = (string?) dbContext.Entry(entity).Property("Data").CurrentValue;
 
         if (!string.IsNullOrWhiteSpace(json))
@@ -43,7 +42,6 @@ public class WorkflowDefinitionSerializer : IEntitySerializer<WorkflowDefinition
         }
         
         entity.Variables = data.Variables;
-        entity.Tags = data.Tags;
         entity.Metadata = data.Metadata;
         entity.ApplicationProperties = data.ApplicationProperties;
     }
@@ -55,16 +53,14 @@ public class WorkflowDefinitionSerializer : IEntitySerializer<WorkflowDefinition
         {
         }
 
-        public WorkflowDefinitionState(ICollection<Variable> variables, ICollection<string> tags, IDictionary<string, object> metadata, IDictionary<string, object> applicationProperties)
+        public WorkflowDefinitionState(ICollection<Variable> variables, IDictionary<string, object> metadata, IDictionary<string, object> applicationProperties)
         {
             Variables = variables;
-            Tags = tags;
             Metadata = metadata;
             ApplicationProperties = applicationProperties;
         }
         
         public ICollection<Variable> Variables { get; set; } = new List<Variable>();
-        public ICollection<string> Tags { get; set; } = new List<string>();
         public IDictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
         public IDictionary<string, object> ApplicationProperties { get; set; } = new Dictionary<string, object>();
     }
