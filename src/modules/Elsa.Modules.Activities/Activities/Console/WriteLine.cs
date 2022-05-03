@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using Elsa.Attributes;
 using Elsa.Models;
+using Elsa.Modules.Activities.Providers;
 using Elsa.Modules.Activities.Services;
 
 namespace Elsa.Modules.Activities.Console;
@@ -35,7 +36,7 @@ public class WriteLine : Activity
     protected override void Execute(ActivityExecutionContext context)
     {
         var text = context.Get(Text);
-        var provider = context.GetRequiredService<IStandardOutStreamProvider>();
+        var provider = context.GetService<IStandardOutStreamProvider>() ?? new StandardOutStreamProvider(System.Console.Out);
         var textWriter = provider.GetTextWriter();
         textWriter.WriteLine(text);
     }

@@ -1,15 +1,10 @@
-using System;
-using System.Text.Json;
 using Elsa.Activities;
 using Elsa.Api.Extensions;
 using Elsa.Extensions;
 using Elsa.Jobs.Extensions;
 using Elsa.Management.Extensions;
-using Elsa.Modules.Activities.Configurators;
 using Elsa.Modules.Activities.Console;
 using Elsa.Modules.Activities.Workflows;
-using Elsa.Modules.AzureServiceBus.Activities;
-using Elsa.Modules.AzureServiceBus.Extensions;
 using Elsa.Modules.Hangfire.Implementations;
 using Elsa.Modules.Http;
 using Elsa.Modules.Http.Extensions;
@@ -20,13 +15,10 @@ using Elsa.Modules.Scheduling.Extensions;
 using Elsa.Modules.WorkflowContexts.Extensions;
 using Elsa.Persistence.EntityFrameworkCore.Extensions;
 using Elsa.Persistence.EntityFrameworkCore.Sqlite;
-using Elsa.Pipelines.ActivityExecution;
-using Elsa.Pipelines.ActivityExecution.Components;
+using Elsa.Persistence.Extensions;
 using Elsa.Pipelines.WorkflowExecution.Components;
 using Elsa.Runtime.Extensions;
-using Elsa.Runtime.ProtoActor.Extensions;
 using Elsa.Samples.Web1.Activities;
-using Elsa.Samples.Web1.Models;
 using Elsa.Samples.Web1.Serialization;
 using Elsa.Samples.Web1.Workflows;
 using Elsa.Scripting.JavaScript.Extensions;
@@ -48,15 +40,12 @@ var sqlServerConnectionString = configuration.GetConnectionString("SqlServer");
 
 // Add services.
 services
-    .AddElsa()
-    .AddEntityFrameworkCorePersistence((_, ef) => ef.UseSqlite())
-    .AddProtoActorWorkflowHost()
-    .IndexWorkflowTriggers()
-    .AddElsaManagement()
-    .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider(true))
+    .AddElsa(elsa => elsa.ConfigurePersistence(p => p.UseEntityFrameworkCoreProvider(ef => ef.UseSqlite())))
+    //.AddProtoActorWorkflowHost()
+    .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider())
     .AddSchedulingServices()
     .AddHttpActivityServices()
-    .AddAzureServiceBusServices(options => configuration.GetSection("AzureServiceBus").Bind(options))
+    //.AddAzureServiceBusServices(options => configuration.GetSection("AzureServiceBus").Bind(options))
     .ConfigureWorkflowRuntime(options =>
     {
         // Register workflows.
@@ -92,8 +81,8 @@ services
     .AddActivity<Timer>()
     .AddActivity<ForEach>()
     .AddActivity<Switch>()
-    .AddActivity<SendMessage>()
-    .AddActivity<MessageReceived>()
+    //.AddActivity<SendMessage>()
+    //.AddActivity<MessageReceived>()
     .AddActivity<RunJavaScript>()
     ;
 
@@ -116,11 +105,6 @@ wellKnownTypeRegistry.RegisterType<int>("int");
 wellKnownTypeRegistry.RegisterType<float>("float");
 wellKnownTypeRegistry.RegisterType<bool>("boolean");
 wellKnownTypeRegistry.RegisterType<string>("string");
-
-var order = new Order("order-1", 1, "customer-1", new[] { new OrderItem("product-i1", 2) });
-var serializationOptions = serviceProvider.GetRequiredService<WorkflowSerializerOptionsProvider>().CreatePersistenceOptions();
-var json = JsonSerializer.Serialize(order, serializationOptions);
-Console.WriteLine(json);
 
 // Configure workflow engine execution pipeline.
 serviceProvider.ConfigureDefaultWorkflowExecutionPipeline(pipeline =>

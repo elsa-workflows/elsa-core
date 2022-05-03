@@ -9,7 +9,7 @@ public class ExpressionHandlerRegistry : IExpressionHandlerRegistry
 {
     private readonly IServiceProvider _serviceProvider;
 
-    public ExpressionHandlerRegistry(IOptions<WorkflowEngineOptions> options, IServiceProvider serviceProvider)
+    public ExpressionHandlerRegistry(IOptions<ElsaOptions> options, IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
         Dictionary = new Dictionary<Type, Type>(options.Value.ExpressionHandlers);

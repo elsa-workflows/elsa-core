@@ -31,6 +31,15 @@ public class ActivitySchedulerMiddleware : WorkflowExecutionMiddleware
             await currentWorkItem.Execute();
         }
 
+        // If there are no bookmarks and all activities are completed, complete the workflow.
+        if (context.Status == WorkflowStatus.Running)
+        {
+            if (!context.Bookmarks.Any())
+            {
+                context.TransitionTo(WorkflowSubStatus.Finished);
+            }
+        }
+
         // Invoke next middleware.
         await Next(context);
     }

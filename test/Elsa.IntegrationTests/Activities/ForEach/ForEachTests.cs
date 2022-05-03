@@ -24,7 +24,7 @@ public class ForEachTests
     public async Task Test1()
     {
         var items = new[] { "C#", "Rust", "Go"};
-        var workflow = new WorkflowDefinitionBuilder().BuildWorkflow(new ForEachWorkflow(items));
+        var workflow = await new WorkflowDefinitionBuilder().BuildWorkflowAsync(new ForEachWorkflow(items));
         await _workflowRunner.RunAsync(workflow);
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(items, lines);

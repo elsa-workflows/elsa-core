@@ -1,6 +1,0 @@
-using Elsa.Mediator.Services;
-using Elsa.Models;
-
-namespace Elsa.Persistence.Requests;
-
-public record FindLatestAndPublishedWorkflows(string DefinitionId) : IRequest<IEnumerable<Workflow>>;

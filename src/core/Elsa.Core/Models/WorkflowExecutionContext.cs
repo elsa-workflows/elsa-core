@@ -18,7 +18,7 @@ public class WorkflowExecutionContext
     public WorkflowExecutionContext(
         IServiceProvider serviceProvider,
         string id,
-        string correlationId,
+        string? correlationId,
         Workflow workflow,
         ActivityNode graph,
         IActivityScheduler scheduler,
@@ -82,6 +82,10 @@ public class WorkflowExecutionContext
 
     public T GetRequiredService<T>() where T : notnull => _serviceProvider.GetRequiredService<T>();
     public object GetRequiredService(Type serviceType) => _serviceProvider.GetRequiredService(serviceType);
+    public T GetOrCreateService<T>() where T : notnull => ActivatorUtilities.GetServiceOrCreateInstance<T>(_serviceProvider);
+    public object GetOrCreateService(Type serviceType) => ActivatorUtilities.GetServiceOrCreateInstance(_serviceProvider, serviceType);
+    public T? GetService<T>() where T : notnull => _serviceProvider.GetService<T>();
+    public object? GetService(Type serviceType) => _serviceProvider.GetService(serviceType);
 
     public void AddCompletionCallback(ActivityExecutionContext owner, IActivity child, ActivityCompletionCallback completionCallback)
     {

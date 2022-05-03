@@ -4,9 +4,9 @@ using Elsa.Services;
 
 namespace Elsa.IntegrationTests.Activities;
 
-class NestedSequentialWorkflow : IWorkflow
+class NestedSequentialWorkflow : WorkflowBase
 {
-    public void Build(IWorkflowDefinitionBuilder workflow)
+    protected override void Build(IWorkflowDefinitionBuilder workflow)
     {
         workflow.WithRoot(new Sequence
         {

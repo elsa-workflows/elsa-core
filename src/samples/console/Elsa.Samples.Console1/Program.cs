@@ -1,9 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Extensions;
 using Elsa.Models;
+using Elsa.Modules.Activities.Extensions;
+using Elsa.Modules.Activities.Options;
+using Elsa.Modules.Activities.Providers;
+using Elsa.Modules.Activities.Services;
 using Elsa.Persistence.InMemory.Extensions;
 using Elsa.Pipelines.ActivityExecution.Components;
 using Elsa.Pipelines.WorkflowExecution.Components;
@@ -88,10 +94,22 @@ class Program
         var services = new ServiceCollection();
 
         services
-            .AddElsa()
-            .AddInMemoryPersistence()
+            .AddElsa(elsa => elsa.Configure<ActivityOptions>()
+                .WithStandardOutStreamProvider(sp => new CustomOutStreamProvider(Console.Out)))
             .AddLogging(logging => logging.AddConsole().SetMinimumLevel(LogLevel.Warning));
 
         return services.BuildServiceProvider();
     }
+}
+
+public class CustomOutStreamProvider : IStandardOutStreamProvider
+{
+    private readonly TextWriter _textWriter;
+
+    public CustomOutStreamProvider(TextWriter textWriter)
+    {
+        _textWriter = textWriter;
+    }
+
+    public TextWriter GetTextWriter() => _textWriter;
 }

@@ -5,9 +5,9 @@ using Elsa.Services;
 
 namespace Elsa.IntegrationTests.Activities;
 
-class NestedForEachWithBreakWorkflow : IWorkflow
+class NestedForEachWithBreakWorkflow : WorkflowBase
 {
-    public void Build(IWorkflowDefinitionBuilder workflow)
+    protected override void Build(IWorkflowDefinitionBuilder workflow)
     {
         var outerItems = new[] { "C#", "Rust", "Go" };
         var innerItems = new[] { "Classes", "Functions", "Modules" };

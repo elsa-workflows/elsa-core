@@ -2,10 +2,10 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Mediator.Services;
+using Elsa.Helpers;
 using Elsa.Modules.Scheduling.Activities;
 using Elsa.Modules.Scheduling.Services;
-using Elsa.Persistence.Requests;
+using Elsa.Persistence.Services;
 using Microsoft.Extensions.Hosting;
 
 namespace Elsa.Modules.Scheduling.HostedServices;
@@ -15,12 +15,12 @@ namespace Elsa.Modules.Scheduling.HostedServices;
 /// </summary>
 public class ScheduleWorkflows : BackgroundService
 {
-    private readonly IRequestSender _requestSender;
+    private readonly IWorkflowBookmarkStore _bookmarkStore;
     private readonly IWorkflowBookmarkScheduler _workflowBookmarkScheduler;
 
-    public ScheduleWorkflows(IRequestSender requestSender, IWorkflowBookmarkScheduler workflowBookmarkScheduler)
+    public ScheduleWorkflows(IWorkflowBookmarkStore bookmarkStore, IWorkflowBookmarkScheduler workflowBookmarkScheduler)
     {
-        _requestSender = requestSender;
+        _bookmarkStore = bookmarkStore;
         _workflowBookmarkScheduler = workflowBookmarkScheduler;
     }
 
@@ -31,7 +31,7 @@ public class ScheduleWorkflows : BackgroundService
 
     private async Task ScheduleBookmarksAsync(CancellationToken cancellationToken)
     {
-        var workflowBookmarks = (await _requestSender.RequestAsync(FindWorkflowBookmarks.ForActivity<Delay>(), cancellationToken)).ToImmutableList();
+        var workflowBookmarks = (await _bookmarkStore.FindManyAsync(ActivityTypeNameHelper.GenerateTypeName<Delay>(), cancellationToken: cancellationToken)).ToImmutableList();
         var groupedBookmarks = workflowBookmarks.GroupBy(x => x.WorkflowInstanceId);
 
         foreach (var bookmarksGroup in groupedBookmarks)

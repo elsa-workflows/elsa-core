@@ -13,7 +13,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\persistence\Elsa.Persistence.Abstractions\Elsa.Persistence.Abstractions.csproj" />
+      <ProjectReference Include="..\..\core\Elsa.Persistence.Abstractions\Elsa.Persistence.Abstractions.csproj" />
     </ItemGroup>
 
 </Project>

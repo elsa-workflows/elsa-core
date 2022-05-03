@@ -6,9 +6,9 @@ using Elsa.Services;
 
 namespace Elsa.Samples.Web1.Workflows;
 
-public class RunJavaScriptWorkflow : IWorkflow
+public class RunJavaScriptWorkflow : WorkflowBase
 {
-    public void Build(IWorkflowDefinitionBuilder workflow)
+    protected override void Build(IWorkflowDefinitionBuilder workflow)
     {
         var scriptResult = new Variable();
 

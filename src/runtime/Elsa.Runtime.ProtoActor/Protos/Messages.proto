@@ -18,11 +18,25 @@ message ExecuteWorkflowDefinitionResponse {
   repeated Bookmark bookmarks = 2;
 }
 
-message ExecuteWorkflowInstanceRequest {
-  string id = 1;
+message ExecuteExistingWorkflowInstanceRequest {
+  string instanceId = 1;
   optional Bookmark bookmark = 2;
   optional Input input = 3;
+}
+
+message ExecuteNewWorkflowInstanceRequest {
+  string definitionId = 1;
+  string versionOptions = 2;
+  optional Input input = 3;
   optional string CorrelationId = 4;
+}
+
+message ExecuteWorkflowRequest {
+  string definitionId = 1;
+  string versionOptions = 2;
+  string workflowState = 3;
+  optional Bookmark bookmark = 4;
+  optional Input input = 5;
 }
 
 message ExecuteWorkflowInstanceResponse {

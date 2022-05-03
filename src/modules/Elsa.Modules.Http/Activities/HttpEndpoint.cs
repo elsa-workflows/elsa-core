@@ -9,7 +9,7 @@ using Elsa.Modules.Http.Models;
 
 namespace Elsa.Modules.Http;
 
-[Activity("Elsa", "HTTP", "Waits for an inbound HTTP request that matches the specified path and methods")]
+[Activity("Elsa", "HTTP", "Wait for an inbound HTTP request that matches the specified path and methods.")]
 public class HttpEndpoint : Trigger<HttpRequestModel>
 {
     public const string InputKey = "HttpRequest";
@@ -47,7 +47,7 @@ public class HttpEndpoint : Trigger<HttpRequestModel>
 
     protected override void Execute(ActivityExecutionContext context)
     {
-        // If we did not receive external input, it means we are just now encountering this activity.
+        // If we did not receive external input, it means we are just now encountering this activity and we need to block execution by creating a bookmark.
         if (!context.TryGetInput<HttpRequestModel>(InputKey, out var request))
         {
             // Create bookmarks for when we receive the expected HTTP request.

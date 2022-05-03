@@ -5,7 +5,7 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
-import { ActionDefinition, ActionInvokedArgs, Activity, ActivityDescriptor, ActivitySelectedArgs, ContainerSelectedArgs, GraphUpdatedArgs, IntellisenseContext, SelectListItem, TabChangedArgs, TabDefinition, Workflow, WorkflowInstance, WorkflowInstanceSummary, WorkflowSummary } from "./models";
+import { ActionDefinition, ActionInvokedArgs, Activity, ActivityDescriptor, ActivitySelectedArgs, ContainerSelectedArgs, GraphUpdatedArgs, IntellisenseContext, SelectListItem, TabChangedArgs, TabDefinition, WorkflowDefinition, WorkflowDefinitionSummary, WorkflowInstance, WorkflowInstanceSummary } from "./models";
 import { ActivityUpdatedArgs, DeleteActivityRequestedArgs } from "./components/designer/activity-properties-editor/activity-properties-editor";
 import { ContainerActivityComponent } from "./components/activities/container-activity-component";
 import { AddActivityArgs } from "./components/designer/canvas/canvas";
@@ -159,16 +159,16 @@ export namespace Components {
         "activityDescriptors": Array<ActivityDescriptor>;
         "graph": Graph;
     }
-    interface ElsaWorkflowBrowser {
+    interface ElsaWorkflowDefinitionBrowser {
         "hide": () => Promise<void>;
         "show": () => Promise<void>;
     }
     interface ElsaWorkflowEditor {
         "activityDescriptors": Array<ActivityDescriptor>;
         "getCanvas": () => Promise<HTMLElsaCanvasElement>;
-        "getWorkflow": () => Promise<Workflow>;
-        "importWorkflow": (workflow: Workflow, workflowInstance?: WorkflowInstance) => Promise<void>;
-        "importWorkflowMetadata": (workflow: Workflow) => Promise<void>;
+        "getWorkflow": () => Promise<WorkflowDefinition>;
+        "importWorkflow": (workflow: WorkflowDefinition, workflowInstance?: WorkflowInstance) => Promise<void>;
+        "importWorkflowMetadata": (workflow: WorkflowDefinition) => Promise<void>;
         "monacoLibPath": string;
         "registerActivityDrivers": (register: (registry: ActivityDriverRegistry) => void) => Promise<void>;
     }
@@ -179,7 +179,7 @@ export namespace Components {
     interface ElsaWorkflowPropertiesEditor {
         "hide": () => Promise<void>;
         "show": () => Promise<void>;
-        "workflow"?: Workflow;
+        "workflow"?: WorkflowDefinition;
     }
     interface ElsaWorkflowPublishButton {
         "publishing": boolean;
@@ -340,11 +340,11 @@ declare global {
         prototype: HTMLElsaToolboxActivitiesElement;
         new (): HTMLElsaToolboxActivitiesElement;
     };
-    interface HTMLElsaWorkflowBrowserElement extends Components.ElsaWorkflowBrowser, HTMLStencilElement {
+    interface HTMLElsaWorkflowDefinitionBrowserElement extends Components.ElsaWorkflowDefinitionBrowser, HTMLStencilElement {
     }
-    var HTMLElsaWorkflowBrowserElement: {
-        prototype: HTMLElsaWorkflowBrowserElement;
-        new (): HTMLElsaWorkflowBrowserElement;
+    var HTMLElsaWorkflowDefinitionBrowserElement: {
+        prototype: HTMLElsaWorkflowDefinitionBrowserElement;
+        new (): HTMLElsaWorkflowDefinitionBrowserElement;
     };
     interface HTMLElsaWorkflowEditorElement extends Components.ElsaWorkflowEditor, HTMLStencilElement {
     }
@@ -408,7 +408,7 @@ declare global {
         "elsa-switch-editor": HTMLElsaSwitchEditorElement;
         "elsa-toolbox": HTMLElsaToolboxElement;
         "elsa-toolbox-activities": HTMLElsaToolboxActivitiesElement;
-        "elsa-workflow-browser": HTMLElsaWorkflowBrowserElement;
+        "elsa-workflow-definition-browser": HTMLElsaWorkflowDefinitionBrowserElement;
         "elsa-workflow-editor": HTMLElsaWorkflowEditorElement;
         "elsa-workflow-instance-browser": HTMLElsaWorkflowInstanceBrowserElement;
         "elsa-workflow-properties-editor": HTMLElsaWorkflowPropertiesEditorElement;
@@ -556,8 +556,8 @@ declare namespace LocalJSX {
         "activityDescriptors"?: Array<ActivityDescriptor>;
         "graph"?: Graph;
     }
-    interface ElsaWorkflowBrowser {
-        "onWorkflowDefinitionSelected"?: (event: CustomEvent<WorkflowSummary>) => void;
+    interface ElsaWorkflowDefinitionBrowser {
+        "onWorkflowDefinitionSelected"?: (event: CustomEvent<WorkflowDefinitionSummary>) => void;
     }
     interface ElsaWorkflowEditor {
         "activityDescriptors"?: Array<ActivityDescriptor>;
@@ -569,7 +569,7 @@ declare namespace LocalJSX {
     }
     interface ElsaWorkflowPropertiesEditor {
         "onWorkflowPropsUpdated"?: (event: CustomEvent<WorkflowPropsUpdatedArgs>) => void;
-        "workflow"?: Workflow;
+        "workflow"?: WorkflowDefinition;
     }
     interface ElsaWorkflowPublishButton {
         "onExportClicked"?: (event: CustomEvent<any>) => void;
@@ -609,7 +609,7 @@ declare namespace LocalJSX {
         "elsa-switch-editor": ElsaSwitchEditor;
         "elsa-toolbox": ElsaToolbox;
         "elsa-toolbox-activities": ElsaToolboxActivities;
-        "elsa-workflow-browser": ElsaWorkflowBrowser;
+        "elsa-workflow-definition-browser": ElsaWorkflowDefinitionBrowser;
         "elsa-workflow-editor": ElsaWorkflowEditor;
         "elsa-workflow-instance-browser": ElsaWorkflowInstanceBrowser;
         "elsa-workflow-properties-editor": ElsaWorkflowPropertiesEditor;
@@ -647,7 +647,7 @@ declare module "@stencil/core" {
             "elsa-switch-editor": LocalJSX.ElsaSwitchEditor & JSXBase.HTMLAttributes<HTMLElsaSwitchEditorElement>;
             "elsa-toolbox": LocalJSX.ElsaToolbox & JSXBase.HTMLAttributes<HTMLElsaToolboxElement>;
             "elsa-toolbox-activities": LocalJSX.ElsaToolboxActivities & JSXBase.HTMLAttributes<HTMLElsaToolboxActivitiesElement>;
-            "elsa-workflow-browser": LocalJSX.ElsaWorkflowBrowser & JSXBase.HTMLAttributes<HTMLElsaWorkflowBrowserElement>;
+            "elsa-workflow-definition-browser": LocalJSX.ElsaWorkflowDefinitionBrowser & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionBrowserElement>;
             "elsa-workflow-editor": LocalJSX.ElsaWorkflowEditor & JSXBase.HTMLAttributes<HTMLElsaWorkflowEditorElement>;
             "elsa-workflow-instance-browser": LocalJSX.ElsaWorkflowInstanceBrowser & JSXBase.HTMLAttributes<HTMLElsaWorkflowInstanceBrowserElement>;
             "elsa-workflow-properties-editor": LocalJSX.ElsaWorkflowPropertiesEditor & JSXBase.HTMLAttributes<HTMLElsaWorkflowPropertiesEditorElement>;

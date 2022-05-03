@@ -138,6 +138,10 @@ public class ActivityExecutionContext
 
     public T GetRequiredService<T>() where T : notnull => WorkflowExecutionContext.GetRequiredService<T>();
     public object GetRequiredService(Type serviceType) => WorkflowExecutionContext.GetRequiredService(serviceType);
+    public T GetOrCreateService<T>() where T : notnull => WorkflowExecutionContext.GetOrCreateService<T>();
+    public object GetOrCreateService(Type serviceType) => WorkflowExecutionContext.GetOrCreateService(serviceType);
+    public T? GetService<T>() where T : notnull => WorkflowExecutionContext.GetService<T>();
+    public object? GetService(Type serviceType) => WorkflowExecutionContext.GetService(serviceType);
     public T? Get<T>(Input<T>? input) => input == null ? default : Get<T>(input.LocationReference);
 
     public object? Get(RegisterLocationReference locationReference)

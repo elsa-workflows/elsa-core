@@ -6,9 +6,9 @@ using Elsa.Services;
 
 namespace Elsa.Samples.Web1.Workflows;
 
-public class CompositeActivitiesWorkflow : IWorkflow
+public class CompositeActivitiesWorkflow : WorkflowBase
 {
-    public void Build(IWorkflowDefinitionBuilder workflow)
+    protected override void Build(IWorkflowDefinitionBuilder workflow)
     {
         var name = new Variable<string?>();
 
@@ -17,10 +17,7 @@ public class CompositeActivitiesWorkflow : IWorkflow
             Variables = { name },
             Activities =
             {
-                new MyGreeterComposite
-                {
-                    Name = new Output<string?>(name)
-                },
+                new MyGreeterComposite().CaptureOutput(x => x.Name, name),
                 new WriteLine(context => $"Captured name: {name.Get(context)}")
             }
         });

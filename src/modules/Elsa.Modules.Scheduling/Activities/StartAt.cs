@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Elsa.Attributes;
 using Elsa.Models;
@@ -11,6 +10,8 @@ namespace Elsa.Modules.Scheduling.Activities;
 [Activity("Elsa", "Scheduling", "Trigger execution at a specific time in the future.")]
 public class StartAt : Trigger
 {
+    public const string InputKey = "ExecuteAt";
+    
     public StartAt()
     {
     }
@@ -46,6 +47,11 @@ public class StartAt : Trigger
 
     protected override void Execute(ActivityExecutionContext context)
     {
+        // If external input was received, it means this activity got triggered and does not need to create a bookmark.
+        if (context.TryGetInput<DateTimeOffset>(InputKey, out _)) 
+            return;
+        
+        // No external input received, so create a bookmark.
         var executeAt = context.ExpressionExecutionContext.Get(DateTime);
         var clock = context.ExpressionExecutionContext.GetRequiredService<ISystemClock>();
         var now = clock.UtcNow;

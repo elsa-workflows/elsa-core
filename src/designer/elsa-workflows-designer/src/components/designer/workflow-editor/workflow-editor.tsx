@@ -12,7 +12,7 @@ import {
   EventTypes,
   GraphUpdatedArgs,
   Trigger,
-  Workflow,
+  WorkflowDefinition,
   WorkflowInstance
 } from '../../../models';
 import WorkflowEditorTunnel, {WorkflowDesignerState} from '../state';
@@ -26,7 +26,7 @@ import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
 import {PluginRegistry} from "../../../services/plugin-registry";
 
 export interface WorkflowUpdatedArgs {
-  workflow: Workflow;
+  workflow: WorkflowDefinition;
 }
 
 @Component({
@@ -45,13 +45,14 @@ export class WorkflowEditor {
   private deleteTrigger: (trigger: Trigger) => void;
   private readonly emitActivityChangedDebounced: (e: ActivityPropertyChangedEventArgs) => void;
   private readonly saveChangesDebounced: () => void;
- 
-  @State()
-  private workflow: Workflow = {
+
+  private workflowDefinition: WorkflowDefinition = {
     root: null,
-    identity: {id: uuid(), definitionId: uuid(), version: 1},
-    publication: {isLatest: true, isPublished: false},
-    metadata: {}
+    id: uuid(),
+    definitionId: uuid(),
+    version: 1,
+    isLatest: true,
+    isPublished: false,
   };
 
   private workflowInstance?: WorkflowInstance;
@@ -119,25 +120,25 @@ export class WorkflowEditor {
   }
 
   @Method()
-  public getWorkflow(): Promise<Workflow> {
+  public getWorkflow(): Promise<WorkflowDefinition> {
     return this.getWorkflowInternal();
   }
 
   @Method()
-  public async importWorkflow(workflow: Workflow, workflowInstance?: WorkflowInstance): Promise<void> {
+  public async importWorkflow(workflow: WorkflowDefinition, workflowInstance?: WorkflowInstance): Promise<void> {
     this.workflowInstance = workflowInstance;
     await this.importWorkflowMetadata(workflow);
     await this.canvas.importGraph(workflow.root);
   }
 
   @Method()
-  public async importWorkflowMetadata(workflow: Workflow): Promise<void> {
-    this.workflow = workflow;
+  public async importWorkflowMetadata(workflow: WorkflowDefinition): Promise<void> {
+    this.workflowDefinition = workflow;
   }
 
   public render() {
     const tunnelState: WorkflowDesignerState = {
-      workflow: this.workflow,
+      workflow: this.workflowDefinition,
       activityDescriptors: this.activityDescriptors,
     };
 
@@ -179,13 +180,13 @@ export class WorkflowEditor {
         onDeleteActivityRequested={e => this.onDeleteActivityRequested(e)}/>
 
     return <elsa-workflow-properties-editor
-      workflow={this.workflow}
+      workflow={this.workflowDefinition}
       onWorkflowPropsUpdated={e => this.onWorkflowPropsUpdated(e)}/>;
   }
 
-  private getWorkflowInternal = async (): Promise<Workflow> => {
+  private getWorkflowInternal = async (): Promise<WorkflowDefinition> => {
     const root = await this.canvas.exportGraph();
-    const workflow = this.workflow;
+    const workflow = this.workflowDefinition;
     workflow.root = root;
     return workflow;
   };

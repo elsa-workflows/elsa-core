@@ -25,7 +25,7 @@ public class MyGreeterComposite : Composite
     }
 
     [Input] public Input<string> Prompt { get; set; } = new("Hello! What's your name?");
-    [Output] public Output<string?>? Name { get; set; }
+    [Output] public Output<string?> Name { get; } = new();
 
     protected override ValueTask OnCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext)
     {
