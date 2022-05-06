@@ -9,6 +9,7 @@ using Elsa.Persistence.Specifications;
 using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Serialization;
 using Elsa.Server.Api.Models;
+using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -28,14 +29,16 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
         private readonly IContentSerializer _contentSerializer;
         private readonly ILogger _logger;
         private readonly Stopwatch _stopwatch;
+        private readonly ITenantAccessor _tenantAccessor;
 
-        public List(IWorkflowInstanceStore workflowInstanceStore, IMapper mapper, IContentSerializer contentSerializer, ILogger<List> logger)
+        public List(IWorkflowInstanceStore workflowInstanceStore, IMapper mapper, IContentSerializer contentSerializer, ILogger<List> logger, ITenantAccessor tenantAccessor)
         {
             _workflowInstanceStore = workflowInstanceStore;
             _mapper = mapper;
             _contentSerializer = contentSerializer;
             _logger = logger;
             _stopwatch = new Stopwatch();
+            _tenantAccessor = tenantAccessor;
         }
 
         [HttpGet]
@@ -70,6 +73,9 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
             
             if (!string.IsNullOrWhiteSpace(searchTerm)) 
                 specification = specification.WithSearchTerm(searchTerm);
+
+            var tenantId = await _tenantAccessor.GetTenantIdAsync(cancellationToken);
+            specification = specification.And(new TenantSpecification<WorkflowInstance>(tenantId));
 
             var orderBySpecification = default(OrderBy<WorkflowInstance>);
             

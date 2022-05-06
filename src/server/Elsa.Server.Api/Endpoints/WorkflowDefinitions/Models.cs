@@ -1,10 +1,11 @@
-﻿using Elsa.Models;
+using Elsa.Models;
 
 namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
 {
     public record WorkflowDefinitionSummaryModel(
         string Id,
         string DefinitionId,
+        string? TenantId,
         string? Name,
         string? DisplayName,
         string? Description,
