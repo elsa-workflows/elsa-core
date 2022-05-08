@@ -2,16 +2,32 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities;
+using Elsa.AspNetCore;
 using Elsa.Management.Materializers;
 using Elsa.Management.Services;
+using Elsa.Persistence.Entities;
 using Elsa.Serialization;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Elsa.Api.Endpoints.WorkflowDefinitions;
 
-public static partial class WorkflowDefinitions
+[Area(AreaNames.Elsa)]
+[ApiEndpoint(ControllerNames.WorkflowDefinitions, "Post")]
+[ProducesResponseType(typeof(WorkflowDefinition), StatusCodes.Status200OK)]
+[ProducesResponseType(typeof(WorkflowDefinition), StatusCodes.Status201Created)]
+public class Post : Controller
 {
+    private readonly WorkflowSerializerOptionsProvider _serializerOptionsProvider;
+    private readonly IWorkflowPublisher _workflowPublisher;
+
+    public Post(WorkflowSerializerOptionsProvider serializerOptionsProvider, IWorkflowPublisher workflowPublisher)
+    {
+        _serializerOptionsProvider = serializerOptionsProvider;
+        _workflowPublisher = workflowPublisher;
+    }
+
     public record SaveWorkflowDefinitionRequest(
         string? DefinitionId,
         string? Name,
@@ -19,19 +35,16 @@ public static partial class WorkflowDefinitions
         IActivity? Root,
         bool Publish);
 
-    public static async Task<IResult> PostAsync(
-        HttpContext httpContext,
-        WorkflowSerializerOptionsProvider serializerOptionsProvider,
-        IWorkflowPublisher workflowPublisher,
-        CancellationToken cancellationToken)
+    [HttpPost]
+    public async Task<IActionResult> HandleAsync(CancellationToken cancellationToken)
     {
-        var serializerOptions = serializerOptionsProvider.CreateApiOptions();
-        var model = (await httpContext.Request.ReadFromJsonAsync<SaveWorkflowDefinitionRequest>(serializerOptions, cancellationToken))!;
+        var serializerOptions = _serializerOptionsProvider.CreateApiOptions();
+        var model = (await Request.ReadFromJsonAsync<SaveWorkflowDefinitionRequest>(serializerOptions, cancellationToken))!;
         var definitionId = model.DefinitionId;
 
         // Get a workflow draft version.
         var draft = !string.IsNullOrWhiteSpace(definitionId)
-            ? await workflowPublisher.GetDraftAsync(definitionId, cancellationToken)
+            ? await _workflowPublisher.GetDraftAsync(definitionId, cancellationToken)
             : default;
 
         var isNew = draft == null;
@@ -39,7 +52,7 @@ public static partial class WorkflowDefinitions
         // Create a new workflow in case no existing definition was found.
         if (draft == null)
         {
-            draft = workflowPublisher.New();
+            draft = _workflowPublisher.New();
 
             if (!string.IsNullOrWhiteSpace(definitionId))
                 draft.DefinitionId = definitionId;
@@ -53,9 +66,11 @@ public static partial class WorkflowDefinitions
         draft.MaterializerName = ClrWorkflowMaterializer.MaterializerName;
         draft.Name = model.Name?.Trim();
         draft.Description = model.Description?.Trim();
-        draft = model.Publish ? await workflowPublisher.PublishAsync(draft, cancellationToken) : await workflowPublisher.SaveDraftAsync(draft, cancellationToken);
-        
-        var statusCode = isNew ? StatusCodes.Status201Created : StatusCodes.Status200OK;
-        return Results.Json(draft, serializerOptions, statusCode: statusCode);
+        draft = model.Publish ? await _workflowPublisher.PublishAsync(draft, cancellationToken) : await _workflowPublisher.SaveDraftAsync(draft, cancellationToken);
+
+        var result = Json(draft, serializerOptions);
+        result.StatusCode = isNew ? StatusCodes.Status201Created : StatusCodes.Status200OK;
+
+        return result;
     }
 }

@@ -1,16 +1,35 @@
-using Elsa.Api.Endpoints.ActivityDescriptors;
-using Elsa.Api.Endpoints.Events;
-using Elsa.Api.Endpoints.WorkflowDefinitions;
-using Elsa.Api.Endpoints.WorkflowInstances;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
 
 namespace Elsa.Api.Extensions;
 
 public static class EndpointRouteBuilderExtensions
 {
-    public static IEndpointRouteBuilder MapElsaApiEndpoints(this IEndpointRouteBuilder endpoints) => endpoints
-        .MapWorkflows()
-        .MapWorkflowInstances()
-        .MapActivityDescriptors()
-        .MapEvents();
+    /// <summary>
+    /// Maps default routes for Elsa API endpoints.
+    /// </summary>
+    public static IEndpointRouteBuilder MapElsaApiEndpoints(this IEndpointRouteBuilder endpoints, string basePattern = "elsa/api")
+    {
+        void Map(string routeName, string pattern, object defaults) => endpoints.MapAreaControllerRoute($"Elsa.{routeName}", AreaNames.Elsa, $"{basePattern}/{pattern}", defaults);
+
+        // Activity Descriptors.
+        Map("ActivityDescriptors.List", "descriptors/activities", new { Controller = ControllerNames.ActivityDescriptors, Action = "List" });
+        
+        // Events.
+        Map("Events.Trigger", "events/{eventName}/trigger", new { Controller = ControllerNames.Events, Action = "Trigger" });
+        
+        // Workflow Definitions.
+        Map("WorkflowDefinitions.Post", "workflow-definitions", new { Controller = ControllerNames.WorkflowDefinitions, Action = "Post" });
+        Map("WorkflowDefinitions.List", "workflow-definitions", new { Controller = ControllerNames.WorkflowDefinitions, Action = "List" });
+        Map("WorkflowDefinitions.Get", "workflow-definitions/{definitionId}", new { Controller = ControllerNames.WorkflowDefinitions, Action = "Get" });
+        Map("WorkflowDefinitions.Delete", "workflow-definitions/{definitionId}", new { Controller = ControllerNames.WorkflowDefinitions, Action = "Delete" });
+        Map("WorkflowDefinitions.Publish", "workflow-definitions/{definitionId}/publish", new { Controller = ControllerNames.WorkflowDefinitions, Action = "Publish" });
+        Map("WorkflowDefinitions.Retract", "workflow-definitions/{definitionId}/retract", new { Controller = ControllerNames.WorkflowDefinitions, Action = "Retract" });
+        Map("WorkflowDefinitions.Dispatch", "workflow-definitions/{definitionId}/dispatch", new { Controller = ControllerNames.WorkflowDefinitions, Action = "Dispatch" });
+        Map("WorkflowDefinitions.Execute", "workflow-definitions/{definitionId}/execute", new { Controller = ControllerNames.WorkflowDefinitions, Action = "Execute" });
+
+        // Workflow Instances.
+
+        return endpoints;
+    }
 }

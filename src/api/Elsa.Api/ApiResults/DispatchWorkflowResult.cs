@@ -5,11 +5,12 @@ using Elsa.Persistence.Models;
 using Elsa.Runtime.Models;
 using Elsa.Runtime.Services;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Api.ApiResults;
 
-public class DispatchWorkflowResult : IResult
+public class DispatchWorkflowResult : IActionResult
 {
     public DispatchWorkflowResult(Workflow workflow, string? correlationId = default)
     {
@@ -20,8 +21,9 @@ public class DispatchWorkflowResult : IResult
     public Workflow Workflow { get; }
     public string? CorrelationId { get; set; }
 
-    public async Task ExecuteAsync(HttpContext httpContext)
+    public async Task ExecuteResultAsync(ActionContext context)
     {
+        var httpContext = context.HttpContext;
         var response = httpContext.Response;
         var workflowDispatcher = httpContext.RequestServices.GetRequiredService<IWorkflowDispatcher>();
         var definitionId = Workflow.Identity.DefinitionId;

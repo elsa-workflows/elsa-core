@@ -11,6 +11,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\core\Elsa.AspNetCore\Elsa.AspNetCore.csproj" />
         <ProjectReference Include="..\..\core\Elsa.Management\Elsa.Management.csproj" />
         <ProjectReference Include="..\..\core\Elsa.Runtime\Elsa.Runtime.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Modules.Activities\Elsa.Modules.Activities.csproj" />

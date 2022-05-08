@@ -1,17 +1,27 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Api.ApiResults;
+using Elsa.AspNetCore;
+using Elsa.Models;
 using Elsa.Persistence.Models;
 using Elsa.Runtime.Services;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Elsa.Api.Endpoints.WorkflowDefinitions;
 
-public static partial class WorkflowDefinitions
+[Area(AreaNames.Elsa)]
+[ApiEndpoint(ControllerNames.WorkflowDefinitions, "Execute")]
+[ProducesResponseType(typeof(InvokeWorkflowResult), StatusCodes.Status200OK)]
+public class Execute : Controller
 {
-    public static async Task<IResult> ExecuteAsync(string definitionId, IWorkflowRegistry workflowRegistry, HttpResponse response, CancellationToken cancellationToken)
+    private readonly IWorkflowRegistry _workflowRegistry;
+    public Execute(IWorkflowRegistry workflowRegistry) => _workflowRegistry = workflowRegistry;
+
+    [HttpPost]
+    public async Task<IActionResult> ExecuteAsync(string definitionId, CancellationToken cancellationToken)
     {
-        var workflow = await workflowRegistry.FindByDefinitionIdAsync(definitionId, VersionOptions.Published, cancellationToken);
-        return workflow == null ? Results.NotFound() : new ExecuteWorkflowResult(workflow);
+        var workflow = await _workflowRegistry.FindByDefinitionIdAsync(definitionId, VersionOptions.Published, cancellationToken);
+        return workflow == null ? NotFound() : new ExecuteWorkflowResult(workflow);
     }
 }

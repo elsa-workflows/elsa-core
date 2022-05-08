@@ -1,5 +1,7 @@
 using Elsa.Activities;
+using Elsa.Api.Endpoints.ActivityDescriptors;
 using Elsa.Api.Extensions;
+using Elsa.AspNetCore;
 using Elsa.Extensions;
 using Elsa.Jobs.Extensions;
 using Elsa.Management.Extensions;
@@ -26,6 +28,7 @@ using Elsa.Scripting.Liquid.Extensions;
 using Elsa.Serialization;
 using Elsa.Services;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -38,7 +41,7 @@ var configuration = builder.Configuration;
 // Run the SqlServer container from docker-compose.yml to start a SQL Server container.
 var sqlServerConnectionString = configuration.GetConnectionString("SqlServer");
 
-// Add services.
+// Add Elsa services.
 services
     .AddElsa(elsa => elsa.ConfigurePersistence(p => p.UseEntityFrameworkCoreProvider(ef => ef.UseSqlite())))
     //.AddProtoActorWorkflowHost()
@@ -64,6 +67,14 @@ services
         options.Workflows.Add<StartAtTriggerWorkflow>();
         options.Workflows.Add<StartAtBookmarkWorkflow>();
     });
+
+// Add controller services.
+services
+    .AddControllers(mvc => mvc.Conventions.Add(new ApiEndpointAttributeConvention()))
+    .ClearApplicationParts()
+    .AddApplicationPartsFrom<Program>()
+    .AddElsaApiControllers()
+    ;
 
 // Testing only: allow client app to connect from anywhere.
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
@@ -126,7 +137,12 @@ app.UseCors();
 app.MapGet("/", () => "Hello World!");
 
 // Map Elsa API endpoints.
-app.MapElsaApiEndpoints();
+app.MapElsaApiEndpoints("elsa/api");
+
+// Map Controller endpoints.
+//app.MapAreaControllerRoute("Elsa", "elsa", "elsa/api/descriptors/activities", new { Controller = "ActivityDescriptors", Action = "List" });
+
+//app.MapControllers();
 
 // Register Elsa middleware.
 app.UseJsonSerializationErrorHandler();

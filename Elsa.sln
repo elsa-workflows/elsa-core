@@ -108,6 +108,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.EntityFram
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.EntityFrameworkCore.Sqlite", "src\persistence\efcore\Elsa.Persistence.EntityFrameworkCore.Sqlite\Elsa.Persistence.EntityFrameworkCore.Sqlite.csproj", "{C81E2148-283E-409F-BFE7-60CD2E227887}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.AspNetCore", "src\core\Elsa.AspNetCore\Elsa.AspNetCore.csproj", "{D1DA35F2-E531-41EA-ADF4-48E5DF3DAABF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -254,6 +256,10 @@ Global
 		{C81E2148-283E-409F-BFE7-60CD2E227887}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C81E2148-283E-409F-BFE7-60CD2E227887}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C81E2148-283E-409F-BFE7-60CD2E227887}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D1DA35F2-E531-41EA-ADF4-48E5DF3DAABF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D1DA35F2-E531-41EA-ADF4-48E5DF3DAABF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D1DA35F2-E531-41EA-ADF4-48E5DF3DAABF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D1DA35F2-E531-41EA-ADF4-48E5DF3DAABF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{155227F0-A33B-40AA-A4B4-06F813EB921B} = {61017E64-6D00-49CB-9E81-5002DC8F7D5F}
@@ -304,5 +310,6 @@ Global
 		{5F00DBC2-12B5-483C-A875-A5BC7CDCA8C0} = {1B264AAB-D41D-4457-988D-CBEB34EA4A9E}
 		{92CC542F-942B-4EF4-A4DE-970332B68394} = {9F8AE7FB-E5F9-4DCB-9CF8-0362B3D18DAA}
 		{C81E2148-283E-409F-BFE7-60CD2E227887} = {9F8AE7FB-E5F9-4DCB-9CF8-0362B3D18DAA}
+		{D1DA35F2-E531-41EA-ADF4-48E5DF3DAABF} = {C6658DE0-2B2F-47F0-BB61-2CA66D435C09}
 	EndGlobalSection
 EndGlobal

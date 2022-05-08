@@ -5,17 +5,19 @@ using Elsa.Persistence.Models;
 using Elsa.Runtime.Models;
 using Elsa.Runtime.Services;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Api.ApiResults;
 
-public class ExecuteWorkflowResult : IResult
+public class ExecuteWorkflowResult : IActionResult
 {
     public ExecuteWorkflowResult(Workflow workflow) => Workflow = workflow;
     public Workflow Workflow { get; }
 
-    public async Task ExecuteAsync(HttpContext httpContext)
+    public async Task ExecuteResultAsync(ActionContext context)
     {
+        var httpContext = context.HttpContext;
         var response = httpContext.Response;
         var workflowInvoker = httpContext.RequestServices.GetRequiredService<IWorkflowInvoker>();
         var definitionId = Workflow.Identity.DefinitionId;

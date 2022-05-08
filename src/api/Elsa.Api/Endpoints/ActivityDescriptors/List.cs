@@ -1,33 +1,55 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Elsa.Api.Models;
+using Elsa.AspNetCore;
+using Elsa.Management.Models;
 using Elsa.Management.Services;
 using Elsa.Serialization.Converters;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Elsa.Api.Endpoints.ActivityDescriptors;
 
-public static partial class ActivityDescriptors
+[Area(AreaNames.Elsa)]
+[ApiEndpoint(ControllerNames.ActivityDescriptors, "List")]
+[ProducesResponseType(typeof(ActivityDescriptors), StatusCodes.Status200OK, "application/json")]
+public class List : Controller
 {
-    public static IResult ListAsync(IActivityRegistry registry, IWellKnownTypeRegistry wellKnownTypeRegistry)
+    private readonly IActivityRegistry _registry;
+    private readonly IWellKnownTypeRegistry _wellKnownTypeRegistry;
+
+    public List(IActivityRegistry registry, IWellKnownTypeRegistry wellKnownTypeRegistry)
     {
-        var descriptors = registry.ListAll().ToList();
+        _registry = registry;
+        _wellKnownTypeRegistry = wellKnownTypeRegistry;
+    }
+
+    [HttpGet]
+    public IActionResult Handle()
+    {
+        var descriptors = _registry.ListAll().ToList();
 
         var model = new
         {
             ActivityDescriptors = descriptors
         };
 
-        return Results.Json(model, new JsonSerializerOptions
+        var serializerOptions = new JsonSerializerOptions
         {
             Converters =
             {
                 new JsonStringEnumConverter(),
-                new TypeJsonConverter(wellKnownTypeRegistry)
+                new TypeJsonConverter(_wellKnownTypeRegistry)
             },
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault
-        });
+        };
+
+        return Json(model, serializerOptions);
     }
 }
+
+public record ActivityDescriptors(ICollection<ActivityDescriptor> Items) : ListModel<ActivityDescriptor>(Items);

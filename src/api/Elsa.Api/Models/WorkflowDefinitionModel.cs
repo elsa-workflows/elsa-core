@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Elsa.Models;
 using Elsa.Services;
 
-namespace Elsa.Api.Endpoints.WorkflowDefinitions;
+namespace Elsa.Api.Models;
 
 public record WorkflowDefinitionModel(
     string Id,

@@ -1,17 +1,27 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Api.ApiResults;
+using Elsa.AspNetCore;
 using Elsa.Persistence.Models;
+using Elsa.Runtime.Models;
 using Elsa.Runtime.Services;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Elsa.Api.Endpoints.WorkflowDefinitions;
 
-public static partial class WorkflowDefinitions
+[Area(AreaNames.Elsa)]
+[ApiEndpoint(ControllerNames.WorkflowDefinitions, "Dispatch")]
+[ProducesResponseType(typeof(DispatchWorkflowDefinitionResponse), StatusCodes.Status200OK)]
+public class Dispatch : Controller
 {
-    public static async Task<IResult> DispatchAsync(string definitionId, IWorkflowRegistry workflowRegistry, HttpResponse response, string? correlationId = default, CancellationToken cancellationToken = default)
+    private readonly IWorkflowRegistry _workflowRegistry;
+    public Dispatch(IWorkflowRegistry workflowRegistry) => _workflowRegistry = workflowRegistry;
+
+    [HttpPost]
+    public async Task<IActionResult> DispatchAsync(string definitionId, string? correlationId = default, CancellationToken cancellationToken = default)
     {
-        var workflow = await workflowRegistry.FindByDefinitionIdAsync(definitionId, VersionOptions.Published, cancellationToken);
-        return workflow == null ? Results.NotFound() : new DispatchWorkflowResult(workflow, correlationId);
+        var workflow = await _workflowRegistry.FindByDefinitionIdAsync(definitionId, VersionOptions.Published, cancellationToken);
+        return workflow == null ? NotFound() : new DispatchWorkflowResult(workflow, correlationId);
     }
 }

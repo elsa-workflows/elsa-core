@@ -6,6 +6,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\..\core\Elsa.AspNetCore\Elsa.AspNetCore.csproj" />
         <ProjectReference Include="..\..\..\core\Elsa.ServiceBus.Abstractions\Elsa.ServiceBus.Abstractions.csproj" />
         <ProjectReference Include="..\..\..\modules\Elsa.Modules.Activities\Elsa.Modules.Activities.csproj" />
         <ProjectReference Include="..\..\..\modules\Elsa.Modules.AzureServiceBus\Elsa.Modules.AzureServiceBus.csproj" />

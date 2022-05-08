@@ -1,5 +1,8 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Api.Models;
+using Elsa.AspNetCore;
+using Elsa.Models;
 using Elsa.Persistence.Models;
 using Elsa.Persistence.Services;
 using Elsa.Runtime.Services;
@@ -9,24 +12,36 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Elsa.Api.Endpoints.WorkflowDefinitions;
 
-public static partial class WorkflowDefinitions
+[Area(AreaNames.Elsa)]
+[ApiEndpoint(ControllerNames.WorkflowDefinitions, "Get")]
+[ProducesResponseType(typeof(WorkflowDefinitionModel), StatusCodes.Status200OK)]
+public class Get : Controller
 {
-    public static async Task<IResult> Get(
-        IWorkflowDefinitionStore workflowDefinitionStore,
-        IWorkflowDefinitionService workflowDefinitionService,
-        WorkflowSerializerOptionsProvider serializerOptionsProvider,
+    private readonly IWorkflowDefinitionStore _store;
+    private readonly IWorkflowDefinitionService _workflowDefinitionService;
+    private readonly WorkflowSerializerOptionsProvider _serializerOptionsProvider;
+
+    public Get(IWorkflowDefinitionStore store, IWorkflowDefinitionService workflowDefinitionService, WorkflowSerializerOptionsProvider serializerOptionsProvider)
+    {
+        _store = store;
+        _workflowDefinitionService = workflowDefinitionService;
+        _serializerOptionsProvider = serializerOptionsProvider;
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> HandleAsync(
         CancellationToken cancellationToken,
         [FromRoute] string definitionId,
         [FromQuery] string? versionOptions = default)
     {
-        var serializerOptions = serializerOptionsProvider.CreateApiOptions();
+        var serializerOptions = _serializerOptionsProvider.CreateApiOptions();
         var parsedVersionOptions = versionOptions != null ? VersionOptions.FromString(versionOptions) : VersionOptions.Latest;
-        var definition = await workflowDefinitionStore.FindByDefinitionIdAsync(definitionId, parsedVersionOptions, cancellationToken);
+        var definition = await _store.FindByDefinitionIdAsync(definitionId, parsedVersionOptions, cancellationToken);
 
         if (definition == null)
-            return Results.NotFound();
+            return NotFound();
 
-        var workflow = await workflowDefinitionService.MaterializeWorkflowAsync(definition, cancellationToken);
+        var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(definition, cancellationToken);
 
         var model = new WorkflowDefinitionModel(
             definition.Id,
@@ -42,6 +57,6 @@ public static partial class WorkflowDefinitions
             definition.IsPublished,
             workflow.Root);
 
-        return Results.Json(model, serializerOptions, statusCode: StatusCodes.Status200OK);
+        return Json(model, serializerOptions);
     }
 }
