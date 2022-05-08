@@ -68,12 +68,14 @@ services
         options.Workflows.Add<StartAtBookmarkWorkflow>();
     });
 
-// Add controller services.
+// Add controller services. The below technique allows full control over what controllers get added from which assemblies.
+// It is even possible to add individual controllers this way using a custom TypesPart.
 services
-    .AddControllers(mvc => mvc.Conventions.Add(new ApiEndpointAttributeConvention()))
-    .ClearApplicationParts()
-    .AddApplicationPartsFrom<Program>()
-    .AddElsaApiControllers()
+    // Elsa API endpoints require MVC controllers. 
+    .AddControllers(mvc => mvc.Conventions.Add(new ApiEndpointAttributeConvention())) // This convention is required as well. 
+    .ClearApplicationParts() // Remove all controllers from referenced packages.
+    .AddApplicationPartsFrom<Program>() // Add back any controllers from the current application.
+    .AddElsaApiControllers() // Add Elsa API endpoint controllers
     ;
 
 // Testing only: allow client app to connect from anywhere.
@@ -136,13 +138,8 @@ app.UseCors();
 // Root.
 app.MapGet("/", () => "Hello World!");
 
-// Map Elsa API endpoints.
+// Map Elsa API endpoint controllers.
 app.MapElsaApiEndpoints("elsa/api");
-
-// Map Controller endpoints.
-//app.MapAreaControllerRoute("Elsa", "elsa", "elsa/api/descriptors/activities", new { Controller = "ActivityDescriptors", Action = "List" });
-
-//app.MapControllers();
 
 // Register Elsa middleware.
 app.UseJsonSerializationErrorHandler();
