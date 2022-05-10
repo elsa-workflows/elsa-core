@@ -68,9 +68,13 @@ export class WorkflowDefinitionBrowser {
     const pageSize = 50;
     const latestVersionOptions: VersionOptions = {isLatest: true};
     const publishedVersionOptions: VersionOptions = {isPublished: true};
-    const latestWorkflowDefinitions = await elsaClient.workflowDefinitions.list({page: page, pageSize: pageSize, versionOptions: {isLatest: true}});
+
+    // TODO: Load only json-based workflow definitions for now.
+    // Later, also allow CLR-based workflows to be "edited" (publish / unpublish / position activities / set variables, etc.)
+    const materializerName = 'Json';
+    const latestWorkflowDefinitions = await elsaClient.workflowDefinitions.list({materializerName, page: page, pageSize: pageSize, versionOptions: {isLatest: true}});
     const unpublishedWorkflowDefinitionIds = latestWorkflowDefinitions.items.filter(x => !x.isPublished).map(x => x.definitionId);
-    this.publishedWorkflowDefinitions = await elsaClient.workflowDefinitions.list({definitionIds: unpublishedWorkflowDefinitionIds, versionOptions: publishedVersionOptions});
+    this.publishedWorkflowDefinitions = await elsaClient.workflowDefinitions.list({materializerName, definitionIds: unpublishedWorkflowDefinitionIds, versionOptions: publishedVersionOptions});
     this.workflowDefinitions = latestWorkflowDefinitions;
   }
 

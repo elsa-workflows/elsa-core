@@ -83,16 +83,19 @@ export async function createElsaClient(serverUrl: string): Promise<ElsaClient> {
         return response.data;
       },
       async list(request: ListWorkflowDefinitionsRequest): Promise<PagedList<WorkflowDefinitionSummary>> {
-        const queryString = {};
+        const queryString: any = {};
+
+        if (!!request.materializerName)
+          queryString.materializer = request.materializerName;
 
         if (!!request.versionOptions)
-          queryString['versionOptions'] = getVersionOptionsString(request.versionOptions);
+          queryString.versionOptions = getVersionOptionsString(request.versionOptions);
 
         if (!!request.page)
-          queryString['page'] = request.page;
+          queryString.page = request.page;
 
         if (!!request.pageSize)
-          queryString['pageSize'] = request.pageSize;
+          queryString.pageSize = request.pageSize;
 
         const queryStringText = serializeQueryString(queryString);
         const response = await httpClient.get<PagedList<WorkflowDefinitionSummary>>(`workflow-definitions${queryStringText}`);
@@ -227,6 +230,7 @@ export interface ListWorkflowDefinitionsRequest {
   pageSize?: number;
   definitionIds?: Array<string>;
   versionOptions?: VersionOptions;
+  materializerName?: string;
 }
 
 export interface ListWorkflowInstancesRequest {
