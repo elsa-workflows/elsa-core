@@ -10,7 +10,6 @@ import {SwitchPortUpdater} from "./switch-port-updater";
 import {TransposeHandlerRegistry} from "../../components/activities/flowchart/transpose-handler-registry";
 import {SwitchTransposeHandler} from "./switch-transpose-handler";
 
-
 @Service()
 export class SwitchPlugin implements Plugin {
   public static readonly ActivityTypeName: string = 'Elsa.Switch';
