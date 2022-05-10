@@ -17,5 +17,6 @@ public record WorkflowDefinitionModel(
     IDictionary<string, object> ApplicationProperties,
     bool IsLatest,
     bool IsPublished,
+    ICollection<string> Tags,
     IActivity Root
 );

@@ -55,6 +55,7 @@ public class Get : Controller
             definition.ApplicationProperties,
             definition.IsLatest,
             definition.IsPublished,
+            definition.Tags,
             workflow.Root);
 
         return Json(model, serializerOptions);
