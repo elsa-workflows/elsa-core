@@ -14,12 +14,6 @@ using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Runtime.Implementations;
 
-/// <summary>
-/// Pre-indexes workflow triggers from providers that are static in nature.
-/// These are providers such as the ConfigurationWorkflowProvider, whose set of workflows will never change after application has started.
-/// Workflows stored in the DB, on the other hand, will be updated via API endpoints, which will then be indexed right there and then.
-/// To prevent potentially loading hundreds of user-defined workflows from the DB, we will skip that provider. 
-/// </summary>
 public class TriggerIndexer : ITriggerIndexer
 {
     private readonly IActivityWalker _activityWalker;
