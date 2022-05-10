@@ -105,14 +105,13 @@ export class ToolboxActivities {
               {category}
             </button>
 
-            <div class={`space-y-1 ${categoryContentClass}`}>
+            <div class={`space-y-0.5 ${categoryContentClass}`}>
 
               {activityDescriptors.map(activityDescriptor => {
                 const activityHtml = renderedActivities.get(activityDescriptor.activityType);
                 return (
                   <div class="w-full flex items-center pl-10 pr-2 py-2">
-                    <div class="cursor-move"
-                         onDragStart={e => ToolboxActivities.onActivityStartDrag(e, activityDescriptor)}>
+                    <div class="cursor-move" onDragStart={e => ToolboxActivities.onActivityStartDrag(e, activityDescriptor)}>
                       <div innerHTML={activityHtml} draggable={true}/>
                     </div>
                   </div>

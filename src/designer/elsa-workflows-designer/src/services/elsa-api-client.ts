@@ -50,26 +50,26 @@ export async function createElsaClient(serverUrl: string): Promise<ElsaClient> {
     descriptors: {
       activities: {
         async list(): Promise<Array<ActivityDescriptor>> {
-          const response = await httpClient.get<ActivityDescriptorResponse>('api/descriptors/activities');
+          const response = await httpClient.get<ActivityDescriptorResponse>('descriptors/activities');
           return response.data.activityDescriptors;
         }
       }
     },
     workflowDefinitions: {
       async publish(request: PublishWorkflowDefinitionRequest) : Promise<WorkflowDefinition>{
-        const response = await httpClient.post<WorkflowDefinition>(`api/workflow-definitions/${request.definitionId}/publish`);
+        const response = await httpClient.post<WorkflowDefinition>(`workflow-definitions/${request.definitionId}/publish`);
         return response.data;
       },
       async retract(request: RetractWorkflowDefinitionRequest) : Promise<WorkflowDefinition>{
-        const response = await httpClient.post<WorkflowDefinition>(`api/workflow-definitions/${request.definitionId}/retract`);
+        const response = await httpClient.post<WorkflowDefinition>(`workflow-definitions/${request.definitionId}/retract`);
         return response.data;
       },
       async delete(request: DeleteWorkflowDefinitionRequest) : Promise<WorkflowDefinition>{
-        const response = await httpClient.delete<WorkflowDefinition>(`api/workflow-definitions/${request.definitionId}`);
+        const response = await httpClient.delete<WorkflowDefinition>(`workflow-definitions/${request.definitionId}`);
         return response.data;
       },
       async post(request: SaveWorkflowDefinitionRequest): Promise<WorkflowDefinition> {
-        const response = await httpClient.post<WorkflowDefinition>('api/workflow-definitions', request);
+        const response = await httpClient.post<WorkflowDefinition>('workflow-definitions', request);
         return response.data;
       },
       async get(request: GetWorkflowRequest): Promise<WorkflowDefinition> {
@@ -79,7 +79,7 @@ export async function createElsaClient(serverUrl: string): Promise<ElsaClient> {
           queryString['versionOptions'] = getVersionOptionsString(request.versionOptions);
 
         const queryStringText = serializeQueryString(queryString);
-        const response = await httpClient.get<WorkflowDefinition>(`api/workflow-definitions/${request.definitionId}${queryStringText}`);
+        const response = await httpClient.get<WorkflowDefinition>(`workflow-definitions/${request.definitionId}${queryStringText}`);
         return response.data;
       },
       async list(request: ListWorkflowDefinitionsRequest): Promise<PagedList<WorkflowDefinitionSummary>> {
@@ -95,7 +95,7 @@ export async function createElsaClient(serverUrl: string): Promise<ElsaClient> {
           queryString['pageSize'] = request.pageSize;
 
         const queryStringText = serializeQueryString(queryString);
-        const response = await httpClient.get<PagedList<WorkflowDefinitionSummary>>(`api/workflow-definitions${queryStringText}`);
+        const response = await httpClient.get<PagedList<WorkflowDefinitionSummary>>(`workflow-definitions${queryStringText}`);
         return response.data;
       },
       async getMany(request: GetManyWorkflowsRequest): Promise<Array<WorkflowDefinitionSummary>> {
@@ -107,33 +107,33 @@ export async function createElsaClient(serverUrl: string): Promise<ElsaClient> {
         queryString['definitionIds'] = request.definitionIds.join(',');
 
         const queryStringText = serializeQueryString(queryString);
-        const response = await httpClient.get<Array<WorkflowDefinitionSummary>>(`api/workflow-definitions/set${queryStringText}`);
+        const response = await httpClient.get<Array<WorkflowDefinitionSummary>>(`workflow-definitions/set${queryStringText}`);
         return response.data;
       }
     },
     workflowInstances: {
       async list(request: ListWorkflowInstancesRequest): Promise<PagedList<WorkflowInstanceSummary>> {
         const queryStringText = serializeQueryString(request);
-        const response = await httpClient.get<PagedList<WorkflowInstanceSummary>>(`api/workflow-instances${queryStringText}`);
+        const response = await httpClient.get<PagedList<WorkflowInstanceSummary>>(`workflow-instances${queryStringText}`);
         return response.data;
       },
       async get(request: GetWorkflowInstanceRequest): Promise<WorkflowInstance> {
-        const response = await httpClient.get<WorkflowInstance>(`api/workflow-instances/${request.id}`);
+        const response = await httpClient.get<WorkflowInstance>(`workflow-instances/${request.id}`);
         return response.data;
       },
       async delete(request: DeleteWorkflowInstanceRequest): Promise<WorkflowInstanceSummary> {
-        const response = await httpClient.delete<WorkflowInstanceSummary>(`api/workflow-instances/${request.id}`);
+        const response = await httpClient.delete<WorkflowInstanceSummary>(`workflow-instances/${request.id}`);
         return response.data;
       },
       async deleteMany(request: BulkDeleteWorkflowInstancesRequest): Promise<PagedList<WorkflowInstanceSummary>>  {
-        const response = await httpClient.delete<PagedList<WorkflowInstanceSummary>>(`api/workflow-instances/bulk`);
+        const response = await httpClient.delete<PagedList<WorkflowInstanceSummary>>(`workflow-instances/bulk`);
         return response.data;
       }
     },
     designer: {
       runtimeSelectListApi: {
         get: async (providerTypeName: string, context?: any): Promise<SelectList> => {
-          const response = await httpClient.post('api/designer/runtime-select-list', {
+          const response = await httpClient.post('designer/runtime-select-list', {
             providerTypeName: providerTypeName,
             context: context
           });
