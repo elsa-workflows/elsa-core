@@ -42,6 +42,8 @@ export interface WorkflowDefinition {
   variables?: Array<Variable>;
   metadata?: Map<string, any>;
   applicationProperties?: Map<string, any>;
+  materializerName: string;
+  materializerContext?: string;
   root: Activity;
 }
 

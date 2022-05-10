@@ -55,6 +55,7 @@ export interface WorkflowDefinitionSummary {
   description?: string;
   isPublished: boolean;
   isLatest: boolean;
+  materializerName: string;
 }
 
 export enum WorkflowStatus {

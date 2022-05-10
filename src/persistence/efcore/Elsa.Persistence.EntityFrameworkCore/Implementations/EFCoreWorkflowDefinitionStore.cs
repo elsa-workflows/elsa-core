@@ -83,7 +83,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         return await _store.DeleteWhereAsync(x => definitionIdList.Contains(x.DefinitionId), cancellationToken);
     }
 
-    public async Task<Page<WorkflowDefinitionSummary>> ListSummariesAsync(VersionOptions? versionOptions = default, PageArgs? pageArgs = default, CancellationToken cancellationToken = default)
+    public async Task<Page<WorkflowDefinitionSummary>> ListSummariesAsync(VersionOptions? versionOptions = default, string? materializerName = default, PageArgs? pageArgs = default, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
         var set = dbContext.WorkflowDefinitions;
@@ -91,6 +91,9 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
 
         if (versionOptions != null)
             query = set.WithVersion(versionOptions.Value);
+
+        if (!string.IsNullOrWhiteSpace(materializerName))
+            query = set.Where(x => x.MaterializerName == materializerName);
 
         query = query.OrderBy(x => x.Name);
         
