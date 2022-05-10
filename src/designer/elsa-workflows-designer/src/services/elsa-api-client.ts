@@ -56,15 +56,15 @@ export async function createElsaClient(serverUrl: string): Promise<ElsaClient> {
       }
     },
     workflowDefinitions: {
-      async publish(request: PublishWorkflowDefinitionRequest) : Promise<WorkflowDefinition>{
+      async publish(request: PublishWorkflowDefinitionRequest): Promise<WorkflowDefinition> {
         const response = await httpClient.post<WorkflowDefinition>(`workflow-definitions/${request.definitionId}/publish`);
         return response.data;
       },
-      async retract(request: RetractWorkflowDefinitionRequest) : Promise<WorkflowDefinition>{
+      async retract(request: RetractWorkflowDefinitionRequest): Promise<WorkflowDefinition> {
         const response = await httpClient.post<WorkflowDefinition>(`workflow-definitions/${request.definitionId}/retract`);
         return response.data;
       },
-      async delete(request: DeleteWorkflowDefinitionRequest) : Promise<WorkflowDefinition>{
+      async delete(request: DeleteWorkflowDefinitionRequest): Promise<WorkflowDefinition> {
         const response = await httpClient.delete<WorkflowDefinition>(`workflow-definitions/${request.definitionId}`);
         return response.data;
       },
@@ -97,9 +97,21 @@ export async function createElsaClient(serverUrl: string): Promise<ElsaClient> {
         const queryStringText = serializeQueryString(queryString);
         const response = await httpClient.get<PagedList<WorkflowDefinitionSummary>>(`workflow-definitions${queryStringText}`);
         return response.data;
-      },
-      async getMany(request: GetManyWorkflowsRequest): Promise<Array<WorkflowDefinitionSummary>> {
-        const queryString = {};
+      }
+    },
+    workflowInstances: {
+      async list(request: ListWorkflowInstancesRequest): Promise<PagedList<WorkflowInstanceSummary>> {
+        let queryString = {
+          searchTerm: request.searchTerm,
+          definitionId: request.definitionId,
+          correlationId: request.correlationId,
+          definitionIds: request.definitionIds.join(','),
+          workflowStatus: request.workflowStatus,
+          orderBy: request.orderBy,
+          orderDirection: request.orderDirection,
+          page: request.page,
+          pageSize: request.pageSize
+        };
 
         if (!!request.versionOptions)
           queryString['versionOptions'] = getVersionOptionsString(request.versionOptions);
@@ -107,13 +119,6 @@ export async function createElsaClient(serverUrl: string): Promise<ElsaClient> {
         queryString['definitionIds'] = request.definitionIds.join(',');
 
         const queryStringText = serializeQueryString(queryString);
-        const response = await httpClient.get<Array<WorkflowDefinitionSummary>>(`workflow-definitions/set${queryStringText}`);
-        return response.data;
-      }
-    },
-    workflowInstances: {
-      async list(request: ListWorkflowInstancesRequest): Promise<PagedList<WorkflowInstanceSummary>> {
-        const queryStringText = serializeQueryString(request);
         const response = await httpClient.get<PagedList<WorkflowInstanceSummary>>(`workflow-instances${queryStringText}`);
         return response.data;
       },
@@ -125,7 +130,7 @@ export async function createElsaClient(serverUrl: string): Promise<ElsaClient> {
         const response = await httpClient.delete<WorkflowInstanceSummary>(`workflow-instances/${request.id}`);
         return response.data;
       },
-      async deleteMany(request: BulkDeleteWorkflowInstancesRequest): Promise<PagedList<WorkflowInstanceSummary>>  {
+      async deleteMany(request: BulkDeleteWorkflowInstancesRequest): Promise<PagedList<WorkflowInstanceSummary>> {
         const response = await httpClient.delete<PagedList<WorkflowInstanceSummary>>(`workflow-instances/bulk`);
         return response.data;
       }
@@ -166,8 +171,6 @@ export interface WorkflowDefinitionsApi {
 
   list(request: ListWorkflowDefinitionsRequest): Promise<PagedList<WorkflowDefinitionSummary>>;
 
-  getMany(request: GetManyWorkflowsRequest): Promise<Array<WorkflowDefinitionSummary>>;
-
   delete(request: DeleteWorkflowDefinitionRequest): Promise<WorkflowDefinition>;
 
   retract(request: RetractWorkflowDefinitionRequest): Promise<WorkflowDefinition>;
@@ -181,9 +184,9 @@ export interface WorkflowInstancesApi {
 
   get(request: GetWorkflowInstanceRequest): Promise<WorkflowInstance>;
 
-  delete(request: DeleteWorkflowInstanceRequest) : Promise<WorkflowInstanceSummary>
+  delete(request: DeleteWorkflowInstanceRequest): Promise<WorkflowInstanceSummary>
 
-  deleteMany(request: BulkDeleteWorkflowInstancesRequest) : Promise<PagedList<WorkflowInstanceSummary>>
+  deleteMany(request: BulkDeleteWorkflowInstancesRequest): Promise<PagedList<WorkflowInstanceSummary>>
 }
 
 export interface DesignerApi {
@@ -222,10 +225,6 @@ export interface GetWorkflowRequest {
 export interface ListWorkflowDefinitionsRequest {
   page?: number;
   pageSize?: number;
-  versionOptions?: VersionOptions;
-}
-
-export interface GetManyWorkflowsRequest {
   definitionIds?: Array<string>;
   versionOptions?: VersionOptions;
 }
@@ -234,7 +233,8 @@ export interface ListWorkflowInstancesRequest {
   searchTerm?: string;
   definitionId?: string;
   correlationId?: string;
-  version?: number;
+  definitionIds?: Array<string>;
+  versionOptions?: VersionOptions;
   workflowStatus?: WorkflowStatus;
   orderBy?: OrderBy;
   orderDirection?: OrderDirection;
@@ -250,7 +250,7 @@ export interface DeleteWorkflowInstanceRequest {
   id: string;
 }
 
-export interface BulkDeleteWorkflowInstancesRequest{
+export interface BulkDeleteWorkflowInstancesRequest {
   workflowInstanceIds: Array<string>;
 }
 
