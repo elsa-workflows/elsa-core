@@ -63,7 +63,7 @@ public class Post : Controller
         var stringData = JsonSerializer.Serialize(root, serializerOptions);
 
         draft.StringData = stringData;
-        draft.MaterializerName = ClrWorkflowMaterializer.MaterializerName;
+        draft.MaterializerName = JsonWorkflowMaterializer.MaterializerName;
         draft.Name = model.Name?.Trim();
         draft.Description = model.Description?.Trim();
         draft = model.Publish ? await _workflowPublisher.PublishAsync(draft, cancellationToken) : await _workflowPublisher.SaveDraftAsync(draft, cancellationToken);
