@@ -3,7 +3,7 @@ import 'reflect-metadata';
 import {Container} from 'typedi';
 import {
   ElsaApiClientProvider,
-  ElsaClient,
+  ElsaClient, ExportWorkflowRequest,
   RetractWorkflowDefinitionRequest,
   SaveWorkflowDefinitionRequest,
   ServerSettings
@@ -12,6 +12,7 @@ import {ActivityDescriptor, VersionOptions, WorkflowDefinition, WorkflowInstance
 import {WorkflowUpdatedArgs} from '../../designer/workflow-editor/workflow-editor';
 import {PublishClickedArgs} from "../../toolbar/workflow-publish-button/workflow-publish-button";
 import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
+import {downloadFromBlob, getVersionOptionsString} from "../../../utils";
 
 @Component({
   tag: 'elsa-studio'
@@ -112,6 +113,24 @@ export class Studio {
 
     const updatedWorkflow = await this.elsaClient.workflowDefinitions.post(request);
     await this.workflowEditorElement.importWorkflowMetadata(updatedWorkflow);
+  }
+
+  @Listen('exportClicked')
+  private async handleExportClick(e: EventEmitter) {
+    const workflowEditorElement = this.workflowEditorElement;
+
+    if (!workflowEditorElement)
+      return;
+
+    const workflow = await workflowEditorElement.getWorkflow();
+
+    const request: ExportWorkflowRequest = {
+      definitionId: workflow.definitionId,
+      versionOptions: {version: workflow.version}
+    };
+
+    const response = await this.elsaClient.workflowDefinitions.export(request);
+    downloadFromBlob(response.data, {contentType: 'application/json', fileName: response.fileName});
   }
 
   public async componentWillLoad() {

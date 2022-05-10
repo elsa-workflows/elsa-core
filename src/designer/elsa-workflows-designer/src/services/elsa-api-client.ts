@@ -100,7 +100,29 @@ export async function createElsaClient(serverUrl: string): Promise<ElsaClient> {
         const queryStringText = serializeQueryString(queryString);
         const response = await httpClient.get<PagedList<WorkflowDefinitionSummary>>(`workflow-definitions${queryStringText}`);
         return response.data;
-      }
+      },
+      async export(request: ExportWorkflowRequest): Promise<ExportWorkflowResponse> {
+        const queryString = {};
+
+        if (!!request.versionOptions)
+          queryString['versionOptions'] = getVersionOptionsString(request.versionOptions);
+
+        const queryStringText = serializeQueryString(queryString);
+        const definitionId = request.definitionId;
+
+        const response = await httpClient.get(`workflow-definitions/${request.definitionId}/export${queryStringText}`, {
+          responseType: "blob"
+        });
+
+        const contentDispositionHeader = response.headers["content-disposition"]; // Only available if the Elsa Server exposes the "Content-Disposition" header.
+        const fileName = contentDispositionHeader ? contentDispositionHeader.split(";")[1].split("=")[1] : `workflow-definition-${definitionId}.json`;
+        const data = response.data;
+
+        return {
+          fileName: fileName,
+          data: data
+        };
+      },
     },
     workflowInstances: {
       async list(request: ListWorkflowInstancesRequest): Promise<PagedList<WorkflowInstanceSummary>> {
@@ -179,6 +201,8 @@ export interface WorkflowDefinitionsApi {
   retract(request: RetractWorkflowDefinitionRequest): Promise<WorkflowDefinition>;
 
   publish(request: PublishWorkflowDefinitionRequest): Promise<WorkflowDefinition>;
+
+  export(request: ExportWorkflowRequest): Promise<ExportWorkflowResponse>;
 }
 
 export interface WorkflowInstancesApi {
@@ -223,6 +247,16 @@ export interface PublishWorkflowDefinitionRequest {
 export interface GetWorkflowRequest {
   definitionId: string;
   versionOptions?: VersionOptions;
+}
+
+export interface ExportWorkflowRequest {
+  definitionId: string;
+  versionOptions?: VersionOptions;
+}
+
+export interface ExportWorkflowResponse {
+  fileName: string;
+  data: Blob;
 }
 
 export interface ListWorkflowDefinitionsRequest {
