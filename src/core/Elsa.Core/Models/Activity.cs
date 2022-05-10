@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using System.Text.Json.Serialization;
 using Elsa.Behaviors;
 using Elsa.Helpers;
 using Elsa.Services;
@@ -8,7 +9,7 @@ namespace Elsa.Models;
 public abstract class Activity : IActivity, ISignalHandler
 {
     private readonly ICollection<SignalHandlerRegistration> _signalHandlers = new List<SignalHandlerRegistration>();
-    
+
     protected Activity()
     {
         TypeName = ActivityTypeNameHelper.GenerateTypeName(GetType());
@@ -26,12 +27,12 @@ public abstract class Activity : IActivity, ISignalHandler
     public bool CanStartWorkflow { get; set; }
     public IDictionary<string, object> ApplicationProperties { get; set; } = new Dictionary<string, object>();
     public IDictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
-    
+
     /// <summary>
     /// A collection of reusable behaviors to add to this activity.
     /// </summary>
+    [JsonIgnore]
     public ICollection<IBehavior> Behaviors { get; } = new List<IBehavior>();
-    
 
     protected virtual ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
@@ -72,11 +73,11 @@ public abstract class Activity : IActivity, ISignalHandler
             return ValueTask.CompletedTask;
         });
     }
-    
+
     async ValueTask IActivity.ExecuteAsync(ActivityExecutionContext context)
     {
         await ExecuteAsync(context);
-        
+
         // Invoke behaviors.
         foreach (var behavior in Behaviors) await behavior.ExecuteAsync(context);
     }
@@ -92,7 +93,7 @@ public abstract class Activity : IActivity, ISignalHandler
 
         foreach (var registration in handlers)
             await registration.Handler(signal, context);
-        
+
         // Invoke behaviors.
         foreach (var behavior in Behaviors) await behavior.HandleSignalAsync(signal, context);
     }
