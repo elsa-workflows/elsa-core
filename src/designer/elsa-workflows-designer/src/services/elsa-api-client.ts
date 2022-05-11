@@ -123,6 +123,20 @@ export async function createElsaClient(serverUrl: string): Promise<ElsaClient> {
           data: data
         };
       },
+      import: async (request: ImportWorkflowRequest): Promise<ImportWorkflowResponse> => {
+        const file = request.file;
+        const definitionId = request.definitionId;
+        const json = await file.text();
+
+        const response = await httpClient.post<WorkflowDefinition>(`workflow-definitions/${definitionId}/import`, json, {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const workflowDefinition = response.data;
+        return {workflowDefinition: workflowDefinition};
+      }
     },
     workflowInstances: {
       async list(request: ListWorkflowInstancesRequest): Promise<PagedList<WorkflowInstanceSummary>> {
@@ -203,6 +217,8 @@ export interface WorkflowDefinitionsApi {
   publish(request: PublishWorkflowDefinitionRequest): Promise<WorkflowDefinition>;
 
   export(request: ExportWorkflowRequest): Promise<ExportWorkflowResponse>;
+
+  import(request: ImportWorkflowRequest): Promise<ImportWorkflowResponse>;
 }
 
 export interface WorkflowInstancesApi {
@@ -257,6 +273,15 @@ export interface ExportWorkflowRequest {
 export interface ExportWorkflowResponse {
   fileName: string;
   data: Blob;
+}
+
+export interface ImportWorkflowRequest {
+  definitionId: string;
+  file: File;
+}
+
+export interface ImportWorkflowResponse {
+  workflowDefinition: WorkflowDefinition;
 }
 
 export interface ListWorkflowDefinitionsRequest {

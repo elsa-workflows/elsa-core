@@ -208,7 +208,6 @@ export class FlowchartComponent implements ContainerActivityComponent {
 
     const rootActivity = rootActivities.find(x => x.canStartWorkflow) || first(rootActivities);
 
-    debugger;
     return {
       typeName: 'Elsa.Flowchart',
       activities: remainingActivities,

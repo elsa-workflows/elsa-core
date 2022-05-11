@@ -3,7 +3,7 @@ import 'reflect-metadata';
 import {Container} from 'typedi';
 import {
   ElsaApiClientProvider,
-  ElsaClient, ExportWorkflowRequest,
+  ElsaClient, ExportWorkflowRequest, ImportWorkflowRequest,
   RetractWorkflowDefinitionRequest,
   SaveWorkflowDefinitionRequest,
   ServerSettings
@@ -89,7 +89,7 @@ export class Studio {
   }
 
   @Listen('unPublishClicked')
-  private async handleUnPublishClicked(e: Event) {
+  private async handleUnPublishClicked(e: CustomEvent) {
     const workflowEditorElement = this.workflowEditorElement;
 
     if (!workflowEditorElement)
@@ -100,7 +100,7 @@ export class Studio {
   }
 
   @Listen('newClicked')
-  private async handleNewClick(e: EventEmitter) {
+  private async handleNewClick(e: CustomEvent) {
     const workflowEditorElement = this.workflowEditorElement;
 
     if (!workflowEditorElement)
@@ -116,7 +116,7 @@ export class Studio {
   }
 
   @Listen('exportClicked')
-  private async handleExportClick(e: EventEmitter) {
+  private async handleExportClick(e: CustomEvent) {
     const workflowEditorElement = this.workflowEditorElement;
 
     if (!workflowEditorElement)
@@ -131,6 +131,34 @@ export class Studio {
 
     const response = await this.elsaClient.workflowDefinitions.export(request);
     downloadFromBlob(response.data, {contentType: 'application/json', fileName: response.fileName});
+  }
+
+  @Listen('importClicked')
+  private async handleImportClick(e: CustomEvent<File>) {
+    const workflowEditorElement = this.workflowEditorElement;
+
+    if (!workflowEditorElement)
+      return;
+
+    const file = e.detail;
+    const client = this.elsaClient;
+    const workflow = await workflowEditorElement.getWorkflow();
+    const definitionId = workflow?.definitionId;
+
+    const importWorkflow = async (): Promise<WorkflowDefinition> => {
+      try {
+        const importRequest: ImportWorkflowRequest = {definitionId, file};
+        const importResponse = await client.workflowDefinitions.import(importRequest);
+        return importResponse.workflowDefinition;
+      } catch (e) {
+        console.error(e);
+      }
+    };
+
+    const workflowDefinition = await importWorkflow();
+
+    if(!!workflowDefinition)
+      await workflowEditorElement.importWorkflow(workflowDefinition);
   }
 
   public async componentWillLoad() {
