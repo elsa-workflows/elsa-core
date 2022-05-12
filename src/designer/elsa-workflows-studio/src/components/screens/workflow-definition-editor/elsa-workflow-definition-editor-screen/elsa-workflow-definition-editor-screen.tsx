@@ -1077,6 +1077,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
         </elsa-tab-content>
         {this.renderTestPanel()}
         {this.renderDesignerPanel()}
+        {this.renderVersionHistoryPanel()}
       </elsa-flyout-panel>
     );
   }
@@ -1112,6 +1113,16 @@ export class ElsaWorkflowDefinitionEditorScreen {
         </elsa-tab-content>
       ];
     }
+  }
+
+  private renderVersionHistoryPanel = () => {
+
+    return [
+      <elsa-tab-header tab="versionHistory" slot="header">Version History</elsa-tab-header>,
+      <elsa-tab-content tab="versionHistory" slot="content">
+        <elsa-version-history-panel />
+      </elsa-tab-content>
+    ];
   }
 
   handleFeatureChange = (e: CustomEvent<string>) => {
