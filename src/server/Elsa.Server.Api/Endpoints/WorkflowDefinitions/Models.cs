@@ -17,4 +17,4 @@ public record WorkflowDefinitionSummaryModel(
     bool IsLatest,
     Variables CustomAttributes);
     
-public record WorkflowDefinitionVersionModel(string Id, string DefinitionId, int Version, bool IsPublished, Instant CreatedAt);
+public record WorkflowDefinitionVersionModel(string Id, string DefinitionId, int Version, bool IsLatest, bool IsPublished, Instant CreatedAt);

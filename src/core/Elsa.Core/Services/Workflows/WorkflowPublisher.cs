@@ -1,9 +1,11 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Events;
 using Elsa.Models;
 using Elsa.Persistence;
+using Elsa.Persistence.Specifications;
 using Elsa.Persistence.Specifications.WorkflowDefinitions;
 using Elsa.Persistence.Specifications.WorkflowInstances;
 using MediatR;
@@ -136,14 +138,27 @@ namespace Elsa.Services.Workflows
             if (definition.IsLatest && !definition.IsPublished)
                 return definition;
 
-            var latest = definition.IsLatest ? definition : (await _workflowDefinitionStore.FindByDefinitionIdAsync(workflowDefinitionId, VersionOptions.Latest, cancellationToken))!;
+            var latest = definition.IsLatest ? definition : (await _workflowDefinitionStore.FindByDefinitionIdAsync(workflowDefinitionId, VersionOptions.Latest, cancellationToken));
+
+            if (latest == null)
+            {
+                latest = (await _workflowDefinitionStore.FindManyAsync(new Persistence.Specifications.WorkflowDefinitions.WorkflowDefinitionIdSpecification(workflowDefinitionId, VersionOptions.All),
+                    new OrderBy<WorkflowDefinition>(x => x.Version, SortDirection.Descending), new Paging(0, 1), cancellationToken)).FirstOrDefault();
+
+                if(latest != null)
+                {
+                    latest.IsLatest = true;
+                    return latest;
+                }
+            }
+
             var draft = _cloner.Clone(definition);
 
             draft.Id = _idGenerator.Generate();
             draft.IsPublished = false;
             draft.IsLatest = true;
             draft.CreatedAt = _clock.GetCurrentInstant();
-            draft.Version = latest.Version + 1;
+            draft.Version = latest != null ? latest.Version + 1 : 1;
 
             return draft;
         }

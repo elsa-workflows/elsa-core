@@ -81,10 +81,11 @@ export class ElsaVersionHistoryPanel {
                           const createdAt = moment(v.createdAt);
                           const isSelected = selectedVersion == v.version;
                           const rowCssClass = isSelected ? 'elsa-bg-gray-100' : undefined;
+                          const canDeleteOrRevert = !v.isLatest && !v.isPublished;
 
                           const published = v.isPublished ? (
                             <div title="Published">
-                              <svg class="elsa-h-6 elsa-w-6 elsa-text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <svg class="elsa-h-6 elsa-w-6 elsa-text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                               </svg>
                             </div>
@@ -103,13 +104,25 @@ export class ElsaVersionHistoryPanel {
                           );
 
                           const revertIcon = (
-                            <svg class="h-6 w-6 text-gray-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <svg class="elsa-h-6 elsa-w-6 elsa-text-gray-500" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                               <path stroke="none" d="M0 0h24v24H0z"/>
                               <path d="M9 11l-4 4l4 4m-4 -4h11a4 4 0 0 0 0 -8h-1"/>
                             </svg>
                           );
 
-                          const contextMenuItems: Array<MenuItem> = [{
+                          const viewIcon = (
+                            <svg class="elsa-h-6 w-6 elsa-text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+
+                          );
+
+                          let contextMenuItems: Array<MenuItem> = [{
+                            text: 'View',
+                            icon: viewIcon,
+                            clickHandler: e => this.onViewVersionClick(e, v)
+                          }, {
                             text: 'Delete',
                             icon: deleteIcon,
                             clickHandler: e => this.onDeleteVersionClick(e, v)
@@ -135,7 +148,7 @@ export class ElsaVersionHistoryPanel {
                                 </button>
                               </td>
                               <td>
-                                <elsa-context-menu menuItems={contextMenuItems}/>
+                                {!v.isPublished && !v.isPublished ? <elsa-context-menu menuItems={contextMenuItems}/> : undefined}
                               </td>
                             </tr>
                           );

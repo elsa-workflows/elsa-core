@@ -41,6 +41,7 @@ export interface WorkflowDefinitionVersion {
   id: string;
   definitionId: string;
   version: number;
+  isLatest: boolean;
   isPublished: boolean;
   createdAt: Date;
 }
