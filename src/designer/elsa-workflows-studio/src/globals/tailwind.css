@@ -2561,16 +2561,6 @@ select {
   margin-bottom: 1rem;
 }
 
-.elsa-my-2 {
-  margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.elsa-mx-4 {
-  margin-left: 1rem;
-  margin-right: 1rem;
-}
-
 .-elsa-ml-1 {
   margin-left: -0.25rem;
 }
@@ -6268,6 +6258,11 @@ select {
   background-color: rgb(219 234 254 / var(--tw-bg-opacity));
 }
 
+.elsa-bg-gray-300 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(209 213 219 / var(--tw-bg-opacity));
+}
+
 .elsa-bg-green-500 {
   --tw-bg-opacity: 1;
   background-color: rgb(34 197 94 / var(--tw-bg-opacity));
@@ -6276,11 +6271,6 @@ select {
 .elsa-bg-gray-200 {
   --tw-bg-opacity: 1;
   background-color: rgb(229 231 235 / var(--tw-bg-opacity));
-}
-
-.elsa-bg-gray-300 {
-  --tw-bg-opacity: 1;
-  background-color: rgb(209 213 219 / var(--tw-bg-opacity));
 }
 
 .elsa-bg-gray-400 {
@@ -8412,11 +8402,6 @@ select {
 .elsa-text-gray-600 {
   --tw-text-opacity: 1;
   color: rgb(75 85 99 / var(--tw-text-opacity));
-}
-
-.elsa-text-indigo-600 {
-  --tw-text-opacity: 1;
-  color: rgb(79 70 229 / var(--tw-text-opacity));
 }
 
 .elsa-text-red-500 {
@@ -12174,9 +12159,9 @@ svg.jtk-connector.jtk-hover path {
   color: rgb(55 65 81 / var(--tw-text-opacity));
 }
 
-.hover\:elsa-text-indigo-900:hover {
+.hover\:elsa-text-blue-900:hover {
   --tw-text-opacity: 1;
-  color: rgb(49 46 129 / var(--tw-text-opacity));
+  color: rgb(30 58 138 / var(--tw-text-opacity));
 }
 
 .hover\:elsa-text-gray-600:hover {
@@ -12357,11 +12342,6 @@ svg.jtk-connector.jtk-hover path {
   .sm\:elsa-mx-auto {
     margin-left: auto;
     margin-right: auto;
-  }
-
-  .sm\:elsa-mx-6 {
-    margin-left: 1.5rem;
-    margin-right: 1.5rem;
   }
 
   .sm\:elsa-mt-0 {

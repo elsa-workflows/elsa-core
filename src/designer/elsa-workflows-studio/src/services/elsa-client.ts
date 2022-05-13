@@ -16,7 +16,7 @@ import {
   WorkflowBlueprintSummary,
   WorkflowContextOptions,
   WorkflowDefinition,
-  WorkflowDefinitionSummary,
+  WorkflowDefinitionSummary, WorkflowDefinitionVersion,
   WorkflowExecutionLogRecord,
   WorkflowInstance,
   WorkflowInstanceSummary,
@@ -82,6 +82,10 @@ export const createElsaClient = async function (serverUrl: string): Promise<Elsa
         const response = await httpClient.get<ListModel<WorkflowDefinitionSummary>>(`v1/workflow-definitions?ids=${ids.join(',')}&version=${versionOptionsString}`);
         return response.data.items;
       },
+      getVersionHistory: async (definitionId: string): Promise<Array<WorkflowDefinitionVersion>> => {
+        const response = await httpClient.get<ListModel<WorkflowDefinitionVersion>>(`v1/workflow-definitions/${definitionId}/history`);
+        return response.data.items;
+      },
       getByDefinitionAndVersion: async (definitionId: string, versionOptions: VersionOptions) => {
         const versionOptionsString = getVersionOptionsString(versionOptions);
         const response = await httpClient.get<WorkflowDefinition>(`v1/workflow-definitions/${definitionId}/${versionOptionsString}`);
@@ -100,6 +104,10 @@ export const createElsaClient = async function (serverUrl: string): Promise<Elsa
       },
       publish: async workflowDefinitionId => {
         const response = await httpClient.post<WorkflowDefinition>(`v1/workflow-definitions/${workflowDefinitionId}/publish`);
+        return response.data;
+      },
+      revert: async (workflowDefinitionId, version) => {
+        const response = await httpClient.post<WorkflowDefinition>(`v1/workflow-definitions/${workflowDefinitionId}/revert/${version}`);
         return response.data;
       },
       export: async (workflowDefinitionId, versionOptions): Promise<ExportWorkflowResponse> => {
@@ -339,6 +347,8 @@ export interface WorkflowDefinitionsApi {
 
   getMany(ids: Array<string>, versionOptions?: VersionOptions): Promise<Array<WorkflowDefinitionSummary>>;
 
+  getVersionHistory(id: string): Promise<Array<WorkflowDefinitionVersion>>;
+
   getByDefinitionAndVersion(definitionId: string, versionOptions: VersionOptions): Promise<WorkflowDefinition>;
 
   save(request: SaveWorkflowDefinitionRequest): Promise<WorkflowDefinition>;
@@ -348,6 +358,7 @@ export interface WorkflowDefinitionsApi {
   retract(workflowDefinitionId: string): Promise<WorkflowDefinition>;
 
   publish(workflowDefinitionId: string): Promise<WorkflowDefinition>;
+  revert(workflowDefinitionId: string, version: number): Promise<WorkflowDefinition>;
 
   export(workflowDefinitionId: string, versionOptions: VersionOptions): Promise<ExportWorkflowResponse>;
 

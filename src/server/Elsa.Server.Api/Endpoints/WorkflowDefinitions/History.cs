@@ -43,7 +43,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             OperationId = "WorkflowDefinitions.History",
             Tags = new[] { "WorkflowDefinitions" })
         ]
-        public async Task<ActionResult<PagedList<WorkflowDefinitionSummaryModel>>> Handle(string definitionId, CancellationToken cancellationToken = default)
+        public async Task<IActionResult> Handle(string definitionId, CancellationToken cancellationToken = default)
         {
             var tenantId = await _tenantAccessor.GetTenantIdAsync(cancellationToken);
             var specification = GetSpecification(definitionId).And(new TenantSpecification<WorkflowDefinition>(tenantId));
@@ -52,7 +52,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
 
             var model = new
             {
-                Versions = versionModels
+                Items = versionModels
             };
 
             return Json(model, SerializationHelper.GetSettingsForWorkflowDefinition());

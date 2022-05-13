@@ -5,7 +5,7 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
-import { ActivityDefinitionProperty, ActivityDescriptor, ActivityModel, ActivityPropertyDescriptor, ElsaStudio, IntellisenseContext, OrderBy, SelectListItem, VersionOptions, WorkflowBlueprint, WorkflowDefinition, WorkflowExecutionLogRecord, WorkflowFault, WorkflowInstance, WorkflowModel, WorkflowStatus } from "./models";
+import { ActivityDefinitionProperty, ActivityDescriptor, ActivityModel, ActivityPropertyDescriptor, ElsaStudio, IntellisenseContext, OrderBy, SelectListItem, VersionOptions, WorkflowBlueprint, WorkflowDefinition, WorkflowDefinitionVersion, WorkflowExecutionLogRecord, WorkflowFault, WorkflowInstance, WorkflowModel, WorkflowStatus } from "./models";
 import { LocationSegments, MatchResults, RouterHistory } from "@stencil/router";
 import { MenuItem } from "./components/controls/elsa-context-menu/models";
 import { VNode } from "@stencil/core";
@@ -1070,6 +1070,7 @@ declare namespace LocalJSX {
     interface ElsaToastNotification {
     }
     interface ElsaVersionHistoryPanel {
+        "onVersionSelected"?: (event: CustomEvent<WorkflowDefinitionVersion>) => void;
         "serverUrl"?: string;
         "workflowDefinition"?: WorkflowDefinition;
     }
@@ -1158,6 +1159,7 @@ declare namespace LocalJSX {
         "onExportClicked"?: (event: CustomEvent<any>) => void;
         "onImportClicked"?: (event: CustomEvent<File>) => void;
         "onPublishClicked"?: (event: CustomEvent<any>) => void;
+        "onRevertClicked"?: (event: CustomEvent<any>) => void;
         "onUnPublishClicked"?: (event: CustomEvent<any>) => void;
         "publishing"?: boolean;
         "workflowDefinition"?: WorkflowDefinition;
