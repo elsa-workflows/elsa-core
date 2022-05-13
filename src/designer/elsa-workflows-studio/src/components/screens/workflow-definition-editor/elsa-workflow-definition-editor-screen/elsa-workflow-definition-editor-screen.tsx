@@ -293,7 +293,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
     await eventBus.emit(EventTypes.WorkflowRetracted, this, this.workflowDefinition);
   }
 
-  async revertWorkflow(){
+  async revertWorkflow() {
     await this.revertWorkflowInternal();
   }
 
@@ -389,7 +389,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
     }
   }
 
-  async revertWorkflowInternal(){
+  async revertWorkflowInternal() {
     const client = await createElsaClient(this.serverUrl);
     const workflowDefinitionId = this.workflowDefinition.definitionId;
     const version = this.workflowDefinition.version;
@@ -481,7 +481,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
     await this.unpublishWorkflow();
   }
 
-  async onRevertClicked(){
+  async onRevertClicked() {
     await this.revertWorkflow();
   }
 
@@ -1153,7 +1153,11 @@ export class ElsaWorkflowDefinitionEditorScreen {
     return [
       <elsa-tab-header tab="versionHistory" slot="header">Version History</elsa-tab-header>,
       <elsa-tab-content tab="versionHistory" slot="content">
-        <elsa-version-history-panel workflowDefinition={workflowDefinition} onVersionSelected={e => this.onVersionSelected(e)}/>
+        <elsa-version-history-panel
+          workflowDefinition={workflowDefinition}
+          onVersionSelected={e => this.onVersionSelected(e)}
+          onDeleteVersionClicked={e => this.onDeleteVersionClicked(e)}
+          onRevertVersionClicked={e => this.onRevertVersionClicked(e)}/>
       </elsa-tab-content>
     ];
   }
@@ -1184,6 +1188,20 @@ export class ElsaWorkflowDefinitionEditorScreen {
     const client = await createElsaClient(this.serverUrl);
     const version = e.detail;
     const workflowDefinition = await client.workflowDefinitionsApi.getByDefinitionAndVersion(version.definitionId, {version: version.version});
+    this.updateWorkflowDefinition(workflowDefinition);
+  };
+
+  onDeleteVersionClicked = async (e: CustomEvent<WorkflowDefinitionVersion>) => {
+    const client = await createElsaClient(this.serverUrl);
+    const version = e.detail;
+    await client.workflowDefinitionsApi.delete(version.definitionId, {version: version.version});
+    this.updateWorkflowDefinition({...this.workflowDefinition}); // Force a rerender.
+  };
+
+  onRevertVersionClicked = async (e: CustomEvent<WorkflowDefinitionVersion>) => {
+    const client = await createElsaClient(this.serverUrl);
+    const version = e.detail;
+    const workflowDefinition = await client.workflowDefinitionsApi.revert(version.definitionId, version.version);
     this.updateWorkflowDefinition(workflowDefinition);
   };
 }

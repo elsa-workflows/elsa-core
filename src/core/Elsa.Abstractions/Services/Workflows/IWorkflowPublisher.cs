@@ -13,7 +13,15 @@ namespace Elsa.Services
         Task<WorkflowDefinition> RetractAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken = default);
         Task<WorkflowDefinition?> GetDraftAsync(string workflowDefinitionId, VersionOptions? versionOptions = default, CancellationToken cancellationToken = default);
         Task<WorkflowDefinition> SaveDraftAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken = default);
-        Task DeleteAsync(string workflowDefinitionId, CancellationToken cancellationToken = default);
+        
+        /// <summary>
+        /// Delete the specified workflow version or versions.
+        /// </summary>
+        Task DeleteAsync(string workflowDefinitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default);
+        
+        /// <summary>
+        /// Delete a specific workflow version.
+        /// </summary>
         Task DeleteAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken = default);
     }
 

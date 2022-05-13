@@ -1,5 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Models;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -9,7 +10,8 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{apiVersion:apiVersion}/workflow-definitions/{id}")]
+    [Route("v{apiVersion:apiVersion}/workflow-definitions/{definitionId}")]
+    [Route("v{apiVersion:apiVersion}/workflow-definitions/{definitionId}/{versionOptions}")]
     [Produces("application/json")]
     public class Delete : ControllerBase
     {
@@ -24,9 +26,13 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             OperationId = "WorkflowDefinitions.Delete",
             Tags = new[] { "WorkflowDefinitions" })
         ]
-        public async Task<IActionResult> Handle(string id, CancellationToken cancellationToken)
+        public async Task<IActionResult> Handle(string definitionId, VersionOptions? versionOptions = default, CancellationToken cancellationToken = default)
         {
-            await _workflowPublisher.DeleteAsync(id, cancellationToken);
+            if (versionOptions == null)
+                await _workflowPublisher.DeleteAsync(definitionId, VersionOptions.All, cancellationToken);
+            else
+                await _workflowPublisher.DeleteAsync(definitionId, versionOptions.Value, cancellationToken);
+
             return Accepted();
         }
     }

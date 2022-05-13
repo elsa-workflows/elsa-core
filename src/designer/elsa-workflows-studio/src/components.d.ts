@@ -1070,6 +1070,8 @@ declare namespace LocalJSX {
     interface ElsaToastNotification {
     }
     interface ElsaVersionHistoryPanel {
+        "onDeleteVersionClicked"?: (event: CustomEvent<WorkflowDefinitionVersion>) => void;
+        "onRevertVersionClicked"?: (event: CustomEvent<WorkflowDefinitionVersion>) => void;
         "onVersionSelected"?: (event: CustomEvent<WorkflowDefinitionVersion>) => void;
         "serverUrl"?: string;
         "workflowDefinition"?: WorkflowDefinition;

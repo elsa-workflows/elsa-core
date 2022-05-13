@@ -5,6 +5,7 @@ using Elsa.Events;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications.WorkflowDefinitions;
+using Elsa.Persistence.Specifications.WorkflowInstances;
 using MediatR;
 using NodaTime;
 using Open.Linq.AsyncExtensions;
@@ -170,13 +171,27 @@ namespace Elsa.Services.Workflows
             return draft;
         }
 
-        public async Task DeleteAsync(string workflowDefinitionId, CancellationToken cancellationToken = default)
+        public async Task DeleteAsync(string workflowDefinitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
         {
-            await _workflowInstanceStore.DeleteManyAsync(new WorkflowDefinitionIdSpecification(workflowDefinitionId), cancellationToken);
-            await _workflowDefinitionStore.DeleteManyAsync(new Persistence.Specifications.WorkflowDefinitions.WorkflowDefinitionIdSpecification(workflowDefinitionId), cancellationToken);
+            if (versionOptions.AllVersions)
+            {
+                await _workflowInstanceStore.DeleteManyAsync(new WorkflowDefinitionIdSpecification(workflowDefinitionId), cancellationToken);
+                await _workflowDefinitionStore.DeleteManyAsync(new Persistence.Specifications.WorkflowDefinitions.WorkflowDefinitionIdSpecification(workflowDefinitionId), cancellationToken);
+            }
+            else
+            {
+                var definition = await _workflowDefinitionStore.FindByDefinitionIdAsync(workflowDefinitionId, versionOptions, cancellationToken);
+
+                if (definition != null)
+                    await DeleteAsync(definition, cancellationToken);
+            }
         }
 
-        public Task DeleteAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken = default) => DeleteAsync(workflowDefinition.Id, cancellationToken);
+        public async Task DeleteAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken = default)
+        {
+            await _workflowInstanceStore.DeleteManyAsync(new WorkflowDefinitionVersionIdsSpecification(new[] { workflowDefinition.VersionId }), cancellationToken);
+            await _workflowDefinitionStore.DeleteAsync(workflowDefinition, cancellationToken);
+        }
 
         private WorkflowDefinition Initialize(WorkflowDefinition workflowDefinition)
         {
