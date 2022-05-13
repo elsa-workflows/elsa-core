@@ -61,9 +61,9 @@ export class ElsaVersionHistoryPanel {
           <div class="elsa-text-sm elsa-font-medium">
 
             <div class="elsa-mt-2 elsa-flex elsa-flex-col">
-              <div class="elsa-overflow-x-auto">
+              <div class="">
                 <div class="elsa-inline-block elsa-min-w-full elsa-py-2 elsa-align-middle">
-                  <div class="elsa-overflow-hidden elsa-shadow-sm elsa-ring-1 elsa-ring-black elsa-ring-opacity-5 md:elsa-rounded-lg">
+                  <div class="elsa-shadow-sm elsa-ring-1 elsa-ring-black elsa-ring-opacity-5 md:elsa-rounded-lg">
                     <table class="elsa-min-w-full elsa-divide-y elsa-divide-gray-300">
                       <thead class="elsa-bg-gray-50">
                       <tr>
@@ -148,7 +148,7 @@ export class ElsaVersionHistoryPanel {
                                 </button>
                               </td>
                               <td>
-                                {!v.isPublished && !v.isPublished ? <elsa-context-menu menuItems={contextMenuItems}/> : undefined}
+                                {v.isPublished || v.isPublished ? undefined : <elsa-context-menu menuItems={contextMenuItems}/>}
                               </td>
                             </tr>
                           );
