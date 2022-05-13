@@ -30,16 +30,16 @@ export class ElsaWorkflowDefinitionsListScreen {
   @State() currentPageSize: number = ElsaWorkflowDefinitionsListScreen.DEFAULT_PAGE_SIZE;
   private i18next: i18n;
   private confirmDialog: HTMLElsaConfirmDialogElement;
-  private unlistenRouteChanged: () => void;
+  private clearRouteChangedListeners: () => void;
 
   connectedCallback() {
     if (!!this.history)
-      this.unlistenRouteChanged = this.history.listen(e => this.routeChanged(e));
+      this.clearRouteChangedListeners = this.history.listen(e => this.routeChanged(e));
   }
 
   disconnectedCallback() {
-    if (!!this.unlistenRouteChanged)
-      this.unlistenRouteChanged();
+    if (!!this.clearRouteChangedListeners)
+      this.clearRouteChangedListeners();
   }
 
   async componentWillLoad() {
