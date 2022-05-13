@@ -37,6 +37,15 @@ export interface WorkflowDefinitionSummary {
   tag?: string;
 }
 
+export interface WorkflowDefinitionVersion {
+  id: string;
+  definitionId: string;
+  version: number;
+  isLatest: boolean;
+  isPublished: boolean;
+  createdAt: Date;
+}
+
 export interface ActivityBlueprint {
   id: string;
   name?: string;

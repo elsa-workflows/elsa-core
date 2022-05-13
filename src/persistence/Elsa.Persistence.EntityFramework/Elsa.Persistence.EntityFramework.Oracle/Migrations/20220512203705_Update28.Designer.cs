@@ -3,15 +3,17 @@ using System;
 using Elsa.Persistence.EntityFramework.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Oracle.EntityFrameworkCore.Metadata;
 
 namespace Elsa.Persistence.EntityFramework.Oracle.Migrations
 {
     [DbContext(typeof(ElsaContext))]
-    partial class ElsaContextModelSnapshot : ModelSnapshot
+    [Migration("20220512203705_Update28")]
+    partial class Update28
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

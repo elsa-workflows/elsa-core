@@ -30,16 +30,16 @@ export class ElsaWorkflowDefinitionsListScreen {
   @State() currentPageSize: number = ElsaWorkflowDefinitionsListScreen.DEFAULT_PAGE_SIZE;
   private i18next: i18n;
   private confirmDialog: HTMLElsaConfirmDialogElement;
-  private unlistenRouteChanged: () => void;
+  private clearRouteChangedListeners: () => void;
 
   connectedCallback() {
     if (!!this.history)
-      this.unlistenRouteChanged = this.history.listen(e => this.routeChanged(e));
+      this.clearRouteChangedListeners = this.history.listen(e => this.routeChanged(e));
   }
 
   disconnectedCallback() {
-    if (!!this.unlistenRouteChanged)
-      this.unlistenRouteChanged();
+    if (!!this.clearRouteChangedListeners)
+      this.clearRouteChangedListeners();
   }
 
   async componentWillLoad() {
@@ -61,13 +61,13 @@ export class ElsaWorkflowDefinitionsListScreen {
     this.currentPageSize = Math.max(Math.min(this.currentPageSize, ElsaWorkflowDefinitionsListScreen.MAX_PAGE_SIZE), ElsaWorkflowDefinitionsListScreen.MIN_PAGE_SIZE);
   }
 
-  async onPublishClick (e: Event, workflowDefinition: WorkflowDefinitionSummary) {
+  async onPublishClick(e: Event, workflowDefinition: WorkflowDefinitionSummary) {
     const elsaClient = await this.createClient();
     await elsaClient.workflowDefinitionsApi.publish(workflowDefinition.definitionId);
     await this.loadWorkflowDefinitions();
   }
 
-  async onUnPublishClick (e: Event, workflowDefinition: WorkflowDefinitionSummary) {
+  async onUnPublishClick(e: Event, workflowDefinition: WorkflowDefinitionSummary) {
     const elsaClient = await this.createClient();
     await elsaClient.workflowDefinitionsApi.retract(workflowDefinition.definitionId);
     await this.loadWorkflowDefinitions();
@@ -81,7 +81,7 @@ export class ElsaWorkflowDefinitionsListScreen {
       return;
 
     const elsaClient = await this.createClient();
-    await elsaClient.workflowDefinitionsApi.delete(workflowDefinition.definitionId);
+    await elsaClient.workflowDefinitionsApi.delete(workflowDefinition.definitionId, {allVersions: true});
     await this.loadWorkflowDefinitions();
   }
 
@@ -181,13 +181,13 @@ export class ElsaWorkflowDefinitionsListScreen {
 
               const publishIcon = (
                 <svg xmlns="http://www.w3.org/2000/svg" class="elsa-h-5 elsa-w-5 elsa-text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
                 </svg>
               );
 
               const unPublishIcon = (
                 <svg xmlns="http://www.w3.org/2000/svg" class="elsa-h-5 elsa-w-5 elsa-text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
                 </svg>
               );
 
@@ -210,7 +210,11 @@ export class ElsaWorkflowDefinitionsListScreen {
                   <td class="elsa-pr-6">
                     <elsa-context-menu history={this.history} menuItems={[
                       {text: i18next.t('Edit'), anchorUrl: editUrl, icon: editIcon},
-                      isPublished ? {text: i18next.t('Unpublish'), clickHandler: e => this.onUnPublishClick(e, workflowDefinition), icon: unPublishIcon} : {text: i18next.t('Publish'), clickHandler: e => this.onPublishClick(e, workflowDefinition), icon: publishIcon},
+                      isPublished ? {text: i18next.t('Unpublish'), clickHandler: e => this.onUnPublishClick(e, workflowDefinition), icon: unPublishIcon} : {
+                        text: i18next.t('Publish'),
+                        clickHandler: e => this.onPublishClick(e, workflowDefinition),
+                        icon: publishIcon
+                      },
                       {text: i18next.t('Delete'), clickHandler: e => this.onDeleteClick(e, workflowDefinition), icon: deleteIcon}
                     ]}/>
                   </td>
