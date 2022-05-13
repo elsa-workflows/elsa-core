@@ -40,8 +40,14 @@ export class ElsaVersionHistoryPanel {
     this.versionSelected.emit(version);
   };
 
-  onDeleteVersionClick = (e: Event, version: WorkflowDefinitionVersion) => {
+  onDeleteVersionClick = async (e: Event, version: WorkflowDefinitionVersion) => {
     e.preventDefault();
+
+    const result = await this.confirmDialog.show('Delete Version', 'Are you sure you wish to permanently delete this version? This operation cannot be undone.');
+
+    if (!result)
+      return;
+
     this.deleteVersionClicked.emit(version);
   };
 
