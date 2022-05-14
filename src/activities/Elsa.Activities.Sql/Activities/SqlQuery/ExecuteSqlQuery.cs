@@ -7,6 +7,7 @@ using Elsa.Expressions;
 using Elsa.Activities.Sql.Factory;
 using System.Data;
 using Elsa.Activities.Sql.Models;
+using Elsa.Providers.WorkflowStorage;
 
 namespace Elsa.Activities.Sql.Activities
 {
@@ -28,9 +29,10 @@ namespace Elsa.Activities.Sql.Activities
             UIHint = ActivityInputUIHints.Dropdown,
             Hint = "Allowed databases to run SQL.",
             Options = new[] { "MSSQL Server", "PostgreSql" },
+            DefaultValue = "MSSQL Server",
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
-        public string? Database { get; set; }
+        public string? Database { get; set; } = "MSSQL Server";
 
         /// <summary>
         /// SQl script to execute
@@ -51,11 +53,12 @@ namespace Elsa.Activities.Sql.Activities
         )]
         public string ConnectionString { get; set; } = default!;
 
-        [ActivityOutput] public DataSet? Output { get; set; }
+        [ActivityOutput(DisableWorkflowProviderSelection = true, DefaultWorkflowStorageProvider = TransientWorkflowStorageProvider.ProviderName)]
+        public DataSet? Output { get; set; }
 
         private readonly ISqlClientFactory _sqlClientFactory;
 
-        public ExecuteSqlQuery(ISqlClientFactory sqlClientFactory) 
+        public ExecuteSqlQuery(ISqlClientFactory sqlClientFactory)
         {
             _sqlClientFactory = sqlClientFactory;
         }

@@ -26,8 +26,6 @@ namespace Elsa.Activities.Telnyx.Activities
 
             if (webhookModel.Data.Payload is CallPayload callPayload)
             {
-                context.WorkflowExecutionContext.CorrelationId = callPayload.CallSessionId;
-
                 if (!context.HasCallControlId())
                     context.SetCallControlId(callPayload.CallControlId);
 

@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services.Models;
+using Elsa.Services.WorkflowStorage;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Services.Workflows
@@ -11,12 +12,14 @@ namespace Elsa.Services.Workflows
     public class WorkflowInstanceExecutor : IWorkflowInstanceExecutor
     {
         private readonly IResumesWorkflow _workflowRunner;
+        private readonly IWorkflowStorageService _workflowStorageService;
         public IWorkflowInstanceStore WorkflowInstanceStore { get; }
         private readonly ILogger _logger;
 
-        public WorkflowInstanceExecutor(IResumesWorkflow workflowRunner, IWorkflowInstanceStore workflowInstanceStore, ILogger<WorkflowInstanceExecutor> logger)
+        public WorkflowInstanceExecutor(IResumesWorkflow workflowRunner, IWorkflowInstanceStore workflowInstanceStore, IWorkflowStorageService workflowStorageService, ILogger<WorkflowInstanceExecutor> logger)
         {
             _workflowRunner = workflowRunner;
+            _workflowStorageService = workflowStorageService;
             WorkflowInstanceStore = workflowInstanceStore;
             _logger = logger;
         }
@@ -26,24 +29,27 @@ namespace Elsa.Services.Workflows
             var workflowInstance = await WorkflowInstanceStore.FindByIdAsync(workflowInstanceId, cancellationToken);
 
             if (!ValidatePreconditions(workflowInstanceId, workflowInstance, activityId))
-                return new RunWorkflowResult(workflowInstance, activityId, null,false);
+                return new RunWorkflowResult(workflowInstance, activityId, null, false);
+
+            await _workflowStorageService.UpdateInputAsync(workflowInstance!, input, cancellationToken);
 
             return await _workflowRunner.ResumeWorkflowAsync(
                 workflowInstance!,
                 activityId,
-                input,
                 cancellationToken);
         }
 
         public async Task<RunWorkflowResult> ExecuteAsync(WorkflowInstance workflowInstance, string? activityId, WorkflowInput? input = default, CancellationToken cancellationToken = default)
         {
             if (!ValidatePreconditions(workflowInstance.Id, workflowInstance, activityId))
-                return new RunWorkflowResult(workflowInstance, activityId, null,false);
+                return new RunWorkflowResult(workflowInstance, activityId, null, false);
+
+            if (input != null)
+                workflowInstance!.Input = await _workflowStorageService.SaveAsync(input, workflowInstance, cancellationToken);
 
             return await _workflowRunner.ResumeWorkflowAsync(
                 workflowInstance!,
                 activityId,
-                input,
                 cancellationToken);
         }
 

@@ -44,7 +44,7 @@ namespace Elsa.Server.Api.Endpoints.Signals
                 return new EmptyResult();
 
             return Json(
-                new ExecuteSignalResponse(result.Select(x => new CollectedWorkflow(x.WorkflowInstanceId, x.ActivityId)).ToList()),
+                new ExecuteSignalResponse(result.Select(x => new CollectedWorkflow(x.WorkflowInstanceId, x.WorkflowInstance, x.ActivityId)).ToList()),
                 _serializerSettingsProvider.GetSettings());
         }
     }

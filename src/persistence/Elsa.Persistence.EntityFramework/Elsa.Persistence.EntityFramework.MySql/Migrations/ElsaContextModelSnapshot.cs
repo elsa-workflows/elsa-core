@@ -146,6 +146,9 @@ namespace Elsa.Persistence.EntityFramework.MySql.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("varchar(255)");
 
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<string>("Data")
                         .HasColumnType("longtext");
 

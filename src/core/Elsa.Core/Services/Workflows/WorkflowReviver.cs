@@ -66,7 +66,7 @@ namespace Elsa.Services.Workflows
         public async Task<RunWorkflowResult> ReviveAndRunAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken)
         {
             workflowInstance = await ReviveAsync(workflowInstance, cancellationToken);
-            return await _resumesWorkflow.ResumeWorkflowAsync(workflowInstance, null, null, cancellationToken);
+            return await _resumesWorkflow.ResumeWorkflowAsync(workflowInstance, cancellationToken: cancellationToken);
         }
 
         public async Task<WorkflowInstance> ReviveAndQueueAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken)
