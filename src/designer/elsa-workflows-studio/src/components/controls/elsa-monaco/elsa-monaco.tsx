@@ -1,10 +1,15 @@
-import {Component, Event, EventEmitter, h, Host, Method, Prop, Watch} from '@stencil/core';
-import {initializeMonacoWorker, Monaco} from "./elsa-monaco-utils";
+import { Component, Event, EventEmitter, h, Host, Method, Prop, Watch } from '@stencil/core';
+import { initializeMonacoWorker, Monaco } from "./elsa-monaco-utils";
 import state from '../../../utils/store';
 
 export interface MonacoValueChangedArgs {
   value: string;
   markers: Array<any>;
+}
+
+export interface EditorVariable {
+  variableName: string;
+  type: string;
 }
 
 @Component({
@@ -15,16 +20,18 @@ export interface MonacoValueChangedArgs {
 export class ElsaMonaco {
   private monaco: Monaco;
 
-  @Prop({attribute: 'monaco-lib-path'}) monacoLibPath: string;
-  @Prop({attribute: 'editor-height', reflect: true}) editorHeight: string = '5em';
+  @Prop({ attribute: 'monaco-lib-path' }) monacoLibPath: string;
+  @Prop({ attribute: 'editor-height', reflect: true }) editorHeight: string = '5em';
   @Prop() value: string;
   @Prop() language: string;
-  @Prop({attribute: 'single-line', reflect: true}) singleLineMode: boolean = false;
+  @Prop({ attribute: 'single-line', reflect: true }) singleLineMode: boolean = false;
   @Prop() padding: string;
-  @Event({eventName: 'valueChanged'}) valueChanged: EventEmitter<MonacoValueChangedArgs>;
+  @Event({ eventName: 'valueChanged' }) valueChanged: EventEmitter<MonacoValueChangedArgs>;
 
   container: HTMLElement;
   editor: any;
+
+  private editorVariables: Array<EditorVariable> = [];
 
   @Watch('language')
   languageChangeHandler(newValue: string) {
@@ -60,13 +67,20 @@ export class ElsaMonaco {
     if (oldModel)
       oldModel.dispose();
 
-    const newModel = monaco.editor.createModel(libSource, 'typescript', monaco.Uri.parse(libUri));
+    const newModel = monaco.editor.createModel(libSource, 'typescript', monaco.Uri.parse(libUri));    
+    
+    const matches = libSource.matchAll(/declare const (\w+): (\w+)/g);
+
+    for(const match of matches) {
+      this.editorVariables.push({variableName: match[1], type: match[2] });
+    }
   }
 
   async componentWillLoad() {
     const monacoLibPath = this.monacoLibPath ?? state.monacoLibPath;
     this.monaco = await initializeMonacoWorker(monacoLibPath);
     this.registerLiquid();
+    this.registerSQL();
   }
 
   componentDidLoad() {
@@ -119,8 +133,8 @@ export class ElsaMonaco {
           lineNumbersMinChars: 0,
           folding: false,
           scrollBeyondLastColumn: 0,
-          scrollbar: {horizontal: 'hidden', vertical: 'hidden'},
-          find: {addExtraSpaceOnTop: false, autoFindInSelection: 'never', seedSearchStringFromSelection: false},
+          scrollbar: { horizontal: 'hidden', vertical: 'hidden' },
+          find: { addExtraSpaceOnTop: false, autoFindInSelection: 'never', seedSearchStringFromSelection: false },
         }
       }
     }
@@ -129,8 +143,8 @@ export class ElsaMonaco {
 
     this.editor.onDidChangeModelContent(e => {
       const value = this.editor.getValue();
-      const markers = monaco.editor.getModelMarkers({owner: language});
-      this.valueChanged.emit({value: value, markers: markers});
+      const markers = monaco.editor.getModelMarkers({ owner: language });
+      this.valueChanged.emit({ value: value, markers: markers });
     });
 
     if (this.singleLineMode) {
@@ -166,7 +180,7 @@ export class ElsaMonaco {
 
   registerLiquid() {
     const monaco = (window as any).monaco;
-    monaco.languages.register({id: 'liquid'});
+    monaco.languages.register({ id: 'liquid' });
 
     monaco.languages.registerCompletionItemProvider('liquid', {
       provideCompletionItems: () => {
@@ -190,12 +204,39 @@ export class ElsaMonaco {
           'uniq', 'upcase', 'url_decode', 'url_encode'];
 
         for (let i = 0; i < keywords.length; i++) {
-          autocompleteProviderItems.push({'label': keywords[i], kind: monaco.languages.CompletionItemKind.Keyword});
+          autocompleteProviderItems.push({ 'label': keywords[i], kind: monaco.languages.CompletionItemKind.Keyword });
         }
 
-        return {suggestions: autocompleteProviderItems};
+        return { suggestions: autocompleteProviderItems };
       }
     });
+  }
+
+  registerSQL() {
+    console.log("registerSQL");
+    const monaco = (window as any).monaco;
+
+    monaco.languages.registerCompletionItemProvider('sql', {
+      triggerCharacters: ["@"],
+      provideCompletionItems: (model, position) => {
+
+        const word = model.getWordUntilPosition(position)
+
+        const autocompleteProviderItems = [];
+        //if (word.word.match(/@.*/)) {
+          for(const varible of this.editorVariables) {
+            autocompleteProviderItems.push({
+              label: `${varible.variableName}: ${varible.type}`,
+              kind: monaco.languages.CompletionItemKind.Keyword,
+              insertText: varible.variableName
+            });
+          }
+        //}
+
+        return { suggestions: autocompleteProviderItems };
+      }
+    });
+
   }
 
   render() {
@@ -203,8 +244,8 @@ export class ElsaMonaco {
     return (
       <Host
         class="elsa-monaco-editor-host elsa-border focus:elsa-ring-blue-500 focus:elsa-border-blue-500 elsa-block elsa-w-full elsa-min-w-0 elsa-rounded-md sm:elsa-text-sm elsa-border-gray-300 elsa-p-4"
-        style={{'min-height': this.editorHeight}}>
-        <div ref={el => this.container = el} class={`elsa-monaco-editor-container ${padding}`}/>
+        style={{ 'min-height': this.editorHeight }}>
+        <div ref={el => this.container = el} class={`elsa-monaco-editor-container ${padding}`} />
       </Host>
     )
   }
