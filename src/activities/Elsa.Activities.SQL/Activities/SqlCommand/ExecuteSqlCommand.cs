@@ -37,7 +37,7 @@ namespace Elsa.Activities.Sql.Activities
         [ActivityInput(
             Hint = "SQL command to execute",
             UIHint = ActivityInputUIHints.MultiLine,
-            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
+            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid, SyntaxNames.SQL }
         )]
         public string Command { get; set; } = default!;
 
