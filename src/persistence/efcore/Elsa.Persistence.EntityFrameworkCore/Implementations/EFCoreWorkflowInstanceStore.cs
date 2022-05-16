@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Elsa.Persistence.Entities;
 using Elsa.Persistence.EntityFrameworkCore.Services;
 using Elsa.Persistence.Extensions;
@@ -89,6 +90,6 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
             _ => query
         };
 
-        return await query.PaginateAsync(x => WorkflowInstanceSummary.FromInstance(x), pageArgs);
+        return await Extensions.QueryableExtensions.PaginateAsync(query, x => WorkflowInstanceSummary.FromInstance(x), pageArgs);
     }
 }
