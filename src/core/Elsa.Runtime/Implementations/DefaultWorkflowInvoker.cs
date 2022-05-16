@@ -1,3 +1,4 @@
+using Elsa.Management.Services;
 using Elsa.Models;
 using Elsa.Persistence.Entities;
 using Elsa.Persistence.Models;
@@ -14,24 +15,28 @@ namespace Elsa.Runtime.Implementations;
 /// </summary>
 public class DefaultWorkflowInvoker : IWorkflowInvoker
 {
+    private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
     private readonly IWorkflowInstanceStore _workflowInstanceStore;
+    private readonly IWorkflowMaterializer _workflowMaterializer;
     private readonly IWorkflowRunner _workflowRunner;
-    private readonly IWorkflowRegistry _workflowRegistry;
 
     public DefaultWorkflowInvoker(
-        IWorkflowInstanceStore workflowInstanceStore, 
-        IWorkflowRunner workflowRunner, 
-        IWorkflowRegistry workflowRegistry)
+        IWorkflowDefinitionStore workflowDefinitionStore,
+        IWorkflowInstanceStore workflowInstanceStore,
+        IWorkflowMaterializer workflowMaterializer,
+        IWorkflowRunner workflowRunner)
     {
         _workflowInstanceStore = workflowInstanceStore;
+        _workflowMaterializer = workflowMaterializer;
         _workflowRunner = workflowRunner;
-        _workflowRegistry = workflowRegistry;
+        _workflowDefinitionStore = workflowDefinitionStore;
     }
 
     public async Task<InvokeWorkflowResult> InvokeAsync(InvokeWorkflowDefinitionRequest request, CancellationToken cancellationToken = default)
     {
-        var workflow = await GetWorkflowAsync(request.DefinitionId, request.VersionOptions, cancellationToken);
+        var definition = await GetWorkflowDefinitionAsync(request.DefinitionId, request.VersionOptions, cancellationToken);
         var input = request.Input;
+        var workflow = await _workflowMaterializer.MaterializeAsync(definition, cancellationToken);
         return await _workflowRunner.RunAsync(workflow, input, cancellationToken);
     }
 
@@ -43,7 +48,7 @@ public class DefaultWorkflowInvoker : IWorkflowInvoker
 
     public async Task<InvokeWorkflowResult> InvokeAsync(WorkflowInstance workflowInstance, Bookmark? bookmark = default, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
     {
-        var workflow = await _workflowRegistry.FindByDefinitionIdAsync(workflowInstance.DefinitionId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken);
+        var workflow = await _workflowDefinitionStore.FindByDefinitionIdAsync(workflowInstance.DefinitionId, VersionOptions.SpecificVersion(workflowInstance.Version), cancellationToken);
 
         if (workflow == null)
             throw new Exception($"Workflow instance references a workflow that does not exist");
@@ -52,18 +57,24 @@ public class DefaultWorkflowInvoker : IWorkflowInvoker
         return await InvokeAsync(workflow, workflowState, bookmark, input, cancellationToken);
     }
 
+    public async Task<InvokeWorkflowResult> InvokeAsync(WorkflowDefinition workflowDefinition, WorkflowState workflowState, Bookmark? bookmark = default, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
+    {
+        var workflow = await _workflowMaterializer.MaterializeAsync(workflowDefinition, cancellationToken);
+        return await InvokeAsync(workflow, workflowState, bookmark, input, cancellationToken);
+    }
+
     public async Task<InvokeWorkflowResult> InvokeAsync(Workflow workflow, WorkflowState workflowState, Bookmark? bookmark = default, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
     {
         return await _workflowRunner.RunAsync(workflow, workflowState, bookmark, input, cancellationToken);
     }
-    
-    private async Task<Workflow> GetWorkflowAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
-    {
-        var workflow = await _workflowRegistry.FindByDefinitionIdAsync(definitionId, versionOptions, cancellationToken);
 
-        if (workflow == null)
+    private async Task<WorkflowDefinition> GetWorkflowDefinitionAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
+    {
+        var definition = await _workflowDefinitionStore.FindByDefinitionIdAsync(definitionId, versionOptions, cancellationToken);
+
+        if (definition == null)
             throw new Exception($"Workflow instance references a workflow that does not exist");
 
-        return workflow;
+        return definition;
     }
 }

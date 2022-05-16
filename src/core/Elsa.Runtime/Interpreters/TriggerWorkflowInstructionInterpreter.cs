@@ -1,6 +1,7 @@
 using Elsa.Models;
 using Elsa.Persistence.Entities;
 using Elsa.Persistence.Models;
+using Elsa.Persistence.Services;
 using Elsa.Runtime.Abstractions;
 using Elsa.Runtime.Models;
 using Elsa.Runtime.Services;
@@ -14,37 +15,37 @@ public class TriggerWorkflowInstructionInterpreter : WorkflowInstructionInterpre
 {
     private readonly IWorkflowInvoker _workflowInvoker;
     private readonly IWorkflowDispatcher _workflowDispatcher;
-    private readonly IWorkflowRegistry _workflowRegistry;
+    private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
     private readonly ILogger _logger;
 
     public TriggerWorkflowInstructionInterpreter(
         IWorkflowInvoker workflowInvoker,
         IWorkflowDispatcher workflowDispatcher,
-        IWorkflowRegistry workflowRegistry, 
+        IWorkflowDefinitionStore workflowDefinitionStore, 
         ILogger<TriggerWorkflowInstructionInterpreter> logger)
     {
         _workflowInvoker = workflowInvoker;
         _workflowDispatcher = workflowDispatcher;
-        _workflowRegistry = workflowRegistry;
+        _workflowDefinitionStore = workflowDefinitionStore;
         _logger = logger;
     }
 
     protected override async ValueTask<ExecuteWorkflowInstructionResult?> ExecuteInstructionAsync(TriggerWorkflowInstruction instruction, CancellationToken cancellationToken = default)
     {
         var workflowTrigger = instruction.WorkflowTrigger;
-        var workflowId = workflowTrigger.WorkflowDefinitionId;
+        var definitionId = workflowTrigger.WorkflowDefinitionId;
 
-        // Get workflow to execute.
-        var workflow = await FindWorkflowAsync(workflowId, cancellationToken);
+        // Check if the workflow definition exists.
+        var exists = await GetDefinitionExistsAsync(definitionId, cancellationToken);
 
-        if (workflow == null)
+        if (!exists)
             return null;
 
         // Execute workflow.
-        var executeRequest = new InvokeWorkflowDefinitionRequest(workflowId, VersionOptions.Published, instruction.Input, instruction.CorrelationId);
+        var executeRequest = new InvokeWorkflowDefinitionRequest(definitionId, VersionOptions.Published, instruction.Input, instruction.CorrelationId);
         var workflowExecutionResult = await _workflowInvoker.InvokeAsync(executeRequest, cancellationToken);
 
-        return new ExecuteWorkflowInstructionResult(workflow, workflowExecutionResult);
+        return new ExecuteWorkflowInstructionResult(workflowExecutionResult);
     }
 
     protected override async ValueTask<DispatchWorkflowInstructionResult?> DispatchInstructionAsync(TriggerWorkflowInstruction instruction, CancellationToken cancellationToken = default)
@@ -52,10 +53,10 @@ public class TriggerWorkflowInstructionInterpreter : WorkflowInstructionInterpre
         var workflowTrigger = instruction.WorkflowTrigger;
         var definitionId = workflowTrigger.WorkflowDefinitionId;
 
-        // Get workflow to dispatch.
-        var workflow = await FindWorkflowAsync(definitionId, cancellationToken);
+        // Check if the workflow definition exists.
+        var exists = await GetDefinitionExistsAsync(definitionId, cancellationToken);
 
-        if (workflow == null)
+        if (!exists)
             return null;
 
         // Execute workflow.
@@ -65,15 +66,5 @@ public class TriggerWorkflowInstructionInterpreter : WorkflowInstructionInterpre
         return new DispatchWorkflowInstructionResult();
     }
 
-    private async Task<Workflow?> FindWorkflowAsync(string id, CancellationToken cancellationToken)
-    {
-        // Get workflow to execute.
-        var workflow = await _workflowRegistry.FindByDefinitionIdAsync(id, VersionOptions.Published, cancellationToken);
-
-        if (workflow != null)
-            return workflow;
-
-        _logger.LogWarning("Could not trigger workflow definition {WorkflowDefinitionId} because it was not found", id);
-        return null;
-    }
+    private async Task<bool> GetDefinitionExistsAsync(string definitionId, CancellationToken cancellationToken) => await _workflowDefinitionStore.GetExistsAsync(definitionId, VersionOptions.Published, cancellationToken);
 }

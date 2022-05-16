@@ -3,8 +3,8 @@ using System.Threading.Tasks;
 using Elsa.Api.ApiResults;
 using Elsa.AspNetCore;
 using Elsa.Persistence.Models;
+using Elsa.Persistence.Services;
 using Elsa.Runtime.Models;
-using Elsa.Runtime.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,13 +15,13 @@ namespace Elsa.Api.Endpoints.WorkflowDefinitions;
 [ProducesResponseType(typeof(DispatchWorkflowDefinitionResponse), StatusCodes.Status200OK)]
 public class Dispatch : Controller
 {
-    private readonly IWorkflowRegistry _workflowRegistry;
-    public Dispatch(IWorkflowRegistry workflowRegistry) => _workflowRegistry = workflowRegistry;
+    private readonly IWorkflowDefinitionStore _store;
+    public Dispatch(IWorkflowDefinitionStore store) => _store = store;
 
     [HttpPost]
     public async Task<IActionResult> DispatchAsync(string definitionId, string? correlationId = default, CancellationToken cancellationToken = default)
     {
-        var workflow = await _workflowRegistry.FindByDefinitionIdAsync(definitionId, VersionOptions.Published, cancellationToken);
-        return workflow == null ? NotFound() : new DispatchWorkflowResult(workflow, correlationId);
+        var exists = await _store.GetExistsAsync(definitionId, VersionOptions.Published, cancellationToken);
+        return exists ? new DispatchWorkflowDefinitionResult(definitionId, correlationId) : NotFound();
     }
 }
