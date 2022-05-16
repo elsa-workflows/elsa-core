@@ -27,7 +27,7 @@ public class WorkflowInstanceGrain : WorkflowInstanceGrainBase
 {
     private readonly IWorkflowInstanceStore _workflowInstanceStore;
     private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
-    private readonly IWorkflowMaterializer _workflowMaterializer;
+    private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IWorkflowRunner _workflowRunner;
     private readonly IWorkflowInstanceFactory _workflowInstanceFactory;
     private readonly WorkflowSerializerOptionsProvider _workflowSerializerOptionsProvider;
@@ -35,7 +35,7 @@ public class WorkflowInstanceGrain : WorkflowInstanceGrainBase
     public WorkflowInstanceGrain(
         IWorkflowInstanceStore workflowInstanceStore,
         IWorkflowDefinitionStore workflowDefinitionStore,
-        IWorkflowMaterializer workflowMaterializer,
+        IWorkflowDefinitionService workflowDefinitionService,
         IWorkflowRunner workflowRunner,
         IWorkflowInstanceFactory workflowInstanceFactory,
         WorkflowSerializerOptionsProvider workflowSerializerOptionsProvider,
@@ -43,7 +43,7 @@ public class WorkflowInstanceGrain : WorkflowInstanceGrainBase
     {
         _workflowInstanceStore = workflowInstanceStore;
         _workflowDefinitionStore = workflowDefinitionStore;
-        _workflowMaterializer = workflowMaterializer;
+        _workflowDefinitionService = workflowDefinitionService;
         _workflowRunner = workflowRunner;
         _workflowInstanceFactory = workflowInstanceFactory;
         _workflowSerializerOptionsProvider = workflowSerializerOptionsProvider;
@@ -145,7 +145,7 @@ public class WorkflowInstanceGrain : WorkflowInstanceGrainBase
         IDictionary<string, object>? input = default,
         CancellationToken cancellationToken = default)
     {
-        var workflow = await _workflowMaterializer.MaterializeAsync(workflowDefinition, cancellationToken);
+        var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
         return await ExecuteAsync(workflow, workflowState, bookmarkMessage, input, cancellationToken);
     }
 

@@ -18,20 +18,20 @@ public class ResumeWorkflowInstructionInterpreter : WorkflowInstructionInterpret
     private readonly IWorkflowRunner _workflowRunner;
     private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
     private readonly IWorkflowInstanceStore _workflowInstanceStore;
-    private readonly IWorkflowMaterializer _workflowMaterializer;
+    private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly ILogger _logger;
 
     public ResumeWorkflowInstructionInterpreter(
         IWorkflowRunner workflowRunner, 
         IWorkflowDefinitionStore workflowDefinitionStore, 
         IWorkflowInstanceStore workflowInstanceStore,
-        IWorkflowMaterializer workflowMaterializer,
+        IWorkflowDefinitionService workflowDefinitionService,
         ILogger<ResumeWorkflowInstructionInterpreter> logger)
     {
         _workflowRunner = workflowRunner;
         _workflowDefinitionStore = workflowDefinitionStore;
         _workflowInstanceStore = workflowInstanceStore;
-        _workflowMaterializer = workflowMaterializer;
+        _workflowDefinitionService = workflowDefinitionService;
         _logger = logger;
     }
 
@@ -63,7 +63,7 @@ public class ResumeWorkflowInstructionInterpreter : WorkflowInstructionInterpret
         var bookmark = new Bookmark(workflowBookmark.Id, workflowBookmark.Name, workflowBookmark.Hash, workflowBookmark.Data, workflowBookmark.ActivityId, workflowBookmark.ActivityInstanceId, workflowBookmark.CallbackMethodName);
         var workflowState = workflowInstance.WorkflowState;
         var input = instruction.Input;
-        var workflow = await _workflowMaterializer.MaterializeAsync(definition, cancellationToken);
+        var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(definition, cancellationToken);
         var workflowExecutionResult = await _workflowRunner.RunAsync(workflow, workflowState, bookmark, input, cancellationToken);
 
         // Update workflow instance with new workflow state.

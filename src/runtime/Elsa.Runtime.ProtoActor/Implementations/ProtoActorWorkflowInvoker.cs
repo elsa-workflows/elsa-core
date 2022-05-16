@@ -23,18 +23,18 @@ namespace Elsa.Runtime.ProtoActor.Implementations;
 
 public class ProtoActorWorkflowInvoker : IWorkflowInvoker
 {
-    private readonly IWorkflowMaterializer _workflowMaterializer;
+    private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly Cluster _cluster;
     private readonly GrainClientFactory _grainClientFactory;
     private readonly WorkflowSerializerOptionsProvider _workflowSerializerOptionsProvider;
 
     public ProtoActorWorkflowInvoker(
-        IWorkflowMaterializer workflowMaterializer,
+        IWorkflowDefinitionService workflowDefinitionService,
         Cluster cluster, 
         GrainClientFactory grainClientFactory, 
         WorkflowSerializerOptionsProvider workflowSerializerOptionsProvider)
     {
-        _workflowMaterializer = workflowMaterializer;
+        _workflowDefinitionService = workflowDefinitionService;
         _cluster = cluster;
         _grainClientFactory = grainClientFactory;
         _workflowSerializerOptionsProvider = workflowSerializerOptionsProvider;
@@ -117,7 +117,7 @@ public class ProtoActorWorkflowInvoker : IWorkflowInvoker
         IDictionary<string, object>? input = default, 
         CancellationToken cancellationToken = default)
     {
-        var workflow = await _workflowMaterializer.MaterializeAsync(workflowDefinition, cancellationToken);
+        var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
         return await InvokeAsync(workflow, workflowState, bookmark, input, cancellationToken);
     }
 

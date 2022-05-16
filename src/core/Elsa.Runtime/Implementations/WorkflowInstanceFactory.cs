@@ -12,18 +12,18 @@ namespace Elsa.Runtime.Implementations;
 public class WorkflowInstanceFactory : IWorkflowInstanceFactory
 {
     private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
-    private readonly IWorkflowMaterializer _workflowMaterializer;
+    private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IIdentityGenerator _identityGenerator;
     private readonly ISystemClock _systemClock;
 
     public WorkflowInstanceFactory(
         IWorkflowDefinitionStore workflowDefinitionStore,
-        IWorkflowMaterializer workflowMaterializer,
+        IWorkflowDefinitionService workflowDefinitionService,
         IIdentityGenerator identityGenerator,
         ISystemClock systemClock)
     {
         _workflowDefinitionStore = workflowDefinitionStore;
-        _workflowMaterializer = workflowMaterializer;
+        _workflowDefinitionService = workflowDefinitionService;
         _identityGenerator = identityGenerator;
         _systemClock = systemClock;
     }
@@ -39,7 +39,7 @@ public class WorkflowInstanceFactory : IWorkflowInstanceFactory
 
     public async Task<WorkflowInstance> CreateAsync(WorkflowDefinition definition, string? correlationId, CancellationToken cancellationToken = default)
     {
-        var workflow = await _workflowMaterializer.MaterializeAsync(definition, cancellationToken);
+        var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(definition, cancellationToken);
         return Create(workflow, correlationId);
     }
 

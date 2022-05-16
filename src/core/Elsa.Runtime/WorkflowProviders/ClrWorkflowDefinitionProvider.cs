@@ -57,7 +57,7 @@ public class ClrWorkflowDefinitionProvider : IWorkflowDefinitionProvider
         var workflow = builder.BuildWorkflow();
         _identityGraphService.AssignIdentities(workflow);
 
-        var workflowJson = JsonSerializer.Serialize(workflow, _workflowSerializerOptionsProvider.CreatePersistenceOptions());
+        var workflowJson = JsonSerializer.Serialize(workflow.Root, _workflowSerializerOptionsProvider.CreatePersistenceOptions());
         var materializerContext = new ClrWorkflowMaterializerContext(workflowBuilder.GetType());
         var materializerContextJson = JsonSerializer.Serialize(materializerContext, _workflowSerializerOptionsProvider.CreatePersistenceOptions());
         var name = string.IsNullOrWhiteSpace(workflow.WorkflowMetadata.Name) ? workflowBuilderType.Name : workflow.WorkflowMetadata.Name.Trim();

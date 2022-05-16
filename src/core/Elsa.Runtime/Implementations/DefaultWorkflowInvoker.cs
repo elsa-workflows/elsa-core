@@ -17,17 +17,17 @@ public class DefaultWorkflowInvoker : IWorkflowInvoker
 {
     private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
     private readonly IWorkflowInstanceStore _workflowInstanceStore;
-    private readonly IWorkflowMaterializer _workflowMaterializer;
+    private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IWorkflowRunner _workflowRunner;
 
     public DefaultWorkflowInvoker(
         IWorkflowDefinitionStore workflowDefinitionStore,
         IWorkflowInstanceStore workflowInstanceStore,
-        IWorkflowMaterializer workflowMaterializer,
+        IWorkflowDefinitionService workflowDefinitionService,
         IWorkflowRunner workflowRunner)
     {
         _workflowInstanceStore = workflowInstanceStore;
-        _workflowMaterializer = workflowMaterializer;
+        _workflowDefinitionService = workflowDefinitionService;
         _workflowRunner = workflowRunner;
         _workflowDefinitionStore = workflowDefinitionStore;
     }
@@ -36,7 +36,7 @@ public class DefaultWorkflowInvoker : IWorkflowInvoker
     {
         var definition = await GetWorkflowDefinitionAsync(request.DefinitionId, request.VersionOptions, cancellationToken);
         var input = request.Input;
-        var workflow = await _workflowMaterializer.MaterializeAsync(definition, cancellationToken);
+        var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(definition, cancellationToken);
         return await _workflowRunner.RunAsync(workflow, input, cancellationToken);
     }
 
@@ -59,7 +59,7 @@ public class DefaultWorkflowInvoker : IWorkflowInvoker
 
     public async Task<InvokeWorkflowResult> InvokeAsync(WorkflowDefinition workflowDefinition, WorkflowState workflowState, Bookmark? bookmark = default, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
     {
-        var workflow = await _workflowMaterializer.MaterializeAsync(workflowDefinition, cancellationToken);
+        var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
         return await InvokeAsync(workflow, workflowState, bookmark, input, cancellationToken);
     }
 
