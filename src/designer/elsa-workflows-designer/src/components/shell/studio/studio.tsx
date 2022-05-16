@@ -13,6 +13,7 @@ import {WorkflowUpdatedArgs} from '../../designer/workflow-editor/workflow-edito
 import {PublishClickedArgs} from "../../toolbar/workflow-publish-button/workflow-publish-button";
 import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
 import {downloadFromBlob, getVersionOptionsString} from "../../../utils";
+import {uuid} from "@antv/x6/lib/util/string/uuid";
 
 @Component({
   tag: 'elsa-studio'
@@ -106,13 +107,7 @@ export class Studio {
     if (!workflowEditorElement)
       return;
 
-    const request: SaveWorkflowDefinitionRequest = {
-      definitionId: "",
-      publish: false
-    };
-
-    const updatedWorkflow = await this.elsaClient.workflowDefinitions.post(request);
-    await this.workflowEditorElement.importWorkflowMetadata(updatedWorkflow);
+    await this.workflowEditorElement.newWorkflow();
   }
 
   @Listen('exportClicked')

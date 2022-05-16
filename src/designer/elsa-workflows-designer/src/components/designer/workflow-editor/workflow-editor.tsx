@@ -24,6 +24,7 @@ import {ActivityDriverRegistry, EventBus} from '../../../services';
 import {WorkflowPropsUpdatedArgs} from "../workflow-properties-editor/workflow-properties-editor";
 import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
 import {PluginRegistry} from "../../../services/plugin-registry";
+import {Flowchart} from "../../activities/flowchart/models";
 
 export interface WorkflowUpdatedArgs {
   workflow: WorkflowDefinition;
@@ -136,6 +137,31 @@ export class WorkflowEditor {
   @Method()
   public async importWorkflowMetadata(workflow: WorkflowDefinition): Promise<void> {
     this.workflowDefinition = workflow;
+  }
+
+  @Method()
+  public async newWorkflow() {
+    const flowchart = {
+      typeName: 'Elsa.Flowchart',
+      activities: [],
+      connections: [],
+      id: uuid(),
+      metadata: {},
+      applicationProperties: {},
+      variables: []
+    } as Flowchart;
+
+    const workflowDefinition: WorkflowDefinition = {
+      root: flowchart,
+      id: uuid(),
+      definitionId: uuid(),
+      version: 1,
+      isLatest: true,
+      isPublished: false,
+      materializerName: 'Json'
+    }
+
+    await this.importWorkflow(workflowDefinition);
   }
 
   public render() {

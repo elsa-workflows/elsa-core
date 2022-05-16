@@ -20,6 +20,7 @@ import { PagerData } from "./components/shared/pager/pager";
 import { PanelPosition, PanelStateChangedArgs } from "./components/designer/panel/models";
 import { WorkflowUpdatedArgs } from "./components/designer/workflow-editor/workflow-editor";
 import { ActivityDriverRegistry } from "./services";
+import { Flowchart } from "./components/activities/flowchart/models";
 import { WorkflowPropsUpdatedArgs } from "./components/designer/workflow-properties-editor/workflow-properties-editor";
 import { PublishClickedArgs } from "./components/toolbar/workflow-publish-button/workflow-publish-button";
 export namespace Components {
@@ -170,6 +171,7 @@ export namespace Components {
         "importWorkflow": (workflow: WorkflowDefinition, workflowInstance?: WorkflowInstance) => Promise<void>;
         "importWorkflowMetadata": (workflow: WorkflowDefinition) => Promise<void>;
         "monacoLibPath": string;
+        "newWorkflow": () => Promise<void>;
         "registerActivityDrivers": (register: (registry: ActivityDriverRegistry) => void) => Promise<void>;
     }
     interface ElsaWorkflowInstanceBrowser {
