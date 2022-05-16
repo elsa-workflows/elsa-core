@@ -1,52 +1,40 @@
-using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities;
+using Elsa.Api.Models;
 using Elsa.AspNetCore;
 using Elsa.Management.Materializers;
 using Elsa.Management.Services;
-using Elsa.Models;
 using Elsa.Persistence.Entities;
+using Elsa.Runtime.Services;
 using Elsa.Serialization;
-using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Elsa.Api.Endpoints.WorkflowDefinitions;
 
 [Area(AreaNames.Elsa)]
-[ApiEndpoint(ControllerNames.WorkflowDefinitions, "Post")]
+[ApiEndpoint(ControllerNames.WorkflowDefinitions, "Import")]
 [ProducesResponseType(typeof(WorkflowDefinition), StatusCodes.Status200OK)]
 [ProducesResponseType(typeof(WorkflowDefinition), StatusCodes.Status201Created)]
-public class Post : Controller
+public class Import : Controller
 {
     private readonly WorkflowSerializerOptionsProvider _serializerOptionsProvider;
     private readonly IWorkflowPublisher _workflowPublisher;
+    private readonly IWorkflowDefinitionService _workflowDefinitionService;
 
-    public Post(WorkflowSerializerOptionsProvider serializerOptionsProvider, IWorkflowPublisher workflowPublisher)
+    public Import(WorkflowSerializerOptionsProvider serializerOptionsProvider, IWorkflowPublisher workflowPublisher, IWorkflowDefinitionService workflowDefinitionService)
     {
         _serializerOptionsProvider = serializerOptionsProvider;
         _workflowPublisher = workflowPublisher;
+        _workflowDefinitionService = workflowDefinitionService;
     }
-
-    public record SaveWorkflowDefinitionRequest(
-        string? DefinitionId,
-        string? Name,
-        string? Description,
-        IActivity? Root,
-        ICollection<Variable> Variables,
-        IDictionary<string, object> Metadata,
-        IDictionary<string, object> ApplicationProperties,
-        ICollection<string> Tags,
-        bool Publish);
-
+    
     [HttpPost]
-    public async Task<IActionResult> HandleAsync(CancellationToken cancellationToken)
+    public async Task<IActionResult> HandleAsync(string? definitionId, bool publish, CancellationToken cancellationToken)
     {
         var serializerOptions = _serializerOptionsProvider.CreateApiOptions();
-        var model = (await Request.ReadFromJsonAsync<SaveWorkflowDefinitionRequest>(serializerOptions, cancellationToken))!;
-        var definitionId = model.DefinitionId;
+        var model = (await Request.ReadFromJsonAsync<WorkflowDefinitionModel>(serializerOptions, cancellationToken))!;
 
         // Get a workflow draft version.
         var draft = !string.IsNullOrWhiteSpace(definitionId)
@@ -65,7 +53,7 @@ public class Post : Controller
         }
 
         // Update the draft with the received model.
-        var root = model.Root ?? new Sequence();
+        var root = model.Root;
         var stringData = JsonSerializer.Serialize(root, serializerOptions);
 
         draft!.StringData = stringData;
@@ -76,9 +64,27 @@ public class Post : Controller
         draft.Tags = model.Tags;
         draft.Variables = model.Variables;
         draft.ApplicationProperties = model.ApplicationProperties;
-        draft = model.Publish ? await _workflowPublisher.PublishAsync(draft, cancellationToken) : await _workflowPublisher.SaveDraftAsync(draft, cancellationToken);
+        draft = publish ? await _workflowPublisher.PublishAsync(draft, cancellationToken) : await _workflowPublisher.SaveDraftAsync(draft, cancellationToken);
+        
+        // Materialize the workflow definition for serialization.
+        var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(draft, cancellationToken);
 
-        var result = Json(draft, serializerOptions);
+        var workflowModel = new WorkflowDefinitionModel(
+            draft.Id,
+            draft.DefinitionId,
+            draft.Name,
+            draft.Description,
+            draft.CreatedAt,
+            draft.Version,
+            draft.Variables,
+            draft.Metadata,
+            draft.ApplicationProperties,
+            draft.IsLatest,
+            draft.IsPublished,
+            draft.Tags,
+            workflow.Root);
+
+        var result = Json(workflowModel, serializerOptions);
         result.StatusCode = isNew ? StatusCodes.Status201Created : StatusCodes.Status200OK;
 
         return result;

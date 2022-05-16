@@ -54,6 +54,7 @@ export class WorkflowEditor {
     version: 1,
     isLatest: true,
     isPublished: false,
+    materializerName: 'Json'
   };
 
   private workflowInstance?: WorkflowInstance;

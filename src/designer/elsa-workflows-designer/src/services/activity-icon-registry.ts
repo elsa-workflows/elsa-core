@@ -17,7 +17,6 @@ export class ActivityIconRegistry {
     this.add('Elsa.Flowchart', Icons.FlowchartIcon);
     this.add('Elsa.HttpEndpoint', Icons.HttpEndpointIcon);
     this.add('Elsa.ForEach', Icons.ForEachIcon);
-    this.add('Elsa.Sequence', Icons.SequenceIcon);
     this.add('Elsa.Delay', Icons.DelayIcon);
     this.add('Elsa.Timer', Icons.TimerIcon);
     this.add('Elsa.RunJavaScript', Icons.RunJavaScriptIcon);

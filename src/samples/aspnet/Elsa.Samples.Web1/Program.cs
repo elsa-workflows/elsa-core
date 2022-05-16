@@ -75,7 +75,7 @@ services
     .AddControllers(mvc => mvc.Conventions.Add(new ApiEndpointAttributeConvention())) // This convention is required as well. 
     .ClearApplicationParts() // Remove all controllers from referenced packages.
     .AddApplicationPartsFrom<Program>() // Add back any controllers from the current application.
-    .AddElsaApiControllers() // Add Elsa API endpoint controllers
+    .AddElsaApiControllers() // Add Elsa API endpoint controllers.
     ;
 
 // Testing only: allow client app to connect from anywhere.

@@ -19,6 +19,8 @@ public static class EndpointRouteBuilderExtensions
         Map("Events.Trigger", "events/{eventName}/trigger", new { Controller = ControllerNames.Events, Action = "Trigger" });
         
         // Workflow Definitions.
+        Map("WorkflowDefinitions.ImportNew", "workflow-definitions/import", new { Controller = ControllerNames.WorkflowDefinitions, Action = "Import" });
+        Map("WorkflowDefinitions.ImportExisting", "workflow-definitions/{definitionId}/import", new { Controller = ControllerNames.WorkflowDefinitions, Action = "Import" });
         Map("WorkflowDefinitions.Post", "workflow-definitions", new { Controller = ControllerNames.WorkflowDefinitions, Action = "Post" });
         Map("WorkflowDefinitions.List", "workflow-definitions", new { Controller = ControllerNames.WorkflowDefinitions, Action = "List" });
         Map("WorkflowDefinitions.Get", "workflow-definitions/{definitionId}", new { Controller = ControllerNames.WorkflowDefinitions, Action = "Get" });
@@ -27,7 +29,8 @@ public static class EndpointRouteBuilderExtensions
         Map("WorkflowDefinitions.Retract", "workflow-definitions/{definitionId}/retract", new { Controller = ControllerNames.WorkflowDefinitions, Action = "Retract" });
         Map("WorkflowDefinitions.Dispatch", "workflow-definitions/{definitionId}/dispatch", new { Controller = ControllerNames.WorkflowDefinitions, Action = "Dispatch" });
         Map("WorkflowDefinitions.Execute", "workflow-definitions/{definitionId}/execute", new { Controller = ControllerNames.WorkflowDefinitions, Action = "Execute" });
-
+        Map("WorkflowDefinitions.Export", "workflow-definitions/{definitionId}/export", new { Controller = ControllerNames.WorkflowDefinitions, Action = "Export" });
+        
         // Workflow Instances.
 
         return endpoints;

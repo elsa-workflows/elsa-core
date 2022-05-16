@@ -30,6 +30,7 @@ public class List : Controller
         CancellationToken cancellationToken,
         [FromQuery] string? versionOptions = default,
         [FromQuery] string? definitionIds = default,
+        [FromQuery(Name = "materializer")] string? materializerName = default,
         [FromQuery] int? page = default,
         [FromQuery] int? pageSize = default)
     {
@@ -47,7 +48,7 @@ public class List : Controller
         }
         else
         {
-            var pageOfSummaries = await _store.ListSummariesAsync(parsedVersionOptions, pageArgs, cancellationToken);
+            var pageOfSummaries = await _store.ListSummariesAsync(parsedVersionOptions, materializerName, pageArgs, cancellationToken);
             return Json(pageOfSummaries, serializerOptions);
         }
     }

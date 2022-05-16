@@ -1,27 +1,28 @@
+using System.Net.Mime;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Api.Models;
 using Elsa.AspNetCore;
-using Elsa.Models;
 using Elsa.Persistence.Models;
 using Elsa.Persistence.Services;
 using Elsa.Runtime.Services;
 using Elsa.Serialization;
-using Microsoft.AspNetCore.Http;
+using Humanizer;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Elsa.Api.Endpoints.WorkflowDefinitions;
 
 [Area(AreaNames.Elsa)]
-[ApiEndpoint(ControllerNames.WorkflowDefinitions, "Get")]
-[ProducesResponseType(typeof(WorkflowDefinitionModel), StatusCodes.Status200OK)]
-public class Get : Controller
+[ApiEndpoint(ControllerNames.WorkflowDefinitions, "Export")]
+[Produces("application/json")]
+public class Export : Controller
 {
     private readonly IWorkflowDefinitionStore _store;
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly WorkflowSerializerOptionsProvider _serializerOptionsProvider;
 
-    public Get(IWorkflowDefinitionStore store, IWorkflowDefinitionService workflowDefinitionService, WorkflowSerializerOptionsProvider serializerOptionsProvider)
+    public Export(IWorkflowDefinitionStore store, IWorkflowDefinitionService workflowDefinitionService, WorkflowSerializerOptionsProvider serializerOptionsProvider)
     {
         _store = store;
         _workflowDefinitionService = workflowDefinitionService;
@@ -40,9 +41,9 @@ public class Get : Controller
 
         if (definition == null)
             return NotFound();
-
+        
         var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(definition, cancellationToken);
-
+        
         var model = new WorkflowDefinitionModel(
             definition.Id,
             definition.DefinitionId,
@@ -57,7 +58,15 @@ public class Get : Controller
             definition.IsPublished,
             definition.Tags,
             workflow.Root);
+        
+        var binaryJson = JsonSerializer.SerializeToUtf8Bytes(model, serializerOptions);
+        var hasWorkflowName = !string.IsNullOrWhiteSpace(definition.Name);
+        var workflowName = hasWorkflowName ? definition.Name!.Trim() : definition.DefinitionId;
+            
+        var fileName = hasWorkflowName
+            ? $"{workflowName.Underscore().Dasherize().ToLowerInvariant()}.json"
+            : $"workflow-definition-{workflowName.Underscore().Dasherize().ToLowerInvariant()}.json";
 
-        return Json(model, serializerOptions);
+        return File(binaryJson, MediaTypeNames.Application.Json, fileName);
     }
 }

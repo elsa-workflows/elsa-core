@@ -14,7 +14,7 @@ export class WorkflowDefinitionBrowser {
 
   @Event() public workflowDefinitionSelected: EventEmitter<WorkflowDefinitionSummary>;
   @State() private workflowDefinitions: PagedList<WorkflowDefinitionSummary> = {items: [], totalCount: 0};
-  @State() private publishedWorkflowDefinitions: Array<WorkflowDefinitionSummary> = [];
+  @State() private publishedWorkflowDefinitions: PagedList<WorkflowDefinitionSummary> = {items: [], totalCount: 0};
 
   @Method()
   public async show() {
@@ -68,16 +68,20 @@ export class WorkflowDefinitionBrowser {
     const pageSize = 50;
     const latestVersionOptions: VersionOptions = {isLatest: true};
     const publishedVersionOptions: VersionOptions = {isPublished: true};
-    const latestWorkflowDefinitions = await elsaClient.workflowDefinitions.list({page: page, pageSize: pageSize, versionOptions: {isLatest: true}});
+
+    // TODO: Load only json-based workflow definitions for now.
+    // Later, also allow CLR-based workflows to be "edited" (publish / unpublish / position activities / set variables, etc.)
+    const materializerName = 'Json';
+    const latestWorkflowDefinitions = await elsaClient.workflowDefinitions.list({materializerName, page: page, pageSize: pageSize, versionOptions: {isLatest: true}});
     const unpublishedWorkflowDefinitionIds = latestWorkflowDefinitions.items.filter(x => !x.isPublished).map(x => x.definitionId);
-    this.publishedWorkflowDefinitions = await elsaClient.workflowDefinitions.getMany({definitionIds: unpublishedWorkflowDefinitionIds, versionOptions: publishedVersionOptions});
+    this.publishedWorkflowDefinitions = await elsaClient.workflowDefinitions.list({materializerName, definitionIds: unpublishedWorkflowDefinitionIds, versionOptions: publishedVersionOptions});
     this.workflowDefinitions = latestWorkflowDefinitions;
   }
 
   render() {
 
     const workflowDefinitions = this.workflowDefinitions;
-    const publishedWorkflowDefinitions = this.publishedWorkflowDefinitions;
+    const publishedWorkflowDefinitions = this.publishedWorkflowDefinitions.items;
     const closeAction = DefaultActions.Close();
     const actions = [closeAction];
 

@@ -91,12 +91,15 @@ public class InMemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
         return Task.FromResult(result);
     }
 
-    public Task<Page<WorkflowDefinitionSummary>> ListSummariesAsync(VersionOptions? versionOptions = default, PageArgs? pageArgs = default, CancellationToken cancellationToken = default)
+    public Task<Page<WorkflowDefinitionSummary>> ListSummariesAsync(VersionOptions? versionOptions = default, string? materializerName = default, PageArgs? pageArgs = default, CancellationToken cancellationToken = default)
     {
         var query = _store.List().AsQueryable();
 
         if (versionOptions != null)
             query = query.WithVersion(versionOptions.Value);
+        
+        if (!string.IsNullOrWhiteSpace(materializerName))
+            query = query.Where(x => x.MaterializerName == materializerName);
 
         return query.PaginateAsync(x => WorkflowDefinitionSummary.FromDefinition(x), pageArgs);
     }

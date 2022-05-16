@@ -17,6 +17,7 @@ public class ClrWorkflowDefinitionProvider : IWorkflowDefinitionProvider
 {
     private readonly IIdentityGraphService _identityGraphService;
     private readonly WorkflowSerializerOptionsProvider _workflowSerializerOptionsProvider;
+    private readonly ISystemClock _systemClock;
     private readonly IServiceProvider _serviceProvider;
     private readonly ElsaRuntimeOptions _options;
 
@@ -24,11 +25,13 @@ public class ClrWorkflowDefinitionProvider : IWorkflowDefinitionProvider
         IOptions<ElsaRuntimeOptions> options,
         IIdentityGraphService identityGraphService,
         WorkflowSerializerOptionsProvider workflowSerializerOptionsProvider,
+        ISystemClock systemClock,
         IServiceProvider serviceProvider
     )
     {
         _identityGraphService = identityGraphService;
         _workflowSerializerOptionsProvider = workflowSerializerOptionsProvider;
+        _systemClock = systemClock;
         _serviceProvider = serviceProvider;
         _options = options.Value;
     }
@@ -46,8 +49,9 @@ public class ClrWorkflowDefinitionProvider : IWorkflowDefinitionProvider
     {
         var builder = new WorkflowDefinitionBuilder();
         var workflowBuilder = await workflowFactory(_serviceProvider);
+        var workflowBuilderType = workflowBuilder.GetType();
 
-        builder.WithDefinitionId(workflowBuilder.GetType().Name);
+        builder.WithDefinitionId(workflowBuilderType.Name);
         await workflowBuilder.BuildAsync(builder, cancellationToken);
 
         var workflow = builder.BuildWorkflow();
@@ -56,13 +60,14 @@ public class ClrWorkflowDefinitionProvider : IWorkflowDefinitionProvider
         var workflowJson = JsonSerializer.Serialize(workflow, _workflowSerializerOptionsProvider.CreatePersistenceOptions());
         var materializerContext = new ClrWorkflowMaterializerContext(workflowBuilder.GetType());
         var materializerContextJson = JsonSerializer.Serialize(materializerContext, _workflowSerializerOptionsProvider.CreatePersistenceOptions());
+        var name = string.IsNullOrWhiteSpace(workflow.WorkflowMetadata.Name) ? workflowBuilderType.Name : workflow.WorkflowMetadata.Name.Trim();
 
         var definition = new WorkflowDefinition
         {
             Id = workflow.Identity.Id,
             DefinitionId = workflow.Identity.DefinitionId,
             Version = workflow.Identity.Version,
-            Name = workflow.WorkflowMetadata.Name,
+            Name = name,
             Description = workflow.WorkflowMetadata.Description,
             Metadata = workflow.Metadata,
             Variables = workflow.Variables,
@@ -70,7 +75,7 @@ public class ClrWorkflowDefinitionProvider : IWorkflowDefinitionProvider
             ApplicationProperties = workflow.ApplicationProperties,
             IsLatest = workflow.Publication.IsLatest,
             IsPublished = workflow.Publication.IsPublished,
-            CreatedAt = workflow.WorkflowMetadata.CreatedAt,
+            CreatedAt = workflow.WorkflowMetadata.CreatedAt == default ? _systemClock.UtcNow : workflow.WorkflowMetadata.CreatedAt,
             MaterializerName = ClrWorkflowMaterializer.MaterializerName,
             MaterializerContext = materializerContextJson,
             StringData = workflowJson
