@@ -32,6 +32,9 @@ public static class EndpointRouteBuilderExtensions
         Map("WorkflowDefinitions.Export", "workflow-definitions/{definitionId}/export", new { Controller = ControllerNames.WorkflowDefinitions, Action = "Export" });
         
         // Workflow Instances.
+        Map("WorkflowInstances.Get", "workflow-instances/{id}", new { Controller = ControllerNames.WorkflowInstances, Action = "Get" });
+        Map("WorkflowInstances.Delete", "workflow-instances/{id}", new { Controller = ControllerNames.WorkflowInstances, Action = "Delete" });
+        Map("WorkflowInstances.List", "workflow-instances", new { Controller = ControllerNames.WorkflowInstances, Action = "List" });
 
         return endpoints;
     }

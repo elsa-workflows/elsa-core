@@ -2,7 +2,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.AspNetCore;
 using Elsa.Persistence.Services;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Elsa.Api.Endpoints.WorkflowDefinitions;

@@ -1,17 +1,30 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.AspNetCore;
 using Elsa.Persistence.Services;
 using Elsa.Serialization;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Elsa.Api.Endpoints.WorkflowInstances;
 
-public static partial class WorkflowInstances
+[Area(AreaNames.Elsa)]
+[ApiEndpoint(ControllerNames.WorkflowInstances, "Get")]
+public class Get : Controller
 {
-    public static async Task<IResult> GetAsync(IWorkflowInstanceStore workflowInstanceStore, WorkflowSerializerOptionsProvider serializerOptionsProvider, string id, CancellationToken cancellationToken)
+    private readonly IWorkflowInstanceStore _store;
+    private readonly WorkflowSerializerOptionsProvider _serializerOptionsProvider;
+
+    public Get(IWorkflowInstanceStore store, WorkflowSerializerOptionsProvider serializerOptionsProvider)
     {
-        var serializerOptions = serializerOptionsProvider.CreateApiOptions();
-        var workflowInstance = await workflowInstanceStore.FindByIdAsync(id, cancellationToken);
-        return workflowInstance != null ? Results.Json(workflowInstance, serializerOptions, statusCode: StatusCodes.Status200OK) : Results.NotFound();
+        _store = store;
+        _serializerOptionsProvider = serializerOptionsProvider;
+    }
+    
+    [HttpGet]
+    public async Task<IActionResult> HandleAsync(string id, CancellationToken cancellationToken)
+    {
+        var serializerOptions = _serializerOptionsProvider.CreateApiOptions();
+        var workflowInstance = await _store.FindByIdAsync(id, cancellationToken);
+        return workflowInstance != null ? Json(workflowInstance, serializerOptions) : NotFound();
     }
 }

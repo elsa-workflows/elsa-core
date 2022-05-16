@@ -2,7 +2,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Api.Models;
 using Elsa.AspNetCore;
-using Elsa.Models;
 using Elsa.Persistence.Models;
 using Elsa.Persistence.Services;
 using Elsa.Runtime.Services;

@@ -1,23 +1,22 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.AspNetCore;
 using Elsa.Persistence.Services;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Elsa.Api.Endpoints.WorkflowInstances;
 
-public static partial class WorkflowInstances
+[Area(AreaNames.Elsa)]
+[ApiEndpoint(ControllerNames.WorkflowInstances, "Delete")]
+public class Delete : Controller
 {
-    public static async Task<IResult> DeleteAsync(
-        string id, 
-        IWorkflowInstanceStore workflowInstanceStore,
-        CancellationToken cancellationToken)
+    private readonly IWorkflowInstanceStore _store;
+    public Delete(IWorkflowInstanceStore store) => _store = store;
+
+    [HttpDelete]
+    public async Task<IActionResult> HandleAsync(string id, CancellationToken cancellationToken)
     {
-        var workflowInstance = await workflowInstanceStore.FindByIdAsync(id, cancellationToken);
-
-        if (workflowInstance == null)
-            return Results.NotFound();
-
-        await workflowInstanceStore.DeleteAsync(id, cancellationToken);
-        return Results.NoContent();
+        var deleted = await _store.DeleteAsync(id, cancellationToken);
+        return deleted ? NoContent() : NotFound();
     }
 }

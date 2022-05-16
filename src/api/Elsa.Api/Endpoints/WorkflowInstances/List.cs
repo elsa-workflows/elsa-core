@@ -1,21 +1,30 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.AspNetCore;
 using Elsa.Models;
 using Elsa.Persistence.Entities;
 using Elsa.Persistence.Models;
 using Elsa.Persistence.Services;
 using Elsa.Serialization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Elsa.Api.Endpoints.WorkflowInstances;
 
-public static partial class WorkflowInstances
+[Area(AreaNames.Elsa)]
+[ApiEndpoint(ControllerNames.WorkflowInstances, "List")]
+public class List : Controller
 {
-    public static async Task<IResult> ListAsync(
-        IWorkflowInstanceStore workflowInstanceStore,
-        WorkflowSerializerOptionsProvider serializerOptionsProvider,
-        CancellationToken cancellationToken,
+    private readonly IWorkflowInstanceStore _store;
+    private readonly WorkflowSerializerOptionsProvider _serializerOptionsProvider;
+
+    public List(IWorkflowInstanceStore store, WorkflowSerializerOptionsProvider serializerOptionsProvider)
+    {
+        _store = store;
+        _serializerOptionsProvider = serializerOptionsProvider;
+    }
+    
+    [HttpGet]
+    public async Task<IActionResult> HandleAsync(
         [FromQuery] int? page,
         [FromQuery] int? pageSize,
         [FromQuery] string? searchTerm,
@@ -25,9 +34,10 @@ public static partial class WorkflowInstances
         [FromQuery] WorkflowStatus? workflowStatus,
         [FromQuery] WorkflowSubStatus? workflowSubStatus,
         [FromQuery] OrderBy? orderBy,
-        [FromQuery] OrderDirection? orderDirection)
+        [FromQuery] OrderDirection? orderDirection,
+        CancellationToken cancellationToken)
     {
-        var serializerOptions = serializerOptionsProvider.CreateApiOptions();
+        var serializerOptions = _serializerOptionsProvider.CreateApiOptions();
         var pageArgs = new PageArgs(page, pageSize);
 
         var request = new FindWorkflowInstancesArgs(
@@ -41,8 +51,8 @@ public static partial class WorkflowInstances
             orderBy ?? OrderBy.Created,
             orderDirection ?? OrderDirection.Ascending);
 
-        var summaries = await workflowInstanceStore.FindManyAsync(request, cancellationToken);
+        var summaries = await _store.FindManyAsync(request, cancellationToken);
 
-        return Results.Json(summaries, serializerOptions, statusCode: StatusCodes.Status200OK);
+        return Json(summaries, serializerOptions);
     }
 }
