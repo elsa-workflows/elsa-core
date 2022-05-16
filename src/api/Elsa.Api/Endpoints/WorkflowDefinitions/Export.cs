@@ -1,3 +1,4 @@
+using System.Net.Mime;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -66,6 +67,6 @@ public class Export : Controller
             ? $"{workflowName.Underscore().Dasherize().ToLowerInvariant()}.json"
             : $"workflow-definition-{workflowName.Underscore().Dasherize().ToLowerInvariant()}.json";
 
-        return File(binaryJson, "application/json", fileName);
+        return File(binaryJson, MediaTypeNames.Application.Json, fileName);
     }
 }
