@@ -86,6 +86,13 @@ public class EFCoreStore<TEntity> : IStore<TEntity> where TEntity : Entity
         return Load(dbContext, queryable).ToList();
     }
 
+    public async Task<bool> AnyAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await CreateDbContextAsync(cancellationToken);
+        var set = dbContext.Set<TEntity>();
+        return await set.AnyAsync(predicate, cancellationToken);
+    }
+
     public IEnumerable<TEntity> Load(ElsaDbContext dbContext, IEnumerable<TEntity> entities) => OnLoading(dbContext, entities.ToList());
 
     private void OnSaving(ElsaDbContext dbContext, TEntity entity)

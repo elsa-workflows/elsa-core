@@ -1,5 +1,4 @@
 using Elsa.Persistence.Entities;
-using Elsa.Persistence.Extensions;
 using Elsa.Persistence.Models;
 using Elsa.Persistence.Services;
 
@@ -32,4 +31,6 @@ public class NullWorkflowDefinitionStore : IWorkflowDefinitionStore
         var page = new Page<WorkflowDefinitionSummary>(new List<WorkflowDefinitionSummary>(0), 0);
         return Task.FromResult(page);
     }
+
+    public Task<bool> GetExistsAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default) => Task.FromResult(false);
 }

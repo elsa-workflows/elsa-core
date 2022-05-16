@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Elsa.Persistence.Entities;
 
 namespace Elsa.Persistence.InMemory.Implementations;
@@ -67,4 +68,6 @@ public class InMemoryStore<TEntity> where TEntity : Entity
         var queryable = Entities.Values.AsQueryable();
         return query(queryable);
     }
+
+    public bool AnyAsync(Func<TEntity, bool> predicate) => Entities.Values.Any(predicate);
 }

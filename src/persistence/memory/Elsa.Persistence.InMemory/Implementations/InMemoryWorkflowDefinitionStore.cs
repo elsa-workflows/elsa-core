@@ -103,4 +103,10 @@ public class InMemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
 
         return query.PaginateAsync(x => WorkflowDefinitionSummary.FromDefinition(x), pageArgs);
     }
+
+    public Task<bool> GetExistsAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
+    {
+        var exists = _store.AnyAsync(x => x.DefinitionId == definitionId && x.WithVersion(versionOptions));
+        return Task.FromResult(exists);
+    }
 }

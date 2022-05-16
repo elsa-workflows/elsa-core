@@ -14,4 +14,5 @@ public interface IWorkflowDefinitionStore
     Task<int> DeleteByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default);
     Task<int> DeleteManyByDefinitionIdsAsync(IEnumerable<string> definitionIds, CancellationToken cancellationToken = default);
     Task<Page<WorkflowDefinitionSummary>> ListSummariesAsync(VersionOptions? versionOptions = default, string? materializerName = default, PageArgs? pageArgs = default, CancellationToken cancellationToken = default);
+    Task<bool> GetExistsAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default);
 }

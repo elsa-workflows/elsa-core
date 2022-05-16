@@ -19,7 +19,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         IStore<WorkflowDefinition> store,
         IStore<WorkflowInstance> instanceStore,
         IStore<WorkflowTrigger> triggerStore,
-        IStore<WorkflowBookmark> bookmarkStore, 
+        IStore<WorkflowBookmark> bookmarkStore,
         IStore<WorkflowExecutionLogRecord> executionLogRecordStore)
     {
         _store = store;
@@ -57,7 +57,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         return query.OrderBy(x => x.Name).Select(x => WorkflowDefinitionSummary.FromDefinition(x)).ToList();
     }
 
-    public async Task<IEnumerable<WorkflowDefinition>> FindLatestAndPublishedByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default) => 
+    public async Task<IEnumerable<WorkflowDefinition>> FindLatestAndPublishedByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default) =>
         await _store.FindManyAsync(x => x.DefinitionId == definitionId && (x.IsLatest || x.IsPublished), cancellationToken);
 
     public async Task SaveAsync(WorkflowDefinition record, CancellationToken cancellationToken = default) => await _store.SaveAsync(record, cancellationToken);
@@ -95,7 +95,14 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
             query = set.Where(x => x.MaterializerName == materializerName);
 
         query = query.OrderBy(x => x.Name);
-        
-        return await  Extensions.QueryableExtensions.PaginateAsync(query,x => WorkflowDefinitionSummary.FromDefinition(x), pageArgs);
+
+        return await Extensions.QueryableExtensions.PaginateAsync(query, x => WorkflowDefinitionSummary.FromDefinition(x), pageArgs);
+    }
+
+    public async Task<bool> GetExistsAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
+    {
+        Expression<Func<WorkflowDefinition, bool>> predicate = x => x.DefinitionId == definitionId;
+        predicate = predicate.WithVersion(versionOptions);
+        return await _store.AnyAsync(predicate, cancellationToken);
     }
 }
