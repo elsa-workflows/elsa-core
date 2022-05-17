@@ -42,8 +42,6 @@ export class WorkflowEditor {
   private toolbox: HTMLElsaToolboxElement;
   private applyActivityChanges: (activity: Activity) => void;
   private deleteActivity: (activity: Activity) => void;
-  private applyTriggerChanges: (trigger: Trigger) => void;
-  private deleteTrigger: (trigger: Trigger) => void;
   private readonly emitActivityChangedDebounced: (e: ActivityPropertyChangedEventArgs) => void;
   private readonly saveChangesDebounced: () => void;
 
