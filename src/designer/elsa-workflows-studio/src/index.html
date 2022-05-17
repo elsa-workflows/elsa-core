@@ -206,6 +206,68 @@
     };
   }
 
+  // Awaits the existence of an element.
+  const awaitElement = async selector => {
+    while ( document.querySelector(selector) === null) {
+      await new Promise( resolve =>  requestAnimationFrame(resolve) )
+    }
+    return document.querySelector(selector);
+  };
+
+  // A sample plugin for the VehicleActivity sample activity.
+  function VehicleActivityPlugin(elsaStudio) {
+    const {eventBus, httpClientFactory} = elsaStudio;
+
+    // A function that requests a list of models from the server based on the selected car brand.
+    const updateModels = async (brand, currentModel) => {
+      let models = [];
+
+      // Only attempt to fetch car models if a brand was given.
+      if (!!brand) {
+        const httpClient = await httpClientFactory();
+        const response = await httpClient.get(`api/samples/brands/${brand}/models`);
+        models = response.data;
+      }
+
+      // Get a reference to the models select list.
+      const modelsSelectList = await awaitElement('#Model');
+      modelsSelectList.innerHTML = "";
+
+      // Build up the models dropdown list.
+      for (const model of models) {
+        const selected = model === currentModel;
+        const option = new Option(model, model, selected, selected);
+        modelsSelectList.options.add(option);
+      }
+    }
+
+    // When the activity editor is opened, setup an event handler on the Brands dropdown list.
+    eventBus.on('activity-editor-appearing', async e => {
+      // We are only interested in our custom activity being editor.
+      if (e.activityDescriptor.type !== 'VehicleActivity')
+        return;
+
+      // Listen for change events on the Brand dropdown list.
+      const brandsSelectList = await awaitElement('#Brand');
+      const currentBrand = brandsSelectList.value;
+      const currentModel = e.activityModel.properties.find(p => p.name === 'Model').expressions['Literal'];
+
+      brandsSelectList.addEventListener('change', async e => {
+        await updateModels(e.currentTarget.value);
+      });
+
+      await updateModels(currentBrand, currentModel);
+    });
+
+    // When the activity editor is closing, dispose event handlers.
+    eventBus.on('activity-editor-disappearing', e => {
+      if (e.activityDescriptor.type !== 'VehicleActivity')
+        return;
+
+      document.querySelector('#Brand').removeEventListener('change', updateModels);
+    });
+  }
+
   // Get a handle to the elsa-studio-root element.
   const elsaStudioRoot = document.querySelector('elsa-studio-root');
 
@@ -219,6 +281,7 @@
       CustomPropertyFieldPlugin,
       WorkflowModelChangedListenerPlugin,
       CustomActivityEditorPlugin,
+      VehicleActivityPlugin,
       WebhooksPlugin,
       WorkflowSettingsPlugin
     ]);

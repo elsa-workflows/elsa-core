@@ -12,7 +12,6 @@ using Elsa.Services;
 
 namespace Elsa.Samples.Server.Host.Activities
 {
-    [Action]
     public class VehicleActivity : Activity, IActivityPropertyOptionsProvider, IRuntimeSelectListProvider
     {
         private readonly Random _random;
@@ -26,11 +25,16 @@ namespace Elsa.Samples.Server.Host.Activities
             UIHint = ActivityInputUIHints.Dropdown,
             OptionsProvider = typeof(VehicleActivity),
             DefaultSyntax = SyntaxNames.Literal,
-            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid }
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? Brand { get; set; }
         
-        [ActivityOutput] public string? Output { get; set; }
+        [ActivityInput(
+            UIHint = ActivityInputUIHints.Dropdown,
+            DefaultSyntax = SyntaxNames.Literal,
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
+        )]
+        public string? Model { get; set; }
 
         /// <summary>
         /// Return options to be used by the designer. The designer will pass back whatever context is provided here.
@@ -44,14 +48,13 @@ namespace Elsa.Samples.Server.Host.Activities
         public ValueTask<SelectList> GetSelectListAsync(object? context = default, CancellationToken cancellationToken = default)
         {
             var vehicleContext = (VehicleContext) context!;
-            var brands = new[] { "BMW", "Peugot", "Tesla", vehicleContext.RandomNumber.ToString() };
+            var brands = new[] { "BMW", "Peugeot", "Tesla", vehicleContext.RandomNumber.ToString() };
             var items = brands.Select(x => new SelectListItem(x)).ToList();
             return new ValueTask<SelectList>(new SelectList(items));
         }
 
         protected override IActivityExecutionResult OnExecute()
         {
-            Output = Brand;
             return Done();
         }
     }
