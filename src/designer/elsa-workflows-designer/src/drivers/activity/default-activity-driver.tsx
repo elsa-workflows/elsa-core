@@ -3,6 +3,7 @@ import {h} from "@stencil/core";
 import {Container, Service} from "typedi";
 import {ActivityKind} from '../../models';
 import {ActivityDisplayContext, ActivityDisplayType, ActivityDriver, ActivityIcon, ActivityIconRegistry} from '../../services';
+import {isNullOrWhitespace} from "../../utils";
 
 @Service()
 export class DefaultActivityDriver implements ActivityDriver {
@@ -19,7 +20,11 @@ export class DefaultActivityDriver implements ActivityDriver {
     const activity = context.activity;
     const canStartWorkflow = activity?.canStartWorkflow;
     const text = activityDescriptor?.displayName;
-    const displayText = activity?.metadata?.displayText ?? text;
+    let displayText = activity?.metadata?.displayText;
+
+    if(isNullOrWhitespace(displayText))
+      displayText = text;
+
     const isTrigger = activityDescriptor?.kind == ActivityKind.Trigger;
     const borderColor = canStartWorkflow ? isTrigger ? 'border-green-600' : 'border-blue-600' : 'border-gray-300';
     const backgroundColor = canStartWorkflow ? isTrigger ? 'bg-green-400' : 'bg-blue-400' : 'bg-white';

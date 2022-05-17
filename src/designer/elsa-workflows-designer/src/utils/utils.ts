@@ -60,3 +60,5 @@ export const getInputPropertyValue = (inputContext: ActivityInputContext): Activ
   const propName = getInputPropertyName(inputContext);
   return inputContext.node[propName] as ActivityInput;
 };
+
+export const isNullOrWhitespace = ( input ) => !input || !input.trim();
