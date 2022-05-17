@@ -92,7 +92,6 @@ export class ElsaWorkflowPublishButton {
 
   render() {
     const t = this.t;
-    const isPublished = this.workflowDefinition.isPublished;
 
     return (
       <Host class="elsa-block" ref={el => this.element = el}>

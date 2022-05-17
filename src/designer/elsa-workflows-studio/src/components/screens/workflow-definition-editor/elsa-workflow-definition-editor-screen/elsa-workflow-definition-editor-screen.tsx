@@ -1090,6 +1090,8 @@ export class ElsaWorkflowDefinitionEditorScreen {
     return {
       definitionId: null,
       version: 1,
+      isLatest: true,
+      isPublished: false,
       activities: [],
       connections: [],
       persistenceBehavior: WorkflowPersistenceBehavior.WorkflowBurst,
