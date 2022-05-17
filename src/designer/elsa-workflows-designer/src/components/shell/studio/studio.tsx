@@ -184,7 +184,7 @@ export class Studio {
     };
 
     const updatedWorkflow = await this.elsaClient.workflowDefinitions.post(request);
-    await this.workflowEditorElement.importWorkflowMetadata(updatedWorkflow);
+    await this.workflowEditorElement.updateWorkflowDefinition(updatedWorkflow);
     return updatedWorkflow;
   }
 
@@ -194,7 +194,7 @@ export class Studio {
     };
 
     const updatedWorkflow = await this.elsaClient.workflowDefinitions.retract(request);
-    await this.workflowEditorElement.importWorkflowMetadata(updatedWorkflow);
+    await this.workflowEditorElement.updateWorkflowDefinition(updatedWorkflow);
     return updatedWorkflow;
   }
 }

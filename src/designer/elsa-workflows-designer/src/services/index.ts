@@ -7,3 +7,5 @@ export * from './event-bus';
 export * from './input-control-registry';
 export * from './input-driver-registry';
 export * from './server-settings';
+export * from './activity-name-formatter';
+export * from './plugin-registry';
