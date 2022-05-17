@@ -4,6 +4,7 @@ import {Activity, ActivityDescriptor} from '../../../models';
 
 export interface AddActivityArgs {
   descriptor: ActivityDescriptor;
+  id?: string;
   x?: number;
   y?: number;
 }

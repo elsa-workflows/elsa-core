@@ -69,6 +69,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
   public async addActivity(args: AddActivityArgs): Promise<void> {
     const graph = this.graph;
     const {descriptor, x, y} = args;
+    let id = args.id ?? uuid();
 
     // TODO: Figure out how to convert client coordinates to appropriate graph coordinates taking into account transformations.
     // See https://x6.antv.vision/en/docs/api/graph/coordinate for documentation.
@@ -78,13 +79,8 @@ export class FlowchartComponent implements ContainerActivityComponent {
     const sx = point.x;
     const sy = point.y;
 
-    console.debug({
-      client: {x, y},
-      local: {sx, sy},
-    });
-
     const activity: Activity = {
-      id: uuid(),
+      id: id,
       typeName: descriptor.activityType,
       applicationProperties: {},
       metadata: {

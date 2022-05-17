@@ -25,6 +25,8 @@ import {WorkflowPropsUpdatedArgs} from "../workflow-properties-editor/workflow-p
 import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
 import {PluginRegistry} from "../../../services/plugin-registry";
 import {Flowchart} from "../../activities/flowchart/models";
+import {ActivityNode, flattenList, walkActivities} from "../../activities/flowchart/activity-walker";
+import {ActivityNameFormatter} from "../../../services/activity-name-formatter";
 
 export interface WorkflowUpdatedArgs {
   workflow: WorkflowDefinition;
@@ -37,13 +39,12 @@ export interface WorkflowUpdatedArgs {
 export class WorkflowEditor {
   private readonly pluginRegistry: PluginRegistry;
   private readonly eventBus: EventBus;
+  private readonly activityNameFormatter: ActivityNameFormatter;
   private canvas: HTMLElsaCanvasElement;
   private container: HTMLDivElement;
   private toolbox: HTMLElsaToolboxElement;
   private applyActivityChanges: (activity: Activity) => void;
   private deleteActivity: (activity: Activity) => void;
-  private applyTriggerChanges: (trigger: Trigger) => void;
-  private deleteTrigger: (trigger: Trigger) => void;
   private readonly emitActivityChangedDebounced: (e: ActivityPropertyChangedEventArgs) => void;
   private readonly saveChangesDebounced: () => void;
 
@@ -63,6 +64,7 @@ export class WorkflowEditor {
   constructor() {
     this.eventBus = Container.get(EventBus);
     this.pluginRegistry = Container.get(PluginRegistry);
+    this.activityNameFormatter = Container.get(ActivityNameFormatter);
     this.emitActivityChangedDebounced = debounce(this.emitActivityChanged, 100);
     this.saveChangesDebounced = debounce(this.saveChanges, 1000);
   }
@@ -128,15 +130,16 @@ export class WorkflowEditor {
   }
 
   @Method()
-  public async importWorkflow(workflow: WorkflowDefinition, workflowInstance?: WorkflowInstance): Promise<void> {
+  public async importWorkflow(workflowDefinition: WorkflowDefinition, workflowInstance?: WorkflowInstance): Promise<void> {
     this.workflowInstance = workflowInstance;
-    await this.importWorkflowMetadata(workflow);
-    await this.canvas.importGraph(workflow.root);
+    this.workflowDefinition = workflowDefinition;
+    await this.canvas.importGraph(workflowDefinition.root);
   }
 
+  // Updates the workflow definition without importing it into the designer.
   @Method()
-  public async importWorkflowMetadata(workflow: WorkflowDefinition): Promise<void> {
-    this.workflowDefinition = workflow;
+  public async updateWorkflowDefinition(workflowDefinition: WorkflowDefinition): Promise<void> {
+    this.workflowDefinition = workflowDefinition;
   }
 
   @Method()
@@ -242,6 +245,23 @@ export class WorkflowEditor {
     await this.updateLayout();
   }
 
+  private generateUniqueActivityName = async (activityDescriptor: ActivityDescriptor): Promise<string> => {
+    const activityType = activityDescriptor.activityType;
+    const workflowDefinition = await this.getWorkflowInternal();
+    const root = workflowDefinition.root;
+    const activityDescriptors = this.activityDescriptors;
+    const graph = walkActivities(root, activityDescriptors);
+    const activityNodes = flattenList(graph.children);
+    const activityCount = activityNodes.filter(x => x.activity.typeName == activityType).length;
+    let counter = activityCount + 1;
+    let newName = this.activityNameFormatter.format({activityDescriptor, count: counter, activityNodes});
+
+    while (!!activityNodes.find(x => x.activity.id == newName))
+      newName = this.activityNameFormatter.format({activityDescriptor, count: ++counter, activityNodes});
+
+    return newName;
+  };
+
   private onActivityPickerPanelStateChanged = async (e: PanelStateChangedArgs) => await this.updateContainerLayout('activity-picker-closed', e.expanded)
   private onActivityEditorPanelStateChanged = async (e: PanelStateChangedArgs) => await this.updateContainerLayout('object-editor-closed', e.expanded)
 
@@ -253,8 +273,13 @@ export class WorkflowEditor {
   private onDrop = async (e: DragEvent) => {
     const json = e.dataTransfer.getData('activity-descriptor');
     const activityDescriptor: ActivityDescriptor = JSON.parse(json);
+    const newName = await this.generateUniqueActivityName(activityDescriptor);
 
-    await this.canvas.addActivity({descriptor: activityDescriptor, x: e.offsetX, y: e.offsetY});
+    await this.canvas.addActivity({
+      descriptor: activityDescriptor,
+      id: newName,
+      x: e.offsetX,
+      y: e.offsetY});
   };
 
   private onActivityUpdated = (e: CustomEvent<ActivityUpdatedArgs>) => {

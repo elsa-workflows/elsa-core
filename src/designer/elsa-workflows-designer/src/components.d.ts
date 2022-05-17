@@ -168,11 +168,11 @@ export namespace Components {
         "activityDescriptors": Array<ActivityDescriptor>;
         "getCanvas": () => Promise<HTMLElsaCanvasElement>;
         "getWorkflow": () => Promise<WorkflowDefinition>;
-        "importWorkflow": (workflow: WorkflowDefinition, workflowInstance?: WorkflowInstance) => Promise<void>;
-        "importWorkflowMetadata": (workflow: WorkflowDefinition) => Promise<void>;
+        "importWorkflow": (workflowDefinition: WorkflowDefinition, workflowInstance?: WorkflowInstance) => Promise<void>;
         "monacoLibPath": string;
         "newWorkflow": () => Promise<void>;
         "registerActivityDrivers": (register: (registry: ActivityDriverRegistry) => void) => Promise<void>;
+        "updateWorkflowDefinition": (workflowDefinition: WorkflowDefinition) => Promise<void>;
     }
     interface ElsaWorkflowInstanceBrowser {
         "hide": () => Promise<void>;
