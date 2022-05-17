@@ -10,18 +10,23 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Api.ApiResults;
 
-public class ExecuteWorkflowResult : IActionResult
+public class ExecuteWorkflowDefinitionResult : IActionResult
 {
-    public ExecuteWorkflowResult(Workflow workflow) => Workflow = workflow;
-    public Workflow Workflow { get; }
+    public ExecuteWorkflowDefinitionResult(string definitionId, string? correlationId = default)
+    {
+        DefinitionId = definitionId;
+        CorrelationId = correlationId;
+    }
+    
+    public string DefinitionId { get; }
+    public string? CorrelationId { get; }
 
     public async Task ExecuteResultAsync(ActionContext context)
     {
         var httpContext = context.HttpContext;
         var response = httpContext.Response;
         var workflowInvoker = httpContext.RequestServices.GetRequiredService<IWorkflowInvoker>();
-        var definitionId = Workflow.Identity.DefinitionId;
-        var executeRequest = new InvokeWorkflowDefinitionRequest(definitionId, VersionOptions.Published);
+        var executeRequest = new InvokeWorkflowDefinitionRequest(DefinitionId, VersionOptions.Published, CorrelationId: CorrelationId);
         var result = await workflowInvoker.InvokeAsync(executeRequest, CancellationToken.None);
 
         if (!response.HasStarted)

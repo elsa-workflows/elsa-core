@@ -346,14 +346,19 @@ export class FlowchartComponent implements ContainerActivityComponent {
   onGraphClick = async (e: PositionEventArgs<JQuery.ClickEvent>) => this.containerSelected.emit({});
 
   onNodeClick = async (e: PositionEventArgs<JQuery.ClickEvent>) => {
-    const node = e.node;
+    const node = e.node as ActivityNodeShape;
     const activity = node.data as Activity;
     const activityId = activity.id;
 
     const args: ActivitySelectedArgs = {
       activity: activity,
       applyChanges: a => {
+
+        // Update the node's data with the activity.
         node.data = a;
+
+        // Updating the node's activity property to trigger a rerender.
+        node.activity = a;
 
         // If the ID of the activity changed, we need to update connection references (X6 stores deep copies of data).
         if (a.id !== activityId)
@@ -402,13 +407,14 @@ export class FlowchartComponent implements ContainerActivityComponent {
   }
 
   onNodeMoved = (e: PositionEventArgs<JQuery.ClickEvent>) => {
-    const {node, x, y} = e;
+    const node = e.node;
     const activity = node.data as Activity;
     const nodePosition = node.position({relative: false});
 
     activity.metadata = {
       ...activity.metadata,
       designer: {
+        ...activity.metadata.designer,
         position: {
           x: nodePosition.x,
           y: nodePosition.y

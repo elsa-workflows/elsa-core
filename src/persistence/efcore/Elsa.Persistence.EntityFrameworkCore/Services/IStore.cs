@@ -13,6 +13,7 @@ public interface IStore<TEntity> where TEntity : Entity
     Task<bool> DeleteAsync(TEntity entity, CancellationToken cancellationToken = default);
     Task<int> DeleteManyAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default);
     Task<int> DeleteWhereAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default);
-    IEnumerable<TEntity> Load(ElsaDbContext dbContext, IEnumerable<TEntity> entities);
+    //IEnumerable<TEntity> Load(ElsaDbContext dbContext, IEnumerable<TEntity> entities);
     Task<IEnumerable<TEntity>> QueryAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, CancellationToken cancellationToken = default);
+    Task<bool> AnyAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default);
 }

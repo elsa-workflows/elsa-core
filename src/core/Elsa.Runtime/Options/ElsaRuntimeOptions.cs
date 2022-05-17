@@ -38,7 +38,6 @@ public class ElsaRuntimeOptions : ConfiguratorBase
 
         services
             // Core.
-            .AddSingleton<IWorkflowRegistry, WorkflowRegistry>()
             .AddSingleton<IStimulusInterpreter, StimulusInterpreter>()
             .AddSingleton<IWorkflowInstructionExecutor, WorkflowInstructionExecutor>()
             .AddSingleton<ITriggerIndexer, TriggerIndexer>()

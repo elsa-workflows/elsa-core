@@ -26,6 +26,11 @@ public interface IWorkflowInvoker
     Task<InvokeWorkflowResult> InvokeAsync(WorkflowInstance workflowInstance, Bookmark? bookmark = default, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Invokes the specified workflow definition.
+    /// </summary>
+    Task<InvokeWorkflowResult> InvokeAsync(WorkflowDefinition workflowDefinition, WorkflowState workflowState, Bookmark? bookmark = default, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default);
+    
+    /// <summary>
     /// Invokes the specified workflow.
     /// </summary>
     Task<InvokeWorkflowResult> InvokeAsync(Workflow workflow, WorkflowState workflowState, Bookmark? bookmark = default, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default);

@@ -18,8 +18,8 @@ import {FormEntry} from "../../shared/forms/form-entry";
 export interface ActivityUpdatedArgs {
   activity: Activity;
   activityDescriptor: ActivityDescriptor;
-  propertyName: string;
-  inputDescriptor: InputDescriptor;
+  propertyName?: string;
+  inputDescriptor?: InputDescriptor;
 }
 
 export interface DeleteActivityRequestedArgs {
@@ -128,6 +128,19 @@ export class ActivityPropertiesEditor {
     this.activityUpdated.emit({activity, activityDescriptor, propertyName: 'id', inputDescriptor});
   }
 
+  private onActivityDisplayTextChanged(e: any){
+    const activity = this.activity;
+    const inputElement = e.target as HTMLInputElement;
+
+    activity.metadata = {
+      ...activity.metadata,
+      displayText: inputElement.value
+    };
+
+    const activityDescriptor = this.findActivityDescriptor();
+    this.activityUpdated.emit({activity, activityDescriptor});
+  }
+
   private onPropertyEditorChanged = (inputDescriptor: InputDescriptor, propertyValue: any, syntax: string) => {
     const activity = this.activity;
     const propertyName = inputDescriptor.name;
@@ -150,10 +163,16 @@ export class ActivityPropertiesEditor {
   private renderPropertiesTab = () => {
     const {activity, properties} = this.renderContext;
     const activityId = activity.id;
+    const displayText: string = activity.metadata?.displayText ?? '';
+    const key = `${activityId}`;
 
-    return <div>
+    return <div key={key}>
       <FormEntry fieldId="ActivityId" label="ID" hint="The ID of the activity.">
         <input type="text" name="ActivityId" id="ActivityId" value={activityId} onChange={e => this.onActivityIdChanged(e)}/>
+      </FormEntry>
+
+      <FormEntry fieldId="ActivityDisplayText" label="Display Text" hint="The text to display on the activity in the designer.">
+        <input type="text" name="ActivityDisplayText" id="ActivityDisplayText" value={displayText} onChange={e => this.onActivityDisplayTextChanged(e)}/>
       </FormEntry>
 
       {properties.filter(x => !!x.inputControl).map(propertyContext => {

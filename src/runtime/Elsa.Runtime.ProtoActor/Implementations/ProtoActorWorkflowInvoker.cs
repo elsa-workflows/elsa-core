@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Management.Services;
 using Elsa.Models;
 using Elsa.Persistence.Entities;
 using Elsa.Persistence.Models;
@@ -22,12 +23,18 @@ namespace Elsa.Runtime.ProtoActor.Implementations;
 
 public class ProtoActorWorkflowInvoker : IWorkflowInvoker
 {
+    private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly Cluster _cluster;
     private readonly GrainClientFactory _grainClientFactory;
     private readonly WorkflowSerializerOptionsProvider _workflowSerializerOptionsProvider;
 
-    public ProtoActorWorkflowInvoker(Cluster cluster, GrainClientFactory grainClientFactory, WorkflowSerializerOptionsProvider workflowSerializerOptionsProvider)
+    public ProtoActorWorkflowInvoker(
+        IWorkflowDefinitionService workflowDefinitionService,
+        Cluster cluster, 
+        GrainClientFactory grainClientFactory, 
+        WorkflowSerializerOptionsProvider workflowSerializerOptionsProvider)
     {
+        _workflowDefinitionService = workflowDefinitionService;
         _cluster = cluster;
         _grainClientFactory = grainClientFactory;
         _workflowSerializerOptionsProvider = workflowSerializerOptionsProvider;
@@ -36,7 +43,7 @@ public class ProtoActorWorkflowInvoker : IWorkflowInvoker
     public async Task<InvokeWorkflowResult> InvokeAsync(InvokeWorkflowDefinitionRequest request, CancellationToken cancellationToken = default)
     {
         var (definitionId, versionOptions, input, correlationId) = request;
-        
+
         var message = new ExecuteWorkflowDefinitionRequest
         {
             Id = definitionId,
@@ -50,7 +57,7 @@ public class ProtoActorWorkflowInvoker : IWorkflowInvoker
 
         if (response == null)
             throw new TimeoutException("Did not receive a response from the WorkflowDefinition actor within the configured amount of time.");
-        
+
         var workflowState = JsonSerializer.Deserialize<WorkflowState>(response.WorkflowState.Text)!;
         var bookmarks = response.Bookmarks.Select(MapBookmark).ToList();
 
@@ -61,7 +68,7 @@ public class ProtoActorWorkflowInvoker : IWorkflowInvoker
     {
         var (instanceId, bookmark, input, correlationId) = request;
         var bookmarkMessage = MapBookmark(bookmark);
-        
+
         var message = new ExecuteExistingWorkflowInstanceRequest
         {
             InstanceId = instanceId,
@@ -71,10 +78,10 @@ public class ProtoActorWorkflowInvoker : IWorkflowInvoker
 
         var client = _grainClientFactory.CreateWorkflowInstanceGrainClient(instanceId);
         var response = await client.ExecuteExistingInstance(message, CancellationTokens.FromSeconds(600));
-        
+
         if (response == null)
             throw new TimeoutException("Did not receive a response from the WorkflowInstance actor within the configured amount of time.");
-        
+
         var workflowState = JsonSerializer.Deserialize<WorkflowState>(response.WorkflowState.Text)!;
         var bookmarks = response.Bookmarks.Select(MapBookmark).ToList();
 
@@ -94,13 +101,24 @@ public class ProtoActorWorkflowInvoker : IWorkflowInvoker
 
         var client = _grainClientFactory.CreateWorkflowInstanceGrainClient(workflowInstance.Id);
         var response = await client.ExecuteExistingInstance(message, CancellationTokens.FromSeconds(600));
-        
+
         if (response == null)
             throw new TimeoutException("Did not receive a response from the WorkflowInstance actor within the configured amount of time.");
-        
+
         var bookmarks = response.Bookmarks.Select(MapBookmark).ToList();
         var workflowState = JsonSerializer.Deserialize<WorkflowState>(response.WorkflowState.Text, _workflowSerializerOptionsProvider.CreateDefaultOptions())!;
         return new InvokeWorkflowResult(workflowState, bookmarks);
+    }
+
+    public async Task<InvokeWorkflowResult> InvokeAsync(
+        WorkflowDefinition workflowDefinition, 
+        WorkflowState workflowState, 
+        Bookmark? bookmark = default, 
+        IDictionary<string, object>? input = default, 
+        CancellationToken cancellationToken = default)
+    {
+        var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
+        return await InvokeAsync(workflow, workflowState, bookmark, input, cancellationToken);
     }
 
     public async Task<InvokeWorkflowResult> InvokeAsync(Workflow workflow, WorkflowState workflowState, Bookmark? bookmark = default, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
@@ -118,10 +136,10 @@ public class ProtoActorWorkflowInvoker : IWorkflowInvoker
 
         var client = _grainClientFactory.CreateWorkflowInstanceGrainClient(workflowState.Id);
         var response = await client.Execute(message, CancellationTokens.FromSeconds(600));
-        
+
         if (response == null)
             throw new TimeoutException("Did not receive a response from the WorkflowInstance actor within the configured amount of time.");
-        
+
         var bookmarks = response.Bookmarks.Select(MapBookmark).ToList();
 
         return new InvokeWorkflowResult(workflowState, bookmarks);
