@@ -17,7 +17,7 @@ export interface GraphUpdatedArgs {
 export interface ActivityPropertyChangedEventArgs {
   activity: Activity;
   activityDescriptor: ActivityDescriptor;
-  propertyName: string;
-  inputDescriptor: InputDescriptor;
+  propertyName?: string;
+  inputDescriptor?: InputDescriptor;
   workflowEditor: HTMLElsaWorkflowEditorElement;
 }

@@ -1,7 +1,6 @@
 import 'reflect-metadata';
 import {Container, Service} from "typedi";
-import {PortProvider, PortProviderContext} from "../../components/activities/flowchart/port-provider";
-import {Activity, ActivityPropertyChangedEventArgs, EventTypes, Port} from "../../models";
+import {ActivityPropertyChangedEventArgs, EventTypes} from "../../models";
 import {SwitchActivity} from "./models";
 import {EventBus} from "../../services";
 import {SwitchPlugin} from "./switch-plugin";

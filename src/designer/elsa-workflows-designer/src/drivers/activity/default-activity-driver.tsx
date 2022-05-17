@@ -19,6 +19,7 @@ export class DefaultActivityDriver implements ActivityDriver {
     const activity = context.activity;
     const canStartWorkflow = activity?.canStartWorkflow;
     const text = activityDescriptor?.displayName;
+    const displayText = activity?.metadata?.displayText ?? text;
     const isTrigger = activityDescriptor?.kind == ActivityKind.Trigger;
     const borderColor = canStartWorkflow ? isTrigger ? 'border-green-600' : 'border-blue-600' : 'border-gray-300';
     const backgroundColor = canStartWorkflow ? isTrigger ? 'bg-green-400' : 'bg-blue-400' : 'bg-white';
@@ -50,7 +51,7 @@ export class DefaultActivityDriver implements ActivityDriver {
                 </div>
                 <div class="flex items-center">
                   <div class="${cssClass}">
-                    <span class=${textColor}>${text}</span>
+                    <span class=${textColor}>${displayText}</span>
                   </div>
                 </div>
               </div>
