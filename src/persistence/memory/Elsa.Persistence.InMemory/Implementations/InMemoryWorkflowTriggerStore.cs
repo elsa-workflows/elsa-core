@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -19,12 +18,14 @@ public class InMemoryWorkflowTriggerStore : IWorkflowTriggerStore
 
     public Task SaveAsync(WorkflowTrigger record, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        _store.Save(record);
+        return Task.CompletedTask;
     }
 
     public Task SaveManyAsync(IEnumerable<WorkflowTrigger> records, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        _store.SaveMany(records);
+        return Task.CompletedTask;
     }
 
     public Task<IEnumerable<WorkflowTrigger>> FindManyByNameAsync(string name, string? hash, CancellationToken cancellationToken = default)

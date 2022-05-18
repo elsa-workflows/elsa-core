@@ -23,6 +23,8 @@ public class EFCorePersistenceOptions : IConfigurator
             .WithWorkflowBookmarkStore(sp => sp.GetRequiredService<EFCoreWorkflowBookmarkStore>())
             .WithWorkflowTriggerStore(sp => sp.GetRequiredService<EFCoreWorkflowTriggerStore>())
             .WithWorkflowExecutionLogStore(sp => sp.GetRequiredService<EFCoreWorkflowExecutionLogStore>())
+            .WithLabelStore(sp => sp.GetRequiredService<EFCoreLabelStore>())
+            .WithWorkflowDefinitionLabelStore(sp => sp.GetRequiredService<EFCoreWorkflowDefinitionLabelStore>())
             ;
     }
 
@@ -37,7 +39,7 @@ public class EFCorePersistenceOptions : IConfigurator
         ContextPoolingIsEnabled = enabled;
         return this;
     }
-    
+
     public EFCorePersistenceOptions AutoRunMigrations(bool enabled = true)
     {
         AutoRunMigrationsIsEnabled = enabled;
@@ -53,23 +55,21 @@ public class EFCorePersistenceOptions : IConfigurator
     public void ConfigureServices(ElsaOptionsConfigurator configurator)
     {
         var services = configurator.Services;
-        
+
         if (ContextPoolingIsEnabled)
             services.AddPooledDbContextFactory<ElsaDbContext>(DbContextOptionsBuilderAction);
         else
             services.AddDbContextFactory<ElsaDbContext>(DbContextOptionsBuilderAction, DbContextFactoryLifetime);
 
+        AddStore<WorkflowDefinition, EFCoreWorkflowDefinitionStore>(services);
+        AddStore<WorkflowInstance, EFCoreWorkflowInstanceStore>(services);
+        AddStore<WorkflowBookmark, EFCoreWorkflowBookmarkStore>(services);
+        AddStore<WorkflowTrigger, EFCoreWorkflowTriggerStore>(services);
+        AddStore<WorkflowExecutionLogRecord, EFCoreWorkflowExecutionLogStore>(services);
+        AddStore<Label, EFCoreLabelStore>(services);
+        AddStore<WorkflowDefinitionLabel, EFCoreWorkflowDefinitionLabelStore>(services);
+
         services
-            .AddSingleton<IStore<WorkflowDefinition>, EFCoreStore<WorkflowDefinition>>()
-            .AddSingleton<IStore<WorkflowInstance>, EFCoreStore<WorkflowInstance>>()
-            .AddSingleton<IStore<WorkflowBookmark>, EFCoreStore<WorkflowBookmark>>()
-            .AddSingleton<IStore<WorkflowTrigger>, EFCoreStore<WorkflowTrigger>>()
-            .AddSingleton<IStore<WorkflowExecutionLogRecord>, EFCoreStore<WorkflowExecutionLogRecord>>()
-            .AddSingleton<EFCoreWorkflowInstanceStore>()
-            .AddSingleton<EFCoreWorkflowDefinitionStore>()
-            .AddSingleton<EFCoreWorkflowTriggerStore>()
-            .AddSingleton<EFCoreWorkflowBookmarkStore>()
-            .AddSingleton<EFCoreWorkflowExecutionLogStore>()
             .AddSingleton<IEntitySerializer<WorkflowDefinition>, WorkflowDefinitionSerializer>()
             .AddSingleton<IEntitySerializer<WorkflowInstance>, WorkflowInstanceSerializer>()
             .AddSingleton<IEntitySerializer<WorkflowExecutionLogRecord>, WorkflowExecutionLogRecordSerializer>()
@@ -80,5 +80,12 @@ public class EFCorePersistenceOptions : IConfigurator
     {
         if (AutoRunMigrationsIsEnabled)
             configurator.AddHostedService<RunMigrations>(-1); // Migrations need to run before other hosted services that depend on DB access.
+    }
+
+    private void AddStore<TEntity, TStore>(IServiceCollection services) where TEntity : Entity where TStore : class
+    {
+        services
+            .AddSingleton<IStore<TEntity>, EFCoreStore<TEntity>>()
+            .AddSingleton<TStore>();
     }
 }
