@@ -111,8 +111,10 @@ export class ToolboxActivities {
                 const activityHtml = renderedActivities.get(activityDescriptor.activityType);
                 return (
                   <div class="w-full flex items-center pl-10 pr-2 py-2">
-                    <div class="cursor-move" onDragStart={e => ToolboxActivities.onActivityStartDrag(e, activityDescriptor)}>
-                      <div innerHTML={activityHtml} draggable={true}/>
+                    <div class="relative cursor-move" onDragStart={e => ToolboxActivities.onActivityStartDrag(e, activityDescriptor)}>
+                      <elsa-tooltip tooltipPosition="right" tooltipContent={<p class="text-gray-600 text-sm">{activityDescriptor.description}</p>}>
+                        <div innerHTML={activityHtml} draggable={true} />
+                      </elsa-tooltip>
                     </div>
                   </div>
                 );

@@ -9,6 +9,7 @@ export interface ActivityDescriptor {
   activityType: string;
   displayName: string;
   category: string;
+  description: string;
   inputProperties: Array<InputDescriptor>
   kind: ActivityKind;
   inPorts: Array<Port>;

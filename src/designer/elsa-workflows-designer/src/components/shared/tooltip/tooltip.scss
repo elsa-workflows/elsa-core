@@ -1,0 +1,10 @@
+.tooltip-container {
+    .tooltip {
+        opacity: 0;
+    }
+    &:hover {
+        .tooltip {
+            opacity: 1;
+        }
+    }
+}
