@@ -18,4 +18,13 @@ public class EFCoreWorkflowDefinitionLabelStore : IWorkflowDefinitionLabelStore
         var idList = ids.ToList();
         return await _store.DeleteWhereAsync(x => idList.Contains(x.Id), cancellationToken);
     }
+
+    public async Task<IEnumerable<WorkflowDefinitionLabel>> FindByWorkflowDefinitionVersionIdAsync(string workflowDefinitionVersionId, CancellationToken cancellationToken = default) => 
+        await _store.FindManyAsync(x => x.WorkflowDefinitionVersionId == workflowDefinitionVersionId, cancellationToken);
+
+    public async Task ReplaceAsync(IEnumerable<WorkflowDefinitionLabel> removed, IEnumerable<WorkflowDefinitionLabel> added, CancellationToken cancellationToken = default)
+    {
+        await _store.DeleteManyAsync(removed, cancellationToken);
+        await _store.SaveManyAsync(added, cancellationToken);
+    }
 }

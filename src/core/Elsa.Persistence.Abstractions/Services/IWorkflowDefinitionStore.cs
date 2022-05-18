@@ -5,8 +5,21 @@ namespace Elsa.Persistence.Services;
 
 public interface IWorkflowDefinitionStore
 {
+    /// <summary>
+    /// Finds a workflow definition by its unique version ID.
+    /// </summary>
+    Task<WorkflowDefinition?> FindByIdAsync(string id, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Finds a workflow definition by its logical definition ID and specified version options.
+    /// </summary>
     Task<WorkflowDefinition?> FindByDefinitionIdAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Finds a workflow definition by name and specified version options.
+    /// </summary>
     Task<WorkflowDefinition?> FindByNameAsync(string name, VersionOptions versionOptions, CancellationToken cancellationToken = default);
+    
     Task<IEnumerable<WorkflowDefinitionSummary>> FindManySummariesAsync(IEnumerable<string> definitionIds, VersionOptions? versionOptions = default, CancellationToken cancellationToken = default);
     Task<IEnumerable<WorkflowDefinition>> FindLatestAndPublishedByDefinitionIdAsync(string definitionId, CancellationToken cancellationToken = default);
     Task SaveAsync(WorkflowDefinition record, CancellationToken cancellationToken = default);

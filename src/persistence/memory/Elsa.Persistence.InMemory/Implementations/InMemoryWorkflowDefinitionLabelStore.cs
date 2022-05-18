@@ -38,4 +38,17 @@ public class InMemoryWorkflowDefinitionLabelStore : IWorkflowDefinitionLabelStor
         var result = _store.DeleteMany(ids);
         return Task.FromResult(result);
     }
+
+    public Task<IEnumerable<WorkflowDefinitionLabel>> FindByWorkflowDefinitionVersionIdAsync(string workflowDefinitionVersionId, CancellationToken cancellationToken = default)
+    {
+        var result = _store.FindMany(x => x.WorkflowDefinitionVersionId == workflowDefinitionVersionId);
+        return Task.FromResult(result);
+    }
+
+    public Task ReplaceAsync(IEnumerable<WorkflowDefinitionLabel> removed, IEnumerable<WorkflowDefinitionLabel> added, CancellationToken cancellationToken = default)
+    {
+        _store.DeleteMany(removed);
+        _store.SaveMany(added);
+        return Task.CompletedTask;
+    }
 }

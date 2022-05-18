@@ -29,6 +29,9 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         _executionLogRecordStore = executionLogRecordStore;
     }
 
+    public async Task<WorkflowDefinition?> FindByIdAsync(string id, CancellationToken cancellationToken = default) => 
+        await _store.FindAsync(x => x.Id == id, cancellationToken);
+
     public async Task<WorkflowDefinition?> FindByDefinitionIdAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
     {
         Expression<Func<WorkflowDefinition, bool>> predicate = x => x.DefinitionId == definitionId;

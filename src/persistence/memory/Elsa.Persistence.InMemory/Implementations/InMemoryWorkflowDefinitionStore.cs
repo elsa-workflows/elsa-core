@@ -27,7 +27,13 @@ public class InMemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
         _triggerStore = triggerStore;
         _bookmarkStore = bookmarkStore;
     }
-    
+
+    public Task<WorkflowDefinition?> FindByIdAsync(string id, CancellationToken cancellationToken = default)
+    {
+        var definition = _store.Find(x => x.Id == id);
+        return Task.FromResult(definition);
+    }
+
     public Task<WorkflowDefinition?> FindByDefinitionIdAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
     {
         var definition = _store.Find(x => x.DefinitionId == definitionId && x.WithVersion(versionOptions));

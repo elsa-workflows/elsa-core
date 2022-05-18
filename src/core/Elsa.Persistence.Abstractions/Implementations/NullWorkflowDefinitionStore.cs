@@ -6,6 +6,8 @@ namespace Elsa.Persistence.Implementations;
 
 public class NullWorkflowDefinitionStore : IWorkflowDefinitionStore
 {
+    public Task<WorkflowDefinition?> FindByIdAsync(string id, CancellationToken cancellationToken = default) => Task.FromResult<WorkflowDefinition?>(default);
+
     public Task<WorkflowDefinition?> FindByDefinitionIdAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default) =>
         Task.FromResult<WorkflowDefinition?>(default);
 

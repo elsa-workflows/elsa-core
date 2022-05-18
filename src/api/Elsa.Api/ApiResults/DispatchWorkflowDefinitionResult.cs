@@ -1,6 +1,5 @@
 using System.Net;
 using System.Threading.Tasks;
-using Elsa.Models;
 using Elsa.Persistence.Models;
 using Elsa.Runtime.Models;
 using Elsa.Runtime.Services;
