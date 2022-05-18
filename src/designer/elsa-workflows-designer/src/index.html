@@ -23,7 +23,7 @@
   // Integration demos.
 
   // Import publicly exposed plugins, services and models to use in vanilla JavaScript.
-  import {Container, ActivityNameFormatter} from "/build/index.esm.js";
+  import {Container, ActivityNameFormatter, stripActivityNameSpace} from "/build/index.esm.js";
 
   // Get a reference to the ActivityNameFormatter.
   const activityNameFormatter = Container.get(ActivityNameFormatter);
@@ -32,7 +32,7 @@
   activityNameFormatter.strategy = ActivityNameFormatter.CamelCaseStrategy;
 
   // Or install a custom name formatter strategy.
-  //activityNameFormatter.strategy = context => `${context.activityDescriptor.activityType}_${context.count}`;
+  activityNameFormatter.strategy = context => `${stripActivityNameSpace(context.activityDescriptor.activityType)}_${context.count} :)`;
 
 </script>
 </body>

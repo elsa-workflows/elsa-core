@@ -17,6 +17,26 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "6.0.3");
 
+            modelBuilder.Entity("Elsa.Persistence.Entities.Label", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Color")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Labels");
+                });
+
             modelBuilder.Entity("Elsa.Persistence.Entities.WorkflowBookmark", b =>
                 {
                     b.Property<string>("Id")
@@ -140,6 +160,37 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
                         .HasDatabaseName("IX_WorkflowDefinition_DefinitionId_Version");
 
                     b.ToTable("WorkflowDefinitions");
+                });
+
+            modelBuilder.Entity("Elsa.Persistence.Entities.WorkflowDefinitionLabel", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LabelId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("WorkflowDefinitionId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("WorkflowDefinitionVersionId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabelId")
+                        .HasDatabaseName("WorkflowDefinitionLabel_LabelId");
+
+                    b.HasIndex("WorkflowDefinitionId")
+                        .HasDatabaseName("WorkflowDefinitionLabel_WorkflowDefinitionId");
+
+                    b.HasIndex("WorkflowDefinitionVersionId")
+                        .HasDatabaseName("WorkflowDefinitionLabel_WorkflowDefinitionVersionId");
+
+                    b.ToTable("WorkflowDefinitionLabels");
                 });
 
             modelBuilder.Entity("Elsa.Persistence.Entities.WorkflowExecutionLogRecord", b =>

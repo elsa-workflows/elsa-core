@@ -1,4 +1,3 @@
-using Elsa.Options;
 using Elsa.Persistence.Entities;
 using Elsa.Persistence.InMemory.Implementations;
 using Elsa.Persistence.Options;
@@ -15,24 +14,28 @@ public static class ServiceCollectionExtensions
         var services = configurator.ElsaOptionsConfigurator.Services;
 
         services
-            .AddSingleton<InMemoryStore<WorkflowDefinition>>()
-            .AddSingleton<InMemoryStore<WorkflowInstance>>()
-            .AddSingleton<InMemoryStore<WorkflowBookmark>>()
-            .AddSingleton<InMemoryStore<WorkflowTrigger>>()
-            .AddSingleton<InMemoryStore<WorkflowExecutionLogRecord>>()
-            .AddSingleton<InMemoryWorkflowDefinitionStore>()
-            .AddSingleton<InMemoryWorkflowInstanceStore>()
-            .AddSingleton<InMemoryWorkflowBookmarkStore>()
-            .AddSingleton<InMemoryWorkflowTriggerStore>()
-            .AddSingleton<InMemoryWorkflowExecutionLogStore>()
+            .AddStore<WorkflowDefinition, InMemoryWorkflowDefinitionStore>()
+            .AddStore<WorkflowInstance, InMemoryWorkflowInstanceStore>()
+            .AddStore<WorkflowBookmark, InMemoryWorkflowBookmarkStore>()
+            .AddStore<WorkflowTrigger, InMemoryWorkflowTriggerStore>()
+            .AddStore<WorkflowExecutionLogRecord, InMemoryWorkflowExecutionLogStore>()
+            .AddStore<Label, InMemoryLabelStore>()
+            .AddStore<WorkflowDefinitionLabel, InMemoryWorkflowDefinitionLabelStore>()
             ;
 
         return configurator.ElsaOptionsConfigurator.Configure(() => new PersistenceOptions(configurator.ElsaOptionsConfigurator), o => o
-                .WithWorkflowDefinitionStore(sp => sp.GetRequiredService<InMemoryWorkflowDefinitionStore>())
-                .WithWorkflowInstanceStore(sp => sp.GetRequiredService<InMemoryWorkflowInstanceStore>())
-                .WithWorkflowBookmarkStore(sp => sp.GetRequiredService<InMemoryWorkflowBookmarkStore>())
-                .WithWorkflowTriggerStore(sp => sp.GetRequiredService<InMemoryWorkflowTriggerStore>())
-                .WithWorkflowExecutionLogStore(sp => sp.GetRequiredService<InMemoryWorkflowExecutionLogStore>()))
-            ;
+            .WithWorkflowDefinitionStore(sp => sp.GetRequiredService<InMemoryWorkflowDefinitionStore>())
+            .WithWorkflowInstanceStore(sp => sp.GetRequiredService<InMemoryWorkflowInstanceStore>())
+            .WithWorkflowBookmarkStore(sp => sp.GetRequiredService<InMemoryWorkflowBookmarkStore>())
+            .WithWorkflowTriggerStore(sp => sp.GetRequiredService<InMemoryWorkflowTriggerStore>())
+            .WithWorkflowExecutionLogStore(sp => sp.GetRequiredService<InMemoryWorkflowExecutionLogStore>())
+            .WithLabelStore(sp => sp.GetRequiredService<InMemoryLabelStore>())
+            .WithWorkflowDefinitionLabelStore(sp => sp.GetRequiredService<InMemoryWorkflowDefinitionLabelStore>())
+        );
     }
+
+    private static IServiceCollection AddStore<TEntity, TStore>(this IServiceCollection services) where TEntity : Entity where TStore : class =>
+        services
+            .AddSingleton<InMemoryStore<TEntity>>()
+            .AddSingleton<TStore>();
 }

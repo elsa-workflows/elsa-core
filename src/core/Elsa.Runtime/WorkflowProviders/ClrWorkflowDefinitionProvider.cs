@@ -71,7 +71,7 @@ public class ClrWorkflowDefinitionProvider : IWorkflowDefinitionProvider
             Description = workflow.WorkflowMetadata.Description,
             Metadata = workflow.Metadata,
             Variables = workflow.Variables,
-            Tags = workflow.Tags,
+            Tags = builder.Tags,
             ApplicationProperties = workflow.ApplicationProperties,
             IsLatest = workflow.Publication.IsLatest,
             IsPublished = workflow.Publication.IsPublished,

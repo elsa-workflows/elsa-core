@@ -14,10 +14,10 @@ public static class EndpointRouteBuilderExtensions
 
         // Activity Descriptors.
         Map("ActivityDescriptors.List", "descriptors/activities", new { Controller = ControllerNames.ActivityDescriptors, Action = "List" });
-        
+
         // Events.
         Map("Events.Trigger", "events/{eventName}/trigger", new { Controller = ControllerNames.Events, Action = "Trigger" });
-        
+
         // Workflow Definitions.
         Map("WorkflowDefinitions.ImportNew", "workflow-definitions/import", new { Controller = ControllerNames.WorkflowDefinitions, Action = "Import" });
         Map("WorkflowDefinitions.ImportExisting", "workflow-definitions/{definitionId}/import", new { Controller = ControllerNames.WorkflowDefinitions, Action = "Import" });
@@ -30,11 +30,18 @@ public static class EndpointRouteBuilderExtensions
         Map("WorkflowDefinitions.Dispatch", "workflow-definitions/{definitionId}/dispatch", new { Controller = ControllerNames.WorkflowDefinitions, Action = "Dispatch" });
         Map("WorkflowDefinitions.Execute", "workflow-definitions/{definitionId}/execute", new { Controller = ControllerNames.WorkflowDefinitions, Action = "Execute" });
         Map("WorkflowDefinitions.Export", "workflow-definitions/{definitionId}/export", new { Controller = ControllerNames.WorkflowDefinitions, Action = "Export" });
-        
+
         // Workflow Instances.
         Map("WorkflowInstances.Get", "workflow-instances/{id}", new { Controller = ControllerNames.WorkflowInstances, Action = "Get" });
         Map("WorkflowInstances.Delete", "workflow-instances/{id}", new { Controller = ControllerNames.WorkflowInstances, Action = "Delete" });
         Map("WorkflowInstances.List", "workflow-instances", new { Controller = ControllerNames.WorkflowInstances, Action = "List" });
+
+        // Labels
+        Map("Labels.Create", "labels", new { Controller = ControllerNames.Labels, Action = "Create" });
+        Map("Labels.Update", "labels/{id}", new { Controller = ControllerNames.Labels, Action = "Update" });
+        Map("Labels.Get", "labels/{id}", new { Controller = ControllerNames.Labels, Action = "Get" });
+        Map("Labels.Delete", "labels/{id}", new { Controller = ControllerNames.Labels, Action = "Delete" });
+        Map("Labels.List", "labels", new { Controller = ControllerNames.Labels, Action = "List" });
 
         return endpoints;
     }

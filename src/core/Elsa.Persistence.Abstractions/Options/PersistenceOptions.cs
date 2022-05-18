@@ -20,6 +20,8 @@ public class PersistenceOptions : ConfiguratorBase
     public Func<IServiceProvider, IWorkflowBookmarkStore> WorkflowBookmarkStore { get; set; } = _ => new NullWorkflowBookmarkStore();
     public Func<IServiceProvider, IWorkflowTriggerStore> WorkflowTriggerStore { get; set; } = _ => new NullWorkflowTriggerStore();
     public Func<IServiceProvider, IWorkflowExecutionLogStore> WorkflowExecutionLogStore { get; set; } = _ => new NullWorkflowExecutionLogStore();
+    public Func<IServiceProvider, ILabelStore> LabelStore { get; set; } = _ => new NullLabelStore();
+    public Func<IServiceProvider, IWorkflowDefinitionLabelStore> WorkflowDefinitionLabelStore { get; set; } = _ => new NullWorkflowDefinitionLabelStore();
 
     public PersistenceOptions WithWorkflowDefinitionStore(Func<IServiceProvider, IWorkflowDefinitionStore> factory)
     {
@@ -50,6 +52,18 @@ public class PersistenceOptions : ConfiguratorBase
         WorkflowExecutionLogStore = factory;
         return this;
     }
+    
+    public PersistenceOptions WithLabelStore(Func<IServiceProvider, ILabelStore> factory)
+    {
+        LabelStore = factory;
+        return this;
+    }
+    
+    public PersistenceOptions WithWorkflowDefinitionLabelStore(Func<IServiceProvider, IWorkflowDefinitionLabelStore> factory)
+    {
+        WorkflowDefinitionLabelStore = factory;
+        return this;
+    }
 
     public override void ConfigureServices(ElsaOptionsConfigurator configurator)
     {
@@ -59,6 +73,8 @@ public class PersistenceOptions : ConfiguratorBase
             .AddSingleton(WorkflowBookmarkStore)
             .AddSingleton(WorkflowTriggerStore)
             .AddSingleton(WorkflowExecutionLogStore)
+            .AddSingleton(LabelStore)
+            .AddSingleton(WorkflowDefinitionLabelStore)
             ;
     }
 }
