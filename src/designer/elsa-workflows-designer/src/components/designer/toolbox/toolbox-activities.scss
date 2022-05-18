@@ -12,7 +12,6 @@
                 display: block;
                 width: 2rem;
                 height: 1rem;
-
                 left: -9px;
                 top: 50%;
                 transform: translate(0, -50%);
@@ -38,23 +37,8 @@
                     left: 1px;
                     border-right-color: #fff;
                     border-width: 0.5rem 0.5rem 0.5rem 0;
-
                 }
             }
-
-            // &::before {
-            //     width: 0;
-            //     left: -15px;
-            //     top: 50%;
-            //     transform: translate(0, -50%);
-            //     display: block;
-            //     content: "";
-            //     position: absolute;
-            //     height: 0;
-            //     border-style: solid;
-            //     border-width: 15px 15px 15px 0;
-            //     border-color: transparent rgb(244, 244, 244) transparent transparent;
-            // }
 
             display: block;
             position: absolute;
