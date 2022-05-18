@@ -14,6 +14,7 @@ interface ActivityCategoryModel {
 
 @Component({
   tag: 'elsa-toolbox-activities',
+  styleUrl: 'toolbox-activities.scss'
 })
 export class ToolboxActivities {
   @Prop() graph: Graph;
@@ -111,9 +112,13 @@ export class ToolboxActivities {
                 const activityHtml = renderedActivities.get(activityDescriptor.activityType);
                 return (
                   <div class="w-full flex items-center pl-10 pr-2 py-2">
-                    <div class="cursor-move" onDragStart={e => ToolboxActivities.onActivityStartDrag(e, activityDescriptor)}>
-                      <div innerHTML={activityHtml} draggable={true}/>
-                    </div>
+                     <div class="activity cursor-move" onDragStart={e => ToolboxActivities.onActivityStartDrag(e, activityDescriptor)}>
+                        <div innerHTML={activityHtml} draggable={true} />
+                        {!!activityDescriptor.description && 
+                        (<div class="activity-tooltip">{activityDescriptor.description} 
+                          <div class="tooltip-arrow"/> 
+                        </div>)}
+                      </div>
                   </div>
                 );
               })}
