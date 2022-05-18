@@ -21,6 +21,7 @@ namespace Elsa.Retention.Jobs
     public class CleanupJob
     {
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
+        private readonly IWorkflowExecutionLogStore _workflowExecutionLogStore;
         private readonly IClock _clock;
         private readonly IRetentionFilterPipeline _retentionFilterPipeline;
         private readonly CleanupOptions _options;
@@ -28,12 +29,14 @@ namespace Elsa.Retention.Jobs
 
         public CleanupJob(
             IWorkflowInstanceStore workflowInstanceStore,
+            IWorkflowExecutionLogStore workflowExecutionLogStore,
             IClock clock,
             IRetentionFilterPipeline retentionFilterPipeline,
             IOptions<CleanupOptions> options,
             ILogger<CleanupJob> logger)
         {
             _workflowInstanceStore = workflowInstanceStore;
+            _workflowExecutionLogStore = workflowExecutionLogStore;
             _clock = clock;
             _retentionFilterPipeline = retentionFilterPipeline;
             _options = options.Value;
@@ -69,13 +72,23 @@ namespace Elsa.Retention.Jobs
             _logger.LogInformation("Deleting {WorkflowInstanceCount} workflow instances", filteredWorkflowInstances.Count);
 
             if (filteredWorkflowInstances.Any())
-                await DeleteManyAsync(filteredWorkflowInstances.Select(x => x.Id), cancellationToken);
+            {
+                var filteredWorkflowInstancesIds = filteredWorkflowInstances.Select(x => x.Id);
+                await DeleteManyAsync(filteredWorkflowInstancesIds, cancellationToken);
+                await DeleteManyExecutionLogStoreAsync(filteredWorkflowInstancesIds, cancellationToken);
+            }
         }
 
         private async Task DeleteManyAsync(IEnumerable<string> workflowInstanceIds, CancellationToken cancellationToken)
         {
             var specification = new WorkflowInstanceIdsSpecification(workflowInstanceIds);
             await _workflowInstanceStore.DeleteManyAsync(specification, cancellationToken);
+        }
+
+        private async Task DeleteManyExecutionLogStoreAsync(IEnumerable<string> workflowInstanceIds, CancellationToken cancellationToken)
+        {
+            var specification = new Persistence.Specifications.WorkflowExecutionLogRecords.WorkflowInstanceIdsSpecification(workflowInstanceIds);
+            await _workflowExecutionLogStore.DeleteManyAsync(specification, cancellationToken);
         }
     }
 }
