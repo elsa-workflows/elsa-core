@@ -159,6 +159,10 @@ export namespace Components {
         "activityDescriptors": Array<ActivityDescriptor>;
         "graph": Graph;
     }
+    interface ElsaTooltip {
+        "tooltipContent": any;
+        "tooltipPosition": string;
+    }
     interface ElsaWorkflowDefinitionBrowser {
         "hide": () => Promise<void>;
         "show": () => Promise<void>;
@@ -340,6 +344,12 @@ declare global {
         prototype: HTMLElsaToolboxActivitiesElement;
         new (): HTMLElsaToolboxActivitiesElement;
     };
+    interface HTMLElsaTooltipElement extends Components.ElsaTooltip, HTMLStencilElement {
+    }
+    var HTMLElsaTooltipElement: {
+        prototype: HTMLElsaTooltipElement;
+        new (): HTMLElsaTooltipElement;
+    };
     interface HTMLElsaWorkflowDefinitionBrowserElement extends Components.ElsaWorkflowDefinitionBrowser, HTMLStencilElement {
     }
     var HTMLElsaWorkflowDefinitionBrowserElement: {
@@ -408,6 +418,7 @@ declare global {
         "elsa-switch-editor": HTMLElsaSwitchEditorElement;
         "elsa-toolbox": HTMLElsaToolboxElement;
         "elsa-toolbox-activities": HTMLElsaToolboxActivitiesElement;
+        "elsa-tooltip": HTMLElsaTooltipElement;
         "elsa-workflow-definition-browser": HTMLElsaWorkflowDefinitionBrowserElement;
         "elsa-workflow-editor": HTMLElsaWorkflowEditorElement;
         "elsa-workflow-instance-browser": HTMLElsaWorkflowInstanceBrowserElement;
@@ -556,6 +567,10 @@ declare namespace LocalJSX {
         "activityDescriptors"?: Array<ActivityDescriptor>;
         "graph"?: Graph;
     }
+    interface ElsaTooltip {
+        "tooltipContent"?: any;
+        "tooltipPosition"?: string;
+    }
     interface ElsaWorkflowDefinitionBrowser {
         "onWorkflowDefinitionSelected"?: (event: CustomEvent<WorkflowDefinitionSummary>) => void;
     }
@@ -609,6 +624,7 @@ declare namespace LocalJSX {
         "elsa-switch-editor": ElsaSwitchEditor;
         "elsa-toolbox": ElsaToolbox;
         "elsa-toolbox-activities": ElsaToolboxActivities;
+        "elsa-tooltip": ElsaTooltip;
         "elsa-workflow-definition-browser": ElsaWorkflowDefinitionBrowser;
         "elsa-workflow-editor": ElsaWorkflowEditor;
         "elsa-workflow-instance-browser": ElsaWorkflowInstanceBrowser;
@@ -647,6 +663,7 @@ declare module "@stencil/core" {
             "elsa-switch-editor": LocalJSX.ElsaSwitchEditor & JSXBase.HTMLAttributes<HTMLElsaSwitchEditorElement>;
             "elsa-toolbox": LocalJSX.ElsaToolbox & JSXBase.HTMLAttributes<HTMLElsaToolboxElement>;
             "elsa-toolbox-activities": LocalJSX.ElsaToolboxActivities & JSXBase.HTMLAttributes<HTMLElsaToolboxActivitiesElement>;
+            "elsa-tooltip": LocalJSX.ElsaTooltip & JSXBase.HTMLAttributes<HTMLElsaTooltipElement>;
             "elsa-workflow-definition-browser": LocalJSX.ElsaWorkflowDefinitionBrowser & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionBrowserElement>;
             "elsa-workflow-editor": LocalJSX.ElsaWorkflowEditor & JSXBase.HTMLAttributes<HTMLElsaWorkflowEditorElement>;
             "elsa-workflow-instance-browser": LocalJSX.ElsaWorkflowInstanceBrowser & JSXBase.HTMLAttributes<HTMLElsaWorkflowInstanceBrowserElement>;
