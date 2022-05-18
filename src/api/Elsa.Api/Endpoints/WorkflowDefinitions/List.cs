@@ -31,12 +31,13 @@ public class List : Controller
         [FromQuery] string? versionOptions = default,
         [FromQuery] string? definitionIds = default,
         [FromQuery(Name = "materializer")] string? materializerName = default,
+        [FromQuery(Name = "label")] string[]? labels = default,
         [FromQuery] int? page = default,
         [FromQuery] int? pageSize = default)
     {
         var serializerOptions = _serializerOptionsProvider.CreateApiOptions();
         var pageArgs = new PageArgs(page, pageSize);
-        var parsedVersionOptions = versionOptions != null ? VersionOptions.FromString(versionOptions) : default;
+        var parsedVersionOptions = versionOptions != null ? VersionOptions.FromString(versionOptions) : default(VersionOptions?);
         var splitIds = definitionIds?.Split(',', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
 
         if (splitIds.Any())
@@ -48,7 +49,7 @@ public class List : Controller
         }
         else
         {
-            var pageOfSummaries = await _store.ListSummariesAsync(parsedVersionOptions, materializerName, pageArgs, cancellationToken);
+            var pageOfSummaries = await _store.ListSummariesAsync(parsedVersionOptions, materializerName, labels, pageArgs, cancellationToken);
             return Json(pageOfSummaries, serializerOptions);
         }
     }

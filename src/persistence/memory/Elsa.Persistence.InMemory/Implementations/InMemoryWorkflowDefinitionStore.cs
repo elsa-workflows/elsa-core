@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -15,17 +16,23 @@ public class InMemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
     private readonly InMemoryStore<WorkflowInstance> _instanceStore;
     private readonly InMemoryStore<WorkflowTrigger> _triggerStore;
     private readonly InMemoryStore<WorkflowBookmark> _bookmarkStore;
+    private readonly InMemoryStore<Label> _labelStore;
+    private readonly InMemoryStore<WorkflowDefinitionLabel> _workflowDefinitionLabelStore;
 
     public InMemoryWorkflowDefinitionStore(
-        InMemoryStore<WorkflowDefinition> store, 
-        InMemoryStore<WorkflowInstance> instanceStore, 
-        InMemoryStore<WorkflowTrigger> triggerStore, 
-        InMemoryStore<WorkflowBookmark> bookmarkStore)
+        InMemoryStore<WorkflowDefinition> store,
+        InMemoryStore<WorkflowInstance> instanceStore,
+        InMemoryStore<WorkflowTrigger> triggerStore,
+        InMemoryStore<WorkflowBookmark> bookmarkStore,
+        InMemoryStore<Label> labelStore,
+        InMemoryStore<WorkflowDefinitionLabel> workflowDefinitionLabelStore)
     {
         _store = store;
         _instanceStore = instanceStore;
         _triggerStore = triggerStore;
         _bookmarkStore = bookmarkStore;
+        _labelStore = labelStore;
+        _workflowDefinitionLabelStore = workflowDefinitionLabelStore;
     }
 
     public Task<WorkflowDefinition?> FindByIdAsync(string id, CancellationToken cancellationToken = default)
@@ -55,7 +62,7 @@ public class InMemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
 
         var definitionIdList = definitionIds.ToList();
         query = query.Where(x => definitionIdList.Contains(x.Id));
-        
+
         var summaries = query.Select(WorkflowDefinitionSummary.FromDefinition).ToList().AsEnumerable();
         return Task.FromResult(summaries);
     }
@@ -97,15 +104,18 @@ public class InMemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
         return Task.FromResult(result);
     }
 
-    public Task<Page<WorkflowDefinitionSummary>> ListSummariesAsync(VersionOptions? versionOptions = default, string? materializerName = default, PageArgs? pageArgs = default, CancellationToken cancellationToken = default)
+    public Task<Page<WorkflowDefinitionSummary>> ListSummariesAsync(
+        VersionOptions? versionOptions = default,
+        string? materializerName = default,
+        IEnumerable<string>? labelNames = default,
+        PageArgs? pageArgs = default,
+        CancellationToken cancellationToken = default)
     {
         var query = _store.List().AsQueryable();
 
-        if (versionOptions != null)
-            query = query.WithVersion(versionOptions.Value);
-        
-        if (!string.IsNullOrWhiteSpace(materializerName))
-            query = query.Where(x => x.MaterializerName == materializerName);
+        if (versionOptions != null) query = query.WithVersion(versionOptions.Value);
+        if (!string.IsNullOrWhiteSpace(materializerName)) query = query.Where(x => x.MaterializerName == materializerName);
+        if (labelNames != null) query = FilterByLabels(query, labelNames);
 
         return query.PaginateAsync(x => WorkflowDefinitionSummary.FromDefinition(x), pageArgs);
     }
@@ -114,5 +124,28 @@ public class InMemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
     {
         var exists = _store.AnyAsync(x => x.DefinitionId == definitionId && x.WithVersion(versionOptions));
         return Task.FromResult(exists);
+    }
+
+    private IQueryable<WorkflowDefinition> FilterByLabels(IQueryable<WorkflowDefinition> query, IEnumerable<string>? labelNames)
+    {
+        var labelList = labelNames?.Select(x => x.ToLowerInvariant()).ToList();
+
+        // Do we need to filter by labels?
+        if (labelList == null || !labelList.Any())
+            return query;
+
+        // Translate label names to label IDs.
+        var labelIds = _labelStore.FindMany(x => labelList.Contains(x.NormalizedName)).Select(x => x.Id);
+
+        // We need to build a query that requires a workflow definition to be associated with ALL labels ("and").
+        foreach (var labelId in labelIds)
+            query =
+                from workflowDefinition in query
+                join label in _workflowDefinitionLabelStore.List().AsQueryable()
+                    on workflowDefinition.Id equals label.WorkflowDefinitionVersionId
+                where labelId == label.LabelId
+                select workflowDefinition;
+
+        return query;
     }
 }

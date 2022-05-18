@@ -5,7 +5,19 @@ namespace Elsa.Persistence.Entities;
 /// </summary>
 public class Label : Entity
 {
-    public string Name { get; set; } = default!;
+    private string _name = default!;
+
+    public string Name
+    {
+        get => _name;
+        set
+        {
+            _name = value;
+            NormalizedName = value.ToLowerInvariant();
+        }
+    }
+
+    public string NormalizedName { get; set; } = default!;
     public string? Description { get; set; }
     public string? Color { get; set; }
 }
