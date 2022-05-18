@@ -10,6 +10,20 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "Labels",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "TEXT", nullable: false),
+                    Name = table.Column<string>(type: "TEXT", nullable: false),
+                    Description = table.Column<string>(type: "TEXT", nullable: true),
+                    Color = table.Column<string>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Labels", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "WorkflowBookmarks",
                 columns: table => new
                 {
@@ -27,6 +41,20 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_WorkflowBookmarks", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "WorkflowDefinitionLabels",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "TEXT", nullable: false),
+                    WorkflowDefinitionId = table.Column<string>(type: "TEXT", nullable: false),
+                    WorkflowDefinitionVersionId = table.Column<string>(type: "TEXT", nullable: false),
+                    LabelId = table.Column<string>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_WorkflowDefinitionLabels", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -140,6 +168,21 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
                 name: "IX_WorkflowBookmark_WorkflowInstanceId",
                 table: "WorkflowBookmarks",
                 column: "WorkflowInstanceId");
+
+            migrationBuilder.CreateIndex(
+                name: "WorkflowDefinitionLabel_LabelId",
+                table: "WorkflowDefinitionLabels",
+                column: "LabelId");
+
+            migrationBuilder.CreateIndex(
+                name: "WorkflowDefinitionLabel_WorkflowDefinitionId",
+                table: "WorkflowDefinitionLabels",
+                column: "WorkflowDefinitionId");
+
+            migrationBuilder.CreateIndex(
+                name: "WorkflowDefinitionLabel_WorkflowDefinitionVersionId",
+                table: "WorkflowDefinitionLabels",
+                column: "WorkflowDefinitionVersionId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowDefinition_DefinitionId_Version",
@@ -281,7 +324,13 @@ namespace Elsa.Persistence.EntityFrameworkCore.Sqlite.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "Labels");
+
+            migrationBuilder.DropTable(
                 name: "WorkflowBookmarks");
+
+            migrationBuilder.DropTable(
+                name: "WorkflowDefinitionLabels");
 
             migrationBuilder.DropTable(
                 name: "WorkflowDefinitions");
