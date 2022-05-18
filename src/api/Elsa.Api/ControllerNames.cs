@@ -6,4 +6,5 @@ public class ControllerNames
     public const string Events = "Events";
     public const string WorkflowDefinitions = "WorkflowDefinitions";
     public const string WorkflowInstances = "WorkflowInstances";
+    public const string Labels = "Labels";
 }

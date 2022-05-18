@@ -1,5 +1,7 @@
 using Elsa.Persistence.Entities;
+using Elsa.Persistence.EntityFrameworkCore.Extensions;
 using Elsa.Persistence.EntityFrameworkCore.Services;
+using Elsa.Persistence.Models;
 using Elsa.Persistence.Services;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Implementations;
@@ -17,5 +19,14 @@ public class EFCoreLabelStore : ILabelStore
     {
         var idList = ids.ToList();
         return await _store.DeleteWhereAsync(x => idList.Contains(x.Id), cancellationToken);
+    }
+
+    public async Task<Label?> FindByIdAsync(string id, CancellationToken cancellationToken = default) => await _store.FindAsync(x => x.Id == id, cancellationToken);
+    
+    public async Task<Page<Label>> ListAsync(PageArgs? pageArgs = default, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
+        var set = dbContext.Labels.OrderBy(x => x.Name);
+        return await set.PaginateAsync(pageArgs);
     }
 }
