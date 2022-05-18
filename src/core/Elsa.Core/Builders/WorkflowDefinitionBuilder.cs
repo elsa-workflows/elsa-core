@@ -50,7 +50,7 @@ public class WorkflowDefinitionBuilder : IWorkflowDefinitionBuilder
         foreach (var variable in variables) Variables.Add(variable);
         return this;
     }
-    
+
     public IWorkflowDefinitionBuilder WithTags(params string[] tags)
     {
         foreach (var tag in tags) Tags.Add(tag);
@@ -77,7 +77,7 @@ public class WorkflowDefinitionBuilder : IWorkflowDefinitionBuilder
         var identity = new WorkflowIdentity(definitionId, Version, id);
         var publication = WorkflowPublication.LatestAndPublished;
         var metadata = new WorkflowMetadata();
-        return new Workflow(identity, publication, metadata, root, Variables, Tags, Metadata, ApplicationProperties);
+        return new Workflow(identity, publication, metadata, root, Variables, Metadata, ApplicationProperties);
     }
 
     public async Task<Workflow> BuildWorkflowAsync(IWorkflow workflowDefinition, CancellationToken cancellationToken = default)
