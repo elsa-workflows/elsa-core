@@ -53,4 +53,10 @@ public class InMemoryLabelStore : ILabelStore
         var query = _store.List().AsQueryable().OrderBy(x => x.Name);
         return query.PaginateAsync(pageArgs);
     }
+
+    public Task<IEnumerable<Label>> FindManyByIdAsync(IEnumerable<string> ids, CancellationToken cancellationToken)
+    {
+        var idList = ids.ToList();
+        return Task.FromResult(_store.FindMany(x => idList.Contains(x.Id)));
+    }
 }

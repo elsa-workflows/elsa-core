@@ -29,4 +29,10 @@ public class EFCoreLabelStore : ILabelStore
         var set = dbContext.Labels.OrderBy(x => x.Name);
         return await set.PaginateAsync(pageArgs);
     }
+
+    public async Task<IEnumerable<Label>> FindManyByIdAsync(IEnumerable<string> ids, CancellationToken cancellationToken = default)
+    {
+        var idList = ids.ToList();
+        return await _store.FindManyAsync(x => idList.Contains(x.Id), cancellationToken);
+    }
 }

@@ -42,6 +42,10 @@ public static class EndpointRouteBuilderExtensions
         Map("Labels.Get", "labels/{id}", new { Controller = ControllerNames.Labels, Action = "Get" });
         Map("Labels.Delete", "labels/{id}", new { Controller = ControllerNames.Labels, Action = "Delete" });
         Map("Labels.List", "labels", new { Controller = ControllerNames.Labels, Action = "List" });
+        
+        // Workflow Definition Labels
+        Map("WorkflowDefinitions.Labels.Update", "workflow-definitions/{id}/labels", new { Controller = ControllerNames.WorkflowDefinitionLabels, Action = "Update" });
+        Map("WorkflowDefinitions.Labels.Get", "workflow-definitions/{id}/labels", new { Controller = ControllerNames.WorkflowDefinitionLabels, Action = "Get" });
 
         return endpoints;
     }

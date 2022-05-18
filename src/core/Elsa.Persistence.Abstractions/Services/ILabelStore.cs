@@ -11,4 +11,5 @@ public interface ILabelStore
     Task<int> DeleteManyAsync(IEnumerable<string> ids, CancellationToken cancellationToken = default);
     Task<Label?> FindByIdAsync(string id, CancellationToken cancellationToken = default);
     Task<Page<Label>> ListAsync(PageArgs? pageArgs = default, CancellationToken cancellationToken = default);
+    Task<IEnumerable<Label>> FindManyByIdAsync(IEnumerable<string> ids, CancellationToken cancellationToken = default);
 }

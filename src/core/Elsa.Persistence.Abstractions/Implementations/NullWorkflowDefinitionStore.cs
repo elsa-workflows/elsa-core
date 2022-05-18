@@ -6,6 +6,8 @@ namespace Elsa.Persistence.Implementations;
 
 public class NullWorkflowDefinitionStore : IWorkflowDefinitionStore
 {
+    public Task<WorkflowDefinition?> FindByIdAsync(string id, CancellationToken cancellationToken = default) => Task.FromResult<WorkflowDefinition?>(default);
+
     public Task<WorkflowDefinition?> FindByDefinitionIdAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default) =>
         Task.FromResult<WorkflowDefinition?>(default);
 
@@ -26,7 +28,12 @@ public class NullWorkflowDefinitionStore : IWorkflowDefinitionStore
 
     public Task<int> DeleteManyByDefinitionIdsAsync(IEnumerable<string> definitionIds, CancellationToken cancellationToken = default) => Task.FromResult(0);
 
-    public Task<Page<WorkflowDefinitionSummary>> ListSummariesAsync(VersionOptions? versionOptions = default, string? materializerName = default, PageArgs? pageArgs = default, CancellationToken cancellationToken = default)
+    public Task<Page<WorkflowDefinitionSummary>> ListSummariesAsync(
+        VersionOptions? versionOptions = default, 
+        string? materializerName = default, 
+        IEnumerable<string>? labelNames = default, 
+        PageArgs? pageArgs = default, 
+        CancellationToken cancellationToken = default)
     {
         var page = new Page<WorkflowDefinitionSummary>(new List<WorkflowDefinitionSummary>(0), 0);
         return Task.FromResult(page);
