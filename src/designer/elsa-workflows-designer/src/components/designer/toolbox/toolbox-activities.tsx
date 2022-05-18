@@ -112,14 +112,32 @@ export class ToolboxActivities {
                 const activityHtml = renderedActivities.get(activityDescriptor.activityType);
                 return (
                   <div class="w-full flex items-center pl-10 pr-2 py-2">
-                     <div class="activity cursor-move" onDragStart={e => ToolboxActivities.onActivityStartDrag(e, activityDescriptor)}>
+                      <div class="activity relative cursor-move" onDragStart={e => ToolboxActivities.onActivityStartDrag(e, activityDescriptor)}>
                         <div innerHTML={activityHtml} draggable={true} />
-                        {!!activityDescriptor.description && 
-                        (<div class="activity-tooltip">{activityDescriptor.description} 
-                          <div class="tooltip-arrow"/> 
-                        </div>)}
+                        {activityDescriptor.description && 
+                          <div
+                            role="tooltip"
+                            class="tooltip top-1/2 -translate-y-1/2 z-20 w-48 absolute transition duration-150 ease-in-out left-full ml-4 shadow-lg bg-white p-4 rounded"
+                          >
+                            <svg class="absolute left-0 -ml-2 bottom-0 top-0 h-full" width="9px" height="16px" viewBox="0 0 9 16" version="1.1" xmlns="http://www.w3.org/2000/svg">
+                              <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                                <g id="Tooltips-" transform="translate(-874.000000, -1029.000000)" fill="#FFFFFF">
+                                  <g id="Group-3-Copy-16" transform="translate(850.000000, 975.000000)">
+                                    <g id="Group-2" transform="translate(24.000000, 0.000000)">
+                                      <polygon
+                                        id="Triangle"
+                                        transform="translate(4.500000, 62.000000) rotate(-90.000000) translate(-4.500000, -62.000000) "
+                                        points="4.5 57.5 12.5 66.5 -3.5 66.5"
+                                      />
+                                    </g>
+                                  </g>
+                                </g>
+                              </g>
+                            </svg>
+                            <p class="text-gray-600 text-sm">{activityDescriptor.description} </p>
+                          </div>}
                       </div>
-                  </div>
+                    </div>
                 );
               })}
 
