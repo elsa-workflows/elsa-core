@@ -1,7 +1,7 @@
-import {Component, Event, EventEmitter, h, Host, Method, Prop, State, Watch} from '@stencil/core';
-import {DefaultActions, PagedList, VersionOptions, WorkflowDefinition, WorkflowDefinitionSummary} from "../../../models";
+import {Component, Event, EventEmitter, h, Host, Method, State} from '@stencil/core';
+import {DefaultActions, PagedList, VersionOptions,  WorkflowDefinitionSummary} from "../../../models";
 import {Container} from "typedi";
-import {ElsaApiClientProvider, ElsaClient, SaveWorkflowDefinitionRequest} from "../../../services";
+import {ElsaApiClientProvider, ElsaClient} from "../../../services";
 import {DeleteIcon, EditIcon, PublishIcon, UnPublishIcon} from "../../icons/tooling";
 
 @Component({

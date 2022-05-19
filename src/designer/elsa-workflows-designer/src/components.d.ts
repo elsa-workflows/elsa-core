@@ -102,6 +102,10 @@ export namespace Components {
         "placeHolder"?: string;
         "values"?: Array<string | SelectListItem>;
     }
+    interface ElsaLabelsManager {
+        "hide": () => Promise<void>;
+        "show": () => Promise<void>;
+    }
     interface ElsaModalDialog {
         "actions": Array<ActionDefinition>;
         "hide": (animate?: boolean) => Promise<void>;
@@ -268,6 +272,12 @@ declare global {
         prototype: HTMLElsaInputTagsDropdownElement;
         new (): HTMLElsaInputTagsDropdownElement;
     };
+    interface HTMLElsaLabelsManagerElement extends Components.ElsaLabelsManager, HTMLStencilElement {
+    }
+    var HTMLElsaLabelsManagerElement: {
+        prototype: HTMLElsaLabelsManagerElement;
+        new (): HTMLElsaLabelsManagerElement;
+    };
     interface HTMLElsaModalDialogElement extends Components.ElsaModalDialog, HTMLStencilElement {
     }
     var HTMLElsaModalDialogElement: {
@@ -407,6 +417,7 @@ declare global {
         "elsa-input-control-switch": HTMLElsaInputControlSwitchElement;
         "elsa-input-tags": HTMLElsaInputTagsElement;
         "elsa-input-tags-dropdown": HTMLElsaInputTagsDropdownElement;
+        "elsa-labels-manager": HTMLElsaLabelsManagerElement;
         "elsa-modal-dialog": HTMLElsaModalDialogElement;
         "elsa-monaco-editor": HTMLElsaMonacoEditorElement;
         "elsa-multi-line-input": HTMLElsaMultiLineInputElement;
@@ -507,6 +518,8 @@ declare namespace LocalJSX {
         "onValueChanged"?: (event: CustomEvent<Array<string | SelectListItem>>) => void;
         "placeHolder"?: string;
         "values"?: Array<string | SelectListItem>;
+    }
+    interface ElsaLabelsManager {
     }
     interface ElsaModalDialog {
         "actions"?: Array<ActionDefinition>;
@@ -613,6 +626,7 @@ declare namespace LocalJSX {
         "elsa-input-control-switch": ElsaInputControlSwitch;
         "elsa-input-tags": ElsaInputTags;
         "elsa-input-tags-dropdown": ElsaInputTagsDropdown;
+        "elsa-labels-manager": ElsaLabelsManager;
         "elsa-modal-dialog": ElsaModalDialog;
         "elsa-monaco-editor": ElsaMonacoEditor;
         "elsa-multi-line-input": ElsaMultiLineInput;
@@ -652,6 +666,7 @@ declare module "@stencil/core" {
             "elsa-input-control-switch": LocalJSX.ElsaInputControlSwitch & JSXBase.HTMLAttributes<HTMLElsaInputControlSwitchElement>;
             "elsa-input-tags": LocalJSX.ElsaInputTags & JSXBase.HTMLAttributes<HTMLElsaInputTagsElement>;
             "elsa-input-tags-dropdown": LocalJSX.ElsaInputTagsDropdown & JSXBase.HTMLAttributes<HTMLElsaInputTagsDropdownElement>;
+            "elsa-labels-manager": LocalJSX.ElsaLabelsManager & JSXBase.HTMLAttributes<HTMLElsaLabelsManagerElement>;
             "elsa-modal-dialog": LocalJSX.ElsaModalDialog & JSXBase.HTMLAttributes<HTMLElsaModalDialogElement>;
             "elsa-monaco-editor": LocalJSX.ElsaMonacoEditor & JSXBase.HTMLAttributes<HTMLElsaMonacoEditorElement>;
             "elsa-multi-line-input": LocalJSX.ElsaMultiLineInput & JSXBase.HTMLAttributes<HTMLElsaMultiLineInputElement>;

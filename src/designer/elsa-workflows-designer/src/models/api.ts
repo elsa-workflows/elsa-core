@@ -1,10 +1,6 @@
 import {Type} from './shared';
 import {WorkflowState} from "./core";
 
-export interface ActivityDescriptorResponse {
-  activityDescriptors: Array<ActivityDescriptor>;
-}
-
 export interface ActivityDescriptor {
   activityType: string;
   displayName: string;

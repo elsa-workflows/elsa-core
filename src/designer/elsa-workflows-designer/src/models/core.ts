@@ -47,23 +47,6 @@ export interface WorkflowDefinition {
   root: Activity;
 }
 
-export interface WorkflowMetadata {
-  name?: string;
-  description?: string;
-  createdAt?: Date;
-}
-
-export interface WorkflowIdentity {
-  id: string;
-  definitionId: string;
-  version: number;
-}
-
-export interface WorkflowPublication {
-  isLatest: boolean;
-  isPublished: boolean;
-}
-
 export interface WorkflowState {
   id: string;
   activityOutput: Map<string, Map<string, any>>;
@@ -93,6 +76,13 @@ export interface RegisterState {
 
 export interface RegisterLocation {
   value: any;
+}
+
+export interface Label {
+  id: string;
+  name: string;
+  description?: string;
+  color?: string;
 }
 
 export enum SyntaxNames {

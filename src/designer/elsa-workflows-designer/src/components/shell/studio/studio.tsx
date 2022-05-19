@@ -1,19 +1,17 @@
-import {Component, Element, EventEmitter, h, Listen, Prop, Watch} from '@stencil/core';
+import {Component, Element, h, Listen, Prop, Watch} from '@stencil/core';
 import 'reflect-metadata';
 import {Container} from 'typedi';
 import {
   ElsaApiClientProvider,
-  ElsaClient, ExportWorkflowRequest, ImportWorkflowRequest,
-  RetractWorkflowDefinitionRequest,
-  SaveWorkflowDefinitionRequest,
+  ElsaClient,
   ServerSettings
 } from '../../../services';
 import {ActivityDescriptor, VersionOptions, WorkflowDefinition, WorkflowInstanceSummary, WorkflowDefinitionSummary} from '../../../models';
 import {WorkflowUpdatedArgs} from '../../designer/workflow-editor/workflow-editor';
 import {PublishClickedArgs} from "../../toolbar/workflow-publish-button/workflow-publish-button";
 import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
-import {downloadFromBlob, getVersionOptionsString} from "../../../utils";
-import {uuid} from "@antv/x6/lib/util/string/uuid";
+import {downloadFromBlob} from "../../../utils";
+import {ExportWorkflowRequest, ImportWorkflowRequest, RetractWorkflowDefinitionRequest, SaveWorkflowDefinitionRequest} from "../../../services/api-client/workflow-definitions-api";
 
 @Component({
   tag: 'elsa-studio'
@@ -152,7 +150,7 @@ export class Studio {
 
     const workflowDefinition = await importWorkflow();
 
-    if(!!workflowDefinition)
+    if (!!workflowDefinition)
       await workflowEditorElement.importWorkflow(workflowDefinition);
   }
 
