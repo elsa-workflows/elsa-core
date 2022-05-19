@@ -25,7 +25,7 @@
     "generate": "stencil generate"
   },
   "dependencies": {
-    "@antv/x6": "^1.31.4",
+    "@antv/x6": "^1.32.2",
     "@stencil/core": "^2.13.0",
     "@stencil/state-tunnel": "^1.0.1",
     "@stencil/store": "^1.5.0",
@@ -45,7 +45,7 @@
     "@fullhuman/postcss-purgecss": "^4.1.3",
     "@stencil/postcss": "^2.1.0",
     "@stencil/sass": "^1.5.2",
-    "@tailwindcss/forms": "^0.5.0",
+    "@tailwindcss/forms": "^0.5.2",
     "@tailwindcss/typography": "^0.5.2",
     "@types/jquery": "^3.5.14",
     "@types/jquery-mousewheel": "^3.1.9",
