@@ -11,6 +11,11 @@
   @apply h-5 w-5 mx-auto outline-none focus:outline-none;
 }
 
+/* Toolbar Menu */
+.toolbar-menu-wrapper a {
+  @apply block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900;
+}
+
 /* Activities */
 .activity-content-wrapper {
   min-height: 2rem;
