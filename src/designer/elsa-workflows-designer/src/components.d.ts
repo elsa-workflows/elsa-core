@@ -162,7 +162,7 @@ export namespace Components {
     }
     interface ElsaTooltip {
         "tooltipContent": any;
-        "tooltipPosition": string;
+        "tooltipPosition"?: string;
     }
     interface ElsaWorkflowDefinitionBrowser {
         "hide": () => Promise<void>;
