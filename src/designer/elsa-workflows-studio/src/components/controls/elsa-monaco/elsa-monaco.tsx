@@ -1,15 +1,10 @@
 import { Component, Event, EventEmitter, h, Host, Method, Prop, Watch } from '@stencil/core';
-import { initializeMonacoWorker, Monaco } from "./elsa-monaco-utils";
+import { initializeMonacoWorker, Monaco, editorVariables } from "./elsa-monaco-utils";
 import state from '../../../utils/store';
 
 export interface MonacoValueChangedArgs {
   value: string;
   markers: Array<any>;
-}
-
-export interface EditorVariable {
-  variableName: string;
-  type: string;
 }
 
 @Component({
@@ -31,7 +26,6 @@ export class ElsaMonaco {
   container: HTMLElement;
   editor: any;
 
-  private editorVariables: Array<EditorVariable> = [];
 
   @Watch('language')
   languageChangeHandler(newValue: string) {
@@ -71,16 +65,16 @@ export class ElsaMonaco {
     
     const matches = libSource.matchAll(/declare const (\w+): (\w+)/g);
 
+    editorVariables.splice(0, editorVariables.length);
+    
     for(const match of matches) {
-      this.editorVariables.push({variableName: match[1], type: match[2] });
+      editorVariables.push({variableName: match[1], type: match[2] });
     }
   }
 
   async componentWillLoad() {
     const monacoLibPath = this.monacoLibPath ?? state.monacoLibPath;
     this.monaco = await initializeMonacoWorker(monacoLibPath);
-    this.registerLiquid();
-    this.registerSQL();
   }
 
   componentDidLoad() {
@@ -176,67 +170,6 @@ export class ElsaMonaco {
 
     if (!!editor)
       editor.dispose();
-  }
-
-  registerLiquid() {
-    const monaco = (window as any).monaco;
-    monaco.languages.register({ id: 'liquid' });
-
-    monaco.languages.registerCompletionItemProvider('liquid', {
-      provideCompletionItems: () => {
-        const autocompleteProviderItems = [];
-        const keywords = ['assign', 'capture', 'endcapture', 'increment', 'decrement',
-          'if', 'else', 'elsif', 'endif', 'for', 'endfor', 'break',
-          'continue', 'limit', 'offset', 'range', 'reversed', 'cols',
-          'case', 'endcase', 'when', 'block', 'endblock', 'true', 'false',
-          'in', 'unless', 'endunless', 'cycle', 'tablerow', 'endtablerow',
-          'contains', 'startswith', 'endswith', 'comment', 'endcomment',
-          'raw', 'endraw', 'editable', 'endentitylist', 'endentityview', 'endinclude',
-          'endmarker', 'entitylist', 'entityview', 'forloop', 'image', 'include',
-          'marker', 'outputcache', 'plugin', 'style', 'text', 'widget',
-          'abs', 'append', 'at_least', 'at_most', 'capitalize', 'ceil', 'compact',
-          'concat', 'date', 'default', 'divided_by', 'downcase', 'escape',
-          'escape_once', 'first', 'floor', 'join', 'last', 'lstrip', 'map',
-          'minus', 'modulo', 'newline_to_br', 'plus', 'prepend', 'remove',
-          'remove_first', 'replace', 'replace_first', 'reverse', 'round',
-          'rstrip', 'size', 'slice', 'sort', 'sort_natural', 'split', 'strip',
-          'strip_html', 'strip_newlines', 'times', 'truncate', 'truncatewords',
-          'uniq', 'upcase', 'url_decode', 'url_encode'];
-
-        for (let i = 0; i < keywords.length; i++) {
-          autocompleteProviderItems.push({ 'label': keywords[i], kind: monaco.languages.CompletionItemKind.Keyword });
-        }
-
-        return { suggestions: autocompleteProviderItems };
-      }
-    });
-  }
-
-  registerSQL() {
-    console.log("registerSQL");
-    const monaco = (window as any).monaco;
-
-    monaco.languages.registerCompletionItemProvider('sql', {
-      triggerCharacters: ["@"],
-      provideCompletionItems: (model, position) => {
-
-        const word = model.getWordUntilPosition(position)
-
-        const autocompleteProviderItems = [];
-        //if (word.word.match(/@.*/)) {
-          for(const varible of this.editorVariables) {
-            autocompleteProviderItems.push({
-              label: `${varible.variableName}: ${varible.type}`,
-              kind: monaco.languages.CompletionItemKind.Keyword,
-              insertText: varible.variableName
-            });
-          }
-        //}
-
-        return { suggestions: autocompleteProviderItems };
-      }
-    });
-
   }
 
   render() {
