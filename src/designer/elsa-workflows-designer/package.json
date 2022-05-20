@@ -1,6 +1,6 @@
 {
   "name": "@elsa-workflows/elsa-workflows-designer",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "A workflow designer for Elsa 3",
   "main": "dist/index.cjs.js",
   "module": "dist/custom-elements/index.js",
@@ -29,6 +29,7 @@
     "@stencil/core": "^2.13.0",
     "@stencil/state-tunnel": "^1.0.1",
     "@stencil/store": "^1.5.0",
+    "@ctrl/tinycolor": "^3.4.1",
     "axios": "^0.27.2",
     "axios-middleware": "^0.3.1",
     "reflect-metadata": "^0.1.13",

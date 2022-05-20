@@ -102,6 +102,10 @@ export interface PagedList<T> {
   totalCount: number;
 }
 
+export interface List<T> {
+  items: Array<T>;
+}
+
 export interface VersionOptions {
   isLatest?: boolean;
   isLatestOrPublished?: boolean;
