@@ -63,7 +63,7 @@ export class ElsaMonaco {
 
     const newModel = monaco.editor.createModel(libSource, 'typescript', monaco.Uri.parse(libUri));    
     
-    const matches = libSource.matchAll(/declare const (\w+): (string|number|any)/g);
+    const matches = libSource.matchAll(/declare const (\w+): (string|number)/g);
 
     editorVariables.splice(0, editorVariables.length);
     
