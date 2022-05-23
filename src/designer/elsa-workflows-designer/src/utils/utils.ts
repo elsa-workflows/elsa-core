@@ -1,5 +1,5 @@
 import moment from 'moment';
-import {camelCase} from 'lodash';
+import _, {camelCase} from 'lodash';
 import {ActivityInput, VersionOptions} from '../models';
 import {ActivityInputContext} from '../services/node-input-driver';
 
@@ -67,3 +67,9 @@ export const stripActivityNameSpace = (name: string): string => {
 };
 
 export const isNullOrWhitespace = (input) => !input || !input.trim();
+
+export const serializeQueryString = (queryString: object): string => {
+  const filteredItems = _(queryString).omitBy(_.isUndefined).omitBy(_.isNull).value();
+  const queryStringItems = _.map(filteredItems, (v, k) => `${k}=${v}`);
+  return queryStringItems.length > 0 ? `?${queryStringItems.join('&')}` : '';
+};

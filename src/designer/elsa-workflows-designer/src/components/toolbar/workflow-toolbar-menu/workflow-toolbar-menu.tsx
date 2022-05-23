@@ -1,5 +1,6 @@
 import {Component, Event, EventEmitter, Host, h, Listen, Prop, State} from '@stencil/core';
 import {leave, toggle} from 'el-transition';
+import {LabelsManager} from "../../modals/labels-manager/labels-manager";
 
 @Component({
   tag: 'elsa-workflow-toolbar-menu',
@@ -10,6 +11,7 @@ export class WorkflowToolbarMenu {
   private element: HTMLElement;
   private workflowDefinitionBrowser: HTMLElsaWorkflowDefinitionBrowserElement;
   private workflowInstanceBrowser: HTMLElsaWorkflowInstanceBrowserElement;
+  private labelsManager: HTMLElsaLabelsManagerElement;
 
   @Listen('click', {target: 'window'})
   private onWindowClicked(event: Event) {
@@ -39,11 +41,17 @@ export class WorkflowToolbarMenu {
     this.closeMenu();
   };
 
+  private onLabelsClick = async (e: MouseEvent) => {
+    e.preventDefault();
+    await this.labelsManager.show();
+    this.closeMenu();
+  };
+
   render() {
 
     return (
       <Host class="block" ref={el => this.element = el}>
-        <div class="ml-3 relative">
+        <div class="toolbar-menu-wrapper ml-3 relative">
           <div>
             <button onClick={() => this.toggleMenu()}
                     type="button"
@@ -65,13 +73,15 @@ export class WorkflowToolbarMenu {
                data-transition-leave-end="transform opacity-0 scale-95"
                class="hidden origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
                role="menu" aria-orientation="vertical" aria-labelledby="user-menu-button" tabindex="-1">
-            <a onClick={e => this.onWorkflowDefinitionsClick(e)} href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900" role="menuitem" tabindex="-1" id="user-menu-item-0">Workflow Definitions</a>
-            <a onClick={e => this.onWorkflowInstancesClick(e)} href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900" role="menuitem" tabindex="-1" id="user-menu-item-1">Workflow Instances</a>
-            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900" role="menuitem" tabindex="-1" id="user-menu-item-2">Settings</a>
+            <a onClick={e => this.onWorkflowDefinitionsClick(e)} href="#" role="menuitem" tabindex="-1">Workflow Definitions</a>
+            <a onClick={e => this.onWorkflowInstancesClick(e)} href="#" role="menuitem" tabindex="-1">Workflow Instances</a>
+            <a onClick={e => this.onLabelsClick(e)} href="#" role="menuitem" tabindex="-1">Labels</a>
+            <a href="#" role="menuitem" tabindex="-1">Settings</a>
           </div>
         </div>
         <elsa-workflow-definition-browser ref={el => this.workflowDefinitionBrowser = el}/>
         <elsa-workflow-instance-browser ref={el => this.workflowInstanceBrowser = el}/>
+        <elsa-labels-manager ref={el => this.labelsManager = el}/>
       </Host>
     );
   }

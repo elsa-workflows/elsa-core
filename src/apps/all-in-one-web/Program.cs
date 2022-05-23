@@ -1,5 +1,6 @@
 using Elsa.Activities;
 using Elsa.Api.Extensions;
+using Elsa.AspNetCore;
 using Elsa.Extensions;
 using Elsa.Jobs.Extensions;
 using Elsa.Management.Extensions;
@@ -22,7 +23,7 @@ using Elsa.Services;
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 
-// Add services.
+// Add Elsa services.
 services
     .AddElsa()
     .AddHttpActivityServices()
@@ -53,6 +54,9 @@ services
 // Register serialization configurator for configuring what types to allow to be serialized.
 services.AddSingleton<ISerializationOptionsConfigurator, CustomSerializationOptionConfigurator>();
 services.AddSingleton<ISerializationOptionsConfigurator, SerializationOptionsConfigurator>();
+
+// Controllers.
+services.AddControllers(mvc => mvc.Conventions.Add(new ApiEndpointAttributeConvention()));
 
 // Razor Pages.
 services.AddRazorPages();

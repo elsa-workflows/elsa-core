@@ -2,7 +2,7 @@ export * from './activity-driver';
 export * from './activity-driver-registry';
 export * from './activity-icon-registry';
 export * from './custom-event-bus';
-export * from './elsa-api-client';
+export * from './api-client/api-client';
 export * from './event-bus';
 export * from './input-control-registry';
 export * from './input-driver-registry';

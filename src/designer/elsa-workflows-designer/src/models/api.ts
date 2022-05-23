@@ -1,10 +1,6 @@
 import {Type} from './shared';
 import {WorkflowState} from "./core";
 
-export interface ActivityDescriptorResponse {
-  activityDescriptors: Array<ActivityDescriptor>;
-}
-
 export interface ActivityDescriptor {
   activityType: string;
   displayName: string;
@@ -104,6 +100,10 @@ export interface PagedList<T> {
   page?: number;
   pageSize?: number;
   totalCount: number;
+}
+
+export interface List<T> {
+  items: Array<T>;
 }
 
 export interface VersionOptions {

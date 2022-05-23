@@ -1,6 +1,6 @@
 {
   "name": "@elsa-workflows/elsa-workflows-designer",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "A workflow designer for Elsa 3",
   "main": "dist/index.cjs.js",
   "module": "dist/custom-elements/index.js",
@@ -25,10 +25,11 @@
     "generate": "stencil generate"
   },
   "dependencies": {
-    "@antv/x6": "^1.31.4",
+    "@antv/x6": "^1.32.2",
     "@stencil/core": "^2.13.0",
     "@stencil/state-tunnel": "^1.0.1",
     "@stencil/store": "^1.5.0",
+    "@ctrl/tinycolor": "^3.4.1",
     "axios": "^0.27.2",
     "axios-middleware": "^0.3.1",
     "reflect-metadata": "^0.1.13",
@@ -45,7 +46,7 @@
     "@fullhuman/postcss-purgecss": "^4.1.3",
     "@stencil/postcss": "^2.1.0",
     "@stencil/sass": "^1.5.2",
-    "@tailwindcss/forms": "^0.5.0",
+    "@tailwindcss/forms": "^0.5.2",
     "@tailwindcss/typography": "^0.5.2",
     "@types/jquery": "^3.5.14",
     "@types/jquery-mousewheel": "^3.1.9",
