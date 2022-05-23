@@ -8181,10 +8181,6 @@ select {
   padding-left: 2.5rem;
 }
 
-.elsa-pl-4 {
-  padding-left: 1rem;
-}
-
 .elsa-pr-3 {
   padding-right: 0.75rem;
 }
@@ -12560,10 +12556,6 @@ svg.jtk-connector.jtk-hover path {
     padding-right: 0px;
   }
 
-  .sm\:elsa-pl-6 {
-    padding-left: 1.5rem;
-  }
-
   .sm\:elsa-pr-6 {
     padding-right: 1.5rem;
   }
@@ -12690,10 +12682,6 @@ svg.jtk-connector.jtk-hover path {
   .lg\:elsa-px-0 {
     padding-left: 0px;
     padding-right: 0px;
-  }
-
-  .lg\:elsa-pl-8 {
-    padding-left: 2rem;
   }
 
   .lg\:elsa-pr-8 {
