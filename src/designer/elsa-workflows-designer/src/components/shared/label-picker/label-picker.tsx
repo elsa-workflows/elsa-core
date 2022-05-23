@@ -1,4 +1,4 @@
-import {Component, FunctionalComponent, h, Prop, State} from "@stencil/core";
+import {Component, FunctionalComponent, h, Listen, Prop, State, Element, Event, EventEmitter} from "@stencil/core";
 import {leave, toggle, enter} from 'el-transition';
 import {EventTypes, Label} from "../../../models";
 import {Container} from "typedi";
@@ -13,6 +13,7 @@ import {TinyColor} from "@ctrl/tinycolor";
   shadow: false,
 })
 export class LabelPicker {
+  @Element() element: HTMLElement;
   private eventBus: EventBus;
   private flyoutPanel: HTMLElement;
 
@@ -21,7 +22,19 @@ export class LabelPicker {
   }
 
   @Prop() selectedLabels: Array<string> = [];
+
+  @Event() selectedLabelsChanged: EventEmitter<Array<string>>;
+
+  @State() selectedLabelsMap: any = {};
   @State() availableLabels: Array<Label> = [];
+
+  @Listen('click', {target: 'window'})
+  private onWindowClicked(event: Event) {
+    const target = event.target as HTMLElement;
+
+    if (!this.element.contains(target))
+      this.closeFlyoutPanel();
+  }
 
   connectedCallback() {
     this.eventBus.on(EventTypes.Labels.Updated, this.onLabelsUpdated);
@@ -33,6 +46,11 @@ export class LabelPicker {
 
   async componentWillLoad() {
     await this.loadLabels();
+
+    const selectedLabels = this.selectedLabels;
+
+    for (const label of this.availableLabels)
+      this.selectedLabelsMap[label.id] = !!selectedLabels.find(x => x == label.id);
   }
 
   public render() {
@@ -43,7 +61,7 @@ export class LabelPicker {
         {labels.map(this.renderLabel)}
       </div>
       <div class="relative">
-        <button>
+        <button onClick={e => this.toggleFlyoutPanel()} class="text-blue-500 hover:text-blue-300">
           <ConfigIcon/>
         </button>
         {this.renderFlyout()}
@@ -52,9 +70,10 @@ export class LabelPicker {
   }
 
   private renderFlyout = () => {
+    const selectedLabelsMap = this.selectedLabelsMap;
     const labels = this.availableLabels;
 
-    return <div ref={el => this.flyoutPanel = el} class="absolute z-10 right-0 transform mt-3 px-2 w-screen max-w-md px-0"
+    return <div ref={el => this.flyoutPanel = el} class="absolute z-10 right-0 transform mt-3 px-2 w-screen max-w-md px-0 hidden"
                 data-transition-enter="transition ease-out duration-200"
                 data-transition-enter-start="opacity-0 translate-y-1"
                 data-transition-enter-end="opacity-100 translate-y-0"
@@ -75,13 +94,14 @@ export class LabelPicker {
 
               const color = new TinyColor(label.color).lighten(40).toHexString();
               const colorStyle = {backgroundColor: color};
+              const isSelected = selectedLabelsMap[label.id] == true;
 
               return (
                 <li role="option" tab-index="-1">
-                  <a class="block select-none rounded-xl p-3 bg-white hover:bg-gray-100" href="#">
+                  <a class="block select-none rounded-xl p-3 bg-white hover:bg-gray-100" href="#" onClick={e => this.onLabelClick(e, label)}>
                     <div class="flex justify-start gap-1.5">
                       <div class="flex-none w-8">
-                        <TickIcon/>
+                        {isSelected ? <TickIcon/> : undefined}
                       </div>
                       <div class="flex-grow ">
                         <div class="flex gap-1.5">
@@ -134,6 +154,12 @@ export class LabelPicker {
 
   private onLabelsUpdated = async () => {
     await this.loadLabels();
+  }
+
+  private onLabelClick = (e: Event, label: Label) => {
+    const map = {...this.selectedLabelsMap};
+    map[label.id] = !this.selectedLabelsMap[label.id];
+    this.selectedLabelsMap = map;
   }
 }
 

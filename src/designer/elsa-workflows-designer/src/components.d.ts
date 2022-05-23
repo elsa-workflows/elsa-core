@@ -572,6 +572,7 @@ declare namespace LocalJSX {
         "onLabelUpdated"?: (event: CustomEvent<UpdateLabelEventArgs>) => void;
     }
     interface ElsaLabelPicker {
+        "onSelectedLabelsChanged"?: (event: CustomEvent<Array<string>>) => void;
         "selectedLabels"?: Array<string>;
     }
     interface ElsaLabelsManager {

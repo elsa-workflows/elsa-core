@@ -12,7 +12,7 @@ export class ButtonGroup {
 
   render() {
     return (
-      <span class="relative z-0 inline-flex shadow-sm rounded-md">
+      <span class="relative z-0 inline-flex rounded-md">
         {this.renderButtons()}
       </span>
     );
