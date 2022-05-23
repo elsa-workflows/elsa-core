@@ -76,7 +76,10 @@ export class WorkflowPropertiesEditor {
       <FormEntry label="Description" fieldId="workflowDescription" hint="A brief description about the workflow.">
         <textarea name="workflowDescription" id="workflowDescription" value={workflow.description} rows={6} onChange={e => this.onPropertyEditorChanged(wf => wf.description = (e.target as HTMLTextAreaElement).value)}/>
       </FormEntry>
-      <InfoList title="WorkflowDefinition Information" dictionary={workflowDetails}/>
+      <FormEntry label="Labels" fieldId="workflowLabels" hint="Labels allow you to tag the workflow that can be used to query workflows with.">
+        <elsa-label-picker />
+      </FormEntry>
+      <InfoList title="Information" dictionary={workflowDetails}/>
     </div>
   };
 

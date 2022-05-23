@@ -40,12 +40,8 @@ export default class EventBus{
   */
   detachAll(): void
   /**
-   * Emit the event
+   * Emit the event asynchronously.
    * @param {string} eventName - name of the event.
    */
   emit<C = null>(eventName: string, context?: C, ...args: any[]): Promise<void>
-  /**
-   * Emit the event asynchronously
-   * @param {string} eventName - name of the event.
-   */
 }

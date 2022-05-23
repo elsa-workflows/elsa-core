@@ -16,7 +16,7 @@ import { DropdownButtonItem, DropdownButtonOrigin } from "./components/shared/dr
 import { Graph } from "@antv/x6";
 import { AddActivityArgs as AddActivityArgs1 } from "./components/designer/canvas/canvas";
 import { ExpressionChangedArs } from "./components/designer/input-control-switch/input-control-switch";
-import { CreateLabelEventArgs } from "./components/modals/labels-manager/models";
+import { CreateLabelEventArgs, DeleteLabelEventArgs, UpdateLabelEventArgs } from "./components/modals/labels-manager/models";
 import { MonacoLib, MonacoValueChangedArgs } from "./components/shared/monaco-editor/monaco-editor";
 import { PagerData } from "./components/shared/pager/pager";
 import { PanelPosition, PanelStateChangedArgs } from "./components/designer/panel/models";
@@ -111,6 +111,9 @@ export namespace Components {
     }
     interface ElsaLabelEditor {
         "label": Label;
+    }
+    interface ElsaLabelPicker {
+        "selectedLabels": Array<string>;
     }
     interface ElsaLabelsManager {
         "hide": () => Promise<void>;
@@ -300,6 +303,12 @@ declare global {
         prototype: HTMLElsaLabelEditorElement;
         new (): HTMLElsaLabelEditorElement;
     };
+    interface HTMLElsaLabelPickerElement extends Components.ElsaLabelPicker, HTMLStencilElement {
+    }
+    var HTMLElsaLabelPickerElement: {
+        prototype: HTMLElsaLabelPickerElement;
+        new (): HTMLElsaLabelPickerElement;
+    };
     interface HTMLElsaLabelsManagerElement extends Components.ElsaLabelsManager, HTMLStencilElement {
     }
     var HTMLElsaLabelsManagerElement: {
@@ -448,6 +457,7 @@ declare global {
         "elsa-input-tags-dropdown": HTMLElsaInputTagsDropdownElement;
         "elsa-label-creator": HTMLElsaLabelCreatorElement;
         "elsa-label-editor": HTMLElsaLabelEditorElement;
+        "elsa-label-picker": HTMLElsaLabelPickerElement;
         "elsa-labels-manager": HTMLElsaLabelsManagerElement;
         "elsa-modal-dialog": HTMLElsaModalDialogElement;
         "elsa-monaco-editor": HTMLElsaMonacoEditorElement;
@@ -558,7 +568,11 @@ declare namespace LocalJSX {
     }
     interface ElsaLabelEditor {
         "label"?: Label;
-        "onLabelDeleted"?: (event: CustomEvent<Label>) => void;
+        "onLabelDeleted"?: (event: CustomEvent<DeleteLabelEventArgs>) => void;
+        "onLabelUpdated"?: (event: CustomEvent<UpdateLabelEventArgs>) => void;
+    }
+    interface ElsaLabelPicker {
+        "selectedLabels"?: Array<string>;
     }
     interface ElsaLabelsManager {
     }
@@ -670,6 +684,7 @@ declare namespace LocalJSX {
         "elsa-input-tags-dropdown": ElsaInputTagsDropdown;
         "elsa-label-creator": ElsaLabelCreator;
         "elsa-label-editor": ElsaLabelEditor;
+        "elsa-label-picker": ElsaLabelPicker;
         "elsa-labels-manager": ElsaLabelsManager;
         "elsa-modal-dialog": ElsaModalDialog;
         "elsa-monaco-editor": ElsaMonacoEditor;
@@ -713,6 +728,7 @@ declare module "@stencil/core" {
             "elsa-input-tags-dropdown": LocalJSX.ElsaInputTagsDropdown & JSXBase.HTMLAttributes<HTMLElsaInputTagsDropdownElement>;
             "elsa-label-creator": LocalJSX.ElsaLabelCreator & JSXBase.HTMLAttributes<HTMLElsaLabelCreatorElement>;
             "elsa-label-editor": LocalJSX.ElsaLabelEditor & JSXBase.HTMLAttributes<HTMLElsaLabelEditorElement>;
+            "elsa-label-picker": LocalJSX.ElsaLabelPicker & JSXBase.HTMLAttributes<HTMLElsaLabelPickerElement>;
             "elsa-labels-manager": LocalJSX.ElsaLabelsManager & JSXBase.HTMLAttributes<HTMLElsaLabelsManagerElement>;
             "elsa-modal-dialog": LocalJSX.ElsaModalDialog & JSXBase.HTMLAttributes<HTMLElsaModalDialogElement>;
             "elsa-monaco-editor": LocalJSX.ElsaMonacoEditor & JSXBase.HTMLAttributes<HTMLElsaMonacoEditorElement>;

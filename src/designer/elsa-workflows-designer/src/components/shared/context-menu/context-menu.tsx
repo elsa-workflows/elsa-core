@@ -1,5 +1,5 @@
 import {Component, h, Listen, Method, Prop} from '@stencil/core';
-import {leave, toggle, enter} from 'el-transition'
+import {leave, toggle, enter} from 'el-transition';
 import {ContextMenuAnchorPoint, MenuItem, MenuItemGroup} from "./models";
 import {TickIcon} from "../../icons/tooling/tick";
 
