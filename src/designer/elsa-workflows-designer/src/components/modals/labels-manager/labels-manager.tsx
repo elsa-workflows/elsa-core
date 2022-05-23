@@ -2,6 +2,7 @@ import {Component, h, Host, Method, State} from '@stencil/core';
 import {DefaultActions, Label} from "../../../models";
 import {Container} from "typedi";
 import {ElsaApiClientProvider, ElsaClient} from "../../../services";
+import {CreateLabelEventArgs} from "./models";
 
 @Component({
   tag: 'elsa-labels-manager',
@@ -30,15 +31,6 @@ export class LabelsManager {
     this.elsaClient = await elsaClientProvider.getClient();
   }
 
-  private async onDeleteClick(e: MouseEvent, label: Label) {
-    await this.loadLabels();
-  }
-
-  private async loadLabels() {
-    const elsaClient = this.elsaClient;
-    this.labels = await elsaClient.labels.list();
-  }
-
   render() {
     const labels = this.labels;
     const createMode = this.createMode;
@@ -59,20 +51,18 @@ export class LabelsManager {
                 </div>
               </div>
 
-              {createMode ? <elsa-label-creator /> : undefined}
+              {createMode ? <elsa-label-creator onCreateLabelClicked={e => this.onCreateLabelClicked(e)}/> : undefined}
 
-              <div class="mt-5 ">
-                <div class="border-l border-r border-gray-200 rounded-l-md rounded-r-md">
-                  <div class="flex">
-                    <div>
-                      <p class="max-w-2xl text-sm text-gray-500">{labels.length == 1 ? '1 label' : `${labels.length} labels`}</p>
-                    </div>
+              <div class="mt-5">
+                <div class="flex">
+                  <div>
+                    <p class="max-w-2xl text-sm text-gray-500">{labels.length == 1 ? '1 label' : `${labels.length} labels`}</p>
                   </div>
                 </div>
-                <div class="border-t border-gray-200">
+                <div class="mt-5 border-t border-gray-200">
                   <div class="divide-y divide-gray-200">
                     {labels.map(label => <div class="border-top last:border-bottom border-solid border-gray-200">
-                      <elsa-label-editor label={label}/>
+                      <elsa-label-editor key={label.id} label={label} onLabelDeleted={e => this.onLabelDeleted(e)}/>
                     </div>)}
                   </div>
                 </div>
@@ -83,6 +73,27 @@ export class LabelsManager {
         </elsa-modal-dialog>
       </Host>
     );
+  }
+
+  private createLabel = async (name: string, description?: string, color?: string): Promise<void> => {
+    await this.elsaClient.labels.create(name, description, color);
+  }
+
+  private async loadLabels() {
+    const elsaClient = this.elsaClient;
+    this.labels = await elsaClient.labels.list();
+  }
+
+  private async onCreateLabelClicked(e: CustomEvent<CreateLabelEventArgs>) {
+    const args = e.detail;
+    this.createMode = false;
+    await this.createLabel(args.name, args.description, args.color);
+    await this.loadLabels();
+  }
+
+  private onLabelDeleted = async (e: CustomEvent<Label>) => {
+    debugger;
+    await this.loadLabels();
   }
 }
 

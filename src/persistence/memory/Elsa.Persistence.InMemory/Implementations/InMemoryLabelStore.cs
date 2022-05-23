@@ -11,52 +11,57 @@ namespace Elsa.Persistence.InMemory.Implementations;
 
 public class InMemoryLabelStore : ILabelStore
 {
-    private readonly InMemoryStore<Label> _store;
+    private readonly InMemoryStore<Label> _labelStore;
+    private readonly InMemoryStore<WorkflowDefinitionLabel> _workflowDefinitionLabelStore;
 
-    public InMemoryLabelStore(InMemoryStore<Label> store)
+    public InMemoryLabelStore(InMemoryStore<Label> labelStore, InMemoryStore<WorkflowDefinitionLabel> workflowDefinitionLabelStore)
     {
-        _store = store;
+        _labelStore = labelStore;
+        _workflowDefinitionLabelStore = workflowDefinitionLabelStore;
     }
 
     public Task SaveAsync(Label record, CancellationToken cancellationToken = default)
     {
-        _store.Save(record);
+        _labelStore.Save(record);
         return Task.CompletedTask;
     }
 
     public Task SaveManyAsync(IEnumerable<Label> records, CancellationToken cancellationToken = default)
     {
-        _store.SaveMany(records);
+        _labelStore.SaveMany(records);
         return Task.CompletedTask;
     }
 
     public Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default)
     {
-        var result = _store.Delete(id);
+        _workflowDefinitionLabelStore.DeleteWhere(x => x.LabelId == id);
+        var result = _labelStore.Delete(id);
         return Task.FromResult(result);
     }
 
     public Task<int> DeleteManyAsync(IEnumerable<string> ids, CancellationToken cancellationToken = default)
     {
-        var result = _store.DeleteMany(ids);
+        var idList = ids.ToList();
+        _workflowDefinitionLabelStore.DeleteWhere(x => idList.Contains(x.LabelId));
+        var result = _labelStore.DeleteMany(idList);
         return Task.FromResult(result);
     }
 
     public Task<Label?> FindByIdAsync(string id, CancellationToken cancellationToken = default)
     {
-        var record = _store.Find(x => x.Id == id);
+        var record = _labelStore.Find(x => x.Id == id);
         return Task.FromResult(record);
     }
 
     public Task<Page<Label>> ListAsync(PageArgs? pageArgs = default, CancellationToken cancellationToken = default)
     {
-        var query = _store.List().AsQueryable().OrderBy(x => x.Name);
+        var query = _labelStore.List().AsQueryable().OrderBy(x => x.Name);
         return query.PaginateAsync(pageArgs);
     }
 
     public Task<IEnumerable<Label>> FindManyByIdAsync(IEnumerable<string> ids, CancellationToken cancellationToken)
     {
         var idList = ids.ToList();
-        return Task.FromResult(_store.FindMany(x => idList.Contains(x.Id)));
+        return Task.FromResult(_labelStore.FindMany(x => idList.Contains(x.Id)));
     }
 }

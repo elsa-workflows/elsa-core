@@ -1,22 +1,45 @@
-import {Component, h, Prop, State} from "@stencil/core";
+import {Component, h, Prop, State, Event, EventEmitter} from "@stencil/core";
 import {v4 as uuid} from 'uuid';
 import {Badge} from "../../shared/badge/badge";
 import {Button} from "../../shared/button-group/models";
 import {Label} from "../../../models";
+import {ElsaApiClientProvider, ElsaClient} from "../../../services";
+import {Container} from "typedi";
 
 @Component({
   tag: 'elsa-label-editor',
   shadow: false,
 })
 export class LabelEditor {
+  private elsaClient: ElsaClient;
+  static readonly defaultColor: string = '#991b1b';
 
   @Prop() label: Label = {id: uuid(), name: 'Preview'};
+
+  @Event() labelDeleted: EventEmitter<Label>;
+
   @State() editMode: boolean = false;
+  @State() labelName: string;
+  @State() labelDescription?: string;
+  @State() labelColor?: string;
+
+  async componentWillLoad() {
+    const elsaClientProvider = Container.get(ElsaApiClientProvider);
+    this.elsaClient = await elsaClientProvider.getClient();
+
+    const label = this.label;
+    this.labelName = label.name;
+    this.labelDescription = label.description;
+    this.labelColor = label.color;
+  }
 
   render() {
     const label = this.label;
     const editMode = this.editMode;
-    const color = label.color ?? '#991b1b';
+    const labelName = this.labelName;
+    const labelDescription = this.labelDescription;
+    const labelColor = this.labelColor ?? LabelEditor.defaultColor;
+
     const buttons: Array<Button> = [];
 
     if (!editMode) {
@@ -28,8 +51,7 @@ export class LabelEditor {
 
     buttons.push({
       text: 'Delete',
-      clickHandler: e => {
-      }
+      clickHandler: this.onDeleteLabel
     });
 
     const icon = <svg class="h-6 w-6 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -41,15 +63,15 @@ export class LabelEditor {
 
       <div class={`py-4 grid grid-cols-4 gap-4`}>
         <div>
-          <Badge text={label.name} color={color}/>
+          <Badge text={labelName} color={labelColor}/>
         </div>
         <div class="mt-1 text-sm text-gray-900">
-          <span class="text-sm" hidden={editMode}>
-            {label.description}
+          <span class="text-sm">
+            {labelDescription}
           </span>
         </div>
         <div>
-          <span class="justify-self-center" hidden={editMode}>
+          <span class="justify-self-center">
             <a href="#" title="Linked to 20 workflow definitions" class="inline-flex items-center space-x-2">
               {icon} <span>20</span>
             </a>
@@ -63,26 +85,26 @@ export class LabelEditor {
       </div>
 
       <div hidden={!editMode}>
-        <form class="pb-5 space-y-8 divide-y">
+        <form class="pb-5 space-y-8 divide-y" onSubmit={e => this.onSubmit(e)}>
           <div class="grid grid-cols-4 gap-x-4">
             <div>
               <label htmlFor="labelName">Name</label>
               <div class="mt-1">
-                <input type="text" id="labelName" name="labelName" autoComplete="off"/>
+                <input type="text" id="labelName" name="labelName" autoComplete="off" value={labelName} onInput={e => this.onNameChanged(e)}/>
               </div>
             </div>
 
             <div>
               <label htmlFor="labelDescription">Description</label>
               <div class="mt-1">
-                <input type="text" id="labelDescription" name="labelDescription" autoComplete="off"/>
+                <input type="text" id="labelDescription" name="labelDescription" autoComplete="off" value={labelDescription} onInput={e => this.onDescriptionChanged(e)}/>
               </div>
             </div>
 
             <div>
               <label htmlFor="labelColor">Color</label>
               <div class="mt-1">
-                <input type="text" id="labelColor" name="labelColor" autoComplete="off"/>
+                <input type="text" id="labelColor" name="labelColor" autoComplete="off" value={labelColor} onInput={e => this.onColorChanged(e)}/>
               </div>
             </div>
 
@@ -98,4 +120,40 @@ export class LabelEditor {
       </div>
     </div>
   }
+
+  private updateLabel = async (id: string, name: string, description: string, color: string): Promise<Label> => {
+    return await this.elsaClient.labels.update(id, name, description, color);
+  }
+
+  private onNameChanged = (e: Event) => {
+    this.labelName = (e.target as HTMLInputElement).value;
+  };
+
+  private onDescriptionChanged = (e: Event) => {
+    this.labelDescription = (e.target as HTMLInputElement).value;
+  };
+
+  private onColorChanged = (e: Event) => {
+    this.labelColor = (e.target as HTMLInputElement).value;
+  };
+
+  private onDeleteLabel = async () => {
+    await this.elsaClient.labels.delete(this.label.id);
+    this.labelDeleted.emit(this.label);
+  };
+
+  private onSubmit = async (e: Event) => {
+    e.preventDefault();
+    const form = e.target as HTMLFormElement;
+    const formData = new FormData(form);
+    const labelName = formData.get('labelName') as string;
+    const labelDescription = formData.get('labelDescription') as string;
+    const labelColor = formData.get('labelColor') as string;
+    const updatedLabel = await this.updateLabel(this.label.id, labelName, labelDescription, labelColor);
+    this.label = updatedLabel;
+    this.labelName = updatedLabel.name;
+    this.labelColor = updatedLabel.color;
+    this.labelDescription = updatedLabel.description;
+    this.editMode = false;
+  };
 }

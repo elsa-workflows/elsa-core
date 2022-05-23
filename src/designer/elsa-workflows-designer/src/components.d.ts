@@ -16,6 +16,7 @@ import { DropdownButtonItem, DropdownButtonOrigin } from "./components/shared/dr
 import { Graph } from "@antv/x6";
 import { AddActivityArgs as AddActivityArgs1 } from "./components/designer/canvas/canvas";
 import { ExpressionChangedArs } from "./components/designer/input-control-switch/input-control-switch";
+import { CreateLabelEventArgs } from "./components/modals/labels-manager/models";
 import { MonacoLib, MonacoValueChangedArgs } from "./components/shared/monaco-editor/monaco-editor";
 import { PagerData } from "./components/shared/pager/pager";
 import { PanelPosition, PanelStateChangedArgs } from "./components/designer/panel/models";
@@ -553,9 +554,11 @@ declare namespace LocalJSX {
         "values"?: Array<string | SelectListItem>;
     }
     interface ElsaLabelCreator {
+        "onCreateLabelClicked"?: (event: CustomEvent<CreateLabelEventArgs>) => void;
     }
     interface ElsaLabelEditor {
         "label"?: Label;
+        "onLabelDeleted"?: (event: CustomEvent<Label>) => void;
     }
     interface ElsaLabelsManager {
     }
