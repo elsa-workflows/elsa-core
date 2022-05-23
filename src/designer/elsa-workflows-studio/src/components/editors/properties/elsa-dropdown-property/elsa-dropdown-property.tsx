@@ -24,21 +24,116 @@ export class ElsaDropdownProperty {
 
   selectList: SelectList = { items: [], isFlagsEnum: false };
 
+
   async componentWillLoad() {
     const defaultSyntax = this.propertyDescriptor.defaultSyntax || SyntaxNames.Literal;
     this.currentValue = this.propertyModel.expressions[defaultSyntax] || undefined;
-    this.selectList = await getSelectListItems(this.serverUrl, this.propertyDescriptor);
 
-    if (this.currentValue == undefined) {
-      const firstOption : any = this.selectList.items[0];
+    if (this.propertyDescriptor.options?.context.dependsOnEvent) {
+      var initialDepsValue = {};
+      
+      this.propertyDescriptor.options.context.dependsOnEvent.forEach(async (element, index, array) => {
+        this.activityModel.properties.forEach((value, index, array) => {
+          initialDepsValue[value.name] = value.expressions["Literal"];
+        });
 
-      if (firstOption) {
-        const optionIsObject = typeof (firstOption) == 'object';
-        this.currentValue = optionIsObject ? firstOption.value : firstOption.toString();
+        // Listen for change events on the Brand dropdown list.
+        let dependantInputElement = await this.awaitElement('#' + element);
+        // Setup a change handler for when the user changes the selected brand.
+        dependantInputElement.addEventListener('change', async e => await this.ReloadSelectListFromDeps(e)
+        );
+      });
+
+      let options: RuntimeSelectListProviderSettings = {
+        context: {
+          ...this.propertyDescriptor.options.context,
+          depValues: initialDepsValue
+        },
+        runtimeSelectListProviderType: (this.propertyDescriptor.options as RuntimeSelectListProviderSettings).runtimeSelectListProviderType
+
+      }
+      this.selectList = await getSelectListItems(this.serverUrl, { options: options } as ActivityPropertyDescriptor);
+      if (this.currentValue == undefined) {
+        const firstOption: any = this.selectList.items[0];
+
+        if (firstOption) {
+          const optionIsObject = typeof (firstOption) == 'object';
+          this.currentValue = optionIsObject ? firstOption.value : firstOption.toString();
+        }
+      }
+
+    }
+
+    else {
+      this.selectList = await getSelectListItems(this.serverUrl, this.propertyDescriptor);
+
+
+      if (this.currentValue == undefined) {
+        const firstOption: any = this.selectList.items[0];
+
+        if (firstOption) {
+          const optionIsObject = typeof (firstOption) == 'object';
+          this.currentValue = optionIsObject ? firstOption.value : firstOption.toString();
+        }
       }
     }
   }
 
+
+
+  async ReloadSelectListFromDeps(e) {
+    let depValues = {};
+
+    this.propertyDescriptor.options.context.dependsOnValue.forEach(async element => {
+      let value = this.activityModel.properties.find((prop) => {
+        return prop.name == element;
+      })
+      depValues[element] = value.expressions["Literal"];
+    });
+
+    //need to get the latest value of the component that just changed
+    //for this we need to get the value from the event.
+    depValues[e.currentTarget.id] = e.currentTarget.value;
+
+
+    let options: RuntimeSelectListProviderSettings = {
+      context: {
+        ...this.propertyDescriptor.options.context,
+        depValues: depValues
+      },
+      runtimeSelectListProviderType: (this.propertyDescriptor.options as RuntimeSelectListProviderSettings).runtimeSelectListProviderType
+    }
+
+    this.selectList = await getSelectListItems(this.serverUrl, { options: options } as ActivityPropertyDescriptor);
+
+    const firstOption: any = this.selectList.items[0];
+    let currentSelectList = await this.awaitElement('#' + this.propertyDescriptor.name);
+
+    if (firstOption) {
+      const optionIsObject = typeof (firstOption) == 'object';
+      this.currentValue = optionIsObject ? firstOption.value : firstOption.toString();
+
+      // rebuild the dropdown list to avoid issue between dispatchevent vs render() for the content of the HTMLElement
+      currentSelectList.innerHTML = "";
+      for (const prop of this.selectList.items) {
+        let item: any = prop;
+        const optionIsObject = typeof (item) == 'object';
+        const selected = (optionIsObject ? item.value : item.toString()) === this.currentValue;
+        const option = new Option(optionIsObject ? item.text : item.toString(), optionIsObject ? item.value : item.toString(), selected, selected);
+        currentSelectList.options.add(option);
+      }
+    }
+    //dispatch event to the next dependant input
+    currentSelectList.dispatchEvent(new Event("change"));
+  }
+
+
+  awaitElement = async selector => {
+    while (document.querySelector(selector) === null) {
+      await new Promise(resolve => requestAnimationFrame(resolve))
+    }
+    return document.querySelector(selector);
+  };
   onChange(e: Event) {
     const select = (e.target as HTMLSelectElement);
     const defaultSyntax = this.propertyDescriptor.defaultSyntax || SyntaxNames.Literal;
