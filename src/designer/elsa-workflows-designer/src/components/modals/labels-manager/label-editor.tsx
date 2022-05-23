@@ -61,20 +61,13 @@ export class LabelEditor {
 
     return <div>
 
-      <div class={`py-4 grid grid-cols-4 gap-4`}>
+      <div class={`py-4 grid grid-cols-3 gap-4`}>
         <div>
           <Badge text={labelName} color={labelColor}/>
         </div>
         <div class="mt-1 text-sm text-gray-900">
           <span class="text-sm">
             {labelDescription}
-          </span>
-        </div>
-        <div>
-          <span class="justify-self-center">
-            <a href="#" title="Linked to 20 workflow definitions" class="inline-flex items-center space-x-2">
-              {icon} <span>20</span>
-            </a>
           </span>
         </div>
         <div class="justify-self-end">
