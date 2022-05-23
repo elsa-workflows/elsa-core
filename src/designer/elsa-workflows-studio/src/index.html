@@ -208,15 +208,15 @@
 
   // Awaits the existence of an element.
   const awaitElement = async selector => {
-    while ( document.querySelector(selector) === null) {
-      await new Promise( resolve =>  requestAnimationFrame(resolve) )
+    while (document.querySelector(selector) === null) {
+      await new Promise(resolve => requestAnimationFrame(resolve))
     }
     return document.querySelector(selector);
   };
 
   // A sample plugin for the VehicleActivity sample activity.
   function VehicleActivityPlugin(elsaStudio) {
-    const {eventBus, httpClientFactory} = elsaStudio;
+    const {eventBus, httpClientFactory, activityIconProvider} = elsaStudio;
 
     // A function that requests a list of models from the server based on the selected car brand.
     const updateModels = async (brand, currentModel) => {
@@ -241,6 +241,10 @@
       }
     }
 
+    const onBrandChanged = async e => {
+      await updateModels(e.currentTarget.value);
+    };
+
     // When the activity editor is opened, setup an event handler on the Brands dropdown list.
     eventBus.on('activity-editor-appearing', async e => {
       // We are only interested in our custom activity being editor.
@@ -252,9 +256,7 @@
       const currentBrand = brandsSelectList.value;
       const currentModel = e.activityModel.properties.find(p => p.name === 'Model').expressions['Literal'];
 
-      brandsSelectList.addEventListener('change', async e => {
-        await updateModels(e.currentTarget.value);
-      });
+      brandsSelectList.addEventListener('change', onBrandChanged);
 
       await updateModels(currentBrand, currentModel);
     });
@@ -264,8 +266,20 @@
       if (e.activityDescriptor.type !== 'VehicleActivity')
         return;
 
-      document.querySelector('#Brand').removeEventListener('change', updateModels);
+      document.querySelector('#Brand').removeEventListener('change', onBrandChanged);
     });
+
+    const vehicleIcon = '<span class="elsa-rounded-lg elsa-inline-flex elsa-p-3 elsa-bg-pink-50 elsa-text-pink-700 elsa-ring-4 elsa-ring-white">' +
+      '  <svg class="elsa-h-6 elsa-w-6" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">' +
+      '    <path stroke="none" d="M0 0h24v24H0z"/>' +
+      '    <circle cx="7" cy="17" r="2" />' +
+      '    <circle cx="17" cy="17" r="2" />' +
+      '    <path d="M5 17h-2v-6l2-5h9l4 5h1a2 2 0 0 1 2 2v4h-2m-4 0h-6m-6 -6h15m-6 0v-5" />' +
+      '  </svg>' +
+      '</span>';
+
+    // Install a custom icon for this activity.
+    activityIconProvider.register('VehicleActivity', vehicleIcon);
   }
 
   // Get a handle to the elsa-studio-root element.
