@@ -14,8 +14,8 @@ export interface WorkflowDefinition {
   isSingleton?: boolean;
   persistenceBehavior?: WorkflowPersistenceBehavior;
   deleteCompletedInstances?: boolean;
-  isPublished?: boolean;
-  isLatest?: boolean;
+  isPublished: boolean;
+  isLatest: boolean;
   activities: Array<ActivityDefinition>;
   connections: Array<ConnectionDefinition>;
   tag?: string;
@@ -35,6 +35,15 @@ export interface WorkflowDefinitionSummary {
   isPublished?: boolean;
   isLatest?: boolean;
   tag?: string;
+}
+
+export interface WorkflowDefinitionVersion {
+  id: string;
+  definitionId: string;
+  version: number;
+  isLatest: boolean;
+  isPublished: boolean;
+  createdAt: Date;
 }
 
 export interface ActivityBlueprint {
