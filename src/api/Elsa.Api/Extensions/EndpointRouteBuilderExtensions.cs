@@ -31,6 +31,7 @@ public static class EndpointRouteBuilderExtensions
         Map("WorkflowDefinitions.Execute", "workflow-definitions/{definitionId}/execute", new { Controller = ControllerNames.WorkflowDefinitions, Action = "Execute" });
         Map("WorkflowDefinitions.Export", "workflow-definitions/{definitionId}/export", new { Controller = ControllerNames.WorkflowDefinitions, Action = "Export" });
         Map("WorkflowDefinitions.BulkDelete", "bulk-actions/delete/workflow-definitions/by-definition-id", new { Controller = ControllerNames.WorkflowDefinitions, Action = "BulkDelete" });
+        Map("WorkflowDefinitions.BulkPublish", "bulk-actions/publish/workflow-definitions/by-definition-id", new { Controller = ControllerNames.WorkflowDefinitions, Action = "BulkPublish" });
 
         // Workflow Instances.
         Map("WorkflowInstances.BulkDelete", "bulk-actions/delete/workflow-instances/by-id", new { Controller = ControllerNames.WorkflowInstances, Action = "BulkDelete" });
