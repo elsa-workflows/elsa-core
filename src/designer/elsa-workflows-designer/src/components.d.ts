@@ -21,9 +21,10 @@ import { MonacoLib, MonacoValueChangedArgs } from "./components/shared/monaco-ed
 import { PagerData } from "./components/shared/pager/pager";
 import { PanelPosition, PanelStateChangedArgs } from "./components/designer/panel/models";
 import { WorkflowUpdatedArgs } from "./components/designer/workflow-editor/workflow-editor";
+import { WorkflowLabelsUpdatedArgs } from "./components/designer/workflow-properties-editor/workflow-properties-editor";
 import { ActivityDriverRegistry } from "./services";
 import { Flowchart } from "./components/activities/flowchart/models";
-import { WorkflowPropsUpdatedArgs } from "./components/designer/workflow-properties-editor/workflow-properties-editor";
+import { WorkflowLabelsUpdatedArgs as WorkflowLabelsUpdatedArgs1, WorkflowPropsUpdatedArgs } from "./components/designer/workflow-properties-editor/workflow-properties-editor";
 import { PublishClickedArgs } from "./components/toolbar/workflow-publish-button/workflow-publish-button";
 export namespace Components {
     interface ElsaActivityPropertiesEditor {
@@ -187,6 +188,7 @@ export namespace Components {
     }
     interface ElsaWorkflowEditor {
         "activityDescriptors": Array<ActivityDescriptor>;
+        "assignLabels": (labelIds: Array<string>) => Promise<void>;
         "getCanvas": () => Promise<HTMLElsaCanvasElement>;
         "getWorkflow": () => Promise<WorkflowDefinition>;
         "importWorkflow": (workflowDefinition: WorkflowDefinition, workflowInstance?: WorkflowInstance) => Promise<void>;
@@ -200,9 +202,10 @@ export namespace Components {
         "show": () => Promise<void>;
     }
     interface ElsaWorkflowPropertiesEditor {
+        "assignedLabelIds": Array<string>;
         "hide": () => Promise<void>;
         "show": () => Promise<void>;
-        "workflow"?: WorkflowDefinition;
+        "workflowDefinition"?: WorkflowDefinition;
     }
     interface ElsaWorkflowPublishButton {
         "publishing": boolean;
@@ -648,14 +651,17 @@ declare namespace LocalJSX {
     interface ElsaWorkflowEditor {
         "activityDescriptors"?: Array<ActivityDescriptor>;
         "monacoLibPath"?: string;
+        "onWorkflowLabelsUpdated"?: (event: CustomEvent<WorkflowLabelsUpdatedArgs>) => void;
         "onWorkflowUpdated"?: (event: CustomEvent<WorkflowUpdatedArgs>) => void;
     }
     interface ElsaWorkflowInstanceBrowser {
         "onWorkflowInstanceSelected"?: (event: CustomEvent<WorkflowInstanceSummary>) => void;
     }
     interface ElsaWorkflowPropertiesEditor {
+        "assignedLabelIds"?: Array<string>;
+        "onWorkflowLabelsUpdated"?: (event: CustomEvent<WorkflowLabelsUpdatedArgs>) => void;
         "onWorkflowPropsUpdated"?: (event: CustomEvent<WorkflowPropsUpdatedArgs>) => void;
-        "workflow"?: WorkflowDefinition;
+        "workflowDefinition"?: WorkflowDefinition;
     }
     interface ElsaWorkflowPublishButton {
         "onExportClicked"?: (event: CustomEvent<any>) => void;

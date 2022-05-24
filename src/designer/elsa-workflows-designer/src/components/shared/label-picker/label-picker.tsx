@@ -1,8 +1,9 @@
-import {Component, FunctionalComponent, h, Listen, Prop, State, Element, Event, EventEmitter} from "@stencil/core";
+import {Component, FunctionalComponent, h, Listen, Prop, State, Element, Event, EventEmitter, Watch} from "@stencil/core";
 import {leave, toggle, enter} from 'el-transition';
-import {EventTypes, Label} from "../../../models";
 import {Container} from "typedi";
-import {ElsaApiClientProvider, EventBus} from "../../../services";
+import {EventTypes, Label} from "../../../models";
+import labelStore from '../../../data/label-store';
+import {EventBus} from "../../../services";
 import {Badge} from "../badge/badge";
 import {ConfigIcon} from "../../icons/tooling/config";
 import {TickIcon} from "../../icons/tooling/tick";
@@ -25,8 +26,7 @@ export class LabelPicker {
 
   @Event() selectedLabelsChanged: EventEmitter<Array<string>>;
 
-  @State() selectedLabelsMap: any = {};
-  @State() availableLabels: Array<Label> = [];
+  @State() selectedLabelsState: Array<string> = [];
 
   @Listen('click', {target: 'window'})
   private onWindowClicked(event: Event) {
@@ -36,29 +36,12 @@ export class LabelPicker {
       this.closeFlyoutPanel();
   }
 
-  connectedCallback() {
-    this.eventBus.on(EventTypes.Labels.Updated, this.onLabelsUpdated);
-  }
-
-  disconnectedCallback() {
-    this.eventBus.detach(EventTypes.Labels.Updated, this.onLabelsUpdated);
-  }
-
-  async componentWillLoad() {
-    await this.loadLabels();
-
-    const selectedLabels = this.selectedLabels;
-
-    for (const label of this.availableLabels)
-      this.selectedLabelsMap[label.id] = !!selectedLabels.find(x => x == label.id);
-  }
-
   public render() {
-    const labels = this.availableLabels;
+    const selectedLabels = this.getFilteredSelectedLabels();
 
     return <div class="flex">
       <div class="flex flex-grow">
-        {labels.map(this.renderLabel)}
+        {selectedLabels.map(this.renderLabel)}
       </div>
       <div class="relative">
         <button onClick={e => this.toggleFlyoutPanel()} class="text-blue-500 hover:text-blue-300">
@@ -70,8 +53,8 @@ export class LabelPicker {
   }
 
   private renderFlyout = () => {
-    const selectedLabelsMap = this.selectedLabelsMap;
-    const labels = this.availableLabels;
+    const selectedLabels = this.selectedLabels;
+    const labels = labelStore.labels;
 
     return <div ref={el => this.flyoutPanel = el} class="absolute z-10 right-0 transform mt-3 px-2 w-screen max-w-md px-0 hidden"
                 data-transition-enter="transition ease-out duration-200"
@@ -94,7 +77,7 @@ export class LabelPicker {
 
               const color = new TinyColor(label.color).lighten(40).toHexString();
               const colorStyle = {backgroundColor: color};
-              const isSelected = selectedLabelsMap[label.id] == true;
+              const isSelected = !!selectedLabels.find(x => x == label.id);
 
               return (
                 <li role="option" tab-index="-1">
@@ -127,12 +110,8 @@ export class LabelPicker {
     </div>;
   };
 
-  private loadLabels = async () => {
-    const elsaClient = await Container.get(ElsaApiClientProvider).getClient();
-    this.availableLabels = await elsaClient.labels.list();
-  };
-
-  private renderLabel = (label: Label) => {
+  private renderLabel = (labelId: string) => {
+    const label = labelStore.labels.find(x => x.id == labelId);
     return <div class="mr-2">
       <Badge text={label.name} color={label.color}/>
     </div>
@@ -152,14 +131,20 @@ export class LabelPicker {
     toggle(this.flyoutPanel);
   }
 
-  private onLabelsUpdated = async () => {
-    await this.loadLabels();
-  }
+  private getFilteredSelectedLabels = ():Array<string> => {
+    const labels = labelStore.labels;
+    return this.selectedLabels.filter(labelId => !!labels.find(x => x.id == labelId));
+  };
 
   private onLabelClick = (e: Event, label: Label) => {
-    const map = {...this.selectedLabelsMap};
-    map[label.id] = !this.selectedLabelsMap[label.id];
-    this.selectedLabelsMap = map;
+    if (!this.selectedLabels.find(x => x == label.id))
+      this.selectedLabels = [...this.selectedLabels, label.id];
+    else
+      this.selectedLabels = this.selectedLabels.filter(x => x != label.id);
+
+    const selectedLabels = this.getFilteredSelectedLabels();
+    this.selectedLabels = selectedLabels;
+    this.selectedLabelsChanged.emit(selectedLabels);
   }
 }
 

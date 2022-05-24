@@ -1,12 +1,18 @@
 import {Component, Event, EventEmitter, h, Method, Prop, State} from '@stencil/core';
 import WorkflowEditorTunnel from '../state';
-import {TabChangedArgs, TabDefinition, WorkflowDefinition
+import {
+  TabChangedArgs, TabDefinition, WorkflowDefinition
 } from '../../../models';
 import {FormEntry} from "../../shared/forms/form-entry";
 import {InfoList} from "../../shared/forms/info-list";
 
 export interface WorkflowPropsUpdatedArgs {
-  workflow: WorkflowDefinition;
+  workflowDefinition: WorkflowDefinition;
+}
+
+export interface WorkflowLabelsUpdatedArgs {
+  workflowDefinition: WorkflowDefinition;
+  labelIds: Array<string>;
 }
 
 @Component({
@@ -15,8 +21,10 @@ export interface WorkflowPropsUpdatedArgs {
 export class WorkflowPropertiesEditor {
   private slideOverPanel: HTMLElsaSlideOverPanelElement;
 
-  @Prop({mutable: true}) workflow?: WorkflowDefinition;
+  @Prop({mutable: true}) workflowDefinition?: WorkflowDefinition;
+  @Prop() assignedLabelIds: Array<string> = [];
   @Event() workflowPropsUpdated: EventEmitter<WorkflowPropsUpdatedArgs>;
+  @Event({bubbles: false}) workflowLabelsUpdated: EventEmitter<WorkflowLabelsUpdatedArgs>;
   @State() private selectedTabIndex: number = 0;
 
   @Method()
@@ -51,16 +59,9 @@ export class WorkflowPropertiesEditor {
     );
   }
 
-  private onSelectedTabIndexChanged = (e: CustomEvent<TabChangedArgs>) => this.selectedTabIndex = e.detail.selectedTabIndex;
-
-  private onPropertyEditorChanged = (apply: (w: WorkflowDefinition) => void) => {
-    const workflow = this.workflow;
-    apply(workflow);
-    return this.workflowPropsUpdated.emit({workflow});
-  }
-
   private renderPropertiesTab = () => {
-    const workflow = this.workflow;
+    const workflow = this.workflowDefinition;
+    const assignedLabelIds = this.assignedLabelIds;
 
     const workflowDetails = {
       'Definition ID': workflow.definitionId,
@@ -77,7 +78,7 @@ export class WorkflowPropertiesEditor {
         <textarea name="workflowDescription" id="workflowDescription" value={workflow.description} rows={6} onChange={e => this.onPropertyEditorChanged(wf => wf.description = (e.target as HTMLTextAreaElement).value)}/>
       </FormEntry>
       <FormEntry label="Labels" fieldId="workflowLabels" hint="Labels allow you to tag the workflow that can be used to query workflows with.">
-        <elsa-label-picker />
+        <elsa-label-picker onSelectedLabelsChanged={this.onSelectedLabelsChanged} selectedLabels={assignedLabelIds}/>
       </FormEntry>
       <InfoList title="Information" dictionary={workflowDetails}/>
     </div>
@@ -88,6 +89,18 @@ export class WorkflowPropertiesEditor {
       TODO: Variables editor
     </div>
   };
+
+  private onSelectedTabIndexChanged = (e: CustomEvent<TabChangedArgs>) => this.selectedTabIndex = e.detail.selectedTabIndex;
+
+  private onPropertyEditorChanged = (apply: (w: WorkflowDefinition) => void) => {
+    const workflowDefinition = this.workflowDefinition;
+    apply(workflowDefinition);
+    return this.workflowPropsUpdated.emit({workflowDefinition});
+  }
+
+  private onSelectedLabelsChanged = (e: CustomEvent<Array<string>>) => {
+    this.workflowLabelsUpdated.emit({workflowDefinition: this.workflowDefinition, labelIds: e.detail});
+  }
 }
 
 WorkflowEditorTunnel.injectProps(WorkflowPropertiesEditor, ['activityDescriptors']);

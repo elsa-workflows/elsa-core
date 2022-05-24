@@ -11,7 +11,6 @@ import {
   ContainerSelectedArgs,
   EventTypes,
   GraphUpdatedArgs,
-  Trigger,
   WorkflowDefinition,
   WorkflowInstance
 } from '../../../models';
@@ -20,16 +19,14 @@ import {
   ActivityUpdatedArgs,
   DeleteActivityRequestedArgs
 } from '../activity-properties-editor/activity-properties-editor';
-import {ActivityDriverRegistry, EventBus} from '../../../services';
-import {WorkflowPropsUpdatedArgs} from "../workflow-properties-editor/workflow-properties-editor";
+import {PluginRegistry, ActivityNameFormatter, ActivityDriverRegistry, EventBus} from '../../../services';
+import {WorkflowLabelsUpdatedArgs, WorkflowPropsUpdatedArgs} from "../workflow-properties-editor/workflow-properties-editor";
 import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
-import {PluginRegistry} from "../../../services/plugin-registry";
 import {Flowchart} from "../../activities/flowchart/models";
-import {ActivityNode, flattenList, walkActivities} from "../../activities/flowchart/activity-walker";
-import {ActivityNameFormatter} from "../../../services/activity-name-formatter";
+import {flattenList, walkActivities} from "../../activities/flowchart/activity-walker";
 
 export interface WorkflowUpdatedArgs {
-  workflow: WorkflowDefinition;
+  workflowDefinition: WorkflowDefinition;
 }
 
 @Component({
@@ -47,6 +44,7 @@ export class WorkflowEditor {
   private deleteActivity: (activity: Activity) => void;
   private readonly emitActivityChangedDebounced: (e: ActivityPropertyChangedEventArgs) => void;
   private readonly saveChangesDebounced: () => void;
+  private readonly saveLabelsDebounced: () => void;
 
   @State()
   private workflowDefinition: WorkflowDefinition = {
@@ -67,13 +65,16 @@ export class WorkflowEditor {
     this.activityNameFormatter = Container.get(ActivityNameFormatter);
     this.emitActivityChangedDebounced = debounce(this.emitActivityChanged, 100);
     this.saveChangesDebounced = debounce(this.saveChanges, 1000);
+    this.saveLabelsDebounced = debounce(this.saveLabels, 1000);
   }
 
   @Element() el: HTMLElsaWorkflowEditorElement;
   @Prop({attribute: 'monaco-lib-path'}) public monacoLibPath: string;
   @Prop() public activityDescriptors: Array<ActivityDescriptor> = [];
   @Event() public workflowUpdated: EventEmitter<WorkflowUpdatedArgs>
+  @Event() public workflowLabelsUpdated: EventEmitter<WorkflowLabelsUpdatedArgs>
   @State() private selectedActivity?: Activity;
+  @State() private assignedLabelIds: Array<string> = [];
 
   private get interactiveMode(): boolean {
     return !this.workflowInstance;
@@ -136,6 +137,11 @@ export class WorkflowEditor {
     await this.canvas.importGraph(workflowDefinition.root);
   }
 
+  @Method()
+  public async assignLabels(labelIds: Array<string>): Promise<void> {
+    this.assignedLabelIds = labelIds;
+  }
+
   // Updates the workflow definition without importing it into the designer.
   @Method()
   public async updateWorkflowDefinition(workflowDefinition: WorkflowDefinition): Promise<void> {
@@ -164,6 +170,7 @@ export class WorkflowEditor {
       materializerName: 'Json'
     }
 
+    this.assignedLabelIds = [];
     await this.importWorkflow(workflowDefinition);
   }
 
@@ -211,15 +218,18 @@ export class WorkflowEditor {
         onDeleteActivityRequested={e => this.onDeleteActivityRequested(e)}/>
 
     return <elsa-workflow-properties-editor
-      workflow={this.workflowDefinition}
-      onWorkflowPropsUpdated={e => this.onWorkflowPropsUpdated(e)}/>;
+      workflowDefinition={this.workflowDefinition}
+      assignedLabelIds={this.assignedLabelIds}
+      onWorkflowPropsUpdated={e => this.onWorkflowPropsUpdated(e)}
+      onWorkflowLabelsUpdated={e => this.onWorkflowLabelsUpdated(e)}
+    />;
   }
 
   private getWorkflowInternal = async (): Promise<WorkflowDefinition> => {
     const root = await this.canvas.exportGraph();
-    const workflow = this.workflowDefinition;
-    workflow.root = root;
-    return workflow;
+    const workflowDefinition = this.workflowDefinition;
+    workflowDefinition.root = root;
+    return workflowDefinition;
   };
 
   private emitActivityChanged = async (activity: Activity, propertyName: string) => {
@@ -227,8 +237,13 @@ export class WorkflowEditor {
   };
 
   private saveChanges = async (): Promise<void> => {
-    const workflow = await this.getWorkflowInternal();
-    this.workflowUpdated.emit({workflow});
+    const workflowDefinition = await this.getWorkflowInternal();
+    this.workflowUpdated.emit({workflowDefinition});
+  };
+
+  private saveLabels = async (): Promise<void> => {
+    const workflowDefinition = this.workflowDefinition;
+    this.workflowLabelsUpdated.emit({workflowDefinition, labelIds: this.assignedLabelIds});
   };
 
   private updateLayout = async () => {
@@ -279,7 +294,8 @@ export class WorkflowEditor {
       descriptor: activityDescriptor,
       id: newName,
       x: e.offsetX,
-      y: e.offsetY});
+      y: e.offsetY
+    });
   };
 
   private onActivityUpdated = (e: CustomEvent<ActivityUpdatedArgs>) => {
@@ -290,6 +306,11 @@ export class WorkflowEditor {
   }
 
   private onWorkflowPropsUpdated = (e: CustomEvent<WorkflowPropsUpdatedArgs>) => this.saveChangesDebounced()
+
+  private onWorkflowLabelsUpdated = (e: CustomEvent<WorkflowLabelsUpdatedArgs>) => {
+    this.assignedLabelIds = e.detail.labelIds;
+    this.saveLabelsDebounced();
+  };
 
   private onDeleteActivityRequested = (e: CustomEvent<DeleteActivityRequestedArgs>) => {
     this.deleteActivity(e.detail.activity);

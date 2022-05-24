@@ -10,6 +10,7 @@ import {DescriptorsApi, DescriptorsApiImpl} from "./descriptors-api";
 import {LabelsApi, LabelsApiImpl} from "./labels-api";
 import {DesignerApi, DesignerApiImpl} from "./designer-api";
 import {EventTypes} from "../../models";
+import {WorkflowDefinitionLabelsApi, WorkflowDefinitionLabelsApiImpl} from "./workflow-definition-labels-api";
 
 export interface ElsaClient {
   descriptors: DescriptorsApi;
@@ -17,6 +18,7 @@ export interface ElsaClient {
   workflowInstances: WorkflowInstancesApi;
   labels: LabelsApi;
   designer: DesignerApi;
+  workflowDefinitionLabelsApi: WorkflowDefinitionLabelsApi
 }
 
 class ElsaClientImpl implements ElsaClient {
@@ -26,6 +28,7 @@ class ElsaClientImpl implements ElsaClient {
   labels: LabelsApi;
   workflowDefinitions: WorkflowDefinitionsApi;
   workflowInstances: WorkflowInstancesApi;
+  workflowDefinitionLabelsApi: WorkflowDefinitionLabelsApi;
 
   constructor(httpClient: AxiosInstance) {
     this.httpClient = httpClient;
@@ -34,6 +37,7 @@ class ElsaClientImpl implements ElsaClient {
     this.descriptors = new DescriptorsApiImpl(httpClient);
     this.designer = new DesignerApiImpl(httpClient);
     this.labels = new LabelsApiImpl(httpClient);
+    this.workflowDefinitionLabelsApi = new WorkflowDefinitionLabelsApiImpl(httpClient);
   }
 }
 

@@ -1,6 +1,7 @@
 import {Component, h, Host, Method, State} from '@stencil/core';
 import {DefaultActions, EventTypes, Label} from "../../../models";
 import {Container} from "typedi";
+import labelStore from "../../../data/label-store";
 import {ElsaApiClientProvider, ElsaClient, EventBus} from "../../../services";
 import {CreateLabelEventArgs, DeleteLabelEventArgs, UpdateLabelEventArgs} from "./models";
 
@@ -13,13 +14,12 @@ export class LabelsManager {
   private modalDialog: HTMLElsaModalDialogElement;
   private eventBus: EventBus;
 
-  @State() private labels: Array<Label> = [];
+  //@State() private labels: Array<Label> = [];
   @State() private createMode: boolean = false;
 
   @Method()
   public async show() {
     await this.modalDialog.show();
-    await this.loadLabels();
   }
 
   @Method()
@@ -31,10 +31,11 @@ export class LabelsManager {
     const elsaClientProvider = Container.get(ElsaApiClientProvider);
     this.elsaClient = await elsaClientProvider.getClient();
     this.eventBus = Container.get(EventBus);
+    //await this.loadLabels();
   }
 
   render() {
-    const labels = this.labels;
+    const labels = labelStore.labels;
     const createMode = this.createMode;
     const closeAction = DefaultActions.Close();
     const actions = [closeAction];
@@ -95,7 +96,7 @@ export class LabelsManager {
 
   private async loadLabels() {
     const elsaClient = this.elsaClient;
-    this.labels = await elsaClient.labels.list();
+    labelStore.labels = await elsaClient.labels.list();
   }
 
   private async refreshLabels() {
