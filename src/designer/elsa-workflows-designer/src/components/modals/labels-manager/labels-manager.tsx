@@ -13,8 +13,7 @@ export class LabelsManager {
   private elsaClient: ElsaClient;
   private modalDialog: HTMLElsaModalDialogElement;
   private eventBus: EventBus;
-
-  //@State() private labels: Array<Label> = [];
+  
   @State() private createMode: boolean = false;
 
   @Method()
@@ -31,7 +30,6 @@ export class LabelsManager {
     const elsaClientProvider = Container.get(ElsaApiClientProvider);
     this.elsaClient = await elsaClientProvider.getClient();
     this.eventBus = Container.get(EventBus);
-    //await this.loadLabels();
   }
 
   render() {
