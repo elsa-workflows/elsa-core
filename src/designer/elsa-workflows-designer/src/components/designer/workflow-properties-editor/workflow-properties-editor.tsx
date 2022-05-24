@@ -5,6 +5,7 @@ import {
 } from '../../../models';
 import {FormEntry} from "../../shared/forms/form-entry";
 import {InfoList} from "../../shared/forms/info-list";
+import {isNullOrWhitespace} from "../../../utils";
 
 export interface WorkflowPropsUpdatedArgs {
   workflowDefinition: WorkflowDefinition;
@@ -64,8 +65,8 @@ export class WorkflowPropertiesEditor {
     const assignedLabelIds = this.assignedLabelIds;
 
     const workflowDetails = {
-      'Definition ID': workflow.definitionId,
-      'Version ID': workflow.id,
+      'Definition ID': isNullOrWhitespace(workflow.definitionId) ? '(new)' : workflow.definitionId,
+      'Version ID': isNullOrWhitespace(workflow.id) ? '(new)' : workflow.id,
       'Version': workflow.version,
       'Status': workflow.isPublished ? 'Published' : 'Draft'
     };

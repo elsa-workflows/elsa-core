@@ -11,7 +11,7 @@ import {ActivityDescriptor, VersionOptions, WorkflowDefinition, WorkflowInstance
 import {WorkflowUpdatedArgs} from '../../designer/workflow-editor/workflow-editor';
 import {PublishClickedArgs} from "../../toolbar/workflow-publish-button/workflow-publish-button";
 import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
-import {downloadFromBlob} from "../../../utils";
+import {downloadFromBlob, isNullOrWhitespace} from "../../../utils";
 import {ExportWorkflowRequest, ImportWorkflowRequest, RetractWorkflowDefinitionRequest, SaveWorkflowDefinitionRequest} from "../../../services/api-client/workflow-definitions-api";
 import {WorkflowLabelsUpdatedArgs} from "../../designer/workflow-properties-editor/workflow-properties-editor";
 
@@ -50,8 +50,8 @@ export class Studio {
 
   @Listen('workflowLabelsUpdated')
   private async handleWorkflowLabelsUpdated(e: CustomEvent<WorkflowLabelsUpdatedArgs>) {
-    const versionId = e.detail.workflowDefinition.id;
     const labelIds = e.detail.labelIds;
+    const versionId = e.detail.workflowDefinition.id;
     await this.saveWorkflowLabels(versionId, labelIds);
   }
 
@@ -209,7 +209,13 @@ export class Studio {
     return updatedWorkflow;
   }
 
-  private saveWorkflowLabels = async (definitionId: string, labelIds: Array<string>) => {
-    await this.elsaClient.workflowDefinitionLabelsApi.update(definitionId, labelIds);
+  private saveWorkflowLabels = async (versionId: string, labelIds: Array<string>) => {
+    if (isNullOrWhitespace(versionId)) {
+      let definition = await this.workflowEditorElement.getWorkflow();
+      definition = await this.saveWorkflow(definition, false);
+      versionId = definition.id;
+    }
+
+    await this.elsaClient.workflowDefinitionLabelsApi.update(versionId, labelIds);
   }
 }

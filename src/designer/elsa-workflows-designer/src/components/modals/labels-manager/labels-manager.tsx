@@ -13,7 +13,7 @@ export class LabelsManager {
   private elsaClient: ElsaClient;
   private modalDialog: HTMLElsaModalDialogElement;
   private eventBus: EventBus;
-  
+
   @State() private createMode: boolean = false;
 
   @Method()

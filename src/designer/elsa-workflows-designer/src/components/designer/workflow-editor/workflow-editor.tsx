@@ -49,8 +49,8 @@ export class WorkflowEditor {
   @State()
   private workflowDefinition: WorkflowDefinition = {
     root: null,
-    id: uuid(),
-    definitionId: uuid(),
+    id: '',
+    definitionId: '',
     version: 1,
     isLatest: true,
     isPublished: false,
@@ -162,8 +162,8 @@ export class WorkflowEditor {
 
     const workflowDefinition: WorkflowDefinition = {
       root: flowchart,
-      id: uuid(),
-      definitionId: uuid(),
+      id: '',
+      definitionId: '',
       version: 1,
       isLatest: true,
       isPublished: false,
