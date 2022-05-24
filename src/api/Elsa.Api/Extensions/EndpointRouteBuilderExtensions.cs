@@ -32,6 +32,7 @@ public static class EndpointRouteBuilderExtensions
         Map("WorkflowDefinitions.Export", "workflow-definitions/{definitionId}/export", new { Controller = ControllerNames.WorkflowDefinitions, Action = "Export" });
         Map("WorkflowDefinitions.BulkDelete", "bulk-actions/delete/workflow-definitions/by-definition-id", new { Controller = ControllerNames.WorkflowDefinitions, Action = "BulkDelete" });
         Map("WorkflowDefinitions.BulkPublish", "bulk-actions/publish/workflow-definitions/by-definition-id", new { Controller = ControllerNames.WorkflowDefinitions, Action = "BulkPublish" });
+        Map("WorkflowDefinitions.BulkRetract", "bulk-actions/retract/workflow-definitions/by-definition-id", new { Controller = ControllerNames.WorkflowDefinitions, Action = "BulkRetract" });
 
         // Workflow Instances.
         Map("WorkflowInstances.BulkDelete", "bulk-actions/delete/workflow-instances/by-id", new { Controller = ControllerNames.WorkflowInstances, Action = "BulkDelete" });
@@ -46,7 +47,7 @@ public static class EndpointRouteBuilderExtensions
         Map("Labels.Get", "labels/{id}", new { Controller = ControllerNames.Labels, Action = "Get" });
         Map("Labels.Delete", "labels/{id}", new { Controller = ControllerNames.Labels, Action = "Delete" });
         Map("Labels.List", "labels", new { Controller = ControllerNames.Labels, Action = "List" });
-        
+
         // Workflow Definition Labels
         Map("WorkflowDefinitions.Labels.Update", "workflow-definitions/{id}/labels", new { Controller = ControllerNames.WorkflowDefinitionLabels, Action = "Update" });
         Map("WorkflowDefinitions.Labels.Get", "workflow-definitions/{id}/labels", new { Controller = ControllerNames.WorkflowDefinitionLabels, Action = "Get" });
