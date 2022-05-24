@@ -70,8 +70,9 @@ public class DefaultExpressionSyntaxProvider : IExpressionSyntaxProvider
 
     private IExpression CreateLiteralExpression(ExpressionConstructorContext context)
     {
-        var expressionValue = context.Element.GetProperty("value").ToString();
-        return new LiteralExpression(expressionValue);
+        return !context.Element.TryGetProperty("value", out var expressionValue) 
+            ? new LiteralExpression() 
+            : new LiteralExpression(expressionValue.ToString());
     }
 
     private IExpression CreateJsonExpression(ExpressionConstructorContext context)

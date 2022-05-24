@@ -1,8 +1,9 @@
 import {Component, h, Host, Method, State} from '@stencil/core';
-import {DefaultActions, Label} from "../../../models";
+import {DefaultActions, EventTypes, Label} from "../../../models";
 import {Container} from "typedi";
-import {ElsaApiClientProvider, ElsaClient} from "../../../services";
-import {CreateLabelEventArgs} from "./models";
+import labelStore from "../../../data/label-store";
+import {ElsaApiClientProvider, ElsaClient, EventBus} from "../../../services";
+import {CreateLabelEventArgs, DeleteLabelEventArgs, UpdateLabelEventArgs} from "./models";
 
 @Component({
   tag: 'elsa-labels-manager',
@@ -11,14 +12,13 @@ import {CreateLabelEventArgs} from "./models";
 export class LabelsManager {
   private elsaClient: ElsaClient;
   private modalDialog: HTMLElsaModalDialogElement;
+  private eventBus: EventBus;
 
-  @State() private labels: Array<Label> = [];
   @State() private createMode: boolean = false;
 
   @Method()
   public async show() {
     await this.modalDialog.show();
-    await this.loadLabels();
   }
 
   @Method()
@@ -29,10 +29,11 @@ export class LabelsManager {
   public async componentWillLoad() {
     const elsaClientProvider = Container.get(ElsaApiClientProvider);
     this.elsaClient = await elsaClientProvider.getClient();
+    this.eventBus = Container.get(EventBus);
   }
 
   render() {
-    const labels = this.labels;
+    const labels = labelStore.labels;
     const createMode = this.createMode;
     const closeAction = DefaultActions.Close();
     const actions = [closeAction];
@@ -62,7 +63,11 @@ export class LabelsManager {
                 <div class="mt-5 border-t border-gray-200">
                   <div class="divide-y divide-gray-200">
                     {labels.map(label => <div class="border-top last:border-bottom border-solid border-gray-200">
-                      <elsa-label-editor key={label.id} label={label} onLabelDeleted={e => this.onLabelDeleted(e)}/>
+                      <elsa-label-editor key={label.id}
+                                         label={label}
+                                         onLabelUpdated={e => this.onLabelUpdated(e)}
+                                         onLabelDeleted={e => this.onLabelDeleted(e)}
+                      />
                     </div>)}
                   </div>
                 </div>
@@ -79,21 +84,40 @@ export class LabelsManager {
     await this.elsaClient.labels.create(name, description, color);
   }
 
+  private updateLabel = async (id: string, name: string, description?: string, color?: string): Promise<void> => {
+    await this.elsaClient.labels.update(id, name, description, color);
+  }
+
+  private deleteLabel = async (id: string): Promise<void> => {
+    await this.elsaClient.labels.delete(id);
+  }
+
   private async loadLabels() {
     const elsaClient = this.elsaClient;
-    this.labels = await elsaClient.labels.list();
+    labelStore.labels = await elsaClient.labels.list();
+  }
+
+  private async refreshLabels() {
+    await this.loadLabels();
+    await this.eventBus.emit(EventTypes.Labels.Updated, this);
   }
 
   private async onCreateLabelClicked(e: CustomEvent<CreateLabelEventArgs>) {
     const args = e.detail;
     this.createMode = false;
     await this.createLabel(args.name, args.description, args.color);
-    await this.loadLabels();
+    await this.refreshLabels();
   }
 
-  private onLabelDeleted = async (e: CustomEvent<Label>) => {
-    debugger;
-    await this.loadLabels();
+  private onLabelDeleted = async (e: CustomEvent<DeleteLabelEventArgs>) => {
+    await this.deleteLabel(e.detail.id);
+    await this.refreshLabels();
+  }
+
+  private onLabelUpdated = async (e: CustomEvent<UpdateLabelEventArgs>) => {
+    const {id, name, description, color} = e.detail;
+    await this.updateLabel(id, name, description, color);
+    await this.refreshLabels();
   }
 }
 

@@ -1,6 +1,5 @@
 import {Type} from "./shared";
 import {Expression} from "./expressions";
-import {VersionOptions} from "./api";
 
 export interface Activity {
   id: string;

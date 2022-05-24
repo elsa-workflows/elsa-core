@@ -1,5 +1,5 @@
-import {Component, h, Listen, Method, Prop} from '@stencil/core';
-import {leave, toggle, enter} from 'el-transition'
+import {Component, h, Listen, Method, Prop, Element} from '@stencil/core';
+import {leave, toggle, enter} from 'el-transition';
 import {ContextMenuAnchorPoint, MenuItem, MenuItemGroup} from "./models";
 import {TickIcon} from "../../icons/tooling/tick";
 
@@ -14,7 +14,7 @@ export class ContextMenu {
   @Prop() anchorPoint: ContextMenuAnchorPoint;
 
   contextMenu: HTMLElement;
-  element: HTMLElement;
+  @Element() element: HTMLElement;
 
   @Method()
   async open(): Promise<void> {
@@ -80,10 +80,9 @@ export class ContextMenu {
     const anchorPointClass = this.getAnchorPointClass();
     const menuItems = this.menuItems;
     const menuItemGroups = this.menuItemGroups;
-    const hasAnyIcons = menuItems.find(x => !!x.icon) != null;
 
     return (
-      <div class="relative flex justify-end items-center" ref={el => this.element = el}>
+      <div class="relative flex justify-end items-center">
         {this.renderButton()}
         <div ref={el => this.contextMenu = el}
              data-transition-enter="transition ease-out duration-100"

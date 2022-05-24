@@ -16,14 +16,15 @@ import { DropdownButtonItem, DropdownButtonOrigin } from "./components/shared/dr
 import { Graph } from "@antv/x6";
 import { AddActivityArgs as AddActivityArgs1 } from "./components/designer/canvas/canvas";
 import { ExpressionChangedArs } from "./components/designer/input-control-switch/input-control-switch";
-import { CreateLabelEventArgs } from "./components/modals/labels-manager/models";
+import { CreateLabelEventArgs, DeleteLabelEventArgs, UpdateLabelEventArgs } from "./components/modals/labels-manager/models";
 import { MonacoLib, MonacoValueChangedArgs } from "./components/shared/monaco-editor/monaco-editor";
 import { PagerData } from "./components/shared/pager/pager";
 import { PanelPosition, PanelStateChangedArgs } from "./components/designer/panel/models";
 import { WorkflowUpdatedArgs } from "./components/designer/workflow-editor/workflow-editor";
+import { WorkflowLabelsUpdatedArgs } from "./components/designer/workflow-properties-editor/workflow-properties-editor";
 import { ActivityDriverRegistry } from "./services";
 import { Flowchart } from "./components/activities/flowchart/models";
-import { WorkflowPropsUpdatedArgs } from "./components/designer/workflow-properties-editor/workflow-properties-editor";
+import { WorkflowLabelsUpdatedArgs as WorkflowLabelsUpdatedArgs1, WorkflowPropsUpdatedArgs } from "./components/designer/workflow-properties-editor/workflow-properties-editor";
 import { PublishClickedArgs } from "./components/toolbar/workflow-publish-button/workflow-publish-button";
 export namespace Components {
     interface ElsaActivityPropertiesEditor {
@@ -112,6 +113,9 @@ export namespace Components {
     interface ElsaLabelEditor {
         "label": Label;
     }
+    interface ElsaLabelPicker {
+        "selectedLabels": Array<string>;
+    }
     interface ElsaLabelsManager {
         "hide": () => Promise<void>;
         "show": () => Promise<void>;
@@ -184,6 +188,7 @@ export namespace Components {
     }
     interface ElsaWorkflowEditor {
         "activityDescriptors": Array<ActivityDescriptor>;
+        "assignLabels": (labelIds: Array<string>) => Promise<void>;
         "getCanvas": () => Promise<HTMLElsaCanvasElement>;
         "getWorkflow": () => Promise<WorkflowDefinition>;
         "importWorkflow": (workflowDefinition: WorkflowDefinition, workflowInstance?: WorkflowInstance) => Promise<void>;
@@ -197,9 +202,10 @@ export namespace Components {
         "show": () => Promise<void>;
     }
     interface ElsaWorkflowPropertiesEditor {
+        "assignedLabelIds": Array<string>;
         "hide": () => Promise<void>;
         "show": () => Promise<void>;
-        "workflow"?: WorkflowDefinition;
+        "workflowDefinition"?: WorkflowDefinition;
     }
     interface ElsaWorkflowPublishButton {
         "publishing": boolean;
@@ -299,6 +305,12 @@ declare global {
     var HTMLElsaLabelEditorElement: {
         prototype: HTMLElsaLabelEditorElement;
         new (): HTMLElsaLabelEditorElement;
+    };
+    interface HTMLElsaLabelPickerElement extends Components.ElsaLabelPicker, HTMLStencilElement {
+    }
+    var HTMLElsaLabelPickerElement: {
+        prototype: HTMLElsaLabelPickerElement;
+        new (): HTMLElsaLabelPickerElement;
     };
     interface HTMLElsaLabelsManagerElement extends Components.ElsaLabelsManager, HTMLStencilElement {
     }
@@ -448,6 +460,7 @@ declare global {
         "elsa-input-tags-dropdown": HTMLElsaInputTagsDropdownElement;
         "elsa-label-creator": HTMLElsaLabelCreatorElement;
         "elsa-label-editor": HTMLElsaLabelEditorElement;
+        "elsa-label-picker": HTMLElsaLabelPickerElement;
         "elsa-labels-manager": HTMLElsaLabelsManagerElement;
         "elsa-modal-dialog": HTMLElsaModalDialogElement;
         "elsa-monaco-editor": HTMLElsaMonacoEditorElement;
@@ -558,7 +571,12 @@ declare namespace LocalJSX {
     }
     interface ElsaLabelEditor {
         "label"?: Label;
-        "onLabelDeleted"?: (event: CustomEvent<Label>) => void;
+        "onLabelDeleted"?: (event: CustomEvent<DeleteLabelEventArgs>) => void;
+        "onLabelUpdated"?: (event: CustomEvent<UpdateLabelEventArgs>) => void;
+    }
+    interface ElsaLabelPicker {
+        "onSelectedLabelsChanged"?: (event: CustomEvent<Array<string>>) => void;
+        "selectedLabels"?: Array<string>;
     }
     interface ElsaLabelsManager {
     }
@@ -633,14 +651,17 @@ declare namespace LocalJSX {
     interface ElsaWorkflowEditor {
         "activityDescriptors"?: Array<ActivityDescriptor>;
         "monacoLibPath"?: string;
+        "onWorkflowLabelsUpdated"?: (event: CustomEvent<WorkflowLabelsUpdatedArgs>) => void;
         "onWorkflowUpdated"?: (event: CustomEvent<WorkflowUpdatedArgs>) => void;
     }
     interface ElsaWorkflowInstanceBrowser {
         "onWorkflowInstanceSelected"?: (event: CustomEvent<WorkflowInstanceSummary>) => void;
     }
     interface ElsaWorkflowPropertiesEditor {
+        "assignedLabelIds"?: Array<string>;
+        "onWorkflowLabelsUpdated"?: (event: CustomEvent<WorkflowLabelsUpdatedArgs>) => void;
         "onWorkflowPropsUpdated"?: (event: CustomEvent<WorkflowPropsUpdatedArgs>) => void;
-        "workflow"?: WorkflowDefinition;
+        "workflowDefinition"?: WorkflowDefinition;
     }
     interface ElsaWorkflowPublishButton {
         "onExportClicked"?: (event: CustomEvent<any>) => void;
@@ -670,6 +691,7 @@ declare namespace LocalJSX {
         "elsa-input-tags-dropdown": ElsaInputTagsDropdown;
         "elsa-label-creator": ElsaLabelCreator;
         "elsa-label-editor": ElsaLabelEditor;
+        "elsa-label-picker": ElsaLabelPicker;
         "elsa-labels-manager": ElsaLabelsManager;
         "elsa-modal-dialog": ElsaModalDialog;
         "elsa-monaco-editor": ElsaMonacoEditor;
@@ -713,6 +735,7 @@ declare module "@stencil/core" {
             "elsa-input-tags-dropdown": LocalJSX.ElsaInputTagsDropdown & JSXBase.HTMLAttributes<HTMLElsaInputTagsDropdownElement>;
             "elsa-label-creator": LocalJSX.ElsaLabelCreator & JSXBase.HTMLAttributes<HTMLElsaLabelCreatorElement>;
             "elsa-label-editor": LocalJSX.ElsaLabelEditor & JSXBase.HTMLAttributes<HTMLElsaLabelEditorElement>;
+            "elsa-label-picker": LocalJSX.ElsaLabelPicker & JSXBase.HTMLAttributes<HTMLElsaLabelPickerElement>;
             "elsa-labels-manager": LocalJSX.ElsaLabelsManager & JSXBase.HTMLAttributes<HTMLElsaLabelsManagerElement>;
             "elsa-modal-dialog": LocalJSX.ElsaModalDialog & JSXBase.HTMLAttributes<HTMLElsaModalDialogElement>;
             "elsa-monaco-editor": LocalJSX.ElsaMonacoEditor & JSXBase.HTMLAttributes<HTMLElsaMonacoEditorElement>;

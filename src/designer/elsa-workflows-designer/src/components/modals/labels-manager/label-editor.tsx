@@ -5,6 +5,7 @@ import {Button} from "../../shared/button-group/models";
 import {Label} from "../../../models";
 import {ElsaApiClientProvider, ElsaClient} from "../../../services";
 import {Container} from "typedi";
+import {CreateLabelEventArgs, DeleteLabelEventArgs, UpdateLabelEventArgs} from "./models";
 
 @Component({
   tag: 'elsa-label-editor',
@@ -16,7 +17,8 @@ export class LabelEditor {
 
   @Prop() label: Label = {id: uuid(), name: 'Preview'};
 
-  @Event() labelDeleted: EventEmitter<Label>;
+  @Event() labelDeleted: EventEmitter<DeleteLabelEventArgs>;
+  @Event() labelUpdated: EventEmitter<UpdateLabelEventArgs>;
 
   @State() editMode: boolean = false;
   @State() labelName: string;
@@ -34,7 +36,6 @@ export class LabelEditor {
   }
 
   render() {
-    const label = this.label;
     const editMode = this.editMode;
     const labelName = this.labelName;
     const labelDescription = this.labelDescription;
@@ -131,7 +132,6 @@ export class LabelEditor {
   };
 
   private onDeleteLabel = async () => {
-    await this.elsaClient.labels.delete(this.label.id);
     this.labelDeleted.emit(this.label);
   };
 
@@ -139,14 +139,16 @@ export class LabelEditor {
     e.preventDefault();
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
+    const labelId = this.label.id;
     const labelName = formData.get('labelName') as string;
     const labelDescription = formData.get('labelDescription') as string;
     const labelColor = formData.get('labelColor') as string;
-    const updatedLabel = await this.updateLabel(this.label.id, labelName, labelDescription, labelColor);
-    this.label = updatedLabel;
-    this.labelName = updatedLabel.name;
-    this.labelColor = updatedLabel.color;
-    this.labelDescription = updatedLabel.description;
+    //const updatedLabel = await this.updateLabel(this.label.id, labelName, labelDescription, labelColor);
+    // this.label = updatedLabel;
+    // this.labelName = updatedLabel.name;
+    // this.labelColor = updatedLabel.color;
+    // this.labelDescription = updatedLabel.description;
+    this.labelUpdated.emit({ id: labelId, name: labelName, description: labelDescription, color: labelColor });
     this.editMode = false;
   };
 }

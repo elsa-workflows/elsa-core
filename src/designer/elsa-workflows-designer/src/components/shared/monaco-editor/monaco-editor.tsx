@@ -1,6 +1,6 @@
 import {Component, Event, EventEmitter, h, Host, Method, Prop, Watch} from '@stencil/core';
 import {initializeMonacoWorker, Monaco} from "./utils";
-import globalState from '../../../data/store';
+import globalState from '../../../data/server-store';
 
 export interface MonacoValueChangedArgs {
   value: string;

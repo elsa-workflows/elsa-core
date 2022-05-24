@@ -1,5 +1,5 @@
 import {Service} from "typedi";
-import store from "../data/store";
+import store from "../data/server-store";
 
 @Service()
 export class MonacoEditorSettings {

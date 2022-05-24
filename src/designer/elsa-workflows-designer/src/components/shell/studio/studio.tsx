@@ -1,6 +1,7 @@
 import {Component, Element, h, Listen, Prop, Watch} from '@stencil/core';
 import 'reflect-metadata';
 import {Container} from 'typedi';
+import labelStore from "../../../data/label-store";
 import {
   ElsaApiClientProvider,
   ElsaClient,
@@ -10,8 +11,9 @@ import {ActivityDescriptor, VersionOptions, WorkflowDefinition, WorkflowInstance
 import {WorkflowUpdatedArgs} from '../../designer/workflow-editor/workflow-editor';
 import {PublishClickedArgs} from "../../toolbar/workflow-publish-button/workflow-publish-button";
 import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
-import {downloadFromBlob} from "../../../utils";
+import {downloadFromBlob, isNullOrWhitespace} from "../../../utils";
 import {ExportWorkflowRequest, ImportWorkflowRequest, RetractWorkflowDefinitionRequest, SaveWorkflowDefinitionRequest} from "../../../services/api-client/workflow-definitions-api";
+import {WorkflowLabelsUpdatedArgs} from "../../designer/workflow-properties-editor/workflow-properties-editor";
 
 @Component({
   tag: 'elsa-studio'
@@ -42,8 +44,15 @@ export class Studio {
 
   @Listen('workflowUpdated')
   private async handleWorkflowUpdated(e: CustomEvent<WorkflowUpdatedArgs>) {
-    const workflow = e.detail.workflow;
-    await this.saveWorkflow(workflow, false);
+    const workflowDefinition = e.detail.workflowDefinition;
+    await this.saveWorkflow(workflowDefinition, false);
+  }
+
+  @Listen('workflowLabelsUpdated')
+  private async handleWorkflowLabelsUpdated(e: CustomEvent<WorkflowLabelsUpdatedArgs>) {
+    const labelIds = e.detail.labelIds;
+    const versionId = e.detail.workflowDefinition.id;
+    await this.saveWorkflowLabels(versionId, labelIds);
   }
 
   @Listen('workflowDefinitionSelected')
@@ -55,7 +64,9 @@ export class Studio {
 
     const definitionId = e.detail.definitionId;
     const workflowDefinition = await this.elsaClient.workflowDefinitions.get({definitionId});
+    const assignedLabelIds = await this.elsaClient.workflowDefinitionLabelsApi.get(workflowDefinition.id)
     await workflowEditorElement.importWorkflow(workflowDefinition);
+    await workflowEditorElement.assignLabels(assignedLabelIds);
   }
 
   @Listen('workflowInstanceSelected')
@@ -158,8 +169,10 @@ export class Studio {
     this.handleServerUrl(this.serverUrl);
 
     const elsaClientProvider = Container.get(ElsaApiClientProvider);
+
     this.elsaClient = await elsaClientProvider.getClient();
     this.activityDescriptors = await this.elsaClient.descriptors.activities.list();
+    labelStore.labels = await this.elsaClient.labels.list();
     this.workflowEditorElement = this.el.getElementsByTagName('elsa-workflow-editor')[0] as HTMLElsaWorkflowEditorElement;
 
     if (!!this.workflowEditorElement) {
@@ -194,5 +207,15 @@ export class Studio {
     const updatedWorkflow = await this.elsaClient.workflowDefinitions.retract(request);
     await this.workflowEditorElement.updateWorkflowDefinition(updatedWorkflow);
     return updatedWorkflow;
+  }
+
+  private saveWorkflowLabels = async (versionId: string, labelIds: Array<string>) => {
+    if (isNullOrWhitespace(versionId)) {
+      let definition = await this.workflowEditorElement.getWorkflow();
+      definition = await this.saveWorkflow(definition, false);
+      versionId = definition.id;
+    }
+
+    await this.elsaClient.workflowDefinitionLabelsApi.update(versionId, labelIds);
   }
 }

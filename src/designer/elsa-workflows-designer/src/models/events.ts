@@ -5,5 +5,8 @@
   },
   Activity: {
     PropertyChanged: 'activity:property-changed'
+  },
+  Labels: {
+    Updated: 'labels:updated'
   }
 };
