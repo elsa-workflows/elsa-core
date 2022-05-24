@@ -64,7 +64,7 @@ namespace Elsa.Samples.Server.Host.Activities
                 ((String[])(property.GetCustomAttribute<ActivityInputAttribute>().Options))?.Take(1).ToArray(),
                 ((String[])(property.GetCustomAttribute<ActivityInputAttribute>().Options))
 
-                , new Dictionary<string, string>(), new VehicleContext(_random.Next(100))));
+                , new Dictionary<string, string>(), new DynamicVehicleContext(_random.Next(100))));
         //    new {
         //    RuntimeSelectList = new RuntimeSelectListProviderSettings(GetType(), new VehicleContext(_random.Next(100))),
         //    PropertyName = property.Name,
@@ -77,7 +77,7 @@ namespace Elsa.Samples.Server.Host.Activities
         public ValueTask<SelectList> GetSelectListAsync(object? context = default, CancellationToken cancellationToken = default)
         {
             var CascadingDropDownContext = (CascadingDropDownContext)context! ;
-            var vehicleContext = ((JObject)CascadingDropDownContext.Context!).ToObject<VehicleContext>()!;
+            var vehicleContext = ((JObject)CascadingDropDownContext.Context!).ToObject<DynamicVehicleContext>()!;
 
             if (CascadingDropDownContext.name == "Brand")
             {
@@ -155,7 +155,7 @@ namespace Elsa.Samples.Server.Host.Activities
         }
     }
 
-    public record VehicleContext(int RandomNumber);
+    public record DynamicVehicleContext(int RandomNumber);
 
     public record CascadingDropDownContext(string name, string[] dependsOnEvent, string[] dependsOnValue, IDictionary<string, string> depValues, object? Context);
     
