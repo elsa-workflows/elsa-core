@@ -14,19 +14,14 @@ import {TinyColor} from "@ctrl/tinycolor";
   shadow: false,
 })
 export class LabelPicker {
-  @Element() element: HTMLElement;
-  private eventBus: EventBus;
+  @Element() private element: HTMLElement;
   private flyoutPanel: HTMLElement;
 
-  constructor() {
-    this.eventBus = Container.get(EventBus);
-  }
+  @Prop() public selectedLabels: Array<string> = [];
 
-  @Prop() selectedLabels: Array<string> = [];
+  @Event() public selectedLabelsChanged: EventEmitter<Array<string>>;
 
-  @Event() selectedLabelsChanged: EventEmitter<Array<string>>;
-
-  @State() selectedLabelsState: Array<string> = [];
+  @State() private selectedLabelsState: Array<string> = [];
 
   @Listen('click', {target: 'window'})
   private onWindowClicked(event: Event) {
@@ -131,7 +126,7 @@ export class LabelPicker {
     toggle(this.flyoutPanel);
   }
 
-  private getFilteredSelectedLabels = ():Array<string> => {
+  private getFilteredSelectedLabels = (): Array<string> => {
     const labels = labelStore.labels;
     return this.selectedLabels.filter(labelId => !!labels.find(x => x.id == labelId));
   };
