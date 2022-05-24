@@ -33,6 +33,7 @@ public static class EndpointRouteBuilderExtensions
 
         // Workflow Instances.
         Map("WorkflowInstances.BulkDelete", "bulk-actions/delete/workflow-instances/by-id", new { Controller = ControllerNames.WorkflowInstances, Action = "BulkDelete" });
+        Map("WorkflowInstances.BulkCancel", "bulk-actions/cancel/workflow-instances/by-id", new { Controller = ControllerNames.WorkflowInstances, Action = "BulkCancel" });
         Map("WorkflowInstances.Get", "workflow-instances/{id}", new { Controller = ControllerNames.WorkflowInstances, Action = "Get" });
         Map("WorkflowInstances.Delete", "workflow-instances/{id}", new { Controller = ControllerNames.WorkflowInstances, Action = "Delete" });
         Map("WorkflowInstances.List", "workflow-instances", new { Controller = ControllerNames.WorkflowInstances, Action = "List" });
