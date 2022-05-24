@@ -72,7 +72,7 @@ public class EFCoreStore<TEntity> : IStore<TEntity> where TEntity : Entity
     {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
         var set = dbContext.Set<TEntity>();
-        return await set.Where(predicate).BatchDeleteWithWorkAroundAsync(dbContext, cancellationToken);
+        return await set.DeleteWhereAsync(dbContext, predicate, cancellationToken);
     }
 
     public async Task<IEnumerable<TEntity>> QueryAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, CancellationToken cancellationToken = default)

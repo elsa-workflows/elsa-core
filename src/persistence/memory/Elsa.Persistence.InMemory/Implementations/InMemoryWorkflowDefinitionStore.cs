@@ -90,6 +90,7 @@ public class InMemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
         _triggerStore.DeleteWhere(x => x.WorkflowDefinitionId == definitionId);
         _instanceStore.DeleteWhere(x => x.DefinitionId == definitionId);
         _bookmarkStore.DeleteWhere(x => x.WorkflowDefinitionId == definitionId);
+        _workflowDefinitionLabelStore.DeleteWhere(x => x.WorkflowDefinitionId == definitionId);
         var result = _store.DeleteWhere(x => x.DefinitionId == definitionId);
         return Task.FromResult(result);
     }
