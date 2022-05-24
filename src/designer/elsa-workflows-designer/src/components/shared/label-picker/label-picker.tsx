@@ -1,13 +1,13 @@
-import {Component, FunctionalComponent, h, Listen, Prop, State, Element, Event, EventEmitter, Watch} from "@stencil/core";
+import {Component, h, Listen, Prop, State, Element, Event, EventEmitter, Watch} from "@stencil/core";
+import {debounce} from 'lodash';
 import {leave, toggle, enter} from 'el-transition';
-import {Container} from "typedi";
-import {EventTypes, Label} from "../../../models";
+import {Label} from "../../../models";
 import labelStore from '../../../data/label-store';
-import {EventBus} from "../../../services";
 import {Badge} from "../badge/badge";
 import {ConfigIcon} from "../../icons/tooling/config";
 import {TickIcon} from "../../icons/tooling/tick";
 import {TinyColor} from "@ctrl/tinycolor";
+import {isNullOrWhitespace} from "../../../utils";
 
 @Component({
   tag: 'elsa-label-picker',
@@ -15,13 +15,22 @@ import {TinyColor} from "@ctrl/tinycolor";
 })
 export class LabelPicker {
   @Element() private element: HTMLElement;
+  private searchTextElement: HTMLInputElement;
   private flyoutPanel: HTMLElement;
+  private readonly filterLabelsDebounced: () => void;
+
+  constructor() {
+    this.filterLabelsDebounced = debounce(this.filterLabels, 200);
+    this.filteredLabels = labelStore.labels;
+  }
 
   @Prop() public selectedLabels: Array<string> = [];
 
   @Event() public selectedLabelsChanged: EventEmitter<Array<string>>;
 
   @State() private selectedLabelsState: Array<string> = [];
+  @State() private searchText?: string;
+  @State() private filteredLabels: Array<Label>;
 
   @Listen('click', {target: 'window'})
   private onWindowClicked(event: Event) {
@@ -49,7 +58,8 @@ export class LabelPicker {
 
   private renderFlyout = () => {
     const selectedLabels = this.selectedLabels;
-    const labels = labelStore.labels;
+    const labels = this.filteredLabels;
+    const searchText = this.searchText;
 
     return <div ref={el => this.flyoutPanel = el} class="absolute z-10 right-0 transform mt-3 px-2 w-screen max-w-md px-0 hidden"
                 data-transition-enter="transition ease-out duration-200"
@@ -65,7 +75,13 @@ export class LabelPicker {
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="pointer-events-none absolute top-3.5 left-4 h-5 w-5 text-gray-400">
               <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
             </svg>
-            <input class="h-12 w-full border-0 bg-transparent pl-11 pr-4 text-gray-800 placeholder-gray-400 focus:ring-0 sm:text-sm" placeholder="Search..." role="combobox" type="text" aria-expanded="true" value=""/></div>
+            <input class="h-12 w-full border-0 bg-transparent pl-11 pr-4 text-gray-800 placeholder-gray-400 focus:ring-0 sm:text-sm"
+                   placeholder="Search..."
+                   role="combobox"
+                   type="text"
+                   ref={el => this.searchTextElement = el}
+                   onInput={e => this.onSearchTextChanged(e)}
+                   value={searchText}/></div>
 
           <ul class="max-h-96 scroll-py-3 overflow-y-auto p-1" role="listbox">
             {labels.map(label => {
@@ -110,21 +126,39 @@ export class LabelPicker {
     return <div class="mr-2">
       <Badge text={label.name} color={label.color}/>
     </div>
-  }
+  };
 
-  private showFlyoutPanel() {
+  private showFlyoutPanel = () => {
     if (!!this.flyoutPanel)
       enter(this.flyoutPanel);
-  }
+  };
 
-  private closeFlyoutPanel() {
+  private closeFlyoutPanel = () => {
     if (!!this.flyoutPanel)
       leave(this.flyoutPanel);
-  }
+  };
 
-  private toggleFlyoutPanel() {
+  private toggleFlyoutPanel = () => {
+    this.filterLabelsDebounced();
+    this.searchText = null;
     toggle(this.flyoutPanel);
-  }
+
+    if (!!this.searchTextElement)
+      this.searchTextElement.value = '';
+      this.searchTextElement.focus();
+  };
+
+  private filterLabels = () => {
+    const searchText = this.searchText;
+
+    if (isNullOrWhitespace(searchText)) {
+      this.filteredLabels = labelStore.labels;
+      return;
+    }
+
+    const s = searchText.toLocaleLowerCase();
+    this.filteredLabels = labelStore.labels.filter(x => x.name.toLocaleLowerCase().includes(s) || x.description.toLocaleLowerCase().includes(s));
+  };
 
   private getFilteredSelectedLabels = (): Array<string> => {
     const labels = labelStore.labels;
@@ -140,7 +174,14 @@ export class LabelPicker {
     const selectedLabels = this.getFilteredSelectedLabels();
     this.selectedLabels = selectedLabels;
     this.selectedLabelsChanged.emit(selectedLabels);
-  }
+  };
+
+  private onSearchTextChanged = (e: Event) => {
+    const value = (e.target as HTMLInputElement).value.trim();
+    this.searchText = value;
+
+    this.filterLabelsDebounced();
+  };
 }
 
 
