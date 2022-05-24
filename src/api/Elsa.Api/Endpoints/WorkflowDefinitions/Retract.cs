@@ -36,6 +36,12 @@ public class Retract : Controller
 
         if (definition == null)
             return NotFound();
+        
+        if (!definition.IsPublished)
+            return BadRequest(new
+            {
+                Message = $"Workflow with id {definitionId} is not published"
+            });
 
         await _workflowPublisher.RetractAsync(definition, cancellationToken);
         var serializerOptions = _serializerOptionsProvider.CreateApiOptions();
