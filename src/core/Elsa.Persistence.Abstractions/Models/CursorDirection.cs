@@ -1,4 +1,4 @@
-namespace Elsa.Persistence.Models;
+namespace Elsa.Persistence.Common.Models;
 
 public enum CursorDirection
 {

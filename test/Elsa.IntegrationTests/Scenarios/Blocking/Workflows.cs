@@ -1,6 +1,4 @@
 using Elsa.Activities;
-using Elsa.Modules.Activities.Console;
-using Elsa.Modules.Activities.Primitives;
 using Elsa.Services;
 
 namespace Elsa.IntegrationTests.Scenarios.Blocking;

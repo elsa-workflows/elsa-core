@@ -1,7 +1,6 @@
 using Elsa.Activities;
 using Elsa.Models;
-using Elsa.Modules.Activities.Console;
-using Elsa.Modules.AzureServiceBus.Activities;
+using Elsa.AzureServiceBus.Activities;
 using Elsa.Services;
 
 namespace Elsa.Samples.Web1.Workflows;

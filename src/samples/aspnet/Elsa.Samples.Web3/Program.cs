@@ -1,22 +1,19 @@
 using Elsa.Activities;
-using Elsa.Api.Extensions;
+using Elsa.Workflows.Api.Extensions;
 using Elsa.Extensions;
 using Elsa.Jobs.Extensions;
 using Elsa.Management.Extensions;
 using Elsa.Management.Serialization;
-using Elsa.Modules.Activities.Console;
-using Elsa.Modules.Activities.Workflows;
-using Elsa.Modules.Hangfire.Implementations;
-using Elsa.Modules.Http;
-using Elsa.Modules.Http.Extensions;
-using Elsa.Modules.JavaScript.Activities;
-using Elsa.Modules.Quartz.Implementations;
-using Elsa.Modules.Scheduling.Activities;
-using Elsa.Modules.Scheduling.Extensions;
-using Elsa.Persistence.InMemory.Extensions;
-using Elsa.Runtime.ProtoActor.Extensions;
+using Elsa.Hangfire.Implementations;
+using Elsa.Http;
+using Elsa.Http.Extensions;
+using Elsa.JavaScript.Activities;
+using Elsa.Quartz.Implementations;
+using Elsa.Scheduling.Activities;
+using Elsa.Scheduling.Extensions;
+using Elsa.ProtoActor.Extensions;
 using Elsa.Scripting.JavaScript.Extensions;
-using Elsa.Scripting.Liquid.Extensions;
+using Elsa.Liquid.Extensions;
 using Elsa.Serialization;
 using Elsa.Services;
 
@@ -40,7 +37,7 @@ services
     .AddActivity<HttpEndpoint>()
     .AddActivity<Flowchart>()
     .AddActivity<Delay>()
-    .AddActivity<Elsa.Modules.Scheduling.Activities.Timer>()
+    .AddActivity<Elsa.Scheduling.Activities.Timer>()
     .AddActivity<ForEach>()
     .AddActivity<Switch>()
     .AddActivity<RunJavaScript>()

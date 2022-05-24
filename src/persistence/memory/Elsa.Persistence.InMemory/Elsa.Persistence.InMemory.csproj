@@ -6,7 +6,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\..\core\Elsa.Persistence.Abstractions\Elsa.Persistence.Abstractions.csproj" />
+      <ProjectReference Include="..\..\..\core\Elsa.Workflows.Persistence\Elsa.Workflows.Persistence.csproj" />
     </ItemGroup>
 
 </Project>

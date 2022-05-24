@@ -8,12 +8,13 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\core\Elsa.Jobs.Abstractions\Elsa.Jobs.Abstractions.csproj" />
-      <ProjectReference Include="..\..\core\Elsa.Runtime\Elsa.Runtime.csproj" />
+      <ProjectReference Include="..\..\core\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Configurators" />
-      <Folder Include="Converters" />
+      <Folder Include="Activities\Console" />
+      <Folder Include="Activities\Primitives" />
+      <Folder Include="Activities\Workflows" />
     </ItemGroup>
 
 </Project>

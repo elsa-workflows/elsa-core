@@ -16,8 +16,8 @@
     <ItemGroup>
         <ProjectReference Include="..\..\modules\Elsa.Modules.Activities\Elsa.Modules.Activities.csproj" />
         <ProjectReference Include="..\..\persistence\memory\Elsa.Persistence.InMemory\Elsa.Persistence.InMemory.csproj" />
-        <ProjectReference Include="..\..\core\Elsa.Runtime\Elsa.Runtime.csproj" />
-        <ProjectReference Include="..\Elsa.Core\Elsa.Core.csproj" />
+        <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
+        <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
     </ItemGroup>
 
 </Project>

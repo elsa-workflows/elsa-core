@@ -2,18 +2,14 @@
 
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
-        <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
-        <RootNamespace>Elsa.Persistence</RootNamespace>
+        <Nullable>enable</Nullable>
+        <RootNamespace>Elsa.Persistence.Common</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
-      <ProjectReference Include="..\..\core\Elsa.Mediator\Elsa.Mediator.csproj" />
+        <PackageReference Include="LinqKit" Version="1.2.2" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
     </ItemGroup>
 
-    <ItemGroup>
-      <PackageReference Include="LinqKit" Version="1.2.2" />
-    </ItemGroup>
-    
 </Project>

@@ -1,4 +1,4 @@
-namespace Elsa.Persistence.Entities;
+namespace Elsa.Persistence.Common.Entities;
 
 public abstract class Entity
 {

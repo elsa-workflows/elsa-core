@@ -1,7 +1,6 @@
 using Elsa.Activities;
 using Elsa.Models;
-using Elsa.Modules.Activities.Console;
-using Elsa.Modules.Scheduling.Activities;
+using Elsa.Scheduling.Activities;
 using Elsa.Samples.Web1.Models;
 using Elsa.Services;
 

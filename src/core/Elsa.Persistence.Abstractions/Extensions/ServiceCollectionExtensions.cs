@@ -1,13 +1,13 @@
-using Elsa.Options;
-using Elsa.Persistence.Options;
+using Elsa.Persistence.Common.Entities;
+using Elsa.Persistence.Common.Implementations;
+using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Persistence.Extensions;
+namespace Elsa.Persistence.Common.Extensions;
 
 public static class ServiceCollectionExtensions
 {
-    public static ElsaOptionsConfigurator ConfigurePersistence(this ElsaOptionsConfigurator configurator, Action<PersistenceOptions>? configure = default)
-    {
-        configurator.Configure(() => new PersistenceOptions(configurator), configure);
-        return configurator;
-    }
+    public static IServiceCollection AddMemoryStore<TEntity, TStore>(this IServiceCollection services) where TEntity : Entity where TStore : class =>
+        services
+            .AddSingleton<MemoryStore<TEntity>>()
+            .AddSingleton<TStore>();
 }

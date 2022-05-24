@@ -18,8 +18,8 @@
         <ProjectReference Include="..\..\..\core\Elsa\Elsa.csproj" />
         <ProjectReference Include="..\..\..\dsl\Elsa.Dsl\Elsa.Dsl.csproj" />
         <ProjectReference Include="..\..\..\modules\Elsa.Modules.Activities\Elsa.Modules.Activities.csproj" />
-        <ProjectReference Include="..\..\..\modules\Elsa.Modules.Http\Elsa.Modules.Http.csproj" />
-        <ProjectReference Include="..\..\..\modules\Elsa.Modules.Scheduling\Elsa.Modules.Scheduling.csproj" />
+        <ProjectReference Include="..\..\..\modules\Elsa.Http\Elsa.Http.csproj" />
+        <ProjectReference Include="..\..\..\modules\Elsa.Scheduling\Elsa.Scheduling.csproj" />
     </ItemGroup>
 
     <ItemGroup>

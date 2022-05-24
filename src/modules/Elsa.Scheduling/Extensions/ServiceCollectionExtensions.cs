@@ -1,0 +1,21 @@
+using Elsa.Mediator.Extensions;
+using Elsa.Scheduling.Implementations;
+using Elsa.Scheduling.Services;
+using Microsoft.Extensions.DependencyInjection;
+using ScheduleWorkflows = Elsa.Scheduling.HostedServices.ScheduleWorkflows;
+
+namespace Elsa.Scheduling.Extensions;
+
+public static class ServiceCollectionExtensions
+{
+    public static IServiceCollection AddSchedulingServices(this IServiceCollection services)
+    {
+        services
+            .AddSingleton<IWorkflowTriggerScheduler, WorkflowTriggerScheduler>()
+            .AddSingleton<IWorkflowBookmarkScheduler, WorkflowBookmarkScheduler>()
+            .AddNotificationHandlersFrom<HostedServices.ScheduleWorkflows>()
+            .AddHostedService<HostedServices.ScheduleWorkflows>();
+
+        return services;
+    }
+}

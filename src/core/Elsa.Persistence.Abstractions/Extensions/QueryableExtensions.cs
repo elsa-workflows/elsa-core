@@ -1,8 +1,8 @@
 using System.Data.Entity;
 using System.Linq.Expressions;
-using Elsa.Persistence.Models;
+using Elsa.Persistence.Common.Models;
 
-namespace Elsa.Persistence.Extensions;
+namespace Elsa.Persistence.Common.Extensions;
 
 public static class QueryableExtensions
 {

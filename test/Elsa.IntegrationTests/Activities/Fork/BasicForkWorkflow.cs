@@ -1,5 +1,4 @@
 using Elsa.Activities;
-using Elsa.Modules.Activities.Console;
 using Elsa.Services;
 
 namespace Elsa.IntegrationTests.Activities;

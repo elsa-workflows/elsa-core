@@ -5,7 +5,6 @@ using Elsa.Activities;
 using Elsa.Jobs.Abstractions;
 using Elsa.Jobs.Models;
 using Elsa.Jobs.Services;
-using Elsa.Modules.Activities.Console;
 using Elsa.Services;
 
 namespace Elsa.Samples.Web1.Workflows;
