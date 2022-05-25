@@ -11,7 +11,7 @@ namespace Elsa.Labels.EntityFrameworkCore.Sqlite
 
         public static DbContextOptionsBuilder UseSqlite(this DbContextOptionsBuilder builder, string connectionString = "Data Source=elsa.sqlite.db;Cache=Shared;") =>
             builder.UseSqlite(connectionString, db => db
-                .MigrationsAssembly(typeof(Providers.Sqlite.SqliteDesignTimeLabelsDbContextFactory).Assembly.GetName().Name)
+                .MigrationsAssembly(typeof(SqliteDesignTimeLabelsDbContextFactory).Assembly.GetName().Name)
                 .MigrationsHistoryTable(ElsaDbContextBase.MigrationsHistoryTable, ElsaDbContextBase.ElsaSchema));
     }
 }
