@@ -3,7 +3,6 @@ using Elsa.Persistence.EntityFrameworkCore.Common.Services;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Persistence.Entities;
-using Elsa.Workflows.Persistence.EntityFrameworkCore.DbContexts;
 
 namespace Elsa.Workflows.Persistence.EntityFrameworkCore.Handlers;
 

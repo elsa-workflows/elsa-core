@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace Elsa.Labels.EntityFrameworkCore.DbContexts;
+namespace Elsa.Labels.EntityFrameworkCore.Providers.Sqlite;
 
 public class SqliteLabelsDbContext : LabelsDbContext
 {

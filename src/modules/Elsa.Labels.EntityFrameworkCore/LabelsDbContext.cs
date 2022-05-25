@@ -1,8 +1,8 @@
 ﻿using Elsa.Labels.Entities;
-using Elsa.Persistence.EntityFrameworkCore.Common;
+using Elsa.Persistence.EntityFrameworkCore.Common.Abstractions;
 using Microsoft.EntityFrameworkCore;
 
-namespace Elsa.Labels.EntityFrameworkCore.DbContexts;
+namespace Elsa.Labels.EntityFrameworkCore;
 
 public class LabelsDbContext : ElsaDbContextBase
 {

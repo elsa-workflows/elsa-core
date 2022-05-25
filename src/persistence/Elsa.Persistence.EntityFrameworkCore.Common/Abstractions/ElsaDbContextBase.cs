@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
-namespace Elsa.Persistence.EntityFrameworkCore.Common;
+namespace Elsa.Persistence.EntityFrameworkCore.Common.Abstractions;
 
 /// <summary>
 /// An optional base class to implement with some opinions on certain converters to install for certain DB providers.

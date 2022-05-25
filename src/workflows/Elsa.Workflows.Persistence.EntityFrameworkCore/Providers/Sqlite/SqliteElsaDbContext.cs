@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace Elsa.Workflows.Persistence.EntityFrameworkCore.DbContexts;
+namespace Elsa.Workflows.Persistence.EntityFrameworkCore.Providers.Sqlite;
 
 public class SqliteElsaDbContext : ElsaDbContext
 {

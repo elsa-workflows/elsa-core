@@ -1,5 +1,4 @@
 using Elsa.Labels.Entities;
-using Elsa.Labels.EntityFrameworkCore.DbContexts;
 using Elsa.Labels.Services;
 using Elsa.Persistence.Common.Extensions;
 using Elsa.Persistence.Common.Models;

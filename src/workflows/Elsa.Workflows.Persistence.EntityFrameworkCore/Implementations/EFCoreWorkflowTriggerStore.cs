@@ -1,6 +1,5 @@
 using Elsa.Persistence.EntityFrameworkCore.Common.Services;
 using Elsa.Workflows.Persistence.Entities;
-using Elsa.Workflows.Persistence.EntityFrameworkCore.DbContexts;
 using Elsa.Workflows.Persistence.Services;
 
 namespace Elsa.Workflows.Persistence.EntityFrameworkCore.Implementations;
