@@ -1,14 +1,13 @@
+using Elsa.Labels.Configuration;
 using Elsa.Labels.EntityFrameworkCore.Options;
-using Elsa.Labels.Options;
-using Elsa.Workflows.Persistence.Options;
 
 namespace Elsa.Labels.EntityFrameworkCore.Extensions;
 
 public static class DependencyInjectionExtensions
 {
-    public static LabelPersistenceOptions UseEntityFrameworkCoreProvider(this LabelPersistenceOptions configurator, Action<EFCoreLabelPersistenceOptions> configure)
+    public static LabelPersistenceOptions UseEntityFrameworkCoreProvider(this LabelPersistenceOptions configurator, Action<EFCoreLabelPersistenceConfigurator> configure)
     {
-        configurator.ElsaOptionsConfigurator.Configure(() => new EFCoreLabelPersistenceOptions(configurator), configure);
+        configurator.ServiceConfiguration.Configure(() => new EFCoreLabelPersistenceConfigurator(configurator), configure);
         return configurator;
     }
 }

@@ -1,28 +1,14 @@
-using Elsa.Expressions;
-using Elsa.Expressions.Extensions;
-using Elsa.Workflows.Core.Expressions;
-using Elsa.Workflows.Core.Options;
+using Elsa.ServiceConfiguration.Services;
+using Elsa.Workflows.Core.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Core;
 
 public static class DependencyInjectionExtensions
 {
-    public static IServiceCollection AddWorkflowCore(this IServiceCollection services, Action<ElsaOptionsConfigurator>? configure = default)
+    public static IServiceConfiguration ConfigureWorkflows(this IServiceConfiguration configuration, Action<WorkflowConfigurator>? configure = default)
     {
-        services.AddExpressions();
-        var configurator = new ElsaOptionsConfigurator(services);
-        configure?.Invoke(configurator);
-        configurator.ConfigureServices();
-        return services;
+        configuration.Configure(() => new WorkflowConfigurator(configuration), configure);
+        return configuration;
     }
-
-    public static IServiceCollection AddDefaultExpressionHandlers(this IServiceCollection services) =>
-        services
-            .AddExpressionHandler<LiteralExpressionHandler, LiteralExpression>()
-            .AddExpressionHandler<DelegateExpressionHandler, DelegateExpression>()
-            .AddExpressionHandler<VariableExpressionHandler, VariableExpression>()
-            .AddExpressionHandler<JsonExpressionHandler, JsonExpression>()
-            .AddExpressionHandler<OutputExpressionHandler, OutputExpression>()
-            .AddExpressionHandler<ElsaExpressionHandler, ElsaExpression>();
 }

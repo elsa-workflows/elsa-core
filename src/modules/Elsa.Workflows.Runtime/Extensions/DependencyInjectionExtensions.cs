@@ -1,6 +1,6 @@
 using System.Threading.Channels;
-using Elsa.Workflows.Core.Options;
-using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Core.Configuration;
+using Elsa.Workflows.Runtime.Configuration;
 using Elsa.Workflows.Runtime.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -8,9 +8,9 @@ namespace Elsa.Workflows.Runtime.Extensions;
 
 public static class DependencyInjectionExtensions
 {
-    public static ElsaOptionsConfigurator ConfigureWorkflowRuntime(this ElsaOptionsConfigurator configurator, Action<ElsaRuntimeOptions>? configure = default)
+    public static WorkflowConfigurator ConfigureRuntime(this WorkflowConfigurator configurator, Action<WorkflowRuntimeConfigurator>? configure = default)
     {
-        configurator.Configure(configure);
+        configurator.ServiceConfiguration.Configure(configure);
         return configurator;
     }
 
@@ -27,5 +27,5 @@ public static class DependencyInjectionExtensions
     public static IServiceCollection AddWorkflowDefinitionProvider<T>(this IServiceCollection services) where T : class, IWorkflowDefinitionProvider => services.AddSingleton<IWorkflowDefinitionProvider, T>();
     public static IServiceCollection AddStimulusHandler<T>(this IServiceCollection services) where T : class, IStimulusHandler => services.AddSingleton<IStimulusHandler, T>();
     public static IServiceCollection AddInstructionInterpreter<T>(this IServiceCollection services) where T : class, IWorkflowInstructionInterpreter => services.AddSingleton<IWorkflowInstructionInterpreter, T>();
-    public static IServiceCollection ConfigureWorkflowRuntime(this IServiceCollection services, Action<ElsaRuntimeOptions> configure) => services.Configure(configure);
+    //public static IServiceCollection ConfigureWorkflowRuntime(this IServiceCollection services, Action<WorkflowRuntimeConfigurator> configure) => services.Configure(configure);
 }

@@ -4,10 +4,10 @@ using Elsa.Persistence.EntityFrameworkCore.Common.Implementations;
 using Elsa.Persistence.EntityFrameworkCore.Common.Services;
 using Elsa.Workflows.Core.Options;
 using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Persistence.Configuration;
 using Elsa.Workflows.Persistence.Entities;
 using Elsa.Workflows.Persistence.EntityFrameworkCore.Handlers;
 using Elsa.Workflows.Persistence.EntityFrameworkCore.Implementations;
-using Elsa.Workflows.Persistence.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -15,11 +15,11 @@ namespace Elsa.Workflows.Persistence.EntityFrameworkCore.Options;
 
 public class EFCoreWorkflowPersistenceOptions : IConfigurator
 {
-    public EFCoreWorkflowPersistenceOptions(WorkflowPersistenceOptions workflowPersistenceOptions)
+    public EFCoreWorkflowPersistenceOptions(WorkflowPersistenceConfigurator workflowPersistenceConfigurator)
     {
-        WorkflowPersistenceOptions = workflowPersistenceOptions;
+        WorkflowPersistenceConfigurator = workflowPersistenceConfigurator;
 
-        workflowPersistenceOptions
+        workflowPersistenceConfigurator
             .WithWorkflowDefinitionStore(sp => sp.GetRequiredService<EFCoreWorkflowDefinitionStore>())
             .WithWorkflowInstanceStore(sp => sp.GetRequiredService<EFCoreWorkflowInstanceStore>())
             .WithWorkflowBookmarkStore(sp => sp.GetRequiredService<EFCoreWorkflowBookmarkStore>())
@@ -28,7 +28,7 @@ public class EFCoreWorkflowPersistenceOptions : IConfigurator
             ;
     }
 
-    public WorkflowPersistenceOptions WorkflowPersistenceOptions { get; }
+    public WorkflowPersistenceConfigurator WorkflowPersistenceConfigurator { get; }
     public bool ContextPoolingIsEnabled { get; set; }
     public bool AutoRunMigrationsIsEnabled { get; set; } = true;
     public ServiceLifetime DbContextFactoryLifetime { get; set; } = ServiceLifetime.Singleton;

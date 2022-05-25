@@ -1,16 +1,17 @@
 using Elsa.Persistence.Common.Extensions;
-using Elsa.Workflows.Core.Options;
+using Elsa.Workflows.Core.Configuration;
+using Elsa.Workflows.Persistence.Configuration;
 using Elsa.Workflows.Persistence.Entities;
 using Elsa.Workflows.Persistence.Implementations;
-using Elsa.Workflows.Persistence.Options;
 
 namespace Elsa.Workflows.Persistence.Extensions;
 
 public static class DependencyInjectionExtensions
 {
-    public static ElsaOptionsConfigurator ConfigureWorkflowPersistence(this ElsaOptionsConfigurator configurator, Action<WorkflowPersistenceOptions>? configure = default)
+    public static WorkflowConfigurator ConfigurePersistence(this WorkflowConfigurator configurator, Action<WorkflowPersistenceConfigurator>? configure = default)
     {
-        var services = configurator.Services;
+        var configuration = configurator.ServiceConfiguration;
+        var services = configuration.Services;
 
         services
             .AddMemoryStore<WorkflowDefinition, MemoryWorkflowDefinitionStore>()
@@ -20,7 +21,7 @@ public static class DependencyInjectionExtensions
             .AddMemoryStore<WorkflowExecutionLogRecord, MemoryWorkflowExecutionLogStore>()
             ;
 
-        configurator.Configure(() => new WorkflowPersistenceOptions(configurator), configure);
+        configuration.Configure(() => new WorkflowPersistenceConfigurator(configuration), configure);
         return configurator;
     }
 }

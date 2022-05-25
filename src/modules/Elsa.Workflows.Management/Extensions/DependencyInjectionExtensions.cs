@@ -1,41 +1,14 @@
-using Elsa.Expressions.Services;
-using Elsa.Workflows.Core.Options;
-using Elsa.Workflows.Core.Serialization;
-using Elsa.Workflows.Core.Services;
-using Elsa.Workflows.Management.Implementations;
-using Elsa.Workflows.Management.Materializers;
-using Elsa.Workflows.Management.Options;
-using Elsa.Workflows.Management.Providers;
-using Elsa.Workflows.Management.Serialization;
-using Elsa.Workflows.Management.Services;
-using Microsoft.Extensions.DependencyInjection;
+using Elsa.ServiceConfiguration.Services;
+using Elsa.Workflows.Core.Configuration;
+using Elsa.Workflows.Management.Configuration;
 
 namespace Elsa.Workflows.Management.Extensions;
 
 public static class DependencyInjectionExtensions
 {
-    public static IServiceCollection AddWorkflowManagement(this ElsaOptionsConfigurator configurator)
+    public static WorkflowConfigurator ConfigureWorkflowManagement(this WorkflowConfigurator workflow, Action<WorkflowManagementConfigurator>? configure = default)
     {
-        var services = configurator.Services;
-        
-        return services
-            .AddSingleton<IWorkflowPublisher, WorkflowPublisher>()
-            .AddSingleton<IActivityDescriber, ActivityDescriber>()
-            .AddSingleton<IActivityRegistry, ActivityRegistry>()
-            .AddSingleton<IActivityRegistryPopulator, ActivityRegistryPopulator>()
-            .AddSingleton<IPropertyDefaultValueResolver, PropertyDefaultValueResolver>()
-            .AddSingleton<IPropertyOptionsResolver, PropertyOptionsResolver>()
-            .AddSingleton<IActivityProvider, TypedActivityProvider>()
-            .AddSingleton<IActivityFactory, ActivityFactory>()
-            .AddSingleton<IExpressionSyntaxRegistry, ExpressionSyntaxRegistry>()
-            .AddSingleton<IExpressionSyntaxProvider, DefaultExpressionSyntaxProvider>()
-            .AddSingleton<IExpressionSyntaxRegistryPopulator, ExpressionSyntaxRegistryPopulator>()
-            .AddSingleton<ISerializationOptionsConfigurator, SerializationOptionsConfigurator>()
-            .AddSingleton<IWorkflowMaterializer, ClrWorkflowMaterializer>()
-            .AddSingleton<IWorkflowMaterializer, JsonWorkflowMaterializer>()
-            .AddSingleton<WorkflowSerializerOptionsProvider>();
+        workflow.ServiceConfiguration.Configure(configure);
+        return workflow;
     }
-    
-    public static IServiceCollection ConfigureApiOptions(this IServiceCollection services, Action<ApiOptions> configure) => services.Configure(configure);
-    public static IServiceCollection AddActivity<T>(this IServiceCollection services) where T:IActivity => services.ConfigureApiOptions(options => options.ActivityTypes.Add(typeof(T)));
 }

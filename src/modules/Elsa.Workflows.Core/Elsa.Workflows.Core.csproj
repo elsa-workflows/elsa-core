@@ -19,6 +19,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\common\Elsa.Expressions\Elsa.Expressions.csproj" />
+      <ProjectReference Include="..\..\common\Elsa.ServiceConfiguration\Elsa.ServiceConfiguration.csproj" />
     </ItemGroup>
 
 </Project>

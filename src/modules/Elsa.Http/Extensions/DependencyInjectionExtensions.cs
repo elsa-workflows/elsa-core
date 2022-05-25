@@ -1,19 +1,15 @@
-using Elsa.Http.Handlers;
-using Elsa.Http.Implementations;
-using Elsa.Http.Services;
-using Elsa.Mediator.Extensions;
+using System;
+using Elsa.Http.Configuration;
+using Elsa.ServiceConfiguration.Services;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection;
 
 public static class DependencyInjectionExtensions
 {
-    public static IServiceCollection AddHttpActivityServices(this IServiceCollection services)
+    public static IServiceConfiguration ConfigureHttp(this IServiceConfiguration configuration, Action<HttpConfigurator>? configure = default)
     {
-        return services
-            .AddSingleton<IRouteMatcher, RouteMatcher>()
-            .AddSingleton<IRouteTable, RouteTable>()
-            .AddNotificationHandlersFrom<UpdateRouteTable>()
-            .AddHttpContextAccessor();
+        configuration.Configure(configure);
+        return configuration;
     }
 }

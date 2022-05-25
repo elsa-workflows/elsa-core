@@ -24,6 +24,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Elsa.Persistence.Abstractions\Elsa.Persistence.Abstractions.csproj" />
+      <ProjectReference Include="..\Elsa.ServiceConfiguration\Elsa.ServiceConfiguration.csproj" />
     </ItemGroup>
 
 </Project>

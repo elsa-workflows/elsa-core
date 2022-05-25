@@ -4,14 +4,14 @@ using Elsa.Workflows.Core.Builders;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Persistence.Entities;
-using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.Configuration;
 using Elsa.Workflows.Runtime.Services;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Runtime.WorkflowProviders;
 
 /// <summary>
-/// Provides workflows to the system that are registered with <see cref="ElsaRuntimeOptions"/>
+/// Provides workflows to the system that are registered with <see cref="WorkflowRuntimeConfigurator"/>
 /// </summary>
 public class ClrWorkflowDefinitionProvider : IWorkflowDefinitionProvider
 {
@@ -19,10 +19,10 @@ public class ClrWorkflowDefinitionProvider : IWorkflowDefinitionProvider
     private readonly WorkflowSerializerOptionsProvider _workflowSerializerOptionsProvider;
     private readonly ISystemClock _systemClock;
     private readonly IServiceProvider _serviceProvider;
-    private readonly ElsaRuntimeOptions _options;
+    private readonly WorkflowRuntimeConfigurator _configurator;
 
     public ClrWorkflowDefinitionProvider(
-        IOptions<ElsaRuntimeOptions> options,
+        IOptions<WorkflowRuntimeConfigurator> options,
         IIdentityGraphService identityGraphService,
         WorkflowSerializerOptionsProvider workflowSerializerOptionsProvider,
         ISystemClock systemClock,
@@ -33,14 +33,14 @@ public class ClrWorkflowDefinitionProvider : IWorkflowDefinitionProvider
         _workflowSerializerOptionsProvider = workflowSerializerOptionsProvider;
         _systemClock = systemClock;
         _serviceProvider = serviceProvider;
-        _options = options.Value;
+        _configurator = options.Value;
     }
 
     public string Name => "CLR";
 
     public async ValueTask<IEnumerable<WorkflowDefinitionResult>> GetWorkflowDefinitionsAsync(CancellationToken cancellationToken = default)
     {
-        var workflowDefinitionTasks = _options.Workflows.Values.Select(async x => await BuildWorkflowDefinition(x, cancellationToken)).ToList();
+        var workflowDefinitionTasks = _configurator.Workflows.Values.Select(async x => await BuildWorkflowDefinition(x, cancellationToken)).ToList();
         var workflowDefinitions = await Task.WhenAll(workflowDefinitionTasks);
         return workflowDefinitions;
     }

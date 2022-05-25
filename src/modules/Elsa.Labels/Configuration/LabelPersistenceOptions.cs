@@ -1,19 +1,21 @@
+using Elsa.Labels.Entities;
 using Elsa.Labels.Implementations;
 using Elsa.Labels.Services;
-using Elsa.Workflows.Core.Options;
-using Elsa.Workflows.Core.Services;
+using Elsa.Persistence.Common.Extensions;
+using Elsa.ServiceConfiguration.Abstractions;
+using Elsa.ServiceConfiguration.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Labels.Options;
+namespace Elsa.Labels.Configuration;
 
 public class LabelPersistenceOptions : ConfiguratorBase
 {
-    public ElsaOptionsConfigurator ElsaOptionsConfigurator { get; }
-
-    public LabelPersistenceOptions(ElsaOptionsConfigurator elsaOptionsConfigurator)
+    public LabelPersistenceOptions(IServiceConfiguration serviceConfiguration)
     {
-        ElsaOptionsConfigurator = elsaOptionsConfigurator;
+        ServiceConfiguration = serviceConfiguration;
     }
+    
+    public IServiceConfiguration ServiceConfiguration { get; }
     
     public Func<IServiceProvider, ILabelStore> LabelStore { get; set; } = sp => sp.GetRequiredService<InMemoryLabelStore>();
     public Func<IServiceProvider, IWorkflowDefinitionLabelStore> WorkflowDefinitionLabelStore { get; set; } = sp => sp.GetRequiredService<InMemoryWorkflowDefinitionLabelStore>();
@@ -30,9 +32,11 @@ public class LabelPersistenceOptions : ConfiguratorBase
         return this;
     }
 
-    public override void ConfigureServices(ElsaOptionsConfigurator configurator)
+    public override void ConfigureServices(IServiceConfiguration configuration)
     {
-        configurator.Services
+        configuration.Services
+            .AddMemoryStore<Label, InMemoryLabelStore>()
+            .AddMemoryStore<WorkflowDefinitionLabel, InMemoryWorkflowDefinitionLabelStore>()
             .AddSingleton(LabelStore)
             .AddSingleton(WorkflowDefinitionLabelStore)
             ;

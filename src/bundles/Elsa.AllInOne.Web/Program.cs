@@ -11,6 +11,7 @@ using Elsa.Quartz.Implementations;
 using Elsa.Scheduling.Activities;
 using Elsa.Scheduling.Extensions;
 using Elsa.Liquid.Extensions;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Services;
@@ -22,26 +23,26 @@ var services = builder.Services;
 
 // Add Elsa services.
 services
-    .AddElsa()
-    .AddHttpActivityServices()
+    .AddElsa(elsa => elsa
+        .ConfigureWorkflows(workflows => workflows
+            .ConfigureWorkflowManagement(management => management
+                .AddActivity<Sequence>()
+                .AddActivity<WriteLine>()
+                .AddActivity<ReadLine>()
+                .AddActivity<If>()
+                .AddActivity<HttpEndpoint>()
+                .AddActivity<Flowchart>()
+                .AddActivity<Delay>()
+                .AddActivity<Elsa.Scheduling.Activities.Timer>()
+                .AddActivity<ForEach>()
+                .AddActivity<Switch>()
+                .AddActivity<RunJavaScript>()
+            ))
+        .ConfigureHttp()
+    )
     //.AddProtoActorRuntime()
     .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider())
     .AddSchedulingServices();
-
-// Register activities available from the designer.
-services
-    .AddActivity<Sequence>()
-    .AddActivity<WriteLine>()
-    .AddActivity<ReadLine>()
-    .AddActivity<If>()
-    .AddActivity<HttpEndpoint>()
-    .AddActivity<Flowchart>()
-    .AddActivity<Delay>()
-    .AddActivity<Elsa.Scheduling.Activities.Timer>()
-    .AddActivity<ForEach>()
-    .AddActivity<Switch>()
-    .AddActivity<RunJavaScript>()
-    ;
 
 // Register scripting languages.
 services

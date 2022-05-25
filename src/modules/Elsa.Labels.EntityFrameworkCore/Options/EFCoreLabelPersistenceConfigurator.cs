@@ -1,20 +1,20 @@
+using Elsa.Labels.Configuration;
 using Elsa.Labels.Entities;
 using Elsa.Labels.EntityFrameworkCore.Implementations;
-using Elsa.Labels.Options;
 using Elsa.Persistence.Common.Entities;
 using Elsa.Persistence.EntityFrameworkCore.Common.HostedServices;
 using Elsa.Persistence.EntityFrameworkCore.Common.Implementations;
 using Elsa.Persistence.EntityFrameworkCore.Common.Services;
-using Elsa.Workflows.Core.Options;
-using Elsa.Workflows.Core.Services;
+using Elsa.ServiceConfiguration.Abstractions;
+using Elsa.ServiceConfiguration.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Labels.EntityFrameworkCore.Options;
 
-public class EFCoreLabelPersistenceOptions : IConfigurator
+public class EFCoreLabelPersistenceConfigurator : ConfiguratorBase
 {
-    public EFCoreLabelPersistenceOptions(LabelPersistenceOptions labelPersistenceOptions)
+    public EFCoreLabelPersistenceConfigurator(LabelPersistenceOptions labelPersistenceOptions)
     {
         LabelPersistenceOptions = labelPersistenceOptions;
 
@@ -30,25 +30,25 @@ public class EFCoreLabelPersistenceOptions : IConfigurator
     public ServiceLifetime DbContextFactoryLifetime { get; set; } = ServiceLifetime.Singleton;
     public Action<IServiceProvider, DbContextOptionsBuilder> DbContextOptionsBuilderAction = (_, _) => { };
 
-    public EFCoreLabelPersistenceOptions WithContextPooling(bool enabled = true)
+    public EFCoreLabelPersistenceConfigurator WithContextPooling(bool enabled = true)
     {
         ContextPoolingIsEnabled = enabled;
         return this;
     }
 
-    public EFCoreLabelPersistenceOptions AutoRunMigrations(bool enabled = true)
+    public EFCoreLabelPersistenceConfigurator AutoRunMigrations(bool enabled = true)
     {
         AutoRunMigrationsIsEnabled = enabled;
         return this;
     }
 
-    public EFCoreLabelPersistenceOptions ConfigureDbContextOptions(Action<IServiceProvider, DbContextOptionsBuilder> configure)
+    public EFCoreLabelPersistenceConfigurator ConfigureDbContextOptions(Action<IServiceProvider, DbContextOptionsBuilder> configure)
     {
         DbContextOptionsBuilderAction = configure;
         return this;
     }
 
-    public void ConfigureServices(ElsaOptionsConfigurator configurator)
+    public override void ConfigureServices(IServiceConfiguration configurator)
     {
         var services = configurator.Services;
 
@@ -61,7 +61,7 @@ public class EFCoreLabelPersistenceOptions : IConfigurator
         AddStore<WorkflowDefinitionLabel, EFCoreWorkflowDefinitionLabelStore>(services);
     }
 
-    public void ConfigureHostedServices(ElsaOptionsConfigurator configurator)
+    public override void ConfigureHostedServices(IServiceConfiguration configurator)
     {
         if (AutoRunMigrationsIsEnabled)
             configurator.AddHostedService<RunMigrations<LabelsDbContext>>(-1); // Migrations need to run before other hosted services that depend on DB access.
