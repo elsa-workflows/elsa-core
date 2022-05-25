@@ -6,9 +6,9 @@ namespace Elsa.Workflows.Persistence.EntityFrameworkCore.Implementations;
 
 public class EFCoreWorkflowTriggerStore : IWorkflowTriggerStore
 {
-    private readonly IStore<ElsaDbContext, WorkflowTrigger> _store;
+    private readonly IStore<WorkflowsDbContext, WorkflowTrigger> _store;
 
-    public EFCoreWorkflowTriggerStore(IStore<ElsaDbContext, WorkflowTrigger> store)
+    public EFCoreWorkflowTriggerStore(IStore<WorkflowsDbContext, WorkflowTrigger> store)
     {
         _store = store;
     }

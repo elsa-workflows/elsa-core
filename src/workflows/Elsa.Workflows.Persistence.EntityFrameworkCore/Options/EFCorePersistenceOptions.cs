@@ -57,9 +57,9 @@ public class EFCorePersistenceOptions : IConfigurator
         var services = configurator.Services;
 
         if (ContextPoolingIsEnabled)
-            services.AddPooledDbContextFactory<ElsaDbContext>(DbContextOptionsBuilderAction);
+            services.AddPooledDbContextFactory<WorkflowsDbContext>(DbContextOptionsBuilderAction);
         else
-            services.AddDbContextFactory<ElsaDbContext>(DbContextOptionsBuilderAction, DbContextFactoryLifetime);
+            services.AddDbContextFactory<WorkflowsDbContext>(DbContextOptionsBuilderAction, DbContextFactoryLifetime);
 
         AddStore<WorkflowDefinition, EFCoreWorkflowDefinitionStore>(services);
         AddStore<WorkflowInstance, EFCoreWorkflowInstanceStore>(services);
@@ -68,22 +68,22 @@ public class EFCorePersistenceOptions : IConfigurator
         AddStore<WorkflowExecutionLogRecord, EFCoreWorkflowExecutionLogStore>(services);
 
         services
-            .AddSingleton<IEntitySerializer<ElsaDbContext, WorkflowDefinition>, WorkflowDefinitionSerializer>()
-            .AddSingleton<IEntitySerializer<ElsaDbContext, WorkflowInstance>, WorkflowInstanceSerializer>()
-            .AddSingleton<IEntitySerializer<ElsaDbContext, WorkflowExecutionLogRecord>, WorkflowExecutionLogRecordSerializer>()
+            .AddSingleton<IEntitySerializer<WorkflowsDbContext, WorkflowDefinition>, WorkflowDefinitionSerializer>()
+            .AddSingleton<IEntitySerializer<WorkflowsDbContext, WorkflowInstance>, WorkflowInstanceSerializer>()
+            .AddSingleton<IEntitySerializer<WorkflowsDbContext, WorkflowExecutionLogRecord>, WorkflowExecutionLogRecordSerializer>()
             ;
     }
 
     public void ConfigureHostedServices(ElsaOptionsConfigurator configurator)
     {
         if (AutoRunMigrationsIsEnabled)
-            configurator.AddHostedService<RunMigrations<ElsaDbContext>>(-1); // Migrations need to run before other hosted services that depend on DB access.
+            configurator.AddHostedService<RunMigrations<WorkflowsDbContext>>(-1); // Migrations need to run before other hosted services that depend on DB access.
     }
 
     private void AddStore<TEntity, TStore>(IServiceCollection services) where TEntity : Entity where TStore : class
     {
         services
-            .AddSingleton<IStore<ElsaDbContext, TEntity>, EFCoreStore<ElsaDbContext, TEntity>>()
+            .AddSingleton<IStore<WorkflowsDbContext, TEntity>, EFCoreStore<WorkflowsDbContext, TEntity>>()
             .AddSingleton<TStore>();
     }
 }

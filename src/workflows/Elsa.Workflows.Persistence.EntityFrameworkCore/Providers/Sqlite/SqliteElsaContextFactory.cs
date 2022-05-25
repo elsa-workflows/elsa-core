@@ -2,7 +2,7 @@
 
 namespace Elsa.Workflows.Persistence.EntityFrameworkCore.Providers.Sqlite
 {
-    public class SqliteDesignTimeDbElsaContextFactory : SqliteDesignTimeDbContextFactory<SqliteElsaDbContext>
+    public class SqliteDesignTimeDbElsaContextFactory : SqliteDesignTimeDbContextFactory<SqliteWorkflowsDbContext>
     {
     }
 }

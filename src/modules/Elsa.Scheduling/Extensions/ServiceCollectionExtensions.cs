@@ -2,7 +2,6 @@ using Elsa.Mediator.Extensions;
 using Elsa.Scheduling.Implementations;
 using Elsa.Scheduling.Services;
 using Microsoft.Extensions.DependencyInjection;
-using ScheduleWorkflows = Elsa.Scheduling.HostedServices.ScheduleWorkflows;
 
 namespace Elsa.Scheduling.Extensions;
 

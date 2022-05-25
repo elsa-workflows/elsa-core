@@ -10,14 +10,14 @@ namespace Elsa.Workflows.Persistence.EntityFrameworkCore.Implementations;
 
 public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
 {
-    private readonly IStore<ElsaDbContext, WorkflowInstance> _store;
-    private readonly IStore<ElsaDbContext, WorkflowBookmark> _bookmarkStore;
-    private readonly IStore<ElsaDbContext, WorkflowExecutionLogRecord> _executionLogRecordStore;
+    private readonly IStore<WorkflowsDbContext, WorkflowInstance> _store;
+    private readonly IStore<WorkflowsDbContext, WorkflowBookmark> _bookmarkStore;
+    private readonly IStore<WorkflowsDbContext, WorkflowExecutionLogRecord> _executionLogRecordStore;
 
     public EFCoreWorkflowInstanceStore(
-        IStore<ElsaDbContext, WorkflowInstance> store,
-        IStore<ElsaDbContext, WorkflowBookmark> bookmarkStore,
-        IStore<ElsaDbContext, WorkflowExecutionLogRecord> executionLogRecordStore)
+        IStore<WorkflowsDbContext, WorkflowInstance> store,
+        IStore<WorkflowsDbContext, WorkflowBookmark> bookmarkStore,
+        IStore<WorkflowsDbContext, WorkflowExecutionLogRecord> executionLogRecordStore)
     {
         _store = store;
         _bookmarkStore = bookmarkStore;

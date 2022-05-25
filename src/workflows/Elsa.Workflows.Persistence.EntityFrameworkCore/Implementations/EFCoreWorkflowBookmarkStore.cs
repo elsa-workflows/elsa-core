@@ -6,9 +6,9 @@ namespace Elsa.Workflows.Persistence.EntityFrameworkCore.Implementations;
 
 public class EFCoreWorkflowBookmarkStore : IWorkflowBookmarkStore
 {
-    private readonly IStore<ElsaDbContext, WorkflowBookmark> _store;
+    private readonly IStore<WorkflowsDbContext, WorkflowBookmark> _store;
 
-    public EFCoreWorkflowBookmarkStore(IStore<ElsaDbContext, WorkflowBookmark> store)
+    public EFCoreWorkflowBookmarkStore(IStore<WorkflowsDbContext, WorkflowBookmark> store)
     {
         _store = store;
     }

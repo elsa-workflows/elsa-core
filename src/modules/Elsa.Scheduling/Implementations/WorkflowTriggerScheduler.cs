@@ -11,7 +11,6 @@ using Elsa.Scheduling.Services;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Persistence.Entities;
 using Elsa.Workflows.Persistence.Extensions;
-using Timer = Elsa.Scheduling.Activities.Timer;
 
 namespace Elsa.Scheduling.Implementations;
 

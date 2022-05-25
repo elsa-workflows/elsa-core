@@ -1,13 +1,12 @@
-﻿using Elsa.Persistence.EntityFrameworkCore.Common;
-using Elsa.Persistence.EntityFrameworkCore.Common.Abstractions;
+﻿using Elsa.Persistence.EntityFrameworkCore.Common.Abstractions;
 using Elsa.Workflows.Persistence.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Workflows.Persistence.EntityFrameworkCore;
 
-public class ElsaDbContext : ElsaDbContextBase
+public class WorkflowsDbContext : ElsaDbContextBase
 {
-    public ElsaDbContext(DbContextOptions options) : base(options)
+    public WorkflowsDbContext(DbContextOptions options) : base(options)
     {
     }
 

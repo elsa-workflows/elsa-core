@@ -11,8 +11,8 @@ namespace Elsa.Workflows.Persistence.EntityFrameworkCore.Implementations;
 
 public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
 {
-    private readonly IStore<ElsaDbContext, WorkflowDefinition> _store;
-    public EFCoreWorkflowDefinitionStore(IStore<ElsaDbContext, WorkflowDefinition> store) => _store = store;
+    private readonly IStore<WorkflowsDbContext, WorkflowDefinition> _store;
+    public EFCoreWorkflowDefinitionStore(IStore<WorkflowsDbContext, WorkflowDefinition> store) => _store = store;
 
     public async Task<WorkflowDefinition?> FindByIdAsync(string id, CancellationToken cancellationToken = default) =>
         await _store.FindAsync(x => x.Id == id, cancellationToken);
@@ -100,7 +100,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
     }
 
     private async Task<IQueryable<WorkflowDefinition>> FilterByLabelsAsync(
-        ElsaDbContext dbContext,
+        WorkflowsDbContext dbContext,
         IQueryable<WorkflowDefinition> query,
         IEnumerable<string>? labelNames,
         CancellationToken cancellationToken)

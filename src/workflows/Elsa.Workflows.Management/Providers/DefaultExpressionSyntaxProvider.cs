@@ -4,8 +4,6 @@ using Elsa.Expressions.Services;
 using Elsa.Workflows.Core.Expressions;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
-using Elsa.Workflows.Management.Models;
-using Elsa.Workflows.Management.Services;
 
 namespace Elsa.Workflows.Management.Providers;
 
