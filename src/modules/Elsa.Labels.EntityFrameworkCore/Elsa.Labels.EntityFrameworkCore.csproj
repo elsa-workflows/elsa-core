@@ -14,7 +14,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\persistence\Elsa.Persistence.EntityFrameworkCore.Common\Elsa.Persistence.EntityFrameworkCore.Common.csproj" />
+        <ProjectReference Include="..\..\common\Elsa.Persistence.EntityFrameworkCore.Common\Elsa.Persistence.EntityFrameworkCore.Common.csproj" />
         <ProjectReference Include="..\Elsa.Labels\Elsa.Labels.csproj" />
     </ItemGroup>
 

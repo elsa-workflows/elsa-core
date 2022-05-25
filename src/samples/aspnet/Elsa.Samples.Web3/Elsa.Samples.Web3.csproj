@@ -15,6 +15,6 @@
       <ProjectReference Include="..\..\..\modules\Elsa.Liquid\Elsa.Liquid.csproj" />
       <ProjectReference Include="..\..\..\modules\Elsa.ProtoActor\Elsa.ProtoActor.csproj" />
       <ProjectReference Include="..\..\..\modules\Elsa.Quartz\Elsa.Quartz.csproj" />
-      <ProjectReference Include="..\..\..\workflows\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />
+      <ProjectReference Include="..\..\..\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />
     </ItemGroup>
 </Project>

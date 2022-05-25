@@ -11,6 +11,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\src\bundles\Elsa\Elsa.csproj" />
+      <ProjectReference Include="..\..\src\modules\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
     </ItemGroup>
 
 </Project>

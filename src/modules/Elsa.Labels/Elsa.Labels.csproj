@@ -11,14 +11,14 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\common\Elsa.AspNetCore\Elsa.AspNetCore.csproj" />
-      <ProjectReference Include="..\..\persistence\Elsa.Persistence.Abstractions\Elsa.Persistence.Abstractions.csproj" />
-      <ProjectReference Include="..\..\workflows\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
-      <ProjectReference Include="..\..\workflows\Elsa.Workflows.Persistence\Elsa.Workflows.Persistence.csproj" />
+        <PackageReference Include="Open.Linq.AsyncExtensions" Version="1.2.0" />
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Open.Linq.AsyncExtensions" Version="1.2.0" />
+      <ProjectReference Include="..\..\common\Elsa.AspNetCore\Elsa.AspNetCore.csproj" />
+      <ProjectReference Include="..\..\common\Elsa.Persistence.Abstractions\Elsa.Persistence.Abstractions.csproj" />
+      <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
+      <ProjectReference Include="..\Elsa.Workflows.Persistence\Elsa.Workflows.Persistence.csproj" />
     </ItemGroup>
 
 </Project>

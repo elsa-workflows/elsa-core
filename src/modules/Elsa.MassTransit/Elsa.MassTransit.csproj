@@ -8,7 +8,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\common\Elsa.ServiceBus.Abstractions\Elsa.ServiceBus.Abstractions.csproj" />
-      <ProjectReference Include="..\..\workflows\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
+      <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
     </ItemGroup>
 
     <ItemGroup>
