@@ -1,0 +1,1 @@
+SQLite: `dotnet ef migrations add Initial --context SqliteLabelsDbContext -o Providers/Sqlite/Migrations`

@@ -104,6 +104,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Expressions", "src\com
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Dsl", "src\modules\Elsa.Dsl\Elsa.Dsl.csproj", "{78DAB791-8595-4612-8E9E-2248AF5B1862}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.WorkflowServer.Web", "src\apps\Elsa.WorkflowServer.Web\Elsa.WorkflowServer.Web.csproj", "{407DA432-A1A7-4293-90F5-96FB047DBD65}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Workflows.Persistence.EntityFrameworkCore.Sqlite", "src\workflows\Elsa.Workflows.Persistence.EntityFrameworkCore.Sqlite\Elsa.Workflows.Persistence.EntityFrameworkCore.Sqlite.csproj", "{59C1C62B-7D6B-4A2E-AA17-8F57E3760B60}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -258,6 +262,14 @@ Global
 		{78DAB791-8595-4612-8E9E-2248AF5B1862}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{78DAB791-8595-4612-8E9E-2248AF5B1862}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{78DAB791-8595-4612-8E9E-2248AF5B1862}.Release|Any CPU.Build.0 = Release|Any CPU
+		{407DA432-A1A7-4293-90F5-96FB047DBD65}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{407DA432-A1A7-4293-90F5-96FB047DBD65}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{407DA432-A1A7-4293-90F5-96FB047DBD65}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{407DA432-A1A7-4293-90F5-96FB047DBD65}.Release|Any CPU.Build.0 = Release|Any CPU
+		{59C1C62B-7D6B-4A2E-AA17-8F57E3760B60}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{59C1C62B-7D6B-4A2E-AA17-8F57E3760B60}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{59C1C62B-7D6B-4A2E-AA17-8F57E3760B60}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{59C1C62B-7D6B-4A2E-AA17-8F57E3760B60}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{155227F0-A33B-40AA-A4B4-06F813EB921B} = {61017E64-6D00-49CB-9E81-5002DC8F7D5F}
@@ -306,5 +318,7 @@ Global
 		{C3833EE0-FDCD-4FBE-B90E-E2696742A4CC} = {C8B1677B-0988-4119-B02A-1A106C587377}
 		{042D22D7-35B6-4A72-9FBD-25EF1842B31E} = {C6658DE0-2B2F-47F0-BB61-2CA66D435C09}
 		{78DAB791-8595-4612-8E9E-2248AF5B1862} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
+		{407DA432-A1A7-4293-90F5-96FB047DBD65} = {2CA48C3F-1B7C-454B-BEA8-58718090B4EB}
+		{59C1C62B-7D6B-4A2E-AA17-8F57E3760B60} = {C8B1677B-0988-4119-B02A-1A106C587377}
 	EndGlobalSection
 EndGlobal

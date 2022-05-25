@@ -8,10 +8,6 @@ using Elsa.JavaScript.Extensions;
 using Elsa.Jobs.Extensions;
 using Elsa.Liquid.Extensions;
 using Elsa.Quartz.Implementations;
-using Elsa.Samples.Web1.Activities;
-using Elsa.Samples.Web1.Serialization;
-using Elsa.Samples.Web1.Workflows;
-using Elsa.Scheduling.Activities;
 using Elsa.Scheduling.Extensions;
 using Elsa.WorkflowContexts.Extensions;
 using Elsa.Workflows.Api.Extensions;
@@ -20,22 +16,15 @@ using Elsa.Workflows.Core.Pipelines.WorkflowExecution.Components;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Extensions;
+using Elsa.Workflows.Management.Serialization;
 using Elsa.Workflows.Persistence.EntityFrameworkCore.Extensions;
 using Elsa.Workflows.Persistence.EntityFrameworkCore.Sqlite;
 using Elsa.Workflows.Persistence.Extensions;
 using Elsa.Workflows.Runtime.Extensions;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 
 var builder = WebApplication.CreateBuilder(args);
-
 var services = builder.Services;
 var configuration = builder.Configuration;
-
-// Run the SqlServer container from docker-compose.yml to start a SQL Server container.
-var sqlServerConnectionString = configuration.GetConnectionString("SqlServer");
 
 // Add Elsa services.
 services
@@ -48,20 +37,7 @@ services
     .ConfigureWorkflowRuntime(options =>
     {
         // Register workflows.
-        options.Workflows.Add<HelloWorldWorkflow>();
         //options.Workflows.Add<HeartbeatWorkflow>();
-        options.Workflows.Add<HttpWorkflow>();
-        options.Workflows.Add<ForkedHttpWorkflow>();
-        options.Workflows.Add<CompositeActivitiesWorkflow>();
-        options.Workflows.Add<SendMessageWorkflow>();
-        options.Workflows.Add<ReceiveMessageWorkflow>();
-        options.Workflows.Add<RunJavaScriptWorkflow>();
-        options.Workflows.Add<WorkflowContextsWorkflow>();
-        options.Workflows.Add<SubmitJobWorkflow>();
-        options.Workflows.Add<DelayWorkflow>();
-        options.Workflows.Add<OrderProcessingWorkflow>();
-        options.Workflows.Add<StartAtTriggerWorkflow>();
-        options.Workflows.Add<StartAtBookmarkWorkflow>();
     });
 
 // Add controller services. The below technique allows full control over what controllers get added from which assemblies.
@@ -74,24 +50,21 @@ services
     .AddElsaApiControllers() // Add Elsa API endpoint controllers.
     ;
 
-// Testing only: allow client app to connect from anywhere.
+services.AddHealthChecks();
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
 
 // Register activities available from the designer.
 services
     .AddActivity<Sequence>()
     .AddActivity<WriteLine>()
-    .AddActivity<WriteLines>()
     .AddActivity<ReadLine>()
     .AddActivity<If>()
     .AddActivity<HttpEndpoint>()
     .AddActivity<Flowchart>()
-    .AddActivity<Delay>()
-    .AddActivity<Timer>()
+    .AddActivity<Elsa.Scheduling.Activities.Delay>()
+    .AddActivity<Elsa.Scheduling.Activities.Timer>()
     .AddActivity<ForEach>()
     .AddActivity<Switch>()
-    //.AddActivity<SendMessage>()
-    //.AddActivity<MessageReceived>()
     .AddActivity<RunJavaScript>()
     ;
 
@@ -131,8 +104,8 @@ if (app.Environment.IsDevelopment())
 // CORS.
 app.UseCors();
 
-// Root.
-app.MapGet("/", () => "Hello World!");
+// Health checks.
+app.MapHealthChecks("/");
 
 // Map Elsa API endpoint controllers.
 app.MapElsaApiEndpoints("elsa/api");

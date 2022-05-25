@@ -3,7 +3,7 @@
 namespace Elsa.Labels.EntityFrameworkCore.Providers.Sqlite
 {
     // ReSharper disable once UnusedType.Global
-    public class SqliteDesignTimeDbElsaContextFactory : SqliteDesignTimeDbContextFactory<SqliteLabelsDbContext>
+    public class SqliteDesignTimeLabelsDbContextFactory : SqliteDesignTimeDbContextFactory<SqliteLabelsDbContext>
     {
     }
 }

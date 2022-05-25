@@ -16,6 +16,7 @@
       <ProjectReference Include="..\..\..\modules\Elsa.Quartz\Elsa.Quartz.csproj" />
       <ProjectReference Include="..\..\..\modules\Elsa.WorkflowContexts\Elsa.WorkflowContexts.csproj" />
       <ProjectReference Include="..\..\..\workflows\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />
+      <ProjectReference Include="..\..\..\workflows\Elsa.Workflows.Persistence.EntityFrameworkCore.Sqlite\Elsa.Workflows.Persistence.EntityFrameworkCore.Sqlite.csproj" />
       <ProjectReference Include="..\..\..\workflows\Elsa.Workflows.Persistence.EntityFrameworkCore\Elsa.Workflows.Persistence.EntityFrameworkCore.csproj" />
     </ItemGroup>
 
