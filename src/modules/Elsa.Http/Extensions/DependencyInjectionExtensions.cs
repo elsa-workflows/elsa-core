@@ -6,7 +6,7 @@ using Elsa.Mediator.Extensions;
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection;
 
-public static class ServiceCollectionExtensions
+public static class DependencyInjectionExtensions
 {
     public static IServiceCollection AddHttpActivityServices(this IServiceCollection services)
     {

@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.MassTransit.Extensions;
 
-public static class ServiceCollectionExtensions
+public static class DependencyInjectionExtensions
 {
     public static IServiceCollection AddMassTransitServices(this IServiceCollection services)
     {

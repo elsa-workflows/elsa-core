@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Jobs.Extensions;
 
-public static class ServiceCollectionExtensions
+public static class DependencyInjectionExtensions
 {
     public static IServiceCollection AddJobServices(this IServiceCollection services, IJobSchedulerProvider schedulerProvider, IJobQueueProvider queueProvider)
     {

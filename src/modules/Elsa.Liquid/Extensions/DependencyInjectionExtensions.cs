@@ -12,7 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Liquid.Extensions;
 
-public static class ServiceCollectionExtensions
+public static class DependencyInjectionExtensions
 {
     public static IServiceCollection AddLiquidExpressions(this IServiceCollection services)
     {

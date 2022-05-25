@@ -6,11 +6,11 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Persistence.Options;
 
-public class PersistenceOptions : ConfiguratorBase
+public class WorkflowPersistenceOptions : ConfiguratorBase
 {
     public ElsaOptionsConfigurator ElsaOptionsConfigurator { get; }
 
-    public PersistenceOptions(ElsaOptionsConfigurator elsaOptionsConfigurator)
+    public WorkflowPersistenceOptions(ElsaOptionsConfigurator elsaOptionsConfigurator)
     {
         ElsaOptionsConfigurator = elsaOptionsConfigurator;
     }
@@ -21,31 +21,31 @@ public class PersistenceOptions : ConfiguratorBase
     public Func<IServiceProvider, IWorkflowTriggerStore> WorkflowTriggerStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowTriggerStore>();
     public Func<IServiceProvider, IWorkflowExecutionLogStore> WorkflowExecutionLogStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowExecutionLogStore>();
 
-    public PersistenceOptions WithWorkflowDefinitionStore(Func<IServiceProvider, IWorkflowDefinitionStore> factory)
+    public WorkflowPersistenceOptions WithWorkflowDefinitionStore(Func<IServiceProvider, IWorkflowDefinitionStore> factory)
     {
         WorkflowDefinitionStore = factory;
         return this;
     }
 
-    public PersistenceOptions WithWorkflowInstanceStore(Func<IServiceProvider, IWorkflowInstanceStore> factory)
+    public WorkflowPersistenceOptions WithWorkflowInstanceStore(Func<IServiceProvider, IWorkflowInstanceStore> factory)
     {
         WorkflowInstanceStore = factory;
         return this;
     }
 
-    public PersistenceOptions WithWorkflowBookmarkStore(Func<IServiceProvider, IWorkflowBookmarkStore> factory)
+    public WorkflowPersistenceOptions WithWorkflowBookmarkStore(Func<IServiceProvider, IWorkflowBookmarkStore> factory)
     {
         WorkflowBookmarkStore = factory;
         return this;
     }
 
-    public PersistenceOptions WithWorkflowTriggerStore(Func<IServiceProvider, IWorkflowTriggerStore> factory)
+    public WorkflowPersistenceOptions WithWorkflowTriggerStore(Func<IServiceProvider, IWorkflowTriggerStore> factory)
     {
         WorkflowTriggerStore = factory;
         return this;
     }
     
-    public PersistenceOptions WithWorkflowExecutionLogStore(Func<IServiceProvider, IWorkflowExecutionLogStore> factory)
+    public WorkflowPersistenceOptions WithWorkflowExecutionLogStore(Func<IServiceProvider, IWorkflowExecutionLogStore> factory)
     {
         WorkflowExecutionLogStore = factory;
         return this;

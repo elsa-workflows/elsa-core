@@ -13,7 +13,7 @@ using Microsoft.Extensions.Options;
 
 namespace Elsa.AzureServiceBus.Extensions;
 
-public static class ServiceCollectionExtensions
+public static class DependencyInjectionExtensions
 {
     /// <summary>
     /// Register required services for the Azure Service Bus module. 

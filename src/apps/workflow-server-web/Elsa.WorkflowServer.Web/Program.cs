@@ -6,6 +6,9 @@ using Elsa.Http.Extensions;
 using Elsa.JavaScript.Activities;
 using Elsa.JavaScript.Extensions;
 using Elsa.Jobs.Extensions;
+using Elsa.Labels.EntityFrameworkCore.Extensions;
+using Elsa.Labels.EntityFrameworkCore.Sqlite;
+using Elsa.Labels.Extensions;
 using Elsa.Liquid.Extensions;
 using Elsa.Quartz.Implementations;
 using Elsa.Scheduling.Extensions;
@@ -28,7 +31,10 @@ var configuration = builder.Configuration;
 
 // Add Elsa services.
 services
-    .AddElsa(elsa => elsa.ConfigurePersistence(p => p.UseEntityFrameworkCoreProvider(ef => ef.UseSqlite())))
+    .AddElsa(elsa => elsa
+        .ConfigureWorkflowPersistence(p => p.UseEntityFrameworkCoreProvider(ef => ef.UseSqlite()))
+        .AddLabels(labels => labels.UseEntityFrameworkCoreProvider(ef => ef.UseSqlite()))
+    )
     //.AddProtoActorWorkflowHost()
     .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider())
     .AddSchedulingServices()

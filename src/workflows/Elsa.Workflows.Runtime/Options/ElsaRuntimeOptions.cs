@@ -12,7 +12,7 @@ using Elsa.Workflows.Runtime.Stimuli.Handlers;
 using Elsa.Workflows.Runtime.WorkflowProviders;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using ServiceCollectionExtensions = Elsa.Workflows.Core.ServiceCollectionExtensions;
+using DependencyInjectionExtensions = Elsa.Workflows.Core.DependencyInjectionExtensions;
 
 namespace Elsa.Workflows.Runtime.Options;
 
@@ -86,7 +86,7 @@ public class ElsaRuntimeOptions : ConfiguratorBase
             .AddSingleton<IWorkflowService, WorkflowService>()
 
             // Domain event handlers.
-            .AddNotificationHandlersFrom(typeof(ServiceCollectionExtensions))
+            .AddNotificationHandlersFrom(typeof(DependencyInjectionExtensions))
 
             // Channels for dispatching workflows in-memory.
             .CreateChannel<DispatchWorkflowDefinitionRequest>()

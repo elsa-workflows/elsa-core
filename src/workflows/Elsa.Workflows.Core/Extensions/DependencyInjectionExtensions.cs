@@ -6,9 +6,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Core;
 
-public static class ServiceCollectionExtensions
+public static class DependencyInjectionExtensions
 {
-    public static IServiceCollection AddElsaCore(this IServiceCollection services, Action<ElsaOptionsConfigurator>? configure = default)
+    public static IServiceCollection AddWorkflowCore(this IServiceCollection services, Action<ElsaOptionsConfigurator>? configure = default)
     {
         services.AddExpressions();
         var configurator = new ElsaOptionsConfigurator(services);

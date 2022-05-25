@@ -5,7 +5,7 @@ using IJob = Elsa.Jobs.Services.IJob;
 
 namespace Elsa.Quartz.Extensions;
 
-public static class ServiceCollectionExtensions
+public static class DependencyInjectionExtensions
 {
     public static IServiceCollectionQuartzConfigurator AddElsaJobs(this IServiceCollectionQuartzConfigurator quartz)
     {

@@ -9,18 +9,18 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Extensions;
 
-public static class ServiceCollectionExtensions
+public static class DependencyInjectionExtensions
 {
     public static IServiceCollection AddElsa(this IServiceCollection services, Action<ElsaOptionsConfigurator>? configure = default)
     {
         services.AddMediator();
 
         return services
-            .AddElsaCore(elsa =>
+            .AddWorkflowCore(elsa =>
             {
-                elsa.ConfigureElsaRuntime();
-                elsa.ConfigurePersistence();
-                elsa.AddElsaManagement();
+                elsa.ConfigureWorkflowRuntime();
+                elsa.ConfigureWorkflowPersistence();
+                elsa.AddWorkflowManagement();
                 configure?.Invoke(elsa);
             });
     }

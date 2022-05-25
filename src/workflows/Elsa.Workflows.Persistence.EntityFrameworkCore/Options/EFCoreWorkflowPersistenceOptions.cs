@@ -13,13 +13,13 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Persistence.EntityFrameworkCore.Options;
 
-public class EFCorePersistenceOptions : IConfigurator
+public class EFCoreWorkflowPersistenceOptions : IConfigurator
 {
-    public EFCorePersistenceOptions(PersistenceOptions persistenceOptions)
+    public EFCoreWorkflowPersistenceOptions(WorkflowPersistenceOptions workflowPersistenceOptions)
     {
-        PersistenceOptions = persistenceOptions;
+        WorkflowPersistenceOptions = workflowPersistenceOptions;
 
-        persistenceOptions
+        workflowPersistenceOptions
             .WithWorkflowDefinitionStore(sp => sp.GetRequiredService<EFCoreWorkflowDefinitionStore>())
             .WithWorkflowInstanceStore(sp => sp.GetRequiredService<EFCoreWorkflowInstanceStore>())
             .WithWorkflowBookmarkStore(sp => sp.GetRequiredService<EFCoreWorkflowBookmarkStore>())
@@ -28,25 +28,25 @@ public class EFCorePersistenceOptions : IConfigurator
             ;
     }
 
-    public PersistenceOptions PersistenceOptions { get; }
+    public WorkflowPersistenceOptions WorkflowPersistenceOptions { get; }
     public bool ContextPoolingIsEnabled { get; set; }
     public bool AutoRunMigrationsIsEnabled { get; set; } = true;
     public ServiceLifetime DbContextFactoryLifetime { get; set; } = ServiceLifetime.Singleton;
     public Action<IServiceProvider, DbContextOptionsBuilder> DbContextOptionsBuilderAction = (_, _) => { };
 
-    public EFCorePersistenceOptions WithContextPooling(bool enabled = true)
+    public EFCoreWorkflowPersistenceOptions WithContextPooling(bool enabled = true)
     {
         ContextPoolingIsEnabled = enabled;
         return this;
     }
 
-    public EFCorePersistenceOptions AutoRunMigrations(bool enabled = true)
+    public EFCoreWorkflowPersistenceOptions AutoRunMigrations(bool enabled = true)
     {
         AutoRunMigrationsIsEnabled = enabled;
         return this;
     }
 
-    public EFCorePersistenceOptions ConfigureDbContextOptions(Action<IServiceProvider, DbContextOptionsBuilder> configure)
+    public EFCoreWorkflowPersistenceOptions ConfigureDbContextOptions(Action<IServiceProvider, DbContextOptionsBuilder> configure)
     {
         DbContextOptionsBuilderAction = configure;
         return this;

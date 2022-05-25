@@ -16,7 +16,7 @@ using Proto.Remote.GrpcNet;
 
 namespace Elsa.ProtoActor.Extensions;
 
-public static class ServiceCollectionExtensions
+public static class DependencyInjectionExtensions
 {
     public static IServiceCollection AddProtoActorRuntime(this IServiceCollection services)
     {

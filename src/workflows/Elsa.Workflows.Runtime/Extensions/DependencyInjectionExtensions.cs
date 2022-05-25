@@ -6,9 +6,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Runtime.Extensions;
 
-public static class ServiceCollectionExtensions
+public static class DependencyInjectionExtensions
 {
-    public static ElsaOptionsConfigurator ConfigureElsaRuntime(this ElsaOptionsConfigurator configurator, Action<ElsaRuntimeOptions>? configure = default)
+    public static ElsaOptionsConfigurator ConfigureWorkflowRuntime(this ElsaOptionsConfigurator configurator, Action<ElsaRuntimeOptions>? configure = default)
     {
         configurator.Configure(configure);
         return configurator;

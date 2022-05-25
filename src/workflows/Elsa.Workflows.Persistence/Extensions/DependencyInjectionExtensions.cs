@@ -6,9 +6,9 @@ using Elsa.Workflows.Persistence.Options;
 
 namespace Elsa.Workflows.Persistence.Extensions;
 
-public static class ServiceCollectionExtensions
+public static class DependencyInjectionExtensions
 {
-    public static ElsaOptionsConfigurator ConfigurePersistence(this ElsaOptionsConfigurator configurator, Action<PersistenceOptions>? configure = default)
+    public static ElsaOptionsConfigurator ConfigureWorkflowPersistence(this ElsaOptionsConfigurator configurator, Action<WorkflowPersistenceOptions>? configure = default)
     {
         var services = configurator.Services;
 
@@ -20,7 +20,7 @@ public static class ServiceCollectionExtensions
             .AddMemoryStore<WorkflowExecutionLogRecord, MemoryWorkflowExecutionLogStore>()
             ;
 
-        configurator.Configure(() => new PersistenceOptions(configurator), configure);
+        configurator.Configure(() => new WorkflowPersistenceOptions(configurator), configure);
         return configurator;
     }
 }

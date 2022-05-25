@@ -12,9 +12,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Management.Extensions;
 
-public static class ServiceCollectionExtensions
+public static class DependencyInjectionExtensions
 {
-    public static IServiceCollection AddElsaManagement(this ElsaOptionsConfigurator configurator)
+    public static IServiceCollection AddWorkflowManagement(this ElsaOptionsConfigurator configurator)
     {
         var services = configurator.Services;
         
