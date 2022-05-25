@@ -1,5 +1,5 @@
-using Elsa.Persistence.Options;
 using Elsa.Workflows.Persistence.EntityFrameworkCore.Options;
+using Elsa.Workflows.Persistence.Options;
 
 namespace Elsa.Workflows.Persistence.EntityFrameworkCore.Extensions;
 

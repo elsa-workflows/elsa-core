@@ -1,10 +1,10 @@
 using System.Text.Json;
-using Elsa.Persistence.Entities;
 using Elsa.Persistence.EntityFrameworkCore.Common.Services;
-using Elsa.Persistence.Models;
-using Elsa.Serialization;
-using Elsa.State;
+using Elsa.Workflows.Core.Serialization;
+using Elsa.Workflows.Core.State;
+using Elsa.Workflows.Persistence.Entities;
 using Elsa.Workflows.Persistence.EntityFrameworkCore.DbContexts;
+using Elsa.Workflows.Persistence.Models;
 
 namespace Elsa.Workflows.Persistence.EntityFrameworkCore.Handlers;
 

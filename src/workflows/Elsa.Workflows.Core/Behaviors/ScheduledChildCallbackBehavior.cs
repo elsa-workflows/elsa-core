@@ -1,8 +1,8 @@
-using Elsa.Models;
-using Elsa.Services;
-using Elsa.Signals;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Core.Signals;
 
-namespace Elsa.Behaviors;
+namespace Elsa.Workflows.Core.Behaviors;
 
 /// <summary>
 /// Implements a "break" behavior that handles the <see cref="BreakSignal"/> signal.

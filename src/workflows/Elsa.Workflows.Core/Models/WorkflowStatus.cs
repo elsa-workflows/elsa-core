@@ -1,4 +1,4 @@
-namespace Elsa.Models;
+namespace Elsa.Workflows.Core.Models;
 
 /// <summary>
 /// Represents the current workflow status.

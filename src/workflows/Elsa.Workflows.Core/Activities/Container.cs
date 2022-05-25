@@ -1,10 +1,10 @@
 using System.Collections.ObjectModel;
-using Elsa.Attributes;
-using Elsa.Behaviors;
-using Elsa.Models;
-using Elsa.Services;
+using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Behaviors;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
 
-namespace Elsa.Activities;
+namespace Elsa.Workflows.Core.Activities;
 
 /// <summary>
 /// A base class for activities that control a collection of activities.

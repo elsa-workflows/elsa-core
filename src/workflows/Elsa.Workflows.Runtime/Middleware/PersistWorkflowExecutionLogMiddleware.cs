@@ -1,9 +1,9 @@
-using Elsa.Models;
-using Elsa.Persistence.Entities;
-using Elsa.Persistence.Services;
-using Elsa.Pipelines.WorkflowExecution;
-using Elsa.Pipelines.WorkflowExecution.Components;
-using Elsa.Services;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
+using Elsa.Workflows.Core.Pipelines.WorkflowExecution.Components;
+using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Persistence.Entities;
+using Elsa.Workflows.Persistence.Services;
 
 namespace Elsa.Workflows.Runtime.Middleware;
 

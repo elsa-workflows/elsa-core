@@ -1,6 +1,6 @@
-using Elsa.Services;
+using Elsa.Workflows.Core.Services;
 
-namespace Elsa.Models;
+namespace Elsa.Workflows.Core.Models;
 
 /// <summary>
 /// Represents an activity in the context of an hierarchical tree structure, providing access to its siblings, parents and children.

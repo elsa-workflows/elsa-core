@@ -1,4 +1,4 @@
-namespace Elsa.Models;
+namespace Elsa.Workflows.Core.Models;
 
 public record WorkflowPublication(bool IsLatest, bool IsPublished)
 {

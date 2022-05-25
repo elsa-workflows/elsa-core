@@ -1,4 +1,4 @@
-namespace Elsa.Services;
+namespace Elsa.Workflows.Core.Services;
 
 /// <summary>
 /// Computes a hash for a given value.

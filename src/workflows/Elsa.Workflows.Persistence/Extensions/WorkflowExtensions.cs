@@ -1,7 +1,7 @@
-using Elsa.Models;
-using Elsa.Persistence.Models;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Persistence.Models;
 
-namespace Elsa.Persistence.Extensions;
+namespace Elsa.Workflows.Persistence.Extensions;
 
 public static class WorkflowExtensions
 {

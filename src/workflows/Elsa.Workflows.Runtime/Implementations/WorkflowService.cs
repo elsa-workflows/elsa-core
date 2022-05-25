@@ -1,5 +1,5 @@
-using Elsa.Models;
-using Elsa.Persistence.Models;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Persistence.Models;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Services;
 

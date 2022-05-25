@@ -4,15 +4,15 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Models;
-using Elsa.Persistence.Entities;
-using Elsa.Persistence.Models;
-using Elsa.Persistence.Services;
 using Elsa.ProtoActor.Extensions;
 using Elsa.Runtime.Protos;
-using Elsa.Serialization;
-using Elsa.Services;
-using Elsa.State;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Serialization;
+using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Core.State;
+using Elsa.Workflows.Persistence.Entities;
+using Elsa.Workflows.Persistence.Models;
+using Elsa.Workflows.Persistence.Services;
 using Elsa.Workflows.Runtime.Services;
 using Proto;
 using Bookmark = Elsa.Runtime.Protos.Bookmark;
@@ -159,7 +159,7 @@ public class WorkflowInstanceGrain : WorkflowInstanceGrainBase
             return await _workflowRunner.RunAsync(workflow, workflowState, input, cancellationToken);
 
         var bookmark =
-            new Elsa.Models.Bookmark(
+            new Workflows.Core.Models.Bookmark(
                 bookmarkMessage.Id,
                 bookmarkMessage.Name,
                 bookmarkMessage.Hash,

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Elsa.Dsl.Services;
-using Elsa.Models;
+using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Dsl.Implementations;
 

@@ -1,4 +1,4 @@
-namespace Elsa.State;
+namespace Elsa.Workflows.Core.State;
 
 public class ActivityExecutionContextState
 {

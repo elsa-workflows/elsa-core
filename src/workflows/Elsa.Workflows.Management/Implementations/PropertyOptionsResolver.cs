@@ -1,5 +1,5 @@
 using System.Reflection;
-using Elsa.Attributes;
+using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Services;

@@ -1,6 +1,6 @@
-using Elsa.Persistence.Entities;
+using Elsa.Workflows.Persistence.Entities;
 
-namespace Elsa.Persistence.Services;
+namespace Elsa.Workflows.Persistence.Services;
 
 public interface IWorkflowExecutionLogStore
 {

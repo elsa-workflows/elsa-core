@@ -3,7 +3,6 @@ using Elsa.Labels.Services;
 using Elsa.Persistence.Common.Extensions;
 using Elsa.Persistence.Common.Implementations;
 using Elsa.Persistence.Common.Models;
-using Elsa.Persistence.Extensions;
 
 namespace Elsa.Labels.Implementations;
 

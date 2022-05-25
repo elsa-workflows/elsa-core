@@ -1,7 +1,7 @@
-using Elsa.Models;
-using Elsa.Persistence.Entities;
-using Elsa.Persistence.Models;
-using Elsa.Persistence.Services;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Persistence.Entities;
+using Elsa.Workflows.Persistence.Models;
+using Elsa.Workflows.Persistence.Services;
 using Elsa.Workflows.Runtime.Services;
 using Microsoft.Extensions.Hosting;
 using Open.Linq.AsyncExtensions;

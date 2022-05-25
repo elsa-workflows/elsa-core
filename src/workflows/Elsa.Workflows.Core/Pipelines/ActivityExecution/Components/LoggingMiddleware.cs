@@ -1,9 +1,9 @@
 using System.Diagnostics;
-using Elsa.Models;
-using Elsa.Services;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
 using Microsoft.Extensions.Logging;
 
-namespace Elsa.Pipelines.ActivityExecution.Components;
+namespace Elsa.Workflows.Core.Pipelines.ActivityExecution.Components;
 
 public class LoggingMiddleware : IActivityExecutionMiddleware
 {

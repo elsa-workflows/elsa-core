@@ -1,10 +1,10 @@
 using System.Text.Json.Serialization;
-using Elsa.Attributes;
-using Elsa.Behaviors;
-using Elsa.Models;
-using Elsa.Services;
+using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Behaviors;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
 
-namespace Elsa.Activities;
+namespace Elsa.Workflows.Core.Activities;
 
 [Activity("Elsa", "Control Flow", "Iterate over a set of values.")]
 public class ForEach : Activity

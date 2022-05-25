@@ -1,5 +1,5 @@
-using Elsa.State;
+using Elsa.Workflows.Core.State;
 
-namespace Elsa.Models;
+namespace Elsa.Workflows.Core.Models;
 
 public record InvokeWorkflowResult(WorkflowState WorkflowState, IReadOnlyCollection<Bookmark> Bookmarks);

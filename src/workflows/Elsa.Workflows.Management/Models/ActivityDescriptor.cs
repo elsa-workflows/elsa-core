@@ -1,6 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Services;
+using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Management.Models;
 

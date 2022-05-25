@@ -1,5 +1,5 @@
-using Elsa.Models;
-using Elsa.Persistence.Entities;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Persistence.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;

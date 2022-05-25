@@ -1,8 +1,8 @@
-using Elsa.Attributes;
 using Elsa.Expressions.Models;
-using Elsa.Models;
+using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Models;
 
-namespace Elsa.Activities;
+namespace Elsa.Workflows.Core.Activities;
 
 /// <summary>
 /// Represents an inline code activity that can be used to execute arbitrary .NET code from a workflow.

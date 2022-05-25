@@ -5,11 +5,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Jobs.Schedules;
 using Elsa.Jobs.Services;
-using Elsa.Persistence.Entities;
-using Elsa.Persistence.Extensions;
 using Elsa.Scheduling.Activities;
 using Elsa.Scheduling.Jobs;
 using Elsa.Scheduling.Services;
+using Elsa.Workflows.Core;
+using Elsa.Workflows.Persistence.Entities;
+using Elsa.Workflows.Persistence.Extensions;
 using Timer = Elsa.Scheduling.Activities.Timer;
 
 namespace Elsa.Scheduling.Implementations;

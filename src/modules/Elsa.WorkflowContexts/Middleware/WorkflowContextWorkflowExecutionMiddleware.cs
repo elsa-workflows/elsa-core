@@ -1,9 +1,10 @@
-using Elsa.Models;
 using Elsa.WorkflowContexts.Extensions;
-using Elsa.Pipelines.WorkflowExecution;
-using Elsa.Pipelines.WorkflowExecution.Components;
 using Elsa.WorkflowContexts.Models;
 using Elsa.WorkflowContexts.Services;
+using Elsa.Workflows.Core;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
+using Elsa.Workflows.Core.Pipelines.WorkflowExecution.Components;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.WorkflowContexts.Middleware;

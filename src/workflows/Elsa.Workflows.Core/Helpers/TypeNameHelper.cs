@@ -1,4 +1,4 @@
-namespace Elsa.Helpers;
+namespace Elsa.Workflows.Core.Helpers;
 
 public static class TypeNameHelper
 {

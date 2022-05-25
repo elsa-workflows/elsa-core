@@ -1,9 +1,9 @@
 using System.Reflection;
-using Elsa.Attributes;
-using Elsa.Models;
-using Elsa.Services;
+using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
 
-namespace Elsa.ActivityNodeResolvers;
+namespace Elsa.Workflows.Core.ActivityNodeResolvers;
 
 public class OutboundActivityNodeResolver : IActivityNodeResolver
 {

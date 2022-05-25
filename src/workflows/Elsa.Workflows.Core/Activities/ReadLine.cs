@@ -1,10 +1,10 @@
-using Elsa.Attributes;
 using Elsa.Expressions.Models;
-using Elsa.Implementations;
-using Elsa.Models;
-using Elsa.Services;
+using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Implementations;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
 
-namespace Elsa.Activities;
+namespace Elsa.Workflows.Core.Activities;
 
 [Activity("Elsa", "Console", "Read a line of text from the console.")]
 public class ReadLine : Activity<string>

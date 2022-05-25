@@ -1,10 +1,10 @@
-using Elsa.Options;
-using Elsa.Persistence.Implementations;
-using Elsa.Persistence.Services;
-using Elsa.Services;
+using Elsa.Workflows.Core.Options;
+using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Persistence.Implementations;
+using Elsa.Workflows.Persistence.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Persistence.Options;
+namespace Elsa.Workflows.Persistence.Options;
 
 public class PersistenceOptions : ConfiguratorBase
 {

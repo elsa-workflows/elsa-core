@@ -1,8 +1,8 @@
 using System.Reflection;
-using Elsa.Models;
-using Elsa.Services;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
 
-namespace Elsa;
+namespace Elsa.Workflows.Core;
 
 public static class ActivityExtensions
 {

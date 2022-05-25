@@ -1,7 +1,7 @@
 using System.ComponentModel;
-using Elsa.Persistence.TypeConverters;
+using Elsa.Workflows.Persistence.TypeConverters;
 
-namespace Elsa.Persistence.Models;
+namespace Elsa.Workflows.Persistence.Models;
 
 [TypeConverter(typeof(VersionOptionsTypeConverter))]
 public struct VersionOptions

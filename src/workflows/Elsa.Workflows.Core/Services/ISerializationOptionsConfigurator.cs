@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace Elsa.Services;
+namespace Elsa.Workflows.Core.Services;
 
 public interface ISerializationOptionsConfigurator
 {

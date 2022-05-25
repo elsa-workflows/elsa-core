@@ -1,10 +1,10 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.AspNetCore;
-using Elsa.Persistence.Models;
-using Elsa.Persistence.Services;
-using Elsa.Serialization;
 using Elsa.Workflows.Api.Models;
+using Elsa.Workflows.Core.Serialization;
+using Elsa.Workflows.Persistence.Models;
+using Elsa.Workflows.Persistence.Services;
 using Elsa.Workflows.Runtime.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;

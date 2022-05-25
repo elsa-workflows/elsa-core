@@ -1,9 +1,9 @@
 using System.Collections.ObjectModel;
 using Elsa.Expressions.Models;
-using Elsa.Services;
+using Elsa.Workflows.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Models;
+namespace Elsa.Workflows.Core.Models;
 
 public record ActivityCompletionCallbackEntry(ActivityExecutionContext Owner, IActivity Child, ActivityCompletionCallback CompletionCallback);
 

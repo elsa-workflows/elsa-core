@@ -1,4 +1,4 @@
-using Elsa.Models;
+using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Dsl.Services;
 

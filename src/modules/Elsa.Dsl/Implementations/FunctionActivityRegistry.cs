@@ -5,9 +5,8 @@ using System.Reflection;
 using Elsa.Dsl.Interpreters;
 using Elsa.Dsl.Services;
 using Elsa.Expressions.Helpers;
-using Elsa.Helpers;
-using Elsa.Models;
-using Elsa.Services;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Dsl.Implementations;
 

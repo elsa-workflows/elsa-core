@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace Elsa;
+namespace Elsa.Workflows.Core;
 
 public static class ObjectExtensions
 {

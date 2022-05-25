@@ -1,12 +1,10 @@
 using Elsa.Labels.Entities;
 using Elsa.Labels.Implementations;
 using Elsa.Labels.Options;
-using Elsa.Options;
 using Elsa.Persistence.Common.Entities;
 using Elsa.Persistence.Common.Extensions;
 using Elsa.Persistence.Common.Implementations;
-using Elsa.Persistence.Entities;
-using Elsa.Persistence.Options;
+using Elsa.Workflows.Core.Options;
 using Microsoft.Extensions.DependencyInjection;
 
 #pragma warning disable CS8631

@@ -1,6 +1,6 @@
-using Elsa.Models;
+using Elsa.Workflows.Core.Models;
 
-namespace Elsa.State;
+namespace Elsa.Workflows.Core.State;
 
 /// <summary>
 /// Represents the current state of a workflow. 

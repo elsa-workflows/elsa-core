@@ -2,9 +2,8 @@
 using System.Linq;
 using System.Reflection;
 using Elsa.Expressions.Helpers;
-using Elsa.Helpers;
-using Elsa.Models;
-using Elsa.Services;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Dsl.Interpreters;
 

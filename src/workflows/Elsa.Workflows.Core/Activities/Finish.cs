@@ -1,8 +1,8 @@
-using Elsa.Attributes;
-using Elsa.Behaviors;
-using Elsa.Models;
+using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Behaviors;
+using Elsa.Workflows.Core.Models;
 
-namespace Elsa.Activities;
+namespace Elsa.Workflows.Core.Activities;
 
 [Activity("Elsa", "Control Flow", "Mark the workflow as Finished")]
 public class Finish : Activity

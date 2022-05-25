@@ -1,7 +1,7 @@
 using System.Text.Json;
-using Elsa.Services;
+using Elsa.Workflows.Core.Services;
 
-namespace Elsa.Implementations;
+namespace Elsa.Workflows.Core.Implementations;
 
 public class BookmarkDataSerializer : IBookmarkDataSerializer
 {

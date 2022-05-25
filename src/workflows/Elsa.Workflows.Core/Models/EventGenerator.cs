@@ -1,6 +1,6 @@
-using Elsa.Services;
+using Elsa.Workflows.Core.Services;
 
-namespace Elsa.Models;
+namespace Elsa.Workflows.Core.Models;
 
 public abstract class EventGenerator : Trigger, IEventGenerator
 {

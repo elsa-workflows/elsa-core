@@ -1,8 +1,8 @@
-using Elsa.Activities;
 using Elsa.Expressions.Models;
-using Elsa.Services;
+using Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Core.Services;
 
-namespace Elsa.Models;
+namespace Elsa.Workflows.Core.Models;
 
 public class Workflow : Composite, ICloneable
 {

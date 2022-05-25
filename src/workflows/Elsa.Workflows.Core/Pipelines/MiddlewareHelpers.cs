@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace Elsa.Pipelines;
+namespace Elsa.Workflows.Core.Pipelines;
 
 public static class MiddlewareHelpers
 {

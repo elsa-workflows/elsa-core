@@ -1,9 +1,8 @@
 using Elsa.Expressions.Models;
 using Elsa.Expressions.Services;
-using Elsa.Models;
-using Elsa.Services;
+using Elsa.Workflows.Core.Models;
 
-namespace Elsa.Expressions;
+namespace Elsa.Workflows.Core.Expressions;
 
 public class OutputExpression : IExpression
 {

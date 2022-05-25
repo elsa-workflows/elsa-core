@@ -1,11 +1,11 @@
 using Elsa.Persistence.Common.Entities;
 using Elsa.Persistence.Common.Models;
-using Elsa.Persistence.Entities;
 using Elsa.Persistence.EntityFrameworkCore.Common.Extensions;
 using Elsa.Persistence.EntityFrameworkCore.Common.Services;
-using Elsa.Persistence.Models;
-using Elsa.Persistence.Services;
+using Elsa.Workflows.Persistence.Entities;
 using Elsa.Workflows.Persistence.EntityFrameworkCore.DbContexts;
+using Elsa.Workflows.Persistence.Models;
+using Elsa.Workflows.Persistence.Services;
 
 namespace Elsa.Workflows.Persistence.EntityFrameworkCore.Implementations;
 

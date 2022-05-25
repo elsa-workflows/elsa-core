@@ -1,7 +1,8 @@
 using System.Threading.Tasks;
-using Elsa.Activities;
-using Elsa.Attributes;
-using Elsa.Models;
+using Elsa.Workflows.Core;
+using Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Samples.Web1.Activities;
 

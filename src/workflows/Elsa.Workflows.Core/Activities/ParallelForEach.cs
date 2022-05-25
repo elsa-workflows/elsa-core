@@ -1,8 +1,8 @@
-using Elsa.Attributes;
-using Elsa.Models;
-using Elsa.Services;
+using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
 
-namespace Elsa.Activities;
+namespace Elsa.Workflows.Core.Activities;
 
 [Activity("Elsa", "Control Flow", "Schedule an activity for each item in parallel.")]
 public class ParallelForEach<T> : Activity

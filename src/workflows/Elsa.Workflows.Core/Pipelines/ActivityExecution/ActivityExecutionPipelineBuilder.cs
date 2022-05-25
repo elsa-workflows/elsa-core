@@ -1,6 +1,6 @@
-using Elsa.Services;
+using Elsa.Workflows.Core.Services;
 
-namespace Elsa.Pipelines.ActivityExecution;
+namespace Elsa.Workflows.Core.Pipelines.ActivityExecution;
 
 public class ActivityExecutionPipelineBuilder : IActivityExecutionBuilder
 {

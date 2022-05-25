@@ -1,4 +1,4 @@
-using Elsa.Persistence.Entities;
+using Elsa.Workflows.Persistence.Entities;
 
 namespace Elsa.Workflows.Runtime.Services;
 

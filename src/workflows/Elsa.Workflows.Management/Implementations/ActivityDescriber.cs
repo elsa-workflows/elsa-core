@@ -1,11 +1,11 @@
 using System.Collections;
 using System.ComponentModel;
 using System.Reflection;
-using Elsa.Attributes;
-using Elsa.Helpers;
+using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Helpers;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Extensions;
-using Elsa.Models;
-using Elsa.Services;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Services;
 using Humanizer;

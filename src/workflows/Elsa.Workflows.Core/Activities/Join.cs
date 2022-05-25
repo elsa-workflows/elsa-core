@@ -1,7 +1,7 @@
-using Elsa.Attributes;
-using Elsa.Models;
+using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Models;
 
-namespace Elsa.Activities;
+namespace Elsa.Workflows.Core.Activities;
 
 public enum JoinMode
 {

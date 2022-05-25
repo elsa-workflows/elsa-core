@@ -1,15 +1,15 @@
 ﻿using System;
 using System.IO;
 using System.Reflection;
-using Elsa.Activities;
 using Elsa.Dsl.Extensions;
 using Elsa.Dsl.Services;
 using Elsa.Extensions;
 using Elsa.Http;
 using Elsa.JavaScript.Extensions;
-using Elsa.Models;
 using Elsa.Scheduling.Activities;
-using Elsa.Services;
+using Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 

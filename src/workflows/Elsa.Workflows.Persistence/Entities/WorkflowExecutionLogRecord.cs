@@ -1,6 +1,6 @@
 using Elsa.Persistence.Common.Entities;
 
-namespace Elsa.Persistence.Entities
+namespace Elsa.Workflows.Persistence.Entities
 {
     public class WorkflowExecutionLogRecord : Entity
     {

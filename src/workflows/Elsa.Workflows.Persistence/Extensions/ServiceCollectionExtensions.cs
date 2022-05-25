@@ -1,11 +1,10 @@
-using System.Reflection.Emit;
-using Elsa.Options;
 using Elsa.Persistence.Common.Extensions;
-using Elsa.Persistence.Entities;
-using Elsa.Persistence.Implementations;
-using Elsa.Persistence.Options;
+using Elsa.Workflows.Core.Options;
+using Elsa.Workflows.Persistence.Entities;
+using Elsa.Workflows.Persistence.Implementations;
+using Elsa.Workflows.Persistence.Options;
 
-namespace Elsa.Persistence.Extensions;
+namespace Elsa.Workflows.Persistence.Extensions;
 
 public static class ServiceCollectionExtensions
 {

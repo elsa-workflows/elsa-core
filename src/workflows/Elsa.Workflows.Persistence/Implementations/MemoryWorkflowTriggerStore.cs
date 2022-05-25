@@ -1,8 +1,8 @@
 using Elsa.Persistence.Common.Implementations;
-using Elsa.Persistence.Entities;
-using Elsa.Persistence.Services;
+using Elsa.Workflows.Persistence.Entities;
+using Elsa.Workflows.Persistence.Services;
 
-namespace Elsa.Persistence.Implementations;
+namespace Elsa.Workflows.Persistence.Implementations;
 
 public class MemoryWorkflowTriggerStore : IWorkflowTriggerStore
 {

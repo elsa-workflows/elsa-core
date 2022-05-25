@@ -1,6 +1,6 @@
-using Elsa.Services;
+using Elsa.Workflows.Core.Services;
 
-namespace Elsa.Serialization;
+namespace Elsa.Workflows.Core.Serialization;
 
 public class WellKnownTypeRegistry : IWellKnownTypeRegistry
 {

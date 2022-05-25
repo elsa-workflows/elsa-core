@@ -1,8 +1,8 @@
-using Elsa.Implementations;
 using Elsa.Mediator.Extensions;
-using Elsa.Options;
+using Elsa.Workflows.Core.Implementations;
+using Elsa.Workflows.Core.Options;
+using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Runtime.Extensions;
-using Elsa.Services;
 using Elsa.Workflows.Runtime.HostedServices;
 using Elsa.Workflows.Runtime.Implementations;
 using Elsa.Workflows.Runtime.Interpreters;
@@ -12,6 +12,7 @@ using Elsa.Workflows.Runtime.Stimuli.Handlers;
 using Elsa.Workflows.Runtime.WorkflowProviders;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using ServiceCollectionExtensions = Elsa.Workflows.Core.ServiceCollectionExtensions;
 
 namespace Elsa.Workflows.Runtime.Options;
 

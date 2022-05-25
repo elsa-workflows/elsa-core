@@ -1,6 +1,6 @@
-using Elsa.Services;
+using Elsa.Workflows.Core.Services;
 
-namespace Elsa.Models;
+namespace Elsa.Workflows.Core.Models;
 
 /// <summary>
 /// A dynamically provided activity with custom properties.

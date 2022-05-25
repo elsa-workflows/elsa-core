@@ -1,9 +1,10 @@
 using System.Text.Json.Serialization;
-using Elsa.Attributes;
 using Elsa.AzureServiceBus.Models;
 using Elsa.Expressions.Models;
 using Elsa.Formatting.Services;
-using Elsa.Models;
+using Elsa.Workflows.Core;
+using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Models;
 
 namespace Elsa.AzureServiceBus.Activities;
 

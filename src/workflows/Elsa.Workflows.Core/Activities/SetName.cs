@@ -1,8 +1,8 @@
 ﻿using System.Text.Json.Serialization;
-using Elsa.Attributes;
-using Elsa.Models;
+using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Models;
 
-namespace Elsa.Activities;
+namespace Elsa.Workflows.Core.Activities;
 
 /// <summary>
 /// Sets a transient property on the workflow execution context the specified name value.

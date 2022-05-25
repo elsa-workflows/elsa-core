@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Elsa.Services;
+using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Samples.Web1.Serialization;
 

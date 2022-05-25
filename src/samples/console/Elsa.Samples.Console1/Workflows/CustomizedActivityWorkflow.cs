@@ -1,5 +1,5 @@
-using Elsa.Activities;
-using Elsa.Services;
+using Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Samples.Console1.Workflows;
 

@@ -1,11 +1,11 @@
 using System.Linq.Expressions;
-using Elsa.Models;
-using Elsa.Persistence.Entities;
-using Elsa.Persistence.Models;
-using Elsa.Services;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Persistence.Entities;
+using Elsa.Workflows.Persistence.Models;
 using LinqKit;
 
-namespace Elsa.Persistence.Extensions;
+namespace Elsa.Workflows.Persistence.Extensions;
 
 public static class WorkflowDefinitionExtensions
 {

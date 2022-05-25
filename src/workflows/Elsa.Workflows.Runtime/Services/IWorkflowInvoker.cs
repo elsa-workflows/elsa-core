@@ -1,6 +1,6 @@
-using Elsa.Models;
-using Elsa.Persistence.Entities;
-using Elsa.State;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.State;
+using Elsa.Workflows.Persistence.Entities;
 using Elsa.Workflows.Runtime.Models;
 
 namespace Elsa.Workflows.Runtime.Services;

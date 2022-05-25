@@ -3,7 +3,7 @@ using Elsa.Liquid.Helpers;
 using Elsa.Liquid.Notifications;
 using Elsa.Liquid.Options;
 using Elsa.Mediator.Services;
-using Elsa.Models;
+using Elsa.Workflows.Core.Models;
 using Fluid;
 using Fluid.Values;
 using Microsoft.Extensions.Configuration;

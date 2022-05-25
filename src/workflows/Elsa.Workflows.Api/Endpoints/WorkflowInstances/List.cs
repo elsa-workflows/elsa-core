@@ -1,11 +1,11 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.AspNetCore;
-using Elsa.Models;
 using Elsa.Persistence.Common.Entities;
 using Elsa.Persistence.Common.Models;
-using Elsa.Persistence.Services;
-using Elsa.Serialization;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Serialization;
+using Elsa.Workflows.Persistence.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances;

@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Elsa.Runtime.Protos;
-using Elsa.Services;
+using Elsa.Workflows.Core.Services;
 using Proto;
 
 namespace Elsa.ProtoActor.Grains;

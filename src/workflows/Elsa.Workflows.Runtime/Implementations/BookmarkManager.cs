@@ -1,6 +1,6 @@
 using Elsa.Mediator.Services;
-using Elsa.Persistence.Entities;
-using Elsa.Persistence.Services;
+using Elsa.Workflows.Persistence.Entities;
+using Elsa.Workflows.Persistence.Services;
 using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Services;
 

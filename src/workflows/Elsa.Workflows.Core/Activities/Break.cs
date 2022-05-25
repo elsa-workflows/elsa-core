@@ -1,8 +1,8 @@
-using Elsa.Attributes;
-using Elsa.Models;
-using Elsa.Signals;
+using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Signals;
 
-namespace Elsa.Activities;
+namespace Elsa.Workflows.Core.Activities;
 
 [Activity("Elsa", "Control Flow", "Break out of a loop")]
 public class Break : Activity

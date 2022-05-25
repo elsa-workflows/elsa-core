@@ -1,9 +1,9 @@
-using Elsa.Models;
-using Elsa.Services;
-using Elsa.State;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Core.State;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Implementations;
+namespace Elsa.Workflows.Core.Implementations;
 
 public class WorkflowRunner : IWorkflowRunner
 {

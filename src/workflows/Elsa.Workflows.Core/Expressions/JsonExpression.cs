@@ -1,10 +1,9 @@
 using System.Text.Json;
+using Elsa.Expressions;
 using Elsa.Expressions.Models;
 using Elsa.Expressions.Services;
-using Elsa.Models;
-using Elsa.Services;
 
-namespace Elsa.Expressions;
+namespace Elsa.Workflows.Core.Expressions;
 
 public class JsonExpression : IExpression
 {

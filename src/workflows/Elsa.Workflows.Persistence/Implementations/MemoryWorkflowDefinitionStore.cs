@@ -1,12 +1,12 @@
 using Elsa.Persistence.Common.Extensions;
 using Elsa.Persistence.Common.Implementations;
 using Elsa.Persistence.Common.Models;
-using Elsa.Persistence.Entities;
-using Elsa.Persistence.Extensions;
-using Elsa.Persistence.Models;
-using Elsa.Persistence.Services;
+using Elsa.Workflows.Persistence.Entities;
+using Elsa.Workflows.Persistence.Extensions;
+using Elsa.Workflows.Persistence.Models;
+using Elsa.Workflows.Persistence.Services;
 
-namespace Elsa.Persistence.Implementations;
+namespace Elsa.Workflows.Persistence.Implementations;
 
 public class MemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
 {

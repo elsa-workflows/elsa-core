@@ -1,11 +1,11 @@
 using System.Text.Json.Serialization;
-using Elsa.Attributes;
-using Elsa.Behaviors;
 using Elsa.Expressions.Models;
-using Elsa.Models;
-using Elsa.Services;
+using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Behaviors;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
 
-namespace Elsa.Activities;
+namespace Elsa.Workflows.Core.Activities;
 
 [Activity("Elsa", "Primitives", "Execute an activity while a given condition evaluates to true.")]
 public class While : Activity

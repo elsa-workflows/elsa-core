@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
-using Elsa.Attributes;
-using Elsa.Models;
+using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Models;
 using IJavaScriptEvaluator = Elsa.JavaScript.Services.IJavaScriptEvaluator;
 
 namespace Elsa.JavaScript.Activities;

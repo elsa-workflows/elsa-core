@@ -1,4 +1,4 @@
-using Elsa.Services;
+using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Models;
 
 namespace Elsa.Workflows.Management.Services;

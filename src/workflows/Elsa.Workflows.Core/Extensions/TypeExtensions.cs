@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using System.Reflection;
 
-namespace Elsa;
+namespace Elsa.Workflows.Core;
 
 public static class TypeExtensions
 {

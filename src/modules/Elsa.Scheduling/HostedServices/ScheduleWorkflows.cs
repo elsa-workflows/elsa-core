@@ -2,10 +2,10 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Helpers;
-using Elsa.Persistence.Services;
 using Elsa.Scheduling.Activities;
 using Elsa.Scheduling.Services;
+using Elsa.Workflows.Core.Helpers;
+using Elsa.Workflows.Persistence.Services;
 using Microsoft.Extensions.Hosting;
 
 namespace Elsa.Scheduling.HostedServices;

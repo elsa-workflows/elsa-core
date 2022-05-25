@@ -1,5 +1,5 @@
-using Elsa.Models;
+using Elsa.Workflows.Core.Models;
 
-namespace Elsa.Pipelines.WorkflowExecution;
+namespace Elsa.Workflows.Core.Pipelines.WorkflowExecution;
 
 public delegate ValueTask WorkflowMiddlewareDelegate(WorkflowExecutionContext context);

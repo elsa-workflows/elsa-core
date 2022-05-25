@@ -1,8 +1,8 @@
-using Elsa.Persistence.Entities;
-using Elsa.Persistence.Models;
 using Elsa.Persistence.Common.Models;
+using Elsa.Workflows.Persistence.Entities;
+using Elsa.Workflows.Persistence.Models;
 
-namespace Elsa.Persistence.Services;
+namespace Elsa.Workflows.Persistence.Services;
 
 public interface IWorkflowDefinitionStore
 {

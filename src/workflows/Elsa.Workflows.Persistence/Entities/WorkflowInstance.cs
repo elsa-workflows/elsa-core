@@ -1,9 +1,9 @@
-using Elsa.Models;
-using Elsa.Persistence.Models;
-using Elsa.State;
 using Elsa.Persistence.Common.Entities;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.State;
+using Elsa.Workflows.Persistence.Models;
 
-namespace Elsa.Persistence.Entities;
+namespace Elsa.Workflows.Persistence.Entities;
 
 public class WorkflowInstance : Entity
 {

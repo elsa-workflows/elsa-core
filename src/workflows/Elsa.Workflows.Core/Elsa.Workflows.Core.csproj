@@ -4,7 +4,6 @@
         <TargetFramework>net6.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
-        <RootNamespace>Elsa</RootNamespace>
         <LangVersion>latest</LangVersion>
     </PropertyGroup>
 
@@ -21,9 +20,5 @@
     <ItemGroup>
       <ProjectReference Include="..\..\common\Elsa.Expressions\Elsa.Expressions.csproj" />
     </ItemGroup>
-
-    <!--    <ItemGroup>-->
-    <!--      <ProjectReference Include="..\..\..\..\..\Dahomey.Json\src\Dahomey.Json\Dahomey.Json.csproj" />-->
-    <!--    </ItemGroup>-->
 
 </Project>

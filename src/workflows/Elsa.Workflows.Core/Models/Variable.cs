@@ -1,8 +1,7 @@
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
-using Elsa.Helpers;
 
-namespace Elsa.Models;
+namespace Elsa.Workflows.Core.Models;
 
 public class Variable : RegisterLocationReference
 {

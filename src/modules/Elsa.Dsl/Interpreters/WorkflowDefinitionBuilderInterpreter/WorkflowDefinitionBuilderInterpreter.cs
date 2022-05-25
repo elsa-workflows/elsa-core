@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using Antlr4.Runtime.Tree;
-using Elsa.Builders;
 using Elsa.Dsl.Models;
 using Elsa.Dsl.Services;
 using Elsa.Expressions.Services;
-using Elsa.Services;
+using Elsa.Workflows.Core.Builders;
+using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Dsl.Interpreters;
 

@@ -1,9 +1,9 @@
 using Elsa.Expressions;
 using Elsa.Expressions.Models;
 using Elsa.Expressions.Services;
-using Elsa.Services;
+using Elsa.Workflows.Core.Expressions;
 
-namespace Elsa.Models;
+namespace Elsa.Workflows.Core.Models;
 
 public abstract class Input : Argument
 {

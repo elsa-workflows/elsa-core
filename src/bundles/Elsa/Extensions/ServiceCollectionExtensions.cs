@@ -1,6 +1,7 @@
 using System;
 using Elsa.Mediator.Extensions;
-using Elsa.Options;
+using Elsa.Workflows.Core;
+using Elsa.Workflows.Core.Options;
 using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Runtime.Extensions;
 using Microsoft.Extensions.DependencyInjection;

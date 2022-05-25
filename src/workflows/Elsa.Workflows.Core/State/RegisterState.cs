@@ -1,9 +1,9 @@
 using Elsa.Expressions.Models;
-using Elsa.Models;
+
 // ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
 // Required for JSON serialization configured with reference handling.
 
-namespace Elsa.State;
+namespace Elsa.Workflows.Core.State;
 
 public class RegisterState
 {

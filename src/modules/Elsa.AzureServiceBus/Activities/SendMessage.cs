@@ -1,8 +1,8 @@
 using Azure.Messaging.ServiceBus;
-using Elsa.Attributes;
 using Elsa.Formatting.Formatters;
 using Elsa.Formatting.Services;
-using Elsa.Models;
+using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Models;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.AzureServiceBus.Activities;

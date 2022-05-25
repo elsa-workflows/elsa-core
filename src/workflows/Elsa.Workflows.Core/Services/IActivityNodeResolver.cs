@@ -1,4 +1,4 @@
-namespace Elsa.Services;
+namespace Elsa.Workflows.Core.Services;
 
 /// <summary>
 /// A node resolver inspects a given activity and returns its outbound "ports". A port is an activity that this activity connects to.

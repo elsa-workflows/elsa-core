@@ -1,7 +1,7 @@
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace Elsa
+namespace Elsa.Workflows.Core
 {
     public static class PropertyAccessorExtensions
     {

@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace Elsa;
+namespace Elsa.Workflows.Core;
 
 public static class DictionaryExtensions
 {

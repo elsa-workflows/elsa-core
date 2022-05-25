@@ -1,7 +1,7 @@
-﻿using Elsa.Activities;
-using Elsa.JavaScript.Expressions;
-using Elsa.Models;
-using Elsa.Services;
+﻿using Elsa.JavaScript.Expressions;
+using Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Dsl.Interpreters;
 

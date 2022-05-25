@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
-using Elsa.Models;
-using Elsa.Services;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Dsl.Interpreters;
 

@@ -1,6 +1,6 @@
-using Elsa.Models;
+using Elsa.Workflows.Core.Models;
 
-namespace Elsa.Behaviors;
+namespace Elsa.Workflows.Core.Behaviors;
 
 /// <summary>
 /// Automatically completes the currently executing activity.

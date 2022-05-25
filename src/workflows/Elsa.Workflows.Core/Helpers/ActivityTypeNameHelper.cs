@@ -1,7 +1,7 @@
 using System.Reflection;
-using Elsa.Attributes;
+using Elsa.Workflows.Core.Attributes;
 
-namespace Elsa.Helpers;
+namespace Elsa.Workflows.Core.Helpers;
 
 public static class ActivityTypeNameHelper
 {

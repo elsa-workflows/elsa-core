@@ -1,8 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Services;
+using Elsa.Workflows.Core.Services;
 
-namespace Elsa.Serialization.Converters;
+namespace Elsa.Workflows.Core.Serialization.Converters;
 
 /// <summary>
 /// Serializes <see cref="Type"/> objects to a simple alias representing said type.

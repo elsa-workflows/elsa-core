@@ -1,9 +1,9 @@
 using System.ComponentModel;
-using Elsa.Attributes;
 using Elsa.Expressions.Models;
-using Elsa.Models;
+using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Models;
 
-namespace Elsa.Activities;
+namespace Elsa.Workflows.Core.Activities;
 
 [Browsable(false)]
 [Activity("Elsa", "Primitives", "Set a workflow variable to a given value.")]

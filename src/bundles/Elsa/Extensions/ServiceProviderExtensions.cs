@@ -1,5 +1,5 @@
 using System;
-using Elsa.Services;
+using Elsa.Workflows.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Extensions;

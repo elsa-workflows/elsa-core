@@ -1,7 +1,7 @@
 using Elsa.Expressions.Models;
 using Elsa.Expressions.Services;
 using Elsa.JavaScript.Expressions;
-using Elsa.Services;
+using Elsa.Workflows.Core.Services;
 
 namespace Elsa.JavaScript.Providers;
 

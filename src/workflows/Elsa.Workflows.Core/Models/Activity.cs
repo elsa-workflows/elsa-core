@@ -1,11 +1,11 @@
 using System.Linq.Expressions;
 using System.Text.Json.Serialization;
-using Elsa.Behaviors;
 using Elsa.Expressions.Models;
-using Elsa.Helpers;
-using Elsa.Services;
+using Elsa.Workflows.Core.Behaviors;
+using Elsa.Workflows.Core.Helpers;
+using Elsa.Workflows.Core.Services;
 
-namespace Elsa.Models;
+namespace Elsa.Workflows.Core.Models;
 
 public abstract class Activity : IActivity, ISignalHandler
 {

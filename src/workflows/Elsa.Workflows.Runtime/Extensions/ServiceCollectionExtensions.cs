@@ -1,5 +1,5 @@
 using System.Threading.Channels;
-using Elsa.Options;
+using Elsa.Workflows.Core.Options;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Services;
 using Microsoft.Extensions.DependencyInjection;

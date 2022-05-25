@@ -1,4 +1,3 @@
-using Elsa.Activities;
 using Elsa.Extensions;
 using Elsa.Hangfire.Implementations;
 using Elsa.Http;
@@ -11,9 +10,10 @@ using Elsa.ProtoActor.Extensions;
 using Elsa.Quartz.Implementations;
 using Elsa.Scheduling.Activities;
 using Elsa.Scheduling.Extensions;
-using Elsa.Serialization;
-using Elsa.Services;
 using Elsa.Workflows.Api.Extensions;
+using Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Core.Serialization;
+using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Serialization;
 

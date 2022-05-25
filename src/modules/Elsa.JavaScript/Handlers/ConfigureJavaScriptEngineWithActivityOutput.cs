@@ -1,6 +1,7 @@
 using Elsa.JavaScript.Notifications;
 using Elsa.Mediator.Services;
-using Elsa.Services;
+using Elsa.Workflows.Core;
+using Elsa.Workflows.Core.Services;
 
 namespace Elsa.JavaScript.Handlers;
 

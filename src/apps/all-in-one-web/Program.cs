@@ -1,4 +1,3 @@
-using Elsa.Activities;
 using Elsa.Workflows.Api.Extensions;
 using Elsa.AspNetCore;
 using Elsa.Extensions;
@@ -12,8 +11,9 @@ using Elsa.Quartz.Implementations;
 using Elsa.Scheduling.Activities;
 using Elsa.Scheduling.Extensions;
 using Elsa.Liquid.Extensions;
-using Elsa.Serialization;
-using Elsa.Services;
+using Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Core.Serialization;
+using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Serialization;
 

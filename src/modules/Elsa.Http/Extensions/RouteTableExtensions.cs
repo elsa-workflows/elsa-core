@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
-using Elsa.Helpers;
 using Elsa.Http.Models;
 using Elsa.Http.Services;
-using Elsa.Persistence.Entities;
+using Elsa.Workflows.Core.Helpers;
+using Elsa.Workflows.Persistence.Entities;
 
 namespace Elsa.Http.Extensions;
 

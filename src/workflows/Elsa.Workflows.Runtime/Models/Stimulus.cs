@@ -1,3 +1,4 @@
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Runtime.Stimuli;
 
 namespace Elsa.Workflows.Runtime.Models;

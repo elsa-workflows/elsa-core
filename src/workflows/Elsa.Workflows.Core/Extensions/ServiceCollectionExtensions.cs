@@ -1,11 +1,10 @@
 using Elsa.Expressions;
 using Elsa.Expressions.Extensions;
-using Elsa.Expressions.Services;
-using Elsa.Options;
-using Elsa.Services;
+using Elsa.Workflows.Core.Expressions;
+using Elsa.Workflows.Core.Options;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa;
+namespace Elsa.Workflows.Core;
 
 public static class ServiceCollectionExtensions
 {

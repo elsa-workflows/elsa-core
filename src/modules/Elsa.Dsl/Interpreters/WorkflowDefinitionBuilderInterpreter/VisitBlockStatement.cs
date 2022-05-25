@@ -1,6 +1,6 @@
 ﻿using System.Linq;
-using Elsa.Activities;
-using Elsa.Services;
+using Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Dsl.Interpreters;
 

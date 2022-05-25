@@ -1,4 +1,4 @@
-namespace Elsa.Attributes;
+namespace Elsa.Workflows.Core.Attributes;
 
 /// <summary>
 /// Specifies various metadata about an activity's input property.

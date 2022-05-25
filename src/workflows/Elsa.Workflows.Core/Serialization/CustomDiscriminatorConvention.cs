@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 using Dahomey.Json;
 using Dahomey.Json.Serialization.Conventions;
 
-namespace Elsa.Serialization;
+namespace Elsa.Workflows.Core.Serialization;
 
 public class CustomDiscriminatorConvention : IDiscriminatorConvention
 {

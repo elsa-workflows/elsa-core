@@ -1,7 +1,7 @@
-using Elsa.Models;
-using Elsa.State;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.State;
 
-namespace Elsa.Services;
+namespace Elsa.Workflows.Core.Services;
 
 public interface IWorkflowStateSerializer
 {

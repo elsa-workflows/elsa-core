@@ -1,10 +1,10 @@
 using System.ComponentModel;
-using Elsa.Attributes;
-using Elsa.Models;
-using Elsa.Services;
-using Elsa.Signals;
+using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Core.Signals;
 
-namespace Elsa.Activities;
+namespace Elsa.Workflows.Core.Activities;
 
 [Category("Workflows")]
 [Activity("Elsa", "Workflows", "Execute a set of activities in sequence.")]

@@ -1,5 +1,6 @@
-using Elsa.Services;
 using Elsa.WorkflowContexts.Models;
+using Elsa.Workflows.Core;
+using Elsa.Workflows.Core.Services;
 
 namespace Elsa.WorkflowContexts.Extensions;
 

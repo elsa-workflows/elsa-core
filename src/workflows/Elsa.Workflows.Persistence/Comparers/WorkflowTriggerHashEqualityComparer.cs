@@ -1,6 +1,6 @@
-using Elsa.Persistence.Entities;
+using Elsa.Workflows.Persistence.Entities;
 
-namespace Elsa.Persistence.Comparers;
+namespace Elsa.Workflows.Persistence.Comparers;
 
 public class WorkflowTriggerHashEqualityComparer : IEqualityComparer<WorkflowTrigger>
 {

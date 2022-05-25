@@ -3,8 +3,7 @@ using Elsa.Dsl.Interpreters;
 using Elsa.Dsl.Models;
 using Elsa.Dsl.Services;
 using Elsa.Expressions.Services;
-using Elsa.Models;
-using Elsa.Services;
+using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Dsl.Implementations;
 

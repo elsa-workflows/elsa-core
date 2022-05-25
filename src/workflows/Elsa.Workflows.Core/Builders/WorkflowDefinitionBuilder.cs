@@ -1,8 +1,8 @@
-using Elsa.Activities;
-using Elsa.Models;
-using Elsa.Services;
+using Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
 
-namespace Elsa.Builders;
+namespace Elsa.Workflows.Core.Builders;
 
 public class WorkflowDefinitionBuilder : IWorkflowDefinitionBuilder
 {

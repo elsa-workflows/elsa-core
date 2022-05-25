@@ -1,10 +1,10 @@
 using System.Text.Json.Serialization;
-using Elsa.Attributes;
 using Elsa.Expressions.Models;
-using Elsa.Models;
-using Elsa.Services;
+using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
 
-namespace Elsa.Activities;
+namespace Elsa.Workflows.Core.Activities;
 
 [Activity("Elsa", "Primitives", "Wait for an event to be triggered.")]
 public class Event : Activity<object?>

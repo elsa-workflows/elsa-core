@@ -1,7 +1,7 @@
 using Elsa.Expressions.Services;
-using Elsa.Options;
-using Elsa.Serialization;
-using Elsa.Services;
+using Elsa.Workflows.Core.Options;
+using Elsa.Workflows.Core.Serialization;
+using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Implementations;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Options;

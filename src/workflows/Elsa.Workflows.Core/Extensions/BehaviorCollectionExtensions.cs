@@ -1,6 +1,6 @@
-using Elsa.Services;
+using Elsa.Workflows.Core.Services;
 
-namespace Elsa;
+namespace Elsa.Workflows.Core;
 
 public static class BehaviorCollectionExtensions
 {

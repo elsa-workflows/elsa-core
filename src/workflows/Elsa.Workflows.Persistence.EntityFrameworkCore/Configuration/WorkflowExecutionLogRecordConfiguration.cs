@@ -1,4 +1,4 @@
-using Elsa.Persistence.Entities;
+using Elsa.Workflows.Persistence.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

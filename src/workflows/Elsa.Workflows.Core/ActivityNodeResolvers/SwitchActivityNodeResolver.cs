@@ -1,7 +1,7 @@
-using Elsa.Activities;
-using Elsa.Services;
+using Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Core.Services;
 
-namespace Elsa.ActivityNodeResolvers;
+namespace Elsa.Workflows.Core.ActivityNodeResolvers;
 
 /// <summary>
 /// Returns a list of outbound activities for a given <see cref="Switch"/> activity's branches.

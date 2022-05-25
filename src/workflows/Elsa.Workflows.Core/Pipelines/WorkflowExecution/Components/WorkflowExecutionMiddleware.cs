@@ -1,7 +1,7 @@
-using Elsa.Models;
-using Elsa.Services;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
 
-namespace Elsa.Pipelines.WorkflowExecution.Components;
+namespace Elsa.Workflows.Core.Pipelines.WorkflowExecution.Components;
 
 public abstract class WorkflowExecutionMiddleware : IWorkflowExecutionMiddleware
 {

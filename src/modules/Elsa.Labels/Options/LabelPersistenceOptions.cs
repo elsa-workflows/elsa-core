@@ -1,7 +1,7 @@
 using Elsa.Labels.Implementations;
 using Elsa.Labels.Services;
-using Elsa.Options;
-using Elsa.Services;
+using Elsa.Workflows.Core.Options;
+using Elsa.Workflows.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Labels.Options;

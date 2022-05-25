@@ -1,6 +1,6 @@
-using Elsa.Models;
+using Elsa.Workflows.Core.Models;
 
-namespace Elsa.Services;
+namespace Elsa.Workflows.Core.Services;
 
 /// <summary>
 /// Represents an activity, which is an atomic unit of operation within a workflow.

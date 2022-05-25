@@ -1,6 +1,6 @@
-using Elsa.Models;
+using Elsa.Workflows.Core.Models;
 
-namespace Elsa;
+namespace Elsa.Workflows.Core;
 
 public static class NodeExtensions
 {

@@ -1,4 +1,4 @@
-namespace Elsa.Services;
+namespace Elsa.Workflows.Core.Services;
 
 /// <summary>
 /// Implemented by trigger activities that generate events. For example, a timer activity is an event generator. 

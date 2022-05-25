@@ -1,4 +1,4 @@
-namespace Elsa.Attributes;
+namespace Elsa.Workflows.Core.Attributes;
 
 [AttributeUsage(AttributeTargets.Class)]
 public class ActivityAttribute : Attribute

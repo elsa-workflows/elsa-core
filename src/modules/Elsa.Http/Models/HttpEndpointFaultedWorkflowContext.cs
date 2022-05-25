@@ -1,6 +1,6 @@
 using System;
 using System.Threading;
-using Elsa.Persistence.Entities;
+using Elsa.Workflows.Persistence.Entities;
 using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Http.Models;

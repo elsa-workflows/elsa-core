@@ -1,10 +1,10 @@
 using System.Text.Json;
-using Elsa.Builders;
-using Elsa.Models;
-using Elsa.Persistence.Entities;
-using Elsa.Serialization;
-using Elsa.Services;
+using Elsa.Workflows.Core.Builders;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Serialization;
+using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Services;
+using Elsa.Workflows.Persistence.Entities;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Management.Materializers;

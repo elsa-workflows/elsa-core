@@ -1,6 +1,6 @@
-using Elsa.Pipelines.WorkflowExecution;
+using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
 
-namespace Elsa.Services;
+namespace Elsa.Workflows.Core.Services;
 
 public interface IWorkflowExecutionBuilder
 {

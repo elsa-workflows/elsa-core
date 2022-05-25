@@ -1,7 +1,7 @@
-using Elsa.Models;
 using Elsa.Persistence.Common.Entities;
+using Elsa.Workflows.Core.Models;
 
-namespace Elsa.Persistence.Entities;
+namespace Elsa.Workflows.Persistence.Entities;
 
 public class WorkflowBookmark : Entity
 {

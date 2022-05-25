@@ -1,7 +1,7 @@
 using System.Net;
 using System.Threading.Tasks;
-using Elsa.Attributes;
-using Elsa.Models;
+using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Models;
 using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Http;

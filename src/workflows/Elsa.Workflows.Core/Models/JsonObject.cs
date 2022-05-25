@@ -1,6 +1,6 @@
 using Elsa.Expressions.Models;
 
-namespace Elsa.Models;
+namespace Elsa.Workflows.Core.Models;
 
 public class JsonObject : RegisterLocationReference
 {

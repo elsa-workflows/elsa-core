@@ -1,6 +1,6 @@
-using Elsa.Options;
+using Elsa.Workflows.Core.Options;
 
-namespace Elsa.Services;
+namespace Elsa.Workflows.Core.Services;
 
 public interface IConfigurator
 {

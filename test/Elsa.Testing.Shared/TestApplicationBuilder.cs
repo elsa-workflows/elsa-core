@@ -1,7 +1,7 @@
 using System;
 using Elsa.Extensions;
-using Elsa.Implementations;
-using Elsa.Services;
+using Elsa.Workflows.Core.Implementations;
+using Elsa.Workflows.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;

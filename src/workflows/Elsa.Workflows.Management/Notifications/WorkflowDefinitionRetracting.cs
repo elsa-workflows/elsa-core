@@ -1,5 +1,5 @@
 using Elsa.Mediator.Services;
-using Elsa.Persistence.Entities;
+using Elsa.Workflows.Persistence.Entities;
 
 namespace Elsa.Workflows.Management.Notifications;
 

@@ -1,14 +1,14 @@
 using System.Text.Json;
-using Elsa.Activities;
 using Elsa.Mediator.Services;
-using Elsa.Persistence.Entities;
-using Elsa.Persistence.Models;
-using Elsa.Persistence.Services;
-using Elsa.Serialization;
-using Elsa.Services;
+using Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Core.Serialization;
+using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Notifications;
 using Elsa.Workflows.Management.Services;
+using Elsa.Workflows.Persistence.Entities;
+using Elsa.Workflows.Persistence.Models;
+using Elsa.Workflows.Persistence.Services;
 
 namespace Elsa.Workflows.Management.Implementations
 {

@@ -1,8 +1,8 @@
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Elsa.Jobs.Abstractions;
-using Elsa.Models;
 using Elsa.Jobs.Models;
+using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Services;
 

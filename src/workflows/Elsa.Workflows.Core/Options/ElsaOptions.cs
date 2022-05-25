@@ -1,6 +1,6 @@
 using System.Collections.ObjectModel;
 
-namespace Elsa.Options;
+namespace Elsa.Workflows.Core.Options;
 
 public class ElsaOptions
 {

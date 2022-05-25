@@ -2,11 +2,13 @@
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json.Serialization;
-using Elsa.Attributes;
 using Elsa.Expressions.Models;
 using Elsa.Http.Models;
-using Elsa.Models;
+using Elsa.Workflows.Core;
+using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Models;
+using ActivityExecutionContextExtensions = Elsa.Workflows.Core.ActivityExecutionContextExtensions;
 
 namespace Elsa.Http;
 
@@ -49,7 +51,7 @@ public class HttpEndpoint : Trigger<HttpRequestModel>
     protected override void Execute(ActivityExecutionContext context)
     {
         // If we did not receive external input, it means we are just now encountering this activity and we need to block execution by creating a bookmark.
-        if (!context.TryGetInput<HttpRequestModel>(InputKey, out var request))
+        if (!ActivityExecutionContextExtensions.TryGetInput<HttpRequestModel>(context, InputKey, out var request))
         {
             // Create bookmarks for when we receive the expected HTTP request.
             context.CreateBookmarks(GetBookmarkData(context.ExpressionExecutionContext));

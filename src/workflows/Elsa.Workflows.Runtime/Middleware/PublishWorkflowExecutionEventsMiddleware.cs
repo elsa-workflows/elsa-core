@@ -1,7 +1,7 @@
 using Elsa.Mediator.Services;
-using Elsa.Models;
-using Elsa.Pipelines.WorkflowExecution;
-using Elsa.Pipelines.WorkflowExecution.Components;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
+using Elsa.Workflows.Core.Pipelines.WorkflowExecution.Components;
 using Elsa.Workflows.Runtime.Notifications;
 
 namespace Elsa.Workflows.Runtime.Middleware;

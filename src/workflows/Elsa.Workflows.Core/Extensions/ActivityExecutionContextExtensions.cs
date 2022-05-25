@@ -1,11 +1,11 @@
 using System.Linq.Expressions;
 using Elsa.Expressions.Services;
-using Elsa.Models;
-using Elsa.Services;
-using Elsa.Signals;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Core.Signals;
 using Microsoft.Extensions.Logging;
 
-namespace Elsa;
+namespace Elsa.Workflows.Core;
 
 public static class ActivityExecutionContextExtensions
 {

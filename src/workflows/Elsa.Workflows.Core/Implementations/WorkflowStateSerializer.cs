@@ -1,11 +1,11 @@
 using System.Reflection;
-using Elsa.Attributes;
 using Elsa.Expressions.Models;
-using Elsa.Models;
-using Elsa.Services;
-using Elsa.State;
+using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Core.State;
 
-namespace Elsa.Implementations;
+namespace Elsa.Workflows.Core.Implementations;
 
 public class WorkflowStateSerializer : IWorkflowStateSerializer
 {

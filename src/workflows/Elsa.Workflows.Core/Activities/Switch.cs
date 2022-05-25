@@ -1,12 +1,12 @@
 using System.Text.Json.Serialization;
-using Elsa.Attributes;
 using Elsa.Expressions;
 using Elsa.Expressions.Models;
 using Elsa.Expressions.Services;
-using Elsa.Models;
-using Elsa.Services;
+using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
 
-namespace Elsa.Activities;
+namespace Elsa.Workflows.Core.Activities;
 
 /// <summary>
 /// The Switch activity is an approximation of the `switch` construct in C#.

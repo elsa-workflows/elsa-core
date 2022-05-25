@@ -1,7 +1,7 @@
 using Elsa.AspNetCore;
 using Elsa.Labels.Entities;
 using Elsa.Labels.Services;
-using Elsa.Serialization;
+using Elsa.Workflows.Core.Serialization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 

@@ -1,14 +1,14 @@
-using Elsa.ActivityNodeResolvers;
-using Elsa.Implementations;
-using Elsa.Pipelines.ActivityExecution;
-using Elsa.Pipelines.WorkflowExecution;
-using Elsa.Serialization;
-using Elsa.Services;
+using Elsa.Workflows.Core.ActivityNodeResolvers;
+using Elsa.Workflows.Core.Implementations;
+using Elsa.Workflows.Core.Pipelines.ActivityExecution;
+using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
+using Elsa.Workflows.Core.Serialization;
+using Elsa.Workflows.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 
-namespace Elsa.Options;
+namespace Elsa.Workflows.Core.Options;
 
 public class ElsaOptionsConfigurator
 {
