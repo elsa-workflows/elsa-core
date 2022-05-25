@@ -1,4 +1,4 @@
-namespace Elsa.Scripting.JavaScript.Options
+namespace Elsa.JavaScript.Options
 {
     public class JintOptions
     {

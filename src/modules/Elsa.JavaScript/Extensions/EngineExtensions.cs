@@ -1,7 +1,7 @@
 using Jint;
 using Jint.Runtime.Interop;
 
-namespace Elsa.Scripting.JavaScript.Extensions;
+namespace Elsa.JavaScript.Extensions;
 
 public static class EngineExtensions
 {

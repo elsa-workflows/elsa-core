@@ -7,8 +7,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\core\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
-      <ProjectReference Include="..\..\scripting\Elsa.Scripting.JavaScript\Elsa.Scripting.JavaScript.csproj" />
+      <ProjectReference Include="..\..\common\Elsa.Expressions\Elsa.Expressions.csproj" />
+      <ProjectReference Include="..\..\common\Elsa.Mediator\Elsa.Mediator.csproj" />
+      <ProjectReference Include="..\..\workflows\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Jint" Version="3.0.0-beta-2083" />
     </ItemGroup>
 
 </Project>

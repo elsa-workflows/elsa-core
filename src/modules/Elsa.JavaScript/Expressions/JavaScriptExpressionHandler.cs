@@ -1,8 +1,8 @@
-using Elsa.Models;
-using Elsa.Scripting.JavaScript.Services;
-using Elsa.Services;
+using Elsa.Expressions.Models;
+using Elsa.Expressions.Services;
+using Elsa.JavaScript.Services;
 
-namespace Elsa.Scripting.JavaScript.Expressions;
+namespace Elsa.JavaScript.Expressions;
 
 public class JavaScriptExpressionHandler : IExpressionHandler
 {

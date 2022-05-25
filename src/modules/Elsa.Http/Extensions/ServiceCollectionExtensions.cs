@@ -1,7 +1,7 @@
-using Elsa.Mediator.Extensions;
 using Elsa.Http.Handlers;
 using Elsa.Http.Implementations;
 using Elsa.Http.Services;
+using Elsa.Mediator.Extensions;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection;

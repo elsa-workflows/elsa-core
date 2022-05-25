@@ -1,9 +1,9 @@
-using Elsa.Workflows.Management.Models;
-using Elsa.Workflows.Management.Services;
-using Elsa.Scripting.JavaScript.Expressions;
+using Elsa.Expressions.Models;
+using Elsa.Expressions.Services;
+using Elsa.JavaScript.Expressions;
 using Elsa.Services;
 
-namespace Elsa.Scripting.JavaScript.Providers;
+namespace Elsa.JavaScript.Providers;
 
 public class JavaScriptExpressionSyntaxProvider : IExpressionSyntaxProvider
 {

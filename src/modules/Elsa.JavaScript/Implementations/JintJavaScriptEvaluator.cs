@@ -1,13 +1,13 @@
-﻿using Elsa.Mediator.Services;
-using Elsa.Models;
-using Elsa.Scripting.JavaScript.Extensions;
-using Elsa.Scripting.JavaScript.Notifications;
-using Elsa.Scripting.JavaScript.Options;
-using Elsa.Scripting.JavaScript.Services;
+﻿using Elsa.Expressions.Models;
+using Elsa.JavaScript.Extensions;
+using Elsa.JavaScript.Notifications;
+using Elsa.JavaScript.Options;
+using Elsa.JavaScript.Services;
+using Elsa.Mediator.Services;
 using Jint;
 using Microsoft.Extensions.Options;
 
-namespace Elsa.Scripting.JavaScript.Implementations
+namespace Elsa.JavaScript.Implementations
 {
     public class JintJavaScriptEvaluator : IJavaScriptEvaluator
     {

@@ -15,9 +15,7 @@ public class TypeSystem : ITypeSystem
         _typeNameLookup[descriptor.Name] = descriptor;
         _typeLookup[descriptor.Type] = descriptor;
     }
-        
-        
-
+    
     public TypeDescriptor? ResolveTypeName(string typeName) => _typeNameLookup.TryGetValue(typeName, out var descriptor) ? descriptor : default;
     public TypeDescriptor? ResolveType(Type type) => _typeLookup.TryGetValue(type, out var descriptor) ? descriptor : default;
 }

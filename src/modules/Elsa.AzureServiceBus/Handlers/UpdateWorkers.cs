@@ -2,10 +2,10 @@ using Elsa.AzureServiceBus.Activities;
 using Elsa.AzureServiceBus.Models;
 using Elsa.AzureServiceBus.Services;
 using Elsa.Mediator.Services;
-using Elsa.Persistence.Extensions;
-using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Services;
+using Elsa.Workflows.Runtime.Models;
+using Elsa.Persistence.Extensions;
 
 namespace Elsa.AzureServiceBus.Handlers;
 
@@ -67,7 +67,7 @@ public class UpdateWorkers : INotificationHandler<WorkflowTriggersIndexed>, INot
     {
         foreach (var payload in payloads) await _workerManager.StopWorkerAsync(payload.QueueOrTopic, payload.Subscription, cancellationToken);
     }
-    
+
     private async Task EnsureWorkersAsync(IEnumerable<MessageReceivedTriggerPayload> payloads, CancellationToken cancellationToken)
     {
         foreach (var payload in payloads) await _workerManager.EnsureWorkerAsync(payload.QueueOrTopic, payload.Subscription, cancellationToken);

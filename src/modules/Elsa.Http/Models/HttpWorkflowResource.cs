@@ -1,4 +1,4 @@
-using Elsa.Models;
+using Elsa.Expressions.Models;
 
 namespace Elsa.Http.Models
 {

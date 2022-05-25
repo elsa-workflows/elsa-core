@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using Elsa.Dsl.Abstractions;
 using Elsa.Dsl.Interpreters;
+using Elsa.Expressions.Helpers;
 using Elsa.Helpers;
 using Elsa.Models;
 using Elsa.Services;

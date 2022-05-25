@@ -1,4 +1,5 @@
 using Elsa.Activities;
+using Elsa.Expressions.Models;
 using Elsa.Models;
 using Elsa.Services;
 

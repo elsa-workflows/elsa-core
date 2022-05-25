@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using Elsa.Attributes;
 using Elsa.AzureServiceBus.Models;
+using Elsa.Expressions.Models;
 using Elsa.Formatting.Services;
 using Elsa.Models;
 

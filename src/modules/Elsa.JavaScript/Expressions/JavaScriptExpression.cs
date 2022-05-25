@@ -1,6 +1,6 @@
-using Elsa.Services;
+using Elsa.Expressions.Services;
 
-namespace Elsa.Scripting.JavaScript.Expressions;
+namespace Elsa.JavaScript.Expressions;
 
 public class JavaScriptExpression : IExpression
 {

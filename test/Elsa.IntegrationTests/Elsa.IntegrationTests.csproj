@@ -22,12 +22,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\core\Elsa\Elsa.csproj" />
       <ProjectReference Include="..\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Behaviors" />
     </ItemGroup>
 
 </Project>

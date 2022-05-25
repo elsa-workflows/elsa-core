@@ -1,7 +1,7 @@
+using Elsa.Expressions.Models;
 using Elsa.Mediator.Services;
-using Elsa.Models;
 using Jint;
 
-namespace Elsa.Scripting.JavaScript.Notifications;
+namespace Elsa.JavaScript.Notifications;
 
 public record EvaluatingJavaScript(Engine Engine, ExpressionExecutionContext Context) : INotification;

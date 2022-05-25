@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.JavaScript.Notifications;
 using Elsa.Mediator.Services;
-using Elsa.Scripting.JavaScript.Notifications;
 
 namespace Elsa.Http.Scripting;
 

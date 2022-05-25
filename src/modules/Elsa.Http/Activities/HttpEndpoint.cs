@@ -3,9 +3,10 @@ using System.Linq;
 using System.Net.Http;
 using System.Text.Json.Serialization;
 using Elsa.Attributes;
+using Elsa.Expressions.Models;
 using Elsa.Http.Models;
-using Elsa.Management.Models;
 using Elsa.Models;
+using Elsa.Workflows.Management.Models;
 
 namespace Elsa.Http;
 

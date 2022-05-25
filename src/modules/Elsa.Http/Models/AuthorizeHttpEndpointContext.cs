@@ -1,4 +1,4 @@
-using Elsa.Models;
+using Elsa.Expressions.Models;
 using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Http.Models

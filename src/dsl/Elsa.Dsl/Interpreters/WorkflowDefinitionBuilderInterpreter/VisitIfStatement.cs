@@ -1,6 +1,6 @@
 ﻿using Elsa.Activities;
+using Elsa.JavaScript.Expressions;
 using Elsa.Models;
-using Elsa.Scripting.JavaScript.Expressions;
 using Elsa.Services;
 
 namespace Elsa.Dsl.Interpreters;

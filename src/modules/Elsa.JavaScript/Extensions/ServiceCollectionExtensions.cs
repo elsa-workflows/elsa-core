@@ -1,13 +1,14 @@
-using Elsa.Workflows.Management.Services;
+using Elsa.Expressions.Extensions;
+using Elsa.Expressions.Services;
+using Elsa.JavaScript.Expressions;
+using Elsa.JavaScript.Handlers;
+using Elsa.JavaScript.Implementations;
+using Elsa.JavaScript.Providers;
+using Elsa.JavaScript.Services;
 using Elsa.Mediator.Extensions;
-using Elsa.Scripting.JavaScript.Expressions;
-using Elsa.Scripting.JavaScript.Handlers;
-using Elsa.Scripting.JavaScript.Implementations;
-using Elsa.Scripting.JavaScript.Providers;
-using Elsa.Scripting.JavaScript.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Scripting.JavaScript.Extensions;
+namespace Elsa.JavaScript.Extensions;
 
 public static class ServiceCollectionExtensions
 {

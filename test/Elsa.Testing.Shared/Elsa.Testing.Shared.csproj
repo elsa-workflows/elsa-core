@@ -10,8 +10,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\core\Elsa\Elsa.csproj" />
-      <ProjectReference Include="..\..\src\modules\Elsa.Modules.Activities\Elsa.Modules.Activities.csproj" />
+      <ProjectReference Include="..\..\src\bundles\Elsa\Elsa.csproj" />
     </ItemGroup>
 
 </Project>

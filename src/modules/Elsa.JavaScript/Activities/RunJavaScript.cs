@@ -1,7 +1,7 @@
 ﻿using System.Text.Json.Serialization;
 using Elsa.Attributes;
 using Elsa.Models;
-using Elsa.Scripting.JavaScript.Services;
+using IJavaScriptEvaluator = Elsa.JavaScript.Services.IJavaScriptEvaluator;
 
 namespace Elsa.JavaScript.Activities;
 

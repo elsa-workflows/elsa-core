@@ -2,10 +2,10 @@ using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Elsa.Jobs.Abstractions;
-using Elsa.Runtime.Models;
 using Elsa.Jobs.Models;
 using Elsa.Persistence.Models;
-using Elsa.Runtime.Services;
+using Elsa.Workflows.Runtime.Models;
+using Elsa.Workflows.Runtime.Services;
 
 namespace Elsa.Scheduling.Jobs;
 

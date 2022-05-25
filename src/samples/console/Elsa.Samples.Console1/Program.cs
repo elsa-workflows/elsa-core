@@ -1,18 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Extensions;
 using Elsa.Models;
-using Elsa.Modules.Activities.Extensions;
-using Elsa.Modules.Activities.Options;
+using Elsa.Options;
 using Elsa.Pipelines.ActivityExecution.Components;
 using Elsa.Pipelines.WorkflowExecution.Components;
-using Elsa.Runtime.Extensions;
 using Elsa.Samples.Console1.Workflows;
 using Elsa.Services;
+using Elsa.Workflows.Runtime.Extensions;
+using Elsa.Workflows.Runtime.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -91,7 +90,7 @@ class Program
         var services = new ServiceCollection();
 
         services
-            .AddElsa(elsa => elsa.Configure<ActivityOptions>()
+            .AddElsa(elsa => elsa.Configure<ElsaRuntimeOptions>()
                 .WithStandardOutStreamProvider(sp => new CustomOutStreamProvider(Console.Out)))
             .AddLogging(logging => logging.AddConsole().SetMinimumLevel(LogLevel.Warning));
 

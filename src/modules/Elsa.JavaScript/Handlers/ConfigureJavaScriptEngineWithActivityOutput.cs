@@ -1,8 +1,8 @@
+using Elsa.JavaScript.Notifications;
 using Elsa.Mediator.Services;
-using Elsa.Scripting.JavaScript.Notifications;
 using Elsa.Services;
 
-namespace Elsa.Scripting.JavaScript.Handlers;
+namespace Elsa.JavaScript.Handlers;
 
 /// <summary>
 /// Makes available activity output to the JavaScript runtime environment. 
@@ -19,7 +19,7 @@ public class ConfigureJavaScriptEngineWithActivityOutput : INotificationHandler<
     public Task HandleAsync(EvaluatingJavaScript notification, CancellationToken cancellationToken)
     {
         var engine = notification.Engine;
-        var workflow = notification.Context.Workflow;
+        var workflow = notification.Context.GetWorkflow();
         var graph = _activityWalker.Walk(workflow.Root).Flatten();
         var register = notification.Context.Register;
         var jsActivities = new Dictionary<string, object>();

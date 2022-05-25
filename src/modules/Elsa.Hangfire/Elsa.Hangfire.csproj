@@ -12,7 +12,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\core\Elsa.Jobs.Abstractions\Elsa.Jobs.Abstractions.csproj" />
+      <ProjectReference Include="..\..\common\Elsa.Jobs.Abstractions\Elsa.Jobs.Abstractions.csproj" />
     </ItemGroup>
 
 </Project>

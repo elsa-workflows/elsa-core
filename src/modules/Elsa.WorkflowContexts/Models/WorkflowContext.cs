@@ -1,4 +1,4 @@
-using Elsa.Models;
+using Elsa.Expressions.Models;
 using Elsa.WorkflowContexts.Services;
 
 namespace Elsa.WorkflowContexts.Models;
@@ -21,7 +21,7 @@ public class WorkflowContext<T, TProvider> : WorkflowContext where TProvider:IWo
     
     public T? Get(ExpressionExecutionContext context)
     {
-        var workflowContexts = (IDictionary<WorkflowContext, object?>)context.TransientProperties["WorkflowContexts"]!;
+        var workflowContexts = (IDictionary<WorkflowContext, object?>)context.GetTransientProperties()["WorkflowContexts"]!;
         return workflowContexts.TryGetValue(this, out var workflowContext) ? (T?)workflowContext : default;
     }
 }
