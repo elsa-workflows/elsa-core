@@ -10,6 +10,7 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddElsaCore(this IServiceCollection services, Action<ElsaOptionsConfigurator>? configure = default)
     {
+        services.AddExpressions();
         var configurator = new ElsaOptionsConfigurator(services);
         configure?.Invoke(configurator);
         configurator.ConfigureServices();

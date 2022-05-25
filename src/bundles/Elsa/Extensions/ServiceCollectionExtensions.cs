@@ -3,6 +3,7 @@ using Elsa.Mediator.Extensions;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Options;
 using Elsa.Workflows.Management.Extensions;
+using Elsa.Workflows.Persistence.Extensions;
 using Elsa.Workflows.Runtime.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -18,6 +19,7 @@ public static class ServiceCollectionExtensions
             .AddElsaCore(elsa =>
             {
                 elsa.ConfigureElsaRuntime();
+                elsa.ConfigurePersistence();
                 elsa.AddElsaManagement();
                 configure?.Invoke(elsa);
             });

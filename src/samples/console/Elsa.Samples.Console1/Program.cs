@@ -51,7 +51,7 @@ class Program
         var workflow14 = new Func<IActivity>(FlowchartWorkflow.Create);
         var workflow15 = new Func<IActivity>(BreakForWorkflow.Create);
 
-        var workflowFactory = workflow2;
+        var workflowFactory = workflow1;
         var workflowGraph = workflowFactory();
         var workflow = Workflow.FromActivity(workflowGraph);
 

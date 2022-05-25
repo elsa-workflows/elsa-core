@@ -20,7 +20,6 @@ public static class ServiceCollectionExtensions
             .AddMemoryStore<WorkflowExecutionLogRecord, MemoryWorkflowExecutionLogStore>()
             ;
 
-        
         configurator.Configure(() => new PersistenceOptions(configurator), configure);
         return configurator;
     }
