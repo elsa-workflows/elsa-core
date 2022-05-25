@@ -26,7 +26,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\..\bundles\Elsa\Elsa.csproj" />
-      <ProjectReference Include="..\..\..\dsl\Elsa.Dsl\Elsa.Dsl.csproj" />
+      <ProjectReference Include="..\..\..\modules\Elsa.Dsl\Elsa.Dsl.csproj" />
       <ProjectReference Include="..\..\..\modules\Elsa.Http\Elsa.Http.csproj" />
       <ProjectReference Include="..\..\..\modules\Elsa.Scheduling\Elsa.Scheduling.csproj" />
     </ItemGroup>

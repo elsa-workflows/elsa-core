@@ -10,12 +10,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\modules\Elsa.JavaScript\Elsa.JavaScript.csproj" />
       <ProjectReference Include="..\..\workflows\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Abstractions" />
+      <ProjectReference Include="..\Elsa.JavaScript\Elsa.JavaScript.csproj" />
     </ItemGroup>
 
 </Project>
