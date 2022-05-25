@@ -2,7 +2,6 @@
 using System.IO;
 using System.Reflection;
 using Elsa.Activities;
-using Elsa.Dsl.Abstractions;
 using Elsa.Dsl.Extensions;
 using Elsa.Dsl.Services;
 using Elsa.Extensions;

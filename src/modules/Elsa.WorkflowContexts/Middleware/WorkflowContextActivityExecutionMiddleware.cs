@@ -43,7 +43,7 @@ public class WorkflowContextActivityExecutionMiddleware : IActivityExecutionMidd
                 var value = await provider.LoadAsync(context.WorkflowExecutionContext);
 
                 // Store the loaded value into the workflow execution context.
-                context.WorkflowExecutionContext.SetWorkflowContext(workflowContext, value);
+                context.WorkflowExecutionContext.SetWorkflowContext(workflowContext, value!);
             }
         }
 

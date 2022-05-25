@@ -1,5 +1,5 @@
 using System;
-using Elsa.Dsl.Abstractions;
+using Elsa.Dsl.Services;
 using Elsa.Models;
 using Elsa.Services;
 

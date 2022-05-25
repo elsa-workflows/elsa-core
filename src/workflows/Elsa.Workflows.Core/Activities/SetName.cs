@@ -31,6 +31,6 @@ public class SetName : Activity
     protected override void Execute(ActivityExecutionContext context)
     {
         var value = context.Get(Value);
-        context.WorkflowExecutionContext.TransientProperties[WorkflowInstanceNameKey] = value;
+        context.WorkflowExecutionContext.TransientProperties[WorkflowInstanceNameKey] = value!;
     }
 }
