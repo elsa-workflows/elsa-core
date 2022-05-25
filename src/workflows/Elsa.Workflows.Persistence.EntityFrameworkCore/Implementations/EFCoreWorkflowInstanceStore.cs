@@ -80,7 +80,7 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
                 where instance.Name!.Contains(searchTerm)
                       || instance.Id.Contains(searchTerm)
                       || instance.DefinitionId.Contains(searchTerm)
-                      || instance.CorrelationId.Contains(searchTerm)
+                      || instance.CorrelationId!.Contains(searchTerm)
                 select instance;
         }
 
