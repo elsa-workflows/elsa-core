@@ -5,7 +5,7 @@ namespace Elsa.Workflows.Core;
 
 public static class DependencyInjectionExtensions
 {
-    public static IServiceConfiguration UseWorkflows(this IServiceConfiguration configuration, Action<WorkflowConfigurator>? configure = default)
+    public static IServiceConfiguration UseWorkflows(this IServiceConfiguration configuration, Action<WorkflowsConfigurator>? configure = default)
     {
         configuration.Configure(configure);
         return configuration;

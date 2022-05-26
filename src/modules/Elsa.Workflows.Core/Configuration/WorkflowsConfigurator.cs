@@ -13,11 +13,33 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Core.Configuration;
 
-public class WorkflowConfigurator : ConfiguratorBase
+public class WorkflowsConfigurator : ConfiguratorBase
 {
-    public WorkflowConfigurator(IServiceConfiguration serviceConfiguration) : base(serviceConfiguration)
+    public WorkflowsConfigurator(IServiceConfiguration serviceConfiguration) : base(serviceConfiguration)
     {
         ServiceConfiguration = serviceConfiguration;
+    }
+    
+    /// <summary>
+    /// A factory that instantiates a concrete <see cref="IStandardInStreamProvider"/>.
+    /// </summary>
+    public Func<IServiceProvider, IStandardInStreamProvider> StandardInStreamProvider { get; set; } = _ => new StandardInStreamProvider(Console.In);
+
+    /// <summary>
+    /// A factory that instantiates a concrete <see cref="IStandardOutStreamProvider"/>.
+    /// </summary>
+    public Func<IServiceProvider, IStandardOutStreamProvider> StandardOutStreamProvider { get; set; } = _ => new StandardOutStreamProvider(Console.Out);
+    
+    public WorkflowsConfigurator WithStandardInStreamProvider(Func<IServiceProvider, IStandardInStreamProvider> provider)
+    {
+        StandardInStreamProvider = provider;
+        return this;
+    }
+
+    public WorkflowsConfigurator WithStandardOutStreamProvider(Func<IServiceProvider, IStandardOutStreamProvider> provider)
+    {
+        StandardOutStreamProvider = provider;
+        return this;
     }
     
     public override void ConfigureServices(IServiceConfiguration serviceConfiguration)
@@ -52,6 +74,10 @@ public class WorkflowConfigurator : ConfiguratorBase
             .AddSingleton<IActivityNodeResolver, OutboundActivityNodeResolver>()
             .AddSingleton<IActivityNodeResolver, SwitchActivityNodeResolver>()
             .AddSingleton<ISerializationOptionsConfigurator, CustomSerializationOptionConfigurator>()
+            
+            // Stream providers.
+            .AddSingleton(StandardInStreamProvider)
+            .AddSingleton(StandardOutStreamProvider)
 
             // Logging
             .AddLogging();

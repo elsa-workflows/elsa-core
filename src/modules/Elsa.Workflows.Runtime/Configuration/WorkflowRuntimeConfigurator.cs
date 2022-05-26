@@ -23,16 +23,6 @@ public class WorkflowRuntimeConfigurator : ConfiguratorBase
     }
 
     /// <summary>
-    /// A factory that instantiates a concrete <see cref="IStandardInStreamProvider"/>.
-    /// </summary>
-    public Func<IServiceProvider, IStandardInStreamProvider> StandardInStreamProvider { get; set; } = _ => new StandardInStreamProvider(Console.In);
-
-    /// <summary>
-    /// A factory that instantiates a concrete <see cref="IStandardOutStreamProvider"/>.
-    /// </summary>
-    public Func<IServiceProvider, IStandardOutStreamProvider> StandardOutStreamProvider { get; set; } = _ => new StandardOutStreamProvider(Console.Out);
-
-    /// <summary>
     /// A list of workflow builders configured during application startup.
     /// </summary>
     public IDictionary<string, Func<IServiceProvider, ValueTask<IWorkflow>>> Workflows { get; set; } = new Dictionary<string, Func<IServiceProvider, ValueTask<IWorkflow>>>();
@@ -46,18 +36,6 @@ public class WorkflowRuntimeConfigurator : ConfiguratorBase
     /// A factory that instantiates a concrete <see cref="IWorkflowDispatcher"/>.
     /// </summary>
     public Func<IServiceProvider, IWorkflowDispatcher> WorkflowDispatcherFactory { get; set; } = sp => ActivatorUtilities.CreateInstance<TaskBasedWorkflowDispatcher>(sp);
-
-    public WorkflowRuntimeConfigurator WithStandardInStreamProvider(Func<IServiceProvider, IStandardInStreamProvider> provider)
-    {
-        StandardInStreamProvider = provider;
-        return this;
-    }
-
-    public WorkflowRuntimeConfigurator WithStandardOutStreamProvider(Func<IServiceProvider, IStandardOutStreamProvider> provider)
-    {
-        StandardOutStreamProvider = provider;
-        return this;
-    }
 
     public override void ConfigureServices(IServiceConfiguration serviceConfiguration)
     {
@@ -94,10 +72,6 @@ public class WorkflowRuntimeConfigurator : ConfiguratorBase
             // Channels for dispatching workflows in-memory.
             .CreateChannel<DispatchWorkflowDefinitionRequest>()
             .CreateChannel<DispatchWorkflowInstanceRequest>()
-
-            // Stream providers.
-            .AddSingleton(StandardInStreamProvider)
-            .AddSingleton(StandardOutStreamProvider)
             ;
 
         services.Configure<WorkflowRuntimeOptions>(options => options.Workflows = Workflows);
