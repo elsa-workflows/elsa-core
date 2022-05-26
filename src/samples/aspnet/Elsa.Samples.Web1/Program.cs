@@ -84,13 +84,6 @@ services.AddSingleton<ISerializationOptionsConfigurator, SerializationOptionsCon
 var app = builder.Build();
 var serviceProvider = app.Services;
 
-// Add type aliases for prettier JSON serialization.
-var wellKnownTypeRegistry = serviceProvider.GetRequiredService<IWellKnownTypeRegistry>();
-wellKnownTypeRegistry.RegisterType<int>("int");
-wellKnownTypeRegistry.RegisterType<float>("float");
-wellKnownTypeRegistry.RegisterType<bool>("boolean");
-wellKnownTypeRegistry.RegisterType<string>("string");
-
 // Configure workflow engine execution pipeline.
 serviceProvider.ConfigureDefaultWorkflowExecutionPipeline(pipeline =>
     pipeline
