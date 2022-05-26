@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Antlr4.Runtime.Standard" Version="4.10.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
+      <ProjectReference Include="..\Elsa.JavaScript\Elsa.JavaScript.csproj" />
+    </ItemGroup>
+
+</Project>

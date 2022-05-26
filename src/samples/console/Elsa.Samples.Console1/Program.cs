@@ -1,21 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Extensions;
-using Elsa.Models;
-using Elsa.Modules.Activities.Extensions;
-using Elsa.Modules.Activities.Options;
-using Elsa.Modules.Activities.Providers;
-using Elsa.Modules.Activities.Services;
-using Elsa.Persistence.InMemory.Extensions;
-using Elsa.Pipelines.ActivityExecution.Components;
-using Elsa.Pipelines.WorkflowExecution.Components;
-using Elsa.Runtime.Extensions;
 using Elsa.Samples.Console1.Workflows;
-using Elsa.Services;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Pipelines.ActivityExecution.Components;
+using Elsa.Workflows.Core.Pipelines.WorkflowExecution.Components;
+using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Runtime.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -56,7 +49,7 @@ class Program
         var workflow14 = new Func<IActivity>(FlowchartWorkflow.Create);
         var workflow15 = new Func<IActivity>(BreakForWorkflow.Create);
 
-        var workflowFactory = workflow2;
+        var workflowFactory = workflow1;
         var workflowGraph = workflowFactory();
         var workflow = Workflow.FromActivity(workflowGraph);
 
@@ -93,23 +86,9 @@ class Program
     {
         var services = new ServiceCollection();
 
-        services
-            .AddElsa(elsa => elsa.Configure<ActivityOptions>()
-                .WithStandardOutStreamProvider(sp => new CustomOutStreamProvider(Console.Out)))
-            .AddLogging(logging => logging.AddConsole().SetMinimumLevel(LogLevel.Warning));
+        services.AddElsa();
+        services.AddLogging(logging => logging.AddConsole().SetMinimumLevel(LogLevel.Warning));
 
         return services.BuildServiceProvider();
     }
-}
-
-public class CustomOutStreamProvider : IStandardOutStreamProvider
-{
-    private readonly TextWriter _textWriter;
-
-    public CustomOutStreamProvider(TextWriter textWriter)
-    {
-        _textWriter = textWriter;
-    }
-
-    public TextWriter GetTextWriter() => _textWriter;
 }

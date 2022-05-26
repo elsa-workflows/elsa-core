@@ -6,16 +6,14 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\..\modules\Elsa.Modules.Activities\Elsa.Modules.Activities.csproj" />
-        <ProjectReference Include="..\..\..\modules\Elsa.Modules.Hangfire\Elsa.Modules.Hangfire.csproj" />
-        <ProjectReference Include="..\..\..\modules\Elsa.Modules.Http\Elsa.Modules.Http.csproj" />
-        <ProjectReference Include="..\..\..\api\Elsa.Api\Elsa.Api.csproj" />
-        <ProjectReference Include="..\..\..\core\Elsa\Elsa.csproj" />
-        <ProjectReference Include="..\..\..\modules\Elsa.Modules.JavaScript\Elsa.Modules.JavaScript.csproj" />
-        <ProjectReference Include="..\..\..\modules\Elsa.Modules.Quartz\Elsa.Modules.Quartz.csproj" />
-        <ProjectReference Include="..\..\..\persistence\memory\Elsa.Persistence.InMemory\Elsa.Persistence.InMemory.csproj" />
-        <ProjectReference Include="..\..\..\runtime\Elsa.Runtime.ProtoActor\Elsa.Runtime.ProtoActor.csproj" />
-        <ProjectReference Include="..\..\..\scripting\Elsa.Scripting.Liquid\Elsa.Scripting.Liquid.csproj" />
+      <ProjectReference Include="..\..\..\bundles\Elsa\Elsa.csproj" />
+      <ProjectReference Include="..\..\..\common\Elsa.Jobs.Abstractions\Elsa.Jobs.Abstractions.csproj" />
+      <ProjectReference Include="..\..\..\modules\Elsa.Hangfire\Elsa.Hangfire.csproj" />
+      <ProjectReference Include="..\..\..\modules\Elsa.Http\Elsa.Http.csproj" />
+      <ProjectReference Include="..\..\..\modules\Elsa.Liquid\Elsa.Liquid.csproj" />
+      <ProjectReference Include="..\..\..\modules\Elsa.ProtoActor\Elsa.ProtoActor.csproj" />
+      <ProjectReference Include="..\..\..\modules\Elsa.Quartz\Elsa.Quartz.csproj" />
+      <ProjectReference Include="..\..\..\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />
     </ItemGroup>
 
 </Project>

@@ -1,9 +1,8 @@
-using Elsa.Activities;
-using Elsa.Models;
-using Elsa.Modules.Activities.Console;
-using Elsa.Modules.WorkflowContexts.Abstractions;
-using Elsa.Modules.WorkflowContexts.Extensions;
-using Elsa.Services;
+using Elsa.WorkflowContexts.Abstractions;
+using Elsa.WorkflowContexts.Extensions;
+using Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Samples.Web1.Workflows;
 

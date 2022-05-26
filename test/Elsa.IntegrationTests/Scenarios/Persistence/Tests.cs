@@ -1,12 +1,13 @@
 using System.Threading.Tasks;
-using Elsa.Builders;
 using Elsa.Extensions;
-using Elsa.Persistence.Entities;
-using Elsa.Persistence.InMemory.Implementations;
-using Elsa.Pipelines.WorkflowExecution.Components;
-using Elsa.Runtime.Extensions;
-using Elsa.Services;
+using Elsa.Persistence.Common.Implementations;
 using Elsa.Testing.Shared;
+using Elsa.Workflows.Core;
+using Elsa.Workflows.Core.Builders;
+using Elsa.Workflows.Core.Pipelines.WorkflowExecution.Components;
+using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Persistence.Entities;
+using Elsa.Workflows.Runtime.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 using Xunit.Abstractions;
@@ -17,15 +18,15 @@ public class WorkflowInstancePersistenceTests
 {
     private readonly IWorkflowRunner _workflowRunner;
     private readonly CapturingTextWriter _capturingTextWriter = new();
-    private readonly InMemoryStore<WorkflowInstance> _workflowInstanceStore;
-    private readonly InMemoryStore<WorkflowBookmark> _workflowBookmarkStore;
+    private readonly MemoryStore<WorkflowInstance> _workflowInstanceStore;
+    private readonly MemoryStore<WorkflowBookmark> _workflowBookmarkStore;
 
     public WorkflowInstancePersistenceTests(ITestOutputHelper testOutputHelper)
     {
         var services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
         _workflowRunner = services.GetRequiredService<IWorkflowRunner>();
-        _workflowInstanceStore = services.GetRequiredService<InMemoryStore<WorkflowInstance>>();
-        _workflowBookmarkStore = services.GetRequiredService<InMemoryStore<WorkflowBookmark>>();
+        _workflowInstanceStore = services.GetRequiredService<MemoryStore<WorkflowInstance>>();
+        _workflowBookmarkStore = services.GetRequiredService<MemoryStore<WorkflowBookmark>>();
         
         services.ConfigureDefaultWorkflowExecutionPipeline(pipeline => pipeline
             .UsePersistence()

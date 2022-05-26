@@ -1,8 +1,7 @@
 using System;
 using Elsa.Extensions;
-using Elsa.Modules.Activities.Providers;
-using Elsa.Modules.Activities.Services;
-using Elsa.Persistence.InMemory.Extensions;
+using Elsa.Workflows.Core.Implementations;
+using Elsa.Workflows.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
@@ -18,9 +17,9 @@ public class TestApplicationBuilder
     {
         _testOutputHelper = testOutputHelper;
         _services = new ServiceCollection();
+        _services.ConfigureElsa();
 
         _services
-            .AddElsa()
             .AddSingleton(testOutputHelper)
             .AddSingleton<IStandardOutStreamProvider>(new StandardOutStreamProvider(new XunitConsoleTextWriter(testOutputHelper)))
             .AddLogging(logging => logging.AddProvider(new XunitLoggerProvider(testOutputHelper)).SetMinimumLevel(LogLevel.Debug));

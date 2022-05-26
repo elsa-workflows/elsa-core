@@ -1,34 +1,25 @@
-using Elsa.Activities;
-using Elsa.Api.Endpoints.ActivityDescriptors;
-using Elsa.Api.Extensions;
 using Elsa.AspNetCore;
 using Elsa.Extensions;
+using Elsa.Hangfire.Implementations;
+using Elsa.Http.Extensions;
+using Elsa.JavaScript.Extensions;
 using Elsa.Jobs.Extensions;
-using Elsa.Management.Extensions;
-using Elsa.Modules.Activities.Console;
-using Elsa.Modules.Activities.Workflows;
-using Elsa.Modules.Hangfire.Implementations;
-using Elsa.Modules.Http;
-using Elsa.Modules.Http.Extensions;
-using Elsa.Modules.JavaScript.Activities;
-using Elsa.Modules.Quartz.Implementations;
-using Elsa.Modules.Scheduling.Activities;
-using Elsa.Modules.Scheduling.Extensions;
-using Elsa.Modules.WorkflowContexts.Extensions;
-using Elsa.Persistence.EntityFrameworkCore.Extensions;
-using Elsa.Persistence.EntityFrameworkCore.Sqlite;
-using Elsa.Persistence.Extensions;
-using Elsa.Pipelines.WorkflowExecution.Components;
-using Elsa.Runtime.Extensions;
-using Elsa.Samples.Web1.Activities;
+using Elsa.Liquid.Extensions;
+using Elsa.Quartz.Implementations;
 using Elsa.Samples.Web1.Serialization;
 using Elsa.Samples.Web1.Workflows;
-using Elsa.Scripting.JavaScript.Extensions;
-using Elsa.Scripting.Liquid.Extensions;
-using Elsa.Serialization;
-using Elsa.Services;
+using Elsa.Scheduling.Extensions;
+using Elsa.WorkflowContexts.Extensions;
+using Elsa.Workflows.Api.Extensions;
+using Elsa.Workflows.Core;
+using Elsa.Workflows.Core.Pipelines.WorkflowExecution.Components;
+using Elsa.Workflows.Core.Serialization;
+using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Persistence.EntityFrameworkCore.Extensions;
+using Elsa.Workflows.Persistence.EntityFrameworkCore.Sqlite;
+using Elsa.Workflows.Persistence.Extensions;
+using Elsa.Workflows.Runtime.Extensions;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -43,30 +34,31 @@ var sqlServerConnectionString = configuration.GetConnectionString("SqlServer");
 
 // Add Elsa services.
 services
-    .AddElsa(elsa => elsa.ConfigurePersistence(p => p.UseEntityFrameworkCoreProvider(ef => ef.UseSqlite())))
-    //.AddProtoActorWorkflowHost()
-    .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider())
-    .AddSchedulingServices()
-    .AddHttpActivityServices()
-    //.AddAzureServiceBusServices(options => configuration.GetSection("AzureServiceBus").Bind(options))
-    .ConfigureWorkflowRuntime(options =>
+    .ConfigureElsa()
+    .UseWorkflows()
+    .UsePersistence(persistence => persistence.UseEntityFrameworkCore(ef => ef.UseSqlite()))
+    .UseRuntime(runtime =>
     {
-        // Register workflows.
-        options.Workflows.Add<HelloWorldWorkflow>();
-        //options.Workflows.Add<HeartbeatWorkflow>();
-        options.Workflows.Add<HttpWorkflow>();
-        options.Workflows.Add<ForkedHttpWorkflow>();
-        options.Workflows.Add<CompositeActivitiesWorkflow>();
-        options.Workflows.Add<SendMessageWorkflow>();
-        options.Workflows.Add<ReceiveMessageWorkflow>();
-        options.Workflows.Add<RunJavaScriptWorkflow>();
-        options.Workflows.Add<WorkflowContextsWorkflow>();
-        options.Workflows.Add<SubmitJobWorkflow>();
-        options.Workflows.Add<DelayWorkflow>();
-        options.Workflows.Add<OrderProcessingWorkflow>();
-        options.Workflows.Add<StartAtTriggerWorkflow>();
-        options.Workflows.Add<StartAtBookmarkWorkflow>();
-    });
+        runtime.Workflows.Add<HelloWorldWorkflow>();
+        runtime.Workflows.Add<HttpWorkflow>();
+        runtime.Workflows.Add<ForkedHttpWorkflow>();
+        runtime.Workflows.Add<CompositeActivitiesWorkflow>();
+        runtime.Workflows.Add<SendMessageWorkflow>();
+        runtime.Workflows.Add<ReceiveMessageWorkflow>();
+        runtime.Workflows.Add<RunJavaScriptWorkflow>();
+        runtime.Workflows.Add<WorkflowContextsWorkflow>();
+        runtime.Workflows.Add<SubmitJobWorkflow>();
+        runtime.Workflows.Add<DelayWorkflow>();
+        runtime.Workflows.Add<OrderProcessingWorkflow>();
+        runtime.Workflows.Add<StartAtTriggerWorkflow>();
+        runtime.Workflows.Add<StartAtBookmarkWorkflow>();
+    })
+    .UseHttp()
+    .Apply();
+
+services
+    .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider())
+    .AddSchedulingServices();
 
 // Add controller services. The below technique allows full control over what controllers get added from which assemblies.
 // It is even possible to add individual controllers this way using a custom TypesPart.
@@ -75,29 +67,11 @@ services
     .AddControllers(mvc => mvc.Conventions.Add(new ApiEndpointAttributeConvention())) // This convention is required as well. 
     .ClearApplicationParts() // Remove all controllers from referenced packages.
     .AddApplicationPartsFrom<Program>() // Add back any controllers from the current application.
-    .AddElsaApiControllers() // Add Elsa API endpoint controllers.
+    .AddWorkflowManagementApiControllers() // Add Elsa API endpoint controllers.
     ;
 
 // Testing only: allow client app to connect from anywhere.
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
-
-// Register activities available from the designer.
-services
-    .AddActivity<Sequence>()
-    .AddActivity<WriteLine>()
-    .AddActivity<WriteLines>()
-    .AddActivity<ReadLine>()
-    .AddActivity<If>()
-    .AddActivity<HttpEndpoint>()
-    .AddActivity<Flowchart>()
-    .AddActivity<Delay>()
-    .AddActivity<Timer>()
-    .AddActivity<ForEach>()
-    .AddActivity<Switch>()
-    //.AddActivity<SendMessage>()
-    //.AddActivity<MessageReceived>()
-    .AddActivity<RunJavaScript>()
-    ;
 
 // Register scripting languages.
 services
@@ -139,7 +113,7 @@ app.UseCors();
 app.MapGet("/", () => "Hello World!");
 
 // Map Elsa API endpoint controllers.
-app.MapElsaApiEndpoints("elsa/api");
+app.MapWorkflowManagementApiEndpoints("elsa/api");
 
 // Register Elsa middleware.
 app.UseJsonSerializationErrorHandler();

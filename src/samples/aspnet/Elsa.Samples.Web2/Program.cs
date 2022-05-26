@@ -1,26 +1,24 @@
-using Elsa.Activities;
-using Elsa.Api.Extensions;
 using Elsa.Extensions;
+using Elsa.Hangfire.Implementations;
+using Elsa.Http;
+using Elsa.Http.Extensions;
+using Elsa.JavaScript.Activities;
+using Elsa.JavaScript.Extensions;
 using Elsa.Jobs.Extensions;
-using Elsa.Management.Extensions;
-using Elsa.Management.Serialization;
-using Elsa.Modules.Activities.Console;
-using Elsa.Modules.Activities.Workflows;
-using Elsa.Modules.Hangfire.Implementations;
-using Elsa.Modules.Http;
-using Elsa.Modules.Http.Extensions;
-using Elsa.Modules.JavaScript.Activities;
-using Elsa.Modules.Quartz.Implementations;
-using Elsa.Modules.Scheduling.Activities;
-using Elsa.Modules.Scheduling.Extensions;
-using Elsa.Persistence.InMemory.Extensions;
-using Elsa.Pipelines.WorkflowExecution.Components;
-using Elsa.Runtime.Extensions;
-using Elsa.Runtime.ProtoActor.Extensions;
-using Elsa.Scripting.JavaScript.Extensions;
-using Elsa.Scripting.Liquid.Extensions;
-using Elsa.Serialization;
-using Elsa.Services;
+using Elsa.Liquid.Extensions;
+using Elsa.ProtoActor.Extensions;
+using Elsa.Quartz.Implementations;
+using Elsa.Scheduling.Activities;
+using Elsa.Scheduling.Extensions;
+using Elsa.Workflows.Api.Extensions;
+using Elsa.Workflows.Core;
+using Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Core.Pipelines.WorkflowExecution.Components;
+using Elsa.Workflows.Core.Serialization;
+using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Management.Extensions;
+using Elsa.Workflows.Management.Serialization;
+using Elsa.Workflows.Runtime.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -30,29 +28,29 @@ var services = builder.Services;
 
 // Add services.
 services
-    .AddElsa()
-    .AddHttpActivityServices()
-    .AddProtoActorRuntime()
+    .AddElsa(elsa => elsa
+        .UseWorkflows()
+        .UseRuntime(runtime => runtime.UseProtoActor())
+        .UseManagement(management => management
+            .AddActivity<Sequence>()
+            .AddActivity<WriteLine>()
+            .AddActivity<ReadLine>()
+            .AddActivity<If>()
+            .AddActivity<HttpEndpoint>()
+            .AddActivity<Flowchart>()
+            .AddActivity<Delay>()
+            .AddActivity<Timer>()
+            .AddActivity<ForEach>()
+            .AddActivity<Switch>()
+            .AddActivity<RunJavaScript>())
+        .UseHttp());
+
+services
     .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider())
     .AddSchedulingServices();
 
 // Testing only: allow client app to connect from anywhere.
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
-
-// Register activities available from the designer.
-services
-    .AddActivity<Sequence>()
-    .AddActivity<WriteLine>()
-    .AddActivity<ReadLine>()
-    .AddActivity<If>()
-    .AddActivity<HttpEndpoint>()
-    .AddActivity<Flowchart>()
-    .AddActivity<Delay>()
-    .AddActivity<Timer>()
-    .AddActivity<ForEach>()
-    .AddActivity<Switch>()
-    .AddActivity<RunJavaScript>()
-    ;
 
 // Register scripting languages.
 services
@@ -91,7 +89,7 @@ if (app.Environment.IsDevelopment())
 app.UseCors();
 
 // Map Elsa API endpoints.
-app.MapElsaApiEndpoints();
+app.MapWorkflowManagementApiEndpoints();
 
 // Register Elsa HTTP activity middleware.
 app.UseHttpActivities();

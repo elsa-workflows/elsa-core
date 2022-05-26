@@ -1,18 +1,15 @@
 ﻿using System;
 using System.IO;
 using System.Reflection;
-using Elsa.Activities;
-using Elsa.Dsl.Abstractions;
 using Elsa.Dsl.Extensions;
 using Elsa.Dsl.Services;
 using Elsa.Extensions;
-using Elsa.Models;
-using Elsa.Modules.Activities.Console;
-using Elsa.Modules.Http;
-using Elsa.Modules.Scheduling.Activities;
-using Elsa.Persistence.InMemory.Extensions;
-using Elsa.Scripting.JavaScript.Extensions;
-using Elsa.Services;
+using Elsa.Http;
+using Elsa.JavaScript.Extensions;
+using Elsa.Scheduling.Activities;
+using Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -54,8 +51,9 @@ IServiceProvider CreateServices()
 {
     var services = new ServiceCollection();
 
+    services.AddElsa();
+    
     services
-        .AddElsa()
         .AddDsl()
         .AddLogging(logging => logging.AddConsole().SetMinimumLevel(LogLevel.Warning))
         .AddJavaScriptExpressions();
