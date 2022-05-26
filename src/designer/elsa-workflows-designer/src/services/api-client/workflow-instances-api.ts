@@ -50,7 +50,6 @@ export class WorkflowInstancesApiImpl implements WorkflowInstancesApi {
       searchTerm: request.searchTerm,
       definitionId: request.definitionId,
       correlationId: request.correlationId,
-      definitionIds: request.definitionIds.join(','),
       workflowStatus: request.workflowStatus,
       orderBy: request.orderBy,
       orderDirection: request.orderDirection,
@@ -61,7 +60,8 @@ export class WorkflowInstancesApiImpl implements WorkflowInstancesApi {
     if (!!request.versionOptions)
       queryString['versionOptions'] = getVersionOptionsString(request.versionOptions);
 
-    queryString['definitionIds'] = request.definitionIds.join(',');
+    if (!!request.definitionIds)
+      queryString['definitionIds'] = request.definitionIds.join(',');
 
     const queryStringText = serializeQueryString(queryString);
     const response = await this.httpClient.get<PagedList<WorkflowInstanceSummary>>(`workflow-instances${queryStringText}`);

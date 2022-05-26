@@ -10,7 +10,6 @@ import {DescriptorsApi, DescriptorsApiImpl} from "./descriptors-api";
 import {DesignerApi, DesignerApiImpl} from "./designer-api";
 import {EventTypes} from "../../models";
 
-@Service()
 export class ElsaClient {
   httpClient: AxiosInstance;
   descriptors: DescriptorsApi;

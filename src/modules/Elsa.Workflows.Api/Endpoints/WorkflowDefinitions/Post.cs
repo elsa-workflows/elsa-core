@@ -36,10 +36,10 @@ public class Post : Controller
         string? Name,
         string? Description,
         IActivity? Root,
-        ICollection<Variable> Variables,
-        IDictionary<string, object> Metadata,
-        IDictionary<string, object> ApplicationProperties,
-        ICollection<string> Tags,
+        ICollection<Variable>? Variables,
+        IDictionary<string, object>? Metadata,
+        IDictionary<string, object>? ApplicationProperties,
+        ICollection<string>? Tags,
         bool Publish);
 
     [HttpPost]
@@ -73,10 +73,10 @@ public class Post : Controller
         draft.MaterializerName = JsonWorkflowMaterializer.MaterializerName;
         draft.Name = model.Name?.Trim();
         draft.Description = model.Description?.Trim();
-        draft.Metadata = model.Metadata;
-        draft.Tags = model.Tags;
-        draft.Variables = model.Variables;
-        draft.ApplicationProperties = model.ApplicationProperties;
+        draft.Metadata = model.Metadata ?? new Dictionary<string, object>();
+        draft.Tags = model.Tags ?? new List<string>();
+        draft.Variables = model.Variables ?? new List<Variable>();
+        draft.ApplicationProperties = model.ApplicationProperties ?? new Dictionary<string, object>();
         draft = model.Publish ? await _workflowPublisher.PublishAsync(draft, cancellationToken) : await _workflowPublisher.SaveDraftAsync(draft, cancellationToken);
 
         var result = Json(draft, serializerOptions);
