@@ -5,6 +5,7 @@ using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Persistence.Entities;
 using Elsa.Workflows.Runtime.Configuration;
+using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Services;
 using Microsoft.Extensions.Options;
 
@@ -19,10 +20,10 @@ public class ClrWorkflowDefinitionProvider : IWorkflowDefinitionProvider
     private readonly WorkflowSerializerOptionsProvider _workflowSerializerOptionsProvider;
     private readonly ISystemClock _systemClock;
     private readonly IServiceProvider _serviceProvider;
-    private readonly WorkflowRuntimeConfigurator _configurator;
+    private readonly WorkflowRuntimeOptions _options;
 
     public ClrWorkflowDefinitionProvider(
-        IOptions<WorkflowRuntimeConfigurator> options,
+        IOptions<WorkflowRuntimeOptions> options,
         IIdentityGraphService identityGraphService,
         WorkflowSerializerOptionsProvider workflowSerializerOptionsProvider,
         ISystemClock systemClock,
@@ -33,14 +34,14 @@ public class ClrWorkflowDefinitionProvider : IWorkflowDefinitionProvider
         _workflowSerializerOptionsProvider = workflowSerializerOptionsProvider;
         _systemClock = systemClock;
         _serviceProvider = serviceProvider;
-        _configurator = options.Value;
+        _options = options.Value;
     }
 
     public string Name => "CLR";
 
     public async ValueTask<IEnumerable<WorkflowDefinitionResult>> GetWorkflowDefinitionsAsync(CancellationToken cancellationToken = default)
     {
-        var workflowDefinitionTasks = _configurator.Workflows.Values.Select(async x => await BuildWorkflowDefinition(x, cancellationToken)).ToList();
+        var workflowDefinitionTasks = _options.Workflows.Values.Select(async x => await BuildWorkflowDefinition(x, cancellationToken)).ToList();
         var workflowDefinitions = await Task.WhenAll(workflowDefinitionTasks);
         return workflowDefinitions;
     }

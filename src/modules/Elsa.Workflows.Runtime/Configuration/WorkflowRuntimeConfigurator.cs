@@ -8,11 +8,11 @@ using Elsa.Workflows.Runtime.HostedServices;
 using Elsa.Workflows.Runtime.Implementations;
 using Elsa.Workflows.Runtime.Interpreters;
 using Elsa.Workflows.Runtime.Models;
+using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Services;
 using Elsa.Workflows.Runtime.Stimuli.Handlers;
 using Elsa.Workflows.Runtime.WorkflowProviders;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Runtime.Configuration;
 
@@ -21,12 +21,12 @@ public class WorkflowRuntimeConfigurator : ConfiguratorBase
     public WorkflowRuntimeConfigurator(IServiceConfiguration serviceConfiguration) : base(serviceConfiguration)
     {
     }
-    
+
     /// <summary>
     /// A factory that instantiates a concrete <see cref="IStandardInStreamProvider"/>.
     /// </summary>
     public Func<IServiceProvider, IStandardInStreamProvider> StandardInStreamProvider { get; set; } = _ => new StandardInStreamProvider(Console.In);
-    
+
     /// <summary>
     /// A factory that instantiates a concrete <see cref="IStandardOutStreamProvider"/>.
     /// </summary>
@@ -62,7 +62,7 @@ public class WorkflowRuntimeConfigurator : ConfiguratorBase
     public override void ConfigureServices(IServiceConfiguration serviceConfiguration)
     {
         var services = serviceConfiguration.Services;
-        
+
         services
             // Core.
             .AddSingleton<IStimulusInterpreter, StimulusInterpreter>()
@@ -71,8 +71,8 @@ public class WorkflowRuntimeConfigurator : ConfiguratorBase
             .AddSingleton<IBookmarkManager, BookmarkManager>()
             .AddSingleton<IWorkflowInstanceFactory, WorkflowInstanceFactory>()
             .AddSingleton<IWorkflowDefinitionService, WorkflowDefinitionService>()
-            .AddSingleton(sp => sp.GetRequiredService<IOptions<WorkflowRuntimeConfigurator>>().Value.WorkflowInvokerFactory(sp))
-            .AddSingleton(sp => sp.GetRequiredService<IOptions<WorkflowRuntimeConfigurator>>().Value.WorkflowDispatcherFactory(sp))
+            .AddSingleton(WorkflowInvokerFactory)
+            .AddSingleton(WorkflowDispatcherFactory)
 
             // Stimulus handlers.
             .AddStimulusHandler<TriggerWorkflowsStimulusHandler>()
@@ -94,11 +94,13 @@ public class WorkflowRuntimeConfigurator : ConfiguratorBase
             // Channels for dispatching workflows in-memory.
             .CreateChannel<DispatchWorkflowDefinitionRequest>()
             .CreateChannel<DispatchWorkflowInstanceRequest>()
-            
+
             // Stream providers.
             .AddSingleton(StandardInStreamProvider)
             .AddSingleton(StandardOutStreamProvider)
             ;
+
+        services.Configure<WorkflowRuntimeOptions>(options => options.Workflows = Workflows);
     }
 
     public override void ConfigureHostedServices(IServiceConfiguration services)
