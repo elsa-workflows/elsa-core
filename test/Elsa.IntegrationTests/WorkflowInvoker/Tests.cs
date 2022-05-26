@@ -35,9 +35,10 @@ public class Tests
     }
 
     [Fact(DisplayName = "Invoker creates workflow instance")]
-    public async Task Test1()
+    public Task Test1()
     {
         var workflow = new WorkflowDefinitionBuilder().BuildWorkflowAsync<SequentialWorkflow>();
+        return Task.CompletedTask;
         //var requ
         //var result = await _workflowInvoker.InvokeAsync(new InvokeWorkflowDefinitionRequest());
         //var workflowInstance = _workflowInstanceStore.Find(x => x.Id == result.WorkflowState.Id);

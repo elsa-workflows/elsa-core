@@ -1,6 +1,8 @@
 using Elsa.Persistence.Common.Extensions;
 using Elsa.ServiceConfiguration.Abstractions;
+using Elsa.ServiceConfiguration.Attributes;
 using Elsa.ServiceConfiguration.Services;
+using Elsa.Workflows.Core.Configuration;
 using Elsa.Workflows.Persistence.Entities;
 using Elsa.Workflows.Persistence.Implementations;
 using Elsa.Workflows.Persistence.Services;
@@ -8,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Persistence.Configuration;
 
+[Dependency(typeof(WorkflowsConfigurator))]
 public class WorkflowPersistenceConfigurator : ConfiguratorBase
 {
     public WorkflowPersistenceConfigurator(IServiceConfiguration serviceConfiguration) : base(serviceConfiguration)
