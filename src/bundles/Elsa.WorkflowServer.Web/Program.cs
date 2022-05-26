@@ -32,29 +32,27 @@ var services = builder.Services;
 
 // Add Elsa services.
 services
-    .AddElsa(elsa => elsa
-        .UseWorkflows(workflows => workflows
-            .UseManagement(management => management
-                .AddActivity<Sequence>()
-                .AddActivity<WriteLine>()
-                .AddActivity<ReadLine>()
-                .AddActivity<If>()
-                .AddActivity<HttpEndpoint>()
-                .AddActivity<Flowchart>()
-                .AddActivity<Elsa.Scheduling.Activities.Delay>()
-                .AddActivity<Elsa.Scheduling.Activities.Timer>()
-                .AddActivity<ForEach>()
-                .AddActivity<Switch>()
-                .AddActivity<RunJavaScript>()
-            )
-            .UsePersistence(p => p
-                .UseEntityFrameworkCore(ef => ef
-                    .UseSqlite()))
-            .UseRuntime(runtime => runtime.UseProtoActor())
-        )
-        .UseLabels(labels => labels.UseEntityFrameworkCore(ef => ef.UseSqlite()))
-        .UseHttp()
+    .AddElsa()
+    .UseWorkflows()
+    .UseManagement(management => management
+        .AddActivity<Sequence>()
+        .AddActivity<WriteLine>()
+        .AddActivity<ReadLine>()
+        .AddActivity<If>()
+        .AddActivity<HttpEndpoint>()
+        .AddActivity<Flowchart>()
+        .AddActivity<Elsa.Scheduling.Activities.Delay>()
+        .AddActivity<Elsa.Scheduling.Activities.Timer>()
+        .AddActivity<ForEach>()
+        .AddActivity<Switch>()
+        .AddActivity<RunJavaScript>()
     )
+    .UsePersistence(p => p.UseEntityFrameworkCore(ef => ef.UseSqlite()))
+    .UseRuntime(runtime => runtime.UseProtoActor())
+    .UseLabels(labels => labels.UseEntityFrameworkCore(ef => ef.UseSqlite()))
+    .UseHttp();
+
+services
     .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider())
     .AddSchedulingServices()
     ;

@@ -6,8 +6,11 @@ namespace Elsa.Labels.EntityFrameworkCore.Sqlite
 {
     public static class DbContextOptionsBuilderExtensions
     {
-        public static EFCoreLabelPersistenceConfigurator UseSqlite(this EFCoreLabelPersistenceConfigurator configurator, string connectionString = "Data Source=elsa.sqlite.db;Cache=Shared;") =>
+        public static EFCoreLabelPersistenceConfigurator UseSqlite(this EFCoreLabelPersistenceConfigurator configurator, string connectionString = "Data Source=elsa.sqlite.db;Cache=Shared;")
+        {
             configurator.ConfigureDbContextOptions((_, db) => db.UseSqlite(connectionString));
+            return configurator;
+        }
 
         public static DbContextOptionsBuilder UseSqlite(this DbContextOptionsBuilder builder, string connectionString = "Data Source=elsa.sqlite.db;Cache=Shared;") =>
             builder.UseSqlite(connectionString, db => db

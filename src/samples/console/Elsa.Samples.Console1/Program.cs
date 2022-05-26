@@ -86,9 +86,8 @@ class Program
     {
         var services = new ServiceCollection();
 
-        services
-            .AddElsa()
-            .AddLogging(logging => logging.AddConsole().SetMinimumLevel(LogLevel.Warning));
+        services.AddElsa();
+        services.AddLogging(logging => logging.AddConsole().SetMinimumLevel(LogLevel.Warning));
 
         return services.BuildServiceProvider();
     }

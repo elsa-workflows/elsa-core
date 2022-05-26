@@ -17,9 +17,9 @@ public class TestApplicationBuilder
     {
         _testOutputHelper = testOutputHelper;
         _services = new ServiceCollection();
+        _services.AddElsa();
 
         _services
-            .AddElsa()
             .AddSingleton(testOutputHelper)
             .AddSingleton<IStandardOutStreamProvider>(new StandardOutStreamProvider(new XunitConsoleTextWriter(testOutputHelper)))
             .AddLogging(logging => logging.AddProvider(new XunitLoggerProvider(testOutputHelper)).SetMinimumLevel(LogLevel.Debug));

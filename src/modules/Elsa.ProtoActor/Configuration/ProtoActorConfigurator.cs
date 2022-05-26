@@ -20,13 +20,10 @@ namespace Elsa.ProtoActor.Configuration;
 
 public class ProtoActorConfigurator : ConfiguratorBase
 {
-    public ProtoActorConfigurator(WorkflowRuntimeConfigurator workflowRuntimeConfigurator)
+    public ProtoActorConfigurator(IServiceConfiguration serviceConfiguration) : base(serviceConfiguration)
     {
-        WorkflowRuntimeConfigurator = workflowRuntimeConfigurator;
     }
-    
-    public WorkflowRuntimeConfigurator WorkflowRuntimeConfigurator { get; }
-    
+
     public override void ConfigureServices(IServiceConfiguration serviceConfiguration)
     {
         var services = serviceConfiguration.Services;
@@ -61,7 +58,7 @@ public class ProtoActorConfigurator : ConfiguratorBase
         services.AddSingleton<GrainClientFactory>();
 
         // Configure runtime with ProtoActor workflow invoker.
-        WorkflowRuntimeConfigurator.WorkflowInvokerFactory = sp => ActivatorUtilities.CreateInstance<ProtoActorWorkflowInvoker>(sp);
+        ServiceConfiguration.Configure<WorkflowRuntimeConfigurator>().WorkflowInvokerFactory = sp => ActivatorUtilities.CreateInstance<ProtoActorWorkflowInvoker>(sp);
     }
 
     public override void ConfigureHostedServices(IServiceConfiguration serviceConfiguration)

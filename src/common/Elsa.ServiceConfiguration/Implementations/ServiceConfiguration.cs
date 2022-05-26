@@ -19,13 +19,13 @@ public class ServiceConfiguration : IServiceConfiguration
 
     public IServiceCollection Services { get; }
 
-    public T Configure<T>(Action<T>? configure = default) where T : class, IConfigurator, new() => Configure(() => new T(), configure);
+    public T Configure<T>(Action<T>? configure = default) where T : class, IConfigurator => Configure(serviceConfiguration => (T)Activator.CreateInstance(typeof(T), serviceConfiguration)!, configure);
 
-    public T Configure<T>(Func<T> factory, Action<T>? configure = default) where T : class, IConfigurator
+    public T Configure<T>(Func<IServiceConfiguration, T> factory, Action<T>? configure = default) where T : class, IConfigurator
     {
         if (_configurators.FirstOrDefault(x => x is T) is not T configurator)
         {
-            configurator = factory();
+            configurator = factory(this);
             _configurators.Add(configurator);
         }
 
@@ -39,7 +39,7 @@ public class ServiceConfiguration : IServiceConfiguration
         return this;
     }
 
-    public void RunConfigurators()
+    public void Apply()
     {
         foreach (var configurator in _configurators)
         {
@@ -47,7 +47,7 @@ public class ServiceConfiguration : IServiceConfiguration
             configurator.ConfigureHostedServices(this);
         }
 
-        foreach (var hostedServiceDescriptor in _hostedServiceDescriptors.OrderBy(x => x.Order)) 
+        foreach (var hostedServiceDescriptor in _hostedServiceDescriptors.OrderBy(x => x.Order))
             Services.TryAddEnumerable(ServiceDescriptor.Singleton(typeof(IHostedService), hostedServiceDescriptor.HostedServiceType));
     }
 }

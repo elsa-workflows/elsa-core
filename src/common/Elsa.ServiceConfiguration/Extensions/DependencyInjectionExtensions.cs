@@ -5,11 +5,11 @@ namespace Elsa.ServiceConfiguration.Extensions;
 
 public static class DependencyInjectionExtensions
 {
-    public static IServiceCollection ConfigureServices(this IServiceCollection services, Action<IServiceConfiguration>? configure = default)
+    public static IServiceConfiguration ConfigureServices(this IServiceCollection services)
     {
-        var configurator = new ServiceConfiguration.Implementations.ServiceConfiguration(services);
-        configure?.Invoke(configurator);
-        configurator.RunConfigurators();
-        return services;
+        return new ServiceConfiguration.Implementations.ServiceConfiguration(services);
+        //configure?.Invoke(serviceConfiguration);
+        //serviceConfiguration.RunConfigurators();
+        //return services;
     }
 }

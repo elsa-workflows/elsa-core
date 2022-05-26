@@ -18,12 +18,9 @@ namespace Elsa.Workflows.Runtime.Configuration;
 
 public class WorkflowRuntimeConfigurator : ConfiguratorBase
 {
-    public WorkflowRuntimeConfigurator(IServiceConfiguration serviceConfiguration)
+    public WorkflowRuntimeConfigurator(IServiceConfiguration serviceConfiguration) : base(serviceConfiguration)
     {
-        ServiceConfiguration = serviceConfiguration;
     }
-    
-    public IServiceConfiguration ServiceConfiguration { get; }
     
     /// <summary>
     /// A factory that instantiates a concrete <see cref="IStandardInStreamProvider"/>.

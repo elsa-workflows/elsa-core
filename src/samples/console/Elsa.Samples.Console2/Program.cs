@@ -51,8 +51,9 @@ IServiceProvider CreateServices()
 {
     var services = new ServiceCollection();
 
+    services.AddElsa();
+    
     services
-        .AddElsa()
         .AddDsl()
         .AddLogging(logging => logging.AddConsole().SetMinimumLevel(LogLevel.Warning))
         .AddJavaScriptExpressions();

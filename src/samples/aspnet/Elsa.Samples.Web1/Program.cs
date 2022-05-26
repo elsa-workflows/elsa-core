@@ -39,28 +39,29 @@ var sqlServerConnectionString = configuration.GetConnectionString("SqlServer");
 
 // Add Elsa services.
 services
-    .AddElsa(elsa => elsa
-        .UseWorkflows(workflows => workflows
-            .UsePersistence(persistence => persistence.UseEntityFrameworkCore(ef => ef.UseSqlite()))
-            .UseRuntime(runtime =>
-            {
-                runtime.Workflows.Add<HelloWorldWorkflow>();
-                runtime.Workflows.Add<HttpWorkflow>();
-                runtime.Workflows.Add<ForkedHttpWorkflow>();
-                runtime.Workflows.Add<CompositeActivitiesWorkflow>();
-                runtime.Workflows.Add<SendMessageWorkflow>();
-                runtime.Workflows.Add<ReceiveMessageWorkflow>();
-                runtime.Workflows.Add<RunJavaScriptWorkflow>();
-                runtime.Workflows.Add<WorkflowContextsWorkflow>();
-                runtime.Workflows.Add<SubmitJobWorkflow>();
-                runtime.Workflows.Add<DelayWorkflow>();
-                runtime.Workflows.Add<OrderProcessingWorkflow>();
-                runtime.Workflows.Add<StartAtTriggerWorkflow>();
-                runtime.Workflows.Add<StartAtBookmarkWorkflow>();
-            })
-        )
-        .UseHttp())
-    
+    .AddElsa()
+    .UseWorkflows()
+    .UsePersistence(persistence => persistence.UseEntityFrameworkCore(ef => ef.UseSqlite()))
+    .UseRuntime(runtime =>
+    {
+        runtime.Workflows.Add<HelloWorldWorkflow>();
+        runtime.Workflows.Add<HttpWorkflow>();
+        runtime.Workflows.Add<ForkedHttpWorkflow>();
+        runtime.Workflows.Add<CompositeActivitiesWorkflow>();
+        runtime.Workflows.Add<SendMessageWorkflow>();
+        runtime.Workflows.Add<ReceiveMessageWorkflow>();
+        runtime.Workflows.Add<RunJavaScriptWorkflow>();
+        runtime.Workflows.Add<WorkflowContextsWorkflow>();
+        runtime.Workflows.Add<SubmitJobWorkflow>();
+        runtime.Workflows.Add<DelayWorkflow>();
+        runtime.Workflows.Add<OrderProcessingWorkflow>();
+        runtime.Workflows.Add<StartAtTriggerWorkflow>();
+        runtime.Workflows.Add<StartAtBookmarkWorkflow>();
+    })
+    .UseHttp()
+    .Apply();
+
+services
     .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider())
     .AddSchedulingServices();
 

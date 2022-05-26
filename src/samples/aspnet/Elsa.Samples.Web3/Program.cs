@@ -6,18 +6,15 @@ using Elsa.JavaScript.Activities;
 using Elsa.JavaScript.Extensions;
 using Elsa.Jobs.Extensions;
 using Elsa.Liquid.Extensions;
-using Elsa.ProtoActor.Extensions;
 using Elsa.Quartz.Implementations;
 using Elsa.Scheduling.Activities;
 using Elsa.Scheduling.Extensions;
 using Elsa.Workflows.Api.Extensions;
-using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Serialization;
-using Elsa.Workflows.Runtime.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -25,21 +22,21 @@ var services = builder.Services;
 // Add services.
 services
     .AddElsa(elsa => elsa
-        .UseWorkflows(workflows => workflows
-            .UseRuntime(runtime => runtime.UseProtoActor())
-            .UseManagement(management => management
-                .AddActivity<Sequence>()
-                .AddActivity<WriteLine>()
-                .AddActivity<ReadLine>()
-                .AddActivity<If>()
-                .AddActivity<HttpEndpoint>()
-                .AddActivity<Flowchart>()
-                .AddActivity<Delay>()
-                .AddActivity<Elsa.Scheduling.Activities.Timer>()
-                .AddActivity<ForEach>()
-                .AddActivity<Switch>()
-                .AddActivity<RunJavaScript>()))
-        .UseHttp())
+        .UseManagement(management => management
+            .AddActivity<Sequence>()
+            .AddActivity<WriteLine>()
+            .AddActivity<ReadLine>()
+            .AddActivity<If>()
+            .AddActivity<HttpEndpoint>()
+            .AddActivity<Flowchart>()
+            .AddActivity<Delay>()
+            .AddActivity<Elsa.Scheduling.Activities.Timer>()
+            .AddActivity<ForEach>()
+            .AddActivity<Switch>()
+            .AddActivity<RunJavaScript>())
+        .UseHttp());
+
+services
     .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider())
     .AddSchedulingServices();
 

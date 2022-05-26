@@ -17,29 +17,32 @@ using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Serialization;
+using Elsa.Workflows.Runtime.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 
 // Add Elsa services.
 services
-    .AddElsa(elsa => elsa
-        .UseWorkflows(workflows => workflows
-            .UseManagement(management => management
-                .AddActivity<Sequence>()
-                .AddActivity<WriteLine>()
-                .AddActivity<ReadLine>()
-                .AddActivity<If>()
-                .AddActivity<HttpEndpoint>()
-                .AddActivity<Flowchart>()
-                .AddActivity<Delay>()
-                .AddActivity<Elsa.Scheduling.Activities.Timer>()
-                .AddActivity<ForEach>()
-                .AddActivity<Switch>()
-                .AddActivity<RunJavaScript>()
-            ))
-        .UseHttp()
+    .AddElsa()
+    .UseWorkflows()
+    .UseRuntime()
+    .UseManagement(management => management
+        .AddActivity<Sequence>()
+        .AddActivity<WriteLine>()
+        .AddActivity<ReadLine>()
+        .AddActivity<If>()
+        .AddActivity<HttpEndpoint>()
+        .AddActivity<Flowchart>()
+        .AddActivity<Delay>()
+        .AddActivity<Elsa.Scheduling.Activities.Timer>()
+        .AddActivity<ForEach>()
+        .AddActivity<Switch>()
+        .AddActivity<RunJavaScript>()
     )
+    .UseHttp();
+
+services
     //.AddProtoActorRuntime()
     .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider())
     .AddSchedulingServices();

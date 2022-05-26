@@ -5,9 +5,9 @@ namespace Elsa.Workflows.Persistence.EntityFrameworkCore.Extensions;
 
 public static class DependencyInjectionExtensions
 {
-    public static WorkflowPersistenceConfigurator UseEntityFrameworkCore(this WorkflowPersistenceConfigurator configurator, Action<EFCoreWorkflowPersistenceOptions> configure)
+    public static WorkflowPersistenceConfigurator UseEntityFrameworkCore(this WorkflowPersistenceConfigurator configurator, Action<EFCoreWorkflowPersistenceConfigurator> configure)
     {
-        configurator.ServiceConfiguration.Configure(() => new EFCoreWorkflowPersistenceOptions(configurator), configure);
+        configurator.ServiceConfiguration.Configure(configure);
         return configurator;
     }
 }

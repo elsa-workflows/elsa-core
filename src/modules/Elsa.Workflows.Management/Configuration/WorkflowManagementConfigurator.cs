@@ -15,6 +15,10 @@ namespace Elsa.Workflows.Management.Configuration;
 
 public class WorkflowManagementConfigurator : ConfiguratorBase
 {
+    public WorkflowManagementConfigurator(IServiceConfiguration serviceConfiguration) : base(serviceConfiguration)
+    {
+    }
+    
     public HashSet<Type> ActivityTypes { get; } = new();
 
     public WorkflowManagementConfigurator AddActivity<T>() where T : IActivity

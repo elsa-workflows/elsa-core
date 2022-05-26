@@ -12,23 +12,26 @@ namespace Elsa.Extensions;
 
 public static class DependencyInjectionExtensions
 {
-    public static IServiceCollection AddElsa(this IServiceCollection services, Action<IServiceConfiguration>? configure = default)
+    public static IServiceCollection AddElsa(this IServiceCollection services, Action<IServiceConfiguration> configure)
+    {
+        var serviceConfiguration = services.AddElsa();
+        configure(serviceConfiguration);
+        serviceConfiguration.Apply();
+        return services;
+    }
+
+
+    public static IServiceConfiguration AddElsa(this IServiceCollection services)
     {
         services.AddMediator();
 
-        services
-            .ConfigureServices(config => config
-                .UseWorkflows(workflows =>
-                {
-                    workflows
-                        .UsePersistence()
-                        .UseRuntime()
-                        .UseManagement();
+        var serviceConfiguration = services
+            .ConfigureServices()
+            .UseWorkflows()
+            .UsePersistence()
+            .UseRuntime()
+            .UseManagement();
 
-                    configure?.Invoke(config);
-                })
-            );
-
-        return services;
+        return serviceConfiguration;
     }
 }

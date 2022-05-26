@@ -1,5 +1,5 @@
 using System.Threading.Channels;
-using Elsa.Workflows.Core.Configuration;
+using Elsa.ServiceConfiguration.Services;
 using Elsa.Workflows.Runtime.Configuration;
 using Elsa.Workflows.Runtime.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,10 +8,10 @@ namespace Elsa.Workflows.Runtime.Extensions;
 
 public static class DependencyInjectionExtensions
 {
-    public static WorkflowConfigurator UseRuntime(this WorkflowConfigurator configurator, Action<WorkflowRuntimeConfigurator>? configure = default)
+    public static IServiceConfiguration UseRuntime(this IServiceConfiguration serviceConfiguration, Action<WorkflowRuntimeConfigurator>? configure = default)
     {
-        configurator.ServiceConfiguration.Configure(() => new WorkflowRuntimeConfigurator(configurator.ServiceConfiguration), configure);
-        return configurator;
+        serviceConfiguration.Configure(configure);
+        return serviceConfiguration;
     }
 
     public static IServiceCollection CreateChannel<T>(this IServiceCollection services) =>

@@ -8,25 +8,22 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Labels.Configuration;
 
-public class LabelPersistenceOptions : ConfiguratorBase
+public class LabelsConfigurator : ConfiguratorBase
 {
-    public LabelPersistenceOptions(IServiceConfiguration serviceConfiguration)
+    public LabelsConfigurator(IServiceConfiguration serviceConfiguration) : base(serviceConfiguration)
     {
-        ServiceConfiguration = serviceConfiguration;
     }
-    
-    public IServiceConfiguration ServiceConfiguration { get; }
     
     public Func<IServiceProvider, ILabelStore> LabelStore { get; set; } = sp => sp.GetRequiredService<InMemoryLabelStore>();
     public Func<IServiceProvider, IWorkflowDefinitionLabelStore> WorkflowDefinitionLabelStore { get; set; } = sp => sp.GetRequiredService<InMemoryWorkflowDefinitionLabelStore>();
     
-    public LabelPersistenceOptions WithLabelStore(Func<IServiceProvider, ILabelStore> factory)
+    public LabelsConfigurator WithLabelStore(Func<IServiceProvider, ILabelStore> factory)
     {
         LabelStore = factory;
         return this;
     }
     
-    public LabelPersistenceOptions WithWorkflowDefinitionLabelStore(Func<IServiceProvider, IWorkflowDefinitionLabelStore> factory)
+    public LabelsConfigurator WithWorkflowDefinitionLabelStore(Func<IServiceProvider, IWorkflowDefinitionLabelStore> factory)
     {
         WorkflowDefinitionLabelStore = factory;
         return this;

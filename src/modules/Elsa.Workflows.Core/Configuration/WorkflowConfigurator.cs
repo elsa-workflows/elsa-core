@@ -15,12 +15,10 @@ namespace Elsa.Workflows.Core.Configuration;
 
 public class WorkflowConfigurator : ConfiguratorBase
 {
-    public WorkflowConfigurator(IServiceConfiguration serviceConfiguration)
+    public WorkflowConfigurator(IServiceConfiguration serviceConfiguration) : base(serviceConfiguration)
     {
         ServiceConfiguration = serviceConfiguration;
     }
-    
-    public IServiceConfiguration ServiceConfiguration { get; }
     
     public override void ConfigureServices(IServiceConfiguration serviceConfiguration)
     {
@@ -31,8 +29,6 @@ public class WorkflowConfigurator : ConfiguratorBase
 
     private void AddElsaCore(IServiceCollection services)
     {
-        //services.AddOptions<ElsaOptions>();
-
         services
 
             // Core.

@@ -29,22 +29,23 @@ var services = builder.Services;
 // Add services.
 services
     .AddElsa(elsa => elsa
-        .UseWorkflows(workflows => workflows
-            .UseRuntime(runtime => runtime.UseProtoActor())
-            .UseManagement(management => management
-                .AddActivity<Sequence>()
-                .AddActivity<WriteLine>()
-                .AddActivity<ReadLine>()
-                .AddActivity<If>()
-                .AddActivity<HttpEndpoint>()
-                .AddActivity<Flowchart>()
-                .AddActivity<Delay>()
-                .AddActivity<Timer>()
-                .AddActivity<ForEach>()
-                .AddActivity<Switch>()
-                .AddActivity<RunJavaScript>())
-        )
-        .UseHttp())
+        .UseWorkflows()
+        .UseRuntime(runtime => runtime.UseProtoActor())
+        .UseManagement(management => management
+            .AddActivity<Sequence>()
+            .AddActivity<WriteLine>()
+            .AddActivity<ReadLine>()
+            .AddActivity<If>()
+            .AddActivity<HttpEndpoint>()
+            .AddActivity<Flowchart>()
+            .AddActivity<Delay>()
+            .AddActivity<Timer>()
+            .AddActivity<ForEach>()
+            .AddActivity<Switch>()
+            .AddActivity<RunJavaScript>())
+        .UseHttp());
+
+services
     .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider())
     .AddSchedulingServices();
 

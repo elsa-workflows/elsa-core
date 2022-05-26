@@ -1,5 +1,7 @@
+using Elsa.Persistence.Common.Extensions;
 using Elsa.ServiceConfiguration.Abstractions;
 using Elsa.ServiceConfiguration.Services;
+using Elsa.Workflows.Persistence.Entities;
 using Elsa.Workflows.Persistence.Implementations;
 using Elsa.Workflows.Persistence.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,12 +10,10 @@ namespace Elsa.Workflows.Persistence.Configuration;
 
 public class WorkflowPersistenceConfigurator : ConfiguratorBase
 {
-    public WorkflowPersistenceConfigurator(IServiceConfiguration serviceConfiguration)
+    public WorkflowPersistenceConfigurator(IServiceConfiguration serviceConfiguration) : base(serviceConfiguration)
     {
-        ServiceConfiguration = serviceConfiguration;
     }
-
-    public IServiceConfiguration ServiceConfiguration { get; }
+    
     public Func<IServiceProvider, IWorkflowDefinitionStore> WorkflowDefinitionStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowDefinitionStore>();
     public Func<IServiceProvider, IWorkflowInstanceStore> WorkflowInstanceStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowInstanceStore>();
     public Func<IServiceProvider, IWorkflowBookmarkStore> WorkflowBookmarkStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowBookmarkStore>();
@@ -55,6 +55,11 @@ public class WorkflowPersistenceConfigurator : ConfiguratorBase
         var services = serviceConfiguration.Services;
         
         services
+            .AddMemoryStore<WorkflowDefinition, MemoryWorkflowDefinitionStore>()
+            .AddMemoryStore<WorkflowInstance, MemoryWorkflowInstanceStore>()
+            .AddMemoryStore<WorkflowBookmark, MemoryWorkflowBookmarkStore>()
+            .AddMemoryStore<WorkflowTrigger, MemoryWorkflowTriggerStore>()
+            .AddMemoryStore<WorkflowExecutionLogRecord, MemoryWorkflowExecutionLogStore>()
             .AddSingleton(WorkflowDefinitionStore)
             .AddSingleton(WorkflowInstanceStore)
             .AddSingleton(WorkflowBookmarkStore)

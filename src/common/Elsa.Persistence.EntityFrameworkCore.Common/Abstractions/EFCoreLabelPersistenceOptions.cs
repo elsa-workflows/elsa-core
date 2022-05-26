@@ -11,12 +11,10 @@ namespace Elsa.Persistence.EntityFrameworkCore.Common.Abstractions;
 
 public abstract class EFCorePersistenceConfigurator<TDbContext> : ConfiguratorBase where TDbContext : DbContext
 {
-    protected EFCorePersistenceConfigurator(IServiceConfiguration serviceConfiguration)
+    protected EFCorePersistenceConfigurator(IServiceConfiguration serviceConfiguration) : base(serviceConfiguration)
     {
-        ServiceConfiguration = serviceConfiguration;
     }
- 
-    public IServiceConfiguration ServiceConfiguration { get; }
+    
     public bool ContextPoolingIsEnabled { get; set; }
     public bool AutoRunMigrationsIsEnabled { get; set; } = true;
     public ServiceLifetime DbContextFactoryLifetime { get; set; } = ServiceLifetime.Singleton;

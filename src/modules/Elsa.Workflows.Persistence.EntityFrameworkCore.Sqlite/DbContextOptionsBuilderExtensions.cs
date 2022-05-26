@@ -6,8 +6,11 @@ namespace Elsa.Workflows.Persistence.EntityFrameworkCore.Sqlite
 {
     public static class DbContextOptionsBuilderExtensions
     {
-        public static EFCoreWorkflowPersistenceOptions UseSqlite(this EFCoreWorkflowPersistenceOptions options, string connectionString = "Data Source=elsa.sqlite.db;Cache=Shared;") =>
-            options.ConfigureDbContextOptions((_, db) => db.UseSqlite());
+        public static EFCoreWorkflowPersistenceConfigurator UseSqlite(this EFCoreWorkflowPersistenceConfigurator configurator, string connectionString = "Data Source=elsa.sqlite.db;Cache=Shared;")
+        {
+            configurator.ConfigureDbContextOptions((_, db) => db.UseSqlite(connectionString));
+            return configurator;
+        }
 
         public static DbContextOptionsBuilder UseSqlite(this DbContextOptionsBuilder builder, string connectionString = "Data Source=elsa.sqlite.db;Cache=Shared;") =>
             builder.UseSqlite(connectionString, db => db
