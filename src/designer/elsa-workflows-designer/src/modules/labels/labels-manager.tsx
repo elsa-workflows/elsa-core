@@ -1,8 +1,8 @@
 import {Component, h, Host, Method, State} from '@stencil/core';
-import {DefaultActions, EventTypes, Label} from "../../../models";
+import {DefaultActions, EventTypes, Label} from "../../models";
 import {Container} from "typedi";
-import labelStore from "../../../data/label-store";
-import {ElsaApiClientProvider, ElsaClient, EventBus} from "../../../services";
+import labelStore from "../../data/label-store";
+import {ElsaApiClientProvider, ElsaClient, EventBus} from "../../services";
 import {CreateLabelEventArgs, DeleteLabelEventArgs, UpdateLabelEventArgs} from "./models";
 
 @Component({

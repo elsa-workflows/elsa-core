@@ -1,11 +1,11 @@
 import {Component, h, Prop, State, Event, EventEmitter} from "@stencil/core";
 import {v4 as uuid} from 'uuid';
-import {Badge} from "../../shared/badge/badge";
-import {Button} from "../../shared/button-group/models";
-import {Label} from "../../../models";
-import {ElsaApiClientProvider, ElsaClient} from "../../../services";
+import {Badge} from "../../components/shared/badge/badge";
+import {Button} from "../../components/shared/button-group/models";
+import {Label} from "../../models";
+import {ElsaApiClientProvider, ElsaClient} from "../../services";
 import {Container} from "typedi";
-import {CreateLabelEventArgs, DeleteLabelEventArgs, UpdateLabelEventArgs} from "./models";
+import {DeleteLabelEventArgs, UpdateLabelEventArgs} from "./models";
 
 @Component({
   tag: 'elsa-label-editor',

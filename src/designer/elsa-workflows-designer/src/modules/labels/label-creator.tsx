@@ -1,6 +1,6 @@
 import {Component, Event, EventEmitter, h, Prop, State} from "@stencil/core";
-import {Badge} from "../../shared/badge/badge";
-import {isNullOrWhitespace} from "../../../utils";
+import {Badge} from "../../components/shared/badge/badge";
+import {isNullOrWhitespace} from "../../utils";
 import {CreateLabelEventArgs} from "./models";
 
 @Component({
