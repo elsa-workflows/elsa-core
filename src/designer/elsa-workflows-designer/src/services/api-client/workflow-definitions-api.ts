@@ -1,6 +1,6 @@
-import {Activity, PagedList, VersionOptions, WorkflowDefinition, WorkflowDefinitionSummary} from "../../models";
-import {AxiosInstance} from "axios";
-import {getVersionOptionsString, serializeQueryString} from "../../utils";
+import { Activity, PagedList, VersionOptions, WorkflowDefinition, WorkflowDefinitionSummary } from '../../models';
+import { AxiosInstance } from 'axios';
+import { getVersionOptionsString, serializeQueryString } from '../../utils';
 
 export interface WorkflowDefinitionsApi {
   post(request: SaveWorkflowDefinitionRequest): Promise<WorkflowDefinition>;
@@ -18,6 +18,12 @@ export interface WorkflowDefinitionsApi {
   export(request: ExportWorkflowRequest): Promise<ExportWorkflowResponse>;
 
   import(request: ImportWorkflowRequest): Promise<ImportWorkflowResponse>;
+
+  deleteMany(request: DeleteManyWorkflowDefinitionRequest): Promise<DeleteManyWorkflowDefinitionResponse>;
+
+  publishMany(request: PublishManyWorkflowDefinitionRequest): Promise<PublishManyWorkflowDefinitionResponse>;
+
+  unpublishMany(request: UnpublishManyWorkflowDefinitionRequest): Promise<UnpublishManyWorkflowDefinitionResponse>;
 }
 
 export interface SaveWorkflowDefinitionRequest {
@@ -25,8 +31,15 @@ export interface SaveWorkflowDefinitionRequest {
   name?: string;
   description?: string;
   publish: boolean;
-  root?: Activity
+  root?: Activity;
 }
+
+export interface BaseManyWorkflowDefinitionRequest {
+  definitionIds: string[];
+}
+export interface DeleteManyWorkflowDefinitionRequest extends BaseManyWorkflowDefinitionRequest {}
+export interface PublishManyWorkflowDefinitionRequest extends BaseManyWorkflowDefinitionRequest {}
+export interface UnpublishManyWorkflowDefinitionRequest extends BaseManyWorkflowDefinitionRequest {}
 
 export interface DeleteWorkflowDefinitionRequest {
   definitionId: string;
@@ -64,12 +77,32 @@ export interface ImportWorkflowResponse {
   workflowDefinition: WorkflowDefinition;
 }
 
+export enum WorkflowDefinitionsOrderBy {
+  Name = 'Name',
+  CreatedAt = 'CreatedAt',
+}
 export interface ListWorkflowDefinitionsRequest {
   page?: number;
   pageSize?: number;
   definitionIds?: Array<string>;
   versionOptions?: VersionOptions;
   materializerName?: string;
+  orderBy?: WorkflowDefinitionsOrderBy;
+}
+
+export interface DeleteManyWorkflowDefinitionResponse {
+  deleted: number;
+}
+
+export interface PublishManyWorkflowDefinitionResponse {
+  published: string[];
+  alreadyPublished: string[];
+  notFound: string[];
+}
+export interface UnpublishManyWorkflowDefinitionResponse {
+  retracted: string[];
+  notPublished: string[];
+  notFound: string[];
 }
 
 export class WorkflowDefinitionsApiImpl implements WorkflowDefinitionsApi {
@@ -102,8 +135,7 @@ export class WorkflowDefinitionsApiImpl implements WorkflowDefinitionsApi {
   async get(request: GetWorkflowRequest): Promise<WorkflowDefinition> {
     const queryString = {};
 
-    if (!!request.versionOptions)
-      queryString['versionOptions'] = getVersionOptionsString(request.versionOptions);
+    if (!!request.versionOptions) queryString['versionOptions'] = getVersionOptionsString(request.versionOptions);
 
     const queryStringText = serializeQueryString(queryString);
     const response = await this.httpClient.get<WorkflowDefinition>(`workflow-definitions/${request.definitionId}${queryStringText}`);
@@ -113,17 +145,15 @@ export class WorkflowDefinitionsApiImpl implements WorkflowDefinitionsApi {
   async list(request: ListWorkflowDefinitionsRequest): Promise<PagedList<WorkflowDefinitionSummary>> {
     const queryString: any = {};
 
-    if (!!request.materializerName)
-      queryString.materializer = request.materializerName;
+    if (!!request.materializerName) queryString.materializer = request.materializerName;
 
-    if (!!request.versionOptions)
-      queryString.versionOptions = getVersionOptionsString(request.versionOptions);
+    if (!!request.versionOptions) queryString.versionOptions = getVersionOptionsString(request.versionOptions);
 
-    if (!!request.page)
-      queryString.page = request.page;
+    if (!!request.page) queryString.page = request.page;
 
-    if (!!request.pageSize)
-      queryString.pageSize = request.pageSize;
+    if (!!request.pageSize) queryString.pageSize = request.pageSize;
+
+    if (!!request.pageSize) queryString.orderBy = request.orderBy;
 
     const queryStringText = serializeQueryString(queryString);
     const response = await this.httpClient.get<PagedList<WorkflowDefinitionSummary>>(`workflow-definitions${queryStringText}`);
@@ -133,23 +163,22 @@ export class WorkflowDefinitionsApiImpl implements WorkflowDefinitionsApi {
   async export(request: ExportWorkflowRequest): Promise<ExportWorkflowResponse> {
     const queryString = {};
 
-    if (!!request.versionOptions)
-      queryString['versionOptions'] = getVersionOptionsString(request.versionOptions);
+    if (!!request.versionOptions) queryString['versionOptions'] = getVersionOptionsString(request.versionOptions);
 
     const queryStringText = serializeQueryString(queryString);
     const definitionId = request.definitionId;
 
     const response = await this.httpClient.get(`workflow-definitions/${request.definitionId}/export${queryStringText}`, {
-      responseType: "blob"
+      responseType: 'blob',
     });
 
-    const contentDispositionHeader = response.headers["content-disposition"]; // Only available if the Elsa Server exposes the "Content-Disposition" header.
-    const fileName = contentDispositionHeader ? contentDispositionHeader.split(";")[1].split("=")[1] : `workflow-definition-${definitionId}.json`;
+    const contentDispositionHeader = response.headers['content-disposition']; // Only available if the Elsa Server exposes the "Content-Disposition" header.
+    const fileName = contentDispositionHeader ? contentDispositionHeader.split(';')[1].split('=')[1] : `workflow-definition-${definitionId}.json`;
     const data = response.data;
 
     return {
       fileName: fileName,
-      data: data
+      data: data,
     };
   }
 
@@ -160,11 +189,32 @@ export class WorkflowDefinitionsApiImpl implements WorkflowDefinitionsApi {
 
     const response = await this.httpClient.post<WorkflowDefinition>(`workflow-definitions/${definitionId}/import`, json, {
       headers: {
-        'Content-Type': 'application/json'
-      }
+        'Content-Type': 'application/json',
+      },
     });
 
     const workflowDefinition = response.data;
-    return {workflowDefinition: workflowDefinition};
+    return { workflowDefinition: workflowDefinition };
+  }
+
+  async deleteMany(request: DeleteManyWorkflowDefinitionRequest): Promise<DeleteManyWorkflowDefinitionResponse> {
+    const response = await this.httpClient.post<DeleteManyWorkflowDefinitionResponse>(`bulk-actions/delete/workflow-definitions/by-definition-id`, {
+      definitionIds: request.definitionIds,
+    });
+    return response.data;
+  }
+
+  async publishMany(request: PublishManyWorkflowDefinitionRequest): Promise<PublishManyWorkflowDefinitionResponse> {
+    const response = await this.httpClient.post<PublishManyWorkflowDefinitionResponse>(`/bulk-actions/publish/workflow-definitions/by-definition-id`, {
+      definitionIds: request.definitionIds,
+    });
+    return response.data;
+  }
+
+  async unpublishMany(request: UnpublishManyWorkflowDefinitionRequest): Promise<UnpublishManyWorkflowDefinitionResponse> {
+    const response = await this.httpClient.post<UnpublishManyWorkflowDefinitionResponse>(`/bulk-actions/retract/workflow-definitions/by-definition-id`, {
+      definitionIds: request.definitionIds,
+    });
+    return response.data;
   }
 }
