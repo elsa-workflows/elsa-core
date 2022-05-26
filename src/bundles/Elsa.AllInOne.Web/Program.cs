@@ -24,7 +24,7 @@ var services = builder.Services;
 
 // Add Elsa services.
 services
-    .AddElsa()
+    .ConfigureElsa()
     .UseWorkflows()
     .UseRuntime()
     .UseManagement(management => management
@@ -40,7 +40,8 @@ services
         .AddActivity<Switch>()
         .AddActivity<RunJavaScript>()
     )
-    .UseHttp();
+    .UseHttp()
+    .Apply();
 
 services
     //.AddProtoActorRuntime()

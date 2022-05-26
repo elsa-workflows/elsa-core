@@ -12,16 +12,16 @@ namespace Elsa.Extensions;
 
 public static class DependencyInjectionExtensions
 {
-    public static IServiceCollection AddElsa(this IServiceCollection services, Action<IServiceConfiguration> configure)
+    public static IServiceCollection AddElsa(this IServiceCollection services, Action<IServiceConfiguration>? configure = default)
     {
-        var serviceConfiguration = services.AddElsa();
-        configure(serviceConfiguration);
+        var serviceConfiguration = services.ConfigureElsa();
+        configure?.Invoke(serviceConfiguration);
         serviceConfiguration.Apply();
         return services;
     }
 
 
-    public static IServiceConfiguration AddElsa(this IServiceCollection services)
+    public static IServiceConfiguration ConfigureElsa(this IServiceCollection services)
     {
         services.AddMediator();
 

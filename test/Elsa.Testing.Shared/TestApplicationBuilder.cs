@@ -17,7 +17,7 @@ public class TestApplicationBuilder
     {
         _testOutputHelper = testOutputHelper;
         _services = new ServiceCollection();
-        _services.AddElsa();
+        _services.ConfigureElsa();
 
         _services
             .AddSingleton(testOutputHelper)

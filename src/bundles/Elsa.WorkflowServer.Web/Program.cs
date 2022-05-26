@@ -32,7 +32,7 @@ var services = builder.Services;
 
 // Add Elsa services.
 services
-    .AddElsa()
+    .ConfigureElsa()
     .UseWorkflows()
     .UseManagement(management => management
         .AddActivity<Sequence>()
@@ -50,7 +50,8 @@ services
     .UsePersistence(p => p.UseEntityFrameworkCore(ef => ef.UseSqlite()))
     .UseRuntime(runtime => runtime.UseProtoActor())
     .UseLabels(labels => labels.UseEntityFrameworkCore(ef => ef.UseSqlite()))
-    .UseHttp();
+    .UseHttp()
+    .Apply();
 
 services
     .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider())
