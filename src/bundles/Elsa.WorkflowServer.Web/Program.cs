@@ -65,7 +65,8 @@ services
     .AddControllers(mvc => mvc.Conventions.Add(new ApiEndpointAttributeConvention())) // This convention is required as well. 
     .ClearApplicationParts() // Remove all controllers from referenced packages.
     .AddApplicationPartsFrom<Program>() // Add back any controllers from the current application.
-    .AddElsaApiControllers() // Add Elsa API endpoint controllers.
+    .AddWorkflowManagementApiControllers() // Add workflow management API endpoint controllers.
+    .AddLabelsApiControllers() // Add label API controllers.
     ;
 
 services.AddHealthChecks();
@@ -111,7 +112,8 @@ app.UseCors();
 app.MapHealthChecks("/");
 
 // Map Elsa API endpoint controllers.
-app.MapElsaApiEndpoints("elsa/api");
+app.MapWorkflowManagementApiEndpoints();
+app.MapLabelApiEndpoints();
 
 // Register Elsa middleware.
 app.UseJsonSerializationErrorHandler();

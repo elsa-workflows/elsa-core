@@ -9,7 +9,7 @@ public static class MvcBuilderExtensions
     /// <summary>
     /// Add all API controllers from this assembly.
     /// </summary>
-    public static IMvcBuilder AddElsaApiControllers(this IMvcBuilder mvcBuilder)
+    public static IMvcBuilder AddWorkflowManagementApiControllers(this IMvcBuilder mvcBuilder)
     {
         return mvcBuilder.ConfigureApplicationPartManager(partManager =>
         {
