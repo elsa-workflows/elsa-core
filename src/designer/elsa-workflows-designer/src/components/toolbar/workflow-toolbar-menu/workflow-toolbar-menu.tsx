@@ -1,24 +1,40 @@
 import {Component, Event, EventEmitter, Host, h, Listen, Prop, State} from '@stencil/core';
 import {leave, toggle} from 'el-transition';
-import {LabelsManager} from "../../modals/labels-manager/labels-manager";
+import {EventBus} from "../../../services";
+import {Container} from "typedi";
+import {ToolbarDisplayingArgs, ToolbarEventTypes, ToolbarMenu, ToolbarMenuItem} from "./models";
 
 @Component({
   tag: 'elsa-workflow-toolbar-menu',
   shadow: false,
 })
 export class WorkflowToolbarMenu {
+  private readonly eventBus: EventBus;
+  private readonly model: ToolbarMenu;
   private menu: HTMLElement;
   private element: HTMLElement;
   private workflowDefinitionBrowser: HTMLElsaWorkflowDefinitionBrowserElement;
   private workflowInstanceBrowser: HTMLElsaWorkflowInstanceBrowserElement;
-  private labelsManager: HTMLElsaLabelsManagerElement;
 
-  @Listen('click', {target: 'window'})
-  private onWindowClicked(event: Event) {
-    const target = event.target as HTMLElement;
+  constructor() {
+    this.eventBus = Container.get(EventBus);
 
-    if (!this.element.contains(target))
-      this.closeMenu();
+    this.model = {
+      menuItems: [{
+        text: 'Workflow Definitions',
+        onClick: this.onWorkflowDefinitionsClick,
+        order: 0
+      }, {
+        text: 'Workflow Instances',
+        onClick: this.onWorkflowInstancesClick,
+        order: 1
+      }]
+    }
+  }
+
+  async componentWillLoad() {
+    const args: ToolbarDisplayingArgs = {menu: this.model};
+    await this.eventBus.emit<WorkflowToolbarMenu>(ToolbarEventTypes.Displaying, this, args);
   }
 
   private closeMenu = () => {
@@ -29,25 +45,8 @@ export class WorkflowToolbarMenu {
     toggle(this.menu);
   };
 
-  private onWorkflowDefinitionsClick = async (e: MouseEvent) => {
-    e.preventDefault();
-    await this.workflowDefinitionBrowser.show();
-    this.closeMenu();
-  };
-
-  private onWorkflowInstancesClick = async (e: MouseEvent) => {
-    e.preventDefault();
-    await this.workflowInstanceBrowser.show();
-    this.closeMenu();
-  };
-
-  private onLabelsClick = async (e: MouseEvent) => {
-    e.preventDefault();
-    await this.labelsManager.show();
-    this.closeMenu();
-  };
-
   render() {
+    const menuItems = this.model.menuItems;
 
     return (
       <Host class="block" ref={el => this.element = el}>
@@ -73,16 +72,35 @@ export class WorkflowToolbarMenu {
                data-transition-leave-end="transform opacity-0 scale-95"
                class="hidden origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
                role="menu" aria-orientation="vertical" aria-labelledby="user-menu-button" tabindex="-1">
-            <a onClick={e => this.onWorkflowDefinitionsClick(e)} href="#" role="menuitem" tabindex="-1">Workflow Definitions</a>
-            <a onClick={e => this.onWorkflowInstancesClick(e)} href="#" role="menuitem" tabindex="-1">Workflow Instances</a>
-            <a onClick={e => this.onLabelsClick(e)} href="#" role="menuitem" tabindex="-1">Labels</a>
+            {menuItems.map(menuItem => <a onClick={e => this.onMenuItemClick(e, menuItem)} href="#" role="menuitem" tabindex="-1">{menuItem.text}</a>)}
             <a href="#" role="menuitem" tabindex="-1">Settings</a>
           </div>
         </div>
         <elsa-workflow-definition-browser ref={el => this.workflowDefinitionBrowser = el}/>
         <elsa-workflow-instance-browser ref={el => this.workflowInstanceBrowser = el}/>
-        <elsa-labels-manager ref={el => this.labelsManager = el}/>
       </Host>
     );
   }
+
+  @Listen('click', {target: 'window'})
+  private onWindowClicked(event: Event) {
+    const target = event.target as HTMLElement;
+
+    if (!this.element.contains(target))
+      this.closeMenu();
+  }
+
+  private onWorkflowDefinitionsClick = async () => {
+    await this.workflowDefinitionBrowser.show();
+  };
+
+  private onWorkflowInstancesClick = async () => {
+    await this.workflowInstanceBrowser.show();
+  };
+
+  private onMenuItemClick = async (e: MouseEvent, menuItem: ToolbarMenuItem) => {
+    e.preventDefault();
+    await menuItem.onClick();
+    this.closeMenu();
+  };
 }

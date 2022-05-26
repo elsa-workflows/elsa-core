@@ -1,18 +1,24 @@
 import {Component, h, Host, Method, State} from '@stencil/core';
-import {DefaultActions, EventTypes, Label} from "../../../models";
+import {DefaultActions, EventTypes} from "../../models";
 import {Container} from "typedi";
-import labelStore from "../../../data/label-store";
-import {ElsaApiClientProvider, ElsaClient, EventBus} from "../../../services";
+import labelStore from "./label-store";
+import {ElsaApiClientProvider, ElsaClient, EventBus} from "../../services";
 import {CreateLabelEventArgs, DeleteLabelEventArgs, UpdateLabelEventArgs} from "./models";
+import {LabelsApi} from "./labels-api";
 
 @Component({
   tag: 'elsa-labels-manager',
   shadow: false,
 })
 export class LabelsManager {
-  private elsaClient: ElsaClient;
+  private readonly eventBus: EventBus;
+  private readonly labelsApi: LabelsApi;
   private modalDialog: HTMLElsaModalDialogElement;
-  private eventBus: EventBus;
+
+  constructor() {
+    this.eventBus = Container.get(EventBus);
+    this.labelsApi = Container.get(LabelsApi);
+  }
 
   @State() private createMode: boolean = false;
 
@@ -24,12 +30,6 @@ export class LabelsManager {
   @Method()
   public async hide() {
     await this.modalDialog.hide();
-  }
-
-  public async componentWillLoad() {
-    const elsaClientProvider = Container.get(ElsaApiClientProvider);
-    this.elsaClient = await elsaClientProvider.getClient();
-    this.eventBus = Container.get(EventBus);
   }
 
   render() {
@@ -81,20 +81,19 @@ export class LabelsManager {
   }
 
   private createLabel = async (name: string, description?: string, color?: string): Promise<void> => {
-    await this.elsaClient.labels.create(name, description, color);
+    await this.labelsApi.create(name, description, color);
   }
 
   private updateLabel = async (id: string, name: string, description?: string, color?: string): Promise<void> => {
-    await this.elsaClient.labels.update(id, name, description, color);
+    await this.labelsApi.update(id, name, description, color);
   }
 
   private deleteLabel = async (id: string): Promise<void> => {
-    await this.elsaClient.labels.delete(id);
+    await this.labelsApi.delete(id);
   }
 
   private async loadLabels() {
-    const elsaClient = this.elsaClient;
-    labelStore.labels = await elsaClient.labels.list();
+    labelStore.labels = await this.labelsApi.list();
   }
 
   private async refreshLabels() {

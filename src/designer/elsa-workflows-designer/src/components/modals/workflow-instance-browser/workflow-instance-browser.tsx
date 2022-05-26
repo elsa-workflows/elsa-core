@@ -52,7 +52,7 @@ export class WorkflowInstanceBrowser {
 
   public async componentWillLoad() {
     const elsaClientProvider = Container.get(ElsaApiClientProvider);
-    this.elsaClient = await elsaClientProvider.getClient();
+    this.elsaClient = await elsaClientProvider.getElsaClient();
   }
 
   public render() {

@@ -77,13 +77,6 @@ export interface RegisterLocation {
   value: any;
 }
 
-export interface Label {
-  id: string;
-  name: string;
-  description?: string;
-  color?: string;
-}
-
 export enum SyntaxNames {
   Literal = 'Literal',
   JavaScript = 'JavaScript',

@@ -7,28 +7,16 @@ import {ServerSettings} from '../server-settings';
 import {WorkflowDefinitionsApi, WorkflowDefinitionsApiImpl} from "./workflow-definitions-api";
 import {WorkflowInstancesApi, WorkflowInstancesApiImpl} from "./workflow-instances-api";
 import {DescriptorsApi, DescriptorsApiImpl} from "./descriptors-api";
-import {LabelsApi, LabelsApiImpl} from "./labels-api";
 import {DesignerApi, DesignerApiImpl} from "./designer-api";
 import {EventTypes} from "../../models";
-import {WorkflowDefinitionLabelsApi, WorkflowDefinitionLabelsApiImpl} from "./workflow-definition-labels-api";
 
-export interface ElsaClient {
-  descriptors: DescriptorsApi;
-  workflowDefinitions: WorkflowDefinitionsApi;
-  workflowInstances: WorkflowInstancesApi;
-  labels: LabelsApi;
-  designer: DesignerApi;
-  workflowDefinitionLabelsApi: WorkflowDefinitionLabelsApi
-}
-
-class ElsaClientImpl implements ElsaClient {
+@Service()
+export class ElsaClient {
   httpClient: AxiosInstance;
   descriptors: DescriptorsApi;
   designer: DesignerApi;
-  labels: LabelsApi;
   workflowDefinitions: WorkflowDefinitionsApi;
   workflowInstances: WorkflowInstancesApi;
-  workflowDefinitionLabelsApi: WorkflowDefinitionLabelsApi;
 
   constructor(httpClient: AxiosInstance) {
     this.httpClient = httpClient;
@@ -36,27 +24,35 @@ class ElsaClientImpl implements ElsaClient {
     this.workflowInstances = new WorkflowInstancesApiImpl(httpClient);
     this.descriptors = new DescriptorsApiImpl(httpClient);
     this.designer = new DesignerApiImpl(httpClient);
-    this.labels = new LabelsApiImpl(httpClient);
-    this.workflowDefinitionLabelsApi = new WorkflowDefinitionLabelsApiImpl(httpClient);
   }
 }
 
 @Service()
 export class ElsaApiClientProvider {
+  private httpClient: AxiosInstance;
   private elsaClient: ElsaClient;
 
   constructor(private serverSettings: ServerSettings) {
   }
 
-  public async getClient(): Promise<ElsaClient> {
+  public async getHttpClient(): Promise<AxiosInstance>
+  {
+    if (!!this.httpClient)
+      return this.httpClient;
+
+    return this.httpClient = await createHttpClient(this.serverSettings.baseAddress);
+  }
+
+  public async getElsaClient(): Promise<ElsaClient> {
     if (!!this.elsaClient)
       return this.elsaClient;
 
-    return this.elsaClient = await createElsaClient(this.serverSettings.baseAddress);
+    const httpClient = await this.getHttpClient();
+    return this.elsaClient = new ElsaClient(httpClient);
   }
 }
 
-export async function createHttpClient(baseAddress: string): Promise<AxiosInstance> {
+async function createHttpClient(baseAddress: string): Promise<AxiosInstance> {
   const config: AxiosRequestConfig = {
     baseURL: baseAddress
   };
@@ -70,11 +66,4 @@ export async function createHttpClient(baseAddress: string): Promise<AxiosInstan
   await eventBus.emit(EventTypes.HttpClient.ClientCreated, this, {service: middlewareService, httpClient});
 
   return httpClient;
-}
-
-export async function createElsaClient(serverUrl: string): Promise<ElsaClient> {
-
-  const httpClient: AxiosInstance = await createHttpClient(serverUrl);
-
-  return new ElsaClientImpl(httpClient);
 }

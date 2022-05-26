@@ -43,7 +43,7 @@ export class WorkflowDefinitionBrowser {
 
   public async componentWillLoad() {
     const elsaClientProvider = Container.get(ElsaApiClientProvider);
-    this.elsaClient = await elsaClientProvider.getClient();
+    this.elsaClient = await elsaClientProvider.getElsaClient();
   }
 
   private async onPublishClick(e: MouseEvent, workflowDefinition: WorkflowDefinitionSummary) {

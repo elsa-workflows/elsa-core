@@ -1,19 +1,24 @@
 import {Component, h, Prop, State, Event, EventEmitter} from "@stencil/core";
 import {v4 as uuid} from 'uuid';
-import {Badge} from "../../shared/badge/badge";
-import {Button} from "../../shared/button-group/models";
-import {Label} from "../../../models";
-import {ElsaApiClientProvider, ElsaClient} from "../../../services";
+import {Badge} from "../../components/shared/badge/badge";
+import {Button} from "../../components/shared/button-group/models";
+import {Label} from "./models";
 import {Container} from "typedi";
-import {CreateLabelEventArgs, DeleteLabelEventArgs, UpdateLabelEventArgs} from "./models";
+import {DeleteLabelEventArgs, UpdateLabelEventArgs} from "./models";
+import {LabelsApi} from "./labels-api";
 
 @Component({
   tag: 'elsa-label-editor',
   shadow: false,
 })
 export class LabelEditor {
-  private elsaClient: ElsaClient;
   static readonly defaultColor: string = '#991b1b';
+
+  private readonly labelsApi: LabelsApi;
+
+  constructor() {
+    this.labelsApi = Container.get(LabelsApi);
+  }
 
   @Prop() label: Label = {id: uuid(), name: 'Preview'};
 
@@ -26,9 +31,6 @@ export class LabelEditor {
   @State() labelColor?: string;
 
   async componentWillLoad() {
-    const elsaClientProvider = Container.get(ElsaApiClientProvider);
-    this.elsaClient = await elsaClientProvider.getClient();
-
     const label = this.label;
     this.labelName = label.name;
     this.labelDescription = label.description;
@@ -116,7 +118,7 @@ export class LabelEditor {
   }
 
   private updateLabel = async (id: string, name: string, description: string, color: string): Promise<Label> => {
-    return await this.elsaClient.labels.update(id, name, description, color);
+    return await this.labelsApi.update(id, name, description, color);
   }
 
   private onNameChanged = (e: Event) => {
