@@ -27,11 +27,9 @@ public class WorkflowManagementConfigurator : ConfiguratorBase
         return this;
     }
 
-    public override void ConfigureServices(IServiceConfiguration serviceConfiguration)
+    public override void ConfigureServices()
     {
-        var services = serviceConfiguration.Services;
-        
-        services
+        Services
             .AddSingleton<IWorkflowPublisher, WorkflowPublisher>()
             .AddSingleton<IActivityDescriber, ActivityDescriber>()
             .AddSingleton<IActivityRegistry, ActivityRegistry>()
@@ -48,7 +46,7 @@ public class WorkflowManagementConfigurator : ConfiguratorBase
             .AddSingleton<IWorkflowMaterializer, JsonWorkflowMaterializer>()
             .AddSingleton<WorkflowSerializerOptionsProvider>();
         
-        services.Configure<ApiOptions>(options =>
+        Services.Configure<ApiOptions>(options =>
         {
             foreach (var activityType in ActivityTypes) 
                 options.ActivityTypes.Add(activityType);

@@ -13,17 +13,16 @@ public class EFCoreLabelPersistenceConfigurator : EFCorePersistenceConfigurator<
     {
     }
     
-    public override void ConfigureServices(IServiceConfiguration serviceConfiguration)
+    public override void ConfigureServices()
     {
-        base.ConfigureServices(serviceConfiguration);
+        base.ConfigureServices();
 
-        serviceConfiguration.UseLabels(labels => labels
+        ServiceConfiguration.UseLabels(labels => labels
             .WithLabelStore(sp => sp.GetRequiredService<EFCoreLabelStore>())
             .WithWorkflowDefinitionLabelStore(sp => sp.GetRequiredService<EFCoreWorkflowDefinitionLabelStore>())
         );
-
-        var services = serviceConfiguration.Services;
-        AddStore<Label, EFCoreLabelStore>(services);
-        AddStore<WorkflowDefinitionLabel, EFCoreWorkflowDefinitionLabelStore>(services);
+        
+        AddStore<Label, EFCoreLabelStore>(Services);
+        AddStore<WorkflowDefinitionLabel, EFCoreWorkflowDefinitionLabelStore>(Services);
     }
 }

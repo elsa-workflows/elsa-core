@@ -17,7 +17,6 @@ public class WorkflowsConfigurator : ConfiguratorBase
 {
     public WorkflowsConfigurator(IServiceConfiguration serviceConfiguration) : base(serviceConfiguration)
     {
-        ServiceConfiguration = serviceConfiguration;
     }
     
     /// <summary>
@@ -42,11 +41,10 @@ public class WorkflowsConfigurator : ConfiguratorBase
         return this;
     }
     
-    public override void ConfigureServices(IServiceConfiguration serviceConfiguration)
+    public override void ConfigureServices()
     {
-        var services = serviceConfiguration.Services;
-        AddElsaCore(services);
-        AddExpressions(services);
+        AddElsaCore(Services);
+        AddExpressions(Services);
     }
 
     private void AddElsaCore(IServiceCollection services)

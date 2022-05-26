@@ -24,9 +24,9 @@ public class ProtoActorConfigurator : ConfiguratorBase
     {
     }
 
-    public override void ConfigureServices(IServiceConfiguration serviceConfiguration)
+    public override void ConfigureServices()
     {
-        var services = serviceConfiguration.Services;
+        var services = Services;
         var systemConfig = GetSystemConfig();
 
         // Logging.
@@ -61,10 +61,9 @@ public class ProtoActorConfigurator : ConfiguratorBase
         ServiceConfiguration.Configure<WorkflowRuntimeConfigurator>().WorkflowInvokerFactory = sp => ActivatorUtilities.CreateInstance<ProtoActorWorkflowInvoker>(sp);
     }
 
-    public override void ConfigureHostedServices(IServiceConfiguration serviceConfiguration)
+    public override void ConfigureHostedServices()
     {
-        var services = serviceConfiguration.Services;
-        services.AddHostedService<WorkflowServerHost>();
+        Services.AddHostedService<WorkflowServerHost>();
     }
 
     private static ActorSystemConfig GetSystemConfig() =>

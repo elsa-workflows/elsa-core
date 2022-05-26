@@ -50,11 +50,8 @@ public class WorkflowPersistenceConfigurator : ConfiguratorBase
         return this;
     }
 
-    public override void ConfigureServices(IServiceConfiguration serviceConfiguration)
-    {
-        var services = serviceConfiguration.Services;
-        
-        services
+    public override void ConfigureServices() =>
+        Services
             .AddMemoryStore<WorkflowDefinition, MemoryWorkflowDefinitionStore>()
             .AddMemoryStore<WorkflowInstance, MemoryWorkflowInstanceStore>()
             .AddMemoryStore<WorkflowBookmark, MemoryWorkflowBookmarkStore>()
@@ -64,7 +61,5 @@ public class WorkflowPersistenceConfigurator : ConfiguratorBase
             .AddSingleton(WorkflowInstanceStore)
             .AddSingleton(WorkflowBookmarkStore)
             .AddSingleton(WorkflowTriggerStore)
-            .AddSingleton(WorkflowExecutionLogStore)
-            ;
-    }
+            .AddSingleton(WorkflowExecutionLogStore);
 }

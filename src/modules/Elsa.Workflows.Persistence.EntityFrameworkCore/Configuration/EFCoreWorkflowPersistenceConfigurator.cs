@@ -15,18 +15,17 @@ public class EFCoreWorkflowPersistenceConfigurator : EFCorePersistenceConfigurat
     {
     }
 
-    public override void ConfigureServices(IServiceConfiguration serviceConfiguration)
+    public override void ConfigureServices()
     {
-        base.ConfigureServices(serviceConfiguration);
+        base.ConfigureServices();
+        
+        AddStore<WorkflowDefinition, EFCoreWorkflowDefinitionStore>(Services);
+        AddStore<WorkflowInstance, EFCoreWorkflowInstanceStore>(Services);
+        AddStore<WorkflowBookmark, EFCoreWorkflowBookmarkStore>(Services);
+        AddStore<WorkflowTrigger, EFCoreWorkflowTriggerStore>(Services);
+        AddStore<WorkflowExecutionLogRecord, EFCoreWorkflowExecutionLogStore>(Services);
 
-        var services = serviceConfiguration.Services;
-        AddStore<WorkflowDefinition, EFCoreWorkflowDefinitionStore>(services);
-        AddStore<WorkflowInstance, EFCoreWorkflowInstanceStore>(services);
-        AddStore<WorkflowBookmark, EFCoreWorkflowBookmarkStore>(services);
-        AddStore<WorkflowTrigger, EFCoreWorkflowTriggerStore>(services);
-        AddStore<WorkflowExecutionLogRecord, EFCoreWorkflowExecutionLogStore>(services);
-
-        services
+        Services
             .AddSingleton<IEntitySerializer<WorkflowsDbContext, WorkflowDefinition>, WorkflowDefinitionSerializer>()
             .AddSingleton<IEntitySerializer<WorkflowsDbContext, WorkflowInstance>, WorkflowInstanceSerializer>()
             .AddSingleton<IEntitySerializer<WorkflowsDbContext, WorkflowExecutionLogRecord>, WorkflowExecutionLogRecordSerializer>()

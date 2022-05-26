@@ -47,8 +47,8 @@ public class ServiceConfiguration : IServiceConfiguration
 
         foreach (var configurator in _configurators)
         {
-            configurator.ConfigureServices(this);
-            configurator.ConfigureHostedServices(this);
+            configurator.ConfigureServices();
+            configurator.ConfigureHostedServices();
         }
 
         foreach (var hostedServiceDescriptor in _hostedServiceDescriptors.OrderBy(x => x.Order))

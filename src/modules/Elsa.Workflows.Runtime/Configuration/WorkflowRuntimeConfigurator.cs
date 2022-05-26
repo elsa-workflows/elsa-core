@@ -1,7 +1,6 @@
 using Elsa.Mediator.Extensions;
 using Elsa.ServiceConfiguration.Abstractions;
 using Elsa.ServiceConfiguration.Services;
-using Elsa.Workflows.Core.Implementations;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Runtime.Extensions;
 using Elsa.Workflows.Runtime.HostedServices;
@@ -37,11 +36,9 @@ public class WorkflowRuntimeConfigurator : ConfiguratorBase
     /// </summary>
     public Func<IServiceProvider, IWorkflowDispatcher> WorkflowDispatcherFactory { get; set; } = sp => ActivatorUtilities.CreateInstance<TaskBasedWorkflowDispatcher>(sp);
 
-    public override void ConfigureServices(IServiceConfiguration serviceConfiguration)
+    public override void ConfigureServices()
     {
-        var services = serviceConfiguration.Services;
-
-        services
+        Services
             // Core.
             .AddSingleton<IStimulusInterpreter, StimulusInterpreter>()
             .AddSingleton<IWorkflowInstructionExecutor, WorkflowInstructionExecutor>()
@@ -74,16 +71,14 @@ public class WorkflowRuntimeConfigurator : ConfiguratorBase
             .CreateChannel<DispatchWorkflowInstanceRequest>()
             ;
 
-        services.Configure<WorkflowRuntimeOptions>(options => options.Workflows = Workflows);
+        Services.Configure<WorkflowRuntimeOptions>(options => options.Workflows = Workflows);
     }
 
-    public override void ConfigureHostedServices(IServiceConfiguration services)
-    {
-        services
+    public override void ConfigureHostedServices() =>
+        ServiceConfiguration
             .ConfigureHostedService<RegisterDescriptors>()
             .ConfigureHostedService<RegisterExpressionSyntaxDescriptors>()
             .ConfigureHostedService<DispatchedWorkflowDefinitionWorker>()
             .ConfigureHostedService<DispatchedWorkflowInstanceWorker>()
             .ConfigureHostedService<PopulateWorkflowDefinitionStore>();
-    }
 }

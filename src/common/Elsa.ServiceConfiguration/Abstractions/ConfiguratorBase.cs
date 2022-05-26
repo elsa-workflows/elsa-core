@@ -1,4 +1,5 @@
 using Elsa.ServiceConfiguration.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.ServiceConfiguration.Abstractions;
 
@@ -9,13 +10,14 @@ public abstract class ConfiguratorBase : IConfigurator
         ServiceConfiguration = serviceConfiguration;
     }
     
-    public IServiceConfiguration ServiceConfiguration { get; set; }
+    public IServiceConfiguration ServiceConfiguration { get; }
+    public IServiceCollection Services => ServiceConfiguration.Services;
 
-    public virtual void ConfigureServices(IServiceConfiguration serviceConfiguration)
+    public virtual void ConfigureServices()
     {
     }
 
-    public virtual void ConfigureHostedServices(IServiceConfiguration serviceConfiguration)
+    public virtual void ConfigureHostedServices()
     {
     }
 }

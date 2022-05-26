@@ -10,9 +10,8 @@ public class MediatorConfigurator : ConfiguratorBase
     {
     }
 
-    public override void ConfigureServices(IServiceConfiguration serviceConfiguration)
+    public override void ConfigureServices()
     {
-        var services = serviceConfiguration.Services;
-        services.AddMediator();
+        Services.AddMediator();
     }
 }

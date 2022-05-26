@@ -29,9 +29,9 @@ public class LabelsConfigurator : ConfiguratorBase
         return this;
     }
 
-    public override void ConfigureServices(IServiceConfiguration configuration)
+    public override void ConfigureServices()
     {
-        configuration.Services
+        Services
             .AddMemoryStore<Label, InMemoryLabelStore>()
             .AddMemoryStore<WorkflowDefinitionLabel, InMemoryWorkflowDefinitionLabelStore>()
             .AddSingleton(LabelStore)

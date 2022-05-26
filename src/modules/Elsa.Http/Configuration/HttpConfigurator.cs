@@ -38,12 +38,11 @@ public class HttpConfigurator : ConfiguratorBase
         return this;
     }
 
-    public override void ConfigureServices(IServiceConfiguration serviceConfiguration)
+    public override void ConfigureServices()
     {
-        var services = serviceConfiguration.Services;
-        services.Configure<HttpActivityOptions>(options => options.BasePath = BasePath);
+        Services.Configure<HttpActivityOptions>(options => options.BasePath = BasePath);
 
-        services
+        Services
             .AddSingleton<IRouteMatcher, RouteMatcher>()
             .AddSingleton<IRouteTable, RouteTable>()
             .AddNotificationHandlersFrom<UpdateRouteTable>()
