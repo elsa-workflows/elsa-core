@@ -11,7 +11,7 @@ namespace Elsa.Persistence.EntityFrameworkCore.Common.Abstractions;
 
 public abstract class EFCorePersistenceConfigurator<TDbContext> : ConfiguratorBase where TDbContext : DbContext
 {
-    public EFCorePersistenceConfigurator(IServiceConfiguration serviceConfiguration)
+    protected EFCorePersistenceConfigurator(IServiceConfiguration serviceConfiguration)
     {
         ServiceConfiguration = serviceConfiguration;
     }
@@ -40,18 +40,18 @@ public abstract class EFCorePersistenceConfigurator<TDbContext> : ConfiguratorBa
         return this;
     }
 
-    public override void ConfigureServices(IServiceCollection services)
+    public override void ConfigureServices(IServiceConfiguration serviceConfiguration)
     {
         if (ContextPoolingIsEnabled)
-            services.AddPooledDbContextFactory<TDbContext>(DbContextOptionsBuilderAction);
+            serviceConfiguration.Services.AddPooledDbContextFactory<TDbContext>(DbContextOptionsBuilderAction);
         else
-            services.AddDbContextFactory<TDbContext>(DbContextOptionsBuilderAction, DbContextFactoryLifetime);
+            serviceConfiguration.Services.AddDbContextFactory<TDbContext>(DbContextOptionsBuilderAction, DbContextFactoryLifetime);
     }
 
-    public override void ConfigureHostedServices(IServiceCollection services)
+    public override void ConfigureHostedServices(IServiceConfiguration serviceConfiguration)
     {
         if (AutoRunMigrationsIsEnabled)
-            ServiceConfiguration.AddHostedService<RunMigrations<TDbContext>>(-1); // Migrations need to run before other hosted services that depend on DB access.
+            ServiceConfiguration.ConfigureHostedService<RunMigrations<TDbContext>>(-1); // Migrations need to run before other hosted services that depend on DB access.
     }
 
     protected void AddStore<TEntity, TStore>(IServiceCollection services) where TEntity : Entity where TStore : class

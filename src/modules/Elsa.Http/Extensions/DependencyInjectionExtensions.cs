@@ -7,7 +7,7 @@ namespace Microsoft.Extensions.DependencyInjection;
 
 public static class DependencyInjectionExtensions
 {
-    public static IServiceConfiguration ConfigureHttp(this IServiceConfiguration configuration, Action<HttpConfigurator>? configure = default)
+    public static IServiceConfiguration UseHttp(this IServiceConfiguration configuration, Action<HttpConfigurator>? configure = default)
     {
         configuration.Configure(configure);
         return configuration;

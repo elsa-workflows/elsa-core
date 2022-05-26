@@ -11,6 +11,7 @@ using Elsa.Quartz.Implementations;
 using Elsa.Scheduling.Activities;
 using Elsa.Scheduling.Extensions;
 using Elsa.Workflows.Api.Extensions;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution.Components;
 using Elsa.Workflows.Core.Serialization;
@@ -27,29 +28,28 @@ var services = builder.Services;
 
 // Add services.
 services
-    .AddElsa()
-    .AddHttpActivityServices()
-    .AddProtoActorRuntime()
+    .AddElsa(elsa => elsa
+        .UseWorkflows(workflows => workflows
+            .UseRuntime(runtime => runtime.UseProtoActor())
+            .UseManagement(management => management
+                .AddActivity<Sequence>()
+                .AddActivity<WriteLine>()
+                .AddActivity<ReadLine>()
+                .AddActivity<If>()
+                .AddActivity<HttpEndpoint>()
+                .AddActivity<Flowchart>()
+                .AddActivity<Delay>()
+                .AddActivity<Timer>()
+                .AddActivity<ForEach>()
+                .AddActivity<Switch>()
+                .AddActivity<RunJavaScript>())
+        )
+        .UseHttp())
     .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider())
     .AddSchedulingServices();
 
 // Testing only: allow client app to connect from anywhere.
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
-
-// Register activities available from the designer.
-services
-    .AddActivity<Sequence>()
-    .AddActivity<WriteLine>()
-    .AddActivity<ReadLine>()
-    .AddActivity<If>()
-    .AddActivity<HttpEndpoint>()
-    .AddActivity<Flowchart>()
-    .AddActivity<Delay>()
-    .AddActivity<Timer>()
-    .AddActivity<ForEach>()
-    .AddActivity<Switch>()
-    .AddActivity<RunJavaScript>()
-    ;
 
 // Register scripting languages.
 services

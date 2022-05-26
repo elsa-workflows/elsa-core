@@ -50,8 +50,10 @@ public class WorkflowPersistenceConfigurator : ConfiguratorBase
         return this;
     }
 
-    public override void ConfigureServices(IServiceCollection services)
+    public override void ConfigureServices(IServiceConfiguration serviceConfiguration)
     {
+        var services = serviceConfiguration.Services;
+        
         services
             .AddSingleton(WorkflowDefinitionStore)
             .AddSingleton(WorkflowInstanceStore)

@@ -24,8 +24,8 @@ var services = builder.Services;
 // Add Elsa services.
 services
     .AddElsa(elsa => elsa
-        .ConfigureWorkflows(workflows => workflows
-            .ConfigureWorkflowManagement(management => management
+        .UseWorkflows(workflows => workflows
+            .UseManagement(management => management
                 .AddActivity<Sequence>()
                 .AddActivity<WriteLine>()
                 .AddActivity<ReadLine>()
@@ -38,7 +38,7 @@ services
                 .AddActivity<Switch>()
                 .AddActivity<RunJavaScript>()
             ))
-        .ConfigureHttp()
+        .UseHttp()
     )
     //.AddProtoActorRuntime()
     .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider())

@@ -15,11 +15,11 @@ using Elsa.Scheduling.Activities;
 using Elsa.Scheduling.Extensions;
 using Elsa.WorkflowContexts.Extensions;
 using Elsa.Workflows.Api.Extensions;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution.Components;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Services;
-using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Persistence.EntityFrameworkCore.Extensions;
 using Elsa.Workflows.Persistence.EntityFrameworkCore.Sqlite;
 using Elsa.Workflows.Persistence.Extensions;
@@ -39,30 +39,30 @@ var sqlServerConnectionString = configuration.GetConnectionString("SqlServer");
 
 // Add Elsa services.
 services
-    .AddElsa(elsa => elsa.ConfigureWorkflowPersistence(p => p.UseEntityFrameworkCoreProvider(ef => ef.UseSqlite())))
-    //.AddProtoActorWorkflowHost()
+    .AddElsa(elsa => elsa
+        .UseWorkflows(workflows => workflows
+            .UsePersistence(persistence => persistence.UseEntityFrameworkCore(ef => ef.UseSqlite()))
+            .UseRuntime(runtime =>
+            {
+                runtime.Workflows.Add<HelloWorldWorkflow>();
+                runtime.Workflows.Add<HttpWorkflow>();
+                runtime.Workflows.Add<ForkedHttpWorkflow>();
+                runtime.Workflows.Add<CompositeActivitiesWorkflow>();
+                runtime.Workflows.Add<SendMessageWorkflow>();
+                runtime.Workflows.Add<ReceiveMessageWorkflow>();
+                runtime.Workflows.Add<RunJavaScriptWorkflow>();
+                runtime.Workflows.Add<WorkflowContextsWorkflow>();
+                runtime.Workflows.Add<SubmitJobWorkflow>();
+                runtime.Workflows.Add<DelayWorkflow>();
+                runtime.Workflows.Add<OrderProcessingWorkflow>();
+                runtime.Workflows.Add<StartAtTriggerWorkflow>();
+                runtime.Workflows.Add<StartAtBookmarkWorkflow>();
+            })
+        )
+        .UseHttp())
+    
     .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider())
-    .AddSchedulingServices()
-    .AddHttpActivityServices()
-    //.AddAzureServiceBusServices(options => configuration.GetSection("AzureServiceBus").Bind(options))
-    .ConfigureWorkflowRuntime(options =>
-    {
-        // Register workflows.
-        options.Workflows.Add<HelloWorldWorkflow>();
-        //options.Workflows.Add<HeartbeatWorkflow>();
-        options.Workflows.Add<HttpWorkflow>();
-        options.Workflows.Add<ForkedHttpWorkflow>();
-        options.Workflows.Add<CompositeActivitiesWorkflow>();
-        options.Workflows.Add<SendMessageWorkflow>();
-        options.Workflows.Add<ReceiveMessageWorkflow>();
-        options.Workflows.Add<RunJavaScriptWorkflow>();
-        options.Workflows.Add<WorkflowContextsWorkflow>();
-        options.Workflows.Add<SubmitJobWorkflow>();
-        options.Workflows.Add<DelayWorkflow>();
-        options.Workflows.Add<OrderProcessingWorkflow>();
-        options.Workflows.Add<StartAtTriggerWorkflow>();
-        options.Workflows.Add<StartAtBookmarkWorkflow>();
-    });
+    .AddSchedulingServices();
 
 // Add controller services. The below technique allows full control over what controllers get added from which assemblies.
 // It is even possible to add individual controllers this way using a custom TypesPart.
@@ -76,24 +76,6 @@ services
 
 // Testing only: allow client app to connect from anywhere.
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
-
-// Register activities available from the designer.
-services
-    .AddActivity<Sequence>()
-    .AddActivity<WriteLine>()
-    .AddActivity<WriteLines>()
-    .AddActivity<ReadLine>()
-    .AddActivity<If>()
-    .AddActivity<HttpEndpoint>()
-    .AddActivity<Flowchart>()
-    .AddActivity<Delay>()
-    .AddActivity<Timer>()
-    .AddActivity<ForEach>()
-    .AddActivity<Switch>()
-    //.AddActivity<SendMessage>()
-    //.AddActivity<MessageReceived>()
-    .AddActivity<RunJavaScript>()
-    ;
 
 // Register scripting languages.
 services

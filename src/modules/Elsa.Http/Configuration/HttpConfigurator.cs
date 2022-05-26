@@ -5,6 +5,7 @@ using Elsa.Http.Options;
 using Elsa.Http.Services;
 using Elsa.Mediator.Extensions;
 using Elsa.ServiceConfiguration.Abstractions;
+using Elsa.ServiceConfiguration.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Http.Configuration;
@@ -26,17 +27,18 @@ public class HttpConfigurator : ConfiguratorBase
         HttpEndpointAuthorizationHandlerFactory = value;
         return this;
     }
-    
+
     public HttpConfigurator WithWorkflowFaultHandlerFactory(Func<IServiceProvider, IHttpEndpointWorkflowFaultHandler> value)
     {
         HttpEndpointWorkflowFaultHandlerFactory = value;
         return this;
     }
-    
-    public override void ConfigureServices(IServiceCollection services)
+
+    public override void ConfigureServices(IServiceConfiguration serviceConfiguration)
     {
+        var services = serviceConfiguration.Services;
         services.Configure<HttpActivityOptions>(options => options.BasePath = BasePath);
-        
+
         services
             .AddSingleton<IRouteMatcher, RouteMatcher>()
             .AddSingleton<IRouteTable, RouteTable>()

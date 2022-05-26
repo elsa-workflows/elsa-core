@@ -8,7 +8,7 @@ namespace Elsa.Workflows.Persistence.Extensions;
 
 public static class DependencyInjectionExtensions
 {
-    public static WorkflowConfigurator ConfigurePersistence(this WorkflowConfigurator configurator, Action<WorkflowPersistenceConfigurator>? configure = default)
+    public static WorkflowConfigurator UsePersistence(this WorkflowConfigurator configurator, Action<WorkflowPersistenceConfigurator>? configure = default)
     {
         var configuration = configurator.ServiceConfiguration;
         var services = configuration.Services;

@@ -7,7 +7,7 @@ namespace Elsa.ServiceConfiguration.Implementations;
 
 public class ServiceConfiguration : IServiceConfiguration
 {
-    internal record HostedServiceDescriptor(int Order, Type HostedServiceType);
+    private record HostedServiceDescriptor(int Order, Type HostedServiceType);
 
     private readonly ISet<IConfigurator> _configurators = new HashSet<IConfigurator>();
     private readonly ICollection<HostedServiceDescriptor> _hostedServiceDescriptors = new List<HostedServiceDescriptor>();
@@ -33,7 +33,7 @@ public class ServiceConfiguration : IServiceConfiguration
         return configurator;
     }
 
-    public IServiceConfiguration AddHostedService<T>(int priority = 0)
+    public IServiceConfiguration ConfigureHostedService<T>(int priority = 0)
     {
         _hostedServiceDescriptors.Add(new HostedServiceDescriptor(priority, typeof(T)));
         return this;
@@ -43,8 +43,8 @@ public class ServiceConfiguration : IServiceConfiguration
     {
         foreach (var configurator in _configurators)
         {
-            configurator.ConfigureServices(Services);
-            configurator.ConfigureHostedServices(Services);
+            configurator.ConfigureServices(this);
+            configurator.ConfigureHostedServices(this);
         }
 
         foreach (var hostedServiceDescriptor in _hostedServiceDescriptors.OrderBy(x => x.Order)) 

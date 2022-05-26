@@ -48,9 +48,9 @@ public class EFCoreLabelPersistenceConfigurator : ConfiguratorBase
         return this;
     }
 
-    public override void ConfigureServices(IServiceConfiguration configurator)
+    public override void ConfigureServices(IServiceConfiguration serviceConfiguration)
     {
-        var services = configurator.Services;
+        var services = serviceConfiguration.Services;
 
         if (ContextPoolingIsEnabled)
             services.AddPooledDbContextFactory<LabelsDbContext>(DbContextOptionsBuilderAction);
@@ -64,7 +64,7 @@ public class EFCoreLabelPersistenceConfigurator : ConfiguratorBase
     public override void ConfigureHostedServices(IServiceConfiguration configurator)
     {
         if (AutoRunMigrationsIsEnabled)
-            configurator.AddHostedService<RunMigrations<LabelsDbContext>>(-1); // Migrations need to run before other hosted services that depend on DB access.
+            configurator.ConfigureHostedService<RunMigrations<LabelsDbContext>>(-1); // Migrations need to run before other hosted services that depend on DB access.
     }
 
     private void AddStore<TEntity, TStore>(IServiceCollection services) where TEntity : Entity where TStore : class

@@ -4,7 +4,8 @@ using Elsa.ProtoActor.HostedServices;
 using Elsa.ProtoActor.Implementations;
 using Elsa.Runtime.Protos;
 using Elsa.ServiceConfiguration.Abstractions;
-using Elsa.Workflows.Runtime.Extensions;
+using Elsa.ServiceConfiguration.Services;
+using Elsa.Workflows.Runtime.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Proto;
@@ -19,8 +20,16 @@ namespace Elsa.ProtoActor.Configuration;
 
 public class ProtoActorConfigurator : ConfiguratorBase
 {
-    public override void ConfigureServices(IServiceCollection services)
+    public ProtoActorConfigurator(WorkflowRuntimeConfigurator workflowRuntimeConfigurator)
     {
+        WorkflowRuntimeConfigurator = workflowRuntimeConfigurator;
+    }
+    
+    public WorkflowRuntimeConfigurator WorkflowRuntimeConfigurator { get; }
+    
+    public override void ConfigureServices(IServiceConfiguration serviceConfiguration)
+    {
+        var services = serviceConfiguration.Services;
         var systemConfig = GetSystemConfig();
 
         // Logging.
@@ -52,13 +61,13 @@ public class ProtoActorConfigurator : ConfiguratorBase
         services.AddSingleton<GrainClientFactory>();
 
         // Configure runtime with ProtoActor workflow invoker.
-        services.ConfigureWorkflowRuntime(options => options.WorkflowInvokerFactory = sp => ActivatorUtilities.CreateInstance<ProtoActorWorkflowInvoker>(sp));
+        WorkflowRuntimeConfigurator.WorkflowInvokerFactory = sp => ActivatorUtilities.CreateInstance<ProtoActorWorkflowInvoker>(sp);
     }
 
-    public override void ConfigureHostedServices(IServiceCollection services)
+    public override void ConfigureHostedServices(IServiceConfiguration serviceConfiguration)
     {
-        services
-            .AddHostedService<WorkflowServerHost>();
+        var services = serviceConfiguration.Services;
+        services.AddHostedService<WorkflowServerHost>();
     }
 
     private static ActorSystemConfig GetSystemConfig() =>

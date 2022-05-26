@@ -2,7 +2,7 @@ using Elsa.Workflows.Persistence.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Elsa.Workflows.Persistence.EntityFrameworkCore.Configuration;
+namespace Elsa.Workflows.Persistence.EntityFrameworkCore.EntityConfiguration;
 
 public class WorkflowTriggerConfiguration : IEntityTypeConfiguration<WorkflowTrigger>
 {

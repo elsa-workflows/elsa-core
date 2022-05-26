@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Extensions;
@@ -9,7 +8,6 @@ using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Pipelines.ActivityExecution.Components;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution.Components;
 using Elsa.Workflows.Core.Services;
-using Elsa.Workflows.Runtime.Configuration;
 using Elsa.Workflows.Runtime.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -89,22 +87,9 @@ class Program
         var services = new ServiceCollection();
 
         services
-            .AddElsa(elsa => elsa.Configure<WorkflowRuntimeConfigurator>()
-                .WithStandardOutStreamProvider(sp => new CustomOutStreamProvider(Console.Out)))
+            .AddElsa()
             .AddLogging(logging => logging.AddConsole().SetMinimumLevel(LogLevel.Warning));
 
         return services.BuildServiceProvider();
     }
-}
-
-public class CustomOutStreamProvider : IStandardOutStreamProvider
-{
-    private readonly TextWriter _textWriter;
-
-    public CustomOutStreamProvider(TextWriter textWriter)
-    {
-        _textWriter = textWriter;
-    }
-
-    public TextWriter GetTextWriter() => _textWriter;
 }

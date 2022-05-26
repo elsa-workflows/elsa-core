@@ -1,5 +1,6 @@
 using Elsa.Mediator.Extensions;
 using Elsa.ServiceConfiguration.Abstractions;
+using Elsa.ServiceConfiguration.Services;
 using Elsa.Workflows.Core.Implementations;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Runtime.Extensions;
@@ -17,6 +18,13 @@ namespace Elsa.Workflows.Runtime.Configuration;
 
 public class WorkflowRuntimeConfigurator : ConfiguratorBase
 {
+    public WorkflowRuntimeConfigurator(IServiceConfiguration serviceConfiguration)
+    {
+        ServiceConfiguration = serviceConfiguration;
+    }
+    
+    public IServiceConfiguration ServiceConfiguration { get; }
+    
     /// <summary>
     /// A factory that instantiates a concrete <see cref="IStandardInStreamProvider"/>.
     /// </summary>
@@ -54,8 +62,10 @@ public class WorkflowRuntimeConfigurator : ConfiguratorBase
         return this;
     }
 
-    public override void ConfigureServices(IServiceCollection services)
+    public override void ConfigureServices(IServiceConfiguration serviceConfiguration)
     {
+        var services = serviceConfiguration.Services;
+        
         services
             // Core.
             .AddSingleton<IStimulusInterpreter, StimulusInterpreter>()
@@ -94,13 +104,13 @@ public class WorkflowRuntimeConfigurator : ConfiguratorBase
             ;
     }
 
-    public override void ConfigureHostedServices(IServiceCollection services)
+    public override void ConfigureHostedServices(IServiceConfiguration services)
     {
         services
-            .AddHostedService<RegisterDescriptors>()
-            .AddHostedService<RegisterExpressionSyntaxDescriptors>()
-            .AddHostedService<DispatchedWorkflowDefinitionWorker>()
-            .AddHostedService<DispatchedWorkflowInstanceWorker>()
-            .AddHostedService<PopulateWorkflowDefinitionStore>();
+            .ConfigureHostedService<RegisterDescriptors>()
+            .ConfigureHostedService<RegisterExpressionSyntaxDescriptors>()
+            .ConfigureHostedService<DispatchedWorkflowDefinitionWorker>()
+            .ConfigureHostedService<DispatchedWorkflowInstanceWorker>()
+            .ConfigureHostedService<PopulateWorkflowDefinitionStore>();
     }
 }

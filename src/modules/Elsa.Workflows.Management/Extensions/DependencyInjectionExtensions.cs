@@ -6,7 +6,7 @@ namespace Elsa.Workflows.Management.Extensions;
 
 public static class DependencyInjectionExtensions
 {
-    public static WorkflowConfigurator ConfigureWorkflowManagement(this WorkflowConfigurator workflow, Action<WorkflowManagementConfigurator>? configure = default)
+    public static WorkflowConfigurator UseManagement(this WorkflowConfigurator workflow, Action<WorkflowManagementConfigurator>? configure = default)
     {
         workflow.ServiceConfiguration.Configure(configure);
         return workflow;

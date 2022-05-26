@@ -10,10 +10,12 @@ using Elsa.Labels.EntityFrameworkCore.Extensions;
 using Elsa.Labels.EntityFrameworkCore.Sqlite;
 using Elsa.Labels.Extensions;
 using Elsa.Liquid.Extensions;
+using Elsa.ProtoActor.Extensions;
 using Elsa.Quartz.Implementations;
 using Elsa.Scheduling.Extensions;
 using Elsa.WorkflowContexts.Extensions;
 using Elsa.Workflows.Api.Extensions;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution.Components;
 using Elsa.Workflows.Core.Serialization;
@@ -27,24 +29,35 @@ using Elsa.Workflows.Runtime.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
-var configuration = builder.Configuration;
 
 // Add Elsa services.
 services
     .AddElsa(elsa => elsa
-        .ConfigureWorkflowPersistence(p => p.UseEntityFrameworkCoreProvider(ef => ef.UseSqlite()))
-        .AddLabels(labels => labels.UseEntityFrameworkCoreProvider(ef => ef.UseSqlite()))
+        .UseWorkflows(workflows => workflows
+            .UseManagement(management => management
+                .AddActivity<Sequence>()
+                .AddActivity<WriteLine>()
+                .AddActivity<ReadLine>()
+                .AddActivity<If>()
+                .AddActivity<HttpEndpoint>()
+                .AddActivity<Flowchart>()
+                .AddActivity<Elsa.Scheduling.Activities.Delay>()
+                .AddActivity<Elsa.Scheduling.Activities.Timer>()
+                .AddActivity<ForEach>()
+                .AddActivity<Switch>()
+                .AddActivity<RunJavaScript>()
+            )
+            .UsePersistence(p => p
+                .UseEntityFrameworkCore(ef => ef
+                    .UseSqlite()))
+            .UseRuntime(runtime => runtime.UseProtoActor())
+        )
+        .UseLabels(labels => labels.UseEntityFrameworkCore(ef => ef.UseSqlite()))
+        .UseHttp()
     )
-    //.AddProtoActorWorkflowHost()
     .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider())
     .AddSchedulingServices()
-    .AddHttpActivityServices()
-    //.AddAzureServiceBusServices(options => configuration.GetSection("AzureServiceBus").Bind(options))
-    .ConfigureWorkflowRuntime(options =>
-    {
-        // Register workflows.
-        //options.Workflows.Add<HeartbeatWorkflow>();
-    });
+    ;
 
 // Add controller services. The below technique allows full control over what controllers get added from which assemblies.
 // It is even possible to add individual controllers this way using a custom TypesPart.
@@ -58,21 +71,6 @@ services
 
 services.AddHealthChecks();
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
-
-// Register activities available from the designer.
-services
-    .AddActivity<Sequence>()
-    .AddActivity<WriteLine>()
-    .AddActivity<ReadLine>()
-    .AddActivity<If>()
-    .AddActivity<HttpEndpoint>()
-    .AddActivity<Flowchart>()
-    .AddActivity<Elsa.Scheduling.Activities.Delay>()
-    .AddActivity<Elsa.Scheduling.Activities.Timer>()
-    .AddActivity<ForEach>()
-    .AddActivity<Switch>()
-    .AddActivity<RunJavaScript>()
-    ;
 
 // Register scripting languages.
 services

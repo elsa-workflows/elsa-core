@@ -22,8 +22,9 @@ public class WorkflowConfigurator : ConfiguratorBase
     
     public IServiceConfiguration ServiceConfiguration { get; }
     
-    public override void ConfigureServices(IServiceCollection services)
+    public override void ConfigureServices(IServiceConfiguration serviceConfiguration)
     {
+        var services = serviceConfiguration.Services;
         AddElsaCore(services);
         AddExpressions(services);
     }

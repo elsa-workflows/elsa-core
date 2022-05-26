@@ -1,5 +1,5 @@
 ﻿using Elsa.Persistence.EntityFrameworkCore.Common.Abstractions;
-using Elsa.Workflows.Persistence.EntityFrameworkCore.Options;
+using Elsa.Workflows.Persistence.EntityFrameworkCore.Configuration;
 using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Workflows.Persistence.EntityFrameworkCore.Sqlite

@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
-namespace Elsa.Workflows.Persistence.EntityFrameworkCore.Configuration
+namespace Elsa.Workflows.Persistence.EntityFrameworkCore.EntityConfiguration
 {
     public class WorkflowInstanceConfiguration : IEntityTypeConfiguration<WorkflowInstance>
     {

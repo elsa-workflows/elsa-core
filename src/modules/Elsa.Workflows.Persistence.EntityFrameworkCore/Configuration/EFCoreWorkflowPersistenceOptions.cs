@@ -2,8 +2,8 @@ using Elsa.Persistence.Common.Entities;
 using Elsa.Persistence.EntityFrameworkCore.Common.HostedServices;
 using Elsa.Persistence.EntityFrameworkCore.Common.Implementations;
 using Elsa.Persistence.EntityFrameworkCore.Common.Services;
-using Elsa.Workflows.Core.Options;
-using Elsa.Workflows.Core.Services;
+using Elsa.ServiceConfiguration.Abstractions;
+using Elsa.ServiceConfiguration.Services;
 using Elsa.Workflows.Persistence.Configuration;
 using Elsa.Workflows.Persistence.Entities;
 using Elsa.Workflows.Persistence.EntityFrameworkCore.Handlers;
@@ -11,9 +11,9 @@ using Elsa.Workflows.Persistence.EntityFrameworkCore.Implementations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Workflows.Persistence.EntityFrameworkCore.Options;
+namespace Elsa.Workflows.Persistence.EntityFrameworkCore.Configuration;
 
-public class EFCoreWorkflowPersistenceOptions : IConfigurator
+public class EFCoreWorkflowPersistenceOptions : ConfiguratorBase
 {
     public EFCoreWorkflowPersistenceOptions(WorkflowPersistenceConfigurator workflowPersistenceConfigurator)
     {
@@ -52,9 +52,9 @@ public class EFCoreWorkflowPersistenceOptions : IConfigurator
         return this;
     }
 
-    public void ConfigureServices(ElsaOptionsConfigurator configurator)
+    public override void ConfigureServices(IServiceConfiguration serviceConfiguration)
     {
-        var services = configurator.Services;
+        var services = serviceConfiguration.Services;
 
         if (ContextPoolingIsEnabled)
             services.AddPooledDbContextFactory<WorkflowsDbContext>(DbContextOptionsBuilderAction);
@@ -74,10 +74,10 @@ public class EFCoreWorkflowPersistenceOptions : IConfigurator
             ;
     }
 
-    public void ConfigureHostedServices(ElsaOptionsConfigurator configurator)
+    public override void ConfigureHostedServices(IServiceConfiguration serviceConfiguration)
     {
         if (AutoRunMigrationsIsEnabled)
-            configurator.AddHostedService<RunMigrations<WorkflowsDbContext>>(-1); // Migrations need to run before other hosted services that depend on DB access.
+            serviceConfiguration.ConfigureHostedService<RunMigrations<WorkflowsDbContext>>(-1); // Migrations need to run before other hosted services that depend on DB access.
     }
 
     private void AddStore<TEntity, TStore>(IServiceCollection services) where TEntity : Entity where TStore : class

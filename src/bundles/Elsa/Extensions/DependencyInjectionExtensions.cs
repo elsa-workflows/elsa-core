@@ -16,17 +16,19 @@ public static class DependencyInjectionExtensions
     {
         services.AddMediator();
 
-        return services
+        services
             .ConfigureServices(config => config
-                .ConfigureWorkflows(workflows =>
+                .UseWorkflows(workflows =>
                 {
                     workflows
-                        .ConfigureRuntime()
-                        .ConfigurePersistence()
-                        .ConfigureWorkflowManagement();
+                        .UsePersistence()
+                        .UseRuntime()
+                        .UseManagement();
 
                     configure?.Invoke(config);
                 })
             );
+
+        return services;
     }
 }

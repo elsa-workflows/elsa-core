@@ -1,5 +1,6 @@
 using Elsa.Expressions.Services;
 using Elsa.ServiceConfiguration.Abstractions;
+using Elsa.ServiceConfiguration.Services;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Implementations;
@@ -22,8 +23,10 @@ public class WorkflowManagementConfigurator : ConfiguratorBase
         return this;
     }
 
-    public override void ConfigureServices(IServiceCollection services)
+    public override void ConfigureServices(IServiceConfiguration serviceConfiguration)
     {
+        var services = serviceConfiguration.Services;
+        
         services
             .AddSingleton<IWorkflowPublisher, WorkflowPublisher>()
             .AddSingleton<IActivityDescriber, ActivityDescriber>()
