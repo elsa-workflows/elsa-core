@@ -1,11 +1,7 @@
 using System;
-using Elsa.Mediator.Extensions;
+using Elsa.Configuration;
 using Elsa.ServiceConfiguration.Extensions;
 using Elsa.ServiceConfiguration.Services;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Management.Extensions;
-using Elsa.Workflows.Persistence.Extensions;
-using Elsa.Workflows.Runtime.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Extensions;
@@ -23,14 +19,17 @@ public static class DependencyInjectionExtensions
 
     public static IServiceConfiguration ConfigureElsa(this IServiceCollection services)
     {
-        services.AddMediator();
+        // services.AddMediator();
+        //
+        // var serviceConfiguration = services
+        //     .ConfigureServices()
+        //     .UseWorkflows()
+        //     .UsePersistence()
+        //     .UseRuntime()
+        //     .UseManagement();
 
-        var serviceConfiguration = services
-            .ConfigureServices()
-            .UseWorkflows()
-            .UsePersistence()
-            .UseRuntime()
-            .UseManagement();
+        var serviceConfiguration = services.ConfigureServices();
+        serviceConfiguration.Configure<ElsaConfigurator>();
 
         return serviceConfiguration;
     }

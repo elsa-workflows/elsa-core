@@ -10,4 +10,8 @@
       <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\Elsa.ServiceConfiguration\Elsa.ServiceConfiguration.csproj" />
+    </ItemGroup>
+
 </Project>

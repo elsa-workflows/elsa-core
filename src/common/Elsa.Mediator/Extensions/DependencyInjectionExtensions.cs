@@ -1,4 +1,5 @@
 using System.Reflection;
+using Elsa.Mediator.Configuration;
 using Elsa.Mediator.Implementations;
 using Elsa.Mediator.Middleware.Command;
 using Elsa.Mediator.Middleware.Command.Contracts;
@@ -8,12 +9,19 @@ using Elsa.Mediator.Middleware.Request;
 using Elsa.Mediator.Middleware.Request.Contracts;
 using Elsa.Mediator.Models;
 using Elsa.Mediator.Services;
+using Elsa.ServiceConfiguration.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Mediator.Extensions;
 
 public static class DependencyInjectionExtensions
 {
+    public static IServiceConfiguration AddMediator(this IServiceConfiguration serviceConfiguration, Action<MediatorConfigurator>? configure = default)
+    {
+        serviceConfiguration.Configure(configure);
+        return serviceConfiguration;
+    }
+    
     public static IServiceCollection AddMediator(this IServiceCollection services)
     {
         return services
