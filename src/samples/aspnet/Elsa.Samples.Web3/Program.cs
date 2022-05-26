@@ -1,20 +1,16 @@
+using Elsa.AspNetCore.Extensions;
 using Elsa.Extensions;
 using Elsa.Hangfire.Implementations;
 using Elsa.Http;
 using Elsa.Http.Extensions;
 using Elsa.JavaScript.Activities;
-using Elsa.JavaScript.Extensions;
 using Elsa.Jobs.Extensions;
-using Elsa.Liquid.Extensions;
 using Elsa.Quartz.Implementations;
 using Elsa.Scheduling.Activities;
 using Elsa.Scheduling.Extensions;
 using Elsa.Workflows.Api.Extensions;
 using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.Serialization;
-using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Extensions;
-using Elsa.Workflows.Management.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -34,20 +30,13 @@ services
             .AddActivity<ForEach>()
             .AddActivity<Switch>()
             .AddActivity<RunJavaScript>())
-        .UseHttp());
+        .UseHttp()
+        .UseMvc()
+    );
 
 services
     .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider())
     .AddSchedulingServices();
-
-// Register scripting languages.
-services
-    .AddJavaScriptExpressions()
-    .AddLiquidExpressions();
-
-// Register serialization configurator for configuring what types to allow to be serialized.
-services.AddSingleton<ISerializationOptionsConfigurator, CustomSerializationOptionConfigurator>();
-services.AddSingleton<ISerializationOptionsConfigurator, SerializationOptionsConfigurator>();
 
 // Razor Pages.
 services.AddRazorPages();

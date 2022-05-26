@@ -1,6 +1,7 @@
-using Elsa.Expressions.Implementations;
+using Elsa.Expressions.Configuration;
 using Elsa.Expressions.Options;
 using Elsa.Expressions.Services;
+using Elsa.ServiceConfiguration.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -8,11 +9,10 @@ namespace Elsa.Expressions.Extensions;
 
 public static class DependencyInjectionExtensions
 {
-    public static IServiceCollection AddExpressions(this IServiceCollection services)
+    public static IServiceConfiguration UseExpressions(this IServiceConfiguration configuration, Action<ExpressionsConfigurator>? configure = default)
     {
-        return services
-            .AddSingleton<IExpressionEvaluator, ExpressionEvaluator>()
-            .AddSingleton<IExpressionHandlerRegistry, ExpressionHandlerRegistry>();
+        configuration.Configure(configure);
+        return configuration;
     }
 
     public static IServiceCollection AddExpressionHandler<THandler, TExpression>(this IServiceCollection services) where THandler : class, IExpressionHandler =>

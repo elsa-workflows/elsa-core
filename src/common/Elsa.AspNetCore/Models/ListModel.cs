@@ -1,4 +1,4 @@
-namespace Elsa.AspNetCore;
+namespace Elsa.AspNetCore.Models;
 
 public record ListModel<T>(ICollection<T> Items);
 

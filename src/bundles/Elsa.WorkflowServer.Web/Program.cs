@@ -1,4 +1,6 @@
 using Elsa.AspNetCore;
+using Elsa.AspNetCore.Conventions;
+using Elsa.AspNetCore.Extensions;
 using Elsa.Extensions;
 using Elsa.Hangfire.Implementations;
 using Elsa.Http;
@@ -45,8 +47,11 @@ services
             .AddActivity<RunJavaScript>()
         )
         .UsePersistence(p => p.UseEntityFrameworkCore(ef => ef.UseSqlite()))
+        .UseJavaScript()
+        .UseLiquid()
         .UseLabels(labels => labels.UseEntityFrameworkCore(ef => ef.UseSqlite()))
         .UseHttp()
+        .UseMvc()
     );
 
 services
@@ -54,24 +59,10 @@ services
     .AddSchedulingServices()
     ;
 
-// Add controller services. The below technique allows full control over what controllers get added from which assemblies.
-// It is even possible to add individual controllers this way using a custom TypesPart.
-services
-    // Elsa API endpoints require MVC controllers. 
-    .AddControllers(mvc => mvc.Conventions.Add(new ApiEndpointAttributeConvention())) // This convention is required as well. 
-    .ClearApplicationParts() // Remove all controllers from referenced packages.
-    .AddApplicationPartsFrom<Program>() // Add back any controllers from the current application.
-    .AddWorkflowManagementApiControllers() // Add workflow management API endpoint controllers.
-    .AddLabelsApiControllers() // Add label API controllers.
-    ;
 
+//services.AddControllers();
 services.AddHealthChecks();
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
-
-// Register scripting languages.
-services
-    .AddJavaScriptExpressions()
-    .AddLiquidExpressions();
 
 // Register serialization configurator for configuring what types to allow to be serialized.
 services.AddSingleton<ISerializationOptionsConfigurator, CustomSerializationOptionConfigurator>();

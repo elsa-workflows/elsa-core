@@ -16,8 +16,4 @@
       <PackageReference Include="Jint" Version="3.0.0-beta-2083" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Configuration" />
-    </ItemGroup>
-
 </Project>

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.AspNetCore;
+using Elsa.AspNetCore.Attributes;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Persistence.Models;

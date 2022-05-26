@@ -1,4 +1,6 @@
 using Elsa.AspNetCore;
+using Elsa.AspNetCore.Conventions;
+using Elsa.AspNetCore.Extensions;
 using Elsa.Extensions;
 using Elsa.Hangfire.Implementations;
 using Elsa.Http.Extensions;
@@ -51,7 +53,10 @@ services
             runtime.Workflows.Add<StartAtTriggerWorkflow>();
             runtime.Workflows.Add<StartAtBookmarkWorkflow>();
         })
+        .UseJavaScript()
+        .UseLiquid()
         .UseHttp()
+        .UseMvc()
     );
 
 services
@@ -60,9 +65,10 @@ services
 
 // Add controller services. The below technique allows full control over what controllers get added from which assemblies.
 // It is even possible to add individual controllers this way using a custom TypesPart.
+// If you want to include all controllers
 services
     // Elsa API endpoints require MVC controllers. 
-    .AddControllers(mvc => mvc.Conventions.Add(new ApiEndpointAttributeConvention())) // This convention is required as well. 
+    .AddControllers() 
     .ClearApplicationParts() // Remove all controllers from referenced packages.
     .AddApplicationPartsFrom<Program>() // Add back any controllers from the current application.
     .AddWorkflowManagementApiControllers() // Add Elsa API endpoint controllers.
@@ -70,15 +76,6 @@ services
 
 // Testing only: allow client app to connect from anywhere.
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
-
-// Register scripting languages.
-services
-    .AddJavaScriptExpressions()
-    .AddLiquidExpressions();
-
-// Register serialization configurator for configuring what types to allow to be serialized.
-services.AddSingleton<ISerializationOptionsConfigurator, CustomSerializationOptionConfigurator>();
-services.AddSingleton<ISerializationOptionsConfigurator, SerializationOptionsConfigurator>();
 
 // Configure middleware pipeline.
 var app = builder.Build();

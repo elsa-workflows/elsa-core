@@ -1,7 +1,8 @@
+using Elsa.AspNetCore.Parts;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.AspNetCore;
+namespace Elsa.AspNetCore.Extensions;
 
 public static class MvcBuilderExtensions
 {

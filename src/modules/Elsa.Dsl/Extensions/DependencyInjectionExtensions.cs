@@ -1,16 +1,14 @@
-using Elsa.Dsl.Implementations;
-using Elsa.Dsl.Services;
-using Microsoft.Extensions.DependencyInjection;
+using System;
+using Elsa.Dsl.Configuration;
+using Elsa.ServiceConfiguration.Services;
 
 namespace Elsa.Dsl.Extensions;
 
 public static class DependencyInjectionExtensions
 {
-    public static IServiceCollection AddDsl(this IServiceCollection services)
+    public static IServiceConfiguration UseDsl(this IServiceConfiguration configuration, Action<DslConfigurator>? configure = default)
     {
-        return services
-            .AddSingleton<IDslEngine, DslEngine>()
-            .AddSingleton<ITypeSystem, TypeSystem>()
-            .AddSingleton<IFunctionActivityRegistry, FunctionActivityRegistry>();
+        configuration.Configure(configure);
+        return configuration;
     }
 }

@@ -1,39 +1,27 @@
-using Elsa.Expressions.Extensions;
-using Elsa.Expressions.Services;
-using Elsa.Liquid.Expressions;
-using Elsa.Liquid.Filters;
-using Elsa.Liquid.Handlers;
+using Elsa.Liquid.Configuration;
 using Elsa.Liquid.Implementations;
 using Elsa.Liquid.Options;
-using Elsa.Liquid.Providers;
 using Elsa.Liquid.Services;
-using Elsa.Mediator.Extensions;
+using Elsa.ServiceConfiguration.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Liquid.Extensions;
 
 public static class DependencyInjectionExtensions
 {
-    public static IServiceCollection AddLiquidExpressions(this IServiceCollection services)
+    public static IServiceConfiguration UseLiquid(this IServiceConfiguration configuration, Action<LiquidConfigurator>? configure = default)
     {
-        return services
-            .AddMemoryCache()
-            .AddHandlersFrom<ConfigureLiquidEngine>()
-            .AddSingleton<IExpressionSyntaxProvider, LiquidExpressionSyntaxProvider>()
-            .AddSingleton<ILiquidTemplateManager, LiquidTemplateManager>()
-            .AddSingleton<LiquidParser>()
-            .AddExpressionHandler<LiquidExpressionHandler, LiquidExpression>()
-            .AddLiquidFilter<JsonFilter>("json")
-            .AddLiquidFilter<Base64Filter>("base64");
+        configuration.Configure(configure);
+        return configuration;
     }
-    
+
     public static IServiceCollection AddLiquidFilter<T>(this IServiceCollection services, string name) where T : class, ILiquidFilter
     {
         services.Configure<FluidOptions>(options => options.FilterRegistrations[name] = typeof(T));
         services.AddScoped<T>();
         return services;
     }
-        
+
     public static IServiceCollection RegisterLiquidTag(this IServiceCollection services, Action<LiquidParser> configure)
     {
         services.Configure<FluidOptions>(options => options.ParserConfiguration.Add(configure));

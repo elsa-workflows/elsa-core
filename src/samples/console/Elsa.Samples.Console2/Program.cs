@@ -5,7 +5,6 @@ using Elsa.Dsl.Extensions;
 using Elsa.Dsl.Services;
 using Elsa.Extensions;
 using Elsa.Http;
-using Elsa.JavaScript.Extensions;
 using Elsa.Scheduling.Activities;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Models;
@@ -51,12 +50,8 @@ IServiceProvider CreateServices()
 {
     var services = new ServiceCollection();
 
-    services.AddElsa();
-    
-    services
-        .AddDsl()
-        .AddLogging(logging => logging.AddConsole().SetMinimumLevel(LogLevel.Warning))
-        .AddJavaScriptExpressions();
+    services.AddElsa(elsa => elsa.UseDsl());
+    services.AddLogging(logging => logging.AddConsole().SetMinimumLevel(LogLevel.Warning));
 
     return services.BuildServiceProvider();
 }

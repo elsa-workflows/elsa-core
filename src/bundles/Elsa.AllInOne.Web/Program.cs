@@ -1,5 +1,7 @@
 using Elsa.Workflows.Api.Extensions;
 using Elsa.AspNetCore;
+using Elsa.AspNetCore.Conventions;
+using Elsa.AspNetCore.Extensions;
 using Elsa.Extensions;
 using Elsa.Jobs.Extensions;
 using Elsa.Hangfire.Implementations;
@@ -24,41 +26,35 @@ var services = builder.Services;
 
 // Add Elsa services.
 services
-    .ConfigureElsa()
-    .UseWorkflows()
-    .UseRuntime()
-    .UseManagement(management => management
-        .AddActivity<Sequence>()
-        .AddActivity<WriteLine>()
-        .AddActivity<ReadLine>()
-        .AddActivity<If>()
-        .AddActivity<HttpEndpoint>()
-        .AddActivity<Flowchart>()
-        .AddActivity<Delay>()
-        .AddActivity<Elsa.Scheduling.Activities.Timer>()
-        .AddActivity<ForEach>()
-        .AddActivity<Switch>()
-        .AddActivity<RunJavaScript>()
-    )
-    .UseHttp()
-    .Apply();
+    .AddElsa(elsa => elsa
+        .UseWorkflows()
+        .UseRuntime()
+        .UseManagement(management => management
+            .AddActivity<Sequence>()
+            .AddActivity<WriteLine>()
+            .AddActivity<ReadLine>()
+            .AddActivity<If>()
+            .AddActivity<HttpEndpoint>()
+            .AddActivity<Flowchart>()
+            .AddActivity<Delay>()
+            .AddActivity<Elsa.Scheduling.Activities.Timer>()
+            .AddActivity<ForEach>()
+            .AddActivity<Switch>()
+            .AddActivity<RunJavaScript>()
+        )
+        .UseJavaScript()
+        .UseLiquid()
+        .UseHttp()
+        .UseMvc()
+    );
 
 services
-    //.AddProtoActorRuntime()
     .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider())
     .AddSchedulingServices();
-
-// Register scripting languages.
-services
-    .AddJavaScriptExpressions()
-    .AddLiquidExpressions();
 
 // Register serialization configurator for configuring what types to allow to be serialized.
 services.AddSingleton<ISerializationOptionsConfigurator, CustomSerializationOptionConfigurator>();
 services.AddSingleton<ISerializationOptionsConfigurator, SerializationOptionsConfigurator>();
-
-// Controllers.
-services.AddControllers(mvc => mvc.Conventions.Add(new ApiEndpointAttributeConvention()));
 
 // Razor Pages.
 services.AddRazorPages();

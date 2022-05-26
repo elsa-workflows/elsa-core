@@ -3,6 +3,8 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.AspNetCore;
+using Elsa.AspNetCore.Attributes;
+using Elsa.AspNetCore.Models;
 using Elsa.Workflows.Core.Serialization.Converters;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Models;

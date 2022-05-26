@@ -1,12 +1,15 @@
+using Elsa.Labels.Configuration;
 using Elsa.Labels.Entities;
 using Elsa.Labels.EntityFrameworkCore.Implementations;
 using Elsa.Labels.Extensions;
 using Elsa.Persistence.EntityFrameworkCore.Common.Abstractions;
+using Elsa.ServiceConfiguration.Attributes;
 using Elsa.ServiceConfiguration.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Labels.EntityFrameworkCore.Configuration;
 
+[Dependency(typeof(LabelsConfigurator))]
 public class EFCoreLabelPersistenceConfigurator : EFCorePersistenceConfigurator<LabelsDbContext>
 {
     public EFCoreLabelPersistenceConfigurator(IServiceConfiguration serviceConfiguration) : base(serviceConfiguration)

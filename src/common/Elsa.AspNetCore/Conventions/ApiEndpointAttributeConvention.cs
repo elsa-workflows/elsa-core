@@ -1,6 +1,7 @@
+using Elsa.AspNetCore.Attributes;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 
-namespace Elsa.AspNetCore;
+namespace Elsa.AspNetCore.Conventions;
 
 /// <summary>
 /// A custom controller model convention that applies a controller & action name based on the values provided via <see cref="ApiEndpointAttribute"/>.

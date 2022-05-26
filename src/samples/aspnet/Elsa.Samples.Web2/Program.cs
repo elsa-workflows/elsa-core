@@ -1,3 +1,4 @@
+using Elsa.AspNetCore.Extensions;
 using Elsa.Extensions;
 using Elsa.Hangfire.Implementations;
 using Elsa.Http;
@@ -43,7 +44,9 @@ services
             .AddActivity<ForEach>()
             .AddActivity<Switch>()
             .AddActivity<RunJavaScript>())
-        .UseHttp());
+        .UseHttp()
+        .UseMvc()
+    );
 
 services
     .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider())
@@ -51,15 +54,6 @@ services
 
 // Testing only: allow client app to connect from anywhere.
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
-
-// Register scripting languages.
-services
-    .AddJavaScriptExpressions()
-    .AddLiquidExpressions();
-
-// Register serialization configurator for configuring what types to allow to be serialized.
-services.AddSingleton<ISerializationOptionsConfigurator, CustomSerializationOptionConfigurator>();
-services.AddSingleton<ISerializationOptionsConfigurator, SerializationOptionsConfigurator>();
 
 // Configure middleware pipelines.
 var app = builder.Build();

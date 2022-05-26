@@ -1,6 +1,8 @@
 using Elsa.Expressions;
+using Elsa.Expressions.Configuration;
 using Elsa.Expressions.Extensions;
 using Elsa.ServiceConfiguration.Abstractions;
+using Elsa.ServiceConfiguration.Attributes;
 using Elsa.ServiceConfiguration.Services;
 using Elsa.Workflows.Core.ActivityNodeResolvers;
 using Elsa.Workflows.Core.Expressions;
@@ -13,6 +15,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Core.Configuration;
 
+[Dependency(typeof(ExpressionsConfigurator))]
 public class WorkflowsConfigurator : ConfiguratorBase
 {
     public WorkflowsConfigurator(IServiceConfiguration serviceConfiguration) : base(serviceConfiguration)
@@ -84,7 +87,6 @@ public class WorkflowsConfigurator : ConfiguratorBase
     private void AddExpressions(IServiceCollection services)
     {
         services
-            .AddExpressions()
             .AddExpressionHandler<LiteralExpressionHandler, LiteralExpression>()
             .AddExpressionHandler<DelegateExpressionHandler, DelegateExpression>()
             .AddExpressionHandler<VariableExpressionHandler, VariableExpression>()

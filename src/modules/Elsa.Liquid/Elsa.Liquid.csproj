@@ -15,6 +15,7 @@
     <ItemGroup>
       <ProjectReference Include="..\..\common\Elsa.Expressions\Elsa.Expressions.csproj" />
       <ProjectReference Include="..\..\common\Elsa.Mediator\Elsa.Mediator.csproj" />
+      <ProjectReference Include="..\Elsa.MemoryCache\Elsa.MemoryCache.csproj" />
       <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
     </ItemGroup>
 

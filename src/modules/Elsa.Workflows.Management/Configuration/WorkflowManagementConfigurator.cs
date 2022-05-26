@@ -50,7 +50,7 @@ public class WorkflowManagementConfigurator : ConfiguratorBase
             .AddSingleton<IWorkflowMaterializer, ClrWorkflowMaterializer>()
             .AddSingleton<IWorkflowMaterializer, JsonWorkflowMaterializer>()
             .AddSingleton<WorkflowSerializerOptionsProvider>();
-        
+
         Services.Configure<ApiOptions>(options =>
         {
             foreach (var activityType in ActivityTypes) 

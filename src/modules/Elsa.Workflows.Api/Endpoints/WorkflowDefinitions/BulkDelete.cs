@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.AspNetCore;
+using Elsa.AspNetCore.Attributes;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Persistence.Services;
 using Microsoft.AspNetCore.Http;

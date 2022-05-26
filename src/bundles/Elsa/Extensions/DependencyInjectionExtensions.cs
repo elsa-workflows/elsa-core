@@ -16,18 +16,8 @@ public static class DependencyInjectionExtensions
         return services;
     }
 
-
     public static IServiceConfiguration ConfigureElsa(this IServiceCollection services)
     {
-        // services.AddMediator();
-        //
-        // var serviceConfiguration = services
-        //     .ConfigureServices()
-        //     .UseWorkflows()
-        //     .UsePersistence()
-        //     .UseRuntime()
-        //     .UseManagement();
-
         var serviceConfiguration = services.ConfigureServices();
         serviceConfiguration.Configure<ElsaConfigurator>();
 
