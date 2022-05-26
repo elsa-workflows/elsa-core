@@ -11,7 +11,6 @@ using Elsa.Samples.Web1.Workflows;
 using Elsa.Scheduling.Extensions;
 using Elsa.WorkflowContexts.Extensions;
 using Elsa.Workflows.Api.Extensions;
-using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution.Components;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Services;
@@ -34,27 +33,26 @@ var sqlServerConnectionString = configuration.GetConnectionString("SqlServer");
 
 // Add Elsa services.
 services
-    .ConfigureElsa()
-    .UseWorkflows()
-    .UsePersistence(persistence => persistence.UseEntityFrameworkCore(ef => ef.UseSqlite()))
-    .UseRuntime(runtime =>
-    {
-        runtime.Workflows.Add<HelloWorldWorkflow>();
-        runtime.Workflows.Add<HttpWorkflow>();
-        runtime.Workflows.Add<ForkedHttpWorkflow>();
-        runtime.Workflows.Add<CompositeActivitiesWorkflow>();
-        runtime.Workflows.Add<SendMessageWorkflow>();
-        runtime.Workflows.Add<ReceiveMessageWorkflow>();
-        runtime.Workflows.Add<RunJavaScriptWorkflow>();
-        runtime.Workflows.Add<WorkflowContextsWorkflow>();
-        runtime.Workflows.Add<SubmitJobWorkflow>();
-        runtime.Workflows.Add<DelayWorkflow>();
-        runtime.Workflows.Add<OrderProcessingWorkflow>();
-        runtime.Workflows.Add<StartAtTriggerWorkflow>();
-        runtime.Workflows.Add<StartAtBookmarkWorkflow>();
-    })
-    .UseHttp()
-    .Apply();
+    .AddElsa(elsa => elsa
+        .UsePersistence(persistence => persistence.UseEntityFrameworkCore(ef => ef.UseSqlite()))
+        .UseRuntime(runtime =>
+        {
+            runtime.Workflows.Add<HelloWorldWorkflow>();
+            runtime.Workflows.Add<HttpWorkflow>();
+            runtime.Workflows.Add<ForkedHttpWorkflow>();
+            runtime.Workflows.Add<CompositeActivitiesWorkflow>();
+            runtime.Workflows.Add<SendMessageWorkflow>();
+            runtime.Workflows.Add<ReceiveMessageWorkflow>();
+            runtime.Workflows.Add<RunJavaScriptWorkflow>();
+            runtime.Workflows.Add<WorkflowContextsWorkflow>();
+            runtime.Workflows.Add<SubmitJobWorkflow>();
+            runtime.Workflows.Add<DelayWorkflow>();
+            runtime.Workflows.Add<OrderProcessingWorkflow>();
+            runtime.Workflows.Add<StartAtTriggerWorkflow>();
+            runtime.Workflows.Add<StartAtBookmarkWorkflow>();
+        })
+        .UseHttp()
+    );
 
 services
     .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider())
@@ -113,7 +111,7 @@ app.UseCors();
 app.MapGet("/", () => "Hello World!");
 
 // Map Elsa API endpoint controllers.
-app.MapWorkflowManagementApiEndpoints("elsa/api");
+app.MapManagementApiEndpoints("elsa/api");
 
 // Register Elsa middleware.
 app.UseJsonSerializationErrorHandler();

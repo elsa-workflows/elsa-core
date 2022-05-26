@@ -89,7 +89,7 @@ if (app.Environment.IsDevelopment())
 app.UseCors();
 
 // Map Elsa API endpoints.
-app.MapWorkflowManagementApiEndpoints();
+app.MapManagementApiEndpoints();
 
 // Register Elsa HTTP activity middleware.
 app.UseHttpActivities();

@@ -78,7 +78,7 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthorization();
-app.MapWorkflowManagementApiEndpoints();
+app.MapManagementApiEndpoints();
 app.UseHttpActivities();
 app.MapRazorPages();
 

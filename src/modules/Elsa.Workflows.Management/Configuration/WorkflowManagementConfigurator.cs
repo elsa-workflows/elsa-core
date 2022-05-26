@@ -2,6 +2,7 @@ using Elsa.Expressions.Services;
 using Elsa.ServiceConfiguration.Abstractions;
 using Elsa.ServiceConfiguration.Attributes;
 using Elsa.ServiceConfiguration.Services;
+using Elsa.Workflows.Core.Configuration;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Implementations;
@@ -15,6 +16,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Management.Configuration;
 
+[Dependency(typeof(WorkflowsConfigurator))]
 [Dependency(typeof(WorkflowPersistenceConfigurator))]
 public class WorkflowManagementConfigurator : ConfiguratorBase
 {

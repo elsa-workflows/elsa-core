@@ -10,12 +10,10 @@ using Elsa.Labels.EntityFrameworkCore.Extensions;
 using Elsa.Labels.EntityFrameworkCore.Sqlite;
 using Elsa.Labels.Extensions;
 using Elsa.Liquid.Extensions;
-using Elsa.ProtoActor.Extensions;
 using Elsa.Quartz.Implementations;
 using Elsa.Scheduling.Extensions;
 using Elsa.WorkflowContexts.Extensions;
 using Elsa.Workflows.Api.Extensions;
-using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution.Components;
 using Elsa.Workflows.Core.Serialization;
@@ -32,26 +30,24 @@ var services = builder.Services;
 
 // Add Elsa services.
 services
-    .ConfigureElsa()
-    .UseWorkflows()
-    .UseManagement(management => management
-        .AddActivity<Sequence>()
-        .AddActivity<WriteLine>()
-        .AddActivity<ReadLine>()
-        .AddActivity<If>()
-        .AddActivity<HttpEndpoint>()
-        .AddActivity<Flowchart>()
-        .AddActivity<Elsa.Scheduling.Activities.Delay>()
-        .AddActivity<Elsa.Scheduling.Activities.Timer>()
-        .AddActivity<ForEach>()
-        .AddActivity<Switch>()
-        .AddActivity<RunJavaScript>()
-    )
-    .UsePersistence(p => p.UseEntityFrameworkCore(ef => ef.UseSqlite()))
-    .UseRuntime(runtime => runtime.UseProtoActor())
-    .UseLabels(labels => labels.UseEntityFrameworkCore(ef => ef.UseSqlite()))
-    .UseHttp()
-    .Apply();
+    .AddElsa(elsa => elsa
+        .UseManagement(management => management
+            .AddActivity<Sequence>()
+            .AddActivity<WriteLine>()
+            .AddActivity<ReadLine>()
+            .AddActivity<If>()
+            .AddActivity<HttpEndpoint>()
+            .AddActivity<Flowchart>()
+            .AddActivity<Elsa.Scheduling.Activities.Delay>()
+            .AddActivity<Elsa.Scheduling.Activities.Timer>()
+            .AddActivity<ForEach>()
+            .AddActivity<Switch>()
+            .AddActivity<RunJavaScript>()
+        )
+        .UsePersistence(p => p.UseEntityFrameworkCore(ef => ef.UseSqlite()))
+        .UseLabels(labels => labels.UseEntityFrameworkCore(ef => ef.UseSqlite()))
+        .UseHttp()
+    );
 
 services
     .AddJobServices(new QuartzJobSchedulerProvider(), new HangfireJobQueueProvider())
@@ -112,7 +108,7 @@ app.UseCors();
 app.MapHealthChecks("/");
 
 // Map Elsa API endpoint controllers.
-app.MapWorkflowManagementApiEndpoints();
+app.MapManagementApiEndpoints();
 app.MapLabelApiEndpoints();
 
 // Register Elsa middleware.

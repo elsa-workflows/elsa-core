@@ -8,7 +8,7 @@ public static class EndpointRouteBuilderExtensions
     /// <summary>
     /// Maps default routes for Elsa API endpoints.
     /// </summary>
-    public static IEndpointRouteBuilder MapWorkflowManagementApiEndpoints(this IEndpointRouteBuilder endpoints, string basePattern = "elsa/api")
+    public static IEndpointRouteBuilder MapManagementApiEndpoints(this IEndpointRouteBuilder endpoints, string basePattern = "elsa/api")
     {
         void Map(string routeName, string pattern, object defaults) => endpoints.MapAreaControllerRoute($"Elsa.{routeName}", AreaNames.Elsa, $"{basePattern}/{pattern}", defaults);
 
