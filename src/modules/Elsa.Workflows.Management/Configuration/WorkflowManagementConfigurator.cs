@@ -30,7 +30,7 @@ public class WorkflowManagementConfigurator : ConfiguratorBase
         return this;
     }
 
-    public override void ConfigureServices()
+    public override void Apply()
     {
         Services
             .AddSingleton<IWorkflowPublisher, WorkflowPublisher>()

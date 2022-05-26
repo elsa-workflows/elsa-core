@@ -1,4 +1,4 @@
-﻿using Elsa.Labels.EntityFrameworkCore.Options;
+﻿using Elsa.Labels.EntityFrameworkCore.Configuration;
 
 namespace Elsa.Labels.EntityFrameworkCore.Sqlite
 {

@@ -38,7 +38,7 @@ public class HttpConfigurator : ConfiguratorBase
         return this;
     }
 
-    public override void ConfigureServices()
+    public override void Apply()
     {
         Services.Configure<HttpActivityOptions>(options => options.BasePath = BasePath);
 

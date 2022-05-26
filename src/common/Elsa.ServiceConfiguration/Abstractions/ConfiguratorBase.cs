@@ -9,15 +9,19 @@ public abstract class ConfiguratorBase : IConfigurator
     {
         ServiceConfiguration = serviceConfiguration;
     }
-    
+
     public IServiceConfiguration ServiceConfiguration { get; }
     public IServiceCollection Services => ServiceConfiguration.Services;
 
-    public virtual void ConfigureServices()
+    public virtual void Configure()
     {
     }
 
     public virtual void ConfigureHostedServices()
+    {
+    }
+
+    public virtual void Apply()
     {
     }
 }

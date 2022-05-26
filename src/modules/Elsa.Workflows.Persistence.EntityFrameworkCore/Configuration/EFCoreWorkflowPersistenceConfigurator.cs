@@ -15,10 +15,20 @@ public class EFCoreWorkflowPersistenceConfigurator : EFCorePersistenceConfigurat
     {
     }
 
-    public override void ConfigureServices()
+    public override void Configure()
     {
-        base.ConfigureServices();
-        
+        ServiceConfiguration.Configure<WorkflowPersistenceConfigurator>().WithWorkflowDefinitionStore(sp => sp.GetRequiredService<EFCoreWorkflowDefinitionStore>())
+            .WithWorkflowInstanceStore(sp => sp.GetRequiredService<EFCoreWorkflowInstanceStore>())
+            .WithWorkflowBookmarkStore(sp => sp.GetRequiredService<EFCoreWorkflowBookmarkStore>())
+            .WithWorkflowTriggerStore(sp => sp.GetRequiredService<EFCoreWorkflowTriggerStore>())
+            .WithWorkflowExecutionLogStore(sp => sp.GetRequiredService<EFCoreWorkflowExecutionLogStore>())
+            ;
+    }
+
+    public override void Apply()
+    {
+        base.Apply();
+
         AddStore<WorkflowDefinition, EFCoreWorkflowDefinitionStore>(Services);
         AddStore<WorkflowInstance, EFCoreWorkflowInstanceStore>(Services);
         AddStore<WorkflowBookmark, EFCoreWorkflowBookmarkStore>(Services);
@@ -29,13 +39,6 @@ public class EFCoreWorkflowPersistenceConfigurator : EFCorePersistenceConfigurat
             .AddSingleton<IEntitySerializer<WorkflowsDbContext, WorkflowDefinition>, WorkflowDefinitionSerializer>()
             .AddSingleton<IEntitySerializer<WorkflowsDbContext, WorkflowInstance>, WorkflowInstanceSerializer>()
             .AddSingleton<IEntitySerializer<WorkflowsDbContext, WorkflowExecutionLogRecord>, WorkflowExecutionLogRecordSerializer>()
-            ;
-
-        ServiceConfiguration.Configure<WorkflowPersistenceConfigurator>().WithWorkflowDefinitionStore(sp => sp.GetRequiredService<EFCoreWorkflowDefinitionStore>())
-            .WithWorkflowInstanceStore(sp => sp.GetRequiredService<EFCoreWorkflowInstanceStore>())
-            .WithWorkflowBookmarkStore(sp => sp.GetRequiredService<EFCoreWorkflowBookmarkStore>())
-            .WithWorkflowTriggerStore(sp => sp.GetRequiredService<EFCoreWorkflowTriggerStore>())
-            .WithWorkflowExecutionLogStore(sp => sp.GetRequiredService<EFCoreWorkflowExecutionLogStore>())
             ;
     }
 }

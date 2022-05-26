@@ -29,7 +29,7 @@ public class LabelsConfigurator : ConfiguratorBase
         return this;
     }
 
-    public override void ConfigureServices()
+    public override void Apply()
     {
         Services
             .AddMemoryStore<Label, InMemoryLabelStore>()

@@ -41,7 +41,7 @@ public class WorkflowsConfigurator : ConfiguratorBase
         return this;
     }
     
-    public override void ConfigureServices()
+    public override void Apply()
     {
         AddElsaCore(Services);
         AddExpressions(Services);

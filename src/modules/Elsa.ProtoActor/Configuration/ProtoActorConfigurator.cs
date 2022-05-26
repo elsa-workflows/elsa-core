@@ -24,7 +24,7 @@ public class ProtoActorConfigurator : ConfiguratorBase
     {
     }
 
-    public override void ConfigureServices()
+    public override void Apply()
     {
         var services = Services;
         var systemConfig = GetSystemConfig();

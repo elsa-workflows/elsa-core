@@ -1,4 +1,3 @@
-using System.Data.Entity;
 using System.Linq.Expressions;
 using Elsa.Persistence.Common.Models;
 
@@ -6,23 +5,23 @@ namespace Elsa.Persistence.Common.Extensions;
 
 public static class QueryableExtensions
 {
-    public static async Task<Page<TTarget>> PaginateAsync<T, TTarget>(this IQueryable<T> queryable, Expression<Func<T, TTarget>> projection, PageArgs? pageArgs = default)
+    public static Page<TTarget> Paginate<T, TTarget>(this IQueryable<T> queryable, Expression<Func<T, TTarget>> projection, PageArgs? pageArgs = default)
     {
         if (pageArgs?.Offset != null) queryable = queryable.Skip(pageArgs.Offset.Value);
         if (pageArgs?.Limit != null) queryable = queryable.Take(pageArgs.Limit.Value);
-        
-        var count = await queryable.CountAsync();
-        var results = await queryable.Select(projection).ToListAsync();
+
+        var count = queryable.Count();
+        var results = queryable.Select(projection).ToList();
         return Page.Of(results, count);
     }
-    
-    public static async Task<Page<T>> PaginateAsync<T>(this IQueryable<T> queryable, PageArgs? pageArgs = default)
+
+    public static Page<T> Paginate<T>(this IQueryable<T> queryable, PageArgs? pageArgs = default)
     {
         if (pageArgs?.Offset != null) queryable = queryable.Skip(pageArgs.Offset.Value);
         if (pageArgs?.Limit != null) queryable = queryable.Take(pageArgs.Limit.Value);
-        
-        var count = await queryable.CountAsync();
-        var results = await queryable.ToListAsync();
+
+        var count = queryable.Count();
+        var results = queryable.ToList();
         return Page.Of(results, count);
     }
 }

@@ -1,5 +1,5 @@
 using Elsa.Labels.Configuration;
-using Elsa.Labels.EntityFrameworkCore.Options;
+using Elsa.Labels.EntityFrameworkCore.Configuration;
 
 namespace Elsa.Labels.EntityFrameworkCore.Extensions;
 

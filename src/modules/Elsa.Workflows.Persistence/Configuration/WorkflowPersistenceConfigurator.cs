@@ -53,7 +53,7 @@ public class WorkflowPersistenceConfigurator : ConfiguratorBase
         return this;
     }
 
-    public override void ConfigureServices() =>
+    public override void Apply() =>
         Services
             .AddMemoryStore<WorkflowDefinition, MemoryWorkflowDefinitionStore>()
             .AddMemoryStore<WorkflowInstance, MemoryWorkflowInstanceStore>()

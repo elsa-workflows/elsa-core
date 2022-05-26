@@ -36,7 +36,7 @@ public class WorkflowRuntimeConfigurator : ConfiguratorBase
     /// </summary>
     public Func<IServiceProvider, IWorkflowDispatcher> WorkflowDispatcherFactory { get; set; } = sp => ActivatorUtilities.CreateInstance<TaskBasedWorkflowDispatcher>(sp);
 
-    public override void ConfigureServices()
+    public override void Apply()
     {
         Services
             // Core.

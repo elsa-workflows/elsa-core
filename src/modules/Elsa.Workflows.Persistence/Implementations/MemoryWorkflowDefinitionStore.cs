@@ -109,7 +109,8 @@ public class MemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
         if (!string.IsNullOrWhiteSpace(materializerName)) query = query.Where(x => x.MaterializerName == materializerName);
         if (labelNames != null) query = FilterByLabels(query, labelNames);
 
-        return query.PaginateAsync(x => WorkflowDefinitionSummary.FromDefinition(x), pageArgs);
+        var page = query.Paginate(x => WorkflowDefinitionSummary.FromDefinition(x), pageArgs);
+        return Task.FromResult(page);
     }
 
     public Task<bool> GetExistsAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)

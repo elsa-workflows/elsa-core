@@ -38,18 +38,18 @@ public abstract class EFCorePersistenceConfigurator<TDbContext> : ConfiguratorBa
         return this;
     }
 
-    public override void ConfigureServices()
+    public override void ConfigureHostedServices()
+    {
+        if (AutoRunMigrationsIsEnabled)
+            ServiceConfiguration.ConfigureHostedService<RunMigrations<TDbContext>>(-1); // Migrations need to run before other hosted services that depend on DB access.
+    }
+    
+    public override void Apply()
     {
         if (ContextPoolingIsEnabled)
             Services.AddPooledDbContextFactory<TDbContext>(DbContextOptionsBuilderAction);
         else
             Services.AddDbContextFactory<TDbContext>(DbContextOptionsBuilderAction, DbContextFactoryLifetime);
-    }
-
-    public override void ConfigureHostedServices()
-    {
-        if (AutoRunMigrationsIsEnabled)
-            ServiceConfiguration.ConfigureHostedService<RunMigrations<TDbContext>>(-1); // Migrations need to run before other hosted services that depend on DB access.
     }
 
     protected void AddStore<TEntity, TStore>(IServiceCollection services) where TEntity : Entity where TStore : class
