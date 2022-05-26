@@ -5,6 +5,7 @@ import {ActivityDescriptor} from "./api";
 export interface TabDefinition {
   displayText: string;
   content: () => any;
+  order?: number;
 }
 
 export interface TabChangedArgs {

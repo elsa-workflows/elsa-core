@@ -5,7 +5,7 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
-import { ActionDefinition, ActionInvokedArgs, Activity, ActivityDescriptor, ActivitySelectedArgs, ContainerSelectedArgs, GraphUpdatedArgs, IntellisenseContext, Label, SelectListItem, TabChangedArgs, TabDefinition, WorkflowDefinition, WorkflowDefinitionSummary, WorkflowInstance, WorkflowInstanceSummary } from "./models";
+import { ActionDefinition, ActionInvokedArgs, Activity, ActivityDescriptor, ActivitySelectedArgs, ContainerSelectedArgs, GraphUpdatedArgs, IntellisenseContext, SelectListItem, TabChangedArgs, TabDefinition, WorkflowDefinition, WorkflowDefinitionSummary, WorkflowInstance, WorkflowInstanceSummary } from "./models";
 import { ActivityUpdatedArgs, DeleteActivityRequestedArgs } from "./components/designer/activity-properties-editor/activity-properties-editor";
 import { Button } from "./components/shared/button-group/models";
 import { ContainerActivityComponent } from "./components/activities/container-activity-component";
@@ -16,15 +16,14 @@ import { DropdownButtonItem, DropdownButtonOrigin } from "./components/shared/dr
 import { Graph } from "@antv/x6";
 import { AddActivityArgs as AddActivityArgs1 } from "./components/designer/canvas/canvas";
 import { ExpressionChangedArs } from "./components/designer/input-control-switch/input-control-switch";
-import { CreateLabelEventArgs, DeleteLabelEventArgs, UpdateLabelEventArgs } from "./modules/labels/models";
+import { CreateLabelEventArgs, DeleteLabelEventArgs, Label, UpdateLabelEventArgs } from "./modules/labels/models";
 import { MonacoLib, MonacoValueChangedArgs } from "./components/shared/monaco-editor/monaco-editor";
 import { PagerData } from "./components/shared/pager/pager";
 import { PanelPosition, PanelStateChangedArgs } from "./components/designer/panel/models";
 import { WorkflowUpdatedArgs } from "./components/designer/workflow-editor/workflow-editor";
-import { WorkflowLabelsUpdatedArgs } from "./components/designer/workflow-properties-editor/workflow-properties-editor";
+import { WorkflowLabelsUpdatedArgs, WorkflowPropsUpdatedArgs } from "./components/designer/workflow-properties-editor/models";
 import { ActivityDriverRegistry } from "./services";
 import { Flowchart } from "./components/activities/flowchart/models";
-import { WorkflowLabelsUpdatedArgs as WorkflowLabelsUpdatedArgs1, WorkflowPropsUpdatedArgs } from "./components/designer/workflow-properties-editor/workflow-properties-editor";
 import { PublishClickedArgs } from "./components/toolbar/workflow-publish-button/workflow-publish-button";
 export namespace Components {
     interface ElsaActivityPropertiesEditor {
@@ -190,7 +189,6 @@ export namespace Components {
     }
     interface ElsaWorkflowEditor {
         "activityDescriptors": Array<ActivityDescriptor>;
-        "assignLabels": (labelIds: Array<string>) => Promise<void>;
         "getCanvas": () => Promise<HTMLElsaCanvasElement>;
         "getWorkflow": () => Promise<WorkflowDefinition>;
         "importWorkflow": (workflowDefinition: WorkflowDefinition, workflowInstance?: WorkflowInstance) => Promise<void>;
@@ -204,7 +202,6 @@ export namespace Components {
         "show": () => Promise<void>;
     }
     interface ElsaWorkflowPropertiesEditor {
-        "assignedLabelIds": Array<string>;
         "hide": () => Promise<void>;
         "show": () => Promise<void>;
         "workflowDefinition"?: WorkflowDefinition;
@@ -669,7 +666,6 @@ declare namespace LocalJSX {
         "onWorkflowInstanceSelected"?: (event: CustomEvent<WorkflowInstanceSummary>) => void;
     }
     interface ElsaWorkflowPropertiesEditor {
-        "assignedLabelIds"?: Array<string>;
         "onWorkflowLabelsUpdated"?: (event: CustomEvent<WorkflowLabelsUpdatedArgs>) => void;
         "onWorkflowPropsUpdated"?: (event: CustomEvent<WorkflowPropsUpdatedArgs>) => void;
         "workflowDefinition"?: WorkflowDefinition;

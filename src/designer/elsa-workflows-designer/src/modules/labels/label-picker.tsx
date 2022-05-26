@@ -1,13 +1,13 @@
 import {Component, h, Listen, Prop, State, Element, Event, EventEmitter, Watch} from "@stencil/core";
+import {TinyColor} from "@ctrl/tinycolor";
 import {debounce} from 'lodash';
 import {leave, toggle, enter} from 'el-transition';
-import {Label} from "../../../models";
-import labelStore from '../../../data/label-store';
-import {Badge} from "../badge/badge";
-import {ConfigIcon} from "../../icons/tooling/config";
-import {TickIcon} from "../../icons/tooling/tick";
-import {TinyColor} from "@ctrl/tinycolor";
-import {isNullOrWhitespace} from "../../../utils";
+import {Label} from "./models";
+import labelStore from './label-store';
+import {Badge} from "../../components/shared/badge/badge";
+import {ConfigIcon} from "../../components/icons/tooling/config";
+import {TickIcon} from "../../components/icons/tooling/tick";
+import {isNullOrWhitespace} from "../../utils";
 
 @Component({
   tag: 'elsa-label-picker',

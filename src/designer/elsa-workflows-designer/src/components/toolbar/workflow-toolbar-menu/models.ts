@@ -13,5 +13,5 @@ export interface ToolbarDisplayingArgs {
 }
 
 export const ToolbarEventTypes = {
-  Displaying: 'studio-toolbar-displaying'
+  Displaying: 'studio-toolbar:displaying'
 }

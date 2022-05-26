@@ -4,6 +4,7 @@ import {ActivityPropertyChangedEventArgs, EventTypes} from "../../models";
 import {SwitchActivity} from "./models";
 import {EventBus} from "../../services";
 import {SwitchPlugin} from "./switch-plugin";
+import {WorkflowEditorEventTypes} from "../../components/designer/workflow-editor/models";
 
 @Service()
 export class SwitchPortUpdater {
@@ -11,7 +12,7 @@ export class SwitchPortUpdater {
   constructor() {
     const eventBus = Container.get(EventBus);
 
-    eventBus.on(EventTypes.Activity.PropertyChanged, this.onActivityPropertyChanged);
+    eventBus.on(WorkflowEditorEventTypes.Activity.PropertyChanged, this.onActivityPropertyChanged);
   }
 
   private onActivityPropertyChanged = async (e: ActivityPropertyChangedEventArgs) => {

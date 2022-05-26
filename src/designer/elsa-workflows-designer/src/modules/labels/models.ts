@@ -14,3 +14,10 @@ export interface UpdateLabelEventArgs {
 export interface DeleteLabelEventArgs {
   id: string;
 }
+
+export interface Label {
+  id: string;
+  name: string;
+  description?: string;
+  color?: string;
+}
