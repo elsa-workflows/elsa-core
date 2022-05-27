@@ -14,7 +14,7 @@ export interface EditorVariable {
   type: string;
 }
 
-export var editorVariables: Array<EditorVariable> = [];
+export var EditorVariables: Array<EditorVariable> = [];
 
 let isInitialized: boolean;
 const mutex = new Mutex();
@@ -47,7 +47,7 @@ export async function initializeMonacoWorker(libPath?: string): Promise<Monaco> 
       require(["vs/editor/editor.main"], () => {
         isInitialized = true;
         registerLiquid(win.monaco);
-        registerSQL(win.monaco);
+        registerSql(win.monaco);
         resolve(win.monaco);
       });
     });
@@ -89,7 +89,7 @@ function registerLiquid(monaco: any) {
   });
 }
 
-function registerSQL(monaco: any) {
+function registerSql(monaco: any) {
 
   monaco.languages.registerCompletionItemProvider('sql', {
     triggerCharacters: ["@"],
@@ -98,7 +98,7 @@ function registerSQL(monaco: any) {
       const word = model.getWordUntilPosition(position)
 
       const autocompleteProviderItems = [];
-      for (const varible of editorVariables) {
+      for (const varible of EditorVariables) {
         autocompleteProviderItems.push({
           label: `${varible.variableName}: ${varible.type}`,
           kind: monaco.languages.CompletionItemKind.Variable,

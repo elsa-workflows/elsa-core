@@ -1,5 +1,5 @@
 import { Component, Event, EventEmitter, h, Host, Method, Prop, Watch } from '@stencil/core';
-import { initializeMonacoWorker, Monaco, editorVariables } from "./elsa-monaco-utils";
+import { initializeMonacoWorker, Monaco, EditorVariables } from "./elsa-monaco-utils";
 import state from '../../../utils/store';
 
 export interface MonacoValueChangedArgs {
@@ -65,10 +65,10 @@ export class ElsaMonaco {
     
     const matches = libSource.matchAll(/declare const (\w+): (string|number)/g);
 
-    editorVariables.splice(0, editorVariables.length);
+    EditorVariables.splice(0, EditorVariables.length);
     
     for(const match of matches) {
-      editorVariables.push({variableName: match[1], type: match[2] });
+      EditorVariables.push({variableName: match[1], type: match[2] });
     }
   }
 
