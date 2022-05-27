@@ -11,7 +11,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Elsa.ServiceConfiguration\Elsa.ServiceConfiguration.csproj" />
+      <ProjectReference Include="..\Elsa.Features\Elsa.Features.csproj" />
     </ItemGroup>
 
 </Project>

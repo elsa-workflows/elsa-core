@@ -1,14 +1,14 @@
 using System;
-using Elsa.Configuration;
-using Elsa.ServiceConfiguration.Extensions;
-using Elsa.ServiceConfiguration.Services;
+using Elsa.Features;
+using Elsa.Features.Extensions;
+using Elsa.Features.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Extensions;
 
 public static class DependencyInjectionExtensions
 {
-    public static IServiceCollection AddElsa(this IServiceCollection services, Action<IServiceConfiguration>? configure = default)
+    public static IServiceCollection AddElsa(this IServiceCollection services, Action<IModule>? configure = default)
     {
         var serviceConfiguration = services.ConfigureElsa();
         configure?.Invoke(serviceConfiguration);
@@ -16,11 +16,11 @@ public static class DependencyInjectionExtensions
         return services;
     }
 
-    public static IServiceConfiguration ConfigureElsa(this IServiceCollection services)
+    public static IModule ConfigureElsa(this IServiceCollection services)
     {
-        var serviceConfiguration = services.ConfigureServices();
-        serviceConfiguration.Configure<ElsaConfigurator>();
+        var module = services.CreateModule();
+        module.Configure<ElsaFeature>();
 
-        return serviceConfiguration;
+        return module;
     }
 }

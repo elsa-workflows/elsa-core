@@ -1,7 +1,7 @@
-using Elsa.Expressions.Configuration;
+using Elsa.Expressions.Features;
 using Elsa.Expressions.Options;
 using Elsa.Expressions.Services;
-using Elsa.ServiceConfiguration.Services;
+using Elsa.Features.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -9,7 +9,7 @@ namespace Elsa.Expressions.Extensions;
 
 public static class DependencyInjectionExtensions
 {
-    public static IServiceConfiguration UseExpressions(this IServiceConfiguration configuration, Action<ExpressionsConfigurator>? configure = default)
+    public static IModule UseExpressions(this IModule configuration, Action<ExpressionsFeature>? configure = default)
     {
         configuration.Configure(configure);
         return configuration;

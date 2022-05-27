@@ -104,7 +104,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Workflows.Persistence.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Workflows.Runtime", "src\modules\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj", "{8A050229-DB79-4E0B-9AFF-7565E87F2954}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ServiceConfiguration", "src\common\Elsa.ServiceConfiguration\Elsa.ServiceConfiguration.csproj", "{C237BA1A-3A7D-4AB2-BE09-2696F3C082A4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Features", "src\common\Elsa.Features\Elsa.Features.csproj", "{C237BA1A-3A7D-4AB2-BE09-2696F3C082A4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.MemoryCache", "src\modules\Elsa.MemoryCache\Elsa.MemoryCache.csproj", "{2570418D-1674-4DAE-9A24-9146D522450C}"
 EndProject

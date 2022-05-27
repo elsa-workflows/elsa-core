@@ -1,11 +1,11 @@
-using Elsa.AspNetCore.Configuration;
-using Elsa.ServiceConfiguration.Services;
+using Elsa.AspNetCore.Features;
+using Elsa.Features.Services;
 
 namespace Elsa.AspNetCore.Extensions;
 
 public static class DependencyInjectionExtensions
 {
-    public static IServiceConfiguration UseMvc(this IServiceConfiguration configuration, Action<MvcConfigurator>? configure = default)
+    public static IModule UseMvc(this IModule configuration, Action<MvcFeature>? configure = default)
     {
         configuration.Configure(configure);
         return configuration;

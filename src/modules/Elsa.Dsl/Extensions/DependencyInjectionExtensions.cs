@@ -1,12 +1,12 @@
 using System;
-using Elsa.Dsl.Configuration;
-using Elsa.ServiceConfiguration.Services;
+using Elsa.Dsl.Features;
+using Elsa.Features.Services;
 
 namespace Elsa.Dsl.Extensions;
 
 public static class DependencyInjectionExtensions
 {
-    public static IServiceConfiguration UseDsl(this IServiceConfiguration configuration, Action<DslConfigurator>? configure = default)
+    public static IModule UseDsl(this IModule configuration, Action<DslFeature>? configure = default)
     {
         configuration.Configure(configure);
         return configuration;

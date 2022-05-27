@@ -1,13 +1,13 @@
-using Elsa.ServiceConfiguration.Services;
-using Elsa.Workflows.Management.Configuration;
+using Elsa.Features.Services;
+using Elsa.Workflows.Management.Features;
 
 namespace Elsa.Workflows.Management.Extensions;
 
 public static class DependencyInjectionExtensions
 {
-    public static IServiceConfiguration UseManagement(this IServiceConfiguration serviceConfiguration, Action<WorkflowManagementConfigurator>? configure = default)
+    public static IModule UseManagement(this IModule module, Action<WorkflowManagementFeature>? configure = default)
     {
-        serviceConfiguration.Configure(configure);
-        return serviceConfiguration;
+        module.Configure(configure);
+        return module;
     }
 }

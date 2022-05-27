@@ -1,13 +1,13 @@
-using Elsa.ServiceConfiguration.Services;
-using Elsa.Workflows.Persistence.Configuration;
+using Elsa.Features.Services;
+using Elsa.Workflows.Persistence.Features;
 
 namespace Elsa.Workflows.Persistence.Extensions;
 
 public static class DependencyInjectionExtensions
 {
-    public static IServiceConfiguration UsePersistence(this IServiceConfiguration serviceConfiguration, Action<WorkflowPersistenceConfigurator>? configure = default )
+    public static IModule UseWorkflowPersistence(this IModule module, Action<WorkflowPersistenceFeature>? configure = default )
     {
-        serviceConfiguration.Configure(configure);
-        return serviceConfiguration;
+        module.Configure(configure);
+        return module;
     }
 }

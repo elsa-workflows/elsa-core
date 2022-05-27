@@ -1,11 +1,11 @@
-using Elsa.ServiceConfiguration.Services;
-using Elsa.Workflows.Core.Configuration;
+using Elsa.Features.Services;
+using Elsa.Workflows.Core.Features;
 
 namespace Elsa.Workflows.Core;
 
 public static class DependencyInjectionExtensions
 {
-    public static IServiceConfiguration UseWorkflows(this IServiceConfiguration configuration, Action<WorkflowsConfigurator>? configure = default)
+    public static IModule UseWorkflows(this IModule configuration, Action<WorkflowsFeature>? configure = default)
     {
         configuration.Configure(configure);
         return configuration;
