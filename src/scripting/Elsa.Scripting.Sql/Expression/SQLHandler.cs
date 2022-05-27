@@ -43,6 +43,8 @@ namespace Elsa.Scripting.Sql.Expressions
                             var value = context.GetVariable(variable);
                             if(value is not null) {
                                 replacement = IsNumber(value)? $"{value}" : $"'{value}'";
+                            } else {
+                                replacement = "NULL";
                             }
                         }
                         break;
