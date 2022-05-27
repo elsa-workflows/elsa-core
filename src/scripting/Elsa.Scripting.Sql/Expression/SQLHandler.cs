@@ -2,9 +2,10 @@ using System;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Expressions;
 using Elsa.Services.Models;
 
-namespace Elsa.Expressions
+namespace Elsa.Scripting.Sql.Expressions
 {
     public class SQLHandler : IExpressionHandler
     {

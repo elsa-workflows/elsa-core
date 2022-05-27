@@ -209,7 +209,6 @@ namespace Microsoft.Extensions.DependencyInjection
                 .TryAddProvider<IExpressionHandler, VariableHandler>(ServiceLifetime.Singleton)
                 .TryAddProvider<IExpressionHandler, JsonHandler>(ServiceLifetime.Singleton)
                 .TryAddProvider<IExpressionHandler, SwitchHandler>(ServiceLifetime.Singleton)
-                .TryAddProvider<IExpressionHandler, SQLHandler>(ServiceLifetime.Singleton)
                 .AddScoped<IExpressionEvaluator, ExpressionEvaluator>();
 
             // Workflow providers.
