@@ -48,8 +48,7 @@ export class ElsaMonaco {
   async addJavaScriptLib(libSource: string, libUri: string) {
     const monaco = this.monaco;
     monaco.languages.typescript.javascriptDefaults.setExtraLibs([{
-      content: "<reference lib=\"es5\" />",
-      filePath: "lib.d.ts"
+      filePath: "lib.es5.d.ts"
     }, {
       content: libSource,
       filePath: libUri
