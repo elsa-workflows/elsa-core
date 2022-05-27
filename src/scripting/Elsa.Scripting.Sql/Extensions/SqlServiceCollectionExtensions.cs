@@ -11,7 +11,7 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             var services = elsaOptions.Services;
 
-            services.TryAddProvider<IExpressionHandler, SQLHandler>(ServiceLifetime.Singleton);
+            services.TryAddProvider<IExpressionHandler, SqlHandler>(ServiceLifetime.Singleton);
             
             return elsaOptions;
         }

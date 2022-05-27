@@ -26,7 +26,6 @@ export class ElsaMonaco {
   container: HTMLElement;
   editor: any;
 
-
   @Watch('language')
   languageChangeHandler(newValue: string) {
     if (!this.editor)

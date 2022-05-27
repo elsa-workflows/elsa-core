@@ -19,8 +19,6 @@ export var EditorVariables: Array<EditorVariable> = [];
 let isInitialized: boolean;
 const mutex = new Mutex();
 
-
-
 export async function initializeMonacoWorker(libPath?: string): Promise<Monaco> {
 
   return await mutex.runExclusive(async () => {

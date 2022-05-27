@@ -7,9 +7,9 @@ using Elsa.Services.Models;
 
 namespace Elsa.Scripting.Sql.Expressions
 {
-    public class SQLHandler : IExpressionHandler
+    public class SqlHandler : IExpressionHandler
     {
-        public string Syntax => SyntaxNames.SQL;
+        public string Syntax => SyntaxNames.Sql;
 
         private static Regex rx = new Regex(@"@(\w+)");
 
