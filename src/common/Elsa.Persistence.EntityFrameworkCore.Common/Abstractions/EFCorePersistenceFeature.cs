@@ -1,0 +1,61 @@
+using Elsa.Persistence.Common.Entities;
+using Elsa.Persistence.EntityFrameworkCore.Common.HostedServices;
+using Elsa.Persistence.EntityFrameworkCore.Common.Implementations;
+using Elsa.Persistence.EntityFrameworkCore.Common.Services;
+using Elsa.Features.Abstractions;
+using Elsa.Features.Services;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Elsa.Persistence.EntityFrameworkCore.Common.Abstractions;
+
+public abstract class EFCorePersistenceFeature<TDbContext> : FeatureBase where TDbContext : DbContext
+{
+    protected EFCorePersistenceFeature(IModule module) : base(module)
+    {
+    }
+    
+    public bool ContextPoolingIsEnabled { get; set; }
+    public bool AutoRunMigrationsIsEnabled { get; set; } = true;
+    public ServiceLifetime DbContextFactoryLifetime { get; set; } = ServiceLifetime.Singleton;
+    public Action<IServiceProvider, DbContextOptionsBuilder> DbContextOptionsBuilderAction = (_, _) => { };
+
+    public EFCorePersistenceFeature<TDbContext> WithContextPooling(bool enabled = true)
+    {
+        ContextPoolingIsEnabled = enabled;
+        return this;
+    }
+
+    public EFCorePersistenceFeature<TDbContext> AutoRunMigrations(bool enabled = true)
+    {
+        AutoRunMigrationsIsEnabled = enabled;
+        return this;
+    }
+
+    public EFCorePersistenceFeature<TDbContext> ConfigureDbContextOptions(Action<IServiceProvider, DbContextOptionsBuilder> configure)
+    {
+        DbContextOptionsBuilderAction = configure;
+        return this;
+    }
+
+    public override void ConfigureHostedServices()
+    {
+        if (AutoRunMigrationsIsEnabled)
+            Module.ConfigureHostedService<RunMigrations<TDbContext>>(-1); // Migrations need to run before other hosted services that depend on DB access.
+    }
+    
+    public override void Apply()
+    {
+        if (ContextPoolingIsEnabled)
+            Services.AddPooledDbContextFactory<TDbContext>(DbContextOptionsBuilderAction);
+        else
+            Services.AddDbContextFactory<TDbContext>(DbContextOptionsBuilderAction, DbContextFactoryLifetime);
+    }
+
+    protected void AddStore<TEntity, TStore>(IServiceCollection services) where TEntity : Entity where TStore : class
+    {
+        services
+            .AddSingleton<IStore<TDbContext, TEntity>, EFCoreStore<TDbContext, TEntity>>()
+            .AddSingleton<TStore>();
+    }
+}

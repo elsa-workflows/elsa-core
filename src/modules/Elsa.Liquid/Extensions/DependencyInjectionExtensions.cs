@@ -1,18 +1,18 @@
-using Elsa.Liquid.Configuration;
+using Elsa.Features.Services;
+using Elsa.Liquid.Features;
 using Elsa.Liquid.Implementations;
 using Elsa.Liquid.Options;
 using Elsa.Liquid.Services;
-using Elsa.ServiceConfiguration.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Liquid.Extensions;
 
 public static class DependencyInjectionExtensions
 {
-    public static IServiceConfiguration UseLiquid(this IServiceConfiguration configuration, Action<LiquidConfigurator>? configure = default)
+    public static IModule UseLiquid(this IModule module, Action<LiquidConfigurator>? configure = default)
     {
-        configuration.Configure(configure);
-        return configuration;
+        module.Configure(configure);
+        return module;
     }
 
     public static IServiceCollection AddLiquidFilter<T>(this IServiceCollection services, string name) where T : class, ILiquidFilter

@@ -27,7 +27,6 @@ export class LabelsWidget {
   private refreshWorkflowProperties: () => void;
   private definitionVersionId: string;
 
-
   constructor() {
     this.eventBus = Container.get(EventBus);
     this.workflowDefinitionManager = Container.get(WorkflowDefinitionManager);
@@ -97,6 +96,13 @@ export class LabelsWidget {
 
   private onWorkflowDefinitionImported = async (e: WorkflowDefinitionImportedArgs) => {
     const workflowDefinition = e.workflowDefinition;
+
+    if (isNullOrWhitespace(workflowDefinition.id)) {
+      this.definitionVersionId = null;
+      this.assignedLabelIds = [];
+      return;
+    }
+
     const assignedLabelIds = await this.workflowDefinitionLabelsApi.get(workflowDefinition.id);
     this.assignedLabelIds = assignedLabelIds;
     this.definitionVersionId = workflowDefinition.id;

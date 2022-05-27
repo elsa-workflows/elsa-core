@@ -36,7 +36,7 @@ var sqlServerConnectionString = configuration.GetConnectionString("SqlServer");
 // Add Elsa services.
 services
     .AddElsa(elsa => elsa
-        .UsePersistence(persistence => persistence.UseEntityFrameworkCore(ef => ef.UseSqlite()))
+        .UseWorkflowPersistence(persistence => persistence.UseEntityFrameworkCore(ef => ef.UseSqlite()))
         .UseRuntime(runtime =>
         {
             runtime.Workflows.Add<HelloWorldWorkflow>();

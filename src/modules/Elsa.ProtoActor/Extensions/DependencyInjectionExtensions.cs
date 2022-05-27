@@ -1,14 +1,14 @@
 using System;
 using Elsa.ProtoActor.Configuration;
-using Elsa.Workflows.Runtime.Configuration;
+using Elsa.Workflows.Runtime.Features;
 
 namespace Elsa.ProtoActor.Extensions;
 
 public static class DependencyInjectionExtensions
 {
-    public static WorkflowRuntimeConfigurator UseProtoActor(this WorkflowRuntimeConfigurator configurator, Action<ProtoActorConfigurator>? configure = default)
+    public static WorkflowRuntimeFeature UseProtoActor(this WorkflowRuntimeFeature feature, Action<ProtoActorFeature>? configure = default)
     {
-        configurator.ServiceConfiguration.Configure(configure);
-        return configurator;
+        feature.Module.Configure(configure);
+        return feature;
     }
 }

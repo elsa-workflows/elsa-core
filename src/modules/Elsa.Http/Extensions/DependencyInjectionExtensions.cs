@@ -1,15 +1,15 @@
 using System;
-using Elsa.Http.Configuration;
-using Elsa.ServiceConfiguration.Services;
+using Elsa.Features.Services;
+using Elsa.Http.Features;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection;
 
 public static class DependencyInjectionExtensions
 {
-    public static IServiceConfiguration UseHttp(this IServiceConfiguration configuration, Action<HttpConfigurator>? configure = default)
+    public static IModule UseHttp(this IModule module, Action<HttpFeature>? configure = default)
     {
-        configuration.Configure(configure);
-        return configuration;
+        module.Configure(configure);
+        return module;
     }
 }

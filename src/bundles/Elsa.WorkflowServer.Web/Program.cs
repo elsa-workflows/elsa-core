@@ -46,7 +46,7 @@ services
             .AddActivity<Switch>()
             .AddActivity<RunJavaScript>()
         )
-        .UsePersistence(p => p.UseEntityFrameworkCore(ef => ef.UseSqlite()))
+        .UseWorkflowPersistence(p => p.UseEntityFrameworkCore(ef => ef.UseSqlite()))
         .UseJavaScript()
         .UseLiquid()
         .UseLabels(labels => labels.UseEntityFrameworkCore(ef => ef.UseSqlite()))

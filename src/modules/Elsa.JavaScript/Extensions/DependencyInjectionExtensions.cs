@@ -1,13 +1,13 @@
-using Elsa.JavaScript.Configuration;
-using Elsa.ServiceConfiguration.Services;
+using Elsa.Features.Services;
+using Elsa.JavaScript.Features;
 
 namespace Elsa.JavaScript.Extensions;
 
 public static class DependencyInjectionExtensions
 {
-    public static IServiceConfiguration UseJavaScript(this IServiceConfiguration serviceConfiguration, Action<JavaScriptConfigurator>? configure = default)
+    public static IModule UseJavaScript(this IModule module, Action<JavaScriptFeature>? configure = default)
     {
-        serviceConfiguration.Configure(configure);
-        return serviceConfiguration;
+        module.Configure(configure);
+        return module;
     }
 }

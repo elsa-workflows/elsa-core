@@ -9,7 +9,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\bundles\Elsa\Elsa.csproj" />
-      <ProjectReference Include="..\..\common\Elsa.AspNetCore\Elsa.AspNetCore.csproj" />
+      <ProjectReference Include="..\..\modules\Elsa.AspNetCore\Elsa.AspNetCore.csproj" />
       <ProjectReference Include="..\..\common\Elsa.Jobs.Abstractions\Elsa.Jobs.Abstractions.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Hangfire\Elsa.Hangfire.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Http\Elsa.Http.csproj" />

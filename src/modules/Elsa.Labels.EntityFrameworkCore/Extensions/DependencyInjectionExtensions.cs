@@ -1,13 +1,13 @@
-using Elsa.Labels.Configuration;
-using Elsa.Labels.EntityFrameworkCore.Configuration;
+using Elsa.Labels.EntityFrameworkCore.Features;
+using Elsa.Labels.Features;
 
 namespace Elsa.Labels.EntityFrameworkCore.Extensions;
 
 public static class DependencyInjectionExtensions
 {
-    public static LabelsConfigurator UseEntityFrameworkCore(this LabelsConfigurator configurator, Action<EFCoreLabelPersistenceConfigurator> configure)
+    public static LabelsFeature UseEntityFrameworkCore(this LabelsFeature feature, Action<EFCoreLabelPersistenceFeature> configure)
     {
-        configurator.ServiceConfiguration.Configure(configure);
-        return configurator;
+        feature.Module.Configure(configure);
+        return feature;
     }
 }

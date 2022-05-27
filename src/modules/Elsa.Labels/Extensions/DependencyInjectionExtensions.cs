@@ -1,11 +1,11 @@
-using Elsa.Labels.Configuration;
-using Elsa.ServiceConfiguration.Services;
+using Elsa.Features.Services;
+using Elsa.Labels.Features;
 
 namespace Elsa.Labels.Extensions;
 
 public static class DependencyInjectionExtensions
 {
-    public static IServiceConfiguration UseLabels(this IServiceConfiguration configuration, Action<LabelsConfigurator>? configure = default)
+    public static IModule UseLabels(this IModule configuration, Action<LabelsFeature>? configure = default)
     {
         configuration.Configure(configure);
         return configuration;
