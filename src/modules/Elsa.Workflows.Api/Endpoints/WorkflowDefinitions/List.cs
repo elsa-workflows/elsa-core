@@ -33,7 +33,7 @@ public class List : Controller
         [FromQuery] string? versionOptions = default,
         [FromQuery] string? definitionIds = default,
         [FromQuery(Name = "materializer")] string? materializerName = default,
-        [FromQuery(Name = "label")] string[]? labels = default,
+        //[FromQuery(Name = "label")] string[]? labels = default,
         [FromQuery] int? page = default,
         [FromQuery] int? pageSize = default)
     {
@@ -51,7 +51,7 @@ public class List : Controller
         }
         else
         {
-            var pageOfSummaries = await _store.ListSummariesAsync(parsedVersionOptions, materializerName, labels, pageArgs, cancellationToken);
+            var pageOfSummaries = await _store.ListSummariesAsync(parsedVersionOptions, materializerName, pageArgs, cancellationToken);
             return Json(pageOfSummaries, serializerOptions);
         }
     }

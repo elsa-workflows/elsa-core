@@ -31,7 +31,6 @@ public interface IWorkflowDefinitionStore
     Task<Page<WorkflowDefinitionSummary>> ListSummariesAsync(
         VersionOptions? versionOptions = default,
         string? materializerName = default,
-        IEnumerable<string>? labelNames = default,
         PageArgs? pageArgs = default,
         CancellationToken cancellationToken = default);
 

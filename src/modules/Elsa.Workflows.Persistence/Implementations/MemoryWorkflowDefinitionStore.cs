@@ -99,7 +99,6 @@ public class MemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
     public Task<Page<WorkflowDefinitionSummary>> ListSummariesAsync(
         VersionOptions? versionOptions = default,
         string? materializerName = default,
-        IEnumerable<string>? labelNames = default,
         PageArgs? pageArgs = default,
         CancellationToken cancellationToken = default)
     {
@@ -107,7 +106,6 @@ public class MemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
 
         if (versionOptions != null) query = query.WithVersion(versionOptions.Value);
         if (!string.IsNullOrWhiteSpace(materializerName)) query = query.Where(x => x.MaterializerName == materializerName);
-        if (labelNames != null) query = FilterByLabels(query, labelNames);
 
         var page = query.Paginate(x => WorkflowDefinitionSummary.FromDefinition(x), pageArgs);
         return Task.FromResult(page);

@@ -75,7 +75,6 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
     public async Task<Page<WorkflowDefinitionSummary>> ListSummariesAsync(
         VersionOptions? versionOptions = default,
         string? materializerName = default,
-        IEnumerable<string>? labelNames = default,
         PageArgs? pageArgs = default,
         CancellationToken cancellationToken = default)
     {
@@ -83,9 +82,8 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         var workflowDefinitions = dbContext.WorkflowDefinitions;
         var query = workflowDefinitions.AsQueryable();
 
-        if (versionOptions != null) query = workflowDefinitions.WithVersion(versionOptions.Value);
-        if (!string.IsNullOrWhiteSpace(materializerName)) query = workflowDefinitions.Where(x => x.MaterializerName == materializerName);
-        if (labelNames != null) query = await FilterByLabelsAsync(dbContext, query, labelNames, cancellationToken);
+        if (versionOptions != null) query = query.WithVersion(versionOptions.Value);
+        if (!string.IsNullOrWhiteSpace(materializerName)) query = query.Where(x => x.MaterializerName == materializerName);
 
         query = query.OrderBy(x => x.Name); //.Distinct();
 
