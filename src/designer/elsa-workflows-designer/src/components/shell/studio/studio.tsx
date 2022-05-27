@@ -110,7 +110,6 @@ export class Studio {
 
   @Listen('newClicked')
   private async handleNewClick(e: CustomEvent) {
-    debugger;
     const workflowManagerElement = this.workflowManagerElement;
 
     if (!workflowManagerElement)
@@ -193,10 +192,10 @@ export class Studio {
     this.elsaClient = await elsaClientProvider.getElsaClient();
     this.activityDescriptors = await this.elsaClient.descriptors.activities.list();
 
-    debugger;
     this.workflowManagerElement = this.el.getElementsByTagName('elsa-workflow-manager')[0] as HTMLElsaWorkflowManagerElement;
 
     if (!!this.workflowManagerElement) {
+      debugger;
       this.workflowManagerElement.activityDescriptors = this.activityDescriptors;
       this.workflowManagerElement.monacoLibPath = this.monacoLibPath;
     }

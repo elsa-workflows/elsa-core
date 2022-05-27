@@ -1,6 +1,5 @@
 import {Component, h, Method, Prop} from "@stencil/core";
 import {ActivityDescriptor, WorkflowDefinition, WorkflowInstance} from "../../../models";
-import {Flowchart} from "../../activities/flowchart/models";
 
 @Component({
   tag: 'elsa-workflow-manager',
@@ -35,16 +34,24 @@ export class WorkflowManager {
   }
 
   public render() {
+    const monacoLibPath = this.monacoLibPath;
     const workflowInstance = this.workflowInstance;
     const workflowDefinition = this.workflowDefinition;
+    const activityDescriptors = this.activityDescriptors;
 
     if (workflowDefinition == null)
       return <div/>;
 
     if (workflowInstance == null) {
-      return <elsa-workflow-definition-editor workflowDefinition={workflowDefinition} ref={el => this.workflowDefinitionEditor = el}/>
+      return <elsa-workflow-definition-editor
+        monacoLibPath={monacoLibPath}
+        workflowDefinition={workflowDefinition}
+        activityDescriptors={activityDescriptors}
+        ref={el => this.workflowDefinitionEditor = el}/>
     }
 
-    return <elsa-workflow-instance-viewer ref={el => this.workflowInstanceViewer = el}/>
+    return <elsa-workflow-instance-viewer
+      monacoLibPath={monacoLibPath}
+      ref={el => this.workflowInstanceViewer = el}/>
   }
 }

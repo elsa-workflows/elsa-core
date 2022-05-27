@@ -147,9 +147,10 @@ export class WorkflowDefinitionEditor {
     await this.importWorkflow(workflowDefinition);
   }
 
-  public async ComponentWillLoad() {
-    debugger;
-    if (!this.workflowDefinition)
+  public async componentWillLoad() {
+    this.workflowDefinitionState = this.workflowDefinition;
+
+    if (!this.workflowDefinitionState)
       await this.newWorkflow();
   }
 
@@ -159,7 +160,7 @@ export class WorkflowDefinitionEditor {
 
   public render() {
     const tunnelState: WorkflowDesignerState = {
-      workflow: this.workflowDefinition,
+      workflow: this.workflowDefinitionState,
       activityDescriptors: this.activityDescriptors,
     };
 

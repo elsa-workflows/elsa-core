@@ -42,13 +42,11 @@ export class WorkflowDefinitionPropertiesEditor {
 
   @Watch('workflowDefinition')
   async onWorkflowDefinitionChanged() {
-    debugger;
     await this.createModel();
     //this.refresh();
   }
 
   async componentWillLoad() {
-    debugger;
     await this.createModel();
   }
 
@@ -64,7 +62,6 @@ export class WorkflowDefinitionPropertiesEditor {
   }
 
   private createModel = async () => {
-    debugger;
     const model = {
       tabModels: [],
       refresh: this.refresh
