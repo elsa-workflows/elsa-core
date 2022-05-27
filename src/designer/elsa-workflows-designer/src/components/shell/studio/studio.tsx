@@ -1,19 +1,20 @@
 import {Component, Element, h, Listen, Prop, Watch} from '@stencil/core';
 import 'reflect-metadata';
 import {Container} from 'typedi';
+import {v4 as uuid} from 'uuid';
 import {
   ElsaApiClientProvider,
   ElsaClient,
   ServerSettings
 } from '../../../services';
 import {ActivityDescriptor, VersionOptions, WorkflowDefinition, WorkflowInstanceSummary, WorkflowDefinitionSummary} from '../../../models';
-import {WorkflowUpdatedArgs} from '../../designer/workflow-editor/workflow-editor';
 import {PublishClickedArgs} from "../../toolbar/workflow-publish-button/workflow-publish-button";
 import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
-import {downloadFromBlob, isNullOrWhitespace} from "../../../utils";
+import {downloadFromBlob} from "../../../utils";
 import {ExportWorkflowRequest, ImportWorkflowRequest} from "../../../services/api-client/workflow-definitions-api";
-import {WorkflowLabelsUpdatedArgs} from "../../designer/workflow-properties-editor/models";
 import {WorkflowDefinitionManager} from "../../../services/workflow-definition-manager";
+import {WorkflowDefinitionUpdatedArgs} from "../../designer/workflow-definition-editor/models";
+import {Flowchart} from "../../activities/flowchart/models";
 
 @Component({
   tag: 'elsa-studio'
@@ -22,7 +23,7 @@ export class Studio {
   private readonly workflowDefinitionManager: WorkflowDefinitionManager;
   private activityDescriptors: Array<ActivityDescriptor>;
   private elsaClient: ElsaClient;
-  private workflowEditorElement?: HTMLElsaWorkflowEditorElement;
+  private workflowManagerElement?: HTMLElsaWorkflowManagerElement;
 
   constructor() {
     this.workflowDefinitionManager = Container.get(WorkflowDefinitionManager);
@@ -43,86 +44,109 @@ export class Studio {
     const settings = Container.get(MonacoEditorSettings);
     settings.monacoLibPath = value;
 
-    if (!!this.workflowEditorElement)
-      this.workflowEditorElement.monacoLibPath = this.monacoLibPath;
+    if (!!this.workflowManagerElement)
+      this.workflowManagerElement.monacoLibPath = this.monacoLibPath;
   }
 
   @Listen('workflowUpdated')
-  private async handleWorkflowUpdated(e: CustomEvent<WorkflowUpdatedArgs>) {
+  private async handleWorkflowUpdated(e: CustomEvent<WorkflowDefinitionUpdatedArgs>) {
     const workflowDefinition = e.detail.workflowDefinition;
-    await this.saveWorkflow(workflowDefinition, false);
+    await this.saveWorkflowDefinition(workflowDefinition, false);
   }
 
   @Listen('workflowDefinitionSelected')
   private async handleWorkflowDefinitionSelected(e: CustomEvent<WorkflowDefinitionSummary>) {
-    const workflowEditorElement = this.workflowEditorElement;
+    const workflowManagerElement = this.workflowManagerElement;
 
-    if (!workflowEditorElement)
+    if (!workflowManagerElement)
       return;
 
     const definitionId = e.detail.definitionId;
     const workflowDefinition = await this.elsaClient.workflowDefinitions.get({definitionId});
-    await workflowEditorElement.importWorkflow(workflowDefinition);
+    workflowManagerElement.workflowDefinition = workflowDefinition;
   }
 
   @Listen('workflowInstanceSelected')
   private async handleWorkflowInstanceSelected(e: CustomEvent<WorkflowInstanceSummary>) {
-    const workflowEditorElement = this.workflowEditorElement;
+    const workflowManagerElement = this.workflowManagerElement;
 
-    if (!workflowEditorElement)
+    if (!workflowManagerElement)
       return;
 
     const workflowInstanceSummary = e.detail;
     const definitionId = workflowInstanceSummary.definitionId;
     const version = workflowInstanceSummary.version;
     const versionOptions: VersionOptions = {version};
-    const workflow = await this.elsaClient.workflowDefinitions.get({definitionId, versionOptions});
+    const workflowDefinition = await this.elsaClient.workflowDefinitions.get({definitionId, versionOptions});
     const workflowInstance = await this.elsaClient.workflowInstances.get({id: workflowInstanceSummary.id});
-    await workflowEditorElement.importWorkflow(workflow, workflowInstance);
+
+    workflowManagerElement.workflowDefinition = workflowDefinition;
+    workflowManagerElement.workflowInstance = workflowInstance;
   }
 
   @Listen('publishClicked')
   private async handlePublishClicked(e: CustomEvent<PublishClickedArgs>) {
-    const workflowEditorElement = this.workflowEditorElement;
+    const workflowManagerElement = this.workflowManagerElement;
 
-    if (!workflowEditorElement)
+    if (!workflowManagerElement)
       return;
 
     e.detail.begin();
-    const workflow = await workflowEditorElement.getWorkflow();
-    await this.saveWorkflow(workflow, true);
+    const workflowDefinition = await workflowManagerElement.getWorkflowDefinition();
+    await this.saveWorkflowDefinition(workflowDefinition, true);
     e.detail.complete();
   }
 
   @Listen('unPublishClicked')
   private async handleUnPublishClicked(e: CustomEvent) {
-    const workflowEditorElement = this.workflowEditorElement;
+    const workflowManagerElement = this.workflowManagerElement;
 
-    if (!workflowEditorElement)
+    if (!workflowManagerElement)
       return;
 
-    const workflow = await workflowEditorElement.getWorkflow();
-    await this.retractWorkflow(workflow);
+    const workflow = await workflowManagerElement.getWorkflowDefinition();
+    await this.retractWorkflowDefinition(workflow);
   }
 
   @Listen('newClicked')
   private async handleNewClick(e: CustomEvent) {
-    const workflowEditorElement = this.workflowEditorElement;
+    debugger;
+    const workflowManagerElement = this.workflowManagerElement;
 
-    if (!workflowEditorElement)
+    if (!workflowManagerElement)
       return;
 
-    await this.workflowEditorElement.newWorkflow();
+    const flowchart = {
+      typeName: 'Elsa.Flowchart',
+      activities: [],
+      connections: [],
+      id: uuid(),
+      metadata: {},
+      applicationProperties: {},
+      variables: []
+    } as Flowchart;
+
+    const workflowDefinition: WorkflowDefinition = {
+      root: flowchart,
+      id: '',
+      definitionId: '',
+      version: 1,
+      isLatest: true,
+      isPublished: false,
+      materializerName: 'Json'
+    }
+
+    this.workflowManagerElement.workflowDefinition = workflowDefinition;
   }
 
   @Listen('exportClicked')
   private async handleExportClick(e: CustomEvent) {
-    const workflowEditorElement = this.workflowEditorElement;
+    const workflowManagerElement = this.workflowManagerElement;
 
-    if (!workflowEditorElement)
+    if (!workflowManagerElement)
       return;
 
-    const workflow = await workflowEditorElement.getWorkflow();
+    const workflow = await workflowManagerElement.getWorkflowDefinition();
 
     const request: ExportWorkflowRequest = {
       definitionId: workflow.definitionId,
@@ -135,14 +159,14 @@ export class Studio {
 
   @Listen('importClicked')
   private async handleImportClick(e: CustomEvent<File>) {
-    const workflowEditorElement = this.workflowEditorElement;
+    const workflowManagerElement = this.workflowManagerElement;
 
-    if (!workflowEditorElement)
+    if (!workflowManagerElement)
       return;
 
     const file = e.detail;
     const client = this.elsaClient;
-    const workflow = await workflowEditorElement.getWorkflow();
+    const workflow = await workflowManagerElement.getWorkflowDefinition();
     const definitionId = workflow?.definitionId;
 
     const importWorkflow = async (): Promise<WorkflowDefinition> => {
@@ -158,7 +182,7 @@ export class Studio {
     const workflowDefinition = await importWorkflow();
 
     if (!!workflowDefinition)
-      await workflowEditorElement.importWorkflow(workflowDefinition);
+      workflowManagerElement.workflowDefinition = workflowDefinition;
   }
 
   public async componentWillLoad() {
@@ -168,11 +192,13 @@ export class Studio {
 
     this.elsaClient = await elsaClientProvider.getElsaClient();
     this.activityDescriptors = await this.elsaClient.descriptors.activities.list();
-    this.workflowEditorElement = this.el.getElementsByTagName('elsa-workflow-editor')[0] as HTMLElsaWorkflowEditorElement;
 
-    if (!!this.workflowEditorElement) {
-      this.workflowEditorElement.activityDescriptors = this.activityDescriptors;
-      this.workflowEditorElement.monacoLibPath = this.monacoLibPath;
+    debugger;
+    this.workflowManagerElement = this.el.getElementsByTagName('elsa-workflow-manager')[0] as HTMLElsaWorkflowManagerElement;
+
+    if (!!this.workflowManagerElement) {
+      this.workflowManagerElement.activityDescriptors = this.activityDescriptors;
+      this.workflowManagerElement.monacoLibPath = this.monacoLibPath;
     }
   }
 
@@ -180,15 +206,15 @@ export class Studio {
     return <slot/>;
   }
 
-  private saveWorkflow = async (definition: WorkflowDefinition, publish: boolean): Promise<WorkflowDefinition> => {
+  private saveWorkflowDefinition = async (definition: WorkflowDefinition, publish: boolean): Promise<WorkflowDefinition> => {
     const updatedWorkflow = await this.workflowDefinitionManager.saveWorkflow(definition, publish);
-    await this.workflowEditorElement.updateWorkflowDefinition(updatedWorkflow);
+    await this.workflowManagerElement.updateWorkflowDefinition(updatedWorkflow);
     return updatedWorkflow;
   }
 
-  private retractWorkflow = async (definition: WorkflowDefinition): Promise<WorkflowDefinition> => {
+  private retractWorkflowDefinition = async (definition: WorkflowDefinition): Promise<WorkflowDefinition> => {
     const updatedWorkflow = await this.workflowDefinitionManager.retractWorkflow(definition);
-    await this.workflowEditorElement.updateWorkflowDefinition(updatedWorkflow);
+    await this.workflowManagerElement.updateWorkflowDefinition(updatedWorkflow);
     return updatedWorkflow;
   }
 }

@@ -1,0 +1,41 @@
+$activity-picker-width: 300px;
+$activity-editor-width: 580px;
+
+elsa-canvas {
+  left: $activity-picker-width;
+  top: 0;
+  right: $activity-editor-width;
+  bottom: 0;
+}
+
+elsa-panel.panel-state-expanded.elsa-activity-picker-container {
+  width: $activity-picker-width;
+}
+
+elsa-panel.panel-state-expanded.elsa-activity-editor-container {
+  width: $activity-editor-width;
+  right: 0;
+  left: unset;
+}
+
+.activity-picker-closed {
+
+  .activity-list {
+    display: none;
+  }
+
+  elsa-canvas {
+    left: 0;
+  }
+}
+
+.object-editor-closed {
+
+  .object-editor-container {
+    display: none;
+  }
+
+  elsa-canvas {
+    right: 0;
+  }
+}

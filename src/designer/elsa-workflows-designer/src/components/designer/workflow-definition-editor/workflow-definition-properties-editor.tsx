@@ -4,16 +4,15 @@ import {TabChangedArgs, WorkflowDefinition} from '../../../models';
 import {FormEntry} from "../../shared/forms/form-entry";
 import {InfoList} from "../../shared/forms/info-list";
 import {isNullOrWhitespace} from "../../../utils";
-import {PropertiesTabModel, TabModel, WorkflowLabelsUpdatedArgs, WorkflowPropertiesEditorDisplayingArgs, WorkflowPropertiesEditorEventTypes, WorkflowPropertiesEditorModel, WorkflowPropsUpdatedArgs} from "./models";
+import {PropertiesTabModel, TabModel, WorkflowDefinitionPropsUpdatedArgs, WorkflowPropertiesEditorDisplayingArgs, WorkflowPropertiesEditorEventTypes, WorkflowPropertiesEditorModel} from "./models";
 import {Container} from "typedi";
 import {EventBus} from "../../../services";
 
 @Component({
-  tag: 'elsa-workflow-properties-editor',
+  tag: 'elsa-workflow-definition-properties-editor',
 })
-export class WorkflowPropertiesEditor {
+export class WorkflowDefinitionPropertiesEditor {
   private readonly eventBus: EventBus;
-  private readonly model: WorkflowPropertiesEditorModel;
   private slideOverPanel: HTMLElsaSlideOverPanelElement;
 
   constructor() {
@@ -25,9 +24,9 @@ export class WorkflowPropertiesEditor {
     }
   }
 
-  @Prop({mutable: true}) workflowDefinition?: WorkflowDefinition;
-  @Event() workflowPropsUpdated: EventEmitter<WorkflowPropsUpdatedArgs>;
-  @Event({bubbles: false}) workflowLabelsUpdated: EventEmitter<WorkflowLabelsUpdatedArgs>;
+  @Prop() workflowDefinition?: WorkflowDefinition;
+  @Event() workflowPropsUpdated: EventEmitter<WorkflowDefinitionPropsUpdatedArgs>;
+  @State() private model: WorkflowPropertiesEditorModel;
   @State() private selectedTabIndex: number = 0;
   @State() private changeHandle: object = {};
 
@@ -42,12 +41,41 @@ export class WorkflowPropertiesEditor {
   }
 
   @Watch('workflowDefinition')
-  onWorkflowDefinitionChanged() {
-    this.refresh();
+  async onWorkflowDefinitionChanged() {
+    debugger;
+    await this.createModel();
+    //this.refresh();
   }
 
   async componentWillLoad() {
-    const model = this.model;
+    debugger;
+    await this.createModel();
+  }
+
+  public render() {
+    const title = 'Workflow';
+    const tabs = this.model.tabModels.map(x => x.tab);
+
+    return (
+      <elsa-form-panel
+        headerText={title} tabs={tabs} selectedTabIndex={this.selectedTabIndex}
+        onSelectedTabIndexChanged={e => this.onSelectedTabIndexChanged(e)}/>
+    );
+  }
+
+  private createModel = async () => {
+    debugger;
+    const model = {
+      tabModels: [],
+      refresh: this.refresh
+    };
+
+    const workflowDefinition = this.workflowDefinition;
+
+    if (!workflowDefinition) {
+      this.model = model;
+      return;
+    }
 
     const propertiesTabModel: PropertiesTabModel = {
       name: 'properties',
@@ -106,21 +134,12 @@ export class WorkflowPropertiesEditor {
     const args: WorkflowPropertiesEditorDisplayingArgs = {model};
 
     await this.eventBus.emit(WorkflowPropertiesEditorEventTypes.Displaying, this, args);
-  }
 
-  public render() {
-    const title = 'Workflow';
-    const tabs = this.model.tabModels.map(x => x.tab);
-
-    return (
-      <elsa-form-panel
-        headerText={title} tabs={tabs} selectedTabIndex={this.selectedTabIndex}
-        onSelectedTabIndexChanged={e => this.onSelectedTabIndexChanged(e)}/>
-    );
+    this.model = model;
   }
 
   private refresh = () => {
-    this.changeHandle = new Date();
+    //this.changeHandle = new Date();
   };
 
   private renderPropertiesTab = (tabModel: PropertiesTabModel) => {
@@ -146,4 +165,4 @@ export class WorkflowPropertiesEditor {
   }
 }
 
-WorkflowEditorTunnel.injectProps(WorkflowPropertiesEditor, ['activityDescriptors']);
+WorkflowEditorTunnel.injectProps(WorkflowDefinitionPropertiesEditor, ['activityDescriptors']);
