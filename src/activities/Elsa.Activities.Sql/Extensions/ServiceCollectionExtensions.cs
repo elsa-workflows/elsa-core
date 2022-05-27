@@ -13,6 +13,8 @@ namespace Elsa.Activities.Sql.Extensions
             elsa.AddActivity<Activities.ExecuteSqlQuery>();
             elsa.AddActivity<Activities.ExecuteSqlCommand>();
 
+            elsa.AddSqlScripting();
+
             return elsa;
         }
     }
