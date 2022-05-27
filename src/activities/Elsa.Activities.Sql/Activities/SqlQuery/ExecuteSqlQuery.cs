@@ -40,7 +40,7 @@ namespace Elsa.Activities.Sql.Activities
         [ActivityInput(
             Hint = "SQL query to execute",
             UIHint = ActivityInputUIHints.MultiLine,
-            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
+            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid, SyntaxNames.Sql }
         )]
         public string Query { get; set; } = default!;
 
