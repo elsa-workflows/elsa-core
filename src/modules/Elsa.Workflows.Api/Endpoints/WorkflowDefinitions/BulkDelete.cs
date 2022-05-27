@@ -2,10 +2,9 @@ using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.AspNetCore;
 using Elsa.AspNetCore.Attributes;
 using Elsa.Workflows.Core.Serialization;
-using Elsa.Workflows.Persistence.Services;
+using Elsa.Workflows.Management.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,12 +14,12 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions;
 [ApiEndpoint(ControllerNames.WorkflowDefinitions, "BulkDelete")]
 public class BulkDelete : Controller
 {
-    private readonly IWorkflowDefinitionStore _store;
+    private readonly IWorkflowDefinitionManager _workflowDefinitionManager;
     private readonly WorkflowSerializerOptionsProvider _serializerOptionsProvider;
 
-    public BulkDelete(IWorkflowDefinitionStore store, WorkflowSerializerOptionsProvider serializerOptionsProvider)
+    public BulkDelete(IWorkflowDefinitionManager workflowDefinitionManager, WorkflowSerializerOptionsProvider serializerOptionsProvider)
     {
-        _store = store;
+        _workflowDefinitionManager = workflowDefinitionManager;
         _serializerOptionsProvider = serializerOptionsProvider;
     }
 
@@ -29,7 +28,7 @@ public class BulkDelete : Controller
     {
         var serializerOptions = _serializerOptionsProvider.CreateApiOptions();
         var model = await Request.ReadFromJsonAsync<BulkDeleteWorkflowDefinitionsRequest>(serializerOptions, cancellationToken);
-        var count = await _store.DeleteManyByDefinitionIdsAsync(model!.DefinitionIds, cancellationToken);
+        var count = await _workflowDefinitionManager.BulkDeleteByDefinitionIdsAsync(model!.DefinitionIds, cancellationToken);
 
         return Json(new BulkDeleteWorkflowDefinitionsResponse(count), serializerOptions);
     }

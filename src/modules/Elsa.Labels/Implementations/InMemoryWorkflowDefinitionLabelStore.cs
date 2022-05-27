@@ -49,4 +49,30 @@ public class InMemoryWorkflowDefinitionLabelStore : IWorkflowDefinitionLabelStor
         _store.SaveMany(added);
         return Task.CompletedTask;
     }
+
+    public Task<int> DeleteByWorkflowDefinitionIdAsync(string workflowDefinitionId, CancellationToken cancellationToken = default)
+    {
+        var result = _store.DeleteWhere(x => x.WorkflowDefinitionId == workflowDefinitionId);
+        return Task.FromResult(result);
+    }
+
+    public Task<int> DeleteByWorkflowDefinitionVersionIdAsync(string workflowDefinitionVersionId, CancellationToken cancellationToken = default)
+    {
+        var result = _store.DeleteWhere(x => x.WorkflowDefinitionVersionId == workflowDefinitionVersionId);
+        return Task.FromResult(result);
+    }
+
+    public Task<int> DeleteByWorkflowDefinitionIdsAsync(IEnumerable<string> workflowDefinitionIds, CancellationToken cancellationToken = default)
+    {
+        var ids = workflowDefinitionIds.ToList();
+        var result = _store.DeleteWhere(x => ids.Contains(x.WorkflowDefinitionId));
+        return Task.FromResult(result);
+    }
+
+    public Task<int> DeleteByWorkflowDefinitionVersionIdsAsync(IEnumerable<string> workflowDefinitionVersionIds, CancellationToken cancellationToken = default)
+    {
+        var ids = workflowDefinitionVersionIds.ToList();
+        var result = _store.DeleteWhere(x => ids.Contains(x.WorkflowDefinitionVersionId));
+        return Task.FromResult(result);
+    }
 }

@@ -1,4 +1,6 @@
 using Elsa.Expressions.Services;
+using Elsa.Mediator.Configuration;
+using Elsa.Mediator.Extensions;
 using Elsa.ServiceConfiguration.Abstractions;
 using Elsa.ServiceConfiguration.Attributes;
 using Elsa.ServiceConfiguration.Services;
@@ -16,6 +18,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Management.Configuration;
 
+[Dependency(typeof(MediatorConfigurator))]
 [Dependency(typeof(WorkflowsConfigurator))]
 [Dependency(typeof(WorkflowPersistenceConfigurator))]
 public class WorkflowManagementConfigurator : ConfiguratorBase
@@ -36,6 +39,7 @@ public class WorkflowManagementConfigurator : ConfiguratorBase
     {
         Services
             .AddSingleton<IWorkflowPublisher, WorkflowPublisher>()
+            .AddSingleton<IWorkflowDefinitionManager, WorkflowDefinitionManager>()
             .AddSingleton<IActivityDescriber, ActivityDescriber>()
             .AddSingleton<IActivityRegistry, ActivityRegistry>()
             .AddSingleton<IActivityRegistryPopulator, ActivityRegistryPopulator>()

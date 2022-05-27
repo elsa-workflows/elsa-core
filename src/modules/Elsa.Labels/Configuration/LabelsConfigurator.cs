@@ -1,13 +1,17 @@
 using Elsa.Labels.Entities;
 using Elsa.Labels.Implementations;
 using Elsa.Labels.Services;
+using Elsa.Mediator.Configuration;
+using Elsa.Mediator.Extensions;
 using Elsa.Persistence.Common.Extensions;
 using Elsa.ServiceConfiguration.Abstractions;
+using Elsa.ServiceConfiguration.Attributes;
 using Elsa.ServiceConfiguration.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Labels.Configuration;
 
+[Dependency(typeof(MediatorConfigurator))]
 public class LabelsConfigurator : ConfiguratorBase
 {
     public LabelsConfigurator(IServiceConfiguration serviceConfiguration) : base(serviceConfiguration)
@@ -37,5 +41,7 @@ public class LabelsConfigurator : ConfiguratorBase
             .AddSingleton(LabelStore)
             .AddSingleton(WorkflowDefinitionLabelStore)
             ;
+
+        Services.AddNotificationHandlersFrom(GetType());
     }
 }
