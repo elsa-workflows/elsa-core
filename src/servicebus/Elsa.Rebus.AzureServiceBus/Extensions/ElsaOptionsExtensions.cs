@@ -1,7 +1,12 @@
 ﻿using System;
 using Azure.Core;
 using Elsa.Options;
+using Elsa.Rebus.AzureServiceBus.StartupTasks;
+using Elsa.Runtime;
+using Elsa.Services;
 using Elsa.Services.Messaging;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Rebus.Config;
 
 namespace Elsa.Rebus.AzureServiceBus
@@ -27,6 +32,23 @@ namespace Elsa.Rebus.AzureServiceBus
 
         public static ElsaOptionsBuilder UseAzureServiceBus(this ElsaOptionsBuilder elsaOptions, string connectionString, TokenCredential tokenCredential, Action<ConfigureTransportContext> configureTransport) =>
             elsaOptions.UseServiceBus(context => ConfigureAzureServiceBusEndpoint(context, connectionString, tokenCredential, configureTransport));
+
+        public static ElsaOptionsBuilder PurgeAzureSubscriptionOnStartup(
+            this ElsaOptionsBuilder elsaOptions,
+            string connectionString)
+        {
+
+            elsaOptions.Services.AddStartupTask<PurgeSubscriptions>(sp =>
+            {
+                return new PurgeSubscriptions(sp.GetService<IServiceBusFactory>()!,
+                    sp.GetService<ElsaOptions>()!,
+                    sp.GetService<ILogger>()!,
+                    sp.GetService<IDistributedLockProvider>()!,
+                    connectionString);
+            });
+
+            return elsaOptions;
+        }
 
         private static void ConfigureAzureServiceBusEndpoint(
             ServiceBusEndpointConfigurationContext context,
