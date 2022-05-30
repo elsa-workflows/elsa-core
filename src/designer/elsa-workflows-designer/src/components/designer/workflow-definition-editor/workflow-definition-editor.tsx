@@ -34,7 +34,7 @@ export class WorkflowDefinitionEditor {
   private readonly activityNameFormatter: ActivityNameFormatter;
   private canvas: HTMLElsaCanvasElement;
   private container: HTMLDivElement;
-  private toolbox: HTMLElsaToolboxElement;
+  private toolbox: HTMLElsaWorkflowDefinitionEditorToolboxElement;
   private applyActivityChanges: (activity: Activity) => void;
   private deleteActivity: (activity: Activity) => void;
   private readonly emitActivityChangedDebounced: (e: ActivityPropertyChangedEventArgs) => void;
@@ -149,12 +149,15 @@ export class WorkflowDefinitionEditor {
 
   public async componentWillLoad() {
     this.workflowDefinitionState = this.workflowDefinition;
-
-    if (!this.workflowDefinitionState)
-      await this.newWorkflow();
   }
 
   public async componentDidLoad() {
+
+    if (!this.workflowDefinitionState)
+      await this.newWorkflow();
+    else
+      await this.importWorkflow(this.workflowDefinitionState);
+
     await this.eventBus.emit(WorkflowEditorEventTypes.WorkflowEditor.Ready, this, {workflowEditor: this});
   }
 
@@ -171,7 +174,7 @@ export class WorkflowDefinitionEditor {
             class="elsa-activity-picker-container"
             position={PanelPosition.Left}
             onExpandedStateChanged={e => this.onActivityPickerPanelStateChanged(e.detail)}>
-            <elsa-toolbox ref={el => this.toolbox = el}/>
+            <elsa-workflow-definition-editor-toolbox ref={el => this.toolbox = el}/>
           </elsa-panel>
           <elsa-canvas
             class="absolute" ref={el => this.canvas = el}

@@ -53,7 +53,6 @@ export interface PropertiesTabModel extends TabModel {
 
 export interface WorkflowPropertiesEditorModel {
   tabModels: Array<TabModel>;
-  refresh: () => void;
 }
 
 export interface WorkflowDefinitionImportedArgs {

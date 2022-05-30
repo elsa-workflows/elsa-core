@@ -16,8 +16,8 @@ import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
 import {WorkflowEditorEventTypes} from "../workflow-definition-editor/models";
 
 @Component({
-  tag: 'elsa-workflow-viewer',
-  styleUrl: 'workflow-viewer.scss',
+  tag: 'elsa-workflow-instance-viewer',
+  styleUrl: 'workflow-instance-viewer.scss',
 })
 export class WorkflowViewer {
   private readonly pluginRegistry: PluginRegistry;
@@ -25,7 +25,8 @@ export class WorkflowViewer {
   private readonly activityNameFormatter: ActivityNameFormatter;
   private canvas: HTMLElsaCanvasElement;
   private container: HTMLDivElement;
-  private toolbox: HTMLElsaToolboxElement;
+
+  //private toolbox: HTMLElsaToolboxElement;
 
   constructor() {
     this.eventBus = Container.get(EventBus);
@@ -44,6 +45,11 @@ export class WorkflowViewer {
   private handleMonacoLibPath(value: string) {
     const settings = Container.get(MonacoEditorSettings);
     settings.monacoLibPath = value;
+  }
+
+  @Watch('workflowDefinition')
+  async onWorkflowDefinitionChanged(value: WorkflowDefinition) {
+    await this.importWorkflow(value);
   }
 
   @Listen('resize', {target: 'window'})
@@ -91,7 +97,6 @@ export class WorkflowViewer {
     this.workflowInstance = workflowInstance;
     this.workflowDefinition = workflowDefinition;
     await this.canvas.importGraph(workflowDefinition.root);
-    await this.eventBus.emit(WorkflowEditorEventTypes.WorkflowDefinition.Imported, this, {workflowDefinition});
   }
 
   // Updates the workflow definition without importing it into the designer.
@@ -100,7 +105,14 @@ export class WorkflowViewer {
     this.workflowDefinition = workflowDefinition;
   }
 
+  public async componentWillLoad() {
+  }
+
   public async componentDidLoad() {
+
+    if (!!this.workflowDefinition)
+      await this.importWorkflow(this.workflowDefinition);
+
     await this.eventBus.emit(WorkflowEditorEventTypes.WorkflowEditor.Ready, this, {workflowEditor: this});
   }
 
@@ -117,7 +129,7 @@ export class WorkflowViewer {
             class="elsa-activity-picker-container"
             position={PanelPosition.Left}
             onExpandedStateChanged={e => this.onActivityPickerPanelStateChanged(e.detail)}>
-            <elsa-toolbox ref={el => this.toolbox = el}/>
+            {/*<elsa-toolbox ref={el => this.toolbox = el}/>*/}
           </elsa-panel>
           <elsa-canvas
             class="absolute" ref={el => this.canvas = el}
@@ -136,7 +148,10 @@ export class WorkflowViewer {
   }
 
   private renderSelectedObject = () => {
-    return <div>Information goes here...</div>;
+    if (!!this.selectedActivity)
+      return <div>Activity details here...</div>
+
+    return <elsa-workflow-instance-properties workflowDefinition={this.workflowDefinition}/>;
   }
 
   private getWorkflowInternal = async (): Promise<WorkflowDefinition> => {

@@ -1,5 +1,6 @@
 import {Component, h, Method, Prop, getAssetPath} from "@stencil/core";
 import {ActivityDescriptor, WorkflowDefinition, WorkflowInstance} from "../../../models";
+import {HomeView} from "./home-view";
 
 @Component({
   tag: 'elsa-workflow-manager',
@@ -9,7 +10,7 @@ import {ActivityDescriptor, WorkflowDefinition, WorkflowInstance} from "../../..
 })
 export class WorkflowManager {
   private workflowDefinitionEditor?: HTMLElsaWorkflowDefinitionEditorElement;
-  private workflowInstanceViewer?: HTMLElsaWorkflowViewerElement;
+  private workflowInstanceViewer?: HTMLElsaWorkflowInstanceViewerElement;
 
   @Prop({attribute: 'monaco-lib-path'}) public monacoLibPath: string;
   @Prop() public activityDescriptors: Array<ActivityDescriptor> = [];
@@ -43,24 +44,7 @@ export class WorkflowManager {
     const activityDescriptors = this.activityDescriptors;
 
     if (workflowDefinition == null) {
-      return <div class="default-background h-full">
-        <div class="flex max-w-5xl mx-auto">
-          <div class="flex-grow">
-            <div class="ml-10 lg:py-24">
-              <h1 class="mt-4 text-4xl tracking-tight font-extrabold sm:mt-5 sm:text-6xl lg:mt-6 xl:text-6xl">
-                <span class="block main-title-color">Elsa Workflows</span>
-                <span class="pb-3 block sm:pb-5 sub-title-color">3.0</span>
-              </h1>
-              <p class="text-base text-gray-800 sm:text-xl lg:text-lg xl:text-xl">
-                Decoding the future.
-              </p>
-            </div>
-          </div>
-          <div class="flex-shrink">
-            <img class="" src={visualPath} alt="" width={750}/>
-          </div>
-        </div>
-      </div>;
+      return <HomeView imageUrl={visualPath} />;
     }
 
     if (workflowInstance == null) {
@@ -73,6 +57,9 @@ export class WorkflowManager {
 
     return <elsa-workflow-instance-viewer
       monacoLibPath={monacoLibPath}
+      workflowDefinition={workflowDefinition}
+      workflowInstance={workflowInstance}
+      activityDescriptors={activityDescriptors}
       ref={el => this.workflowInstanceViewer = el}/>
   }
 }

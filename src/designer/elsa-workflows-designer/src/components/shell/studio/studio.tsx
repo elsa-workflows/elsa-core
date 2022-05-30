@@ -63,6 +63,7 @@ export class Studio {
 
     const definitionId = e.detail.definitionId;
     const workflowDefinition = await this.elsaClient.workflowDefinitions.get({definitionId});
+    workflowManagerElement.workflowInstance = null;
     workflowManagerElement.workflowDefinition = workflowDefinition;
   }
 

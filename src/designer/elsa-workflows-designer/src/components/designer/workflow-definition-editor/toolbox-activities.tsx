@@ -13,7 +13,7 @@ interface ActivityCategoryModel {
 }
 
 @Component({
-  tag: 'elsa-toolbox-activities',
+  tag: 'elsa-workflow-definition-editor-toolbox-activities',
 })
 export class ToolboxActivities {
   @Prop() graph: Graph;

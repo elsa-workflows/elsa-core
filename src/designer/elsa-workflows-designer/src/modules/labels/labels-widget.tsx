@@ -30,7 +30,6 @@ export class LabelsWidget {
   private workflowEditor: HTMLElsaWorkflowDefinitionEditorElement;
   private labelsManager: HTMLElsaLabelsManagerElement;
   private elsaClient: ElsaClient;
-  private refreshWorkflowProperties: () => void;
   private definitionVersionId: string;
 
   constructor() {
@@ -85,7 +84,6 @@ export class LabelsWidget {
 
   private onWorkflowPropertiesEditorDisplaying = (e: WorkflowPropertiesEditorDisplayingArgs) => {
     const propertiesTabModel = e.model.tabModels.find(x => x.name == 'properties') as PropertiesTabModel;
-    this.refreshWorkflowProperties = e.model.refresh;
 
     propertiesTabModel.Widgets.push({
       name: 'labelPicker',
@@ -112,7 +110,6 @@ export class LabelsWidget {
     const assignedLabelIds = await this.workflowDefinitionLabelsApi.get(workflowDefinition.id);
     this.assignedLabelIds = assignedLabelIds;
     this.definitionVersionId = workflowDefinition.id;
-    this.refreshWorkflowProperties();
   }
 
   private onLabelsMenuItemClicked = async () => {

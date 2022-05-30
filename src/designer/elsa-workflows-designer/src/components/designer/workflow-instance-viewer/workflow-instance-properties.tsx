@@ -1,15 +1,14 @@
 import {Component, Event, EventEmitter, h, Method, Prop, State, Watch} from '@stencil/core';
 import WorkflowEditorTunnel from '../state';
 import {TabChangedArgs, WorkflowDefinition} from '../../../models';
-import {FormEntry} from "../../shared/forms/form-entry";
 import {InfoList} from "../../shared/forms/info-list";
 import {isNullOrWhitespace} from "../../../utils";
-import {PropertiesTabModel, TabModel, WorkflowDefinitionPropsUpdatedArgs, WorkflowPropertiesEditorDisplayingArgs, WorkflowPropertiesEditorEventTypes, WorkflowPropertiesEditorModel} from "./models";
+import {PropertiesTabModel, TabModel, WorkflowInstancePropertiesDisplayingArgs, WorkflowInstancePropertiesEventTypes, WorkflowInstancePropertiesViewerModel} from "./models";
 import {Container} from "typedi";
 import {EventBus} from "../../../services";
 
 @Component({
-  tag: 'elsa-workflow-definition-properties-editor',
+  tag: 'elsa-workflow-instance-properties',
 })
 export class WorkflowDefinitionPropertiesEditor {
   private readonly eventBus: EventBus;
@@ -24,8 +23,7 @@ export class WorkflowDefinitionPropertiesEditor {
   }
 
   @Prop() workflowDefinition?: WorkflowDefinition;
-  @Event() workflowPropsUpdated: EventEmitter<WorkflowDefinitionPropsUpdatedArgs>;
-  @State() private model: WorkflowPropertiesEditorModel;
+  @State() private model: WorkflowInstancePropertiesViewerModel;
   @State() private selectedTabIndex: number = 0;
   @State() private changeHandle: object = {};
 
@@ -62,7 +60,6 @@ export class WorkflowDefinitionPropertiesEditor {
   private createModel = async () => {
     const model = {
       tabModels: [],
-      refresh: this.refresh
     };
 
     const workflowDefinition = this.workflowDefinition;
@@ -76,24 +73,6 @@ export class WorkflowDefinitionPropertiesEditor {
       name: 'properties',
       tab: null,
       Widgets: [{
-        name: 'workflowName',
-        content: () => {
-          const workflow = this.workflowDefinition;
-          return <FormEntry label="Name" fieldId="workflowName" hint="The name of the workflow.">
-            <input type="text" name="workflowName" id="workflowName" value={workflow.name} onChange={e => this.onPropertyEditorChanged(wf => wf.name = (e.target as HTMLInputElement).value)}/>
-          </FormEntry>;
-        },
-        order: 0
-      }, {
-        name: 'workflowDescription',
-        content: () => {
-          const workflow = this.workflowDefinition;
-          return <FormEntry label="Description" fieldId="workflowDescription" hint="A brief description about the workflow.">
-            <textarea name="workflowDescription" id="workflowDescription" value={workflow.description} rows={6} onChange={e => this.onPropertyEditorChanged(wf => wf.description = (e.target as HTMLTextAreaElement).value)}/>
-          </FormEntry>;
-        },
-        order: 5
-      }, {
         name: 'workflowInfo',
         content: () => {
           const workflow = this.workflowDefinition;
@@ -126,16 +105,12 @@ export class WorkflowDefinitionPropertiesEditor {
 
     model.tabModels = [propertiesTabModel, variablesTabModel];
 
-    const args: WorkflowPropertiesEditorDisplayingArgs = {model};
+    const args: WorkflowInstancePropertiesDisplayingArgs = {model};
 
-    await this.eventBus.emit(WorkflowPropertiesEditorEventTypes.Displaying, this, args);
+    await this.eventBus.emit(WorkflowInstancePropertiesEventTypes.Displaying, this, args);
 
     this.model = model;
   }
-
-  private refresh = () => {
-    //this.changeHandle = new Date();
-  };
 
   private renderPropertiesTab = (tabModel: PropertiesTabModel) => {
     const widgets = tabModel.Widgets.sort((a, b) => a.order < b.order ? -1 : a.order > b.order ? 1 : 0);
@@ -152,12 +127,6 @@ export class WorkflowDefinitionPropertiesEditor {
   };
 
   private onSelectedTabIndexChanged = (e: CustomEvent<TabChangedArgs>) => this.selectedTabIndex = e.detail.selectedTabIndex;
-
-  private onPropertyEditorChanged = (apply: (w: WorkflowDefinition) => void) => {
-    const workflowDefinition = this.workflowDefinition;
-    apply(workflowDefinition);
-    return this.workflowPropsUpdated.emit({workflowDefinition});
-  }
 }
 
 WorkflowEditorTunnel.injectProps(WorkflowDefinitionPropertiesEditor, ['activityDescriptors']);
