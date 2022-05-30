@@ -26,6 +26,7 @@ using Elsa.Serialization;
 using Elsa.Serialization.Converters;
 using Elsa.Services;
 using Elsa.Services.Bookmarks;
+using Elsa.Services.Compensation;
 using Elsa.Services.Dispatch.Consumers;
 using Elsa.Services.Locking;
 using Elsa.Services.Messaging;
@@ -182,6 +183,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddTransient<IWorkflowBlueprintMaterializer, WorkflowBlueprintMaterializer>()
                 .AddSingleton<IWorkflowBlueprintReflector, WorkflowBlueprintReflector>()
                 .AddSingleton<IBackgroundWorker, BackgroundWorker>()
+                .AddSingleton<ICompensationService, CompensationService>()
                 .AddScoped<IWorkflowPublisher, WorkflowPublisher>()
                 .AddScoped<IWorkflowContextManager, WorkflowContextManager>()
                 .AddScoped<IActivityTypeService, ActivityTypeService>()

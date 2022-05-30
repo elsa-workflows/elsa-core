@@ -108,7 +108,7 @@ namespace Elsa.Persistence.EntityFramework.Oracle.Migrations
 
                     b.Property<string>("ModelType")
                         .IsRequired()
-                        .HasColumnType("NCLOB");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("TenantId")
                         .HasColumnType("NVARCHAR2(450)");
@@ -147,6 +147,9 @@ namespace Elsa.Persistence.EntityFramework.Oracle.Migrations
                 {
                     b.Property<string>("Id")
                         .HasColumnType("NVARCHAR2(450)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
 
                     b.Property<string>("Data")
                         .HasColumnType("NCLOB");

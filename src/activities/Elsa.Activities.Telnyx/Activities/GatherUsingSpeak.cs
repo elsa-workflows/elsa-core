@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using Elsa.Activities.Telnyx.Client.Models;
 using Elsa.Activities.Telnyx.Client.Services;
 using Elsa.Activities.Telnyx.Extensions;
@@ -18,7 +19,7 @@ namespace Elsa.Activities.Telnyx.Activities
     [Action(
         Category = Constants.Category,
         Description = "Convert text to speech and play it on the call until the required DTMF signals are gathered to build interactive menus.",
-        Outcomes = new[] { TelnyxOutcomeNames.GatheringInput, TelnyxOutcomeNames.GatherCompleted, TelnyxOutcomeNames.CallIsNoLongerActive },
+        Outcomes = new[] { TelnyxOutcomeNames.GatherCompleted, TelnyxOutcomeNames.CallIsNoLongerActive, TelnyxOutcomeNames.ValidInput, TelnyxOutcomeNames.InvalidInput },
         DisplayName = "Gather Using Speak"
     )]
     public class GatherUsingSpeak : Activity
@@ -151,7 +152,7 @@ namespace Elsa.Activities.Telnyx.Activities
             try
             {
                 await _telnyxClient.Calls.GatherUsingSpeakAsync(callControlId, request, context.CancellationToken);
-                return Combine(Outcome(TelnyxOutcomeNames.GatheringInput), Suspend());
+                return Suspend();
             }
             catch (ApiException e)
             {
@@ -166,7 +167,18 @@ namespace Elsa.Activities.Telnyx.Activities
         {
             ReceivedPayload = context.GetInput<CallGatherEndedPayload>();
             context.LogOutputProperty(this, "Received Payload", ReceivedPayload);
-            return Outcome(TelnyxOutcomeNames.GatherCompleted);
+            
+            var outcomes = new List<string>
+            {
+                TelnyxOutcomeNames.GatherCompleted
+            };
+
+            if (ReceivedPayload!.Status == "valid")
+                outcomes.Add(TelnyxOutcomeNames.ValidInput);
+            else
+                outcomes.Add(TelnyxOutcomeNames.InvalidInput);
+            
+            return Outcomes(outcomes);
         }
 
         private string? EmptyToNull(string? value) => value is "" ? null : value;

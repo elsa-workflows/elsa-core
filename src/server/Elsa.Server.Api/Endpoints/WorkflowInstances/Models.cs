@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Elsa.Models;
 using NodaTime;
 
@@ -21,8 +21,9 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
         public Instant? FinishedAt { get; set; }
         public Instant? CancelledAt { get; set; }
         public Instant? FaultedAt { get; set; }
+        public IDictionary<string, object?> Metadata { get; set; } = default!;
     }
-    
+
     public record RetryWorkflowRequest(bool RunImmediately)
     {
         /// <summary>

@@ -91,6 +91,7 @@ namespace Elsa.Activities.ControlFlow
         private async Task RemoveBlockingActivitiesAsync(WorkflowExecutionContext workflowExecutionContext, IActivityBlueprint? fork)
         {
             var blockingActivities = workflowExecutionContext.WorkflowInstance.BlockingActivities.ToList();
+            var inboundActivities = workflowExecutionContext.GetInboundActivityPath(Id).ToHashSet();
 
             // Remove all blocking activities between the fork and this join activity. 
             foreach (var blockingActivity in blockingActivities)
@@ -105,7 +106,11 @@ namespace Elsa.Activities.ControlFlow
                     blockingActivityAncestors = blockingActivityAncestors.Concat(compositeBlockingActivityAncestors).ToList();
                 }
 
-                if (fork == null || blockingActivityAncestors.Contains(fork.Id))
+                // If the fork is inbound in the blocking activity AND the blocking activity is inbound in this Join, then clear it.
+                var blockingActivityHasInboundFork = fork == null || blockingActivityAncestors.Contains(fork.Id);
+                var joinActivityHasInboundBlockingActivity = inboundActivities.Contains(blockingActivity.ActivityId);
+                
+                if (blockingActivityHasInboundFork && joinActivityHasInboundBlockingActivity)
                     await workflowExecutionContext.RemoveBlockingActivityAsync(blockingActivity);
             }
         }

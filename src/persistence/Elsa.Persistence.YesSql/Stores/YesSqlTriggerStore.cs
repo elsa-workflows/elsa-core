@@ -30,6 +30,18 @@ public class YesSqlTriggerStore : YesSqlStore<Trigger, TriggerDocument>, ITrigge
             TriggerIdsSpecification spec => Query<TriggerIndex>(session, x => x.TriggerId.IsIn(spec.Ids)),
             WorkflowDefinitionIdSpecification spec => Query<TriggerIndex>(session, x => x.WorkflowDefinitionId == spec.WorkflowDefinitionId),
             WorkflowDefinitionIdsSpecification spec => Query<TriggerIndex>(session, x => x.WorkflowDefinitionId.IsIn(spec.WorkflowDefinitionIds)),
+            TriggerSpecification spec => Query<TriggerIndex>(session, x => x.TenantId == spec.TenantId && x.ActivityType == spec.ActivityType && x.Hash.IsIn(spec.Hashes)),
+            TriggerModelTypeSpecification spec => CreateTriggerModelTypeQuery(session, spec),
             _ => AutoMapSpecification<TriggerIndex>(session, specification)
         };
+
+    private IQuery<TriggerDocument> CreateTriggerModelTypeQuery(ISession session, TriggerModelTypeSpecification spec)
+    {
+        var query = Query<TriggerIndex>(session, x => x.ModelType == spec.ModelType);
+
+        if (!string.IsNullOrWhiteSpace(spec.TenantId))
+            query = query.Where(x => x.TenantId == spec.TenantId);
+
+        return query;
+    }
 }

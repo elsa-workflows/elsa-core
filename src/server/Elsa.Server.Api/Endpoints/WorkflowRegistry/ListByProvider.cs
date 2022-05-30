@@ -17,7 +17,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowRegistry
 {
     [ApiController]
     [ApiVersion("1")]
-    [Route("v{apiVersion:apiVersion}/workflow-registry/{providerName}")]
+    [Route("v{apiVersion:apiVersion}/workflow-registry/by-provider/{providerName}")]
     [Produces("application/json")]
     public class ListByProvider : Controller
     {

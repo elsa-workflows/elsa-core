@@ -114,6 +114,12 @@ namespace Elsa.Providers.Workflows
             return await ListInternalAsync(cancellationToken).FirstOrDefaultAsync(predicate.Compile(), cancellationToken);
         }
 
+        public override async ValueTask<IEnumerable<IWorkflowBlueprint>> FindManyByDefinitionIds(IEnumerable<string> definitionIds, VersionOptions versionOptions, CancellationToken cancellationToken = default)
+        {
+            var idList = definitionIds.ToList();
+            return await ListInternalAsync(cancellationToken).Where(x => idList.Contains(x.Id) && x.WithVersion(versionOptions)).ToListAsync(cancellationToken);
+        }
+
         public override async ValueTask<IEnumerable<IWorkflowBlueprint>> FindManyByDefinitionVersionIds(IEnumerable<string> definitionVersionIds, CancellationToken cancellationToken = default)
         {
             var idList = definitionVersionIds.ToList();
@@ -125,6 +131,9 @@ namespace Elsa.Providers.Workflows
             var nameList = names.ToList();
             return await ListInternalAsync(cancellationToken).Where(x => nameList.Contains(x.VersionId)).ToListAsync(cancellationToken);
         }
+
+        public override async ValueTask<IEnumerable<IWorkflowBlueprint>> FindManyByTagAsync(string tag, VersionOptions versionOptions, string? tenantId = default, CancellationToken cancellationToken = default) => 
+            await ListInternalAsync(cancellationToken).Where(x => string.Equals(tag, x.Tag, StringComparison.OrdinalIgnoreCase) && x.WithVersion(versionOptions)).ToListAsync(cancellationToken);
 
         private async IAsyncEnumerable<IWorkflowBlueprint> ListInternalAsync([EnumeratorCancellation] CancellationToken cancellationToken = default)
         {

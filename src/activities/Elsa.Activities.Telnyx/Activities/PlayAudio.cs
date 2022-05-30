@@ -19,7 +19,7 @@ namespace Elsa.Activities.Telnyx.Activities
     [Action(
         Category = Constants.Category,
         Description = "Play an audio file on the call.",
-        Outcomes = new[] { TelnyxOutcomeNames.PlaybackRequested, TelnyxOutcomeNames.CallIsNoLongerActive, TelnyxOutcomeNames.CallPlaybackEnded },
+        Outcomes = new[] { TelnyxOutcomeNames.CallIsNoLongerActive, TelnyxOutcomeNames.CallPlaybackStarted },
         DisplayName = "Play Audio"
     )]
     public class PlayAudio : Activity
@@ -72,18 +72,18 @@ namespace Elsa.Activities.Telnyx.Activities
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public bool Overlay { get; set; }
-        
+
         [ActivityInput(
             Hint = "Specifies the leg or legs on which audio will be played. If supplied, the value must be either 'self', 'opposite' or 'both'.",
             UIHint = ActivityInputUIHints.Dropdown,
-            Options = new[]{ "", "self", "opposite", "both" },
+            Options = new[] { "", "self", "opposite", "both" },
             Category = PropertyCategories.Advanced,
             SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? TargetLegs { get; set; }
-        
-        [ActivityOutput(Hint = "The received payload when audio ended.")]
-        public CallPlaybackEndedPayload? PlaybackEndedPayload { get; set; }
+
+        [ActivityOutput(Hint = "The received payload when audio started.")]
+        public CallPlaybackStartedPayload? Output { get; set; }
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
@@ -100,8 +100,8 @@ namespace Elsa.Activities.Telnyx.Activities
 
             try
             {
-                await _telnyxClient.Calls.PlayAudioAsync(callControlId, request, context.CancellationToken);
-                return Combine(Outcome(TelnyxOutcomeNames.PlaybackRequested), Suspend());
+                var response = await _telnyxClient.Calls.PlayAudioAsync(callControlId, request, context.CancellationToken);
+                return Suspend();
             }
             catch (ApiException e)
             {
@@ -114,14 +114,16 @@ namespace Elsa.Activities.Telnyx.Activities
 
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context)
         {
-            PlaybackEndedPayload = context.GetInput<CallPlaybackEndedPayload>();
-            context.LogOutputProperty(this, "Received Payload", PlaybackEndedPayload);
-            return Outcome(TelnyxOutcomeNames.CallPlaybackEnded);
+            var payload = context.GetInput<CallPlaybackStartedPayload>();
+            Output = payload;
+
+            context.LogOutputProperty(this, "Received Payload", payload);
+            return Outcome(TelnyxOutcomeNames.CallPlaybackStarted, payload);
         }
 
         private static string? EmptyToNull(string? value) => value is "" ? null : value;
     }
-    
+
     public static class PlayAudioExtensions
     {
         public static ISetupActivity<PlayAudio> WithCallControlId(this ISetupActivity<PlayAudio> setup, Func<ActivityExecutionContext, ValueTask<string?>> value) => setup.Set(x => x.CallControlId, value);
@@ -129,25 +131,25 @@ namespace Elsa.Activities.Telnyx.Activities
         public static ISetupActivity<PlayAudio> WithCallControlId(this ISetupActivity<PlayAudio> setup, Func<ValueTask<string?>> value) => setup.Set(x => x.CallControlId, value);
         public static ISetupActivity<PlayAudio> WithCallControlId(this ISetupActivity<PlayAudio> setup, Func<string?> value) => setup.Set(x => x.CallControlId, value);
         public static ISetupActivity<PlayAudio> WithCallControlId(this ISetupActivity<PlayAudio> setup, string? value) => setup.Set(x => x.CallControlId, value);
-        
+
         public static ISetupActivity<PlayAudio> WithAudioUrl(this ISetupActivity<PlayAudio> setup, Func<ActivityExecutionContext, ValueTask<Uri?>> value) => setup.Set(x => x.AudioUrl, value);
         public static ISetupActivity<PlayAudio> WithAudioUrl(this ISetupActivity<PlayAudio> setup, Func<ActivityExecutionContext, Uri?> value) => setup.Set(x => x.AudioUrl, value);
         public static ISetupActivity<PlayAudio> WithAudioUrl(this ISetupActivity<PlayAudio> setup, Func<ValueTask<Uri?>> value) => setup.Set(x => x.AudioUrl, value);
         public static ISetupActivity<PlayAudio> WithAudioUrl(this ISetupActivity<PlayAudio> setup, Func<Uri?> value) => setup.Set(x => x.AudioUrl, value);
         public static ISetupActivity<PlayAudio> WithAudioUrl(this ISetupActivity<PlayAudio> setup, Uri? value) => setup.Set(x => x.AudioUrl, value);
-        
+
         public static ISetupActivity<PlayAudio> WithLoop(this ISetupActivity<PlayAudio> setup, Func<ActivityExecutionContext, ValueTask<string?>> value) => setup.Set(x => x.Loop, value);
         public static ISetupActivity<PlayAudio> WithLoop(this ISetupActivity<PlayAudio> setup, Func<ActivityExecutionContext, string?> value) => setup.Set(x => x.Loop, value);
         public static ISetupActivity<PlayAudio> WithLoop(this ISetupActivity<PlayAudio> setup, Func<ValueTask<string?>> value) => setup.Set(x => x.Loop, value);
         public static ISetupActivity<PlayAudio> WithLoop(this ISetupActivity<PlayAudio> setup, Func<string?> value) => setup.Set(x => x.Loop, value);
         public static ISetupActivity<PlayAudio> WithLoop(this ISetupActivity<PlayAudio> setup, string? value) => setup.Set(x => x.Loop, value);
-        
+
         public static ISetupActivity<PlayAudio> WithOverlay(this ISetupActivity<PlayAudio> setup, Func<ActivityExecutionContext, ValueTask<bool?>> value) => setup.Set(x => x.Overlay, value);
         public static ISetupActivity<PlayAudio> WithOverlay(this ISetupActivity<PlayAudio> setup, Func<ActivityExecutionContext, bool?> value) => setup.Set(x => x.Overlay, value);
         public static ISetupActivity<PlayAudio> WithOverlay(this ISetupActivity<PlayAudio> setup, Func<ValueTask<bool?>> value) => setup.Set(x => x.Overlay, value);
         public static ISetupActivity<PlayAudio> WithOverlay(this ISetupActivity<PlayAudio> setup, Func<bool?> value) => setup.Set(x => x.Overlay, value);
         public static ISetupActivity<PlayAudio> WithOverlay(this ISetupActivity<PlayAudio> setup, bool? value) => setup.Set(x => x.Overlay, value);
-        
+
         public static ISetupActivity<PlayAudio> WithTargetLegs(this ISetupActivity<PlayAudio> setup, Func<ActivityExecutionContext, ValueTask<string?>> value) => setup.Set(x => x.TargetLegs, value);
         public static ISetupActivity<PlayAudio> WithTargetLegs(this ISetupActivity<PlayAudio> setup, Func<ActivityExecutionContext, string?> value) => setup.Set(x => x.TargetLegs, value);
         public static ISetupActivity<PlayAudio> WithTargetLegs(this ISetupActivity<PlayAudio> setup, Func<ValueTask<string?>> value) => setup.Set(x => x.TargetLegs, value);

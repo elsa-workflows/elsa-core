@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
@@ -29,6 +30,7 @@ namespace Elsa.Services.Dispatch
 
         public async Task DispatchAsync(ExecuteWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
         {
+            using var loggingScope = _logger.BeginScope(new Dictionary<string, object> { ["WorkflowInstanceId"] = request.WorkflowInstanceId });
             var workflowInstance = await _workflowInstanceStore.FindByIdAsync(request.WorkflowInstanceId, cancellationToken);
 
             if (workflowInstance == null)
@@ -51,6 +53,8 @@ namespace Elsa.Services.Dispatch
 
             var channel = _workflowChannelOptions.GetChannelOrDefault(workflowBlueprint.Channel);
             var queue = ServiceBusOptions.FormatChannelQueueName<ExecuteWorkflowInstanceRequest>(channel);
+            
+            _logger.LogDebug("Dispatching workflow instance to queue {Queue}", queue);
             await _commandSender.SendAsync(request, queue, cancellationToken: cancellationToken);
         }
 

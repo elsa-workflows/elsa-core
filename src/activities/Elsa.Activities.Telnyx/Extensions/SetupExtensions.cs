@@ -50,7 +50,6 @@ namespace Elsa.Activities.Telnyx.Extensions
                 .AddScoped<IWebhookHandler, WebhookHandler>()
                 .AddSingleton<IWebhookFilterService, WebhookFilterService>()
                 .AddSingleton<IWebhookFilter, AttributeBasedWebhookFilter>()
-                .AddSingleton<IWebhookFilter, HangupWebhookFilter>()
                 .AddSingleton<IWebhookFilter, CallInitiatedWebhookFilter>()
                 .AddScoped(telnyxOptions.ExtensionProviderFactory);
             

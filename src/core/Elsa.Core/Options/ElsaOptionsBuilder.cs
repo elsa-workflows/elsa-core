@@ -150,6 +150,7 @@ namespace Elsa.Options
 
         public ElsaOptionsBuilder AddCompetingMessageType(Type messageType, string? queueName = default)
         {
+            queueName ??= messageType.Name;
             ElsaOptions.CompetingMessageTypes.Add(new MessageTypeConfig(messageType, queueName));
             return this;
         }

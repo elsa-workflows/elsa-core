@@ -62,7 +62,7 @@ namespace Elsa.Persistence.EntityFramework.Core
                 modelBuilder.Entity<Bookmark>().Property(x => x.Model).HasColumnType("NCLOB");
                 modelBuilder.Entity<Bookmark>().Property(x => x.ModelType).HasColumnType("NCLOB");
                 modelBuilder.Entity<Trigger>().Property(x => x.Model).HasColumnType("NCLOB");
-                modelBuilder.Entity<Trigger>().Property(x => x.ModelType).HasColumnType("NCLOB");
+                
             }
         }
     }

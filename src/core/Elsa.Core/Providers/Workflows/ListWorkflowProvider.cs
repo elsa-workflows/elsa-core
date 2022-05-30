@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -87,6 +88,13 @@ public class ListWorkflowProvider : WorkflowProvider
         return new ValueTask<IWorkflowBlueprint?>(workflowBlueprint);
     }
 
+    public override ValueTask<IEnumerable<IWorkflowBlueprint>> FindManyByDefinitionIds(IEnumerable<string> definitionIds, VersionOptions versionOptions, CancellationToken cancellationToken = default)
+    {
+        var ids = definitionIds.ToList();
+        var workflowBlueprints = _workflowBlueprints.Where(x => ids.Contains(x.Id) && x.WithVersion(versionOptions));
+        return new ValueTask<IEnumerable<IWorkflowBlueprint>>(workflowBlueprints);
+    }
+
     public override ValueTask<IEnumerable<IWorkflowBlueprint>> FindManyByDefinitionVersionIds(IEnumerable<string> definitionVersionIds, CancellationToken cancellationToken = default)
     {
         var ids = definitionVersionIds.ToList();
@@ -98,6 +106,12 @@ public class ListWorkflowProvider : WorkflowProvider
     {
         var nameList = names.ToList();
         var workflowBlueprints = _workflowBlueprints.Where(x => x.Name != null && nameList.Contains(x.Name));
+        return new ValueTask<IEnumerable<IWorkflowBlueprint>>(workflowBlueprints);
+    }
+
+    public override ValueTask<IEnumerable<IWorkflowBlueprint>> FindManyByTagAsync(string tag, VersionOptions versionOptions, string? tenantId = default, CancellationToken cancellationToken = default)
+    {
+        var workflowBlueprints = _workflowBlueprints.Where(x => string.Equals(x.Tag, tag, StringComparison.OrdinalIgnoreCase));
         return new ValueTask<IEnumerable<IWorkflowBlueprint>>(workflowBlueprints);
     }
 }

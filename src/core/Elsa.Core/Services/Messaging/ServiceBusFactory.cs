@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Elsa.Options;
 using Elsa.Serialization;
 using Microsoft.Extensions.Hosting;
@@ -69,15 +70,38 @@ namespace Elsa.Services.Messaging
 
             if (autoCleanup) 
                 _busEntries.Add(new BusEntry(newBus, messageTypeList));
-
+            
             return newBus;
         }
 
-        public IBus GetServiceBus(Type messageType, string? queueName = default) => GetOrCreateServiceBus(messageType, queueName);
-
-        private IBus GetOrCreateServiceBus(Type messageType, string? queueName)
+        public async Task<IBus> GetServiceBusAsync(Type messageType, string? queueName = default, CancellationToken cancellationToken = default) => await GetOrCreateServiceBus(messageType, queueName, cancellationToken);
+        
+        public async Task DisposeServiceBusAsync(IBus bus, CancellationToken cancellationToken)
         {
-            _semaphore.Wait();
+            await _semaphore.WaitAsync(cancellationToken);
+
+            try
+            {
+                bus.Dispose();
+                var entry = _serviceBuses.FirstOrDefault(x => x.Value == bus);
+                
+                if(_serviceBuses.ContainsKey(entry.Key))
+                    _serviceBuses.Remove(entry.Key);
+
+                var busEntry = _busEntries.FirstOrDefault(x => x.Bus == bus);
+
+                if (busEntry != null)
+                    _busEntries.Remove(busEntry);
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+        }
+
+        private async Task<IBus> GetOrCreateServiceBus(Type messageType, string? queueName, CancellationToken cancellationToken)
+        {
+            await _semaphore.WaitAsync(cancellationToken);
 
             try
             {

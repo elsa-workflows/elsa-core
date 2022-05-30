@@ -91,6 +91,12 @@ namespace Elsa.Providers.Workflows
             return workflowDefinition == null ? null : await TryMaterializeBlueprintAsync(workflowDefinition, cancellationToken);
         }
 
+        public override async ValueTask<IEnumerable<IWorkflowBlueprint>> FindManyByDefinitionIds(IEnumerable<string> definitionIds, VersionOptions versionOptions, CancellationToken cancellationToken = default)
+        {
+            var definitions = await _workflowDefinitionStore.FindManyAsync(new ManyWorkflowDefinitionIdsSpecification(definitionIds, versionOptions), cancellationToken: cancellationToken);
+            return await TryMaterializeBlueprintsAsync(definitions, cancellationToken).ToListAsync(cancellationToken);
+        }
+
         public override async ValueTask<IEnumerable<IWorkflowBlueprint>> FindManyByDefinitionVersionIds(IEnumerable<string> definitionVersionIds, CancellationToken cancellationToken = default)
         {
             var definitions = await _workflowDefinitionStore.FindManyAsync(new ManyWorkflowDefinitionVersionIdsSpecification(definitionVersionIds), cancellationToken: cancellationToken);
@@ -100,6 +106,12 @@ namespace Elsa.Providers.Workflows
         public override async ValueTask<IEnumerable<IWorkflowBlueprint>> FindManyByNames(IEnumerable<string> names, CancellationToken cancellationToken = default)
         {
             var definitions = await _workflowDefinitionStore.FindManyAsync(new ManyWorkflowDefinitionVersionIdsSpecification(names), cancellationToken: cancellationToken);
+            return await TryMaterializeBlueprintsAsync(definitions, cancellationToken).ToListAsync(cancellationToken);
+        }
+
+        public override async ValueTask<IEnumerable<IWorkflowBlueprint>> FindManyByTagAsync(string tag, VersionOptions versionOptions, string? tenantId = default, CancellationToken cancellationToken = default)
+        {
+            var definitions = await _workflowDefinitionStore.FindManyAsync(new WorkflowDefinitionTagSpecification(tag, versionOptions), cancellationToken: cancellationToken);
             return await TryMaterializeBlueprintsAsync(definitions, cancellationToken).ToListAsync(cancellationToken);
         }
 

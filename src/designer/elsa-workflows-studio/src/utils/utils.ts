@@ -178,6 +178,8 @@ export function mapSyntaxToLanguage(syntax: string): any {
       return 'javascript';
     case 'Liquid':
       return 'handlebars';
+    case 'SQL':
+      return 'sql';
     case 'Literal':
     default:
       return 'plaintext';

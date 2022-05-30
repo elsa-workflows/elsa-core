@@ -14,9 +14,7 @@ namespace Elsa.Activities.Http.Extensions
             CancellationToken cancellationToken = default)
         {
             if (request.Body == null || request.Body == Stream.Null)
-            {
                 return null;
-            }
 
             request.EnableBuffering();
 

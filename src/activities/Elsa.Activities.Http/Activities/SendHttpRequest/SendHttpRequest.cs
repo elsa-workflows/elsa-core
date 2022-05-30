@@ -6,8 +6,8 @@ using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Elsa.Activities.Http.Contracts;
 using Elsa.Activities.Http.Models;
-using Elsa.Activities.Http.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
@@ -134,12 +134,14 @@ namespace Elsa.Activities.Http
             var hasContent = response.Content != null!;
             var contentType = response.Content?.Headers.ContentType?.MediaType;
 
+            var allHeaders = 
+            response.Headers.ToDictionary(x => x.Key, x => x.Value.ToArray())
+                .Concat(response.Content?.Headers.ToDictionary(x => x.Key, x => x.Value.ToArray()));
+
             var responseModel = new HttpResponseModel
             {
                 StatusCode = response!.StatusCode,
-                Headers = new Dictionary<string, string[]>(
-                    response.Headers.ToDictionary(x => x.Key, x => x.Value.ToArray())
-                )
+                Headers = new Dictionary<string, string[]>(allHeaders)
             };
 
             if (hasContent && ReadContent)

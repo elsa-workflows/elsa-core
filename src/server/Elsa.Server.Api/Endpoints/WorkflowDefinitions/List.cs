@@ -56,7 +56,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             var specification = GetSpecification(ids, version.Value).And(new TenantSpecification<WorkflowDefinition>(tenantId));
             var totalCount = await _workflowDefinitionStore.CountAsync(specification, cancellationToken);
             var paging = page == null || pageSize == null ? default : Paging.Page(page.Value, pageSize.Value);
-            var items = await _workflowDefinitionStore.FindManyAsync(specification, paging: paging, cancellationToken: cancellationToken);
+            var items = await _workflowDefinitionStore.FindManyAsync(specification, new OrderBy<WorkflowDefinition>(x => x.Name!, SortDirection.Ascending), paging, cancellationToken);
             var summaries = _mapper.Map<IList<WorkflowDefinitionSummaryModel>>(items);
             var pagedList = new PagedList<WorkflowDefinitionSummaryModel>(summaries, page, pageSize, totalCount);
 

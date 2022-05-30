@@ -18,6 +18,7 @@ namespace Elsa.Server.Api.Mapping
             CreateMap<IConnection, ConnectionModel?>().ConvertUsing<ConnectionConverter>();
             CreateMap<WorkflowInstance, WorkflowInstanceSummaryModel>();
             CreateMap<WorkflowDefinition, WorkflowDefinitionSummaryModel>();
+            CreateMap<WorkflowDefinition, WorkflowDefinitionVersionModel>();
         }
     }
 }

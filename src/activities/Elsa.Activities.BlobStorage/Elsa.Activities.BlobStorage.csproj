@@ -15,6 +15,7 @@
 
     <ItemGroup>
         <PackageReference Include="Storage.Net" Version="9.3.0" />
+        <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
     </ItemGroup>
 
     <ItemGroup>

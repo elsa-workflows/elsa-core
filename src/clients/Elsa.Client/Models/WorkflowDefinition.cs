@@ -21,7 +21,6 @@ namespace Elsa.Client.Models
         [DataMember(Order = 7)] public int Version { get; set; }
         [DataMember(Order = 8)] public string Variables { get; set; } = default!;
         [DataMember(Order = 9)] public string CustomAttributes { get; set; } = default!;
-
         [DataMember(Order = 10)] public WorkflowContextOptions? ContextOptions { get; set; }
         [DataMember(Order = 11)] public bool IsSingleton { get; set; }
         [DataMember(Order = 12)] public WorkflowPersistenceBehavior PersistenceBehavior { get; set; }

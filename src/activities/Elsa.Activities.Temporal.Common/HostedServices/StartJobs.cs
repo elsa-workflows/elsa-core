@@ -101,7 +101,7 @@ namespace Elsa.Activities.Temporal.Common.HostedServices
             await foreach (var result in stream.WithCancellation(cancellationToken))
             {
                 await _commandSender.SendAsync(new ScheduleTemporalBookmark(result), cancellationToken: cancellationToken);
-                _logger.LogDebug("Dispatched scheduling bookmark {CurrentBookmarkIndex}", ++index);
+                _logger.LogDebug("Dispatched scheduling bookmark {CurrentBookmarkIndex} - {BookmarkId}", ++index, result.Id);
             }
         }
     }

@@ -13,7 +13,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AutoMapper" Version="10.1.1" />
+        <PackageReference Include="AutoMapper" Version="11.0.1" />
         <PackageReference Include="YesSql.Core" Version="3.0.7" />
         <PackageReference Include="YesSql.Provider.Sqlite" Version="3.0.7" />
     </ItemGroup>

@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Temporal.Common.Services;
 using Elsa.Activities.Temporal.Quartz.Jobs;
@@ -30,6 +31,7 @@ namespace Elsa.Activities.Temporal.Quartz.Services
 
         public async Task ScheduleAsync(string workflowInstanceId, string activityId, Instant startAt, Duration? interval, CancellationToken cancellationToken = default)
         {
+            using var loggingScope = _logger.BeginScope(new Dictionary<string, object> { ["WorkflowInstanceId"] = workflowInstanceId });
             var triggerBuilder = CreateTrigger(workflowInstanceId, activityId).StartAt(startAt.ToDateTimeOffset());
 
             if (interval != null && interval != Duration.Zero)
@@ -41,12 +43,14 @@ namespace Elsa.Activities.Temporal.Quartz.Services
 
         public async Task ScheduleAsync(string workflowInstanceId, string activityId, string cronExpression, CancellationToken cancellationToken = default)
         {
+            using var loggingScope = _logger.BeginScope(new Dictionary<string, object> { ["WorkflowInstanceId"] = workflowInstanceId });
             var trigger = CreateTrigger(workflowInstanceId, activityId).WithCronSchedule(cronExpression).Build();
             await ScheduleJob(trigger, cancellationToken);
         }
 
         public async Task UnscheduleAsync(string workflowInstanceId, string activityId, CancellationToken cancellationToken)
         {
+            using var loggingScope = _logger.BeginScope(new Dictionary<string, object> { ["WorkflowInstanceId"] = workflowInstanceId });
             var scheduler = await _schedulerProvider.GetSchedulerAsync(cancellationToken);
             var trigger = CreateTriggerKey(workflowInstanceId, activityId);
             var existingTrigger = await scheduler.GetTrigger(trigger, cancellationToken);
@@ -57,6 +61,7 @@ namespace Elsa.Activities.Temporal.Quartz.Services
 
         public async Task UnscheduleAsync(string workflowInstanceId, CancellationToken cancellationToken)
         {
+            using var loggingScope = _logger.BeginScope(new Dictionary<string, object> { ["WorkflowInstanceId"] = workflowInstanceId });
             var scheduler = await _schedulerProvider.GetSchedulerAsync(cancellationToken);
             var groupName = CreateTriggerGroupKey(workflowInstanceId);
             var existingTriggers = await scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.GroupEquals(groupName), cancellationToken);
@@ -87,8 +92,12 @@ namespace Elsa.Activities.Temporal.Quartz.Services
                 var existingTrigger = await scheduler.GetTrigger(trigger.Key, cancellationToken);
 
                 if (existingTrigger != null)
+                {
+                    _logger.LogDebug("Found existing trigger with key {TriggerKey}", trigger.Key.ToString());
                     await scheduler.UnscheduleJob(existingTrigger.Key, cancellationToken);
+                }
 
+                _logger.LogDebug("Scheduling new job with key {TriggerKey}", trigger.Key.ToString());
                 await scheduler.ScheduleJob(trigger, cancellationToken);
             }
             catch (SchedulerException e)

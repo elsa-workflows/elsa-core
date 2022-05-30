@@ -145,6 +145,9 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Data")
                         .HasColumnType("TEXT");
 

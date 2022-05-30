@@ -9,6 +9,8 @@
         <ProjectReference Include="..\..\..\core\Elsa\Elsa.csproj" />
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.Console\Elsa.Activities.Console.csproj" />
         <ProjectReference Include="..\..\..\activities\Elsa.Activities.MassTransit\Elsa.Activities.MassTransit.csproj" />
+        <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.EntityFramework\Elsa.Persistence.EntityFramework.Sqlite\Elsa.Persistence.EntityFramework.Sqlite.csproj" />
+        <ProjectReference Include="..\..\..\server\Elsa.Server.Api\Elsa.Server.Api.csproj" />
     </ItemGroup>
 
     <ItemGroup>

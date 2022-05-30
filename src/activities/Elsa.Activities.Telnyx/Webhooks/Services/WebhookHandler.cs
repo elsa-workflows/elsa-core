@@ -1,10 +1,13 @@
-﻿using System.IO.Pipelines;
+﻿using System.Collections.Generic;
+using System.IO.Pipelines;
 using System.Text;
 using System.Threading.Tasks;
+using Elsa.Activities.Telnyx.Extensions;
 using Elsa.Activities.Telnyx.Webhooks.Events;
 using Elsa.Activities.Telnyx.Webhooks.Models;
 using MediatR;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using NodaTime;
@@ -16,30 +19,44 @@ namespace Elsa.Activities.Telnyx.Webhooks.Services
     {
         private static readonly JsonSerializerSettings SerializerSettings;
         private readonly IMediator _mediator;
-        
+        private readonly ILogger<WebhookHandler> _logger;
+
         static WebhookHandler()
         {
             SerializerSettings = CreateSerializerSettings();
         }
 
-        public WebhookHandler(IMediator mediator)
+        public WebhookHandler(IMediator mediator, ILogger<WebhookHandler> logger)
         {
             _mediator = mediator;
+            _logger = logger;
         }
-        
+
         public async Task HandleAsync(HttpContext httpContext)
         {
             var cancellationToken = httpContext.RequestAborted;
             var json = await ReadRequestBodyAsync(httpContext);
             var webhook = JsonConvert.DeserializeObject<TelnyxWebhook>(json, SerializerSettings)!;
-            await _mediator.Publish(new TelnyxWebhookReceived(webhook), cancellationToken);
+            var correlationId = webhook.Data.Payload.GetCorrelationId();
+            
+            if (!string.IsNullOrEmpty(correlationId))
+            {
+                using var loggingScope = _logger.BeginScope(new Dictionary<string, object> { ["CorrelationId"] = correlationId });
+                _logger.LogDebug("Telnyx webhook payload received: {@Webhook}", webhook);
+                await _mediator.Publish(new TelnyxWebhookReceived(webhook), cancellationToken);
+            }
+            else
+            {
+                _logger.LogDebug("Telnyx webhook payload received: {@Webhook}", webhook);
+                await _mediator.Publish(new TelnyxWebhookReceived(webhook), cancellationToken);
+            }
         }
 
         private static async Task<string> ReadRequestBodyAsync(HttpContext httpContext)
         {
             var cancellationToken = httpContext.RequestAborted;
             var readResult = default(ReadResult);
-            
+
             try
             {
                 readResult = await httpContext.Request.BodyReader.ReadAsync(cancellationToken);
@@ -60,7 +77,7 @@ namespace Elsa.Activities.Telnyx.Webhooks.Services
                     NamingStrategy = new SnakeCaseNamingStrategy()
                 }
             };
-            
+
             settings.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
             return settings;
         }

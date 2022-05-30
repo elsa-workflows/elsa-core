@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Azure.Messaging.ServiceBus;
 using Elsa.Activities.AzureServiceBus.Bookmarks;
 using Elsa.Models;
 using Elsa.Services;
@@ -43,7 +44,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
                 foreach (var trigger in filteredTriggers)
                 {
                     var bookmark = _bookmarkSerializer.Deserialize<MessageReceivedBookmark>(trigger.Model);
-                    await CreateAndAddWorkerAsync(trigger.WorkflowDefinitionId, bookmark.QueueOrTopic, bookmark.Subscription, cancellationToken);
+                    await GetOrCreateWorkerAsync(trigger.WorkflowDefinitionId, bookmark.QueueOrTopic, bookmark.Subscription, cancellationToken);
                 }
             }
             finally
@@ -63,7 +64,7 @@ namespace Elsa.Activities.AzureServiceBus.Services
                 foreach (var bookmark in filteredBookmarks)
                 {
                     var bookmarkModel = _bookmarkSerializer.Deserialize<MessageReceivedBookmark>(bookmark.Model);
-                    await CreateAndAddWorkerAsync(bookmark.WorkflowInstanceId, bookmarkModel.QueueOrTopic, bookmarkModel.Subscription, cancellationToken);
+                    await GetOrCreateWorkerAsync(bookmark.WorkflowInstanceId, bookmarkModel.QueueOrTopic, bookmarkModel.Subscription, cancellationToken);
                 }
             }
             finally
@@ -72,65 +73,76 @@ namespace Elsa.Activities.AzureServiceBus.Services
             }
         }
 
-        public async Task RemoveWorkersAsync(IReadOnlyCollection<Trigger> triggers, CancellationToken cancellationToken = default)
+        public async Task RemoveTagsFromWorkersAsync(IReadOnlyCollection<string> tags, CancellationToken cancellationToken)
         {
-            var workflowDefinitionIds = Filter(triggers).Select(x => x.WorkflowDefinitionId).Distinct().ToList();
+            await _semaphore.WaitAsync(cancellationToken);
 
-            var workers =
-                from worker in _workers
-                from workflowId in workflowDefinitionIds
-                where worker.Tag == workflowId
-                select worker;
-
-            foreach (var worker in workers.ToList())
+            try
             {
-                await worker.DisposeAsync();
-                _workers.Remove(worker);
+                foreach (var worker in _workers.ToList())
+                {
+                    // Remove tags.
+                    worker.Tags.RemoveWhere(tags.Contains);
+
+                    // Remove worker if it has no more tags.
+                    if (!worker.Tags.Any())
+                        await RemoveWorkerAsync(worker);
+                }
+            }
+            finally
+            {
+                _semaphore.Release();
             }
         }
 
-        public async Task RemoveWorkersAsync(IReadOnlyCollection<Bookmark> bookmarks, CancellationToken cancellationToken = default)
-        {
-            var workflowInstanceIds = Filter(bookmarks).Select(x => x.WorkflowInstanceId).Distinct().ToList();
-            await RemoveWorkersAsync(workflowInstanceIds);
-        }
-
-        private async Task CreateAndAddWorkerAsync(string tag, string queueOrTopic, string? subscription, CancellationToken cancellationToken)
+        private async Task GetOrCreateWorkerAsync(string tag, string queueOrTopic, string? subscription, CancellationToken cancellationToken)
         {
             try
             {
-                var worker = _workers.FirstOrDefault(x => x.Tag == tag && x.QueueOrTopic == queueOrTopic && x.Subscription == subscription);
+                var worker = _workers.FirstOrDefault(x => x.QueueOrTopic == queueOrTopic && x.Subscription == subscription);
 
+                // Create worker if not found.
                 if (worker == null)
                 {
-                    worker = ActivatorUtilities.CreateInstance<Worker>(_serviceProvider, queueOrTopic, subscription ?? "", tag);
+                    worker = ActivatorUtilities.CreateInstance<Worker>(
+                        _serviceProvider,
+                        queueOrTopic,
+                        subscription ?? "",
+                        (Func<Worker, ProcessErrorEventArgs, Task>)(async (w, e) => await RemoveAndRespawnWorkerAsync(w, e, tag, queueOrTopic, subscription)));
+
+                    _logger.LogDebug("Created worker for {QueueOrTopic}", worker.QueueOrTopic);
                     _workers.Add(worker);
+
+                    _logger.LogDebug("Starting worker for {QueueOrTopic}", worker.QueueOrTopic);
                     await worker.StartAsync(cancellationToken);
                 }
+
+                // Tag worker.
+                worker.Tags.Add(tag);
             }
             catch (Exception e)
             {
-                if(subscription == null)
+                if (subscription == null)
                     _logger.LogWarning(e, "Failed to create a receiver for {Queue}", queueOrTopic);
                 else
                     _logger.LogWarning(e, "Failed to create a receiver for {Topic} and subscription {Subscription}", queueOrTopic, subscription);
+
+                throw;
             }
         }
 
-        private async Task RemoveWorkersAsync(IEnumerable<string> tags)
+        private async Task RemoveAndRespawnWorkerAsync(Worker worker, ProcessErrorEventArgs args, string tag, string queueOrTopic, string? subscription)
         {
-            var workers =
-                from worker in _workers
-                from tag in tags
-                where worker.Tag == tag
-                select worker;
+            _logger.LogDebug(args.Exception, "Error occurred in processor for {QueueOrTopic}. Error source: {ErrorSource}", worker.QueueOrTopic, args.ErrorSource);
+            await RemoveWorkerAsync(worker);
 
-            foreach (var worker in workers.ToList())
-                await RemoveWorkerAsync(worker);
+            _logger.LogDebug("Respawning worker for {QueueOrTopic}", worker.QueueOrTopic);
+            await GetOrCreateWorkerAsync(tag, queueOrTopic, subscription, args.CancellationToken);
         }
 
         private async Task RemoveWorkerAsync(Worker worker)
         {
+            _logger.LogDebug("Disposing worker for {QueueOrTopic}", worker.QueueOrTopic);
             await worker.DisposeAsync();
             _workers.Remove(worker);
         }

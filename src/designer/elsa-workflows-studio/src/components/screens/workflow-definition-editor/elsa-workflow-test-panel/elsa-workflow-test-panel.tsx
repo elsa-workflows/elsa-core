@@ -1,6 +1,6 @@
-import {Component, Prop, h, State, Watch, Host} from '@stencil/core';
+import {Component, h, Host, Prop, State, Watch} from '@stencil/core';
 import {HubConnection, HubConnectionBuilder} from '@microsoft/signalr';
-import {EventTypes, WorkflowDefinition, WorkflowTestActivityMessage} from "../../../../models";
+import {EventTypes, WorkflowDefinition, WorkflowStatus, WorkflowTestActivityMessage} from "../../../../models";
 import {i18n} from "i18next";
 import {loadTranslations} from "../../../i18n/i18n-loader";
 import {resources} from "./localizations";
@@ -30,6 +30,7 @@ export class ElsaWorkflowTestPanel {
   i18next: i18n;
   signalRConnectionId: string;
   message: WorkflowTestActivityMessage;
+  confirmDialog: HTMLElsaConfirmDialogElement;
 
   @Watch('workflowTestActivityId')
   async workflowTestActivityMessageChangedHandler(newMessage: string, oldMessage: string) {
@@ -99,7 +100,25 @@ export class ElsaWorkflowTestPanel {
     };
 
     const client = await createElsaClient(this.serverUrl);
-    await client.workflowTestApi.execute(request);
+    const response = await client.workflowTestApi.execute(request);
+
+    if(!response.isSuccess && response.isAnotherInstanceRunning){
+      this.workflowStarted = false;
+
+      const t = x => this.i18next.t(x);
+      const result = await this.confirmDialog.show(t('RestartInstanceConfirmationModel.Title'), t('RestartInstanceConfirmationModel.Message'));
+
+      if (!!result) {
+        const runningInstances = await client.workflowInstancesApi.list(null, null, this.workflowDefinition.definitionId, WorkflowStatus.Suspended);
+
+        for (const instance of runningInstances.items) {
+          await client.workflowTestApi.stop({ workflowInstanceId: instance.id });
+          await client.workflowInstancesApi.delete(instance.id);
+        }
+
+        await this.onExecuteWorkflowClick();
+      }
+    }
   }
 
   onRestartWorkflow = async (selectedActivityId: string) => {
@@ -199,12 +218,9 @@ export class ElsaWorkflowTestPanel {
           </div>
         </dl>
         {renderActivityTestMessage()}
+        <elsa-confirm-dialog ref={el => this.confirmDialog = el} culture={this.culture}/>
       </Host>
     );
-  }
-
-  createClient() {
-    return createElsaClient(this.serverUrl);
   }
 }
 

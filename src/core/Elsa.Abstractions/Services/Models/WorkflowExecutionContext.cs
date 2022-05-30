@@ -33,7 +33,7 @@ namespace Elsa.Services.Models
             IsFirstPass = true;
             Serializer = serviceProvider.GetRequiredService<JsonSerializer>();
             Mediator = serviceProvider.GetRequiredService<IMediator>();
-            
+
             // This is a service that needs to be bound to the same lifetime scope as the workflow execution context.
             WorkflowExecutionLog = ActivatorUtilities.CreateInstance<WorkflowExecutionLog>(serviceProvider);
         }
@@ -53,6 +53,11 @@ namespace Elsa.Services.Models
         /// </summary>
         public Variables TransientState { get; set; } = new();
 
+        /// <summary>
+        /// The current exception, if any.
+        /// </summary>
+        public Exception? Exception { get; private set; }
+
         public void ScheduleActivities(IEnumerable<string> activityIds, object? input = null)
         {
             foreach (var activityId in activityIds)
@@ -69,6 +74,7 @@ namespace Elsa.Services.Models
         public void ScheduleActivity(ScheduledActivity activity) => WorkflowInstance.ScheduledActivities.Push(activity);
         public ScheduledActivity PopScheduledActivity() => WorkflowInstance.ScheduledActivities.Pop();
         public ScheduledActivity PeekScheduledActivity() => WorkflowInstance.ScheduledActivities.Peek();
+        public void ClearScheduledActivities() => WorkflowInstance.ScheduledActivities.Clear();
 
         public string CorrelationId
         {
@@ -117,7 +123,7 @@ namespace Elsa.Services.Models
         public T? GetVariable<T>() => GetVariable<T>(typeof(T).Name);
         public T? GetVariable<T>(string name) => GetMergedVariables().Get<T>(name);
         public bool HasVariable(string name) => GetMergedVariables().Has(name);
-        
+
         /// <summary>
         /// Gets a variable from across all scopes, starting with the current scope, going up each scope until the requested variable is found.
         /// </summary>
@@ -127,7 +133,7 @@ namespace Elsa.Services.Models
             var mergedVariables = GetMergedVariables();
             return mergedVariables.Get(name);
         }
-        
+
         /// <summary>
         /// Gets all variables merged across all scopes.
         /// </summary>
@@ -183,6 +189,15 @@ namespace Elsa.Services.Models
             WorkflowInstance.WorkflowStatus = WorkflowStatus.Faulted;
             WorkflowInstance.FaultedAt = clock.GetCurrentInstant();
             WorkflowInstance.Fault = new WorkflowFault(SimpleException.FromException(exception), message, activityId, activityInput, resuming);
+            Exception = exception;
+        }
+
+        public void Cancel(Exception? exception, string message, string? activityId, object? activityInput, bool resuming)
+        {
+            var clock = ServiceProvider.GetRequiredService<IClock>();
+            WorkflowInstance.WorkflowStatus = WorkflowStatus.Cancelled;
+            WorkflowInstance.CancelledAt = clock.GetCurrentInstant();
+            WorkflowInstance.Fault = new WorkflowFault(SimpleException.FromException(exception), message, activityId, activityInput, resuming);
         }
 
         public async Task CompleteAsync()
@@ -196,7 +211,23 @@ namespace Elsa.Services.Models
                 await EvictScopeAsync(scope);
 
             WorkflowInstance.Scopes = new SimpleStack<ActivityScope>();
-            WorkflowInstance.WorkflowStatus = WorkflowStatus.Finished;
+            var now = ServiceProvider.GetRequiredService<IClock>().GetCurrentInstant();
+
+            if(WorkflowInstance.GetMetadata("Compensated") as bool? == true)
+            {
+                WorkflowInstance.WorkflowStatus = WorkflowStatus.Cancelled;
+                WorkflowInstance.CancelledAt = now;
+            }
+            if(WorkflowInstance.Fault != null)
+            {
+                WorkflowInstance.WorkflowStatus = WorkflowStatus.Faulted;
+                WorkflowInstance.FaultedAt = now;
+            }
+            else
+            {
+                WorkflowInstance.WorkflowStatus = WorkflowStatus.Finished;
+                WorkflowInstance.FinishedAt = now;
+            }
         }
 
         public IActivityBlueprint? GetActivityBlueprintById(string id) => WorkflowBlueprint.Activities.FirstOrDefault(x => x.Id == id);
@@ -205,31 +236,36 @@ namespace Elsa.Services.Models
         public async Task<object?> GetNamedActivityPropertyAsync(string activityName, string propertyName, CancellationToken cancellationToken = default)
         {
             var activityBlueprint = GetActivityBlueprintByName(activityName)!;
+
+            if (activityBlueprint == null)
+                throw new Exception($"No activity found with name {activityName}");
+
             return await GetActivityPropertyAsync(activityBlueprint, propertyName, cancellationToken);
         }
 
-        public async ValueTask<T?> GetNamedActivityPropertyAsync<T>(string activityName, string propertyName, CancellationToken cancellationToken = default) => (T?) await GetNamedActivityPropertyAsync(activityName, propertyName, cancellationToken);
-        
+        public async ValueTask<T?> GetNamedActivityPropertyAsync<T>(string activityName, string propertyName, CancellationToken cancellationToken = default) =>
+            (T?)await GetNamedActivityPropertyAsync(activityName, propertyName, cancellationToken);
+
         public async Task<T?> GetNamedActivityPropertyAsync<TActivity, T>(string activityName, Expression<Func<TActivity, T>> propertyExpression, CancellationToken cancellationToken = default) where TActivity : IActivity
         {
-            var expression = (MemberExpression) propertyExpression.Body;
+            var expression = (MemberExpression)propertyExpression.Body;
             string propertyName = expression.Member.Name;
             return await GetNamedActivityPropertyAsync<T>(activityName, propertyName, cancellationToken);
         }
-        
+
         public async Task<T?> GetActivityPropertyAsync<TActivity, T>(string activityId, Expression<Func<TActivity, T>> propertyExpression, CancellationToken cancellationToken = default) where TActivity : IActivity
         {
-            var expression = (MemberExpression) propertyExpression.Body;
+            var expression = (MemberExpression)propertyExpression.Body;
             string propertyName = expression.Member.Name;
             return await GetActivityPropertyAsync<T>(activityId, propertyName, cancellationToken);
         }
-        
+
         public async Task<T?> GetActivityPropertyAsync<T>(string activityId, string propertyName, CancellationToken cancellationToken = default)
         {
             var activityBlueprint = GetActivityBlueprintById(activityId)!;
             return await GetActivityPropertyAsync<T>(activityBlueprint, propertyName, cancellationToken);
         }
-        
+
         public async Task<T?> GetActivityPropertyAsync<T>(IActivityBlueprint activityBlueprint, string propertyName, CancellationToken cancellationToken = default)
         {
             var value = await GetActivityPropertyAsync(activityBlueprint, propertyName, cancellationToken);
@@ -243,25 +279,25 @@ namespace Elsa.Services.Models
             var context = new WorkflowStorageContext(WorkflowInstance, activityBlueprint.Id);
             return await workflowStorageService.LoadAsync(storageProviderName, context, propertyName, cancellationToken);
         }
-        
+
         public void SetWorkflowContext(object? value) => WorkflowContext = value;
         public object? GetWorkflowContext() => WorkflowContext;
-        public T GetWorkflowContext<T>() => (T) WorkflowContext!;
-        
+        public T GetWorkflowContext<T>() => (T)WorkflowContext!;
+
         public IDictionary<string, object?> GetActivityData(string activityId)
         {
             var activityData = WorkflowInstance.ActivityData;
             var state = activityData.ContainsKey(activityId) ? activityData[activityId] : default;
 
-            if (state != null) 
+            if (state != null)
                 return state;
-            
+
             state = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
             activityData[activityId] = state;
 
             return state;
         }
-        
+
         public void AddEntry(IActivityBlueprint activityBlueprint, string eventName, string? message, object? data) => AddEntry(activityBlueprint.Id, activityBlueprint.Type, eventName, message, data);
 
         public void AddEntry(string activityId, string activityType, string eventName, string? message, object? data)
@@ -283,6 +319,4 @@ namespace Elsa.Services.Models
             return scope;
         }
     }
-
-    public record ExecutionLogEntry(string ActivityId, string Outcome);
 }
