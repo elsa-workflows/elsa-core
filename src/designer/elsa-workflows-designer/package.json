@@ -47,6 +47,7 @@
     "@stencil/postcss": "^2.1.0",
     "@stencil/sass": "^1.5.2",
     "@tailwindcss/forms": "^0.5.2",
+    "@tailwindcss/aspect-ratio": "^0.4.0",
     "@tailwindcss/typography": "^0.5.2",
     "@types/jquery": "^3.5.14",
     "@types/jquery-mousewheel": "^3.1.9",
