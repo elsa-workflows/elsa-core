@@ -4,7 +4,7 @@ import WorkflowEditorTunnel from '../state';
 import {
   Activity,
   ActivityDescriptor,
-  DefaultActions, InputDescriptor,
+  DefaultActions, Expression, InputDescriptor, Lookup,
   RenderActivityPropContext,
   RenderActivityPropsContext,
   TabChangedArgs,
@@ -14,6 +14,7 @@ import {InputDriverRegistry} from "../../../services";
 import {Container} from "typedi";
 import {ActivityInputContext} from "../../../services/node-input-driver";
 import {FormEntry} from "../../shared/forms/form-entry";
+import {InfoList} from "../../shared/forms/info-list";
 
 @Component({
   tag: 'elsa-activity-properties',
@@ -78,23 +79,21 @@ export class ActivityProperties {
     const properties = activityDescriptor.inputProperties;
     const activityId = activity.id;
     const displayText: string = activity.metadata?.displayText ?? '';
-    const key = `${activityId}`;
 
-    return <div key={key}>
-      <FormEntry fieldId="ActivityId" label="ID" hint="The ID of the activity.">
-        <input type="text" name="ActivityId" id="ActivityId" value={activityId}/>
-      </FormEntry>
+    const propertyDetails: Lookup<string> = {
+      'Activity ID': activityId,
+      'Display Text': displayText
+    };
 
-      <FormEntry fieldId="ActivityDisplayText" label="Display Text" hint="The text to display on the activity in the designer.">
-        <input type="text" name="ActivityDisplayText" id="ActivityDisplayText" value={displayText}/>
-      </FormEntry>
+    for (const property of properties) {
+      const propertyName = camelCase(property.name);
+      const propertyValue = activity[propertyName]?.expression?.value;
+      const propertyValueText = propertyValue != null ? propertyValue.toString() : '';
+      propertyDetails[property.displayName] = propertyValueText;
+    }
 
-      {properties.map(property => {
-        const key = `${activity.id}-${property.name}`;
-        return <div key={key}>
-          {activity[property.name]}
-        </div>;
-      })}
+    return <div>
+      <InfoList title="Properties" dictionary={propertyDetails}/>
     </div>
   };
 
