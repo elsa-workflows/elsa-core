@@ -52,7 +52,9 @@ export class WorkflowDefinitionPropertiesEditor {
 
     return (
       <elsa-form-panel
-        headerText={title} tabs={tabs} selectedTabIndex={this.selectedTabIndex}
+        mainTitle={title}
+        tabs={tabs}
+        selectedTabIndex={this.selectedTabIndex}
         onSelectedTabIndexChanged={e => this.onSelectedTabIndexChanged(e)}/>
     );
   }

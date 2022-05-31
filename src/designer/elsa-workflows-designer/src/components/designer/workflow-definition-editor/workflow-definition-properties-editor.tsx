@@ -49,20 +49,25 @@ export class WorkflowDefinitionPropertiesEditor {
   }
 
   public render() {
-    const title = 'Workflow';
+    const workflowDefinition = this.workflowDefinition;
+    const workflowDefinitionName = workflowDefinition?.name ?? 'Untitled';
+    const title = workflowDefinitionName;
+    const subTitle = 'Workflow Definition'
     const tabs = this.model.tabModels.map(x => x.tab);
 
     return (
       <elsa-form-panel
-        headerText={title} tabs={tabs} selectedTabIndex={this.selectedTabIndex}
+        mainTitle={title}
+        subTitle={subTitle}
+        tabs={tabs}
+        selectedTabIndex={this.selectedTabIndex}
         onSelectedTabIndexChanged={e => this.onSelectedTabIndexChanged(e)}/>
     );
   }
 
   private createModel = async () => {
     const model = {
-      tabModels: [],
-      refresh: this.refresh
+      tabModels: []
     };
 
     const workflowDefinition = this.workflowDefinition;
@@ -132,10 +137,6 @@ export class WorkflowDefinitionPropertiesEditor {
 
     this.model = model;
   }
-
-  private refresh = () => {
-    //this.changeHandle = new Date();
-  };
 
   private renderPropertiesTab = (tabModel: PropertiesTabModel) => {
     const widgets = tabModel.Widgets.sort((a, b) => a.order < b.order ? -1 : a.order > b.order ? 1 : 0);

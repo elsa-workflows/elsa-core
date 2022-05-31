@@ -7,7 +7,8 @@ import {ActionDefinition, ActionInvokedArgs, ActionType, TabChangedArgs, TabDefi
 export class FormPanel {
   private formElement: HTMLFormElement;
 
-  @Prop() public headerText: string;
+  @Prop() public mainTitle: string;
+  @Prop() public subTitle: string;
   @Prop() public tabs: Array<TabDefinition> = [];
   @Prop({mutable: true}) public selectedTabIndex?: number;
   @Prop() public actions: Array<ActionDefinition> = [];

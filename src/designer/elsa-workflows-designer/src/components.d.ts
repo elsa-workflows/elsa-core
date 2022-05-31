@@ -77,8 +77,9 @@ export namespace Components {
     }
     interface ElsaFormPanel {
         "actions": Array<ActionDefinition>;
-        "headerText": string;
+        "mainTitle": string;
         "selectedTabIndex"?: number;
+        "subTitle": string;
         "tabs": Array<TabDefinition>;
     }
     interface ElsaInputControlSwitch {
@@ -584,11 +585,12 @@ declare namespace LocalJSX {
     }
     interface ElsaFormPanel {
         "actions"?: Array<ActionDefinition>;
-        "headerText"?: string;
+        "mainTitle"?: string;
         "onActionInvoked"?: (event: CustomEvent<ActionInvokedArgs>) => void;
         "onSelectedTabIndexChanged"?: (event: CustomEvent<TabChangedArgs>) => void;
         "onSubmitted"?: (event: CustomEvent<FormData>) => void;
         "selectedTabIndex"?: number;
+        "subTitle"?: string;
         "tabs"?: Array<TabDefinition>;
     }
     interface ElsaInputControlSwitch {
