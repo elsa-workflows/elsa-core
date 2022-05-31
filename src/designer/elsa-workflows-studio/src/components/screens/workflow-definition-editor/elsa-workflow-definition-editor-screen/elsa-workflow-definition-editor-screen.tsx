@@ -613,6 +613,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
     switch (testActivityMessage.status) {
       case WorkflowTestActivityMessageStatus.Done:
+      default:
         icon = `<svg class="elsa-h-8 elsa-w-8 elsa-text-green-500"  fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>`;
