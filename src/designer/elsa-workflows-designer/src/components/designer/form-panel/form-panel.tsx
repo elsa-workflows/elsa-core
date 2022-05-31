@@ -1,5 +1,6 @@
 import {Component, Event, EventEmitter, h, Prop} from '@stencil/core';
 import {ActionDefinition, ActionInvokedArgs, ActionType, TabChangedArgs, TabDefinition} from '../../../models';
+import {isNullOrWhitespace} from "../../../utils";
 
 @Component({
   tag: 'elsa-form-panel'
@@ -37,6 +38,8 @@ export class FormPanel {
     const tabs = this.tabs;
     const selectedTabIndex = this.selectedTabIndex;
     const actions = this.actions;
+    const mainTitle = this.mainTitle;
+    const subTitle = this.subTitle;
 
     return (
       <div class="absolute inset-0 overflow-hidden">
@@ -47,9 +50,10 @@ export class FormPanel {
             <div class="px-4 py-6 bg-gray-50 sm:px-6">
               <div class="flex items-start justify-between space-x-3">
                 <div class="space-y-1">
-                  <h2 class="text-lg font-medium text-gray-900" id="slide-over-title">
-                    {this.mainTitle}
+                  <h2 class="text-lg font-medium text-gray-900">
+                    {mainTitle}
                   </h2>
+                  {!isNullOrWhitespace(subTitle) ? <h3 class="text-sm text-gray-700">{subTitle}</h3> : undefined}
                 </div>
               </div>
             </div>

@@ -30,7 +30,7 @@
   const activityNameFormatter = Container.get(ActivityNameFormatter);
 
   // Install your preferred naming strategy:
-  activityNameFormatter.strategy = ActivityNameFormatter.CamelCaseStrategy;
+  activityNameFormatter.strategy = ActivityNameFormatter.PascalCaseStrategy;
 
   // Or install a custom name formatter strategy.
   //activityNameFormatter.strategy = context => `${stripActivityNameSpace(context.activityDescriptor.activityType)}_${context.count}`;
