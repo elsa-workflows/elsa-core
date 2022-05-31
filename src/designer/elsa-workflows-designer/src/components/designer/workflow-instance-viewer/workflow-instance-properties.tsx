@@ -43,6 +43,11 @@ export class WorkflowDefinitionPropertiesEditor {
     await this.createModel();
   }
 
+  @Watch('workflowInstance')
+  async onWorkflowInstanceChanged() {
+    await this.createModel();
+  }
+
   async componentWillLoad() {
     await this.createModel();
   }

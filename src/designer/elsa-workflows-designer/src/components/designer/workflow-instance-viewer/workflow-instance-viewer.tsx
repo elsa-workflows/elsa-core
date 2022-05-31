@@ -49,7 +49,12 @@ export class WorkflowViewer {
 
   @Watch('workflowDefinition')
   async onWorkflowDefinitionChanged(value: WorkflowDefinition) {
-    await this.importWorkflow(value);
+    await this.importWorkflow(value, this.workflowInstance);
+  }
+
+  @Watch('workflowInstance')
+  async onWorkflowInstanceChanged(value: WorkflowDefinition) {
+    await this.importWorkflow(this.workflowDefinition, this.workflowInstance);
   }
 
   @Listen('resize', {target: 'window'})
@@ -93,7 +98,7 @@ export class WorkflowViewer {
   }
 
   @Method()
-  public async importWorkflow(workflowDefinition: WorkflowDefinition, workflowInstance?: WorkflowInstance): Promise<void> {
+  public async importWorkflow(workflowDefinition: WorkflowDefinition, workflowInstance: WorkflowInstance): Promise<void> {
     this.workflowInstance = workflowInstance;
     this.workflowDefinition = workflowDefinition;
     await this.canvas.importGraph(workflowDefinition.root);
@@ -110,8 +115,8 @@ export class WorkflowViewer {
 
   public async componentDidLoad() {
 
-    if (!!this.workflowDefinition)
-      await this.importWorkflow(this.workflowDefinition);
+    if (!!this.workflowDefinition && !!this.workflowInstance)
+      await this.importWorkflow(this.workflowDefinition, this.workflowInstance);
 
     await this.eventBus.emit(WorkflowEditorEventTypes.WorkflowEditor.Ready, this, {workflowEditor: this});
   }
@@ -148,8 +153,10 @@ export class WorkflowViewer {
   }
 
   private renderSelectedObject = () => {
-    if (!!this.selectedActivity)
-      return <div>Activity details here...</div>
+    const activity = this.selectedActivity;
+
+    if (!!activity)
+      return <elsa-activity-properties activity={activity} activityDescriptors={this.activityDescriptors}/>
 
     return <elsa-workflow-instance-properties workflowDefinition={this.workflowDefinition} workflowInstance={this.workflowInstance}/>;
   }

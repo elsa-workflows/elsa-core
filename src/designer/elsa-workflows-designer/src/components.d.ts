@@ -25,6 +25,12 @@ import { ActivityDriverRegistry } from "./services";
 import { Flowchart } from "./components/activities/flowchart/models";
 import { PublishClickedArgs } from "./components/toolbar/workflow-publish-button/workflow-publish-button";
 export namespace Components {
+    interface ElsaActivityProperties {
+        "activity"?: Activity;
+        "activityDescriptors": Array<ActivityDescriptor>;
+        "hide": () => Promise<void>;
+        "show": () => Promise<void>;
+    }
     interface ElsaActivityPropertiesEditor {
         "activity"?: Activity;
         "activityDescriptors": Array<ActivityDescriptor>;
@@ -217,7 +223,7 @@ export namespace Components {
         "activityDescriptors": Array<ActivityDescriptor>;
         "getCanvas": () => Promise<HTMLElsaCanvasElement>;
         "getWorkflow": () => Promise<WorkflowDefinition>;
-        "importWorkflow": (workflowDefinition: WorkflowDefinition, workflowInstance?: WorkflowInstance) => Promise<void>;
+        "importWorkflow": (workflowDefinition: WorkflowDefinition, workflowInstance: WorkflowInstance) => Promise<void>;
         "monacoLibPath": string;
         "registerActivityDrivers": (register: (registry: ActivityDriverRegistry) => void) => Promise<void>;
         "updateWorkflowDefinition": (workflowDefinition: WorkflowDefinition) => Promise<void>;
@@ -244,6 +250,12 @@ export namespace Components {
     }
 }
 declare global {
+    interface HTMLElsaActivityPropertiesElement extends Components.ElsaActivityProperties, HTMLStencilElement {
+    }
+    var HTMLElsaActivityPropertiesElement: {
+        prototype: HTMLElsaActivityPropertiesElement;
+        new (): HTMLElsaActivityPropertiesElement;
+    };
     interface HTMLElsaActivityPropertiesEditorElement extends Components.ElsaActivityPropertiesEditor, HTMLStencilElement {
     }
     var HTMLElsaActivityPropertiesEditorElement: {
@@ -497,6 +509,7 @@ declare global {
         new (): HTMLElsaWorkflowToolbarMenuElement;
     };
     interface HTMLElementTagNameMap {
+        "elsa-activity-properties": HTMLElsaActivityPropertiesElement;
         "elsa-activity-properties-editor": HTMLElsaActivityPropertiesEditorElement;
         "elsa-button-group": HTMLElsaButtonGroupElement;
         "elsa-canvas": HTMLElsaCanvasElement;
@@ -542,6 +555,10 @@ declare global {
     }
 }
 declare namespace LocalJSX {
+    interface ElsaActivityProperties {
+        "activity"?: Activity;
+        "activityDescriptors"?: Array<ActivityDescriptor>;
+    }
     interface ElsaActivityPropertiesEditor {
         "activity"?: Activity;
         "activityDescriptors"?: Array<ActivityDescriptor>;
@@ -749,6 +766,7 @@ declare namespace LocalJSX {
     interface ElsaWorkflowToolbarMenu {
     }
     interface IntrinsicElements {
+        "elsa-activity-properties": ElsaActivityProperties;
         "elsa-activity-properties-editor": ElsaActivityPropertiesEditor;
         "elsa-button-group": ElsaButtonGroup;
         "elsa-canvas": ElsaCanvas;
@@ -797,6 +815,7 @@ export { LocalJSX as JSX };
 declare module "@stencil/core" {
     export namespace JSX {
         interface IntrinsicElements {
+            "elsa-activity-properties": LocalJSX.ElsaActivityProperties & JSXBase.HTMLAttributes<HTMLElsaActivityPropertiesElement>;
             "elsa-activity-properties-editor": LocalJSX.ElsaActivityPropertiesEditor & JSXBase.HTMLAttributes<HTMLElsaActivityPropertiesEditorElement>;
             "elsa-button-group": LocalJSX.ElsaButtonGroup & JSXBase.HTMLAttributes<HTMLElsaButtonGroupElement>;
             "elsa-canvas": LocalJSX.ElsaCanvas & JSXBase.HTMLAttributes<HTMLElsaCanvasElement>;
