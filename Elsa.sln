@@ -405,6 +405,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.Http.OpenAp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.CompensationConsole", "src\samples\console\Elsa.Samples.CompensationConsole\Elsa.Samples.CompensationConsole.csproj", "{962653DD-BFE7-4DDB-9B3D-5AC8C222F43F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Scripting.Sql", "src\scripting\Elsa.Scripting.Sql\Elsa.Scripting.Sql.csproj", "{68BF7E0F-0E52-4477-A5B1-367E87697C75}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -971,6 +973,10 @@ Global
 		{962653DD-BFE7-4DDB-9B3D-5AC8C222F43F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{962653DD-BFE7-4DDB-9B3D-5AC8C222F43F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{962653DD-BFE7-4DDB-9B3D-5AC8C222F43F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{68BF7E0F-0E52-4477-A5B1-367E87697C75}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{68BF7E0F-0E52-4477-A5B1-367E87697C75}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{68BF7E0F-0E52-4477-A5B1-367E87697C75}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{68BF7E0F-0E52-4477-A5B1-367E87697C75}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1153,6 +1159,7 @@ Global
 		{1208F7DC-1CFF-48B4-A7A8-1F7EFD12CA89} = {2C75C427-94D8-4F20-821C-20582BDB865B}
 		{F9731DF7-CEB1-4B9B-8838-803275E301E4} = {B43B546E-23F3-46E8-ACB7-D04F05CDA180}
 		{962653DD-BFE7-4DDB-9B3D-5AC8C222F43F} = {FC9F520F-BA51-4AD2-BFEE-EF787798E734}
+		{68BF7E0F-0E52-4477-A5B1-367E87697C75} = {9C3C685E-3D7D-4638-A031-24F71CF74B52}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}
