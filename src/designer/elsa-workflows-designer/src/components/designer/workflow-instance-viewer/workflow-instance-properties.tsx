@@ -2,7 +2,7 @@ import {Component, Event, EventEmitter, h, Method, Prop, State, Watch} from '@st
 import WorkflowEditorTunnel from '../state';
 import {TabChangedArgs, WorkflowDefinition, WorkflowInstance} from '../../../models';
 import {InfoList} from "../../shared/forms/info-list";
-import {isNullOrWhitespace} from "../../../utils";
+import {formatTimestamp, isNullOrWhitespace} from "../../../utils";
 import {PropertiesTabModel, TabModel, WorkflowInstancePropertiesDisplayingArgs, WorkflowInstancePropertiesEventTypes, WorkflowInstancePropertiesViewerModel} from "./models";
 import {Container} from "typedi";
 import {EventBus} from "../../../services";
@@ -80,18 +80,32 @@ export class WorkflowDefinitionPropertiesEditor {
       name: 'properties',
       tab: null,
       Widgets: [{
-        name: 'workflowInfo',
+        name: 'workflowInstanceInfo',
         content: () => {
 
-          const workflowDetails = {
+          const identityDetails = {
             'Instance ID': isNullOrWhitespace(workflowInstance.id) ? '(new)' : workflowInstance.id,
             'Definition ID': isNullOrWhitespace(workflowDefinition.definitionId) ? '(new)' : workflowDefinition.definitionId,
-            'Version': workflowDefinition.version,
+            'Version': workflowDefinition.version.toString(),
+          };
+
+          const statusDetails = {
             'Status': workflowInstance.status,
             'Sub status': workflowInstance.subStatus
           };
 
-          return <InfoList title="Information" dictionary={workflowDetails}/>;
+          const timestampDetails = {
+            'Created': formatTimestamp(workflowInstance.createdAt),
+            'Last execution': formatTimestamp(workflowInstance.lastExecutedAt),
+            'Finished': formatTimestamp(workflowInstance.finishedAt),
+            'Faulted': formatTimestamp(workflowInstance.faultedAt),
+          };
+
+          return <div>
+            <InfoList title="Identity" dictionary={identityDetails}/>
+            <InfoList title="Status" dictionary={statusDetails}/>
+            <InfoList title="Timestamps" dictionary={timestampDetails} hideEmptyValues={true}/>
+          </div>;
         },
         order: 10
       }]

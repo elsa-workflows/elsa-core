@@ -106,7 +106,7 @@ export class WorkflowDefinitionPropertiesEditor {
           const workflowDetails = {
             'Definition ID': isNullOrWhitespace(workflow.definitionId) ? '(new)' : workflow.definitionId,
             'Version ID': isNullOrWhitespace(workflow.id) ? '(new)' : workflow.id,
-            'Version': workflow.version,
+            'Version': workflow.version.toString(),
             'Status': workflow.isPublished ? 'Published' : 'Draft'
           };
 
