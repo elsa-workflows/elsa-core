@@ -6,7 +6,7 @@
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
 import { ActionDefinition, ActionInvokedArgs, Activity, ActivityDescriptor, ActivitySelectedArgs, ContainerSelectedArgs, GraphUpdatedArgs, IntellisenseContext, SelectListItem, TabChangedArgs, TabDefinition, WorkflowDefinition, WorkflowDefinitionSummary, WorkflowInstance, WorkflowInstanceSummary } from "./models";
-import { ActivityUpdatedArgs, DeleteActivityRequestedArgs } from "./components/designer/activity-properties-editor/activity-properties-editor";
+import { ActivityUpdatedArgs, DeleteActivityRequestedArgs } from "./components/designer/workflow-definition-editor/activity-properties-editor";
 import { Button } from "./components/shared/button-group/models";
 import { ContainerActivityComponent } from "./components/activities/container-activity-component";
 import { AddActivityArgs } from "./components/designer/canvas/canvas";
@@ -20,12 +20,17 @@ import { CreateLabelEventArgs, DeleteLabelEventArgs, Label, UpdateLabelEventArgs
 import { MonacoLib, MonacoValueChangedArgs } from "./components/shared/monaco-editor/monaco-editor";
 import { PagerData } from "./components/shared/pager/pager";
 import { PanelPosition, PanelStateChangedArgs } from "./components/designer/panel/models";
-import { WorkflowUpdatedArgs } from "./components/designer/workflow-editor/workflow-editor";
-import { WorkflowLabelsUpdatedArgs, WorkflowPropsUpdatedArgs } from "./components/designer/workflow-properties-editor/models";
+import { WorkflowDefinitionPropsUpdatedArgs, WorkflowDefinitionUpdatedArgs } from "./components/designer/workflow-definition-editor/models";
 import { ActivityDriverRegistry } from "./services";
 import { Flowchart } from "./components/activities/flowchart/models";
 import { PublishClickedArgs } from "./components/toolbar/workflow-publish-button/workflow-publish-button";
 export namespace Components {
+    interface ElsaActivityProperties {
+        "activity"?: Activity;
+        "activityDescriptors": Array<ActivityDescriptor>;
+        "hide": () => Promise<void>;
+        "show": () => Promise<void>;
+    }
     interface ElsaActivityPropertiesEditor {
         "activity"?: Activity;
         "activityDescriptors": Array<ActivityDescriptor>;
@@ -78,8 +83,9 @@ export namespace Components {
     }
     interface ElsaFormPanel {
         "actions": Array<ActionDefinition>;
-        "headerText": string;
+        "mainTitle": string;
         "selectedTabIndex"?: number;
+        "subTitle": string;
         "tabs": Array<TabDefinition>;
     }
     interface ElsaInputControlSwitch {
@@ -172,13 +178,6 @@ export namespace Components {
     interface ElsaSwitchEditor {
         "inputContext": ActivityInputContext;
     }
-    interface ElsaToolbox {
-        "graph": Graph;
-    }
-    interface ElsaToolboxActivities {
-        "activityDescriptors": Array<ActivityDescriptor>;
-        "graph": Graph;
-    }
     interface ElsaTooltip {
         "tooltipContent": any;
         "tooltipPosition"?: string;
@@ -187,24 +186,60 @@ export namespace Components {
         "hide": () => Promise<void>;
         "show": () => Promise<void>;
     }
-    interface ElsaWorkflowEditor {
+    interface ElsaWorkflowDefinitionEditor {
         "activityDescriptors": Array<ActivityDescriptor>;
         "getCanvas": () => Promise<HTMLElsaCanvasElement>;
-        "getWorkflow": () => Promise<WorkflowDefinition>;
-        "importWorkflow": (workflowDefinition: WorkflowDefinition, workflowInstance?: WorkflowInstance) => Promise<void>;
+        "getWorkflowDefinition": () => Promise<WorkflowDefinition>;
+        "importWorkflow": (workflowDefinition: WorkflowDefinition) => Promise<void>;
         "monacoLibPath": string;
         "newWorkflow": () => Promise<void>;
         "registerActivityDrivers": (register: (registry: ActivityDriverRegistry) => void) => Promise<void>;
         "updateWorkflowDefinition": (workflowDefinition: WorkflowDefinition) => Promise<void>;
+        "workflowDefinition"?: WorkflowDefinition;
+    }
+    interface ElsaWorkflowDefinitionEditorToolbox {
+        "graph": Graph;
+    }
+    interface ElsaWorkflowDefinitionEditorToolboxActivities {
+        "activityDescriptors": Array<ActivityDescriptor>;
+        "graph": Graph;
+    }
+    interface ElsaWorkflowDefinitionPropertiesEditor {
+        "hide": () => Promise<void>;
+        "show": () => Promise<void>;
+        "workflowDefinition"?: WorkflowDefinition;
     }
     interface ElsaWorkflowInstanceBrowser {
         "hide": () => Promise<void>;
         "show": () => Promise<void>;
     }
-    interface ElsaWorkflowPropertiesEditor {
+    interface ElsaWorkflowInstanceProperties {
         "hide": () => Promise<void>;
         "show": () => Promise<void>;
         "workflowDefinition"?: WorkflowDefinition;
+        "workflowInstance"?: WorkflowInstance;
+    }
+    interface ElsaWorkflowInstanceViewer {
+        "activityDescriptors": Array<ActivityDescriptor>;
+        "getCanvas": () => Promise<HTMLElsaCanvasElement>;
+        "getWorkflow": () => Promise<WorkflowDefinition>;
+        "importWorkflow": (workflowDefinition: WorkflowDefinition, workflowInstance: WorkflowInstance) => Promise<void>;
+        "monacoLibPath": string;
+        "registerActivityDrivers": (register: (registry: ActivityDriverRegistry) => void) => Promise<void>;
+        "updateWorkflowDefinition": (workflowDefinition: WorkflowDefinition) => Promise<void>;
+        "workflowDefinition": WorkflowDefinition;
+        "workflowInstance": WorkflowInstance;
+    }
+    interface ElsaWorkflowManager {
+        "activityDescriptors": Array<ActivityDescriptor>;
+        "getWorkflowDefinition": () => Promise<WorkflowDefinition>;
+        "monacoLibPath": string;
+        /**
+          * Updates the workflow definition without importing it into the designer.
+         */
+        "updateWorkflowDefinition": (workflowDefinition: WorkflowDefinition) => Promise<void>;
+        "workflowDefinition"?: WorkflowDefinition;
+        "workflowInstance"?: WorkflowInstance;
     }
     interface ElsaWorkflowPublishButton {
         "publishing": boolean;
@@ -215,6 +250,12 @@ export namespace Components {
     }
 }
 declare global {
+    interface HTMLElsaActivityPropertiesElement extends Components.ElsaActivityProperties, HTMLStencilElement {
+    }
+    var HTMLElsaActivityPropertiesElement: {
+        prototype: HTMLElsaActivityPropertiesElement;
+        new (): HTMLElsaActivityPropertiesElement;
+    };
     interface HTMLElsaActivityPropertiesEditorElement extends Components.ElsaActivityPropertiesEditor, HTMLStencilElement {
     }
     var HTMLElsaActivityPropertiesEditorElement: {
@@ -389,18 +430,6 @@ declare global {
         prototype: HTMLElsaSwitchEditorElement;
         new (): HTMLElsaSwitchEditorElement;
     };
-    interface HTMLElsaToolboxElement extends Components.ElsaToolbox, HTMLStencilElement {
-    }
-    var HTMLElsaToolboxElement: {
-        prototype: HTMLElsaToolboxElement;
-        new (): HTMLElsaToolboxElement;
-    };
-    interface HTMLElsaToolboxActivitiesElement extends Components.ElsaToolboxActivities, HTMLStencilElement {
-    }
-    var HTMLElsaToolboxActivitiesElement: {
-        prototype: HTMLElsaToolboxActivitiesElement;
-        new (): HTMLElsaToolboxActivitiesElement;
-    };
     interface HTMLElsaTooltipElement extends Components.ElsaTooltip, HTMLStencilElement {
     }
     var HTMLElsaTooltipElement: {
@@ -413,11 +442,29 @@ declare global {
         prototype: HTMLElsaWorkflowDefinitionBrowserElement;
         new (): HTMLElsaWorkflowDefinitionBrowserElement;
     };
-    interface HTMLElsaWorkflowEditorElement extends Components.ElsaWorkflowEditor, HTMLStencilElement {
+    interface HTMLElsaWorkflowDefinitionEditorElement extends Components.ElsaWorkflowDefinitionEditor, HTMLStencilElement {
     }
-    var HTMLElsaWorkflowEditorElement: {
-        prototype: HTMLElsaWorkflowEditorElement;
-        new (): HTMLElsaWorkflowEditorElement;
+    var HTMLElsaWorkflowDefinitionEditorElement: {
+        prototype: HTMLElsaWorkflowDefinitionEditorElement;
+        new (): HTMLElsaWorkflowDefinitionEditorElement;
+    };
+    interface HTMLElsaWorkflowDefinitionEditorToolboxElement extends Components.ElsaWorkflowDefinitionEditorToolbox, HTMLStencilElement {
+    }
+    var HTMLElsaWorkflowDefinitionEditorToolboxElement: {
+        prototype: HTMLElsaWorkflowDefinitionEditorToolboxElement;
+        new (): HTMLElsaWorkflowDefinitionEditorToolboxElement;
+    };
+    interface HTMLElsaWorkflowDefinitionEditorToolboxActivitiesElement extends Components.ElsaWorkflowDefinitionEditorToolboxActivities, HTMLStencilElement {
+    }
+    var HTMLElsaWorkflowDefinitionEditorToolboxActivitiesElement: {
+        prototype: HTMLElsaWorkflowDefinitionEditorToolboxActivitiesElement;
+        new (): HTMLElsaWorkflowDefinitionEditorToolboxActivitiesElement;
+    };
+    interface HTMLElsaWorkflowDefinitionPropertiesEditorElement extends Components.ElsaWorkflowDefinitionPropertiesEditor, HTMLStencilElement {
+    }
+    var HTMLElsaWorkflowDefinitionPropertiesEditorElement: {
+        prototype: HTMLElsaWorkflowDefinitionPropertiesEditorElement;
+        new (): HTMLElsaWorkflowDefinitionPropertiesEditorElement;
     };
     interface HTMLElsaWorkflowInstanceBrowserElement extends Components.ElsaWorkflowInstanceBrowser, HTMLStencilElement {
     }
@@ -425,11 +472,23 @@ declare global {
         prototype: HTMLElsaWorkflowInstanceBrowserElement;
         new (): HTMLElsaWorkflowInstanceBrowserElement;
     };
-    interface HTMLElsaWorkflowPropertiesEditorElement extends Components.ElsaWorkflowPropertiesEditor, HTMLStencilElement {
+    interface HTMLElsaWorkflowInstancePropertiesElement extends Components.ElsaWorkflowInstanceProperties, HTMLStencilElement {
     }
-    var HTMLElsaWorkflowPropertiesEditorElement: {
-        prototype: HTMLElsaWorkflowPropertiesEditorElement;
-        new (): HTMLElsaWorkflowPropertiesEditorElement;
+    var HTMLElsaWorkflowInstancePropertiesElement: {
+        prototype: HTMLElsaWorkflowInstancePropertiesElement;
+        new (): HTMLElsaWorkflowInstancePropertiesElement;
+    };
+    interface HTMLElsaWorkflowInstanceViewerElement extends Components.ElsaWorkflowInstanceViewer, HTMLStencilElement {
+    }
+    var HTMLElsaWorkflowInstanceViewerElement: {
+        prototype: HTMLElsaWorkflowInstanceViewerElement;
+        new (): HTMLElsaWorkflowInstanceViewerElement;
+    };
+    interface HTMLElsaWorkflowManagerElement extends Components.ElsaWorkflowManager, HTMLStencilElement {
+    }
+    var HTMLElsaWorkflowManagerElement: {
+        prototype: HTMLElsaWorkflowManagerElement;
+        new (): HTMLElsaWorkflowManagerElement;
     };
     interface HTMLElsaWorkflowPublishButtonElement extends Components.ElsaWorkflowPublishButton, HTMLStencilElement {
     }
@@ -450,6 +509,7 @@ declare global {
         new (): HTMLElsaWorkflowToolbarMenuElement;
     };
     interface HTMLElementTagNameMap {
+        "elsa-activity-properties": HTMLElsaActivityPropertiesElement;
         "elsa-activity-properties-editor": HTMLElsaActivityPropertiesEditorElement;
         "elsa-button-group": HTMLElsaButtonGroupElement;
         "elsa-canvas": HTMLElsaCanvasElement;
@@ -479,19 +539,26 @@ declare global {
         "elsa-slide-over-panel": HTMLElsaSlideOverPanelElement;
         "elsa-studio": HTMLElsaStudioElement;
         "elsa-switch-editor": HTMLElsaSwitchEditorElement;
-        "elsa-toolbox": HTMLElsaToolboxElement;
-        "elsa-toolbox-activities": HTMLElsaToolboxActivitiesElement;
         "elsa-tooltip": HTMLElsaTooltipElement;
         "elsa-workflow-definition-browser": HTMLElsaWorkflowDefinitionBrowserElement;
-        "elsa-workflow-editor": HTMLElsaWorkflowEditorElement;
+        "elsa-workflow-definition-editor": HTMLElsaWorkflowDefinitionEditorElement;
+        "elsa-workflow-definition-editor-toolbox": HTMLElsaWorkflowDefinitionEditorToolboxElement;
+        "elsa-workflow-definition-editor-toolbox-activities": HTMLElsaWorkflowDefinitionEditorToolboxActivitiesElement;
+        "elsa-workflow-definition-properties-editor": HTMLElsaWorkflowDefinitionPropertiesEditorElement;
         "elsa-workflow-instance-browser": HTMLElsaWorkflowInstanceBrowserElement;
-        "elsa-workflow-properties-editor": HTMLElsaWorkflowPropertiesEditorElement;
+        "elsa-workflow-instance-properties": HTMLElsaWorkflowInstancePropertiesElement;
+        "elsa-workflow-instance-viewer": HTMLElsaWorkflowInstanceViewerElement;
+        "elsa-workflow-manager": HTMLElsaWorkflowManagerElement;
         "elsa-workflow-publish-button": HTMLElsaWorkflowPublishButtonElement;
         "elsa-workflow-toolbar": HTMLElsaWorkflowToolbarElement;
         "elsa-workflow-toolbar-menu": HTMLElsaWorkflowToolbarMenuElement;
     }
 }
 declare namespace LocalJSX {
+    interface ElsaActivityProperties {
+        "activity"?: Activity;
+        "activityDescriptors"?: Array<ActivityDescriptor>;
+    }
     interface ElsaActivityPropertiesEditor {
         "activity"?: Activity;
         "activityDescriptors"?: Array<ActivityDescriptor>;
@@ -536,11 +603,12 @@ declare namespace LocalJSX {
     }
     interface ElsaFormPanel {
         "actions"?: Array<ActionDefinition>;
-        "headerText"?: string;
+        "mainTitle"?: string;
         "onActionInvoked"?: (event: CustomEvent<ActionInvokedArgs>) => void;
         "onSelectedTabIndexChanged"?: (event: CustomEvent<TabChangedArgs>) => void;
         "onSubmitted"?: (event: CustomEvent<FormData>) => void;
         "selectedTabIndex"?: number;
+        "subTitle"?: string;
         "tabs"?: Array<TabDefinition>;
     }
     interface ElsaInputControlSwitch {
@@ -642,13 +710,6 @@ declare namespace LocalJSX {
     interface ElsaSwitchEditor {
         "inputContext"?: ActivityInputContext;
     }
-    interface ElsaToolbox {
-        "graph"?: Graph;
-    }
-    interface ElsaToolboxActivities {
-        "activityDescriptors"?: Array<ActivityDescriptor>;
-        "graph"?: Graph;
-    }
     interface ElsaTooltip {
         "tooltipContent"?: any;
         "tooltipPosition"?: string;
@@ -656,19 +717,41 @@ declare namespace LocalJSX {
     interface ElsaWorkflowDefinitionBrowser {
         "onWorkflowDefinitionSelected"?: (event: CustomEvent<WorkflowDefinitionSummary>) => void;
     }
-    interface ElsaWorkflowEditor {
+    interface ElsaWorkflowDefinitionEditor {
         "activityDescriptors"?: Array<ActivityDescriptor>;
         "monacoLibPath"?: string;
-        "onWorkflowLabelsUpdated"?: (event: CustomEvent<WorkflowLabelsUpdatedArgs>) => void;
-        "onWorkflowUpdated"?: (event: CustomEvent<WorkflowUpdatedArgs>) => void;
+        "onWorkflowUpdated"?: (event: CustomEvent<WorkflowDefinitionUpdatedArgs>) => void;
+        "workflowDefinition"?: WorkflowDefinition;
+    }
+    interface ElsaWorkflowDefinitionEditorToolbox {
+        "graph"?: Graph;
+    }
+    interface ElsaWorkflowDefinitionEditorToolboxActivities {
+        "activityDescriptors"?: Array<ActivityDescriptor>;
+        "graph"?: Graph;
+    }
+    interface ElsaWorkflowDefinitionPropertiesEditor {
+        "onWorkflowPropsUpdated"?: (event: CustomEvent<WorkflowDefinitionPropsUpdatedArgs>) => void;
+        "workflowDefinition"?: WorkflowDefinition;
     }
     interface ElsaWorkflowInstanceBrowser {
         "onWorkflowInstanceSelected"?: (event: CustomEvent<WorkflowInstanceSummary>) => void;
     }
-    interface ElsaWorkflowPropertiesEditor {
-        "onWorkflowLabelsUpdated"?: (event: CustomEvent<WorkflowLabelsUpdatedArgs>) => void;
-        "onWorkflowPropsUpdated"?: (event: CustomEvent<WorkflowPropsUpdatedArgs>) => void;
+    interface ElsaWorkflowInstanceProperties {
         "workflowDefinition"?: WorkflowDefinition;
+        "workflowInstance"?: WorkflowInstance;
+    }
+    interface ElsaWorkflowInstanceViewer {
+        "activityDescriptors"?: Array<ActivityDescriptor>;
+        "monacoLibPath"?: string;
+        "workflowDefinition"?: WorkflowDefinition;
+        "workflowInstance"?: WorkflowInstance;
+    }
+    interface ElsaWorkflowManager {
+        "activityDescriptors"?: Array<ActivityDescriptor>;
+        "monacoLibPath"?: string;
+        "workflowDefinition"?: WorkflowDefinition;
+        "workflowInstance"?: WorkflowInstance;
     }
     interface ElsaWorkflowPublishButton {
         "onExportClicked"?: (event: CustomEvent<any>) => void;
@@ -683,6 +766,7 @@ declare namespace LocalJSX {
     interface ElsaWorkflowToolbarMenu {
     }
     interface IntrinsicElements {
+        "elsa-activity-properties": ElsaActivityProperties;
         "elsa-activity-properties-editor": ElsaActivityPropertiesEditor;
         "elsa-button-group": ElsaButtonGroup;
         "elsa-canvas": ElsaCanvas;
@@ -712,13 +796,16 @@ declare namespace LocalJSX {
         "elsa-slide-over-panel": ElsaSlideOverPanel;
         "elsa-studio": ElsaStudio;
         "elsa-switch-editor": ElsaSwitchEditor;
-        "elsa-toolbox": ElsaToolbox;
-        "elsa-toolbox-activities": ElsaToolboxActivities;
         "elsa-tooltip": ElsaTooltip;
         "elsa-workflow-definition-browser": ElsaWorkflowDefinitionBrowser;
-        "elsa-workflow-editor": ElsaWorkflowEditor;
+        "elsa-workflow-definition-editor": ElsaWorkflowDefinitionEditor;
+        "elsa-workflow-definition-editor-toolbox": ElsaWorkflowDefinitionEditorToolbox;
+        "elsa-workflow-definition-editor-toolbox-activities": ElsaWorkflowDefinitionEditorToolboxActivities;
+        "elsa-workflow-definition-properties-editor": ElsaWorkflowDefinitionPropertiesEditor;
         "elsa-workflow-instance-browser": ElsaWorkflowInstanceBrowser;
-        "elsa-workflow-properties-editor": ElsaWorkflowPropertiesEditor;
+        "elsa-workflow-instance-properties": ElsaWorkflowInstanceProperties;
+        "elsa-workflow-instance-viewer": ElsaWorkflowInstanceViewer;
+        "elsa-workflow-manager": ElsaWorkflowManager;
         "elsa-workflow-publish-button": ElsaWorkflowPublishButton;
         "elsa-workflow-toolbar": ElsaWorkflowToolbar;
         "elsa-workflow-toolbar-menu": ElsaWorkflowToolbarMenu;
@@ -728,6 +815,7 @@ export { LocalJSX as JSX };
 declare module "@stencil/core" {
     export namespace JSX {
         interface IntrinsicElements {
+            "elsa-activity-properties": LocalJSX.ElsaActivityProperties & JSXBase.HTMLAttributes<HTMLElsaActivityPropertiesElement>;
             "elsa-activity-properties-editor": LocalJSX.ElsaActivityPropertiesEditor & JSXBase.HTMLAttributes<HTMLElsaActivityPropertiesEditorElement>;
             "elsa-button-group": LocalJSX.ElsaButtonGroup & JSXBase.HTMLAttributes<HTMLElsaButtonGroupElement>;
             "elsa-canvas": LocalJSX.ElsaCanvas & JSXBase.HTMLAttributes<HTMLElsaCanvasElement>;
@@ -757,13 +845,16 @@ declare module "@stencil/core" {
             "elsa-slide-over-panel": LocalJSX.ElsaSlideOverPanel & JSXBase.HTMLAttributes<HTMLElsaSlideOverPanelElement>;
             "elsa-studio": LocalJSX.ElsaStudio & JSXBase.HTMLAttributes<HTMLElsaStudioElement>;
             "elsa-switch-editor": LocalJSX.ElsaSwitchEditor & JSXBase.HTMLAttributes<HTMLElsaSwitchEditorElement>;
-            "elsa-toolbox": LocalJSX.ElsaToolbox & JSXBase.HTMLAttributes<HTMLElsaToolboxElement>;
-            "elsa-toolbox-activities": LocalJSX.ElsaToolboxActivities & JSXBase.HTMLAttributes<HTMLElsaToolboxActivitiesElement>;
             "elsa-tooltip": LocalJSX.ElsaTooltip & JSXBase.HTMLAttributes<HTMLElsaTooltipElement>;
             "elsa-workflow-definition-browser": LocalJSX.ElsaWorkflowDefinitionBrowser & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionBrowserElement>;
-            "elsa-workflow-editor": LocalJSX.ElsaWorkflowEditor & JSXBase.HTMLAttributes<HTMLElsaWorkflowEditorElement>;
+            "elsa-workflow-definition-editor": LocalJSX.ElsaWorkflowDefinitionEditor & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionEditorElement>;
+            "elsa-workflow-definition-editor-toolbox": LocalJSX.ElsaWorkflowDefinitionEditorToolbox & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionEditorToolboxElement>;
+            "elsa-workflow-definition-editor-toolbox-activities": LocalJSX.ElsaWorkflowDefinitionEditorToolboxActivities & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionEditorToolboxActivitiesElement>;
+            "elsa-workflow-definition-properties-editor": LocalJSX.ElsaWorkflowDefinitionPropertiesEditor & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionPropertiesEditorElement>;
             "elsa-workflow-instance-browser": LocalJSX.ElsaWorkflowInstanceBrowser & JSXBase.HTMLAttributes<HTMLElsaWorkflowInstanceBrowserElement>;
-            "elsa-workflow-properties-editor": LocalJSX.ElsaWorkflowPropertiesEditor & JSXBase.HTMLAttributes<HTMLElsaWorkflowPropertiesEditorElement>;
+            "elsa-workflow-instance-properties": LocalJSX.ElsaWorkflowInstanceProperties & JSXBase.HTMLAttributes<HTMLElsaWorkflowInstancePropertiesElement>;
+            "elsa-workflow-instance-viewer": LocalJSX.ElsaWorkflowInstanceViewer & JSXBase.HTMLAttributes<HTMLElsaWorkflowInstanceViewerElement>;
+            "elsa-workflow-manager": LocalJSX.ElsaWorkflowManager & JSXBase.HTMLAttributes<HTMLElsaWorkflowManagerElement>;
             "elsa-workflow-publish-button": LocalJSX.ElsaWorkflowPublishButton & JSXBase.HTMLAttributes<HTMLElsaWorkflowPublishButtonElement>;
             "elsa-workflow-toolbar": LocalJSX.ElsaWorkflowToolbar & JSXBase.HTMLAttributes<HTMLElsaWorkflowToolbarElement>;
             "elsa-workflow-toolbar-menu": LocalJSX.ElsaWorkflowToolbarMenu & JSXBase.HTMLAttributes<HTMLElsaWorkflowToolbarMenuElement>;

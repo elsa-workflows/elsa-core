@@ -1,6 +1,6 @@
 import {Component, Event, EventEmitter, h, Host, Method, Prop, Watch} from '@stencil/core';
 import {initializeMonacoWorker, Monaco} from "./utils";
-import globalState from '../../../data/server-store';
+import monacoStore from '../../../data/monaco-store';
 
 export interface MonacoValueChangedArgs {
   value: string;
@@ -73,7 +73,7 @@ export class MonacoEditor {
   }
 
   public async componentWillLoad() {
-    const monacoLibPath = this.monacoLibPath || globalState.monacoLibPath;
+    const monacoLibPath = this.monacoLibPath || monacoStore.monacoLibPath;
     this.monaco = await initializeMonacoWorker(monacoLibPath);
   }
 

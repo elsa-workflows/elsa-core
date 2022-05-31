@@ -4,12 +4,18 @@ import {debounce} from 'lodash';
 import labelStore from './label-store';
 import {ElsaApiClientProvider, ElsaClient, EventBus} from "../../services";
 import {ToolbarDisplayingArgs, ToolbarEventTypes} from "../../components/toolbar/workflow-toolbar-menu/models";
-import {PropertiesTabModel, TabModel, WorkflowPropertiesEditorDisplayingArgs, WorkflowPropertiesEditorEventTypes} from "../../components/designer/workflow-properties-editor/models";
 import {FormEntry} from "../../components/shared/forms/form-entry";
-import {WorkflowDefinitionImportedArgs, WorkflowEditorEventTypes, WorkflowEditorReadyArgs} from "../../components/designer/workflow-editor/models";
 import {isNullOrWhitespace} from "../../utils";
 import {WorkflowDefinitionManager} from "../../services/workflow-definition-manager";
 import {LabelsApi, WorkflowDefinitionLabelsApi} from "./labels-api";
+import {
+  PropertiesTabModel,
+  WorkflowDefinitionImportedArgs,
+  WorkflowEditorEventTypes,
+  WorkflowEditorReadyArgs,
+  WorkflowPropertiesEditorDisplayingArgs,
+  WorkflowPropertiesEditorEventTypes
+} from "../../components/designer/workflow-definition-editor/models";
 
 @Component({
   tag: 'elsa-labels-widget',
@@ -21,10 +27,9 @@ export class LabelsWidget {
   private readonly labelsApi: LabelsApi;
   private readonly workflowDefinitionLabelsApi: WorkflowDefinitionLabelsApi;
   private readonly saveLabelsDebounced: () => void;
-  private workflowEditor: HTMLElsaWorkflowEditorElement;
+  private workflowEditor: HTMLElsaWorkflowDefinitionEditorElement;
   private labelsManager: HTMLElsaLabelsManagerElement;
   private elsaClient: ElsaClient;
-  private refreshWorkflowProperties: () => void;
   private definitionVersionId: string;
 
   constructor() {
@@ -55,7 +60,7 @@ export class LabelsWidget {
     let versionId = this.definitionVersionId;
 
     if (isNullOrWhitespace(versionId)) {
-      let definition = await this.workflowEditor.getWorkflow();
+      let definition = await this.workflowEditor.getWorkflowDefinition();
       definition = await this.workflowDefinitionManager.saveWorkflow(definition, false);
       await this.workflowEditor.updateWorkflowDefinition(definition);
       versionId = definition.id;
@@ -79,7 +84,6 @@ export class LabelsWidget {
 
   private onWorkflowPropertiesEditorDisplaying = (e: WorkflowPropertiesEditorDisplayingArgs) => {
     const propertiesTabModel = e.model.tabModels.find(x => x.name == 'properties') as PropertiesTabModel;
-    this.refreshWorkflowProperties = e.model.refresh;
 
     propertiesTabModel.Widgets.push({
       name: 'labelPicker',
@@ -106,7 +110,6 @@ export class LabelsWidget {
     const assignedLabelIds = await this.workflowDefinitionLabelsApi.get(workflowDefinition.id);
     this.assignedLabelIds = assignedLabelIds;
     this.definitionVersionId = workflowDefinition.id;
-    this.refreshWorkflowProperties();
   }
 
   private onLabelsMenuItemClicked = async () => {

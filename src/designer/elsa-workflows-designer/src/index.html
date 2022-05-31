@@ -15,7 +15,7 @@
 <elsa-studio server="https://localhost:5001/elsa/api" monaco-lib-path="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.31.1/min">
   <elsa-workflow-toolbar></elsa-workflow-toolbar>
   <div class="absolute inset-0" style="top: 64px;">
-    <elsa-workflow-editor></elsa-workflow-editor>
+    <elsa-workflow-manager></elsa-workflow-manager>
     <elsa-labels-widget></elsa-labels-widget>
   </div>
   <!--  <elsa-workflow-editor></elsa-workflow-editor>-->
@@ -30,7 +30,7 @@
   const activityNameFormatter = Container.get(ActivityNameFormatter);
 
   // Install your preferred naming strategy:
-  activityNameFormatter.strategy = ActivityNameFormatter.CamelCaseStrategy;
+  activityNameFormatter.strategy = ActivityNameFormatter.PascalCaseStrategy;
 
   // Or install a custom name formatter strategy.
   //activityNameFormatter.strategy = context => `${stripActivityNameSpace(context.activityDescriptor.activityType)}_${context.count}`;

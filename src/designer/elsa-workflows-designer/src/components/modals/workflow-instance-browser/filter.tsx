@@ -1,12 +1,13 @@
 import {FunctionalComponent, h} from "@stencil/core";
 import {BulkActionsIcon, OrderByIcon, PageSizeIcon, WorkflowIcon, WorkflowStatusIcon} from "../../icons/tooling";
 import {DropdownButtonItem, DropdownButtonOrigin} from "../../shared/dropdown-button/models";
-import {OrderBy, WorkflowStatus, WorkflowDefinitionSummary} from "../../../models";
+import {OrderBy, WorkflowStatus, WorkflowDefinitionSummary, WorkflowSubStatus} from "../../../models";
 
 export interface FilterProps {
   pageSizeFilter: PageSizeFilterProps;
   workflowFilter: WorkflowFilterProps;
   statusFilter: StatusFilterProps;
+  subStatusFilter: SubStatusFilterProps;
   orderByFilter: OrderByFilterProps;
 }
 
@@ -26,13 +27,18 @@ export interface StatusFilterProps {
   onChange: (status: WorkflowStatus) => void;
 }
 
+export interface SubStatusFilterProps {
+  selectedStatus?: WorkflowSubStatus;
+  onChange: (status: WorkflowSubStatus) => void;
+}
+
 export interface OrderByFilterProps {
   selectedOrderBy?: OrderBy;
   onChange: (orderBy: OrderBy) => void;
 }
 
 
-export const Filter: FunctionalComponent<FilterProps> = ({pageSizeFilter, workflowFilter, statusFilter, orderByFilter}) => {
+export const Filter: FunctionalComponent<FilterProps> = ({pageSizeFilter, workflowFilter, statusFilter, subStatusFilter, orderByFilter}) => {
 
   return <div class="p-8 flex content-end justify-right bg-white space-x-4">
     <div class="flex-shrink-0">
@@ -44,6 +50,7 @@ export const Filter: FunctionalComponent<FilterProps> = ({pageSizeFilter, workfl
     <PageSizeFilter {...pageSizeFilter}/>
     <WorkflowFilter {...workflowFilter}/>
     <StatusFilter {...statusFilter}/>
+    <SubStatusFilter {...subStatusFilter}/>
     <OrderByFilter {...orderByFilter} />
   </div>;
 }
@@ -108,12 +115,24 @@ const WorkflowFilter: FunctionalComponent<WorkflowFilterProps> = ({workflows, se
 
 const StatusFilter: FunctionalComponent<StatusFilterProps> = ({selectedStatus, onChange}) => {
   const selectedStatusText = !!selectedStatus ? selectedStatus : 'Status';
-  const statuses: Array<WorkflowStatus> = [null, WorkflowStatus.Running, WorkflowStatus.Suspended, WorkflowStatus.Finished, WorkflowStatus.Compensating, WorkflowStatus.Faulted, WorkflowStatus.Cancelled, WorkflowStatus.Idle];
-  const items: Array<DropdownButtonItem> = statuses.map(x => ({text: x ?? 'All', isSelected: x == selectedStatus, value: x}));
+  const statuses: Array<WorkflowStatus> = [null, WorkflowStatus.Running, WorkflowStatus.Finished];
+  const statusOptions: Array<DropdownButtonItem> = statuses.map(x => ({text: x ?? 'All', isSelected: x == selectedStatus, value: x}));
   const onStatusChanged = (e: CustomEvent<DropdownButtonItem>) => onChange(e.detail.value);
 
   return <elsa-dropdown-button
-    text={selectedStatusText} items={items} icon={<WorkflowStatusIcon/>}
+    text={selectedStatusText} items={statusOptions} icon={<WorkflowStatusIcon/>}
+    origin={DropdownButtonOrigin.TopRight}
+    onItemSelected={onStatusChanged}/>
+}
+
+const SubStatusFilter: FunctionalComponent<SubStatusFilterProps> = ({selectedStatus, onChange}) => {
+  const selectedSubStatusText = !!selectedStatus ? selectedStatus : 'Sub status';
+  const subStatuses: Array<WorkflowSubStatus> = [null, WorkflowSubStatus.Executing, WorkflowSubStatus.Suspended, WorkflowSubStatus.Finished, WorkflowSubStatus.Faulted, WorkflowSubStatus.Cancelled];
+  const subStatusOptions: Array<DropdownButtonItem> = subStatuses.map(x => ({text: x ?? 'All', isSelected: x == selectedStatus, value: x}));
+  const onStatusChanged = (e: CustomEvent<DropdownButtonItem>) => onChange(e.detail.value);
+
+  return <elsa-dropdown-button
+    text={selectedSubStatusText} items={subStatusOptions} icon={<WorkflowStatusIcon/>}
     origin={DropdownButtonOrigin.TopRight}
     onItemSelected={onStatusChanged}/>
 }

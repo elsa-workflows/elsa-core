@@ -13,11 +13,3 @@ export interface ContainerSelectedArgs {
 export interface GraphUpdatedArgs {
   exportGraph: () => Activity;
 }
-
-export interface ActivityPropertyChangedEventArgs {
-  activity: Activity;
-  activityDescriptor: ActivityDescriptor;
-  propertyName?: string;
-  inputDescriptor?: InputDescriptor;
-  workflowEditor: HTMLElsaWorkflowEditorElement;
-}

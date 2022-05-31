@@ -1,4 +1,4 @@
-import {OrderBy, OrderDirection, PagedList, VersionOptions, WorkflowInstance, WorkflowInstanceSummary, WorkflowStatus} from "../../models";
+import {OrderBy, OrderDirection, PagedList, VersionOptions, WorkflowInstance, WorkflowInstanceSummary, WorkflowStatus, WorkflowSubStatus} from "../../models";
 import {AxiosInstance} from "axios";
 import {getVersionOptionsString, serializeQueryString} from "../../utils";
 
@@ -19,7 +19,8 @@ export interface ListWorkflowInstancesRequest {
   correlationId?: string;
   definitionIds?: Array<string>;
   versionOptions?: VersionOptions;
-  workflowStatus?: WorkflowStatus;
+  status?: WorkflowStatus;
+  subStatus?: WorkflowSubStatus;
   orderBy?: OrderBy;
   orderDirection?: OrderDirection;
   page?: number;
@@ -50,7 +51,8 @@ export class WorkflowInstancesApiImpl implements WorkflowInstancesApi {
       searchTerm: request.searchTerm,
       definitionId: request.definitionId,
       correlationId: request.correlationId,
-      workflowStatus: request.workflowStatus,
+      status: request.status,
+      subStatus: request.subStatus,
       orderBy: request.orderBy,
       orderDirection: request.orderDirection,
       page: request.page,

@@ -2,7 +2,7 @@ import {Component, h, Prop, State} from '@stencil/core';
 import {Graph} from '@antv/x6';
 
 @Component({
-  tag: 'elsa-toolbox',
+  tag: 'elsa-workflow-definition-editor-toolbox',
 })
 export class Toolbox {
   @Prop() graph: Graph;
@@ -35,7 +35,7 @@ export class Toolbox {
           </nav>
         </div>
 
-        <elsa-toolbox-activities
+        <elsa-workflow-definition-editor-toolbox-activities
           graph={this.graph}
           class={selectedTabIndex == 0 ? '' : 'hidden'}/>
 

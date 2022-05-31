@@ -1,17 +1,24 @@
-import {PagedList, WorkflowInstanceSummary, WorkflowStatus} from "../../../models";
+import {PagedList, WorkflowInstanceSummary, WorkflowStatus, WorkflowSubStatus} from "../../../models";
 
 const statusColorMap = {};
+const subStatusColorMap = {};
 
-statusColorMap[WorkflowStatus.Idle] = 'bg-gray-600';
 statusColorMap[WorkflowStatus.Running] = 'bg-rose-600';
-statusColorMap[WorkflowStatus.Suspended] = 'bg-blue-600';
 statusColorMap[WorkflowStatus.Finished] = 'bg-green-600';
-statusColorMap[WorkflowStatus.Faulted] = 'bg-red-600';
-statusColorMap[WorkflowStatus.Compensating] = 'bg-orange-600';
-statusColorMap[WorkflowStatus.Cancelled] = 'bg-gray-900';
+
+subStatusColorMap[WorkflowSubStatus.Executing] = 'bg-rose-600';
+subStatusColorMap[WorkflowSubStatus.Suspended] = 'bg-blue-600';
+subStatusColorMap[WorkflowSubStatus.Finished] = 'bg-green-600';
+subStatusColorMap[WorkflowSubStatus.Faulted] = 'bg-red-600';
+subStatusColorMap[WorkflowSubStatus.Compensating] = 'bg-orange-600';
+subStatusColorMap[WorkflowSubStatus.Cancelled] = 'bg-gray-900';
 
 export function getStatusColor(status: WorkflowStatus) {
-  return statusColorMap[status] ?? statusColorMap[WorkflowStatus.Idle];
+  return statusColorMap[status] ?? statusColorMap[WorkflowStatus.Running];
+}
+
+export function getSubStatusColor(status: WorkflowSubStatus) {
+  return subStatusColorMap[status] ?? statusColorMap[WorkflowSubStatus.Suspended];
 }
 
 export function updateSelectedWorkflowInstances(isChecked: boolean, workflowInstances: PagedList<WorkflowInstanceSummary>, selectedWorkflowInstanceIds: Array<string>) {

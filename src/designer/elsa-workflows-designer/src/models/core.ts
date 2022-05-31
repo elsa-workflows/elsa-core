@@ -1,6 +1,8 @@
 import {Type} from "./shared";
 import {Expression} from "./expressions";
 
+export type Lookup<T> = { [key: string]: T};
+
 export interface Activity {
   id: string;
   typeName: string;

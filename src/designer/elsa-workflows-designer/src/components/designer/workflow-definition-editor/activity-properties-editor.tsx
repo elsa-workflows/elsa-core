@@ -88,7 +88,7 @@ export class ActivityPropertiesEditor {
   }
 
   public render() {
-    const {activityDescriptor, title} = this.renderContext;
+    const {activity, activityDescriptor, title} = this.renderContext;
 
     const propertiesTab: TabDefinition = {
       displayText: 'Properties',
@@ -102,10 +102,15 @@ export class ActivityPropertiesEditor {
 
     const tabs = !!activityDescriptor ? [propertiesTab, commonTab] : [];
     const actions = [DefaultActions.Delete(this.onDeleteActivity)];
+    const mainTitle = activity.id;
+    const subTitle = activityDescriptor.displayName;
 
     return (
       <elsa-form-panel
-        headerText={title} tabs={tabs} selectedTabIndex={this.selectedTabIndex}
+        mainTitle={mainTitle}
+        subTitle={subTitle}
+        tabs={tabs}
+        selectedTabIndex={this.selectedTabIndex}
         onSelectedTabIndexChanged={e => this.onSelectedTabIndexChanged(e)}
         actions={actions}/>
     );

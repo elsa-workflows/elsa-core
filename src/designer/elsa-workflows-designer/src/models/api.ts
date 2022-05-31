@@ -56,8 +56,12 @@ export interface WorkflowDefinitionSummary {
 }
 
 export enum WorkflowStatus {
-  Idle = 'Idle',
   Running = 'Running',
+  Finished = 'Finished'
+}
+
+export enum WorkflowSubStatus {
+  Executing = 'Executing',
   Suspended = 'Suspended',
   Finished = 'Finished',
   Compensating = 'Compensating',
@@ -81,7 +85,8 @@ export interface WorkflowInstanceSummary {
   definitionId: string;
   definitionVersionId: string;
   version: number;
-  workflowStatus: WorkflowStatus;
+  status: WorkflowStatus;
+  subStatus: WorkflowSubStatus;
   correlationId: string;
   name?: string;
   createdAt: Date;

@@ -1,10 +1,9 @@
 import 'reflect-metadata';
 import {Container, Service} from "typedi";
-import {ActivityPropertyChangedEventArgs, EventTypes} from "../../models";
 import {SwitchActivity} from "./models";
 import {EventBus} from "../../services";
 import {SwitchPlugin} from "./switch-plugin";
-import {WorkflowEditorEventTypes} from "../../components/designer/workflow-editor/models";
+import {ActivityPropertyChangedEventArgs, WorkflowEditorEventTypes} from "../../components/designer/workflow-definition-editor/models";
 
 @Service()
 export class SwitchPortUpdater {
