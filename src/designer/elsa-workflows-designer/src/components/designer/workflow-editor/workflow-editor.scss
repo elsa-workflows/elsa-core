@@ -1,19 +1,21 @@
-$activity-picker-width: 300px;
-$activity-editor-width: 580px;
+:root {
+  --activity-editor-width: 580px;
+  --activity-picker-width: 300px;
+}
 
 elsa-canvas {
-  left: $activity-picker-width;
+  left: var(--activity-picker-width);
   top: 0;
-  right: $activity-editor-width;
+  right: var(--activity-editor-width);
   bottom: 0;
 }
 
 elsa-panel.panel-state-expanded.elsa-activity-picker-container {
-  width: $activity-picker-width;
+  width: var(--activity-picker-width);
 }
 
 elsa-panel.panel-state-expanded.elsa-activity-editor-container {
-  width: $activity-editor-width;
+  width: var(--activity-editor-width);
   right: 0;
   left: unset;
 }
