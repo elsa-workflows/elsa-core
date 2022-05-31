@@ -105,7 +105,7 @@ export class ActivityPropertiesEditor {
 
     return (
       <elsa-form-panel
-        headerText={title} tabs={tabs} selectedTabIndex={this.selectedTabIndex}
+        mainTitle={title} tabs={tabs} selectedTabIndex={this.selectedTabIndex}
         onSelectedTabIndexChanged={e => this.onSelectedTabIndexChanged(e)}
         actions={actions}/>
     );

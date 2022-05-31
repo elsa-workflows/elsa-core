@@ -48,7 +48,7 @@ export class FormPanel {
               <div class="flex items-start justify-between space-x-3">
                 <div class="space-y-1">
                   <h2 class="text-lg font-medium text-gray-900" id="slide-over-title">
-                    {this.headerText}
+                    {this.mainTitle}
                   </h2>
                 </div>
               </div>
