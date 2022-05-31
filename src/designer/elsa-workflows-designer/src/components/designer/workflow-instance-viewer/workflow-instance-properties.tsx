@@ -1,6 +1,6 @@
 import {Component, Event, EventEmitter, h, Method, Prop, State, Watch} from '@stencil/core';
 import WorkflowEditorTunnel from '../state';
-import {TabChangedArgs, WorkflowDefinition} from '../../../models';
+import {TabChangedArgs, WorkflowDefinition, WorkflowInstance} from '../../../models';
 import {InfoList} from "../../shared/forms/info-list";
 import {isNullOrWhitespace} from "../../../utils";
 import {PropertiesTabModel, TabModel, WorkflowInstancePropertiesDisplayingArgs, WorkflowInstancePropertiesEventTypes, WorkflowInstancePropertiesViewerModel} from "./models";
@@ -23,6 +23,7 @@ export class WorkflowDefinitionPropertiesEditor {
   }
 
   @Prop() workflowDefinition?: WorkflowDefinition;
+  @Prop() workflowInstance?: WorkflowInstance;
   @State() private model: WorkflowInstancePropertiesViewerModel;
   @State() private selectedTabIndex: number = 0;
   @State() private changeHandle: object = {};
@@ -47,12 +48,15 @@ export class WorkflowDefinitionPropertiesEditor {
   }
 
   public render() {
-    const title = 'Workflow';
+    const workflowDefinition = this.workflowDefinition;
+    const title = !isNullOrWhitespace(workflowDefinition?.name) ? workflowDefinition.name : '-';
+    const subTitle='Workflow Instance';
     const tabs = this.model.tabModels.map(x => x.tab);
 
     return (
       <elsa-form-panel
         mainTitle={title}
+        subTitle={subTitle}
         tabs={tabs}
         selectedTabIndex={this.selectedTabIndex}
         onSelectedTabIndexChanged={e => this.onSelectedTabIndexChanged(e)}/>
@@ -65,8 +69,9 @@ export class WorkflowDefinitionPropertiesEditor {
     };
 
     const workflowDefinition = this.workflowDefinition;
+    const workflowInstance = this.workflowInstance;
 
-    if (!workflowDefinition) {
+    if (!workflowDefinition || !workflowInstance) {
       this.model = model;
       return;
     }
@@ -77,13 +82,13 @@ export class WorkflowDefinitionPropertiesEditor {
       Widgets: [{
         name: 'workflowInfo',
         content: () => {
-          const workflow = this.workflowDefinition;
 
           const workflowDetails = {
-            'Definition ID': isNullOrWhitespace(workflow.definitionId) ? '(new)' : workflow.definitionId,
-            'Version ID': isNullOrWhitespace(workflow.id) ? '(new)' : workflow.id,
-            'Version': workflow.version,
-            'Status': workflow.isPublished ? 'Published' : 'Draft'
+            'Instance ID': isNullOrWhitespace(workflowInstance.id) ? '(new)' : workflowInstance.id,
+            'Definition ID': isNullOrWhitespace(workflowDefinition.definitionId) ? '(new)' : workflowDefinition.definitionId,
+            'Version': workflowDefinition.version,
+            'Status': workflowInstance.status,
+            'Sub status': workflowInstance.subStatus
           };
 
           return <InfoList title="Information" dictionary={workflowDetails}/>;

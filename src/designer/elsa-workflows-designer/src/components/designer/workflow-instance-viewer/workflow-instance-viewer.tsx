@@ -151,7 +151,7 @@ export class WorkflowViewer {
     if (!!this.selectedActivity)
       return <div>Activity details here...</div>
 
-    return <elsa-workflow-instance-properties workflowDefinition={this.workflowDefinition}/>;
+    return <elsa-workflow-instance-properties workflowDefinition={this.workflowDefinition} workflowInstance={this.workflowInstance}/>;
   }
 
   private getWorkflowInternal = async (): Promise<WorkflowDefinition> => {

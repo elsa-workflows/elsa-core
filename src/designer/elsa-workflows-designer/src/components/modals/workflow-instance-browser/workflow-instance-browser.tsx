@@ -1,10 +1,10 @@
 import {Component, Event, EventEmitter, h, Host, Method, State} from '@stencil/core';
 import _ from 'lodash';
-import {DefaultActions, OrderBy, OrderDirection, PagedList, VersionOptions, WorkflowInstanceSummary, WorkflowStatus, WorkflowDefinitionSummary} from "../../../models";
+import {DefaultActions, OrderBy, OrderDirection, PagedList, VersionOptions, WorkflowInstanceSummary, WorkflowStatus, WorkflowDefinitionSummary, WorkflowSubStatus} from "../../../models";
 import {Container} from "typedi";
 import {ElsaApiClientProvider, ElsaClient} from "../../../services";
 import {DeleteIcon, EditIcon} from "../../icons/tooling";
-import {getStatusColor, updateSelectedWorkflowInstances} from "./utils";
+import {getStatusColor, getSubStatusColor, updateSelectedWorkflowInstances} from "./utils";
 import {formatTimestamp} from "../../../utils";
 import {PagerData} from "../../shared/pager/pager";
 import {Search} from "./search";
@@ -36,6 +36,7 @@ export class WorkflowInstanceBrowser {
   @State() private currentPageSize: number = WorkflowInstanceBrowser.DEFAULT_PAGE_SIZE;
   @State() private selectedWorkflowDefinitionId?: string;
   @State() private selectedStatus?: WorkflowStatus;
+  @State() private selectedSubStatus?: WorkflowSubStatus;
   @State() private orderBy?: OrderBy;
 
   @Method()
@@ -74,6 +75,10 @@ export class WorkflowInstanceBrowser {
       statusFilter: {
         selectedStatus: this.selectedStatus,
         onChange: this.onWorkflowStatusChanged
+      },
+      subStatusFilter: {
+        selectedStatus: this.selectedSubStatus,
+        onChange: this.onWorkflowSubStatusChanged
       },
       workflowFilter: {
         workflows: publishedOrLatestWorkflows,
@@ -116,7 +121,7 @@ export class WorkflowInstanceBrowser {
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-100">
                 {workflowInstances.items.map(workflowInstance => {
-                  const statusColor = getStatusColor(workflowInstance.workflowStatus);
+                  const statusColor = getSubStatusColor(workflowInstance.subStatus);
                   const isSelected = this.selectedWorkflowInstanceIds.findIndex(x => x === workflowInstance.id) >= 0;
                   const workflow: WorkflowDefinitionSummary = publishedOrLatestWorkflows.find(x => x.definitionId == workflowInstance.definitionId);
                   const workflowName = !!workflow ? (workflow.name || 'Untitled') : '(Definition not found)';
@@ -139,7 +144,7 @@ export class WorkflowInstanceBrowser {
                       <td>
                         <div class="flex items-center space-x-3 lg:pl-2">
                           <div class={`flex-shrink-0 w-2.5 h-2.5 rounded-full ${statusColor}`}/>
-                          <span>{workflowInstance.workflowStatus}</span>
+                          <span>{workflowInstance.status}</span>
                         </div>
                       </td>
                       <td class="optional">{formatTimestamp(workflowInstance.createdAt, '-')}</td>
@@ -178,7 +183,8 @@ export class WorkflowInstanceBrowser {
     const request: ListWorkflowInstancesRequest = {
       searchTerm: this.searchTerm,
       definitionId: this.selectedWorkflowDefinitionId,
-      workflowStatus: this.selectedStatus,
+      status: this.selectedStatus,
+      subStatus: this.selectedSubStatus,
       orderBy: this.orderBy,
       orderDirection: OrderDirection.Descending,
       page: this.currentPage,
@@ -233,6 +239,12 @@ export class WorkflowInstanceBrowser {
 
   private onWorkflowStatusChanged = async (status: WorkflowStatus) => {
     this.selectedStatus = status;
+    this.resetPagination();
+    await this.loadWorkflowInstances();
+  };
+
+  private onWorkflowSubStatusChanged = async (status: WorkflowSubStatus) => {
+    this.selectedSubStatus = status;
     this.resetPagination();
     await this.loadWorkflowInstances();
   };

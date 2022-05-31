@@ -32,8 +32,8 @@ public class List : Controller
         [FromQuery] string? definitionId,
         [FromQuery] string? correlationId,
         [FromQuery] int? version,
-        [FromQuery] WorkflowStatus? workflowStatus,
-        [FromQuery] WorkflowSubStatus? workflowSubStatus,
+        [FromQuery] WorkflowStatus? status,
+        [FromQuery] WorkflowSubStatus? subStatus,
         [FromQuery] OrderBy? orderBy,
         [FromQuery] OrderDirection? orderDirection,
         CancellationToken cancellationToken)
@@ -46,8 +46,8 @@ public class List : Controller
             definitionId,
             version,
             correlationId,
-            workflowStatus,
-            workflowSubStatus,
+            status,
+            subStatus,
             pageArgs,
             orderBy ?? OrderBy.Created,
             orderDirection ?? OrderDirection.Ascending);

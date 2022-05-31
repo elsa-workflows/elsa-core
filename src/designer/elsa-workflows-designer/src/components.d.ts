@@ -211,6 +211,7 @@ export namespace Components {
         "hide": () => Promise<void>;
         "show": () => Promise<void>;
         "workflowDefinition"?: WorkflowDefinition;
+        "workflowInstance"?: WorkflowInstance;
     }
     interface ElsaWorkflowInstanceViewer {
         "activityDescriptors": Array<ActivityDescriptor>;
@@ -721,6 +722,7 @@ declare namespace LocalJSX {
     }
     interface ElsaWorkflowInstanceProperties {
         "workflowDefinition"?: WorkflowDefinition;
+        "workflowInstance"?: WorkflowInstance;
     }
     interface ElsaWorkflowInstanceViewer {
         "activityDescriptors"?: Array<ActivityDescriptor>;
