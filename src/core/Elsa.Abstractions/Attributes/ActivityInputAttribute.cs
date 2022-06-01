@@ -74,5 +74,14 @@ namespace Elsa.Attributes
         /// A value indicating whether this property values should be used as outcomes in the workflow designer.
         /// </summary>
         public bool ConsiderValuesAsOutcomes { get; set; }
+
+        /// <summary>
+        /// A list of dependents property of the activity that can trigger event
+        /// </summary>
+        public string[]? DependsOnEvents { get; set; }
+        /// <summary>
+        /// A list of dependents property value of the activity that should be embedded with the event triggered
+        /// </summary>
+        public string[]? DependsOnValues { get; set; }
     }
 }

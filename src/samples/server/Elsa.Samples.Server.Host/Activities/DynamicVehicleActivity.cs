@@ -39,7 +39,8 @@ namespace Elsa.Samples.Server.Host.Activities
            OptionsProvider = typeof(DynamicVehicleActivity),
            DefaultSyntax = SyntaxNames.Literal,
            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid },
-           Options = new[] { "Brand"}
+           DependsOnEvents = new[] { "Brand"},
+           DependsOnValues = new[] {"Brand"}
        )]
 
         public string? Model { get; set; }
@@ -48,7 +49,8 @@ namespace Elsa.Samples.Server.Host.Activities
            OptionsProvider = typeof(DynamicVehicleActivity),
            DefaultSyntax = SyntaxNames.Literal,
            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid },
-           Options = new[] { "Model","Brand" }
+           DependsOnEvents = new[] { "Model" },
+           DependsOnValues = new[] { "Model", "Brand" }
         )]
         public string? Color { get; set; }
 
@@ -61,15 +63,10 @@ namespace Elsa.Samples.Server.Host.Activities
         /// </summary>
         public object GetOptions(PropertyInfo property) => new RuntimeSelectListProviderSettings(GetType(),
             new CascadingDropDownContext(property.Name,
-                ((String[])(property.GetCustomAttribute<ActivityInputAttribute>().Options))?.Take(1).ToArray(),
-                ((String[])(property.GetCustomAttribute<ActivityInputAttribute>().Options))
-
+                property.GetCustomAttribute<ActivityInputAttribute>().DependsOnEvents,
+                property.GetCustomAttribute<ActivityInputAttribute>().DependsOnValues
                 , new Dictionary<string, string>(), new DynamicVehicleContext(_random.Next(100))));
-        //    new {
-        //    RuntimeSelectList = new RuntimeSelectListProviderSettings(GetType(), new VehicleContext(_random.Next(100))),
-        //    PropertyName = property.Name,
-        //};
-
+       
         /// <summary>
         /// Invoked from an API endpoint that is invoked by the designer every time an activity editor for this activity is opened.
         /// </summary>
