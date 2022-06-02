@@ -186,6 +186,7 @@ export class Studio {
   }
 
   public async componentWillLoad() {
+    this.handleMonacoLibPath(this.monacoLibPath);
     this.handleServerUrl(this.serverUrl);
 
     const elsaClientProvider = Container.get(ElsaApiClientProvider);
