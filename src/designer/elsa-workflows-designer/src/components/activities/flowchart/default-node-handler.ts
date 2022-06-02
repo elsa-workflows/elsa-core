@@ -26,8 +26,8 @@ export class DefaultNodeHandler implements ActivityNodeHandler {
     if (inPorts.length == 1)
       inPorts[0].displayName = null;
 
-    if (outPorts.length == 0)
-      outPorts = [{name: 'Done', displayName: 'Done'}];
+    // In a flowchart, always add a Done port to connect the next node.
+    outPorts = [...outPorts, {name: 'Done', displayName: 'Done'}];
 
     if (outPorts.length == 1)
       outPorts[0].displayName = null;
