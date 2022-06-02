@@ -230,6 +230,8 @@ export namespace Components {
         "workflowDefinition": WorkflowDefinition;
         "workflowInstance": WorkflowInstance;
     }
+    interface ElsaWorkflowJournal {
+    }
     interface ElsaWorkflowManager {
         "activityDescriptors": Array<ActivityDescriptor>;
         "getWorkflowDefinition": () => Promise<WorkflowDefinition>;
@@ -484,6 +486,12 @@ declare global {
         prototype: HTMLElsaWorkflowInstanceViewerElement;
         new (): HTMLElsaWorkflowInstanceViewerElement;
     };
+    interface HTMLElsaWorkflowJournalElement extends Components.ElsaWorkflowJournal, HTMLStencilElement {
+    }
+    var HTMLElsaWorkflowJournalElement: {
+        prototype: HTMLElsaWorkflowJournalElement;
+        new (): HTMLElsaWorkflowJournalElement;
+    };
     interface HTMLElsaWorkflowManagerElement extends Components.ElsaWorkflowManager, HTMLStencilElement {
     }
     var HTMLElsaWorkflowManagerElement: {
@@ -548,6 +556,7 @@ declare global {
         "elsa-workflow-instance-browser": HTMLElsaWorkflowInstanceBrowserElement;
         "elsa-workflow-instance-properties": HTMLElsaWorkflowInstancePropertiesElement;
         "elsa-workflow-instance-viewer": HTMLElsaWorkflowInstanceViewerElement;
+        "elsa-workflow-journal": HTMLElsaWorkflowJournalElement;
         "elsa-workflow-manager": HTMLElsaWorkflowManagerElement;
         "elsa-workflow-publish-button": HTMLElsaWorkflowPublishButtonElement;
         "elsa-workflow-toolbar": HTMLElsaWorkflowToolbarElement;
@@ -747,6 +756,8 @@ declare namespace LocalJSX {
         "workflowDefinition"?: WorkflowDefinition;
         "workflowInstance"?: WorkflowInstance;
     }
+    interface ElsaWorkflowJournal {
+    }
     interface ElsaWorkflowManager {
         "activityDescriptors"?: Array<ActivityDescriptor>;
         "monacoLibPath"?: string;
@@ -805,6 +816,7 @@ declare namespace LocalJSX {
         "elsa-workflow-instance-browser": ElsaWorkflowInstanceBrowser;
         "elsa-workflow-instance-properties": ElsaWorkflowInstanceProperties;
         "elsa-workflow-instance-viewer": ElsaWorkflowInstanceViewer;
+        "elsa-workflow-journal": ElsaWorkflowJournal;
         "elsa-workflow-manager": ElsaWorkflowManager;
         "elsa-workflow-publish-button": ElsaWorkflowPublishButton;
         "elsa-workflow-toolbar": ElsaWorkflowToolbar;
@@ -854,6 +866,7 @@ declare module "@stencil/core" {
             "elsa-workflow-instance-browser": LocalJSX.ElsaWorkflowInstanceBrowser & JSXBase.HTMLAttributes<HTMLElsaWorkflowInstanceBrowserElement>;
             "elsa-workflow-instance-properties": LocalJSX.ElsaWorkflowInstanceProperties & JSXBase.HTMLAttributes<HTMLElsaWorkflowInstancePropertiesElement>;
             "elsa-workflow-instance-viewer": LocalJSX.ElsaWorkflowInstanceViewer & JSXBase.HTMLAttributes<HTMLElsaWorkflowInstanceViewerElement>;
+            "elsa-workflow-journal": LocalJSX.ElsaWorkflowJournal & JSXBase.HTMLAttributes<HTMLElsaWorkflowJournalElement>;
             "elsa-workflow-manager": LocalJSX.ElsaWorkflowManager & JSXBase.HTMLAttributes<HTMLElsaWorkflowManagerElement>;
             "elsa-workflow-publish-button": LocalJSX.ElsaWorkflowPublishButton & JSXBase.HTMLAttributes<HTMLElsaWorkflowPublishButtonElement>;
             "elsa-workflow-toolbar": LocalJSX.ElsaWorkflowToolbar & JSXBase.HTMLAttributes<HTMLElsaWorkflowToolbarElement>;

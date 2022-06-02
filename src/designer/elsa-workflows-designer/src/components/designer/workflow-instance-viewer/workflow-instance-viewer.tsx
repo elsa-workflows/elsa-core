@@ -134,7 +134,7 @@ export class WorkflowViewer {
             class="elsa-activity-picker-container"
             position={PanelPosition.Left}
             onExpandedStateChanged={e => this.onActivityPickerPanelStateChanged(e.detail)}>
-            {/*<elsa-toolbox ref={el => this.toolbox = el}/>*/}
+            <elsa-workflow-journal />
           </elsa-panel>
           <elsa-canvas
             class="absolute" ref={el => this.canvas = el}
