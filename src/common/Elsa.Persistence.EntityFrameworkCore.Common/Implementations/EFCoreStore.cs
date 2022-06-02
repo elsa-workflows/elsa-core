@@ -1,6 +1,8 @@
 using System.Linq.Expressions;
 using EFCore.BulkExtensions;
 using Elsa.Persistence.Common.Entities;
+using Elsa.Persistence.Common.Extensions;
+using Elsa.Persistence.Common.Models;
 using Elsa.Persistence.EntityFrameworkCore.Common.Extensions;
 using Elsa.Persistence.EntityFrameworkCore.Common.Services;
 using Microsoft.EntityFrameworkCore;
@@ -52,6 +54,28 @@ public class EFCoreStore<TDbContext, TEntity> : IStore<TDbContext, TEntity> wher
         return OnLoading(dbContext, entities);
     }
 
+    public async Task<Page<TEntity>> FindManyAsync<TKey>(
+        Expression<Func<TEntity, bool>> predicate,
+        Expression<Func<TEntity, TKey>> orderBy,
+        OrderDirection orderDirection = OrderDirection.Ascending,
+        PageArgs? pageArgs = default,
+        CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await CreateDbContextAsync(cancellationToken);
+        var set = dbContext.Set<TEntity>().Where(predicate);
+
+        set = orderDirection switch
+        {
+            OrderDirection.Ascending => set.OrderBy(orderBy),
+            OrderDirection.Descending => set.OrderByDescending(orderBy),
+            _ => set.OrderBy(orderBy)
+        };
+
+        var page = await set.PaginateAsync(pageArgs);
+        OnLoading(dbContext, page.Items);
+        return page;
+    }
+
     public async Task<bool> DeleteAsync(TEntity entity, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
@@ -82,8 +106,9 @@ public class EFCoreStore<TDbContext, TEntity> : IStore<TDbContext, TEntity> wher
         var queryable = query(set.AsQueryable());
 
         queryable = query(queryable);
+        var entities = await queryable.ToListAsync(cancellationToken);
 
-        return Load(dbContext, queryable).ToList();
+        return Load(dbContext, entities).ToList();
     }
 
     public async Task<bool> AnyAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)

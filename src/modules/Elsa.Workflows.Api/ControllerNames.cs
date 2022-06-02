@@ -8,4 +8,5 @@ public class ControllerNames
     public const string WorkflowInstances = "WorkflowInstances";
     public const string Labels = "Labels";
     public const string WorkflowDefinitionLabels = "WorkflowDefinitionLabels";
+    public const string WorkflowJournal = "WorkflowJournal";
 }

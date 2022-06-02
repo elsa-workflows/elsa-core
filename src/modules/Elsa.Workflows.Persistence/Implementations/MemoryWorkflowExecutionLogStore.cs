@@ -1,4 +1,6 @@
+using Elsa.Persistence.Common.Extensions;
 using Elsa.Persistence.Common.Implementations;
+using Elsa.Persistence.Common.Models;
 using Elsa.Workflows.Persistence.Entities;
 using Elsa.Workflows.Persistence.Services;
 
@@ -23,5 +25,16 @@ public class MemoryWorkflowExecutionLogStore : IWorkflowExecutionLogStore
     {
         _store.SaveMany(records);
         return Task.CompletedTask;
+    }
+
+    public Task<Page<WorkflowExecutionLogRecord>> FindManyByWorkflowInstanceIdAsync(string workflowInstanceId, PageArgs? pageArgs = default, CancellationToken cancellationToken = default)
+    {
+        var page = _store
+            .FindMany(
+                x => x.WorkflowInstanceId == workflowInstanceId, 
+                x => x.Timestamp)
+            .Paginate();
+        
+        return Task.FromResult(page);
     }
 }

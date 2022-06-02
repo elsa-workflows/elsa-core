@@ -27,7 +27,8 @@ public class WorkflowSerializerOptionsProvider
         var options = new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            PropertyNameCaseInsensitive = true
+            PropertyNameCaseInsensitive = true,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
         
         options.Converters.Add(Create<JsonStringEnumConverter>());

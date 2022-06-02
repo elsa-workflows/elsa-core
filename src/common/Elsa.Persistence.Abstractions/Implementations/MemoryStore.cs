@@ -15,6 +15,21 @@ public class MemoryStore<TEntity> where TEntity : Entity
 
     public TEntity? Find(Func<TEntity, bool> predicate) => Entities.Values.Where(predicate).FirstOrDefault();
     public IEnumerable<TEntity> FindMany(Func<TEntity, bool> predicate) => Entities.Values.Where(predicate);
+    
+    public IEnumerable<TEntity> FindMany<TKey>(Func<TEntity, bool> predicate, Func<TEntity, TKey> orderBy, OrderDirection orderDirection = OrderDirection.Ascending)
+    {
+        var query = Entities.Values.Where(predicate);
+
+        query = orderDirection switch
+        {
+            OrderDirection.Ascending => query.OrderBy(orderBy),
+            OrderDirection.Descending => query.OrderByDescending(orderBy),
+            _ => query.OrderBy(orderBy)
+        };
+        
+        return query;
+    }
+
     public IEnumerable<TEntity> List() => Entities.Values;
 
     public bool Delete(string id) => Entities.Remove(id);

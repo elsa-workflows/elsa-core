@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using Elsa.Persistence.Common.Entities;
+using Elsa.Persistence.Common.Models;
 
 namespace Elsa.Persistence.EntityFrameworkCore.Common.Services;
 
@@ -10,6 +11,14 @@ public interface IStore<TDbContext, TEntity> where TEntity : Entity
     Task SaveManyAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default);
     Task<TEntity?> FindAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default);
     Task<IEnumerable<TEntity>> FindManyAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default);
+
+    Task<Page<TEntity>> FindManyAsync<TKey>(
+        Expression<Func<TEntity, bool>> predicate,
+        Expression<Func<TEntity, TKey>> orderBy,
+        OrderDirection orderDirection = OrderDirection.Ascending,
+        PageArgs? pageArgs = default,
+        CancellationToken cancellationToken = default);
+    
     Task<bool> DeleteAsync(TEntity entity, CancellationToken cancellationToken = default);
     Task<int> DeleteManyAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default);
     Task<int> DeleteWhereAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default);
