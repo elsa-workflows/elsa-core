@@ -29,6 +29,7 @@ export class WorkflowDefinitionBrowser {
   @State() private currentPage: number = 0;
   @State() private currentPageSize: number = WorkflowDefinitionBrowser.DEFAULT_PAGE_SIZE;
   @State() private orderBy?: WorkflowDefinitionsOrderBy;
+  @State() private labels?: string[];
   @State() private selectAllChecked: boolean;
   @Method()
   public async show() {
@@ -107,6 +108,7 @@ export class WorkflowDefinitionBrowser {
       pageSize: this.currentPageSize,
       versionOptions: { isLatest: true },
       orderBy: this.orderBy,
+      label: this.labels,
     });
     const unpublishedWorkflowDefinitionIds = latestWorkflowDefinitions.items.filter(x => !x.isPublished).map(x => x.definitionId);
     this.publishedWorkflowDefinitions = await elsaClient.workflowDefinitions.list({
@@ -132,6 +134,12 @@ export class WorkflowDefinitionBrowser {
       orderByFilter: {
         selectedOrderBy: this.orderBy,
         onChange: this.onOrderByChanged,
+      },
+      labelFilter: {
+        selectedLabels: this.labels,
+        onSelectedLabelsChanged: this.onLabelChange,
+        buttonClass: 'text-gray-500 hover:text-gray-300',
+        containerClass: 'mt-1.5',
       },
       onBulkDelete: this.onDeleteManyClick,
       onBulkPublish: this.onPublishManyClick,
@@ -251,6 +259,11 @@ export class WorkflowDefinitionBrowser {
 
   private onOrderByChanged = async (orderBy: WorkflowDefinitionsOrderBy) => {
     this.orderBy = orderBy;
+    await this.loadWorkflowDefinitions();
+  };
+
+  private onLabelChange = async (e: CustomEvent<Array<string>>) => {
+    this.labels = e.detail;
     await this.loadWorkflowDefinitions();
   };
 

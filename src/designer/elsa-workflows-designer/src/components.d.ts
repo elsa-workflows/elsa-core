@@ -119,6 +119,8 @@ export namespace Components {
         "label": Label;
     }
     interface ElsaLabelPicker {
+        "buttonClass"?: string;
+        "containerClass"?: string;
         "selectedLabels": Array<string>;
     }
     interface ElsaLabelsManager {
@@ -649,6 +651,8 @@ declare namespace LocalJSX {
         "onLabelUpdated"?: (event: CustomEvent<UpdateLabelEventArgs>) => void;
     }
     interface ElsaLabelPicker {
+        "buttonClass"?: string;
+        "containerClass"?: string;
         "onSelectedLabelsChanged"?: (event: CustomEvent<Array<string>>) => void;
         "selectedLabels"?: Array<string>;
     }

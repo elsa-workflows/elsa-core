@@ -88,6 +88,7 @@ export interface ListWorkflowDefinitionsRequest {
   versionOptions?: VersionOptions;
   materializerName?: string;
   orderBy?: WorkflowDefinitionsOrderBy;
+  label?: Array<string>;
 }
 
 export interface DeleteManyWorkflowDefinitionResponse {
@@ -154,6 +155,8 @@ export class WorkflowDefinitionsApiImpl implements WorkflowDefinitionsApi {
     if (!!request.pageSize) queryString.pageSize = request.pageSize;
 
     if (!!request.pageSize) queryString.orderBy = request.orderBy;
+
+    if (!!request.label) queryString.label = request.label;
 
     const queryStringText = serializeQueryString(queryString);
     const response = await this.httpClient.get<PagedList<WorkflowDefinitionSummary>>(`workflow-definitions${queryStringText}`);

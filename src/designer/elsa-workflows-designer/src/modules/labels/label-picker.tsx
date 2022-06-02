@@ -25,6 +25,8 @@ export class LabelPicker {
   }
 
   @Prop() public selectedLabels: Array<string> = [];
+  @Prop() public buttonClass?: string = 'text-blue-500 hover:text-blue-300';
+  @Prop() public containerClass?: string;
 
   @Event() public selectedLabelsChanged: EventEmitter<Array<string>>;
 
@@ -43,12 +45,12 @@ export class LabelPicker {
   public render() {
     const selectedLabels = this.getFilteredSelectedLabels();
 
-    return <div class="flex">
+    return <div class={`flex ${this.containerClass}`}>
       <div class="flex flex-grow">
         {selectedLabels.map(this.renderLabel)}
       </div>
       <div class="relative">
-        <button onClick={e => this.toggleFlyoutPanel()} class="text-blue-500 hover:text-blue-300">
+        <button onClick={e => this.toggleFlyoutPanel()} class={this.buttonClass}>
           <ConfigIcon/>
         </button>
         {this.renderFlyout()}
