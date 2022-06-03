@@ -1,5 +1,4 @@
 import { FunctionalComponent, h } from '@stencil/core';
-import { OrderBy } from '../../../models';
 import { WorkflowDefinitionsOrderBy } from '../../../services/api-client/workflow-definitions-api';
 import { BulkActionsIcon, OrderByIcon, PageSizeIcon } from '../../icons/tooling';
 import { DropdownButtonItem, DropdownButtonOrigin } from '../../shared/dropdown-button/models';
@@ -14,9 +13,17 @@ export interface OrderByFilterProps {
   onChange: (orderBy: WorkflowDefinitionsOrderBy) => void;
 }
 
+export interface LabelFilterProps {
+  selectedLabels?: Array<string>;
+  onSelectedLabelsChanged: (e: CustomEvent<Array<string>>) => void;
+  buttonClass?: string;
+  containerClass?: string;
+}
+
 export interface FilterProps extends BulkActionsProps {
   pageSizeFilter: PageSizeFilterProps;
   orderByFilter: OrderByFilterProps;
+  labelFilter: LabelFilterProps;
 }
 
 export interface BulkActionsProps {
@@ -25,13 +32,16 @@ export interface BulkActionsProps {
   onBulkUnpublish: () => void;
 }
 
-export const Filter: FunctionalComponent<FilterProps> = ({ pageSizeFilter, orderByFilter, onBulkDelete, onBulkPublish, onBulkUnpublish }) => {
+export const Filter: FunctionalComponent<FilterProps> = ({ pageSizeFilter, orderByFilter, onBulkDelete, onBulkPublish, onBulkUnpublish, labelFilter }) => {
   return (
     <div class="p-8 flex content-end justify-right bg-white space-x-4">
       <div class="flex-shrink-0">
         <BulkActions onBulkDelete={onBulkDelete} onBulkPublish={onBulkPublish} onBulkUnpublish={onBulkUnpublish} />
       </div>
       <div class="flex-1">&nbsp;</div>
+
+      <elsa-label-picker {...labelFilter} />
+
       <PageSizeFilter {...pageSizeFilter} />
 
       <OrderByFilter {...orderByFilter} />
