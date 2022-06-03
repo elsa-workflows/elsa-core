@@ -24,10 +24,10 @@ public static class DictionaryExtensions
 
     public static T? GetOrAdd<T>(this IDictionary<string, object> dictionary, string key, Func<T> valueFactory) where T : notnull => dictionary.GetOrAdd<string, T>(key, valueFactory);
 
-    public static T? GetOrAdd<TKey, T>(this IDictionary<TKey, object> dictionary, TKey key, Func<T> valueFactory)
+    public static T GetOrAdd<TKey, T>(this IDictionary<TKey, object> dictionary, TKey key, Func<T> valueFactory)
     {
         if (dictionary.TryGetValue<TKey, T>(key, out var value))
-            return value;
+            return value!;
 
         value = valueFactory()!;
         dictionary.Add(key, value);
