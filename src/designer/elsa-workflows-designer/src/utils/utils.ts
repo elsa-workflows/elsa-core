@@ -70,6 +70,11 @@ export const isNullOrWhitespace = (input) => !input || !input.trim();
 
 export const serializeQueryString = (queryString: object): string => {
   const filteredItems = _(queryString).omitBy(_.isUndefined).omitBy(_.isNull).value();
-  const queryStringItems = _.map(filteredItems, (v, k) => `${k}=${v}`);
+  const queryStringItems = _.map(filteredItems, (v, k) => {
+    if (Array.isArray(v)) {
+      return v.map(item => `${k}=${item}`).join('&');
+    };
+    return `${k}=${v}`;
+  });
   return queryStringItems.length > 0 ? `?${queryStringItems.join('&')}` : '';
 };
