@@ -13,7 +13,7 @@ public class ForEach : Activity
 
     public ForEach()
     {
-        Behaviors.Add<BreakBehavior>();
+        Behaviors.Add<BreakBehavior>(this);
         Behaviors.Remove<AutoCompleteBehavior>();
     }
 

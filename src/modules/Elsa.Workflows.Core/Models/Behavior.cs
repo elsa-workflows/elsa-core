@@ -6,6 +6,12 @@ public abstract class Behavior : IBehavior
 {
     private readonly ICollection<SignalHandlerRegistration> _signalHandlers = new List<SignalHandlerRegistration>();
 
+    public Behavior(IActivity owner)
+    {
+        Owner = owner;
+    }
+
+    public IActivity Owner { get; }
     protected void OnSignalReceived(Type signalType, Func<object, SignalContext, ValueTask> handler) => _signalHandlers.Add(new SignalHandlerRegistration(signalType, handler));
     protected void OnSignalReceived<T>(Func<T, SignalContext, ValueTask> handler) => OnSignalReceived(typeof(T), (signal, context) => handler((T)signal, context));
 

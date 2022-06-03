@@ -20,7 +20,7 @@ public class For : Activity
     [JsonConstructor]
     public For()
     {
-        Behaviors.Add<BreakBehavior>();
+        Behaviors.Add<BreakBehavior>(this);
         Behaviors.Remove<AutoCompleteBehavior>();
     }
 

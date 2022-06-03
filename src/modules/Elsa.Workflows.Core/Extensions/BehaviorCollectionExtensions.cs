@@ -4,7 +4,7 @@ namespace Elsa.Workflows.Core;
 
 public static class BehaviorCollectionExtensions
 {
-    public static void Add<T>(this ICollection<IBehavior> behaviors) where T : IBehavior => behaviors.Add((T)Activator.CreateInstance(typeof(T))!);
+    public static void Add<T>(this ICollection<IBehavior> behaviors, IActivity owner) where T : IBehavior => behaviors.Add((T)Activator.CreateInstance(typeof(T), owner)!);
 
     public static void Remove<T>(this ICollection<IBehavior> behaviors) where T : IBehavior
     {

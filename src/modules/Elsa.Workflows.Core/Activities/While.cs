@@ -19,7 +19,7 @@ public class While : Activity
     public While(IActivity? body = default)
     {
         Body = body!;
-        Behaviors.Add<BreakBehavior>();
+        Behaviors.Add<BreakBehavior>(this);
         Behaviors.Remove<AutoCompleteBehavior>();
     }
 

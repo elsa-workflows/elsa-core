@@ -1,4 +1,5 @@
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.Behaviors;
 
@@ -7,6 +8,10 @@ namespace Elsa.Workflows.Core.Behaviors;
 /// </summary>
 public class AutoCompleteBehavior : Behavior
 {
+    public AutoCompleteBehavior(IActivity owner) : base(owner)
+    {
+    }
+    
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         // If the activity created any bookmarks, do not complete. 
