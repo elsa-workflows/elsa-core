@@ -36,13 +36,12 @@ public class ActivityInvokerMiddleware : IActivityExecutionMiddleware
         var executeDelegate = workflowExecution.ExecuteDelegate ?? (ExecuteActivityDelegate)Delegate.CreateDelegate(typeof(ExecuteActivityDelegate), activity, methodInfo);
 
         // Record executing event.
-        LogExecutionRecord(context, WorkflowExecutionLogEventNames.Executing);
+        _logger.LogTrace("Executing activity {ActivityId}", activity.Id);
 
         await executeDelegate(context);
 
         // Record executed event.
-        var payload = context.JournalData.Any() ? context.JournalData : default;
-        LogExecutionRecord(context, WorkflowExecutionLogEventNames.Executed, payload: payload);
+        _logger.LogTrace("Executed activity {ActivityId}", activity.Id);
 
         // Reset execute delegate.
         workflowExecution.ExecuteDelegate = null;
@@ -57,6 +56,4 @@ public class ActivityInvokerMiddleware : IActivityExecutionMiddleware
             workflowExecution.RegisterBookmarks(context.Bookmarks);
         }
     }
-
-    private void LogExecutionRecord(ActivityExecutionContext context, string eventName, string? message = default, string? source = default, object? payload = default) => context.AddExecutionLogEntry(eventName, message, source, payload);
 }

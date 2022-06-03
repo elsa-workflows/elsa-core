@@ -13,9 +13,6 @@ public static class ActivityExecutionContextExtensions
     public static T GetInput<T>(this ActivityExecutionContext context) => context.GetInput<T>(typeof(T).Name);
     public static T GetInput<T>(this ActivityExecutionContext context, string key) => (T)context.Input[key];
 
-    public static WorkflowExecutionLogEntry AddExecutionLogEntry(this ActivityExecutionContext context, string eventName, string? message = default, object? payload = default) =>
-        context.AddExecutionLogEntry(eventName, message, default, payload);
-
     public static WorkflowExecutionLogEntry AddExecutionLogEntry(this ActivityExecutionContext context, string eventName, string? message = default, string? source = default, object? payload = default)
     {
         var activity = context.Activity;
@@ -78,7 +75,7 @@ public static class ActivityExecutionContextExtensions
 
         return input;
     }
-    
+
     public static async Task<T?> EvaluateAsync<T>(this ActivityExecutionContext context, Input<T> input)
     {
         var evaluator = context.GetRequiredService<IExpressionEvaluator>();
@@ -87,7 +84,7 @@ public static class ActivityExecutionContextExtensions
         locationReference.Set(context, value);
         return value;
     }
-    
+
     /// <summary>
     /// Returns a flattened list of the current context's ancestors.
     /// </summary>
@@ -107,7 +104,7 @@ public static class ActivityExecutionContextExtensions
     /// Returns a flattened list of the current context's immediate children.
     /// </summary>
     /// <returns></returns>
-    public static IEnumerable<ActivityExecutionContext> GetChildren(this ActivityExecutionContext context) => 
+    public static IEnumerable<ActivityExecutionContext> GetChildren(this ActivityExecutionContext context) =>
         context.WorkflowExecutionContext.ActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context);
 
     /// <summary>
@@ -118,13 +115,13 @@ public static class ActivityExecutionContextExtensions
         // Detach child activity execution contexts.
         context.WorkflowExecutionContext.RemoveActivityExecutionContexts(context.GetChildren());
     }
-    
+
     /// <summary>
     /// Send a signal up the current branch.
     /// </summary>
     public static async ValueTask SignalAsync(this ActivityExecutionContext context, object signal)
     {
-        var ancestorContexts = context.GetAncestors();
+        var ancestorContexts = new[] { context }.Concat(context.GetAncestors());
 
         foreach (var ancestorContext in ancestorContexts)
         {
@@ -132,7 +129,7 @@ public static class ActivityExecutionContextExtensions
 
             if (ancestorContext.Activity is not ISignalHandler handler)
                 continue;
-            
+
             await handler.HandleSignalAsync(signal, signalContext);
 
             if (signalContext.StopPropagationRequested)

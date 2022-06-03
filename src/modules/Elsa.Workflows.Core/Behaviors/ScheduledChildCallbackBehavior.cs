@@ -16,8 +16,8 @@ public class ScheduledChildCallbackBehavior : Behavior
 
     private async ValueTask OnActivityCompletedAsync(ActivityCompleted signal, SignalContext context)
     {
-        var activityExecutionContext = context.ActivityExecutionContext;
-        var childActivityExecutionContext = context.SourceActivityExecutionContext;
+        var activityExecutionContext = context.ReceiverActivityExecutionContext;
+        var childActivityExecutionContext = context.SenderActivityExecutionContext;
         var childActivity = childActivityExecutionContext.Activity;
         var callbackEntry = activityExecutionContext.WorkflowExecutionContext.PopCompletionCallback(activityExecutionContext, childActivity);
 

@@ -28,7 +28,7 @@ public class Flowchart : Container
     
     private async ValueTask OnDescendantCompletedAsync(ActivityCompleted signal, SignalContext context)
     {
-        await ScheduleChildrenAsync(context.ActivityExecutionContext, context.SourceActivityExecutionContext.Activity);
+        await ScheduleChildrenAsync(context.ReceiverActivityExecutionContext, context.SenderActivityExecutionContext.Activity);
     }
 
     private async Task ScheduleChildrenAsync(ActivityExecutionContext context, IActivity parent)

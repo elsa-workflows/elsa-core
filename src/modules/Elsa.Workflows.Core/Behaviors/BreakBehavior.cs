@@ -20,10 +20,10 @@ public class BreakBehavior : Behavior
         context.StopPropagation();
 
         // Remove child activity execution contexts.
-        var childActivityExecutionContexts = context.ActivityExecutionContext.GetChildren().ToList();
-        context.ActivityExecutionContext.WorkflowExecutionContext.RemoveActivityExecutionContexts(childActivityExecutionContexts);
+        var childActivityExecutionContexts = context.ReceiverActivityExecutionContext.GetChildren().ToList();
+        context.ReceiverActivityExecutionContext.WorkflowExecutionContext.RemoveActivityExecutionContexts(childActivityExecutionContexts);
         
         // Mark this activity as completed.
-        await context.ActivityExecutionContext.CompleteActivityAsync();
+        await context.ReceiverActivityExecutionContext.CompleteActivityAsync();
     }
 }

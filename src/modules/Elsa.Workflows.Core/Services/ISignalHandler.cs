@@ -9,15 +9,28 @@ public interface ISignalHandler
 
 public class SignalContext
 {
-    public SignalContext(ActivityExecutionContext activityExecutionContext, ActivityExecutionContext sourceActivityExecutionContext, CancellationToken cancellationToken)
+    public SignalContext(ActivityExecutionContext receiverActivityExecutionContext, ActivityExecutionContext senderActivityExecutionContext, CancellationToken cancellationToken)
     {
-        ActivityExecutionContext = activityExecutionContext;
-        SourceActivityExecutionContext = sourceActivityExecutionContext;
+        ReceiverActivityExecutionContext = receiverActivityExecutionContext;
+        SenderActivityExecutionContext = senderActivityExecutionContext;
         CancellationToken = cancellationToken;
     }
 
-    public ActivityExecutionContext ActivityExecutionContext { get; init; }
-    public ActivityExecutionContext SourceActivityExecutionContext { get; init; }
+    /// <summary>
+    /// The <see cref="ActivityExecutionContext"/> receiving the signal.
+    /// </summary>
+    public ActivityExecutionContext ReceiverActivityExecutionContext { get; init; }
+    
+    /// <summary>
+    /// The <see cref="ActivityExecutionContext"/> sending the signal.
+    /// </summary>
+    public ActivityExecutionContext SenderActivityExecutionContext { get; init; }
+    
+    /// <summary>
+    /// Returns true if the receiver is the same as the sender.
+    /// </summary>
+    public bool IsSelf => SenderActivityExecutionContext.Activity == ReceiverActivityExecutionContext.Activity;
+    
     public CancellationToken CancellationToken { get; init; }
     internal bool StopPropagationRequested { get; private set; }
 

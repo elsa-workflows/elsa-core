@@ -54,6 +54,6 @@ public class Sequence : Container
     private void OnBreak(BreakSignal signal, SignalContext context)
     {
         // Clear any scheduled child completion callbacks, since we no longer want to schedule any sibling. 
-        context.ActivityExecutionContext.ClearCompletionCallbacks();
+        context.ReceiverActivityExecutionContext.ClearCompletionCallbacks();
     }
 }

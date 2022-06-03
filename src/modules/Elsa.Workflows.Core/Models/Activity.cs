@@ -14,9 +14,9 @@ public abstract class Activity : IActivity, ISignalHandler
     protected Activity()
     {
         TypeName = ActivityTypeNameHelper.GenerateTypeName(GetType());
+        Behaviors.Add<ExecutionLoggingBehavior>(this);
         Behaviors.Add<ScheduledChildCallbackBehavior>(this);
         Behaviors.Add<AutoCompleteBehavior>(this);
-        Behaviors.Add<CreateCompletedLogRecord>(this);
     }
 
     protected Activity(string activityType) : this()
