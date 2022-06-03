@@ -30,11 +30,12 @@ public class ForEach : Activity
     /// <summary>
     /// The current value being iterated.
     /// </summary>
-    public Variable CurrentValue { get; set; } = new();
+    public Variable CurrentValue { get; set; } = default!;
 
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         // Declare looping variable.
+        CurrentValue = new Variable($"{Id}_{nameof(CurrentValue)}");
         context.ExpressionExecutionContext.Register.Declare(CurrentValue);
 
         // Execute first iteration.
