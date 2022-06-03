@@ -5,16 +5,16 @@ using Elsa.Workflows.Core.Signals;
 namespace Elsa.Workflows.Core.Behaviors;
 
 /// <summary>
-/// Implements a "break" behavior that handles the <see cref="BreakSignal"/> signal.
+/// Implements a behavior that invokes "child completed" callbacks on parent activities.
 /// </summary>
 public class ScheduledChildCallbackBehavior : Behavior
 {
-    public ScheduledChildCallbackBehavior()
+    public ScheduledChildCallbackBehavior(IActivity owner) : base(owner)
     {
-        OnSignalReceived<ActivityCompleted>(OnChildActivityCompletedAsync);
+        OnSignalReceived<ActivityCompleted>(OnActivityCompletedAsync);
     }
 
-    private async ValueTask OnChildActivityCompletedAsync(ActivityCompleted signal, SignalContext context)
+    private async ValueTask OnActivityCompletedAsync(ActivityCompleted signal, SignalContext context)
     {
         var activityExecutionContext = context.ActivityExecutionContext;
         var childActivityExecutionContext = context.SourceActivityExecutionContext;
