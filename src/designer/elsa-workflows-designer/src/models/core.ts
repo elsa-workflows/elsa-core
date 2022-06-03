@@ -1,7 +1,7 @@
 import {Type} from "./shared";
 import {Expression} from "./expressions";
 
-export type Lookup<T> = { [key: string]: T};
+export type Lookup<T> = { [key: string]: T };
 
 export interface Activity {
   id: string;
@@ -77,6 +77,14 @@ export interface RegisterState {
 
 export interface RegisterLocation {
   value: any;
+}
+
+export interface WorkflowExecutionLogRecord {
+  id: string;
+  activityId: string;
+  activityType: string;
+  timestamp: Date;
+  eventName: string;
 }
 
 export enum SyntaxNames {

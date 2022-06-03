@@ -231,6 +231,7 @@ export namespace Components {
         "workflowInstance": WorkflowInstance;
     }
     interface ElsaWorkflowJournal {
+        "workflowInstanceId": any;
     }
     interface ElsaWorkflowManager {
         "activityDescriptors": Array<ActivityDescriptor>;
@@ -757,6 +758,7 @@ declare namespace LocalJSX {
         "workflowInstance"?: WorkflowInstance;
     }
     interface ElsaWorkflowJournal {
+        "workflowInstanceId"?: any;
     }
     interface ElsaWorkflowManager {
         "activityDescriptors"?: Array<ActivityDescriptor>;

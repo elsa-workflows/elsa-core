@@ -1,4 +1,4 @@
-import {OrderBy, OrderDirection, PagedList, VersionOptions, WorkflowInstance, WorkflowInstanceSummary, WorkflowStatus, WorkflowSubStatus} from "../../models";
+import {OrderBy, OrderDirection, PagedList, VersionOptions, WorkflowExecutionLogRecord, WorkflowInstance, WorkflowInstanceSummary, WorkflowStatus, WorkflowSubStatus} from "../../models";
 import {AxiosInstance} from "axios";
 import {getVersionOptionsString, serializeQueryString} from "../../utils";
 
@@ -11,6 +11,8 @@ export interface WorkflowInstancesApi {
   delete(request: DeleteWorkflowInstanceRequest): Promise<WorkflowInstanceSummary>
 
   deleteMany(request: BulkDeleteWorkflowInstancesRequest): Promise<PagedList<WorkflowInstanceSummary>>
+
+  getJournal(request: GetWorkflowJournalRequest): Promise<PagedList<WorkflowExecutionLogRecord>>;
 }
 
 export interface ListWorkflowInstancesRequest {
@@ -37,6 +39,12 @@ export interface DeleteWorkflowInstanceRequest {
 
 export interface BulkDeleteWorkflowInstancesRequest {
   workflowInstanceIds: Array<string>;
+}
+
+export interface GetWorkflowJournalRequest {
+  workflowInstanceId: string;
+  page?: number;
+  pageSize?: number;
 }
 
 export class WorkflowInstancesApiImpl implements WorkflowInstancesApi {
@@ -82,6 +90,17 @@ export class WorkflowInstancesApiImpl implements WorkflowInstancesApi {
 
   async deleteMany(request: BulkDeleteWorkflowInstancesRequest): Promise<PagedList<WorkflowInstanceSummary>> {
     const response = await this.httpClient.delete<PagedList<WorkflowInstanceSummary>>(`workflow-instances/bulk`);
+    return response.data;
+  }
+
+  async getJournal(request: GetWorkflowJournalRequest): Promise<PagedList<WorkflowExecutionLogRecord>> {
+    let queryString = {
+      page: request.page,
+      pageSize: request.pageSize
+    };
+
+    const queryStringText = serializeQueryString(queryString);
+    const response = await this.httpClient.get<PagedList<WorkflowExecutionLogRecord>>(`workflow-instances/${request.workflowInstanceId}/journal${queryStringText}`);
     return response.data;
   }
 }
