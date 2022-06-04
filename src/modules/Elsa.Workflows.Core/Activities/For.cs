@@ -45,7 +45,7 @@ public class For : Activity
         if (iterateNode == null)
             return;
 
-        context.ExpressionExecutionContext.MemoryRegister.Declare(CurrentValue);
+        context.ExpressionExecutionContext.Memory.Declare(CurrentValue);
         HandleIteration(context);
     }
         

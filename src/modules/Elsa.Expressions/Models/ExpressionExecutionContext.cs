@@ -8,13 +8,13 @@ public class ExpressionExecutionContext
 
     public ExpressionExecutionContext(
         IServiceProvider serviceProvider,
-        MemoryRegister memoryRegister,
+        MemoryRegister memory,
         ExpressionExecutionContext? parentContext = default,
         IDictionary<object, object>? applicationProperties = default,
         CancellationToken cancellationToken = default)
     {
         _serviceProvider = serviceProvider;
-        MemoryRegister = memoryRegister;
+        Memory = memory;
         ApplicationProperties = applicationProperties ?? new Dictionary<object, object>();
         ParentContext = parentContext;
 
@@ -24,7 +24,7 @@ public class ExpressionExecutionContext
     /// <summary>
     /// A shared register of computer memory. 
     /// </summary>
-    public MemoryRegister MemoryRegister { get; }
+    public MemoryRegister Memory { get; }
 
     public IDictionary<object, object> ApplicationProperties { get; set; }
     public ExpressionExecutionContext? ParentContext { get; set; }
@@ -36,12 +36,12 @@ public class ExpressionExecutionContext
 
     public void Set(MemoryReference reference, object? value)
     {
-        var datum = GetMemoryDatumInternal(reference) ?? MemoryRegister.Declare(reference);
+        var datum = GetMemoryDatumInternal(reference) ?? Memory.Declare(reference);
         datum.Value = value;
     }
 
     public T GetRequiredService<T>() where T : notnull => _serviceProvider.GetRequiredService<T>();
 
     //private MemoryDatum? GetMemoryDatumInternal(MemoryDatumReference locationReference) => MemoryRegister.TryGetMemoryDatum(locationReference.Id, out var location) ? location : ParentContext?.GetMemoryDatumInternal(locationReference);
-    private MemoryBlock? GetMemoryDatumInternal(MemoryReference reference) => MemoryRegister.TryGetMemoryDatum(reference.Id, out var location) ? location : default;
+    private MemoryBlock? GetMemoryDatumInternal(MemoryReference reference) => Memory.TryGetMemoryDatum(reference.Id, out var location) ? location : default;
 }

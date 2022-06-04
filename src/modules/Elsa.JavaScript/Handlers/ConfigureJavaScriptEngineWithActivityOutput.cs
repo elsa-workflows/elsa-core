@@ -22,7 +22,7 @@ public class ConfigureJavaScriptEngineWithActivityOutput : INotificationHandler<
         var engine = notification.Engine;
         var workflow = notification.Context.GetWorkflow();
         var graph = _activityWalker.Walk(workflow.Root).Flatten();
-        var register = notification.Context.MemoryRegister;
+        var register = notification.Context.Memory;
         var jsActivities = new Dictionary<string, object>();
 
         foreach (var node in graph)

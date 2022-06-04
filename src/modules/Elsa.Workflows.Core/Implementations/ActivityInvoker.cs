@@ -33,7 +33,7 @@ public class ActivityInvoker : IActivityInvoker
         var transientProperties = workflowExecutionContext.TransientProperties;
         var input = workflowExecutionContext.Input;
         var applicationProperties = ExpressionExecutionContextExtensions.CreateApplicationPropertiesFrom(workflow, transientProperties, input);
-        var parentMemory = parentActivityExecutionContext?.ExpressionExecutionContext.MemoryRegister ?? workflowMemory;
+        var parentMemory = parentActivityExecutionContext?.ExpressionExecutionContext.Memory ?? workflowMemory;
         var activityMemory = new MemoryRegister(workflowMemory);
         var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, parentMemory, parentExpressionExecutionContext, applicationProperties, cancellationToken);
         var activityExecutionContext = new ActivityExecutionContext(workflowExecutionContext, parentActivityExecutionContext, expressionExecutionContext, activity, cancellationToken);

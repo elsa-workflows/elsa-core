@@ -177,7 +177,7 @@ public class ActivityExecutionContext
     }
     
     private MemoryBlock? GetLocation(MemoryReference locationReference) =>
-        ExpressionExecutionContext.MemoryRegister.TryGetMemoryDatum(locationReference.Id, out var location)
+        ExpressionExecutionContext.Memory.TryGetMemoryDatum(locationReference.Id, out var location)
             ? location
             : ParentActivityExecutionContext?.GetLocation(locationReference);
 }

@@ -171,5 +171,5 @@ public class WorkflowExecutionContext
         return currentMainStatus != WorkflowStatus.Finished;
     }
     
-    private IEnumerable<MemoryRegister> GetMergedRegistersView() => new[] { MemoryRegister }.Concat(ActivityExecutionContexts.Select(x => x.ExpressionExecutionContext.MemoryRegister)).ToList();
+    private IEnumerable<MemoryRegister> GetMergedRegistersView() => new[] { MemoryRegister }.Concat(ActivityExecutionContexts.Select(x => x.ExpressionExecutionContext.Memory)).ToList();
 }

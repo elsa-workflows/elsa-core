@@ -109,7 +109,7 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
     {
         ActivityExecutionContextState CreateActivityExecutionContextState(ActivityExecutionContext activityExecutionContext)
         {
-            var registerState = new RegisterState(activityExecutionContext.ExpressionExecutionContext.MemoryRegister.MemoryBlocks);
+            var registerState = new RegisterState(activityExecutionContext.ExpressionExecutionContext.Memory.Blocks);
             var activityExecutionContextState = new ActivityExecutionContextState
             {
                 Id = activityExecutionContext.Id,
