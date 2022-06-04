@@ -7,9 +7,8 @@ public abstract class MemoryReference
 {
     protected MemoryReference()
     {
-        //Id = Guid.NewGuid().ToString("N");
     }
-        
+
     protected MemoryReference(string id) => Id = id;
 
     public string Id { get; set; } = default!;
