@@ -109,7 +109,7 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
     {
         ActivityExecutionContextState CreateActivityExecutionContextState(ActivityExecutionContext activityExecutionContext)
         {
-            var registerState = new RegisterState(activityExecutionContext.ExpressionExecutionContext.Register.Locations);
+            var registerState = new RegisterState(activityExecutionContext.ExpressionExecutionContext.MemoryRegister.Memory);
             var activityExecutionContextState = new ActivityExecutionContextState
             {
                 Id = activityExecutionContext.Id,
@@ -131,12 +131,13 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
         {
             var cancellationToken = workflowExecutionContext.CancellationToken;
             var activity = workflowExecutionContext.FindActivityById(activityExecutionContextState.ScheduledActivityId);
-            var register = workflowExecutionContext.Register;
+            var workflowMemory = workflowExecutionContext.MemoryRegister;
             var workflow = workflowExecutionContext.Workflow;
             var expressionInput = workflowExecutionContext.Input;
             var transientProperties = workflowExecutionContext.TransientProperties;
             var applicationProperties = ExpressionExecutionContextExtensions.CreateApplicationPropertiesFrom(workflow, transientProperties, expressionInput);
-            var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, register, null, applicationProperties, cancellationToken);
+            var activityMemory = new MemoryRegister(workflowMemory);
+            var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, activityMemory, null, applicationProperties, cancellationToken);
             var properties = activityExecutionContextState.Properties;
             var activityExecutionContext = new ActivityExecutionContext(workflowExecutionContext, default, expressionExecutionContext, activity, cancellationToken)
             {

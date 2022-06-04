@@ -2,7 +2,7 @@ using Elsa.Expressions.Models;
 
 namespace Elsa.Workflows.Core.Models;
 
-public class JsonObject : RegisterLocationReference
+public class JsonObject : MemoryDatumReference
 {
     public JsonObject()
     {
@@ -15,5 +15,5 @@ public class JsonObject : RegisterLocationReference
 
     public string? Name { get; set; }
     public string? DefaultValue { get; }
-    public override RegisterLocation Declare() => new(DefaultValue);
+    public override MemoryDatum Declare() => new(DefaultValue);
 }

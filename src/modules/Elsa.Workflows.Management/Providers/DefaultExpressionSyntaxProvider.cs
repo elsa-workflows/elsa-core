@@ -46,7 +46,7 @@ public class DefaultExpressionSyntaxProvider : IExpressionSyntaxProvider
     private ExpressionSyntaxDescriptor CreateDescriptor<TExpression>(
         string syntax,
         Func<ExpressionConstructorContext, IExpression> constructor,
-        Func<LocationReferenceConstructorContext, RegisterLocationReference> createLocationReference,
+        Func<LocationReferenceConstructorContext, MemoryDatumReference> createLocationReference,
         Func<TExpression, object?> expressionValue) =>
         new()
         {

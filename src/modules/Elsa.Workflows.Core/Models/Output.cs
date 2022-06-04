@@ -8,12 +8,12 @@ public class Output : Argument
     {
     }
 
-    public Output(RegisterLocationReference locationReference) : this()
+    public Output(MemoryDatumReference locationReference) : this()
     {
         Targets.Add(locationReference);
     }
 
-    public ICollection<RegisterLocationReference> Targets { get; } = new List<RegisterLocationReference>();
+    public ICollection<MemoryDatumReference> Targets { get; } = new List<MemoryDatumReference>();
 }
 
 public class Output<T> : Output

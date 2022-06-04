@@ -12,10 +12,10 @@ public class WorkflowIndexingContext
     }
 
     public Workflow Workflow { get; }
-    public IDictionary<ITrigger, Register> Registers { get; } = new Dictionary<ITrigger, Register>();
+    public IDictionary<ITrigger, MemoryRegister> Registers { get; } = new Dictionary<ITrigger, MemoryRegister>();
     public CancellationToken CancellationToken { get; }
 
-    public Register GetOrCreateRegister(ITrigger activity)
+    public MemoryRegister GetOrCreateRegister(ITrigger activity)
     {
         if (!Registers.TryGetValue(activity, out var register))
         {

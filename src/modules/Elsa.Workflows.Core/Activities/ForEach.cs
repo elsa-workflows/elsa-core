@@ -35,8 +35,8 @@ public class ForEach : Activity
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         // Declare looping variable.
-        CurrentValue = new Variable($"{Id}_{nameof(CurrentValue)}");
-        context.ExpressionExecutionContext.Register.Declare(CurrentValue);
+        CurrentValue = new Variable(nameof(CurrentValue));
+        context.ExpressionExecutionContext.MemoryRegister.Declare(CurrentValue);
 
         // Execute first iteration.
         await HandleIteration(context);

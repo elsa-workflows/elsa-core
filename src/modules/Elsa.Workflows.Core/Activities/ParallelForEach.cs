@@ -15,7 +15,7 @@ public class ParallelForEach<T> : Activity
     protected override void Execute(ActivityExecutionContext context)
     {
         // Declare looping variable.
-        context.ExpressionExecutionContext.Register.Declare(CurrentValue);
+        context.ExpressionExecutionContext.MemoryRegister.Declare(CurrentValue);
         var items = context.Get(Items)!.Reverse().ToList();
 
         foreach (var item in items)

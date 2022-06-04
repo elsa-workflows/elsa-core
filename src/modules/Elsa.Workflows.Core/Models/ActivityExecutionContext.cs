@@ -68,7 +68,7 @@ public class ActivityExecutionContext
     /// </summary>
     public IDictionary<string, object?> JournalData { get; private set; } = new Dictionary<string, object?>();
 
-    public void ScheduleActivity(IActivity? activity, ActivityCompletionCallback? completionCallback = default, IEnumerable<RegisterLocationReference>? locationReferences = default, object? tag = default)
+    public void ScheduleActivity(IActivity? activity, ActivityCompletionCallback? completionCallback = default, IEnumerable<MemoryDatumReference>? locationReferences = default, object? tag = default)
     {
         if (activity == null)
             return;
@@ -76,7 +76,7 @@ public class ActivityExecutionContext
         WorkflowExecutionContext.Schedule(activity, this, completionCallback, locationReferences, tag);
     }
 
-    public void ScheduleActivity(IActivity? activity, ActivityExecutionContext owner, ActivityCompletionCallback? completionCallback = default, IEnumerable<RegisterLocationReference>? locationReferences = default, object? tag = default)
+    public void ScheduleActivity(IActivity? activity, ActivityExecutionContext owner, ActivityCompletionCallback? completionCallback = default, IEnumerable<MemoryDatumReference>? locationReferences = default, object? tag = default)
     {
         if (activity == null)
             return;
@@ -145,19 +145,19 @@ public class ActivityExecutionContext
     public object? GetService(Type serviceType) => WorkflowExecutionContext.GetService(serviceType);
     public T? Get<T>(Input<T>? input) => input == null ? default : Get<T>(input.LocationReference);
 
-    public object? Get(RegisterLocationReference locationReference)
+    public object? Get(MemoryDatumReference locationReference)
     {
         var location = GetLocation(locationReference) ?? throw new InvalidOperationException($"No location found with ID {locationReference.Id}. Did you forget to declare a variable with a container?");
         return location.Value;
     }
 
-    public T? Get<T>(RegisterLocationReference locationReference)
+    public T? Get<T>(MemoryDatumReference locationReference)
     {
         var value = Get(locationReference);
         return value != default ? (T?)(value) : default;
     }
 
-    public void Set(RegisterLocationReference locationReference, object? value) => ExpressionExecutionContext.Set(locationReference, value);
+    public void Set(MemoryDatumReference locationReference, object? value) => ExpressionExecutionContext.Set(locationReference, value);
     public void Set(Output output, object? value) => ExpressionExecutionContext.Set(output, value);
     public void Set<T>(Output output, T value) => ExpressionExecutionContext.Set(output, value);
 
@@ -175,8 +175,8 @@ public class ActivityExecutionContext
         WorkflowExecutionContext.RemoveCompletionCallbacks(entriesToRemove);
     }
     
-    private RegisterLocation? GetLocation(RegisterLocationReference locationReference) =>
-        ExpressionExecutionContext.Register.TryGetLocation(locationReference.Id, out var location)
+    private MemoryDatum? GetLocation(MemoryDatumReference locationReference) =>
+        ExpressionExecutionContext.MemoryRegister.TryGetMemoryDatum(locationReference.Id, out var location)
             ? location
             : ParentActivityExecutionContext?.GetLocation(locationReference);
 }

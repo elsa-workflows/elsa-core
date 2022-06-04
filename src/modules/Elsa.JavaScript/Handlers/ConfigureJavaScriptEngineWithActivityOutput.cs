@@ -22,7 +22,7 @@ public class ConfigureJavaScriptEngineWithActivityOutput : INotificationHandler<
         var engine = notification.Engine;
         var workflow = notification.Context.GetWorkflow();
         var graph = _activityWalker.Walk(workflow.Root).Flatten();
-        var register = notification.Context.Register;
+        var register = notification.Context.MemoryRegister;
         var jsActivities = new Dictionary<string, object>();
 
         foreach (var node in graph)
@@ -32,7 +32,7 @@ public class ConfigureJavaScriptEngineWithActivityOutput : INotificationHandler<
 
             foreach (var property in properties)
             {
-                if (register.TryGetLocation(property.Value.LocationReference.Id, out var location))
+                if (register.TryGetMemoryDatum(property.Value.LocationReference.Id, out var location))
                     jsActivity[property.Name] = location.Value;
             }
 

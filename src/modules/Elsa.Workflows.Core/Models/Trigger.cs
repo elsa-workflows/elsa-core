@@ -45,7 +45,7 @@ public abstract class Trigger<T> : Activity<T>, ITrigger
     {
     }
 
-    protected Trigger(RegisterLocationReference? outputTarget) : base(outputTarget)
+    protected Trigger(MemoryDatumReference? outputTarget) : base(outputTarget)
     {
     }
 

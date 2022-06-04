@@ -23,4 +23,4 @@ public partial class WorkflowDefinitionBuilderInterpreter
     }
 }
 
-public record ExternalExpressionReference(IExpression Expression, RegisterLocationReference Reference);
+public record ExternalExpressionReference(IExpression Expression, MemoryDatumReference Reference);

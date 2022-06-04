@@ -9,7 +9,7 @@ public interface IActivityInvoker
         WorkflowExecutionContext workflowExecutionContext,
         IActivity activity,
         ActivityExecutionContext? owner = default,
-        IEnumerable<RegisterLocationReference>? locationReferences = default);
+        IEnumerable<MemoryDatumReference>? locationReferences = default);
 
     Task InvokeAsync(ActivityExecutionContext activityExecutionContext);
 }

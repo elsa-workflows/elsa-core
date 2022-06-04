@@ -22,7 +22,7 @@ public class HttpEndpoint : Trigger<HttpRequestModel>
     {
     }
 
-    public HttpEndpoint(RegisterLocationReference outputTarget) : base(outputTarget)
+    public HttpEndpoint(MemoryDatumReference outputTarget) : base(outputTarget)
     {
     }
 

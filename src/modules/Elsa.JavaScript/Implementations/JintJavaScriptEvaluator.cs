@@ -64,14 +64,14 @@ namespace Elsa.JavaScript.Implementations
             return result?.ToObject();
         }
 
-        private IDictionary<string, RegisterLocation> GetVariables(ExpressionExecutionContext context)
+        private IDictionary<string, MemoryDatum> GetVariables(ExpressionExecutionContext context)
         {
             var currentContext = context;
-            var dictionary = new Dictionary<string, RegisterLocation>();
+            var dictionary = new Dictionary<string, MemoryDatum>();
 
             while (currentContext != null)
             {
-                foreach (var l in currentContext.Register.Locations)
+                foreach (var l in currentContext.MemoryRegister.Memory)
                 {
                     if(!dictionary.ContainsKey(l.Key))
                         dictionary.Add(l.Key, l.Value);

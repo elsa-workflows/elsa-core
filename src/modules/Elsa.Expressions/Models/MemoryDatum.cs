@@ -1,15 +1,15 @@
 namespace Elsa.Expressions.Models;
 
 /// <summary>
-/// Represents a location within a register
+/// Represents a piece of memory within a memory register
 /// </summary>
-public class RegisterLocation
+public class MemoryDatum
 {
-    public RegisterLocation()
+    public MemoryDatum()
     {
     }
 
-    public RegisterLocation(object? value)
+    public MemoryDatum(object? value)
     {
         Value = value;
     }

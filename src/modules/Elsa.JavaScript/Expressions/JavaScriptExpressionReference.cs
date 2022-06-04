@@ -2,7 +2,7 @@ using Elsa.Expressions.Models;
 
 namespace Elsa.JavaScript.Expressions;
 
-public class JavaScriptExpressionReference : RegisterLocationReference
+public class JavaScriptExpressionReference : MemoryDatumReference
 {
     public JavaScriptExpressionReference(JavaScriptExpression expression)
     {
@@ -11,5 +11,5 @@ public class JavaScriptExpressionReference : RegisterLocationReference
         
     public JavaScriptExpression Expression { get; }
         
-    public override RegisterLocation Declare() => new();
+    public override MemoryDatum Declare() => new();
 }

@@ -42,14 +42,14 @@ public class WorkflowExecutionContext
         CancellationToken = cancellationToken;
         NodeIdLookup = _nodes.ToDictionary(x => x.NodeId);
         NodeActivityLookup = _nodes.ToDictionary(x => x.Activity);
-        Register = workflow.CreateRegister();
+        MemoryRegister = workflow.CreateRegister();
     }
 
     public Workflow Workflow { get; }
     public ActivityNode Graph { get; }
     public WorkflowStatus Status => GetMainStatus(SubStatus);
     public WorkflowSubStatus SubStatus { get; internal set; }
-    public Register Register { get; }
+    public MemoryRegister MemoryRegister { get; }
     public string Id { get; set; }
     public string? CorrelationId { get; set; }
     public IReadOnlyCollection<ActivityNode> Nodes => new ReadOnlyCollection<ActivityNode>(_nodes);
@@ -171,5 +171,5 @@ public class WorkflowExecutionContext
         return currentMainStatus != WorkflowStatus.Finished;
     }
     
-    private IEnumerable<Register> GetMergedRegistersView() => new[] { Register }.Concat(ActivityExecutionContexts.Select(x => x.ExpressionExecutionContext.Register)).ToList();
+    private IEnumerable<MemoryRegister> GetMergedRegistersView() => new[] { MemoryRegister }.Concat(ActivityExecutionContexts.Select(x => x.ExpressionExecutionContext.MemoryRegister)).ToList();
 }

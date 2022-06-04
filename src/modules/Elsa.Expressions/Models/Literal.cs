@@ -1,6 +1,6 @@
 namespace Elsa.Expressions.Models;
 
-public class Literal : RegisterLocationReference
+public class Literal : MemoryDatumReference
 {
     public Literal()
     {
@@ -12,7 +12,7 @@ public class Literal : RegisterLocationReference
     }
         
     public object? Value { get; }
-    public override RegisterLocation Declare() => new();
+    public override MemoryDatum Declare() => new();
 
     public static Literal From<T>(T value) => new Literal<T>(value);
 }

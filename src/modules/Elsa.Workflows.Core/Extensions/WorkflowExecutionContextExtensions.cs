@@ -55,7 +55,7 @@ public static class WorkflowExecutionContextExtensions
         IActivity activity,
         ActivityExecutionContext owner,
         ActivityCompletionCallback? completionCallback = default,
-        IEnumerable<RegisterLocationReference>? locationReferences = default, object? tag = default)
+        IEnumerable<MemoryDatumReference>? locationReferences = default, object? tag = default)
     {
         var activityInvoker = workflowExecutionContext.GetRequiredService<IActivityInvoker>();
         var workItem = new ActivityWorkItem(activity.Id, async () => await activityInvoker.InvokeAsync(workflowExecutionContext, activity, owner, locationReferences), tag);
@@ -81,7 +81,7 @@ public static class WorkflowExecutionContextExtensions
     public static object? GetVariable(this WorkflowExecutionContext workflowExecutionContext, string name)
     {
         var variable = workflowExecutionContext.Workflow.Variables.FirstOrDefault(x => x.Name == name);
-        return variable?.Get(workflowExecutionContext.Register);
+        return variable?.Get(workflowExecutionContext.MemoryRegister);
     }
 
     /// <summary>
@@ -100,7 +100,7 @@ public static class WorkflowExecutionContextExtensions
     public static Variable SetVariable(this WorkflowExecutionContext workflowExecutionContext, string name, object? value)
     {
         var variable = workflowExecutionContext.Workflow.Variables.FirstOrDefault(x => x.Name == name) ?? new Variable(name, value);
-        variable.Set(workflowExecutionContext.Register, value);
+        variable.Set(workflowExecutionContext.MemoryRegister, value);
         return variable;
     }
 }

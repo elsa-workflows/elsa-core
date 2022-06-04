@@ -36,9 +36,9 @@ public class Workflow : Composite, ICloneable
     /// <summary>
     /// Creates a new memory register initialized with this workflow's variables.
     /// </summary>
-    public Register CreateRegister()
+    public MemoryRegister CreateRegister()
     {
-        var register = new Register();
+        var register = new MemoryRegister();
         register.Declare(Variables);
         return register;
     }

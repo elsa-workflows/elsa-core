@@ -7,7 +7,7 @@ namespace Elsa.Workflows.Core.Models;
 
 public abstract class Input : Argument
 {
-    protected Input(IExpression expression, RegisterLocationReference locationReference, Type type) : base(locationReference)
+    protected Input(IExpression expression, MemoryDatumReference locationReference, Type type) : base(locationReference)
     {
         Expression = expression;
         Type = type;
@@ -63,7 +63,7 @@ public class Input<T> : Input
     {
     }
 
-    public Input(IExpression expression, RegisterLocationReference locationReference) : base(expression, locationReference, typeof(T))
+    public Input(IExpression expression, MemoryDatumReference locationReference) : base(expression, locationReference, typeof(T))
     {
     }
 

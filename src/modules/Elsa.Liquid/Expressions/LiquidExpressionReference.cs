@@ -2,9 +2,9 @@ using Elsa.Expressions.Models;
 
 namespace Elsa.Liquid.Expressions;
 
-public class LiquidExpressionReference : RegisterLocationReference
+public class LiquidExpressionReference : MemoryDatumReference
 {
     public LiquidExpressionReference(LiquidExpression expression) => Expression = expression;
     public LiquidExpression Expression { get; }
-    public override RegisterLocation Declare() => new();
+    public override MemoryDatum Declare() => new();
 }

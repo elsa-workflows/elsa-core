@@ -32,7 +32,7 @@ public abstract class Container : Activity, IContainer
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         // Register variables.
-        context.ExpressionExecutionContext.Register.Declare(Variables);
+        context.ExpressionExecutionContext.MemoryRegister.Declare(Variables);
 
         // Schedule children.
         await ScheduleChildrenAsync(context);

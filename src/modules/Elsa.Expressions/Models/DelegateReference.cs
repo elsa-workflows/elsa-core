@@ -1,6 +1,6 @@
 namespace Elsa.Expressions.Models;
 
-public class DelegateReference : RegisterLocationReference
+public class DelegateReference : MemoryDatumReference
 {
     public DelegateReference()
     {
@@ -11,7 +11,7 @@ public class DelegateReference : RegisterLocationReference
     public DelegateReference(Func<ExpressionExecutionContext, ValueTask<object?>> @delegate) => Delegate = @delegate;
 
     public Func<ExpressionExecutionContext, ValueTask<object?>>? Delegate { get; set; }
-    public override RegisterLocation Declare() => new();
+    public override MemoryDatum Declare() => new();
 }
 
 public class DelegateReference<T> : DelegateReference

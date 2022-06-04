@@ -38,9 +38,9 @@ public static class WorkflowExtensions
     }
 }
 
-public static class RegisterLocationReferenceExtensions
+public static class MemoryDatumReferenceExtensions
 {
-    public static object? Get(this RegisterLocationReference reference, ActivityExecutionContext context) => reference.Get(context.ExpressionExecutionContext);
-    public static T? Get<T>(this RegisterLocationReference reference, ActivityExecutionContext context) => (T?)reference.Get(context.ExpressionExecutionContext);
-    public static void Set(this RegisterLocationReference reference, ActivityExecutionContext context, object? value) => reference.Set(context.ExpressionExecutionContext, value);
+    public static object? Get(this MemoryDatumReference reference, ActivityExecutionContext context) => reference.Get(context.ExpressionExecutionContext);
+    public static T? Get<T>(this MemoryDatumReference reference, ActivityExecutionContext context) => (T?)reference.Get(context.ExpressionExecutionContext);
+    public static void Set(this MemoryDatumReference reference, ActivityExecutionContext context, object? value) => reference.Set(context.ExpressionExecutionContext, value);
 }
