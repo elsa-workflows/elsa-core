@@ -21,16 +21,19 @@ public class ForEach : Activity
     /// <summary>
     /// The set of values to iterate.
     /// </summary>
-    [Input] public Input<ICollection<object>> Items { get; set; } = new(Array.Empty<object>());
-    
+    [Input]
+    public Input<ICollection<object>> Items { get; set; } = new(Array.Empty<object>());
+
     /// <summary>
     /// The activity to execute for each iteration.
     /// </summary>
-    [Outbound] public IActivity? Body { get; set; }
-    
+    [Outbound]
+    public IActivity? Body { get; set; }
+
     /// <summary>
     /// The current value being iterated will be assigned to the specified <see cref="MemoryReference"/>.
     /// </summary>
+    [JsonIgnore]
     public MemoryReference? CurrentValue { get; set; }
 
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
@@ -81,7 +84,7 @@ public class ForEach<T> : ForEach
     public ForEach(ICollection<T> items) : this(new Input<ICollection<T>>(items))
     {
     }
-    
+
     [Input]
     public new Input<ICollection<T>> Items
     {
