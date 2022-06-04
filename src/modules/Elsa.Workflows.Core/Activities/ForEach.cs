@@ -92,9 +92,9 @@ public class ForEach<T> : ForEach
         set => base.Items = new Input<ICollection<object>>(value.Expression, value.MemoryReference);
     }
 
-    public new Variable<T> CurrentValue
+    public new Variable<T>? CurrentValue
     {
-        get => (Variable<T>)base.CurrentValue;
+        get => (Variable<T>?)base.CurrentValue;
         set => base.CurrentValue = value;
     }
 }
