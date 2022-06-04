@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Behaviors;
 using Elsa.Workflows.Core.Models;
@@ -17,6 +18,8 @@ public enum ForOperator
 [Activity("Elsa", "Control Flow", "Iterate over a sequence of steps between a start and an end number.")]
 public class For : Activity
 {
+    private const string CurrentStepProperty = "CurrentStep";
+    
     [JsonConstructor]
     public For()
     {
@@ -36,7 +39,9 @@ public class For : Activity
     public Input<int> Step { get; set; } = new(1);
     public Input<ForOperator> Operator { get; set; } = new(ForOperator.LessThanOrEqual);
     [Outbound] public IActivity? Body { get; set; }
-    public Variable<int?> CurrentValue { get; set; } = new();
+    
+    [JsonIgnore]
+    public MemoryReference? CurrentValue { get; set; }
 
     protected override void Execute(ActivityExecutionContext context)
     {
@@ -44,8 +49,7 @@ public class For : Activity
 
         if (iterateNode == null)
             return;
-
-        context.ExpressionExecutionContext.Memory.Declare(CurrentValue);
+        
         HandleIteration(context);
     }
         
@@ -53,7 +57,7 @@ public class For : Activity
     {
         var iterateNode = Body!;
         var end = context.Get(End);
-        var currentValue = CurrentValue.Get<int?>(context.ExpressionExecutionContext);
+        var currentValue = context.GetProperty<int?>(CurrentStepProperty);
 
         // Initialize or increment.
         var start = context.Get(Start);
@@ -74,8 +78,11 @@ public class For : Activity
         {
             context.ScheduleActivity(iterateNode, OnChildComplete);
 
+            // Update internal step.
+            context.SetProperty(CurrentStepProperty, currentValue);
+            
             // Update loop variable.
-            CurrentValue.Set(context.ExpressionExecutionContext, currentValue);
+            CurrentValue?.Set(context.ExpressionExecutionContext, currentValue);
         }
     }
 
