@@ -1,4 +1,4 @@
-import { Component, h, Prop } from '@stencil/core';
+import {Component, h, Prop} from '@stencil/core';
 
 @Component({
   tag: 'elsa-tooltip',
@@ -28,21 +28,21 @@ export class Tooltip {
       triangleClass: triangleClasses[tooltipPosition],
     };
   }
+
   render() {
-    const { tooltipClass, triangleClass } = this.getTooltipPositionClasses(this.tooltipPosition);
+    const {tooltipClass, triangleClass} = this.getTooltipPositionClasses(this.tooltipPosition);
 
     return (
       <div class="relative tooltip-container w-full">
-        <slot />
+        <slot/>
         {this.tooltipContent && (
-          <div role="tooltip" class={`tooltip ${tooltipClass} z-20 w-48 absolute transition duration-150 ease-in-out shadow-lg bg-white p-4 rounded`}>
+          <div role="tooltip" class={`tooltip ${tooltipClass} z-20 w-48 absolute transition duration-150 ease-in-out shadow-lg bg-gray-800 text-white p-4 rounded`}>
             <svg class={`absolute ${triangleClass}`} width="9px" height="16px" viewBox="0 0 9 16" version="1.1" xmlns="http://www.w3.org/2000/svg">
-              <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-                <g id="Tooltips-" transform="translate(-874.000000, -1029.000000)" fill="#FFFFFF">
-                  <g id="Group-3-Copy-16" transform="translate(850.000000, 975.000000)">
-                    <g id="Group-2" transform="translate(24.000000, 0.000000)">
+              <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                <g id="Tooltips-" transform="translate(-874.000000, -1029.000000)" fill="#111827">
+                  <g transform="translate(850.000000, 975.000000)">
+                    <g transform="translate(24.000000, 0.000000)">
                       <polygon
-                        id="Triangle"
                         transform="translate(4.500000, 62.000000) rotate(-90.000000) translate(-4.500000, -62.000000) "
                         points="4.5 57.5 12.5 66.5 -3.5 66.5"
                       />
@@ -51,7 +51,7 @@ export class Tooltip {
                 </g>
               </g>
             </svg>
-            {this.tooltipContent}
+            <p class="text-white text-sm"> {this.tooltipContent}</p>
           </div>
         )}
       </div>

@@ -112,8 +112,8 @@ export class ToolboxActivities {
                 return (
                   <div class="w-full flex items-center pl-10 pr-2 py-2">
                     <div class="relative cursor-move" onDragStart={e => ToolboxActivities.onActivityStartDrag(e, activityDescriptor)}>
-                      <elsa-tooltip tooltipPosition="right" tooltipContent={activityDescriptor.description && <p class="text-gray-600 text-sm">{activityDescriptor.description}</p>}>
-                        <div innerHTML={activityHtml} draggable={true} />
+                      <elsa-tooltip tooltipPosition="right" tooltipContent={activityDescriptor.description}>
+                        <div innerHTML={activityHtml} draggable={true}/>
                       </elsa-tooltip>
                     </div>
                   </div>
