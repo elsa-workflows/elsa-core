@@ -128,7 +128,7 @@ public class ActivityExecutionContext
     public void ClearBookmarks() => _bookmarks.Clear();
 
     public T? GetProperty<T>(string key) => ApplicationProperties!.TryGetValue<T?>(key, out var value) ? value : default;
-    public void SetProperty<T>(string key, T value) where T : notnull => ApplicationProperties[key] = value;
+    public void SetProperty<T>(string key, T? value) => ApplicationProperties[key] = value!;
 
     public T UpdateProperty<T>(string key, Func<T?, T> updater) where T : notnull
     {
