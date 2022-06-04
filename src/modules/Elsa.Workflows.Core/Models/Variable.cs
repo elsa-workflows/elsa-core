@@ -16,14 +16,14 @@ public class Variable : MemoryReference
         Name = name;
     }
 
-    public Variable(string name, object? defaultValue = default) : this(name)
+    public Variable(string name, object? value = default) : this(name)
     {
-        DefaultValue = defaultValue;
+        Value = value;
     }
 
     public string? Name { get; set; }
-    public object? DefaultValue { get; set; }
-    public override MemoryBlock Declare() => new(DefaultValue);
+    public object? Value { get; set; }
+    public override MemoryBlock Declare() => new(Value);
 }
 
 public class Variable<T> : Variable
@@ -42,7 +42,7 @@ public class Variable<T> : Variable
     
     public Variable(T value)
     {
-        DefaultValue = value;
+        Value = value;
     }
 
     public T? Get(ActivityExecutionContext context) => Get(context.ExpressionExecutionContext).ConvertTo<T?>();

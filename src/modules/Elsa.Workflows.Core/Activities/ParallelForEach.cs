@@ -26,7 +26,7 @@ public class ParallelForEach<T> : Activity
             // For each item, declare a new block of memory to store the item into.
             var localVariable = new Variable<T>()
             {
-                DefaultValue = item
+                Value = item
             };
 
             if (CurrentValue != null)
