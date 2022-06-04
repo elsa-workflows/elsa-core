@@ -31,6 +31,7 @@ export class WorkflowDefinitionBrowser {
   @State() private orderBy?: WorkflowDefinitionsOrderBy;
   @State() private labels?: string[];
   @State() private selectAllChecked: boolean;
+
   @Method()
   public async show() {
     await this.modalDialog.show();
