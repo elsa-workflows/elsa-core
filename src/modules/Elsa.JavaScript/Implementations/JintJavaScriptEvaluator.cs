@@ -66,21 +66,21 @@ namespace Elsa.JavaScript.Implementations
 
         private IDictionary<string, MemoryBlock> GetVariables(ExpressionExecutionContext context)
         {
-            var currentContext = context;
-            var dictionary = new Dictionary<string, MemoryBlock>();
+            var currentRegister = context.Memory;
+            var memoryBlocks = new Dictionary<string, MemoryBlock>();
 
-            while (currentContext != null)
+            while (currentRegister != null)
             {
-                foreach (var l in currentContext.Memory.Blocks)
+                foreach (var l in currentRegister.Blocks)
                 {
-                    if(!dictionary.ContainsKey(l.Key))
-                        dictionary.Add(l.Key, l.Value);
+                    if(!memoryBlocks.ContainsKey(l.Key))
+                        memoryBlocks.Add(l.Key, l.Value);
                 }
                 
-                currentContext = currentContext.ParentContext;
+                currentRegister = currentRegister.Parent;
             }
 
-            return dictionary;
+            return memoryBlocks;
         }
     }
 }
