@@ -148,7 +148,7 @@ export class WorkflowDefinitionPropertiesEditor {
 
   private renderVariablesTab = () => {
     return <div>
-      TODO: Variables editor
+      <elsa-variables-editor />
     </div>
   };
 
