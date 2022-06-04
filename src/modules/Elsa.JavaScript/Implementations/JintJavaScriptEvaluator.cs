@@ -71,7 +71,7 @@ namespace Elsa.JavaScript.Implementations
 
             while (currentContext != null)
             {
-                foreach (var l in currentContext.MemoryRegister.Memory)
+                foreach (var l in currentContext.MemoryRegister.MemoryBlocks)
                 {
                     if(!dictionary.ContainsKey(l.Key))
                         dictionary.Add(l.Key, l.Value);
