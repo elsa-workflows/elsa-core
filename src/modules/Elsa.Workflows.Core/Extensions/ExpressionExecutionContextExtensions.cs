@@ -21,9 +21,9 @@ public static class ExpressionExecutionContextExtensions
     public static IDictionary<object, object> GetTransientProperties(this ExpressionExecutionContext context) => (IDictionary<object, object>)context.ApplicationProperties[TransientPropertiesKey];
     public static IDictionary<string, object> GetInput(this ExpressionExecutionContext context) => (IDictionary<string, object>)context.ApplicationProperties[InputKey];
 
-    public static T? Get<T>(this ExpressionExecutionContext context, Input<T>? input) => input != null ? (T?)context.GetDatum(input.LocationReference).Value : default;
-    public static T? Get<T>(this ExpressionExecutionContext context, Output output) => (T?)context.GetDatum(output.LocationReference).Value;
-    public static object? Get(this ExpressionExecutionContext context, Output output) => context.GetDatum(output.LocationReference).Value;
+    public static T? Get<T>(this ExpressionExecutionContext context, Input<T>? input) => input != null ? (T?)context.GetDatum(input.MemoryReference).Value : default;
+    public static T? Get<T>(this ExpressionExecutionContext context, Output output) => (T?)context.GetDatum(output.MemoryReference).Value;
+    public static object? Get(this ExpressionExecutionContext context, Output output) => context.GetDatum(output.MemoryReference).Value;
     public static T? GetVariable<T>(this ExpressionExecutionContext context, string name) => (T?)context.GetVariable(name);
     public static T? GetVariable<T>(this ExpressionExecutionContext context) => (T?)context.GetVariable(typeof(T).Name);
     public static object? GetVariable(this ExpressionExecutionContext context, string name) => new Variable(name).Get(context);
@@ -42,7 +42,7 @@ public static class ExpressionExecutionContextExtensions
     {
         //var convertedValue = output.ValueConverter?.Invoke(value) ?? value;
         var convertedValue = value;
-        var targets = new[] { output.LocationReference }.Concat(output.Targets);
+        var targets = new[] { output.MemoryReference }.Concat(output.Targets);
         foreach (var target in targets) context.Set(target, convertedValue);
     }
 }

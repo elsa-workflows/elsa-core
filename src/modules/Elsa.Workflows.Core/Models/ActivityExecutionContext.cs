@@ -66,22 +66,23 @@ public class ActivityExecutionContext
     /// <summary>
     /// Journal data will be added to the workflow execution log for the "Executed" event.  
     /// </summary>
-    public IDictionary<string, object?> JournalData { get; private set; } = new Dictionary<string, object?>();
+    // ReSharper disable once CollectionNeverQueried.Global
+    public IDictionary<string, object?> JournalData { get; } = new Dictionary<string, object?>();
 
-    public void ScheduleActivity(IActivity? activity, ActivityCompletionCallback? completionCallback = default, IEnumerable<MemoryDatumReference>? locationReferences = default, object? tag = default)
+    public void ScheduleActivity(IActivity? activity, ActivityCompletionCallback? completionCallback = default, IEnumerable<MemoryReference>? references = default, object? tag = default)
     {
         if (activity == null)
             return;
 
-        WorkflowExecutionContext.Schedule(activity, this, completionCallback, locationReferences, tag);
+        WorkflowExecutionContext.Schedule(activity, this, completionCallback, references, tag);
     }
 
-    public void ScheduleActivity(IActivity? activity, ActivityExecutionContext owner, ActivityCompletionCallback? completionCallback = default, IEnumerable<MemoryDatumReference>? locationReferences = default, object? tag = default)
+    public void ScheduleActivity(IActivity? activity, ActivityExecutionContext owner, ActivityCompletionCallback? completionCallback = default, IEnumerable<MemoryReference>? references = default, object? tag = default)
     {
         if (activity == null)
             return;
 
-        WorkflowExecutionContext.Schedule(activity, owner, completionCallback, locationReferences, tag);
+        WorkflowExecutionContext.Schedule(activity, owner, completionCallback, references, tag);
     }
 
     public void ScheduleActivities(params IActivity?[] activities) => ScheduleActivities((IEnumerable<IActivity?>)activities);
@@ -143,21 +144,21 @@ public class ActivityExecutionContext
     public object GetOrCreateService(Type serviceType) => WorkflowExecutionContext.GetOrCreateService(serviceType);
     public T? GetService<T>() where T : notnull => WorkflowExecutionContext.GetService<T>();
     public object? GetService(Type serviceType) => WorkflowExecutionContext.GetService(serviceType);
-    public T? Get<T>(Input<T>? input) => input == null ? default : Get<T>(input.LocationReference);
+    public T? Get<T>(Input<T>? input) => input == null ? default : Get<T>(input.MemoryReference);
 
-    public object? Get(MemoryDatumReference locationReference)
+    public object? Get(MemoryReference locationReference)
     {
         var location = GetLocation(locationReference) ?? throw new InvalidOperationException($"No location found with ID {locationReference.Id}. Did you forget to declare a variable with a container?");
         return location.Value;
     }
 
-    public T? Get<T>(MemoryDatumReference locationReference)
+    public T? Get<T>(MemoryReference locationReference)
     {
         var value = Get(locationReference);
         return value != default ? (T?)(value) : default;
     }
 
-    public void Set(MemoryDatumReference locationReference, object? value) => ExpressionExecutionContext.Set(locationReference, value);
+    public void Set(MemoryReference locationReference, object? value) => ExpressionExecutionContext.Set(locationReference, value);
     public void Set(Output output, object? value) => ExpressionExecutionContext.Set(output, value);
     public void Set<T>(Output output, T value) => ExpressionExecutionContext.Set(output, value);
 
@@ -175,7 +176,7 @@ public class ActivityExecutionContext
         WorkflowExecutionContext.RemoveCompletionCallbacks(entriesToRemove);
     }
     
-    private MemoryDatum? GetLocation(MemoryDatumReference locationReference) =>
+    private MemoryBlock? GetLocation(MemoryReference locationReference) =>
         ExpressionExecutionContext.MemoryRegister.TryGetMemoryDatum(locationReference.Id, out var location)
             ? location
             : ParentActivityExecutionContext?.GetLocation(locationReference);

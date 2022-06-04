@@ -3,7 +3,7 @@ using Elsa.Workflows.Core.Expressions;
 
 namespace Elsa.Workflows.Core.Models;
 
-public class ElsaExpressionReference : MemoryDatumReference
+public class ElsaExpressionReference : MemoryReference
 {
     public ElsaExpressionReference(ElsaExpression expression)
     {
@@ -12,5 +12,5 @@ public class ElsaExpressionReference : MemoryDatumReference
         
     public ElsaExpression Expression { get; }
         
-    public override MemoryDatum Declare() => new();
+    public override MemoryBlock Declare() => new();
 }

@@ -2,7 +2,7 @@ using Elsa.Expressions.Models;
 
 namespace Elsa.JavaScript.Expressions;
 
-public class JavaScriptExpressionReference : MemoryDatumReference
+public class JavaScriptExpressionReference : MemoryReference
 {
     public JavaScriptExpressionReference(JavaScriptExpression expression)
     {
@@ -11,5 +11,5 @@ public class JavaScriptExpressionReference : MemoryDatumReference
         
     public JavaScriptExpression Expression { get; }
         
-    public override MemoryDatum Declare() => new();
+    public override MemoryBlock Declare() => new();
 }

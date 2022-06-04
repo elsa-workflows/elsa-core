@@ -28,10 +28,10 @@ public class Composite : Activity
     protected static Inline From(Func<ValueTask> activity) => new(activity);
     protected static Inline From(Action<ActivityExecutionContext> activity) => new(activity);
     protected static Inline From(Action activity) => new(activity);
-    protected static Inline<TResult> From<TResult>(Func<ActivityExecutionContext, ValueTask<TResult>> activity, MemoryDatumReference? output = default) => new(activity, output);
-    protected static Inline<TResult> From<TResult>(Func<ValueTask<TResult>> activity, MemoryDatumReference? output = default) => new(activity, output);
-    protected static Inline<TResult> From<TResult>(Func<ActivityExecutionContext, TResult> activity, MemoryDatumReference? output = default) => new(activity, output);
-    protected static Inline<TResult> From<TResult>(Func<TResult> activity, MemoryDatumReference? output = default) => new(activity, output);
+    protected static Inline<TResult> From<TResult>(Func<ActivityExecutionContext, ValueTask<TResult>> activity, MemoryReference? output = default) => new(activity, output);
+    protected static Inline<TResult> From<TResult>(Func<ValueTask<TResult>> activity, MemoryReference? output = default) => new(activity, output);
+    protected static Inline<TResult> From<TResult>(Func<ActivityExecutionContext, TResult> activity, MemoryReference? output = default) => new(activity, output);
+    protected static Inline<TResult> From<TResult>(Func<TResult> activity, MemoryReference? output = default) => new(activity, output);
 }
 
 /// <summary>
@@ -56,8 +56,8 @@ public class Composite<T> : Activity<T>
     protected static Inline From(Func<ValueTask> activity) => new(activity);
     protected static Inline From(Action<ActivityExecutionContext> activity) => new(activity);
     protected static Inline From(Action activity) => new(activity);
-    protected static Inline<TResult> From<TResult>(Func<ActivityExecutionContext, ValueTask<TResult>> activity, MemoryDatumReference? output = default) => new(activity, output);
-    protected static Inline<TResult> From<TResult>(Func<ValueTask<TResult>> activity, MemoryDatumReference? output = default) => new(activity, output);
-    protected static Inline<TResult> From<TResult>(Func<ActivityExecutionContext, TResult> activity, MemoryDatumReference? output = default) => new(activity, output);
-    protected static Inline<TResult> From<TResult>(Func<TResult> activity, MemoryDatumReference? output = default) => new(activity, output);
+    protected static Inline<TResult> From<TResult>(Func<ActivityExecutionContext, ValueTask<TResult>> activity, MemoryReference? output = default) => new(activity, output);
+    protected static Inline<TResult> From<TResult>(Func<ValueTask<TResult>> activity, MemoryReference? output = default) => new(activity, output);
+    protected static Inline<TResult> From<TResult>(Func<ActivityExecutionContext, TResult> activity, MemoryReference? output = default) => new(activity, output);
+    protected static Inline<TResult> From<TResult>(Func<TResult> activity, MemoryReference? output = default) => new(activity, output);
 }

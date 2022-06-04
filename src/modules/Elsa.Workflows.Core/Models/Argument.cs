@@ -6,12 +6,12 @@ public abstract class Argument
 {
     protected Argument(){}
     
-    protected Argument(MemoryDatumReference locationReference /*, Func<object?, object?>? valueConverter = default*/)
+    protected Argument(MemoryReference memoryReference /*, Func<object?, object?>? valueConverter = default*/)
     {
-        LocationReference = locationReference;
+        MemoryReference = memoryReference;
         //ValueConverter = valueConverter;
     }
 
-    public MemoryDatumReference LocationReference { get; set; } = default!;
+    public MemoryReference MemoryReference { get; set; } = default!;
     //public Func<object?, object?>? ValueConverter { get; set; }
 }

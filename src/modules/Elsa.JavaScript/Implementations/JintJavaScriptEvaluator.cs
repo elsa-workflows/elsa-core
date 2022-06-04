@@ -64,10 +64,10 @@ namespace Elsa.JavaScript.Implementations
             return result?.ToObject();
         }
 
-        private IDictionary<string, MemoryDatum> GetVariables(ExpressionExecutionContext context)
+        private IDictionary<string, MemoryBlock> GetVariables(ExpressionExecutionContext context)
         {
             var currentContext = context;
-            var dictionary = new Dictionary<string, MemoryDatum>();
+            var dictionary = new Dictionary<string, MemoryBlock>();
 
             while (currentContext != null)
             {

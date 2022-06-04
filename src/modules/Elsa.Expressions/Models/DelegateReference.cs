@@ -1,6 +1,6 @@
 namespace Elsa.Expressions.Models;
 
-public class DelegateReference : MemoryDatumReference
+public class DelegateReference : MemoryReference
 {
     public DelegateReference()
     {
@@ -11,7 +11,7 @@ public class DelegateReference : MemoryDatumReference
     public DelegateReference(Func<ExpressionExecutionContext, ValueTask<object?>> @delegate) => Delegate = @delegate;
 
     public Func<ExpressionExecutionContext, ValueTask<object?>>? Delegate { get; set; }
-    public override MemoryDatum Declare() => new();
+    public override MemoryBlock Declare() => new();
 }
 
 public class DelegateReference<T> : DelegateReference

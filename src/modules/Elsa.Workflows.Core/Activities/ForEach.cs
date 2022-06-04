@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Behaviors;
 using Elsa.Workflows.Core.Models;
@@ -28,16 +29,12 @@ public class ForEach : Activity
     [Outbound] public IActivity? Body { get; set; }
     
     /// <summary>
-    /// The current value being iterated.
+    /// The current value being iterated will be assigned to the specified <see cref="MemoryReference"/>.
     /// </summary>
-    public Variable CurrentValue { get; set; } = default!;
+    public MemoryReference? CurrentValue { get; set; }
 
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        // Declare looping variable.
-        CurrentValue = new Variable(nameof(CurrentValue));
-        context.ExpressionExecutionContext.MemoryRegister.Declare(CurrentValue);
-
         // Execute first iteration.
         await HandleIteration(context);
     }
@@ -54,7 +51,7 @@ public class ForEach : Activity
         }
 
         var currentItem = items[currentIndex];
-        CurrentValue.Set(context, currentItem);
+        CurrentValue?.Set(context, currentItem);
 
         if (Body != null)
             context.ScheduleActivity(Body, OnChildCompleted);
@@ -88,8 +85,8 @@ public class ForEach<T> : ForEach
     [Input]
     public new Input<ICollection<T>> Items
     {
-        get => new(base.Items.Expression, base.Items.LocationReference);
-        set => base.Items = new Input<ICollection<object>>(value.Expression, value.LocationReference);
+        get => new(base.Items.Expression, base.Items.MemoryReference);
+        set => base.Items = new Input<ICollection<object>>(value.Expression, value.MemoryReference);
     }
 
     public new Variable<T> CurrentValue

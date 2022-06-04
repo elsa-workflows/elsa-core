@@ -19,7 +19,7 @@ public class ActivityInvoker : IActivityInvoker
         WorkflowExecutionContext workflowExecutionContext,
         IActivity activity,
         ActivityExecutionContext? owner,
-        IEnumerable<MemoryDatumReference>? locationReferences = default)
+        IEnumerable<MemoryReference>? memoryReferences = default)
     {
         var cancellationToken = workflowExecutionContext.CancellationToken;
 
@@ -33,13 +33,14 @@ public class ActivityInvoker : IActivityInvoker
         var transientProperties = workflowExecutionContext.TransientProperties;
         var input = workflowExecutionContext.Input;
         var applicationProperties = ExpressionExecutionContextExtensions.CreateApplicationPropertiesFrom(workflow, transientProperties, input);
+        var parentMemory = parentActivityExecutionContext?.ExpressionExecutionContext.MemoryRegister ?? workflowMemory;
         var activityMemory = new MemoryRegister(workflowMemory);
-        var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, activityMemory, parentExpressionExecutionContext, applicationProperties, cancellationToken);
+        var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, parentMemory, parentExpressionExecutionContext, applicationProperties, cancellationToken);
         var activityExecutionContext = new ActivityExecutionContext(workflowExecutionContext, parentActivityExecutionContext, expressionExecutionContext, activity, cancellationToken);
 
-        // Declare locations.
-        if (locationReferences != null)
-            activityMemory.Declare(locationReferences);
+        // Declare memory.
+        if (memoryReferences != null)
+            activityMemory.Declare(memoryReferences);
 
         // Push the activity context into the workflow context.
         workflowExecutionContext.ActivityExecutionContexts.Add(activityExecutionContext);

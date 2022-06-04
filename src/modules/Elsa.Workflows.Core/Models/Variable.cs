@@ -3,40 +3,46 @@ using Elsa.Expressions.Models;
 
 namespace Elsa.Workflows.Core.Models;
 
-public class Variable : MemoryDatumReference
+public class Variable : MemoryReference
 {
     public Variable()
     {
+        Id = Guid.NewGuid().ToString("N");
     }
 
-    public Variable(object? defaultValue)
-    {
-        DefaultValue = defaultValue;
-    }
-
-    public Variable(string name, object? defaultValue = default) : this(defaultValue)
+    public Variable(string name)
     {
         Id = name;
         Name = name;
     }
 
+    public Variable(string name, object? defaultValue = default) : this(name)
+    {
+        DefaultValue = defaultValue;
+    }
+
     public string? Name { get; set; }
     public object? DefaultValue { get; set; }
-    public override MemoryDatum Declare() => new(DefaultValue);
+    public override MemoryBlock Declare() => new(DefaultValue);
 }
 
 public class Variable<T> : Variable
 {
-    public Variable() : base(typeof(T).Name, default(T))
+    public Variable()
     {
     }
 
-    public Variable(T value) : base(typeof(T).Name, value ?? default)
+    public Variable(string name) : base(name)
     {
     }
 
-    public Variable(string name, T value = default!) : base(name, value ?? default)
+    public Variable(string name, T value) : base(name, value ?? default)
     {
+    }
+    
+    public Variable(T value)
+    {
+        DefaultValue = value;
     }
 
     public T? Get(ActivityExecutionContext context) => Get(context.ExpressionExecutionContext).ConvertTo<T?>();

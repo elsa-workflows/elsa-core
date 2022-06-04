@@ -33,13 +33,13 @@ public static class ActivityExecutionContextExtensions
     {
         var activity = context.Activity;
         var inputs = activity.GetInputs();
-        var assignedInputs = inputs.Where(x => x.LocationReference != null!).ToList();
+        var assignedInputs = inputs.Where(x => x.MemoryReference != null!).ToList();
         var evaluator = context.GetRequiredService<IExpressionEvaluator>();
         var expressionExecutionContext = context.ExpressionExecutionContext;
 
         foreach (var input in assignedInputs)
         {
-            var locationReference = input.LocationReference;
+            var locationReference = input.MemoryReference;
             var value = await evaluator.EvaluateAsync(input, expressionExecutionContext);
             locationReference.Set(context, value);
         }
@@ -63,13 +63,13 @@ public static class ActivityExecutionContextExtensions
         if (input == null)
             throw new Exception($"No input with name {inputName} could be found");
 
-        if (input.LocationReference == null!)
+        if (input.MemoryReference == null!)
             throw new Exception("Input not initialized");
 
         var evaluator = context.GetRequiredService<IExpressionEvaluator>();
         var expressionExecutionContext = context.ExpressionExecutionContext;
 
-        var locationReference = input.LocationReference;
+        var locationReference = input.MemoryReference;
         var value = await evaluator.EvaluateAsync(input, expressionExecutionContext);
         locationReference.Set(context, value);
 
@@ -79,7 +79,7 @@ public static class ActivityExecutionContextExtensions
     public static async Task<T?> EvaluateAsync<T>(this ActivityExecutionContext context, Input<T> input)
     {
         var evaluator = context.GetRequiredService<IExpressionEvaluator>();
-        var locationReference = input.LocationReference;
+        var locationReference = input.MemoryReference;
         var value = await evaluator.EvaluateAsync(input, context.ExpressionExecutionContext);
         locationReference.Set(context, value);
         return value;

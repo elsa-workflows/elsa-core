@@ -13,10 +13,10 @@ public class RegisterState
     {
     }
     
-    public RegisterState(IDictionary<string, MemoryDatum> locations)
+    public RegisterState(IDictionary<string, MemoryBlock> locations)
     {
         Locations = locations;
     }
 
-    public IDictionary<string, MemoryDatum> Locations { get; set; } = default!;
+    public IDictionary<string, MemoryBlock> Locations { get; set; } = default!;
 }

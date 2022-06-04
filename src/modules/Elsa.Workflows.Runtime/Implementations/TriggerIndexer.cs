@@ -152,7 +152,7 @@ public class TriggerIndexer : ITriggerIndexer
     private async Task<ExpressionExecutionContext> CreateExpressionExecutionContextAsync(WorkflowIndexingContext context, ITrigger trigger)
     {
         var inputs = trigger.GetInputs();
-        var assignedInputs = inputs.Where(x => x.LocationReference != null!).ToList();
+        var assignedInputs = inputs.Where(x => x.MemoryReference != null!).ToList();
         var register = context.GetOrCreateRegister(trigger);
         var cancellationToken = context.CancellationToken;
         var expressionInput = new Dictionary<string, object>();
@@ -163,7 +163,7 @@ public class TriggerIndexer : ITriggerIndexer
         // Evaluate activity inputs before requesting trigger data.
         foreach (var input in assignedInputs)
         {
-            var locationReference = input.LocationReference;
+            var locationReference = input.MemoryReference;
 
             try
             {

@@ -13,13 +13,14 @@ class ForEachWorkflow : WorkflowBase
     {
         _items = items;
     }
-        
+
     protected override void Build(IWorkflowDefinitionBuilder workflow)
     {
-        var currentItem = new Variable<string>();
+        var currentItem = new Variable<string>("CurrentItem");
 
         workflow.WithRoot(new Sequence
         {
+            Variables = { currentItem },
             Activities =
             {
                 new ForEach<string>

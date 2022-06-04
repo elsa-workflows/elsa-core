@@ -30,11 +30,11 @@ public class ExpressionExecutionContext
     public ExpressionExecutionContext? ParentContext { get; set; }
     public CancellationToken CancellationToken { get; }
 
-    public MemoryDatum GetDatum(MemoryDatumReference reference) => GetMemoryDatumInternal(reference) ?? throw new InvalidOperationException();
-    public object Get(MemoryDatumReference reference) => GetDatum(reference).Value!;
-    public T Get<T>(MemoryDatumReference reference) => (T)Get(reference);
+    public MemoryBlock GetDatum(MemoryReference reference) => GetMemoryDatumInternal(reference) ?? throw new Exception($"Failed to retrieve memory block with reference {reference.Id}");
+    public object Get(MemoryReference reference) => GetDatum(reference).Value!;
+    public T Get<T>(MemoryReference reference) => (T)Get(reference);
 
-    public void Set(MemoryDatumReference reference, object? value)
+    public void Set(MemoryReference reference, object? value)
     {
         var datum = GetMemoryDatumInternal(reference) ?? MemoryRegister.Declare(reference);
         datum.Value = value;
@@ -43,5 +43,5 @@ public class ExpressionExecutionContext
     public T GetRequiredService<T>() where T : notnull => _serviceProvider.GetRequiredService<T>();
 
     //private MemoryDatum? GetMemoryDatumInternal(MemoryDatumReference locationReference) => MemoryRegister.TryGetMemoryDatum(locationReference.Id, out var location) ? location : ParentContext?.GetMemoryDatumInternal(locationReference);
-    private MemoryDatum? GetMemoryDatumInternal(MemoryDatumReference reference) => MemoryRegister.TryGetMemoryDatum(reference.Id, out var location) ? location : default;
+    private MemoryBlock? GetMemoryDatumInternal(MemoryReference reference) => MemoryRegister.TryGetMemoryDatum(reference.Id, out var location) ? location : default;
 }

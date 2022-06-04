@@ -111,7 +111,7 @@ public abstract class ActivityWithResult : Activity
     {
     }
 
-    protected ActivityWithResult(MemoryDatumReference? outputTarget)
+    protected ActivityWithResult(MemoryReference? outputTarget)
     {
         if (outputTarget != null) this.CaptureOutput(outputTarget);
     }
@@ -129,21 +129,21 @@ public abstract class Activity<T> : ActivityWithResult
     {
     }
 
-    protected Activity(MemoryDatumReference? outputTarget) : base(outputTarget)
+    protected Activity(MemoryReference? outputTarget) : base(outputTarget)
     {
     }
 }
 
 public static class ActivityWithResultExtensions
 {
-    public static T CaptureOutput<T>(this T activity, Expression<Func<T, Output>> propertyExpression, MemoryDatumReference locationReference) where T : IActivity
+    public static T CaptureOutput<T>(this T activity, Expression<Func<T, Output>> propertyExpression, MemoryReference locationReference) where T : IActivity
     {
         var output = activity.GetPropertyValue(propertyExpression)!;
         output.Targets.Add(locationReference);
         return activity;
     }
 
-    public static T CaptureOutput<T>(this T activity, MemoryDatumReference locationReference) where T : ActivityWithResult => activity.CaptureOutput(x => x.Result, locationReference);
+    public static T CaptureOutput<T>(this T activity, MemoryReference locationReference) where T : ActivityWithResult => activity.CaptureOutput(x => x.Result, locationReference);
 }
 
 internal record SignalHandlerRegistration(Type SignalType, Func<object, SignalContext, ValueTask> Handler);

@@ -5,16 +5,16 @@ namespace Elsa.Expressions.Models;
 /// </summary>
 public class MemoryRegister
 {
-    public MemoryRegister(MemoryRegister? parent = default, IDictionary<string, MemoryDatum>? locations = default)
+    public MemoryRegister(MemoryRegister? parent = default, IDictionary<string, MemoryBlock>? locations = default)
     {
         Parent = parent;
-        Memory = locations ?? new Dictionary<string, MemoryDatum>();
+        Memory = locations ?? new Dictionary<string, MemoryBlock>();
     }
 
     public MemoryRegister? Parent { get; }
-    public IDictionary<string, MemoryDatum> Memory { get; }
+    public IDictionary<string, MemoryBlock> Memory { get; }
 
-    public bool TryGetMemoryDatum(string id, out MemoryDatum datum)
+    public bool TryGetMemoryDatum(string id, out MemoryBlock datum)
     {
         datum = null!;
         
@@ -24,13 +24,13 @@ public class MemoryRegister
         return Parent?.TryGetMemoryDatum(id, out datum) == true;
     }
 
-    public void Declare(IEnumerable<MemoryDatumReference> references)
+    public void Declare(IEnumerable<MemoryReference> references)
     {
         foreach (var reference in references)
             Declare(reference);
     }
 
-    public MemoryDatum Declare(MemoryDatumReference reference)
+    public MemoryBlock Declare(MemoryReference reference)
     {
         var datum = reference.Declare();
         Memory[reference.Id] = datum;

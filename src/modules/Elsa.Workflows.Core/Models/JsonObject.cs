@@ -2,7 +2,7 @@ using Elsa.Expressions.Models;
 
 namespace Elsa.Workflows.Core.Models;
 
-public class JsonObject : MemoryDatumReference
+public class JsonObject : MemoryReference
 {
     public JsonObject()
     {
@@ -15,5 +15,5 @@ public class JsonObject : MemoryDatumReference
 
     public string? Name { get; set; }
     public string? DefaultValue { get; }
-    public override MemoryDatum Declare() => new(DefaultValue);
+    public override MemoryBlock Declare() => new(DefaultValue);
 }

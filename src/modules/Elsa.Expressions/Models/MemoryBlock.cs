@@ -3,13 +3,13 @@ namespace Elsa.Expressions.Models;
 /// <summary>
 /// Represents a piece of memory within a memory register
 /// </summary>
-public class MemoryDatum
+public class MemoryBlock
 {
-    public MemoryDatum()
+    public MemoryBlock()
     {
     }
 
-    public MemoryDatum(object? value)
+    public MemoryBlock(object? value)
     {
         Value = value;
     }

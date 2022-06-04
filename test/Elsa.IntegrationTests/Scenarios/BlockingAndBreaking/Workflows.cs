@@ -11,6 +11,7 @@ public class BreakWhileBlockForkWorkflow : WorkflowBase
         var currentValue = new Variable<int?>(0);
 
         workflow.WithVariable(currentValue);
+        
         workflow.WithRoot(new While(() => true)
         {
             Body =
@@ -23,7 +24,8 @@ public class BreakWhileBlockForkWorkflow : WorkflowBase
                             JoinMode = JoinMode.WaitAll,
                             Branches =
                             {
-                                new Sequence{
+                                new Sequence
+                                {
                                     Activities =
                                     {
                                         new WriteLine("Branch 1"),

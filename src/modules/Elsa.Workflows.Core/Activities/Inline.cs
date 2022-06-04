@@ -54,16 +54,16 @@ public class Inline<T> : Activity<T>
 {
     private readonly Func<ActivityExecutionContext, ValueTask<T>> _activity;
 
-    public Inline(Func<ActivityExecutionContext, ValueTask<T>> activity, MemoryDatumReference? outputTarget = default) : base(outputTarget)
+    public Inline(Func<ActivityExecutionContext, ValueTask<T>> activity, MemoryReference? outputTarget = default) : base(outputTarget)
     {
         _activity = activity;
     }
 
-    public Inline(Func<ValueTask<T>> activity, MemoryDatumReference? outputTarget = default) : this(_ => activity(), outputTarget)
+    public Inline(Func<ValueTask<T>> activity, MemoryReference? outputTarget = default) : this(_ => activity(), outputTarget)
     {
     }
 
-    public Inline(Func<ActivityExecutionContext, T> activity, MemoryDatumReference? outputTarget = default) : this(c =>
+    public Inline(Func<ActivityExecutionContext, T> activity, MemoryReference? outputTarget = default) : this(c =>
     {
         var result = activity(c);
         return new ValueTask<T>(result);
@@ -71,7 +71,7 @@ public class Inline<T> : Activity<T>
     {
     }
 
-    public Inline(Func<T> activity, MemoryDatumReference? outputTarget = default) : this(c =>
+    public Inline(Func<T> activity, MemoryReference? outputTarget = default) : this(c =>
     {
         var result = activity();
         return new ValueTask<T>(result);

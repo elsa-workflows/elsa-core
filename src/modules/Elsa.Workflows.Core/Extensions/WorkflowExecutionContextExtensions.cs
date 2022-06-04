@@ -55,10 +55,10 @@ public static class WorkflowExecutionContextExtensions
         IActivity activity,
         ActivityExecutionContext owner,
         ActivityCompletionCallback? completionCallback = default,
-        IEnumerable<MemoryDatumReference>? locationReferences = default, object? tag = default)
+        IEnumerable<MemoryReference>? references = default, object? tag = default)
     {
         var activityInvoker = workflowExecutionContext.GetRequiredService<IActivityInvoker>();
-        var workItem = new ActivityWorkItem(activity.Id, async () => await activityInvoker.InvokeAsync(workflowExecutionContext, activity, owner, locationReferences), tag);
+        var workItem = new ActivityWorkItem(activity.Id, async () => await activityInvoker.InvokeAsync(workflowExecutionContext, activity, owner, references), tag);
         workflowExecutionContext.Scheduler.Push(workItem);
 
         if (completionCallback != null)

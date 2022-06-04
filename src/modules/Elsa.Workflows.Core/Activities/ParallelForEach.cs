@@ -1,3 +1,4 @@
+using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
@@ -10,24 +11,29 @@ public class ParallelForEach<T> : Activity
     private const string CollectedCountProperty = nameof(CollectedCountProperty);
     [Input] public Input<ICollection<T>> Items { get; set; } = new(Array.Empty<T>());
     [Outbound] public IActivity Body { get; set; } = default!;
-    public Variable<T> CurrentValue { get; set; } = new();
+
+    /// <summary>
+    /// Assign a memory reference to gain access to individual branches of parallel execution from within each branch.
+    /// </summary>
+    public MemoryReference? CurrentValue { get; set; }
 
     protected override void Execute(ActivityExecutionContext context)
     {
-        // Declare looping variable.
-        context.ExpressionExecutionContext.MemoryRegister.Declare(CurrentValue);
         var items = context.Get(Items)!.Reverse().ToList();
 
         foreach (var item in items)
         {
-            var localVariable = new Variable<T>(item)
+            // For each item, declare a new block of memory to store the item into.
+            var localVariable = new Variable<T>()
             {
-                // "Capture" the CurrentValues variable by use same ID so that outer scope variable can access inner scope variable.
-                Id = CurrentValue.Id
+                DefaultValue = item
             };
-            
+
+            if (CurrentValue != null)
+                localVariable.Id = localVariable.Id;
+
             // Schedule a body of work for each item.
-            context.ScheduleActivity(Body, OnChildCompleted, new[]{localVariable});
+            context.ScheduleActivity(Body, OnChildCompleted, new[] { localVariable });
         }
     }
 
@@ -35,11 +41,11 @@ public class ParallelForEach<T> : Activity
     {
         var itemCount = context.Get(Items)!.Count;
         var collectedCount = context.UpdateProperty<int>(CollectedCountProperty, count => count + 1);
-            
+
         // Prevent next sibling from executing while not all scheduled activities have completed.
-        if(collectedCount < itemCount)
+        if (collectedCount < itemCount)
             context.PreventContinuation();
-            
+
         return ValueTask.CompletedTask;
     }
 }
