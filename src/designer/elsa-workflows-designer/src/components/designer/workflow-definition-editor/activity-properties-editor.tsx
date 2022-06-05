@@ -222,7 +222,7 @@ export class ActivityPropertiesEditor {
         return <div key={key}>
           <FormEntry fieldId={key} label={displayName} hint={property.description}>
             <select>
-              <option>CurrentValue</option>
+              <option>CurrentLanguage</option>
               <option>Variable 2</option>
               <option>Variable 3</option>
             </select>
