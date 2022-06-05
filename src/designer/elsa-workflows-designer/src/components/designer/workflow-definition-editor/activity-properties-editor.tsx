@@ -13,6 +13,7 @@ import {InputDriverRegistry} from "../../../services";
 import {Container} from "typedi";
 import {ActivityInputContext} from "../../../services/node-input-driver";
 import {FormEntry} from "../../shared/forms/form-entry";
+import {isNullOrWhitespace} from "../../../utils";
 
 export interface ActivityUpdatedArgs {
   activity: Activity;
@@ -99,12 +100,17 @@ export class ActivityPropertiesEditor {
       content: () => this.renderInputTab()
     };
 
-    const outputTab: TabDefinition = {
-      displayText: 'Output',
-      content: () => this.renderOutputTab()
-    };
+    const tabs = !!activityDescriptor ? [commonTab, inputTab] : [];
 
-    const tabs = !!activityDescriptor ? [commonTab, inputTab, outputTab] : [];
+    if (activityDescriptor.outputProperties.length > 0) {
+      const outputTab: TabDefinition = {
+        displayText: 'Output',
+        content: () => this.renderOutputTab()
+      };
+
+      tabs.push(outputTab);
+    }
+
     const actions = [DefaultActions.Delete(this.onDeleteActivity)];
     const mainTitle = activity.id;
     const subTitle = activityDescriptor.displayName;
@@ -211,11 +217,16 @@ export class ActivityPropertiesEditor {
     return <div key={key}>
       {outputProperties.map(property => {
         const key = `${activity.id}-${property.name}`;
+        const displayName = isNullOrWhitespace(property.displayName) ? property.name : property.displayName;
+
         return <div key={key}>
-          <select>
-            <option>Variable 1</option>
-            <option>Variable 2</option>
-          </select>
+          <FormEntry fieldId={key} label={displayName} hint={property.description}>
+            <select>
+              <option>CurrentValue</option>
+              <option>Variable 2</option>
+              <option>Variable 3</option>
+            </select>
+          </FormEntry>
         </div>;
       })}
     </div>
