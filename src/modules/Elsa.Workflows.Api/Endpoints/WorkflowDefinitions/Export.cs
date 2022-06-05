@@ -1,9 +1,11 @@
+using System.Linq;
 using System.Net.Mime;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.AspNetCore;
 using Elsa.AspNetCore.Attributes;
+using Elsa.Workflows.Api.Mappers;
 using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Persistence.Models;
@@ -22,12 +24,18 @@ public class Export : Controller
     private readonly IWorkflowDefinitionStore _store;
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly WorkflowSerializerOptionsProvider _serializerOptionsProvider;
+    private readonly VariableDefinitionMapper _variableDefinitionMapper;
 
-    public Export(IWorkflowDefinitionStore store, IWorkflowDefinitionService workflowDefinitionService, WorkflowSerializerOptionsProvider serializerOptionsProvider)
+    public Export(
+        IWorkflowDefinitionStore store, 
+        IWorkflowDefinitionService workflowDefinitionService, 
+        WorkflowSerializerOptionsProvider serializerOptionsProvider,
+        VariableDefinitionMapper variableDefinitionMapper)
     {
         _store = store;
         _workflowDefinitionService = workflowDefinitionService;
         _serializerOptionsProvider = serializerOptionsProvider;
+        _variableDefinitionMapper = variableDefinitionMapper;
     }
 
     [HttpGet]
@@ -44,6 +52,7 @@ public class Export : Controller
             return NotFound();
         
         var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(definition, cancellationToken);
+        var variables = _variableDefinitionMapper.Map(workflow.Variables).ToList();
         
         var model = new WorkflowDefinitionModel(
             definition.Id,
@@ -52,7 +61,7 @@ public class Export : Controller
             definition.Description,
             definition.CreatedAt,
             definition.Version,
-            definition.Variables,
+            variables,
             definition.Metadata,
             definition.ApplicationProperties,
             definition.IsLatest,

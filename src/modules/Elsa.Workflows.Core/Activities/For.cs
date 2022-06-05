@@ -39,9 +39,10 @@ public class For : Activity
     public Input<int> Step { get; set; } = new(1);
     public Input<ForOperator> Operator { get; set; } = new(ForOperator.LessThanOrEqual);
     [Outbound] public IActivity? Body { get; set; }
-    
+
     [JsonIgnore]
-    public MemoryReference? CurrentValue { get; set; }
+    [Output]
+    public Output<MemoryReference?> CurrentValue { get; set; } = new();
 
     protected override void Execute(ActivityExecutionContext context)
     {
@@ -82,13 +83,14 @@ public class For : Activity
             context.SetProperty(CurrentStepProperty, currentValue);
             
             // Update loop variable.
-            CurrentValue?.Set(context.ExpressionExecutionContext, currentValue);
+            context.Set(CurrentValue, currentValue);
+            //CurrentValue?.Set(context.ExpressionExecutionContext, currentValue);
         }
     }
 
-    private ValueTask OnChildComplete(ActivityExecutionContext completedActivityExecutionContext, ActivityExecutionContext ownerActivityExecutionContext)
+    private ValueTask OnChildComplete(ActivityExecutionContext context, ActivityExecutionContext childContext)
     {
-        HandleIteration(ownerActivityExecutionContext);
+        HandleIteration(context);
         return ValueTask.CompletedTask;
     }
 }

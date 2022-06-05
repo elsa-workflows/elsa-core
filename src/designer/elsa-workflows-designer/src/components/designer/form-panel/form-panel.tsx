@@ -6,8 +6,6 @@ import {isNullOrWhitespace} from "../../../utils";
   tag: 'elsa-form-panel'
 })
 export class FormPanel {
-  private formElement: HTMLFormElement;
-
   @Prop() public mainTitle: string;
   @Prop() public subTitle: string;
   @Prop() public tabs: Array<TabDefinition> = [];
@@ -43,8 +41,7 @@ export class FormPanel {
 
     return (
       <div class="absolute inset-0 overflow-hidden">
-        <form class="h-full flex flex-col bg-white shadow-xl" onSubmit={e => this.onSubmit(e)}
-              ref={el => this.formElement = el} method="post">
+        <form class="h-full flex flex-col bg-white shadow-xl" onSubmit={e => this.onSubmit(e)} method="post">
           <div class="flex flex-col flex-1">
 
             <div class="px-4 py-6 bg-gray-50 sm:px-6">

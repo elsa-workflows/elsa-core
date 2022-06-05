@@ -13,7 +13,6 @@ public class Variable : MemoryReference
     public Variable(string name)
     {
         Id = name;
-        Name = name;
     }
 
     public Variable(string name, object? value = default) : this(name)
@@ -21,7 +20,11 @@ public class Variable : MemoryReference
         Value = value;
     }
 
-    public string? Name { get; set; }
+    public string Name
+    {
+        get => Id;
+        set => Id = value;
+    }
     public object? Value { get; set; }
     public override MemoryBlock Declare() => new(Value);
 }

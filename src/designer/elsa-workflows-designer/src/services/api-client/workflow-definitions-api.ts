@@ -1,4 +1,4 @@
-import { Activity, PagedList, VersionOptions, WorkflowDefinition, WorkflowDefinitionSummary } from '../../models';
+import {Activity, PagedList, Variable, VersionOptions, WorkflowDefinition, WorkflowDefinitionSummary} from '../../models';
 import { AxiosInstance } from 'axios';
 import { getVersionOptionsString, serializeQueryString } from '../../utils';
 
@@ -32,6 +32,7 @@ export interface SaveWorkflowDefinitionRequest {
   description?: string;
   publish: boolean;
   root?: Activity;
+  variables?: Array<Variable>;
 }
 
 export interface BaseManyWorkflowDefinitionRequest {

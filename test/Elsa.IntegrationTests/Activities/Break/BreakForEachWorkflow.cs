@@ -20,7 +20,7 @@ class BreakForEachWorkflow : WorkflowBase
                 new ForEach<string>
                 {
                     Items = new Input<ICollection<string>>(items),
-                    CurrentValue = currentItem,
+                    CurrentValue = new Output<Variable<string>?>(currentItem),
                     Body = new Sequence
                     {
                         Activities =

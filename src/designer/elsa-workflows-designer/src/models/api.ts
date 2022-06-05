@@ -6,7 +6,8 @@ export interface ActivityDescriptor {
   displayName: string;
   category: string;
   description: string;
-  inputProperties: Array<InputDescriptor>
+  inputProperties: Array<InputDescriptor>;
+  outputProperties: Array<OutputDescriptor>;
   kind: ActivityKind;
   inPorts: Array<Port>;
   outPorts: Array<Port>;

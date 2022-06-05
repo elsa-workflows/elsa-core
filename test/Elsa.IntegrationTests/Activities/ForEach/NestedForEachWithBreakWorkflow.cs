@@ -15,7 +15,7 @@ class NestedForEachWithBreakWorkflow : WorkflowBase
 
         workflow.WithRoot(new ForEach<string>(outerItems)
         {
-            CurrentValue = currentOuterItem,
+            CurrentValue = new Output<Variable<string>?>(currentOuterItem),
             Body = new Sequence
             {
                 Activities =
@@ -23,7 +23,7 @@ class NestedForEachWithBreakWorkflow : WorkflowBase
                     new WriteLine(currentOuterItem),
                     new ForEach<string>(innerItems)
                     {
-                        CurrentValue = currentInnerItem,
+                        CurrentValue = new Output<Variable<string>?>(currentInnerItem),
                         Body = new Sequence
                         {
                             Activities =

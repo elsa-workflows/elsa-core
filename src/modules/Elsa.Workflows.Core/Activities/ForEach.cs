@@ -34,7 +34,8 @@ public class ForEach : Activity
     /// The current value being iterated will be assigned to the specified <see cref="MemoryReference"/>.
     /// </summary>
     [JsonIgnore]
-    public MemoryReference? CurrentValue { get; set; }
+    [Output(Description = "Captures the current value of the list of items being iterated.")]
+    public Output<MemoryReference?> CurrentValue { get; set; } = new();
 
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
@@ -54,7 +55,8 @@ public class ForEach : Activity
         }
 
         var currentItem = items[currentIndex];
-        CurrentValue?.Set(context, currentItem);
+        context.Set(CurrentValue, currentItem);
+        //CurrentValue.Set(context, currentItem);
 
         if (Body != null)
             context.ScheduleActivity(Body, OnChildCompleted);
@@ -92,9 +94,9 @@ public class ForEach<T> : ForEach
         set => base.Items = new Input<ICollection<object>>(value.Expression, value.MemoryReference);
     }
 
-    public new Variable<T>? CurrentValue
+    public new Output<Variable<T>?> CurrentValue
     {
-        get => (Variable<T>?)base.CurrentValue;
-        set => base.CurrentValue = value;
+        get => new(base.CurrentValue.MemoryReference);
+        set => base.CurrentValue = new Output<MemoryReference?>(value.MemoryReference);
     }
 }

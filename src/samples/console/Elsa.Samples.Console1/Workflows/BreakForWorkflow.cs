@@ -1,3 +1,5 @@
+using System.Linq.Expressions;
+using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
@@ -22,7 +24,7 @@ public static class BreakForWorkflow
                 {
                     Start = new Input<int>(start),
                     End = new Input<int>(end),
-                    CurrentValue = currentValue,
+                    CurrentValue = new Output<MemoryReference?>(currentValue),
                     Body = new Sequence
                     {
                         Activities =

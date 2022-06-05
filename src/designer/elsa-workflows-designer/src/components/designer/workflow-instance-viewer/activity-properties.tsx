@@ -4,16 +4,11 @@ import WorkflowEditorTunnel from '../state';
 import {
   Activity,
   ActivityDescriptor,
-  DefaultActions, Expression, InputDescriptor, Lookup,
-  RenderActivityPropContext,
+  Lookup,
   RenderActivityPropsContext,
   TabChangedArgs,
   TabDefinition
 } from '../../../models';
-import {InputDriverRegistry} from "../../../services";
-import {Container} from "typedi";
-import {ActivityInputContext} from "../../../services/node-input-driver";
-import {FormEntry} from "../../shared/forms/form-entry";
 import {InfoList} from "../../shared/forms/info-list";
 
 @Component({

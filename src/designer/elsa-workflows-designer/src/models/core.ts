@@ -24,7 +24,7 @@ export interface Container extends Activity {
 export interface Variable {
   name: string;
   type: string;
-  defaultValue?: any;
+  value?: any;
 }
 
 export interface ActivityInput {

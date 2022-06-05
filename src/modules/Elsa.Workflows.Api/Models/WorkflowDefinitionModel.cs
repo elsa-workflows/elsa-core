@@ -12,7 +12,7 @@ public record WorkflowDefinitionModel(
     string? Description,
     DateTimeOffset CreatedAt,
     int Version,
-    ICollection<Variable> Variables,
+    ICollection<VariableDefinition> Variables,
     IDictionary<string, object> Metadata,
     IDictionary<string, object> ApplicationProperties,
     bool IsLatest,

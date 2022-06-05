@@ -1,6 +1,6 @@
 import {Component, Event, EventEmitter, h, Method, Prop, State, Watch} from '@stencil/core';
 import WorkflowEditorTunnel from '../state';
-import {TabChangedArgs, WorkflowDefinition} from '../../../models';
+import {TabChangedArgs, Variable, WorkflowDefinition} from '../../../models';
 import {FormEntry} from "../../shared/forms/form-entry";
 import {InfoList} from "../../shared/forms/info-list";
 import {isNullOrWhitespace} from "../../../utils";
@@ -27,7 +27,6 @@ export class WorkflowDefinitionPropertiesEditor {
   @Event() workflowPropsUpdated: EventEmitter<WorkflowDefinitionPropsUpdatedArgs>;
   @State() private model: WorkflowPropertiesEditorModel;
   @State() private selectedTabIndex: number = 0;
-  @State() private changeHandle: object = {};
 
   @Method()
   public async show(): Promise<void> {
@@ -147,8 +146,10 @@ export class WorkflowDefinitionPropertiesEditor {
   };
 
   private renderVariablesTab = () => {
+    const variables: Array<Variable> = this.workflowDefinition?.variables ?? [];
+
     return <div>
-      <elsa-variables-editor />
+      <elsa-variables-editor variables={variables} onVariablesChanged={e => this.onVariablesUpdated(e)} />
     </div>
   };
 
@@ -157,7 +158,19 @@ export class WorkflowDefinitionPropertiesEditor {
   private onPropertyEditorChanged = (apply: (w: WorkflowDefinition) => void) => {
     const workflowDefinition = this.workflowDefinition;
     apply(workflowDefinition);
-    return this.workflowPropsUpdated.emit({workflowDefinition});
+    this.workflowPropsUpdated.emit({workflowDefinition});
+  }
+
+  private onVariablesUpdated = async (e: CustomEvent<Array<Variable>>) => {
+    const workflowDefinition = this.workflowDefinition;
+
+    if(!workflowDefinition)
+      return;
+
+    const variables = e.detail;
+    workflowDefinition.variables = variables;
+    this.workflowPropsUpdated.emit({workflowDefinition});
+    await this.createModel();
   }
 }
 

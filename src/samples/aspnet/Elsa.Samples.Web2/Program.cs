@@ -44,6 +44,7 @@ services
             .AddActivity<ForEach>()
             .AddActivity<Switch>()
             .AddActivity<RunJavaScript>())
+        .UseWorkflowApiEndpoints()
         .UseHttp()
         .UseMvc()
     );

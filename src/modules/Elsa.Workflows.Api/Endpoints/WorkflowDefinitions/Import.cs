@@ -1,8 +1,10 @@
+using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.AspNetCore;
 using Elsa.AspNetCore.Attributes;
+using Elsa.Workflows.Api.Mappers;
 using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Management.Materializers;
@@ -23,14 +25,20 @@ public class Import : Controller
     private readonly WorkflowSerializerOptionsProvider _serializerOptionsProvider;
     private readonly IWorkflowPublisher _workflowPublisher;
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
+    private readonly VariableDefinitionMapper _variableDefinitionMapper;
 
-    public Import(WorkflowSerializerOptionsProvider serializerOptionsProvider, IWorkflowPublisher workflowPublisher, IWorkflowDefinitionService workflowDefinitionService)
+    public Import(
+        WorkflowSerializerOptionsProvider serializerOptionsProvider,
+        IWorkflowPublisher workflowPublisher,
+        IWorkflowDefinitionService workflowDefinitionService,
+        VariableDefinitionMapper variableDefinitionMapper)
     {
         _serializerOptionsProvider = serializerOptionsProvider;
         _workflowPublisher = workflowPublisher;
         _workflowDefinitionService = workflowDefinitionService;
+        _variableDefinitionMapper = variableDefinitionMapper;
     }
-    
+
     [HttpPost]
     public async Task<IActionResult> HandleAsync(string? definitionId, bool publish, CancellationToken cancellationToken)
     {
@@ -56,6 +64,7 @@ public class Import : Controller
         // Update the draft with the received model.
         var root = model.Root;
         var stringData = JsonSerializer.Serialize(root, serializerOptions);
+        var variables = _variableDefinitionMapper.Map(model.Variables).ToList();
 
         draft!.StringData = stringData;
         draft.MaterializerName = JsonWorkflowMaterializer.MaterializerName;
@@ -63,10 +72,10 @@ public class Import : Controller
         draft.Description = model.Description?.Trim();
         draft.Metadata = model.Metadata;
         draft.Tags = model.Tags;
-        draft.Variables = model.Variables;
+        draft.Variables = variables;
         draft.ApplicationProperties = model.ApplicationProperties;
         draft = publish ? await _workflowPublisher.PublishAsync(draft, cancellationToken) : await _workflowPublisher.SaveDraftAsync(draft, cancellationToken);
-        
+
         // Materialize the workflow definition for serialization.
         var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(draft, cancellationToken);
 
@@ -77,7 +86,7 @@ public class Import : Controller
             draft.Description,
             draft.CreatedAt,
             draft.Version,
-            draft.Variables,
+            model.Variables,
             draft.Metadata,
             draft.ApplicationProperties,
             draft.IsLatest,

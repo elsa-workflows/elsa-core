@@ -1,3 +1,4 @@
+using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
@@ -16,7 +17,7 @@ public static class ForWorkflow
         {
             Start = new Input<int>(start),
             End = new Input<int>(end),
-            CurrentValue = currentValue,
+            CurrentValue = new Output<MemoryReference?>(currentValue),
             Body = new WriteLine(context => $"Current value: {currentValue.Get<int>(context)}")
         };
 

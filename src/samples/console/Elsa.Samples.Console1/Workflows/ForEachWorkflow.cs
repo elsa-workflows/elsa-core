@@ -20,7 +20,7 @@ public static class ForEachWorkflow
                 new ForEach<string>
                 {
                     Items = new Input<ICollection<string>>(items),
-                    CurrentValue = currentItem,
+                    CurrentValue = new Output<Variable<string>?>(currentItem),
                     Body = new WriteLine(context => currentItem.Get(context))
                 },
                 new WriteLine("Done.")

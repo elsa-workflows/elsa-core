@@ -17,7 +17,8 @@ export class WorkflowDefinitionManager {
       name: definition.name,
       description: definition.description,
       publish: publish,
-      root: definition.root
+      root: definition.root,
+      variables: definition.variables
     };
 
     const elsaClient = await this.elsaApiClientProvider.getElsaClient();

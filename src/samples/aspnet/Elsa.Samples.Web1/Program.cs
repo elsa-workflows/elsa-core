@@ -53,6 +53,7 @@ services
             runtime.Workflows.Add<StartAtTriggerWorkflow>();
             runtime.Workflows.Add<StartAtBookmarkWorkflow>();
         })
+        .UseWorkflowApiEndpoints()
         .UseJavaScript()
         .UseLiquid()
         .UseHttp()

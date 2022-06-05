@@ -4,8 +4,7 @@ import WorkflowEditorTunnel from '../state';
 import {
   Activity,
   ActivityDescriptor,
-  DefaultActions, InputDescriptor,
-  RenderActivityPropContext,
+  DefaultActions, InputDescriptor, RenderActivityInputContext,
   RenderActivityPropsContext,
   TabChangedArgs,
   TabDefinition
@@ -61,7 +60,7 @@ export class ActivityPropertiesEditor {
     const title = activityDescriptor?.displayName ?? activityDescriptor?.activityType ?? 'Unknown Activity';
     const driverRegistry = this.inputDriverRegistry;
 
-    const renderPropertyContexts: Array<RenderActivityPropContext> = activityDescriptor.inputProperties.map(inputDescriptor => {
+    const renderInputPropertyContexts: Array<RenderActivityInputContext> = activityDescriptor.inputProperties.map(inputDescriptor => {
       const renderInputContext: ActivityInputContext = {
         node: activity,
         nodeDescriptor: activityDescriptor,
@@ -83,24 +82,29 @@ export class ActivityPropertiesEditor {
       activity,
       activityDescriptor,
       title,
-      properties: renderPropertyContexts
+      inputProperties: renderInputPropertyContexts
     }
   }
 
   public render() {
     const {activity, activityDescriptor, title} = this.renderContext;
 
-    const propertiesTab: TabDefinition = {
-      displayText: 'Properties',
-      content: () => this.renderPropertiesTab()
-    };
-
     const commonTab: TabDefinition = {
       displayText: 'Common',
       content: () => this.renderCommonTab()
     };
 
-    const tabs = !!activityDescriptor ? [propertiesTab, commonTab] : [];
+    const inputTab: TabDefinition = {
+      displayText: 'Input',
+      content: () => this.renderInputTab()
+    };
+
+    const outputTab: TabDefinition = {
+      displayText: 'Output',
+      content: () => this.renderOutputTab()
+    };
+
+    const tabs = !!activityDescriptor ? [commonTab, inputTab, outputTab] : [];
     const actions = [DefaultActions.Delete(this.onDeleteActivity)];
     const mainTitle = activity.id;
     const subTitle = activityDescriptor.displayName;
@@ -133,7 +137,7 @@ export class ActivityPropertiesEditor {
     this.activityUpdated.emit({activity, activityDescriptor, propertyName: 'id', inputDescriptor});
   }
 
-  private onActivityDisplayTextChanged(e: any){
+  private onActivityDisplayTextChanged(e: any) {
     const activity = this.activity;
     const inputElement = e.target as HTMLInputElement;
 
@@ -165,8 +169,8 @@ export class ActivityPropertiesEditor {
 
   private onDeleteActivity = () => this.deleteActivityRequested.emit({activity: this.activity});
 
-  private renderPropertiesTab = () => {
-    const {activity, properties} = this.renderContext;
+  private renderCommonTab = () => {
+    const {activity,} = this.renderContext;
     const activityId = activity.id;
     const displayText: string = activity.metadata?.displayText ?? '';
     const key = `${activityId}`;
@@ -180,7 +184,16 @@ export class ActivityPropertiesEditor {
         <input type="text" name="ActivityDisplayText" id="ActivityDisplayText" value={displayText} onChange={e => this.onActivityDisplayTextChanged(e)}/>
       </FormEntry>
 
-      {properties.filter(x => !!x.inputControl).map(propertyContext => {
+    </div>
+  };
+
+  private renderInputTab = () => {
+    const {activity, inputProperties} = this.renderContext;
+    const activityId = activity.id;
+    const key = `${activityId}`;
+
+    return <div key={key}>
+      {inputProperties.filter(x => !!x.inputControl).map(propertyContext => {
         const key = `${activity.id}-${propertyContext.inputContext.inputDescriptor.name}`;
         return <div key={key}>
           {propertyContext.inputControl}
@@ -189,8 +202,22 @@ export class ActivityPropertiesEditor {
     </div>
   };
 
-  private renderCommonTab = () => {
-    return <div>
+  private renderOutputTab = () => {
+    const {activity, activityDescriptor} = this.renderContext;
+    const outputProperties = activityDescriptor.outputProperties;
+    const activityId = activity.id;
+    const key = `${activityId}`;
+
+    return <div key={key}>
+      {outputProperties.map(property => {
+        const key = `${activity.id}-${property.name}`;
+        return <div key={key}>
+          <select>
+            <option>Variable 1</option>
+            <option>Variable 2</option>
+          </select>
+        </div>;
+      })}
     </div>
   };
 }

@@ -71,10 +71,10 @@ export interface RenderActivityPropsContext {
   activity: Activity;
   activityDescriptor: ActivityDescriptor;
   title: string;
-  properties: Array<RenderActivityPropContext>;
+  inputProperties: Array<RenderActivityInputContext>;
 }
 
-export interface RenderActivityPropContext {
+export interface RenderActivityInputContext {
   inputContext: ActivityInputContext
   inputControl?: any;
 }

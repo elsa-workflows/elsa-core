@@ -1,9 +1,11 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.AspNetCore;
 using Elsa.AspNetCore.Attributes;
+using Elsa.Workflows.Api.Mappers;
+using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Serialization;
@@ -24,11 +26,16 @@ public class Post : Controller
 {
     private readonly WorkflowSerializerOptionsProvider _serializerOptionsProvider;
     private readonly IWorkflowPublisher _workflowPublisher;
+    private readonly VariableDefinitionMapper _variableDefinitionMapper;
 
-    public Post(WorkflowSerializerOptionsProvider serializerOptionsProvider, IWorkflowPublisher workflowPublisher)
+    public Post(
+        WorkflowSerializerOptionsProvider serializerOptionsProvider, 
+        IWorkflowPublisher workflowPublisher, 
+        VariableDefinitionMapper variableDefinitionMapper)
     {
         _serializerOptionsProvider = serializerOptionsProvider;
         _workflowPublisher = workflowPublisher;
+        _variableDefinitionMapper = variableDefinitionMapper;
     }
 
     public record SaveWorkflowDefinitionRequest(
@@ -36,7 +43,7 @@ public class Post : Controller
         string? Name,
         string? Description,
         IActivity? Root,
-        ICollection<Variable>? Variables,
+        ICollection<VariableDefinition>? Variables,
         IDictionary<string, object>? Metadata,
         IDictionary<string, object>? ApplicationProperties,
         ICollection<string>? Tags,
@@ -68,6 +75,7 @@ public class Post : Controller
         // Update the draft with the received model.
         var root = model.Root ?? new Sequence();
         var stringData = JsonSerializer.Serialize(root, serializerOptions);
+        var variables = _variableDefinitionMapper.Map(model.Variables).ToList();
 
         draft!.StringData = stringData;
         draft.MaterializerName = JsonWorkflowMaterializer.MaterializerName;
@@ -75,11 +83,26 @@ public class Post : Controller
         draft.Description = model.Description?.Trim();
         draft.Metadata = model.Metadata ?? new Dictionary<string, object>();
         draft.Tags = model.Tags ?? new List<string>();
-        draft.Variables = model.Variables ?? new List<Variable>();
+        draft.Variables = variables;
         draft.ApplicationProperties = model.ApplicationProperties ?? new Dictionary<string, object>();
         draft = model.Publish ? await _workflowPublisher.PublishAsync(draft, cancellationToken) : await _workflowPublisher.SaveDraftAsync(draft, cancellationToken);
 
-        var result = Json(draft, serializerOptions);
+        var draftModel = new WorkflowDefinitionModel(
+            draft.Id,
+            draft.DefinitionId,
+            draft.Name,
+            draft.Description,
+            draft.CreatedAt,
+            draft.Version,
+            model.Variables ?? new List<VariableDefinition>(),
+            draft.Metadata,
+            draft.ApplicationProperties,
+            draft.IsLatest,
+            draft.IsPublished,
+            draft.Tags,
+            root);
+
+        var result = Json(draftModel, serializerOptions);
         result.StatusCode = isNew ? StatusCodes.Status201Created : StatusCodes.Status200OK;
 
         return result;

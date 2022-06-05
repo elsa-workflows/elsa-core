@@ -190,7 +190,7 @@ export namespace Components {
         "variable": Variable;
     }
     interface ElsaVariablesEditor {
-        "variables": Array<Variable>;
+        "variables"?: Array<Variable>;
     }
     interface ElsaWorkflowDefinitionBrowser {
         "hide": () => Promise<void>;
@@ -751,6 +751,7 @@ declare namespace LocalJSX {
         "tooltipPosition"?: string;
     }
     interface ElsaVariableEditorDialog {
+        "onVariableChanged"?: (event: CustomEvent<Variable>) => void;
         "variable"?: Variable;
     }
     interface ElsaVariablesEditor {

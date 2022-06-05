@@ -8,9 +8,8 @@ public class Output : Argument
     {
     }
 
-    public Output(MemoryReference locationReference) : this()
+    public Output(MemoryReference locationReference) : base(locationReference)
     {
-        Targets.Add(locationReference);
     }
 
     public ICollection<MemoryReference> Targets { get; } = new List<MemoryReference>();
@@ -22,7 +21,7 @@ public class Output<T> : Output
     {
     }
     
-    public Output(Variable<T> locationReference) : base(locationReference)
+    public Output(MemoryReference locationReference) : base(locationReference)
     {
     }
 }

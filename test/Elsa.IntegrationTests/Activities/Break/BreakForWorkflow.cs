@@ -1,3 +1,4 @@
+using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
@@ -17,7 +18,7 @@ class BreakForWorkflow : WorkflowBase
                 new WriteLine("Start"),
                 new For(0, 3)
                 {
-                    CurrentValue = currentValue,
+                    CurrentValue = new Output<MemoryReference?>(currentValue),
                     Body = new Sequence
                     {
                         Activities =

@@ -47,6 +47,7 @@ services
             .AddActivity<RunJavaScript>()
         )
         .UseWorkflowPersistence(p => p.UseEntityFrameworkCore(ef => ef.UseSqlite()))
+        .UseWorkflowApiEndpoints()
         .UseJavaScript()
         .UseLiquid()
         .UseLabels(labels => labels.UseEntityFrameworkCore(ef => ef.UseSqlite()))

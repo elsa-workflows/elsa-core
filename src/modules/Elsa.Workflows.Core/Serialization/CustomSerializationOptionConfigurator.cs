@@ -20,6 +20,7 @@ public class CustomSerializationOptionConfigurator : ISerializationOptionsConfig
     
     public void Configure(JsonSerializerOptions options)
     {
+        options.Converters.Add(Create<VariableConverter>());
         options.Converters.Add(Create<FlowchartJsonConverter>());
     }
     
