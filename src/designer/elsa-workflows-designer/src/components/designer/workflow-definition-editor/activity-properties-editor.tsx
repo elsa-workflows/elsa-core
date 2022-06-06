@@ -7,7 +7,7 @@ import {
   DefaultActions, InputDescriptor, RenderActivityInputContext,
   RenderActivityPropsContext,
   TabChangedArgs,
-  TabDefinition
+  TabDefinition, Variable
 } from '../../../models';
 import {InputDriverRegistry} from "../../../services";
 import {Container} from "typedi";
@@ -38,11 +38,12 @@ export class ActivityPropertiesEditor {
     this.inputDriverRegistry = Container.get(InputDriverRegistry);
   }
 
-  @Prop({mutable: true}) public activityDescriptors: Array<ActivityDescriptor> = [];
-  @Prop({mutable: true}) public activity?: Activity;
+  @Prop() activityDescriptors: Array<ActivityDescriptor> = [];
+  @Prop() activity?: Activity;
+  @Prop() variables: Array<Variable> = [];
 
-  @Event() public activityUpdated: EventEmitter<ActivityUpdatedArgs>;
-  @Event() public deleteActivityRequested: EventEmitter<DeleteActivityRequestedArgs>;
+  @Event() activityUpdated: EventEmitter<ActivityUpdatedArgs>;
+  @Event() deleteActivityRequested: EventEmitter<DeleteActivityRequestedArgs>;
   @State() private selectedTabIndex: number = 0;
 
   @Method()
@@ -213,18 +214,18 @@ export class ActivityPropertiesEditor {
     const outputProperties = activityDescriptor.outputProperties;
     const activityId = activity.id;
     const key = `${activityId}`;
+    const allVariables = this.variables;
 
     return <div key={key}>
       {outputProperties.map(property => {
         const key = `${activity.id}-${property.name}`;
         const displayName = isNullOrWhitespace(property.displayName) ? property.name : property.displayName;
+        const compatibleVariables = this.variables.filter(x => x.type == property.type);
 
         return <div key={key}>
           <FormEntry fieldId={key} label={displayName} hint={property.description}>
             <select>
-              <option>CurrentLanguage</option>
-              <option>Variable 2</option>
-              <option>Variable 3</option>
+              {compatibleVariables.map(variable => <option value={variable.name}>{variable.name}</option>)}
             </select>
           </FormEntry>
         </div>;

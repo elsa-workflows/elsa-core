@@ -7,6 +7,11 @@ public class OutputAttribute : Attribute
     /// The technical name of the activity property.
     /// </summary>
     public string? Name { get; set; }
+    
+    /// <summary>
+    /// The user-friendly name of the activity property.
+    /// </summary>
+    public string? DisplayName { get; set; }
         
     /// <summary>
     /// A brief description about this property for workflow tooling to use when displaying activity editors.

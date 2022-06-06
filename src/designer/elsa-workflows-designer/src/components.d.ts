@@ -36,6 +36,7 @@ export namespace Components {
         "activityDescriptors": Array<ActivityDescriptor>;
         "hide": () => Promise<void>;
         "show": () => Promise<void>;
+        "variables": Array<Variable>;
     }
     interface ElsaButtonGroup {
         "buttons": Array<Button>;
@@ -608,6 +609,7 @@ declare namespace LocalJSX {
         "activityDescriptors"?: Array<ActivityDescriptor>;
         "onActivityUpdated"?: (event: CustomEvent<ActivityUpdatedArgs>) => void;
         "onDeleteActivityRequested"?: (event: CustomEvent<DeleteActivityRequestedArgs>) => void;
+        "variables"?: Array<Variable>;
     }
     interface ElsaButtonGroup {
         "buttons"?: Array<Button>;

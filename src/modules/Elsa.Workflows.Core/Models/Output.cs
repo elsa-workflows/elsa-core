@@ -12,7 +12,7 @@ public class Output : Argument
     {
     }
 
-    public ICollection<MemoryReference> Targets { get; } = new List<MemoryReference>();
+    //public ICollection<MemoryReference> Targets { get; } = new List<MemoryReference>();
 }
 
 public class Output<T> : Output

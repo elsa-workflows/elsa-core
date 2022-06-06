@@ -8,13 +8,18 @@ namespace Elsa.IntegrationTests.Scenarios.PersistentVariables;
 
 public class BlockingWorkflow : WorkflowBase
 {
+    // ReSharper disable once UnusedMember.Global
+    public BlockingWorkflow() : this(new[] { "C#", "JavaScript", "Haskell" })
+    {
+    }
+
     public BlockingWorkflow(string[] languages)
     {
         Languages = languages;
     }
-    
+
     public string[] Languages { get; }
-    
+
     protected override void Build(IWorkflowDefinitionBuilder workflow)
     {
         var currentLanguage = workflow.WithVariable<string>().WithWorkflowDrive();
@@ -24,9 +29,9 @@ public class BlockingWorkflow : WorkflowBase
             Activities =
             {
                 new WriteLine("Start"),
-                new ForEach(Languages)
+                new ForEach<string>(Languages)
                 {
-                    CurrentValue = new Output<MemoryReference?>(currentLanguage),
+                    CurrentValue = new Output<string?>(currentLanguage),
                     Body = new Sequence
                     {
                         Activities =

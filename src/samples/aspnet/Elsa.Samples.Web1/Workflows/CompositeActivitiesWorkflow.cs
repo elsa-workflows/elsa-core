@@ -9,14 +9,14 @@ public class CompositeActivitiesWorkflow : WorkflowBase
 {
     protected override void Build(IWorkflowDefinitionBuilder workflow)
     {
-        var name = new Variable<string?>();
+        var name = new Variable<string>();
 
         workflow.WithRoot(new Sequence
         {
             Variables = { name },
             Activities =
             {
-                new MyGreeterComposite().CaptureOutput(x => x.Name, name),
+                new MyGreeterComposite(name),
                 new WriteLine(context => $"Captured name: {name.Get(context)}")
             }
         });

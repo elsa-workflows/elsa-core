@@ -38,7 +38,7 @@ public class MessageReceived : Trigger<object>
     }
 
     public Input<string> QueueOrTopic { get; set; } = default!;
-    public Input<string>? Subscription { get; set; } = default!;
+    public Input<string>? Subscription { get; set; }
 
     /// <summary>
     /// The expected .NET the received message contains. The received message will be deserialized into this type. Defaults to <see cref="string"/>. 
@@ -48,7 +48,7 @@ public class MessageReceived : Trigger<object>
     /// <summary>
     /// The received transport message.
     /// </summary>
-    public Output<ReceivedServiceBusMessageModel> ReceivedMessage { get; } = new();
+    public Output<ReceivedServiceBusMessageModel>? ReceivedMessage { get; set; }
 
     /// <summary>
     /// The formatter to use to parse the message. 

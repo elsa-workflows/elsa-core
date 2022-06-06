@@ -30,8 +30,8 @@ public class ExpressionExecutionContext
     public ExpressionExecutionContext? ParentContext { get; set; }
     public CancellationToken CancellationToken { get; }
 
-    public MemoryBlock GetDatum(MemoryReference reference) => GetMemoryDatumInternal(reference) ?? throw new Exception($"Failed to retrieve memory block with reference {reference.Id}");
-    public object Get(MemoryReference reference) => GetDatum(reference).Value!;
+    public MemoryBlock GetBlock(MemoryReference reference) => GetMemoryDatumInternal(reference) ?? throw new Exception($"Failed to retrieve memory block with reference {reference.Id}");
+    public object Get(MemoryReference reference) => GetBlock(reference).Value!;
     public T Get<T>(MemoryReference reference) => (T)Get(reference);
 
     public void Set(MemoryReference reference, object? value)

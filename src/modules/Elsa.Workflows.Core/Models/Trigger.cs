@@ -45,9 +45,9 @@ public abstract class Trigger<T> : Activity<T>, ITrigger
     {
     }
 
-    protected Trigger(MemoryReference? outputTarget) : base(outputTarget)
-    {
-    }
+    // protected Trigger(MemoryReference? outputTarget) : base(outputTarget)
+    // {
+    // }
 
     ValueTask<IEnumerable<object>> ITrigger.GetTriggerDataAsync(TriggerIndexingContext context) => GetTriggerDataAsync(context);
 

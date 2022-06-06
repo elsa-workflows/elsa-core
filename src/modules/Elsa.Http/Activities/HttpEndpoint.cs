@@ -22,9 +22,9 @@ public class HttpEndpoint : Trigger<HttpRequestModel>
     {
     }
 
-    public HttpEndpoint(MemoryReference outputTarget) : base(outputTarget)
-    {
-    }
+    // public HttpEndpoint(MemoryReference outputTarget) : base(outputTarget)
+    // {
+    // }
 
     [Input] public Input<string> Path { get; set; } = default!;
 
@@ -51,7 +51,7 @@ public class HttpEndpoint : Trigger<HttpRequestModel>
     protected override void Execute(ActivityExecutionContext context)
     {
         // If we did not receive external input, it means we are just now encountering this activity and we need to block execution by creating a bookmark.
-        if (!ActivityExecutionContextExtensions.TryGetInput<HttpRequestModel>(context, InputKey, out var request))
+        if (!context.TryGetInput<HttpRequestModel>(InputKey, out var request))
         {
             // Create bookmarks for when we receive the expected HTTP request.
             context.CreateBookmarks(GetBookmarkData(context.ExpressionExecutionContext));

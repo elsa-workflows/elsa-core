@@ -107,6 +107,7 @@ public class ActivityDescriber : IActivityDescriber
         foreach (var propertyInfo in properties)
         {
             var activityPropertyAttribute = propertyInfo.GetCustomAttribute<OutputAttribute>();
+            var descriptionAttribute = propertyInfo.GetCustomAttribute<DescriptionAttribute>();
             var typeArgs = propertyInfo.PropertyType.GenericTypeArguments;
             var wrappedPropertyType = typeArgs.Any() ? typeArgs[0] : typeof(object);
 
@@ -114,7 +115,7 @@ public class ActivityDescriber : IActivityDescriber
             (
                 (activityPropertyAttribute?.Name ?? propertyInfo.Name).Pascalize(),
                 wrappedPropertyType,
-                activityPropertyAttribute?.Description
+                descriptionAttribute?.Description ?? activityPropertyAttribute?.Description
             );
         }
     }

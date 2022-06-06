@@ -199,6 +199,7 @@ export class WorkflowDefinitionEditor {
     if (!!this.selectedActivity)
       return <elsa-activity-properties-editor
         activity={this.selectedActivity}
+        variables={this.workflowDefinitionState.variables}
         onActivityUpdated={e => this.onActivityUpdated(e)}
         onDeleteActivityRequested={e => this.onDeleteActivityRequested(e)}/>
 

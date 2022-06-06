@@ -54,7 +54,7 @@ public class Inline<T> : Activity<T>
 {
     private readonly Func<ActivityExecutionContext, ValueTask<T>> _activity;
 
-    public Inline(Func<ActivityExecutionContext, ValueTask<T>> activity, MemoryReference? outputTarget = default) : base(outputTarget)
+    public Inline(Func<ActivityExecutionContext, ValueTask<T>> activity, MemoryReference? outputTarget = default) : base()
     {
         _activity = activity;
     }

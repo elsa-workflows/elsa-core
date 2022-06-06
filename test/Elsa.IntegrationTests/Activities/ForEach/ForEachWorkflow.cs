@@ -26,7 +26,7 @@ class ForEachWorkflow : WorkflowBase
                 new ForEach<string>
                 {
                     Items = new Input<ICollection<string>>(_items),
-                    CurrentValue = new Output<Variable<string>?>(currentItem),
+                    CurrentValue = new Output<string?>(currentItem),
                     Body = new WriteLine(currentItem)
                 },
             }

@@ -1,4 +1,5 @@
 using Elsa.AzureServiceBus.Activities;
+using Elsa.AzureServiceBus.Models;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
@@ -20,7 +21,8 @@ public class ReceiveMessageWorkflow : WorkflowBase
                 {
                     CanStartWorkflow = true,
                     QueueOrTopic = new Input<string>("inbox"),
-                }.CaptureOutput(receivedMessageVariable),
+                    ReceivedMessage = new Output<ReceivedServiceBusMessageModel>(receivedMessageVariable)
+                },
                 new WriteLine(context => $"Message received: {receivedMessageVariable.Get(context)}")
             }
         });

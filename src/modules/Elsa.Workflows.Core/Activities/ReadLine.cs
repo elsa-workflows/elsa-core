@@ -13,7 +13,13 @@ public class ReadLine : Activity<string>
     {
     }
 
-    public ReadLine(MemoryReference captureTarget) => this.CaptureOutput(captureTarget);
+    public ReadLine(MemoryReference output) : base(output)
+    {
+    }
+    
+    public ReadLine(Output? output) : base(output)
+    {
+    }
 
     protected override void Execute(ActivityExecutionContext context)
     {

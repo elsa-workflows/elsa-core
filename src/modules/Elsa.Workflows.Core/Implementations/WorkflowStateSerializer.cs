@@ -172,23 +172,7 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
             .Select(x => new PersistentVariableState(x.Name, x.DriveId!))
             .ToList();
     }
-    
-    // private void DeserializePersistentVariables(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
-    // {
-    //     var persistentVariables = state.PersistentVariables;
-    //     var workflow = workflowExecutionContext.Workflow;
-    //
-    //     foreach (var persistentVariable in persistentVariables)
-    //     {
-    //         var variable = workflow.Variables.FirstOrDefault(x => x.Name == persistentVariable.Name);
-    //
-    //         if (variable == null)
-    //             continue;
-    //
-    //         variable.Set(workflowExecutionContext.MemoryRegister, variable.Value);
-    //     }
-    // }
 
-    private IDictionary<string, object?> GetOutputFrom(ActivityNode activityNode) =>
-        activityNode.GetType().GetProperties(BindingFlags.Public).Where(x => x.GetCustomAttribute<OutputAttribute>() != null).ToDictionary(x => x.Name, x => (object?)x.GetValue(activityNode));
+    private Dictionary<string, object> GetOutputFrom(ActivityNode activityNode) =>
+        activityNode.GetType().GetProperties(BindingFlags.Public).Where(x => x.GetCustomAttribute<OutputAttribute>() != null).ToDictionary(x => x.Name, x => x.GetValue(activityNode)!);
 }

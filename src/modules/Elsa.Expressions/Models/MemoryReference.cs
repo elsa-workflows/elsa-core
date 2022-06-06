@@ -21,3 +21,7 @@ public abstract class MemoryReference
     public void Set(ExpressionExecutionContext context, object? value) => context.Set(this, value);
     public MemoryBlock GetBlock(MemoryRegister memoryRegister) => memoryRegister.TryGetBlock(Id, out var location) ? location : memoryRegister.Declare(this);
 }
+
+public abstract class MemoryReference<T> : MemoryReference
+{
+}

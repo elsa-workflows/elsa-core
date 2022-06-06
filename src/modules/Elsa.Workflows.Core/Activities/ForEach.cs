@@ -40,7 +40,7 @@ public class ForEach : Activity
     /// </summary>
     [JsonIgnore]
     [Output(Description = "Captures the current value of the list of items being iterated.")]
-    public Output<MemoryReference?> CurrentValue { get; set; } = new();
+    public Output<object>? CurrentValue { get; set; }
 
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
@@ -61,7 +61,6 @@ public class ForEach : Activity
 
         var currentItem = items[currentIndex];
         context.Set(CurrentValue, currentItem);
-        //CurrentValue.Set(context, currentItem);
 
         if (Body != null)
             context.ScheduleActivity(Body, OnChildCompleted);
@@ -99,9 +98,12 @@ public class ForEach<T> : ForEach
         set => base.Items = new Input<ICollection<object>>(value.Expression, value.MemoryReference);
     }
 
-    public new Output<Variable<T>?> CurrentValue
+    public new Output<T?> CurrentValue
     {
-        get => new(base.CurrentValue.MemoryReference);
-        set => base.CurrentValue = new Output<MemoryReference?>(value.MemoryReference);
+        get =>
+            base.CurrentValue != null
+                ? new(base.CurrentValue.MemoryReference)
+                : new();
+        set => base.CurrentValue = new Output<object>(value.MemoryReference);
     }
 }

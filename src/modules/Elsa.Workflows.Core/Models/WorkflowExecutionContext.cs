@@ -62,7 +62,7 @@ public class WorkflowExecutionContext
     /// <summary>
     /// A dictionary that can be used by application code and activities to store information. Values need to be serializable, since this dictionary will be persisted alongside the workflow instance. 
     /// </summary>
-    public IDictionary<string, object?> Properties { get; set; } = new Dictionary<string, object?>();
+    public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
 
     /// <summary>
     /// A dictionary that can be used by application code and middleware to store information and even services. Values do not need to be serializable, since this dictionary will not be persisted.
@@ -117,13 +117,13 @@ public class WorkflowExecutionContext
     public ActivityNode FindNodeByActivity(IActivity activity) => NodeActivityLookup[activity];
     public IActivity FindActivityById(string activityId) => FindActivityNodeById(activityId).Activity;
     public T? GetProperty<T>(string key) => Properties.TryGetValue(key, out var value) ? (T?)value : default(T);
-    public void SetProperty<T>(string key, T value) => Properties[key] = value;
+    public void SetProperty<T>(string key, T value) => Properties[key] = value!;
 
     public T UpdateProperty<T>(string key, Func<T?, T> updater)
     {
         var value = GetProperty<T?>(key);
         value = updater(value);
-        Properties[key] = value;
+        Properties[key] = value!;
         return value;
     }
 
