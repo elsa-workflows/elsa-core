@@ -62,6 +62,9 @@ export namespace Components {
         "menuItems": Array<MenuItem>;
         "open": () => Promise<void>;
     }
+    interface ElsaCopyButton {
+        "value": string;
+    }
     interface ElsaDropdownButton {
         "icon"?: any;
         "items": Array<DropdownButtonItem>;
@@ -305,6 +308,12 @@ declare global {
         prototype: HTMLElsaContextMenuElement;
         new (): HTMLElsaContextMenuElement;
     };
+    interface HTMLElsaCopyButtonElement extends Components.ElsaCopyButton, HTMLStencilElement {
+    }
+    var HTMLElsaCopyButtonElement: {
+        prototype: HTMLElsaCopyButtonElement;
+        new (): HTMLElsaCopyButtonElement;
+    };
     interface HTMLElsaDropdownButtonElement extends Components.ElsaDropdownButton, HTMLStencilElement {
     }
     var HTMLElsaDropdownButtonElement: {
@@ -547,6 +556,7 @@ declare global {
         "elsa-check-list-input": HTMLElsaCheckListInputElement;
         "elsa-code-editor-input": HTMLElsaCodeEditorInputElement;
         "elsa-context-menu": HTMLElsaContextMenuElement;
+        "elsa-copy-button": HTMLElsaCopyButtonElement;
         "elsa-dropdown-button": HTMLElsaDropdownButtonElement;
         "elsa-dropdown-input": HTMLElsaDropdownInputElement;
         "elsa-flowchart": HTMLElsaFlowchartElement;
@@ -616,6 +626,9 @@ declare namespace LocalJSX {
         "hideButton"?: boolean;
         "menuItemGroups"?: Array<MenuItemGroup>;
         "menuItems"?: Array<MenuItem>;
+    }
+    interface ElsaCopyButton {
+        "value"?: string;
     }
     interface ElsaDropdownButton {
         "icon"?: any;
@@ -820,6 +833,7 @@ declare namespace LocalJSX {
         "elsa-check-list-input": ElsaCheckListInput;
         "elsa-code-editor-input": ElsaCodeEditorInput;
         "elsa-context-menu": ElsaContextMenu;
+        "elsa-copy-button": ElsaCopyButton;
         "elsa-dropdown-button": ElsaDropdownButton;
         "elsa-dropdown-input": ElsaDropdownInput;
         "elsa-flowchart": ElsaFlowchart;
@@ -872,6 +886,7 @@ declare module "@stencil/core" {
             "elsa-check-list-input": LocalJSX.ElsaCheckListInput & JSXBase.HTMLAttributes<HTMLElsaCheckListInputElement>;
             "elsa-code-editor-input": LocalJSX.ElsaCodeEditorInput & JSXBase.HTMLAttributes<HTMLElsaCodeEditorInputElement>;
             "elsa-context-menu": LocalJSX.ElsaContextMenu & JSXBase.HTMLAttributes<HTMLElsaContextMenuElement>;
+            "elsa-copy-button": LocalJSX.ElsaCopyButton & JSXBase.HTMLAttributes<HTMLElsaCopyButtonElement>;
             "elsa-dropdown-button": LocalJSX.ElsaDropdownButton & JSXBase.HTMLAttributes<HTMLElsaDropdownButtonElement>;
             "elsa-dropdown-input": LocalJSX.ElsaDropdownInput & JSXBase.HTMLAttributes<HTMLElsaDropdownInputElement>;
             "elsa-flowchart": LocalJSX.ElsaFlowchart & JSXBase.HTMLAttributes<HTMLElsaFlowchartElement>;
