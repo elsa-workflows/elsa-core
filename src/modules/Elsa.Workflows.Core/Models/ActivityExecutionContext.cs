@@ -42,6 +42,12 @@ public class ActivityExecutionContext
     /// A dictionary of values that can be associated with the activity. 
     /// </summary>
     public IDictionary<string, object> ApplicationProperties { get; set; } = new Dictionary<string, object>();
+    
+    /// <summary>
+    /// A transient dictionary of values that can be associated with the activity.
+    /// These properties only exist while the activity executes and are not persisted. 
+    /// </summary>
+    public IDictionary<string, object> TransientProperties { get; set; } = new Dictionary<string, object>();
 
     /// <summary>
     /// Returns the <see cref="ActivityNode"/> metadata about the current activity.

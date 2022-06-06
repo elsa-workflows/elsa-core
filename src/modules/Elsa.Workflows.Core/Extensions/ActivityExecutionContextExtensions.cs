@@ -43,6 +43,8 @@ public static class ActivityExecutionContextExtensions
             var value = await evaluator.EvaluateAsync(input, expressionExecutionContext);
             locationReference.Set(context, value);
         }
+
+        context.SetHasEvaluatedProperties();
     }
 
     public static async Task<T?> EvaluateInputPropertyAsync<TActivity, T>(this ActivityExecutionContext context, Expression<Func<TActivity, Input<T>>> propertyExpression)
@@ -150,4 +152,7 @@ public static class ActivityExecutionContextExtensions
     }
 
     public static ILogger GetLogger(this ActivityExecutionContext context) => (ILogger)context.GetRequiredService(typeof(ILogger<>).MakeGenericType(context.Activity.GetType()));
+
+    internal static bool GetHasEvaluatedProperties(this ActivityExecutionContext context) => context.TransientProperties.TryGetValue<bool>("HasEvaluatedProperties", out var value) && value;
+    internal static void SetHasEvaluatedProperties(this ActivityExecutionContext context) => context.TransientProperties["HasEvaluatedProperties"] = true;
 }
