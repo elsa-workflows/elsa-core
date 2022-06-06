@@ -30,7 +30,7 @@ public class WorkflowState
     /// <summary>
     /// A dictionary of activity output.
     /// </summary>
-    public IDictionary<string, IDictionary<string, object?>> ActivityOutput { get; set; } = new Dictionary<string, IDictionary<string, object?>>();
+    public IDictionary<string, IDictionary<string, object>> ActivityOutput { get; set; } = new Dictionary<string, IDictionary<string, object>>();
     
     /// <summary>
     /// A list of callbacks that activities registered in order to be notified when the activities they scheduled complete. 
@@ -45,5 +45,10 @@ public class WorkflowState
     /// <summary>
     /// A global property bag that contains properties set by application code and/or activities.
     /// </summary>
-    public IDictionary<string, object?> Properties { get; set; } = new Dictionary<string, object?>();
+    public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
+
+    /// <summary>
+    /// A list of variables that can be persisted.
+    /// </summary>
+    public ICollection<PersistentVariableState> PersistentVariables { get; set; } = new List<PersistentVariableState>();
 }

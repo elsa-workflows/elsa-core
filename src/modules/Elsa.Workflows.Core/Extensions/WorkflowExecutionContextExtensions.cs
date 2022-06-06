@@ -69,7 +69,7 @@ public static class WorkflowExecutionContextExtensions
     /// Gets the specified workflow variable by name. 
     /// </summary>
     public static T? GetVariable<T>(this WorkflowExecutionContext workflowExecutionContext, string name) => (T?)workflowExecutionContext.GetVariable(name);
-    
+
     /// <summary>
     /// Gets the specified workflow variable by name, where the name is implied by the type name. 
     /// </summary>
@@ -88,7 +88,7 @@ public static class WorkflowExecutionContextExtensions
     /// Sets the specified workflow variable by name, where the name is implied by the type name. 
     /// </summary>
     public static Variable SetVariable<T>(this WorkflowExecutionContext workflowExecutionContext, T? value) => workflowExecutionContext.SetVariable(typeof(T).Name, value);
-    
+
     /// <summary>
     /// Sets the specified workflow variable by name. 
     /// </summary>
@@ -99,7 +99,14 @@ public static class WorkflowExecutionContextExtensions
     /// </summary>
     public static Variable SetVariable(this WorkflowExecutionContext workflowExecutionContext, string name, object? value)
     {
-        var variable = workflowExecutionContext.Workflow.Variables.FirstOrDefault(x => x.Name == name) ?? new Variable(name, value);
+        var variable = workflowExecutionContext.Workflow.Variables.FirstOrDefault(x => x.Name == name);
+
+        if (variable == null)
+        {
+            variable = new Variable(name, value);
+            workflowExecutionContext.Workflow.Variables.Add(variable);
+        }
+
         variable.Set(workflowExecutionContext.MemoryRegister, value);
         return variable;
     }

@@ -18,6 +18,11 @@ public class ForEach : Activity
         Behaviors.Remove<AutoCompleteBehavior>();
     }
 
+    public ForEach(ICollection<object> items) : this()
+    {
+        Items = new Input<ICollection<object>>(items);
+    }
+
     /// <summary>
     /// The set of values to iterate.
     /// </summary>

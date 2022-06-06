@@ -25,6 +25,7 @@ public class PersistWorkflowInstanceMiddleware : WorkflowExecutionMiddleware
     private readonly IRequestSender _requestSender;
     private readonly IEventPublisher _eventPublisher;
     private readonly IWorkflowStateSerializer _workflowStateSerializer;
+    private readonly IDataDriveManager _dataDriveManager;
     private readonly IBookmarkManager _bookmarkManager;
     private readonly IIdentityGenerator _identityGenerator;
     private readonly ISystemClock _clock;
@@ -37,6 +38,7 @@ public class PersistWorkflowInstanceMiddleware : WorkflowExecutionMiddleware
         IEventPublisher eventPublisher,
         IBookmarkManager bookmarkManager,
         IWorkflowStateSerializer workflowStateSerializer,
+        IDataDriveManager dataDriveManager,
         IIdentityGenerator identityGenerator,
         ISystemClock clock) : base(next)
     {
@@ -46,6 +48,7 @@ public class PersistWorkflowInstanceMiddleware : WorkflowExecutionMiddleware
         _eventPublisher = eventPublisher;
         _bookmarkManager = bookmarkManager;
         _workflowStateSerializer = workflowStateSerializer;
+        _dataDriveManager = dataDriveManager;
         _identityGenerator = identityGenerator;
         _clock = clock;
     }
@@ -74,7 +77,7 @@ public class PersistWorkflowInstanceMiddleware : WorkflowExecutionMiddleware
             Status = WorkflowStatus.Running,
             SubStatus = WorkflowSubStatus.Executing,
             CorrelationId = _identityGenerator.GenerateId(),
-            WorkflowState = _workflowStateSerializer.ReadState(context),
+            WorkflowState = _workflowStateSerializer.SerializeState(context),
             Name = workflowInstanceName
         };
 
@@ -95,12 +98,26 @@ public class PersistWorkflowInstanceMiddleware : WorkflowExecutionMiddleware
 
         // Persist workflow instance.
         await _workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
+        
+        // Load persistent variables.
+        var dataDriveContext = new DataDriveContext(workflowInstance.WorkflowState, cancellationToken);
+        
+        foreach (var variableState in workflowInstance.WorkflowState.PersistentVariables)
+        {
+            var drive = _dataDriveManager.GetDriveById(variableState.DriveId);
+            if (drive == null) continue;
+            var id = $"{context.Id}:{variableState.Name}";
+            var value = await drive.ReadAsync(id, dataDriveContext);
+            if (value == null) continue;
+            var variable = new Variable(variableState.Name, value);
+            context.MemoryRegister.Declare(variable);
+        }
 
         // Invoke next middleware.
         await Next(context);
 
         // Update workflow instance.
-        var workflowState = _workflowStateSerializer.ReadState(context);
+        var workflowState = _workflowStateSerializer.SerializeState(context);
         workflowInstance.WorkflowState = workflowState;
         workflowInstance.Status = workflowState.Status;
         workflowInstance.SubStatus = workflowState.SubStatus;
@@ -127,6 +144,19 @@ public class PersistWorkflowInstanceMiddleware : WorkflowExecutionMiddleware
         // Get the workflow instance name, if any (could be provided by previously executed middleware). 
         if (context.TransientProperties.TryGetValue(WorkflowInstanceNameKey, out name))
             workflowInstance.Name = (string?)name;
+
+        // Persist variables.
+        dataDriveContext = new DataDriveContext(workflowState, cancellationToken);
+        
+        foreach (var variableState in workflowState.PersistentVariables)
+        {
+            var drive = _dataDriveManager.GetDriveById(variableState.DriveId);
+            if (drive == null) continue;
+            if (!context.MemoryRegister.TryGetBlock(variableState.Name, out var block)) continue;
+            if (block.Value == null) continue;
+            var id = $"{context.Id}:{variableState.Name}";
+            await drive.WriteAsync(id, block.Value, dataDriveContext);
+        }
 
         // Persist updated workflow instance.
         await _workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);

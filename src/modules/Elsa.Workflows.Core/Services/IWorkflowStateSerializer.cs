@@ -5,6 +5,6 @@ namespace Elsa.Workflows.Core.Services;
 
 public interface IWorkflowStateSerializer
 {
-    WorkflowState ReadState(WorkflowExecutionContext workflowExecutionContext);
-    void WriteState(WorkflowExecutionContext workflowExecutionContext, WorkflowState state);
+    WorkflowState SerializeState(WorkflowExecutionContext workflowExecutionContext);
+    void DeserializeState(WorkflowExecutionContext workflowExecutionContext, WorkflowState state);
 }

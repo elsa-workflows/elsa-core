@@ -146,19 +146,19 @@ public class ActivityExecutionContext
     public object? GetService(Type serviceType) => WorkflowExecutionContext.GetService(serviceType);
     public T? Get<T>(Input<T>? input) => input == null ? default : Get<T>(input.MemoryReference);
 
-    public object? Get(MemoryReference locationReference)
+    public object? Get(MemoryReference reference)
     {
-        var location = GetLocation(locationReference) ?? throw new InvalidOperationException($"No location found with ID {locationReference.Id}. Did you forget to declare a variable with a container?");
+        var location = GetBlock(reference) ?? throw new InvalidOperationException($"No location found with ID {reference.Id}. Did you forget to declare a variable with a container?");
         return location.Value;
     }
 
-    public T? Get<T>(MemoryReference locationReference)
+    public T? Get<T>(MemoryReference reference)
     {
-        var value = Get(locationReference);
+        var value = Get(reference);
         return value != default ? (T?)(value) : default;
     }
 
-    public void Set(MemoryReference locationReference, object? value) => ExpressionExecutionContext.Set(locationReference, value);
+    public void Set(MemoryReference reference, object? value) => ExpressionExecutionContext.Set(reference, value);
     public void Set(Output output, object? value) => ExpressionExecutionContext.Set(output, value);
     public void Set<T>(Output output, T value) => ExpressionExecutionContext.Set(output, value);
 
@@ -176,8 +176,8 @@ public class ActivityExecutionContext
         WorkflowExecutionContext.RemoveCompletionCallbacks(entriesToRemove);
     }
     
-    private MemoryBlock? GetLocation(MemoryReference locationReference) =>
-        ExpressionExecutionContext.Memory.TryGetMemoryDatum(locationReference.Id, out var location)
+    private MemoryBlock? GetBlock(MemoryReference locationReference) =>
+        ExpressionExecutionContext.Memory.TryGetBlock(locationReference.Id, out var location)
             ? location
-            : ParentActivityExecutionContext?.GetLocation(locationReference);
+            : ParentActivityExecutionContext?.GetBlock(locationReference);
 }

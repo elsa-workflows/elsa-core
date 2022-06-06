@@ -43,5 +43,5 @@ public class ExpressionExecutionContext
     public T GetRequiredService<T>() where T : notnull => _serviceProvider.GetRequiredService<T>();
 
     //private MemoryDatum? GetMemoryDatumInternal(MemoryDatumReference locationReference) => MemoryRegister.TryGetMemoryDatum(locationReference.Id, out var location) ? location : ParentContext?.GetMemoryDatumInternal(locationReference);
-    private MemoryBlock? GetMemoryDatumInternal(MemoryReference reference) => Memory.TryGetMemoryDatum(reference.Id, out var location) ? location : default;
+    private MemoryBlock? GetMemoryDatumInternal(MemoryReference reference) => Memory.TryGetBlock(reference.Id, out var location) ? location : default;
 }

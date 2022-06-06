@@ -84,7 +84,7 @@ public class WorkflowRunner : IWorkflowRunner
         await _pipeline.ExecuteAsync(workflowExecutionContext);
 
         // Extract workflow state.
-        var workflowState = _workflowStateSerializer.ReadState(workflowExecutionContext);
+        var workflowState = _workflowStateSerializer.SerializeState(workflowExecutionContext);
 
         // Return workflow execution result containing state + bookmarks.
         return new InvokeWorkflowResult(workflowState, workflowExecutionContext.Bookmarks);
@@ -116,7 +116,7 @@ public class WorkflowRunner : IWorkflowRunner
         var workflowExecutionContext = new WorkflowExecutionContext(serviceProvider, id, correlationId, workflow, graph, scheduler, bookmark, input, executeActivityDelegate, cancellationToken);
 
         // Restore workflow execution context from state, if provided.
-        if (workflowState != null) _workflowStateSerializer.WriteState(workflowExecutionContext, workflowState);
+        if (workflowState != null) _workflowStateSerializer.DeserializeState(workflowExecutionContext, workflowState);
 
         return workflowExecutionContext;
     }

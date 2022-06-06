@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Core.Signals;

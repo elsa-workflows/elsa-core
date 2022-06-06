@@ -22,7 +22,7 @@ public static class DictionaryExtensions
     public static T? GetValue<TKey, T>(this IDictionary<TKey, T> dictionary, TKey key) => ConvertValue<T>(dictionary[key]);
     public static T? GetValue<T>(this IDictionary<string, object> dictionary, string key) => ConvertValue<T>(dictionary[key]);
 
-    public static T? GetOrAdd<T>(this IDictionary<string, object> dictionary, string key, Func<T> valueFactory) where T : notnull => dictionary.GetOrAdd<string, T>(key, valueFactory);
+    public static T GetOrAdd<T>(this IDictionary<string, object> dictionary, string key, Func<T> valueFactory) where T : notnull => dictionary.GetOrAdd<string, T>(key, valueFactory);
 
     public static T GetOrAdd<TKey, T>(this IDictionary<TKey, object> dictionary, TKey key, Func<T> valueFactory)
     {

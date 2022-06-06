@@ -14,14 +14,14 @@ public class MemoryRegister
     public MemoryRegister? Parent { get; }
     public IDictionary<string, MemoryBlock> Blocks { get; }
 
-    public bool TryGetMemoryDatum(string id, out MemoryBlock datum)
+    public bool TryGetBlock(string id, out MemoryBlock datum)
     {
         datum = null!;
         
         if (Blocks.TryGetValue(id, out datum!))
             return true;
 
-        return Parent?.TryGetMemoryDatum(id, out datum) == true;
+        return Parent?.TryGetBlock(id, out datum) == true;
     }
 
     public void Declare(IEnumerable<MemoryReference> references)

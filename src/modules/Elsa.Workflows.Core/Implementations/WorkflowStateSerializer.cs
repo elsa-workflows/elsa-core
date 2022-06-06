@@ -16,7 +16,7 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
         _serviceProvider = serviceProvider;
     }
 
-    public WorkflowState ReadState(WorkflowExecutionContext workflowExecutionContext)
+    public WorkflowState SerializeState(WorkflowExecutionContext workflowExecutionContext)
     {
         var state = new WorkflowState
         {
@@ -26,31 +26,31 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
             SubStatus = workflowExecutionContext.SubStatus
         };
 
-        //GetOutput(state, workflowExecutionContext);
-        GetProperties(state, workflowExecutionContext);
-        GetCompletionCallbacks(state, workflowExecutionContext);
-        GetActivityExecutionContexts(state, workflowExecutionContext);
+        SerializeProperties(state, workflowExecutionContext);
+        SerializeCompletionCallbacks(state, workflowExecutionContext);
+        SerializeActivityExecutionContexts(state, workflowExecutionContext);
+        SerializePersistentVariables(state, workflowExecutionContext);
 
         return state;
     }
 
-    public void WriteState(WorkflowExecutionContext workflowExecutionContext, WorkflowState state)
+    public void DeserializeState(WorkflowExecutionContext workflowExecutionContext, WorkflowState state)
     {
         workflowExecutionContext.Id = state.Id;
         workflowExecutionContext.CorrelationId = state.CorrelationId;
-        workflowExecutionContext.SubStatus = state.SubStatus; 
-        //SetOutput(state, workflowExecutionContext);
-        SetProperties(state, workflowExecutionContext);
-        SetActivityExecutionContexts(state, workflowExecutionContext);
-        SetCompletionCallbacks(state, workflowExecutionContext);
+        workflowExecutionContext.SubStatus = state.SubStatus;
+        DeserializeProperties(state, workflowExecutionContext);
+        DeserializeActivityExecutionContexts(state, workflowExecutionContext);
+        DeserializeCompletionCallbacks(state, workflowExecutionContext);
+        //DeserializePersistentVariables(state, workflowExecutionContext);
     }
 
-    private void GetProperties(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
+    private void SerializeProperties(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
         state.Properties = workflowExecutionContext.Properties;
     }
 
-    private void SetProperties(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
+    private void DeserializeProperties(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
         workflowExecutionContext.Properties = state.Properties;
     }
@@ -87,7 +87,7 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
         }
     }
 
-    private void SetCompletionCallbacks(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
+    private void DeserializeCompletionCallbacks(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
         foreach (var completionCallbackEntry in state.CompletionCallbacks)
         {
@@ -99,13 +99,13 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
         }
     }
 
-    private void GetCompletionCallbacks(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
+    private void SerializeCompletionCallbacks(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
         var completionCallbacks = workflowExecutionContext.CompletionCallbacks.Select(x => new CompletionCallbackState(x.Owner.Id, x.Child.Id, x.CompletionCallback.Method.Name));
         state.CompletionCallbacks = completionCallbacks.ToList();
     }
 
-    private void GetActivityExecutionContexts(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
+    private void SerializeActivityExecutionContexts(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
         ActivityExecutionContextState CreateActivityExecutionContextState(ActivityExecutionContext activityExecutionContext)
         {
@@ -125,7 +125,7 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
         state.ActivityExecutionContexts = workflowExecutionContext.ActivityExecutionContexts.Reverse().Select(CreateActivityExecutionContextState).ToList();
     }
 
-    private void SetActivityExecutionContexts(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
+    private void DeserializeActivityExecutionContexts(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
         ActivityExecutionContext CreateActivityExecutionContext(ActivityExecutionContextState activityExecutionContextState)
         {
@@ -162,6 +162,32 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
 
         workflowExecutionContext.ActivityExecutionContexts = activityExecutionContexts;
     }
+
+    private void SerializePersistentVariables(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
+    {
+        var workflow = workflowExecutionContext.Workflow;
+
+        state.PersistentVariables = workflow.Variables
+            .Where(x => x.DriveId != null)
+            .Select(x => new PersistentVariableState(x.Name, x.DriveId!))
+            .ToList();
+    }
+    
+    // private void DeserializePersistentVariables(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
+    // {
+    //     var persistentVariables = state.PersistentVariables;
+    //     var workflow = workflowExecutionContext.Workflow;
+    //
+    //     foreach (var persistentVariable in persistentVariables)
+    //     {
+    //         var variable = workflow.Variables.FirstOrDefault(x => x.Name == persistentVariable.Name);
+    //
+    //         if (variable == null)
+    //             continue;
+    //
+    //         variable.Set(workflowExecutionContext.MemoryRegister, variable.Value);
+    //     }
+    // }
 
     private IDictionary<string, object?> GetOutputFrom(ActivityNode activityNode) =>
         activityNode.GetType().GetProperties(BindingFlags.Public).Where(x => x.GetCustomAttribute<OutputAttribute>() != null).ToDictionary(x => x.Name, x => (object?)x.GetValue(activityNode));

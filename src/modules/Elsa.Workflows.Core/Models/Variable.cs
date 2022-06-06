@@ -25,7 +25,14 @@ public class Variable : MemoryReference
         get => Id;
         set => Id = value;
     }
+    
     public object? Value { get; set; }
+    
+    /// <summary>
+    /// When specified, the variable's value will be stored on the specified data drive. 
+    /// </summary>
+    public string? DriveId { get; set; }
+    
     public override MemoryBlock Declare() => new(Value);
 }
 
