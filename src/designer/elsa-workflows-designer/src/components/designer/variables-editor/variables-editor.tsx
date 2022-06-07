@@ -46,7 +46,7 @@ export class VariablesEditor {
             <tbody>
             {variables.map(variable => {
                 const storage = storageDrivers.find(x => x.id == variable.storageDriverId);
-                const storageName = storage?.displayName ?? 'None';
+                const storageName = storage?.displayName ?? '-';
 
                 return (
                   <tr>

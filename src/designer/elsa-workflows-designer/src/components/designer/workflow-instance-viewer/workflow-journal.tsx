@@ -1,7 +1,8 @@
 import {Component, h, Prop, State, Watch} from "@stencil/core";
-import {WorkflowExecutionLogRecord} from "../../../models";
+import {ActionDefinition, ActionType, WorkflowExecutionLogRecord} from "../../../models";
 import {Container} from "typedi";
 import {ElsaApiClientProvider} from "../../../services";
+import {formatTimestamp, isNullOrWhitespace} from "../../../utils";
 
 const PAGE_SIZE: number = 20;
 
@@ -34,48 +35,57 @@ export class WorkflowJournal {
 
     return (
 
-      <div>
+      <div class="absolute inset-0 overflow-hidden">
+        <div class="h-full flex flex-col bg-white shadow-xl">
+          <div class="flex flex-col flex-1">
 
-        <div class="px-4 py-6 bg-gray-50 sm:px-6">
-          <div class="flex items-start justify-between space-x-3">
-            <div class="space-y-1">
-              <h2 class="text-lg font-medium text-gray-900">
-                Workflow Journal
-              </h2>
+            <div class="px-4 py-6 bg-gray-50 sm:px-6">
+              <div class="flex items-start justify-between space-x-3">
+                <div class="space-y-1">
+                  <h2 class="text-lg font-medium text-gray-900">
+                    Workflow Journal
+                  </h2>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
 
-        <div class="flow-root p-4 overflow-hidden">
-          <ul role="list" class="-mb-8">
-            {records.map(record => (
-              <li>
-                <div class="relative pb-8">
-                  <span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"/>
-                  <div class="relative flex space-x-3">
-                    <div>
+            <div class="flex-1 relative">
+              <div class="absolute inset-0 overflow-y-scroll">
+
+                <ul role="list" class="m-4">
+                  {records.map(record => (
+                    <li>
+                      <div class="relative pb-8">
+                        <span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"/>
+                        <div class="relative flex space-x-3">
+                          <div>
                     <span class="h-8 w-8 rounded-full bg-gray-400 flex items-center justify-center ring-8 ring-white">
 
                       <svg class="h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                         <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
                       </svg>
                     </span>
-                    </div>
-                    <div class="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
-                      <div>
-                        <p class="text-sm text-gray-500">Applied to <a href="#" class="font-medium text-gray-900">Front End Developer</a></p>
+                          </div>
+                          <div class="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
+                            <div>
+                              <p class="text-sm text-gray-500">{record.activityId} <a href="#" class="font-medium text-gray-900">{record.eventName}</a></p>
+                            </div>
+                            <div class="text-right text-sm whitespace-nowrap text-gray-500">
+                              <time dateTime="2020-09-20">{formatTimestamp(record.timestamp)}</time>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <div class="text-right text-sm whitespace-nowrap text-gray-500">
-                        <time dateTime="2020-09-20">Sep 20</time>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </li>
-            ))}
+                    </li>
+                  ))}
 
-          </ul>
+                </ul>
+              </div>
+            </div>
+          </div>
+
         </div>
+
       </div>
     );
   }
