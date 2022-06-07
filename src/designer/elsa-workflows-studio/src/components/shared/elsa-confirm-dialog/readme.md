@@ -40,6 +40,7 @@ Type: `Promise<boolean>`
 ### Used by
 
  - [elsa-studio-root](../../dashboard/pages/elsa-studio-root)
+ - [elsa-version-history-panel](../../screens/workflow-definition-editor/elsa-version-history-panel)
  - [elsa-webhook-definitions-list-screen](../../../modules/elsa-webhooks/components/screens/webhook-definition-list/else-webhook-definitions-screen)
  - [elsa-workflow-definitions-list-screen](../../screens/workflow-definition-list/elsa-workflow-definitions-screen)
  - [elsa-workflow-registry-list-screen](../../screens/workflow-registry-list/elsa-workflow-registry-list-screen)
@@ -54,6 +55,7 @@ Type: `Promise<boolean>`
 graph TD;
   elsa-confirm-dialog --> elsa-modal-dialog
   elsa-studio-root --> elsa-confirm-dialog
+  elsa-version-history-panel --> elsa-confirm-dialog
   elsa-webhook-definitions-list-screen --> elsa-confirm-dialog
   elsa-workflow-definitions-list-screen --> elsa-confirm-dialog
   elsa-workflow-registry-list-screen --> elsa-confirm-dialog
