@@ -1,6 +1,7 @@
 import {Component, h, Prop, State, Event, EventEmitter, Watch} from "@stencil/core";
 import {DeleteIcon, EditIcon} from "../../icons/tooling";
 import {Variable} from "../../../models";
+import {isNullOrWhitespace} from "../../../utils";
 
 @Component({
   tag: 'elsa-variables-editor',
@@ -36,16 +37,20 @@ export class VariablesEditor {
               <th scope="col">Name</th>
               <th scope="col">Type</th>
               <th scope="col">Value</th>
+              <th scope="col">Storage</th>
               <th scope="col"/>
             </tr>
             </thead>
             <tbody>
             {variables.map(variable => {
+                const storageName = isNullOrWhitespace(variable.driveId) ? 'Transient' : variable.driveId;
+
                 return (
                   <tr>
                     <td class="whitespace-nowrap">{variable.name}</td>
                     <td class="whitespace-nowrap">{variable.type}</td>
                     <td>{variable.value}</td>
+                    <td>{storageName}</td>
                     <td class="pr-6">
                       <elsa-context-menu
                         menuItems={[

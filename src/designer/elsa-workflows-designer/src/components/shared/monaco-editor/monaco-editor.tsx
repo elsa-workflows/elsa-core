@@ -45,7 +45,7 @@ export class MonacoEditor {
       return;
 
     const model = this.editor.getModel();
-    model.setValue(newValue || '');
+    //model.setValue(newValue || '');
   }
 
   @Method()

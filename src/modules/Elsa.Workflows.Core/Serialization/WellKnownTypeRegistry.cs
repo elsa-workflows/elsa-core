@@ -9,6 +9,7 @@ public class WellKnownTypeRegistry : IWellKnownTypeRegistry
 
     public WellKnownTypeRegistry()
     {
+        this.RegisterType<object>("Object");
         this.RegisterType<string>("String");
         this.RegisterType<int>("Int32");
         this.RegisterType<long>("Int64");

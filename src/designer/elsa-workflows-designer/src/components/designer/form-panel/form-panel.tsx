@@ -33,7 +33,7 @@ export class FormPanel {
   }
 
   private renderPanel() {
-    const tabs = this.tabs;
+    const tabs = this.tabs.sort((a, b) => a.order < b.order ? -1 : a.order > b.order ? 1 : 0);
     const selectedTabIndex = this.selectedTabIndex;
     const actions = this.actions;
     const mainTitle = this.mainTitle;

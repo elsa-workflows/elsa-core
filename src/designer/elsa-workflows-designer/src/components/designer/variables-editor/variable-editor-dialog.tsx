@@ -1,8 +1,9 @@
 import {Component, h, Prop, Event, EventEmitter, Method} from "@stencil/core";
 import {DeleteIcon, EditIcon, PublishIcon, UnPublishIcon} from "../../icons/tooling";
-import {DefaultActions, InputDescriptor, Variable, WorkflowDefinitionSummary} from "../../../models";
+import {DataDrive, DefaultActions, InputDescriptor, Variable, WorkflowDefinitionSummary} from "../../../models";
 import {Filter} from "../../modals/workflow-definition-browser/filter";
 import {FormEntry} from "../../shared/forms/form-entry";
+import {isNullOrWhitespace} from "../../../utils";
 
 @Component({
   tag: 'elsa-variable-editor-dialog',
@@ -30,7 +31,8 @@ export class VariableEditorDialog {
     const cancelAction = DefaultActions.Cancel();
     const saveAction = DefaultActions.Save();
     const actions = [cancelAction, saveAction];
-    const availableTypes: Array<string> = ['Object', 'String', 'Int32', 'Int64', 'Single', 'Double'];
+    const availableTypes: Array<string> = ['Object', 'String', 'Int32', 'Int64', 'Single', 'Double']; // TODO: Fetch these from backend.
+    const availableDrives: Array<DataDrive> = [null, {id: 'Workflow'}, {id: 'Blob Storage'}, {id: 'FTP'}]; // TODO: Fetch these from backend.
 
     return (
       <div>
@@ -55,6 +57,17 @@ export class VariableEditorDialog {
                   <input type="text" name="variableValue" id="variableValue" value={variable.value}/>
                 </FormEntry>
 
+                <FormEntry fieldId="variableStorage" label="Storage" hint="The storage to use when persisting the variable.">
+                  <select id="variableStorage" name="variableStorage">
+                    {availableDrives.map(drive => {
+                      const value = drive?.id;
+                      const text = drive?.id ?? 'Transient';
+                      const selected = value == variable.driveId;
+                      return <option value={value} selected={selected}>{text}</option>;
+                    })}
+                  </select>
+                </FormEntry>
+
               </div>
             </div>
           </elsa-modal-dialog>
@@ -69,11 +82,13 @@ export class VariableEditorDialog {
     const name = formData.get('variableName') as string;
     const value = formData.get('variableValue') as string;
     const type = formData.get('variableType') as string;
+    const driveId = formData.get('variableStorage') as string;
     const variable = this.variable;
 
     variable.name = name;
     variable.type = type;
     variable.value = value;
+    variable.driveId = isNullOrWhitespace(driveId) ? null : driveId;
 
     this.variableChanged.emit(variable);
     await this.hide();

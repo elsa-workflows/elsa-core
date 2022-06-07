@@ -93,19 +93,22 @@ export class ActivityPropertiesEditor {
 
     const commonTab: TabDefinition = {
       displayText: 'Common',
+      order: 50,
       content: () => this.renderCommonTab()
     };
 
     const inputTab: TabDefinition = {
       displayText: 'Input',
+      order: 10,
       content: () => this.renderInputTab()
     };
 
-    const tabs = !!activityDescriptor ? [commonTab, inputTab] : [];
+    const tabs = !!activityDescriptor ? [inputTab, commonTab] : [];
 
     if (activityDescriptor.outputProperties.length > 0) {
       const outputTab: TabDefinition = {
         displayText: 'Output',
+        order: 11,
         content: () => this.renderOutputTab()
       };
 
@@ -240,7 +243,7 @@ export class ActivityPropertiesEditor {
     const outputProperties = activityDescriptor.outputProperties;
     const activityId = activity.id;
     const key = `${activityId}`;
-    const variableOptions: Array<any> = [{value: null, name: '-'}, ...this.variables.map(x => ({value: x.name, name: x.name}))];
+    const variableOptions: Array<any> = [null, {label: 'Variables', items: [...this.variables.map(x => ({value: x.name, name: x.name}))]}];
 
     return <div key={key}>
       {outputProperties.map(propertyDescriptor => {
@@ -252,9 +255,20 @@ export class ActivityPropertiesEditor {
         return <div key={key}>
           <FormEntry fieldId={key} label={displayName} hint={propertyDescriptor.description}>
             <select onChange={e => this.onOutputPropertyEditorChanged(propertyDescriptor, (e.currentTarget as HTMLSelectElement).value)}>
-              {variableOptions.map(variable => {
-                const isSelected = propertyValue?.memoryReference?.id == variable.value;
-                return <option value={variable.value} selected={isSelected}>{variable.name}</option>;
+              {variableOptions.map(group => {
+                if (!group) {
+                  return <option value="" selected={!propertyValue?.memoryReference?.id}>-</option>
+                }
+
+                const items = group.items;
+
+                return (
+                  <optgroup label={group.label}>
+                    {items.map(variable => {
+                      const isSelected = propertyValue?.memoryReference?.id == variable.value;
+                      return <option value={variable.value} selected={isSelected}>{variable.name}</option>;
+                    })}
+                  </optgroup>);
               })}
             </select>
           </FormEntry>

@@ -31,7 +31,7 @@ public class VariableConverter : JsonConverter<Variable>
         var model = Map(value);
         JsonSerializer.Serialize(writer, model, options);
     }
-    
+
     public Variable? Map(VariableModel source)
     {
         if (!_wellKnownTypeRegistry.TryGetTypeOrDefault(source.TypeName, out var type))
@@ -42,30 +42,22 @@ public class VariableConverter : JsonConverter<Variable>
 
         variable.Name = source.Name;
         variable.Value = source.Value.ConvertTo(type);
+        variable.DriveId = source.DriveId;
 
         return variable;
     }
-
-    public IEnumerable<Variable> Map(IEnumerable<VariableModel>? source) =>
-        source?
-            .Select(Map)
-            .Where(x => x != null)
-            .Select(x => x!)
-        ?? Enumerable.Empty<Variable>();
-
+    
     public VariableModel Map(Variable source)
     {
         var variableType = source.GetType();
         var value = source.Value;
         var valueType = source.Value?.GetType() ?? (variableType.IsConstructedGenericType ? variableType.GetGenericArguments().FirstOrDefault() ?? typeof(object) : typeof(object));
         var valueTypeAlias = _wellKnownTypeRegistry.GetAliasOrDefault(valueType);
-
+        var driveId = source.DriveId;
         var serializedValue = value.Format();
 
-        return new VariableModel(source.Name, valueTypeAlias, serializedValue);
+        return new VariableModel(source.Name, valueTypeAlias, serializedValue, driveId);
     }
-
-    public IEnumerable<VariableModel> Map(IEnumerable<Variable>? source) => source?.Select(Map) ?? Enumerable.Empty<VariableModel>();
 
     public class VariableModel
     {
@@ -74,15 +66,17 @@ public class VariableConverter : JsonConverter<Variable>
         {
         }
 
-        public VariableModel(string name, string typeName, string? value)
+        public VariableModel(string name, string typeName, string? value, string? driveId)
         {
             Name = name;
             TypeName = typeName;
             Value = value;
+            DriveId = driveId;
         }
 
         public string Name { get; set; } = default!;
         public string TypeName { get; set; } = default!;
         public string? Value { get; set; }
+        public string? DriveId { get; set; }
     }
 }
