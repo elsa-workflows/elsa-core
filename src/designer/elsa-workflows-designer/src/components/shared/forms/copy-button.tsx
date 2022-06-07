@@ -14,7 +14,7 @@ export class ElsaCopyButton {
     copyTextToClipboard(this.value);
     setTimeout(() => {
       this.isCopied = false;
-    }, 2500);
+    }, 500);
   };
 
   public render() {
