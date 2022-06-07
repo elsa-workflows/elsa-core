@@ -8,7 +8,7 @@ import {
   ActivityDescriptor,
   ActivitySelectedArgs,
   ContainerSelectedArgs,
-  GraphUpdatedArgs,
+  GraphUpdatedArgs, StorageDriverDescriptor,
   WorkflowDefinition
 } from '../../../models';
 import WorkflowEditorTunnel, {WorkflowDesignerState} from '../state';
@@ -50,8 +50,8 @@ export class WorkflowDefinitionEditor {
 
   @Prop() workflowDefinition?: WorkflowDefinition;
   @Prop({attribute: 'monaco-lib-path'}) public monacoLibPath: string;
-  @Prop() public activityDescriptors: Array<ActivityDescriptor> = [];
-  @Event() public workflowUpdated: EventEmitter<WorkflowDefinitionUpdatedArgs>
+  @Prop() activityDescriptors: Array<ActivityDescriptor> = [];
+  @Event() workflowUpdated: EventEmitter<WorkflowDefinitionUpdatedArgs>
   @State() private workflowDefinitionState: WorkflowDefinition;
   @State() private selectedActivity?: Activity;
 

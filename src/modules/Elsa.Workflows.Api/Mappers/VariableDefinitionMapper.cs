@@ -28,7 +28,7 @@ public class VariableDefinitionMapper
 
         variable.Name = source.Name;
         variable.Value = source.Value.ConvertTo(type);
-        variable.DriveId = source.DriveId;
+        variable.StorageDriverId = source.StorageDriverId;
 
         return variable;
     }
@@ -46,11 +46,11 @@ public class VariableDefinitionMapper
         var value = source.Value;
         var valueType = source.Value?.GetType() ?? (variableType.IsConstructedGenericType ? variableType.GetGenericArguments().FirstOrDefault() ?? typeof(object) : typeof(object));
         var valueTypeAlias = _wellKnownTypeRegistry.GetAliasOrDefault(valueType);
-        var driveId = source.DriveId;
+        var driverId = source.StorageDriverId;
 
         var serializedValue = value.Format();
 
-        return new VariableDefinition(source.Name, valueTypeAlias, serializedValue, driveId);
+        return new VariableDefinition(source.Name, valueTypeAlias, serializedValue, driverId);
     }
 
     public IEnumerable<VariableDefinition> Map(IEnumerable<Variable>? source) => source?.Select(Map) ?? Enumerable.Empty<VariableDefinition>();

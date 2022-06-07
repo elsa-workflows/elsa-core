@@ -25,7 +25,7 @@ public class PersistWorkflowInstanceMiddleware : WorkflowExecutionMiddleware
     private readonly IRequestSender _requestSender;
     private readonly IEventPublisher _eventPublisher;
     private readonly IWorkflowStateSerializer _workflowStateSerializer;
-    private readonly IDataDriveManager _dataDriveManager;
+    private readonly IStorageDriverManager _storageDriverManager;
     private readonly IBookmarkManager _bookmarkManager;
     private readonly IIdentityGenerator _identityGenerator;
     private readonly ISystemClock _clock;
@@ -38,7 +38,7 @@ public class PersistWorkflowInstanceMiddleware : WorkflowExecutionMiddleware
         IEventPublisher eventPublisher,
         IBookmarkManager bookmarkManager,
         IWorkflowStateSerializer workflowStateSerializer,
-        IDataDriveManager dataDriveManager,
+        IStorageDriverManager storageDriverManager,
         IIdentityGenerator identityGenerator,
         ISystemClock clock) : base(next)
     {
@@ -48,7 +48,7 @@ public class PersistWorkflowInstanceMiddleware : WorkflowExecutionMiddleware
         _eventPublisher = eventPublisher;
         _bookmarkManager = bookmarkManager;
         _workflowStateSerializer = workflowStateSerializer;
-        _dataDriveManager = dataDriveManager;
+        _storageDriverManager = storageDriverManager;
         _identityGenerator = identityGenerator;
         _clock = clock;
     }
@@ -104,7 +104,7 @@ public class PersistWorkflowInstanceMiddleware : WorkflowExecutionMiddleware
         
         foreach (var variableState in workflowInstance.WorkflowState.PersistentVariables)
         {
-            var drive = _dataDriveManager.GetDriveById(variableState.DriveId);
+            var drive = _storageDriverManager.GetDriveById(variableState.StorageDriverId);
             if (drive == null) continue;
             var id = $"{context.Id}:{variableState.Name}";
             var value = await drive.ReadAsync(id, dataDriveContext);
@@ -150,7 +150,7 @@ public class PersistWorkflowInstanceMiddleware : WorkflowExecutionMiddleware
         
         foreach (var variableState in workflowState.PersistentVariables)
         {
-            var drive = _dataDriveManager.GetDriveById(variableState.DriveId);
+            var drive = _storageDriverManager.GetDriveById(variableState.StorageDriverId);
             if (drive == null) continue;
             if (!context.MemoryRegister.TryGetBlock(variableState.Name, out var block)) continue;
             if (block.Value == null) continue;

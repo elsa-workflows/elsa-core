@@ -81,9 +81,9 @@ public class WorkflowsFeature : FeatureBase
             .AddSingleton(StandardOutStreamProvider)
             
             // Data drives.
-            .AddSingleton<IDataDriveManager, DataDriveManager>()
-            .AddDataDrive<WorkflowStateDataDrive>()
-            .AddDataDrive<MemoryDataDrive>()
+            .AddSingleton<IStorageDriverManager, StorageDriverManager>()
+            .AddDataDrive<WorkflowStateStorageDriver>()
+            .AddDataDrive<MemoryStorageDriver>()
 
             // Logging
             .AddLogging();

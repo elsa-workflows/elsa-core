@@ -168,8 +168,8 @@ public class WorkflowStateSerializer : IWorkflowStateSerializer
         var workflow = workflowExecutionContext.Workflow;
 
         state.PersistentVariables = workflow.Variables
-            .Where(x => x.DriveId != null)
-            .Select(x => new PersistentVariableState(x.Name, x.DriveId!))
+            .Where(x => x.StorageDriverId != null)
+            .Select(x => new PersistentVariableState(x.Name, x.StorageDriverId!))
             .ToList();
     }
 

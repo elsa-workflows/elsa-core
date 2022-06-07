@@ -2,10 +2,11 @@ using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.Implementations;
 
-public class MemoryDataDrive : IDataDrive
+public class MemoryStorageDriver : IStorageDriver
 {
     private readonly IDictionary<string, object> _dictionary = new Dictionary<string, object>();
-    public string Id => DataDriveNames.Memory;
+    public string Id => StorageDriverNames.Memory;
+    public string DisplayName => StorageDriverNames.Memory;
 
     public ValueTask WriteAsync(string id, object value, DataDriveContext context)
     {

@@ -1,9 +1,8 @@
 import {Component, h, Prop, Event, EventEmitter, Method} from "@stencil/core";
-import {DeleteIcon, EditIcon, PublishIcon, UnPublishIcon} from "../../icons/tooling";
-import {DataDrive, DefaultActions, InputDescriptor, Variable, WorkflowDefinitionSummary} from "../../../models";
-import {Filter} from "../../modals/workflow-definition-browser/filter";
+import {DefaultActions, StorageDriverDescriptor, Variable} from "../../../models";
 import {FormEntry} from "../../shared/forms/form-entry";
 import {isNullOrWhitespace} from "../../../utils";
+import descriptorsStore from '../../../data/descriptors-store';
 
 @Component({
   tag: 'elsa-variable-editor-dialog',
@@ -32,7 +31,7 @@ export class VariableEditorDialog {
     const saveAction = DefaultActions.Save();
     const actions = [cancelAction, saveAction];
     const availableTypes: Array<string> = ['Object', 'String', 'Int32', 'Int64', 'Single', 'Double']; // TODO: Fetch these from backend.
-    const availableDrives: Array<DataDrive> = [null, {id: 'Workflow'}, {id: 'Blob Storage'}, {id: 'FTP'}]; // TODO: Fetch these from backend.
+    const storageDrivers: Array<StorageDriverDescriptor> = descriptorsStore.storageDrivers;
 
     return (
       <div>
@@ -57,12 +56,12 @@ export class VariableEditorDialog {
                   <input type="text" name="variableValue" id="variableValue" value={variable.value}/>
                 </FormEntry>
 
-                <FormEntry fieldId="variableStorage" label="Storage" hint="The storage to use when persisting the variable.">
-                  <select id="variableStorage" name="variableStorage">
-                    {availableDrives.map(drive => {
-                      const value = drive?.id;
-                      const text = drive?.id ?? 'Transient';
-                      const selected = value == variable.driveId;
+                <FormEntry fieldId="variableStorageDriverId" label="Storage" hint="The storage to use when persisting the variable.">
+                  <select id="variableStorageDriverId" name="variableStorageDriverId">
+                    {storageDrivers.map(driver => {
+                      const value = driver.id;
+                      const text = driver.displayName;
+                      const selected = value == variable.storageDriverId;
                       return <option value={value} selected={selected}>{text}</option>;
                     })}
                   </select>
@@ -82,13 +81,13 @@ export class VariableEditorDialog {
     const name = formData.get('variableName') as string;
     const value = formData.get('variableValue') as string;
     const type = formData.get('variableType') as string;
-    const driveId = formData.get('variableStorage') as string;
+    const driverId = formData.get('variableStorageDriverId') as string;
     const variable = this.variable;
 
     variable.name = name;
     variable.type = type;
     variable.value = value;
-    variable.driveId = isNullOrWhitespace(driveId) ? null : driveId;
+    variable.storageDriverId = isNullOrWhitespace(driverId) ? null : driverId;
 
     this.variableChanged.emit(variable);
     await this.hide();

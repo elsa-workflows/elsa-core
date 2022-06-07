@@ -13,8 +13,8 @@ public static class DependencyInjectionExtensions
         return configuration;
     }
 
-    public static IServiceCollection AddDataDrive<T>(this IServiceCollection services) where T : class, IDataDrive
+    public static IServiceCollection AddDataDrive<T>(this IServiceCollection services) where T : class, IStorageDriver
     {
-        return services.AddSingleton<IDataDrive, T>();
+        return services.AddSingleton<IStorageDriver, T>();
     }
 }

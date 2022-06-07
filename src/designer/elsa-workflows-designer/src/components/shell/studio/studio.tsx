@@ -15,6 +15,7 @@ import {ExportWorkflowRequest, ImportWorkflowRequest} from "../../../services/ap
 import {WorkflowDefinitionManager} from "../../../services/workflow-definition-manager";
 import {WorkflowDefinitionUpdatedArgs} from "../../designer/workflow-definition-editor/models";
 import {Flowchart} from "../../activities/flowchart/models";
+import descriptorsStore from '../../../data/descriptors-store';
 
 @Component({
   tag: 'elsa-studio'
@@ -193,6 +194,10 @@ export class Studio {
 
     this.elsaClient = await elsaClientProvider.getElsaClient();
     this.activityDescriptors = await this.elsaClient.descriptors.activities.list();
+    const storageDrivers = await this.elsaClient.descriptors.storageDrivers.list();
+
+    descriptorsStore.activityDescriptors = this.activityDescriptors;
+    descriptorsStore.storageDrivers = storageDrivers;
 
     this.workflowManagerElement = this.el.getElementsByTagName('elsa-workflow-manager')[0] as HTMLElsaWorkflowManagerElement;
 

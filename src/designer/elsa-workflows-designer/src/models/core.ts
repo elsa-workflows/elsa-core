@@ -25,7 +25,7 @@ export interface Variable {
   name: string;
   type: string;
   value?: any;
-  driveId?: string;
+  storageDriverId?: string;
 }
 
 export interface ActivityInput {
@@ -96,10 +96,6 @@ export interface WorkflowExecutionLogRecord {
   activityType: string;
   timestamp: Date;
   eventName: string;
-}
-
-export interface DataDrive {
-  id: string;
 }
 
 export enum SyntaxNames {

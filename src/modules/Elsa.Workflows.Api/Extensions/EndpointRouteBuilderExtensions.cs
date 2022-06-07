@@ -43,6 +43,9 @@ public static class EndpointRouteBuilderExtensions
         
         // Workflow Journal.
         Map("WorkflowJournal.Get", "workflow-instances/{id}/journal", new { Controller = ControllerNames.WorkflowJournal, Action = "Get" });
+        
+        // Storage Drivers.
+        Map("StorageDrivers.List", "descriptors/storage-drivers", new { Controller = ControllerNames.StorageDrivers, Action = "List" });
 
         return endpoints;
     }

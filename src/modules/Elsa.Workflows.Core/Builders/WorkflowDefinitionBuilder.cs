@@ -39,28 +39,28 @@ public class WorkflowDefinitionBuilder : IWorkflowDefinitionBuilder
         return this;
     }
 
-    public Variable<T> WithVariable<T>(string? driveId = default)
+    public Variable<T> WithVariable<T>(string? storageDriverId = default)
     {
         var variable = new Variable<T>()
         {
-            DriveId = driveId
+            StorageDriverId = storageDriverId
         };
         Variables.Add(variable);
         return variable;
     }
 
-    public Variable<T> WithVariable<T>(string name, T value, string? driveId = default)
+    public Variable<T> WithVariable<T>(string name, T value, string? storageDriverId = default)
     {
         var variable = value != null ? new Variable<T>(name, value) : new Variable<T>(name);
-        variable.DriveId = driveId;
+        variable.StorageDriverId = storageDriverId;
         Variables.Add(variable);
         return variable;
     }
 
-    public Variable<T> WithVariable<T>(T value, string? driveId = default)
+    public Variable<T> WithVariable<T>(T value, string? storageDriverId = default)
     {
         var variable = value != null ? new Variable<T>(value) : new Variable<T>();
-        variable.DriveId = driveId;
+        variable.StorageDriverId = storageDriverId;
         Variables.Add(variable);
         return variable;
     }

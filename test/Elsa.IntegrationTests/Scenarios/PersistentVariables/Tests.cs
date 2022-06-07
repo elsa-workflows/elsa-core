@@ -76,7 +76,7 @@ public class WorkflowInstancePersistenceTests
             workflowState = result.WorkflowState;
             
             // Assert that the expected variable is persisted.
-            var persistentVariablesDictionary = (IDictionary<string, object>)workflowState.Properties[WorkflowStateDataDrive.VariablesDictionaryStateKey];
+            var persistentVariablesDictionary = (IDictionary<string, object>)workflowState.Properties[WorkflowStateStorageDriver.VariablesDictionaryStateKey];
             var stateId = $"{workflowState.Id}:{variable.Name}";
             var persistedValue = persistentVariablesDictionary[stateId];
             var expectedValue = languages[currentIndex];

@@ -9,12 +9,12 @@ public class PersistentVariableState
     {
     }
 
-    public PersistentVariableState(string name, string driveId)
+    public PersistentVariableState(string name, string storageDriverId)
     {
         Name = name;
-        DriveId = driveId;
+        StorageDriverId = storageDriverId;
     }
 
     public string Name { get; set; } = default!;
-    public string DriveId { get; set; } = default!;
+    public string StorageDriverId { get; set; } = default!;
 }

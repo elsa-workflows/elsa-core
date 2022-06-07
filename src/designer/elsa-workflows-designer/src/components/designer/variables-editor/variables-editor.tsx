@@ -1,7 +1,8 @@
 import {Component, h, Prop, State, Event, EventEmitter, Watch} from "@stencil/core";
 import {DeleteIcon, EditIcon} from "../../icons/tooling";
-import {Variable} from "../../../models";
+import {StorageDriverDescriptor, Variable} from "../../../models";
 import {isNullOrWhitespace} from "../../../utils";
+import descriptorsStore from "../../../data/descriptors-store";
 
 @Component({
   tag: 'elsa-variables-editor',
@@ -24,6 +25,7 @@ export class VariablesEditor {
 
   render() {
     const variables = this.variables;
+    const storageDrivers: Array<StorageDriverDescriptor> = descriptorsStore.storageDrivers;
 
     return (
       <div>
@@ -43,7 +45,8 @@ export class VariablesEditor {
             </thead>
             <tbody>
             {variables.map(variable => {
-                const storageName = isNullOrWhitespace(variable.driveId) ? 'Transient' : variable.driveId;
+                const storage = storageDrivers.find(x => x.id == variable.storageDriverId);
+                const storageName = storage?.displayName ?? 'None';
 
                 return (
                   <tr>

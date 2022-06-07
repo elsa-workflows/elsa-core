@@ -9,4 +9,5 @@ public class ControllerNames
     public const string Labels = "Labels";
     public const string WorkflowDefinitionLabels = "WorkflowDefinitionLabels";
     public const string WorkflowJournal = "WorkflowJournal";
+    public const string StorageDrivers = "StorageDrivers";
 }

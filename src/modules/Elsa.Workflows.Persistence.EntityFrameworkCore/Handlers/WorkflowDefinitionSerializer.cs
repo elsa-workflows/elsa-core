@@ -14,7 +14,7 @@ public class WorkflowDefinitionSerializer : IEntitySerializer<WorkflowsDbContext
     {
         _workflowSerializerOptionsProvider = workflowSerializerOptionsProvider;
     }
-    
+
     public void Serialize(WorkflowsDbContext dbContext, WorkflowDefinition entity)
     {
         var data = new
@@ -34,20 +34,20 @@ public class WorkflowDefinitionSerializer : IEntitySerializer<WorkflowsDbContext
     public void Deserialize(WorkflowsDbContext dbContext, WorkflowDefinition entity)
     {
         var data = new WorkflowDefinitionState(entity.Variables, entity.Tags, entity.Metadata, entity.ApplicationProperties);
-        var json = (string?) dbContext.Entry(entity).Property("Data").CurrentValue;
+        var json = (string?)dbContext.Entry(entity).Property("Data").CurrentValue;
 
         if (!string.IsNullOrWhiteSpace(json))
         {
             var options = _workflowSerializerOptionsProvider.CreatePersistenceOptions();
             data = JsonSerializer.Deserialize<WorkflowDefinitionState>(json, options)!;
         }
-        
+
         entity.Variables = data.Variables;
         entity.Tags = data.Tags;
         entity.Metadata = data.Metadata;
         entity.ApplicationProperties = data.ApplicationProperties;
     }
-    
+
     // Can't use records when using System.Text.Json serialization and reference handling. Hence, using a class with default constructor.
     private class WorkflowDefinitionState
     {
@@ -55,14 +55,18 @@ public class WorkflowDefinitionSerializer : IEntitySerializer<WorkflowsDbContext
         {
         }
 
-        public WorkflowDefinitionState(ICollection<Variable> variables, ICollection<string> tags, IDictionary<string, object> metadata, IDictionary<string, object> applicationProperties)
+        public WorkflowDefinitionState(
+            ICollection<Variable> variables,
+            ICollection<string> tags,
+            IDictionary<string, object> metadata,
+            IDictionary<string, object> applicationProperties)
         {
             Variables = variables;
             Tags = tags;
             Metadata = metadata;
             ApplicationProperties = applicationProperties;
         }
-        
+
         public ICollection<Variable> Variables { get; set; } = new List<Variable>();
         public ICollection<string> Tags { get; set; } = new List<string>();
         public IDictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();

@@ -47,15 +47,6 @@ public class Workflow : Composite, ICloneable
     public WorkflowPublication Publication { get; set; }
     public WorkflowMetadata WorkflowMetadata { get; set; }
     public ICollection<Variable> Variables { get; init; }
-    
-    /// <summary>
-    /// A list of storage drive definitions that can be used by variables to persist their values.
-    /// </summary>
-    /// <remarks>
-    /// Depending on the drive's driver capabilities, only serializable variables can be persisted.
-    /// </remarks>
-    public ICollection<DataDriveDefinition> Drives { get; set; } = new List<DataDriveDefinition>();
-    
     public Workflow Clone() => (Workflow)((ICloneable)this).Clone();
     object ICloneable.Clone() => MemberwiseClone();
 }

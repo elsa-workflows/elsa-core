@@ -29,9 +29,9 @@ public class Variable : MemoryReference
     public object? Value { get; set; }
     
     /// <summary>
-    /// When specified, the variable's value will be stored on the specified data drive. 
+    /// When specified, the variable's value will be stored on the specified <see cref="Elsa.Workflows.Core.Services.IStorageDriver"/>. 
     /// </summary>
-    public string? DriveId { get; set; }
+    public string? StorageDriverId { get; set; }
     
     public override MemoryBlock Declare() => new(Value);
 }

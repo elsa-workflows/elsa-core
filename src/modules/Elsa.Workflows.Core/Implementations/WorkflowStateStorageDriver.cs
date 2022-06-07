@@ -5,10 +5,11 @@ namespace Elsa.Workflows.Core.Implementations;
 /// <summary>
 /// A data drive that stores objects in the workflow state itself.
 /// </summary>
-public class WorkflowStateDataDrive : IDataDrive
+public class WorkflowStateStorageDriver : IStorageDriver
 {
     public const string VariablesDictionaryStateKey = "PersistentVariablesDictionary";
-    public string Id => DataDriveNames.Workflow;
+    public string Id => StorageDriverNames.Workflow;
+    public string DisplayName => StorageDriverNames.Workflow;
 
     public ValueTask WriteAsync(string id, object value, DataDriveContext context)
     {

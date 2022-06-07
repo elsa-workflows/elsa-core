@@ -128,6 +128,14 @@ export class WorkflowDefinitionPropertiesEditor {
       }
     }
 
+    // const dataDrivesTabModel: TabModel = {
+    //   name: 'dataDrives',
+    //   tab: {
+    //     displayText: 'Data Drives',
+    //     content: () => this.renderDataDrivesTab()
+    //   }
+    // }
+
     model.tabModels = [propertiesTabModel, variablesTabModel];
 
     const args: WorkflowPropertiesEditorDisplayingArgs = {model};
@@ -149,9 +157,17 @@ export class WorkflowDefinitionPropertiesEditor {
     const variables: Array<Variable> = this.workflowDefinition?.variables ?? [];
 
     return <div>
-      <elsa-variables-editor variables={variables} onVariablesChanged={e => this.onVariablesUpdated(e)} />
+      <elsa-variables-editor variables={variables} onVariablesChanged={e => this.onVariablesUpdated(e)}/>
     </div>
   };
+
+  // private renderDataDrivesTab = () => {
+  //   const dataDrives: Array<DataDriveDefinition> = this.workflowDefinition?.dataDrives ?? [];
+  //
+  //   return <div>
+  //     <elsa-data-drives-editor dataDrives={dataDrives} onDataDrivesUpdated={e => this.onDataDrivesUpdated(e)}/>
+  //   </div>
+  // };
 
   private onSelectedTabIndexChanged = (e: CustomEvent<TabChangedArgs>) => this.selectedTabIndex = e.detail.selectedTabIndex;
 
@@ -164,7 +180,7 @@ export class WorkflowDefinitionPropertiesEditor {
   private onVariablesUpdated = async (e: CustomEvent<Array<Variable>>) => {
     const workflowDefinition = this.workflowDefinition;
 
-    if(!workflowDefinition)
+    if (!workflowDefinition)
       return;
 
     const variables = e.detail;
@@ -172,6 +188,18 @@ export class WorkflowDefinitionPropertiesEditor {
     this.workflowPropsUpdated.emit({workflowDefinition});
     await this.createModel();
   }
+
+  // private onDataDrivesUpdated = async (e: CustomEvent<Array<DataDriveDefinition>>) => {
+  //   const workflowDefinition = this.workflowDefinition;
+  //
+  //   if (!workflowDefinition)
+  //     return;
+  //
+  //   const dataDrives = e.detail;
+  //   workflowDefinition.dataDrives = dataDrives;
+  //   this.workflowPropsUpdated.emit({workflowDefinition});
+  //   await this.createModel();
+  // }
 }
 
 WorkflowEditorTunnel.injectProps(WorkflowDefinitionPropertiesEditor, ['activityDescriptors']);

@@ -12,9 +12,9 @@ public interface IWorkflowDefinitionBuilder
     IWorkflowDefinitionBuilder WithDefinitionId(string definitionId);
     IWorkflowDefinitionBuilder WithVersion(int version);
     IWorkflowDefinitionBuilder WithRoot(IActivity root);
-    Variable<T> WithVariable<T>(string? driveId = default);
-    Variable<T> WithVariable<T>(string name, T value, string? driveId = default);
-    Variable<T> WithVariable<T>(T value, string? driveId = default);
+    Variable<T> WithVariable<T>(string? storageDriverId = default);
+    Variable<T> WithVariable<T>(string name, T value, string? storageDriverId = default);
+    Variable<T> WithVariable<T>(T value, string? storageDriverId = default);
     IWorkflowDefinitionBuilder WithVariable(Variable variable);
     IWorkflowDefinitionBuilder WithVariables(params Variable[] variables);
     IWorkflowDefinitionBuilder WithApplicationProperty(string name, object value);

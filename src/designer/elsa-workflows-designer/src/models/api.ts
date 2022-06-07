@@ -125,3 +125,8 @@ export interface IntellisenseContext {
   activityTypeName: string;
   propertyName: string;
 }
+
+export interface StorageDriverDescriptor {
+  id: string;
+  displayName: string;
+}
