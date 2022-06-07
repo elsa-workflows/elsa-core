@@ -32,6 +32,15 @@ export interface ActivityInput {
   expression: Expression;
 }
 
+export interface ActivityOutput {
+  type: Type;
+  memoryReference: MemoryReference;
+}
+
+export interface MemoryReference {
+  id: string;
+}
+
 export interface WorkflowDefinition {
   id: string;
   definitionId: string;

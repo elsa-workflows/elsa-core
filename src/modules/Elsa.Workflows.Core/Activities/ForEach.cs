@@ -38,7 +38,6 @@ public class ForEach : Activity
     /// <summary>
     /// The current value being iterated will be assigned to the specified <see cref="MemoryReference"/>.
     /// </summary>
-    [JsonIgnore]
     [Output(Description = "Captures the current value of the list of items being iterated.")]
     public Output<object>? CurrentValue { get; set; }
 

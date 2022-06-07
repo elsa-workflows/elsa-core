@@ -8,11 +8,15 @@ public class OutputDescriptor : PropertyDescriptor
 
     public OutputDescriptor(
         string name,
+        string displayName,
         Type type,
-        string? description = default)
+        string? description = default,
+        bool? isBrowsable = default)
     {
         Name = name;
+        DisplayName = displayName;
         Type = type;
         Description = description;
+        IsBrowsable = isBrowsable;
     }
 }

@@ -36,6 +36,7 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
 
         var newOptions = new JsonSerializerOptions(options);
         newOptions.Converters.Add(new InputJsonConverterFactory(_serviceProvider));
+        newOptions.Converters.Add(new OutputJsonConverterFactory(_serviceProvider));
 
         var context = new ActivityConstructorContext(doc.RootElement, newOptions);
         var activity = activityDescriptor.Constructor(context);
@@ -47,6 +48,7 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
     {
         var newOptions = new JsonSerializerOptions(options);
         newOptions.Converters.Add(new InputJsonConverterFactory(_serviceProvider));
+        newOptions.Converters.Add(new OutputJsonConverterFactory(_serviceProvider));
         JsonSerializer.Serialize(writer, value, value.GetType(), newOptions);
     }
 }

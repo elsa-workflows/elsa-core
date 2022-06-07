@@ -106,16 +106,18 @@ public class ActivityDescriber : IActivityDescriber
     {
         foreach (var propertyInfo in properties)
         {
-            var activityPropertyAttribute = propertyInfo.GetCustomAttribute<OutputAttribute>();
+            var outputAttribute = propertyInfo.GetCustomAttribute<OutputAttribute>();
             var descriptionAttribute = propertyInfo.GetCustomAttribute<DescriptionAttribute>();
             var typeArgs = propertyInfo.PropertyType.GenericTypeArguments;
             var wrappedPropertyType = typeArgs.Any() ? typeArgs[0] : typeof(object);
 
             yield return new OutputDescriptor
             (
-                (activityPropertyAttribute?.Name ?? propertyInfo.Name).Pascalize(),
+                (outputAttribute?.Name ?? propertyInfo.Name).Pascalize(),
+                outputAttribute?.DisplayName ?? propertyInfo.Name.Humanize(LetterCasing.Title),
                 wrappedPropertyType,
-                descriptionAttribute?.Description ?? activityPropertyAttribute?.Description
+                descriptionAttribute?.Description ?? outputAttribute?.Description,
+                outputAttribute?.IsBrowsable ?? true
             );
         }
     }

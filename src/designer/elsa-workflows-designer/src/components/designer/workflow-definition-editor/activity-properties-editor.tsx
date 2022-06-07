@@ -3,8 +3,8 @@ import {camelCase} from 'lodash';
 import WorkflowEditorTunnel from '../state';
 import {
   Activity,
-  ActivityDescriptor,
-  DefaultActions, InputDescriptor, RenderActivityInputContext,
+  ActivityDescriptor, ActivityOutput,
+  DefaultActions, InputDescriptor, OutputDescriptor, PropertyDescriptor, RenderActivityInputContext,
   RenderActivityPropsContext,
   TabChangedArgs,
   TabDefinition, Variable
@@ -19,7 +19,7 @@ export interface ActivityUpdatedArgs {
   activity: Activity;
   activityDescriptor: ActivityDescriptor;
   propertyName?: string;
-  inputDescriptor?: InputDescriptor;
+  propertyDescriptor?: PropertyDescriptor;
 }
 
 export interface DeleteActivityRequestedArgs {
@@ -67,8 +67,8 @@ export class ActivityPropertiesEditor {
         node: activity,
         nodeDescriptor: activityDescriptor,
         inputDescriptor,
-        notifyInputChanged: () => this.activityUpdated.emit({activity, activityDescriptor, propertyName: camelCase(inputDescriptor.name), inputDescriptor}),
-        inputChanged: (v, s) => this.onPropertyEditorChanged(inputDescriptor, v, s)
+        notifyInputChanged: () => this.activityUpdated.emit({activity, activityDescriptor, propertyName: camelCase(inputDescriptor.name), propertyDescriptor: inputDescriptor}),
+        inputChanged: (v, s) => this.onInputPropertyEditorChanged(inputDescriptor, v, s)
       };
 
       const driver = driverRegistry.get(renderInputContext);
@@ -89,7 +89,7 @@ export class ActivityPropertiesEditor {
   }
 
   public render() {
-    const {activity, activityDescriptor, title} = this.renderContext;
+    const {activity, activityDescriptor} = this.renderContext;
 
     const commonTab: TabDefinition = {
       displayText: 'Common',
@@ -112,6 +112,14 @@ export class ActivityPropertiesEditor {
       tabs.push(outputTab);
     }
 
+    let selectedTabIndex = this.selectedTabIndex;
+
+    if (selectedTabIndex >= tabs.length)
+      selectedTabIndex = tabs.length - 1;
+
+    if (selectedTabIndex < 0)
+      selectedTabIndex = 0;
+
     const actions = [DefaultActions.Delete(this.onDeleteActivity)];
     const mainTitle = activity.id;
     const subTitle = activityDescriptor.displayName;
@@ -121,7 +129,7 @@ export class ActivityPropertiesEditor {
         mainTitle={mainTitle}
         subTitle={subTitle}
         tabs={tabs}
-        selectedTabIndex={this.selectedTabIndex}
+        selectedTabIndex={selectedTabIndex}
         onSelectedTabIndexChanged={e => this.onSelectedTabIndexChanged(e)}
         actions={actions}/>
     );
@@ -141,7 +149,7 @@ export class ActivityPropertiesEditor {
       displayName: 'Id',
       type: 'string'
     };
-    this.activityUpdated.emit({activity, activityDescriptor, propertyName: 'id', inputDescriptor});
+    this.activityUpdated.emit({activity, activityDescriptor, propertyName: 'id', propertyDescriptor: inputDescriptor});
   }
 
   private onActivityDisplayTextChanged(e: any) {
@@ -157,7 +165,7 @@ export class ActivityPropertiesEditor {
     this.activityUpdated.emit({activity, activityDescriptor});
   }
 
-  private onPropertyEditorChanged = (inputDescriptor: InputDescriptor, propertyValue: any, syntax: string) => {
+  private onInputPropertyEditorChanged = (inputDescriptor: InputDescriptor, propertyValue: any, syntax: string) => {
     const activity = this.activity;
     const propertyName = inputDescriptor.name;
     const activityDescriptor = this.findActivityDescriptor();
@@ -171,7 +179,25 @@ export class ActivityPropertiesEditor {
       }
     };
 
-    this.activityUpdated.emit({activity, activityDescriptor, propertyName: camelCasePropertyName, inputDescriptor});
+    this.activityUpdated.emit({activity, activityDescriptor, propertyName: camelCasePropertyName, propertyDescriptor: inputDescriptor});
+  }
+
+  private onOutputPropertyEditorChanged = (outputDescriptor: OutputDescriptor, variableName: string) => {
+    const activity = this.activity;
+    const propertyName = outputDescriptor.name;
+    const activityDescriptor = this.findActivityDescriptor();
+    const camelCasePropertyName = camelCase(propertyName);
+
+    const property: ActivityOutput = {
+      type: outputDescriptor.type,
+      memoryReference: {
+        id: variableName
+      }
+    }
+
+    activity[camelCasePropertyName] = property;
+
+    this.activityUpdated.emit({activity, activityDescriptor, propertyName: camelCasePropertyName, propertyDescriptor: outputDescriptor});
   }
 
   private onDeleteActivity = () => this.deleteActivityRequested.emit({activity: this.activity});
@@ -214,18 +240,22 @@ export class ActivityPropertiesEditor {
     const outputProperties = activityDescriptor.outputProperties;
     const activityId = activity.id;
     const key = `${activityId}`;
-    const allVariables = this.variables;
+    const variableOptions: Array<any> = [{value: null, name: '-'}, ...this.variables.map(x => ({value: x.name, name: x.name}))];
 
     return <div key={key}>
-      {outputProperties.map(property => {
-        const key = `${activity.id}-${property.name}`;
-        const displayName = isNullOrWhitespace(property.displayName) ? property.name : property.displayName;
-        const compatibleVariables = this.variables.filter(x => x.type == property.type);
+      {outputProperties.map(propertyDescriptor => {
+        const key = `${activity.id}-${propertyDescriptor.name}`;
+        const displayName = isNullOrWhitespace(propertyDescriptor.displayName) ? propertyDescriptor.name : propertyDescriptor.displayName;
+        const propertyName = camelCase(propertyDescriptor.name);
+        const propertyValue = activity[propertyName] as ActivityOutput;
 
         return <div key={key}>
-          <FormEntry fieldId={key} label={displayName} hint={property.description}>
-            <select>
-              {compatibleVariables.map(variable => <option value={variable.name}>{variable.name}</option>)}
+          <FormEntry fieldId={key} label={displayName} hint={propertyDescriptor.description}>
+            <select onChange={e => this.onOutputPropertyEditorChanged(propertyDescriptor, (e.currentTarget as HTMLSelectElement).value)}>
+              {variableOptions.map(variable => {
+                const isSelected = propertyValue?.memoryReference?.id == variable.value;
+                return <option value={variable.value} selected={isSelected}>{variable.name}</option>;
+              })}
             </select>
           </FormEntry>
         </div>;
