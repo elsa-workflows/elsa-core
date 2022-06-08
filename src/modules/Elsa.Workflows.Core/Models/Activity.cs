@@ -115,7 +115,7 @@ public abstract class ActivityWithResult : Activity
     {
         if (output != null) Result = new Output(output);
     }
-    
+
     protected ActivityWithResult(Output? output)
     {
         Result = output;
@@ -137,15 +137,21 @@ public abstract class Activity<T> : ActivityWithResult
     protected Activity(MemoryReference? output) : base(output)
     {
     }
-    
+
     protected Activity(Output? output) : base(output)
     {
     }
 
     public Activity<T> CaptureResult(MemoryReference output)
     {
-        Result = new Output(output);
+        Result = new Output<T>(output);
         return this;
+    }
+
+    public new Output<T>? Result
+    {
+        get => base.Result as Output<T>;
+        set => base.Result = value;
     }
 }
 

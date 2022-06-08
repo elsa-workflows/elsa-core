@@ -13,7 +13,7 @@ public class OutputJsonConverterFactory : JsonConverterFactory
 
     public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
     {
-        var type = typeToConvert.GetGenericArguments().First();
+        var type = typeToConvert.GetGenericArguments().FirstOrDefault() ?? typeof(object);
         return (JsonConverter)ActivatorUtilities.CreateInstance(_serviceProvider, typeof(OutputJsonConverter<>).MakeGenericType(type))!;
     }
 }
