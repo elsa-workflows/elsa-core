@@ -115,14 +115,11 @@ export class WorkflowJournal {
                       </li>
                     );
                   })}
-
                 </ul>
               </div>
             </div>
           </div>
-
         </div>
-
       </div>
     );
   }

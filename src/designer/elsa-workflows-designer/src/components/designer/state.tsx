@@ -3,12 +3,12 @@ import {h} from "@stencil/core";
 import {ActivityDescriptor, WorkflowDefinition} from "../../models";
 
 export interface WorkflowDesignerState {
-  workflow: WorkflowDefinition;
+  workflowDefinition: WorkflowDefinition;
 }
 
 export default createProviderConsumer<WorkflowDesignerState>(
   {
-    workflow: null,
+    workflowDefinition: null,
   },
   (subscribe, child) => (<context-consumer subscribe={subscribe} renderer={child}/>)
 );

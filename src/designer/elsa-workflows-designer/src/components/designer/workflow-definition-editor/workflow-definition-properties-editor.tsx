@@ -39,17 +39,14 @@ export class WorkflowDefinitionPropertiesEditor {
 
   @Watch('workflowDefinition')
   async onWorkflowDefinitionChanged() {
-    debugger;
     await this.createModel();
   }
 
   async componentWillLoad() {
-    debugger;
     await this.createModel();
   }
 
   public render() {
-    debugger;
     const workflowDefinition = this.workflowDefinition;
     const workflowDefinitionName = workflowDefinition?.name ?? 'Untitled';
     const title = workflowDefinitionName;
@@ -71,7 +68,6 @@ export class WorkflowDefinitionPropertiesEditor {
       tabModels: []
     };
 
-    debugger;
     const workflowDefinition = this.workflowDefinition;
 
     if (!workflowDefinition) {
@@ -159,11 +155,9 @@ export class WorkflowDefinitionPropertiesEditor {
   private onSelectedTabIndexChanged = (e: CustomEvent<TabChangedArgs>) => this.selectedTabIndex = e.detail.selectedTabIndex;
 
   private onPropertyEditorChanged = (apply: (w: WorkflowDefinition) => void) => {
-    debugger;
     const workflowDefinition = this.workflowDefinition;
     apply(workflowDefinition);
     this.workflowPropsUpdated.emit({workflowDefinition});
-    debugger;
   }
 
   private onVariablesUpdated = async (e: CustomEvent<Array<Variable>>) => {
@@ -173,10 +167,8 @@ export class WorkflowDefinitionPropertiesEditor {
       return;
 
     const variables = e.detail;
-    debugger;
     workflowDefinition.variables = variables;
     this.workflowPropsUpdated.emit({workflowDefinition});
-    debugger;
     await this.createModel();
   }
 }

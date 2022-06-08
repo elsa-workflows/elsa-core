@@ -122,11 +122,12 @@ export class WorkflowInstanceViewer {
   }
 
   public render() {
+    const workflowDefinition = this.workflowDefinition;
     const workflowInstance = this.workflowInstance;
     const workflowInstanceId = workflowInstance?.id;
 
     const tunnelState: WorkflowDesignerState = {
-      workflow: this.workflowDefinition,
+      workflowDefinition: workflowDefinition,
     };
 
     return (
@@ -136,7 +137,7 @@ export class WorkflowInstanceViewer {
             class="elsa-activity-picker-container"
             position={PanelPosition.Left}
             onExpandedStateChanged={e => this.onActivityPickerPanelStateChanged(e.detail)}>
-            <elsa-workflow-journal workflowInstance={workflowInstance}/>
+            <elsa-workflow-journal workflowDefinition={workflowDefinition} workflowInstance={workflowInstance}/>
           </elsa-panel>
           <elsa-canvas
             class="absolute" ref={el => this.canvas = el}

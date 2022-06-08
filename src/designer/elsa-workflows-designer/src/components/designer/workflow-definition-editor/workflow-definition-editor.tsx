@@ -167,7 +167,7 @@ export class WorkflowDefinitionEditor {
 
   public render() {
     const tunnelState: WorkflowDesignerState = {
-      workflow: this.workflowDefinitionState,
+      workflowDefinition: this.workflowDefinitionState,
     };
 
     return (
