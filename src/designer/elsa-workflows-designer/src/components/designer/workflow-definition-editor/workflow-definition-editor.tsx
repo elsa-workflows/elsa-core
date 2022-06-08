@@ -124,11 +124,15 @@ export class WorkflowDefinitionEditor {
 
   @Method()
   public async newWorkflow() {
+
+    const flowchartDescriptor = this.activityDescriptors.find(x => x.activityType == 'Elsa.Flowchart');
+    const newName = await this.generateUniqueActivityName(flowchartDescriptor);
+
     const flowchart = {
       typeName: 'Elsa.Flowchart',
       activities: [],
       connections: [],
-      id: uuid(),
+      id: newName,
       metadata: {},
       applicationProperties: {},
       variables: []
