@@ -47,6 +47,7 @@ namespace Elsa.Activities.File.Services
 
                 using var scope = _scopeFactory.CreateScope();
                 var triggerFinder = scope.ServiceProvider.GetRequiredService<ITriggerFinder>();
+                var triggerRemover = scope.ServiceProvider.GetRequiredService<ITriggerRemover>();
                 await triggerFinder.FindTriggersAsync<WatchDirectory>(cancellationToken: cancellationToken);
 
                 var triggers = await triggerFinder.FindTriggersByTypeAsync<FileSystemEventBookmark>(cancellationToken: cancellationToken);
@@ -59,7 +60,30 @@ namespace Elsa.Activities.File.Services
                     var notifyFilters = bookmark.NotifyFilters;
                     var path = bookmark.Path;
                     var pattern = bookmark.Pattern;
-                    CreateAndAddWatcher(path, pattern, changeTypes, notifyFilters);
+                    try
+                    {
+                        CreateAndAddWatcher(path, pattern, changeTypes, notifyFilters);
+                    }
+                    catch (IOException ex)
+                    {
+                        _logger.LogWarning(ex,
+                            $"Watcher with path \"{path}\" and pattern \"{pattern}\" causes IOException. Removing Trigger.",
+                            path,
+                            pattern,
+                            changeTypes,
+                            notifyFilters);
+                        await triggerRemover.RemoveTriggerAsync(trigger);
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        _logger.LogWarning(ex,
+                            $"Watcher with path \"{path}\" and pattern \"{pattern}\" is not valid. Removing Trigger.",
+                            path,
+                            pattern,
+                            changeTypes,
+                            notifyFilters);
+                        await triggerRemover.RemoveTriggerAsync(trigger);
+                    }
                 }
             }
             finally
@@ -81,9 +105,6 @@ namespace Elsa.Activities.File.Services
         {
             if (string.IsNullOrWhiteSpace(path))
                 throw new ArgumentException("File watcher path must not be null or empty");
-
-            if (!Uri.IsWellFormedUriString(path, UriKind.RelativeOrAbsolute))
-                throw new ArgumentException(nameof(path), $"Path {path} is not a well formed Uri");
 
             EnsurePathExists(path);
 

@@ -245,6 +245,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddScoped<IGetsTriggersForWorkflowBlueprints, TriggersForBlueprintsProvider>()
                 .AddTransient<IGetsTriggersForActivityBlueprintAndWorkflow, TriggersForActivityBlueprintAndWorkflowProvider>()
                 .AddScoped<ITriggerFinder, TriggerFinder>()
+                .AddScoped<ITriggerRemover, TriggerRemover>()
                 .AddBookmarkProvider<SignalReceivedBookmarkProvider>()
                 .AddBookmarkProvider<RunWorkflowBookmarkProvider>();
 
