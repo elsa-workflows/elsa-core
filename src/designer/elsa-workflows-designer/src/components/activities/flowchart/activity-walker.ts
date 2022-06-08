@@ -20,7 +20,7 @@ export interface ActivityPort {
 export function walkActivities(root: Activity, descriptors: Array<ActivityDescriptor>): ActivityNode {
   // Create a copy of the root to avoid transposing its outbound properties.
   const rootCopy = {...root};
-  
+
   const collectedActivities = new Set<Activity>([rootCopy]);
   const graph: ActivityNode = {activity: root, parents: [], children: []};
   const collectedNodes = new Set<ActivityNode>([graph]);
