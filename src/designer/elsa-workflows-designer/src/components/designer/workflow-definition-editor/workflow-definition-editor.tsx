@@ -21,6 +21,7 @@ import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
 import {Flowchart} from "../../activities/flowchart/models";
 import {flattenList, walkActivities} from "../../activities/flowchart/activity-walker";
 import {ActivityPropertyChangedEventArgs, WorkflowDefinitionPropsUpdatedArgs, WorkflowDefinitionUpdatedArgs, WorkflowEditorEventTypes} from "./models";
+import descriptorsStore from "../../../data/descriptors-store";
 
 @Component({
   tag: 'elsa-workflow-definition-editor',
@@ -50,7 +51,6 @@ export class WorkflowDefinitionEditor {
 
   @Prop() workflowDefinition?: WorkflowDefinition;
   @Prop({attribute: 'monaco-lib-path'}) public monacoLibPath: string;
-  @Prop() activityDescriptors: Array<ActivityDescriptor> = [];
   @Event() workflowUpdated: EventEmitter<WorkflowDefinitionUpdatedArgs>
   @State() private workflowDefinitionState: WorkflowDefinition;
   @State() private selectedActivity?: Activity;
@@ -125,7 +125,7 @@ export class WorkflowDefinitionEditor {
   @Method()
   public async newWorkflow() {
 
-    const flowchartDescriptor = this.activityDescriptors.find(x => x.activityType == 'Elsa.Flowchart');
+    const flowchartDescriptor = descriptorsStore.activityDescriptors.find(x => x.activityType == 'Elsa.Flowchart');
     const newName = await this.generateUniqueActivityName(flowchartDescriptor);
 
     const flowchart = {
@@ -168,7 +168,6 @@ export class WorkflowDefinitionEditor {
   public render() {
     const tunnelState: WorkflowDesignerState = {
       workflow: this.workflowDefinitionState,
-      activityDescriptors: this.activityDescriptors,
     };
 
     return (
@@ -247,7 +246,7 @@ export class WorkflowDefinitionEditor {
     const activityType = activityDescriptor.activityType;
     const workflowDefinition = await this.getWorkflowDefinitionInternal();
     const root = workflowDefinition.root;
-    const activityDescriptors = this.activityDescriptors;
+    const activityDescriptors = descriptorsStore.activityDescriptors;
     const graph = walkActivities(root, activityDescriptors);
     const activityNodes = flattenList(graph.children);
     const activityCount = activityNodes.filter(x => x.activity.typeName == activityType).length;

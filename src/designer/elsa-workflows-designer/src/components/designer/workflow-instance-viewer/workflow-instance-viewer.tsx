@@ -37,7 +37,6 @@ export class WorkflowInstanceViewer {
 
   @Element() private el: HTMLElsaWorkflowDefinitionEditorElement;
   @Prop({attribute: 'monaco-lib-path'}) public monacoLibPath: string;
-  @Prop() public activityDescriptors: Array<ActivityDescriptor> = [];
   @Prop() public workflowDefinition: WorkflowDefinition;
   @Prop() public workflowInstance: WorkflowInstance;
   @State() private selectedActivity?: Activity;
@@ -128,7 +127,6 @@ export class WorkflowInstanceViewer {
 
     const tunnelState: WorkflowDesignerState = {
       workflow: this.workflowDefinition,
-      activityDescriptors: this.activityDescriptors,
     };
 
     return (

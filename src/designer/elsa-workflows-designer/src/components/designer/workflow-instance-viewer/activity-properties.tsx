@@ -97,5 +97,3 @@ export class ActivityProperties {
     </div>
   };
 }
-
-WorkflowEditorTunnel.injectProps(ActivityProperties, ['activityDescriptors']);

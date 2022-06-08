@@ -14,6 +14,7 @@ import {Container} from "typedi";
 import {ActivityInputContext} from "../../../services/node-input-driver";
 import {FormEntry} from "../../shared/forms/form-entry";
 import {isNullOrWhitespace} from "../../../utils";
+import descriptorsStore from "../../../data/descriptors-store";
 
 export interface ActivityUpdatedArgs {
   activity: Activity;
@@ -38,7 +39,6 @@ export class ActivityPropertiesEditor {
     this.inputDriverRegistry = Container.get(InputDriverRegistry);
   }
 
-  @Prop() activityDescriptors: Array<ActivityDescriptor> = [];
   @Prop() activity?: Activity;
   @Prop() variables: Array<Variable> = [];
 
@@ -138,7 +138,7 @@ export class ActivityPropertiesEditor {
     );
   }
 
-  private findActivityDescriptor = (): ActivityDescriptor => !!this.activity ? this.activityDescriptors.find(x => x.activityType == this.activity.typeName) : null;
+  private findActivityDescriptor = (): ActivityDescriptor => !!this.activity ? descriptorsStore.activityDescriptors.find(x => x.activityType == this.activity.typeName) : null;
   private onSelectedTabIndexChanged = (e: CustomEvent<TabChangedArgs>) => this.selectedTabIndex = e.detail.selectedTabIndex
 
   private onActivityIdChanged = (e: any) => {
@@ -277,5 +277,3 @@ export class ActivityPropertiesEditor {
     </div>
   };
 }
-
-WorkflowEditorTunnel.injectProps(ActivityPropertiesEditor, ['activityDescriptors']);

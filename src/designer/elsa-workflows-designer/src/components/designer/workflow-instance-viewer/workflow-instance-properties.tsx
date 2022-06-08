@@ -154,5 +154,3 @@ export class WorkflowDefinitionPropertiesEditor {
 
   private onSelectedTabIndexChanged = (e: CustomEvent<TabChangedArgs>) => this.selectedTabIndex = e.detail.selectedTabIndex;
 }
-
-WorkflowEditorTunnel.injectProps(WorkflowDefinitionPropertiesEditor, ['activityDescriptors']);

@@ -5,6 +5,7 @@ import {Container} from 'typedi';
 import {ActivityDescriptor} from '../../../models';
 import {ActivityDriverRegistry} from '../../../services';
 import WorkflowEditorTunnel from '../state';
+import descriptorsStore from "../../../data/descriptors-store";
 
 interface ActivityCategoryModel {
   category: string;
@@ -17,7 +18,6 @@ interface ActivityCategoryModel {
 })
 export class ToolboxActivities {
   @Prop() graph: Graph;
-  @Prop({mutable: true}) activityDescriptors: Array<ActivityDescriptor> = [];
   @State() activityCategoryModels: Array<ActivityCategoryModel> = [];
   private dnd: Addon.Dnd;
   private renderedActivities: Map<string, string>;
@@ -67,7 +67,7 @@ export class ToolboxActivities {
   }
 
   componentDidLoad() {
-    this.handleActivityDescriptorsChanged(this.activityDescriptors);
+    this.handleActivityDescriptorsChanged(descriptorsStore.activityDescriptors);
   }
 
   private static onActivityStartDrag(e: DragEvent, activityDescriptor: ActivityDescriptor) {
@@ -127,5 +127,3 @@ export class ToolboxActivities {
     </nav>
   }
 }
-
-WorkflowEditorTunnel.injectProps(ToolboxActivities, ['activityDescriptors']);

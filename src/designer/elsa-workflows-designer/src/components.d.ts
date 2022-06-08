@@ -5,7 +5,7 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
-import { ActionDefinition, ActionInvokedArgs, Activity, ActivityDescriptor, ActivitySelectedArgs, ContainerSelectedArgs, GraphUpdatedArgs, IntellisenseContext, SelectListItem, TabChangedArgs, TabDefinition, Variable, WorkflowDefinition, WorkflowDefinitionSummary, WorkflowInstance, WorkflowInstanceSummary } from "./models";
+import { ActionDefinition, ActionInvokedArgs, Activity, ActivitySelectedArgs, ContainerSelectedArgs, GraphUpdatedArgs, IntellisenseContext, SelectListItem, TabChangedArgs, TabDefinition, Variable, WorkflowDefinition, WorkflowDefinitionSummary, WorkflowInstance, WorkflowInstanceSummary } from "./models";
 import { ActivityUpdatedArgs, DeleteActivityRequestedArgs } from "./components/designer/workflow-definition-editor/activity-properties-editor";
 import { Button } from "./components/shared/button-group/models";
 import { ContainerActivityComponent } from "./components/activities/container-activity-component";
@@ -32,7 +32,6 @@ export namespace Components {
     }
     interface ElsaActivityPropertiesEditor {
         "activity"?: Activity;
-        "activityDescriptors": Array<ActivityDescriptor>;
         "hide": () => Promise<void>;
         "show": () => Promise<void>;
         "variables": Array<Variable>;
@@ -199,7 +198,6 @@ export namespace Components {
         "show": () => Promise<void>;
     }
     interface ElsaWorkflowDefinitionEditor {
-        "activityDescriptors": Array<ActivityDescriptor>;
         "getCanvas": () => Promise<HTMLElsaCanvasElement>;
         "getWorkflowDefinition": () => Promise<WorkflowDefinition>;
         "importWorkflow": (workflowDefinition: WorkflowDefinition) => Promise<void>;
@@ -213,7 +211,6 @@ export namespace Components {
         "graph": Graph;
     }
     interface ElsaWorkflowDefinitionEditorToolboxActivities {
-        "activityDescriptors": Array<ActivityDescriptor>;
         "graph": Graph;
     }
     interface ElsaWorkflowDefinitionPropertiesEditor {
@@ -232,7 +229,6 @@ export namespace Components {
         "workflowInstance"?: WorkflowInstance;
     }
     interface ElsaWorkflowInstanceViewer {
-        "activityDescriptors": Array<ActivityDescriptor>;
         "getCanvas": () => Promise<HTMLElsaCanvasElement>;
         "getWorkflow": () => Promise<WorkflowDefinition>;
         "importWorkflow": (workflowDefinition: WorkflowDefinition, workflowInstance: WorkflowInstance) => Promise<void>;
@@ -603,7 +599,6 @@ declare namespace LocalJSX {
     }
     interface ElsaActivityPropertiesEditor {
         "activity"?: Activity;
-        "activityDescriptors"?: Array<ActivityDescriptor>;
         "onActivityUpdated"?: (event: CustomEvent<ActivityUpdatedArgs>) => void;
         "onDeleteActivityRequested"?: (event: CustomEvent<DeleteActivityRequestedArgs>) => void;
         "variables"?: Array<Variable>;
@@ -773,7 +768,6 @@ declare namespace LocalJSX {
         "onWorkflowDefinitionSelected"?: (event: CustomEvent<WorkflowDefinitionSummary>) => void;
     }
     interface ElsaWorkflowDefinitionEditor {
-        "activityDescriptors"?: Array<ActivityDescriptor>;
         "monacoLibPath"?: string;
         "onWorkflowUpdated"?: (event: CustomEvent<WorkflowDefinitionUpdatedArgs>) => void;
         "workflowDefinition"?: WorkflowDefinition;
@@ -782,7 +776,6 @@ declare namespace LocalJSX {
         "graph"?: Graph;
     }
     interface ElsaWorkflowDefinitionEditorToolboxActivities {
-        "activityDescriptors"?: Array<ActivityDescriptor>;
         "graph"?: Graph;
     }
     interface ElsaWorkflowDefinitionPropertiesEditor {
@@ -797,7 +790,6 @@ declare namespace LocalJSX {
         "workflowInstance"?: WorkflowInstance;
     }
     interface ElsaWorkflowInstanceViewer {
-        "activityDescriptors"?: Array<ActivityDescriptor>;
         "monacoLibPath"?: string;
         "workflowDefinition"?: WorkflowDefinition;
         "workflowInstance"?: WorkflowInstance;
