@@ -82,6 +82,9 @@ namespace Elsa.Activities.File.Services
             if (string.IsNullOrWhiteSpace(path))
                 throw new ArgumentException("File watcher path must not be null or empty");
 
+            if (!Uri.IsWellFormedUriString(path, UriKind.RelativeOrAbsolute))
+                throw new ArgumentException(nameof(path), $"Path {path} is not a well formed Uri");
+
             EnsurePathExists(path);
 
             var watcher = new FileSystemWatcher()
@@ -115,7 +118,14 @@ namespace Elsa.Activities.File.Services
                 return;
 
             _logger.LogInformation("Creating directory {Path}", path);
-            Directory.CreateDirectory(path);
+            try
+            {
+                Directory.CreateDirectory(path);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogError(ex, $"The path {path} is not valid.", path);
+            }
         }
 
         #region Watcher delegates
