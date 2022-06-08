@@ -270,8 +270,8 @@ export class WorkflowDefinitionEditor {
     await this.canvas.addActivity({
       descriptor: activityDescriptor,
       id: newName,
-      x: e.offsetX,
-      y: e.offsetY
+      x: e.pageX,
+      y: e.pageY
     });
   };
 
