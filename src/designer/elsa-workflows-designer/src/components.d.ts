@@ -27,7 +27,6 @@ import { PublishClickedArgs } from "./components/toolbar/workflow-publish-button
 export namespace Components {
     interface ElsaActivityProperties {
         "activity"?: Activity;
-        "activityDescriptors": Array<ActivityDescriptor>;
         "hide": () => Promise<void>;
         "show": () => Promise<void>;
     }
@@ -76,7 +75,6 @@ export namespace Components {
         "inputContext": ActivityInputContext;
     }
     interface ElsaFlowchart {
-        "activityDescriptors": Array<ActivityDescriptor>;
         "addActivity": (args: AddActivityArgs) => Promise<void>;
         "exportRoot": () => Promise<Activity>;
         "getGraph": () => Promise<Graph>;
@@ -245,10 +243,10 @@ export namespace Components {
         "workflowInstance": WorkflowInstance;
     }
     interface ElsaWorkflowJournal {
-        "workflowInstanceId": any;
+        "workflowDefinition": WorkflowDefinition;
+        "workflowInstance": WorkflowInstance;
     }
     interface ElsaWorkflowManager {
-        "activityDescriptors": Array<ActivityDescriptor>;
         "getWorkflowDefinition": () => Promise<WorkflowDefinition>;
         "monacoLibPath": string;
         /**
@@ -602,7 +600,6 @@ declare global {
 declare namespace LocalJSX {
     interface ElsaActivityProperties {
         "activity"?: Activity;
-        "activityDescriptors"?: Array<ActivityDescriptor>;
     }
     interface ElsaActivityPropertiesEditor {
         "activity"?: Activity;
@@ -643,7 +640,6 @@ declare namespace LocalJSX {
         "inputContext"?: ActivityInputContext;
     }
     interface ElsaFlowchart {
-        "activityDescriptors"?: Array<ActivityDescriptor>;
         "interactiveMode"?: boolean;
         "onActivitySelected"?: (event: CustomEvent<ActivitySelectedArgs>) => void;
         "onContainerSelected"?: (event: CustomEvent<ContainerSelectedArgs>) => void;
@@ -807,10 +803,10 @@ declare namespace LocalJSX {
         "workflowInstance"?: WorkflowInstance;
     }
     interface ElsaWorkflowJournal {
-        "workflowInstanceId"?: any;
+        "workflowDefinition"?: WorkflowDefinition;
+        "workflowInstance"?: WorkflowInstance;
     }
     interface ElsaWorkflowManager {
-        "activityDescriptors"?: Array<ActivityDescriptor>;
         "monacoLibPath"?: string;
         "workflowDefinition"?: WorkflowDefinition;
         "workflowInstance"?: WorkflowInstance;

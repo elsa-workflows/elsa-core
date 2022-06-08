@@ -13,7 +13,6 @@ export class WorkflowManager {
   private workflowInstanceViewer?: HTMLElsaWorkflowInstanceViewerElement;
 
   @Prop({attribute: 'monaco-lib-path'}) public monacoLibPath: string;
-  @Prop() public activityDescriptors: Array<ActivityDescriptor> = [];
   @Prop() public workflowDefinition?: WorkflowDefinition;
   @Prop() public workflowInstance?: WorkflowInstance;
 
@@ -41,7 +40,6 @@ export class WorkflowManager {
     const monacoLibPath = this.monacoLibPath;
     const workflowInstance = this.workflowInstance;
     const workflowDefinition = this.workflowDefinition;
-    const activityDescriptors = this.activityDescriptors;
 
     if (workflowDefinition == null) {
       return <HomeView imageUrl={visualPath} />;
@@ -51,7 +49,6 @@ export class WorkflowManager {
       return <elsa-workflow-definition-editor
         monacoLibPath={monacoLibPath}
         workflowDefinition={workflowDefinition}
-        activityDescriptors={activityDescriptors}
         ref={el => this.workflowDefinitionEditor = el}/>
     }
 
@@ -59,7 +56,6 @@ export class WorkflowManager {
       monacoLibPath={monacoLibPath}
       workflowDefinition={workflowDefinition}
       workflowInstance={workflowInstance}
-      activityDescriptors={activityDescriptors}
       ref={el => this.workflowInstanceViewer = el}/>
   }
 }

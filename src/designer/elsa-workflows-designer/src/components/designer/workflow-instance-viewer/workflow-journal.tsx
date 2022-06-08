@@ -1,8 +1,10 @@
 import {Component, h, Prop, State, Watch} from "@stencil/core";
-import {ActionDefinition, ActionType, WorkflowExecutionLogRecord} from "../../../models";
+import {ActionDefinition, ActionType, ActivityDescriptor, ActivityMetadata, WorkflowDefinition, WorkflowExecutionLogRecord, WorkflowInstance} from "../../../models";
 import {Container} from "typedi";
 import {ElsaApiClientProvider} from "../../../services";
-import {formatTimestamp, isNullOrWhitespace} from "../../../utils";
+import {formatTime, formatTimestamp, isNullOrWhitespace} from "../../../utils";
+import {ActivityNode, flatten, walkActivities} from "../../activities/flowchart/activity-walker";
+import descriptorsStore from '../../../data/descriptors-store';
 
 const PAGE_SIZE: number = 20;
 
@@ -17,20 +19,33 @@ export class WorkflowJournal {
     this.elsaApiClientProvider = Container.get(ElsaApiClientProvider);
   }
 
-  @Prop() workflowInstanceId;
+  @Prop() workflowInstance: WorkflowInstance;
+  @Prop() workflowDefinition: WorkflowDefinition;
+  @State() activityNodes: Array<ActivityNode> = [];
   @State() workflowExecutionLogRecords: Array<WorkflowExecutionLogRecord> = [];
 
-  @Watch('workflowInstanceId')
-  async onWorkflowInstanceIdChanged(value: string) {
+  @Watch('workflowInstance')
+  async onWorkflowInstanceChanged(value: string) {
+    this.createGraph();
+    await this.loadJournalPage(0);
+  }
+
+  @Watch('workflowDefinition')
+  async onWorkflowDefinitionChanged(value: string) {
+    this.createGraph();
     await this.loadJournalPage(0);
   }
 
   async componentWillLoad() {
+    this.createGraph();
     await this.loadJournalPage(0);
   }
 
   public render() {
-
+    const workflowInstance = this.workflowInstance;
+    const workflowDefinition = this.workflowDefinition;
+    const activityNodes = this.activityNodes;
+    const activityDescriptors: Array<ActivityDescriptor> = descriptorsStore.activityDescriptors;
     const records = this.workflowExecutionLogRecords;
 
     return (
@@ -55,24 +70,44 @@ export class WorkflowJournal {
                 <ul role="list" class="m-4">
                   {records.map((record, index) => {
                     const isLastRecord = index == records.length - 1;
+                    // const activityNode = activityNodes.find(x => x.activity.id == record.activityId);
+                    // const activity = activityNode.activity;
+                    // const activityDescriptor = activityDescriptors.find(x => x.activityType == activityNode.activity.typeName);
+                    // const activityMetadata = activity.metadata;
+                    // const activityDisplayText = isNullOrWhitespace(activityMetadata.displayText) ? activity.typeName : activityMetadata.displayText;
+                    const activityDisplayText = 'Test';
+
                     return (
                       <li>
                         <div class="relative pb-8">
                           {isLastRecord ? undefined : <span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"/>}
                           <div class="relative flex space-x-3">
                             <div>
-                              <span class="h-8 w-8 rounded-full bg-gray-400 flex items-center justify-center ring-8 ring-white">
-                                <svg class="h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                  <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
+                              <span class="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center ring-8 ring-white">
+                                <svg class="h-5 w-5 text-white" x-description="Heroicon name: solid/check" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
                                 </svg>
                               </span>
                             </div>
                             <div class="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
                               <div>
-                                <p class="text-sm text-gray-500">{record.activityId} <a href="#" class="font-medium text-gray-900">{record.eventName}</a></p>
+                                <p class="text-sm text-gray-500">{record.activityId}</p>
+                                <div class="mt-2 text-sm text-gray-700">
+                                  <p>
+                                    {activityDisplayText}
+                                  </p>
+                                </div>
+                              </div>
+                              <div class="justify-self-end">
+                                <a href="#" class="relative inline-flex items-center rounded-full border border-gray-300 px-3 py-0.5 text-sm">
+                                    <span class="absolute flex-shrink-0 flex items-center justify-center">
+                                      <span class="h-1.5 w-1.5 rounded-full bg-rose-500" aria-hidden="true"/>
+                                    </span>
+                                  <span class="ml-3.5 font-medium text-gray-900">{record.eventName}</span>
+                                </a>
                               </div>
                               <div class="text-right text-sm whitespace-nowrap text-gray-500">
-                                <time dateTime="2020-09-20">{formatTimestamp(record.timestamp)}</time>
+                                <time dateTime="2020-09-20">{formatTime(record.timestamp)}</time>
                               </div>
                             </div>
                           </div>
@@ -92,12 +127,23 @@ export class WorkflowJournal {
     );
   }
 
+  private createGraph = () => {
+    if (!this.workflowInstance || !this.workflowDefinition)
+      return;
+
+    const activityDescriptors = descriptorsStore.activityDescriptors;
+    const rootNode = walkActivities(this.workflowDefinition.root, activityDescriptors);
+    const nodes = flatten(rootNode);
+    this.activityNodes = nodes;
+  };
+
   private loadJournalPage = async (page: number): Promise<void> => {
-    if (!this.workflowInstanceId)
+    if (!this.workflowInstance || !this.workflowDefinition)
       return;
 
     const client = await this.elsaApiClientProvider.getElsaClient();
-    const pageOfRecords = await client.workflowInstances.getJournal({page, pageSize: PAGE_SIZE, workflowInstanceId: this.workflowInstanceId})
+    const workflowInstanceId = this.workflowInstance.id;
+    const pageOfRecords = await client.workflowInstances.getJournal({page, pageSize: PAGE_SIZE, workflowInstanceId: workflowInstanceId})
     this.workflowExecutionLogRecords = [...this.workflowExecutionLogRecords, ...pageOfRecords.items];
   }
 }

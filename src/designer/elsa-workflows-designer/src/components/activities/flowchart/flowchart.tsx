@@ -22,6 +22,7 @@ import PositionEventArgs = NodeView.PositionEventArgs;
 import FromJSONData = Model.FromJSONData;
 import {ContextMenuAnchorPoint, MenuItem, MenuItemGroup} from "../../shared/context-menu/models";
 import PointLike = Point.PointLike;
+import descriptorsStore from "../../../data/descriptors-store";
 
 @Component({
   tag: 'elsa-flowchart',
@@ -39,7 +40,6 @@ export class FlowchartComponent implements ContainerActivityComponent {
     this.nodeFactory = Container.get(NodeFactory);
   }
 
-  @Prop({mutable: true}) public activityDescriptors: Array<ActivityDescriptor> = [];
   @Prop({mutable: true}) public root?: Activity;
   @Prop() public interactiveMode: boolean = true;
 
@@ -177,7 +177,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
     const connections = graphModel.cells.filter(x => x.shape == 'elsa-edge' && !!x.data).map(x => x.data as Connection);
     const remainingConnections: Array<Connection> = []; // The connections remaining after transposition.
     let remainingActivities: Array<Activity> = [...activities]; // The activities remaining after transposition.
-    const activityDescriptors = this.activityDescriptors;
+    const activityDescriptors = descriptorsStore.activityDescriptors;
     const transposeHandlerRegistry = Container.get(TransposeHandlerRegistry);
 
     // Transpose connections to activity outbound port properties.
@@ -218,9 +218,9 @@ export class FlowchartComponent implements ContainerActivityComponent {
 
   private importRootInternal = async (root: Activity) => {
     this.rootId = root.id;
-    const descriptors = this.activityDescriptors;
+    const descriptors = descriptorsStore.activityDescriptors;
     const flowchart = root as Flowchart;
-    const flowchartGraph = walkActivities(flowchart, this.activityDescriptors);
+    const flowchartGraph = walkActivities(flowchart, descriptorsStore.activityDescriptors);
     const flowchartNodes = flattenList(flowchartGraph.children);
     const transposeHandlerRegistry = Container.get(TransposeHandlerRegistry);
 
@@ -480,5 +480,3 @@ export class FlowchartComponent implements ContainerActivityComponent {
     this.graph.cut(cells);
   };
 }
-
-WorkflowEditorTunnel.injectProps(FlowchartComponent, ['activityDescriptors']);

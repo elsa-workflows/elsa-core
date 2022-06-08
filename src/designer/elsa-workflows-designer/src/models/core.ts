@@ -79,15 +79,6 @@ export interface ActivityExecutionContextState {
   scheduledActivityId: string;
   ownerActivityId?: string;
   properties: Map<string, any>;
-  register: RegisterState;
-}
-
-export interface RegisterState {
-  locations: Map<string, RegisterLocation>;
-}
-
-export interface RegisterLocation {
-  value: any;
 }
 
 export interface WorkflowExecutionLogRecord {
@@ -103,4 +94,18 @@ export enum SyntaxNames {
   JavaScript = 'JavaScript',
   Liquid = 'Liquid',
   Json = 'Json'
+}
+
+export interface  ActivityMetadata {
+  displayText: string;
+  designer: ActivityDesignerMetadata;
+}
+
+export interface ActivityDesignerMetadata {
+  position: Point
+}
+
+export interface Point {
+  x: number;
+  y: number;
 }

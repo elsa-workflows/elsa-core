@@ -10,6 +10,7 @@ import {
   TabDefinition
 } from '../../../models';
 import {InfoList} from "../../shared/forms/info-list";
+import descriptorsStore from "../../../data/descriptors-store";
 
 @Component({
   tag: 'elsa-activity-properties',
@@ -21,7 +22,6 @@ export class ActivityProperties {
   constructor() {
   }
 
-  @Prop({mutable: true}) public activityDescriptors: Array<ActivityDescriptor> = [];
   @Prop({mutable: true}) public activity?: Activity;
 
   @State() private selectedTabIndex: number = 0;
@@ -65,7 +65,7 @@ export class ActivityProperties {
     );
   }
 
-  private findActivityDescriptor = (): ActivityDescriptor => !!this.activity ? this.activityDescriptors.find(x => x.activityType == this.activity.typeName) : null;
+  private findActivityDescriptor = (): ActivityDescriptor => !!this.activity ? descriptorsStore.activityDescriptors.find(x => x.activityType == this.activity.typeName) : null;
   private onSelectedTabIndexChanged = (e: CustomEvent<TabChangedArgs>) => this.selectedTabIndex = e.detail.selectedTabIndex
 
   private renderPropertiesTab = () => {

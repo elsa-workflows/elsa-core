@@ -14,12 +14,13 @@ import WorkflowEditorTunnel, {WorkflowDesignerState} from '../state';
 import {PluginRegistry, ActivityNameFormatter, ActivityDriverRegistry, EventBus} from '../../../services';
 import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
 import {WorkflowEditorEventTypes} from "../workflow-definition-editor/models";
+import descriptorsStore from "../../../data/descriptors-store";
 
 @Component({
   tag: 'elsa-workflow-instance-viewer',
   styleUrl: 'workflow-instance-viewer.scss',
 })
-export class WorkflowViewer {
+export class WorkflowInstanceViewer {
   private readonly pluginRegistry: PluginRegistry;
   private readonly eventBus: EventBus;
   private readonly activityNameFormatter: ActivityNameFormatter;
@@ -137,7 +138,7 @@ export class WorkflowViewer {
             class="elsa-activity-picker-container"
             position={PanelPosition.Left}
             onExpandedStateChanged={e => this.onActivityPickerPanelStateChanged(e.detail)}>
-            <elsa-workflow-journal workflowInstanceId={workflowInstanceId}/>
+            <elsa-workflow-journal workflowInstance={workflowInstance}/>
           </elsa-panel>
           <elsa-canvas
             class="absolute" ref={el => this.canvas = el}
@@ -159,7 +160,7 @@ export class WorkflowViewer {
     const activity = this.selectedActivity;
 
     if (!!activity)
-      return <elsa-activity-properties activity={activity} activityDescriptors={this.activityDescriptors}/>
+      return <elsa-activity-properties activity={activity}/>
 
     return <elsa-workflow-instance-properties workflowDefinition={this.workflowDefinition} workflowInstance={this.workflowInstance}/>;
   }

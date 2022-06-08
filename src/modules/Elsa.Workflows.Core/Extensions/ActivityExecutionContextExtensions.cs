@@ -16,9 +16,10 @@ public static class ActivityExecutionContextExtensions
     public static WorkflowExecutionLogEntry AddExecutionLogEntry(this ActivityExecutionContext context, string eventName, string? message = default, string? source = default, object? payload = default)
     {
         var activity = context.Activity;
+        var activityInstanceId = context.Id;
         var workflowExecutionContext = context.WorkflowExecutionContext;
         var now = context.GetRequiredService<ISystemClock>().UtcNow;
-        var logEntry = new WorkflowExecutionLogEntry(activity.Id, activity.TypeName, now, eventName, message, source, payload);
+        var logEntry = new WorkflowExecutionLogEntry(activityInstanceId, activity.Id, activity.TypeName, now, eventName, message, source, payload);
         workflowExecutionContext.ExecutionLog.Add(logEntry);
         return logEntry;
     }
