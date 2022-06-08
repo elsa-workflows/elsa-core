@@ -278,17 +278,6 @@ export class FlowchartComponent implements ContainerActivityComponent {
     return edges;
   }
 
-  // private createEdges = (connections: Array<Connection>): Array<Edge.Metadata> => {
-  //   let edges: Array<Edge.Metadata> = [];
-  //
-  //   for (const connection of connections) {
-  //     const edge = this.createEdge(connection);
-  //     edges.push(edge);
-  //   }
-  //
-  //   return edges;
-  // }
-
   createEdge = (connection: Connection): Edge.Metadata => {
     return {
       shape: 'elsa-edge',
