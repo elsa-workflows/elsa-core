@@ -9,6 +9,11 @@ elsa-canvas {
   bottom: 0;
 }
 
+.elsa-panel-toolbar {
+  left: var(--activity-picker-width);
+  right: var(--activity-editor-width);
+}
+
 elsa-panel.panel-state-expanded.elsa-activity-picker-container {
   width: var(--activity-picker-width);
 }

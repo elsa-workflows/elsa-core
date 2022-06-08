@@ -170,6 +170,7 @@ export class WorkflowDefinitionEditor {
     return (
       <WorkflowEditorTunnel.Provider state={tunnelState}>
         <div class="absolute inset-0" ref={el => this.container = el}>
+          <elsa-workflow-definition-editor-toolbar />
           <elsa-panel
             class="elsa-activity-picker-container"
             position={PanelPosition.Left}
