@@ -118,14 +118,7 @@ namespace Elsa.Activities.File.Services
                 return;
 
             _logger.LogInformation("Creating directory {Path}", path);
-            try
-            {
-                Directory.CreateDirectory(path);
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogError(ex, $"The path {path} is not valid.", path);
-            }
+            Directory.CreateDirectory(path);
         }
 
         #region Watcher delegates
