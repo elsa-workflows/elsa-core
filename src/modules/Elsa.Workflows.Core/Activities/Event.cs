@@ -7,7 +7,7 @@ using Elsa.Workflows.Core.Services;
 namespace Elsa.Workflows.Core.Activities;
 
 [Activity("Elsa", "Primitives", "Wait for an event to be triggered.")]
-public class Event : Activity<object?>
+public class Event : Trigger<object?>
 {
     [JsonConstructor]
     public Event()
@@ -35,9 +35,7 @@ public class Event : Activity<object?>
 
     protected override void Execute(ActivityExecutionContext context)
     {
-        var hasher = context.GetRequiredService<IHasher>();
         var eventName = context.Get(EventName)!;
-        var hash = hasher.Hash(eventName);
-        context.CreateBookmark(hash);
+        context.CreateBookmark(new EventBookmarkData(eventName));
     }
 }

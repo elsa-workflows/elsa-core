@@ -1,5 +1,6 @@
 using System.Reflection;
 using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.Helpers;
 
@@ -18,7 +19,7 @@ public static class ActivityTypeNameHelper
         return ns != null ? $"{ns}.{typeName}" : typeName;
     }
 
-    public static string GenerateTypeName<T>() => GenerateTypeName(typeof(T));
+    public static string GenerateTypeName<T>() where T : IActivity => GenerateTypeName(typeof(T));
 
     public static string GenerateTypeName(Type type)
     {

@@ -36,7 +36,6 @@ public class HttpTriggerMiddleware
         var method = request.Method!.ToLowerInvariant();
         var abortToken = httpContext.RequestAborted;
         var hash = _hasher.Hash(new HttpEndpointBookmarkData(path, method));
-        var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
         var routeData = GetRouteData(httpContext, routeMatcher, path);
 
         var requestModel = new HttpRequestModel(
@@ -49,7 +48,7 @@ public class HttpTriggerMiddleware
         );
 
         var input = new Dictionary<string, object>() { [HttpEndpoint.InputKey] = requestModel };
-        var stimulus = Stimulus.Standard(activityTypeName, hash, input);
+        var stimulus = Stimulus.Standard<HttpEndpoint>(hash, input);
         var executionResults = (await workflowService.ExecuteStimulusAsync(stimulus, abortToken)).ToList();
 
         if (!executionResults.Any())
