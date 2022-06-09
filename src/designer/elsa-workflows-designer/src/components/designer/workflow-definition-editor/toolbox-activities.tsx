@@ -35,38 +35,7 @@ export class ToolboxActivities {
     });
   }
 
-  @Watch('activityDescriptors')
-  handleActivityDescriptorsChanged(value: Array<ActivityDescriptor>) {
-    const categorizedActivitiesLookup = groupBy(value, x => x.category);
-    const categories = Object.keys(categorizedActivitiesLookup);
-    const renderedActivities: Map<string, string> = new Map<string, string>();
-
-    // Group activities by category
-    this.activityCategoryModels = categories.map(x => {
-      const model: ActivityCategoryModel = {
-        category: x,
-        expanded: false,
-        activities: categorizedActivitiesLookup[x]
-      };
-
-      return model;
-    });
-
-    // Render activities.
-    const activityDriverRegistry = Container.get(ActivityDriverRegistry);
-
-    for (const activityDescriptor of value) {
-      const activityType = activityDescriptor.activityType;
-      const driver = activityDriverRegistry.createDriver(activityType);
-      const html = driver.display({displayType: 'picker', activityDescriptor: activityDescriptor});
-
-      renderedActivities.set(activityType, html);
-    }
-
-    this.renderedActivities = renderedActivities;
-  }
-
-  componentDidLoad() {
+  componentWillLoad() {
     this.handleActivityDescriptorsChanged(descriptorsStore.activityDescriptors);
   }
 
@@ -125,5 +94,35 @@ export class ToolboxActivities {
         }
       )}
     </nav>
+  }
+
+  handleActivityDescriptorsChanged(value: Array<ActivityDescriptor>) {
+    const categorizedActivitiesLookup = groupBy(value, x => x.category);
+    const categories = Object.keys(categorizedActivitiesLookup);
+    const renderedActivities: Map<string, string> = new Map<string, string>();
+
+    // Group activities by category
+    this.activityCategoryModels = categories.map(x => {
+      const model: ActivityCategoryModel = {
+        category: x,
+        expanded: false,
+        activities: categorizedActivitiesLookup[x]
+      };
+
+      return model;
+    });
+
+    // Render activities.
+    const activityDriverRegistry = Container.get(ActivityDriverRegistry);
+
+    for (const activityDescriptor of value) {
+      const activityType = activityDescriptor.activityType;
+      const driver = activityDriverRegistry.createDriver(activityType);
+      const html = driver.display({displayType: 'picker', activityDescriptor: activityDescriptor});
+
+      renderedActivities.set(activityType, html);
+    }
+
+    this.renderedActivities = renderedActivities;
   }
 }
