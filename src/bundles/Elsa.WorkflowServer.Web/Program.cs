@@ -45,6 +45,7 @@ services
             .AddActivity<ForEach>()
             .AddActivity<Switch>()
             .AddActivity<RunJavaScript>()
+            .AddActivity<Event>()
         )
         .UseWorkflowPersistence(p => p.UseEntityFrameworkCore(ef => ef.UseSqlite()))
         .UseWorkflowApiEndpoints()

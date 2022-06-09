@@ -11,6 +11,11 @@ export function formatTime(timestamp?: Date, defaultText?: string): string {
   return !!timestamp ? moment(timestamp).format('HH:mm:ss') : defaultText;
 }
 
+export function getDuration(a: Date, b: Date): moment.Duration {
+  const diff = moment(a).diff(moment(b));
+  return moment.duration(diff);
+}
+
 export function parseJson(json: string): any {
   if (!json)
     return null;
@@ -82,3 +87,14 @@ export const serializeQueryString = (queryString: object): string => {
   });
   return queryStringItems.length > 0 ? `?${queryStringItems.join('&')}` : '';
 };
+
+export function durationToString(duration: moment.Duration) {
+  return !!duration ? duration.asHours() > 1
+      ? `${duration.asHours().toFixed(3)} h`
+      : duration.asMinutes() > 1
+        ? `${duration.asMinutes().toFixed(3)} m`
+        : duration.asSeconds() > 1
+          ? `${duration.asSeconds().toFixed(3)} s`
+          : `${duration.asMilliseconds()} ms`
+    : null;
+}

@@ -30,6 +30,7 @@ public class PersistWorkflowExecutionLogMiddleware : WorkflowExecutionMiddleware
         var entries = context.ExecutionLog.Select(x => new WorkflowExecutionLogRecord
         {
             Id = _identityGenerator.GenerateId(),
+            ActivityInstanceId = x.ActivityInstanceId,
             ActivityId = x.ActivityId,
             ActivityType = x.ActivityType,
             Message = x.Message,

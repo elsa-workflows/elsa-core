@@ -39,6 +39,7 @@ public class Get : Controller
         var models = pageOfRecords.Items.Select(x =>
                 new WorkflowExecutionLogRecordModel(
                     x.Id,
+                    x.ActivityInstanceId,
                     x.ActivityId,
                     x.ActivityType,
                     x.Timestamp,
@@ -55,6 +56,7 @@ public class Get : Controller
 
     public record WorkflowExecutionLogRecordModel(
         string Id,
+        string ActivityInstanceId,
         string ActivityId,
         string ActivityType,
         DateTimeOffset Timestamp,

@@ -2,9 +2,11 @@ import {Component, h, Prop, State, Watch} from "@stencil/core";
 import {ActionDefinition, ActionType, ActivityDescriptor, ActivityMetadata, WorkflowDefinition, WorkflowExecutionLogRecord, WorkflowInstance} from "../../../models";
 import {Container} from "typedi";
 import {ElsaApiClientProvider} from "../../../services";
-import {formatTime, formatTimestamp, isNullOrWhitespace} from "../../../utils";
+import {durationToString, formatTime, formatTimestamp, getDuration, isNullOrWhitespace} from "../../../utils";
 import {ActivityNode, flatten, walkActivities} from "../../activities/flowchart/activity-walker";
 import descriptorsStore from '../../../data/descriptors-store';
+import {ActivityExecutionEventBlock} from "./models";
+import {start} from "@stencil/core/dev-server";
 
 const PAGE_SIZE: number = 20;
 
@@ -23,6 +25,7 @@ export class WorkflowJournal {
   @Prop() workflowDefinition: WorkflowDefinition;
   @State() activityNodes: Array<ActivityNode> = [];
   @State() workflowExecutionLogRecords: Array<WorkflowExecutionLogRecord> = [];
+  @State() activityExecutionEventBlocks: Array<ActivityExecutionEventBlock> = [];
 
   @Watch('workflowInstance')
   async onWorkflowInstanceChanged(value: string) {
@@ -46,7 +49,7 @@ export class WorkflowJournal {
     const workflowDefinition = this.workflowDefinition;
     const activityNodes = this.activityNodes;
     const activityDescriptors: Array<ActivityDescriptor> = descriptorsStore.activityDescriptors;
-    const records = this.workflowExecutionLogRecords;
+    const eventBlocks = this.activityExecutionEventBlocks;
 
     return (
 
@@ -67,55 +70,42 @@ export class WorkflowJournal {
             <div class="flex-1 relative">
               <div class="absolute inset-0 overflow-y-scroll">
 
-                <ul role="list" class="m-4">
-                  {records.map((record, index) => {
-                    const isLastRecord = index == records.length - 1;
-                    // const activityNode = activityNodes.find(x => x.activity.id == record.activityId);
-                    // const activity = activityNode.activity;
-                    // const activityDescriptor = activityDescriptors.find(x => x.activityType == activityNode.activity.typeName);
-                    // const activityMetadata = activity.metadata;
-                    // const activityDisplayText = isNullOrWhitespace(activityMetadata.displayText) ? activity.typeName : activityMetadata.displayText;
-                    const activityDisplayText = 'Test';
+                <table>
+                  <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Activity</th>
+                    <th>Status</th>
+                    <th>Duration</th>
+                  </tr>
+                  </thead>
+
+                  <tbody class="bg-white divide-y divide-gray-100">
+                  {eventBlocks.map((eventBlock, index) => {
+                    const activityNode = activityNodes.find(x => x.activity.id == eventBlock.activityId);
+                    const activity = activityNode.activity;
+                    const activityDescriptor = activityDescriptors.find(x => x.activityType == activityNode.activity.typeName);
+                    const activityMetadata = activity.metadata;
+                    const activityDisplayText = isNullOrWhitespace(activityMetadata.displayText) ? activity.typeName : activityMetadata.displayText;
+                    const duration = durationToString(eventBlock.duration);
+                    const status = eventBlock.completed ? 'Completed' : 'Started';
 
                     return (
-                      <li>
-                        <div class="relative pb-8">
-                          {isLastRecord ? undefined : <span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"/>}
-                          <div class="relative flex space-x-3">
-                            <div>
-                              <span class="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center ring-8 ring-white">
-                                <svg class="h-5 w-5 text-white" x-description="Heroicon name: solid/check" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                                </svg>
-                              </span>
-                            </div>
-                            <div class="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
-                              <div>
-                                <p class="text-sm text-gray-500">{record.activityId}</p>
-                                <div class="mt-2 text-sm text-gray-700">
-                                  <p>
-                                    {activityDisplayText}
-                                  </p>
-                                </div>
-                              </div>
-                              <div class="justify-self-end">
-                                <a href="#" class="relative inline-flex items-center rounded-full border border-gray-300 px-3 py-0.5 text-sm">
-                                    <span class="absolute flex-shrink-0 flex items-center justify-center">
-                                      <span class="h-1.5 w-1.5 rounded-full bg-rose-500" aria-hidden="true"/>
-                                    </span>
-                                  <span class="ml-3.5 font-medium text-gray-900">{record.eventName}</span>
-                                </a>
-                              </div>
-                              <div class="text-right text-sm whitespace-nowrap text-gray-500">
-                                <time dateTime="2020-09-20">{formatTime(record.timestamp)}</time>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </li>
+                      <tr>
+                        <td>{formatTime(eventBlock.timestamp)}</td>
+                        <td>
+                          <div>{activityDisplayText}</div>
+                          <div class="font-bold">{activityDescriptor.activityType}</div>
+                        </td>
+                        <td>
+                          <span class="inline-flex rounded-full bg-green-100 px-2 text-xs font-semibold leading-5 text-green-800">{status}</span>
+                        </td>
+                        <td>{duration}</td>
+                      </tr>
                     );
                   })}
-                </ul>
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
@@ -141,6 +131,29 @@ export class WorkflowJournal {
     const client = await this.elsaApiClientProvider.getElsaClient();
     const workflowInstanceId = this.workflowInstance.id;
     const pageOfRecords = await client.workflowInstances.getJournal({page, pageSize: PAGE_SIZE, workflowInstanceId: workflowInstanceId})
+    const blocks = this.groupRecords(pageOfRecords.items);
     this.workflowExecutionLogRecords = [...this.workflowExecutionLogRecords, ...pageOfRecords.items];
+    this.activityExecutionEventBlocks = [...this.activityExecutionEventBlocks, ...blocks];
   }
+
+  private groupRecords = (records: Array<WorkflowExecutionLogRecord>): Array<ActivityExecutionEventBlock> => {
+    const startedEvents = records.filter(x => x.eventName == 'Started');
+    const completedEvents = records.filter(x => x.eventName == 'Completed');
+
+    const blocks: Array<ActivityExecutionEventBlock> = startedEvents.map(startedRecord => {
+      const completedRecord = completedEvents.find(x => x.activityInstanceId == startedRecord.activityInstanceId);
+      const duration = !!completedRecord ? getDuration(completedRecord.timestamp, startedRecord.timestamp) : null;
+
+      return {
+        activityId: startedRecord.activityId,
+        completed: !!completedRecord,
+        timestamp: startedRecord.timestamp,
+        duration: duration,
+        startedRecord: startedRecord,
+        completedRecord: completedRecord
+      }
+    });
+
+    return blocks;
+  };
 }

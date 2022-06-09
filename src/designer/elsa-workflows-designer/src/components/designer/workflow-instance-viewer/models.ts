@@ -1,4 +1,5 @@
-import {Activity, ActivityDescriptor, InputDescriptor, TabDefinition, WorkflowDefinition} from "../../../models";
+import {Activity, ActivityDescriptor, InputDescriptor, TabDefinition, WorkflowDefinition, WorkflowExecutionLogRecord} from "../../../models";
+import moment from "moment";
 
 export const WorkflowInstanceViewerEventTypes = {
   WorkflowDefinition: {
@@ -34,4 +35,14 @@ export interface PropertiesTabModel extends TabModel {
 
 export interface WorkflowInstancePropertiesViewerModel {
   tabModels: Array<TabModel>;
+}
+
+export interface ActivityExecutionEventBlock {
+  activityId: string;
+  completed: boolean;
+  timestamp: Date;
+  duration?: moment.Duration;
+  startedRecord: WorkflowExecutionLogRecord;
+  completedRecord?: WorkflowExecutionLogRecord;
+  faultedRecord?: WorkflowExecutionLogRecord;
 }

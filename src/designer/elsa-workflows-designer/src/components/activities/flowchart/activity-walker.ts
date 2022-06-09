@@ -30,11 +30,11 @@ export function flatten(root: ActivityNode): Array<ActivityNode> {
 }
 
 export function flattenList(activities: Array<ActivityNode>): Array<ActivityNode> {
-  const list: Array<ActivityNode> = [...activities];
+  let list: Array<ActivityNode> = [...activities];
 
   for (const activity of activities) {
-    for (const child of activity.children)
-      list.push(child);
+    const childList = flattenList(activity.children);
+    list = [...list, ...childList];
   }
 
   return list;
