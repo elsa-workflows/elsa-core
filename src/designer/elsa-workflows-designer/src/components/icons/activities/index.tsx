@@ -1,3 +1,4 @@
+export * from "./event";
 export * from "./http-endpoint";
 export * from "./write-line";
 export * from "./read-line";

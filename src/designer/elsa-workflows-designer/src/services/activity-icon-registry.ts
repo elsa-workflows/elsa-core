@@ -19,6 +19,7 @@ export class ActivityIconRegistry {
     this.add('Elsa.ForEach', Icons.ForEachIcon);
     this.add('Elsa.Delay', Icons.DelayIcon);
     this.add('Elsa.Timer', Icons.TimerIcon);
+    this.add('Elsa.Event', Icons.EventIcon);
     this.add('Elsa.RunJavaScript', Icons.RunJavaScriptIcon);
   }
 
