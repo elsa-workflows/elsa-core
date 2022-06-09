@@ -18,13 +18,10 @@ export interface ActivityPort {
 }
 
 export function walkActivities(root: Activity, descriptors: Array<ActivityDescriptor>): ActivityNode {
-  // Create a copy of the root to avoid transposing its outbound properties.
-  const rootCopy = {...root};
-
-  const collectedActivities = new Set<Activity>([rootCopy]);
+  const collectedActivities = new Set<Activity>([root]);
   const graph: ActivityNode = {activity: root, parents: [], children: []};
   const collectedNodes = new Set<ActivityNode>([graph]);
-  walkRecursive(graph, rootCopy, collectedActivities, collectedNodes, descriptors);
+  walkRecursive(graph, root, collectedActivities, collectedNodes, descriptors);
   return graph;
 }
 
@@ -68,6 +65,7 @@ function getPorts(node: ActivityNode, activity: Activity, descriptors: Array<Act
   const transposeHandler = transposeHandlerRegistry.get(activity.typeName);
   const portProvider = portProviderRegistry.get(activity.typeName);
   const activityDescriptor = descriptors.find(x => x.activityType == activity.typeName);
-  const untransposedConnections = transposeHandler.untranspose({activity, activityDescriptor});
+  const activityCopy: Activity = {...activity};
+  const untransposedConnections = transposeHandler.untranspose({activity: activityCopy, activityDescriptor});
   return untransposedConnections.map(x => ({activity: x.target, port: x.sourcePort}));
 }
