@@ -27,8 +27,6 @@ export class WorkflowInstanceViewer {
   private canvas: HTMLElsaCanvasElement;
   private container: HTMLDivElement;
 
-  //private toolbox: HTMLElsaToolboxElement;
-
   constructor() {
     this.eventBus = Container.get(EventBus);
     this.pluginRegistry = Container.get(PluginRegistry);
@@ -37,8 +35,10 @@ export class WorkflowInstanceViewer {
 
   @Element() private el: HTMLElsaWorkflowDefinitionEditorElement;
   @Prop({attribute: 'monaco-lib-path'}) public monacoLibPath: string;
-  @Prop() public workflowDefinition: WorkflowDefinition;
-  @Prop() public workflowInstance: WorkflowInstance;
+  @Prop() workflowDefinition: WorkflowDefinition;
+  @Prop() workflowInstance: WorkflowInstance;
+  @State() private workflowDefinitionState: WorkflowDefinition;
+  @State() private workflowInstanceState: WorkflowInstance;
   @State() private selectedActivity?: Activity;
 
   @Watch('monacoLibPath')
@@ -49,12 +49,12 @@ export class WorkflowInstanceViewer {
 
   @Watch('workflowDefinition')
   async onWorkflowDefinitionChanged(value: WorkflowDefinition) {
-    await this.importWorkflow(value, this.workflowInstance);
+    await this.importWorkflow(value, this.workflowInstanceState);
   }
 
   @Watch('workflowInstance')
   async onWorkflowInstanceChanged(value: WorkflowDefinition) {
-    await this.importWorkflow(this.workflowDefinition, this.workflowInstance);
+    await this.importWorkflow(this.workflowDefinitionState, this.workflowInstance);
   }
 
   @Listen('resize', {target: 'window'})
@@ -99,32 +99,32 @@ export class WorkflowInstanceViewer {
 
   @Method()
   public async importWorkflow(workflowDefinition: WorkflowDefinition, workflowInstance: WorkflowInstance): Promise<void> {
-    this.workflowInstance = workflowInstance;
-    this.workflowDefinition = workflowDefinition;
+    this.workflowInstanceState = workflowInstance;
+    this.workflowDefinitionState = workflowDefinition;
     await this.canvas.importGraph(workflowDefinition.root);
   }
 
   // Updates the workflow definition without importing it into the designer.
   @Method()
   public async updateWorkflowDefinition(workflowDefinition: WorkflowDefinition): Promise<void> {
-    this.workflowDefinition = workflowDefinition;
+    this.workflowDefinitionState = workflowDefinition;
   }
 
   public async componentWillLoad() {
+    this.workflowInstanceState = this.workflowInstance;
+    this.workflowDefinitionState = this.workflowDefinition;
   }
 
   public async componentDidLoad() {
-
-    if (!!this.workflowDefinition && !!this.workflowInstance)
+    if (!!this.workflowDefinitionState && !!this.workflowInstanceState)
       await this.importWorkflow(this.workflowDefinition, this.workflowInstance);
 
     await this.eventBus.emit(WorkflowEditorEventTypes.WorkflowEditor.Ready, this, {workflowEditor: this});
   }
 
   public render() {
-    const workflowDefinition = this.workflowDefinition;
-    const workflowInstance = this.workflowInstance;
-    const workflowInstanceId = workflowInstance?.id;
+    const workflowDefinition = this.workflowDefinitionState;
+    const workflowInstance = this.workflowInstanceState;
 
     const tunnelState: WorkflowDesignerState = {
       workflowDefinition: workflowDefinition,
@@ -161,12 +161,12 @@ export class WorkflowInstanceViewer {
     if (!!activity)
       return <elsa-activity-properties activity={activity}/>
 
-    return <elsa-workflow-instance-properties workflowDefinition={this.workflowDefinition} workflowInstance={this.workflowInstance}/>;
+    return <elsa-workflow-instance-properties workflowDefinition={this.workflowDefinitionState} workflowInstance={this.workflowInstanceState}/>;
   }
 
   private getWorkflowInternal = async (): Promise<WorkflowDefinition> => {
     const root = await this.canvas.exportGraph();
-    const workflowDefinition = this.workflowDefinition;
+    const workflowDefinition = this.workflowDefinitionState;
     workflowDefinition.root = root;
     return workflowDefinition;
   };
