@@ -66,6 +66,12 @@ export class FlowchartComponent implements ContainerActivityComponent {
   }
 
   @Method()
+  public async zoomToFit(){
+    const graph = this.graph;
+    graph.zoomToFit();
+  }
+
+  @Method()
   public async addActivity(args: AddActivityArgs): Promise<void> {
     const graph = this.graph;
     const {descriptor, x, y} = args;
