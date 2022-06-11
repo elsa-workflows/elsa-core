@@ -8,4 +8,5 @@ namespace Elsa.Workflows.Core.Services;
 public interface IActivityWalker
 {
     ActivityNode Walk(IActivity activity);
+    
 }

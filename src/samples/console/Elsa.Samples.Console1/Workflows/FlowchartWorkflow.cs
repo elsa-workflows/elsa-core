@@ -1,4 +1,6 @@
 using Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Core.Activities.Flowchart.Activities;
+using Elsa.Workflows.Core.Activities.Flowchart.Models;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 

@@ -5,7 +5,7 @@ using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.ActivityNodeResolvers;
 
-public class OutboundActivityNodeResolver : IActivityNodeResolver
+public class OutboundActivityPortResolver : IActivityPortResolver
 {
     public int Priority => -1;
     public bool GetSupportsActivity(IActivity activity) => activity is Activity;
@@ -15,6 +15,18 @@ public class OutboundActivityNodeResolver : IActivityNodeResolver
             .Where(x => x != null)
             .Select(x => x!)
             .ToHashSet();
+
+    public IEnumerable<PropertyInfo> GetPorts(Type activityType)
+    {
+        var outboundPortProperties =
+            from prop in activityType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            where typeof(IActivity).IsAssignableFrom(prop.PropertyType) || typeof(IEnumerable<IActivity>).IsAssignableFrom(prop.PropertyType)
+            let portAttr = prop.GetCustomAttribute<OutboundAttribute>()
+            where portAttr != null
+            select prop;
+
+        return outboundPortProperties;
+    }
 
     private static IEnumerable<IActivity?> GetSinglePorts(IActivity activity)
     {

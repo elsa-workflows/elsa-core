@@ -175,27 +175,27 @@ export class FlowchartComponent implements ContainerActivityComponent {
     const graphModel = graph.toJSON();
     const activities = graphModel.cells.filter(x => x.shape == 'activity').map(x => x.data as Activity);
     const connections = graphModel.cells.filter(x => x.shape == 'elsa-edge' && !!x.data).map(x => x.data as Connection);
-    const remainingConnections: Array<Connection> = []; // The connections remaining after transposition.
-    let remainingActivities: Array<Activity> = [...activities]; // The activities remaining after transposition.
-    const activityDescriptors = descriptorsStore.activityDescriptors;
-    const transposeHandlerRegistry = Container.get(TransposeHandlerRegistry);
+    //const remainingConnections: Array<Connection> = []; // The connections remaining after transposition.
+    //let remainingActivities: Array<Activity> = [...activities]; // The activities remaining after transposition.
+    //const activityDescriptors = descriptorsStore.activityDescriptors;
+    //const transposeHandlerRegistry = Container.get(TransposeHandlerRegistry);
 
-    // Transpose connections to activity outbound port properties.
-    for (const connection of connections) {
-      const source = activities.find(x => x.id == connection.source);
-      const target = activities.find(x => x.id == connection.target);
-      const sourceDescriptor = activityDescriptors.find(x => x.activityType == source.typeName);
-      const targetDescriptor = activityDescriptors.find(x => x.activityType == target.typeName);
-      const transposeHandler = transposeHandlerRegistry.get(source.typeName);
-
-      if (transposeHandler.transpose({source, target, connection, sourceDescriptor, targetDescriptor})) {
-        // Remove the target activity from the list.
-        remainingActivities = remainingActivities.filter(x => x != target);
-      } else {
-        // Keep this connection.
-        remainingConnections.push(connection);
-      }
-    }
+    // // Transpose connections to activity outbound port properties.
+    // for (const connection of connections) {
+    //   const source = activities.find(x => x.id == connection.source);
+    //   const target = activities.find(x => x.id == connection.target);
+    //   const sourceDescriptor = activityDescriptors.find(x => x.activityType == source.typeName);
+    //   const targetDescriptor = activityDescriptors.find(x => x.activityType == target.typeName);
+    //   const transposeHandler = transposeHandlerRegistry.get(source.typeName);
+    //
+    //   if (transposeHandler.transpose({source, target, connection, sourceDescriptor, targetDescriptor})) {
+    //     // Remove the target activity from the list.
+    //     remainingActivities = remainingActivities.filter(x => x != target);
+    //   } else {
+    //     // Keep this connection.
+    //     remainingConnections.push(connection);
+    //   }
+    // }
 
     let rootActivities = activities.filter(activity => {
       const hasInboundConnections = connections.find(c => c.target == activity.id) != null;
@@ -206,8 +206,8 @@ export class FlowchartComponent implements ContainerActivityComponent {
 
     return {
       typeName: 'Elsa.Flowchart',
-      activities: remainingActivities,
-      connections: remainingConnections,
+      activities: activities,
+      connections: connections,
       id: this.rootId,
       start: rootActivity?.id,
       metadata: {},
@@ -220,12 +220,14 @@ export class FlowchartComponent implements ContainerActivityComponent {
     this.rootId = root.id;
     const descriptors = descriptorsStore.activityDescriptors;
     const flowchart = root as Flowchart;
-    const flowchartGraph = walkActivities(flowchart, descriptorsStore.activityDescriptors);
-    const flowchartNodes = flattenList(flowchartGraph.children);
-    const transposeHandlerRegistry = Container.get(TransposeHandlerRegistry);
+    const activities = flowchart.activities;
+    const connections = flowchart.connections;
+    //const flowchartGraph = walkActivities(flowchart, descriptorsStore.activityDescriptors);
+    //const flowchartNodes = flattenList(flowchartGraph.children);
+    //const transposeHandlerRegistry = Container.get(TransposeHandlerRegistry);
 
     // Clear inbound port for start activity.
-    const startActivityNode = flowchartNodes.find(x => x.activity.id === flowchart.start);
+    const startActivityNode = activities.find(x => x.activity.id === flowchart.start);
 
     if (startActivityNode?.port)
       delete startActivityNode.port;
@@ -233,8 +235,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
     let edges: Array<Edge.Metadata> = [];
 
     // Create an X6 node for each activity.
-    const nodes: Array<Node.Metadata> = flowchartNodes.map(activityNode => {
-      const activity = activityNode.activity;
+    const nodes: Array<Node.Metadata> = activities.map(activity => {
       const position = activity.metadata.designer?.position || {x: 100, y: 100};
       const {x, y} = position;
       const descriptor = descriptors.find(x => x.activityType == activity.typeName)
@@ -242,9 +243,9 @@ export class FlowchartComponent implements ContainerActivityComponent {
     });
 
     // Create X6 edges for each child activity.
-    for (const rootNodes of flowchartNodes) {
-      const childEdges = this.createEdges(rootNodes);
-      edges = [...edges, ...childEdges];
+    for (const connection of connections) {
+      const edge = this.createEdge(connection);
+      edges = [...edges, edge];
     }
 
     // Create X6 edges for each connection in the flowchart.
@@ -260,23 +261,6 @@ export class FlowchartComponent implements ContainerActivityComponent {
     this.graph.fromJSON(model, {silent: false});
     this.graph.unfreeze();
   };
-
-  private createEdges = (activityNode: ActivityNode): Array<Edge.Metadata> => {
-    let edges: Array<Edge.Metadata> = [];
-
-    for (const childNode of activityNode.children) {
-      const edge = this.createEdge({
-        source: activityNode.activity.id,
-        sourcePort: childNode.port,
-        target: childNode.activity.id,
-        targetPort: 'In'
-      });
-
-      edges.push(edge);
-    }
-
-    return edges;
-  }
 
   createEdge = (connection: Connection): Edge.Metadata => {
     return {

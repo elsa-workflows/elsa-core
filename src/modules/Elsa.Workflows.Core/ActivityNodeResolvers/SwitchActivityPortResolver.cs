@@ -1,3 +1,4 @@
+using System.Reflection;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Services;
 
@@ -6,7 +7,7 @@ namespace Elsa.Workflows.Core.ActivityNodeResolvers;
 /// <summary>
 /// Returns a list of outbound activities for a given <see cref="Switch"/> activity's branches.
 /// </summary>
-public class SwitchActivityNodeResolver : IActivityNodeResolver
+public class SwitchActivityPortResolver : IActivityPortResolver
 {
     public int Priority => 0;
     public bool GetSupportsActivity(IActivity activity) => activity is Switch;
@@ -21,5 +22,10 @@ public class SwitchActivityNodeResolver : IActivityNodeResolver
 
         if (@switch.Default != null)
             yield return @switch.Default;
+    }
+
+    public IEnumerable<PropertyInfo> GetPorts(Type activityType)
+    {
+        throw new NotImplementedException();
     }
 }

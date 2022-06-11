@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Management.Services;
@@ -23,8 +24,8 @@ public class TypedActivityProvider : IActivityProvider
         var descriptors = await DescribeActivityTypesAsync(activityTypes, cancellationToken).ToListAsync(cancellationToken);
         return descriptors;
     }
-        
-    public async IAsyncEnumerable<ActivityDescriptor> DescribeActivityTypesAsync(IEnumerable<Type> activityTypes, [EnumeratorCancellation] CancellationToken cancellationToken)
+
+    private async IAsyncEnumerable<ActivityDescriptor> DescribeActivityTypesAsync(IEnumerable<Type> activityTypes, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         foreach (var activityType in activityTypes)
         {

@@ -1,11 +1,10 @@
+using Elsa.Workflows.Core.Activities.Flowchart.Models;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Core.Signals;
 
-namespace Elsa.Workflows.Core.Activities;
-
-public record Connection(IActivity Source, IActivity Target, string? SourcePort, string TargetPort);
+namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
 
 [Activity("Elsa", "Workflows", "A flowchart is a collection of activities and connections between them.")]
 public class Flowchart : Container

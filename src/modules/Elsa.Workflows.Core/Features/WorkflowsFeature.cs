@@ -72,8 +72,8 @@ public class WorkflowsFeature : FeatureBase
             .AddSingleton<IWorkflowExecutionPipeline, WorkflowExecutionPipeline>()
 
             // Built-in activity services.
-            .AddSingleton<IActivityNodeResolver, OutboundActivityNodeResolver>()
-            .AddSingleton<IActivityNodeResolver, SwitchActivityNodeResolver>()
+            .AddSingleton<IActivityPortResolver, OutboundActivityPortResolver>()
+            .AddSingleton<IActivityPortResolver, SwitchActivityPortResolver>()
             .AddSingleton<ISerializationOptionsConfigurator, CustomSerializationOptionConfigurator>()
             
             // Stream providers.

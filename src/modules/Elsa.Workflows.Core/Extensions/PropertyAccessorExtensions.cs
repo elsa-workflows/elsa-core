@@ -1,10 +1,17 @@
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Windows.Markup;
 
 namespace Elsa.Workflows.Core
 {
     public static class PropertyAccessorExtensions
     {
+        public static void SetPropertyValue(this object target, string propertyName, object? value)
+        {
+            var property = target.GetType().GetProperty(propertyName)!;
+            property.SetValue(target, value);
+        }
+        
         public static void SetPropertyValue<T, TProperty>(this T target, Expression<Func<T, TProperty>> expression, TProperty value)
         {
             var property = expression.GetProperty();

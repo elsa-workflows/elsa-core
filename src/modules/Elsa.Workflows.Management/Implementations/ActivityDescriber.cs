@@ -30,7 +30,7 @@ public class ActivityDescriber : IActivityDescriber
         var activityAttr = activityType.GetCustomAttribute<ActivityAttribute>();
         var ns = activityAttr?.Namespace ?? ActivityTypeNameHelper.GenerateNamespace(activityType);
         var typeName = activityAttr?.TypeName ?? activityType.Name;
-        var fullTypeName = $"{ns}.{typeName}";
+        var fullTypeName = ActivityTypeNameHelper.GenerateTypeName(activityType);
         var displayNameAttr = activityType.GetCustomAttribute<DisplayNameAttribute>();
         var displayName = displayNameAttr?.DisplayName ?? activityAttr?.DisplayName ?? typeName.Humanize(LetterCasing.Title);
         var categoryAttr = activityType.GetCustomAttribute<CategoryAttribute>();

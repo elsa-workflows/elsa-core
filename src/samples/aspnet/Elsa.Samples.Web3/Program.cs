@@ -10,6 +10,7 @@ using Elsa.Scheduling.Activities;
 using Elsa.Scheduling.Extensions;
 using Elsa.Workflows.Api.Extensions;
 using Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Core.Activities.Flowchart.Activities;
 using Elsa.Workflows.Management.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);

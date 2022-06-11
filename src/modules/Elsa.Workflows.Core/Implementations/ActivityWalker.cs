@@ -5,9 +5,9 @@ namespace Elsa.Workflows.Core.Implementations;
 
 public class ActivityWalker : IActivityWalker
 {
-    private readonly IEnumerable<IActivityNodeResolver> _portResolvers;
+    private readonly IEnumerable<IActivityPortResolver> _portResolvers;
 
-    public ActivityWalker(IEnumerable<IActivityNodeResolver> portResolvers)
+    public ActivityWalker(IEnumerable<IActivityPortResolver> portResolvers)
     {
         _portResolvers = portResolvers.OrderByDescending(x => x.Priority).ToList();
     }

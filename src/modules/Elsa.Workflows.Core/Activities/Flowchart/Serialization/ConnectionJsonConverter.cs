@@ -1,9 +1,9 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Core.Activities.Flowchart.Models;
 using Elsa.Workflows.Core.Services;
 
-namespace Elsa.Workflows.Core.Serialization.Converters;
+namespace Elsa.Workflows.Core.Activities.Flowchart.Serialization;
 
 public class ConnectionJsonConverter : JsonConverter<Connection>
 {
@@ -14,7 +14,7 @@ public class ConnectionJsonConverter : JsonConverter<Connection>
         _activities = activities;
     }
     
-    public override Connection? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public override Connection Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (!JsonDocument.TryParseValue(ref reader, out var doc))
             throw new JsonException("Failed to parse JsonDocument");
