@@ -8185,12 +8185,12 @@ select {
   padding-right: 0.75rem;
 }
 
-.elsa-pr-6 {
-  padding-right: 1.5rem;
-}
-
 .elsa-pl-8 {
   padding-left: 2rem;
+}
+
+.elsa-pr-6 {
+  padding-right: 1.5rem;
 }
 
 .elsa-pb-10 {
