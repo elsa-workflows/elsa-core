@@ -9,7 +9,7 @@ namespace Elsa.Activities.Http.Endpoints.Signals
     [ApiController]
     [Route("signals/dispatch/{token}")]
     [Produces("application/json")]
-    [Authorize()]
+    [Authorize]
     public class DispatchEndpoint : ControllerBase
     {
         private readonly ISignaler _signaler;
