@@ -11,9 +11,19 @@ namespace Elsa.Activities.Http
 {
     public static class WriteHttpResponseBuilderExtensions
     {
+        /// <summary>
+        /// Creates a <see cref="Http.WriteHttpResponse"/> activity.
+        /// </summary>
+        /// <param name="setup">An <see cref="ISetupActivity"/> used to set the properties of the <see cref="Http.WriteHttpResponse"/> Activity.</param>
+        /// <returns>The <see cref="IActivityBuilder"/> with the Write HTTP Response activity built onto it.</returns>
+        /// <inheritdoc cref="BuilderExtensions.Then{T}(IBuilder, Action{ISetupActivity{T}}?, Action{IActivityBuilder}?, int, string?)"/>
         public static IActivityBuilder WriteHttpResponse(this IBuilder builder, Action<ISetupActivity<WriteHttpResponse>> setup, [CallerLineNumber] int lineNumber = default, [CallerFilePath] string? sourceFile = default) =>
             builder.Then(setup, null, lineNumber, sourceFile);
 
+        /// <param name="statusCode">The <see href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Status">status code</see> that is returned with the response.</param>
+        /// <param name="content">The content to send along with the response.</param>
+        /// <param name="contentType">The Content-Type header to send along with the response.</param>
+        /// <inheritdoc cref="WriteHttpResponse(IBuilder, Action{ISetupActivity{WriteHttpResponse}}, int, string?)"/>
         public static IActivityBuilder WriteHttpResponse(
             this IBuilder builder,
             Func<ActivityExecutionContext, HttpStatusCode> statusCode,
@@ -29,6 +39,7 @@ namespace Elsa.Activities.Http
                 lineNumber,
                 sourceFile);
 
+        /// <inheritdoc cref="WriteHttpResponse(IBuilder, Func{ActivityExecutionContext, HttpStatusCode}, Func{ActivityExecutionContext, ValueTask{string?}}, Func{ActivityExecutionContext, string?}, int, string?)"/>
         public static IActivityBuilder WriteHttpResponse(
             this IBuilder builder,
             Func<ActivityExecutionContext, HttpStatusCode> statusCode,
@@ -44,6 +55,7 @@ namespace Elsa.Activities.Http
                 lineNumber,
                 sourceFile);
 
+        /// <inheritdoc cref="WriteHttpResponse(IBuilder, Func{ActivityExecutionContext, HttpStatusCode}, Func{ActivityExecutionContext, ValueTask{string?}}, Func{ActivityExecutionContext, string?}, int, string?)"/>
         public static IActivityBuilder WriteHttpResponse(
             this IBuilder builder,
             Func<HttpStatusCode> statusCode,
@@ -59,6 +71,7 @@ namespace Elsa.Activities.Http
                 lineNumber,
                 sourceFile);
 
+        /// <inheritdoc cref="WriteHttpResponse(IBuilder, Func{ActivityExecutionContext, HttpStatusCode}, Func{ActivityExecutionContext, ValueTask{string?}}, Func{ActivityExecutionContext, string?}, int, string?)"/>
         public static IActivityBuilder WriteHttpResponse(
             this IBuilder builder,
             HttpStatusCode statusCode,

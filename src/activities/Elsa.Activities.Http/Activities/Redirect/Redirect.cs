@@ -29,9 +29,15 @@ namespace Elsa.Activities.Http
 
         private IStringLocalizer<Redirect> T { get; }
 
+        /// <summary>
+        /// The URL to redirect to (HTTP 302).
+        /// </summary>
         [ActivityInput(Hint = "The URL to redirect to (HTTP 302).", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public Uri Location { get; set; } = default!;
 
+        /// <summary>
+        /// Whether or not the redirect is permanent (HTTP 301).
+        /// </summary>
         [ActivityInput(Hint = "Whether or not the redirect is permanent (HTTP 301).", SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid })]
         public bool Permanent { get; set; }
 
