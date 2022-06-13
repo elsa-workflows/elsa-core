@@ -62,13 +62,19 @@ namespace Elsa
             {
                 if (targetType is { IsGenericType: true })
                 {
-                    var desiredCollectionType = typeof(ICollection<>).MakeGenericType(targetType.GenericTypeArguments[0]);
+                    var desiredCollectionItemType = targetType.GenericTypeArguments[0];
+                    var desiredCollectionType = typeof(ICollection<>).MakeGenericType(desiredCollectionItemType);
 
                     if (targetType.IsAssignableFrom(desiredCollectionType))
                     {
-                        var collectionType = typeof(List<>).MakeGenericType(targetType.GenericTypeArguments[0]);
+                        var collectionType = typeof(List<>).MakeGenericType(desiredCollectionItemType);
                         var collection = (IList)Activator.CreateInstance(collectionType);
-                        foreach (var item in enumerable) collection.Add(item);
+                        foreach (var item in enumerable)
+                        {
+                            var convertedItem = ConvertTo(item, desiredCollectionItemType);
+                            collection.Add(convertedItem);
+                        }
+
                         return collection;
                     }
                 }
