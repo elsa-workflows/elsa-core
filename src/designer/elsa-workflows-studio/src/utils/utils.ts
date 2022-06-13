@@ -177,7 +177,7 @@ export function mapSyntaxToLanguage(syntax: string): any {
     case 'JavaScript':
       return 'javascript';
     case 'Liquid':
-      return 'handlebars';
+      return 'liquid';
     case 'SQL':
       return 'sql';
     case 'Literal':
