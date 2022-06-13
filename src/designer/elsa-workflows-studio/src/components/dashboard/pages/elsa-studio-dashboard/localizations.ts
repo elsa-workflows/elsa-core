@@ -22,5 +22,14 @@ export const resources = {
       'WorkflowRegistry': 'Workflow Register',
       'WebhookDefinitions': 'Webhook Definities',
     }
+  },
+  'fa-IR': {
+    default: {
+      'WorkflowDefinitions': 'فرآیندها',
+      'WorkflowInstances': 'فرآیندهای اجرا شده',
+      'WorkflowRegistry': 'Workflow Registry',
+      'WebhookDefinitions': 'مشخصات Webhookها',
+    }
   }
 };
+

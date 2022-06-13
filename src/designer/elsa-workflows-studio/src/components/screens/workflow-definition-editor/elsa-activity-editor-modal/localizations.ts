@@ -97,5 +97,38 @@ export const resources = {
         }
       }
     }
-  }
+  },
+  'fa-IR': {
+    'default': {
+      "Buttons": {
+        'Save': 'ذخیره',
+        'Cancel': 'لغو'
+      },
+      'Tabs': {
+        'Properties': {
+          'Name': 'ویژگیها'
+        },
+        'Common': {
+          'Name': 'عمومی',
+          'Fields': {
+            'Name': {
+              'Label': 'نام',
+              'Hint': 'نام سیستمی Activity'
+            },
+            'DisplayName': {
+              'Label': 'عنوان نمایشی',
+              'Hint': 'عنوانی که Acitvity را توضیح میدهد'
+            },
+            'Description': {
+              'Label': 'توضیحات',
+              'Hint': 'توضیحات این Activity'
+            }
+          }
+        },
+        'Storage': {
+          'Name': 'Storage'
+        }
+      }
+    }
+  },
 };

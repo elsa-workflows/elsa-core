@@ -43,5 +43,20 @@ export const resources = {
       },
       'Restart': 'Herstarten'
     }
-  }
+  },
+  'fa-IR': {
+    'default': {
+      'Publishing': 'در حال انتشار...',
+      'Published': 'منتشر شده',
+      "ActivityContextMenu": {
+        "Edit": "ویرایش",
+        "Delete": "حذف",
+        "DeleteSelected": "حذف موارد انتخاب شده"
+      },
+      "ConnectionContextMenu": {
+        "Paste": "Paste",
+      },
+      'Restart': 'راه اندازی مجدد'
+    }
+  },
 };
