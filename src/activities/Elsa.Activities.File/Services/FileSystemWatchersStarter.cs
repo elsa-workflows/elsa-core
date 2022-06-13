@@ -47,6 +47,7 @@ namespace Elsa.Activities.File.Services
 
                 using var scope = _scopeFactory.CreateScope();
                 var triggerFinder = scope.ServiceProvider.GetRequiredService<ITriggerFinder>();
+                var triggerRemover = scope.ServiceProvider.GetRequiredService<ITriggerRemover>();
                 await triggerFinder.FindTriggersAsync<WatchDirectory>(cancellationToken: cancellationToken);
 
                 var triggers = await triggerFinder.FindTriggersByTypeAsync<FileSystemEventBookmark>(cancellationToken: cancellationToken);
@@ -59,7 +60,30 @@ namespace Elsa.Activities.File.Services
                     var notifyFilters = bookmark.NotifyFilters;
                     var path = bookmark.Path;
                     var pattern = bookmark.Pattern;
-                    CreateAndAddWatcher(path, pattern, changeTypes, notifyFilters);
+                    try
+                    {
+                        CreateAndAddWatcher(path, pattern, changeTypes, notifyFilters);
+                    }
+                    catch (IOException ex)
+                    {
+                        _logger.LogWarning(ex,
+                            $"Watcher with path \"{path}\" and pattern \"{pattern}\" causes IOException. Removing Trigger.",
+                            path,
+                            pattern,
+                            changeTypes,
+                            notifyFilters);
+                        await triggerRemover.RemoveTriggerAsync(trigger);
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        _logger.LogWarning(ex,
+                            $"Watcher with path \"{path}\" and pattern \"{pattern}\" is not valid. Removing Trigger.",
+                            path,
+                            pattern,
+                            changeTypes,
+                            notifyFilters);
+                        await triggerRemover.RemoveTriggerAsync(trigger);
+                    }
                 }
             }
             finally
