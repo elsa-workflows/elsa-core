@@ -46,6 +46,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
         ]
         public async Task<ActionResult<PagedList<WorkflowDefinitionSummaryModel>>> Handle(
             [FromQuery] string? ids,
+            [FromQuery] string? searchTerm = default,
             int? page = default,
             int? pageSize = default,
             VersionOptions? version = default,
@@ -54,6 +55,10 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             var tenantId = await _tenantAccessor.GetTenantIdAsync(cancellationToken);
             version ??= VersionOptions.Latest;
             var specification = GetSpecification(ids, version.Value).And(new TenantSpecification<WorkflowDefinition>(tenantId));
+           
+            if (!string.IsNullOrWhiteSpace(searchTerm)) 
+                specification = specification.And(new WorkflowDefinitionSearchTermSpecification(searchTerm));
+            
             var totalCount = await _workflowDefinitionStore.CountAsync(specification, cancellationToken);
             var paging = page == null || pageSize == null ? default : Paging.Page(page.Value, pageSize.Value);
             var items = await _workflowDefinitionStore.FindManyAsync(specification, new OrderBy<WorkflowDefinition>(x => x.Name!, SortDirection.Ascending), paging, cancellationToken);
