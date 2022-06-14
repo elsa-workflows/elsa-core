@@ -40,6 +40,11 @@ export class Canvas {
   }
 
   @Method()
+  public async zoomToFit(): Promise<void> {
+    return await this.root.zoomToFit();
+  }
+
+  @Method()
   public async importGraph(root: Activity): Promise<void> {
     return await this.root.importRoot(root);
   }

@@ -47,6 +47,7 @@ export namespace Components {
         "importGraph": (root: Activity) => Promise<void>;
         "interactiveMode": boolean;
         "updateLayout": () => Promise<void>;
+        "zoomToFit": () => Promise<void>;
     }
     interface ElsaCheckListInput {
         "inputContext": ActivityInputContext;
@@ -83,6 +84,7 @@ export namespace Components {
         "interactiveMode": boolean;
         "root"?: Activity;
         "updateLayout": () => Promise<void>;
+        "zoomToFit": () => Promise<void>;
     }
     interface ElsaFormPanel {
         "actions": Array<ActionDefinition>;
@@ -203,6 +205,7 @@ export namespace Components {
         "workflowDefinition"?: WorkflowDefinition;
     }
     interface ElsaWorkflowDefinitionEditorToolbar {
+        "zoomToFit": () => Promise<void>;
     }
     interface ElsaWorkflowDefinitionEditorToolbox {
         "graph": Graph;
@@ -759,6 +762,7 @@ declare namespace LocalJSX {
         "workflowDefinition"?: WorkflowDefinition;
     }
     interface ElsaWorkflowDefinitionEditorToolbar {
+        "zoomToFit"?: () => Promise<void>;
     }
     interface ElsaWorkflowDefinitionEditorToolbox {
         "graph"?: Graph;

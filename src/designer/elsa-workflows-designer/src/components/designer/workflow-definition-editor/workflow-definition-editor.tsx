@@ -170,7 +170,7 @@ export class WorkflowDefinitionEditor {
     return (
       <WorkflowEditorTunnel.Provider state={tunnelState}>
         <div class="absolute inset-0" ref={el => this.container = el}>
-          <elsa-workflow-definition-editor-toolbar />
+          <elsa-workflow-definition-editor-toolbar zoomToFit={this.onZoomToFit} />
           <elsa-panel
             class="elsa-activity-picker-container"
             position={PanelPosition.Left}
@@ -275,6 +275,10 @@ export class WorkflowDefinitionEditor {
       y: e.pageY
     });
   };
+
+  private onZoomToFit = async () => {
+    this.canvas.zoomToFit();
+  }
 
   private onActivityUpdated = (e: CustomEvent<ActivityUpdatedArgs>) => {
     const updatedActivity = e.detail.activity;
