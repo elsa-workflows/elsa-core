@@ -74,7 +74,8 @@ export class FlowchartComponent implements ContainerActivityComponent {
     // TODO: Figure out how to convert client coordinates to appropriate graph coordinates taking into account transformations.
     // See https://x6.antv.vision/en/docs/api/graph/coordinate for documentation.
     //const point = graph.coord.localToClientPoint(x, y);
-    const point: PointLike = {x, y};
+    const pageToLocal = graph.pageToLocal(x, y);
+    const point: PointLike = pageToLocal;
 
     const sx = point.x;
     const sy = point.y;
