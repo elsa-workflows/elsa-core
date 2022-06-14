@@ -199,9 +199,6 @@ export class FlowchartComponent implements ContainerActivityComponent {
     const activities = flowchart.activities;
     const connections = flowchart.connections;
 
-    // Clear inbound port for start activity.
-    const startActivity = activities.find(x => x.id === flowchart.start);
-
     let edges: Array<Edge.Metadata> = [];
 
     // Create an X6 node for each activity.

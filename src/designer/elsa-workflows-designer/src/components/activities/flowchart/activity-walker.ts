@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import {camelCase} from 'lodash';
 import {Container} from "typedi"
 import {Activity, ActivityDescriptor} from "../../../models";
 import {PortProviderRegistry} from "./port-provider-registry";
@@ -50,12 +51,12 @@ function walkRecursive(node: ActivityNode, activity: Activity, collectedActiviti
       collectedNodes.add(childNode);
     }
 
-    if(childNode !== node) {
+    if (childNode !== node) {
       childNode.parents.push(node);
       node.children.push(childNode);
       collectedActivities.add(port.activity);
+      walkRecursive(childNode, port.activity, collectedActivities, collectedNodes, descriptors);
     }
-    walkRecursive(childNode, port.activity, collectedActivities, collectedNodes, descriptors);
   }
 }
 
@@ -64,5 +65,22 @@ function getPorts(node: ActivityNode, activity: Activity, descriptors: Array<Act
   const portProvider = portProviderRegistry.get(activity.typeName);
   const activityDescriptor = descriptors.find(x => x.activityType == activity.typeName);
   const ports = portProvider.getOutboundPorts({activity, activityDescriptor});
-  return ports.map(x => ({ port: x.name, activity }));
+  let activityPorts: Array<ActivityPort> = [];
+
+  for (const port of ports) {
+    const propName = camelCase(port.name);
+    const value = activity[propName];
+
+    if (!value)
+      continue;
+
+    if (Array.isArray(value)) {
+      const activities = value as Array<Activity>;
+      activityPorts = [...activityPorts, ...activities.map(x => ({port: port.name, activity: x}))];
+    } else {
+      activityPorts.push({port: port.name, activity: value});
+    }
+  }
+
+  return activityPorts;
 }
