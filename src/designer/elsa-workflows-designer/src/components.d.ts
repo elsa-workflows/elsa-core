@@ -46,6 +46,7 @@ export namespace Components {
         "importGraph": (root: Activity) => Promise<void>;
         "interactiveMode": boolean;
         "updateLayout": () => Promise<void>;
+        "zoomToFit": () => Promise<void>;
     }
     interface ElsaCheckListInput {
         "inputContext": ActivityInputContext;
@@ -81,6 +82,7 @@ export namespace Components {
         "interactiveMode": boolean;
         "root"?: Activity;
         "updateLayout": () => Promise<void>;
+        "zoomToFit": () => Promise<void>;
     }
     interface ElsaFormPanel {
         "actions": Array<ActionDefinition>;
@@ -206,6 +208,9 @@ export namespace Components {
         "registerActivityDrivers": (register: (registry: ActivityDriverRegistry) => void) => Promise<void>;
         "updateWorkflowDefinition": (workflowDefinition: WorkflowDefinition) => Promise<void>;
         "workflowDefinition"?: WorkflowDefinition;
+    }
+    interface ElsaWorkflowDefinitionEditorToolbar {
+        "zoomToFit": () => Promise<void>;
     }
     interface ElsaWorkflowDefinitionEditorToolbox {
         "graph": Graph;
@@ -477,6 +482,12 @@ declare global {
         prototype: HTMLElsaWorkflowDefinitionEditorElement;
         new (): HTMLElsaWorkflowDefinitionEditorElement;
     };
+    interface HTMLElsaWorkflowDefinitionEditorToolbarElement extends Components.ElsaWorkflowDefinitionEditorToolbar, HTMLStencilElement {
+    }
+    var HTMLElsaWorkflowDefinitionEditorToolbarElement: {
+        prototype: HTMLElsaWorkflowDefinitionEditorToolbarElement;
+        new (): HTMLElsaWorkflowDefinitionEditorToolbarElement;
+    };
     interface HTMLElsaWorkflowDefinitionEditorToolboxElement extends Components.ElsaWorkflowDefinitionEditorToolbox, HTMLStencilElement {
     }
     var HTMLElsaWorkflowDefinitionEditorToolboxElement: {
@@ -580,6 +591,7 @@ declare global {
         "elsa-variables-editor": HTMLElsaVariablesEditorElement;
         "elsa-workflow-definition-browser": HTMLElsaWorkflowDefinitionBrowserElement;
         "elsa-workflow-definition-editor": HTMLElsaWorkflowDefinitionEditorElement;
+        "elsa-workflow-definition-editor-toolbar": HTMLElsaWorkflowDefinitionEditorToolbarElement;
         "elsa-workflow-definition-editor-toolbox": HTMLElsaWorkflowDefinitionEditorToolboxElement;
         "elsa-workflow-definition-editor-toolbox-activities": HTMLElsaWorkflowDefinitionEditorToolboxActivitiesElement;
         "elsa-workflow-definition-properties-editor": HTMLElsaWorkflowDefinitionPropertiesEditorElement;
@@ -772,6 +784,9 @@ declare namespace LocalJSX {
         "onWorkflowUpdated"?: (event: CustomEvent<WorkflowDefinitionUpdatedArgs>) => void;
         "workflowDefinition"?: WorkflowDefinition;
     }
+    interface ElsaWorkflowDefinitionEditorToolbar {
+        "zoomToFit"?: () => Promise<void>;
+    }
     interface ElsaWorkflowDefinitionEditorToolbox {
         "graph"?: Graph;
     }
@@ -852,6 +867,7 @@ declare namespace LocalJSX {
         "elsa-variables-editor": ElsaVariablesEditor;
         "elsa-workflow-definition-browser": ElsaWorkflowDefinitionBrowser;
         "elsa-workflow-definition-editor": ElsaWorkflowDefinitionEditor;
+        "elsa-workflow-definition-editor-toolbar": ElsaWorkflowDefinitionEditorToolbar;
         "elsa-workflow-definition-editor-toolbox": ElsaWorkflowDefinitionEditorToolbox;
         "elsa-workflow-definition-editor-toolbox-activities": ElsaWorkflowDefinitionEditorToolboxActivities;
         "elsa-workflow-definition-properties-editor": ElsaWorkflowDefinitionPropertiesEditor;
@@ -905,6 +921,7 @@ declare module "@stencil/core" {
             "elsa-variables-editor": LocalJSX.ElsaVariablesEditor & JSXBase.HTMLAttributes<HTMLElsaVariablesEditorElement>;
             "elsa-workflow-definition-browser": LocalJSX.ElsaWorkflowDefinitionBrowser & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionBrowserElement>;
             "elsa-workflow-definition-editor": LocalJSX.ElsaWorkflowDefinitionEditor & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionEditorElement>;
+            "elsa-workflow-definition-editor-toolbar": LocalJSX.ElsaWorkflowDefinitionEditorToolbar & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionEditorToolbarElement>;
             "elsa-workflow-definition-editor-toolbox": LocalJSX.ElsaWorkflowDefinitionEditorToolbox & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionEditorToolboxElement>;
             "elsa-workflow-definition-editor-toolbox-activities": LocalJSX.ElsaWorkflowDefinitionEditorToolboxActivities & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionEditorToolboxActivitiesElement>;
             "elsa-workflow-definition-properties-editor": LocalJSX.ElsaWorkflowDefinitionPropertiesEditor & JSXBase.HTMLAttributes<HTMLElsaWorkflowDefinitionPropertiesEditorElement>;
