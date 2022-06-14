@@ -71,7 +71,6 @@ public class Import : Controller
         draft.Name = model.Name?.Trim();
         draft.Description = model.Description?.Trim();
         draft.Metadata = model.Metadata;
-        draft.Tags = model.Tags;
         draft.Variables = variables;
         draft.ApplicationProperties = model.ApplicationProperties;
         draft = publish ? await _workflowPublisher.PublishAsync(draft, cancellationToken) : await _workflowPublisher.SaveDraftAsync(draft, cancellationToken);
@@ -91,7 +90,6 @@ public class Import : Controller
             draft.ApplicationProperties,
             draft.IsLatest,
             draft.IsPublished,
-            draft.Tags,
             workflow.Root);
 
         var result = Json(workflowModel, serializerOptions);

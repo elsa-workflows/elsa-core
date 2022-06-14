@@ -8,7 +8,7 @@ public class ExpressionSyntaxDescriptor
     public string Syntax { get; init; } = default!;
     public Type Type { get; init; } = default!;
     public Func<ExpressionConstructorContext, IExpression> CreateExpression { get; init; } = default!;
-    public Func<LocationReferenceConstructorContext, MemoryReference> CreateLocationReference { get; init; } = default!;
+    public Func<LocationReferenceConstructorContext, MemoryBlockReference> CreateLocationReference { get; init; } = default!;
     public Func<SerializableObjectConstructorContext, object> CreateSerializableObject { get; init; } = default!;
 }
 

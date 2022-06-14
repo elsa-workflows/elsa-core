@@ -3,13 +3,13 @@ namespace Elsa.Expressions.Models;
 /// <summary>
 /// A base class for types that represent a reference to a block of memory. 
 /// </summary>
-public abstract class MemoryReference
+public abstract class MemoryBlockReference
 {
-    protected MemoryReference()
+    protected MemoryBlockReference()
     {
     }
 
-    protected MemoryReference(string id) => Id = id;
+    protected MemoryBlockReference(string id) => Id = id;
 
     public string Id { get; set; } = default!;
     public abstract MemoryBlock Declare();
@@ -22,6 +22,6 @@ public abstract class MemoryReference
     public MemoryBlock GetBlock(MemoryRegister memoryRegister) => memoryRegister.TryGetBlock(Id, out var location) ? location : memoryRegister.Declare(this);
 }
 
-public abstract class MemoryReference<T> : MemoryReference
+public abstract class MemoryBlockReference<T> : MemoryBlockReference
 {
 }

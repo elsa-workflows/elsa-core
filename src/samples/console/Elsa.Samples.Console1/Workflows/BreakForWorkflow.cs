@@ -24,7 +24,7 @@ public static class BreakForWorkflow
                 {
                     Start = new Input<int>(start),
                     End = new Input<int>(end),
-                    CurrentValue = new Output<MemoryReference?>(currentValue),
+                    CurrentValue = new Output<MemoryBlockReference?>(currentValue),
                     Body = new Sequence
                     {
                         Activities =

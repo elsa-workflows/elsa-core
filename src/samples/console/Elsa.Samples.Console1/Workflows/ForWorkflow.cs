@@ -17,7 +17,7 @@ public static class ForWorkflow
         {
             Start = new Input<int>(start),
             End = new Input<int>(end),
-            CurrentValue = new Output<MemoryReference?>(currentValue),
+            CurrentValue = new Output<MemoryBlockReference?>(currentValue),
             Body = new WriteLine(context => $"Current value: {currentValue.Get<int>(context)}")
         };
 

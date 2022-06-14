@@ -29,7 +29,7 @@ public class JavaScriptExpressionSyntaxProvider : IExpressionSyntaxProvider
         CreateExpression = CreateJavaScriptExpression,
         CreateLocationReference = context =>
         {
-            var reference = new JavaScriptExpressionReference(context.GetExpression<JavaScriptExpression>());
+            var reference = new JavaScriptExpressionBlockReference(context.GetExpression<JavaScriptExpression>());
 
             if (string.IsNullOrWhiteSpace(reference.Id))
                 reference.Id = GenerateId();

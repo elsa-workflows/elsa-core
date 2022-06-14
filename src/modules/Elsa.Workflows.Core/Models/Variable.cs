@@ -3,7 +3,7 @@ using Elsa.Expressions.Models;
 
 namespace Elsa.Workflows.Core.Models;
 
-public class Variable : MemoryReference
+public class Variable : MemoryBlockReference
 {
     public Variable()
     {

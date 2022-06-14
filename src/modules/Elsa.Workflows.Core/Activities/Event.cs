@@ -18,17 +18,17 @@ public class Event : Trigger<object?>
     {
     }
 
-    public Event(Func<string> text) : this(new DelegateReference<string>(text))
+    public Event(Func<string> text) : this(new DelegateBlockReference<string>(text))
     {
     }
 
-    public Event(Func<ExpressionExecutionContext, string?> text) : this(new DelegateReference<string?>(text))
+    public Event(Func<ExpressionExecutionContext, string?> text) : this(new DelegateBlockReference<string?>(text))
     {
     }
 
     public Event(Variable<string> variable) => EventName = new Input<string>(variable);
     public Event(Literal<string> literal) => EventName = new Input<string>(literal);
-    public Event(DelegateReference delegateExpression) => EventName = new Input<string>(delegateExpression);
+    public Event(DelegateBlockReference delegateBlockExpression) => EventName = new Input<string>(delegateBlockExpression);
     public Event(Input<string> eventName) => EventName = eventName;
 
     [Input] public Input<string> EventName { get; set; } = default!;

@@ -24,16 +24,16 @@ public class MemoryRegister
         return Parent?.TryGetBlock(id, out datum) == true;
     }
 
-    public void Declare(IEnumerable<MemoryReference> references)
+    public void Declare(IEnumerable<MemoryBlockReference> references)
     {
         foreach (var reference in references)
             Declare(reference);
     }
 
-    public MemoryBlock Declare(MemoryReference reference)
+    public MemoryBlock Declare(MemoryBlockReference blockReference)
     {
-        var datum = reference.Declare();
-        Blocks[reference.Id] = datum;
+        var datum = blockReference.Declare();
+        Blocks[blockReference.Id] = datum;
         return datum;
     }
 }

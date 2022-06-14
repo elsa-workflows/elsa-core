@@ -23,8 +23,7 @@ public class SequenceTests
     [Fact(DisplayName = "Sequence completes after its child activities complete")]
     public async Task Test1()
     {
-        var workflow = await new WorkflowDefinitionBuilder().BuildWorkflowAsync(new SequentialWorkflow());
-        await _workflowRunner.RunAsync(workflow);
+        await _workflowRunner.RunAsync(new SequentialWorkflow());
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(new[] { "Line 1", "Line 2", "Line 3" }, lines);
     }
@@ -32,8 +31,7 @@ public class SequenceTests
     [Fact(DisplayName = "Sequence completes after its child sequence activity complete")]
     public async Task Test2()
     {
-        var workflow = await new WorkflowDefinitionBuilder().BuildWorkflowAsync(new NestedSequentialWorkflow());
-        await _workflowRunner.RunAsync(workflow);
+        await _workflowRunner.RunAsync(new NestedSequentialWorkflow());
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(new[] { "Start", "Line 1", "Line 2", "Line 3", "End" }, lines);
     }

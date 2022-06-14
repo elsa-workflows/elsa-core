@@ -14,7 +14,7 @@ public partial class WorkflowDefinitionBuilderInterpreter
 
         // TODO: Determine actual expression type based on specified language.
         var expression = new JavaScriptExpression(expressionContent);
-        var expressionReference = new JavaScriptExpressionReference(expression);
+        var expressionReference = new JavaScriptExpressionBlockReference(expression);
         var externalReference = new ExternalExpressionReference(expression, expressionReference);
         _expressionValue.Put(context, externalReference);
         _expressionValue.Put(context.Parent, externalReference);
@@ -23,4 +23,4 @@ public partial class WorkflowDefinitionBuilderInterpreter
     }
 }
 
-public record ExternalExpressionReference(IExpression Expression, MemoryReference Reference);
+public record ExternalExpressionReference(IExpression Expression, MemoryBlockReference BlockReference);

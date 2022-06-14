@@ -21,10 +21,12 @@ public class WorkflowInstancePersistenceTests
 {
     private readonly IWorkflowRunner _workflowRunner;
     private readonly CapturingTextWriter _capturingTextWriter = new();
+    private readonly IWorkflowDefinitionBuilderFactory _workflowBuilderFactory;
 
     public WorkflowInstancePersistenceTests(ITestOutputHelper testOutputHelper)
     {
         var services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
+        _workflowBuilderFactory = services.GetRequiredService<IWorkflowDefinitionBuilderFactory>();
         _workflowRunner = services.GetRequiredService<IWorkflowRunner>();
 
         services.ConfigureDefaultWorkflowExecutionPipeline(pipeline => pipeline
@@ -35,11 +37,8 @@ public class WorkflowInstancePersistenceTests
     [Fact(DisplayName = "Persistent variables are persisted after workflow gets blocked")]
     public async Task Test1()
     {
-        // Build the workflow.
-        var workflow = await new WorkflowDefinitionBuilder().BuildWorkflowAsync<BlockingWorkflow>();
-
         // Run the workflow.
-        var result = await _workflowRunner.RunAsync(workflow);
+        var result = await _workflowRunner.RunAsync<BlockingWorkflow>();
 
         // Assert the variable was persisted.
         var persistentVariables = result.WorkflowState.PersistentVariables;
@@ -53,7 +52,7 @@ public class WorkflowInstancePersistenceTests
     {
         // Build the workflow.
         var languages = new[] { "C#", "JavaScript", "Haskell" };
-        var workflow = await new WorkflowDefinitionBuilder().BuildWorkflowAsync(new BlockingWorkflow(languages));
+        var workflow = await _workflowBuilderFactory.CreateBuilder().BuildWorkflowAsync(new BlockingWorkflow(languages));
         var currentIndex = 0;
 
         var bookmark = default(Bookmark?);

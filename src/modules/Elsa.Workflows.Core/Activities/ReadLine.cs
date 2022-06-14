@@ -13,7 +13,7 @@ public class ReadLine : Activity<string>
     {
     }
 
-    public ReadLine(MemoryReference output) : base(output)
+    public ReadLine(MemoryBlockReference output) : base(output)
     {
     }
     
@@ -25,7 +25,7 @@ public class ReadLine : Activity<string>
     {
         var provider = context.GetService<IStandardInStreamProvider>() ?? new StandardInStreamProvider(System.Console.In);
         var reader = provider.GetTextReader();
-        var text = reader.ReadLine();
+        var text = reader.ReadLine()!;
         context.Set(Result, text);
     }
 }

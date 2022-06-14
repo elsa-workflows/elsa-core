@@ -89,7 +89,7 @@ public class FunctionActivityRegistry : IFunctionActivityRegistry
         var inputType = typeof(Input<>).MakeGenericType(underlyingType);
 
         if (propertyValue is ExternalExpressionReference externalExpressionReference)
-            return (Input)Activator.CreateInstance(inputType, externalExpressionReference.Expression, externalExpressionReference.Reference)!;
+            return (Input)Activator.CreateInstance(inputType, externalExpressionReference.Expression, externalExpressionReference.BlockReference)!;
 
         if (propertyValueType != null)
         {

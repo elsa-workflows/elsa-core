@@ -32,7 +32,7 @@ public class ConfigureJavaScriptEngineWithActivityOutput : INotificationHandler<
 
             foreach (var property in properties)
             {
-                if (register.TryGetBlock(property.Value.MemoryReference.Id, out var location))
+                if (register.TryGetBlock(property.Value.MemoryBlockReference.Id, out var location))
                     jsActivity[property.Name] = location.Value;
             }
 

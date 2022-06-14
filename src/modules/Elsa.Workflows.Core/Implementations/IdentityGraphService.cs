@@ -23,11 +23,11 @@ public class IdentityGraphService : IIdentityGraphService
     public void AssignIdentities(ActivityNode root)
     {
         var identityCounters = new Dictionary<string, int>();
-        var list = root.Flatten();
+        var list = root.Flatten().ToList();
 
         foreach (var node in list)
         {
-            node.Activity.Id = CreateId(node, identityCounters);
+            node.Activity.Id = CreateId(node, identityCounters, list);
             AssignInputOutputs(node.Activity);
             AssignVariables(node.Activity);
         }
@@ -36,23 +36,23 @@ public class IdentityGraphService : IIdentityGraphService
     private void AssignInputOutputs(IActivity activity)
     {
         var inputs = activity.GetInputs();
-        var assignedInputs = inputs.Where(x => x.MemoryReference != null! && x.MemoryReference.Id == null!).ToList();
+        var assignedInputs = inputs.Where(x => x.MemoryBlockReference != null! && x.MemoryBlockReference.Id == null!).ToList();
         var seed = 0;
 
         foreach (var input in assignedInputs)
         {
-            var locationReference = input.MemoryReference;
+            var locationReference = input.MemoryBlockReference;
 
             locationReference.Id = $"{activity.Id}:input-{++seed}";
         }
 
         seed = 0;
         var outputs = activity.GetOutputs();
-        var assignedOutputs = outputs.Where(x => x.Value.MemoryReference != null! && x.Value.MemoryReference.Id == null!).ToList();
+        var assignedOutputs = outputs.Where(x => x.Value.MemoryBlockReference != null! && x.Value.MemoryBlockReference.Id == null!).ToList();
 
         foreach (var output in assignedOutputs)
         {
-            var memoryReference = output.Value.MemoryReference;
+            var memoryReference = output.Value.MemoryBlockReference;
 
             memoryReference.Id = $"{activity.Id}:output-{++seed}";
         }
@@ -67,16 +67,21 @@ public class IdentityGraphService : IIdentityGraphService
             variable.Id = variable.Name != null! ? variable.Name : $"{activity.Id}:variable-{++seed}";
     }
 
-    private string CreateId(ActivityNode activityNode, IDictionary<string, int> identityCounters)
+    private string CreateId(ActivityNode activityNode, IDictionary<string, int> identityCounters, ICollection<ActivityNode> allNodes)
     {
         if (!string.IsNullOrWhiteSpace(activityNode.NodeId))
             return activityNode.NodeId;
 
-        var fullTypeName = activityNode.Activity.TypeName;
-        var shortTypeName = fullTypeName.Split('.').Last();
-        var index = GetNextIndexFor(shortTypeName, identityCounters);
-        var name = $"{shortTypeName}{index + 1}";
-        return name;
+        while (true)
+        {
+            var fullTypeName = activityNode.Activity.TypeName;
+            var shortTypeName = fullTypeName.Split('.').Last();
+            var index = GetNextIndexFor(shortTypeName, identityCounters);
+            var name = $"{shortTypeName}{index + 1}";
+
+            if (allNodes.All(x => x.Activity.Id != name))
+                return name;
+        }
     }
 
     private int GetNextIndexFor(string activityType, IDictionary<string, int> identityCounters)

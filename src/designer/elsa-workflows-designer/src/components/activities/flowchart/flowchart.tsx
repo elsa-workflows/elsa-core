@@ -8,16 +8,13 @@ import './ports';
 import {ActivityNode as ActivityNodeShape} from './shapes';
 import {ContainerActivityComponent} from '../container-activity-component';
 import {AddActivityArgs} from '../../designer/canvas/canvas';
-import {Activity, ActivityDescriptor, ActivitySelectedArgs, ContainerSelectedArgs, GraphUpdatedArgs} from '../../../models';
+import {Activity, ActivitySelectedArgs, ContainerSelectedArgs, GraphUpdatedArgs} from '../../../models';
 import {createGraph} from './graph-factory';
 import {Connection, Flowchart} from './models';
-import WorkflowEditorTunnel from '../../designer/state';
-import {ActivityNode, flattenList, walkActivities} from "./activity-walker";
 import {NodeFactory} from "./node-factory";
 import {Container} from "typedi";
 import {EventBus} from "../../../services";
 import {ConnectionCreatedEventArgs, FlowchartEvents} from "./events";
-import {TransposeHandlerRegistry} from "./transpose-handler-registry";
 import PositionEventArgs = NodeView.PositionEventArgs;
 import FromJSONData = Model.FromJSONData;
 import {ContextMenuAnchorPoint, MenuItem, MenuItemGroup} from "../../shared/context-menu/models";
@@ -175,27 +172,6 @@ export class FlowchartComponent implements ContainerActivityComponent {
     const graphModel = graph.toJSON();
     const activities = graphModel.cells.filter(x => x.shape == 'activity').map(x => x.data as Activity);
     const connections = graphModel.cells.filter(x => x.shape == 'elsa-edge' && !!x.data).map(x => x.data as Connection);
-    //const remainingConnections: Array<Connection> = []; // The connections remaining after transposition.
-    //let remainingActivities: Array<Activity> = [...activities]; // The activities remaining after transposition.
-    //const activityDescriptors = descriptorsStore.activityDescriptors;
-    //const transposeHandlerRegistry = Container.get(TransposeHandlerRegistry);
-
-    // // Transpose connections to activity outbound port properties.
-    // for (const connection of connections) {
-    //   const source = activities.find(x => x.id == connection.source);
-    //   const target = activities.find(x => x.id == connection.target);
-    //   const sourceDescriptor = activityDescriptors.find(x => x.activityType == source.typeName);
-    //   const targetDescriptor = activityDescriptors.find(x => x.activityType == target.typeName);
-    //   const transposeHandler = transposeHandlerRegistry.get(source.typeName);
-    //
-    //   if (transposeHandler.transpose({source, target, connection, sourceDescriptor, targetDescriptor})) {
-    //     // Remove the target activity from the list.
-    //     remainingActivities = remainingActivities.filter(x => x != target);
-    //   } else {
-    //     // Keep this connection.
-    //     remainingConnections.push(connection);
-    //   }
-    // }
 
     let rootActivities = activities.filter(activity => {
       const hasInboundConnections = connections.find(c => c.target == activity.id) != null;
@@ -222,15 +198,9 @@ export class FlowchartComponent implements ContainerActivityComponent {
     const flowchart = root as Flowchart;
     const activities = flowchart.activities;
     const connections = flowchart.connections;
-    //const flowchartGraph = walkActivities(flowchart, descriptorsStore.activityDescriptors);
-    //const flowchartNodes = flattenList(flowchartGraph.children);
-    //const transposeHandlerRegistry = Container.get(TransposeHandlerRegistry);
 
     // Clear inbound port for start activity.
-    const startActivityNode = activities.find(x => x.activity.id === flowchart.start);
-
-    if (startActivityNode?.port)
-      delete startActivityNode.port;
+    const startActivity = activities.find(x => x.id === flowchart.start);
 
     let edges: Array<Edge.Metadata> = [];
 

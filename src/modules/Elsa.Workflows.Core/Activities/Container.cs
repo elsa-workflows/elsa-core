@@ -26,7 +26,7 @@ public abstract class Container : Activity, IContainer
         Variables = variables;
     }
 
-    [Outbound] public ICollection<IActivity> Activities { get; set; } = new List<IActivity>();
+    [Outbound] public ICollection<IActivity> Activities { get; set; } = new HashSet<IActivity>();
     public ICollection<Variable> Variables { get; set; } = new Collection<Variable>();
 
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)

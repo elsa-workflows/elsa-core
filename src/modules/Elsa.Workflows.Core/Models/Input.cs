@@ -7,7 +7,7 @@ namespace Elsa.Workflows.Core.Models;
 
 public abstract class Input : Argument
 {
-    protected Input(IExpression expression, MemoryReference memoryReference, Type type) : base(memoryReference)
+    protected Input(IExpression expression, MemoryBlockReference memoryBlockReference, Type type) : base(memoryBlockReference)
     {
         Expression = expression;
         Type = type;
@@ -23,19 +23,19 @@ public class Input<T> : Input
     {
     }
 
-    public Input(Func<T> @delegate) : this(new DelegateReference(() => @delegate()))
+    public Input(Func<T> @delegate) : this(new DelegateBlockReference(() => @delegate()))
     {
     }
 
-    public Input(Func<ExpressionExecutionContext, ValueTask<T?>> @delegate) : this(new DelegateReference<T>(@delegate))
+    public Input(Func<ExpressionExecutionContext, ValueTask<T?>> @delegate) : this(new DelegateBlockReference<T>(@delegate))
     {
     }
     
-    public Input(Func<ValueTask<T?>> @delegate) : this(new DelegateReference<T>(@delegate))
+    public Input(Func<ValueTask<T?>> @delegate) : this(new DelegateBlockReference<T>(@delegate))
     {
     }
     
-    public Input(Func<ExpressionExecutionContext, T> @delegate) : this(new DelegateReference<T>(@delegate))
+    public Input(Func<ExpressionExecutionContext, T> @delegate) : this(new DelegateBlockReference<T>(@delegate))
     {
     }
 
@@ -43,7 +43,7 @@ public class Input<T> : Input
     {
     }
     
-    public Input(Output output) : base(new OutputExpression(output), output.MemoryReference, typeof(T))
+    public Input(Output output) : base(new OutputExpression(output), output.MemoryBlockReference, typeof(T))
     {
     }
 
@@ -55,19 +55,19 @@ public class Input<T> : Input
     {
     }
 
-    public Input(DelegateReference delegateReference) : base(new DelegateExpression(delegateReference), delegateReference, typeof(T))
+    public Input(DelegateBlockReference delegateBlockReference) : base(new DelegateExpression(delegateBlockReference), delegateBlockReference, typeof(T))
     {
     }
 
-    public Input(ElsaExpression expression) : this(new ElsaExpressionReference(expression))
+    public Input(ElsaExpression expression) : this(new ElsaExpressionBlockReference(expression))
     {
     }
 
-    public Input(IExpression expression, MemoryReference memoryReference) : base(expression, memoryReference, typeof(T))
+    public Input(IExpression expression, MemoryBlockReference memoryBlockReference) : base(expression, memoryBlockReference, typeof(T))
     {
     }
 
-    private Input(ElsaExpressionReference expressionReference) : base(expressionReference.Expression, expressionReference, typeof(T))
+    private Input(ElsaExpressionBlockReference expressionBlockReference) : base(expressionBlockReference.Expression, expressionBlockReference, typeof(T))
     {
     }
 }

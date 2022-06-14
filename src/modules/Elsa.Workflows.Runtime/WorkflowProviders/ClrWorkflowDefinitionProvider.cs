@@ -17,6 +17,7 @@ namespace Elsa.Workflows.Runtime.WorkflowProviders;
 public class ClrWorkflowDefinitionProvider : IWorkflowDefinitionProvider
 {
     private readonly IIdentityGraphService _identityGraphService;
+    private readonly IWorkflowDefinitionBuilderFactory _workflowBuilderFactory;
     private readonly WorkflowSerializerOptionsProvider _workflowSerializerOptionsProvider;
     private readonly ISystemClock _systemClock;
     private readonly IServiceProvider _serviceProvider;
@@ -25,12 +26,14 @@ public class ClrWorkflowDefinitionProvider : IWorkflowDefinitionProvider
     public ClrWorkflowDefinitionProvider(
         IOptions<WorkflowRuntimeOptions> options,
         IIdentityGraphService identityGraphService,
+        IWorkflowDefinitionBuilderFactory workflowBuilderFactory,
         WorkflowSerializerOptionsProvider workflowSerializerOptionsProvider,
         ISystemClock systemClock,
         IServiceProvider serviceProvider
     )
     {
         _identityGraphService = identityGraphService;
+        _workflowBuilderFactory = workflowBuilderFactory;
         _workflowSerializerOptionsProvider = workflowSerializerOptionsProvider;
         _systemClock = systemClock;
         _serviceProvider = serviceProvider;
@@ -48,7 +51,7 @@ public class ClrWorkflowDefinitionProvider : IWorkflowDefinitionProvider
 
     private async Task<WorkflowDefinitionResult> BuildWorkflowDefinition(Func<IServiceProvider, ValueTask<IWorkflow>> workflowFactory, CancellationToken cancellationToken)
     {
-        var builder = new WorkflowDefinitionBuilder();
+        var builder = _workflowBuilderFactory.CreateBuilder();
         var workflowBuilder = await workflowFactory(_serviceProvider);
         var workflowBuilderType = workflowBuilder.GetType();
 
@@ -72,7 +75,6 @@ public class ClrWorkflowDefinitionProvider : IWorkflowDefinitionProvider
             Description = workflow.WorkflowMetadata.Description,
             Metadata = workflow.Metadata,
             Variables = workflow.Variables,
-            Tags = builder.Tags,
             ApplicationProperties = workflow.ApplicationProperties,
             IsLatest = workflow.Publication.IsLatest,
             IsPublished = workflow.Publication.IsPublished,

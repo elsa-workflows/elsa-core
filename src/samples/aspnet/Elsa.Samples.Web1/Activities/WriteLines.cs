@@ -21,17 +21,17 @@ public class WriteLines : Activity, IActivityPropertyOptionsProvider
     {
     }
 
-    public WriteLines(Func<ICollection<string>> lines) : this(new DelegateReference<ICollection<string>>(lines))
+    public WriteLines(Func<ICollection<string>> lines) : this(new DelegateBlockReference<ICollection<string>>(lines))
     {
     }
 
-    public WriteLines(Func<ExpressionExecutionContext, ICollection<string>?> text) : this(new DelegateReference<ICollection<string>?>(text))
+    public WriteLines(Func<ExpressionExecutionContext, ICollection<string>?> text) : this(new DelegateBlockReference<ICollection<string>?>(text))
     {
     }
 
     public WriteLines(Variable<ICollection<string>> variable) => Lines = new Input<ICollection<string>>(variable);
     public WriteLines(Literal<ICollection<string>> literal) => Lines = new Input<ICollection<string>>(literal);
-    public WriteLines(DelegateReference delegateExpression) => Lines = new Input<ICollection<string>>(delegateExpression);
+    public WriteLines(DelegateBlockReference delegateBlockExpression) => Lines = new Input<ICollection<string>>(delegateBlockExpression);
     public WriteLines(Input<ICollection<string>> lines) => Lines = lines;
     public Input<ICollection<string>> Lines { get; set; } = default!;
 

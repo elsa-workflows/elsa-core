@@ -8,7 +8,7 @@ public class Output : Argument
     {
     }
 
-    public Output(MemoryReference locationReference) : base(locationReference)
+    public Output(MemoryBlockReference locationBlockReference) : base(locationBlockReference)
     {
     }
 
@@ -21,7 +21,7 @@ public class Output<T> : Output
     {
     }
     
-    public Output(MemoryReference locationReference) : base(locationReference)
+    public Output(MemoryBlockReference locationBlockReference) : base(locationBlockReference)
     {
     }
 }

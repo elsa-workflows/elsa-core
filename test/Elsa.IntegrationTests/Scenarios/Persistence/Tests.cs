@@ -36,8 +36,7 @@ public class WorkflowInstancePersistenceTests
     [Fact(DisplayName = "Executing a workflow creates a workflow instance")]
     public async Task Test1()
     {
-        var workflow = await new WorkflowDefinitionBuilder().BuildWorkflowAsync<SequentialWorkflow>();
-        var result = await _workflowRunner.RunAsync(workflow);
+        var result = await _workflowRunner.RunAsync<SequentialWorkflow>();
         var workflowInstance = _workflowInstanceStore.Find(x => x.Id == result.WorkflowState.Id);
 
         Assert.NotNull(workflowInstance);
@@ -46,8 +45,7 @@ public class WorkflowInstancePersistenceTests
     [Fact(DisplayName = "Bookmarks are persisted")]
     public async Task Test2()
     {
-        var workflow = await new WorkflowDefinitionBuilder().BuildWorkflowAsync<SequentialWorkflow>();
-        await _workflowRunner.RunAsync(workflow);
+        await _workflowRunner.RunAsync<SequentialWorkflow>();
         var workflowBookmark = _workflowBookmarkStore.Find(x => x.ActivityId == "Resume");
 
         Assert.NotNull(workflowBookmark);

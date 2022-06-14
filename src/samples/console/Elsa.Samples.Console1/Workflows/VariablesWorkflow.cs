@@ -19,7 +19,7 @@ public static class VariablesWorkflow
             {
                 new WriteLine(context => greeting.Get(context)),
                 new ReadLine(name),
-                new WriteLine(new DelegateReference(context => $"Nice to meet you, {name.Get(context)}!")),
+                new WriteLine(new DelegateBlockReference(context => $"Nice to meet you, {name.Get(context)}!")),
             }
         };
     }

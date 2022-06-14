@@ -42,7 +42,7 @@ public class For : Activity
 
     [JsonIgnore]
     [Output]
-    public Output<MemoryReference?> CurrentValue { get; set; } = new();
+    public Output<MemoryBlockReference?> CurrentValue { get; set; } = new();
 
     protected override void Execute(ActivityExecutionContext context)
     {

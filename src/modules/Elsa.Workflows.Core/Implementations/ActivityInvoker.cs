@@ -19,7 +19,7 @@ public class ActivityInvoker : IActivityInvoker
         WorkflowExecutionContext workflowExecutionContext,
         IActivity activity,
         ActivityExecutionContext? owner,
-        IEnumerable<MemoryReference>? memoryReferences = default)
+        IEnumerable<MemoryBlockReference>? memoryReferences = default)
     {
         var cancellationToken = workflowExecutionContext.CancellationToken;
 

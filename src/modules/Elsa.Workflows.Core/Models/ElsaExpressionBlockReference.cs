@@ -3,9 +3,9 @@ using Elsa.Workflows.Core.Expressions;
 
 namespace Elsa.Workflows.Core.Models;
 
-public class ElsaExpressionReference : MemoryReference
+public class ElsaExpressionBlockReference : MemoryBlockReference
 {
-    public ElsaExpressionReference(ElsaExpression expression)
+    public ElsaExpressionBlockReference(ElsaExpression expression)
     {
         Expression = expression;
     }

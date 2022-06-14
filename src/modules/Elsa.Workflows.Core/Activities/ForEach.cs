@@ -36,7 +36,7 @@ public class ForEach : Activity
     public IActivity? Body { get; set; }
 
     /// <summary>
-    /// The current value being iterated will be assigned to the specified <see cref="MemoryReference"/>.
+    /// The current value being iterated will be assigned to the specified <see cref="MemoryBlockReference"/>.
     /// </summary>
     [Output(Description = "Assign the current value to the specified variable.")]
     public Output<object>? CurrentValue { get; set; }
@@ -93,16 +93,16 @@ public class ForEach<T> : ForEach
     [Input]
     public new Input<ICollection<T>> Items
     {
-        get => new(base.Items.Expression, base.Items.MemoryReference);
-        set => base.Items = new Input<ICollection<object>>(value.Expression, value.MemoryReference);
+        get => new(base.Items.Expression, base.Items.MemoryBlockReference);
+        set => base.Items = new Input<ICollection<object>>(value.Expression, value.MemoryBlockReference);
     }
 
     public new Output<T?> CurrentValue
     {
         get =>
             base.CurrentValue != null
-                ? new(base.CurrentValue.MemoryReference)
+                ? new(base.CurrentValue.MemoryBlockReference)
                 : new();
-        set => base.CurrentValue = new Output<object>(value.MemoryReference);
+        set => base.CurrentValue = new Output<object>(value.MemoryBlockReference);
     }
 }

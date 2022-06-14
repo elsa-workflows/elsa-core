@@ -15,7 +15,7 @@ public class ParallelForEach<T> : Activity
     /// <summary>
     /// Assign a memory reference to gain access to individual branches of parallel execution from within each branch.
     /// </summary>
-    public MemoryReference? CurrentValue { get; set; }
+    public MemoryBlockReference? CurrentValue { get; set; }
 
     protected override void Execute(ActivityExecutionContext context)
     {

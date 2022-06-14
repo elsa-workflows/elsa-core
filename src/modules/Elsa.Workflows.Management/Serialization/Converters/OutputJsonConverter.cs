@@ -48,7 +48,7 @@ public class OutputJsonConverter<T> : JsonConverter<Output<T>?>
             Type = valueTypeAlias,
             MemoryReference = value == null ? null : new
             {
-                Id = value.MemoryReference.Id
+                Id = value.MemoryBlockReference.Id
             }
         };
 

@@ -14,14 +14,17 @@ public class ClrWorkflowMaterializer : IWorkflowMaterializer
     public const string MaterializerName = "CLR";
 
     private readonly WorkflowSerializerOptionsProvider _workflowSerializerOptionsProvider;
+    private readonly IWorkflowDefinitionBuilderFactory _workflowDefinitionBuilderFactory;
     private readonly IServiceProvider _serviceProvider;
     
     public ClrWorkflowMaterializer(
         WorkflowSerializerOptionsProvider workflowSerializerOptionsProvider,
+        IWorkflowDefinitionBuilderFactory workflowDefinitionBuilderFactory,
         IServiceProvider serviceProvider
     )
     {
         _workflowSerializerOptionsProvider = workflowSerializerOptionsProvider;
+        _workflowDefinitionBuilderFactory = workflowDefinitionBuilderFactory;
         _serviceProvider = serviceProvider;
     }
 
@@ -33,7 +36,7 @@ public class ClrWorkflowMaterializer : IWorkflowMaterializer
         var providerContext = JsonSerializer.Deserialize<ClrWorkflowMaterializerContext>(definition.MaterializerContext!, serializerOptions)!;
         var workflowBuilderType = providerContext.WorkflowBuilderType;
         var workflowBuilder = (IWorkflow)ActivatorUtilities.GetServiceOrCreateInstance(_serviceProvider, workflowBuilderType);
-        var workflowDefinitionBuilder = new WorkflowDefinitionBuilder();
+        var workflowDefinitionBuilder = _workflowDefinitionBuilderFactory.CreateBuilder();
         var workflow = await workflowDefinitionBuilder.BuildWorkflowAsync(workflowBuilder, cancellationToken);
 
         return workflow;

@@ -40,13 +40,13 @@ public class DefaultExpressionSyntaxProvider : IExpressionSyntaxProvider
     private ExpressionSyntaxDescriptor CreateDelegateDescriptor() => CreateDescriptor<DelegateExpression>(
         "Delegate",
         CreateJsonExpression,
-        context => new DelegateReference(),
-        expression => expression.DelegateReference.Delegate?.ToString());
+        context => new DelegateBlockReference(),
+        expression => expression.DelegateBlockReference.Delegate?.ToString());
 
     private ExpressionSyntaxDescriptor CreateDescriptor<TExpression>(
         string syntax,
         Func<ExpressionConstructorContext, IExpression> constructor,
-        Func<LocationReferenceConstructorContext, MemoryReference> createLocationReference,
+        Func<LocationReferenceConstructorContext, MemoryBlockReference> createLocationReference,
         Func<TExpression, object?> expressionValue) =>
         new()
         {

@@ -13,7 +13,7 @@ public partial class WorkflowDefinitionBuilderInterpreter
         var conditionExpr = context.expr().GetText();
 
         var javaScriptExpression = new JavaScriptExpression(conditionExpr);
-        ifActivity.Condition = new Input<bool>(javaScriptExpression, new JavaScriptExpressionReference(javaScriptExpression));
+        ifActivity.Condition = new Input<bool>(javaScriptExpression, new JavaScriptExpressionBlockReference(javaScriptExpression));
             
         var thenStat = context.thenStat().stat();
         var elseStat = context.elseStat()?.stat();

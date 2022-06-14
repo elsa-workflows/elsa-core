@@ -25,8 +25,7 @@ public class FinishTests
     [Fact(DisplayName = "Subsequent activities are not executed")]
     public async Task Test1()
     {
-        var workflow = await new WorkflowDefinitionBuilder().BuildWorkflowAsync<FinishSequentialWorkflow>();
-        await _workflowRunner.RunAsync(workflow);
+        await _workflowRunner.RunAsync<FinishSequentialWorkflow>();
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(new[] { "Line 1" }, lines);
     }
@@ -34,8 +33,7 @@ public class FinishTests
     [Fact(DisplayName = "Workflow status is set to Finished")]
     public async Task Test2()
     {
-        var workflow = await new WorkflowDefinitionBuilder().BuildWorkflowAsync<FinishSequentialWorkflow>();
-        var result = await _workflowRunner.RunAsync(workflow);
+        var result = await _workflowRunner.RunAsync<FinishSequentialWorkflow>();
         var workflowState = result.WorkflowState;
         Assert.Equal(WorkflowStatus.Finished, workflowState.Status);
         Assert.Equal(WorkflowSubStatus.Finished, workflowState.SubStatus);
@@ -44,8 +42,7 @@ public class FinishTests
     [Fact(DisplayName = "All bookmarks are removed")]
     public async Task Test3()
     {
-        var workflow = await new WorkflowDefinitionBuilder().BuildWorkflowAsync<FinishForkedWorkflow>();
-        var result = await _workflowRunner.RunAsync(workflow);
+        var result = await _workflowRunner.RunAsync<FinishSequentialWorkflow>();
         Assert.Empty(result.Bookmarks);
     }
 }

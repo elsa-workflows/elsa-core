@@ -111,7 +111,7 @@ public abstract class ActivityWithResult : Activity
     {
     }
 
-    protected ActivityWithResult(MemoryReference? output)
+    protected ActivityWithResult(MemoryBlockReference? output)
     {
         if (output != null) Result = new Output(output);
     }
@@ -134,7 +134,7 @@ public abstract class Activity<T> : ActivityWithResult
     {
     }
 
-    protected Activity(MemoryReference? output) : base(output)
+    protected Activity(MemoryBlockReference? output) : base(output)
     {
     }
 
@@ -142,7 +142,7 @@ public abstract class Activity<T> : ActivityWithResult
     {
     }
 
-    public Activity<T> CaptureResult(MemoryReference output)
+    public Activity<T> CaptureResult(MemoryBlockReference output)
     {
         Result = new Output<T>(output);
         return this;

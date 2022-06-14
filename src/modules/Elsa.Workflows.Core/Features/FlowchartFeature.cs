@@ -1,10 +1,8 @@
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
-using Elsa.Workflows.Core.Activities.Flowchart.Handlers;
 using Elsa.Workflows.Core.Activities.Flowchart.Implementations;
 using Elsa.Workflows.Core.Activities.Flowchart.Serialization;
 using Elsa.Workflows.Core.Activities.Flowchart.Services;
-using Elsa.Workflows.Core.Activities.Flowchart.Transposition.Services;
 using Elsa.Workflows.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -19,8 +17,10 @@ public class FlowchartFeature : FeatureBase
     public override void Apply()
     {
         Services
-            .AddSingleton<ITransposeHandlerRegistry, TransposeHandlerRegistry>()
-            .AddSingleton<ITransposeHandler, DefaultTransposeHandler>()
+            //.AddSingleton<DefaultTransformation>()
+            //.AddSingleton<ITransformationRegistry, TransformationRegistry>()
+            //.AddSingleton<ITransformation, DefaultTransformation>()
+            .AddSingleton<ITransformer, Transformer>()
             .AddSingleton<IActivityNodeDescriber, ActivityNodeDescriber>()
             .AddSingleton<ISerializationOptionsConfigurator, FlowchartSerializationOptionConfigurator>()
             ;

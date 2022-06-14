@@ -9,7 +9,6 @@ namespace Elsa.Workflows.Persistence.EntityFrameworkCore.EntityConfiguration
         public void Configure(EntityTypeBuilder<WorkflowDefinition> builder)
         {
             builder.Ignore(x => x.Variables);
-            builder.Ignore(x => x.Tags);
             builder.Ignore(x => x.Metadata);
             builder.Ignore(x => x.ApplicationProperties);
             builder.Property<string>("Data");

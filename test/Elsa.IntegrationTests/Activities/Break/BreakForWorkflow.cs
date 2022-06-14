@@ -18,7 +18,7 @@ class BreakForWorkflow : WorkflowBase
                 new WriteLine("Start"),
                 new For(0, 3)
                 {
-                    CurrentValue = new Output<MemoryReference?>(currentValue),
+                    CurrentValue = new Output<MemoryBlockReference?>(currentValue),
                     Body = new Sequence
                     {
                         Activities =

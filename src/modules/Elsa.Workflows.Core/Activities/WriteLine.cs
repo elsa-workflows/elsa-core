@@ -18,17 +18,17 @@ public class WriteLine : Activity
     {
     }
         
-    public WriteLine(Func<string> text) : this(new DelegateReference<string>(text))
+    public WriteLine(Func<string> text) : this(new DelegateBlockReference<string>(text))
     {
     }
         
-    public WriteLine(Func<ExpressionExecutionContext, string?> text) : this(new DelegateReference<string?>(text))
+    public WriteLine(Func<ExpressionExecutionContext, string?> text) : this(new DelegateBlockReference<string?>(text))
     {
     }
 
     public WriteLine(Variable<string> variable) => Text = new Input<string>(variable);
     public WriteLine(Literal<string> literal) => Text = new Input<string>(literal);
-    public WriteLine(DelegateReference delegateExpression) => Text = new Input<string>(delegateExpression);
+    public WriteLine(DelegateBlockReference delegateBlockExpression) => Text = new Input<string>(delegateBlockExpression);
     public WriteLine(Input<string> text) => Text = text;
         
     [Description("The text to write.")]

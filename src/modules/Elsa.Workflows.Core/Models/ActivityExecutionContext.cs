@@ -75,7 +75,7 @@ public class ActivityExecutionContext
     // ReSharper disable once CollectionNeverQueried.Global
     public IDictionary<string, object?> JournalData { get; } = new Dictionary<string, object?>();
 
-    public void ScheduleActivity(IActivity? activity, ActivityCompletionCallback? completionCallback = default, IEnumerable<MemoryReference>? references = default, object? tag = default)
+    public void ScheduleActivity(IActivity? activity, ActivityCompletionCallback? completionCallback = default, IEnumerable<MemoryBlockReference>? references = default, object? tag = default)
     {
         if (activity == null)
             return;
@@ -83,7 +83,7 @@ public class ActivityExecutionContext
         WorkflowExecutionContext.Schedule(activity, this, completionCallback, references, tag);
     }
 
-    public void ScheduleActivity(IActivity? activity, ActivityExecutionContext owner, ActivityCompletionCallback? completionCallback = default, IEnumerable<MemoryReference>? references = default, object? tag = default)
+    public void ScheduleActivity(IActivity? activity, ActivityExecutionContext owner, ActivityCompletionCallback? completionCallback = default, IEnumerable<MemoryBlockReference>? references = default, object? tag = default)
     {
         if (activity == null)
             return;
@@ -150,21 +150,21 @@ public class ActivityExecutionContext
     public object GetOrCreateService(Type serviceType) => WorkflowExecutionContext.GetOrCreateService(serviceType);
     public T? GetService<T>() where T : notnull => WorkflowExecutionContext.GetService<T>();
     public object? GetService(Type serviceType) => WorkflowExecutionContext.GetService(serviceType);
-    public T? Get<T>(Input<T>? input) => input == null ? default : Get<T>(input.MemoryReference);
+    public T? Get<T>(Input<T>? input) => input == null ? default : Get<T>(input.MemoryBlockReference);
 
-    public object? Get(MemoryReference reference)
+    public object? Get(MemoryBlockReference blockReference)
     {
-        var location = GetBlock(reference) ?? throw new InvalidOperationException($"No location found with ID {reference.Id}. Did you forget to declare a variable with a container?");
+        var location = GetBlock(blockReference) ?? throw new InvalidOperationException($"No location found with ID {blockReference.Id}. Did you forget to declare a variable with a container?");
         return location.Value;
     }
 
-    public T? Get<T>(MemoryReference reference)
+    public T? Get<T>(MemoryBlockReference blockReference)
     {
-        var value = Get(reference);
+        var value = Get(blockReference);
         return value != default ? (T?)(value) : default;
     }
 
-    public void Set(MemoryReference reference, object? value) => ExpressionExecutionContext.Set(reference, value);
+    public void Set(MemoryBlockReference blockReference, object? value) => ExpressionExecutionContext.Set(blockReference, value);
     public void Set(Output? output, object? value) => ExpressionExecutionContext.Set(output, value);
     public void Set<T>(Output<T>? output, T value) => ExpressionExecutionContext.Set(output, value);
 
@@ -182,8 +182,8 @@ public class ActivityExecutionContext
         WorkflowExecutionContext.RemoveCompletionCallbacks(entriesToRemove);
     }
     
-    private MemoryBlock? GetBlock(MemoryReference locationReference) =>
-        ExpressionExecutionContext.Memory.TryGetBlock(locationReference.Id, out var location)
+    private MemoryBlock? GetBlock(MemoryBlockReference locationBlockReference) =>
+        ExpressionExecutionContext.Memory.TryGetBlock(locationBlockReference.Id, out var location)
             ? location
-            : ParentActivityExecutionContext?.GetBlock(locationReference);
+            : ParentActivityExecutionContext?.GetBlock(locationBlockReference);
 }

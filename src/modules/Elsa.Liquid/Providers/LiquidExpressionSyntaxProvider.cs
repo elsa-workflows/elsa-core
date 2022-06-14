@@ -25,7 +25,7 @@ public class LiquidExpressionSyntaxProvider : IExpressionSyntaxProvider
         CreateExpression = CreateJavaScriptExpression,
         CreateLocationReference = context =>
         {
-            var reference = new LiquidExpressionReference(context.GetExpression<LiquidExpression>());
+            var reference = new LiquidExpressionBlockReference(context.GetExpression<LiquidExpression>());
 
             if (string.IsNullOrWhiteSpace(reference.Id))
                 reference.Id = GenerateId();

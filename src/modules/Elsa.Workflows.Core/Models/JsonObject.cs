@@ -2,7 +2,7 @@ using Elsa.Expressions.Models;
 
 namespace Elsa.Workflows.Core.Models;
 
-public class JsonObject : MemoryReference
+public class JsonObject : MemoryBlockReference
 {
     public JsonObject()
     {

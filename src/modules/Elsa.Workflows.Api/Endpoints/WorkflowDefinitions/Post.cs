@@ -46,7 +46,6 @@ public class Post : Controller
         ICollection<VariableDefinition>? Variables,
         IDictionary<string, object>? Metadata,
         IDictionary<string, object>? ApplicationProperties,
-        ICollection<string>? Tags,
         bool Publish);
 
     [HttpPost]
@@ -82,7 +81,6 @@ public class Post : Controller
         draft.Name = model.Name?.Trim();
         draft.Description = model.Description?.Trim();
         draft.Metadata = model.Metadata ?? new Dictionary<string, object>();
-        draft.Tags = model.Tags ?? new List<string>();
         draft.Variables = variables;
         draft.ApplicationProperties = model.ApplicationProperties ?? new Dictionary<string, object>();
         draft = model.Publish ? await _workflowPublisher.PublishAsync(draft, cancellationToken) : await _workflowPublisher.SaveDraftAsync(draft, cancellationToken);
@@ -99,7 +97,6 @@ public class Post : Controller
             draft.ApplicationProperties,
             draft.IsLatest,
             draft.IsPublished,
-            draft.Tags,
             root);
 
         var result = Json(draftModel, serializerOptions);

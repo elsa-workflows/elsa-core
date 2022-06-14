@@ -66,7 +66,6 @@ public class Export : Controller
             definition.ApplicationProperties,
             definition.IsLatest,
             definition.IsPublished,
-            definition.Tags,
             workflow.Root);
         
         var binaryJson = JsonSerializer.SerializeToUtf8Bytes(model, serializerOptions);

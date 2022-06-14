@@ -1,6 +1,6 @@
 namespace Elsa.Expressions.Models;
 
-public class Literal : MemoryReference
+public class Literal : MemoryBlockReference
 {
     public Literal()
     {

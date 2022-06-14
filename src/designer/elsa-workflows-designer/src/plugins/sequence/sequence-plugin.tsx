@@ -3,19 +3,14 @@ import {h} from '@stencil/core';
 import {Container, Service} from "typedi";
 import {ActivityIconRegistry} from "../../services";
 import {Plugin} from "../../models";
-import {TransposeHandlerRegistry} from "../../components/activities/flowchart/transpose-handler-registry";
-import {SequenceTransposeHandler} from "./sequence-transpose-handler";
 
 @Service()
 export class SequencePlugin implements Plugin {
   public static readonly ActivityTypeName: string = 'Elsa.Sequence';
 
   constructor() {
-    const activityTypeName = SequencePlugin.ActivityTypeName;
-    const transposeHandlerRegistry = Container.get(TransposeHandlerRegistry);
     const iconRegistry = Container.get(ActivityIconRegistry);
 
-    transposeHandlerRegistry.add(activityTypeName, () => Container.get(SequenceTransposeHandler));
     iconRegistry.add(SequencePlugin.ActivityTypeName, Icon);
   }
 }

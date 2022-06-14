@@ -14,7 +14,6 @@ public class WorkflowDefinition : Entity
     public DateTimeOffset CreatedAt { get; set; }
     public int Version { get; set; } = 1;
     public ICollection<Variable> Variables { get; set; } = new List<Variable>();
-    public ICollection<string> Tags { get; set; } = new List<string>();
     public IDictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
     public IDictionary<string, object> ApplicationProperties { get; set; } = new Dictionary<string, object>();
     public bool IsLatest { get; set; }

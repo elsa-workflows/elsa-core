@@ -25,8 +25,7 @@ public class IfTests
     [InlineData(false, "False!")]
     public async Task Test1(bool conditionResult, string expectedLine)
     {
-        var workflow = await new WorkflowDefinitionBuilder().BuildWorkflowAsync(new IfThenWorkflow(() => conditionResult));
-        await _workflowRunner.RunAsync(workflow);
+        await _workflowRunner.RunAsync(new IfThenWorkflow(() => conditionResult));
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(new[] { expectedLine }, lines);
     }
@@ -36,8 +35,7 @@ public class IfTests
     [InlineData(false, new[] { "Start", "Executing", "False!", "End" })]
     public async Task Test2(bool conditionResult, string[] expectedLines)
     {
-        var workflow = await new WorkflowDefinitionBuilder().BuildWorkflowAsync(new ComplexIfWorkflow(() => conditionResult));
-        await _workflowRunner.RunAsync(workflow);
+        await _workflowRunner.RunAsync(new ComplexIfWorkflow(() => conditionResult));
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(expectedLines, lines);
     }

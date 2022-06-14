@@ -1,9 +1,7 @@
 import 'reflect-metadata';
 import {Container} from "typedi"
-import {camelCase} from "lodash";
 import {Activity, ActivityDescriptor} from "../../../models";
 import {PortProviderRegistry} from "./port-provider-registry";
-import {TransposeHandlerRegistry} from "./transpose-handler-registry";
 
 export interface ActivityNode {
   activity: Activity;
@@ -52,20 +50,19 @@ function walkRecursive(node: ActivityNode, activity: Activity, collectedActiviti
       collectedNodes.add(childNode);
     }
 
-    childNode.parents.push(node);
-    node.children.push(childNode);
-    collectedActivities.add(port.activity);
+    if(childNode !== node) {
+      childNode.parents.push(node);
+      node.children.push(childNode);
+      collectedActivities.add(port.activity);
+    }
     walkRecursive(childNode, port.activity, collectedActivities, collectedNodes, descriptors);
   }
 }
 
 function getPorts(node: ActivityNode, activity: Activity, descriptors: Array<ActivityDescriptor>): Array<ActivityPort> {
   const portProviderRegistry = Container.get(PortProviderRegistry);
-  const transposeHandlerRegistry = Container.get(TransposeHandlerRegistry);
-  const transposeHandler = transposeHandlerRegistry.get(activity.typeName);
-  //const portProvider = portProviderRegistry.get(activity.typeName);
+  const portProvider = portProviderRegistry.get(activity.typeName);
   const activityDescriptor = descriptors.find(x => x.activityType == activity.typeName);
-  const activityCopy: Activity = {...activity};
-  const untransposedConnections = transposeHandler.untranspose({activity: activityCopy, activityDescriptor});
-  return untransposedConnections.map(x => ({activity: x.target, port: x.sourcePort}));
+  const ports = portProvider.getOutboundPorts({activity, activityDescriptor});
+  return ports.map(x => ({ port: x.name, activity }));
 }

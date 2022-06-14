@@ -21,9 +21,9 @@ public static class ExpressionExecutionContextExtensions
     public static IDictionary<object, object> GetTransientProperties(this ExpressionExecutionContext context) => (IDictionary<object, object>)context.ApplicationProperties[TransientPropertiesKey];
     public static IDictionary<string, object> GetInput(this ExpressionExecutionContext context) => (IDictionary<string, object>)context.ApplicationProperties[InputKey];
 
-    public static T? Get<T>(this ExpressionExecutionContext context, Input<T>? input) => input != null ? (T?)context.GetBlock(input.MemoryReference).Value : default;
-    public static T? Get<T>(this ExpressionExecutionContext context, Output output) => (T?)context.GetBlock(output.MemoryReference).Value;
-    public static object? Get(this ExpressionExecutionContext context, Output output) => context.GetBlock(output.MemoryReference).Value;
+    public static T? Get<T>(this ExpressionExecutionContext context, Input<T>? input) => input != null ? (T?)context.GetBlock(input.MemoryBlockReference).Value : default;
+    public static T? Get<T>(this ExpressionExecutionContext context, Output output) => (T?)context.GetBlock(output.MemoryBlockReference).Value;
+    public static object? Get(this ExpressionExecutionContext context, Output output) => context.GetBlock(output.MemoryBlockReference).Value;
     public static T? GetVariable<T>(this ExpressionExecutionContext context, string name) => (T?)context.GetVariable(name);
     public static T? GetVariable<T>(this ExpressionExecutionContext context) => (T?)context.GetVariable(typeof(T).Name);
     public static object? GetVariable(this ExpressionExecutionContext context, string name) => new Variable(name).Get(context);
@@ -41,7 +41,7 @@ public static class ExpressionExecutionContextExtensions
     public static void Set(this ExpressionExecutionContext context, Output? output, object? value)
     {
         if(output != null)
-            context.Set(output.MemoryReference, value);
+            context.Set(output.MemoryBlockReference, value);
         //var convertedValue = output.ValueConverter?.Invoke(value) ?? value;
         //var convertedValue = value;
         //var targets = new[] { output.MemoryReference }.Concat(output.Targets);

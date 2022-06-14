@@ -13,7 +13,7 @@ public class MyGreeterComposite : Composite
     {
     }
 
-    public MyGreeterComposite(MemoryReference name) : this(new Output<string>(name))
+    public MyGreeterComposite(MemoryBlockReference name) : this(new Output<string>(name))
     {
     }
 

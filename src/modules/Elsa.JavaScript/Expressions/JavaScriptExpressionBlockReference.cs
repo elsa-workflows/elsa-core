@@ -2,9 +2,9 @@ using Elsa.Expressions.Models;
 
 namespace Elsa.JavaScript.Expressions;
 
-public class JavaScriptExpressionReference : MemoryReference
+public class JavaScriptExpressionBlockReference : MemoryBlockReference
 {
-    public JavaScriptExpressionReference(JavaScriptExpression expression)
+    public JavaScriptExpressionBlockReference(JavaScriptExpression expression)
     {
         Expression = expression;
     }

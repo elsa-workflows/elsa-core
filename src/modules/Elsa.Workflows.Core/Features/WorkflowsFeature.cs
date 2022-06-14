@@ -5,6 +5,7 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Workflows.Core.ActivityNodeResolvers;
+using Elsa.Workflows.Core.Builders;
 using Elsa.Workflows.Core.Expressions;
 using Elsa.Workflows.Core.Implementations;
 using Elsa.Workflows.Core.Pipelines.ActivityExecution;
@@ -65,6 +66,9 @@ public class WorkflowsFeature : FeatureBase
             .AddSingleton<IIdentityGenerator, RandomIdentityGenerator>()
             .AddSingleton<ISystemClock, SystemClock>()
             .AddSingleton<IBookmarkDataSerializer, BookmarkDataSerializer>()
+            .AddTransient<WorkflowDefinitionBuilder>()
+            .AddSingleton(typeof(Func<IWorkflowDefinitionBuilder>), sp => () => sp.GetRequiredService<WorkflowDefinitionBuilder>())
+            .AddSingleton<IWorkflowDefinitionBuilderFactory, WorkflowDefinitionBuilderFactory>()
             .AddSingleton<IWellKnownTypeRegistry, WellKnownTypeRegistry>()
 
             // Pipelines.

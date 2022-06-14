@@ -66,23 +66,23 @@ public class SwitchCase
         Activity = activity;
     }
 
-    public SwitchCase(string label, DelegateReference<bool> condition, IActivity activity) : this(label, new DelegateExpression(condition), activity)
+    public SwitchCase(string label, DelegateBlockReference<bool> condition, IActivity activity) : this(label, new DelegateExpression(condition), activity)
     {
     }
 
-    public SwitchCase(string label, Func<ExpressionExecutionContext, ValueTask<bool>> condition, IActivity activity) : this(label, new DelegateReference<bool>(condition), activity)
+    public SwitchCase(string label, Func<ExpressionExecutionContext, ValueTask<bool>> condition, IActivity activity) : this(label, new DelegateBlockReference<bool>(condition), activity)
     {
     }
 
-    public SwitchCase(string label, Func<ValueTask<bool>> condition, IActivity activity) : this(label, new DelegateReference<bool>(condition), activity)
+    public SwitchCase(string label, Func<ValueTask<bool>> condition, IActivity activity) : this(label, new DelegateBlockReference<bool>(condition), activity)
     {
     }
 
-    public SwitchCase(string label, Func<ExpressionExecutionContext, bool> condition, IActivity activity) : this(label, new DelegateReference<bool>(condition), activity)
+    public SwitchCase(string label, Func<ExpressionExecutionContext, bool> condition, IActivity activity) : this(label, new DelegateBlockReference<bool>(condition), activity)
     {
     }
 
-    public SwitchCase(string label, Func<bool> condition, IActivity activity) : this(label, new DelegateReference<bool>(condition), activity)
+    public SwitchCase(string label, Func<bool> condition, IActivity activity) : this(label, new DelegateBlockReference<bool>(condition), activity)
     {
     }
 
