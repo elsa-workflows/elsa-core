@@ -1,6 +1,7 @@
 import {CellView, Graph, Node, Shape} from '@antv/x6';
 import {v4 as uuid} from 'uuid';
 import './ports';
+import {assignParent} from "./flowchart/assign-parent";
 
 export function createGraph(
   container: HTMLElement,
@@ -11,6 +12,9 @@ export function createGraph(
   const graph = new Graph({
     container: container,
     interacting: interacting,
+    embedding: {
+      enabled: false,
+    },
     grid: {
       type: 'mesh',
       size: 20,
@@ -131,6 +135,12 @@ export function createGraph(
     //   container: this.container,
     // },
     //interacting: () => state.interactingMap,
+  });
+
+  //graph.on('node:change:parent', assignParent);
+
+  graph.on('node:mousedown', ({node}) => {
+    node.toFront();
   });
 
   graph.on('edge:mouseenter', ({edge}) => {

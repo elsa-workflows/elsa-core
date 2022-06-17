@@ -38,7 +38,7 @@ public class For : Activity
     public Input<int> End { get; set; } = new(0);
     public Input<int> Step { get; set; } = new(1);
     public Input<ForOperator> Operator { get; set; } = new(ForOperator.LessThanOrEqual);
-    [Outbound] public IActivity? Body { get; set; }
+    [Port] public IActivity? Body { get; set; }
 
     [JsonIgnore]
     [Output]

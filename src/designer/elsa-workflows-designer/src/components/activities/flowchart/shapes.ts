@@ -60,13 +60,25 @@ export class ActivityNode extends Shape.HTML {
     const wrapper = document.createElement('div');
     wrapper.className = 'w-full flex items-center pl-10 pr-2 py-2';
     wrapper.innerHTML = this.createHtml();
-    document.body.append(wrapper);
-    const rect = wrapper.firstElementChild.getBoundingClientRect();
-    wrapper.remove();
 
-    const width = rect.width;
-    const height = rect.height;
-    this.prop({size: {width, height}});
+    document.body.append(wrapper);
+
+    // Wait for activity element to be completely rendered.
+    const tryUpdate = () => {
+      const rect = wrapper.firstElementChild.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
+
+      if (height == 0 || width == 0) {
+        window.requestAnimationFrame(tryUpdate);
+        return;
+      }
+
+      this.prop({size: {width, height}});
+      wrapper.remove();
+    };
+
+    tryUpdate();
   }
 
   createHtml() {

@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import {Component, Element, Event, EventEmitter, h, Method, Prop, Watch} from '@stencil/core';
-import {Edge, Graph, Model, Node, NodeView, Point} from '@antv/x6';
+import {Edge, Graph, Model, Node, NodeView, Point, Rectangle} from '@antv/x6';
 import {v4 as uuid} from 'uuid';
 import {first} from 'lodash';
 import './shapes';
@@ -20,6 +20,7 @@ import FromJSONData = Model.FromJSONData;
 import {ContextMenuAnchorPoint, MenuItem, MenuItemGroup} from "../../shared/context-menu/models";
 import PointLike = Point.PointLike;
 import descriptorsStore from "../../../data/descriptors-store";
+import {assignParent} from "./flowchart/assign-parent";
 
 @Component({
   tag: 'elsa-flowchart',
@@ -63,7 +64,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
   }
 
   @Method()
-  public async zoomToFit(){
+  public async zoomToFit() {
     const graph = this.graph;
     graph.zoomToFit();
   }
@@ -73,13 +74,8 @@ export class FlowchartComponent implements ContainerActivityComponent {
     const graph = this.graph;
     const {descriptor, x, y} = args;
     let id = args.id ?? uuid();
-
-    // TODO: Figure out how to convert client coordinates to appropriate graph coordinates taking into account transformations.
-    // See https://x6.antv.vision/en/docs/api/graph/coordinate for documentation.
-    //const point = graph.coord.localToClientPoint(x, y);
     const pageToLocal = graph.pageToLocal(x, y);
     const point: PointLike = pageToLocal;
-
     const sx = point.x;
     const sy = point.y;
 
@@ -113,6 +109,10 @@ export class FlowchartComponent implements ContainerActivityComponent {
 
   public async componentDidLoad() {
     await this.createAndInitializeGraph();
+
+    this.container.addEventListener('click', e => {
+      const target = e.target;
+    });
   }
 
   public render() {
@@ -364,6 +364,8 @@ export class FlowchartComponent implements ContainerActivityComponent {
         }
       }
     }
+
+    assignParent(this.graph, node);
   }
 
   onEdgeConnected = async (e: { isNew: boolean, edge: Edge }) => {

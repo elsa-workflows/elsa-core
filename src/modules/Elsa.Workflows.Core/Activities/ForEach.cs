@@ -32,7 +32,7 @@ public class ForEach : Activity
     /// <summary>
     /// The activity to execute for each iteration.
     /// </summary>
-    [Outbound]
+    [Port]
     public IActivity? Body { get; set; }
 
     /// <summary>

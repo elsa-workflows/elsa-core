@@ -23,7 +23,7 @@ public class Fork : Activity
     /// <summary>
     /// The branches to schedule.
     /// </summary>
-    [Outbound]
+    [Port]
     public ICollection<IActivity> Branches { get; set; } = new List<IActivity>();
 
     protected override void Execute(ActivityExecutionContext context) => context.ScheduleActivities(Branches.Reverse(), CompleteChildAsync);

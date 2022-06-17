@@ -20,14 +20,15 @@ export class DefaultNodeHandler implements ActivityNodeHandler {
     let inPorts = provider.getInboundPorts(providerContext);
     let outPorts = provider.getOutboundPorts(providerContext);
 
-    if (inPorts.length == 0)
-      inPorts = [{name: 'In', displayName: 'In'}];
+    //if (inPorts.length == 0)
+    inPorts = [{name: 'In', displayName: 'In'}];
 
     if (inPorts.length == 1)
       inPorts[0].displayName = null;
 
     // In a flowchart, always add a Done port to connect the next node.
-    outPorts = [...outPorts, {name: 'Done', displayName: 'Done'}];
+    //outPorts = [...outPorts, {name: 'Done', displayName: 'Done'}];
+    outPorts = [{name: 'Done', displayName: 'Done'}];
 
     if (outPorts.length == 1)
       outPorts[0].displayName = null;

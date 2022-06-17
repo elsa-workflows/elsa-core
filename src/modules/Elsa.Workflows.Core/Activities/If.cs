@@ -40,13 +40,13 @@ public class If : Activity<bool>
     /// <summary>
     /// The activity to execute when the condition evaluates to true.
     /// </summary>
-    [Outbound]
+    [Port]
     public IActivity? Then { get; set; }
 
     /// <summary>
     /// The activity to execute when the condition evaluates to false.
     /// </summary>
-    [Outbound]
+    [Port]
     public IActivity? Else { get; set; }
 
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)

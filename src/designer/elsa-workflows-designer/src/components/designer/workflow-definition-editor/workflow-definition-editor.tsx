@@ -280,9 +280,7 @@ export class WorkflowDefinitionEditor {
     });
   };
 
-  private onZoomToFit = async () => {
-    this.canvas.zoomToFit();
-  }
+  private onZoomToFit = async () => await this.canvas.zoomToFit()
 
   private onActivityUpdated = (e: CustomEvent<ActivityUpdatedArgs>) => {
     const updatedActivity = e.detail.activity;

@@ -17,7 +17,7 @@ public class ActivityNodeDescriber : IActivityNodeDescriber
         var outboundPorts =
             from prop in activityType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
             where typeof(IActivity).IsAssignableFrom(prop.PropertyType) || typeof(IEnumerable<IActivity>).IsAssignableFrom(prop.PropertyType)
-            let portAttr = prop.GetCustomAttribute<OutboundAttribute>()
+            let portAttr = prop.GetCustomAttribute<PortAttribute>()
             where portAttr != null
             select new Port
             {

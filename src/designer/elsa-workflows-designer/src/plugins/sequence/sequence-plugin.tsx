@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import {h} from '@stencil/core';
+import {FunctionalComponent, h} from '@stencil/core';
 import {Container, Service} from "typedi";
 import {ActivityIconRegistry} from "../../services";
 import {Plugin} from "../../models";
@@ -11,14 +11,14 @@ export class SequencePlugin implements Plugin {
   constructor() {
     const iconRegistry = Container.get(ActivityIconRegistry);
 
-    iconRegistry.add(SequencePlugin.ActivityTypeName, Icon);
+    iconRegistry.add(SequencePlugin.ActivityTypeName, () => <SequenceIcon/>);
   }
 }
 
-const Icon: () => string = () =>
-  `<svg class="h-6 w-6 text-white" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+const SequenceIcon: FunctionalComponent = () => (
+  <svg class="h-6 w-6 text-white" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
     <path stroke="none" d="M0 0h24v24H0z"/>
-    <line x1="4" y1="6" x2="20" y2="6"/>
-    <line x1="4" y1="18" x2="9" y2="18"/>
-    <path d="M4 12h13a3 3 0 0 1 0 6h-4l2 -2m0 4l-2 -2"/>
-  </svg>`;
+    <path d="M9 4.55a8 8 0 0 1 6 14.9m0 -4.45v5h5"/>
+    <path d="M11 19.95a8 8 0 0 1 -5.3 -12.8" stroke-dasharray=".001 4.13"/>
+  </svg>
+);

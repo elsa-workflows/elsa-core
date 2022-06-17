@@ -14,7 +14,7 @@ public class Composite : Activity
     /// <summary>
     /// The activity to schedule when this activity executes.
     /// </summary>
-    [Outbound]
+    [Port]
     public IActivity Root { get; set; } = new Sequence();
 
     protected override void Execute(ActivityExecutionContext context)
@@ -42,7 +42,7 @@ public class Composite<T> : Activity<T>
     /// <summary>
     /// The activity to schedule when this activity executes.
     /// </summary>
-    [Outbound]
+    [Port]
     public IActivity Root { get; protected set; } = new Sequence();
 
     protected override void Execute(ActivityExecutionContext context)

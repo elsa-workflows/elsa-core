@@ -1,6 +1,5 @@
-import {Component, Event, EventEmitter, h, Method, Prop, State} from '@stencil/core';
+import {Component, h, Method, Prop, State} from '@stencil/core';
 import {camelCase} from 'lodash';
-import WorkflowEditorTunnel from '../state';
 import {
   Activity,
   ActivityDescriptor,
@@ -71,7 +70,7 @@ export class ActivityProperties {
   private renderPropertiesTab = () => {
     const activity = this.activity;
     const activityDescriptor = this.findActivityDescriptor();
-    const properties = activityDescriptor.inputProperties;
+    const properties = activityDescriptor.inputs;
     const activityId = activity.id;
     const displayText: string = activity.metadata?.displayText ?? '';
 

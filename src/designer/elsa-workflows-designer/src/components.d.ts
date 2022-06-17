@@ -65,6 +65,13 @@ export namespace Components {
     interface ElsaCopyButton {
         "value": string;
     }
+    interface ElsaDefaultActivityTemplate {
+        "activityJson": string;
+        "activityType": string;
+        "canStartWorkflow": boolean;
+        "displayText": string;
+        "displayType": string;
+    }
     interface ElsaDropdownButton {
         "icon"?: any;
         "items": Array<DropdownButtonItem>;
@@ -313,6 +320,12 @@ declare global {
     var HTMLElsaCopyButtonElement: {
         prototype: HTMLElsaCopyButtonElement;
         new (): HTMLElsaCopyButtonElement;
+    };
+    interface HTMLElsaDefaultActivityTemplateElement extends Components.ElsaDefaultActivityTemplate, HTMLStencilElement {
+    }
+    var HTMLElsaDefaultActivityTemplateElement: {
+        prototype: HTMLElsaDefaultActivityTemplateElement;
+        new (): HTMLElsaDefaultActivityTemplateElement;
     };
     interface HTMLElsaDropdownButtonElement extends Components.ElsaDropdownButton, HTMLStencilElement {
     }
@@ -563,6 +576,7 @@ declare global {
         "elsa-code-editor-input": HTMLElsaCodeEditorInputElement;
         "elsa-context-menu": HTMLElsaContextMenuElement;
         "elsa-copy-button": HTMLElsaCopyButtonElement;
+        "elsa-default-activity-template": HTMLElsaDefaultActivityTemplateElement;
         "elsa-dropdown-button": HTMLElsaDropdownButtonElement;
         "elsa-dropdown-input": HTMLElsaDropdownInputElement;
         "elsa-flowchart": HTMLElsaFlowchartElement;
@@ -635,6 +649,13 @@ declare namespace LocalJSX {
     }
     interface ElsaCopyButton {
         "value"?: string;
+    }
+    interface ElsaDefaultActivityTemplate {
+        "activityJson"?: string;
+        "activityType"?: string;
+        "canStartWorkflow"?: boolean;
+        "displayText"?: string;
+        "displayType"?: string;
     }
     interface ElsaDropdownButton {
         "icon"?: any;
@@ -839,6 +860,7 @@ declare namespace LocalJSX {
         "elsa-code-editor-input": ElsaCodeEditorInput;
         "elsa-context-menu": ElsaContextMenu;
         "elsa-copy-button": ElsaCopyButton;
+        "elsa-default-activity-template": ElsaDefaultActivityTemplate;
         "elsa-dropdown-button": ElsaDropdownButton;
         "elsa-dropdown-input": ElsaDropdownInput;
         "elsa-flowchart": ElsaFlowchart;
@@ -893,6 +915,7 @@ declare module "@stencil/core" {
             "elsa-code-editor-input": LocalJSX.ElsaCodeEditorInput & JSXBase.HTMLAttributes<HTMLElsaCodeEditorInputElement>;
             "elsa-context-menu": LocalJSX.ElsaContextMenu & JSXBase.HTMLAttributes<HTMLElsaContextMenuElement>;
             "elsa-copy-button": LocalJSX.ElsaCopyButton & JSXBase.HTMLAttributes<HTMLElsaCopyButtonElement>;
+            "elsa-default-activity-template": LocalJSX.ElsaDefaultActivityTemplate & JSXBase.HTMLAttributes<HTMLElsaDefaultActivityTemplateElement>;
             "elsa-dropdown-button": LocalJSX.ElsaDropdownButton & JSXBase.HTMLAttributes<HTMLElsaDropdownButtonElement>;
             "elsa-dropdown-input": LocalJSX.ElsaDropdownInput & JSXBase.HTMLAttributes<HTMLElsaDropdownInputElement>;
             "elsa-flowchart": LocalJSX.ElsaFlowchart & JSXBase.HTMLAttributes<HTMLElsaFlowchartElement>;

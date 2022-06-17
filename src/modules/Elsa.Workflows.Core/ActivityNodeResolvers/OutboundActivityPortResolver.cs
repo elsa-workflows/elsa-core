@@ -21,7 +21,7 @@ public class OutboundActivityPortResolver : IActivityPortResolver
         var outboundPortProperties =
             from prop in activityType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
             where typeof(IActivity).IsAssignableFrom(prop.PropertyType) || typeof(IEnumerable<IActivity>).IsAssignableFrom(prop.PropertyType)
-            let portAttr = prop.GetCustomAttribute<OutboundAttribute>()
+            let portAttr = prop.GetCustomAttribute<PortAttribute>()
             where portAttr != null
             select prop;
 
@@ -35,7 +35,7 @@ public class OutboundActivityPortResolver : IActivityPortResolver
         var ports =
             from prop in activityType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
             where typeof(IActivity).IsAssignableFrom(prop.PropertyType) || typeof(IEnumerable<IActivity>).IsAssignableFrom(prop.PropertyType)
-            let portAttr = prop.GetCustomAttribute<OutboundAttribute>()
+            let portAttr = prop.GetCustomAttribute<PortAttribute>()
             let nodeAttr = prop.GetCustomAttribute<NodeAttribute>()
             where portAttr != null || nodeAttr != null
             let value = prop.GetValue(activity)

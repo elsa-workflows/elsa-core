@@ -7,12 +7,12 @@ import {PortProvider, PortProviderContext} from "./port-provider";
 export class DefaultPortProvider implements PortProvider {
   getInboundPorts(context: PortProviderContext): Array<Port> {
     const {activityDescriptor} = context;
-    return [...activityDescriptor.inPorts];
+    return [];
   }
 
   getOutboundPorts(context: PortProviderContext): Array<Port> {
     const {activityDescriptor} = context;
-    return [...activityDescriptor.outPorts];
+    return [...activityDescriptor.ports];
   }
 
 }

@@ -1,6 +1,5 @@
 import {ActivityInputContext} from "../services/node-input-driver";
-import {Activity} from "./core";
-import {ActivityDescriptor} from "./api";
+import {Activity, ActivityDescriptor} from "./core";
 
 export interface TabDefinition {
   displayText: string;
@@ -71,7 +70,7 @@ export interface RenderActivityPropsContext {
   activity: Activity;
   activityDescriptor: ActivityDescriptor;
   title: string;
-  inputProperties: Array<RenderActivityInputContext>;
+  inputs: Array<RenderActivityInputContext>;
 }
 
 export interface RenderActivityInputContext {

@@ -45,7 +45,7 @@ public class While : Activity
     }
 
     [Input(AutoEvaluate = false)] public Input<bool> Condition { get; set; } = new(false);
-    [Outbound] public IActivity Body { get; set; }
+    [Port] public IActivity Body { get; set; }
 
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {

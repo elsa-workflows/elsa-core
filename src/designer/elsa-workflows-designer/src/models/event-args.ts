@@ -1,5 +1,4 @@
 import {Activity} from "./core";
-import {ActivityDescriptor, InputDescriptor} from "./api";
 
 export interface ActivitySelectedArgs {
   activity: Activity;
