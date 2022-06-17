@@ -350,7 +350,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
   }
 
   onNodeMoved = (e: PositionEventArgs<JQuery.ClickEvent>) => {
-    const node = e.node;
+    const node = e.node as ActivityNodeShape;
     const activity = node.data as Activity;
     const nodePosition = node.position({relative: false});
 

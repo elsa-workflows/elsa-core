@@ -64,21 +64,37 @@ export class ActivityNode extends Shape.HTML {
     document.body.append(wrapper);
 
     // Wait for activity element to be completely rendered.
-    const tryUpdate = () => {
+    // When using custom elements, they are rendered after they are mounted. Before then, they have a 0 width and height.
+    const tryUpdateSize = () => {
+      // TODO: Figure out if there's a way to select *any* custom element.
+      //  Worst case, we need to look for a registered set if tags, or introduce a convention where custom elements need to specify a class name for example.
+      const activityElements: Array<Element> = Array.from(wrapper.getElementsByTagName('elsa-default-activity-template'));
+
+      for (const activityElement of activityElements) {
+        const activityElementRect = activityElement.getBoundingClientRect();
+
+        // If the custom element has no width or height yet, it means it has not yet rendered.
+        if (activityElementRect.width == 0 || activityElementRect.height == 0) {
+
+          // Request an animation frame and call ourselves back immediately after.
+          window.requestAnimationFrame(tryUpdateSize);
+          return;
+        }
+      }
+
       const rect = wrapper.firstElementChild.getBoundingClientRect();
       const width = rect.width;
       const height = rect.height;
 
-      if (height == 0 || width == 0) {
-        window.requestAnimationFrame(tryUpdate);
-        return;
-      }
-
+      // Update size of the activity node.
       this.prop({size: {width, height}});
+
+      // Remove the temporary element (used only to calculate its size).
       wrapper.remove();
     };
 
-    tryUpdate();
+    // Begin try to get our element size.
+    tryUpdateSize();
   }
 
   createHtml() {
@@ -99,7 +115,6 @@ export class ActivityNode extends Shape.HTML {
 }
 
 ActivityNode.config({
-  //portMarkup: [Markup.getForeignObjectMarkup()],
   ports: {
     groups: {
       in: {

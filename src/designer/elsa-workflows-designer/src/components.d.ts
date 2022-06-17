@@ -66,11 +66,11 @@ export namespace Components {
         "value": string;
     }
     interface ElsaDefaultActivityTemplate {
+        "activity": Activity;
         "activityJson": string;
         "activityType": string;
-        "canStartWorkflow": boolean;
-        "displayText": string;
         "displayType": string;
+        "selected": boolean;
     }
     interface ElsaDropdownButton {
         "icon"?: any;
@@ -651,11 +651,11 @@ declare namespace LocalJSX {
         "value"?: string;
     }
     interface ElsaDefaultActivityTemplate {
+        "activity"?: Activity;
         "activityJson"?: string;
         "activityType"?: string;
-        "canStartWorkflow"?: boolean;
-        "displayText"?: string;
         "displayType"?: string;
+        "selected"?: boolean;
     }
     interface ElsaDropdownButton {
         "icon"?: any;

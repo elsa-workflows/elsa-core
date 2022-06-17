@@ -11,24 +11,9 @@ export class DefaultActivityDriver implements ActivityDriver {
     const activityDescriptor = context.activityDescriptor;
     const activityType = activityDescriptor.activityType;
     const activity = context.activity;
-    const canStartWorkflow = activity?.canStartWorkflow == true;
-    const text = activityDescriptor?.displayName;
-    let displayText = activity?.metadata?.displayText;
-
-    if (isNullOrWhitespace(displayText))
-      displayText = text;
-
     const displayType = context.displayType;
     const activityJson = displayType == 'designer' ? encodeURI(JSON.stringify(activity)) : '';
 
-    return (`
-         <elsa-default-activity-template
-                activity-type="${activityType}"
-                display-text="${displayText}"
-                display-type="${displayType}"
-                activity="${activityJson}"
-                can-start-workflow="${canStartWorkflow}" />
-        `);
+    return (`<elsa-default-activity-template activity-type="${activityType}" activity="${activityJson}" display-type="${displayType}" />`);
   }
-
 }
