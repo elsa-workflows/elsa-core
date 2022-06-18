@@ -92,13 +92,13 @@ export class ActivityPropertiesEditor {
     const {activity, activityDescriptor} = this.renderContext;
 
     const commonTab: TabDefinition = {
-      displayText: 'Common',
-      order: 50,
+      displayText: 'General',
+      order: 0,
       content: () => this.renderCommonTab()
     };
 
     const inputTab: TabDefinition = {
-      displayText: 'Input',
+      displayText: 'Settings',
       order: 10,
       content: () => this.renderInputTab()
     };

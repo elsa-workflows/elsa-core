@@ -27,6 +27,7 @@ elsa-panel.panel-state-expanded.elsa-activity-editor-container {
 elsa-workflow-navigator {
   top: 70px;
   position: absolute;
+  z-index: 50;
   left: var(--activity-picker-width);
   right: var(--activity-editor-width);
 }
