@@ -5,7 +5,7 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
-import { ActionDefinition, ActionInvokedArgs, Activity, ActivitySelectedArgs, ContainerSelectedArgs, GraphUpdatedArgs, IntellisenseContext, SelectListItem, TabChangedArgs, TabDefinition, Variable, WorkflowDefinition, WorkflowDefinitionSummary, WorkflowInstance, WorkflowInstanceSummary } from "./models";
+import { ActionDefinition, ActionInvokedArgs, Activity, ActivitySelectedArgs, ContainerSelectedArgs, CreateChildActivityArgs, GraphUpdatedArgs, IntellisenseContext, SelectListItem, TabChangedArgs, TabDefinition, Variable, WorkflowDefinition, WorkflowDefinitionSummary, WorkflowInstance, WorkflowInstanceSummary } from "./models";
 import { ActivityUpdatedArgs, DeleteActivityRequestedArgs } from "./components/designer/workflow-definition-editor/activity-properties-editor";
 import { Button } from "./components/shared/button-group/models";
 import { ContainerActivityComponent } from "./components/activities/container-activity-component";
@@ -23,6 +23,7 @@ import { PanelPosition, PanelStateChangedArgs } from "./components/designer/pane
 import { WorkflowDefinitionPropsUpdatedArgs, WorkflowDefinitionUpdatedArgs } from "./components/designer/workflow-definition-editor/models";
 import { ActivityDriverRegistry } from "./services";
 import { Flowchart } from "./components/activities/flowchart/models";
+import { WorkflowNavigationItem } from "./components/designer/workflow-navigator/models";
 import { PublishClickedArgs } from "./components/toolbar/workflow-publish-button/workflow-publish-button";
 export namespace Components {
     interface ElsaActivityProperties {
@@ -41,6 +42,7 @@ export namespace Components {
     }
     interface ElsaCanvas {
         "addActivity": (args: AddActivityArgs) => Promise<void>;
+        "clear": () => Promise<void>;
         "exportGraph": () => Promise<Activity>;
         "getRootComponent": () => Promise<ContainerActivityComponent>;
         "importGraph": (root: Activity) => Promise<void>;
@@ -83,6 +85,7 @@ export namespace Components {
     }
     interface ElsaFlowchart {
         "addActivity": (args: AddActivityArgs) => Promise<void>;
+        "clear": () => Promise<void>;
         "exportRoot": () => Promise<Activity>;
         "getGraph": () => Promise<Graph>;
         "importRoot": (root: Activity) => Promise<void>;
@@ -257,6 +260,7 @@ export namespace Components {
     interface ElsaWorkflowManager {
         "getWorkflowDefinition": () => Promise<WorkflowDefinition>;
         "monacoLibPath": string;
+        "newWorkflow": () => Promise<any>;
         /**
           * Updates the workflow definition without importing it into the designer.
          */
@@ -265,6 +269,7 @@ export namespace Components {
         "workflowInstance"?: WorkflowInstance;
     }
     interface ElsaWorkflowNavigator {
+        "items": Array<WorkflowNavigationItem>;
     }
     interface ElsaWorkflowPublishButton {
         "publishing": boolean;
@@ -664,7 +669,7 @@ declare namespace LocalJSX {
         "activityJson"?: string;
         "activityType"?: string;
         "displayType"?: string;
-        "onActivitySelected"?: (event: CustomEvent<ActivitySelectedArgs>) => void;
+        "onCreateChildActivity"?: (event: CustomEvent<CreateChildActivityArgs>) => void;
         "selected"?: boolean;
     }
     interface ElsaDropdownButton {
@@ -850,6 +855,7 @@ declare namespace LocalJSX {
         "workflowInstance"?: WorkflowInstance;
     }
     interface ElsaWorkflowNavigator {
+        "items"?: Array<WorkflowNavigationItem>;
     }
     interface ElsaWorkflowPublishButton {
         "onExportClicked"?: (event: CustomEvent<any>) => void;

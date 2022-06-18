@@ -7,7 +7,7 @@ import {
   Activity,
   ActivityDescriptor,
   ActivitySelectedArgs,
-  ContainerSelectedArgs,
+  ContainerSelectedArgs, CreateChildActivityArgs,
   GraphUpdatedArgs, StorageDriverDescriptor,
   WorkflowDefinition
 } from '../../../models';
@@ -22,6 +22,7 @@ import {Flowchart} from "../../activities/flowchart/models";
 import {flattenList, walkActivities} from "../../activities/flowchart/activity-walker";
 import {ActivityPropertyChangedEventArgs, WorkflowDefinitionPropsUpdatedArgs, WorkflowDefinitionUpdatedArgs, WorkflowEditorEventTypes} from "./models";
 import descriptorsStore from "../../../data/descriptors-store";
+import {WorkflowNavigationItem} from "../workflow-navigator/models";
 
 @Component({
   tag: 'elsa-workflow-definition-editor',
@@ -54,6 +55,8 @@ export class WorkflowDefinitionEditor {
   @Event() workflowUpdated: EventEmitter<WorkflowDefinitionUpdatedArgs>
   @State() private workflowDefinitionState: WorkflowDefinition;
   @State() private selectedActivity?: Activity;
+  @State() private currentActivityPath: Array<WorkflowNavigationItem> = [];
+  @State() private currentRootActivity: Activity;
 
   @Watch('monacoLibPath')
   private handleMonacoLibPath(value: string) {
@@ -93,6 +96,19 @@ export class WorkflowDefinitionEditor {
     this.saveChangesDebounced();
   }
 
+  @Listen('createChildActivity')
+  private async handleCreateChildActivity(e: CustomEvent<CreateChildActivityArgs>) {
+
+    const item: WorkflowNavigationItem = {
+      activity: e.detail.parent,
+      port: e.detail.port,
+    };
+
+    this.currentActivityPath = [...this.currentActivityPath, item];
+
+    await this.canvas.clear();
+  }
+
   @Method()
   public async getCanvas(): Promise<HTMLElsaCanvasElement> {
     return this.canvas;
@@ -112,6 +128,8 @@ export class WorkflowDefinitionEditor {
   @Method()
   public async importWorkflow(workflowDefinition: WorkflowDefinition): Promise<void> {
     this.workflowDefinitionState = workflowDefinition;
+    this.currentActivityPath = [{activity: workflowDefinition.root}];
+    this.currentRootActivity = workflowDefinition.root;
     await this.canvas.importGraph(workflowDefinition.root);
     await this.eventBus.emit(WorkflowEditorEventTypes.WorkflowDefinition.Imported, this, {workflowDefinition});
   }
@@ -141,12 +159,14 @@ export class WorkflowDefinitionEditor {
     const workflowDefinition: WorkflowDefinition = {
       root: flowchart,
       id: '',
+      name: 'Workflow 1',
       definitionId: '',
       version: 1,
       isLatest: true,
       isPublished: false,
       materializerName: 'Json'
     }
+
 
     await this.importWorkflow(workflowDefinition);
   }
@@ -156,7 +176,6 @@ export class WorkflowDefinitionEditor {
   }
 
   public async componentDidLoad() {
-
     if (!this.workflowDefinitionState)
       await this.newWorkflow();
     else
@@ -173,8 +192,8 @@ export class WorkflowDefinitionEditor {
     return (
       <WorkflowEditorTunnel.Provider state={tunnelState}>
         <div class="absolute inset-0" ref={el => this.container = el}>
-          <elsa-workflow-definition-editor-toolbar zoomToFit={this.onZoomToFit} />
-          <elsa-workflow-navigator />
+          <elsa-workflow-definition-editor-toolbar zoomToFit={this.onZoomToFit}/>
+          <elsa-workflow-navigator items={this.currentActivityPath}/>
           <elsa-panel
             class="elsa-activity-picker-container"
             position={PanelPosition.Left}

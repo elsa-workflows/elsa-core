@@ -49,6 +49,11 @@ export class Canvas {
     return await this.root.importRoot(root);
   }
 
+  @Method()
+  async clear(): Promise<void> {
+    await this.root.clear();
+  }
+
   render() {
     return (
       <div class="absolute left-0 top-0 right-0 bottom-0">

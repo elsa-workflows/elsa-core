@@ -2,7 +2,7 @@ import {Component, h, Prop, State, Event, EventEmitter, Listen, Element} from "@
 import {camelCase} from 'lodash';
 import {ActivityIcon, ActivityIconRegistry} from "../../../services";
 import {Container} from "typedi";
-import {Activity, ActivityDescriptor, ActivityKind, ActivitySelectedArgs, Port} from "../../../models";
+import {Activity, ActivityDescriptor, ActivityKind, CreateChildActivityArgs, Port} from "../../../models";
 import descriptorsStore from "../../../data/descriptors-store";
 import {isNullOrWhitespace} from "../../../utils";
 
@@ -26,7 +26,7 @@ export class DefaultActivityTemplate {
   @Prop({attribute: 'activity'}) activityJson: string;
   @Prop() selected: boolean;
   @Prop() activity: Activity;
-  @Event() activitySelected: EventEmitter<ActivitySelectedArgs>;
+  @Event() createChildActivity: EventEmitter<CreateChildActivityArgs>;
   @State() private selectedPortName: string;
 
   componentWillLoad() {
@@ -162,7 +162,10 @@ export class DefaultActivityTemplate {
             </div>
           ) : (
             <div class="relative block w-full border-2 border-gray-300 border-dashed rounded-lg p-5 text-center focus:outline-none">
-              <a href="#" class="text-gray-400 hover:text-gray-600">
+              <a href="#"
+                 onClick={e => this.onAddChildActivityClick(e, activity, port)}
+                 onMouseDown={e => e.stopPropagation()}
+                 class="text-gray-400 hover:text-gray-600">
                 <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
@@ -191,4 +194,9 @@ export class DefaultActivityTemplate {
 
     this.selectedPortName = null;
   }
+
+  private onAddChildActivityClick = (e: MouseEvent, parentActivity: Activity, port: Port) => {
+    e.preventDefault();
+    this.createChildActivity.emit({parent: parentActivity, port: port});
+  };
 }

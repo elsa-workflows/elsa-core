@@ -12,12 +12,12 @@ export class WorkflowManager {
   private workflowDefinitionEditor?: HTMLElsaWorkflowDefinitionEditorElement;
   private workflowInstanceViewer?: HTMLElsaWorkflowInstanceViewerElement;
 
-  @Prop({attribute: 'monaco-lib-path'}) public monacoLibPath: string;
-  @Prop() public workflowDefinition?: WorkflowDefinition;
-  @Prop() public workflowInstance?: WorkflowInstance;
+  @Prop({attribute: 'monaco-lib-path'}) monacoLibPath: string;
+  @Prop() workflowDefinition?: WorkflowDefinition;
+  @Prop() workflowInstance?: WorkflowInstance;
 
   @Method()
-  public async getWorkflowDefinition(): Promise<WorkflowDefinition> {
+  async getWorkflowDefinition(): Promise<WorkflowDefinition> {
     if (!this.workflowDefinitionEditor)
       return null;
 
@@ -28,21 +28,29 @@ export class WorkflowManager {
    * Updates the workflow definition without importing it into the designer.
    */
   @Method()
-  public async updateWorkflowDefinition(workflowDefinition: WorkflowDefinition): Promise<void> {
+  async updateWorkflowDefinition(workflowDefinition: WorkflowDefinition): Promise<void> {
     if (!this.workflowDefinitionEditor)
       return null;
 
     await this.workflowDefinitionEditor.updateWorkflowDefinition(workflowDefinition);
   }
 
-  public render() {
+  @Method()
+  async newWorkflow() {
+    if (!this.workflowDefinitionEditor)
+      return null;
+
+    await this.workflowDefinitionEditor.newWorkflow();
+  }
+
+  render() {
     const visualPath = getAssetPath('./assets/elsa-anim.gif');
     const monacoLibPath = this.monacoLibPath;
     const workflowInstance = this.workflowInstance;
     const workflowDefinition = this.workflowDefinition;
 
     if (workflowDefinition == null) {
-      return <HomeView imageUrl={visualPath} />;
+      return <HomeView imageUrl={visualPath}/>;
     }
 
     if (workflowInstance == null) {

@@ -7,4 +7,5 @@ export interface ContainerActivityComponent {
   exportRoot(): Promise<Activity>
   importRoot(root: Activity): Promise<void>;
   zoomToFit(): Promise<void>;
+  clear(): Promise<void>;
 }

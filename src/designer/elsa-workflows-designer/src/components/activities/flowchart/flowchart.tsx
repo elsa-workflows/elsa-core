@@ -37,8 +37,8 @@ export class FlowchartComponent implements ContainerActivityComponent {
     this.nodeFactory = Container.get(NodeFactory);
   }
 
-  @Prop({mutable: true}) public root?: Activity;
-  @Prop() public interactiveMode: boolean = true;
+  @Prop({mutable: true}) root?: Activity;
+  @Prop() interactiveMode: boolean = true;
 
   @Element() el: HTMLElement;
   container: HTMLElement;
@@ -50,12 +50,23 @@ export class FlowchartComponent implements ContainerActivityComponent {
   @Event() graphUpdated: EventEmitter<GraphUpdatedArgs>;
 
   @Method()
-  public async getGraph(): Promise<Graph> {
+  async getGraph(): Promise<Graph> {
     return this.graph;
   }
 
   @Method()
-  public async updateLayout(): Promise<void> {
+  async clear(): Promise<void>{
+
+    const model: FromJSONData = {nodes: [], edges: []};
+
+    // Freeze then unfreeze prevents an error from occurring when importing JSON a second time (e.g. after loading a new workflow.
+    this.graph.freeze();
+    this.graph.fromJSON(model, {silent: false});
+    this.graph.unfreeze();
+  }
+
+  @Method()
+  async updateLayout(): Promise<void> {
     const width = this.el.clientWidth;
     const height = this.el.clientHeight;
     this.graph.resize(width, height);
@@ -63,13 +74,13 @@ export class FlowchartComponent implements ContainerActivityComponent {
   }
 
   @Method()
-  public async zoomToFit() {
+  async zoomToFit() {
     const graph = this.graph;
     graph.zoomToFit();
   }
 
   @Method()
-  public async addActivity(args: AddActivityArgs): Promise<void> {
+  async addActivity(args: AddActivityArgs): Promise<void> {
     const graph = this.graph;
     const {descriptor, x, y} = args;
     let id = args.id ?? uuid();
@@ -97,16 +108,16 @@ export class FlowchartComponent implements ContainerActivityComponent {
   }
 
   @Method()
-  public async exportRoot(): Promise<Activity> {
+  async exportRoot(): Promise<Activity> {
     return this.exportRootInternal();
   }
 
   @Method()
-  public async importRoot(root: Activity): Promise<void> {
+  async importRoot(root: Activity): Promise<void> {
     return this.importRootInternal(root);
   }
 
-  public async componentDidLoad() {
+  async componentDidLoad() {
     await this.createAndInitializeGraph();
 
     this.container.addEventListener('click', e => {
@@ -114,7 +125,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
     });
   }
 
-  public render() {
+  render() {
 
     return (
       <div class="relative">
@@ -130,9 +141,9 @@ export class FlowchartComponent implements ContainerActivityComponent {
     );
   }
 
-  public disableEvents = () => this.silent = true;
+  disableEvents = () => this.silent = true;
 
-  public enableEvents = async (emitWorkflowChanged: boolean): Promise<void> => {
+  enableEvents = async (emitWorkflowChanged: boolean): Promise<void> => {
     this.silent = false;
 
     if (emitWorkflowChanged === true) {
