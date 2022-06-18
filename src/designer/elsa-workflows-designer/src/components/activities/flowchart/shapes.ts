@@ -58,7 +58,9 @@ export class ActivityNode extends Shape.HTML {
       return;
 
     const wrapper = document.createElement('div');
-    wrapper.className = 'w-full flex items-center pl-10 pr-2 py-2';
+    wrapper.className = 'w-full flex items-center pl-10 pr-2 py-2 absolute';
+    wrapper.style.left = '-1000px';
+    wrapper.style.top = '-1000px';
     wrapper.innerHTML = this.createHtml();
 
     document.body.append(wrapper);

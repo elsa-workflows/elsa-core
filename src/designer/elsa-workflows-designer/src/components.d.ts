@@ -655,6 +655,7 @@ declare namespace LocalJSX {
         "activityJson"?: string;
         "activityType"?: string;
         "displayType"?: string;
+        "onActivitySelected"?: (event: CustomEvent<ActivitySelectedArgs>) => void;
         "selected"?: boolean;
     }
     interface ElsaDropdownButton {

@@ -1,8 +1,8 @@
-import {Component, h, Prop, State} from "@stencil/core";
+import {Component, h, Prop, State, Event, EventEmitter, Listen, Element} from "@stencil/core";
 import {camelCase} from 'lodash';
 import {ActivityIcon, ActivityIconRegistry} from "../../../services";
 import {Container} from "typedi";
-import {Activity, ActivityDescriptor, ActivityKind, Port} from "../../../models";
+import {Activity, ActivityDescriptor, ActivityKind, ActivitySelectedArgs, Port} from "../../../models";
 import descriptorsStore from "../../../data/descriptors-store";
 import {isNullOrWhitespace} from "../../../utils";
 
@@ -15,6 +15,7 @@ export class DefaultActivityTemplate {
   private activityDescriptor: ActivityDescriptor;
   private parsedActivity: Activity;
   private icon: ActivityIcon;
+  private portElements: Array<HTMLElement> = [];
 
   constructor() {
     this.iconRegistry = Container.get(ActivityIconRegistry);
@@ -25,6 +26,7 @@ export class DefaultActivityTemplate {
   @Prop({attribute: 'activity'}) activityJson: string;
   @Prop() selected: boolean;
   @Prop() activity: Activity;
+  @Event() activitySelected: EventEmitter<ActivitySelectedArgs>;
   @State() private selectedPortName: string;
 
   componentWillLoad() {
@@ -46,6 +48,10 @@ export class DefaultActivityTemplate {
     this.activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.activityType == this.activityType);
     const activityType = this.activityType;
     this.icon = iconRegistry.has(activityType) ? iconRegistry.get(activityType) : null;
+  }
+
+  componentWillRender() {
+    this.portElements = [];
   }
 
   render() {
@@ -128,7 +134,7 @@ export class DefaultActivityTemplate {
     const isSelected = port.name == this.selectedPortName;
 
     return (
-      <div class="activity-port" data-port-name={port.name}>
+      <div class="activity-port" data-port-name={port.name} ref={el => this.portElements.push(el)}>
         <div>
           <span class={`${textColor} text-xs`}>{port.displayName}</span>
         </div>
@@ -136,7 +142,7 @@ export class DefaultActivityTemplate {
           {childActivity ? (
             <div class={`relative block w-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
                  onMouseDown={e => this.onPortMouseDown(e, port)}
-                 onMouseUp={this.onPortMouseUp}
+                 onMouseUp={e => this.onPortMouseUp(e, port)}
             >
               <elsa-default-activity-template activityType={childActivity.typeName} displayType="embedded" activity={childActivity} selected={isSelected}/>
               {/*<span class={textColor}>{childActivity.typeName}</span>*/}
@@ -162,17 +168,43 @@ export class DefaultActivityTemplate {
     return this.displayType == "embedded";
   }
 
+  @Listen('click', {target: 'window'})
+  private onWindowClicked(event: Event) {
+    const target = event.target as HTMLElement;
+
+    for (const portElement of this.portElements)
+      if (portElement.contains(target))
+        return;
+
+    this.selectedPortName = null;
+  }
+
   private onPortMouseDown = (e: MouseEvent, port: Port) => {
     e.stopPropagation();
-
-    if (this.selectedPortName != port.name)
-      this.selectedPortName = port.name;
-    else
-      this.selectedPortName = null;
   };
 
-  private onPortMouseUp = (e: MouseEvent) => {
+  private onPortMouseUp = (e: MouseEvent, port: Port) => {
     e.stopPropagation();
+
+    if (this.selectedPortName != port.name) {
+      this.selectedPortName = port.name;
+
+      const activity = this.parsedActivity;
+      const portName = camelCase(port.name);
+      const childActivity: Activity = activity ? activity[portName] : null;
+
+      const args: ActivitySelectedArgs = {
+        activity: childActivity,
+        applyChanges: a => {
+          activity[portName] = a;
+        },
+        deleteActivity: a => {
+          activity[portName] = null;
+        }
+      };
+
+      this.activitySelected.emit(args);
+    }
   };
 
   private onDragOverPort = (e: DragEvent) => {
