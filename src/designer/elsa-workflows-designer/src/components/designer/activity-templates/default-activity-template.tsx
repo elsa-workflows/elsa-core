@@ -131,7 +131,11 @@ export class DefaultActivityTemplate {
     const portName = camelCase(port.name);
     const activity = this.parsedActivity;
     const childActivity: Activity = activity ? activity[portName] : null;
-    const isSelected = port.name == this.selectedPortName;
+    const childActivityDescriptor: ActivityDescriptor = childActivity != null ? descriptorsStore.activityDescriptors.find(x => x.activityType == childActivity.typeName) : null;
+    let childActivityDisplayText = childActivity?.metadata?.displayText;
+
+    if (isNullOrWhitespace(childActivityDisplayText))
+      childActivityDisplayText = childActivityDescriptor?.displayName;
 
     return (
       <div class="activity-port" data-port-name={port.name} ref={el => this.portElements.push(el)}>
@@ -140,20 +144,29 @@ export class DefaultActivityTemplate {
         </div>
         <div>
           {childActivity ? (
-            <div class={`relative block w-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
-                 onMouseDown={e => this.onPortMouseDown(e, port)}
-                 onMouseUp={e => this.onPortMouseUp(e, port)}
-            >
-              <elsa-default-activity-template activityType={childActivity.typeName} displayType="embedded" activity={childActivity} selected={isSelected}/>
-              {/*<span class={textColor}>{childActivity.typeName}</span>*/}
+            <div class="relative block w-full border-2 border-gray-300 border-solid rounded-lg p-5 text-center focus:outline-none">
+              <div class="flex space-x-2">
+                <div class="flex-grow">
+                  <span class={textColor}>{childActivityDisplayText}</span>
+                </div>
+                <div class="flex-shrink">
+                  <a href="#" class="text-gray-500 hover:text-yellow-700">
+                    <svg class="h-6 w-6" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                      <path stroke="none" d="M0 0h24v24H0z"/>
+                      <path d="M4 20h4l10.5 -10.5a1.5 1.5 0 0 0 -4 -4l-10.5 10.5v4"/>
+                      <line x1="13.5" y1="6.5" x2="17.5" y2="10.5"/>
+                    </svg>
+                  </a>
+                </div>
+              </div>
             </div>
           ) : (
-            <div onDragOver={this.onDragOverPort}
-                 onDrop={this.onDropOnPort}
-                 class="relative block w-full border-2 border-gray-300 border-dashed rounded-lg p-6 text-center hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-              <svg class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-              </svg>
+            <div class="relative block w-full border-2 border-gray-300 border-dashed rounded-lg p-5 text-center focus:outline-none">
+              <a href="#" class="text-gray-400 hover:text-gray-600">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+              </a>
             </div>)}
         </div>
       </div>
@@ -177,44 +190,5 @@ export class DefaultActivityTemplate {
         return;
 
     this.selectedPortName = null;
-  }
-
-  private onPortMouseDown = (e: MouseEvent, port: Port) => {
-    e.stopPropagation();
-  };
-
-  private onPortMouseUp = (e: MouseEvent, port: Port) => {
-    e.stopPropagation();
-
-    if (this.selectedPortName != port.name) {
-      this.selectedPortName = port.name;
-
-      const activity = this.parsedActivity;
-      const portName = camelCase(port.name);
-      const childActivity: Activity = activity ? activity[portName] : null;
-
-      const args: ActivitySelectedArgs = {
-        activity: childActivity,
-        applyChanges: a => {
-          activity[portName] = a;
-        },
-        deleteActivity: a => {
-          activity[portName] = null;
-        }
-      };
-
-      this.activitySelected.emit(args);
-    }
-  };
-
-  private onDragOverPort = (e: DragEvent) => {
-    console.debug("Dragging over!");
-    e.stopPropagation();
-    e.preventDefault();
-  }
-
-  private onDropOnPort = (e: DragEvent) => {
-    //debugger;
-    console.debug("Dropped!");
   }
 }

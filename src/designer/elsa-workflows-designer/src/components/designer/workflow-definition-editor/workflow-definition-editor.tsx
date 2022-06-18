@@ -174,6 +174,7 @@ export class WorkflowDefinitionEditor {
       <WorkflowEditorTunnel.Provider state={tunnelState}>
         <div class="absolute inset-0" ref={el => this.container = el}>
           <elsa-workflow-definition-editor-toolbar zoomToFit={this.onZoomToFit} />
+          <elsa-workflow-navigator />
           <elsa-panel
             class="elsa-activity-picker-container"
             position={PanelPosition.Left}

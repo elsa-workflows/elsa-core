@@ -1,7 +1,6 @@
 import {CellView, Graph, Node, Shape} from '@antv/x6';
 import {v4 as uuid} from 'uuid';
 import './ports';
-import {assignParent} from "./flowchart/assign-parent";
 
 export function createGraph(
   container: HTMLElement,

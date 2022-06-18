@@ -20,7 +20,6 @@ import FromJSONData = Model.FromJSONData;
 import {ContextMenuAnchorPoint, MenuItem, MenuItemGroup} from "../../shared/context-menu/models";
 import PointLike = Point.PointLike;
 import descriptorsStore from "../../../data/descriptors-store";
-import {assignParent} from "./flowchart/assign-parent";
 
 @Component({
   tag: 'elsa-flowchart',
@@ -350,6 +349,9 @@ export class FlowchartComponent implements ContainerActivityComponent {
   }
 
   onNodeMoved = (e: PositionEventArgs<JQuery.ClickEvent>) => {
+
+    console.debug("Node moved...");
+
     const node = e.node as ActivityNodeShape;
     const activity = node.data as Activity;
     const nodePosition = node.position({relative: false});
@@ -364,8 +366,6 @@ export class FlowchartComponent implements ContainerActivityComponent {
         }
       }
     }
-
-    assignParent(this.graph, node);
   }
 
   onEdgeConnected = async (e: { isNew: boolean, edge: Edge }) => {
