@@ -1,5 +1,7 @@
+using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
+using Elsa.Activities.Http.Services;
 using Elsa.Samples.HttpEndpointSecurity.Options;
 using Elsa.Samples.HttpEndpointSecurity.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -61,8 +63,15 @@ namespace Elsa.Samples.HttpEndpointSecurity
             // Elsa.
             services
                 .AddElsa(elsa => elsa
-                    .AddHttpActivities(http => Configuration.GetSection("Elsa:Server").Bind(http))
-                    .AddWorkflowsFrom<Startup>()
+                    .AddHttpActivities(http =>
+
+                    {
+                        http.HttpEndpointAuthorizationHandlerFactory =
+                            ActivatorUtilities.GetServiceOrCreateInstance<AuthenticationBasedHttpEndpointAuthorizationHandler>;
+                        http.BaseUrl = new Uri(Configuration["Elsa:Server:BaseUrl"]);
+                        http.BasePath = Configuration["Elsa:Server:BasePath"];
+                    }
+                    ).AddWorkflowsFrom<Startup>()
                 );
 
             // Application Services.
