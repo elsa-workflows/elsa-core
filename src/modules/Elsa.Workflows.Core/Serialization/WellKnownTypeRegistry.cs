@@ -17,6 +17,9 @@ public class WellKnownTypeRegistry : IWellKnownTypeRegistry
         this.RegisterType<decimal>("Decimal");
         this.RegisterType<float>("Single");
         this.RegisterType<double>("Double");
+        this.RegisterType<DateTime>("DateTime");
+        this.RegisterType<DateTimeOffset>("DateTimeOffset");
+        this.RegisterType<TimeSpan>("TimeSpan");
     }
         
     public void RegisterType(Type type, string alias)
