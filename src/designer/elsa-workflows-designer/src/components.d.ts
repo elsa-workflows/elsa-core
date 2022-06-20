@@ -5,7 +5,7 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
-import { ActionDefinition, ActionInvokedArgs, Activity, ActivitySelectedArgs, ContainerSelectedArgs, CreateChildActivityArgs, GraphUpdatedArgs, IntellisenseContext, SelectListItem, TabChangedArgs, TabDefinition, Variable, WorkflowDefinition, WorkflowDefinitionSummary, WorkflowInstance, WorkflowInstanceSummary } from "./models";
+import { ActionDefinition, ActionInvokedArgs, Activity, ActivitySelectedArgs, ContainerSelectedArgs, CreateChildActivityArgs, EditChildActivityArgs, GraphUpdatedArgs, IntellisenseContext, SelectListItem, TabChangedArgs, TabDefinition, Variable, WorkflowDefinition, WorkflowDefinitionSummary, WorkflowInstance, WorkflowInstanceSummary } from "./models";
 import { ActivityUpdatedArgs, DeleteActivityRequestedArgs } from "./components/designer/workflow-definition-editor/activity-properties-editor";
 import { Button } from "./components/shared/button-group/models";
 import { ContainerActivityComponent } from "./components/activities/container-activity-component";
@@ -68,7 +68,6 @@ export namespace Components {
         "value": string;
     }
     interface ElsaDefaultActivityTemplate {
-        "activity": Activity;
         "activityJson": string;
         "activityType": string;
         "displayType": string;
@@ -86,9 +85,9 @@ export namespace Components {
     interface ElsaFlowchart {
         "addActivity": (args: AddActivityArgs) => Promise<void>;
         "clear": () => Promise<void>;
-        "exportRoot": () => Promise<Activity>;
+        "export": () => Promise<Activity>;
         "getGraph": () => Promise<Graph>;
-        "importRoot": (root: Activity) => Promise<void>;
+        "import": (root: Activity) => Promise<void>;
         "interactiveMode": boolean;
         "root"?: Activity;
         "updateLayout": () => Promise<void>;
@@ -665,11 +664,11 @@ declare namespace LocalJSX {
         "value"?: string;
     }
     interface ElsaDefaultActivityTemplate {
-        "activity"?: Activity;
         "activityJson"?: string;
         "activityType"?: string;
         "displayType"?: string;
         "onCreateChildActivity"?: (event: CustomEvent<CreateChildActivityArgs>) => void;
+        "onEditChildActivity"?: (event: CustomEvent<EditChildActivityArgs>) => void;
         "selected"?: boolean;
     }
     interface ElsaDropdownButton {
@@ -856,6 +855,7 @@ declare namespace LocalJSX {
     }
     interface ElsaWorkflowNavigator {
         "items"?: Array<WorkflowNavigationItem>;
+        "onNavigate"?: (event: CustomEvent<WorkflowNavigationItem>) => void;
     }
     interface ElsaWorkflowPublishButton {
         "onExportClicked"?: (event: CustomEvent<any>) => void;

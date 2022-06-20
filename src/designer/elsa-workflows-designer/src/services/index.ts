@@ -9,3 +9,7 @@ export * from './input-driver-registry';
 export * from './server-settings';
 export * from './activity-name-formatter';
 export * from './plugin-registry';
+export * from './activity-walker';
+export * from './default-port-provider';
+export * from './port-provider';
+export * from './port-provider-registry';

@@ -1,8 +1,8 @@
 import {Service} from 'typedi';
 import {camelCase, startCase, snakeCase, kebabCase} from 'lodash';
 import {ActivityDescriptor} from "../models";
-import {ActivityNode} from "../components/activities/flowchart/activity-walker";
 import {stripActivityNameSpace} from "../utils";
+import {ActivityNode} from "./activity-walker";
 
 export type ActivityNameStrategy = (context: ActivityNameFormatterContext) => string;
 

@@ -2,7 +2,7 @@ import {Component, h, Prop, State, Event, EventEmitter, Listen, Element} from "@
 import {camelCase} from 'lodash';
 import {ActivityIcon, ActivityIconRegistry} from "../../../services";
 import {Container} from "typedi";
-import {Activity, ActivityDescriptor, ActivityKind, CreateChildActivityArgs, Port} from "../../../models";
+import {Activity, ActivityDescriptor, ActivityKind, CreateChildActivityArgs, EditChildActivityArgs, Port} from "../../../models";
 import descriptorsStore from "../../../data/descriptors-store";
 import {isNullOrWhitespace} from "../../../utils";
 
@@ -25,24 +25,18 @@ export class DefaultActivityTemplate {
   @Prop({attribute: 'display-type'}) displayType: string;
   @Prop({attribute: 'activity'}) activityJson: string;
   @Prop() selected: boolean;
-  @Prop() activity: Activity;
   @Event() createChildActivity: EventEmitter<CreateChildActivityArgs>;
+  @Event() editChildActivity: EventEmitter<EditChildActivityArgs>;
   @State() private selectedPortName: string;
 
   componentWillLoad() {
     const iconRegistry = this.iconRegistry;
 
-    if (!!this.activity) {
-      {
-        this.parsedActivity = this.activity;
-      }
-    } else {
-      const encodedActivityJson = this.activityJson;
+    const encodedActivityJson = this.activityJson;
 
-      if (!isNullOrWhitespace(encodedActivityJson)) {
-        const decodedActivityJson = decodeURI(encodedActivityJson);
-        this.parsedActivity = JSON.parse(decodedActivityJson);
-      }
+    if (!isNullOrWhitespace(encodedActivityJson)) {
+      const decodedActivityJson = decodeURI(encodedActivityJson);
+      this.parsedActivity = JSON.parse(decodedActivityJson);
     }
 
     this.activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.activityType == this.activityType);
@@ -150,7 +144,11 @@ export class DefaultActivityTemplate {
                   <span class={textColor}>{childActivityDisplayText}</span>
                 </div>
                 <div class="flex-shrink">
-                  <a href="#" class="text-gray-500 hover:text-yellow-700">
+                  <a
+                    onClick={e => this.onEditChildActivityClick(e, activity, port)}
+                    onMouseDown={e => e.stopPropagation()}
+                    href="#"
+                    class="text-gray-500 hover:text-yellow-700">
                     <svg class="h-6 w-6" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                       <path stroke="none" d="M0 0h24v24H0z"/>
                       <path d="M4 20h4l10.5 -10.5a1.5 1.5 0 0 0 -4 -4l-10.5 10.5v4"/>
@@ -163,7 +161,7 @@ export class DefaultActivityTemplate {
           ) : (
             <div class="relative block w-full border-2 border-gray-300 border-dashed rounded-lg p-5 text-center focus:outline-none">
               <a href="#"
-                 onClick={e => this.onAddChildActivityClick(e, activity, port)}
+                 onClick={e => this.onEditChildActivityClick(e, activity, port)}
                  onMouseDown={e => e.stopPropagation()}
                  class="text-gray-400 hover:text-gray-600">
                 <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -197,6 +195,11 @@ export class DefaultActivityTemplate {
 
   private onAddChildActivityClick = (e: MouseEvent, parentActivity: Activity, port: Port) => {
     e.preventDefault();
-    this.createChildActivity.emit({parent: parentActivity, port: port});
+    this.createChildActivity.emit({parentActivityId: parentActivity.id, port: port});
+  };
+
+  private onEditChildActivityClick = (e: MouseEvent, parentActivity: Activity, port: Port) => {
+    e.preventDefault();
+    this.editChildActivity.emit({parentActivityId: parentActivity.id, port: port});
   };
 }

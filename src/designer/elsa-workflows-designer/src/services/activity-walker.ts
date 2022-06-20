@@ -1,8 +1,9 @@
 import 'reflect-metadata';
 import {camelCase} from 'lodash';
 import {Container} from "typedi"
-import {Activity, ActivityDescriptor} from "../../../models";
+import {Activity, ActivityDescriptor} from "../models";
 import {PortProviderRegistry} from "./port-provider-registry";
+import descriptorsStore from '../data/descriptors-store';
 
 export interface ActivityNode {
   activity: Activity;
@@ -16,7 +17,8 @@ export interface ActivityPort {
   port: string;
 }
 
-export function walkActivities(root: Activity, descriptors: Array<ActivityDescriptor>): ActivityNode {
+export function walkActivities(root: Activity): ActivityNode {
+  const descriptors = descriptorsStore.activityDescriptors;
   const collectedActivities = new Set<Activity>([root]);
   const graph: ActivityNode = {activity: root, parents: [], children: []};
   const collectedNodes = new Set<ActivityNode>([graph]);
@@ -37,6 +39,12 @@ export function flattenList(activities: Array<ActivityNode>): Array<ActivityNode
   }
 
   return list;
+}
+
+export function findActivity(root: Activity, predicate: (activity: Activity) => boolean): Activity {
+  const graph = walkActivities(root);
+  const nodes = flatten(graph);
+  return nodes.find(node => predicate(node.activity))?.activity;
 }
 
 function walkRecursive(node: ActivityNode, activity: Activity, collectedActivities: Set<Activity>, collectedNodes: Set<ActivityNode>, descriptors: Array<ActivityDescriptor>) {

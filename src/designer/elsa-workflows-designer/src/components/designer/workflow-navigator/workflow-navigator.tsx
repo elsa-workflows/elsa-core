@@ -1,7 +1,4 @@
-import {Component, FunctionalComponent, h, Prop} from "@stencil/core";
-import {FlowchartIcon, IfIcon} from "../../icons/activities";
-import {Activity} from "../../../models";
-import descriptorsStore from "../../../data/descriptors-store";
+import {Component, FunctionalComponent, h, Prop, Event, EventEmitter} from "@stencil/core";
 import {Container} from "typedi";
 import {ActivityIconRegistry} from "../../../services";
 import {WorkflowNavigationItem} from "./models";
@@ -13,6 +10,7 @@ import {WorkflowNavigationItem} from "./models";
 export class WorkflowNavigator {
 
   @Prop() items: Array<WorkflowNavigationItem> = [];
+  @Event() navigate: EventEmitter<WorkflowNavigationItem>;
 
   render() {
 
@@ -24,29 +22,38 @@ export class WorkflowNavigator {
     return <div class="ml-8">
       <nav class="flex" aria-label="Breadcrumb">
         <ol role="list" class="flex items-center space-x-3">
-          {items.map(activity => <ActivityPathItem item={activity}/>)}
+          {items.map((activity, index) => <ActivityPathItem item={activity} onClick={this.onItemClick}/>)}
         </ol>
       </nav>
     </div>
   }
+
+  private onItemClick = (item: WorkflowNavigationItem) => this.navigate.emit(item);
 }
 
 interface ActivityPathItemProps {
   item: WorkflowNavigationItem;
+  onClick: (item: WorkflowNavigationItem) => void;
 }
 
-const ActivityPathItem: FunctionalComponent<ActivityPathItemProps> = ({item}) => {
+const ActivityPathItem: FunctionalComponent<ActivityPathItemProps> = ({item, onClick}) => {
   const iconRegistry = Container.get(ActivityIconRegistry);
   const activity = item.activity;
   const icon = iconRegistry.get(activity.typeName)();
   const activityId = activity.id;
-
   const listElements = [];
+
+  const onItemClick = (e: MouseEvent, item: WorkflowNavigationItem) => {
+    e.preventDefault();
+    onClick(item);
+  }
 
   listElements.push(
     <li>
       <div class="flex items-center">
-        <a href="#" class="block flex items-center text-gray-400 hover:text-gray-500">
+        <a onClick={e => onItemClick(e, item)}
+           href="#"
+           class="block flex items-center text-gray-400 hover:text-gray-500">
           <div class="bg-blue-500 rounded">
             {icon}
           </div>

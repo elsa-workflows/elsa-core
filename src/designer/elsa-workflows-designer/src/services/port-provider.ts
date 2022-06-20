@@ -1,4 +1,4 @@
-import {Activity, ActivityDescriptor, Port} from "../../../models";
+import {Activity, ActivityDescriptor, Port} from "../models";
 
 export interface PortProvider {
   getInboundPorts(context: PortProviderContext): Array<Port>;

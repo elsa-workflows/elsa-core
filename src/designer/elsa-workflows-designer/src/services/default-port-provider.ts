@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import {Service} from "typedi"
-import {Port} from "../../../models";
 import {PortProvider, PortProviderContext} from "./port-provider";
+import {Port} from "../models";
 
 @Service()
 export class DefaultPortProvider implements PortProvider {

@@ -108,13 +108,13 @@ export class FlowchartComponent implements ContainerActivityComponent {
   }
 
   @Method()
-  async exportRoot(): Promise<Activity> {
-    return this.exportRootInternal();
+  async export(): Promise<Activity> {
+    return this.exportInternal();
   }
 
   @Method()
-  async importRoot(root: Activity): Promise<void> {
-    return this.importRootInternal(root);
+  async import(root: Activity): Promise<void> {
+    return this.importInternal(root);
   }
 
   async componentDidLoad() {
@@ -184,7 +184,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
     await this.updateLayout();
   }
 
-  private exportRootInternal = (): Activity => {
+  private exportInternal = (): Activity => {
     const graph = this.graph;
     const graphModel = graph.toJSON();
     const activities = graphModel.cells.filter(x => x.shape == 'activity').map(x => x.data as Activity);
@@ -209,7 +209,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
     } as Flowchart;
   }
 
-  private importRootInternal = async (root: Activity) => {
+  private importInternal = async (root: Activity) => {
     this.rootId = root.id;
     const descriptors = descriptorsStore.activityDescriptors;
     const flowchart = root as Flowchart;
@@ -280,7 +280,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
 
   @Watch('root')
   async onRootChange(value: Activity) {
-    await this.importRootInternal(value);
+    await this.importInternal(value);
   }
 
   @Watch('interactiveMode')
@@ -413,7 +413,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
   onGraphChanged = async () => {
     if (this.silent)
       return;
-    this.graphUpdated.emit({exportGraph: this.exportRootInternal});
+    this.graphUpdated.emit({exportGraph: this.exportInternal});
   }
 
   onToggleCanStartWorkflowClicked = (node: ActivityNodeShape) => {

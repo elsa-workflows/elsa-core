@@ -1,6 +1,6 @@
 import {Activity, Port} from "../../../models";
 
 export interface WorkflowNavigationItem {
-  activity?: Activity;
+  activity: Activity;
   port?: Port;
 }

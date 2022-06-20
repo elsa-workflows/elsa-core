@@ -14,6 +14,11 @@ export interface GraphUpdatedArgs {
 }
 
 export interface CreateChildActivityArgs {
-  parent: Activity;
+  parentActivityId: string;
+  port: Port;
+}
+
+export interface EditChildActivityArgs {
+  parentActivityId: string;
   port: Port;
 }

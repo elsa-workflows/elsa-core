@@ -1,9 +1,8 @@
 import 'reflect-metadata';
 import {FunctionalComponent, h} from '@stencil/core';
 import {Container, Service} from "typedi";
-import {ActivityIconRegistry, InputControlRegistry} from "../../services";
+import {ActivityIconRegistry, InputControlRegistry, PortProviderRegistry} from "../../services";
 import {Plugin} from "../../models";
-import {PortProviderRegistry} from "../../components/activities/flowchart/port-provider-registry";
 import {SwitchPortProvider} from "./switch-port-provider";
 
 @Service()
