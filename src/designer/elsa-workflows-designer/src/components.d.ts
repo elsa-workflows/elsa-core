@@ -5,7 +5,7 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
-import { ActionDefinition, ActionInvokedArgs, Activity, ActivitySelectedArgs, ContainerSelectedArgs, CreateChildActivityArgs, EditChildActivityArgs, GraphUpdatedArgs, IntellisenseContext, SelectListItem, TabChangedArgs, TabDefinition, Variable, WorkflowDefinition, WorkflowDefinitionSummary, WorkflowInstance, WorkflowInstanceSummary } from "./models";
+import { ActionDefinition, ActionInvokedArgs, Activity, ActivitySelectedArgs, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs, IntellisenseContext, SelectListItem, TabChangedArgs, TabDefinition, Variable, WorkflowDefinition, WorkflowDefinitionSummary, WorkflowInstance, WorkflowInstanceSummary } from "./models";
 import { ActivityUpdatedArgs, DeleteActivityRequestedArgs } from "./components/designer/workflow-definition-editor/activity-properties-editor";
 import { Button } from "./components/shared/button-group/models";
 import { ContainerActivityComponent } from "./components/activities/container-activity-component";
@@ -42,11 +42,11 @@ export namespace Components {
     }
     interface ElsaCanvas {
         "addActivity": (args: AddActivityArgs) => Promise<void>;
-        "clear": () => Promise<void>;
         "exportGraph": () => Promise<Activity>;
         "getRootComponent": () => Promise<ContainerActivityComponent>;
         "importGraph": (root: Activity) => Promise<void>;
         "interactiveMode": boolean;
+        "reset": () => Promise<void>;
         "updateLayout": () => Promise<void>;
         "zoomToFit": () => Promise<void>;
     }
@@ -84,12 +84,11 @@ export namespace Components {
     }
     interface ElsaFlowchart {
         "addActivity": (args: AddActivityArgs) => Promise<void>;
-        "clear": () => Promise<void>;
         "export": () => Promise<Activity>;
         "getGraph": () => Promise<Graph>;
         "import": (root: Activity) => Promise<void>;
         "interactiveMode": boolean;
-        "root"?: Activity;
+        "reset": () => Promise<void>;
         "updateLayout": () => Promise<void>;
         "zoomToFit": () => Promise<void>;
     }
@@ -269,6 +268,7 @@ export namespace Components {
     }
     interface ElsaWorkflowNavigator {
         "items": Array<WorkflowNavigationItem>;
+        "workflowDefinition": WorkflowDefinition;
     }
     interface ElsaWorkflowPublishButton {
         "publishing": boolean;
@@ -667,7 +667,6 @@ declare namespace LocalJSX {
         "activityJson"?: string;
         "activityType"?: string;
         "displayType"?: string;
-        "onCreateChildActivity"?: (event: CustomEvent<CreateChildActivityArgs>) => void;
         "onEditChildActivity"?: (event: CustomEvent<EditChildActivityArgs>) => void;
         "selected"?: boolean;
     }
@@ -686,7 +685,6 @@ declare namespace LocalJSX {
         "onActivitySelected"?: (event: CustomEvent<ActivitySelectedArgs>) => void;
         "onContainerSelected"?: (event: CustomEvent<ContainerSelectedArgs>) => void;
         "onGraphUpdated"?: (event: CustomEvent<GraphUpdatedArgs>) => void;
-        "root"?: Activity;
     }
     interface ElsaFormPanel {
         "actions"?: Array<ActionDefinition>;
@@ -856,6 +854,7 @@ declare namespace LocalJSX {
     interface ElsaWorkflowNavigator {
         "items"?: Array<WorkflowNavigationItem>;
         "onNavigate"?: (event: CustomEvent<WorkflowNavigationItem>) => void;
+        "workflowDefinition"?: WorkflowDefinition;
     }
     interface ElsaWorkflowPublishButton {
         "onExportClicked"?: (event: CustomEvent<any>) => void;

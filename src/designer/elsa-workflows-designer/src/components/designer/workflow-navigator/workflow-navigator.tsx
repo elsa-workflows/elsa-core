@@ -1,7 +1,9 @@
 import {Component, FunctionalComponent, h, Prop, Event, EventEmitter} from "@stencil/core";
 import {Container} from "typedi";
-import {ActivityIconRegistry} from "../../../services";
+import {ActivityIconRegistry, ActivityNode, flatten, walkActivities} from "../../../services";
 import {WorkflowNavigationItem} from "./models";
+import {WorkflowDefinition} from "../../../models";
+import descriptorsStore from "../../../data/descriptors-store";
 
 @Component({
   tag: 'elsa-workflow-navigator',
@@ -10,6 +12,7 @@ import {WorkflowNavigationItem} from "./models";
 export class WorkflowNavigator {
 
   @Prop() items: Array<WorkflowNavigationItem> = [];
+  @Prop() workflowDefinition: WorkflowDefinition;
   @Event() navigate: EventEmitter<WorkflowNavigationItem>;
 
   render() {
@@ -19,10 +22,15 @@ export class WorkflowNavigator {
     if (items.length <= 1)
       return null;
 
+    if (!this.workflowDefinition)
+      return;
+
+    const graph = flatten(walkActivities(this.workflowDefinition.root));
+
     return <div class="ml-8">
       <nav class="flex" aria-label="Breadcrumb">
         <ol role="list" class="flex items-center space-x-3">
-          {items.map((activity, index) => <ActivityPathItem item={activity} onClick={this.onItemClick}/>)}
+          {items.map((activity, index) => <ActivityPathItem item={activity} onClick={this.onItemClick} graph={graph}/>)}
         </ol>
       </nav>
     </div>
@@ -34,13 +42,15 @@ export class WorkflowNavigator {
 interface ActivityPathItemProps {
   item: WorkflowNavigationItem;
   onClick: (item: WorkflowNavigationItem) => void;
+  graph: Array<ActivityNode>;
 }
 
-const ActivityPathItem: FunctionalComponent<ActivityPathItemProps> = ({item, onClick}) => {
+const ActivityPathItem: FunctionalComponent<ActivityPathItemProps> = ({item, onClick, graph,}) => {
   const iconRegistry = Container.get(ActivityIconRegistry);
-  const activity = item.activity;
+  const activityId = item.activityId;
+  const activity = graph.find(x => x.activity.id == activityId).activity;
+  const activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.activityType == activity.typeName);
   const icon = iconRegistry.get(activity.typeName)();
-  const activityId = activity.id;
   const listElements = [];
 
   const onItemClick = (e: MouseEvent, item: WorkflowNavigationItem) => {
@@ -66,11 +76,13 @@ const ActivityPathItem: FunctionalComponent<ActivityPathItemProps> = ({item, onC
     </li>
   );
 
-  if (!!item.port) {
+  if (!!item.portName) {
+    const port = activityDescriptor.ports.find(x => x.name == item.portName);
+
     listElements.push(
       <li>
         <div class="flex items-center">
-          <span class="text-sm font-medium text-gray-500" aria-current="page">{item.port.displayName}</span>
+          <span class="text-sm font-medium text-gray-500" aria-current="page">{port.displayName}</span>
         </div>
       </li>
     );

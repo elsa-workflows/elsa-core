@@ -13,11 +13,6 @@ export interface GraphUpdatedArgs {
   exportGraph: () => Activity;
 }
 
-export interface CreateChildActivityArgs {
-  parentActivityId: string;
-  port: Port;
-}
-
 export interface EditChildActivityArgs {
   parentActivityId: string;
   port: Port;

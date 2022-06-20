@@ -50,8 +50,8 @@ export class Canvas {
   }
 
   @Method()
-  async clear(): Promise<void> {
-    await this.root.clear();
+  async reset(): Promise<void> {
+    await this.root.reset();
   }
 
   render() {

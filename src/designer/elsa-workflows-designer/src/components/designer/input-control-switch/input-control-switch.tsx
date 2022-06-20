@@ -1,6 +1,7 @@
 import {Component, Event, EventEmitter, Listen, h, Prop, State} from '@stencil/core';
-import {IntellisenseContext, SyntaxNames} from "../../../models";
+import {debounce} from 'lodash';
 import {enter, leave, toggle} from 'el-transition'
+import {IntellisenseContext, SyntaxNames} from "../../../models";
 import {SyntaxSelectorIcon} from "../../icons/tooling/syntax-selector";
 import {MonacoValueChangedArgs} from "../../shared/monaco-editor/monaco-editor";
 import {Hint} from "../../shared/forms/hint";
@@ -20,6 +21,11 @@ export class InputControlSwitch {
   private monacoEditor: HTMLElsaMonacoEditorElement;
   private defaultSyntaxValue: string;
   private contextMenuWidget: HTMLElement;
+  private readonly onExpressionChangedDebounced: (e: MonacoValueChangedArgs) => void;
+
+  constructor() {
+    this.onExpressionChangedDebounced = debounce(this.onExpressionChanged, 1000);
+  }
 
   @Prop() label: string;
   @Prop() hint: string;
@@ -46,11 +52,11 @@ export class InputControlSwitch {
       this.closeContextMenu();
   }
 
-  public componentWillLoad() {
+   componentWillLoad() {
     this.currentExpression = this.expression;
   }
 
-  public render() {
+   render() {
     return <div class="p-4">
       <div class="mb-1">
         <div class="flex">
@@ -134,7 +140,7 @@ export class InputControlSwitch {
             language={monacoLanguage}
             editor-height={this.codeEditorHeight}
             single-line={this.codeEditorSingleLineMode}
-            onValueChanged={e => this.onExpressionChanged(e.detail)}
+            onValueChanged={e => this.onExpressionChangedDebounced(e.detail)}
             ref={el => this.monacoEditor = el}/>
         </div>
         <div class={defaultEditorClass}>

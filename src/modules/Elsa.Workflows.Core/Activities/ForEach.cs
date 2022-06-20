@@ -63,6 +63,8 @@ public class ForEach : Activity
 
         if (Body != null)
             context.ScheduleActivity(Body, OnChildCompleted);
+        else
+            await context.CompleteActivityAsync();
 
         // Increment index.
         context.UpdateProperty<int>(CurrentIndexProperty, x => x + 1);

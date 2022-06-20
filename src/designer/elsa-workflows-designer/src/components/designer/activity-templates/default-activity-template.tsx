@@ -2,7 +2,7 @@ import {Component, h, Prop, State, Event, EventEmitter, Listen, Element} from "@
 import {camelCase} from 'lodash';
 import {ActivityIcon, ActivityIconRegistry} from "../../../services";
 import {Container} from "typedi";
-import {Activity, ActivityDescriptor, ActivityKind, CreateChildActivityArgs, EditChildActivityArgs, Port} from "../../../models";
+import {Activity, ActivityDescriptor, ActivityKind, EditChildActivityArgs, Port} from "../../../models";
 import descriptorsStore from "../../../data/descriptors-store";
 import {isNullOrWhitespace} from "../../../utils";
 
@@ -25,7 +25,6 @@ export class DefaultActivityTemplate {
   @Prop({attribute: 'display-type'}) displayType: string;
   @Prop({attribute: 'activity'}) activityJson: string;
   @Prop() selected: boolean;
-  @Event() createChildActivity: EventEmitter<CreateChildActivityArgs>;
   @Event() editChildActivity: EventEmitter<EditChildActivityArgs>;
   @State() private selectedPortName: string;
 
@@ -192,11 +191,6 @@ export class DefaultActivityTemplate {
 
     this.selectedPortName = null;
   }
-
-  private onAddChildActivityClick = (e: MouseEvent, parentActivity: Activity, port: Port) => {
-    e.preventDefault();
-    this.createChildActivity.emit({parentActivityId: parentActivity.id, port: port});
-  };
 
   private onEditChildActivityClick = (e: MouseEvent, parentActivity: Activity, port: Port) => {
     e.preventDefault();

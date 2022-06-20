@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import {Component, Element, Event, EventEmitter, h, Method, Prop, Watch} from '@stencil/core';
-import {Edge, Graph, Model, Node, NodeView, Point, Rectangle} from '@antv/x6';
+import {Edge, Graph, Model, Node, NodeView, Point} from '@antv/x6';
 import {v4 as uuid} from 'uuid';
 import {first} from 'lodash';
 import './shapes';
@@ -17,7 +17,7 @@ import {EventBus} from "../../../services";
 import {ConnectionCreatedEventArgs, FlowchartEvents} from "./events";
 import PositionEventArgs = NodeView.PositionEventArgs;
 import FromJSONData = Model.FromJSONData;
-import {ContextMenuAnchorPoint, MenuItem, MenuItemGroup} from "../../shared/context-menu/models";
+import {ContextMenuAnchorPoint, MenuItemGroup} from "../../shared/context-menu/models";
 import PointLike = Point.PointLike;
 import descriptorsStore from "../../../data/descriptors-store";
 
@@ -28,16 +28,15 @@ import descriptorsStore from "../../../data/descriptors-store";
 export class FlowchartComponent implements ContainerActivityComponent {
   private readonly eventBus: EventBus;
   private readonly nodeFactory: NodeFactory;
-  private rootId: string = uuid();
   private silent: boolean = false; // Whether to emit events or not.
   private activityContextMenu: HTMLElsaContextMenuElement;
+  private activity: Flowchart;
 
   constructor() {
     this.eventBus = Container.get(EventBus);
     this.nodeFactory = Container.get(NodeFactory);
   }
 
-  @Prop({mutable: true}) root?: Activity;
   @Prop() interactiveMode: boolean = true;
 
   @Element() el: HTMLElement;
@@ -55,7 +54,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
   }
 
   @Method()
-  async clear(): Promise<void>{
+  async reset(): Promise<void> {
 
     const model: FromJSONData = {nodes: [], edges: []};
 
@@ -63,6 +62,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
     this.graph.freeze();
     this.graph.fromJSON(model, {silent: false});
     this.graph.unfreeze();
+    this.activity = null;
   }
 
   @Method()
@@ -119,10 +119,6 @@ export class FlowchartComponent implements ContainerActivityComponent {
 
   async componentDidLoad() {
     await this.createAndInitializeGraph();
-
-    this.container.addEventListener('click', e => {
-      const target = e.target;
-    });
   }
 
   render() {
@@ -195,28 +191,31 @@ export class FlowchartComponent implements ContainerActivityComponent {
       return !hasInboundConnections;
     });
 
-    const rootActivity = rootActivities.find(x => x.canStartWorkflow) || first(rootActivities);
+    const startActivity = rootActivities.find(x => x.canStartWorkflow) || first(rootActivities);
 
-    return {
+    const flowchart: Flowchart = this.activity ?? {
       typeName: 'Elsa.Flowchart',
-      activities: activities,
-      connections: connections,
-      id: this.rootId,
-      start: rootActivity?.id,
-      metadata: {},
-      applicationProperties: {},
-      variables: []
+      id: null,
     } as Flowchart;
+
+    flowchart.activities = activities;
+    flowchart.connections = connections;
+    flowchart.start = startActivity?.id;
+    flowchart.metadata = {};
+    flowchart.applicationProperties = {};
+    flowchart.variables = [];
+
+    return flowchart;
   }
 
   private importInternal = async (root: Activity) => {
-    this.rootId = root.id;
     const descriptors = descriptorsStore.activityDescriptors;
     const flowchart = root as Flowchart;
     const activities = flowchart.activities;
     const connections = flowchart.connections;
-
     let edges: Array<Edge.Metadata> = [];
+
+    this.activity = flowchart;
 
     // Create an X6 node for each activity.
     const nodes: Array<Node.Metadata> = activities.map(activity => {
@@ -226,14 +225,8 @@ export class FlowchartComponent implements ContainerActivityComponent {
       return this.nodeFactory.createNode(descriptor, activity, x, y);
     });
 
-    // Create X6 edges for each child activity.
-    for (const connection of connections) {
-      const edge = this.createEdge(connection);
-      edges = [...edges, edge];
-    }
-
     // Create X6 edges for each connection in the flowchart.
-    for (const connection of flowchart.connections) {
+    for (const connection of connections) {
       const edge: Edge.Metadata = this.createEdge(connection);
       edges.push(edge);
     }
@@ -277,11 +270,6 @@ export class FlowchartComponent implements ContainerActivityComponent {
       edge.data = connection;
     }
   };
-
-  @Watch('root')
-  async onRootChange(value: Activity) {
-    await this.importInternal(value);
-  }
 
   @Watch('interactiveMode')
   async onInteractiveModeChange(value: boolean) {

@@ -22,7 +22,7 @@ export class ActivityNameFormatter {
   public static readonly SnakeCaseStrategy: ActivityNameStrategy = context => snakeCase(ActivityNameFormatter.DefaultStrategy(context));
   public static readonly KebabCaseStrategy: ActivityNameStrategy = context => kebabCase(ActivityNameFormatter.DefaultStrategy(context));
 
-  public strategy: ActivityNameStrategy = ActivityNameFormatter.PascalCaseStrategy;
+  public strategy: ActivityNameStrategy = ActivityNameFormatter.CamelCaseStrategy;
 
   public format(context: ActivityNameFormatterContext): string {
     return this.strategy(context);

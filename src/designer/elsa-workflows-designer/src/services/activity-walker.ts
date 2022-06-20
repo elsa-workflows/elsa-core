@@ -43,7 +43,7 @@ export function flattenList(activities: Array<ActivityNode>): Array<ActivityNode
 
 export function findActivity(root: Activity, predicate: (activity: Activity) => boolean): Activity {
   const graph = walkActivities(root);
-  const nodes = flatten(graph);
+  const nodes = this.nodes;
   return nodes.find(node => predicate(node.activity))?.activity;
 }
 

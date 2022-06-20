@@ -1,6 +1,5 @@
 import {Component, Event, EventEmitter, h, Method, Prop, State} from '@stencil/core';
 import {camelCase} from 'lodash';
-import WorkflowEditorTunnel from '../state';
 import {
   Activity,
   ActivityDescriptor, ActivityOutput,

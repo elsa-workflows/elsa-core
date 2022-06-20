@@ -10,7 +10,7 @@ import {
   WorkflowDefinition,
   WorkflowInstance
 } from '../../../models';
-import WorkflowEditorTunnel, {WorkflowDesignerState} from '../state';
+//import WorkflowEditorTunnel, {WorkflowDesignerState} from '../state';
 import {PluginRegistry, ActivityNameFormatter, ActivityDriverRegistry, EventBus} from '../../../services';
 import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
 import {WorkflowEditorEventTypes} from "../workflow-definition-editor/models";
@@ -126,12 +126,12 @@ export class WorkflowInstanceViewer {
     const workflowDefinition = this.workflowDefinitionState;
     const workflowInstance = this.workflowInstanceState;
 
-    const tunnelState: WorkflowDesignerState = {
-      workflowDefinition: workflowDefinition,
-    };
+    // const tunnelState: WorkflowDesignerState = {
+    //   workflowDefinition: workflowDefinition,
+    // };
 
     return (
-      <WorkflowEditorTunnel.Provider state={tunnelState}>
+      // <WorkflowEditorTunnel.Provider state={tunnelState}>
         <div class="absolute inset-0" ref={el => this.container = el}>
           <elsa-panel
             class="elsa-activity-picker-container"
@@ -151,7 +151,7 @@ export class WorkflowInstanceViewer {
             </div>
           </elsa-panel>
         </div>
-      </WorkflowEditorTunnel.Provider>
+      // </WorkflowEditorTunnel.Provider>
     );
   }
 
