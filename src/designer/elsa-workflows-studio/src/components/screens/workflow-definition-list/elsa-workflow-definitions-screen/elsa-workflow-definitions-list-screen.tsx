@@ -28,6 +28,8 @@ export class ElsaWorkflowDefinitionsListScreen {
   @State() publishedWorkflowDefinitions: WorkflowDefinitionSummary[] = [];
   @State() currentPage: number = 0;
   @State() currentPageSize: number = ElsaWorkflowDefinitionsListScreen.DEFAULT_PAGE_SIZE;
+  @State() currentSearchTerm?: string;
+
   private i18next: i18n;
   private confirmDialog: HTMLElsaConfirmDialogElement;
   private clearRouteChangedListeners: () => void;
@@ -48,6 +50,18 @@ export class ElsaWorkflowDefinitionsListScreen {
     if (!!this.history)
       this.applyQueryString(this.history.location.search);
 
+    await this.loadWorkflowDefinitions();
+  }
+
+  t = (key: string, options?: any) => this.i18next.t(key, options);
+
+  async onSearch(e: Event) {
+    e.preventDefault();
+    const form = e.currentTarget as HTMLFormElement;
+    const formData = new FormData(form);
+    const searchTerm: FormDataEntryValue = formData.get('searchTerm');
+
+    this.currentSearchTerm = searchTerm.toString();
     await this.loadWorkflowDefinitions();
   }
 
@@ -105,7 +119,7 @@ export class ElsaWorkflowDefinitionsListScreen {
     const pageSize = this.currentPageSize;
     const latestVersionOptions: VersionOptions = {isLatest: true};
     const publishedVersionOptions: VersionOptions = {isPublished: true};
-    const latestWorkflowDefinitions = await elsaClient.workflowDefinitionsApi.list(page, pageSize, latestVersionOptions);
+    const latestWorkflowDefinitions = await elsaClient.workflowDefinitionsApi.list(page, pageSize, latestVersionOptions,this.currentSearchTerm);
     const publishedWorkflowDefinitionIds = latestWorkflowDefinitions.items.filter(x => x.isPublished).map(x => x.definitionId);
     this.publishedWorkflowDefinitions = await elsaClient.workflowDefinitionsApi.getMany(publishedWorkflowDefinitionIds, publishedVersionOptions);
     this.workflowDefinitions = latestWorkflowDefinitions;
@@ -121,9 +135,36 @@ export class ElsaWorkflowDefinitionsListScreen {
     const i18next = this.i18next;
     const IntlMessage = GetIntlMessage(i18next);
     const basePath = this.basePath;
+    const t = this.t;
 
     return (
       <div>
+        <div
+          class="elsa-relative elsa-z-10 elsa-flex-shrink-0 elsa-flex elsa-h-16 elsa-bg-white elsa-border-b elsa-border-gray-200">
+          <div class="elsa-flex-1 elsa-px-4 elsa-flex elsa-justify-between sm:elsa-px-6 lg:elsa-px-8">
+            <div class="elsa-flex-1 elsa-flex">
+              <form class="elsa-w-full elsa-flex md:ml-0" onSubmit={e => this.onSearch(e)}>
+                <label htmlFor="search_field" class="elsa-sr-only">Search</label>
+                <div class="elsa-relative elsa-w-full elsa-text-gray-400 focus-within:elsa-text-gray-600">
+                  <div
+                    class="elsa-absolute elsa-inset-y-0 elsa-left-0 elsa-flex elsa-items-center elsa-pointer-events-none">
+                    <svg class="elsa-h-5 elsa-w-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" clip-rule="evenodd"
+                            d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"/>
+                    </svg>
+                  </div>
+                  <input name="searchTerm"
+                         class="elsa-block elsa-w-full elsa-h-full elsa-pl-8 elsa-pr-3 elsa-py-2 elsa-rounded-md elsa-text-gray-900 elsa-placeholder-gray-500 focus:elsa-placeholder-gray-400 sm:elsa-text-sm elsa-border-0 focus:elsa-outline-none focus:elsa-ring-0"
+                         placeholder={t('Search')}
+                         type="search"/>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+
+
         <div class="elsa-align-middle elsa-inline-block elsa-min-w-full elsa-border-b elsa-border-gray-200">
           <table class="elsa-min-w-full">
             <thead>
