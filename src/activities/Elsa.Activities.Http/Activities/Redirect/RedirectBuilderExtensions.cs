@@ -8,6 +8,13 @@ namespace Elsa.Activities.Http
 {
     public static class RedirectBuilderExtensions
     {
+        /// <summary>
+        /// Creates a Redirect activity.
+        /// </summary>
+        /// <param name="location">The URL to redirect the request to.</param>
+        /// <param name="permanent">Wether or not this redirect is permanent (301)</param>
+        /// <returns>The <see cref="IActivityBuilder"/> with the Redirect activity built onto it.</returns>
+        /// <inheritdoc cref="BuilderExtensions.Then{T}(IBuilder, Action{ISetupActivity{T}}?, Action{IActivityBuilder}?, int, string?)"/>
         public static IActivityBuilder Redirect(
             this IBuilder builder,
             Uri location,
