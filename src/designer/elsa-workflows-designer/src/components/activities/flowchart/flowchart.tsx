@@ -341,8 +341,11 @@ export class FlowchartComponent implements ContainerActivityComponent {
       }];
 
     this.activityContextMenu.menuItemGroups = menuItemGroups;
-    this.activityContextMenu.style.top = `${e.y}px`;
-    this.activityContextMenu.style.left = `${e.x}px`;
+    const localPos = this.graph.localToClient(e.x, e.y);
+    this.activityContextMenu.style.top = `${localPos.y}px`;
+    this.activityContextMenu.style.left = `${localPos.x}px`;
+
+    debugger;
 
     await this.activityContextMenu.open();
   }
