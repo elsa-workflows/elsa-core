@@ -200,30 +200,30 @@ export class WorkflowDefinitionEditor {
 
     return (
       // <WorkflowEditorTunnel.Provider state={tunnelState}>
-        <div class="absolute inset-0" ref={el => this.container = el}>
-          <elsa-workflow-definition-editor-toolbar zoomToFit={this.onZoomToFit}/>
-          <elsa-workflow-navigator items={this.currentWorkflowPath} workflowDefinition={this.workflowDefinition} onNavigate={this.onNavigateHierarchy}/>
-          <elsa-panel
-            class="elsa-activity-picker-container"
-            position={PanelPosition.Left}
-            onExpandedStateChanged={e => this.onActivityPickerPanelStateChanged(e.detail)}>
-            <elsa-workflow-definition-editor-toolbox ref={el => this.toolbox = el}/>
-          </elsa-panel>
-          <elsa-canvas
-            class="absolute" ref={el => this.canvas = el}
-            interactiveMode={true}
-            onDragOver={this.onDragOver}
-            onDrop={this.onDrop}/>
-          <elsa-panel
-            class="elsa-activity-editor-container"
-            position={PanelPosition.Right}
-            onExpandedStateChanged={e => this.onActivityEditorPanelStateChanged(e.detail)}>
-            <div class="object-editor-container">
-              {this.renderSelectedObject()}
-            </div>
-          </elsa-panel>
+      <div class="absolute inset-0" ref={el => this.container = el}>
+        <elsa-workflow-definition-editor-toolbar zoomToFit={this.onZoomToFit}/>
+        <elsa-workflow-navigator items={this.currentWorkflowPath} workflowDefinition={this.workflowDefinition} onNavigate={this.onNavigateHierarchy}/>
+        <elsa-panel
+          class="elsa-activity-picker-container"
+          position={PanelPosition.Left}
+          onExpandedStateChanged={e => this.onActivityPickerPanelStateChanged(e.detail)}>
+          <elsa-workflow-definition-editor-toolbox ref={el => this.toolbox = el}/>
+        </elsa-panel>
+        <elsa-canvas
+          class="absolute" ref={el => this.canvas = el}
+          interactiveMode={true}
+          onDragOver={this.onDragOver}
+          onDrop={this.onDrop}/>
+        <elsa-panel
+          class="elsa-activity-editor-container"
+          position={PanelPosition.Right}
+          onExpandedStateChanged={e => this.onActivityEditorPanelStateChanged(e.detail)}>
+          <div class="object-editor-container">
+            {this.renderSelectedObject()}
+          </div>
+        </elsa-panel>
 
-        </div>
+      </div>
       // </WorkflowEditorTunnel.Provider>
     );
   }
@@ -345,11 +345,17 @@ export class WorkflowDefinitionEditor {
   private onNavigateHierarchy = async (e: CustomEvent<WorkflowNavigationItem>) => {
     const item = e.detail;
     const activityId = item.activityId;
-    const activity = this.nodes.find(x => x.activity.id == activityId).activity;
+    let activity = this.nodes.find(x => x.activity.id == activityId).activity;
     const path = this.currentWorkflowPath;
     const index = path.indexOf(item);
 
     this.currentWorkflowPath = path.slice(0, index + 1);
+
+    if (!!item.portName) {
+      const portName = camelCase(item.portName);
+      activity = activity[portName] as Activity;
+    }
+
     await this.canvas.importGraph(activity);
   }
 }
