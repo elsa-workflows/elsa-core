@@ -12,7 +12,7 @@ namespace Elsa.Activities.RabbitMq
 {
     [Trigger(
         Category = "RabbitMQ",
-        DisplayName = "RabbitMQ Message Received Custom",
+        DisplayName = "RabbitMQ Message Received",
         Description = "Triggers when RabbitMQ message matching specified routing key is received",
         Outcomes = new[] { OutcomeNames.Done }
     )]
