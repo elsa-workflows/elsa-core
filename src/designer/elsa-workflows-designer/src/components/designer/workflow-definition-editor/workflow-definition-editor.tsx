@@ -209,6 +209,11 @@ export class WorkflowDefinitionEditor {
           onExpandedStateChanged={e => this.onActivityPickerPanelStateChanged(e.detail)}>
           <elsa-workflow-definition-editor-toolbox ref={el => this.toolbox = el}/>
         </elsa-panel>
+        <elsa-canvas
+          class="absolute" ref={el => this.canvas = el}
+          interactiveMode={true}
+          onDragOver={this.onDragOver}
+          onDrop={this.onDrop}/>
         <elsa-panel
           class="elsa-workflow-editor-container"
           position={PanelPosition.Right}
