@@ -1,12 +1,10 @@
 import {Component, h, Prop, State, Watch} from "@stencil/core";
 import {ActionDefinition, ActionType, ActivityDescriptor, ActivityMetadata, WorkflowDefinition, WorkflowExecutionLogRecord, WorkflowInstance} from "../../../models";
 import {Container} from "typedi";
-import {ElsaApiClientProvider} from "../../../services";
+import {ActivityNode, ElsaApiClientProvider, flatten, walkActivities} from "../../../services";
 import {durationToString, formatTime, formatTimestamp, getDuration, isNullOrWhitespace} from "../../../utils";
-import {ActivityNode, flatten, walkActivities} from "../../activities/flowchart/activity-walker";
 import descriptorsStore from '../../../data/descriptors-store';
 import {ActivityExecutionEventBlock} from "./models";
-import {start} from "@stencil/core/dev-server";
 
 const PAGE_SIZE: number = 20;
 
@@ -118,8 +116,7 @@ export class WorkflowJournal {
     if (!this.workflowInstance || !this.workflowDefinition)
       return;
 
-    const activityDescriptors = descriptorsStore.activityDescriptors;
-    const rootNode = walkActivities(this.workflowDefinition.root, activityDescriptors);
+    const rootNode = walkActivities(this.workflowDefinition.root);
     const nodes = flatten(rootNode);
     this.activityNodes = nodes;
   };

@@ -1,8 +1,8 @@
 import 'reflect-metadata';
 import {Service} from "typedi";
-import {PortProvider, PortProviderContext} from "../../components/activities/flowchart/port-provider";
 import {Port} from "../../models";
 import {SwitchActivity} from "./models";
+import {PortProvider, PortProviderContext} from "../../services";
 
 @Service()
 export class SwitchPortProvider implements PortProvider {

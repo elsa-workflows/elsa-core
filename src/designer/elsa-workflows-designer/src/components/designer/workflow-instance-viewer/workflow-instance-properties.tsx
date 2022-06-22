@@ -1,5 +1,4 @@
 import {Component, Event, EventEmitter, h, Method, Prop, State, Watch} from '@stencil/core';
-import WorkflowEditorTunnel from '../state';
 import {TabChangedArgs, WorkflowDefinition, WorkflowInstance} from '../../../models';
 import {InfoList} from "../../shared/forms/info-list";
 import {formatTimestamp, isNullOrWhitespace} from "../../../utils";

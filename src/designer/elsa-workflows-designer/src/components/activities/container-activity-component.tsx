@@ -4,7 +4,8 @@ import {Activity} from '../../models';
 export interface ContainerActivityComponent {
   updateLayout(): Promise<void>;
   addActivity(args: AddActivityArgs): Promise<void>;
-  exportRoot(): Promise<Activity>
-  importRoot(root: Activity): Promise<void>;
+  export(): Promise<Activity>
+  import(root: Activity): Promise<void>;
   zoomToFit(): Promise<void>;
+  reset(): Promise<void>;
 }

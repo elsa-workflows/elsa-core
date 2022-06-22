@@ -1,6 +1,5 @@
 import {Component, Event, EventEmitter, h, Method, Prop, State} from '@stencil/core';
 import {camelCase} from 'lodash';
-import WorkflowEditorTunnel from '../state';
 import {
   Activity,
   ActivityDescriptor, ActivityOutput,
@@ -62,7 +61,7 @@ export class ActivityPropertiesEditor {
     const title = activityDescriptor?.displayName ?? activityDescriptor?.activityType ?? 'Unknown Activity';
     const driverRegistry = this.inputDriverRegistry;
 
-    const renderInputPropertyContexts: Array<RenderActivityInputContext> = activityDescriptor.inputProperties.map(inputDescriptor => {
+    const renderInputPropertyContexts: Array<RenderActivityInputContext> = activityDescriptor.inputs.map(inputDescriptor => {
       const renderInputContext: ActivityInputContext = {
         node: activity,
         nodeDescriptor: activityDescriptor,
@@ -84,7 +83,7 @@ export class ActivityPropertiesEditor {
       activity,
       activityDescriptor,
       title,
-      inputProperties: renderInputPropertyContexts
+      inputs: renderInputPropertyContexts
     }
   }
 
@@ -92,20 +91,20 @@ export class ActivityPropertiesEditor {
     const {activity, activityDescriptor} = this.renderContext;
 
     const commonTab: TabDefinition = {
-      displayText: 'Common',
-      order: 50,
+      displayText: 'General',
+      order: 0,
       content: () => this.renderCommonTab()
     };
 
     const inputTab: TabDefinition = {
-      displayText: 'Input',
+      displayText: 'Settings',
       order: 10,
       content: () => this.renderInputTab()
     };
 
     const tabs = !!activityDescriptor ? [inputTab, commonTab] : [];
 
-    if (activityDescriptor.outputProperties.length > 0) {
+    if (activityDescriptor.outputs.length > 0) {
       const outputTab: TabDefinition = {
         displayText: 'Output',
         order: 11,
@@ -224,12 +223,12 @@ export class ActivityPropertiesEditor {
   };
 
   private renderInputTab = () => {
-    const {activity, inputProperties} = this.renderContext;
+    const {activity, inputs} = this.renderContext;
     const activityId = activity.id;
     const key = `${activityId}`;
 
     return <div key={key}>
-      {inputProperties.filter(x => !!x.inputControl).map(propertyContext => {
+      {inputs.filter(x => !!x.inputControl).map(propertyContext => {
         const key = `${activity.id}-${propertyContext.inputContext.inputDescriptor.name}`;
         return <div key={key}>
           {propertyContext.inputControl}
@@ -240,13 +239,13 @@ export class ActivityPropertiesEditor {
 
   private renderOutputTab = () => {
     const {activity, activityDescriptor} = this.renderContext;
-    const outputProperties = activityDescriptor.outputProperties;
+    const outputs = activityDescriptor.outputs;
     const activityId = activity.id;
     const key = `${activityId}`;
     const variableOptions: Array<any> = [null, {label: 'Variables', items: [...this.variables.map(x => ({value: x.name, name: x.name}))]}];
 
     return <div key={key}>
-      {outputProperties.map(propertyDescriptor => {
+      {outputs.map(propertyDescriptor => {
         const key = `${activity.id}-${propertyDescriptor.name}`;
         const displayName = isNullOrWhitespace(propertyDescriptor.displayName) ? propertyDescriptor.name : propertyDescriptor.displayName;
         const propertyName = camelCase(propertyDescriptor.name);

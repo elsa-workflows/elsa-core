@@ -5,7 +5,7 @@
 }
 elsa-canvas {
   left: var(--activity-picker-width);
-  top: 0;
+  top: 54px;
   right: var(--workflow-editor-width);
   bottom: var(--activity-editor-height);
 }
@@ -30,6 +30,14 @@ elsa-panel.panel-state-expanded.elsa-activity-editor-container {
   right: var(--workflow-editor-width);
   left: var(--activity-picker-width);
   bottom: 0;
+}
+
+elsa-workflow-navigator {
+  top: 70px;
+  position: absolute;
+  z-index: 50;
+  left: var(--activity-picker-width);
+  right: var(--activity-editor-width);
 }
 
 .activity-picker-closed {

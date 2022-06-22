@@ -1,8 +1,8 @@
 import {Service} from 'typedi';
 import {camelCase, startCase, snakeCase, kebabCase} from 'lodash';
 import {ActivityDescriptor} from "../models";
-import {ActivityNode} from "../components/activities/flowchart/activity-walker";
 import {stripActivityNameSpace} from "../utils";
+import {ActivityNode} from "./activity-walker";
 
 export type ActivityNameStrategy = (context: ActivityNameFormatterContext) => string;
 
@@ -22,7 +22,7 @@ export class ActivityNameFormatter {
   public static readonly SnakeCaseStrategy: ActivityNameStrategy = context => snakeCase(ActivityNameFormatter.DefaultStrategy(context));
   public static readonly KebabCaseStrategy: ActivityNameStrategy = context => kebabCase(ActivityNameFormatter.DefaultStrategy(context));
 
-  public strategy: ActivityNameStrategy = ActivityNameFormatter.PascalCaseStrategy;
+  public strategy: ActivityNameStrategy = ActivityNameFormatter.CamelCaseStrategy;
 
   public format(context: ActivityNameFormatterContext): string {
     return this.strategy(context);

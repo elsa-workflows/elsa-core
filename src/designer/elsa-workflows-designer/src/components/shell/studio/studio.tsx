@@ -121,7 +121,7 @@ export class Studio {
       typeName: 'Elsa.Flowchart',
       activities: [],
       connections: [],
-      id: uuid(),
+      id: 'flowchart1',
       metadata: {},
       applicationProperties: {},
       variables: []
@@ -134,6 +134,7 @@ export class Studio {
       version: 1,
       isLatest: true,
       isPublished: false,
+      name: 'workflow1',
       materializerName: 'Json'
     }
 

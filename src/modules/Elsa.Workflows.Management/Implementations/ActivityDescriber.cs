@@ -41,7 +41,7 @@ public class ActivityDescriber : IActivityDescriber
         var outboundPorts =
             from prop in activityType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
             where typeof(IActivity).IsAssignableFrom(prop.PropertyType) || typeof(IEnumerable<IActivity>).IsAssignableFrom(prop.PropertyType)
-            let portAttr = prop.GetCustomAttribute<OutboundAttribute>()
+            let portAttr = prop.GetCustomAttribute<PortAttribute>()
             where portAttr != null
             select new Port
             {
@@ -61,9 +61,9 @@ public class ActivityDescriber : IActivityDescriber
             ActivityType = fullTypeName,
             DisplayName = displayName,
             Kind = isTrigger ? ActivityKind.Trigger : ActivityKind.Action,
-            OutPorts = outboundPorts.ToList(),
-            InputProperties = DescribeInputProperties(inputProperties).ToList(),
-            OutputProperties = DescribeOutputProperties(outputProperties).ToList(),
+            Ports = outboundPorts.ToList(),
+            Inputs = DescribeInputProperties(inputProperties).ToList(),
+            Outputs = DescribeOutputProperties(outputProperties).ToList(),
             Constructor = context =>
             {
                 var activity = _activityFactory.Create(activityType, context);

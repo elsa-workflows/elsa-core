@@ -1,49 +1,4 @@
-import {Type} from './shared';
 import {WorkflowState} from "./core";
-
-export interface ActivityDescriptor {
-  activityType: string;
-  displayName: string;
-  category: string;
-  description: string;
-  inputProperties: Array<InputDescriptor>;
-  outputProperties: Array<OutputDescriptor>;
-  kind: ActivityKind;
-  inPorts: Array<Port>;
-  outPorts: Array<Port>;
-}
-
-export enum ActivityKind {
-  Action = 'Action',
-  Trigger = 'Trigger'
-}
-
-export interface PropertyDescriptor {
-  name: string;
-  type: Type;
-  displayName?: string;
-  description?: string;
-  order?: number;
-  isBrowsable?: boolean;
-}
-
-export interface InputDescriptor extends PropertyDescriptor {
-  uiHint?: string;
-  options?: any;
-  category?: string;
-  defaultValue?: any;
-  defaultSyntax?: string;
-  supportedSyntaxes?: Array<string>;
-  isReadOnly?: boolean;
-}
-
-export interface OutputDescriptor extends PropertyDescriptor {
-}
-
-export interface Port {
-  name: string;
-  displayName: string;
-}
 
 export interface WorkflowDefinitionSummary {
   id: string;

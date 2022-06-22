@@ -11,6 +11,9 @@ export function createGraph(
   const graph = new Graph({
     container: container,
     interacting: interacting,
+    embedding: {
+      enabled: false,
+    },
     grid: {
       type: 'mesh',
       size: 20,
@@ -131,6 +134,12 @@ export function createGraph(
     //   container: this.container,
     // },
     //interacting: () => state.interactingMap,
+  });
+
+  //graph.on('node:change:parent', assignParent);
+
+  graph.on('node:mousedown', ({node}) => {
+    node.toFront();
   });
 
   graph.on('edge:mouseenter', ({edge}) => {

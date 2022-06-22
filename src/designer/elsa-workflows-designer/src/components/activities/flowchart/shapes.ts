@@ -58,15 +58,40 @@ export class ActivityNode extends Shape.HTML {
       return;
 
     const wrapper = document.createElement('div');
-    wrapper.className = 'w-full flex items-center pl-10 pr-2 py-2';
+    wrapper.className = 'w-full flex items-center pl-10 pr-2 py-2 absolute';
+    wrapper.style.left = '-1000px';
+    wrapper.style.top = '-1000px';
     wrapper.innerHTML = this.createHtml();
-    document.body.append(wrapper);
-    const rect = wrapper.firstElementChild.getBoundingClientRect();
-    wrapper.remove();
 
-    const width = rect.width;
-    const height = rect.height;
-    this.prop({size: {width, height}});
+    document.body.append(wrapper);
+
+    // Wait for activity element to be completely rendered.
+    // When using custom elements, they are rendered after they are mounted. Before then, they have a 0 width and height.
+    const tryUpdateSize = () => {
+      const activityElement: Element = wrapper.getElementsByTagName('elsa-default-activity-template')[0];
+      const activityElementRect = activityElement.getBoundingClientRect();
+
+      // If the custom element has no width or height yet, it means it has not yet rendered.
+      if (activityElementRect.width == 0 || activityElementRect.height == 0) {
+
+        // Request an animation frame and call ourselves back immediately after.
+        window.requestAnimationFrame(tryUpdateSize);
+        return;
+      }
+
+      const rect = wrapper.firstElementChild.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
+
+      // Update size of the activity node.
+      this.prop({size: {width, height}});
+
+      // Remove the temporary element (used only to calculate its size).
+      wrapper.remove();
+    };
+
+    // Begin try to get our element size.
+    tryUpdateSize();
   }
 
   createHtml() {
@@ -87,7 +112,6 @@ export class ActivityNode extends Shape.HTML {
 }
 
 ActivityNode.config({
-  //portMarkup: [Markup.getForeignObjectMarkup()],
   ports: {
     groups: {
       in: {

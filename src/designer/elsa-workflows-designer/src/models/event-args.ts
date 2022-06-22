@@ -1,5 +1,4 @@
-import {Activity} from "./core";
-import {ActivityDescriptor, InputDescriptor} from "./api";
+import {Activity, Port} from "./core";
 
 export interface ActivitySelectedArgs {
   activity: Activity;
@@ -12,4 +11,9 @@ export interface ContainerSelectedArgs {
 
 export interface GraphUpdatedArgs {
   exportGraph: () => Activity;
+}
+
+export interface EditChildActivityArgs {
+  parentActivityId: string;
+  port: Port;
 }

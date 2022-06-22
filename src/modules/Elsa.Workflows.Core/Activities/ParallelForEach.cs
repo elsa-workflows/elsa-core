@@ -10,7 +10,7 @@ public class ParallelForEach<T> : Activity
 {
     private const string CollectedCountProperty = nameof(CollectedCountProperty);
     [Input] public Input<ICollection<T>> Items { get; set; } = new(Array.Empty<T>());
-    [Outbound] public IActivity Body { get; set; } = default!;
+    [Port] public IActivity Body { get; set; } = default!;
 
     /// <summary>
     /// Assign a memory reference to gain access to individual branches of parallel execution from within each branch.

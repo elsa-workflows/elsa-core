@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Services;
 
@@ -161,7 +162,7 @@ public class ActivityExecutionContext
     public T? Get<T>(MemoryBlockReference blockReference)
     {
         var value = Get(blockReference);
-        return value != default ? (T?)(value) : default;
+        return value != default ? value.ConvertTo<T>() : default;
     }
 
     public void Set(MemoryBlockReference blockReference, object? value) => ExpressionExecutionContext.Set(blockReference, value);

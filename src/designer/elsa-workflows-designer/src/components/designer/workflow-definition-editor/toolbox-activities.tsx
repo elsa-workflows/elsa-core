@@ -4,7 +4,6 @@ import groupBy from 'lodash/groupBy';
 import {Container} from 'typedi';
 import {ActivityDescriptor} from '../../../models';
 import {ActivityDriverRegistry} from '../../../services';
-import WorkflowEditorTunnel from '../state';
 import descriptorsStore from "../../../data/descriptors-store";
 
 interface ActivityCategoryModel {

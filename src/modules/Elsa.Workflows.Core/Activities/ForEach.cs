@@ -32,7 +32,7 @@ public class ForEach : Activity
     /// <summary>
     /// The activity to execute for each iteration.
     /// </summary>
-    [Outbound]
+    [Port]
     public IActivity? Body { get; set; }
 
     /// <summary>
@@ -63,6 +63,8 @@ public class ForEach : Activity
 
         if (Body != null)
             context.ScheduleActivity(Body, OnChildCompleted);
+        else
+            await context.CompleteActivityAsync();
 
         // Increment index.
         context.UpdateProperty<int>(CurrentIndexProperty, x => x + 1);

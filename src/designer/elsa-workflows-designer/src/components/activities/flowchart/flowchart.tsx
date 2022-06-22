@@ -17,7 +17,7 @@ import {EventBus} from "../../../services";
 import {ConnectionCreatedEventArgs, FlowchartEvents} from "./events";
 import PositionEventArgs = NodeView.PositionEventArgs;
 import FromJSONData = Model.FromJSONData;
-import {ContextMenuAnchorPoint, MenuItem, MenuItemGroup} from "../../shared/context-menu/models";
+import {ContextMenuAnchorPoint, MenuItemGroup} from "../../shared/context-menu/models";
 import PointLike = Point.PointLike;
 import descriptorsStore from "../../../data/descriptors-store";
 
@@ -28,17 +28,16 @@ import descriptorsStore from "../../../data/descriptors-store";
 export class FlowchartComponent implements ContainerActivityComponent {
   private readonly eventBus: EventBus;
   private readonly nodeFactory: NodeFactory;
-  private rootId: string = uuid();
   private silent: boolean = false; // Whether to emit events or not.
   private activityContextMenu: HTMLElsaContextMenuElement;
+  private activity: Flowchart;
 
   constructor() {
     this.eventBus = Container.get(EventBus);
     this.nodeFactory = Container.get(NodeFactory);
   }
 
-  @Prop({mutable: true}) public root?: Activity;
-  @Prop() public interactiveMode: boolean = true;
+  @Prop() interactiveMode: boolean = true;
 
   @Element() el: HTMLElement;
   container: HTMLElement;
@@ -50,12 +49,24 @@ export class FlowchartComponent implements ContainerActivityComponent {
   @Event() graphUpdated: EventEmitter<GraphUpdatedArgs>;
 
   @Method()
-  public async getGraph(): Promise<Graph> {
+  async getGraph(): Promise<Graph> {
     return this.graph;
   }
 
   @Method()
-  public async updateLayout(): Promise<void> {
+  async reset(): Promise<void> {
+
+    const model: FromJSONData = {nodes: [], edges: []};
+
+    // Freeze then unfreeze prevents an error from occurring when importing JSON a second time (e.g. after loading a new workflow.
+    this.graph.freeze();
+    this.graph.fromJSON(model, {silent: false});
+    this.graph.unfreeze();
+    this.activity = null;
+  }
+
+  @Method()
+  async updateLayout(): Promise<void> {
     const width = this.el.clientWidth;
     const height = this.el.clientHeight;
     this.graph.resize(width, height);
@@ -63,23 +74,18 @@ export class FlowchartComponent implements ContainerActivityComponent {
   }
 
   @Method()
-  public async zoomToFit(){
+  async zoomToFit() {
     const graph = this.graph;
     graph.zoomToFit();
   }
 
   @Method()
-  public async addActivity(args: AddActivityArgs): Promise<void> {
+  async addActivity(args: AddActivityArgs): Promise<void> {
     const graph = this.graph;
     const {descriptor, x, y} = args;
     let id = args.id ?? uuid();
-
-    // TODO: Figure out how to convert client coordinates to appropriate graph coordinates taking into account transformations.
-    // See https://x6.antv.vision/en/docs/api/graph/coordinate for documentation.
-    //const point = graph.coord.localToClientPoint(x, y);
     const pageToLocal = graph.pageToLocal(x, y);
     const point: PointLike = pageToLocal;
-
     const sx = point.x;
     const sy = point.y;
 
@@ -102,20 +108,20 @@ export class FlowchartComponent implements ContainerActivityComponent {
   }
 
   @Method()
-  public async exportRoot(): Promise<Activity> {
-    return this.exportRootInternal();
+  async export(): Promise<Activity> {
+    return this.exportInternal();
   }
 
   @Method()
-  public async importRoot(root: Activity): Promise<void> {
-    return this.importRootInternal(root);
+  async import(root: Activity): Promise<void> {
+    return this.importInternal(root);
   }
 
-  public async componentDidLoad() {
+  async componentDidLoad() {
     await this.createAndInitializeGraph();
   }
 
-  public render() {
+  render() {
 
     return (
       <div class="relative">
@@ -131,9 +137,9 @@ export class FlowchartComponent implements ContainerActivityComponent {
     );
   }
 
-  public disableEvents = () => this.silent = true;
+  disableEvents = () => this.silent = true;
 
-  public enableEvents = async (emitWorkflowChanged: boolean): Promise<void> => {
+  enableEvents = async (emitWorkflowChanged: boolean): Promise<void> => {
     this.silent = false;
 
     if (emitWorkflowChanged === true) {
@@ -174,7 +180,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
     await this.updateLayout();
   }
 
-  private exportRootInternal = (): Activity => {
+  private exportInternal = (): Activity => {
     const graph = this.graph;
     const graphModel = graph.toJSON();
     const activities = graphModel.cells.filter(x => x.shape == 'activity').map(x => x.data as Activity);
@@ -185,28 +191,31 @@ export class FlowchartComponent implements ContainerActivityComponent {
       return !hasInboundConnections;
     });
 
-    const rootActivity = rootActivities.find(x => x.canStartWorkflow) || first(rootActivities);
+    const startActivity = rootActivities.find(x => x.canStartWorkflow) || first(rootActivities);
 
-    return {
+    const flowchart: Flowchart = this.activity ?? {
       typeName: 'Elsa.Flowchart',
-      activities: activities,
-      connections: connections,
-      id: this.rootId,
-      start: rootActivity?.id,
-      metadata: {},
-      applicationProperties: {},
-      variables: []
+      id: null,
     } as Flowchart;
+
+    flowchart.activities = activities;
+    flowchart.connections = connections;
+    flowchart.start = startActivity?.id;
+    flowchart.metadata = {};
+    flowchart.applicationProperties = {};
+    flowchart.variables = [];
+
+    return flowchart;
   }
 
-  private importRootInternal = async (root: Activity) => {
-    this.rootId = root.id;
+  private importInternal = async (root: Activity) => {
     const descriptors = descriptorsStore.activityDescriptors;
     const flowchart = root as Flowchart;
     const activities = flowchart.activities;
     const connections = flowchart.connections;
-
     let edges: Array<Edge.Metadata> = [];
+
+    this.activity = flowchart;
 
     // Create an X6 node for each activity.
     const nodes: Array<Node.Metadata> = activities.map(activity => {
@@ -216,14 +225,8 @@ export class FlowchartComponent implements ContainerActivityComponent {
       return this.nodeFactory.createNode(descriptor, activity, x, y);
     });
 
-    // Create X6 edges for each child activity.
-    for (const connection of connections) {
-      const edge = this.createEdge(connection);
-      edges = [...edges, edge];
-    }
-
     // Create X6 edges for each connection in the flowchart.
-    for (const connection of flowchart.connections) {
+    for (const connection of connections) {
       const edge: Edge.Metadata = this.createEdge(connection);
       edges.push(edge);
     }
@@ -267,11 +270,6 @@ export class FlowchartComponent implements ContainerActivityComponent {
       edge.data = connection;
     }
   };
-
-  @Watch('root')
-  async onRootChange(value: Activity) {
-    await this.importRootInternal(value);
-  }
 
   @Watch('interactiveMode')
   async onInteractiveModeChange(value: boolean) {
@@ -343,14 +341,20 @@ export class FlowchartComponent implements ContainerActivityComponent {
       }];
 
     this.activityContextMenu.menuItemGroups = menuItemGroups;
-    this.activityContextMenu.style.top = `${e.y}px`;
-    this.activityContextMenu.style.left = `${e.x}px`;
+    const localPos = this.graph.localToClient(e.x, e.y);
+    this.activityContextMenu.style.top = `${localPos.y}px`;
+    this.activityContextMenu.style.left = `${localPos.x}px`;
+
+    debugger;
 
     await this.activityContextMenu.open();
   }
 
   onNodeMoved = (e: PositionEventArgs<JQuery.ClickEvent>) => {
-    const node = e.node;
+
+    console.debug("Node moved...");
+
+    const node = e.node as ActivityNodeShape;
     const activity = node.data as Activity;
     const nodePosition = node.position({relative: false});
 
@@ -400,7 +404,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
   onGraphChanged = async () => {
     if (this.silent)
       return;
-    this.graphUpdated.emit({exportGraph: this.exportRootInternal});
+    this.graphUpdated.emit({exportGraph: this.exportInternal});
   }
 
   onToggleCanStartWorkflowClicked = (node: ActivityNodeShape) => {

@@ -1,6 +1,11 @@
 import {Type} from "./shared";
 import {Expression} from "./expressions";
 
+export enum ActivityKind {
+  Action = 'Action',
+  Trigger = 'Trigger'
+}
+
 export type Lookup<T> = { [key: string]: T };
 
 export interface Activity {
@@ -65,6 +70,44 @@ export interface WorkflowState {
   completionCallbacks: Array<CompletionCallbackState>;
   activityExecutionContexts: Array<ActivityExecutionContextState>;
   properties: Map<string, any>;
+}
+
+export interface ActivityDescriptor {
+  activityType: string;
+  displayName: string;
+  category: string;
+  description: string;
+  inputs: Array<InputDescriptor>;
+  outputs: Array<OutputDescriptor>;
+  kind: ActivityKind;
+  ports: Array<Port>;
+}
+
+export interface PropertyDescriptor {
+  name: string;
+  type: Type;
+  displayName?: string;
+  description?: string;
+  order?: number;
+  isBrowsable?: boolean;
+}
+
+export interface InputDescriptor extends PropertyDescriptor {
+  uiHint?: string;
+  options?: any;
+  category?: string;
+  defaultValue?: any;
+  defaultSyntax?: string;
+  supportedSyntaxes?: Array<string>;
+  isReadOnly?: boolean;
+}
+
+export interface OutputDescriptor extends PropertyDescriptor {
+}
+
+export interface Port {
+  name: string;
+  displayName: string;
 }
 
 export interface CompletionCallbackState {
