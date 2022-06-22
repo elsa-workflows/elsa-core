@@ -116,7 +116,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
         {
             var filter = MapSpecification(specification);
 
-            return await DoWork(async dbContext =>
+            return await DoQuery(async dbContext =>
             {
                 var dbSet = dbContext.Set<T>();
                 var queryable = dbSet.Where(filter);
@@ -141,12 +141,12 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
         }
 
         public async Task<int> CountAsync(ISpecification<T> specification, CancellationToken cancellationToken = default) =>
-            await DoWorkOnSet(async dbSet => await dbSet.CountAsync(MapSpecification(specification), cancellationToken), cancellationToken);
+            await DoQueryOnSet(async dbSet => await dbSet.CountAsync(MapSpecification(specification), cancellationToken), cancellationToken);
 
         public async Task<T?> FindAsync(ISpecification<T> specification, CancellationToken cancellationToken = default)
         {
             var filter = MapSpecification(specification);
-            return await DoWork(async dbContext =>
+            return await DoQuery(async dbContext =>
             {
                 var dbSet = dbContext.Set<T>();
                 var entity = await dbSet.FirstOrDefaultAsync(filter, cancellationToken);
@@ -157,6 +157,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
         protected ValueTask DoWorkOnSet(Func<DbSet<T>, ValueTask> work, CancellationToken cancellationToken) => DoWork(dbContext => work(dbContext.Set<T>()), cancellationToken);
         protected ValueTask<TResult> DoWorkOnSet<TResult>(Func<DbSet<T>, ValueTask<TResult>> work, CancellationToken cancellationToken) => DoWork(dbContext => work(dbContext.Set<T>()), cancellationToken);
         protected ValueTask DoWorkOnSet(Action<DbSet<T>> work, CancellationToken cancellationToken) => DoWork(dbContext => work(dbContext.Set<T>()), cancellationToken);
+        protected ValueTask<TResult> DoQueryOnSet<TResult>(Func<DbSet<T>, ValueTask<TResult>> work, CancellationToken cancellationToken) => DoQuery(dbContext => work(dbContext.Set<T>()), cancellationToken);
 
         protected async ValueTask DoWork(Func<TContext, ValueTask> work, CancellationToken cancellationToken)
         {
@@ -178,6 +179,13 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
             await using var dbContext = DbContextFactory.CreateDbContext();
             work(dbContext);
             await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        
+        protected async ValueTask<TResult> DoQuery<TResult>(Func<TContext, ValueTask<TResult>> work, CancellationToken cancellationToken)
+        {
+            await using var dbContext = DbContextFactory.CreateDbContext();
+            var result = await work(dbContext);
+            return result;
         }
 
         protected virtual void OnSaving(TContext dbContext, T entity) => OnSaving(entity);

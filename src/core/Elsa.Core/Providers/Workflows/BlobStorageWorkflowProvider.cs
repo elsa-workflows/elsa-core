@@ -114,6 +114,12 @@ namespace Elsa.Providers.Workflows
             return await ListInternalAsync(cancellationToken).FirstOrDefaultAsync(predicate.Compile(), cancellationToken);
         }
 
+        public override async ValueTask<IEnumerable<IWorkflowBlueprint>> FindManyByDefinitionIds(IEnumerable<string> definitionIds, VersionOptions versionOptions, CancellationToken cancellationToken = default)
+        {
+            var idList = definitionIds.ToList();
+            return await ListInternalAsync(cancellationToken).Where(x => idList.Contains(x.Id) && x.WithVersion(versionOptions)).ToListAsync(cancellationToken);
+        }
+
         public override async ValueTask<IEnumerable<IWorkflowBlueprint>> FindManyByDefinitionVersionIds(IEnumerable<string> definitionVersionIds, CancellationToken cancellationToken = default)
         {
             var idList = definitionVersionIds.ToList();

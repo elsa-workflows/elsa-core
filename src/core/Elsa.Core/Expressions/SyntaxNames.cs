@@ -8,5 +8,6 @@
         public const string Json = "Json";
         public const string Variable = "Variable";
         public const string Output = "Output";
+        public const string Sql = "SQL";
     }
 }

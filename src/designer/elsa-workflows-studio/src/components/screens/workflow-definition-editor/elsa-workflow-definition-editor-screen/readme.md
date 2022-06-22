@@ -82,6 +82,7 @@ Type: `Promise<void>`
 - [elsa-tab-header](../../../shared/elsa-tab-header)
 - [elsa-tab-content](../../../shared/elsa-tab-content)
 - [elsa-designer-panel](../../../shared/elsa-designer-panel)
+- [elsa-version-history-panel](../elsa-version-history-panel)
 - [elsa-designer-tree](../../../designers/tree/elsa-designer-tree)
 - [elsa-workflow-settings-modal](../elsa-workflow-settings-modal)
 - [elsa-workflow-definition-editor-notifications](../elsa-workflow-definition-editor-notifications)
@@ -102,6 +103,7 @@ graph TD;
   elsa-workflow-definition-editor-screen --> elsa-tab-header
   elsa-workflow-definition-editor-screen --> elsa-tab-content
   elsa-workflow-definition-editor-screen --> elsa-designer-panel
+  elsa-workflow-definition-editor-screen --> elsa-version-history-panel
   elsa-workflow-definition-editor-screen --> elsa-designer-tree
   elsa-workflow-definition-editor-screen --> elsa-workflow-settings-modal
   elsa-workflow-definition-editor-screen --> elsa-workflow-definition-editor-notifications
@@ -113,6 +115,10 @@ graph TD;
   elsa-workflow-definition-editor-screen --> elsa-workflow-properties-panel
   elsa-workflow-definition-editor-screen --> elsa-workflow-test-panel
   elsa-workflow-definition-editor-screen --> context-consumer
+  elsa-version-history-panel --> elsa-context-menu
+  elsa-version-history-panel --> elsa-confirm-dialog
+  elsa-version-history-panel --> context-consumer
+  elsa-confirm-dialog --> elsa-modal-dialog
   elsa-workflow-settings-modal --> elsa-modal-dialog
   elsa-workflow-settings-modal --> elsa-monaco
   elsa-activity-picker-modal --> elsa-modal-dialog
@@ -123,7 +129,6 @@ graph TD;
   elsa-workflow-test-panel --> elsa-copy-button
   elsa-workflow-test-panel --> elsa-confirm-dialog
   elsa-workflow-test-panel --> context-consumer
-  elsa-confirm-dialog --> elsa-modal-dialog
   elsa-studio-workflow-definitions-edit --> elsa-workflow-definition-editor-screen
   style elsa-workflow-definition-editor-screen fill:#f9f,stroke:#333,stroke-width:4px
 ```

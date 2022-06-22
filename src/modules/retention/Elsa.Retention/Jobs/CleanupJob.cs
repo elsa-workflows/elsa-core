@@ -44,36 +44,34 @@ namespace Elsa.Retention.Jobs
         {
             var threshold = _clock.GetCurrentInstant().Minus(_options.TimeToLive);
             var specification = new WorkflowCreatedBeforeSpecification(threshold);
+            var currentPage = 0;
             var take = _options.BatchSize;
             var orderBy = new OrderBy<WorkflowInstance>(x => x.CreatedAt, SortDirection.Descending);
+            var collectedWorkflowInstanceIds = new List<string>();
 
+            // Collect workflow instances to be deleted.
             while (true)
             {
-                var paging = new Paging(0, take);
+                var paging = Paging.Page(currentPage++, take);
 
                 var workflowInstances = await _workflowInstanceStore
                     .FindManyAsync(specification, orderBy, paging, cancellationToken)
                     .ToList();
 
-                await FilterAndDeleteWorkflowsAsync(workflowInstances, cancellationToken);
+                var filteredWorkflowInstances = await _retentionFilterPipeline.FilterAsync(workflowInstances, cancellationToken).ToList();
+                collectedWorkflowInstanceIds.AddRange(filteredWorkflowInstances.Select(x => x.Id));
 
                 if (workflowInstances.Count < take)
                     break;
             }
+            
+            // Delete collected workflow instances.
+            await DeleteManyAsync(collectedWorkflowInstanceIds, cancellationToken);
         }
 
-        private async Task FilterAndDeleteWorkflowsAsync(IEnumerable<WorkflowInstance> workflowInstances, CancellationToken cancellationToken)
+        private async Task DeleteManyAsync(ICollection<string> workflowInstanceIds, CancellationToken cancellationToken)
         {
-            var filteredWorkflowInstances = await _retentionFilterPipeline.FilterAsync(workflowInstances, cancellationToken).ToList();
-
-            _logger.LogInformation("Deleting {WorkflowInstanceCount} workflow instances", filteredWorkflowInstances.Count);
-
-            if (filteredWorkflowInstances.Any())
-                await DeleteManyAsync(filteredWorkflowInstances.Select(x => x.Id), cancellationToken);
-        }
-
-        private async Task DeleteManyAsync(IEnumerable<string> workflowInstanceIds, CancellationToken cancellationToken)
-        {
+            _logger.LogInformation("Deleting {WorkflowInstanceCount} workflow instances", workflowInstanceIds.Count);
             var specification = new WorkflowInstanceIdsSpecification(workflowInstanceIds);
             await _workflowInstanceStore.DeleteManyAsync(specification, cancellationToken);
         }

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using NodaTime;
 
 namespace Elsa.Models
 {
@@ -35,6 +36,11 @@ namespace Elsa.Models
         /// Allows for applications to store an application-specific, queryable value to associate with the workflow.
         /// </summary>
         public string? Tag { get; set; }
+
+        /// <summary>
+        /// The timestamp this workflow definition was created.
+        /// </summary>
+        public Instant CreatedAt { get; set; }
 
         public ICollection<ActivityDefinition> Activities { get; set; }
         public ICollection<ConnectionDefinition> Connections { get; set; }

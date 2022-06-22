@@ -148,6 +148,9 @@ namespace Elsa.Persistence.EntityFramework.Oracle.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("NVARCHAR2(450)");
 
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
+
                     b.Property<string>("Data")
                         .HasColumnType("NCLOB");
 

@@ -8,5 +8,9 @@ namespace Elsa
         public const string False = "False";
         public const string Iterate = "Iterate";
         public const string Default = "Default";
+        public const string Body = "Body";
+        public const string Compensate = "Compensate";
+        public const string Cancel = "Cancel";
+        public const string Confirm = "Confirm";
     }
 }

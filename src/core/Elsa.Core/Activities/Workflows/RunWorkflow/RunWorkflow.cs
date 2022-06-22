@@ -120,6 +120,7 @@ namespace Elsa.Activities.Workflows
                 RunWorkflowMode.FireAndForget => Done(),
                 RunWorkflowMode.Blocking when childWorkflowStatus == WorkflowStatus.Finished => await ResumeSynchronouslyAsync(context, childWorkflowInstance, cancellationToken),
                 RunWorkflowMode.Blocking when childWorkflowStatus == WorkflowStatus.Suspended => Suspend(),
+                RunWorkflowMode.Blocking when childWorkflowStatus == WorkflowStatus.Idle => Suspend(),
                 RunWorkflowMode.Blocking when childWorkflowStatus == WorkflowStatus.Faulted => Fault($"Workflow {childWorkflowInstance.Id} faulted"),
                 _ => throw new ArgumentOutOfRangeException(nameof(Mode))
             };

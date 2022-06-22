@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Azure.Messaging.ServiceBus;
 using Elsa.Activities.AzureServiceBus.Bookmarks;
 using Elsa.Models;
 using Elsa.Services;
@@ -103,8 +104,16 @@ namespace Elsa.Activities.AzureServiceBus.Services
                 // Create worker if not found.
                 if (worker == null)
                 {
-                    worker = ActivatorUtilities.CreateInstance<Worker>(_serviceProvider, queueOrTopic, subscription ?? "", RemoveWorkerAsync);
+                    worker = ActivatorUtilities.CreateInstance<Worker>(
+                        _serviceProvider,
+                        queueOrTopic,
+                        subscription ?? "",
+                        (Func<Worker, ProcessErrorEventArgs, Task>)(async (w, e) => await RemoveAndRespawnWorkerAsync(w, e, tag, queueOrTopic, subscription)));
+
+                    _logger.LogDebug("Created worker for {QueueOrTopic}", worker.QueueOrTopic);
                     _workers.Add(worker);
+
+                    _logger.LogDebug("Starting worker for {QueueOrTopic}", worker.QueueOrTopic);
                     await worker.StartAsync(cancellationToken);
                 }
 
@@ -122,8 +131,18 @@ namespace Elsa.Activities.AzureServiceBus.Services
             }
         }
 
+        private async Task RemoveAndRespawnWorkerAsync(Worker worker, ProcessErrorEventArgs args, string tag, string queueOrTopic, string? subscription)
+        {
+            _logger.LogDebug(args.Exception, "Error occurred in processor for {QueueOrTopic}. Error source: {ErrorSource}", worker.QueueOrTopic, args.ErrorSource);
+            await RemoveWorkerAsync(worker);
+
+            _logger.LogDebug("Respawning worker for {QueueOrTopic}", worker.QueueOrTopic);
+            await GetOrCreateWorkerAsync(tag, queueOrTopic, subscription, args.CancellationToken);
+        }
+
         private async Task RemoveWorkerAsync(Worker worker)
         {
+            _logger.LogDebug("Disposing worker for {QueueOrTopic}", worker.QueueOrTopic);
             await worker.DisposeAsync();
             _workers.Remove(worker);
         }

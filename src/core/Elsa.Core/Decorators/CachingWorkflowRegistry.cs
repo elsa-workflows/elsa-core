@@ -56,6 +56,12 @@ namespace Elsa.Decorators
             return await _workflowRegistry.FindManyByTagAsync(tag, versionOptions, tenantId, cancellationToken);
         }
 
+        public async Task<IEnumerable<IWorkflowBlueprint>> FindManyByDefinitionIds(IEnumerable<string> definitionIds, VersionOptions versionOptions, CancellationToken cancellationToken)
+        {
+            // TODO: Maybe cache this as well?
+            return await _workflowRegistry.FindManyByDefinitionIds(definitionIds, versionOptions, cancellationToken);
+        }
+
         public async Task<IEnumerable<IWorkflowBlueprint>> FindManyByDefinitionVersionIds(IEnumerable<string> definitionVersionIds, CancellationToken cancellationToken)
         {
             // TODO: Maybe cache this as well?

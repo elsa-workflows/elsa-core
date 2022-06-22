@@ -16,5 +16,11 @@ export const resources = {
       'Welcome': 'Welkom bij {{title}}',
       'Tagline': 'Gebruik het dashboard om alles te regelen.'
     }
-  }
+  },
+  'fa-IR': {
+    'default': {
+      'Welcome': 'به {{title}} خوش آمدید',
+      'Tagline': 'میتوانید از این داشبورد برای مدیریت بخش های مختلف استفاده نمایید.'
+    }
+  },
 };

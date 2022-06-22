@@ -29,7 +29,11 @@ namespace Elsa.Activities.Telnyx.Extensions
 {
     public static class SetupExtensions
     {
-        public static ElsaOptionsBuilder AddTelnyx(this ElsaOptionsBuilder elsaOptions, Action<TelnyxOptions>? configure = default, Func<IServiceProvider, HttpClient>? httpClientFactory = default)
+        public static ElsaOptionsBuilder AddTelnyx(
+            this ElsaOptionsBuilder elsaOptions, 
+            Action<TelnyxOptions>? configure = default, 
+            Func<IServiceProvider, HttpClient>? httpClientFactory = default,
+            Action<IHttpClientBuilder>? configureHttpClientBuilder = default)
         {
             var services = elsaOptions.Services;
 
@@ -60,7 +64,7 @@ namespace Elsa.Activities.Telnyx.Extensions
             var refitSettings = CreateRefitSettings();
             
             services
-                .AddApiClient<ICallsApi>(refitSettings, httpClientFactory)
+                .AddApiClient<ICallsApi>(refitSettings, httpClientFactory, configureHttpClientBuilder)
                 .AddTransient<ITelnyxClient, TelnyxClient>();
 
             return elsaOptions;
@@ -71,16 +75,22 @@ namespace Elsa.Activities.Telnyx.Extensions
             return endpoints.MapPost(routePattern, HandleTelnyxRequest);
         }
 
-        public static IServiceCollection AddApiClient<T>(this IServiceCollection services, RefitSettings refitSettings, Func<IServiceProvider, HttpClient>? httpClientFactory) where T : class
+        public static IServiceCollection AddApiClient<T>(
+            this IServiceCollection services, 
+            RefitSettings refitSettings, 
+            Func<IServiceProvider, HttpClient>? httpClientFactory, 
+            Action<IHttpClientBuilder>? configureHttpClientBuilder) where T : class
         {
             if (httpClientFactory == null)
             {
-                services.AddRefitClient<T>(refitSettings).ConfigureHttpClient((sp, client) =>
+                var httpClientBuilder = services.AddRefitClient<T>(refitSettings).ConfigureHttpClient((sp, client) =>
                 {
                     var options = sp.GetRequiredService<TelnyxOptions>();
                     client.BaseAddress = options.ApiUrl;
                     client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", options.ApiKey);
                 });
+                
+                configureHttpClientBuilder?.Invoke(httpClientBuilder);
             }
             else
             {

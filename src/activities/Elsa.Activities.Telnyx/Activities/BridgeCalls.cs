@@ -21,7 +21,7 @@ namespace Elsa.Activities.Telnyx.Activities
     [Action(
         Category = Constants.Category,
         Description = "Bridge two call control calls.",
-        Outcomes = new[] { TelnyxOutcomeNames.Bridged, OutcomeNames.Done, TelnyxOutcomeNames.CallIsNoLongerActive },
+        Outcomes = new[] { TelnyxOutcomeNames.Bridged, TelnyxOutcomeNames.CallIsNoLongerActive },
         DisplayName = "Bridge Calls"
     )]
     public class BridgeCalls : Activity

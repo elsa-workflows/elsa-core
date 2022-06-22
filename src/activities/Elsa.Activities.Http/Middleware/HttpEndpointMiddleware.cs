@@ -26,8 +26,6 @@ namespace Elsa.Activities.Http.Middleware
 {
     public class HttpEndpointMiddleware
     {
-        // TODO: Design multi-tenancy. 
-        private const string? TenantId = default;
         private readonly RequestDelegate _next;
 
         public HttpEndpointMiddleware(RequestDelegate next) => _next = next;
@@ -40,6 +38,7 @@ namespace Elsa.Activities.Http.Middleware
             IWorkflowRegistry workflowRegistry,
             IWorkflowBlueprintReflector workflowBlueprintReflector,
             IRouteMatcher routeMatcher,
+            ITenantAccessor tenantAccessor,
             IEnumerable<IHttpRequestBodyParser> contentParsers)
         {
             var basePath = options.Value.BasePath;
@@ -54,6 +53,8 @@ namespace Elsa.Activities.Http.Middleware
             var request = httpContext.Request;
             var cancellationToken = CancellationToken.None; // Prevent half-way request abortion (which also happens when WriteHttpResponse writes to the response).
             var method = httpContext.Request.Method!.ToLowerInvariant();
+
+            var tenantId = await tenantAccessor.GetTenantIdAsync(cancellationToken);
 
             request.TryGetCorrelationId(out var correlationId);
 
@@ -79,7 +80,7 @@ namespace Elsa.Activities.Http.Middleware
             // Create a workflow query using the selected route and HTTP method of the request.
             const string activityType = nameof(HttpEndpoint);
             var bookmark = new HttpEndpointBookmark(routeTemplate, method);
-            var collectWorkflowsContext = new WorkflowsQuery(activityType, bookmark, correlationId, default, default, TenantId);
+            var collectWorkflowsContext = new WorkflowsQuery(activityType, bookmark, correlationId, default, default, tenantId);
             var pendingWorkflows = await workflowLaunchpad.FindWorkflowsAsync(collectWorkflowsContext, cancellationToken).ToList();
 
             if (await HandleNoWorkflowsFoundAsync(httpContext, pendingWorkflows, basePath))
@@ -89,7 +90,7 @@ namespace Elsa.Activities.Http.Middleware
                 return;
 
             var pendingWorkflow = pendingWorkflows.Single();
-            var pendingWorkflowInstance = await workflowInstanceStore.FindByIdAsync(pendingWorkflow.WorkflowInstanceId, cancellationToken);
+            var pendingWorkflowInstance = pendingWorkflow.WorkflowInstance ?? await workflowInstanceStore.FindByIdAsync(pendingWorkflow.WorkflowInstanceId, cancellationToken);
 
             if (pendingWorkflowInstance is null)
             {
@@ -99,8 +100,8 @@ namespace Elsa.Activities.Http.Middleware
 
             var isTest = pendingWorkflowInstance.GetMetadata("isTest");
             var workflowBlueprint = (isTest != null && Convert.ToBoolean(isTest))
-                ? await workflowRegistry.FindAsync(pendingWorkflowInstance.DefinitionId, VersionOptions.Latest, TenantId, cancellationToken)
-                : await workflowRegistry.FindAsync(pendingWorkflowInstance.DefinitionId, VersionOptions.Published, TenantId, cancellationToken);
+                ? await workflowRegistry.FindAsync(pendingWorkflowInstance.DefinitionId, VersionOptions.Latest, tenantId, cancellationToken)
+                : await workflowRegistry.FindAsync(pendingWorkflowInstance.DefinitionId, VersionOptions.Published, tenantId, cancellationToken);
 
             if (workflowBlueprint is null || workflowBlueprint.IsDisabled)
             {

@@ -159,5 +159,87 @@ export const resources = {
   },
   'nl-NL': {
     'default': {}
-  }
+  },
+  'fa-IR': {
+    'default': {
+      'Title': 'جریان ها',
+      'Search': 'جستجو',
+      'Untitled': 'بی نام',
+      'Table': {
+        'Id': 'شناسه',
+        'CorrelationId': 'Correlation ID',
+        'Workflow': 'فرآیند',
+        'Version': 'ویرایش',
+        'InstanceName': 'نام جریان',
+        'Status': 'وضعیت',
+        'Created': 'ایجاد شده',
+        'Finished': 'پایان یافته ',
+        'LastExecuted': 'آخرین اجرا',
+        'Faulted': 'با خطا مواجه شده',
+        'ContextMenu': {
+          'View': 'مشاهده',
+          'Cancel': 'لغو',
+          'Delete': 'حذف',
+          'Retry': 'تلاش مجدد'
+        }
+      },
+      'CancelDialog': {
+        'Title': 'لغو اجرای فرآیند',
+        'Message': 'آیا از لغو اجرای این فرآیند اطمینان دارید؟'
+      },
+      'DeleteDialog': {
+        'Title': 'حذف جریان فرآیند',
+        'Message': 'آیا از حذف این اجرای فرآیند اطمینان دارید؟'
+      },
+      'BulkCancelDialog': {
+        'Title': 'لغو اجراهای انتخاب شده',
+        'Message': 'آیا از لغو همه اجراهای انتخاب شده اطمینان دارید؟'
+      },
+      'BulkDeleteDialog': {
+        'Title': 'حذف اجراهای انتخاب شده',
+        'Message': 'آیا از حذف همه اجراهای انتخاب شده اطمینان دارید؟?'
+      },
+      'BulkRetryDialog': {
+        'Title': 'اجرای مجدد اجراهای انتخاب شده',
+        'Message': 'آیااز اجرای مجدد اجراهای انتخاب شده اطمینان دارید؟'
+      },
+      'Pager': {
+        'Display': '{{Start}} تا {{End}} از {{Results}} نتیجه'
+      },
+      'BulkActions': {
+        'Title': 'عملیات گروهی',
+        'Actions': {
+          'Cancel': 'لغو',
+          'Delete': 'حذف',
+          'Retry': 'اجرای مجدد'
+        }
+      },
+      'Filters': {
+        'Workflow': {
+          'Label': 'فرآیند',
+          'All': 'همه'
+        },
+        'Status': {
+          'All': 'همه',
+          'Label': 'وضعیت',
+          'Running': 'در حال اجرا',
+          'Idle': 'Idle',
+          'Suspended': 'تعلیف شده',
+          'Faulted': 'با خطا مواجه شده',
+          'Finished': 'پایان یافته',
+          'Cancelled': 'لغو شده'
+        },
+        'Sort': {
+          'Label': 'مرتب سازی',
+          'SelectedLabel': 'بر اساس: {{Key}}',
+          'Finished': 'پایان یافته',
+          'LastExecuted': 'آخرین اجرا',
+          'Started': 'شروع شده'
+        },
+        'PageSize': {
+          'SelectedLabel': 'تعداد در صفحه: {{Size}}',
+        }
+      }
+    }
+  },
 };

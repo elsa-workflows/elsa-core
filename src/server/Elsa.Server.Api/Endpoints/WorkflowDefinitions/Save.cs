@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -9,6 +10,7 @@ using Elsa.Server.Api.Swagger.Examples;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.Filters;
 
@@ -55,11 +57,18 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
                     workflowDefinition.DefinitionId = workflowDefinitionId;
             }
 
+            if (!TryParseVariables(request.Variables, out var variables))
+                return BadRequest("Cannot parse variables");
+            
+            if (!TryParseVariables(request.CustomAttributes, out var customAttributes))
+                return BadRequest("Cannot parse customAttributes");
+
             workflowDefinition.Activities = request.Activities;
             workflowDefinition.Connections = FilterInvalidConnections(request).ToList();
             workflowDefinition.Description = request.Description?.Trim();
             workflowDefinition.Name = request.Name?.Trim();
-            workflowDefinition.Variables = ParseVariables(request.Variables);
+            workflowDefinition.Variables = variables;
+			workflowDefinition.CustomAttributes = customAttributes;
             workflowDefinition.IsSingleton = request.IsSingleton;
             workflowDefinition.PersistenceBehavior = request.PersistenceBehavior;
             workflowDefinition.DeleteCompletedInstances = request.DeleteCompletedInstances;
@@ -82,15 +91,24 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
                 .ConfigureForWorkflowDefinition();
         }
 
-        private Variables ParseVariables(string? json)
+        private bool TryParseVariables(string? json, out Variables variables)
         {
+            variables = new Variables();
+            
             if (string.IsNullOrWhiteSpace(json))
-                return new Variables();
+                return true;
 
-            var dictionary = _contentSerializer.Deserialize<Dictionary<string, object?>>(json);
-            var variables = new Variables(dictionary);
+            try
+            {
+                var dictionary = _contentSerializer.Deserialize<Dictionary<string, object?>>(json);
+                variables = new Variables(dictionary);
 
-            return variables;
+                return true;
+            }
+            catch (JsonReaderException e)
+            {
+                return false;
+            }
         }
 
         private IEnumerable<ConnectionDefinition> FilterInvalidConnections(SaveWorkflowDefinitionRequest request)
