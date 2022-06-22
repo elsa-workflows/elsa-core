@@ -87,10 +87,10 @@ namespace Elsa.Metadata
 
                     var nestedInputProperties = DescribeInputProperties(objectProperties, activityPropertyObjectAttribute?.Category);
 
-                    foreach (var prop in nestedInputProperties)
+                    foreach (var property in nestedInputProperties)
                     {
-                        prop.Name = $"{propertyInfo.Name}_{prop.Name}";
-                        yield return prop;
+                        property.Name = $"{propertyInfo.Name}_{property.Name}";
+                        yield return property;
                     }
                     continue;
                 }
