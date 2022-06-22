@@ -12,7 +12,7 @@ namespace Elsa.Activities.RabbitMq
 {
     [Trigger(
         Category = "RabbitMQ",
-        DisplayName = "RabbitMQ Message Received",
+        DisplayName = "RabbitMQ Message Received Custom",
         Description = "Triggers when RabbitMQ message matching specified routing key is received",
         Outcomes = new[] { OutcomeNames.Done }
     )]
@@ -36,7 +36,8 @@ namespace Elsa.Activities.RabbitMq
             Order = 3,
             UIHint = ActivityInputUIHints.Dictionary,
             DefaultSyntax = SyntaxNames.Json,
-            SupportedSyntaxes = new[] { SyntaxNames.Json })]
+            SupportedSyntaxes = new[] { SyntaxNames.Json,SyntaxNames.JavaScript })]
+        
         public Dictionary<string, string> Headers { get; set; } = new Dictionary<string, string>();
 
         [ActivityInput(
