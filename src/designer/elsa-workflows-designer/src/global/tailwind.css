@@ -59,6 +59,14 @@
   @apply absolute py-4 bg-gray-50 border border-gray-400 text-gray-400 rounded-r z-10;
 }
 
+.panel-toggle-bottom {
+  top: -42px;
+  left: 50%;
+  transform: translateX(-50%) rotate(270deg);
+
+  @apply absolute py-4 bg-gray-50 border border-gray-400 text-gray-400 rounded-r z-10;
+}
+
 /* Forms */
 label {
   @apply block text-sm font-medium text-gray-700;
@@ -136,4 +144,8 @@ tbody tr td:first-child {
 
 .pager-chevron.right {
   @apply rounded-r-md -ml-px;
+}
+
+body {
+  min-height: 100vh;
 }
