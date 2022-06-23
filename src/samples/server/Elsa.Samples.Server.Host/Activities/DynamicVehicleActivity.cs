@@ -70,78 +70,129 @@ namespace Elsa.Samples.Server.Host.Activities
         public ValueTask<SelectList> GetSelectListAsync(object? context = default, CancellationToken cancellationToken = default)
         {
             var cascadingDropDownContext = (CascadingDropDownContext)context!;
-            var vehicleContext = ((JObject)cascadingDropDownContext.Context!).ToObject<DynamicVehicleContext>()!;
+            var dataSource = GetDataSource();
+            var dependencyValues = cascadingDropDownContext.DepValues;
 
-            if (cascadingDropDownContext.Name == "Brand")
+            switch (cascadingDropDownContext.Name)
             {
-                var brands = new[] { "BMW", "Peugeot", "Tesla", vehicleContext.RandomNumber.ToString() };
-                var items = brands.Select(x => new SelectListItem(x)).ToList();
-                return new ValueTask<SelectList>(new SelectList(items));
-            }
-
-            if (cascadingDropDownContext.Name == "Model")
-            {
-                if (cascadingDropDownContext.DepValues != null! &&
-                    cascadingDropDownContext.DepValues.TryGetValue("Brand", out var brandValue))
+                case "Brand":
                 {
-                    if (brandValue == "BMW")
-                        return new ValueTask<SelectList>(
-                            new SelectList((new[] { "1 Series", "2 Series", "i3", "i4", "i5" }).Select(x => new SelectListItem(x)).ToList())
-                        );
-                    if (brandValue == "Tesla")
-                        return new ValueTask<SelectList>(
-                            new SelectList((new[] { "Roadster", "Model S", "Model 3", "Model X", "Model Y", "Cybertruck" }).Select(x => new SelectListItem(x)).ToList())
-                        );
-                    if (brandValue == "Peugeot")
-                        return new ValueTask<SelectList>(
-                            new SelectList((new[] { "208", "301", "508", "2008" }).Select(x => new SelectListItem(x)).ToList())
-                        );
+                    var brands = dataSource.Select(x => new SelectListItem(x["Name"]!.Value<string>()!)).ToList();
+                    return new ValueTask<SelectList>(new SelectList(brands));
                 }
-            }
-
-            if (cascadingDropDownContext.Name == "Color")
-            {
-                if (cascadingDropDownContext.DepValues != null)
+                case "Model" when dependencyValues.TryGetValue("Brand", out var brandValue):
                 {
-                    cascadingDropDownContext.DepValues.TryGetValue("Brand", out var brandValue);
-                    cascadingDropDownContext.DepValues.TryGetValue("Model", out var modelValue);
-
-                    if (brandValue == "Tesla")
-                    {
-                        if (modelValue == "Model S")
-                            return new ValueTask<SelectList>(
-                                new SelectList((new[] { "White", "Black" }).Select(x => new SelectListItem(x)).ToList())
-                            );
-                        if (modelValue == "Model X")
-                            return new ValueTask<SelectList>(
-                                new SelectList((new[] { "Blue", "Red" }).Select(x => new SelectListItem(x)).ToList())
-                            );
-                        else
-                            return new ValueTask<SelectList>(
-                                new SelectList((new[] { "Purple", "Brown" }).Select(x => new SelectListItem(x)).ToList())
-                            );
-                    }
-
-                    if (brandValue == "BMW")
-                    {
-                        return new ValueTask<SelectList>(
-                            new SelectList((new[] { "Purple Silk metallic", "Java Green metallic", "Macao Blue" }).Select(x => new SelectListItem(x)).ToList())
-                        );
-                    }
-
-                    return new ValueTask<SelectList>(
-                        new SelectList((new[] { "default color" }).Select(x => new SelectListItem(x)).ToList())
-                    );
+                    var models = (JArray?)dataSource.FirstOrDefault(x => x["Name"]!.Value<string>() == brandValue)?["Models"];
+                    var modelListItems = models?.Select(x => new SelectListItem(x["Name"]!.Value<string>()!)).ToList() ?? new List<SelectListItem>(0);
+                    return new(new SelectList(modelListItems));
                 }
+                case "Color" when dependencyValues.TryGetValue("Brand", out var brandValue) && dependencyValues.TryGetValue("Model", out var modelValue):
+                {
+                    var brandText = brandValue;
+                    var modelText = modelValue;
+                    var models = (JArray)dataSource.First(x => x["Name"]!.Value<string>() == brandText)["Models"]!;
+                    var model = models.FirstOrDefault(x => x["Name"]!.Value<string>() == modelText);
+                    var colors = (JArray?)model?["Colors"];
+                    var colorItems = colors?.Select(x => new SelectListItem(x.Value<string>()!)).ToList() ?? new List<SelectListItem>(0);
+                    return new(new SelectList(colorItems));
+                }
+                default:
+                    return new ValueTask<SelectList>();
             }
-
-            return new ValueTask<SelectList>();
         }
 
         protected override IActivityExecutionResult OnExecute()
         {
             Output = Brand;
             return Done();
+        }
+
+        private JArray GetDataSource()
+        {
+            return JArray.FromObject(new[]
+            {
+                new
+                {
+                    Name = "BMW",
+                    Models = new[]
+                    {
+                        new
+                        {
+                            Name = "1 Series",
+                            Colors = new[] { "Purple Silk metallic", "Java Green metallic", "Macao Blue" }
+                        },
+                        new
+                        {
+                            Name = "2 Series",
+                            Colors = new[] { "Purple Silk metallic", "Java Green metallic", "Macao Blue" }
+                        },
+                        new
+                        {
+                            Name = "i3",
+                            Colors = new[] { "Purple Silk metallic", "Java Green metallic", "Macao Blue" }
+                        },
+                        new
+                        {
+                            Name = "i8",
+                            Colors = new[] { "Purple Silk metallic", "Java Green metallic", "Macao Blue" }
+                        }
+                    }
+                },
+                new
+                {
+                    Name = "Peugeot",
+                    Models = new[]
+                    {
+                        new
+                        {
+                            Name = "208",
+                            Colors = new[] { "Red", "White" }
+                        },
+                        new
+                        {
+                            Name = "301",
+                            Colors = new[] { "Yellow", "Green" }
+                        },
+                        new
+                        {
+                            Name = "508",
+                            Colors = new[] { "Purple", "Black" }
+                        }
+                    }
+                },
+                new
+                {
+                    Name = "Tesla",
+                    Models = new[]
+                    {
+                        new
+                        {
+                            Name = "Roadster",
+                            Colors = new[] { "Purple", "Brown" }
+                        },
+                        new
+                        {
+                            Name = "Model S",
+                            Colors = new[] { "Red", "Black", "White", "Blue" }
+                        },
+                        new
+                        {
+                            Name = "Model 3",
+                            Colors = new[] { "Red", "Black", "White", "Blue" }
+                        },
+                        new
+                        {
+                            Name = "Model X",
+                            Colors = new[] { "Red", "Black", "White", "Blue" }
+                        },
+                        new
+                        {
+                            Name = "Model Y",
+                            Colors = new[] { "Silver", "Black", "White" }
+                        }
+                    }
+                }
+            });
         }
     }
 
