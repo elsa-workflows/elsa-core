@@ -90,7 +90,7 @@ namespace Elsa.Samples.Server.Host.Activities
                         );
                     if (brandValue == "Tesla")
                         return new ValueTask<SelectList>(
-                            new SelectList((new[] { "Roadster", "Model S", "Model 3", "Model X", "Model Y__", "Cybertruck" }).Select(x => new SelectListItem(x)).ToList())
+                            new SelectList((new[] { "Roadster", "Model S", "Model 3", "Model X", "Model Y", "Cybertruck" }).Select(x => new SelectListItem(x)).ToList())
                         );
                     if (brandValue == "Peugeot")
                         return new ValueTask<SelectList>(
