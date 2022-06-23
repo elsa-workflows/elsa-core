@@ -24,7 +24,6 @@ export class ElsaDropdownProperty {
 
   selectList: SelectList = {items: [], isFlagsEnum: false};
 
-
   async componentWillLoad() {
     const defaultSyntax = this.propertyDescriptor.defaultSyntax || SyntaxNames.Literal;
     this.currentValue = this.propertyModel.expressions[defaultSyntax] || undefined;
@@ -83,7 +82,6 @@ export class ElsaDropdownProperty {
       }
     }
   }
-
 
   async ReloadSelectListFromDeps(e) {
     let depValues = {};
