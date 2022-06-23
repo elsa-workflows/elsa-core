@@ -108,8 +108,11 @@ export class ElsaDropdownProperty {
       this.currentValue = optionIsObject ? firstOption.value : firstOption.toString();
     }
 
-    // Dispatch event to the next dependent input, if any.
-    currentSelectList.dispatchEvent(new Event("change"));
+    // Dispatch change event so that dependent dropdown elements refresh.
+    // Do this after the current component has re-rendered, otherwise the current value will be sent to the backend, which is outdated.
+    requestAnimationFrame(() => {
+      currentSelectList.dispatchEvent(new Event("change"));
+    });
   }
 
   private awaitElement = async selector => {
