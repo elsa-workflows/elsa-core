@@ -215,14 +215,20 @@ export class WorkflowDefinitionEditor {
           onDragOver={this.onDragOver}
           onDrop={this.onDrop}/>
         <elsa-panel
-          class="elsa-activity-editor-container"
+          class="elsa-workflow-editor-container"
           position={PanelPosition.Right}
-          onExpandedStateChanged={e => this.onActivityEditorPanelStateChanged(e.detail)}>
+          onExpandedStateChanged={e => this.onWorkflowEditorPanelStateChanged(e.detail)}>
           <div class="object-editor-container">
             {this.renderSelectedObject()}
           </div>
         </elsa-panel>
-
+        <elsa-panel
+          class="elsa-activity-editor-container"
+          position={PanelPosition.Bottom}
+          onExpandedStateChanged={e => this.onActivityEditorPanelStateChanged(e.detail)}>
+          <div class="activity-editor-container">
+          </div>
+        </elsa-panel>
       </div>
       // </WorkflowEditorTunnel.Provider>
     );
@@ -307,7 +313,8 @@ export class WorkflowDefinitionEditor {
   };
 
   private onActivityPickerPanelStateChanged = async (e: PanelStateChangedArgs) => await this.updateContainerLayout('activity-picker-closed', e.expanded)
-  private onActivityEditorPanelStateChanged = async (e: PanelStateChangedArgs) => await this.updateContainerLayout('object-editor-closed', e.expanded)
+  private onWorkflowEditorPanelStateChanged = async (e: PanelStateChangedArgs) => await this.updateContainerLayout('object-editor-closed', e.expanded)
+  private onActivityEditorPanelStateChanged = async (e: PanelStateChangedArgs) => await this.updateContainerLayout('activity-editor-closed', e.expanded)
 
   private onDragOver = (e: DragEvent) => {
     e.preventDefault();
