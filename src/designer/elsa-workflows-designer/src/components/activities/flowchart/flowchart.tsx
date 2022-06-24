@@ -295,7 +295,6 @@ export class FlowchartComponent implements ContainerActivityComponent {
       activity: activity,
       applyChanges: a => {
 
-        debugger;
         // Update the node's data with the activity.
         node.data = a;
 
