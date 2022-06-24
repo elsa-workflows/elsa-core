@@ -19,16 +19,18 @@ public class WorkflowSerializerOptionsProvider
         _serviceProvider = serviceProvider;
     }
 
-    public JsonSerializerOptions CreateApiOptions() => CreateDefaultOptions(ReferenceHandling.Ignore);
-    public JsonSerializerOptions CreatePersistenceOptions() => CreateDefaultOptions();
+    public JsonSerializerOptions CreateApiOptions(ReferenceHandler? referenceHandler = default) => CreateDefaultOptions(referenceHandler ?? ReferenceHandler.IgnoreCycles);
 
-    public JsonSerializerOptions CreateDefaultOptions(ReferenceHandling referenceHandling = ReferenceHandling.Preserve)
+    public JsonSerializerOptions CreatePersistenceOptions(ReferenceHandler? referenceHandler = default) => CreateDefaultOptions(referenceHandler ?? ReferenceHandler.IgnoreCycles);
+
+    public JsonSerializerOptions CreateDefaultOptions(ReferenceHandler? referenceHandling = default)
     {
         var options = new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             PropertyNameCaseInsensitive = true,
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+            ReferenceHandler = referenceHandling ?? ReferenceHandler.Preserve
         };
         
         options.Converters.Add(Create<JsonStringEnumConverter>());
@@ -37,17 +39,7 @@ public class WorkflowSerializerOptionsProvider
         
         // Give external packages a chance to further configure the serializer options. E.g. to add additional converters.
         foreach (var configurator in _configurators) configurator.Configure(options);
-        
-        // Dahomey.
-        // options.SetupExtensions();
-        // options.SetReferenceHandling(referenceHandling);
-        //
-        // // Setup polymorphic serialization.
-        // var registry = options.GetDiscriminatorConventionRegistry();
-        // registry.RegisterConvention(new DefaultDiscriminatorConvention<string>(options));
-        // registry.DiscriminatorPolicy = DiscriminatorPolicy.Auto;
 
-        
         return options;
     }
 
