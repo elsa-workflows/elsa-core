@@ -12,6 +12,7 @@ import {
   WorkflowDefinition
 } from '../../../models';
 import {
+  ActivityIdUpdatedArgs,
   ActivityUpdatedArgs,
   DeleteActivityRequestedArgs
 } from './activity-properties-editor';
@@ -194,15 +195,13 @@ export class WorkflowDefinitionEditor {
   }
 
   render() {
-    // const tunnelState: WorkflowDesignerState = {
-    //   workflowDefinition: this.workflowDefinitionState,
-    // };
+
+    const workflowDefinition = this.workflowDefinitionState;
 
     return (
-      // <WorkflowEditorTunnel.Provider state={tunnelState}>
       <div class="absolute inset-0" ref={el => this.container = el}>
         <elsa-workflow-definition-editor-toolbar zoomToFit={this.onZoomToFit}/>
-        <elsa-workflow-navigator items={this.currentWorkflowPath} workflowDefinition={this.workflowDefinition} onNavigate={this.onNavigateHierarchy}/>
+        <elsa-workflow-navigator items={this.currentWorkflowPath} workflowDefinition={workflowDefinition} onNavigate={this.onNavigateHierarchy}/>
         <elsa-panel
           class="elsa-activity-picker-container"
           position={PanelPosition.Left}
@@ -230,7 +229,6 @@ export class WorkflowDefinitionEditor {
           </div>
         </elsa-panel>
       </div>
-      // </WorkflowEditorTunnel.Provider>
     );
   }
 
@@ -240,6 +238,7 @@ export class WorkflowDefinitionEditor {
         activity={this.selectedActivity}
         variables={this.workflowDefinitionState.variables}
         onActivityUpdated={e => this.onActivityUpdated(e)}
+        onActivityIdUpdated={e => this.onActivityIdUpdated(e)}
         onDeleteActivityRequested={e => this.onDeleteActivityRequested(e)}/>
 
     return <elsa-workflow-definition-properties-editor
@@ -341,6 +340,20 @@ export class WorkflowDefinitionEditor {
     this.emitActivityChangedDebounced({...e.detail, workflowEditor: this.el});
     this.saveChangesDebounced();
   }
+
+  private onActivityIdUpdated = (e: CustomEvent<ActivityIdUpdatedArgs>) => {
+    const originalId = e.detail.originalId;
+    const newId = e.detail.newId;
+    const workflowPath = this.currentWorkflowPath;
+    const item = workflowPath.find(x => x.activityId == originalId);
+
+    if (!item)
+      return;
+
+    item.activityId = newId;
+    this.currentWorkflowPath = [...workflowPath];
+  }
+
 
   private onWorkflowPropsUpdated = (e: CustomEvent<WorkflowDefinitionPropsUpdatedArgs>) => this.saveChangesDebounced()
 

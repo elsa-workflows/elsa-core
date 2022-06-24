@@ -6,7 +6,7 @@
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
 import { ActionDefinition, ActionInvokedArgs, Activity, ActivitySelectedArgs, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs, IntellisenseContext, SelectListItem, TabChangedArgs, TabDefinition, Variable, WorkflowDefinition, WorkflowDefinitionSummary, WorkflowInstance, WorkflowInstanceSummary } from "./models";
-import { ActivityUpdatedArgs, DeleteActivityRequestedArgs } from "./components/designer/workflow-definition-editor/activity-properties-editor";
+import { ActivityIdUpdatedArgs, ActivityUpdatedArgs, DeleteActivityRequestedArgs } from "./components/designer/workflow-definition-editor/activity-properties-editor";
 import { Button } from "./components/shared/button-group/models";
 import { ContainerActivityComponent } from "./components/activities/container-activity-component";
 import { AddActivityArgs } from "./components/designer/canvas/canvas";
@@ -638,6 +638,7 @@ declare namespace LocalJSX {
     }
     interface ElsaActivityPropertiesEditor {
         "activity"?: Activity;
+        "onActivityIdUpdated"?: (event: CustomEvent<ActivityIdUpdatedArgs>) => void;
         "onActivityUpdated"?: (event: CustomEvent<ActivityUpdatedArgs>) => void;
         "onDeleteActivityRequested"?: (event: CustomEvent<DeleteActivityRequestedArgs>) => void;
         "variables"?: Array<Variable>;
