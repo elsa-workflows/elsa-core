@@ -4,36 +4,33 @@ type ApplyResizeParams = {
   position: PanelPosition;
   isDefault?: boolean;
   isHide?: boolean;
-  size?: number;
+  width?: number;
 };
 
 const positionToLocalStorage = {
   [PanelPosition.Right]: 'LS/rightPanelWidth',
   [PanelPosition.Left]: 'LS/leftPanelWidth',
-  [PanelPosition.Bottom]: 'LS/bottomPanelWidth',
 };
 
 const positionToCssVariable = {
-  [PanelPosition.Right]: '--workflow-editor-width',
+  [PanelPosition.Right]: '--activity-editor-width',
   [PanelPosition.Left]: '--activity-picker-width',
-  [PanelPosition.Bottom]: '--activity-editor-height',
 };
 
-const positionToDefaultSize = {
+const positionToDefaultWidth = {
   [PanelPosition.Right]: 580,
   [PanelPosition.Left]: 300,
-  [PanelPosition.Bottom]: 200,
 };
 
-function getPanelDefaultSize(position: PanelPosition) {
-  return localStorage.getItem(positionToLocalStorage[position]) || positionToDefaultSize[position];
+function getPanelDefaultWidth(position: PanelPosition) {
+  return localStorage.getItem(positionToLocalStorage[position]) || positionToDefaultWidth[position];
 }
 
-function updatePanelDefaultSize(position: PanelPosition, size: number) {
-  return localStorage.setItem(positionToLocalStorage[position], size.toString());
+function updatePanelDefaultWidth(position: PanelPosition, width: number) {
+  return localStorage.setItem(positionToLocalStorage[position], width.toString());
 }
 
-export function applyResize({ position, isDefault, isHide, size }: ApplyResizeParams) {
+export function applyResize({ position, isDefault, isHide, width }: ApplyResizeParams) {
   const root = document.querySelector<HTMLElement>(':root');
 
   if (isHide) {
@@ -42,11 +39,11 @@ export function applyResize({ position, isDefault, isHide, size }: ApplyResizePa
   }
 
   if (isDefault) {
-    root.style.setProperty(positionToCssVariable[position], `${getPanelDefaultSize(position)}px`);
+    root.style.setProperty(positionToCssVariable[position], `${getPanelDefaultWidth(position)}px`);
     return;
   }
 
-  root.style.setProperty(positionToCssVariable[position], `${size}px`);
-  updatePanelDefaultSize(position, size);
+  root.style.setProperty(positionToCssVariable[position], `${width}px`);
+  updatePanelDefaultWidth(position, width);
   return;
 }

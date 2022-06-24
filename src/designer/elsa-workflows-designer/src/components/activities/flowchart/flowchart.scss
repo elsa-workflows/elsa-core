@@ -2,7 +2,7 @@
   &.x6-graph-scroller-pannable[data-panning='false'] {
     cursor: default;
   }
-  width: calc(100vw - var(--workflow-editor-width) - var(--activity-picker-width)) !important;
+  width: calc(100vw - var(--activity-editor-width) - var(--activity-picker-width)) !important;
 }
 
 .x6-widget-selection-box {

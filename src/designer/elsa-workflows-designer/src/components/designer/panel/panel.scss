@@ -1,11 +1,6 @@
-.panel-state-collapsed {
+.panel-state-closed {
 
-  &.panel {
-
-    &-position-bottom {
-      right: var(--workflow-editor-width);
-      left: var(--activity-picker-width);
-    }
+  .panel {
 
     &panel-position-top {
       width: 0;
