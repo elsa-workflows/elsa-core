@@ -24,7 +24,7 @@ export class WorkflowNavigator {
 
     if (!this.workflowDefinition)
       return;
-    
+
     const nodes = flatten(walkActivities(this.workflowDefinition.root));
 
     return <div class="ml-8">
