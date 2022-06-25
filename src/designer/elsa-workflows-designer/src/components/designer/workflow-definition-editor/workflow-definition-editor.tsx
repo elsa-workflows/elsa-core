@@ -349,6 +349,15 @@ export class WorkflowDefinitionEditor {
     const activityDescriptor: ActivityDescriptor = JSON.parse(json);
     const newName = await this.generateUniqueActivityName(activityDescriptor);
 
+    const newActivity: Activity = {
+      id: newName,
+      typeName: activityDescriptor.activityType,
+      metadata: {},
+      applicationProperties: {}
+    };
+
+    this.nodeMap[newName] = newActivity;
+
     await this.canvas.addActivity({
       descriptor: activityDescriptor,
       id: newName,
