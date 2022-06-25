@@ -59,7 +59,13 @@ export function createGraph(
       allowEdge: false,
       allowPort: true,
       highlight: true,
-      router: 'manhattan',
+      router: {
+        name: 'manhattan',
+        args: {
+          startDirections: ['right'],
+          endDirections: ['left'],
+        },
+      },
       // router: {
       //   name: 'metro',
       //   args: {
