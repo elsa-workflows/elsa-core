@@ -4,6 +4,7 @@ import {Container} from "typedi"
 import {Activity, ActivityDescriptor} from "../models";
 import {PortProviderRegistry} from "./port-provider-registry";
 import descriptorsStore from '../data/descriptors-store';
+import {Hash} from "../utils";
 
 export interface ActivityNode {
   activity: Activity;
@@ -15,6 +16,24 @@ export interface ActivityNode {
 export interface ActivityPort {
   activity: Activity;
   port: string;
+}
+
+export function createActivityMap(nodes: Array<ActivityNode>): Hash<Activity> {
+  const map = {};
+
+  for (const node of nodes)
+    map[node.activity.id] = node.activity;
+
+  return map;
+}
+
+export function createActivityNodeMap(nodes: Array<ActivityNode>): Hash<ActivityNode> {
+  const map = {};
+
+  for (const node of nodes)
+    map[node.activity.id] = node;
+
+  return map;
 }
 
 export function walkActivities(root: Activity): ActivityNode {

@@ -8,3 +8,4 @@ export * from "./foreach";
 export * from "./delay";
 export * from "./timer";
 export * from "./run-javascript";
+export * from "./models";

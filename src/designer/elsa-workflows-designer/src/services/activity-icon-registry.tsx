@@ -16,7 +16,7 @@ import {
 } from "../components/icons/activities";
 
 export type ActivityType = string;
-export type ActivityIcon = () => any;
+export type ActivityIcon = (ActivityIconSettings?) => any;
 
 // A registry of activity icons.
 @Service()
@@ -24,16 +24,16 @@ export class ActivityIconRegistry {
   private iconMap: Map<ActivityType, ActivityIcon> = new Map<ActivityType, ActivityIcon>();
 
   constructor() {
-    this.add('Elsa.WriteLine', () => <WriteLineIcon/>);
-    this.add('Elsa.ReadLine', () => <ReadLineIcon/>);
-    this.add('Elsa.If', () => <IfIcon/>);
-    this.add('Elsa.Flowchart', () => <FlowchartIcon/>);
-    this.add('Elsa.HttpEndpoint', () => <HttpEndpointIcon/>);
-    this.add('Elsa.ForEach', () => <ForEachIcon/>);
-    this.add('Elsa.Delay', () => <DelayIcon/>);
-    this.add('Elsa.Timer', () => <TimerIcon/>);
-    this.add('Elsa.Event', () => <EventIcon/>);
-    this.add('Elsa.RunJavaScript', () => <RunJavaScriptIcon/>);
+    this.add('Elsa.WriteLine', settings => <WriteLineIcon size={settings?.size}/>);
+    this.add('Elsa.ReadLine', settings => <ReadLineIcon size={settings?.size}/>);
+    this.add('Elsa.If', settings => <IfIcon size={settings?.size}/>);
+    this.add('Elsa.Flowchart', settings => <FlowchartIcon size={settings?.size}/>);
+    this.add('Elsa.HttpEndpoint', settings => <HttpEndpointIcon size={settings?.size}/>);
+    this.add('Elsa.ForEach', settings => <ForEachIcon size={settings?.size}/>);
+    this.add('Elsa.Delay', settings => <DelayIcon size={settings?.size}/>);
+    this.add('Elsa.Timer', settings => <TimerIcon size={settings?.size}/>);
+    this.add('Elsa.Event', settings => <EventIcon size={settings?.size}/>);
+    this.add('Elsa.RunJavaScript', settings => <RunJavaScriptIcon size={settings?.size}/>);
   }
 
   public add(activityType: ActivityType, icon: ActivityIcon) {

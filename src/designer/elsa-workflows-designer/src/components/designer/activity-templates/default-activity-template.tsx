@@ -119,7 +119,7 @@ export class DefaultActivityTemplate {
   };
 
   private renderPort = (activity: Activity, port: Port) => {
-    const canStartWorkflow = activity.canStartWorkflow;
+    const canStartWorkflow = activity?.canStartWorkflow == true;
     const textColor = canStartWorkflow ? 'text-white' : 'text-gray-700';
     const borderColor = port.name == this.selectedPortName ? 'border-blue-600' : 'border-gray-300';
     const portName = camelCase(port.name);

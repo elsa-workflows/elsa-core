@@ -98,7 +98,7 @@ export class WorkflowInstanceBrowser {
             <Filter {...filterProps}/>
 
             <div class="align-middle inline-block min-w-full border-b border-gray-200">
-              <table>
+              <table class="default-table">
                 <thead>
                 <tr>
                   <th>

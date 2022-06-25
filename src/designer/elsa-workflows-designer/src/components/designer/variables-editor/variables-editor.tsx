@@ -33,7 +33,7 @@ export class VariablesEditor {
           <button class="btn btn-primary" onClick={e => this.onAddVariableClick()}>Add variable</button>
         </div>
         <div class="align-middle inline-block min-w-full border-b border-gray-200">
-          <table>
+          <table class="default-table">
             <thead>
             <tr>
               <th scope="col">Name</th>

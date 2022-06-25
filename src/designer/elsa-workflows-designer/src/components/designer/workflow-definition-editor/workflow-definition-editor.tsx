@@ -16,7 +16,7 @@ import {
   ActivityUpdatedArgs,
   DeleteActivityRequestedArgs
 } from './activity-properties-editor';
-import {PluginRegistry, ActivityNameFormatter, ActivityDriverRegistry, EventBus, findActivity, walkActivities, flattenList, flatten, ActivityNode} from '../../../services';
+import {PluginRegistry, ActivityNameFormatter, ActivityDriverRegistry, EventBus, findActivity, walkActivities, flattenList, flatten, ActivityNode, createActivityMap} from '../../../services';
 import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
 import {Flowchart} from "../../activities/flowchart/models";
 import {ActivityPropertyChangedEventArgs, WorkflowDefinitionPropsUpdatedArgs, WorkflowDefinitionUpdatedArgs, WorkflowEditorEventTypes} from "./models";
@@ -164,13 +164,7 @@ export class WorkflowDefinitionEditor {
   @Method()
   async updateWorkflowDefinition(workflowDefinition: WorkflowDefinition): Promise<void> {
     this.workflowDefinitionState = workflowDefinition;
-    const nodes = flatten(walkActivities(workflowDefinition.root));
-    const nodeMap = {};
-
-    for (const node of nodes)
-      nodeMap[node.activity.id] = node.activity;
-
-    this.nodeMap = nodeMap;
+    this.nodeMap = createActivityMap(flatten(walkActivities(workflowDefinition.root)));
 
     if (this.currentWorkflowPath.length == 0)
       this.currentWorkflowPath = [{activityId: workflowDefinition.root.id, portName: null}];
