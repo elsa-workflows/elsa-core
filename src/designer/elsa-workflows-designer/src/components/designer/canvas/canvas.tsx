@@ -9,6 +9,11 @@ export interface AddActivityArgs {
   y?: number;
 }
 
+export interface UpdateActivityArgs {
+  id: string;
+  activity: Activity;
+}
+
 @Component({
   tag: 'elsa-canvas',
   styleUrl: 'canvas.scss',
@@ -27,6 +32,11 @@ export class Canvas {
   @Method()
   public async addActivity(args: AddActivityArgs): Promise<void> {
     await this.root.addActivity(args);
+  }
+
+  @Method()
+  public async updateActivity(args: UpdateActivityArgs): Promise<void> {
+    await this.root.updateActivity(args);
   }
 
   @Method()

@@ -2,9 +2,10 @@ import {Component, h, Prop, State, Event, EventEmitter, Listen, Element} from "@
 import {camelCase} from 'lodash';
 import {ActivityIcon, ActivityIconRegistry} from "../../../services";
 import {Container} from "typedi";
-import {Activity, ActivityDescriptor, ActivityKind, EditChildActivityArgs, Port} from "../../../models";
+import {Activity, ActivityDescriptor, ActivityKind, ActivitySelectedArgs, ChildActivitySelectedArgs, EditChildActivityArgs, Port} from "../../../models";
 import descriptorsStore from "../../../data/descriptors-store";
 import {isNullOrWhitespace} from "../../../utils";
+import WorkflowEditorTunnel from "../state";
 
 @Component({
   tag: 'elsa-default-activity-template',
@@ -13,7 +14,6 @@ import {isNullOrWhitespace} from "../../../utils";
 export class DefaultActivityTemplate {
   private readonly iconRegistry: ActivityIconRegistry;
   private activityDescriptor: ActivityDescriptor;
-  private parsedActivity: Activity;
   private icon: ActivityIcon;
   private portElements: Array<HTMLElement> = [];
 
@@ -23,21 +23,13 @@ export class DefaultActivityTemplate {
 
   @Prop({attribute: 'activity-type'}) activityType: string;
   @Prop({attribute: 'display-type'}) displayType: string;
-  @Prop({attribute: 'activity'}) activityJson: string;
-  @Prop() selected: boolean;
+  @Prop({attribute: 'activity-id'}) activityId: string;
   @Event() editChildActivity: EventEmitter<EditChildActivityArgs>;
+  @Event() childActivitySelected: EventEmitter<ChildActivitySelectedArgs>;
   @State() private selectedPortName: string;
 
   componentWillLoad() {
     const iconRegistry = this.iconRegistry;
-
-    const encodedActivityJson = this.activityJson;
-
-    if (!isNullOrWhitespace(encodedActivityJson)) {
-      const decodedActivityJson = decodeURI(encodedActivityJson);
-      this.parsedActivity = JSON.parse(decodedActivityJson);
-    }
-
     this.activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.activityType == this.activityType);
     const activityType = this.activityType;
     this.icon = iconRegistry.has(activityType) ? iconRegistry.get(activityType) : null;
@@ -49,41 +41,49 @@ export class DefaultActivityTemplate {
 
   render() {
     const activityDescriptor = this.activityDescriptor;
-    const activity = this.parsedActivity;
-    const canStartWorkflow = activity?.canStartWorkflow;
-    const icon = this.icon;
-    const textColor = canStartWorkflow ? 'text-white' : 'text-gray-700';
-    const isTrigger = activityDescriptor?.kind == ActivityKind.Trigger;
-    const backgroundColor = canStartWorkflow ? isTrigger ? 'bg-green-400' : 'bg-blue-400' : 'bg-white';
-    const iconBackgroundColor = isTrigger ? 'bg-green-500' : 'bg-blue-500';
-    const borderColor = this.selected ? 'border-blue-600' : canStartWorkflow ? isTrigger ? 'border-green-600' : 'border-blue-600' : 'border-gray-300';
-    const displayTypeIsPicker = this.displayTypeIsPicker;
-    const displayTypeIsEmbedded = this.displayTypeIsEmbedded;
-    const containerCssClass = displayTypeIsEmbedded ? '' : 'drop-shadow-md';
-    const contentCssClass = displayTypeIsPicker ? 'px-2 py-2' : 'px-4 py-4';
-    let displayText = activity?.metadata?.displayText;
-
-    if (isNullOrWhitespace(displayText))
-      displayText = activityDescriptor?.displayName;
+    const activityId = this.activityId;
 
     return (
-      <div>
-        <div class={`activity-wrapper border ${borderColor} ${backgroundColor} ${containerCssClass} rounded text-white overflow-hidden`}>
-          <div class="activity-content-wrapper flex flex-row">
-            <div class={`flex flex-shrink items-center ${iconBackgroundColor}`}>
-              {this.renderIcon(icon)}
-            </div>
-            <div class="flex items-center">
-              <div class={contentCssClass}>
-                <span class={textColor}>{displayText}</span>
-                <div>
-                  {this.renderPorts()}
+      <WorkflowEditorTunnel.Consumer>
+        {({nodeMap}) => {
+          const activity: Activity = nodeMap[activityId];
+          const canStartWorkflow = activity?.canStartWorkflow;
+          const icon = this.icon;
+          const textColor = canStartWorkflow ? 'text-white' : 'text-gray-700';
+          const isTrigger = activityDescriptor?.kind == ActivityKind.Trigger;
+          const backgroundColor = canStartWorkflow ? isTrigger ? 'bg-green-400' : 'bg-blue-400' : 'bg-white';
+          const iconBackgroundColor = isTrigger ? 'bg-green-500' : 'bg-blue-500';
+          const borderColor = canStartWorkflow ? isTrigger ? 'border-green-600' : 'border-blue-600' : 'border-gray-300';
+          const displayTypeIsPicker = this.displayTypeIsPicker;
+          const displayTypeIsEmbedded = this.displayTypeIsEmbedded;
+          const containerCssClass = displayTypeIsEmbedded ? '' : 'drop-shadow-md';
+          const contentCssClass = displayTypeIsPicker ? 'px-2 py-2' : 'px-4 py-4';
+          let displayText = activity?.metadata?.displayText;
+
+          if (isNullOrWhitespace(displayText))
+            displayText = activityDescriptor?.displayName;
+
+          return (
+            <div>
+              <div class={`activity-wrapper border ${borderColor} ${backgroundColor} ${containerCssClass} rounded text-white overflow-hidden`}>
+                <div class="activity-content-wrapper flex flex-row">
+                  <div class={`flex flex-shrink items-center ${iconBackgroundColor}`}>
+                    {this.renderIcon(icon)}
+                  </div>
+                  <div class="flex items-center">
+                    <div class={contentCssClass}>
+                      <span class={textColor}>{displayText}</span>
+                      <div>
+                        {this.renderPorts(activity)}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
+          );
+        }}
+      </WorkflowEditorTunnel.Consumer>
     )
   }
 
@@ -100,7 +100,7 @@ export class DefaultActivityTemplate {
     );
   }
 
-  private renderPorts = () => {
+  private renderPorts = (activity: Activity) => {
 
     if (this.displayTypeIsPicker)
       return undefined;
@@ -113,16 +113,16 @@ export class DefaultActivityTemplate {
 
     return (
       <div class="activity-ports mt-2 flex space-x-2">
-        {ports.map(port => this.renderPort(port))}
+        {ports.map(port => this.renderPort(activity, port))}
       </div>
     );
   };
 
-  private renderPort = (port: Port) => {
-    const canStartWorkflow = this.parsedActivity?.canStartWorkflow;
+  private renderPort = (activity: Activity, port: Port) => {
+    const canStartWorkflow = activity.canStartWorkflow;
     const textColor = canStartWorkflow ? 'text-white' : 'text-gray-700';
+    const borderColor = port.name == this.selectedPortName ? 'border-blue-600' : 'border-gray-300';
     const portName = camelCase(port.name);
-    const activity = this.parsedActivity;
     const childActivity: Activity = activity ? activity[portName] : null;
     const childActivityDescriptor: ActivityDescriptor = childActivity != null ? descriptorsStore.activityDescriptors.find(x => x.activityType == childActivity.typeName) : null;
     let childActivityDisplayText = childActivity?.metadata?.displayText;
@@ -137,7 +137,10 @@ export class DefaultActivityTemplate {
         </div>
         <div>
           {childActivity ? (
-            <div class="relative block w-full border-2 border-gray-300 border-solid rounded-lg p-5 text-center focus:outline-none">
+            <div class={`relative block w-full border-2 ${borderColor} border-solid rounded-lg p-5 text-center focus:outline-none`}
+                 onMouseDown={this.onChildActivityMouseDown}
+                 onClick={e => this.onChildActivityClick(e, activity, childActivity, port)}
+            >
               <div class="flex space-x-2">
                 <div class="flex-grow">
                   <span class={textColor}>{childActivityDisplayText}</span>
@@ -195,5 +198,21 @@ export class DefaultActivityTemplate {
   private onEditChildActivityClick = (e: MouseEvent, parentActivity: Activity, port: Port) => {
     e.preventDefault();
     this.editChildActivity.emit({parentActivityId: parentActivity.id, port: port});
+  };
+
+  private onChildActivityMouseDown = (e: MouseEvent) => {
+    // Prevent X6 from capturing the click event.
+    e.stopPropagation();
+  };
+
+  private onChildActivityClick = (e: MouseEvent, parentActivity: Activity, childActivity: Activity, port: Port) => {
+    const args: ChildActivitySelectedArgs = {
+      parentActivity: parentActivity,
+      childActivity: childActivity,
+      port: port
+    };
+
+    this.selectedPortName = port.name;
+    this.childActivitySelected.emit(args);
   };
 }

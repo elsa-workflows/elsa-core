@@ -3,6 +3,10 @@ import _, {camelCase} from 'lodash';
 import {ActivityInput, VersionOptions} from '../models';
 import {ActivityInputContext} from '../services/node-input-driver';
 
+export interface Hash<TValue> {
+  [key: string]: TValue;
+}
+
 export function formatTimestamp(timestamp?: Date, defaultText?: string): string {
   return !!timestamp ? moment(timestamp).format('DD-MM-YYYY HH:mm:ss') : defaultText;
 }
@@ -82,7 +86,8 @@ export const serializeQueryString = (queryString: object): string => {
   const queryStringItems = _.map(filteredItems, (v, k) => {
     if (Array.isArray(v)) {
       return v.map(item => `${k}=${item}`).join('&');
-    };
+    }
+    ;
     return `${k}=${v}`;
   });
   return queryStringItems.length > 0 ? `?${queryStringItems.join('&')}` : '';
