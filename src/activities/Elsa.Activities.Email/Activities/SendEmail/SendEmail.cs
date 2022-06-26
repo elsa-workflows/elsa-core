@@ -121,6 +121,9 @@ namespace Elsa.Activities.Email
 
             if (attachments != null)
             {
+                if (attachments is string && string.IsNullOrWhiteSpace((string)attachments))
+                    return;
+                    
                 var index = 0;
                 var attachmentObjects = InterpretAttachmentsModel(attachments);
 
