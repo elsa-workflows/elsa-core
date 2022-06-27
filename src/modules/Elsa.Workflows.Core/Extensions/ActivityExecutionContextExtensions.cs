@@ -17,9 +17,10 @@ public static class ActivityExecutionContextExtensions
     {
         var activity = context.Activity;
         var activityInstanceId = context.Id;
+        var parentActivityInstanceId = context.ParentActivityExecutionContext?.Id;
         var workflowExecutionContext = context.WorkflowExecutionContext;
         var now = context.GetRequiredService<ISystemClock>().UtcNow;
-        var logEntry = new WorkflowExecutionLogEntry(activityInstanceId, activity.Id, activity.TypeName, now, eventName, message, source, payload);
+        var logEntry = new WorkflowExecutionLogEntry(activityInstanceId, parentActivityInstanceId, activity.Id, activity.TypeName, now, eventName, message, source, payload);
         workflowExecutionContext.ExecutionLog.Add(logEntry);
         return logEntry;
     }

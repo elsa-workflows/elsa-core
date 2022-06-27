@@ -165,6 +165,9 @@ namespace Elsa.Workflows.Persistence.EntityFrameworkCore.Sqlite.Migrations
                     b.Property<string>("Message")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("ParentActivityInstanceId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("PayloadData")
                         .HasColumnType("TEXT");
 
@@ -196,6 +199,9 @@ namespace Elsa.Workflows.Persistence.EntityFrameworkCore.Sqlite.Migrations
 
                     b.HasIndex("EventName")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_EventName");
+
+                    b.HasIndex("ParentActivityInstanceId")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_ParentActivityInstanceId");
 
                     b.HasIndex("Timestamp")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_Timestamp");

@@ -1,13 +1,8 @@
 import {Component, Element, h, Listen, Prop, Watch} from '@stencil/core';
 import 'reflect-metadata';
 import {Container} from 'typedi';
-import {v4 as uuid} from 'uuid';
-import {
-  ElsaApiClientProvider,
-  ElsaClient,
-  ServerSettings
-} from '../../../services';
-import {ActivityDescriptor, VersionOptions, WorkflowDefinition, WorkflowInstanceSummary, WorkflowDefinitionSummary} from '../../../models';
+import {ElsaApiClientProvider, ElsaClient, ServerSettings} from '../../../services';
+import {ActivityDescriptor, VersionOptions, WorkflowDefinition, WorkflowDefinitionSummary, WorkflowInstanceSummary} from '../../../models';
 import {PublishClickedArgs} from "../../toolbar/workflow-publish-button/workflow-publish-button";
 import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
 import {downloadFromBlob} from "../../../utils";
@@ -127,7 +122,9 @@ export class Studio {
       variables: []
     } as Flowchart;
 
-    const workflowDefinition: WorkflowDefinition = {
+    this.workflowManagerElement.workflowInstance = null;
+
+    this.workflowManagerElement.workflowDefinition = {
       root: flowchart,
       id: '',
       definitionId: '',
@@ -136,9 +133,7 @@ export class Studio {
       isPublished: false,
       name: 'workflow1',
       materializerName: 'Json'
-    }
-
-    this.workflowManagerElement.workflowDefinition = workflowDefinition;
+    };
   }
 
   @Listen('exportClicked')

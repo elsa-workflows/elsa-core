@@ -40,6 +40,7 @@ public class Get : Controller
                 new WorkflowExecutionLogRecordModel(
                     x.Id,
                     x.ActivityInstanceId,
+                    x.ParentActivityInstanceId,
                     x.ActivityId,
                     x.ActivityType,
                     x.Timestamp,
@@ -57,6 +58,7 @@ public class Get : Controller
     public record WorkflowExecutionLogRecordModel(
         string Id,
         string ActivityInstanceId,
+        string? ParentActivityInstanceId,
         string ActivityId,
         string ActivityType,
         DateTimeOffset Timestamp,

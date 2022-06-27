@@ -1,13 +1,13 @@
 import {Component, h, Prop, State, Watch} from "@stencil/core";
-import {ActionDefinition, ActionType, Activity, ActivityDescriptor, ActivityMetadata, WorkflowDefinition, WorkflowExecutionLogRecord, WorkflowInstance} from "../../../models";
+import {ActivityDescriptor, WorkflowDefinition, WorkflowExecutionLogRecord, WorkflowInstance} from "../../../models";
 import {Container} from "typedi";
-import {ActivityIconRegistry, ActivityNode, createActivityMap, createActivityNodeMap, ElsaApiClientProvider, flatten, walkActivities} from "../../../services";
-import {durationToString, formatTime, formatTimestamp, getDuration, Hash, isNullOrWhitespace} from "../../../utils";
+import {ActivityIconRegistry, ActivityNode, createActivityNodeMap, ElsaApiClientProvider, flatten, walkActivities} from "../../../services";
+import {durationToString, formatTime, getDuration, Hash, isNullOrWhitespace} from "../../../utils";
 import descriptorsStore from '../../../data/descriptors-store';
 import {ActivityExecutionEventBlock} from "./models";
 import {ActivityIconSize} from "../../icons/activities";
 
-const PAGE_SIZE: number = 20;
+const PAGE_SIZE: number = 1000;
 
 @Component({
   tag: 'elsa-workflow-journal',
@@ -28,7 +28,6 @@ export class WorkflowJournal {
   @State() nodeMap: Hash<ActivityNode> = {};
   @State() nodes: Array<ActivityNode> = [];
   @State() workflowExecutionLogRecords: Array<WorkflowExecutionLogRecord> = [];
-  @State() activityExecutionEventBlocks: Array<ActivityExecutionEventBlock> = [];
   @State() rootBlocks: Array<ActivityExecutionEventBlock> = [];
   @State() expandedBlocks: Array<ActivityExecutionEventBlock> = [];
 
@@ -40,6 +39,7 @@ export class WorkflowJournal {
 
   @Watch('workflowDefinition')
   async onWorkflowDefinitionChanged(value: string) {
+    this.rootBlocks = [];
     this.createGraph();
     await this.loadJournalPage(0);
   }
@@ -89,7 +89,7 @@ export class WorkflowJournal {
                   </thead>
 
                   <tbody class="bg-white divide-y divide-gray-100">
-                  {this.renderBlocks()}
+                  {this.renderBlocks(this.rootBlocks)}
                   </tbody>
                 </table>
               </div>
@@ -100,11 +100,10 @@ export class WorkflowJournal {
     );
   }
 
-  private renderBlocks = (activityId?: string) => {
+  private renderBlocks = (blocks: Array<ActivityExecutionEventBlock>) => {
     const nodeMap = this.nodeMap;
     const iconRegistry = this.iconRegistry;
     const expandedBlocks = this.expandedBlocks;
-    const blocks = this.findChildBlocks(activityId);
 
     return blocks.map((block, index) => {
       const activityNode = nodeMap[block.activityId];
@@ -155,7 +154,7 @@ export class WorkflowJournal {
             <span class="inline-flex rounded-full bg-green-100 px-2 text-xs font-semibold leading-5 text-green-800">{status}</span>
           </td>
           <td>{duration}</td>
-        </tr>, expanded ? this.renderBlocks(block.activityId) : undefined]
+        </tr>, expanded ? this.renderBlocks(block.children) : undefined]
       );
     });
   }
@@ -175,49 +174,47 @@ export class WorkflowJournal {
     const client = await this.elsaApiClientProvider.getElsaClient();
     const workflowInstanceId = this.workflowInstance.id;
     const pageOfRecords = await client.workflowInstances.getJournal({page, pageSize: PAGE_SIZE, workflowInstanceId: workflowInstanceId})
-    const blocks = this.groupRecords(pageOfRecords.items);
+    const blocks = this.createBlocks(pageOfRecords.items);
+    const rootBlocks = blocks.filter(x => !x.parentActivityInstanceId);
     this.workflowExecutionLogRecords = [...this.workflowExecutionLogRecords, ...pageOfRecords.items];
-    this.activityExecutionEventBlocks = [...this.activityExecutionEventBlocks, ...blocks];
-    this.rootBlocks = this.findChildBlocks(null);
+    this.rootBlocks = rootBlocks;
   }
 
-  private groupRecords = (records: Array<WorkflowExecutionLogRecord>): Array<ActivityExecutionEventBlock> => {
+  private createBlocks = (records: Array<WorkflowExecutionLogRecord>): Array<ActivityExecutionEventBlock> => {
     const startedEvents = records.filter(x => x.eventName == 'Started');
     const completedEvents = records.filter(x => x.eventName == 'Completed');
-    const nodeMap = this.nodeMap;
 
-    const blocks: Array<ActivityExecutionEventBlock> = startedEvents.map(startedRecord => {
+    const blocks = startedEvents.map(startedRecord => {
       const completedRecord = completedEvents.find(x => x.activityInstanceId == startedRecord.activityInstanceId);
       const duration = !!completedRecord ? getDuration(completedRecord.timestamp, startedRecord.timestamp) : null;
-      const node = nodeMap[startedRecord.activityId];
-      const parents = node.parents.map(x => x.activity.id);
-      const children = node.children.map(x => x.activity.id);
 
       return {
         activityId: startedRecord.activityId,
-        parents: parents,
-        children: children,
+        activityInstanceId: startedRecord.activityInstanceId,
+        parentActivityInstanceId: startedRecord.parentActivityInstanceId,
         completed: !!completedRecord,
         timestamp: startedRecord.timestamp,
         duration: duration,
         startedRecord: startedRecord,
-        completedRecord: completedRecord
-      }
+        completedRecord: completedRecord,
+        children: []
+      };
     });
+
+    for (const block of blocks)
+      block.children = this.findChildBlocks(blocks, block.activityInstanceId);
 
     return blocks;
   };
 
-  private findChildBlocks = (parentActivityId?: string): Array<ActivityExecutionEventBlock> => {
-    const blocks = this.activityExecutionEventBlocks;
+  private findChildBlocks = (blocks: Array<ActivityExecutionEventBlock>, parentActivityInstanceId?: string): Array<ActivityExecutionEventBlock> => {
 
     if (blocks.length == 0)
       return [];
 
-    if (!!parentActivityId)
-      return blocks.filter(x => !!x.parents.find(p => p == parentActivityId));
-
-    return blocks.filter(x => x.parents.length == 0);
+    return !!parentActivityInstanceId
+      ? blocks.filter(x => x.parentActivityInstanceId == parentActivityInstanceId)
+      : blocks.filter(x => !x.parentActivityInstanceId);
   }
 
   private onBlockClick = (e: MouseEvent, block: ActivityExecutionEventBlock) => {

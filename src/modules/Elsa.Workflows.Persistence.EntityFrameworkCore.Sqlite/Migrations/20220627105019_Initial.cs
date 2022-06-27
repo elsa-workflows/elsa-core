@@ -60,6 +60,7 @@ namespace Elsa.Workflows.Persistence.EntityFrameworkCore.Sqlite.Migrations
                     WorkflowDefinitionId = table.Column<string>(type: "TEXT", nullable: false),
                     WorkflowInstanceId = table.Column<string>(type: "TEXT", nullable: false),
                     ActivityInstanceId = table.Column<string>(type: "TEXT", nullable: false),
+                    ParentActivityInstanceId = table.Column<string>(type: "TEXT", nullable: true),
                     ActivityId = table.Column<string>(type: "TEXT", nullable: false),
                     ActivityType = table.Column<string>(type: "TEXT", nullable: false),
                     Timestamp = table.Column<string>(type: "TEXT", nullable: false),
@@ -187,6 +188,11 @@ namespace Elsa.Workflows.Persistence.EntityFrameworkCore.Sqlite.Migrations
                 name: "IX_WorkflowExecutionLogRecord_EventName",
                 table: "WorkflowExecutionLogRecords",
                 column: "EventName");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowExecutionLogRecord_ParentActivityInstanceId",
+                table: "WorkflowExecutionLogRecords",
+                column: "ParentActivityInstanceId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowExecutionLogRecord_Timestamp",

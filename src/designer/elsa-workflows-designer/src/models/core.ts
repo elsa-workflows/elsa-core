@@ -127,6 +127,7 @@ export interface ActivityExecutionContextState {
 export interface WorkflowExecutionLogRecord {
   id: string;
   activityInstanceId: string;
+  parentActivityInstanceId?: string;
   activityId: string;
   activityType: string;
   timestamp: Date;
