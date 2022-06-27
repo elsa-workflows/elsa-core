@@ -5,16 +5,16 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
-import { ActionDefinition, ActionInvokedArgs, Activity, ActivitySelectedArgs, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs, IntellisenseContext, SelectListItem, TabChangedArgs, TabDefinition, Variable, WorkflowDefinition, WorkflowDefinitionSummary, WorkflowInstance, WorkflowInstanceSummary } from "./models";
-import { ActivityUpdatedArgs, DeleteActivityRequestedArgs } from "./components/designer/workflow-definition-editor/activity-properties-editor";
+import { ActionDefinition, ActionInvokedArgs, Activity, ActivitySelectedArgs, ChildActivitySelectedArgs, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs, IntellisenseContext, SelectListItem, TabChangedArgs, TabDefinition, Variable, WorkflowDefinition, WorkflowDefinitionSummary, WorkflowInstance, WorkflowInstanceSummary } from "./models";
+import { ActivityIdUpdatedArgs, ActivityUpdatedArgs, DeleteActivityRequestedArgs } from "./components/designer/workflow-definition-editor/activity-properties-editor";
 import { Button } from "./components/shared/button-group/models";
 import { ContainerActivityComponent } from "./components/activities/container-activity-component";
-import { AddActivityArgs } from "./components/designer/canvas/canvas";
+import { AddActivityArgs, UpdateActivityArgs } from "./components/designer/canvas/canvas";
 import { ActivityInputContext } from "./services/node-input-driver";
 import { ContextMenuAnchorPoint, MenuItem, MenuItemGroup } from "./components/shared/context-menu/models";
 import { DropdownButtonItem, DropdownButtonOrigin } from "./components/shared/dropdown-button/models";
 import { Graph } from "@antv/x6";
-import { AddActivityArgs as AddActivityArgs1 } from "./components/designer/canvas/canvas";
+import { AddActivityArgs as AddActivityArgs1, UpdateActivityArgs as UpdateActivityArgs1 } from "./components/designer/canvas/canvas";
 import { ExpressionChangedArs } from "./components/designer/input-control-switch/input-control-switch";
 import { CreateLabelEventArgs, DeleteLabelEventArgs, Label, UpdateLabelEventArgs } from "./modules/labels/models";
 import { MonacoLib, MonacoValueChangedArgs } from "./components/shared/monaco-editor/monaco-editor";
@@ -47,6 +47,7 @@ export namespace Components {
         "importGraph": (root: Activity) => Promise<void>;
         "interactiveMode": boolean;
         "reset": () => Promise<void>;
+        "updateActivity": (args: UpdateActivityArgs) => Promise<void>;
         "updateLayout": () => Promise<void>;
         "zoomToFit": () => Promise<void>;
     }
@@ -68,10 +69,9 @@ export namespace Components {
         "value": string;
     }
     interface ElsaDefaultActivityTemplate {
-        "activityJson": string;
+        "activityId": string;
         "activityType": string;
         "displayType": string;
-        "selected": boolean;
     }
     interface ElsaDropdownButton {
         "icon"?: any;
@@ -89,6 +89,7 @@ export namespace Components {
         "import": (root: Activity) => Promise<void>;
         "interactiveMode": boolean;
         "reset": () => Promise<void>;
+        "updateActivity": (args: UpdateActivityArgs) => Promise<void>;
         "updateLayout": () => Promise<void>;
         "zoomToFit": () => Promise<void>;
     }
@@ -638,6 +639,7 @@ declare namespace LocalJSX {
     }
     interface ElsaActivityPropertiesEditor {
         "activity"?: Activity;
+        "onActivityIdUpdated"?: (event: CustomEvent<ActivityIdUpdatedArgs>) => void;
         "onActivityUpdated"?: (event: CustomEvent<ActivityUpdatedArgs>) => void;
         "onDeleteActivityRequested"?: (event: CustomEvent<DeleteActivityRequestedArgs>) => void;
         "variables"?: Array<Variable>;
@@ -664,11 +666,11 @@ declare namespace LocalJSX {
         "value"?: string;
     }
     interface ElsaDefaultActivityTemplate {
-        "activityJson"?: string;
+        "activityId"?: string;
         "activityType"?: string;
         "displayType"?: string;
+        "onChildActivitySelected"?: (event: CustomEvent<ChildActivitySelectedArgs>) => void;
         "onEditChildActivity"?: (event: CustomEvent<EditChildActivityArgs>) => void;
-        "selected"?: boolean;
     }
     interface ElsaDropdownButton {
         "icon"?: any;

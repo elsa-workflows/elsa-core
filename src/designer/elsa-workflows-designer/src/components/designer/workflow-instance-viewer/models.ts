@@ -39,6 +39,8 @@ export interface WorkflowInstancePropertiesViewerModel {
 
 export interface ActivityExecutionEventBlock {
   activityId: string;
+  parents: Array<string>;
+  children: Array<string>;
   completed: boolean;
   timestamp: Date;
   duration?: moment.Duration;

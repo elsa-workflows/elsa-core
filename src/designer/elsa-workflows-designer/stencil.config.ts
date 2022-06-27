@@ -10,7 +10,7 @@ const dev: boolean = process.argv && process.argv.indexOf('--dev') > -1;
 
 export const config: Config = {
   namespace: 'elsa-workflows-designer',
-  globalStyle: 'src/global/tailwind.css',
+  globalStyle: 'src/global/tailwind.scss',
   outputTargets: [
     {
       type: 'dist',

@@ -1,7 +1,8 @@
 import {FunctionalComponent, h} from '@stencil/core';
+import {getActivityIconCssClass, ActivityIconSettings} from "./models";
 
-export const FlowchartIcon: FunctionalComponent = () => (
-  <svg class="h-6 w-6 text-white" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+export const FlowchartIcon: FunctionalComponent<ActivityIconSettings> = (settings) => (
+  <svg class={getActivityIconCssClass(settings)} width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
     <path stroke="none" d="M0 0h24v24H0z"/>
     <rect x="3" y="3" width="6" height="6" rx="1"/>
     <rect x="15" y="15" width="6" height="6" rx="1"/>

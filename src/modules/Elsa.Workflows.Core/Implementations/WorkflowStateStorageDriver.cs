@@ -13,8 +13,7 @@ public class WorkflowStateStorageDriver : IStorageDriver
 
     public ValueTask WriteAsync(string id, object value, DataDriveContext context)
     {
-        var dictionary = GetVariablesDictionary(context);
-        dictionary[id] = value;
+        UpdateVariablesDictionary(context, dictionary => dictionary[id] = value);
         return ValueTask.CompletedTask;
     }
 
@@ -27,10 +26,17 @@ public class WorkflowStateStorageDriver : IStorageDriver
 
     public ValueTask DeleteAsync(string id, DataDriveContext context)
     {
-        var dictionary = GetVariablesDictionary(context);
-        dictionary.Remove(id);
+        UpdateVariablesDictionary(context, dictionary => dictionary.Remove(id));
         return ValueTask.CompletedTask;
     }
 
     private IDictionary<string, object> GetVariablesDictionary(DataDriveContext context) => context.WorkflowState.Properties.GetOrAdd(VariablesDictionaryStateKey, () => new Dictionary<string, object>());
+    private void SetVariablesDictionary(DataDriveContext context, IDictionary<string, object> dictionary) => context.WorkflowState.Properties[VariablesDictionaryStateKey] = dictionary;
+
+    private void UpdateVariablesDictionary(DataDriveContext context, Action<IDictionary<string, object>> update)
+    {
+        var dictionary = GetVariablesDictionary(context);
+        update(dictionary);
+        SetVariablesDictionary(context, dictionary);
+    }
 }

@@ -7,7 +7,7 @@ import './shapes';
 import './ports';
 import {ActivityNode as ActivityNodeShape} from './shapes';
 import {ContainerActivityComponent} from '../container-activity-component';
-import {AddActivityArgs} from '../../designer/canvas/canvas';
+import {AddActivityArgs, UpdateActivityArgs} from '../../designer/canvas/canvas';
 import {Activity, ActivitySelectedArgs, ContainerSelectedArgs, GraphUpdatedArgs} from '../../../models';
 import {createGraph} from './graph-factory';
 import {Connection, Flowchart} from './models';
@@ -108,6 +108,23 @@ export class FlowchartComponent implements ContainerActivityComponent {
   }
 
   @Method()
+  async updateActivity(args: UpdateActivityArgs) {
+    const nodeId = args.id;
+    const activity = args.activity;
+    const node = this.graph.getNodes().find(x => x.id == nodeId) as any;
+
+    // Update the node's data with the activity.
+    node.data = activity;
+
+    // Updating the node's activity property to trigger a rerender.
+    node.activity = activity;
+
+    // If the ID of the activity changed, we need to update connection references (X6 stores deep copies of data).
+    if (activity.id !== nodeId)
+      this.syncEdgeData(nodeId, activity);
+  }
+
+  @Method()
   async export(): Promise<Activity> {
     return this.exportInternal();
   }
@@ -201,7 +218,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
     flowchart.activities = activities;
     flowchart.connections = connections;
     flowchart.start = startActivity?.id;
-    flowchart.metadata = {};
+    flowchart.metadata = {...flowchart.metadata};
     flowchart.applicationProperties = {};
     flowchart.variables = [];
 
@@ -293,18 +310,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
 
     const args: ActivitySelectedArgs = {
       activity: activity,
-      applyChanges: a => {
-
-        // Update the node's data with the activity.
-        node.data = a;
-
-        // Updating the node's activity property to trigger a rerender.
-        node.activity = a;
-
-        // If the ID of the activity changed, we need to update connection references (X6 stores deep copies of data).
-        if (a.id !== activityId)
-          this.syncEdgeData(activityId, a);
-      },
+      applyChanges: async a => await this.updateActivity({id: activityId, activity: a}),
       deleteActivity: a => node.remove({deep: true})
     };
 
@@ -344,8 +350,6 @@ export class FlowchartComponent implements ContainerActivityComponent {
     const localPos = this.graph.localToClient(e.x, e.y);
     this.activityContextMenu.style.top = `${localPos.y}px`;
     this.activityContextMenu.style.left = `${localPos.x}px`;
-
-    debugger;
 
     await this.activityContextMenu.open();
   }

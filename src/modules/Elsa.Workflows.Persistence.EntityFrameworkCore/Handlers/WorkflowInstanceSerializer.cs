@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Elsa.Persistence.EntityFrameworkCore.Common.Services;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.State;
@@ -19,7 +20,7 @@ public class WorkflowInstanceSerializer : IEntitySerializer<WorkflowsDbContext, 
     public void Serialize(WorkflowsDbContext dbContext, WorkflowInstance entity)
     {
         var data = new WorkflowInstanceState(entity.WorkflowState, entity.Fault);
-        var options = _workflowSerializerOptionsProvider.CreatePersistenceOptions();
+        var options = _workflowSerializerOptionsProvider.CreatePersistenceOptions(ReferenceHandler.Preserve);
         var json = JsonSerializer.Serialize(data, options);
 
         dbContext.Entry(entity).Property("Data").CurrentValue = json;
@@ -32,7 +33,7 @@ public class WorkflowInstanceSerializer : IEntitySerializer<WorkflowsDbContext, 
 
         if (!string.IsNullOrWhiteSpace(json))
         {
-            var options = _workflowSerializerOptionsProvider.CreatePersistenceOptions();
+            var options = _workflowSerializerOptionsProvider.CreatePersistenceOptions(ReferenceHandler.Preserve);
             data = JsonSerializer.Deserialize<WorkflowInstanceState>(json, options)!;
         }
 

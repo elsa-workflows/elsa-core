@@ -22,6 +22,13 @@ export interface ActivityUpdatedArgs {
   propertyDescriptor?: PropertyDescriptor;
 }
 
+export interface ActivityIdUpdatedArgs {
+  activity: Activity;
+  activityDescriptor: ActivityDescriptor;
+  originalId: string;
+  newId: string;
+}
+
 export interface DeleteActivityRequestedArgs {
   activity: Activity;
 }
@@ -42,20 +49,21 @@ export class ActivityPropertiesEditor {
   @Prop() variables: Array<Variable> = [];
 
   @Event() activityUpdated: EventEmitter<ActivityUpdatedArgs>;
+  @Event() activityIdUpdated: EventEmitter<ActivityIdUpdatedArgs>;
   @Event() deleteActivityRequested: EventEmitter<DeleteActivityRequestedArgs>;
   @State() private selectedTabIndex: number = 0;
 
   @Method()
-  public async show(): Promise<void> {
+  async show(): Promise<void> {
     await this.slideOverPanel.show();
   }
 
   @Method()
-  public async hide(): Promise<void> {
+  async hide(): Promise<void> {
     await this.slideOverPanel.hide();
   }
 
-  public componentWillRender() {
+  componentWillRender() {
     const activity = this.activity;
     const activityDescriptor = this.findActivityDescriptor();
     const title = activityDescriptor?.displayName ?? activityDescriptor?.activityType ?? 'Unknown Activity';
@@ -87,7 +95,7 @@ export class ActivityPropertiesEditor {
     }
   }
 
-  public render() {
+  render() {
     const {activity, activityDescriptor} = this.renderContext;
 
     const commonTab: TabDefinition = {
@@ -142,16 +150,21 @@ export class ActivityPropertiesEditor {
 
   private onActivityIdChanged = (e: any) => {
     const activity = this.activity;
+    const originalId = activity.id;
     const inputElement = e.target as HTMLInputElement;
-
-    activity.id = inputElement.value;
+    const newId = inputElement.value;
     const activityDescriptor = this.findActivityDescriptor();
+
     const inputDescriptor: InputDescriptor = {
       name: 'Id',
       displayName: 'Id',
       type: 'string'
     };
+
+    activity.id = newId;
+
     this.activityUpdated.emit({activity, activityDescriptor, propertyName: 'id', propertyDescriptor: inputDescriptor});
+    this.activityIdUpdated.emit({ activity, activityDescriptor, originalId, newId: activity.id });
   }
 
   private onActivityDisplayTextChanged(e: any) {

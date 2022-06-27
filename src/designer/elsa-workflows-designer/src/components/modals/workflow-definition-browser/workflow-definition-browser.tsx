@@ -154,7 +154,7 @@ export class WorkflowDefinitionBrowser {
             <h2 class="text-lg font-medium ml-4 mb-2">Workflow Definitions</h2>
             <Filter {...filterProps} />
             <div class="align-middle inline-block min-w-full border-b border-gray-200">
-              <table>
+              <table class="default-table">
                 <thead>
                   <tr>
                     <th>

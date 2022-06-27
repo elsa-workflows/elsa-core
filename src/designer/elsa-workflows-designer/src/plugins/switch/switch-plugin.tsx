@@ -4,6 +4,7 @@ import {Container, Service} from "typedi";
 import {ActivityIconRegistry, InputControlRegistry, PortProviderRegistry} from "../../services";
 import {Plugin} from "../../models";
 import {SwitchPortProvider} from "./switch-port-provider";
+import {ActivityIconSettings, getActivityIconCssClass} from "../../components/icons/activities";
 
 @Service()
 export class SwitchPlugin implements Plugin {
@@ -17,12 +18,12 @@ export class SwitchPlugin implements Plugin {
 
     inputControlRegistry.add('switch-editor', c => <elsa-switch-editor inputContext={c}/>);
     portProviderRegistry.add(activityTypeName, () => Container.get(SwitchPortProvider));
-    iconRegistry.add(SwitchPlugin.ActivityTypeName, () => <SwitchIcon/>);
+    iconRegistry.add(SwitchPlugin.ActivityTypeName, settings => <SwitchIcon size={settings?.size}/>);
   }
 }
 
-const SwitchIcon: FunctionalComponent = () => (
-  <svg class="h-6 w-6 text-white" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+const SwitchIcon: FunctionalComponent<ActivityIconSettings> = (settings) => (
+  <svg class={getActivityIconCssClass(settings)} width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
     <path stroke="none" d="M0 0h24v24H0z"/>
     <polyline points="15 4 19 4 19 8"/>
     <line x1="14.75" y1="9.25" x2="19" y2="4"/>

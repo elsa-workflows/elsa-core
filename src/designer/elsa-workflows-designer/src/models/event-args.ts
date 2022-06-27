@@ -17,3 +17,9 @@ export interface EditChildActivityArgs {
   parentActivityId: string;
   port: Port;
 }
+
+export interface ChildActivitySelectedArgs {
+  parentActivity: Activity;
+  childActivity: Activity;
+  port: Port;
+}
