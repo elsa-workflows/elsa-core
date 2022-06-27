@@ -3,6 +3,7 @@ using Elsa.Models;
 using Elsa.Persistence.MongoDb.Serializers;
 using Elsa.Services.Models;
 using MongoDb.Bson.NodaTime;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 
 namespace Elsa.Persistence.MongoDb.Services
@@ -33,19 +34,19 @@ namespace Elsa.Persistence.MongoDb.Services
                     cm.SetIsRootClass(true);
                     cm.MapIdProperty(x => x.Id);
                 });
-                
+
                 BsonClassMap.RegisterClassMap<WorkflowDefinition>(cm =>
                 {
                     cm.MapProperty(p => p.Variables).SetSerializer(VariablesSerializer.Instance);
                     cm.AutoMap();
                 });
-                
+
                 BsonClassMap.RegisterClassMap<WorkflowInstance>(cm =>
                 {
                     cm.MapProperty(p => p.Variables).SetSerializer(VariablesSerializer.Instance);
                     cm.AutoMap();
                 });
-                
+
                 BsonClassMap.RegisterClassMap<Bookmark>(cm => cm.AutoMap());
                 BsonClassMap.RegisterClassMap<WorkflowExecutionLogRecord>(cm => cm.AutoMap());
                 BsonClassMap.RegisterClassMap<WorkflowOutputReference>(cm => cm.AutoMap());
@@ -60,16 +61,50 @@ namespace Elsa.Persistence.MongoDb.Services
 
         private static void RegisterSerializers()
         {
-            if (BsonSerializer.LookupSerializer<VariablesSerializer>() == null)
+            try
+            {
                 BsonSerializer.RegisterSerializer(VariablesSerializer.Instance);
-            if (BsonSerializer.LookupSerializer<JObjectSerializer>() == null)
+            }
+            catch (BsonSerializationException ex)
+            {
+
+            }
+
+            try
+            {
                 BsonSerializer.RegisterSerializer(JObjectSerializer.Instance);
-            if (BsonSerializer.LookupSerializer<ObjectSerializer>() == null)
+            }
+            catch (BsonSerializationException ex)
+            {
+
+            }
+
+            try
+            {
                 BsonSerializer.RegisterSerializer(ObjectSerializer.Instance);
-            if (BsonSerializer.LookupSerializer<TypeSerializer>() == null)
+            }
+            catch (BsonSerializationException ex)
+            {
+
+            }
+
+            try
+            {
                 BsonSerializer.RegisterSerializer(TypeSerializer.Instance);
-            if (BsonSerializer.LookupSerializer<InstantSerializer>() == null)
+            }
+            catch (BsonSerializationException ex)
+            {
+
+            }
+
+            try
+            {
                 BsonSerializer.RegisterSerializer(new InstantSerializer());
+            }
+            catch (BsonSerializationException ex)
+            {
+
+            }
         }
     }
 }
