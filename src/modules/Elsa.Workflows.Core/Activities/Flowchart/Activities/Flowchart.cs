@@ -17,10 +17,13 @@ public class Flowchart : Container
     [Node] public IActivity? Start { get; set; }
     public ICollection<Connection> Connections { get; set; } = new List<Connection>();
 
-    protected override void ScheduleChildren(ActivityExecutionContext context)
+    protected override async ValueTask ScheduleChildrenAsync(ActivityExecutionContext context)
     {
         if (Start == null!)
+        {
+            await context.CompleteActivityAsync();
             return;
+        }
 
         context.ScheduleActivity(Start);
     }

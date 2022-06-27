@@ -123,12 +123,82 @@ export class DefaultActivityTemplate {
     const textColor = canStartWorkflow ? 'text-white' : 'text-gray-700';
     const borderColor = port.name == this.selectedPortName ? 'border-blue-600' : 'border-gray-300';
     const portName = camelCase(port.name);
-    const childActivity: Activity = activity ? activity[portName] : null;
-    const childActivityDescriptor: ActivityDescriptor = childActivity != null ? descriptorsStore.activityDescriptors.find(x => x.activityType == childActivity.typeName) : null;
-    let childActivityDisplayText = childActivity?.metadata?.displayText;
+    const activityProperty: Activity = activity ? activity[portName] : null;
+    const childActivityDescriptor: ActivityDescriptor = activityProperty != null ? descriptorsStore.activityDescriptors.find(x => x.activityType == activityProperty.typeName) : null;
+    let childActivityDisplayText = activityProperty?.metadata?.displayText;
 
     if (isNullOrWhitespace(childActivityDisplayText))
       childActivityDisplayText = childActivityDescriptor?.displayName;
+
+    const renderActivityProperty = () => {
+
+      if (!activityProperty) {
+        return (
+          <div class="relative block w-full border-2 border-gray-300 border-dashed rounded-lg p-5 text-center focus:outline-none">
+            <a href="#"
+               onClick={e => this.onEditChildActivityClick(e, activity, port)}
+               onMouseDown={e => e.stopPropagation()}
+               class="text-gray-400 hover:text-gray-600">
+              <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+              </svg>
+            </a>
+          </div>
+        );
+      }
+
+      const propertyIsArray = Array.isArray(activityProperty);
+
+      if (!propertyIsArray) {
+        return (
+          <div class={`relative block w-full border-2 ${borderColor} border-solid rounded-lg p-5 text-center focus:outline-none`}
+               onMouseDown={this.onChildActivityMouseDown}
+               onClick={e => this.onChildActivityClick(e, activity, activityProperty, port)}>
+            <div class="flex space-x-2">
+              <div class="flex-grow">
+                <span class={textColor}>{childActivityDisplayText}</span>
+              </div>
+              <div class="flex-shrink">
+                <a
+                  onClick={e => this.onEditChildActivityClick(e, activity, port)}
+                  onMouseDown={e => e.stopPropagation()}
+                  href="#"
+                  class="text-gray-500 hover:text-yellow-700">
+                  <svg class="h-6 w-6" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z"/>
+                    <path d="M4 20h4l10.5 -10.5a1.5 1.5 0 0 0 -4 -4l-10.5 10.5v4"/>
+                    <line x1="13.5" y1="6.5" x2="17.5" y2="10.5"/>
+                  </svg>
+                </a>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div class={`relative block w-full border-2 ${borderColor} border-solid rounded-lg p-5 text-center focus:outline-none`}>
+          <div class="flex space-x-2">
+            <div class="flex-grow">
+              <span class={textColor}>{childActivityDisplayText}</span>
+            </div>
+            <div class="flex-shrink">
+              <a
+                onClick={e => this.onEditChildActivityClick(e, activity, port)}
+                onMouseDown={e => e.stopPropagation()}
+                href="#"
+                class="text-gray-500 hover:text-yellow-700">
+                <svg class="h-6 w-6" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z"/>
+                  <path d="M4 20h4l10.5 -10.5a1.5 1.5 0 0 0 -4 -4l-10.5 10.5v4"/>
+                  <line x1="13.5" y1="6.5" x2="17.5" y2="10.5"/>
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
+      );
+    }
 
     return (
       <div class="activity-port" data-port-name={port.name} ref={el => this.portElements.push(el)}>
@@ -136,41 +206,7 @@ export class DefaultActivityTemplate {
           <span class={`${textColor} text-xs`}>{port.displayName}</span>
         </div>
         <div>
-          {childActivity ? (
-            <div class={`relative block w-full border-2 ${borderColor} border-solid rounded-lg p-5 text-center focus:outline-none`}
-                 onMouseDown={this.onChildActivityMouseDown}
-                 onClick={e => this.onChildActivityClick(e, activity, childActivity, port)}
-            >
-              <div class="flex space-x-2">
-                <div class="flex-grow">
-                  <span class={textColor}>{childActivityDisplayText}</span>
-                </div>
-                <div class="flex-shrink">
-                  <a
-                    onClick={e => this.onEditChildActivityClick(e, activity, port)}
-                    onMouseDown={e => e.stopPropagation()}
-                    href="#"
-                    class="text-gray-500 hover:text-yellow-700">
-                    <svg class="h-6 w-6" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                      <path stroke="none" d="M0 0h24v24H0z"/>
-                      <path d="M4 20h4l10.5 -10.5a1.5 1.5 0 0 0 -4 -4l-10.5 10.5v4"/>
-                      <line x1="13.5" y1="6.5" x2="17.5" y2="10.5"/>
-                    </svg>
-                  </a>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div class="relative block w-full border-2 border-gray-300 border-dashed rounded-lg p-5 text-center focus:outline-none">
-              <a href="#"
-                 onClick={e => this.onEditChildActivityClick(e, activity, port)}
-                 onMouseDown={e => e.stopPropagation()}
-                 class="text-gray-400 hover:text-gray-600">
-                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                </svg>
-              </a>
-            </div>)}
+          {renderActivityProperty()}
         </div>
       </div>
     );

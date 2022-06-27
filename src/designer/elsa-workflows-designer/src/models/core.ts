@@ -81,6 +81,7 @@ export interface ActivityDescriptor {
   outputs: Array<OutputDescriptor>;
   kind: ActivityKind;
   ports: Array<Port>;
+  isContainer: boolean;
 }
 
 export interface PropertyDescriptor {

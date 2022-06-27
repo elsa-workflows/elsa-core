@@ -12,10 +12,14 @@ public class ActivityDescriptor
     public string? Description { get; init; }
     public ICollection<InputDescriptor> Inputs { get; init; } = new List<InputDescriptor>();
     public ICollection<OutputDescriptor> Outputs { get; init; } = new List<OutputDescriptor>();
-
     [JsonIgnore] public Func<ActivityConstructorContext, IActivity> Constructor { get; init; } = default!;
     public ActivityKind Kind { get; set; } = ActivityKind.Action;
     public ICollection<Port> Ports { get; init; } = new List<Port>();
+    
+    /// <summary>
+    /// A value indicating whether this activity is a container of child activities.
+    /// </summary>
+    public bool IsContainer { get; set; }
 }
 
 public record ActivityConstructorContext(JsonElement Element, JsonSerializerOptions SerializerOptions);

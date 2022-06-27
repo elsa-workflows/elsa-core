@@ -9,6 +9,7 @@ using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Services;
 using Humanizer;
+using IContainer = Elsa.Workflows.Core.Services.IContainer;
 
 namespace Elsa.Workflows.Management.Implementations;
 
@@ -64,6 +65,7 @@ public class ActivityDescriber : IActivityDescriber
             Ports = outboundPorts.ToList(),
             Inputs = DescribeInputProperties(inputProperties).ToList(),
             Outputs = DescribeOutputProperties(outputProperties).ToList(),
+            IsContainer = typeof(IContainer).IsAssignableFrom(activityType),
             Constructor = context =>
             {
                 var activity = _activityFactory.Create(activityType, context);

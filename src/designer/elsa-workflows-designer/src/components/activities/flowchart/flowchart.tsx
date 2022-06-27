@@ -15,11 +15,11 @@ import {NodeFactory} from "./node-factory";
 import {Container} from "typedi";
 import {EventBus} from "../../../services";
 import {ConnectionCreatedEventArgs, FlowchartEvents} from "./events";
+import {ContextMenuAnchorPoint, MenuItemGroup} from "../../shared/context-menu/models";
+import descriptorsStore from "../../../data/descriptors-store";
 import PositionEventArgs = NodeView.PositionEventArgs;
 import FromJSONData = Model.FromJSONData;
-import {ContextMenuAnchorPoint, MenuItemGroup} from "../../shared/context-menu/models";
 import PointLike = Point.PointLike;
-import descriptorsStore from "../../../data/descriptors-store";
 
 @Component({
   tag: 'elsa-flowchart',
@@ -84,8 +84,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
     const graph = this.graph;
     const {descriptor, x, y} = args;
     let id = args.id ?? uuid();
-    const pageToLocal = graph.pageToLocal(x, y);
-    const point: PointLike = pageToLocal;
+    const point: PointLike = graph.pageToLocal(x, y);
     const sx = point.x;
     const sy = point.y;
 
@@ -218,9 +217,6 @@ export class FlowchartComponent implements ContainerActivityComponent {
     flowchart.activities = activities;
     flowchart.connections = connections;
     flowchart.start = startActivity?.id;
-    flowchart.metadata = {...flowchart.metadata};
-    flowchart.applicationProperties = {};
-    flowchart.variables = [];
 
     return flowchart;
   }
@@ -406,8 +402,9 @@ export class FlowchartComponent implements ContainerActivityComponent {
   }
 
   onGraphChanged = async () => {
-    if (this.silent)
+    if (this.silent) {
       return;
+    }
     this.graphUpdated.emit({exportGraph: this.exportInternal});
   }
 

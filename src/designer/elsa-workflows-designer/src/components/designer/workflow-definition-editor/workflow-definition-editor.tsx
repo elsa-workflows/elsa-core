@@ -63,11 +63,6 @@ export class WorkflowDefinitionEditor {
     await this.updateLayout();
   }
 
-  @Listen('collapsed')
-  private async handlePanelCollapsed(e: CustomEvent) {
-    //this.selectedActivity = null;
-  }
-
   @Listen('containerSelected')
   private async handleContainerSelected(e: CustomEvent<ContainerSelectedArgs>) {
     this.selectedActivity = this.getCurrentContainer();
@@ -114,12 +109,17 @@ export class WorkflowDefinitionEditor {
     this.currentWorkflowPath = [...this.currentWorkflowPath, item];
     const portName = camelCase(e.detail.port.name);
     const parentActivity = this.nodeMap[parentActivityId];
-    const childActivity = parentActivity[portName] as Activity;
+    const activityProperty = parentActivity[portName] as Activity | Array<Activity>;
+    const isContainer = Array.isArray(activityProperty);
 
-    if (!childActivity) {
+    if (!activityProperty) {
       await this.canvas.reset();
     } else {
-      await this.canvas.importGraph(childActivity);
+      if (isContainer) {
+        await this.canvas.importGraph(parentActivity);
+      } else {
+        await this.canvas.importGraph(activityProperty as Activity);
+      }
     }
 
     this.selectedActivity = this.getCurrentContainer();
@@ -152,7 +152,7 @@ export class WorkflowDefinitionEditor {
   @Method()
   async updateWorkflowDefinition(workflowDefinition: WorkflowDefinition): Promise<void> {
     this.workflowDefinitionState = workflowDefinition;
-    this.nodeMap = createActivityMap(flatten(walkActivities(workflowDefinition.root)));
+    this.nodeMap = this.createNodeMap(workflowDefinition);
 
     if (this.currentWorkflowPath.length == 0) {
       this.currentWorkflowPath = [{activityId: workflowDefinition.root.id, portName: null}];
@@ -266,7 +266,7 @@ export class WorkflowDefinitionEditor {
   private getWorkflowDefinitionInternal = async (): Promise<WorkflowDefinition> => {
     const activity: Activity = await this.canvas.exportGraph();
     const workflowDefinition = this.workflowDefinitionState;
-    const nodeMap = this.nodeMap;
+    const nodeMap = this.nodeMap; //this.createNodeMap(workflowDefinition);
     const currentWorkflowPath = this.currentWorkflowPath;
     const currentWorkflowNavigationItem = currentWorkflowPath[currentWorkflowPath.length - 1];
     const currentActivityId = currentWorkflowNavigationItem.activityId;
@@ -279,8 +279,15 @@ export class WorkflowDefinitionEditor {
     }
 
     if (!!currentPortName) {
-      const portName = camelCase(currentPortName);
-      currentActivity[portName] = activity;
+      // If we're editing a container (Flowchart) activity, the exported activity will be the current activity. No need to update anything here.
+      if (currentActivity.id !== activity.id) {
+        const portName = camelCase(currentPortName);
+        currentActivity[portName] = activity;
+        this.nodeMap = this.createNodeMap(workflowDefinition)
+      } else {
+        debugger;
+        nodeMap[currentActivityId] = activity;
+      }
 
     } else {
       workflowDefinition.root = activity;
@@ -335,6 +342,8 @@ export class WorkflowDefinitionEditor {
 
     return this.nodeMap[currentItem.activityId];
   };
+
+  private createNodeMap = (workflowDefinition: WorkflowDefinition) => createActivityMap(flatten(walkActivities(workflowDefinition.root)));
 
   private onActivityPickerPanelStateChanged = async (e: PanelStateChangedArgs) => await this.updateContainerLayout('activity-picker-closed', e.expanded)
   private onWorkflowEditorPanelStateChanged = async (e: PanelStateChangedArgs) => await this.updateContainerLayout('object-editor-closed', e.expanded)
