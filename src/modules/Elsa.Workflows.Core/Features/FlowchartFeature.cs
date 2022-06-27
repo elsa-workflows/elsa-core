@@ -17,10 +17,6 @@ public class FlowchartFeature : FeatureBase
     public override void Apply()
     {
         Services
-            //.AddSingleton<DefaultTransformation>()
-            //.AddSingleton<ITransformationRegistry, TransformationRegistry>()
-            //.AddSingleton<ITransformation, DefaultTransformation>()
-            .AddSingleton<ITransformer, Transformer>()
             .AddSingleton<IActivityNodeDescriber, ActivityNodeDescriber>()
             .AddSingleton<ISerializationOptionsConfigurator, FlowchartSerializationOptionConfigurator>()
             ;

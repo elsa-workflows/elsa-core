@@ -11,13 +11,6 @@ public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
     private const string AllActivitiesKey = "AllActivities";
     private const string AllConnectionsKey = "AllConnections";
     
-    private readonly ITransformer _transformer;
-
-    public FlowchartJsonConverter(ITransformer transformer)
-    {
-        _transformer = transformer;
-    }
-
     public override Activities.Flowchart Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (!JsonDocument.TryParseValue(ref reader, out var doc))
@@ -50,8 +43,6 @@ public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
                 [AllConnectionsKey] = connections.ToList()
             }
         };
-        
-        _transformer.Transpose(flowChart);
 
         return flowChart;
     }
