@@ -45,10 +45,13 @@ export class Panel {
 
   resize = (e: MouseEvent) => {
     if (this.position === PanelPosition.Right) {
-      applyResize({ position: PanelPosition.Right, width: document.body.clientWidth - e.pageX });
+      applyResize({ position: PanelPosition.Right, size: document.body.clientWidth - e.pageX });
     }
     if (this.position === PanelPosition.Left) {
-      applyResize({ position: PanelPosition.Left, width: e.pageX });
+      applyResize({ position: PanelPosition.Left, size: e.pageX });
+    }
+    if (this.position === PanelPosition.Bottom) {
+      applyResize({ position: PanelPosition.Bottom, size: document.body.offsetHeight - e.pageY });
     }
   };
 
@@ -67,6 +70,7 @@ export class Panel {
     const containerClassMap = [];
     containerClassMap[PanelPosition.Left] = 'panel-position-left left-0 top-0 bottom-0 border-r';
     containerClassMap[PanelPosition.Top] = 'panel-position-top left-0 top-0 right-0 border-b';
+    containerClassMap[PanelPosition.Bottom] = 'panel-position-bottom h-0 bottom-0 border-t';
     containerClassMap[PanelPosition.Right] = 'panel-position-right right-0 top-0 bottom-0 border-l';
     const containerCssClass = containerClassMap[position];
 
@@ -78,14 +82,17 @@ export class Panel {
 
     const toggleCssClass = toggleClassMap[position];
 
-    const dragBarClass = position === PanelPosition.Left ? 'right-0' : 'left-0';
+    const dragBarClassMap = {
+      [PanelPosition.Left]: 'right-0 h-full cursor-col-resize w-1',
+      [PanelPosition.Right]: 'left-0 h-full cursor-col-resize w-1',
+      [PanelPosition.Bottom]: 'top-0 w-full cursor-row-resize h-1',
+    };
+
+    const dragBarClass = dragBarClassMap[this.position];
 
     return (
       <Host class={`panel absolute bg-white z-10 ${containerCssClass} ${stateClass}`}>
-        <div
-          class={`absolute h-full opacity-0 cursor-col-resize w-1 bg-blue-400 transition ease-in-out duration-300 hover:opacity-100 z-10 ${dragBarClass}`}
-          onMouseDown={this.onDragBarMouseDown}
-        />
+        <div class={`absolute opacity-0 bg-blue-400 transition ease-in-out duration-300 hover:opacity-100 z-10 ${dragBarClass}`} onMouseDown={this.onDragBarMouseDown} />
         <div class="panel-content-container">
           <slot />
         </div>

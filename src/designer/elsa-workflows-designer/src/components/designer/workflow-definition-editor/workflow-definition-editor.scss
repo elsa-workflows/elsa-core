@@ -1,27 +1,35 @@
 :root {
-  --activity-editor-width: 580px;
+  --workflow-editor-width: 580px;
   --activity-picker-width: 300px;
+  --activity-editor-height: 200px;
 }
 elsa-canvas {
   left: var(--activity-picker-width);
   top: 54px;
-  right: var(--activity-editor-width);
-  bottom: 0;
+  right: var(--workflow-editor-width);
+  bottom: var(--activity-editor-height);
 }
 
 .elsa-panel-toolbar {
   left: var(--activity-picker-width);
-  right: var(--activity-editor-width);
+  right: var(--workflow-editor-width);
 }
 
 elsa-panel.panel-state-expanded.elsa-activity-picker-container {
   width: var(--activity-picker-width);
 }
 
-elsa-panel.panel-state-expanded.elsa-activity-editor-container {
-  width: var(--activity-editor-width);
+elsa-panel.panel-state-expanded.elsa-workflow-editor-container {
+  width: var(--workflow-editor-width);
   right: 0;
   left: unset;
+}
+
+elsa-panel.panel-state-expanded.elsa-activity-editor-container {
+  height: var(--activity-editor-height);
+  right: var(--workflow-editor-width);
+  left: var(--activity-picker-width);
+  bottom: 0;
 }
 
 elsa-workflow-navigator {
@@ -51,5 +59,17 @@ elsa-workflow-navigator {
 
   elsa-canvas {
     right: 0;
+  }
+}
+
+
+.activity-editor-closed {
+
+  .activity-editor-container {
+    display: none;
+  }
+
+  elsa-canvas {
+    bottom: 0;
   }
 }
