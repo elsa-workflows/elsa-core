@@ -7,7 +7,8 @@ import descriptorsStore from '../../../data/descriptors-store';
 import {ActivityExecutionEventBlock} from "./models";
 import {ActivityIconSize} from "../../icons/activities";
 
-const PAGE_SIZE: number = 1000;
+// TODO: Implement dynamic loading of records.
+const PAGE_SIZE: number = 10000;
 
 @Component({
   tag: 'elsa-workflow-journal',
