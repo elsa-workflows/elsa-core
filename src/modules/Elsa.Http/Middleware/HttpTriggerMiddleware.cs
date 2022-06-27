@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Http.Models;
+using Elsa.Http.Options;
 using Elsa.Http.Services;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Services;
@@ -15,6 +16,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Http.Middleware;
 
@@ -22,16 +24,33 @@ public class HttpTriggerMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly IHasher _hasher;
+    private readonly HttpActivityOptions _options;
 
-    public HttpTriggerMiddleware(RequestDelegate next, IHasher hasher)
+    public HttpTriggerMiddleware(RequestDelegate next, IHasher hasher, IOptions<HttpActivityOptions> options)
     {
         _next = next;
         _hasher = hasher;
+        _options = options.Value;
     }
 
     public async Task InvokeAsync(HttpContext httpContext, IWorkflowService workflowService, IRouteMatcher routeMatcher)
     {
         var path = GetPath(httpContext);
+        var basePath = _options.BasePath;
+
+        // If the request path does not match the configured base path to handle workflows, then skip.
+        if (!string.IsNullOrWhiteSpace(basePath))
+        {
+            if (!path.StartsWith(basePath, StringComparison.OrdinalIgnoreCase))
+            {
+                await _next(httpContext);
+                return;
+            }
+
+            // Strip the base path.
+            path = path.Substring(basePath.Value.Value.Length);
+        }
+
         var request = httpContext.Request;
         var method = request.Method!.ToLowerInvariant();
         var abortToken = httpContext.RequestAborted;
