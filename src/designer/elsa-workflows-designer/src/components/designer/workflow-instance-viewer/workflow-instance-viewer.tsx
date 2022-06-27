@@ -179,11 +179,18 @@ export class WorkflowInstanceViewer {
             class="absolute" ref={el => this.canvas = el}
             interactiveMode={false}/>
           <elsa-panel
-            class="elsa-activity-editor-container"
+            class="elsa-workflow-editor-container"
             position={PanelPosition.Right}
             onExpandedStateChanged={e => this.onActivityEditorPanelStateChanged(e.detail)}>
             <div class="object-editor-container">
               {this.renderSelectedObject()}
+            </div>
+          </elsa-panel>
+          <elsa-panel
+            class="elsa-activity-editor-container"
+            position={PanelPosition.Bottom}
+            onExpandedStateChanged={e => this.onActivityEditorPanelStateChanged(e.detail)}>
+            <div class="activity-editor-container">
             </div>
           </elsa-panel>
         </div>
