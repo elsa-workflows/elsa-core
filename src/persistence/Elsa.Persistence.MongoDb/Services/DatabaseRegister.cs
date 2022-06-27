@@ -2,6 +2,7 @@ using System;
 using Elsa.Models;
 using Elsa.Persistence.MongoDb.Serializers;
 using Elsa.Services.Models;
+using Microsoft.Extensions.Logging;
 using MongoDb.Bson.NodaTime;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
@@ -10,7 +11,7 @@ namespace Elsa.Persistence.MongoDb.Services
 {
     public static class DatabaseRegister
     {
-        public static void RegisterMapsAndSerializers()
+        public static void RegisterMapsAndSerializers(ILogger logger = null)
         {
             // In unit tests, the method is called several times, which throws an exception because the entity is already registered
             // If an error is thrown, the remaining registrations are no longer processed
@@ -19,7 +20,7 @@ namespace Elsa.Persistence.MongoDb.Services
             if (firstPass == false)
                 return;
 
-            RegisterSerializers();
+            RegisterSerializers(logger);
         }
 
         private static bool Map()
@@ -59,7 +60,7 @@ namespace Elsa.Persistence.MongoDb.Services
             return true;
         }
 
-        private static void RegisterSerializers()
+        private static void RegisterSerializers(ILogger logger = null)
         {
             try
             {
@@ -67,7 +68,7 @@ namespace Elsa.Persistence.MongoDb.Services
             }
             catch (BsonSerializationException ex)
             {
-
+                logger?.LogWarning(ex, "Couldn't register {serializer_name}", nameof(VariablesSerializer));
             }
 
             try
@@ -76,7 +77,7 @@ namespace Elsa.Persistence.MongoDb.Services
             }
             catch (BsonSerializationException ex)
             {
-
+                logger?.LogWarning(ex, "Couldn't register {serializer_name}", nameof(JObjectSerializer));
             }
 
             try
@@ -85,7 +86,7 @@ namespace Elsa.Persistence.MongoDb.Services
             }
             catch (BsonSerializationException ex)
             {
-
+                logger?.LogWarning(ex, "Couldn't register {serializer_name}", nameof(ObjectSerializer));
             }
 
             try
@@ -94,7 +95,7 @@ namespace Elsa.Persistence.MongoDb.Services
             }
             catch (BsonSerializationException ex)
             {
-
+                logger?.LogWarning(ex, "Couldn't register {serializer_name}", nameof(TypeSerializer));
             }
 
             try
@@ -103,7 +104,7 @@ namespace Elsa.Persistence.MongoDb.Services
             }
             catch (BsonSerializationException ex)
             {
-
+                logger?.LogWarning(ex, "Couldn't register {serializer_name}", nameof(InstantSerializer));
             }
         }
     }
