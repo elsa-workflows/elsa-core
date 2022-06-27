@@ -13,10 +13,7 @@ export class SlideOverPanel {
   @Prop({mutable: true}) public selectedTab?: TabDefinition;
   @Prop() public actions: Array<ActionDefinition> = [];
   @Prop() public expand: boolean;
-
   @Event() public collapsed: EventEmitter;
-  @Event() public submitted: EventEmitter<FormData>;
-
 
   @Method()
   public async show(): Promise<void> {
@@ -58,11 +55,6 @@ export class SlideOverPanel {
 
     // Hide panel.
     await this.hide();
-
-    // Raise Form Submitted event to apply changes.
-    const formData = new FormData(this.formElement);
-
-    this.submitted.emit(formData);
   };
 
   private onTransitionEnd = (e: TransitionEvent) => {
@@ -76,12 +68,6 @@ export class SlideOverPanel {
   private onTabClick(e: Event, tab: TabDefinition) {
     e.preventDefault();
     this.selectedTab = tab;
-  }
-
-  private onSubmit(e: Event) {
-    e.preventDefault();
-    const formData = new FormData(e.target as HTMLFormElement);
-    this.submitted.emit(formData);
   }
 
   private renderPanel() {
@@ -108,7 +94,7 @@ export class SlideOverPanel {
             <div class="fixed inset-y-0 right-0 pl-10 max-w-full flex sm:pl-16">
 
               <div class={`w-screen ease-in-out duration-200 ${panelClass}`}>
-                <form class="h-full flex flex-col bg-white shadow-xl" onSubmit={e => this.onSubmit(e)}
+                <form class="h-full flex flex-col bg-white shadow-xl"
                       ref={el => this.formElement = el} method="post">
                   <div class="flex flex-col flex-1">
 

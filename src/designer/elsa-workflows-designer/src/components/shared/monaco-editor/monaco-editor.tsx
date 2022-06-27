@@ -23,7 +23,7 @@ export class MonacoEditor {
   private editor: any;
 
   @Prop() public monacoLibPath?: string;
-  @Prop() public editorHeight: string = '5em';
+  @Prop() public editorHeight: string = '10em';
   @Prop() public value: string;
   @Prop() public language: string;
   @Prop() public singleLineMode: boolean = false;

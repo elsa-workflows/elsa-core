@@ -1,22 +1,10 @@
-import {Component, h, Listen, Prop, State, Event, EventEmitter, Method, Watch, Element} from '@stencil/core';
-import {debounce, camelCase} from 'lodash';
+import {Component, Element, Event, EventEmitter, h, Listen, Method, Prop, State, Watch} from '@stencil/core';
+import {camelCase, debounce} from 'lodash';
 import {Container} from "typedi";
 import {PanelPosition, PanelStateChangedArgs} from '../panel/models';
-import {
-  Activity,
-  ActivityDescriptor,
-  ActivitySelectedArgs, ChildActivitySelectedArgs,
-  ContainerSelectedArgs,
-  EditChildActivityArgs,
-  GraphUpdatedArgs,
-  WorkflowDefinition
-} from '../../../models';
-import {
-  ActivityIdUpdatedArgs,
-  ActivityUpdatedArgs,
-  DeleteActivityRequestedArgs
-} from './activity-properties-editor';
-import {PluginRegistry, ActivityNameFormatter, ActivityDriverRegistry, EventBus, findActivity, walkActivities, flattenList, flatten, ActivityNode, createActivityMap} from '../../../services';
+import {Activity, ActivityDescriptor, ActivitySelectedArgs, ChildActivitySelectedArgs, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs, WorkflowDefinition} from '../../../models';
+import {ActivityIdUpdatedArgs, ActivityUpdatedArgs, DeleteActivityRequestedArgs} from './activity-properties-editor';
+import {ActivityDriverRegistry, ActivityNameFormatter, createActivityMap, EventBus, flatten, flattenList, PluginRegistry, walkActivities} from '../../../services';
 import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
 import {Flowchart} from "../../activities/flowchart/models";
 import {ActivityPropertyChangedEventArgs, WorkflowDefinitionPropsUpdatedArgs, WorkflowDefinitionUpdatedArgs, WorkflowEditorEventTypes} from "./models";
@@ -76,13 +64,13 @@ export class WorkflowDefinitionEditor {
   }
 
   @Listen('collapsed')
-  private async handlePanelCollapsed() {
-    this.selectedActivity = null;
+  private async handlePanelCollapsed(e: CustomEvent) {
+    //this.selectedActivity = null;
   }
 
   @Listen('containerSelected')
   private async handleContainerSelected(e: CustomEvent<ContainerSelectedArgs>) {
-    this.selectedActivity = null;
+    this.selectedActivity = this.getCurrentContainer();
   }
 
   @Listen('activitySelected')
@@ -134,7 +122,7 @@ export class WorkflowDefinitionEditor {
       await this.canvas.importGraph(childActivity);
     }
 
-    this.selectedActivity = null;
+    this.selectedActivity = this.getCurrentContainer();
   }
 
   @Method()
@@ -166,8 +154,10 @@ export class WorkflowDefinitionEditor {
     this.workflowDefinitionState = workflowDefinition;
     this.nodeMap = createActivityMap(flatten(walkActivities(workflowDefinition.root)));
 
-    if (this.currentWorkflowPath.length == 0)
+    if (this.currentWorkflowPath.length == 0) {
       this.currentWorkflowPath = [{activityId: workflowDefinition.root.id, portName: null}];
+      this.selectedActivity = this.getCurrentContainer();
+    }
   }
 
   @Method()
@@ -242,18 +232,22 @@ export class WorkflowDefinitionEditor {
           <elsa-panel
             class="elsa-workflow-editor-container"
             position={PanelPosition.Right}
-            onExpandedStateChanged={e => this.onActivityEditorPanelStateChanged(e.detail)}>
+            onExpandedStateChanged={e => this.onWorkflowEditorPanelStateChanged(e.detail)}>
             <div class="object-editor-container">
-              {this.renderSelectedObject()}
+              <elsa-workflow-definition-properties-editor
+                workflowDefinition={this.workflowDefinitionState}
+                onWorkflowPropsUpdated={e => this.onWorkflowPropsUpdated(e)}
+              />
             </div>
           </elsa-panel>
           <elsa-panel
-          class="elsa-activity-editor-container"
-          position={PanelPosition.Bottom}
-          onExpandedStateChanged={e => this.onActivityEditorPanelStateChanged(e.detail)}>
-          <div class="activity-editor-container">
-          </div>
-        </elsa-panel>
+            class="elsa-activity-editor-container"
+            position={PanelPosition.Bottom}
+            onExpandedStateChanged={e => this.onActivityEditorPanelStateChanged(e.detail)}>
+            <div class="activity-editor-container">
+              {this.renderSelectedObject()}
+            </div>
+          </elsa-panel>
         </div>
       </WorkflowEditorTunnel.Provider>
     );
@@ -266,12 +260,7 @@ export class WorkflowDefinitionEditor {
         variables={this.workflowDefinitionState.variables}
         onActivityUpdated={e => this.onActivityUpdated(e)}
         onActivityIdUpdated={e => this.onActivityIdUpdated(e)}
-        onDeleteActivityRequested={e => this.onDeleteActivityRequested(e)}/>
-
-    return <elsa-workflow-definition-properties-editor
-      workflowDefinition={this.workflowDefinitionState}
-      onWorkflowPropsUpdated={e => this.onWorkflowPropsUpdated(e)}
-    />;
+        onDeleteActivityRequested={e => this.onDeleteActivityRequested(e)}/>;
   }
 
   private getWorkflowDefinitionInternal = async (): Promise<WorkflowDefinition> => {
@@ -338,6 +327,15 @@ export class WorkflowDefinitionEditor {
     return newName;
   };
 
+  private getCurrentContainer = (): Activity => {
+    const currentItem = this.currentWorkflowPath.length > 0 ? this.currentWorkflowPath[this.currentWorkflowPath.length - 1] : null;
+
+    if (!currentItem)
+      return this.workflowDefinitionState.root;
+
+    return this.nodeMap[currentItem.activityId];
+  };
+
   private onActivityPickerPanelStateChanged = async (e: PanelStateChangedArgs) => await this.updateContainerLayout('activity-picker-closed', e.expanded)
   private onWorkflowEditorPanelStateChanged = async (e: PanelStateChangedArgs) => await this.updateContainerLayout('object-editor-closed', e.expanded)
   private onActivityEditorPanelStateChanged = async (e: PanelStateChangedArgs) => await this.updateContainerLayout('activity-editor-closed', e.expanded)
@@ -351,14 +349,13 @@ export class WorkflowDefinitionEditor {
     const activityDescriptor: ActivityDescriptor = JSON.parse(json);
     const newName = await this.generateUniqueActivityName(activityDescriptor);
 
-    const newActivity: Activity = {
+    // Make sure the node hash is up to date so that it can be found by the activity template.
+    this.nodeMap[newName] = {
       id: newName,
       typeName: activityDescriptor.activityType,
       metadata: {},
       applicationProperties: {}
     };
-
-    this.nodeMap[newName] = newActivity;
 
     await this.canvas.addActivity({
       descriptor: activityDescriptor,
@@ -391,12 +388,11 @@ export class WorkflowDefinitionEditor {
     this.currentWorkflowPath = [...workflowPath];
   }
 
-
   private onWorkflowPropsUpdated = (e: CustomEvent<WorkflowDefinitionPropsUpdatedArgs>) => this.saveChangesDebounced()
 
   private onDeleteActivityRequested = (e: CustomEvent<DeleteActivityRequestedArgs>) => {
     this.deleteActivity(e.detail.activity);
-    this.selectedActivity = null;
+    this.selectedActivity = this.getCurrentContainer();
   };
 
   private onNavigateHierarchy = async (e: CustomEvent<WorkflowNavigationItem>) => {

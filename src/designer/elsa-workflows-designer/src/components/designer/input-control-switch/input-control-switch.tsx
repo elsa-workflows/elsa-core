@@ -35,7 +35,7 @@ export class InputControlSwitch {
   @Prop() defaultSyntax: string = SyntaxNames.Literal;
   @Prop() supportedSyntaxes: Array<string> = ['JavaScript', 'Liquid']; // TODO: Get available syntaxes from some more centralized settings.
   @Prop() isReadOnly?: boolean;
-  @Prop() codeEditorHeight: string = '10em';
+  @Prop() codeEditorHeight: string = '16em';
   @Prop() codeEditorSingleLineMode: boolean = false;
   @Prop() context?: IntellisenseContext;
 

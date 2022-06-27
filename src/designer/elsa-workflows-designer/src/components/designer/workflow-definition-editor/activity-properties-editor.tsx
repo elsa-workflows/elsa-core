@@ -130,7 +130,7 @@ export class ActivityPropertiesEditor {
     if (selectedTabIndex < 0)
       selectedTabIndex = 0;
 
-    const actions = [DefaultActions.Delete(this.onDeleteActivity)];
+    const actions = []; // [DefaultActions.Delete(this.onDeleteActivity)];
     const mainTitle = activity.id;
     const subTitle = activityDescriptor.displayName;
 

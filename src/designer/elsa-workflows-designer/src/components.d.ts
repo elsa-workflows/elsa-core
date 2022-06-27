@@ -788,7 +788,6 @@ declare namespace LocalJSX {
         "expand"?: boolean;
         "headerText"?: string;
         "onCollapsed"?: (event: CustomEvent<any>) => void;
-        "onSubmitted"?: (event: CustomEvent<FormData>) => void;
         "selectedTab"?: TabDefinition;
         "tabs"?: Array<TabDefinition>;
     }
