@@ -407,6 +407,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.CompensationCo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Scripting.Sql", "src\scripting\Elsa.Scripting.Sql\Elsa.Scripting.Sql.csproj", "{68BF7E0F-0E52-4477-A5B1-367E87697C75}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Activities.Kafka", "src\activities\Elsa.Activities.Kafka\Elsa.Activities.Kafka.csproj", "{64A34A11-7DC7-4FD0-B259-C6833E7D1487}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -977,6 +979,10 @@ Global
 		{68BF7E0F-0E52-4477-A5B1-367E87697C75}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{68BF7E0F-0E52-4477-A5B1-367E87697C75}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{68BF7E0F-0E52-4477-A5B1-367E87697C75}.Release|Any CPU.Build.0 = Release|Any CPU
+		{64A34A11-7DC7-4FD0-B259-C6833E7D1487}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{64A34A11-7DC7-4FD0-B259-C6833E7D1487}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{64A34A11-7DC7-4FD0-B259-C6833E7D1487}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{64A34A11-7DC7-4FD0-B259-C6833E7D1487}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1160,6 +1166,7 @@ Global
 		{F9731DF7-CEB1-4B9B-8838-803275E301E4} = {B43B546E-23F3-46E8-ACB7-D04F05CDA180}
 		{962653DD-BFE7-4DDB-9B3D-5AC8C222F43F} = {FC9F520F-BA51-4AD2-BFEE-EF787798E734}
 		{68BF7E0F-0E52-4477-A5B1-367E87697C75} = {9C3C685E-3D7D-4638-A031-24F71CF74B52}
+		{64A34A11-7DC7-4FD0-B259-C6833E7D1487} = {B43B546E-23F3-46E8-ACB7-D04F05CDA180}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B0975FD-7050-48B0-88C5-48C33378E158}
