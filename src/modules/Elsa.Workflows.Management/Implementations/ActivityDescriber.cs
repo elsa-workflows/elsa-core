@@ -51,7 +51,7 @@ public class ActivityDescriber : IActivityDescriber
 
         var properties = activityType.GetProperties();
         var inputProperties = properties.Where(x => typeof(Input).IsAssignableFrom(x.PropertyType) || x.GetCustomAttribute<InputAttribute>() != null).ToList();
-        var outputProperties = properties.Where(x => typeof(Output).IsAssignableFrom(x.PropertyType)).ToList();
+        var outputProperties = properties.Where(x => typeof(Output).IsAssignableFrom(x.PropertyType)).DistinctBy(x => x.Name).ToList();
         var isTrigger = activityType.IsAssignableTo(typeof(ITrigger));
 
         var descriptor = new ActivityDescriptor

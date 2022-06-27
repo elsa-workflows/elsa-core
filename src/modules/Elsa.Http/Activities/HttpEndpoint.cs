@@ -22,10 +22,6 @@ public class HttpEndpoint : Trigger<HttpRequestModel>
     {
     }
 
-    // public HttpEndpoint(MemoryReference outputTarget) : base(outputTarget)
-    // {
-    // }
-
     [Input] public Input<string> Path { get; set; } = default!;
 
     [Input(
