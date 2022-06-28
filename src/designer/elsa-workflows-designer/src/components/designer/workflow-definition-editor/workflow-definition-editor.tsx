@@ -2,9 +2,9 @@ import {Component, Element, Event, EventEmitter, h, Listen, Method, Prop, State,
 import {camelCase, debounce} from 'lodash';
 import {Container} from "typedi";
 import {PanelPosition, PanelStateChangedArgs} from '../panel/models';
-import {Activity, ActivityDescriptor, ActivitySelectedArgs, ChildActivitySelectedArgs, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs, WorkflowDefinition} from '../../../models';
+import {Activity, ActivityDescriptor, ActivitySelectedArgs, ChildActivitySelectedArgs, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs, WorkflowDefinition, Container as ContainerActivity} from '../../../models';
 import {ActivityIdUpdatedArgs, ActivityUpdatedArgs, DeleteActivityRequestedArgs} from './activity-properties-editor';
-import {ActivityDriverRegistry, ActivityNameFormatter, createActivityMap, EventBus, flatten, flattenList, PluginRegistry, walkActivities} from '../../../services';
+import {ActivityDriverRegistry, ActivityNameFormatter, ActivityNode, createActivityMap, createActivityNodeMap, EventBus, flatten, flattenList, PluginRegistry, walkActivities} from '../../../services';
 import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
 import {Flowchart} from "../../activities/flowchart/models";
 import {ActivityPropertyChangedEventArgs, WorkflowDefinitionPropsUpdatedArgs, WorkflowDefinitionUpdatedArgs, WorkflowEditorEventTypes} from "./models";
@@ -27,6 +27,7 @@ export class WorkflowDefinitionEditor {
   private container: HTMLDivElement;
   private toolbox: HTMLElsaWorkflowDefinitionEditorToolboxElement;
   private nodeMap: Hash<Activity> = {};
+  private nodes: Hash<ActivityNode> = {};
   private applyActivityChanges: (activity: Activity) => void;
   private deleteActivity: (activity: Activity) => void;
   private readonly emitActivityChangedDebounced: (e: ActivityPropertyChangedEventArgs) => void;
@@ -100,15 +101,18 @@ export class WorkflowDefinitionEditor {
   @Listen('editChildActivity')
   private async editChildActivity(e: CustomEvent<EditChildActivityArgs>) {
     const parentActivityId = e.detail.parentActivityId;
+    const currentActivityId = this.currentWorkflowPath[this.currentWorkflowPath.length - 1].activityId;
+    const currentActivity = this.nodeMap[currentActivityId];
+    const parentActivity = this.nodeMap[parentActivityId];
+    const indexInParent = currentActivity.activities.findIndex(x => x == parentActivity);
 
     const item: WorkflowNavigationItem = {
       activityId: parentActivityId,
       portName: e.detail.port.name,
+      index: indexInParent
     };
 
-    this.currentWorkflowPath = [...this.currentWorkflowPath, item];
     const portName = camelCase(e.detail.port.name);
-    const parentActivity = this.nodeMap[parentActivityId];
     const activityProperty = parentActivity[portName] as Activity | Array<Activity>;
     const isContainer = Array.isArray(activityProperty);
 
@@ -122,6 +126,7 @@ export class WorkflowDefinitionEditor {
       }
     }
 
+    this.currentWorkflowPath = [...this.currentWorkflowPath, item];
     this.selectedActivity = this.getCurrentContainer();
   }
 
@@ -152,10 +157,10 @@ export class WorkflowDefinitionEditor {
   @Method()
   async updateWorkflowDefinition(workflowDefinition: WorkflowDefinition): Promise<void> {
     this.workflowDefinitionState = workflowDefinition;
-    this.nodeMap = this.createNodeMap(workflowDefinition);
+    this.createNodeMap(workflowDefinition);
 
     if (this.currentWorkflowPath.length == 0) {
-      this.currentWorkflowPath = [{activityId: workflowDefinition.root.id, portName: null}];
+      this.currentWorkflowPath = [{activityId: workflowDefinition.root.id, portName: null, index: 0}];
       this.selectedActivity = this.getCurrentContainer();
     }
   }
@@ -266,12 +271,12 @@ export class WorkflowDefinitionEditor {
   private getWorkflowDefinitionInternal = async (): Promise<WorkflowDefinition> => {
     const activity: Activity = await this.canvas.exportGraph();
     const workflowDefinition = this.workflowDefinitionState;
-    const nodeMap = this.nodeMap; //this.createNodeMap(workflowDefinition);
     const currentWorkflowPath = this.currentWorkflowPath;
     const currentWorkflowNavigationItem = currentWorkflowPath[currentWorkflowPath.length - 1];
     const currentActivityId = currentWorkflowNavigationItem.activityId;
     const currentPortName = currentWorkflowNavigationItem.portName;
-    const currentActivity = nodeMap[currentActivityId];
+    const currentActivity = this.nodeMap[currentActivityId];
+    const currentActivityDescriptor = descriptorsStore.activityDescriptors.find(x => x.activityType == currentActivity.typeName);
 
     if (!activity.id) {
       const descriptor = descriptorsStore.activityDescriptors.find(x => x.activityType == activity.typeName);
@@ -279,16 +284,17 @@ export class WorkflowDefinitionEditor {
     }
 
     if (!!currentPortName) {
-      // If we're editing a container (Flowchart) activity, the exported activity will be the current activity. No need to update anything here.
-      if (currentActivity.id !== activity.id) {
-        const portName = camelCase(currentPortName);
-        currentActivity[portName] = activity;
-        this.nodeMap = this.createNodeMap(workflowDefinition)
-      } else {
-        debugger;
-        nodeMap[currentActivityId] = activity;
-      }
+      const portName = camelCase(currentPortName);
 
+      if (currentActivityDescriptor.isContainer) {
+        const parentNavigationItem = this.currentWorkflowPath[this.currentWorkflowPath.length - 2];
+        const parentActivityId = parentNavigationItem.activityId;
+        const parentActivity = this.nodeMap[parentActivityId] as ContainerActivity;
+        const parentActivitiesProp = parentActivity[portName] as Array<Activity>;
+        parentActivitiesProp[currentWorkflowNavigationItem.index] = activity;
+      } else {
+        currentActivity[portName] = activity;
+      }
     } else {
       workflowDefinition.root = activity;
     }
@@ -343,7 +349,11 @@ export class WorkflowDefinitionEditor {
     return this.nodeMap[currentItem.activityId];
   };
 
-  private createNodeMap = (workflowDefinition: WorkflowDefinition) => createActivityMap(flatten(walkActivities(workflowDefinition.root)));
+  private createNodeMap = (workflowDefinition: WorkflowDefinition): void => {
+    const nodes = flatten(walkActivities(workflowDefinition.root));
+    this.nodeMap = createActivityMap(nodes);
+    this.nodes = createActivityNodeMap(nodes);
+  };
 
   private onActivityPickerPanelStateChanged = async (e: PanelStateChangedArgs) => await this.updateContainerLayout('activity-picker-closed', e.expanded)
   private onWorkflowEditorPanelStateChanged = async (e: PanelStateChangedArgs) => await this.updateContainerLayout('object-editor-closed', e.expanded)
@@ -408,14 +418,18 @@ export class WorkflowDefinitionEditor {
     const item = e.detail;
     const activityId = item.activityId;
     let activity = this.nodeMap[activityId];
+    const activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.activityType == activity.typeName);
     const path = this.currentWorkflowPath;
     const index = path.indexOf(item);
 
     this.currentWorkflowPath = path.slice(0, index + 1);
 
     if (!!item.portName) {
-      const portName = camelCase(item.portName);
-      activity = activity[portName] as Activity;
+      debugger;
+      if (!activityDescriptor.isContainer) {
+        const portName = camelCase(item.portName);
+        activity = activity[portName] as Activity;
+      }
     }
 
     await this.canvas.importGraph(activity);

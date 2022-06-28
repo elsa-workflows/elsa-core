@@ -5,7 +5,7 @@ import {PanelPosition, PanelStateChangedArgs} from '../panel/models';
 import {
   Activity,
   ActivityDescriptor,
-  ActivitySelectedArgs,
+  ActivitySelectedArgs, Container as ContainerActivity,
   ContainerSelectedArgs, EditChildActivityArgs,
   GraphUpdatedArgs,
   WorkflowDefinition,
@@ -90,24 +90,33 @@ export class WorkflowInstanceViewer {
   @Listen('editChildActivity')
   private async editChildActivity(e: CustomEvent<EditChildActivityArgs>) {
     const parentActivityId = e.detail.parentActivityId;
+    const currentActivityId = this.currentWorkflowPath[this.currentWorkflowPath.length - 1].activityId;
+    const currentActivity = this.nodeMap[currentActivityId];
+    const parentActivity = this.nodeMap[parentActivityId];
+    const indexInParent = currentActivity.activities.findIndex(x => x == parentActivity);
 
     const item: WorkflowNavigationItem = {
       activityId: parentActivityId,
       portName: e.detail.port.name,
+      index: indexInParent
     };
 
-    this.currentWorkflowPath = [...this.currentWorkflowPath, item];
     const portName = camelCase(e.detail.port.name);
-    const parentActivity = this.nodeMap[parentActivityId];
-    const childActivity = parentActivity[portName] as Activity;
+    const activityProperty = parentActivity[portName] as Activity | Array<Activity>;
+    const isContainer = Array.isArray(activityProperty);
 
-    if (!childActivity) {
+    if (!activityProperty) {
       await this.canvas.reset();
     } else {
-      await this.canvas.importGraph(childActivity);
+      if (isContainer) {
+        await this.canvas.importGraph(parentActivity);
+      } else {
+        await this.canvas.importGraph(activityProperty as Activity);
+      }
     }
 
-    this.selectedActivity = null;
+    this.currentWorkflowPath = [...this.currentWorkflowPath, item];
+    this.selectedActivity = this.getCurrentContainer();
   }
 
   @Method()
@@ -140,7 +149,7 @@ export class WorkflowInstanceViewer {
     this.nodeMap = createActivityMap(flatten(walkActivities(workflowDefinition.root)));
 
     if (this.currentWorkflowPath.length == 0)
-      this.currentWorkflowPath = [{activityId: workflowDefinition.root.id, portName: null}];
+      this.currentWorkflowPath = [{activityId: workflowDefinition.root.id, portName: null, index: 0}];
   }
 
   public async componentWillLoad() {
@@ -227,6 +236,15 @@ export class WorkflowInstanceViewer {
 
     await this.updateLayout();
   }
+
+  private getCurrentContainer = (): Activity => {
+    const currentItem = this.currentWorkflowPath.length > 0 ? this.currentWorkflowPath[this.currentWorkflowPath.length - 1] : null;
+
+    if (!currentItem)
+      return this.workflowDefinitionState.root;
+
+    return this.nodeMap[currentItem.activityId];
+  };
 
   private onActivityPickerPanelStateChanged = async (e: PanelStateChangedArgs) => await this.updateContainerLayout('activity-picker-closed', e.expanded)
   private onActivityEditorPanelStateChanged = async (e: PanelStateChangedArgs) => await this.updateContainerLayout('object-editor-closed', e.expanded)
