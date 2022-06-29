@@ -163,8 +163,8 @@ export class ActivityPropertiesEditor {
 
     activity.id = newId;
 
-    this.activityUpdated.emit({activity, activityDescriptor, propertyName: 'id', propertyDescriptor: inputDescriptor});
     this.activityIdUpdated.emit({ activity, activityDescriptor, originalId, newId: activity.id });
+    this.activityUpdated.emit({activity, activityDescriptor, propertyName: 'id', propertyDescriptor: inputDescriptor});
   }
 
   private onActivityDisplayTextChanged(e: any) {

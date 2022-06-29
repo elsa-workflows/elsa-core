@@ -8,7 +8,7 @@ import './ports';
 import {ActivityNode as ActivityNodeShape} from './shapes';
 import {ContainerActivityComponent} from '../container-activity-component';
 import {AddActivityArgs, UpdateActivityArgs} from '../../designer/canvas/canvas';
-import {Activity, ActivitySelectedArgs, ContainerSelectedArgs, GraphUpdatedArgs} from '../../../models';
+import {Activity, ActivityDeletedArgs, ActivitySelectedArgs, ContainerSelectedArgs, GraphUpdatedArgs} from '../../../models';
 import {createGraph} from './graph-factory';
 import {Connection, Flowchart} from './models';
 import {NodeFactory} from "./node-factory";
@@ -45,6 +45,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
   target: Node;
 
   @Event() activitySelected: EventEmitter<ActivitySelectedArgs>;
+  @Event() activityDeleted: EventEmitter<ActivityDeletedArgs>;
   @Event() containerSelected: EventEmitter<ContainerSelectedArgs>;
   @Event() graphUpdated: EventEmitter<GraphUpdatedArgs>;
 
@@ -111,6 +112,9 @@ export class FlowchartComponent implements ContainerActivityComponent {
     const nodeId = args.id;
     const activity = args.activity;
     const node = this.graph.getNodes().find(x => x.id == nodeId) as any;
+
+    if (!node)
+      return;
 
     // Update the node's data with the activity.
     node.data = activity;
@@ -188,6 +192,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
 
     graph.on('node:change:*', this.onGraphChanged);
     graph.on('node:added', this.onGraphChanged);
+    graph.on('node:removed', this.onNodeRemoved);
     graph.on('node:removed', this.onGraphChanged);
     graph.on('edge:added', this.onGraphChanged);
     graph.on('edge:removed', this.onGraphChanged);
@@ -297,7 +302,15 @@ export class FlowchartComponent implements ContainerActivityComponent {
     }
   }
 
-  onGraphClick = async (e: PositionEventArgs<JQuery.ClickEvent>) => this.containerSelected.emit({});
+  onGraphClick = async (e: PositionEventArgs<JQuery.ClickEvent>) => {
+    const activityId = this.activity.id;
+
+    const args: ContainerSelectedArgs = {
+      activity: this.activity,
+      applyChanges: async a => await this.updateActivity({id: activityId, activity: a}),
+    };
+    return this.containerSelected.emit(args);
+  };
 
   onNodeClick = async (e: PositionEventArgs<JQuery.ClickEvent>) => {
     const node = e.node as ActivityNodeShape;
@@ -351,9 +364,6 @@ export class FlowchartComponent implements ContainerActivityComponent {
   }
 
   onNodeMoved = (e: PositionEventArgs<JQuery.ClickEvent>) => {
-
-    console.debug("Node moved...");
-
     const node = e.node as ActivityNodeShape;
     const activity = node.data as Activity;
     const nodePosition = node.position({relative: false});
@@ -408,6 +418,11 @@ export class FlowchartComponent implements ContainerActivityComponent {
     this.graphUpdated.emit({exportGraph: this.exportInternal});
   }
 
+  private onNodeRemoved = (e: any) => {
+    const activity = e.node.data as Activity;
+    this.activityDeleted.emit({activity});
+  };
+
   onToggleCanStartWorkflowClicked = (node: ActivityNodeShape) => {
     const activity = node.data as Activity;
     activity.canStartWorkflow = !activity.canStartWorkflow;
@@ -423,6 +438,11 @@ export class FlowchartComponent implements ContainerActivityComponent {
       cells = [node];
 
     this.graph.removeCells(cells);
+
+    for (const cell of cells) {
+      const activity = node.data as Activity;
+      this.activityDeleted.emit({activity: activity});
+    }
   };
 
   onCopyActivityClicked = (node: ActivityNodeShape) => {
@@ -441,5 +461,10 @@ export class FlowchartComponent implements ContainerActivityComponent {
       cells = [node];
 
     this.graph.cut(cells);
+
+    for (const cell of cells) {
+      const activity = node.data as Activity;
+      this.activityDeleted.emit({activity: activity});
+    }
   };
 }

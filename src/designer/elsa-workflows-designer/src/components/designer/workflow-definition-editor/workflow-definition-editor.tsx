@@ -2,7 +2,18 @@ import {Component, Element, Event, EventEmitter, h, Listen, Method, Prop, State,
 import {camelCase, debounce} from 'lodash';
 import {Container} from "typedi";
 import {PanelPosition, PanelStateChangedArgs} from '../panel/models';
-import {Activity, ActivityDescriptor, ActivitySelectedArgs, ChildActivitySelectedArgs, ContainerSelectedArgs, EditChildActivityArgs, GraphUpdatedArgs, WorkflowDefinition, Container as ContainerActivity} from '../../../models';
+import {
+  Activity,
+  ActivityDescriptor,
+  ActivitySelectedArgs,
+  ChildActivitySelectedArgs,
+  ContainerSelectedArgs,
+  EditChildActivityArgs,
+  GraphUpdatedArgs,
+  WorkflowDefinition,
+  Container as ContainerActivity,
+  ActivityDeletedArgs
+} from '../../../models';
 import {ActivityIdUpdatedArgs, ActivityUpdatedArgs, DeleteActivityRequestedArgs} from './activity-properties-editor';
 import {ActivityDriverRegistry, ActivityNameFormatter, ActivityNode, createActivityMap, createActivityNodeMap, EventBus, flatten, flattenList, PluginRegistry, walkActivities} from '../../../services';
 import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
@@ -67,6 +78,7 @@ export class WorkflowDefinitionEditor {
   @Listen('containerSelected')
   private async handleContainerSelected(e: CustomEvent<ContainerSelectedArgs>) {
     this.selectedActivity = this.getCurrentContainer();
+    this.applyActivityChanges = e.detail.applyChanges;
   }
 
   @Listen('activitySelected')
@@ -91,10 +103,13 @@ export class WorkflowDefinitionEditor {
     };
   }
 
+  @Listen('activityDeleted')
+  private async handleActivityDeleted(e: CustomEvent<ActivityDeletedArgs>) {
+    this.selectedActivity = this.getCurrentContainer();
+  }
+
   @Listen('graphUpdated')
   private async handleGraphUpdated(e: CustomEvent<GraphUpdatedArgs>) {
-    const workflowDefinition = await this.getWorkflowDefinitionInternal();
-    await this.updateWorkflowDefinition(workflowDefinition);
     this.saveChangesDebounced();
   }
 
@@ -299,6 +314,7 @@ export class WorkflowDefinitionEditor {
       workflowDefinition.root = activity;
     }
 
+    this.createNodeMap(workflowDefinition);
     return workflowDefinition;
   };
 
@@ -307,6 +323,8 @@ export class WorkflowDefinitionEditor {
   };
 
   private saveChanges = async (): Promise<void> => {
+    const workflowDefinition = await this.getWorkflowDefinitionInternal();
+    await this.updateWorkflowDefinition(workflowDefinition);
     this.workflowUpdated.emit({workflowDefinition: this.workflowDefinitionState});
   };
 
@@ -389,7 +407,10 @@ export class WorkflowDefinitionEditor {
   private onActivityUpdated = (e: CustomEvent<ActivityUpdatedArgs>) => {
     const updatedActivity = e.detail.activity;
     this.nodeMap[updatedActivity.id] = updatedActivity;
-    this.applyActivityChanges(updatedActivity);
+
+    if(!!this.applyActivityChanges)
+      this.applyActivityChanges(updatedActivity);
+
     this.emitActivityChangedDebounced({...e.detail, workflowEditor: this.el});
     this.saveChangesDebounced();
   }
@@ -405,6 +426,7 @@ export class WorkflowDefinitionEditor {
 
     item.activityId = newId;
     this.currentWorkflowPath = [...workflowPath];
+    this.createNodeMap(this.workflowDefinition);
   }
 
   private onWorkflowPropsUpdated = (e: CustomEvent<WorkflowDefinitionPropsUpdatedArgs>) => this.saveChangesDebounced()
@@ -425,7 +447,6 @@ export class WorkflowDefinitionEditor {
     this.currentWorkflowPath = path.slice(0, index + 1);
 
     if (!!item.portName) {
-      debugger;
       if (!activityDescriptor.isContainer) {
         const portName = camelCase(item.portName);
         activity = activity[portName] as Activity;
@@ -433,5 +454,6 @@ export class WorkflowDefinitionEditor {
     }
 
     await this.canvas.importGraph(activity);
+    this.selectedActivity = this.getCurrentContainer();
   }
 }
