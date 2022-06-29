@@ -16,12 +16,12 @@ public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
             throw new JsonException("Failed to parse JsonDocument");
 
         var connectionsElement = doc.RootElement.TryGetProperty("connections", out var connectionsEl) ? connectionsEl : default;
-        var metadataElement = doc.RootElement.GetProperty("metadata");
         var activitiesElement = doc.RootElement.TryGetProperty("activities", out var activitiesEl) ? activitiesEl : default;
         var id = doc.RootElement.GetProperty("id").GetString()!;
         var startId = doc.RootElement.TryGetProperty("start", out var startElement) ? startElement.GetString() : default;
         var activities = activitiesElement.ValueKind != JsonValueKind.Undefined ? activitiesElement.Deserialize<ICollection<IActivity>>(options) ?? new List<IActivity>() : new List<IActivity>();
-        var metadata = metadataElement.Deserialize<IDictionary<string, object>>(options) ?? new Dictionary<string, object>();
+        var metadataElement = doc.RootElement.TryGetProperty("metadata", out var metadataEl) ? metadataEl : default;
+        var metadata = metadataElement.ValueKind != JsonValueKind.Undefined ? metadataElement.Deserialize<IDictionary<string, object>>(options) ?? new Dictionary<string, object>() : new Dictionary<string, object>();
         var start = activities.FirstOrDefault(x => x.Id == startId) ?? activities.FirstOrDefault();
         var connectionSerializerOptions = new JsonSerializerOptions(options);
         var activityDictionary = activities.ToDictionary(x => x.Id);
