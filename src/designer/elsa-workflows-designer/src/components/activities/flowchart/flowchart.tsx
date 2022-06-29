@@ -303,7 +303,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
   }
 
   onGraphClick = async (e: PositionEventArgs<JQuery.ClickEvent>) => {
-    const activityId = this.activity.id;
+    const activityId = this.activity?.id;
 
     const args: ContainerSelectedArgs = {
       activity: this.activity,

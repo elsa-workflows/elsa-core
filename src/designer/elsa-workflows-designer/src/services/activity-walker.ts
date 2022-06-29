@@ -5,6 +5,7 @@ import {Activity, ActivityDescriptor} from "../models";
 import {PortProviderRegistry} from "./port-provider-registry";
 import descriptorsStore from '../data/descriptors-store';
 import {Hash} from "../utils";
+import {PortProviderContext} from "./port-provider";
 
 export interface ActivityNode {
   activity: Activity;
@@ -94,9 +95,13 @@ function getPorts(node: ActivityNode, activity: Activity, descriptors: Array<Act
   const ports = portProvider.getOutboundPorts({activity, activityDescriptor});
   let activityPorts: Array<ActivityPort> = [];
 
+  const portProviderContext: PortProviderContext = {
+    activityDescriptor,
+    activity
+  };
+
   for (const port of ports) {
-    const propName = camelCase(port.name);
-    const value = activity[propName];
+    const value = portProvider.resolvePort(port.name, portProviderContext);
 
     if (!value)
       continue;

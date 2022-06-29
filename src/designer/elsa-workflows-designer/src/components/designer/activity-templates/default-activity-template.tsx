@@ -1,6 +1,6 @@
 import {Component, h, Prop, State, Event, EventEmitter, Listen, Element} from "@stencil/core";
 import {camelCase} from 'lodash';
-import {ActivityIcon, ActivityIconRegistry} from "../../../services";
+import {ActivityIcon, ActivityIconRegistry, PortProviderRegistry} from "../../../services";
 import {Container} from "typedi";
 import {Activity, ActivityDescriptor, ActivityKind, ActivitySelectedArgs, ChildActivitySelectedArgs, EditChildActivityArgs, Port, PortMode} from "../../../models";
 import descriptorsStore from "../../../data/descriptors-store";
@@ -13,12 +13,14 @@ import WorkflowEditorTunnel from "../state";
 })
 export class DefaultActivityTemplate {
   private readonly iconRegistry: ActivityIconRegistry;
+  private readonly portProviderRegistry: PortProviderRegistry;
   private activityDescriptor: ActivityDescriptor;
   private icon: ActivityIcon;
   private portElements: Array<HTMLElement> = [];
 
   constructor() {
     this.iconRegistry = Container.get(ActivityIconRegistry);
+    this.portProviderRegistry = Container.get(PortProviderRegistry);
   }
 
   @Prop({attribute: 'activity-type'}) activityType: string;
@@ -106,7 +108,8 @@ export class DefaultActivityTemplate {
       return undefined;
 
     const activityDescriptor = this.activityDescriptor;
-    const ports = activityDescriptor?.ports ?? [];
+    const portProvider = this.portProviderRegistry.get(activityDescriptor.activityType);
+    const ports = portProvider.getOutboundPorts({ activityDescriptor, activity });
     const embeddedPorts = ports.filter(x => x.mode == PortMode.Embedded);
 
     if (embeddedPorts.length == 0)
@@ -123,8 +126,9 @@ export class DefaultActivityTemplate {
     const canStartWorkflow = activity?.canStartWorkflow == true;
     const textColor = canStartWorkflow ? 'text-white' : 'text-gray-700';
     const borderColor = port.name == this.selectedPortName ? 'border-blue-600' : 'border-gray-300';
-    const portName = camelCase(port.name);
-    const activityProperty: Activity = activity ? activity[portName] : null;
+    const activityDescriptor = this.activityDescriptor;
+    const portProvider = this.portProviderRegistry.get(activityDescriptor.activityType);
+    const activityProperty = portProvider.resolvePort(port.name, { activity, activityDescriptor }) as Activity;
     const childActivityDescriptor: ActivityDescriptor = activityProperty != null ? descriptorsStore.activityDescriptors.find(x => x.activityType == activityProperty.typeName) : null;
     let childActivityDisplayText = activityProperty?.metadata?.displayText;
 

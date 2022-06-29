@@ -5,16 +5,20 @@ import {ActivityIconRegistry, InputControlRegistry, PortProviderRegistry} from "
 import {Plugin} from "../../models";
 import {SwitchPortProvider} from "./switch-port-provider";
 import {ActivityIconSettings, getActivityIconCssClass} from "../../components/icons/activities";
+import {SwitchPortUpdater} from "./switch-port-updater";
 
 @Service()
 export class SwitchPlugin implements Plugin {
-  public static readonly ActivityTypeName: string = 'Elsa.Switch';
+  static readonly ActivityTypeName: string = 'Elsa.Switch';
+
+  private readonly switchPortUpdater: SwitchPortUpdater;
 
   constructor() {
     const activityTypeName = SwitchPlugin.ActivityTypeName;
     const inputControlRegistry = Container.get(InputControlRegistry);
     const portProviderRegistry = Container.get(PortProviderRegistry);
     const iconRegistry = Container.get(ActivityIconRegistry);
+    this.switchPortUpdater = Container.get(SwitchPortUpdater);
 
     inputControlRegistry.add('switch-editor', c => <elsa-switch-editor inputContext={c}/>);
     portProviderRegistry.add(activityTypeName, () => Container.get(SwitchPortProvider));
