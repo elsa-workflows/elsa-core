@@ -27,7 +27,9 @@ public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
         var activityDictionary = activities.ToDictionary(x => x.Id);
 
         connectionSerializerOptions.Converters.Add(new ConnectionJsonConverter(activityDictionary));
-        var connections = connectionsElement.ValueKind != JsonValueKind.Undefined ? connectionsElement.Deserialize<ICollection<Connection>>(connectionSerializerOptions) ?? new List<Connection>() : new List<Connection>();
+        var connections = connectionsElement.ValueKind != JsonValueKind.Undefined 
+            ? connectionsElement.Deserialize<ICollection<Connection>>(connectionSerializerOptions)?.Where(x => x.Source != null! && x.Target != null!).ToList() ?? new List<Connection>() 
+            : new List<Connection>();
 
         var flowChart = new Activities.Flowchart
         {

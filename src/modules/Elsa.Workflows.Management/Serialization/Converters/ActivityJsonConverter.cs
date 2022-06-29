@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Models;
@@ -33,7 +34,14 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
         var activityDescriptor = _activityRegistry.Find(activityTypeName);
 
         if (activityDescriptor == null)
-            throw new Exception($"Activity of type {activityTypeName} not found in registry");
+        {
+            var activityId = doc.RootElement.TryGetProperty("Id", out var activityIdElement) ? activityIdElement.GetString() : default;
+            
+            return new NotFoundActivity(activityTypeName)
+            {
+                Id = activityId ?? Guid.NewGuid().ToString("N"),
+            };
+        }
 
         var newOptions = new JsonSerializerOptions(options);
         newOptions.Converters.Add(new InputJsonConverterFactory(_serviceProvider));

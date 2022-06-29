@@ -6,7 +6,7 @@ using Elsa.Workflows.Core.Signals;
 
 namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
 
-[Activity("Elsa", "Workflows", "A flowchart is a collection of activities and connections between them.")]
+[Activity("Elsa", "Flow", "A flowchart is a collection of activities and connections between them.")]
 public class Flowchart : Container
 {
     public Flowchart()

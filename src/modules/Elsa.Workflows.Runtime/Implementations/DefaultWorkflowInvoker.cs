@@ -42,6 +42,10 @@ public class DefaultWorkflowInvoker : IWorkflowInvoker
     public async Task<InvokeWorkflowResult> InvokeAsync(InvokeWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
         var workflowInstance = await _workflowInstanceStore.FindByIdAsync(request.InstanceId, cancellationToken);
+
+        if (workflowInstance == null)
+            throw new Exception($"No workflow instance found with ID {request.InstanceId}");
+        
         return await InvokeAsync(workflowInstance!, request.Bookmark, request.Input, cancellationToken);
     }
 

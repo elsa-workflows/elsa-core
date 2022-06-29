@@ -2,19 +2,14 @@ using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Activities.Flowchart.Models;
 using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Behaviors;
 using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
 
 [FlowNode("True", "False")]
-public class FlowDecision : Activity
+[Activity("Elsa", "Flow", "Continues on either the True or False branch, depending on the result of a specified condition")]
+public class FlowDecision : ActivityBase
 {
-    public FlowDecision()
-    {
-        Behaviors.Remove<AutoCompleteBehavior>();
-    }
-
     /// <summary>
     /// The condition to evaluate.
     /// </summary>

@@ -5,7 +5,7 @@ import {Service} from "typedi";
 import {
   DelayIcon,
   EventIcon,
-  FlowchartIcon,
+  FlowchartIcon, FlowDecisionIcon,
   ForEachIcon,
   HttpEndpointIcon,
   IfIcon,
@@ -32,6 +32,7 @@ export class ActivityIconRegistry {
     this.add('Elsa.ForEach', settings => <ForEachIcon size={settings?.size}/>);
     this.add('Elsa.Delay', settings => <DelayIcon size={settings?.size}/>);
     this.add('Elsa.Timer', settings => <TimerIcon size={settings?.size}/>);
+    this.add('Elsa.FlowDecision', settings => <FlowDecisionIcon size={settings?.size}/>);
     this.add('Elsa.Event', settings => <EventIcon size={settings?.size}/>);
     this.add('Elsa.RunJavaScript', settings => <RunJavaScriptIcon size={settings?.size}/>);
   }

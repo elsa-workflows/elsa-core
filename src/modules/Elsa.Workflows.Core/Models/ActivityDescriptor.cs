@@ -20,6 +20,11 @@ public class ActivityDescriptor
     /// A value indicating whether this activity is a container of child activities.
     /// </summary>
     public bool IsContainer { get; set; }
+
+    /// <summary>
+    /// Whether this activity type is selectable from activity pickers.
+    /// </summary>
+    public bool IsBrowsable { get; set; }
 }
 
 public record ActivityConstructorContext(JsonElement Element, JsonSerializerOptions SerializerOptions);

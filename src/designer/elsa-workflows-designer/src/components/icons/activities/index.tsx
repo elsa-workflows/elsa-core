@@ -3,6 +3,7 @@ export * from "./http-endpoint";
 export * from "./write-line";
 export * from "./read-line";
 export * from "./if";
+export * from "./flow-decision";
 export * from "./flowchart";
 export * from "./foreach";
 export * from "./delay";

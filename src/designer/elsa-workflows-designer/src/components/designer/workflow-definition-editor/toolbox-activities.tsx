@@ -96,7 +96,8 @@ export class ToolboxActivities {
   }
 
   handleActivityDescriptorsChanged(value: Array<ActivityDescriptor>) {
-    const categorizedActivitiesLookup = groupBy(value, x => x.category);
+    const browsableDescriptors = value.filter(x => x.isBrowsable);
+    const categorizedActivitiesLookup = groupBy(browsableDescriptors, x => x.category);
     const categories = Object.keys(categorizedActivitiesLookup);
     const renderedActivities: Map<string, string> = new Map<string, string>();
 
@@ -114,7 +115,7 @@ export class ToolboxActivities {
     // Render activities.
     const activityDriverRegistry = Container.get(ActivityDriverRegistry);
 
-    for (const activityDescriptor of value) {
+    for (const activityDescriptor of browsableDescriptors) {
       const activityType = activityDescriptor.activityType;
       const driver = activityDriverRegistry.createDriver(activityType);
       const html = driver.display({displayType: 'picker', activityDescriptor: activityDescriptor});
