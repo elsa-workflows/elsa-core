@@ -30,7 +30,7 @@ export class VariableEditorDialog {
     const cancelAction = DefaultActions.Cancel();
     const saveAction = DefaultActions.Save();
     const actions = [cancelAction, saveAction];
-    const availableTypes: Array<string> = ['Object', 'String', 'Int32', 'Int64', 'Single', 'Double']; // TODO: Fetch these from backend.
+    const availableTypes: Array<string> = ['Object', 'String', 'Boolean', 'Int32', 'Int64', 'Single', 'Double']; // TODO: Fetch these from backend.
     const storageDrivers: Array<StorageDriverDescriptor> = [{ id: null, displayName: '-' }, ...descriptorsStore.storageDrivers];
 
     return (

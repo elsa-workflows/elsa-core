@@ -1,6 +1,7 @@
 using System.Collections;
 using System.ComponentModel;
 using System.Reflection;
+using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
@@ -39,7 +40,7 @@ public class ActivityDescriber : IActivityDescriber
         var descriptionAttr = activityType.GetCustomAttribute<DescriptionAttribute>();
         var description = descriptionAttr?.Description ?? activityAttr?.Description;
 
-        var outboundPorts =
+        var embeddedPorts =
             from prop in activityType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
             where typeof(IActivity).IsAssignableFrom(prop.PropertyType) || typeof(IEnumerable<IActivity>).IsAssignableFrom(prop.PropertyType)
             let portAttr = prop.GetCustomAttribute<PortAttribute>()
@@ -47,9 +48,19 @@ public class ActivityDescriber : IActivityDescriber
             select new Port
             {
                 Name = portAttr.Name ?? prop.Name,
-                DisplayName = portAttr.DisplayName ?? portAttr.Name ?? prop.Name
+                DisplayName = portAttr.DisplayName ?? portAttr.Name ?? prop.Name,
+                Mode = PortMode.Embedded
             };
 
+        var flowNodeAttr = activityType.GetCustomAttribute<FlowNodeAttribute>();
+        var flowPorts = flowNodeAttr?.Outcomes.Select(x => new Port
+        {
+            Mode = PortMode.Port,
+            Name = x,
+            DisplayName = x
+        }) ?? Enumerable.Empty<Port>();
+
+        var allPorts = embeddedPorts.Concat(flowPorts);
         var properties = activityType.GetProperties();
         var inputProperties = properties.Where(x => typeof(Input).IsAssignableFrom(x.PropertyType) || x.GetCustomAttribute<InputAttribute>() != null).ToList();
         var outputProperties = properties.Where(x => typeof(Output).IsAssignableFrom(x.PropertyType)).DistinctBy(x => x.Name).ToList();
@@ -62,7 +73,7 @@ public class ActivityDescriber : IActivityDescriber
             ActivityType = fullTypeName,
             DisplayName = displayName,
             Kind = isTrigger ? ActivityKind.Trigger : ActivityKind.Action,
-            Ports = outboundPorts.ToList(),
+            Ports = allPorts.ToList(),
             Inputs = DescribeInputProperties(inputProperties).ToList(),
             Outputs = DescribeOutputProperties(outputProperties).ToList(),
             IsContainer = typeof(IContainer).IsAssignableFrom(activityType),

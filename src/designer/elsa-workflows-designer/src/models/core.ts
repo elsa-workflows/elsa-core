@@ -109,6 +109,12 @@ export interface OutputDescriptor extends PropertyDescriptor {
 export interface Port {
   name: string;
   displayName: string;
+  mode: PortMode;
+}
+
+export enum PortMode {
+  Embedded = 'Embedded',
+  Port = 'Port'
 }
 
 export interface CompletionCallbackState {
@@ -142,7 +148,7 @@ export enum SyntaxNames {
   Json = 'Json'
 }
 
-export interface  ActivityMetadata {
+export interface ActivityMetadata {
   displayText: string;
   designer: ActivityDesignerMetadata;
 }

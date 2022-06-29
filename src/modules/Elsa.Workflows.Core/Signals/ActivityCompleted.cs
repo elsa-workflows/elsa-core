@@ -1,3 +1,3 @@
 namespace Elsa.Workflows.Core.Signals;
 
-public record ActivityCompleted;
+public record ActivityCompleted(object? Result = default);

@@ -144,10 +144,10 @@ public static class ActivityExecutionContextExtensions
     /// <summary>
     /// Complete the current activity. This should only be called by activities that explicitly suppress automatic-completion.
     /// </summary>
-    public static async ValueTask CompleteActivityAsync(this ActivityExecutionContext context)
+    public static async ValueTask CompleteActivityAsync(this ActivityExecutionContext context, object? result = default)
     {
         // Send a signal.
-        await context.SignalAsync(new ActivityCompleted());
+        await context.SignalAsync(new ActivityCompleted(result));
 
         // Remove the context.
         context.WorkflowExecutionContext.ActivityExecutionContexts.Remove(context);

@@ -3,6 +3,7 @@ import {Node} from "@antv/x6";
 import {Container, Service} from "typedi"
 import {ActivityNodeHandler, CreateUINodeContext} from "./activity-node-handler";
 import {PortProviderContext, PortProviderRegistry} from "../../../services";
+import {PortMode} from "../../../models";
 
 @Service()
 export class DefaultNodeHandler implements ActivityNodeHandler {
@@ -16,18 +17,18 @@ export class DefaultNodeHandler implements ActivityNodeHandler {
     const {activityDescriptor, activity, x, y} = context;
     const provider = this.portProviderRegistry.get(activityDescriptor.activityType);
     const providerContext: PortProviderContext = {activityDescriptor, activity};
-    let inPorts = provider.getInboundPorts(providerContext);
-    let outPorts = provider.getOutboundPorts(providerContext);
+    let inPorts = provider.getInboundPorts(providerContext).filter(x => x.mode == PortMode.Port);
+    let outPorts = provider.getOutboundPorts(providerContext).filter(x => x.mode == PortMode.Port);
 
-    //if (inPorts.length == 0)
-    inPorts = [{name: 'In', displayName: 'In'}];
+    if (inPorts.length == 0)
+      inPorts = [{name: 'In', displayName: 'In', mode: PortMode.Port}];
 
     if (inPorts.length == 1)
       inPorts[0].displayName = null;
 
     // In a flowchart, always add a Done port to connect the next node.
-    //outPorts = [...outPorts, {name: 'Done', displayName: 'Done'}];
-    outPorts = [{name: 'Done', displayName: 'Done'}];
+    if(outPorts.length == 0)
+      outPorts = [{name: 'Done', displayName: 'Done', mode: PortMode.Port}];
 
     if (outPorts.length == 1)
       outPorts[0].displayName = null;

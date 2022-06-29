@@ -47,7 +47,7 @@ public class List : Controller
                 new TypeJsonConverter(_wellKnownTypeRegistry)
             },
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
 
         return Json(model, serializerOptions);

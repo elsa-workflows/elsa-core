@@ -2,7 +2,7 @@ import {Component, h, Prop, State, Event, EventEmitter, Listen, Element} from "@
 import {camelCase} from 'lodash';
 import {ActivityIcon, ActivityIconRegistry} from "../../../services";
 import {Container} from "typedi";
-import {Activity, ActivityDescriptor, ActivityKind, ActivitySelectedArgs, ChildActivitySelectedArgs, EditChildActivityArgs, Port} from "../../../models";
+import {Activity, ActivityDescriptor, ActivityKind, ActivitySelectedArgs, ChildActivitySelectedArgs, EditChildActivityArgs, Port, PortMode} from "../../../models";
 import descriptorsStore from "../../../data/descriptors-store";
 import {isNullOrWhitespace} from "../../../utils";
 import WorkflowEditorTunnel from "../state";
@@ -107,13 +107,14 @@ export class DefaultActivityTemplate {
 
     const activityDescriptor = this.activityDescriptor;
     const ports = activityDescriptor?.ports ?? [];
+    const embeddedPorts = ports.filter(x => x.mode == PortMode.Embedded);
 
-    if (ports.length == 0)
+    if (embeddedPorts.length == 0)
       return undefined;
 
     return (
       <div class="activity-ports mt-2 flex space-x-2">
-        {ports.map(port => this.renderPort(activity, port))}
+        {embeddedPorts.map(port => this.renderPort(activity, port))}
       </div>
     );
   };
