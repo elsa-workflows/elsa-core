@@ -75,7 +75,7 @@ export class WorkflowInstanceViewer {
 
   @Listen('containerSelected')
   private async handleContainerSelected(e: CustomEvent<ContainerSelectedArgs>) {
-    this.selectedActivity = null;
+    this.selectedActivity = this.getCurrentContainer();
   }
 
   @Listen('activitySelected')
@@ -148,8 +148,10 @@ export class WorkflowInstanceViewer {
     this.workflowDefinitionState = workflowDefinition;
     this.nodeMap = createActivityMap(flatten(walkActivities(workflowDefinition.root)));
 
-    if (this.currentWorkflowPath.length == 0)
+    if (this.currentWorkflowPath.length == 0) {
       this.currentWorkflowPath = [{activityId: workflowDefinition.root.id, portName: null, index: 0}];
+      this.selectedActivity = this.getCurrentContainer();
+    }
   }
 
   public async componentWillLoad() {
@@ -192,7 +194,7 @@ export class WorkflowInstanceViewer {
             position={PanelPosition.Right}
             onExpandedStateChanged={e => this.onActivityEditorPanelStateChanged(e.detail)}>
             <div class="object-editor-container">
-              {this.renderSelectedObject()}
+              <elsa-workflow-instance-properties workflowDefinition={this.workflowDefinitionState} workflowInstance={this.workflowInstanceState}/>
             </div>
           </elsa-panel>
           <elsa-panel
@@ -200,6 +202,7 @@ export class WorkflowInstanceViewer {
             position={PanelPosition.Bottom}
             onExpandedStateChanged={e => this.onActivityEditorPanelStateChanged(e.detail)}>
             <div class="activity-editor-container">
+              {this.renderSelectedObject()}
             </div>
           </elsa-panel>
         </div>
@@ -211,9 +214,7 @@ export class WorkflowInstanceViewer {
     const activity = this.selectedActivity;
 
     if (!!activity)
-      return <elsa-activity-properties activity={activity}/>
-
-    return <elsa-workflow-instance-properties workflowDefinition={this.workflowDefinitionState} workflowInstance={this.workflowInstanceState}/>;
+      return <elsa-activity-properties activity={activity}/>;
   }
 
   private getWorkflowInternal = async (): Promise<WorkflowDefinition> => {
@@ -253,16 +254,20 @@ export class WorkflowInstanceViewer {
     const item = e.detail;
     const activityId = item.activityId;
     let activity = this.nodeMap[activityId];
+    const activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.activityType == activity.typeName);
     const path = this.currentWorkflowPath;
     const index = path.indexOf(item);
 
     this.currentWorkflowPath = path.slice(0, index + 1);
 
     if (!!item.portName) {
-      const portName = camelCase(item.portName);
-      activity = activity[portName] as Activity;
+      if (!activityDescriptor.isContainer) {
+        const portName = camelCase(item.portName);
+        activity = activity[portName] as Activity;
+      }
     }
 
     await this.canvas.importGraph(activity);
+    this.selectedActivity = this.getCurrentContainer();
   }
 }
