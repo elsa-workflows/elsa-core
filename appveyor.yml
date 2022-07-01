@@ -103,7 +103,9 @@ after_test:
 
 artifacts:
     -   path: '**/*.nupkg'
-        name: Packages
+        name: Packages        
+    -   path: '**/*.snupkg'
+        name: Symbol Packages
     -   path: '**/TestResults/TestResults.xml'
 
 deploy:
