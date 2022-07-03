@@ -35,6 +35,9 @@ namespace Elsa.Activities.ControlFlow
             WaitAll,
             WaitAny
         }
+        
+        [ActivityInput(Hint = "True if all blocking activities within the fork should be cleared.", UIHint = ActivityInputUIHints.SingleLine, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        public bool EagerJoin { get; set; }
 
         [ActivityInput(
             UIHint = ActivityInputUIHints.Dropdown,
@@ -106,12 +109,20 @@ namespace Elsa.Activities.ControlFlow
                     blockingActivityAncestors = blockingActivityAncestors.Concat(compositeBlockingActivityAncestors).ToList();
                 }
 
-                // If the fork is inbound in the blocking activity AND the blocking activity is inbound in this Join, then clear it.
-                var blockingActivityHasInboundFork = fork == null || blockingActivityAncestors.Contains(fork.Id);
-                var joinActivityHasInboundBlockingActivity = inboundActivities.Contains(blockingActivity.ActivityId);
+                if (EagerJoin)
+                {
+                    if (fork == null || blockingActivityAncestors.Contains(fork.Id))
+                        await workflowExecutionContext.RemoveBlockingActivityAsync(blockingActivity);
+                }
+                else
+                {
+                    // If the fork is inbound in the blocking activity AND the blocking activity is inbound in this Join, then clear it.
+                    var blockingActivityHasInboundFork = fork == null || blockingActivityAncestors.Contains(fork.Id);
+                    var joinActivityHasInboundBlockingActivity = inboundActivities.Contains(blockingActivity.ActivityId);
                 
-                if (blockingActivityHasInboundFork && joinActivityHasInboundBlockingActivity)
-                    await workflowExecutionContext.RemoveBlockingActivityAsync(blockingActivity);
+                    if (blockingActivityHasInboundFork && joinActivityHasInboundBlockingActivity)
+                        await workflowExecutionContext.RemoveBlockingActivityAsync(blockingActivity);
+                }
             }
         }
 

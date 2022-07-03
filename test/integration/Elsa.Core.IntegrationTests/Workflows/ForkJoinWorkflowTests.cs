@@ -87,6 +87,28 @@ namespace Elsa.Core.IntegrationTests.Workflows
             Assert.Equal(WorkflowStatus.Finished, workflowInstance.WorkflowStatus);
             Assert.True(await GetIsFinishedAsync());
         }
+        
+        [Fact(DisplayName = "Normal join should not eagerly clear blocking activities")]
+        public async Task Test03()
+        {
+            var workflow = new ForkEagerJoinWorkflow(false);
+            var workflowBlueprint = WorkflowBuilder.Build(workflow);
+            var workflowResult = await WorkflowStarter.StartWorkflowAsync(workflowBlueprint);
+            var workflowInstance = workflowResult.WorkflowInstance!;
+
+            Assert.Equal(2, workflowInstance.BlockingActivities.Count);
+        }
+        
+        [Fact(DisplayName = "Eager join should not clear all blocking activities")]
+        public async Task Test04()
+        {
+            var workflow = new ForkEagerJoinWorkflow(true);
+            var workflowBlueprint = WorkflowBuilder.Build(workflow);
+            var workflowResult = await WorkflowStarter.StartWorkflowAsync(workflowBlueprint);
+            var workflowInstance = workflowResult.WorkflowInstance!;
+
+            Assert.Single(workflowInstance.BlockingActivities);
+        }
 
         private async Task<WorkflowInstance> TriggerSignalAsync(IWorkflowBlueprint workflowBlueprint, WorkflowInstance workflowInstance, string signal)
         {
