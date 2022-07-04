@@ -150,6 +150,7 @@ export class ElsaWorkflowInstanceJournal {
     const workflowBlueprint = this.workflowBlueprint;
     const activityBlueprints: Array<ActivityBlueprint> = workflowBlueprint.activities || [];
     const selectedRecordId = this.selectedRecordId;
+    
 
     const renderRecord = (record: WorkflowExecutionLogRecord, index: number) => {
       var prevItemReverseIndex = allItems
@@ -242,7 +243,7 @@ export class ElsaWorkflowInstanceJournal {
               <div class="elsa-relative elsa-flex elsa-space-x-3">
                 <div>
                   <span
-                    class="elsa-h-8 elsa-w-8 elsa-rounded-full elsa-bg-green-500 elsa-flex elsa-items-center elsa-justify-center elsa-ring-8 elsa-ring-white elsa-mr-1"
+                    class={`elsa-h-8 elsa-w-8 elsa-rounded-full elsa-bg-${eventColor}-500 elsa-flex elsa-items-center elsa-justify-center elsa-ring-8 elsa-ring-white elsa-mr-1`}
                     innerHTML={activityIcon}/>
                 </div>
                 <div class="elsa-min-w-0 elsa-flex-1 elsa-pt-1.5 elsa-flex elsa-justify-between elsa-space-x-4">

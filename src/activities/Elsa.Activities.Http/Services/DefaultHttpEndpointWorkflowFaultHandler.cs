@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using System.Net.Mime;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Contracts;
@@ -16,19 +18,24 @@ public class DefaultHttpEndpointWorkflowFaultHandler : IHttpEndpointWorkflowFaul
         
         httpContext.Response.ContentType = MediaTypeNames.Application.Json;
         httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
-        
 
-        var faultedResponse = JsonConvert.SerializeObject(new
+        var faults = new List<object>();
+
+        foreach (var fault in workflowInstance.Faults)
         {
-            errorMessage = $"Workflow faulted at {workflowInstance.FaultedAt!} with error: {workflowInstance.Fault!.Message}",
-            exception = workflowInstance.Fault?.Exception,
-            workflow = new
+            faults.Add(new
             {
-                name = workflowInstance.Name,
-                version = workflowInstance.Version,
-                instanceId = workflowInstance.Id
-            }
-        });
+                errorMessage = $"Workflow faulted at {workflowInstance.FaultedAt!} with error: {fault?.Message}",
+                exception = fault?.Exception,
+                workflow = new
+                {
+                    name = workflowInstance.Name,
+                    version = workflowInstance.Version,
+                    instanceId = workflowInstance.Id
+                }
+            });
+        }        
+        var faultedResponse = JsonConvert.SerializeObject(faults);
 
         await httpContext.Response.WriteAsync(faultedResponse, context.CancellationToken);
     }

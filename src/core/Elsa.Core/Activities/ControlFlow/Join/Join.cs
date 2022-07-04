@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -47,6 +47,10 @@ namespace Elsa.Activities.ControlFlow
         )]
         public JoinMode Mode { get; set; }
 
+
+        [ActivityInput(Hint = "True if incoming activities executed should not be Faulted to continue.", UIHint = ActivityInputUIHints.SingleLine, SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
+        public bool WaitFaulted { get; set; } = default!;
+
         public IReadOnlyCollection<string> InboundTransitions
         {
             get => GetState<IReadOnlyCollection<string>>(() => new List<string>());
@@ -55,11 +59,16 @@ namespace Elsa.Activities.ControlFlow
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            var isDone = IsDone(context);
+            var isDone = IsDone(context, WaitFaulted);
             
             context.JournalData.Add("Completed", isDone);
             context.JournalData.Add("Current Inbound Transitions", InboundTransitions);
-            
+
+            if (context.WorkflowInstance.Faults.Count > 0)
+            {
+                context.JournalData.Add("Current Faulted Transitions", context.WorkflowInstance.Faults.Select(x => x.FaultedActivityId));
+
+            }
             if (!isDone)
                 return Noop();
             
@@ -77,7 +86,7 @@ namespace Elsa.Activities.ControlFlow
             return Done();
         }
 
-        private bool IsDone(ActivityExecutionContext context)
+        private bool IsDone(ActivityExecutionContext context, bool waitFaulted)
         {
             var recordedInboundTransitions = InboundTransitions;
             var workflowExecutionContext = context.WorkflowExecutionContext;
@@ -85,8 +94,18 @@ namespace Elsa.Activities.ControlFlow
 
             return Mode switch
             {
-                JoinMode.WaitAll => inboundConnections.All(x => recordedInboundTransitions.Contains(GetTransitionKey(x))),
-                JoinMode.WaitAny => inboundConnections.Any(x => recordedInboundTransitions.Contains(GetTransitionKey(x))),
+                JoinMode.WaitAll => inboundConnections.All(x => recordedInboundTransitions.Contains(GetTransitionKey(x)) &&
+                        (!waitFaulted || 
+                        !context.WorkflowInstance.Faults.Contains(f => f.FaultedActivityId == GetActivityId(x)) &&
+                        !context.WorkflowInstance.ScheduledActivities.Contains(f => f.ActivityId == GetActivityId(x))
+                        )
+                    ),
+                JoinMode.WaitAny => inboundConnections.Any(x => recordedInboundTransitions.Contains(GetTransitionKey(x)) &&
+                        (!waitFaulted ||
+                        !context.WorkflowInstance.Faults.Contains(f => f.FaultedActivityId == GetActivityId(x)) &&
+                        !context.WorkflowInstance.ScheduledActivities.Contains(f => f.ActivityId == GetActivityId(x))
+                        )
+                    ),
                 _ => false
             };
         }
@@ -219,6 +238,10 @@ namespace Elsa.Activities.ControlFlow
             var sourceOutcomeName = connection.Source.Outcome;
 
             return $"@{sourceActivityId}_{sourceOutcomeName}";
+        }
+        private string GetActivityId(IConnection connection)
+        {
+            return connection.Source.Activity.Id;
         }
 
         public Task Handle(WorkflowExecutionPassCompleted notification, CancellationToken cancellationToken)

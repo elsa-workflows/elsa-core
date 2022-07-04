@@ -20,7 +20,7 @@ export class ElsaDropdownProperty {
   async componentWillLoad() {
     const defaultSyntax = this.propertyDescriptor.defaultSyntax || SyntaxNames.Literal;
     this.currentValue = this.propertyModel.expressions[defaultSyntax] || undefined;
-    const dependsOnEvent = this.propertyDescriptor.options?.context.dependsOnEvent;
+    const dependsOnEvent = this.propertyDescriptor.options?.context?.dependsOnEvent;
 
     // Does this property have a dependency on another property?
     if (!!dependsOnEvent) {
