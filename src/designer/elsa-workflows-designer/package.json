@@ -26,18 +26,19 @@
   },
   "dependencies": {
     "@antv/x6": "^1.32.2",
+    "@ctrl/tinycolor": "^3.4.1",
     "@stencil/core": "^2.13.0",
     "@stencil/state-tunnel": "^1.0.1",
     "@stencil/store": "^1.5.0",
-    "@ctrl/tinycolor": "^3.4.1",
     "axios": "^0.27.2",
     "axios-middleware": "^0.3.1",
+    "el-transition": "^0.0.7",
+    "lodash": "^4.17.21",
+    "moment": "^2.29.3",
+    "notyf": "^3.10.0",
     "reflect-metadata": "^0.1.13",
     "typedi": "^0.10.0",
-    "lodash": "^4.17.21",
-    "uuid": "^8.3.2",
-    "el-transition": "^0.0.7",
-    "moment": "^2.29.3"
+    "uuid": "^8.3.2"
   },
   "peerDependencies": {
     "monaco-editor": ""

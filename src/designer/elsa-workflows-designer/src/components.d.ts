@@ -162,6 +162,8 @@ export namespace Components {
     interface ElsaMultiTextInput {
         "inputContext": ActivityInputContext;
     }
+    interface ElsaNotificationsManager {
+    }
     interface ElsaPager {
         "page": number;
         "pageSize": number;
@@ -430,6 +432,12 @@ declare global {
         prototype: HTMLElsaMultiTextInputElement;
         new (): HTMLElsaMultiTextInputElement;
     };
+    interface HTMLElsaNotificationsManagerElement extends Components.ElsaNotificationsManager, HTMLStencilElement {
+    }
+    var HTMLElsaNotificationsManagerElement: {
+        prototype: HTMLElsaNotificationsManagerElement;
+        new (): HTMLElsaNotificationsManagerElement;
+    };
     interface HTMLElsaPagerElement extends Components.ElsaPager, HTMLStencilElement {
     }
     var HTMLElsaPagerElement: {
@@ -606,6 +614,7 @@ declare global {
         "elsa-monaco-editor": HTMLElsaMonacoEditorElement;
         "elsa-multi-line-input": HTMLElsaMultiLineInputElement;
         "elsa-multi-text-input": HTMLElsaMultiTextInputElement;
+        "elsa-notifications-manager": HTMLElsaNotificationsManagerElement;
         "elsa-pager": HTMLElsaPagerElement;
         "elsa-panel": HTMLElsaPanelElement;
         "elsa-radio-list-input": HTMLElsaRadioListInputElement;
@@ -768,6 +777,8 @@ declare namespace LocalJSX {
     interface ElsaMultiTextInput {
         "inputContext"?: ActivityInputContext;
     }
+    interface ElsaNotificationsManager {
+    }
     interface ElsaPager {
         "onPaginated"?: (event: CustomEvent<PagerData>) => void;
         "page"?: number;
@@ -896,6 +907,7 @@ declare namespace LocalJSX {
         "elsa-monaco-editor": ElsaMonacoEditor;
         "elsa-multi-line-input": ElsaMultiLineInput;
         "elsa-multi-text-input": ElsaMultiTextInput;
+        "elsa-notifications-manager": ElsaNotificationsManager;
         "elsa-pager": ElsaPager;
         "elsa-panel": ElsaPanel;
         "elsa-radio-list-input": ElsaRadioListInput;
@@ -952,6 +964,7 @@ declare module "@stencil/core" {
             "elsa-monaco-editor": LocalJSX.ElsaMonacoEditor & JSXBase.HTMLAttributes<HTMLElsaMonacoEditorElement>;
             "elsa-multi-line-input": LocalJSX.ElsaMultiLineInput & JSXBase.HTMLAttributes<HTMLElsaMultiLineInputElement>;
             "elsa-multi-text-input": LocalJSX.ElsaMultiTextInput & JSXBase.HTMLAttributes<HTMLElsaMultiTextInputElement>;
+            "elsa-notifications-manager": LocalJSX.ElsaNotificationsManager & JSXBase.HTMLAttributes<HTMLElsaNotificationsManagerElement>;
             "elsa-pager": LocalJSX.ElsaPager & JSXBase.HTMLAttributes<HTMLElsaPagerElement>;
             "elsa-panel": LocalJSX.ElsaPanel & JSXBase.HTMLAttributes<HTMLElsaPanelElement>;
             "elsa-radio-list-input": LocalJSX.ElsaRadioListInput & JSXBase.HTMLAttributes<HTMLElsaRadioListInputElement>;

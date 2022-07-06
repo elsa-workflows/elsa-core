@@ -1,7 +1,7 @@
 import {Component, Element, h, Listen, Prop, Watch} from '@stencil/core';
 import 'reflect-metadata';
 import {Container} from 'typedi';
-import {ElsaApiClientProvider, ElsaClient, ServerSettings} from '../../../services';
+import {ElsaApiClientProvider, ElsaClient, EventBus, ServerSettings} from '../../../services';
 import {ActivityDescriptor, VersionOptions, WorkflowDefinition, WorkflowDefinitionSummary, WorkflowInstanceSummary} from '../../../models';
 import {PublishClickedArgs} from "../../toolbar/workflow-publish-button/workflow-publish-button";
 import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
@@ -11,17 +11,20 @@ import {WorkflowDefinitionManager} from "../../../services/workflow-definition-m
 import {WorkflowDefinitionUpdatedArgs} from "../../designer/workflow-definition-editor/models";
 import {Flowchart} from "../../activities/flowchart/models";
 import descriptorsStore from '../../../data/descriptors-store';
+import { NotificationEventTypes } from '../../../modules/notifications/event-types';
 
 @Component({
   tag: 'elsa-studio'
 })
 export class Studio {
+  private readonly eventBus: EventBus;
   private readonly workflowDefinitionManager: WorkflowDefinitionManager;
   private activityDescriptors: Array<ActivityDescriptor>;
   private elsaClient: ElsaClient;
   private workflowManagerElement?: HTMLElsaWorkflowManagerElement;
 
   constructor() {
+    this.eventBus = Container.get(EventBus);
     this.workflowDefinitionManager = Container.get(WorkflowDefinitionManager);
   }
 
@@ -85,12 +88,13 @@ export class Studio {
   private async handlePublishClicked(e: CustomEvent<PublishClickedArgs>) {
     const workflowManagerElement = this.workflowManagerElement;
 
-    if (!workflowManagerElement)
-      return;
+    if (!workflowManagerElement) return;
 
     e.detail.begin();
     const workflowDefinition = await workflowManagerElement.getWorkflowDefinition();
+    this.eventBus.emit(NotificationEventTypes.Add, this, { id: workflowDefinition.definitionId, message: `Starting publishing ${workflowDefinition.name}` });
     await this.saveWorkflowDefinition(workflowDefinition, true);
+    this.eventBus.emit(NotificationEventTypes.Update, this, { id: workflowDefinition.definitionId, message: `${workflowDefinition.name} publish finished` });
     e.detail.complete();
   }
 
@@ -98,11 +102,12 @@ export class Studio {
   private async handleUnPublishClicked(e: CustomEvent) {
     const workflowManagerElement = this.workflowManagerElement;
 
-    if (!workflowManagerElement)
-      return;
+    if (!workflowManagerElement) return;
 
     const workflow = await workflowManagerElement.getWorkflowDefinition();
+    this.eventBus.emit(NotificationEventTypes.Add, this, { id: workflow.definitionId, message: `Starting unpublishing ${workflow.name}` });
     await this.retractWorkflowDefinition(workflow);
+    this.eventBus.emit(NotificationEventTypes.Update, this, { id: workflow.definitionId, message: `${workflow.name} unpublish finished` });
   }
 
   @Listen('newClicked')

@@ -1,0 +1,11 @@
+@import url('../../../node_modules/notyf/notyf.min.css');
+
+.notif {
+    .notyf__message {
+        @apply text-black
+    }
+}
+
+.notifications-container {
+    height: calc(100vh - 64px);
+}
