@@ -13,6 +13,10 @@ export class SwitchPortProvider implements PortProvider {
 
   getOutboundPorts(context: PortProviderContext): Array<Port> {
     const activity = context.activity as SwitchActivity;
+
+    if(activity == null)
+      return [];
+
     const cases = activity.cases ?? [];
     return cases.map(x => ({name: x.label, displayName: x.label, mode: PortMode.Embedded}));
   }
