@@ -102,10 +102,10 @@ export class DefaultActivityTemplate {
     );
   }
 
-  private renderPorts = (activity: Activity) => {
+  private renderPorts = (activity?: Activity) => {
 
     if (this.displayTypeIsPicker)
-      return undefined;
+      return;
 
     const activityDescriptor = this.activityDescriptor;
     const portProvider = this.portProviderRegistry.get(activityDescriptor.activityType);
@@ -113,7 +113,7 @@ export class DefaultActivityTemplate {
     const embeddedPorts = ports.filter(x => x.mode == PortMode.Embedded);
 
     if (embeddedPorts.length == 0)
-      return undefined;
+      return;
 
     return (
       <div class="activity-ports mt-2 flex space-x-2">

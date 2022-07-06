@@ -3,7 +3,7 @@ import {Activity} from '../../models';
 
 export interface ContainerActivityComponent {
   updateLayout(): Promise<void>;
-  addActivity(args: AddActivityArgs): Promise<void>;
+  addActivity(args: AddActivityArgs): Promise<Activity>;
   updateActivity(args: UpdateActivityArgs): Promise<void>;
   export(): Promise<Activity>
   import(root: Activity): Promise<void>;

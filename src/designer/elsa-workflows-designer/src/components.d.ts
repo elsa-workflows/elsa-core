@@ -41,7 +41,7 @@ export namespace Components {
         "buttons": Array<Button>;
     }
     interface ElsaCanvas {
-        "addActivity": (args: AddActivityArgs) => Promise<void>;
+        "addActivity": (args: AddActivityArgs) => Promise<Activity>;
         "exportGraph": () => Promise<Activity>;
         "getRootComponent": () => Promise<ContainerActivityComponent>;
         "importGraph": (root: Activity) => Promise<void>;
@@ -83,7 +83,7 @@ export namespace Components {
         "inputContext": ActivityInputContext;
     }
     interface ElsaFlowchart {
-        "addActivity": (args: AddActivityArgs) => Promise<void>;
+        "addActivity": (args: AddActivityArgs) => Promise<Activity>;
         "export": () => Promise<Activity>;
         "getGraph": () => Promise<Graph>;
         "import": (root: Activity) => Promise<void>;

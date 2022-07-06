@@ -308,6 +308,7 @@ export class WorkflowDefinitionEditor {
         const parentActivitiesProp = parentActivity[portName] as Array<Activity>;
         parentActivitiesProp[currentWorkflowNavigationItem.index] = activity;
       } else {
+        debugger;
         currentActivity[portName] = activity;
       }
     } else {
@@ -386,20 +387,16 @@ export class WorkflowDefinitionEditor {
     const activityDescriptor: ActivityDescriptor = JSON.parse(json);
     const newName = await this.generateUniqueActivityName(activityDescriptor);
 
-    // Make sure the node hash is up to date so that it can be found by the activity template.
-    this.nodeMap[newName] = {
-      id: newName,
-      typeName: activityDescriptor.activityType,
-      metadata: {},
-      applicationProperties: {}
-    };
-
-    await this.canvas.addActivity({
+    const activity = await this.canvas.addActivity({
       descriptor: activityDescriptor,
       id: newName,
       x: e.pageX,
       y: e.pageY
     });
+
+    this.nodeMap[newName] = activity;
+
+    requestAnimationFrame(() => {});
   };
 
   private onZoomToFit = async () => await this.canvas.zoomToFit()

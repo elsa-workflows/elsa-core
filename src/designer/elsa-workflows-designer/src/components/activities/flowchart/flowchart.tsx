@@ -5,7 +5,7 @@ import {v4 as uuid} from 'uuid';
 import {first} from 'lodash';
 import './shapes';
 import './ports';
-import {ActivityNode as ActivityNodeShape} from './shapes';
+import {ActivityNode, ActivityNode as ActivityNodeShape} from './shapes';
 import {ContainerActivityComponent} from '../container-activity-component';
 import {AddActivityArgs, UpdateActivityArgs} from '../../designer/canvas/canvas';
 import {Activity, ActivityDeletedArgs, ActivitySelectedArgs, ContainerSelectedArgs, GraphUpdatedArgs} from '../../../models';
@@ -81,7 +81,7 @@ export class FlowchartComponent implements ContainerActivityComponent {
   }
 
   @Method()
-  async addActivity(args: AddActivityArgs): Promise<void> {
+  async addActivity(args: AddActivityArgs): Promise<Activity> {
     const graph = this.graph;
     const {descriptor, x, y} = args;
     let id = args.id ?? uuid();
@@ -104,7 +104,8 @@ export class FlowchartComponent implements ContainerActivityComponent {
     };
 
     const node = this.nodeFactory.createNode(descriptor, activity, sx, sy);
-    graph.addNode(node);
+    graph.addNode(node, { merge: true});
+    return activity;
   }
 
   @Method()

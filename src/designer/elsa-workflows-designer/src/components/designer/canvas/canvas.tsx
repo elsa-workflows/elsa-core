@@ -30,8 +30,8 @@ export class Canvas {
   }
 
   @Method()
-  public async addActivity(args: AddActivityArgs): Promise<void> {
-    await this.root.addActivity(args);
+  public async addActivity(args: AddActivityArgs): Promise<Activity> {
+    return await this.root.addActivity(args);
   }
 
   @Method()
