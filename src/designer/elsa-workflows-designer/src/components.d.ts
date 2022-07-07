@@ -15,6 +15,7 @@ import { ContextMenuAnchorPoint, MenuItem, MenuItemGroup } from "./components/sh
 import { DropdownButtonItem, DropdownButtonOrigin } from "./components/shared/dropdown-button/models";
 import { Graph } from "@antv/x6";
 import { AddActivityArgs as AddActivityArgs1, UpdateActivityArgs as UpdateActivityArgs1 } from "./components/designer/canvas/canvas";
+import { ActivityNode } from "./components/activities/flowchart/shapes";
 import { ExpressionChangedArs } from "./components/designer/input-control-switch/input-control-switch";
 import { CreateLabelEventArgs, DeleteLabelEventArgs, Label, UpdateLabelEventArgs } from "./modules/labels/models";
 import { MonacoLib, MonacoValueChangedArgs } from "./components/shared/monaco-editor/monaco-editor";
