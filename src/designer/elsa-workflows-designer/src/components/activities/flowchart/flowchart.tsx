@@ -112,13 +112,13 @@ export class FlowchartComponent implements ContainerActivityComponent {
   async updateActivity(args: UpdateActivityArgs) {
     const nodeId = args.id;
     const activity = args.activity;
-    const node = this.graph.getNodes().find(x => x.id == nodeId) as any;
+    const node = this.graph.getNodes().find(x => x.id == nodeId) as ActivityNode;
 
     if (!node)
       return;
 
     // Update the node's data with the activity.
-    node.data = activity;
+    node.setData(activity, { overwrite: true });
 
     // Updating the node's activity property to trigger a rerender.
     node.activity = activity;
@@ -308,7 +308,6 @@ export class FlowchartComponent implements ContainerActivityComponent {
 
     const args: ContainerSelectedArgs = {
       activity: this.activity,
-      applyChanges: async a => await this.updateActivity({id: activityId, activity: a}),
     };
     return this.containerSelected.emit(args);
   };
@@ -316,12 +315,9 @@ export class FlowchartComponent implements ContainerActivityComponent {
   onNodeClick = async (e: PositionEventArgs<JQuery.ClickEvent>) => {
     const node = e.node as ActivityNodeShape;
     const activity = node.data as Activity;
-    const activityId = activity.id;
 
     const args: ActivitySelectedArgs = {
       activity: activity,
-      applyChanges: async a => await this.updateActivity({id: activityId, activity: a}),
-      deleteActivity: a => node.remove({deep: true})
     };
 
     this.activitySelected.emit(args);
