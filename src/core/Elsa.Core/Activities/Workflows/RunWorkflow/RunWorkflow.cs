@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Activities.Workflows.Helper;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Design;
@@ -103,9 +104,9 @@ namespace Elsa.Activities.Workflows
             set => SetState(value);
         }
 
-        public List<string> AlreadyExecutedChildren
+        public Dictionary<string, string> AlreadyExecutedChildren
         {
-            get => GetState<List<string>>()!;
+            get => GetState<Dictionary<string,string>>()!;
             set => SetState(value);
         }
 
@@ -114,15 +115,18 @@ namespace Elsa.Activities.Workflows
             var cancellationToken = context.CancellationToken;
 
             var workflowBlueprint = await FindWorkflowBlueprintAsync(cancellationToken);
-
+            var test = context.Input.GetType().GetProperties();
             WorkflowStatus? childWorkflowStatus;
             WorkflowInstance? childWorkflowInstance;
-            AlreadyExecutedChildren ??= new List<string>();
+            AlreadyExecutedChildren ??= new Dictionary<string, string>();
 
+            //Someway the initial input changes when retrying
+            var hash = HashHelper.Hash(context.Input);
             if (!string.IsNullOrEmpty(ChildWorkflowInstanceId) 
-                //&& !AlreadyExecutedChildren.Contains(ChildWorkflowInstanceId)
+                && AlreadyExecutedChildren.ContainsKey(hash)
                 )
             {
+                ChildWorkflowInstanceId = AlreadyExecutedChildren.GetValueOrDefault(hash);
                 childWorkflowInstance = await _workflowInstanceStore.FindByIdAsync(ChildWorkflowInstanceId);
 
                 if (childWorkflowInstance == null)
@@ -146,6 +150,8 @@ namespace Elsa.Activities.Workflows
                 childWorkflowStatus = childWorkflowInstance.WorkflowStatus;
                 ChildWorkflowInstanceId = childWorkflowInstance.Id;
 
+                
+
                 context.JournalData.Add("Workflow Blueprint ID", workflowBlueprint?.Id);
                 context.JournalData.Add("Workflow Instance ID", childWorkflowInstance.Id);
                 context.JournalData.Add("Workflow Instance Status", childWorkflowInstance.WorkflowStatus);
@@ -161,13 +167,13 @@ namespace Elsa.Activities.Workflows
                 var result = await _startsWorkflow.StartWorkflowAsync(workflowBlueprint!, TenantId, new WorkflowInput(Input), CorrelationId, ContextId, cancellationToken: cancellationToken);
                 childWorkflowInstance = result.WorkflowInstance!;
                 childWorkflowStatus = childWorkflowInstance.WorkflowStatus;
-                //ChildWorkflowInstanceId = childWorkflowInstance.Id;
+                ChildWorkflowInstanceId = childWorkflowInstance.Id;
 
                 context.JournalData.Add("Workflow Blueprint ID", workflowBlueprint.Id);
                 context.JournalData.Add("Workflow Instance ID", childWorkflowInstance.Id);
                 context.JournalData.Add("Workflow Instance Status", childWorkflowInstance.WorkflowStatus);
 
-                //AlreadyExecutedChildren.Add(ChildWorkflowInstanceId);
+                AlreadyExecutedChildren.Add(HashHelper.Hash(context.Input), ChildWorkflowInstanceId);
             }
             
 
