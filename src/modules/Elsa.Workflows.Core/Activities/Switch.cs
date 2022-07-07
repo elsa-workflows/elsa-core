@@ -39,9 +39,9 @@ public class Switch : Activity
 
         foreach (var switchCase in Cases)
         {
-            var result = await expressionEvaluator.EvaluateAsync<bool>(switchCase.Condition, context);
+            var result = await expressionEvaluator.EvaluateAsync<bool?>(switchCase.Condition, context);
 
-            if (result)
+            if (result == true)
                 return switchCase;
         }
 
