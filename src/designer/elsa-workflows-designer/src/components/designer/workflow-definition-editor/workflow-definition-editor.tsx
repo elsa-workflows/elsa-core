@@ -39,9 +39,6 @@ export class WorkflowDefinitionEditor {
   private container: HTMLDivElement;
   private toolbox: HTMLElsaWorkflowDefinitionEditorToolboxElement;
   private nodeMap: Hash<Activity> = {};
-  private nodes: Hash<ActivityNode> = {};
-  private applyActivityChanges: (activity: Activity) => void;
-  private deleteActivity: (activity: Activity) => void;
   private readonly emitActivityChangedDebounced: (e: ActivityPropertyChangedEventArgs) => void;
   private readonly updateModelDebounced: () => void;
   private readonly saveChangesDebounced: () => void;
@@ -82,14 +79,11 @@ export class WorkflowDefinitionEditor {
   @Listen('containerSelected')
   private async handleContainerSelected(e: CustomEvent<ContainerSelectedArgs>) {
     this.selectedActivity = this.getCurrentContainer();
-    this.applyActivityChanges = e.detail.applyChanges;
   }
 
   @Listen('activitySelected')
   private async handleActivitySelected(e: CustomEvent<ActivitySelectedArgs>) {
     this.selectedActivity = e.detail.activity;
-    this.applyActivityChanges = e.detail.applyChanges;
-    this.deleteActivity = e.detail.deleteActivity;
   }
 
   @Listen('childActivitySelected')
@@ -97,14 +91,6 @@ export class WorkflowDefinitionEditor {
     const {parentActivity, childActivity, port} = e.detail;
     this.selectedActivity = childActivity;
     const parentActivityId = parentActivity.id;
-
-    this.applyActivityChanges = async a => {
-      return await this.canvas.updateActivity({id: parentActivityId, activity: parentActivity});
-    };
-    this.deleteActivity = a => {
-      const portName = camelCase(port.name);
-      delete parentActivity[portName];
-    };
   }
 
   @Listen('activityDeleted')
@@ -135,7 +121,7 @@ export class WorkflowDefinitionEditor {
     };
 
     const portProvider = this.portProviderRegistry.get(parentActivity.typeName);
-    const activityProperty = portProvider.resolvePort(portName, {activity: parentActivity, activityDescriptor: parentActivityDescriptor  });
+    const activityProperty = portProvider.resolvePort(portName, {activity: parentActivity, activityDescriptor: parentActivityDescriptor});
     const isContainer = Array.isArray(activityProperty);
 
     if (!activityProperty) {
@@ -286,8 +272,7 @@ export class WorkflowDefinitionEditor {
         activity={this.selectedActivity}
         variables={this.workflowDefinitionState.variables}
         onActivityUpdated={e => this.onActivityUpdated(e)}
-        onActivityIdUpdated={e => this.onActivityIdUpdated(e)}
-        onDeleteActivityRequested={e => this.onDeleteActivityRequested(e)}/>;
+        onActivityIdUpdated={e => this.onActivityIdUpdated(e)}/>;
   }
 
   private getWorkflowDefinitionInternal = async (): Promise<WorkflowDefinition> => {
@@ -378,7 +363,7 @@ export class WorkflowDefinitionEditor {
     const activity = this.nodeMap[currentItem.activityId];
     const activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.activityType == activity.typeName);
 
-    if(activityDescriptor.isContainer)
+    if (activityDescriptor.isContainer)
       return activity;
 
     const portProvider = this.portProviderRegistry.get(activity.typeName);
@@ -388,7 +373,6 @@ export class WorkflowDefinitionEditor {
   private createNodeMap = (workflowDefinition: WorkflowDefinition): void => {
     const nodes = flatten(walkActivities(workflowDefinition.root));
     this.nodeMap = createActivityMap(nodes);
-    this.nodes = createActivityNodeMap(nodes);
   };
 
   private onActivityPickerPanelStateChanged = async (e: PanelStateChangedArgs) => await this.updateContainerLayout('activity-picker-closed', e.expanded)
@@ -416,13 +400,11 @@ export class WorkflowDefinitionEditor {
 
   private onZoomToFit = async () => await this.canvas.zoomToFit()
 
-  private onActivityUpdated = (e: CustomEvent<ActivityUpdatedArgs>) => {
+  private onActivityUpdated = async (e: CustomEvent<ActivityUpdatedArgs>) => {
     const updatedActivity = e.detail.activity;
     this.nodeMap[updatedActivity.id] = updatedActivity;
-
-    if (!!this.applyActivityChanges)
-      this.applyActivityChanges(updatedActivity);
-
+    await this.canvas.updateActivity({activity: updatedActivity, id: updatedActivity.id});
+    await this.updateModel();
     this.emitActivityChangedDebounced({...e.detail, workflowEditor: this.el});
     this.saveChangesDebounced();
   }
@@ -441,12 +423,10 @@ export class WorkflowDefinitionEditor {
     this.createNodeMap(this.workflowDefinition);
   }
 
-  private onWorkflowPropsUpdated = (e: CustomEvent<WorkflowDefinitionPropsUpdatedArgs>) => this.saveChangesDebounced()
-
-  private onDeleteActivityRequested = (e: CustomEvent<DeleteActivityRequestedArgs>) => {
-    this.deleteActivity(e.detail.activity);
-    this.selectedActivity = this.getCurrentContainer();
-  };
+  private onWorkflowPropsUpdated = (e: CustomEvent<WorkflowDefinitionPropsUpdatedArgs>) => {
+    this.updateModelDebounced();
+    this.saveChangesDebounced();
+  }
 
   private onNavigateHierarchy = async (e: CustomEvent<WorkflowNavigationItem>) => {
     const item = e.detail;
