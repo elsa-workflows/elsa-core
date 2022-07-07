@@ -7,7 +7,7 @@ using Elsa.Workflows.Core.Models;
 namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
 
 [FlowNode("True", "False")]
-[Activity("Elsa", "Flow", "Continues on either the True or False branch, depending on the result of a specified condition")]
+[Activity("Elsa", "Flow", "Evaluate a Boolean condition to determine which path to execute next.")]
 public class FlowDecision : ActivityBase
 {
     /// <summary>
