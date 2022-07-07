@@ -40,6 +40,7 @@ services
             .AddActivity<HttpEndpoint>()
             .AddActivity<Flowchart>()
             .AddActivity<FlowDecision>()
+            .AddActivity<FlowSwitch>()
             .AddActivity<Elsa.Scheduling.Activities.Delay>()
             .AddActivity<Elsa.Scheduling.Activities.Timer>()
             .AddActivity<ForEach>()

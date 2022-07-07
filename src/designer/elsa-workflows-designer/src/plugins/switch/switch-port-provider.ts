@@ -8,10 +8,6 @@ import {PortProvider, PortProviderContext} from "../../services";
 @Service()
 export class SwitchPortProvider implements PortProvider {
 
-  getInboundPorts(context: PortProviderContext): Array<Port> {
-    return [];
-  }
-
   getOutboundPorts(context: PortProviderContext): Array<Port> {
     const activity = context.activity as SwitchActivity;
 

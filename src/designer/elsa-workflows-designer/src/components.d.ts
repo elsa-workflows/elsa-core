@@ -83,6 +83,9 @@ export namespace Components {
     interface ElsaDropdownInput {
         "inputContext": ActivityInputContext;
     }
+    interface ElsaFlowSwitchEditor {
+        "inputContext": ActivityInputContext;
+    }
     interface ElsaFlowchart {
         "addActivity": (args: AddActivityArgs) => Promise<Activity>;
         "export": () => Promise<Activity>;
@@ -347,6 +350,12 @@ declare global {
         prototype: HTMLElsaDropdownInputElement;
         new (): HTMLElsaDropdownInputElement;
     };
+    interface HTMLElsaFlowSwitchEditorElement extends Components.ElsaFlowSwitchEditor, HTMLStencilElement {
+    }
+    var HTMLElsaFlowSwitchEditorElement: {
+        prototype: HTMLElsaFlowSwitchEditorElement;
+        new (): HTMLElsaFlowSwitchEditorElement;
+    };
     interface HTMLElsaFlowchartElement extends Components.ElsaFlowchart, HTMLStencilElement {
     }
     var HTMLElsaFlowchartElement: {
@@ -593,6 +602,7 @@ declare global {
         "elsa-default-activity-template": HTMLElsaDefaultActivityTemplateElement;
         "elsa-dropdown-button": HTMLElsaDropdownButtonElement;
         "elsa-dropdown-input": HTMLElsaDropdownInputElement;
+        "elsa-flow-switch-editor": HTMLElsaFlowSwitchEditorElement;
         "elsa-flowchart": HTMLElsaFlowchartElement;
         "elsa-form-panel": HTMLElsaFormPanelElement;
         "elsa-input-control-switch": HTMLElsaInputControlSwitchElement;
@@ -681,6 +691,9 @@ declare namespace LocalJSX {
         "text"?: string;
     }
     interface ElsaDropdownInput {
+        "inputContext"?: ActivityInputContext;
+    }
+    interface ElsaFlowSwitchEditor {
         "inputContext"?: ActivityInputContext;
     }
     interface ElsaFlowchart {
@@ -883,6 +896,7 @@ declare namespace LocalJSX {
         "elsa-default-activity-template": ElsaDefaultActivityTemplate;
         "elsa-dropdown-button": ElsaDropdownButton;
         "elsa-dropdown-input": ElsaDropdownInput;
+        "elsa-flow-switch-editor": ElsaFlowSwitchEditor;
         "elsa-flowchart": ElsaFlowchart;
         "elsa-form-panel": ElsaFormPanel;
         "elsa-input-control-switch": ElsaInputControlSwitch;
@@ -939,6 +953,7 @@ declare module "@stencil/core" {
             "elsa-default-activity-template": LocalJSX.ElsaDefaultActivityTemplate & JSXBase.HTMLAttributes<HTMLElsaDefaultActivityTemplateElement>;
             "elsa-dropdown-button": LocalJSX.ElsaDropdownButton & JSXBase.HTMLAttributes<HTMLElsaDropdownButtonElement>;
             "elsa-dropdown-input": LocalJSX.ElsaDropdownInput & JSXBase.HTMLAttributes<HTMLElsaDropdownInputElement>;
+            "elsa-flow-switch-editor": LocalJSX.ElsaFlowSwitchEditor & JSXBase.HTMLAttributes<HTMLElsaFlowSwitchEditorElement>;
             "elsa-flowchart": LocalJSX.ElsaFlowchart & JSXBase.HTMLAttributes<HTMLElsaFlowchartElement>;
             "elsa-form-panel": LocalJSX.ElsaFormPanel & JSXBase.HTMLAttributes<HTMLElsaFormPanelElement>;
             "elsa-input-control-switch": LocalJSX.ElsaInputControlSwitch & JSXBase.HTMLAttributes<HTMLElsaInputControlSwitchElement>;

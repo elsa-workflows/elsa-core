@@ -3,6 +3,7 @@ using Elsa.Expressions;
 using Elsa.Expressions.Models;
 using Elsa.Expressions.Services;
 using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
+using Elsa.Workflows.Core.Activities.Flowchart.Models;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 
@@ -19,7 +20,7 @@ public class FlowSwitch : ActivityBase
         var matchingCase = await FindMatchingCaseAsync(context.ExpressionExecutionContext);
         var outcome = matchingCase?.Label ?? "Default";
 
-        await context.CompleteActivityAsync(outcome);
+        await context.CompleteActivityAsync(new Outcome(outcome));
     }
 
     private async Task<FlowSwitchCase?> FindMatchingCaseAsync(ExpressionExecutionContext context)

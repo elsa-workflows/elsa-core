@@ -16,18 +16,13 @@ export class DefaultNodeHandler implements ActivityNodeHandler {
   createDesignerNode(context: CreateUINodeContext): Node.Metadata {
     const {activityDescriptor, activity, x, y} = context;
     const provider = this.portProviderRegistry.get(activityDescriptor.activityType);
+    debugger;
     const providerContext: PortProviderContext = {activityDescriptor, activity};
-    let inPorts = provider.getInboundPorts(providerContext).filter(x => x.mode == PortMode.Port);
+    const inPorts = [{name: 'In', displayName: null, mode: PortMode.Port}];
     let outPorts = provider.getOutboundPorts(providerContext).filter(x => x.mode == PortMode.Port);
 
-    if (inPorts.length == 0)
-      inPorts = [{name: 'In', displayName: 'In', mode: PortMode.Port}];
-
-    if (inPorts.length == 1)
-      inPorts[0].displayName = null;
-
     // In a flowchart, always add a Done port to connect the next node.
-    if(outPorts.length == 0)
+    if (outPorts.length == 0)
       outPorts = [{name: 'Done', displayName: 'Done', mode: PortMode.Port}];
 
     if (outPorts.length == 1)
