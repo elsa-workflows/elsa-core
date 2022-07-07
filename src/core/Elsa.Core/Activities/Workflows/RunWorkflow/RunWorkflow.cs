@@ -8,6 +8,7 @@ using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Expressions;
 using Elsa.Models;
+using Elsa.Persistence;
 using Elsa.Providers.WorkflowStorage;
 using Elsa.Services;
 using Elsa.Services.Models;
@@ -26,12 +27,16 @@ namespace Elsa.Activities.Workflows
         private readonly IStartsWorkflow _startsWorkflow;
         private readonly IWorkflowRegistry _workflowRegistry;
         private readonly IWorkflowStorageService _workflowStorageService;
-
-        public RunWorkflow(IStartsWorkflow startsWorkflow, IWorkflowRegistry workflowRegistry, IWorkflowStorageService workflowStorageService)
+        private readonly IWorkflowReviver _workflowReviver;
+        private readonly IWorkflowInstanceStore _workflowInstanceStore;
+        public RunWorkflow(IStartsWorkflow startsWorkflow, IWorkflowRegistry workflowRegistry, IWorkflowStorageService workflowStorageService, IWorkflowReviver workflowReviver,
+            IWorkflowInstanceStore workflowInstanceStore)
         {
             _startsWorkflow = startsWorkflow;
             _workflowRegistry = workflowRegistry;
             _workflowStorageService = workflowStorageService;
+            _workflowReviver = workflowReviver;
+            _workflowInstanceStore = workflowInstanceStore;
         }
 
         [ActivityInput(
@@ -98,22 +103,73 @@ namespace Elsa.Activities.Workflows
             set => SetState(value);
         }
 
+        public List<string> AlreadyExecutedChildren
+        {
+            get => GetState<List<string>>()!;
+            set => SetState(value);
+        }
+
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
             var cancellationToken = context.CancellationToken;
+
             var workflowBlueprint = await FindWorkflowBlueprintAsync(cancellationToken);
 
-            if (workflowBlueprint == null || workflowBlueprint.Id == context.WorkflowInstance.DefinitionId)
-                return Outcome("Not Found");
+            WorkflowStatus? childWorkflowStatus;
+            WorkflowInstance? childWorkflowInstance;
+            AlreadyExecutedChildren ??= new List<string>();
 
-            var result = await _startsWorkflow.StartWorkflowAsync(workflowBlueprint!, TenantId, new WorkflowInput(Input), CorrelationId, ContextId, cancellationToken: cancellationToken);
-            var childWorkflowInstance = result.WorkflowInstance!;
-            var childWorkflowStatus = childWorkflowInstance.WorkflowStatus;
-            ChildWorkflowInstanceId = childWorkflowInstance.Id;
+            if (!string.IsNullOrEmpty(ChildWorkflowInstanceId) 
+                //&& !AlreadyExecutedChildren.Contains(ChildWorkflowInstanceId)
+                )
+            {
+                childWorkflowInstance = await _workflowInstanceStore.FindByIdAsync(ChildWorkflowInstanceId);
 
-            context.JournalData.Add("Workflow Blueprint ID", workflowBlueprint.Id);
-            context.JournalData.Add("Workflow Instance ID", childWorkflowInstance.Id);
-            context.JournalData.Add("Workflow Instance Status", childWorkflowInstance.WorkflowStatus);
+                if (childWorkflowInstance == null)
+                {
+                    throw new Exception();
+                }
+                switch (childWorkflowInstance.WorkflowStatus)
+                {
+                    case WorkflowStatus.Idle:
+                    case WorkflowStatus.Finished:
+                    case WorkflowStatus.Suspended:
+                    case WorkflowStatus.Running:
+                    case WorkflowStatus.Cancelled:
+                        break;
+                    case WorkflowStatus.Faulted:
+                        await _workflowReviver.ReviveAndRunAsync(childWorkflowInstance, cancellationToken);
+                        break;
+                    default:
+                        break;
+                }
+                childWorkflowStatus = childWorkflowInstance.WorkflowStatus;
+                ChildWorkflowInstanceId = childWorkflowInstance.Id;
+
+                context.JournalData.Add("Workflow Blueprint ID", workflowBlueprint?.Id);
+                context.JournalData.Add("Workflow Instance ID", childWorkflowInstance.Id);
+                context.JournalData.Add("Workflow Instance Status", childWorkflowInstance.WorkflowStatus);
+
+            }
+            else
+            {
+
+                if (workflowBlueprint == null || workflowBlueprint.Id == context.WorkflowInstance.DefinitionId)
+                    return Outcome("Not Found");
+
+
+                var result = await _startsWorkflow.StartWorkflowAsync(workflowBlueprint!, TenantId, new WorkflowInput(Input), CorrelationId, ContextId, cancellationToken: cancellationToken);
+                childWorkflowInstance = result.WorkflowInstance!;
+                childWorkflowStatus = childWorkflowInstance.WorkflowStatus;
+                //ChildWorkflowInstanceId = childWorkflowInstance.Id;
+
+                context.JournalData.Add("Workflow Blueprint ID", workflowBlueprint.Id);
+                context.JournalData.Add("Workflow Instance ID", childWorkflowInstance.Id);
+                context.JournalData.Add("Workflow Instance Status", childWorkflowInstance.WorkflowStatus);
+
+                //AlreadyExecutedChildren.Add(ChildWorkflowInstanceId);
+            }
+            
 
             return Mode switch
             {
