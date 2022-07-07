@@ -1,4 +1,4 @@
-import {Component, h, Prop, State} from "@stencil/core";
+import {Component, h, Prop, State, Watch} from "@stencil/core";
 import {camelCase} from 'lodash';
 import {ActivityInputContext} from "../../services/node-input-driver";
 import {mapSyntaxToLanguage} from "../../utils";
@@ -14,11 +14,20 @@ import {FormEntry} from "../../components/shared/forms/form-entry";
   shadow: false
 })
 export class SwitchEditor {
-  @Prop() public inputContext: ActivityInputContext;
+  @Prop() inputContext: ActivityInputContext;
   @State() private cases: Array<SwitchCase> = [];
   private supportedSyntaxes: Array<string> = [SyntaxNames.JavaScript, SyntaxNames.Literal];
 
-  public componentWillLoad() {
+  @Watch('inputContext')
+  onInputContextChanged(value: ActivityInputContext){
+    this.updateCases();
+  }
+
+  componentWillLoad() {
+    this.updateCases();
+  }
+
+  private updateCases(){
     const inputContext = this.inputContext;
     const activity = this.inputContext.node;
     const inputDescriptor = inputContext.inputDescriptor;
@@ -27,7 +36,48 @@ export class SwitchEditor {
     this.cases = activity[camelCasePropertyName] || [];
   }
 
-  public render() {
+  private onAddCaseClick() {
+    const caseName = `Case ${this.cases.length + 1}`;
+    const newCase: SwitchCase = {label: caseName, condition: {type: SyntaxNames.JavaScript, value: ''}};
+    this.cases = [...this.cases, newCase];
+    this.updateActivity();
+  }
+
+  private onDeleteCaseClick(switchCase: SwitchCase) {
+    this.cases = this.cases.filter(x => x != switchCase);
+    this.updateActivity();
+  }
+
+  private onCaseLabelChanged(e: Event, switchCase: SwitchCase) {
+    switchCase.label = (e.currentTarget as HTMLInputElement).value.trim();
+    this.updateActivity();
+  }
+
+  private onCaseExpressionChanged(e: CustomEvent<MonacoValueChangedArgs>, switchCase: SwitchCase) {
+    switchCase.condition = {type: switchCase.condition.type, value: e.detail.value};
+    this.updateActivity();
+  }
+
+  private onCaseSyntaxChanged(e: Event, switchCase: SwitchCase) {
+    const select = e.currentTarget as HTMLSelectElement;
+    const syntax = select.value;
+    switchCase.condition = {...switchCase.condition, type: syntax};
+    this.cases = [...this.cases];
+    this.updateActivity();
+  }
+
+  private updateActivity = () => {
+    const inputContext = this.inputContext;
+    const activity = this.inputContext.node;
+    const inputDescriptor = inputContext.inputDescriptor;
+    const propertyName = inputDescriptor.name;
+    const camelCasePropertyName = camelCase(propertyName);
+
+    activity[camelCasePropertyName] = this.cases;
+    this.inputContext.notifyInputChanged();
+  };
+
+  render() {
     const inputContext = this.inputContext;
     const inputDescriptor = inputContext.inputDescriptor;
     const displayName = inputDescriptor.displayName;
@@ -99,44 +149,4 @@ export class SwitchEditor {
       </div>
     );
   }
-
-  onAddCaseClick() {
-    const caseName = `Case ${this.cases.length + 1}`;
-    const newCase: SwitchCase = {label: caseName, condition: {type: SyntaxNames.JavaScript, value: ''}};
-    this.cases = [...this.cases, newCase];
-    this.updateActivity();
-  }
-
-  onDeleteCaseClick(switchCase: SwitchCase) {
-    this.cases = this.cases.filter(x => x != switchCase);
-    this.updateActivity();
-  }
-
-  private onCaseLabelChanged(e: Event, switchCase: SwitchCase) {
-    switchCase.label = (e.currentTarget as HTMLInputElement).value.trim();
-    this.updateActivity();
-  }
-
-  private onCaseExpressionChanged(e: CustomEvent<MonacoValueChangedArgs>, switchCase: SwitchCase) {
-    switchCase.condition = {type: switchCase.condition.type, value: e.detail.value};
-    this.updateActivity();
-  }
-
-  private onCaseSyntaxChanged(e: Event, switchCase: SwitchCase) {
-    const select = e.currentTarget as HTMLSelectElement;
-    const syntax = select.value;
-    switchCase.condition = {...switchCase.condition, type: syntax};
-    this.cases = [...this.cases];
-    this.updateActivity();
-  }
-
-  private updateActivity = () => {
-    const inputContext = this.inputContext;
-    const activity = this.inputContext.node;
-    const inputDescriptor = inputContext.inputDescriptor;
-    const propertyName = inputDescriptor.name;
-    const camelCasePropertyName = camelCase(propertyName);
-    activity[camelCasePropertyName] = this.cases;
-    this.inputContext.notifyInputChanged();
-  };
 }
