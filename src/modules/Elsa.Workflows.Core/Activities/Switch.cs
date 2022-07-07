@@ -13,7 +13,7 @@ namespace Elsa.Workflows.Core.Activities;
 /// When a case evaluates to true, the associated activity is then scheduled for execution.
 /// </summary>
 [Activity("Elsa", "Control Flow", "Evaluate a set of case conditions and schedule the activity for a matching case.")]
-public class Switch : Activity
+public class Switch : ActivityBase
 {
     [Input(UIHint = "switch-editor")] public ICollection<SwitchCase> Cases { get; set; } = new List<SwitchCase>();
     public IActivity? Default { get; set; }
@@ -25,12 +25,12 @@ public class Switch : Activity
         if (matchingCase != null)
         {
             if (matchingCase.Activity != null)
-                context.ScheduleActivity(matchingCase.Activity);
+                context.ScheduleActivity(matchingCase.Activity, OnChildActivityCompletedAsync);
             return;
         }
 
         if (Default != null)
-            context.ScheduleActivity(Default);
+            context.ScheduleActivity(Default, OnChildActivityCompletedAsync);
     }
 
     private async Task<SwitchCase?> FindMatchingCaseAsync(ExpressionExecutionContext context)
@@ -46,6 +46,11 @@ public class Switch : Activity
         }
 
         return null;
+    }
+    
+    private async ValueTask OnChildActivityCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext)
+    {
+        await context.CompleteActivityAsync();
     }
 }
 
