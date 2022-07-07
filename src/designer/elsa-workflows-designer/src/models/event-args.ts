@@ -2,8 +2,6 @@ import {Activity, Port} from "./core";
 
 export interface ActivitySelectedArgs {
   activity: Activity;
-  applyChanges: (activity: Activity) => void;
-  deleteActivity: (activity: Activity) => void;
 }
 
 export interface ActivityDeletedArgs {
@@ -12,7 +10,6 @@ export interface ActivityDeletedArgs {
 
 export interface ContainerSelectedArgs {
   activity: Activity;
-  applyChanges: (activity: Activity) => void;
 }
 
 export interface GraphUpdatedArgs {
