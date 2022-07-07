@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using Elsa.AspNetCore;
 using Elsa.AspNetCore.Models;
 using Elsa.Workflows.Runtime.Models;
 

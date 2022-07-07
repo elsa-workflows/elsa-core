@@ -1,6 +1,5 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.AspNetCore;
 using Elsa.AspNetCore.Attributes;
 using Elsa.Persistence.Common.Entities;
 using Elsa.Persistence.Common.Models;

@@ -2,7 +2,6 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.AspNetCore;
 using Elsa.AspNetCore.Attributes;
 using Elsa.Workflows.Api.Mappers;
 using Elsa.Workflows.Api.Models;

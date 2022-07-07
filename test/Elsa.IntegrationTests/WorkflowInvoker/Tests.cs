@@ -1,10 +1,7 @@
 using System.Threading.Tasks;
 using Elsa.Extensions;
-using Elsa.IntegrationTests.Scenarios.Persistence;
 using Elsa.Persistence.Common.Implementations;
 using Elsa.Testing.Shared;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Builders;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution.Components;
 using Elsa.Workflows.Persistence.Entities;
 using Elsa.Workflows.Runtime.Extensions;

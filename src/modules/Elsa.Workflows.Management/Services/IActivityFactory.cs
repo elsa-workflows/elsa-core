@@ -1,6 +1,5 @@
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
-using Elsa.Workflows.Management.Models;
 
 namespace Elsa.Workflows.Management.Services;
 

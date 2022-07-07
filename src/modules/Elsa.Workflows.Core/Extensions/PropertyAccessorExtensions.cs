@@ -1,6 +1,5 @@
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Windows.Markup;
 
 namespace Elsa.Workflows.Core
 {

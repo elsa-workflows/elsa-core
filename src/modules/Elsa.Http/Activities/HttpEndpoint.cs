@@ -8,7 +8,6 @@ using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Models;
-using ActivityExecutionContextExtensions = Elsa.Workflows.Core.ActivityExecutionContextExtensions;
 
 namespace Elsa.Http;
 

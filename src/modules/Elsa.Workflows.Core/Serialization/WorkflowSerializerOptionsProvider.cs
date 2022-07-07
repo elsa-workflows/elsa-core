@@ -1,7 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
-using Dahomey.Json;
 using Elsa.Workflows.Core.Serialization.Converters;
 using Elsa.Workflows.Core.Services;
 using Microsoft.Extensions.DependencyInjection;

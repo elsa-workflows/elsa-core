@@ -7,7 +7,6 @@ using Elsa.AspNetCore.Attributes;
 using Elsa.Workflows.Api.Mappers;
 using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Management.Materializers;

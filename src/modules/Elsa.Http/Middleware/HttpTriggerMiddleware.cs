@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using Elsa.Http.Models;
 using Elsa.Http.Options;
 using Elsa.Http.Services;
-using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Services;

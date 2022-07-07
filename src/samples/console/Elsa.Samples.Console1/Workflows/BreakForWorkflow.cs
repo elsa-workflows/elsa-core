@@ -1,4 +1,3 @@
-using System.Linq.Expressions;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Models;

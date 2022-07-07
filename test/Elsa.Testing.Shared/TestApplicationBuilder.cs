@@ -3,7 +3,6 @@ using Elsa.Extensions;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Implementations;
 using Elsa.Workflows.Core.Services;
-using Elsa.Workflows.Runtime.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;

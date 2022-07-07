@@ -1,7 +1,6 @@
 using System.Linq.Expressions;
 using EFCore.BulkExtensions;
 using Elsa.Persistence.Common.Entities;
-using Elsa.Persistence.Common.Extensions;
 using Elsa.Persistence.Common.Models;
 using Elsa.Persistence.EntityFrameworkCore.Common.Extensions;
 using Elsa.Persistence.EntityFrameworkCore.Common.Services;

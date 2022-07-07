@@ -1,6 +1,4 @@
 using Elsa.Workflows.Api.Extensions;
-using Elsa.AspNetCore;
-using Elsa.AspNetCore.Conventions;
 using Elsa.AspNetCore.Extensions;
 using Elsa.Extensions;
 using Elsa.Jobs.Extensions;
