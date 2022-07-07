@@ -1,6 +1,6 @@
 import {Component, FunctionalComponent, h, Prop, Event, EventEmitter} from "@stencil/core";
 import {Container} from "typedi";
-import {ActivityIconRegistry, ActivityNode, flatten, walkActivities} from "../../../services";
+import {ActivityIconRegistry, ActivityNode, flatten, PortProviderRegistry, walkActivities} from "../../../services";
 import {WorkflowNavigationItem} from "./models";
 import {Port, WorkflowDefinition} from "../../../models";
 import descriptorsStore from "../../../data/descriptors-store";
@@ -10,6 +10,13 @@ import descriptorsStore from "../../../data/descriptors-store";
   shadow: false
 })
 export class WorkflowNavigator {
+  private readonly iconRegistry: ActivityIconRegistry;
+  private readonly portProviderRegistry: PortProviderRegistry;
+
+  constructor() {
+    this.iconRegistry = Container.get(ActivityIconRegistry);
+    this.portProviderRegistry = Container.get(PortProviderRegistry);
+  }
 
   @Prop() items: Array<WorkflowNavigationItem> = [];
   @Prop() workflowDefinition: WorkflowDefinition;
@@ -37,11 +44,10 @@ export class WorkflowNavigator {
   }
 
   private renderPathItem = (item: WorkflowNavigationItem, index: number, nodes: Array<ActivityNode>) => {
-    const iconRegistry = Container.get(ActivityIconRegistry);
     const activityId = item.activityId;
     const activity = nodes.find(x => x.activity.id == activityId).activity;
     const activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.activityType == activity.typeName);
-    const icon = iconRegistry.get(activity.typeName)();
+    const icon = this.iconRegistry.get(activity.typeName)();
     const listElements = [];
     const isLastItem = index == this.items.length - 1;
 
@@ -53,7 +59,8 @@ export class WorkflowNavigator {
     let port: Port = null;
 
     if (!!item.portName) {
-      const ports = activityDescriptor.ports;
+      const portProvider = this.portProviderRegistry.get(activity.typeName);
+      const ports = portProvider.getOutboundPorts({activity, activityDescriptor});
 
       if (ports.length > 1)
         port = ports.find(x => x.name == item.portName);

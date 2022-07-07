@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Dahomey.Json;
 using Dahomey.Json.Serialization.Conventions;
+using Dahomey.Json.Util;
 using Elsa.Expressions.Exceptions;
 using DahomeyJsonNode = System.Text.Json.JsonNode;
 
@@ -55,7 +56,7 @@ public static class ObjectConverter
         var targetTypeConverter = TypeDescriptor.GetConverter(underlyingTargetType);
 
         if (targetTypeConverter.CanConvertFrom(underlyingSourceType))
-            return targetTypeConverter.ConvertFrom(value);
+            return targetTypeConverter.IsValid(value) ? targetTypeConverter.ConvertFrom(value) : targetType.GetDefaultValue();
 
         var sourceTypeConverter = TypeDescriptor.GetConverter(underlyingSourceType);
 

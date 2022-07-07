@@ -4,18 +4,18 @@ import {Container} from "typedi";
 import {PanelPosition, PanelStateChangedArgs} from '../panel/models';
 import {
   Activity,
+  ActivityDeletedArgs,
   ActivityDescriptor,
   ActivitySelectedArgs,
   ChildActivitySelectedArgs,
+  Container as ContainerActivity,
   ContainerSelectedArgs,
   EditChildActivityArgs,
   GraphUpdatedArgs,
-  WorkflowDefinition,
-  Container as ContainerActivity,
-  ActivityDeletedArgs
+  WorkflowDefinition
 } from '../../../models';
 import {ActivityIdUpdatedArgs, ActivityUpdatedArgs, DeleteActivityRequestedArgs} from './activity-properties-editor';
-import {ActivityDriverRegistry, ActivityNameFormatter, ActivityNode, createActivityMap, createActivityNodeMap, EventBus, flatten, flattenList, PluginRegistry, walkActivities} from '../../../services';
+import {ActivityDriverRegistry, ActivityNameFormatter, ActivityNode, createActivityMap, createActivityNodeMap, EventBus, flatten, flattenList, PluginRegistry, PortProviderRegistry, walkActivities} from '../../../services';
 import {MonacoEditorSettings} from "../../../services/monaco-editor-settings";
 import {Flowchart} from "../../activities/flowchart/models";
 import {ActivityPropertyChangedEventArgs, WorkflowDefinitionPropsUpdatedArgs, WorkflowDefinitionUpdatedArgs, WorkflowEditorEventTypes} from "./models";
@@ -34,6 +34,7 @@ export class WorkflowDefinitionEditor {
   private readonly pluginRegistry: PluginRegistry;
   private readonly eventBus: EventBus;
   private readonly activityNameFormatter: ActivityNameFormatter;
+  private readonly portProviderRegistry: PortProviderRegistry;
   private canvas: HTMLElsaCanvasElement;
   private container: HTMLDivElement;
   private toolbox: HTMLElsaWorkflowDefinitionEditorToolboxElement;
@@ -42,13 +43,16 @@ export class WorkflowDefinitionEditor {
   private applyActivityChanges: (activity: Activity) => void;
   private deleteActivity: (activity: Activity) => void;
   private readonly emitActivityChangedDebounced: (e: ActivityPropertyChangedEventArgs) => void;
+  private readonly updateModelDebounced: () => void;
   private readonly saveChangesDebounced: () => void;
 
   constructor() {
     this.eventBus = Container.get(EventBus);
     this.pluginRegistry = Container.get(PluginRegistry);
     this.activityNameFormatter = Container.get(ActivityNameFormatter);
+    this.portProviderRegistry = Container.get(PortProviderRegistry);
     this.emitActivityChangedDebounced = debounce(this.emitActivityChanged, 100);
+    this.updateModelDebounced = debounce(this.updateModel, 10);
     this.saveChangesDebounced = debounce(this.saveChanges, 1000);
   }
 
@@ -110,6 +114,7 @@ export class WorkflowDefinitionEditor {
 
   @Listen('graphUpdated')
   private async handleGraphUpdated(e: CustomEvent<GraphUpdatedArgs>) {
+    this.updateModelDebounced();
     this.saveChangesDebounced();
   }
 
@@ -119,16 +124,18 @@ export class WorkflowDefinitionEditor {
     const currentActivityId = this.currentWorkflowPath[this.currentWorkflowPath.length - 1].activityId;
     const currentActivity = this.nodeMap[currentActivityId];
     const parentActivity = this.nodeMap[parentActivityId];
-    const indexInParent = currentActivity.activities.findIndex(x => x == parentActivity);
+    const parentActivityDescriptor = descriptorsStore.activityDescriptors.find(x => x.activityType == parentActivity.typeName);
+    const indexInParent = currentActivity.activities?.findIndex(x => x == parentActivity);
+    const portName = e.detail.port.name;
 
     const item: WorkflowNavigationItem = {
       activityId: parentActivityId,
-      portName: e.detail.port.name,
+      portName: portName,
       index: indexInParent
     };
 
-    const portName = camelCase(e.detail.port.name);
-    const activityProperty = parentActivity[portName] as Activity | Array<Activity>;
+    const portProvider = this.portProviderRegistry.get(parentActivity.typeName);
+    const activityProperty = portProvider.resolvePort(portName, {activity: parentActivity, activityDescriptor: parentActivityDescriptor  });
     const isContainer = Array.isArray(activityProperty);
 
     if (!activityProperty) {
@@ -299,17 +306,17 @@ export class WorkflowDefinitionEditor {
     }
 
     if (!!currentPortName) {
-      const portName = camelCase(currentPortName);
-
       if (currentActivityDescriptor.isContainer) {
         const parentNavigationItem = this.currentWorkflowPath[this.currentWorkflowPath.length - 2];
         const parentActivityId = parentNavigationItem.activityId;
         const parentActivity = this.nodeMap[parentActivityId] as ContainerActivity;
-        const parentActivitiesProp = parentActivity[portName] as Array<Activity>;
+        const parentActivityDescriptor = descriptorsStore.activityDescriptors.find(x => x.activityType == parentActivity.typeName);
+        const portProvider = this.portProviderRegistry.get(parentActivity.typeName);
+        const parentActivitiesProp = portProvider.resolvePort(currentPortName, {activity: parentActivity, activityDescriptor: parentActivityDescriptor}) as Array<Activity>;
         parentActivitiesProp[currentWorkflowNavigationItem.index] = activity;
       } else {
-        debugger;
-        currentActivity[portName] = activity;
+        const portProvider = this.portProviderRegistry.get(currentActivity.typeName);
+        portProvider.assignPort(currentPortName, activity, {activity: currentActivity, activityDescriptor: currentActivityDescriptor});
       }
     } else {
       workflowDefinition.root = activity;
@@ -323,9 +330,12 @@ export class WorkflowDefinitionEditor {
     await this.eventBus.emit(WorkflowEditorEventTypes.Activity.PropertyChanged, this, activity, propertyName, this);
   };
 
-  private saveChanges = async (): Promise<void> => {
+  private updateModel = async (): Promise<void> => {
     const workflowDefinition = await this.getWorkflowDefinitionInternal();
     await this.updateWorkflowDefinition(workflowDefinition);
+  };
+
+  private saveChanges = async (): Promise<void> => {
     this.workflowUpdated.emit({workflowDefinition: this.workflowDefinitionState});
   };
 
@@ -365,7 +375,14 @@ export class WorkflowDefinitionEditor {
     if (!currentItem)
       return this.workflowDefinitionState.root;
 
-    return this.nodeMap[currentItem.activityId];
+    const activity = this.nodeMap[currentItem.activityId];
+    const activityDescriptor = descriptorsStore.activityDescriptors.find(x => x.activityType == activity.typeName);
+
+    if(activityDescriptor.isContainer)
+      return activity;
+
+    const portProvider = this.portProviderRegistry.get(activity.typeName);
+    return portProvider.resolvePort(currentItem.portName, {activity, activityDescriptor}) as Activity;
   };
 
   private createNodeMap = (workflowDefinition: WorkflowDefinition): void => {
@@ -395,8 +412,6 @@ export class WorkflowDefinitionEditor {
     });
 
     this.nodeMap[newName] = activity;
-
-    requestAnimationFrame(() => {});
   };
 
   private onZoomToFit = async () => await this.canvas.zoomToFit()
@@ -405,7 +420,7 @@ export class WorkflowDefinitionEditor {
     const updatedActivity = e.detail.activity;
     this.nodeMap[updatedActivity.id] = updatedActivity;
 
-    if(!!this.applyActivityChanges)
+    if (!!this.applyActivityChanges)
       this.applyActivityChanges(updatedActivity);
 
     this.emitActivityChangedDebounced({...e.detail, workflowEditor: this.el});
