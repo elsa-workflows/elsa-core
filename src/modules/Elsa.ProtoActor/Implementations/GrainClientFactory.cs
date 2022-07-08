@@ -1,3 +1,4 @@
+using Elsa.Persistence.Common.Models;
 using Elsa.Runtime.Protos;
 using Elsa.Workflows.Persistence.Models;
 using Proto.Cluster;

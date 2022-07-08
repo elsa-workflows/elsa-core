@@ -6,7 +6,7 @@ namespace Microsoft.Extensions.DependencyInjection;
 
 public static class DependencyInjectionExtensions
 {
-    public static IModule UseCustomActivitiesApiEndpoints(this IModule module, Action<CustomActivitiesFeature>? configure = default)
+    public static IModule UseCustomActivities(this IModule module, Action<CustomActivitiesFeature>? configure = default)
     {
         module.Configure(configure);
         return module;

@@ -1,4 +1,6 @@
 using Elsa.AspNetCore.Extensions;
+using Elsa.CustomActivities.EntityFrameworkCore.Extensions;
+using Elsa.CustomActivities.EntityFrameworkCore.Sqlite;
 using Elsa.Extensions;
 using Elsa.Hangfire.Implementations;
 using Elsa.Http;
@@ -53,7 +55,7 @@ services
         .UseJavaScript()
         .UseLiquid()
         .UseLabels(labels => labels.UseEntityFrameworkCore(ef => ef.UseSqlite()))
-        .UseCustomActivitiesApiEndpoints(feature => feature.y)
+        .UseCustomActivities(feature => feature.UseEntityFrameworkCore(ef => ef.UseSqlite()))
         .UseHttp()
         .UseMvc()
     );

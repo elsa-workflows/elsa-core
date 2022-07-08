@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Persistence.Common.Models;
 using Elsa.ProtoActor.Extensions;
 using Elsa.Runtime.Protos;
 using Elsa.Workflows.Core.Models;

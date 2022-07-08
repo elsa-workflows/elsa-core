@@ -1,8 +1,8 @@
 ﻿using System.ComponentModel;
 using System.Globalization;
-using Elsa.Workflows.Persistence.Models;
+using Elsa.Persistence.Common.Models;
 
-namespace Elsa.Workflows.Persistence.TypeConverters
+namespace Elsa.Persistence.Common.TypeConverters
 {
     public class VersionOptionsTypeConverter : TypeConverter
     {

@@ -2,6 +2,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.AspNetCore.Attributes;
+using Elsa.Persistence.Common.Models;
 using Elsa.Workflows.Api.Mappers;
 using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Core.Serialization;

@@ -1,4 +1,5 @@
 using Elsa.CustomActivities.Entities;
+using Elsa.CustomActivities.Implementations;
 using Elsa.CustomActivities.Services;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
@@ -14,7 +15,7 @@ public class CustomActivitiesFeature : FeatureBase
     {
     }
     
-    public Func<IServiceProvider, IActivityDefinitionStore> ActivityDefinitionStore { get; set; } = sp => sp.GetRequiredService<InMemoryActivityDefinitionStore>();
+    public Func<IServiceProvider, IActivityDefinitionStore> ActivityDefinitionStore { get; set; } = sp => sp.GetRequiredService<MemoryActivityDefinitionStore>();
 
     public CustomActivitiesFeature WithActivityDefinitionStore(Func<IServiceProvider, IActivityDefinitionStore> factory)
     {
@@ -26,7 +27,7 @@ public class CustomActivitiesFeature : FeatureBase
     public override void Apply()
     {
         Services
-            .AddMemoryStore<ActivityDefinition, InMemoryActivityDefinitionStore>()
+            .AddMemoryStore<ActivityDefinition, MemoryActivityDefinitionStore>()
             .AddSingleton(ActivityDefinitionStore)
             ;
 

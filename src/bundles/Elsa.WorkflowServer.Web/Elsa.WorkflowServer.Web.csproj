@@ -7,6 +7,8 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\modules\Elsa.CustomActivities.EntityFrameworkCore.Sqlite\Elsa.CustomActivities.EntityFrameworkCore.Sqlite.csproj" />
+      <ProjectReference Include="..\..\modules\Elsa.CustomActivities.EntityFrameworkCore\Elsa.CustomActivities.EntityFrameworkCore.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.CustomActivities\Elsa.CustomActivities.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.ProtoActor\Elsa.ProtoActor.csproj" />
       <ProjectReference Include="..\Elsa\Elsa.csproj" />
