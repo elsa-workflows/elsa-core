@@ -104,6 +104,13 @@ namespace Elsa.Activities.Workflows
             set => SetState(value);
         }
 
+        [ActivityInput(
+            Label = "Retry failed workflow",
+            Hint = "True to retry existing ChildWorkflow instance instead of creating a new one when faulted.",
+            Category = PropertyCategories.Advanced,
+            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
+        )]
+        public bool RetryFailedActivities { get; set; } = default!;
         public Dictionary<string, string> AlreadyExecutedChildren
         {
             get => GetState<Dictionary<string,string>>()!;
@@ -115,16 +122,25 @@ namespace Elsa.Activities.Workflows
             var cancellationToken = context.CancellationToken;
 
             var workflowBlueprint = await FindWorkflowBlueprintAsync(cancellationToken);
-            var test = context.Input.GetType().GetProperties();
             WorkflowStatus? childWorkflowStatus;
             WorkflowInstance? childWorkflowInstance;
-            AlreadyExecutedChildren ??= new Dictionary<string, string>();
 
-            //Someway the initial input changes when retrying
-            var hash = HashHelper.Hash(context.Input);
-            if (!string.IsNullOrEmpty(ChildWorkflowInstanceId) 
-                && AlreadyExecutedChildren.ContainsKey(hash)
-                )
+
+            //Someway the initial input changes when retrying, so we hash the values
+            //when retrying this activity if faulted, if there is only one with this activity id in the workflow, we dont need to use the hash because
+            //ChildWorkflowInstanceId will have the id of the subworkflow but, if it has failed in a loop, as ChildWorkflowInstanceId is metadata, it will always
+            //have stored just the last workflowinstance executed, but not the rest, so we need to discover what is the real workflowinstace using hashed input
+
+            string hash = default!;
+
+            if (RetryFailedActivities)
+            {
+                AlreadyExecutedChildren ??= new Dictionary<string, string>();
+                hash = HashHelper.Hash(context.Input);
+            }
+
+            //We know it is a retry if ChildWorkflowInstanceId has a value here, but that value is not the real associated ChildWorkflow
+            if (RetryFailedActivities && !string.IsNullOrEmpty(ChildWorkflowInstanceId) && AlreadyExecutedChildren.ContainsKey(hash))
             {
                 ChildWorkflowInstanceId = AlreadyExecutedChildren.GetValueOrDefault(hash);
                 childWorkflowInstance = await _workflowInstanceStore.FindByIdAsync(ChildWorkflowInstanceId);
@@ -172,8 +188,8 @@ namespace Elsa.Activities.Workflows
                 context.JournalData.Add("Workflow Blueprint ID", workflowBlueprint.Id);
                 context.JournalData.Add("Workflow Instance ID", childWorkflowInstance.Id);
                 context.JournalData.Add("Workflow Instance Status", childWorkflowInstance.WorkflowStatus);
-
-                AlreadyExecutedChildren.Add(HashHelper.Hash(context.Input), ChildWorkflowInstanceId);
+                if (RetryFailedActivities)
+                    AlreadyExecutedChildren.Add(HashHelper.Hash(context.Input), ChildWorkflowInstanceId);
             }
             
 
