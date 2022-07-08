@@ -53,6 +53,7 @@ services
         .UseJavaScript()
         .UseLiquid()
         .UseLabels(labels => labels.UseEntityFrameworkCore(ef => ef.UseSqlite()))
+        .UseCustomActivitiesApiEndpoints(feature => feature.y)
         .UseHttp()
         .UseMvc()
     );
