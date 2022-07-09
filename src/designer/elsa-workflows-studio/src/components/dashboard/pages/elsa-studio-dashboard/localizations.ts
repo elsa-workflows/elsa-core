@@ -22,5 +22,18 @@ export const resources = {
       'WorkflowRegistry': 'Workflow Register',
       'WebhookDefinitions': 'Webhook Definities',
     }
+  },
+  'es-ES': {
+    default: {
+      'WorkflowDefinitions': 'Definiciones de flujos',
+      'WorkflowInstances': 'Ejecuciones de flujos',
+      'WorkflowRegistry': 'Registro de flujos',
+      'WebhookDefinitions': 'Definiciones de webhooks',
+    },
+    menuItems: {
+      'workflow-definitions': 'Definiciones de flujos',
+      'workflow-instances': 'Ejecuciones de flujos',
+      'workflow-registry': 'Registro de flujos',
+    }
   }
 };
