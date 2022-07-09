@@ -1,3 +1,4 @@
+using Elsa.Activities.Mqtt.Extensions;
 using Elsa.Attributes;
 using Elsa.Options;
 using Elsa.Services.Startup;

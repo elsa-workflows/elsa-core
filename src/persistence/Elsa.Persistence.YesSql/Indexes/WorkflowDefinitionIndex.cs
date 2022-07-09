@@ -9,6 +9,7 @@ namespace Elsa.Persistence.YesSql.Indexes
         public string? TenantId { get; set; }
         public string DefinitionId { get; set; } = default!;
         public string DefinitionVersionId { get; set; } = default!;
+        public string? Name { get; set; } = default!;
         public int Version { get; set; }
         public bool IsLatest { get; set; }
         public bool IsPublished { get; set; }
@@ -28,6 +29,7 @@ namespace Elsa.Persistence.YesSql.Indexes
                         DefinitionId = workflowDefinition.DefinitionId,
                         TenantId = workflowDefinition.TenantId,
                         DefinitionVersionId = workflowDefinition.DefinitionVersionId,
+                        Name = workflowDefinition.Name,
                         Version = workflowDefinition.Version,
                         IsPublished = workflowDefinition.IsPublished,
                         IsLatest = workflowDefinition.IsLatest,

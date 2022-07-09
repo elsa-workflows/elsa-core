@@ -1,5 +1,4 @@
 using System;
-using AutoMapper.Internal;
 
 namespace Elsa.Scripting.JavaScript.Services
 {

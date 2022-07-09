@@ -13,7 +13,7 @@ namespace Elsa.StartupTasks
             _triggerIndexer = triggerIndexer;
         }
         
-        public int Order => 100;
+        public int Order => 1000;
         
         public async Task ExecuteAsync(CancellationToken cancellationToken = default)
         {

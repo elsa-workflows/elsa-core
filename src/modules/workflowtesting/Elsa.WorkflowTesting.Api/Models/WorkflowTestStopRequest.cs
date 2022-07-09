@@ -1,4 +1,4 @@
-namespace Elsa.Testing.Api.Models
+namespace Elsa.WorkflowTesting.Api.Models
 {
     public class WorkflowTestStopRequest
     {

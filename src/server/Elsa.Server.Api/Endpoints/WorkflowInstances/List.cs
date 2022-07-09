@@ -7,7 +7,9 @@ using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Persistence.Specifications;
 using Elsa.Persistence.Specifications.WorkflowInstances;
+using Elsa.Serialization;
 using Elsa.Server.Api.Models;
+using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -24,15 +26,19 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
     {
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
         private readonly IMapper _mapper;
+        private readonly IContentSerializer _contentSerializer;
         private readonly ILogger _logger;
         private readonly Stopwatch _stopwatch;
+        private readonly ITenantAccessor _tenantAccessor;
 
-        public List(IWorkflowInstanceStore workflowInstanceStore, IMapper mapper, ILogger<List> logger)
+        public List(IWorkflowInstanceStore workflowInstanceStore, IMapper mapper, IContentSerializer contentSerializer, ILogger<List> logger, ITenantAccessor tenantAccessor)
         {
             _workflowInstanceStore = workflowInstanceStore;
             _mapper = mapper;
+            _contentSerializer = contentSerializer;
             _logger = logger;
             _stopwatch = new Stopwatch();
+            _tenantAccessor = tenantAccessor;
         }
 
         [HttpGet]
@@ -43,7 +49,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
             OperationId = "WorkflowInstances.List",
             Tags = new[] { "WorkflowInstances" })
         ]
-        public async Task<ActionResult<PagedList<WorkflowInstanceSummaryModel>>> Handle(
+        public async Task<IActionResult> Handle(
             [FromQuery(Name = "workflow")] string? workflowDefinitionId = default,
             [FromQuery(Name = "status")] WorkflowStatus? workflowStatus = default,
             [FromQuery] string? correlationId = default,
@@ -68,6 +74,9 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
             if (!string.IsNullOrWhiteSpace(searchTerm)) 
                 specification = specification.WithSearchTerm(searchTerm);
 
+            var tenantId = await _tenantAccessor.GetTenantIdAsync(cancellationToken);
+            specification = specification.And(new TenantSpecification<WorkflowInstance>(tenantId));
+
             var orderBySpecification = default(OrderBy<WorkflowInstance>);
             
             if (orderBy != null)
@@ -87,7 +96,9 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
             var items = _mapper.Map<ICollection<WorkflowInstanceSummaryModel>>(workflowInstances);
             _stopwatch.Stop();
             _logger.LogDebug("Handle took {TimeElapsed}", _stopwatch.Elapsed);
-            return new PagedList<WorkflowInstanceSummaryModel>(items, page, pageSize, totalCount);
+            var model = new PagedList<WorkflowInstanceSummaryModel>(items, page, pageSize, totalCount);
+
+            return Json(model, _contentSerializer.GetSettings());
         }
     }
 }

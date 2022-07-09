@@ -37,5 +37,18 @@ export const resources = {
       'Published': 'Published',
       'Draft': 'Draft'
     }
-  }
+  },
+  'fa-IR': {
+    default: {
+      'Name': 'نام',
+      'DisplayName': 'عنوان نمایشی',
+      'Untitled': 'بی نام',
+      'Id': 'شناسه',
+      'Version': 'جدیدترین ویرایش',
+      'PublishedVersion': 'ویرایش منتشر شده',
+      'Status': 'وضعیت',
+      'Published': 'منتشر شده',
+      'Draft': 'پیش نویس'
+    }
+  },
 };

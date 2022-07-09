@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Linq;
 using AutoFixture.Kernel;
 using Elsa.Services;
-using Elsa.Services.Bookmarks;
 using Moq;
 
 namespace Elsa.Testing.Shared.AutoFixture.SpecimenBuilders

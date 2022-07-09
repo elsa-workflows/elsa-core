@@ -7,7 +7,7 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.0" />
-        <PackageReference Include="Rebus.AzureServiceBus" Version="9.0.5" />
+        <PackageReference Include="Rebus.AzureServiceBus" Version="9.0.8" />
         <PackageReference Include="System.Text.Encodings.Web" Version="6.0.0" />
     </ItemGroup>
 

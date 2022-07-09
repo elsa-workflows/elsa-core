@@ -1,6 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Server.Api.ActionFilters;
+using Elsa.Server.Api.Services;
 using Elsa.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -15,10 +16,12 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
     public class Execute : Controller
     {
         private readonly IWorkflowLaunchpad _workflowLaunchpad;
+        private readonly IEndpointContentSerializerSettingsProvider _serializerSettingsProvider;
 
-        public Execute(IWorkflowLaunchpad workflowLaunchpad)
+        public Execute(IWorkflowLaunchpad workflowLaunchpad, IEndpointContentSerializerSettingsProvider serializerSettingsProvider)
         {
             _workflowLaunchpad = workflowLaunchpad;
+            _serializerSettingsProvider = serializerSettingsProvider;
         }
 
         [HttpPost]
@@ -38,7 +41,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowInstances
             if (Response.HasStarted)
                 return new EmptyResult();
 
-            return Ok(new ExecuteWorkflowInstanceResponseModel(result.Executed, result.ActivityId, result.WorkflowInstance));
+            return Json(new ExecuteWorkflowInstanceResponseModel(result.Executed, result.ActivityId, result.WorkflowInstance), _serializerSettingsProvider.GetSettings());
         }
     }
 }

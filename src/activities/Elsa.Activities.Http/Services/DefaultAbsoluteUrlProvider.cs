@@ -1,7 +1,6 @@
 using System;
-using Elsa.Activities.Http.Extensions;
+using Elsa.Activities.Http.Contracts;
 using Elsa.Activities.Http.Options;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Activities.Http.Services

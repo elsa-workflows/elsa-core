@@ -1,10 +1,10 @@
+using System.Net.Mqtt;
 using Elsa.Attributes;
 using Elsa.Design;
 using Elsa.Expressions;
 using Elsa.Services;
-using System.Net.Mqtt;
 
-namespace Elsa.Activities.Mqtt
+namespace Elsa.Activities.Mqtt.Activities
 {
     public abstract class MqttBaseActivity : Activity
     {
@@ -26,6 +26,7 @@ namespace Elsa.Activities.Mqtt
             Hint = "MQTT broker port",
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid },
             Order = 2,
+            DefaultValue = 1883,
             Category = PropertyCategories.Configuration)]
         public int Port { get; set; } = default!;
 

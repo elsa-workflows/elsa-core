@@ -1,8 +1,14 @@
+using Elsa.Activities.RabbitMq.Configuration;
+using Elsa.Activities.RabbitMq.Helpers;
 using Elsa.Activities.RabbitMq.Services;
+using Elsa.Models;
+using Elsa.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -14,14 +20,17 @@ namespace Elsa.Activities.RabbitMq.Testing
         private readonly IDictionary<string, ICollection<Worker>> _workers;
         private readonly IRabbitMqQueueStarter _rabbitMqQueueStarter;
         private readonly ILogger _logger;
+        private readonly IServiceScopeFactory _scopeFactory;
 
         public RabbitMqTestQueueManager(
             IRabbitMqQueueStarter rabbitMqQueueStarter,
-            ILogger<RabbitMqTestQueueManager> logger)
+            ILogger<RabbitMqTestQueueManager> logger,
+            IServiceScopeFactory scopeFactory)
         {
             _rabbitMqQueueStarter = rabbitMqQueueStarter;
             _logger = logger;
             _workers = new Dictionary<string, ICollection<Worker>>();
+            _scopeFactory = scopeFactory;
         }
 
         public async Task CreateTestWorkersAsync(string workflowId, string workflowInstanceId, CancellationToken cancellationToken = default)
@@ -39,7 +48,7 @@ namespace Elsa.Activities.RabbitMq.Testing
                 else
                     _workers[workflowInstanceId] = new List<Worker>();
 
-                var workerConfigs = (await _rabbitMqQueueStarter.GetConfigurationsAsync<RabbitMqMessageReceived>(x => x.Id == workflowId, cancellationToken).ToListAsync(cancellationToken)).Distinct();
+                var workerConfigs = (await GetConfigurationsAsync(workflowId, cancellationToken).ToListAsync(cancellationToken)).Distinct();
 
                 foreach (var config in workerConfigs)
                 {
@@ -67,6 +76,32 @@ namespace Elsa.Activities.RabbitMq.Testing
             }
 
             _workers[workflowInstance].Clear();
+        }
+
+        private async IAsyncEnumerable<RabbitMqBusConfiguration> GetConfigurationsAsync(string workflowDefinitionId, [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            using var scope = _scopeFactory.CreateScope();
+
+            var workflowRegistry = scope.ServiceProvider.GetRequiredService<IWorkflowRegistry>();
+            var workflowBlueprintReflector = scope.ServiceProvider.GetRequiredService<IWorkflowBlueprintReflector>();
+            var workflow = await workflowRegistry.GetWorkflowAsync(workflowDefinitionId, VersionOptions.Latest, cancellationToken);
+
+            if (workflow == null) yield break;
+
+            var workflowBlueprintWrapper = await workflowBlueprintReflector.ReflectAsync(scope.ServiceProvider, workflow, cancellationToken);
+
+            foreach (var activity in workflowBlueprintWrapper.Filter<RabbitMqMessageReceived>())
+            {
+                var connectionString = await activity.EvaluatePropertyValueAsync(x => x.ConnectionString, cancellationToken);
+                var routingKey = await activity.EvaluatePropertyValueAsync(x => x.RoutingKey, cancellationToken);
+                var exchangeName = await activity.EvaluatePropertyValueAsync(x => x.ExchangeName, cancellationToken);
+                var headers = await activity.EvaluatePropertyValueAsync(x => x.Headers, cancellationToken);
+                var clientId = RabbitMqClientConfigurationHelper.GetTestClientId(activity.ActivityBlueprint.Id);
+
+                var config = new RabbitMqBusConfiguration(connectionString!, exchangeName!, routingKey!, headers!, clientId, autoDeleteQueue: true);
+
+                yield return config;
+            }
         }
     }
 }

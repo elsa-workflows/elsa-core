@@ -1,11 +1,11 @@
-using Elsa.Events;
-using Elsa.WorkflowTesting.Events;
-using MediatR;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Events;
+using Elsa.WorkflowTesting.Events;
+using MediatR;
 
-namespace Elsa.Activities.Mqtt.Testing
+namespace Elsa.Activities.Mqtt.Testing.Handlers
 {
     public class ConfigureMqttActivitiesForTestHandler : INotificationHandler<WorkflowExecuting>, INotificationHandler<WorkflowFaulted>, INotificationHandler<WorkflowCompleted>, INotificationHandler<WorkflowTestExecutionStopped>
     {

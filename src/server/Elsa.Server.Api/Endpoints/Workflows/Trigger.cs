@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Models;
 using Elsa.Server.Api.ActionFilters;
+using Elsa.Server.Api.Helpers;
 using Elsa.Services;
 using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
@@ -57,7 +58,7 @@ namespace Elsa.Server.Api.Endpoints.Workflows
             if (Response.HasStarted)
                 return new EmptyResult();
 
-            return Ok(new TriggerWorkflowsResponseModel(triggeredWorkflows));
+            return Ok(new TriggerWorkflowsResponseModel(triggeredWorkflows)).ConfigureForEndpoint();
         }
     }
 }

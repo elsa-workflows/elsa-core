@@ -6,83 +6,84 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Events;
 using Elsa.Models;
-using Elsa.Persistence;
-using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Providers.Workflows;
 using Elsa.Services.Models;
 using MediatR;
-using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Services.Workflows
 {
     public class WorkflowRegistry : IWorkflowRegistry
     {
-        private readonly IEnumerable<IWorkflowProvider> _workflowProviders;
-        private readonly IWorkflowInstanceStore _workflowInstanceStore;
+        private readonly ListWorkflowProvider _listWorkflowProvider = new();
+        private readonly ICollection<IWorkflowProvider> _workflowProviders;
         private readonly IMediator _mediator;
 
-        public WorkflowRegistry(IEnumerable<IWorkflowProvider> workflowProviders, IWorkflowInstanceStore workflowInstanceStore, IMediator mediator)
+        public WorkflowRegistry(IEnumerable<IWorkflowProvider> workflowProviders, IMediator mediator)
         {
-            _workflowProviders = workflowProviders;
-            _workflowInstanceStore = workflowInstanceStore;
+            _workflowProviders = workflowProviders.Append(_listWorkflowProvider).ToList();
             _mediator = mediator;
         }
 
-        public async Task<IEnumerable<IWorkflowBlueprint>> ListAsync(CancellationToken cancellationToken) => await ListInternalAsync(cancellationToken).ToListAsync(cancellationToken);
-        public async Task<IEnumerable<IWorkflowBlueprint>> ListActiveAsync(CancellationToken cancellationToken) => await ListActiveInternalAsync(cancellationToken).ToListAsync(cancellationToken);
+        public async Task<IWorkflowBlueprint?> FindAsync(string definitionId, VersionOptions versionOptions, string? tenantId = default, CancellationToken cancellationToken = default) =>
+            await FindInternalAsync(provider => provider.FindAsync(definitionId, versionOptions, tenantId, cancellationToken), cancellationToken);
 
-        public async Task<IWorkflowBlueprint?> GetAsync(string id, string? tenantId, VersionOptions version, CancellationToken cancellationToken, bool includeDisabled = false)
-        {
-            return !includeDisabled
-                ? await FindAsync(x => x.Id == id && x.TenantId == tenantId && x.WithVersion(version) && !x.IsDisabled, cancellationToken)
-                : await FindAsync(x => x.Id == id && x.TenantId == tenantId && x.WithVersion(version), cancellationToken);
-        }
+        public async Task<IWorkflowBlueprint?> FindByDefinitionVersionIdAsync(string definitionVersionId, string? tenantId = default, CancellationToken cancellationToken = default) =>
+            await FindInternalAsync(provider => provider.FindByDefinitionVersionIdAsync(definitionVersionId, tenantId, cancellationToken), cancellationToken);
 
-        public async Task<IEnumerable<IWorkflowBlueprint>> FindManyAsync(Func<IWorkflowBlueprint, bool> predicate, CancellationToken cancellationToken) =>
-            (await ListAsync(cancellationToken).Where(predicate).OrderByDescending(x => x.Version)).ToList();
+        public async Task<IWorkflowBlueprint?> FindByNameAsync(string name, VersionOptions versionOptions, string? tenantId = default, CancellationToken cancellationToken = default) =>
+            await FindInternalAsync(provider => provider.FindByNameAsync(name, versionOptions, tenantId, cancellationToken), cancellationToken);
 
-        public async Task<IWorkflowBlueprint?> FindAsync(Func<IWorkflowBlueprint, bool> predicate, CancellationToken cancellationToken) =>
-            (await ListAsync(cancellationToken).Where(predicate).OrderByDescending(x => x.Version)).FirstOrDefault();
+        public async Task<IWorkflowBlueprint?> FindByTagAsync(string tag, VersionOptions versionOptions, string? tenantId = default, CancellationToken cancellationToken = default) =>
+            await FindInternalAsync(provider => provider.FindByTagAsync(tag, versionOptions, tenantId, cancellationToken), cancellationToken);
 
-        private async IAsyncEnumerable<IWorkflowBlueprint> ListActiveInternalAsync([EnumeratorCancellation] CancellationToken cancellationToken)
-        {
-            var workflows = await ListInternalAsync(cancellationToken).ToListAsync(cancellationToken);
-            var publishedWorkflows = workflows.Where(x => x.IsPublished);
+        public async Task<IEnumerable<IWorkflowBlueprint>> FindManyByTagAsync(string tag, VersionOptions versionOptions, string? tenantId = default, CancellationToken cancellationToken = default) =>
+            await FindManyInternalAsync(provider => provider.FindManyByTagAsync(tag, versionOptions, tenantId, cancellationToken), cancellationToken).ToListAsync(cancellationToken);
 
-            foreach (var publishedWorkflow in publishedWorkflows)
-                yield return publishedWorkflow;
+        public async Task<IEnumerable<IWorkflowBlueprint>> FindManyByDefinitionIds(IEnumerable<string> definitionIds, VersionOptions versionOptions, CancellationToken cancellationToken) =>
+            await FindManyInternalAsync(provider => provider.FindManyByDefinitionIds(definitionIds, versionOptions, cancellationToken), cancellationToken).ToListAsync(cancellationToken);
+        
+        public async Task<IEnumerable<IWorkflowBlueprint>> FindManyByDefinitionVersionIds(IEnumerable<string> definitionVersionIds, CancellationToken cancellationToken) =>
+            await FindManyInternalAsync(provider => provider.FindManyByDefinitionVersionIds(definitionVersionIds, cancellationToken), cancellationToken).ToListAsync(cancellationToken);
 
-            // We also need to consider unpublished workflows for inclusion in case they still have associated active workflow instances.
-            var unpublishedWorkflows = workflows.Where(x => !x.IsPublished).ToDictionary(x => x.VersionId);
-            var unpublishedWorkflowIds = unpublishedWorkflows.Keys;
+        public async Task<IEnumerable<IWorkflowBlueprint>> FindManyByNames(IEnumerable<string> names, CancellationToken cancellationToken = default) =>
+            await FindManyInternalAsync(provider => provider.FindManyByNames(names, cancellationToken), cancellationToken).ToListAsync(cancellationToken);
 
-            if (!unpublishedWorkflowIds.Any())
-                yield break;
+        public void Add(IWorkflowBlueprint workflowBlueprint) => _listWorkflowProvider.Add(workflowBlueprint);
 
-            var activeWorkflowInstances = await _workflowInstanceStore.FindManyAsync(new UnfinishedWorkflowSpecification().WithWorkflowDefinitionVersionIds(unpublishedWorkflowIds), cancellationToken: cancellationToken).ToList();
-            var activeUnpublishedWorkflowVersionIds = activeWorkflowInstances.Select(x => x.DefinitionVersionId).Distinct().ToList();
-            var activeUnpublishedWorkflowVersions = unpublishedWorkflows.Where(x => activeUnpublishedWorkflowVersionIds.Contains(x.Key)).Select(x => x.Value);
-
-            foreach (var unpublishedWorkflow in activeUnpublishedWorkflowVersions)
-                yield return unpublishedWorkflow;
-        }
-
-        private async IAsyncEnumerable<IWorkflowBlueprint> ListInternalAsync([EnumeratorCancellation] CancellationToken cancellationToken)
+        private async Task<IWorkflowBlueprint?> FindInternalAsync(Func<IWorkflowProvider, ValueTask<IWorkflowBlueprint?>> providerAction, CancellationToken cancellationToken = default)
         {
             var providers = _workflowProviders;
 
             foreach (var provider in providers)
-            await foreach (var workflow in provider.GetWorkflowsAsync(cancellationToken).WithCancellation(cancellationToken))
             {
+                var workflow = await providerAction(provider);
+
+                if (workflow == null)
+                    continue;
+
                 await _mediator.Publish(new WorkflowBlueprintLoaded(workflow), cancellationToken);
-                yield return workflow;
+                return workflow;
             }
+
+            return null;
         }
 
-        private async Task<bool> WorkflowHasUnfinishedWorkflowsAsync(IWorkflowBlueprint workflowBlueprint, CancellationToken cancellationToken)
+        private async IAsyncEnumerable<IWorkflowBlueprint> FindManyInternalAsync(
+            Func<IWorkflowProvider, ValueTask<IEnumerable<IWorkflowBlueprint>>> providerAction,
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
-            var count = await _workflowInstanceStore.CountAsync(new UnfinishedWorkflowSpecification().WithWorkflowDefinition(workflowBlueprint.Id), cancellationToken);
-            return count > 0;
+            var providers = _workflowProviders;
+
+            foreach (var provider in providers)
+            {
+                var workflows = await providerAction(provider);
+
+                foreach (var workflow in workflows)
+                {
+                    await _mediator.Publish(new WorkflowBlueprintLoaded(workflow), cancellationToken);
+                    yield return workflow;
+                }
+            }
         }
     }
 }

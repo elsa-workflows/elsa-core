@@ -9,13 +9,17 @@ namespace Elsa.Activities.RabbitMq.Configuration
         public string ExchangeName { get; }
         public string RoutingKey { get; }
         public Dictionary<string, string> Headers { get; }
+        public string ClientId { get; }
+        public bool AutoDeleteQueue { get; }
 
-        public RabbitMqBusConfiguration(string connectionString, string exchangeName, string routingKey, Dictionary<string, string> headers)
+        public RabbitMqBusConfiguration(string connectionString, string exchangeName, string routingKey, Dictionary<string, string> headers, string clientId, bool autoDeleteQueue = false)
         {
             ConnectionString = connectionString;
             ExchangeName = exchangeName;
             RoutingKey = routingKey;
             Headers = headers ?? new Dictionary<string, string>();
+            ClientId = clientId;
+            AutoDeleteQueue = autoDeleteQueue;
         }
 
         public override int GetHashCode()

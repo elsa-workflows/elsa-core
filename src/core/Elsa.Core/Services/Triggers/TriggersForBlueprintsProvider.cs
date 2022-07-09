@@ -30,38 +30,33 @@ namespace Elsa.Services.Triggers
             _startingActivitiesProvider = startingActivitiesProvider ?? throw new ArgumentNullException(nameof(startingActivitiesProvider));
         }
 
-        /// <summary>
-        /// Gets the triggers for all of the specified workflow blueprints.
-        /// </summary>
-        /// <param name="workflowBlueprints">The workflow blueprints for which to get triggers.</param>
-        /// <param name="cancellationToken">An optional cancellation token.</param>
-        /// <returns>A task which exposes an enumerable collection of workflow triggers.</returns>
-        public async Task<IEnumerable<WorkflowTrigger>> GetTriggersAsync(
-            IEnumerable<IWorkflowBlueprint> workflowBlueprints,
-            CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<WorkflowTrigger>> GetTriggersAsync(IEnumerable<IWorkflowBlueprint> workflowBlueprints, CancellationToken cancellationToken = default)
         {
             var activityTypes = (await _activityTypeService.GetActivityTypesAsync(cancellationToken)).ToDictionary(x => x.TypeName);
-            var tasksOfListsOfTriggers = workflowBlueprints.Select(workflowBlueprint => GetWorkflowTriggersForWorkflowBlueprintAsync(workflowBlueprint, activityTypes, cancellationToken));
+            var tasksOfListsOfTriggers = workflowBlueprints.Select(workflowBlueprint => GetTriggersInternalAsync(workflowBlueprint, activityTypes, cancellationToken));
 
             return (await Task.WhenAll(tasksOfListsOfTriggers))
                 .SelectMany(x => x)
                 .ToList();
         }
 
-        private async Task<IList<WorkflowTrigger>> GetWorkflowTriggersForWorkflowBlueprintAsync(
-            IWorkflowBlueprint workflowBlueprint,
-            IDictionary<string, ActivityType> activityTypes,
-            CancellationToken cancellationToken)
+        public async Task<IEnumerable<WorkflowTrigger>> GetTriggersAsync(IWorkflowBlueprint workflowBlueprint, CancellationToken cancellationToken)
+        {
+            var activityTypes = (await _activityTypeService.GetActivityTypesAsync(cancellationToken)).ToDictionary(x => x.TypeName);
+            return await GetTriggersInternalAsync(workflowBlueprint, activityTypes, cancellationToken);
+        }
+
+        private async Task<IEnumerable<WorkflowTrigger>> GetTriggersInternalAsync(IWorkflowBlueprint workflowBlueprint, IDictionary<string, ActivityType> activityTypes, CancellationToken cancellationToken)
         {
             var startingActivityBlueprints = _startingActivitiesProvider.GetStartActivities(workflowBlueprint);
             var workflowExecutionContext = await _workflowExecutionContextFactory.CreateWorkflowExecutionContextAsync(workflowBlueprint, cancellationToken);
-            
+
             var tasksOfCollectionsOfTriggers = startingActivityBlueprints
                 .Select(async activityBlueprint => await _triggerProvider.GetTriggersForActivityBlueprintAsync(activityBlueprint,
                     workflowExecutionContext,
                     activityTypes,
                     cancellationToken));
-            
+
             return (await Task.WhenAll(tasksOfCollectionsOfTriggers))
                 .SelectMany(x => x)
                 .ToList();

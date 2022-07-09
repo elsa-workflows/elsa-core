@@ -7,13 +7,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Autofixture" Version="4.17.0"/>
-        <PackageReference Include="Autofixture.AutoMoq" Version="4.17.0"/>
-        <PackageReference Include="autofixture.xunit2" Version="4.17.0"/>
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.11.0"/>
-        <PackageReference Include="Moq" Version="4.16.1"/>
-        <PackageReference Include="xunit" Version="2.4.1"/>
-        <PackageReference Include="XunitXml.TestLogger" Version="3.0.66"/>
+        <PackageReference Include="Autofixture" Version="4.17.0" />
+        <PackageReference Include="Autofixture.AutoMoq" Version="4.17.0" />
+        <PackageReference Include="autofixture.xunit2" Version="4.17.0" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.11.0" />
+        <PackageReference Include="Moq" Version="4.16.1" />
+        <PackageReference Include="xunit" Version="2.4.1" />
+        <PackageReference Include="XunitXml.TestLogger" Version="3.0.66" />
         <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
@@ -22,13 +22,19 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="System.Text.Encodings.Web" Version="6.0.0"/>
+        <PackageReference Include="System.Text.Encodings.Web" Version="6.0.0" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\..\src\core\Elsa.Abstractions\Elsa.Abstractions.csproj"/>
-        <ProjectReference Include="..\..\shared\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj"/>
-        <ProjectReference Include="..\..\..\src\activities\Elsa.Activities.Http\Elsa.Activities.Http.csproj"/>
+        <ProjectReference Include="..\..\..\src\core\Elsa.Abstractions\Elsa.Abstractions.csproj" />
+        <ProjectReference Include="..\..\shared\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj" />
+        <ProjectReference Include="..\..\..\src\activities\Elsa.Activities.Http\Elsa.Activities.Http.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="Scripting\Liquid\header.liquid">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
 </Project>

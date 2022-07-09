@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Models;
+using Elsa.Services.WorkflowStorage;
 
 namespace Elsa.Samples.UserTaskConsole
 {
@@ -27,7 +28,7 @@ namespace Elsa.Samples.UserTaskConsole
             // Get a workflow runner.
             var workflowRunner = services.GetRequiredService<IBuildsAndStartsWorkflow>();
 
-            // And an interruptor.
+            // Get an interruptor.
             var workflowTriggerInterruptor = services.GetRequiredService<IWorkflowTriggerInterruptor>();
 
             // Execute the workflow.
@@ -45,7 +46,11 @@ namespace Elsa.Samples.UserTaskConsole
             Console.WriteLine($"What action will you take? Choose one of: {string.Join(", ", availableActions)}");
             var userAction = Console.ReadLine();
             var currentActivityId = workflowInstance.BlockingActivities.Select(i => i.ActivityId).First();
-            await workflowTriggerInterruptor.InterruptActivityAsync(workflowInstance, currentActivityId, new WorkflowInput(userAction));
+
+            // Update the workflow instance with input.
+            var workflowStorageService = services.GetRequiredService<IWorkflowStorageService>();
+            await workflowStorageService.UpdateInputAsync(workflowInstance, new WorkflowInput(userAction));
+            await workflowTriggerInterruptor.InterruptActivityAsync(workflowInstance, currentActivityId);
         }
     }
 }

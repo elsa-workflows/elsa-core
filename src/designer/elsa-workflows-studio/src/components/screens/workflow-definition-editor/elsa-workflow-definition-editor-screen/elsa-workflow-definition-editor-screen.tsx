@@ -10,7 +10,7 @@ import {
   ConnectionModel,
   EventTypes,
   VersionOptions,
-  WorkflowDefinition,
+  WorkflowDefinition, WorkflowDefinitionVersion,
   WorkflowInstance,
   WorkflowModel,
   WorkflowPersistenceBehavior,
@@ -37,6 +37,7 @@ import {i18n} from "i18next";
 import {loadTranslations} from "../../../i18n/i18n-loader";
 import {resources} from "./localizations";
 import * as collection from 'lodash/collection';
+import {tr} from "cronstrue/dist/i18n/locales/tr";
 
 @Component({
   tag: 'elsa-workflow-definition-editor-screen',
@@ -63,6 +64,8 @@ export class ElsaWorkflowDefinitionEditorScreen {
   @State() saved: boolean;
   @State() importing: boolean;
   @State() imported: boolean;
+  @State() reverting: boolean;
+  @State() reverted: boolean;
   @State() networkError: string;
   @State() selectedActivityId?: string;
   @State() workflowDesignerMode: WorkflowDesignerMode;
@@ -285,11 +288,13 @@ export class ElsaWorkflowDefinitionEditorScreen {
     await eventBus.emit(EventTypes.WorkflowPublished, this, this.workflowDefinition);
   }
 
-  async unPublishWorkflow() {
-    this.unPublishing = true;
-    await this.unpublishWorkflow();
-    this.unPublishing = false;
+  async unpublishWorkflow() {
+    await this.unpublishWorkflowInternal();
     await eventBus.emit(EventTypes.WorkflowRetracted, this, this.workflowDefinition);
+  }
+
+  async revertWorkflow() {
+    await this.revertWorkflowInternal();
   }
 
   async saveWorkflow(publish?: boolean) {
@@ -365,7 +370,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
     }
   }
 
-  async unpublishWorkflow() {
+  async unpublishWorkflowInternal() {
     const client = await createElsaClient(this.serverUrl);
     const workflowDefinitionId = this.workflowDefinition.definitionId;
     this.unPublishing = true;
@@ -379,6 +384,26 @@ export class ElsaWorkflowDefinitionEditorScreen {
       console.error(e);
       this.unPublishing = false;
       this.unPublished = false;
+      this.networkError = e.message;
+      setTimeout(() => this.networkError = null, 2000);
+    }
+  }
+
+  async revertWorkflowInternal() {
+    const client = await createElsaClient(this.serverUrl);
+    const workflowDefinitionId = this.workflowDefinition.definitionId;
+    const version = this.workflowDefinition.version;
+    this.reverting = true;
+
+    try {
+      this.workflowDefinition = await client.workflowDefinitionsApi.revert(workflowDefinitionId, version);
+      this.reverting = false;
+      this.reverted = true
+      setTimeout(() => this.reverted = false, 500);
+    } catch (e) {
+      console.error(e);
+      this.reverting = false;
+      this.reverted = false;
       this.networkError = e.message;
       setTimeout(() => this.networkError = null, 2000);
     }
@@ -453,7 +478,11 @@ export class ElsaWorkflowDefinitionEditorScreen {
   }
 
   async onUnPublishClicked() {
-    await this.unPublishWorkflow();
+    await this.unpublishWorkflow();
+  }
+
+  async onRevertClicked() {
+    await this.revertWorkflow();
   }
 
   async onExportClicked() {
@@ -584,6 +613,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
 
     switch (testActivityMessage.status) {
       case WorkflowTestActivityMessageStatus.Done:
+      default:
         icon = `<svg class="elsa-h-8 elsa-w-8 elsa-text-green-500"  fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>`;
@@ -1050,6 +1080,7 @@ export class ElsaWorkflowDefinitionEditorScreen {
       workflowDefinition={this.workflowDefinition}
       onPublishClicked={() => this.onPublishClicked()}
       onUnPublishClicked={() => this.onUnPublishClicked()}
+      onRevertClicked={() => this.onRevertClicked()}
       onExportClicked={() => this.onExportClicked()}
       onImportClicked={e => this.onImportClicked(e.detail)}
       culture={this.culture}
@@ -1060,6 +1091,8 @@ export class ElsaWorkflowDefinitionEditorScreen {
     return {
       definitionId: null,
       version: 1,
+      isLatest: true,
+      isPublished: false,
       activities: [],
       connections: [],
       persistenceBehavior: WorkflowPersistenceBehavior.WorkflowBurst,
@@ -1067,16 +1100,20 @@ export class ElsaWorkflowDefinitionEditorScreen {
   }
 
   private renderPanel() {
+
+    const workflowDefinition = this.workflowDefinition;
+
     return (
       <elsa-flyout-panel expandButtonPosition={3}>
         <elsa-tab-header tab="general" slot="header">General</elsa-tab-header>
         <elsa-tab-content tab="general" slot="content">
           <elsa-workflow-properties-panel
-            workflowDefinition={this.workflowDefinition}
+            workflowDefinition={workflowDefinition}
           />
         </elsa-tab-content>
         {this.renderTestPanel()}
         {this.renderDesignerPanel()}
+        {this.renderVersionHistoryPanel(workflowDefinition)}
       </elsa-flyout-panel>
     );
   }
@@ -1114,6 +1151,20 @@ export class ElsaWorkflowDefinitionEditorScreen {
     }
   }
 
+  private renderVersionHistoryPanel = (workflowDefinition: WorkflowDefinition) => {
+
+    return [
+      <elsa-tab-header tab="versionHistory" slot="header">Version History</elsa-tab-header>,
+      <elsa-tab-content tab="versionHistory" slot="content">
+        <elsa-version-history-panel
+          workflowDefinition={workflowDefinition}
+          onVersionSelected={e => this.onVersionSelected(e)}
+          onDeleteVersionClicked={e => this.onDeleteVersionClicked(e)}
+          onRevertVersionClicked={e => this.onRevertVersionClicked(e)}/>
+      </elsa-tab-content>
+    ];
+  }
+
   handleFeatureChange = (e: CustomEvent<string>) => {
     const feature = e.detail;
 
@@ -1135,6 +1186,27 @@ export class ElsaWorkflowDefinitionEditorScreen {
       }
     }
   }
+
+  onVersionSelected = async (e: CustomEvent<WorkflowDefinitionVersion>) => {
+    const client = await createElsaClient(this.serverUrl);
+    const version = e.detail;
+    const workflowDefinition = await client.workflowDefinitionsApi.getByDefinitionAndVersion(version.definitionId, {version: version.version});
+    this.updateWorkflowDefinition(workflowDefinition);
+  };
+
+  onDeleteVersionClicked = async (e: CustomEvent<WorkflowDefinitionVersion>) => {
+    const client = await createElsaClient(this.serverUrl);
+    const version = e.detail;
+    await client.workflowDefinitionsApi.delete(version.definitionId, {version: version.version});
+    this.updateWorkflowDefinition({...this.workflowDefinition}); // Force a rerender.
+  };
+
+  onRevertVersionClicked = async (e: CustomEvent<WorkflowDefinitionVersion>) => {
+    const client = await createElsaClient(this.serverUrl);
+    const version = e.detail;
+    const workflowDefinition = await client.workflowDefinitionsApi.revert(version.definitionId, version.version);
+    this.updateWorkflowDefinition(workflowDefinition);
+  };
 }
 
 injectHistory(ElsaWorkflowDefinitionEditorScreen);

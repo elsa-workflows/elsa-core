@@ -9,6 +9,7 @@ using Elsa.Metadata;
 using Elsa.Providers.Activities;
 using Elsa.Services;
 using Elsa.Services.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Activities.Conductor.Providers.ActivityTypes
 {
@@ -16,13 +17,13 @@ namespace Elsa.Activities.Conductor.Providers.ActivityTypes
     {
         private readonly IDescribesActivityType _describesActivityType;
         private readonly IActivityActivator _activityActivator;
-        private readonly Scoped<IEnumerable<ICommandsProvider>> _scopedCommandsProviders;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
 
-        public CommandActivityTypeProvider(IDescribesActivityType describesActivityType, IActivityActivator activityActivator, Scoped<IEnumerable<ICommandsProvider>> scopedCommandsProviders)
+        public CommandActivityTypeProvider(IDescribesActivityType describesActivityType, IActivityActivator activityActivator, IServiceScopeFactory serviceScopeFactory)
         {
             _describesActivityType = describesActivityType;
             _activityActivator = activityActivator;
-            _scopedCommandsProviders = scopedCommandsProviders;
+            _serviceScopeFactory = serviceScopeFactory;
         }
 
         public async ValueTask<IEnumerable<ActivityType>> GetActivityTypesAsync(CancellationToken cancellationToken = default)
@@ -73,8 +74,12 @@ namespace Elsa.Activities.Conductor.Providers.ActivityTypes
             };
         }
 
-        private async Task<IEnumerable<CommandDefinition>> GetCommandsAsync(CancellationToken cancellationToken) =>
-            await _scopedCommandsProviders.UseServiceAsync(async commandProviders => await GetCommandsAsync(commandProviders, cancellationToken).ToListAsync(cancellationToken));
+        private async Task<IEnumerable<CommandDefinition>> GetCommandsAsync(CancellationToken cancellationToken)
+        {
+            using var scope = _serviceScopeFactory.CreateScope();
+            var providers = scope.ServiceProvider.GetRequiredService<IEnumerable<ICommandsProvider>>();
+            return await GetCommandsAsync(providers, cancellationToken).ToListAsync(cancellationToken);
+        }
 
         private static async IAsyncEnumerable<CommandDefinition> GetCommandsAsync(IEnumerable<ICommandsProvider> commandProviders, [EnumeratorCancellation] CancellationToken cancellationToken)
         {

@@ -21,6 +21,7 @@
 | `exportClicked`    |             | `CustomEvent<any>`  |
 | `importClicked`    |             | `CustomEvent<File>` |
 | `publishClicked`   |             | `CustomEvent<any>`  |
+| `revertClicked`    |             | `CustomEvent<any>`  |
 | `unPublishClicked` |             | `CustomEvent<any>`  |
 
 

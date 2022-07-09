@@ -1,11 +1,11 @@
 using Elsa.Activities.Console;
-using Elsa.Activities.Mqtt;
 using Elsa.Activities.Temporal;
 using Elsa.Builders;
 using Microsoft.Extensions.Configuration;
 using NodaTime;
 using System;
 using System.Net.Mqtt;
+using Elsa.Activities.Mqtt.Activities.SendMqttMessage;
 
 namespace Elsa.Samples.MqttWorker.Workflows
 {

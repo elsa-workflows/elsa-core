@@ -154,6 +154,10 @@ export class ElsaActivityEditorModal {
       this.renderProps.selectedTabName = selectedTabName = tabs[0].tabName;
   }
 
+  async componentDidRender(){
+    await eventBus.emit(EventTypes.ActivityEditor.Rendered, this, this.renderProps);
+  }
+
   async onCancelClick() {
     await this.hide(true);
   }

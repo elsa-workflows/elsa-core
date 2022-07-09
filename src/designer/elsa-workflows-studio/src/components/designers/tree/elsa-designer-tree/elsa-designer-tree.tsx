@@ -572,7 +572,7 @@ export class ElsaWorkflowDesigner {
 
   setEntities() {
     this.graph = new dagreD3.graphlib.Graph().setGraph({ranksep: 30});
-    this.graph.graph().rankdir = this.getLayoutDirection();
+    (this.graph.graph() as any).rankdir = this.getLayoutDirection();
 
     const rootActivities = this.getRootActivities();
 
@@ -607,6 +607,7 @@ export class ElsaWorkflowDesigner {
     const activityDisplayContexts = this.activityDisplayContexts || {};
 
     this.workflowModel.activities.forEach(activity => {
+
       this.graph.setNode(activity.activityId, this.createActivityOptions(activity));
       const displayContext = activityDisplayContexts[activity.activityId] || undefined;
       const outcomes = !!displayContext ? displayContext.outcomes : activity.outcomes || [];
@@ -621,7 +622,7 @@ export class ElsaWorkflowDesigner {
           class: 'add'
         });
         this.graph.setEdge(activity.activityId, `${activity.activityId}/${outcome}`, {
-          label: `<p class="elsa-outcome elsa-mb-4 elsa-relative elsa-z-10 elsa-px-2.5 elsa-py-0.5 elsa-rounded-full elsa-text-xs elsa-font-medium elsa-leading-4 elsa-bg-cool-gray-100 elsa-text-cool-gray-800 elsa-capitalize elsa-cursor-default">${outcome}</p>`,
+          label: `<p class="elsa-outcome elsa-mb-4 elsa-relative elsa-z-10 elsa-px-2.5 elsa-py-0.5 elsa-rounded-full elsa-text-xs elsa-font-medium elsa-leading-4 elsa-bg-gray-100 elsa-text-gray-800 elsa-capitalize elsa-cursor-default">${outcome}</p>`,
           labelpos: 'c',
           labelType: 'html',
           arrowhead: 'undirected',
@@ -684,7 +685,7 @@ export class ElsaWorkflowDesigner {
   onWorkflowExecuted = () => {
     const firstNode = d3.select(this.el).select('.node.activity');
 
-    const node = this.graph.node(firstNode.data()) as any;
+    const node = this.graph.node(firstNode.data() as any) as any;
     const activity = node.activity;
     const activityId = activity.activityId;
 
@@ -956,10 +957,10 @@ export class ElsaWorkflowDesigner {
       <Host class="workflow-canvas elsa-flex-1 elsa-flex" ref={el => (this.el = el)}>
         {this.mode == WorkflowDesignerMode.Test ?
           <div>
-            <div id="left" style={{border:`4px solid orange`, position:`fixed`, zIndex:`10`, height: `calc(100vh - 64px)`, width:`4px`, top:`64`, bottom:`0`, left:`0`}}/>
-            <div id="right" style={{border:`4px solid orange`, position:`fixed`, zIndex:`10`, height: `calc(100vh - 64px)`, width:`4px`, top:`64`, bottom:`0`, right:`0`}}/>
-            <div id="top" style={{border:`4px solid orange`, position:`fixed`, zIndex:`10`, height:`4px`, left:`0`, right:`0`, top:`30`}}/>
-            <div id="bottom" style={{border:`4px solid orange`, position:`fixed`, zIndex:`10`, height:`4px`, left:`0`, right:`0`, bottom:`0`}}/>
+            <div id="left" style={{border:`4px solid orange`, position:`fixed`, height: `calc(100vh - 64px)`, width:`4px`, top:`64`, bottom:`0`, left:`0`}}/>
+            <div id="right" style={{border:`4px solid orange`, position:`fixed`, height: `calc(100vh - 64px)`, width:`4px`, top:`64`, bottom:`0`, right:`0`}}/>
+            <div id="top" style={{border:`4px solid orange`, position:`fixed`, height:`4px`, left:`0`, right:`0`, top:`30`}}/>
+            <div id="bottom" style={{border:`4px solid orange`, position:`fixed`, height:`4px`, left:`0`, right:`0`, bottom:`0`}}/>
           </div>
           :
           undefined

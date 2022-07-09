@@ -39,14 +39,11 @@ namespace Elsa.Providers.ActivityTypes
             {
                 var activityType = await CreateActivityTypeAsync(type, cancellationToken);
                 
-                if(activityType == null)
-                    continue;
-
                 yield return activityType;
             }
         }
 
-        private async Task<ActivityType?> CreateActivityTypeAsync(Type activityType, CancellationToken cancellationToken)
+        private async Task<ActivityType> CreateActivityTypeAsync(Type activityType, CancellationToken cancellationToken)
         {
             var info = await _describesActivityType.DescribeAsync(activityType, cancellationToken);
 

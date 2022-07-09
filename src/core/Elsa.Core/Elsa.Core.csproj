@@ -15,13 +15,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AutoMapper" Version="10.1.1" />
-        <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="8.1.1" />
+        <PackageReference Include="AutoMapper" Version="11.0.1" />
+        <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="11.0.0" />
         <PackageReference Include="DistributedLock.Core" Version="1.0.4" />
         <PackageReference Include="DistributedLock.FileSystem" Version="1.0.1" />
         <PackageReference Include="Humanizer.Core" Version="2.13.14" />
-        <PackageReference Include="MediatR" Version="9.0.0" />
-        <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="9.0.0" />
+        <PackageReference Include="MediatR" Version="10.0.1" />
+        <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="10.0.1" />
         <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="6.0.1" />
         <PackageReference Include="Microsoft.AspNetCore.DataProtection.Abstractions" Version="6.0.1" />
         <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
@@ -38,19 +38,11 @@
         <PackageReference Include="NodaTime.Serialization.JsonNet" Version="3.0.0" />
         <PackageReference Include="Open.Linq.AsyncExtensions" Version="1.2.0" />
         <PackageReference Include="Rebus.Microsoft.Extensions.Logging" Version="2.0.0" />
+        <PackageReference Include="Rebus.ServiceProvider" Version="7.0.0" />
         <PackageReference Include="Scrutor" Version="3.3.0" />
         <PackageReference Include="Storage.Net" Version="9.3.0" />
         <PackageReference Include="System.Linq.Async" Version="5.1.0" />
         <PackageReference Include="System.Threading.Channels" Version="6.0.0" />
-        <PackageReference Include="Rebus.ServiceProvider" Version="7.0.0" />
-        <PackageReference Update="Microsoft.SourceLink.GitHub" Version="1.1.1">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-        </PackageReference>
-        <PackageReference Update="Fody" Version="6.6.0">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-        </PackageReference>
     </ItemGroup>
 
     <ItemGroup>

@@ -14,6 +14,7 @@ namespace Elsa.Persistence.YesSql
                     .Column<string?>(nameof(WorkflowDefinitionIndex.TenantId))
                     .Column<string>(nameof(WorkflowDefinitionIndex.DefinitionId))
                     .Column<string>(nameof(WorkflowDefinitionIndex.DefinitionVersionId))
+                    .Column<string>(nameof(WorkflowDefinitionIndex.Name))
                     .Column<int>(nameof(WorkflowDefinitionIndex.Version))
                     .Column<bool>(nameof(WorkflowDefinitionIndex.IsLatest))
                     .Column<bool>(nameof(WorkflowDefinitionIndex.IsPublished))
@@ -66,14 +67,25 @@ namespace Elsa.Persistence.YesSql
                     .Column<string?>(nameof(BookmarkIndex.BookmarkId))
                     .Column<string?>(nameof(BookmarkIndex.TenantId))
                     .Column<string>(nameof(BookmarkIndex.Hash))
+                    .Column<string>(nameof(BookmarkIndex.ModelType))
                     .Column<string>(nameof(BookmarkIndex.ActivityType))
                     .Column<string>(nameof(BookmarkIndex.WorkflowInstanceId))
                     .Column<string>(nameof(BookmarkIndex.CorrelationId)),
                 CollectionNames.Bookmarks);
 
-            return 2;
+            SchemaBuilder.CreateMapIndexTable<TriggerIndex>(
+                table => table
+                    .Column<string?>(nameof(TriggerIndex.TriggerId))
+                    .Column<string?>(nameof(TriggerIndex.TenantId))
+                    .Column<string>(nameof(TriggerIndex.Hash))
+                    .Column<string>(nameof(TriggerIndex.ModelType))
+                    .Column<string>(nameof(TriggerIndex.ActivityType))
+                    .Column<string>(nameof(TriggerIndex.WorkflowDefinitionId)),
+                CollectionNames.Triggers);
+
+            return 5;
         }
-        
+
         public int UpdateFrom1()
         {
             SchemaBuilder.AlterIndexTable<WorkflowInstanceIndex>(
@@ -81,6 +93,45 @@ namespace Elsa.Persistence.YesSql
                 CollectionNames.WorkflowInstances);
 
             return 2;
+        }
+
+        public int UpdateFrom2()
+        {
+            SchemaBuilder.CreateMapIndexTable<TriggerIndex>(
+                table => table
+                    .Column<string?>(nameof(TriggerIndex.TriggerId))
+                    .Column<string?>(nameof(TriggerIndex.TenantId))
+                    .Column<string>(nameof(TriggerIndex.Hash))
+                    .Column<string>(nameof(TriggerIndex.ActivityType))
+                    .Column<string>(nameof(TriggerIndex.WorkflowDefinitionId)),
+                CollectionNames.Triggers);
+
+            return 3;
+        }
+
+        public int UpdateFrom3()
+        {
+            SchemaBuilder.AlterIndexTable<WorkflowDefinitionIndex>(
+                table => table
+                    .AddColumn<string?>(nameof(WorkflowDefinitionIndex.Name)),
+                CollectionNames.WorkflowDefinitions);
+
+            return 4;
+        }
+        
+        public int UpdateFrom4()
+        {
+            SchemaBuilder.AlterIndexTable<TriggerIndex>(
+                table => table
+                    .AddColumn<string?>(nameof(TriggerIndex.ModelType)),
+                CollectionNames.Triggers);
+            
+            SchemaBuilder.AlterIndexTable<BookmarkIndex>(
+                table => table
+                    .AddColumn<string?>(nameof(BookmarkIndex.ModelType)),
+                CollectionNames.Bookmarks);
+
+            return 5;
         }
     }
 }

@@ -18,5 +18,7 @@
 
         public int Skip { get; }
         public int Take { get; }
+
+        public static Paging? Create(int? skip, int? take) => skip != null && take != null ? new Paging(skip.Value, take.Value) : default;
     }
 }

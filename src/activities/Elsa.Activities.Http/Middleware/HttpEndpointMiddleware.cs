@@ -2,20 +2,21 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Mime;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Bookmarks;
+using Elsa.Activities.Http.Contracts;
 using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.Options;
 using Elsa.Activities.Http.Parsers.Request;
-using Elsa.Activities.Http.Services;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -25,8 +26,6 @@ namespace Elsa.Activities.Http.Middleware
 {
     public class HttpEndpointMiddleware
     {
-        // TODO: Design multi-tenancy. 
-        private const string? TenantId = default;
         private readonly RequestDelegate _next;
 
         public HttpEndpointMiddleware(RequestDelegate next) => _next = next;
@@ -38,6 +37,8 @@ namespace Elsa.Activities.Http.Middleware
             IWorkflowInstanceStore workflowInstanceStore,
             IWorkflowRegistry workflowRegistry,
             IWorkflowBlueprintReflector workflowBlueprintReflector,
+            IRouteMatcher routeMatcher,
+            ITenantAccessor tenantAccessor,
             IEnumerable<IHttpRequestBodyParser> contentParsers)
         {
             var basePath = options.Value.BasePath;
@@ -53,11 +54,33 @@ namespace Elsa.Activities.Http.Middleware
             var cancellationToken = CancellationToken.None; // Prevent half-way request abortion (which also happens when WriteHttpResponse writes to the response).
             var method = httpContext.Request.Method!.ToLowerInvariant();
 
+            var tenantId = await tenantAccessor.GetTenantIdAsync(cancellationToken);
+
             request.TryGetCorrelationId(out var correlationId);
 
+            // Try to match inbound path.
+            var routeTable = httpContext.RequestServices.GetRequiredService<IRouteTable>();
+
+            var matchingRouteQuery =
+                from route in routeTable
+                let routeValues = routeMatcher.Match(route, path)
+                where routeValues != null
+                select new { route, routeValues };
+
+            var matchingRoute = matchingRouteQuery.FirstOrDefault();
+            var routeTemplate = matchingRoute?.route ?? path;
+            var routeData = httpContext.GetRouteData();
+
+            if (matchingRoute != null)
+            {
+                foreach (var routeValue in matchingRoute.routeValues!)
+                    routeData.Values[routeValue.Key] = routeValue.Value;
+            }
+
+            // Create a workflow query using the selected route and HTTP method of the request.
             const string activityType = nameof(HttpEndpoint);
-            var bookmark = new HttpEndpointBookmark(path, method);
-            var collectWorkflowsContext = new WorkflowsQuery(activityType, bookmark, correlationId, default, default, TenantId);
+            var bookmark = new HttpEndpointBookmark(routeTemplate, method);
+            var collectWorkflowsContext = new WorkflowsQuery(activityType, bookmark, correlationId, default, default, tenantId);
             var pendingWorkflows = await workflowLaunchpad.FindWorkflowsAsync(collectWorkflowsContext, cancellationToken).ToList();
 
             if (await HandleNoWorkflowsFoundAsync(httpContext, pendingWorkflows, basePath))
@@ -67,7 +90,7 @@ namespace Elsa.Activities.Http.Middleware
                 return;
 
             var pendingWorkflow = pendingWorkflows.Single();
-            var pendingWorkflowInstance = await workflowInstanceStore.FindByIdAsync(pendingWorkflow.WorkflowInstanceId, cancellationToken);
+            var pendingWorkflowInstance = pendingWorkflow.WorkflowInstance ?? await workflowInstanceStore.FindByIdAsync(pendingWorkflow.WorkflowInstanceId, cancellationToken);
 
             if (pendingWorkflowInstance is null)
             {
@@ -76,11 +99,11 @@ namespace Elsa.Activities.Http.Middleware
             }
 
             var isTest = pendingWorkflowInstance.GetMetadata("isTest");
-            var workflowBlueprint = (isTest != null && Convert.ToBoolean(isTest)) ?
-                await workflowRegistry.FindAsync(x => x.Id == pendingWorkflowInstance.DefinitionId, cancellationToken) :
-                await workflowRegistry.FindAsync(x => x.IsPublished && x.Id == pendingWorkflowInstance.DefinitionId && !x.IsDisabled, cancellationToken);
+            var workflowBlueprint = (isTest != null && Convert.ToBoolean(isTest))
+                ? await workflowRegistry.FindAsync(pendingWorkflowInstance.DefinitionId, VersionOptions.Latest, tenantId, cancellationToken)
+                : await workflowRegistry.FindAsync(pendingWorkflowInstance.DefinitionId, VersionOptions.Published, tenantId, cancellationToken);
 
-            if (workflowBlueprint is null)
+            if (workflowBlueprint is null || workflowBlueprint.IsDisabled)
             {
                 await _next(httpContext);
                 return;
@@ -104,53 +127,67 @@ namespace Elsa.Activities.Http.Middleware
                 request.Path.ToString(),
                 request.Method,
                 request.Query.ToDictionary(x => x.Key, x => x.Value.ToString()),
+                routeData.Values,
                 request.Headers.ToDictionary(x => x.Key, x => x.Value.ToString())
             );
 
             if (readContent)
             {
                 var targetType = await activityWrapper.EvaluatePropertyValueAsync(x => x.TargetType, cancellationToken);
-                inputModel = inputModel with
+
+                async Task WriteBadRequestResponseAsync(Exception e)
                 {
-                    RawBody = await request.ReadContentAsStringAsync(cancellationToken),
-                    Body = await contentParser.ParseAsync(request, targetType, cancellationToken)
-                };
+                    httpContext.Response.ContentType = MediaTypeNames.Application.Json;
+                    httpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
+                    await httpContext.Response.WriteAsync(JsonConvert.SerializeObject(new
+                    {
+                        error = "Could not parse content",
+                        message = e.Message
+                    }), cancellationToken);
+                }
+
+                try
+                {
+                    inputModel = inputModel with
+                    {
+                        RawBody = await request.ReadContentAsStringAsync(cancellationToken),
+                        Body = await contentParser.ParseAsync(request, targetType, cancellationToken)
+                    };
+                }
+                catch (JsonSerializationException e)
+                {
+                    await WriteBadRequestResponseAsync(e);
+                    return;
+                }
+                catch (JsonReaderException e)
+                {
+                    await WriteBadRequestResponseAsync(e);
+                    return;
+                }
             }
 
             var useDispatch = httpContext.Request.GetUseDispatch();
+
             if (useDispatch)
             {
                 await workflowLaunchpad.DispatchPendingWorkflowAsync(pendingWorkflow, new WorkflowInput(inputModel), cancellationToken);
 
-                httpContext.Response.ContentType = "application/json";
+                httpContext.Response.ContentType = MediaTypeNames.Application.Json;
                 httpContext.Response.StatusCode = (int)HttpStatusCode.Accepted;
                 await httpContext.Response.WriteAsync(JsonConvert.SerializeObject(pendingWorkflows), cancellationToken);
             }
             else
             {
-                await workflowLaunchpad.ExecutePendingWorkflowAsync(pendingWorkflow, new WorkflowInput(inputModel), cancellationToken);
+                var result = await workflowLaunchpad.ExecutePendingWorkflowAsync(pendingWorkflow, new WorkflowInput(inputModel), cancellationToken);
+
                 pendingWorkflowInstance = await workflowInstanceStore.FindByIdAsync(pendingWorkflow.WorkflowInstanceId, cancellationToken);
 
                 if (pendingWorkflowInstance is not null
                     && pendingWorkflowInstance.WorkflowStatus == WorkflowStatus.Faulted
                     && !httpContext.Response.HasStarted)
                 {
-                    httpContext.Response.ContentType = "application/json";
-                    httpContext.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-
-                    var faultedResponse = JsonConvert.SerializeObject(new
-                    {
-                        errorMessage = $"Workflow faulted at {pendingWorkflowInstance.FaultedAt!} with error: {pendingWorkflowInstance.Fault!.Message}",
-                        exception = pendingWorkflowInstance.Fault?.Exception,
-                        workflow = new
-                        {
-                            name = pendingWorkflowInstance.Name,
-                            version = pendingWorkflowInstance.Version,
-                            instanceId = pendingWorkflowInstance.Id
-                        }
-                    });
-
-                    await httpContext.Response.WriteAsync(faultedResponse, cancellationToken);
+                    var faultHandler = options.Value.HttpEndpointWorkflowFaultHandlerFactory(httpContext.RequestServices);
+                    await faultHandler.HandleAsync(new HttpEndpointFaultedWorkflowContext(httpContext, pendingWorkflowInstance, result.Exception, cancellationToken));
                 }
             }
         }
@@ -169,7 +206,7 @@ namespace Elsa.Activities.Http.Middleware
                 return true;
 
             var authorizationHandler = options.HttpEndpointAuthorizationHandlerFactory(httpContext.RequestServices);
-            
+
             return await authorizationHandler.AuthorizeAsync(new AuthorizeHttpEndpointContext(httpContext, httpEndpoint, workflowBlueprint, pendingWorkflow.WorkflowInstanceId, cancellationToken));
         }
 

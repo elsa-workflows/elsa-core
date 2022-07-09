@@ -14,7 +14,7 @@ namespace Elsa.Samples.AzureServiceBusWorker.Workflows
                 .WriteLine(context =>
                 {
                     var greeting = context.GetInput<Greeting>();
-                    return $"Received a greeting from {greeting.From}, saying \"{greeting.Message}\" to {greeting.To}!";
+                    return $"Received a greeting from {greeting!.From}, saying \"{greeting.Message}\" to {greeting.To}!";
                 });
         }
     }

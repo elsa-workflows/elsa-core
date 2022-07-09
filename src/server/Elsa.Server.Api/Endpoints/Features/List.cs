@@ -17,10 +17,12 @@ namespace Elsa.Server.Api.Endpoints.Features
     public class List : Controller
     {
         private readonly IEnumerable<IServerFeatureProvider> _providers;
+        private readonly IEndpointContentSerializerSettingsProvider _serializerSettingsProvider;
 
-        public List(IEnumerable<IServerFeatureProvider> providers)
+        public List(IEnumerable<IServerFeatureProvider> providers, IEndpointContentSerializerSettingsProvider serializerSettingsProvider)
         {
             _providers = providers;
+            _serializerSettingsProvider = serializerSettingsProvider;
         }
 
         [HttpGet]
@@ -40,7 +42,7 @@ namespace Elsa.Server.Api.Endpoints.Features
                 Features = features
             };
 
-            return Ok(model);
+            return Json(model, _serializerSettingsProvider.GetSettings());
         }
 
         private async IAsyncEnumerable<string> GetFeaturesAsync([EnumeratorCancellation] CancellationToken cancellationToken)

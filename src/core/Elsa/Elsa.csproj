@@ -19,4 +19,8 @@
         <ProjectReference Include="..\Elsa.Core\Elsa.Core.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.0" />
+    </ItemGroup>
+
 </Project>

@@ -1,4 +1,4 @@
-using Elsa.Activities.Mqtt;
+using Elsa.Activities.Mqtt.Extensions;
 using Elsa.Samples.MqttWorker.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

@@ -18,9 +18,9 @@ namespace Elsa.Activities.Telnyx.Activities
 {
     [Action(
         Category = Constants.Category,
-        Description = "Play an audio file on the call.",
-        Outcomes = new[] { TelnyxOutcomeNames.CallPlaybackEnding, TelnyxOutcomeNames.CallIsNoLongerActive, TelnyxOutcomeNames.CallPlaybackEnded },
-        DisplayName = "Play Audio"
+        Description = "Stop audio playback.",
+        Outcomes = new[] { TelnyxOutcomeNames.CallIsNoLongerActive, TelnyxOutcomeNames.CallPlaybackEnded },
+        DisplayName = "Stop Audio Playback"
     )]
     public class StopAudioPlayback : Activity
     {
@@ -74,7 +74,7 @@ namespace Elsa.Activities.Telnyx.Activities
             try
             {
                 await _telnyxClient.Calls.StopAudioPlaybackAsync(callControlId, request, context.CancellationToken);
-                return Combine(Outcome(TelnyxOutcomeNames.CallPlaybackEnding), Suspend());
+                return Suspend();
             }
             catch (ApiException e)
             {

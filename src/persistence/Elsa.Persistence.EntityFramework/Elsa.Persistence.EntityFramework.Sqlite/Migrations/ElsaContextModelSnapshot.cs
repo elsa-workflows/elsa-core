@@ -82,9 +82,70 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
                     b.ToTable("Bookmarks");
                 });
 
+            modelBuilder.Entity("Elsa.Models.Trigger", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ActivityId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ActivityType")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Hash")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Model")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ModelType")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TenantId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("WorkflowDefinitionId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActivityId")
+                        .HasDatabaseName("IX_Trigger_ActivityId");
+
+                    b.HasIndex("ActivityType")
+                        .HasDatabaseName("IX_Trigger_ActivityType");
+
+                    b.HasIndex("Hash")
+                        .HasDatabaseName("IX_Trigger_Hash");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_Trigger_TenantId");
+
+                    b.HasIndex("WorkflowDefinitionId")
+                        .HasDatabaseName("IX_Trigger_WorkflowDefinitionId");
+
+                    b.HasIndex("Hash", "TenantId")
+                        .HasDatabaseName("IX_Trigger_Hash_TenantId");
+
+                    b.HasIndex("ActivityType", "TenantId", "Hash")
+                        .HasDatabaseName("IX_Trigger_ActivityType_TenantId_Hash");
+
+                    b.ToTable("Triggers");
+                });
+
             modelBuilder.Entity("Elsa.Models.WorkflowDefinition", b =>
                 {
                     b.Property<string>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Data")
@@ -281,6 +342,9 @@ namespace Elsa.Persistence.EntityFramework.Sqlite.Migrations
 
                     b.HasIndex("DefinitionId")
                         .HasDatabaseName("IX_WorkflowInstance_DefinitionId");
+
+                    b.HasIndex("DefinitionVersionId")
+                        .HasDatabaseName("IX_WorkflowInstance_DefinitionVersionId");
 
                     b.HasIndex("FaultedAt")
                         .HasDatabaseName("IX_WorkflowInstance_FaultedAt");

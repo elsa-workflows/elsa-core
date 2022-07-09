@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using Elsa.Comparers;
 using Elsa.Services.Models;
 using NodaTime;

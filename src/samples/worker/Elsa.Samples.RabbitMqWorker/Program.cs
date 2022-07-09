@@ -1,4 +1,4 @@
-using Elsa.Activities.RabbitMq;
+using Elsa.Activities.RabbitMq.Extensions;
 using Elsa.Samples.RabbitMqWorker.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

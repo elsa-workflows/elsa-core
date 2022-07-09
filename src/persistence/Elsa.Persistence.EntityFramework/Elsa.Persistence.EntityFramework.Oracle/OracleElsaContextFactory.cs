@@ -1,10 +1,7 @@
 using Elsa.Persistence.EntityFramework.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace Elsa.Persistence.EntityFramework.Oracle
 {

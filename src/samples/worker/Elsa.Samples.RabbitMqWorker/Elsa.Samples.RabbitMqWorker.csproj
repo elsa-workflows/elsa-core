@@ -13,9 +13,18 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\..\activities\Elsa.Activities.RabbitMq\Elsa.Activities.RabbitMq.csproj"/>
-        <ProjectReference Include="..\..\..\activities\Elsa.Activities.Temporal.Quartz\Elsa.Activities.Temporal.Quartz.csproj"/>
-        <ProjectReference Include="..\..\..\core\Elsa\Elsa.csproj"/>
+        <ProjectReference Include="..\..\..\activities\Elsa.Activities.RabbitMq\Elsa.Activities.RabbitMq.csproj" />
+        <ProjectReference Include="..\..\..\activities\Elsa.Activities.Temporal.Quartz\Elsa.Activities.Temporal.Quartz.csproj" />
+        <ProjectReference Include="..\..\..\core\Elsa\Elsa.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="appsettings.Development.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+      <None Update="appsettings.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
 </Project>

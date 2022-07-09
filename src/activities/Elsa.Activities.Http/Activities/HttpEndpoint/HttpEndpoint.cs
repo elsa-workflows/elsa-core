@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.Providers.DefaultValues;
@@ -11,11 +10,13 @@ using Elsa.Expressions;
 using Elsa.Metadata;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Microsoft.AspNetCore.Http;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.Http
 {
+    /// <summary>
+    /// Handle an incoming HTTP request.
+    /// </summary>
     [Trigger(
         Category = "HTTP",
         DisplayName = "HTTP Endpoint",
@@ -28,7 +29,7 @@ namespace Elsa.Activities.Http
         /// The path that triggers this activity. 
         /// </summary>
         [ActivityInput(Hint = "The relative path that triggers this activity.", SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid })]
-        public PathString Path { get; set; }
+        public string Path { get; set; }
 
         /// <summary>
         /// The HTTP methods that triggers this activity.
@@ -59,12 +60,19 @@ namespace Elsa.Activities.Http
         [ActivityInput(Category = PropertyCategories.Advanced)]
         public Type? TargetType { get; set; }
 
+        /// <summary>
+        /// Schema for the HTTP Request model. This is used for autocomplete when referencing the HTTP request body in the Workflow Designer.
+        /// You can use a tool like <see href="https://www.convertsimple.com/convert-json-to-json-schema/">Convert Simple's json to json schema converter</see> for schema generation.
+        /// </summary>
         [ActivityInput(
             Category = PropertyCategories.Advanced,
             UIHint = ActivityInputUIHints.CodeEditor,
             OptionsProvider = typeof(HttpEndpoint))]
         public string? Schema { get; set; }
 
+        /// <summary>
+        /// Allow authenticated requests only
+        /// </summary>
         [ActivityInput(
             Hint = "Check to allow authenticated requests only",
             SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid },
@@ -72,12 +80,19 @@ namespace Elsa.Activities.Http
         )]
         public bool Authorize { get; set; }
 
+        /// <summary>
+        /// Provide a policy to challenge the user with. If the policy fails, the request is forbidden.
+        /// </summary>
         [ActivityInput(
             Hint = "Provide a policy to evaluate. If the policy fails, the request is forbidden.",
             SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid },
             Category = "Security"
         )]
         public string? Policy { get; set; }
+
+        /// <summary>
+        /// The received HTTP request.
+        /// </summary>
 
         [ActivityOutput(Hint = "The received HTTP request.")]
         public HttpRequestModel? Output { get; set; }

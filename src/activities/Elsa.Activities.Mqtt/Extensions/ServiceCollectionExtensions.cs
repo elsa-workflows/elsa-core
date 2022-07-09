@@ -1,15 +1,17 @@
+using Elsa.Activities.Mqtt.Activities.MqttMessageReceived;
+using Elsa.Activities.Mqtt.Activities.SendMqttMessage;
 using Elsa.Activities.Mqtt.Bookmarks;
 using Elsa.Activities.Mqtt.Consumers;
 using Elsa.Activities.Mqtt.Services;
 using Elsa.Activities.Mqtt.StartupTasks;
 using Elsa.Activities.Mqtt.Testing;
+using Elsa.Activities.Mqtt.Testing.Handlers;
 using Elsa.Events;
 using Elsa.Options;
 using Elsa.Runtime;
-using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Activities.Mqtt
+namespace Elsa.Activities.Mqtt.Extensions
 {
     public static class ServiceCollectionExtensions
     {
@@ -20,15 +22,15 @@ namespace Elsa.Activities.Mqtt
                 .AddSingleton<IMessageReceiverClientFactory>(sp => sp.GetRequiredService<BusClientFactory>())
                 .AddSingleton<IMessageSenderClientFactory>(sp => sp.GetRequiredService<BusClientFactory>())
                 .AddSingleton<IMqttTopicsStarter, MqttTopicsStarter>()
-                .AddSingleton<Scoped<IWorkflowLaunchpad>>()
                 .AddStartupTask<StartMqttTopics>()
                 .AddBookmarkProvider<MessageReceivedBookmarkProvider>()
                 .AddSingleton<IMqttTestClientManager, MqttTestClientManager>()
                 .AddNotificationHandlersFrom<ConfigureMqttActivitiesForTestHandler>();
 
-            options.AddPubSubConsumer<RestartMqttTopicsConsumer, WorkflowDefinitionPublished>("WorkflowDefinitionEvents");
-            options.AddPubSubConsumer<RestartMqttTopicsConsumer, WorkflowDefinitionRetracted>("WorkflowDefinitionEvents");
-            options.AddPubSubConsumer<RestartMqttTopicsConsumer, WorkflowDefinitionDeleted>("WorkflowDefinitionEvents");
+            options.AddPubSubConsumer<RestartMqttTopicsConsumer, TriggerIndexingFinished>("WorkflowManagementEvents");
+            options.AddPubSubConsumer<RestartMqttTopicsConsumer, TriggersDeleted>("WorkflowManagementEvents");
+            options.AddPubSubConsumer<RestartMqttTopicsConsumer, BookmarkIndexingFinished>("WorkflowManagementEvents");
+            options.AddPubSubConsumer<RestartMqttTopicsConsumer, BookmarksDeleted>("WorkflowManagementEvents");
 
             options
                 .AddActivity<MqttMessageReceived>()

@@ -11,6 +11,5 @@ namespace Elsa.Activities.RabbitMq.Services
     {
         Task CreateWorkersAsync(CancellationToken cancellationToken = default);
         Task<Worker> CreateWorkerAsync(RabbitMqBusConfiguration config, CancellationToken cancellationToken = default);
-        IAsyncEnumerable<RabbitMqBusConfiguration> GetConfigurationsAsync<T>(Func<IWorkflowBlueprint, bool>? predicate, CancellationToken cancellationToken) where T : IRabbitMqActivity;
     }
 }

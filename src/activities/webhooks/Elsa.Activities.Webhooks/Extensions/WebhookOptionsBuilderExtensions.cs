@@ -7,7 +7,6 @@ using Elsa.Activities.Webhooks.Persistence.Decorators;
 using Elsa.Options;
 using Elsa.Webhooks.Persistence;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 
 namespace Elsa.Activities.Webhooks.Extensions
 {

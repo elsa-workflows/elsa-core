@@ -1,0 +1,9 @@
+POST https://localhost:7134/workflows/users/signup
+Content-Type: application/json
+
+{
+    "UserName": "lindsey91",
+    "Password": "This is actually quite a secure password!"
+}
+
+###

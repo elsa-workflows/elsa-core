@@ -1,12 +1,12 @@
+using System.Net.Mqtt;
+using System.Threading.Tasks;
 using Elsa.Activities.Mqtt.Options;
 using Elsa.Activities.Mqtt.Services;
 using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Services.Models;
-using System.Net.Mqtt;
-using System.Threading.Tasks;
 
-namespace Elsa.Activities.Mqtt
+namespace Elsa.Activities.Mqtt.Activities.MqttMessageReceived
 {
     [Trigger(
         Category = "MQTT",
@@ -26,32 +26,25 @@ namespace Elsa.Activities.Mqtt
         [ActivityOutput(Hint = "Received message")]
         public object? Output { get; set; }
 
-        protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context) => context.WorkflowExecutionContext.IsFirstPass ? ExecuteInternalAsync(context) : await SuspendInternalAsync();
-        
+        [ActivityOutput(Hint = "Received topic")]
+        public string TopicReceived { get; set; }
+
+        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => context.WorkflowExecutionContext.IsFirstPass ? ExecuteInternalAsync(context) : Suspend();
+
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context) => ExecuteInternalAsync(context);
-        
+
         private IActivityExecutionResult ExecuteInternalAsync(ActivityExecutionContext context)
         {
-            if (context.Input != null)
+            if (context.Input != null && context.Input.GetType()==typeof(MqttApplicationMessage))
             {
                 var message = (MqttApplicationMessage)context.Input;
                 Output = System.Text.Encoding.UTF8.GetString(message.Payload);
+                TopicReceived = message.Topic;
             }
 
             context.LogOutputProperty(this, nameof(Output), Output);
 
             return Done();
-        }
-
-        private async ValueTask<IActivityExecutionResult> SuspendInternalAsync()
-        {
-            var options = new MqttClientOptions(Topic, Host, Port, Username, Password, QualityOfService);
-
-            var receiver = await _messageReceiver.GetReceiverAsync(options);
-
-            await receiver.SubscribeAsync(Topic);
-
-            return Suspend();
         }
     }
 }

@@ -1,14 +1,14 @@
+using System.Threading;
+using System.Threading.Tasks;
 using Elsa.Server.Api.ActionFilters;
-using Elsa.Testing.Api.Models;
+using Elsa.WorkflowTesting.Api.Models;
 using Elsa.WorkflowTesting.Events;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
-using System.Threading;
-using System.Threading.Tasks;
 
-namespace Elsa.Testing.Api.Endpoints
+namespace Elsa.WorkflowTesting.Api.Endpoints
 {
     [ApiController]
     [ApiVersion("1")]

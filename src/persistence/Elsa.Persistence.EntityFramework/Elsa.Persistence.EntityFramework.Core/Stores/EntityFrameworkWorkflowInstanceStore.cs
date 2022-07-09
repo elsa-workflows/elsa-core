@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
@@ -9,6 +10,7 @@ using Elsa.Persistence.EntityFramework.Core.Extensions;
 using Elsa.Persistence.EntityFramework.Core.Services;
 using Elsa.Persistence.Specifications;
 using Elsa.Serialization;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 namespace Elsa.Persistence.EntityFramework.Core.Stores
@@ -16,10 +18,16 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
     public class EntityFrameworkWorkflowInstanceStore : ElsaContextEntityFrameworkStore<WorkflowInstance>, IWorkflowInstanceStore
     {
         private readonly IContentSerializer _contentSerializer;
+        private readonly ILogger<EntityFrameworkWorkflowInstanceStore> _logger;
 
-        public EntityFrameworkWorkflowInstanceStore(IElsaContextFactory dbContextFactory, IMapper mapper, IContentSerializer contentSerializer) : base(dbContextFactory, mapper)
+        public EntityFrameworkWorkflowInstanceStore(
+            IElsaContextFactory dbContextFactory,
+            IMapper mapper,
+            IContentSerializer contentSerializer,
+            ILogger<EntityFrameworkWorkflowInstanceStore> logger) : base(dbContextFactory, mapper)
         {
             _contentSerializer = contentSerializer;
+            _logger = logger;
         }
 
         public override async Task DeleteAsync(WorkflowInstance entity, CancellationToken cancellationToken = default)
@@ -38,15 +46,20 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
         {
             var workflowInstances = (await FindManyAsync(specification, cancellationToken: cancellationToken)).ToList();
             var workflowInstanceIds = workflowInstances.Select(x => x.Id).ToArray();
+            await DeleteManyByIdsAsync(workflowInstanceIds, cancellationToken);
+            return workflowInstances.Count;
+        }
+
+        public async Task DeleteManyByIdsAsync(IEnumerable<string> ids, CancellationToken cancellationToken = default)
+        {
+            var idList = ids.ToList();
 
             await DoWork(async dbContext =>
             {
-                await dbContext.Set<WorkflowExecutionLogRecord>().AsQueryable().Where(x => workflowInstanceIds.Contains(x.WorkflowInstanceId)).BatchDeleteWithWorkAroundAsync(dbContext, cancellationToken);
-                await dbContext.Set<Bookmark>().AsQueryable().Where(x => workflowInstanceIds.Contains(x.WorkflowInstanceId)).BatchDeleteWithWorkAroundAsync(dbContext, cancellationToken);
-                await dbContext.Set<WorkflowInstance>().AsQueryable().Where(x => workflowInstanceIds.Contains(x.Id)).BatchDeleteWithWorkAroundAsync(dbContext, cancellationToken);
+                await dbContext.Set<WorkflowExecutionLogRecord>().AsQueryable().Where(x => idList.Contains(x.WorkflowInstanceId)).BatchDeleteWithWorkAroundAsync(dbContext, cancellationToken);
+                await dbContext.Set<Bookmark>().AsQueryable().Where(x => idList.Contains(x.WorkflowInstanceId)).BatchDeleteWithWorkAroundAsync(dbContext, cancellationToken);
+                await dbContext.Set<WorkflowInstance>().AsQueryable().Where(x => idList.Contains(x.Id)).BatchDeleteWithWorkAroundAsync(dbContext, cancellationToken);
             }, cancellationToken);
-
-            return workflowInstances.Count;
         }
 
         protected override Expression<Func<WorkflowInstance, bool>> MapSpecification(ISpecification<WorkflowInstance> specification)
@@ -91,10 +104,19 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
                 entity.CurrentActivity
             };
 
-            var json = (string) dbContext.Entry(entity).Property("Data").CurrentValue;
+            var json = (string)dbContext.Entry(entity).Property("Data").CurrentValue;
 
             if (!string.IsNullOrWhiteSpace(json))
-                data = JsonConvert.DeserializeAnonymousType(json, data, DefaultContentSerializer.CreateDefaultJsonSerializationSettings())!;
+            {
+                try
+                {
+                    data = JsonConvert.DeserializeAnonymousType(json, data, DefaultContentSerializer.CreateDefaultJsonSerializationSettings())!;
+                }
+                catch (JsonSerializationException e)
+                {
+                    _logger.LogWarning(e, "Failed to deserialize workflow instance JSON data");
+                }
+            }
 
             entity.Input = data.Input;
             entity.Output = data.Output;
