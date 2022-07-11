@@ -121,7 +121,7 @@ export interface WorkflowInstance {
   activityData?: Map<any>;
   activityOutput?: Map<any>;
   blockingActivities: Array<BlockingActivity>;
-  fault?: WorkflowFault;
+  faults?: Array<WorkflowFault>;
   scheduledActivities: Array<ScheduledActivity>;
   scopes: Array<ActivityScope>;
   currentActivity: ScheduledActivity;
